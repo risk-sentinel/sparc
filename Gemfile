@@ -20,7 +20,7 @@ gem "jbuilder"
 gem 'csv', '~> 3.3'              # CSV file parsing
 gem 'roo', '~> 2.9.0'              # Excel file parsing
 gem 'roo-xls', '~> 1.2.0'          # .xls support
-gem 'rubyzip', '~> 2.3.0'          # ZIP file handling
+gem 'rubyzip', '~> 2.4.1'          # ZIP file handling
 gem 'activerecord-import'           # Bulk imports
 gem 'pagy', '~> 6.0'               # Pagination
 gem 'sidekiq'                       # Background jobs
