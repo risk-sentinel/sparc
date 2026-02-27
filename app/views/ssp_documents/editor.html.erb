@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Security Plan (SSP) Editor</title>
+    <link rel="stylesheet" href="<%= asset_path 'ssp_editor.css' %>">
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 System Security Plan Editor</h1>
+        
+        <!-- Excel to JSON Conversion Section -->
+        <div class="conversion-section">
+            <h2>📊 Convert Excel to JSON</h2>
+            <div class="upload-container">
+                <label for="excelInput"><strong>Upload Excel File (.xlsx):</strong></label>
+                <input type="file" id="excelInput" accept=".xlsx,.xls" onchange="handleExcelUpload(event)">
+                <button class="convert-btn" id="convertBtn" onclick="convertExcelToJSON()" disabled>
+                    🔄 Convert to JSON
+                </button>
+            </div>
+            <div id="conversionStatus" class="status-message"></div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <!-- Existing Document Selector -->
+        <div class="json-section">
+            <h2>📁 Load Existing Document</h2>
+            <div class="upload-container">
+                <label for="documentSelector"><strong>Select Document:</strong></label>
+                <select id="documentSelector" onchange="loadExistingDocument(this.value)">
+                    <option value="">-- Select a document --</option>
+                    <% SspDocument.completed.order(created_at: :desc).each do |doc| %>
+                      <option value="<%= doc.id %>"><%= doc.name %> (<%= doc.created_at.strftime('%Y-%m-%d') %>)</option>
+                    <% end %>
+                </select>
+            </div>
+        </div>
+        
+        <div id="notification" class="notification"></div>
+        
+        <div id="navigationContainer" class="navigation-container" style="display: none;">
+            <div class="navigation-controls">
+                <div class="record-counter">
+                    <span id="recordCounter">Record 0 of 0</span>
+                </div>
+                <select id="recordSelector" onchange="selectRecord(this.value)">
+                    <!-- Options will be populated dynamically -->
+                </select>
+                <div class="nav-buttons">
+                    <button class="nav-btn" id="prevBtn" onclick="navigateRecord(-1)">⬅️ Previous</button>
+                    <button class="nav-btn" id="nextBtn" onclick="navigateRecord(1)">Next ➡️</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="legend" style="display: none;">
+            <div class="legend-title">Legend:</div>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <span class="editable-icon">✏️</span>
+                    <span>Editable Field</span>
+                </div>
+                <div class="legend-item">
+                    <span class="locked-icon">🔒</span>
+                    <span>Locked Field</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="headerInfo" class="header-info" style="display: none;">
+            <strong>Control ID:</strong> <span id="controlId"></span> | 
+            <strong>Title:</strong> <span id="controlTitle"></span>
+        </div>
+        
+        <table id="dataTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Field Name</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data will be inserted here -->
+            </tbody>
+        </table>
+        
+        <div class="button-container" id="actionButtons" style="display: none;">
+            <button class="reset-btn" onclick="resetCurrentRecord()">🔄 Reset Current</button>
+            <button class="save-btn" onclick="saveCurrentRecord()">💾 Save Current</button>
+            <button class="save-all-btn" onclick="saveAllRecords()">💾 Save All Changes</button>
+            <button class="export-btn" onclick="exportJSON()">📥 Export JSON</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = '/api/v1';
+        let currentDocumentId = null;
+        let currentData = null;
+        let currentIndex = 0;
+
+        /**
+         * Handle Excel file selection
+         */
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('convertBtn').disabled = false;
+                showConversionStatus(`Selected: ${file.name}`, 'info');
+            }
+        }
+
+        /**
+         * Convert Excel file to JSON using Rails API
+         */
+        async function convertExcelToJSON() {
+            const fileInput = document.getElementById('excelInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showConversionStatus('Please select an Excel file first', 'error');
+                return;
+            }
+
+            const convertBtn = document.getElementById('convertBtn');
+            convertBtn.disabled = true;
+            convertBtn.textContent = '⏳ Converting...';
+
+            try {
+                const formData = new FormData();
+                formData.append('excel_file', file);
+
+                showConversionStatus('Uploading and converting file...', 'info');
+
+                const response = await fetch(`${API_BASE_URL}/ssp_documents/convert`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Conversion failed');
+                }
+
+                const result = await response.json();
+                
+                showConversionStatus('✅ Conversion successful! Loading data...', 'success');
+                
+                currentDocumentId = result.document_id;
+                loadConvertedJSON(result.data);
+                showNotification('Excel file converted and loaded successfully!', 'success');
+
+            } catch (error) {
+                console.error('Conversion error:', error);
+                showConversionStatus(`❌ Error: ${error.message}`, 'error');
+                showNotification(`Conversion failed: ${error.message}`, 'error');
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.textContent = '🔄 Convert to JSON';
+            }
+        }
+
+        /**
+         * Load existing document from database
+         */
+        async function loadExistingDocument(documentId) {
+            if (!documentId) return;
+
+            try {
+                showNotification('Loading document...', 'info');
+
+                const response = await fetch(`${API_BASE_URL}/ssp_documents/${documentId}/export`, {
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load document');
+                }
+
+                const data = await response.json();
+                currentDocumentId = documentId;
+                loadConvertedJSON(data);
+                showNotification('Document loaded successfully!', 'success');
+
+            } catch (error) {
+                console.error('Load error:', error);
+                showNotification(`Failed to load document: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Load converted JSON data into the editor
+         */
+        function loadConvertedJSON(jsonData) {
+            currentData = jsonData.controls || [];
+            currentIndex = 0;
+            
+            if (currentData.length > 0) {
+                displayRecord(currentIndex);
+                populateRecordSelector();
+                showEditorUI();
+            } else {
+                showNotification('No controls found in the document', 'error');
+            }
+        }
+
+        /**
+         * Display a record
+         */
+        function displayRecord(index) {
+            if (!currentData || currentData.length === 0) return;
+
+            const record = currentData[index];
+            
+            // Update header
+            document.getElementById('controlId').textContent = record.control_id;
+            document.getElementById('controlTitle').textContent = record.title;
+            
+            // Update counter
+            document.getElementById('recordCounter').textContent = `Record ${index + 1} of ${currentData.length}`;
+            
+            // Update table
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            record.fields.forEach(field => {
+                const row = tableBody.insertRow();
+                const cellName = row.insertCell(0);
+                const cellValue = row.insertCell(1);
+                
+                cellName.innerHTML = `${field.field_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} ${field.editable ? '<span style="color: #27ae60;">✏️</span>' : '<span style="color: #95a5a6;">🔒</span>'}`;
+                
+                if (field.editable) {
+                    cellValue.innerHTML = `<textarea rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;" data-field="${field.field_name}">${field.field_value || ''}</textarea>`;
+                } else {
+                    cellValue.textContent = field.field_value || '';
+                }
+            });
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = (index === 0);
+            document.getElementById('nextBtn').disabled = (index === currentData.length - 1);
+        }
+
+        /**
+         * Populate record selector dropdown
+         */
+        function populateRecordSelector() {
+            const selector = document.getElementById('recordSelector');
+            selector.innerHTML = '';
+            
+            currentData.forEach((record, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${record.control_id} - ${record.title}`;
+                selector.appendChild(option);
+            });
+            
+            selector.value = currentIndex;
+        }
+
+        /**
+         * Navigate between records
+         */
+        function navigateRecord(direction) {
+            const newIndex = currentIndex + direction;
+            if (newIndex >= 0 && newIndex < currentData.length) {
+                currentIndex = newIndex;
+                displayRecord(currentIndex);
+                document.getElementById('recordSelector').value = currentIndex;
+            }
+        }
+
+        /**
+         * Select a specific record
+         */
+        function selectRecord(index) {
+            currentIndex = parseInt(index);
+            displayRecord(currentIndex);
+        }
+
+        /**
+         * Save current record
+         */
+        async function saveCurrentRecord() {
+            if (!currentDocumentId) {
+                showNotification('No document loaded', 'error');
+                return;
+            }
+
+            const record = currentData[currentIndex];
+            const updates = {};
+            
+            // Collect updated field values
+            const textareas = document.querySelectorAll('#tableBody textarea');
+            textareas.forEach(textarea => {
+                const fieldName = textarea.dataset.field;
+                updates[fieldName] = textarea.value;
+            });
+
+            try {
+                const payload = {
+                    controls: {
+                        [record.control_id]: updates
+                    }
+                };
+
+                const response = await fetch(`${API_BASE_URL}/ssp_documents/${currentDocumentId}/update_fields`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Update failed');
+                }
+
+                const result = await response.json();
+                
+                // Update local data
+                record.fields.forEach(field => {
+                    if (updates[field.field_name] !== undefined) {
+                        field.field_value = updates[field.field_name];
+                    }
+                });
+
+                showNotification('✅ Control saved successfully!', 'success');
+
+            } catch (error) {
+                console.error('Save error:', error);
+                showNotification(`❌ Error saving: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Save all records
+         */
+        async function saveAllRecords() {
+            if (!currentDocumentId) {
+                showNotification('No document loaded', 'error');
+                return;
+            }
+
+            try {
+                // Collect all updates
+                const allUpdates = {};
+                
+                currentData.forEach(record => {
+                    const updates = {};
+                    record.fields.forEach(field => {
+                        if (field.editable) {
+                            updates[field.field_name] = field.field_value;
+                        }
+                    });
+                    allUpdates[record.control_id] = updates;
+                });
+
+                const response = await fetch(`${API_BASE_URL}/ssp_documents/${currentDocumentId}/update_fields`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ controls: allUpdates })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Update failed');
+                }
+
+                showNotification('✅ All controls saved successfully!', 'success');
+
+            } catch (error) {
+                console.error('Save error:', error);
+                showNotification(`❌ Error saving: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Reset current record
+         */
+        function resetCurrentRecord() {
+            displayRecord(currentIndex);
+            showNotification('Record reset to original values', 'info');
+        }
+
+        /**
+         * Export to JSON
+         */
+        async function exportJSON() {
+            if (!currentDocumentId) {
+                showNotification('No document loaded', 'error');
+                return;
+            }
+
+            try {
+                window.location.href = `/ssp_documents/${currentDocumentId}/download_json`;
+                showNotification('✅ Export started!', 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification(`❌ Error exporting: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Show editor UI elements
+         */
+        function showEditorUI() {
+            document.getElementById('navigationContainer').style.display = 'block';
+            document.querySelector('.legend').style.display = 'flex';
+            document.getElementById('headerInfo').style.display = 'block';
+            document.getElementById('dataTable').style.display = 'table';
+            document.getElementById('actionButtons').style.display = 'flex';
+        }
+
+        /**
+         * Display conversion status message
+         */
+        function showConversionStatus(message, type) {
+            const statusElement = document.getElementById('conversionStatus');
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type}`;
+            statusElement.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        /**
+         * Show notification
+         */
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

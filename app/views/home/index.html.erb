@@ -1,0 +1,31 @@
+<div class="card">
+  <h2>Welcome to SSP/TPR Manager</h2>
+  <p>Manage your System Security Plans and Test Plan Reports with ease.</p>
+  
+  <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <div style="text-align: center;">
+      <h3>📄 SSP Documents</h3>
+      <p>Upload and manage System Security Plans</p>
+      <%= link_to "View SSP Documents", ssp_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Upload New SSP", new_ssp_document_path, class: "btn btn-success" %>
+    </div>
+    
+    <div style="text-align: center;">
+      <h3>📋 TPR Documents</h3>
+      <p>Upload and manage Test Plan Reports</p>
+      <%= link_to "View TPR Documents", tpr_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Upload New TPR", new_tpr_document_path, class: "btn btn-success" %>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Features</h3>
+  <ul style="line-height: 2;">
+    <li>✅ Convert Excel files to JSON format</li>
+    <li>✅ Edit control fields with validation</li>
+    <li>✅ Export to JSON</li>
+    <li>✅ Track document versions</li>
+    <li>✅ Bulk update capabilities</li>
+  </ul>
+</div>
