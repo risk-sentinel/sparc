@@ -1,0 +1,54 @@
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h2><%= @tpr_document.name %></h2>
+      <p style="color: #666; margin-top: 0.5rem;">
+        Original File: <%= @tpr_document.original_filename %> | 
+        Status: <span style="padding: 0.25rem 0.75rem; background: <%= @tpr_document.completed? ? '#d4edda' : '#fff3cd' %>; border-radius: 4px;"><%= @tpr_document.status %></span>
+      </p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+      <%= link_to "Download JSON", download_json_tpr_document_path(@tpr_document), class: "btn btn-success" %>
+      <%= link_to "Back to List", tpr_documents_path, class: "btn btn-primary" %>
+    </div>
+  </div>
+
+  <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+    <strong>Total Controls:</strong> <%= @controls.count %>
+  </div>
+
+  <div id="controlsContainer">
+    <% @controls.each do |control| %>
+      <div class="control-card" style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+        <div style="margin-bottom: 1rem;">
+          <h3 style="color: #2c3e50; margin-bottom: 0.5rem;"><%= control.control_id %></h3>
+          <p style="color: #666;"><%= control.title %></p>
+        </div>
+
+        <table style="width: 100%;">
+          <% control.tpr_control_fields.each do |field| %>
+            <tr>
+              <td style="width: 30%; font-weight: 600; vertical-align: top; padding: 0.5rem;">
+                <%= field.field_name.titleize %>
+                <% if field.editable %>
+                  <span style="color: #27ae60;">✏️</span>
+                <% else %>
+                  <span style="color: #95a5a6;">🔒</span>
+                <% end %>
+              </td>
+              <td style="padding: 0.5rem;">
+                <% if field.field_name == 'test_status' %>
+                  <span style="padding: 0.25rem 0.75rem; background: <%= field.field_value.downcase.include?('pass') ? '#d4edda' : field.field_value.downcase.include?('fail') ? '#f8d7da' : '#fff3cd' %>; border-radius: 4px;">
+                    <%= field.field_value %>
+                  </span>
+                <% else %>
+                  <%= field.field_value %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </table>
+      </div>
+    <% end %>
+  </div>
+</div>

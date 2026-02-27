@@ -1,0 +1,2 @@
+class ConversionJob < ApplicationRecord
+end

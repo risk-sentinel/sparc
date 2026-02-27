@@ -1,0 +1,32 @@
+<div class="card">
+  <h2>Upload SSP Document</h2>
+  
+  <%= form_with model: @ssp_document, local: true, multipart: true do |f| %>
+    <div class="form-group">
+      <label for="ssp_document_file">Select Excel File (.xlsx, .xls)</label>
+      <%= f.file_field :file, accept: ".xlsx,.xls", required: true %>
+      <small style="color: #666; display: block; margin-top: 0.5rem;">
+        Upload an Excel file containing your SSP controls and fields.
+      </small>
+    </div>
+    
+    <div style="display: flex; gap: 1rem;">
+      <%= f.submit "Upload and Convert", class: "btn btn-success" %>
+      <%= link_to "Cancel", ssp_documents_path, class: "btn", style: "background: #95a5a6; color: white;" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="card">
+  <h3>Expected Excel Format</h3>
+  <p>Your Excel file should contain the following columns:</p>
+  <ul style="line-height: 2; margin-top: 1rem;">
+    <li><strong>Control ID</strong> - Unique identifier for the control</li>
+    <li><strong>Control Title</strong> - Name/title of the control</li>
+    <li><strong>Responsible Role</strong> - Role responsible for implementation</li>
+    <li><strong>Implementation Status</strong> - Current status (e.g., Implemented, Planned)</li>
+    <li><strong>Control Origination</strong> - Origin of control</li>
+    <li><strong>Customer Responsibility</strong> - Customer's responsibilities</li>
+    <li><strong>Implementation Guidance</strong> - How to implement the control</li>
+  </ul>
+</div>
