@@ -1,14 +1,29 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Enable jemalloc for reduced memory usage and latency.
+# Enable jemalloc for better memory performance
 if [ -z "${LD_PRELOAD+x}" ]; then
-    LD_PRELOAD=$(find /usr/lib -name libjemalloc.so.2 -print -quit)
-    export LD_PRELOAD
+    jemalloc_path=$(find /usr/lib -name libjemalloc.so.2 -print -quit 2>/dev/null || true)
+    if [ -n "$jemalloc_path" ]; then
+        export LD_PRELOAD="$jemalloc_path"
+    fi
 fi
 
-# If running the rails server then create or migrate existing database
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare
+# Wait for PostgreSQL (safe for all services)
+echo "Waiting for PostgreSQL..."
+until pg_isready -h db -p 5432 -U postgres -t 1 >/dev/null 2>&1; do
+    echo "Postgres is not ready yet - sleeping..."
+    sleep 2
+done
+echo "PostgreSQL is ready!"
+
+# Only run db:prepare when starting the Rails server (web container)
+# This prevents concurrent migration errors from sidekiq/console/etc.
+if [[ "$1" == "./bin/rails" && "$2" == "server" ]] || [[ "$1" == "rails" && "$2" == "server" ]]; then
+    echo "Running database preparation (create/migrate/seed if needed)..."
+    bundle exec rails db:prepare
 fi
 
-exec "${@}"
+# Hand over to the actual command
+echo "Starting: $@"
+exec "$@"
