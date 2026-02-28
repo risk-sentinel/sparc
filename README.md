@@ -1,16 +1,18 @@
 # README
 
+![alt text](image.png)
+
 This comprehensive Rails application provides:
 
-✅ SSP Management - Upload, convert, edit, and export SSP documents
-✅ TPR Management - Upload, convert, and manage TPR documents
-✅ Excel to JSON Conversion - Automatic parsing of Excel files
-✅ Web-based Editor - User-friendly interface for editing controls
-✅ API Endpoints - RESTful API for programmatic access
-✅ Background Processing - Async job processing for large files
-✅ Database Persistence - Store and version control documents
-✅ Export Capabilities - Download as JSON
-✅ Extensible Architecture - Easy to add update_tpr functionality
+- ✅ SSP Management - Upload, convert, edit, and export SSP documents
+- ✅ TPR Management - Upload, convert, and manage TPR documents
+- ✅ Excel to JSON Conversion - Automatic parsing of Excel files
+- ✅ Web-based Editor - User-friendly interface for editing controls
+- ✅ API Endpoints - RESTful API for programmatic access
+- ✅ Background Processing - Async job processing for large files
+- ✅ Database Persistence - Store and version control documents
+- ✅ Export Capabilities - Download as JSON
+- ✅ Extensible Architecture - Easy to add update_tpr functionality
 
 The application is production-ready with proper error handling, validation, testing support, and Docker containerization options!
 
