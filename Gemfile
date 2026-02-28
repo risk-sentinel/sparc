@@ -22,7 +22,7 @@ gem 'roo', '~> 2.10.1'             # Excel file parsing
 gem 'roo-xls', '~> 1.2.0'          # .xls support
 gem 'rubyzip', '~> 2.4.1'          # ZIP file handling
 gem 'activerecord-import'           # Bulk imports
-gem 'pagy', '~> 6.0'               # Pagination
+gem 'pagy', '~> 43.3'              # Pagination
 gem 'sidekiq'                       # Background jobs
 gem 'redis', '~> 5.0'              # For Sidekiq
 gem 'aws-sdk-s3'                    # File storage
