@@ -2,6 +2,15 @@ require_relative "boot"
 
 require "rails/all"
 
+# Skip dotenv in production/containers
+if Rails.env.development? || Rails.env.test?
+  begin
+    require "dotenv/rails-now"
+  rescue LoadError
+    # Silently skip if gem not present (e.g., in Docker prod build)
+  end
+end
+
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)

@@ -2,8 +2,8 @@ class SspDocument < ApplicationRecord
   has_many :ssp_controls, dependent: :destroy
   has_one_attached :file
   
-  enum status: { pending: 'pending', processing: 'processing', completed: 'completed', failed: 'failed' }
-  
+  enum :status, { pending: 'pending', processing: 'processing', completed: 'completed', failed: 'failed' }
+
   validates :name, presence: true
   validates :file_type, inclusion: { in: %w[excel json] }
   
