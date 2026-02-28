@@ -18,9 +18,9 @@ gem "stimulus-rails"
 gem "jbuilder"
 
 gem 'csv', '~> 3.3'              # CSV file parsing
-gem 'roo', '~> 2.10.1'             # Excel file parsing
-gem 'roo-xls', '~> 1.2.0'          # .xls support
-gem 'rubyzip', '~> 2.4.1'          # ZIP file handling
+gem 'roo', '~> 3.0.0'              # Excel file parsing
+gem 'roo-xls', '~> 2.0.0'          # .xls support
+gem 'rubyzip', '~> 3.2.2'          # ZIP file handling
 gem 'activerecord-import'           # Bulk imports
 gem 'pagy', '~> 43.3'              # Pagination
 gem 'sidekiq'                       # Background jobs
