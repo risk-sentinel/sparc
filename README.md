@@ -1,8 +1,45 @@
-# README
+# SSP and TPR Manager
 
-![alt text](image.png)
+![Landing Page](docs/landing_page.png)
 
-This comprehensive Rails application provides:
+## Why Use the SSP-TPR-Manager App?
+
+Managing **System Security Plans (SSP)** and **Test Plans & Results (TPR)** documents is often painful when everything lives in large, versioned Excel spreadsheets. The SSP-TPR-Manager app solves exactly that problem by turning complex, hard-to-coordinate spreadsheets into structured, web-accessible, collaborative data.
+
+### Key Benefits
+
+- **Transforms spreadsheets into usable information**  
+  Instead of scrolling through massive Excel files, the app automatically parses SSP and TPR spreadsheets and organizes controls, fields, implementation status, test results, remediation plans, etc. into a clean, searchable web interface.
+
+- **Enables real collaboration & coordination**  
+  Security teams, system owners, assessors, and auditors can view and edit the same live data at the same time — no more emailing updated versions or wondering who has the “latest” spreadsheet.
+
+- **Makes assessor coordination dramatically easier**  
+  Large TPR datasets (hundreds or thousands of controls with test dates, results, findings, remediation plans) become filterable, sortable, and commentable. Assessors can quickly find open findings, overdue tests, or controls needing attention.
+
+- **Supports meaningful responses & tracking**  
+  Editable fields (responsible roles, implementation status, test results, remediation plans, etc.) are clearly marked. Changes are persisted in the database — teams can track progress, assign ownership, and generate exportable JSON summaries for reporting or compliance packages.
+
+- **Reduces version chaos and errors**  
+  No more “SSP v12_final_reallyfinal.xlsx” naming nightmares. One source of truth with status tracking (pending → processing → completed/failed).
+
+- **Designed for real-world FedRAMP / RMF workflows**  
+  Built specifically to handle the structure and fields common in SSP and TPR documents — responsible roles, implementation guidance, test status, tester names, findings, remediation plans, etc.
+
+### Who Benefits Most?
+
+- **Security / compliance teams** — easier to maintain and update the SSP  
+- **Assessors / 3PAOs** — faster review of test results and remediation evidence  
+- **System owners / ISSOs** — clear visibility into control status and gaps  
+- **Program managers** — better reporting and coordination across large control sets
+
+### In Short
+
+The app takes the **painful, error-prone spreadsheet reality** of SSP/TPR management and replaces it with a **coordinated, web-based, real-time source of truth** that actually helps teams document, assess, respond, and prove compliance.
+
+If you're tired of version conflicts, lost changes, or spending hours hunting for the right test result in a 10,000-row spreadsheet — this app is built to make that part of your job noticeably less miserable.
+
+SSP and TPR Manager comprehensive Rails application provides:
 
 - ✅ SSP Management - Upload, convert, edit, and export SSP documents
 - ✅ TPR Management - Upload, convert, and manage TPR documents
