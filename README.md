@@ -163,41 +163,41 @@ bin/rails server
 
 ---
 
-## Importing Existing Catalogs
+## Data Schemas
 
-SPARC's catalog importer accepts Excel files with the following column structure.
+Detailed schema documentation for each document type is available in the [`/docs`](docs/) directory:
 
-### Catalog File Columns
+| Document | Schema Reference |
+|----------|----------------|
+| System Security Plan (SSP) | [docs/ssp-schema.md](docs/ssp-schema.md) |
+| Test Plan Report (TPR) | [docs/tpr-schema.md](docs/tpr-schema.md) |
+| Control Catalog | [docs/catalog-schema.md](docs/catalog-schema.md) |
 
-| Column Name | Description | Example |
-|-------------|-------------|---------|
-| `family` | NIST or other control family | `ACCESS CONTROL` |
-| `control_id` | Control identifier | `AC-1` |
-| `title` | Control title | `ACCESS CONTROL POLICY AND PROCEDURES` |
-| `priority` | Implementation priority | `P1` |
-| `overlay` | Applicable baselines/overlays | `LOW, MODERATE, HIGH` |
-| `language` | Base control language | `The organization:` |
-| `related_controls` | Related control identifiers | `PM-9` |
-| `supplemental_guidance` | Supplemental guidance text | `This control addresses...` |
-| `implementation_guidance` | Guidance for satisfying the control | *(to be added)* |
-| `nist_references` | Supporting NIST references | `NIST-800-53v4` |
-| `internal_references` | Applicable internal policies | `PR.AC-001` |
-| `check` | How the control is validated | `Examine supporting policy documents` |
-| `fix` | Remediation for a failing control | `Ensure that policy establishes...` |
+### Quick Reference — SSP Columns
 
-> **Note:** Column order does not matter. Null / NaN values are filled with `"Not Available"` at creation.
+| Column | Required | Editable | Description |
+|--------|----------|----------|-------------|
+| `Control ID` | Yes | No | NIST control identifier (e.g., `AC-1`) |
+| `Control Title` | Yes | No | Human-readable control name |
+| `Implementation Status` | No | **Yes** | `Implemented`, `Partially Implemented`, `Planned`, `Alternative Implementation`, `Not Applicable`, `Not Implemented` |
+| `Responsible Role` | No | **Yes** | Role or team responsible for the control |
+| `Control Origination` | No | **Yes** | `System Specific`, `Inherited`, `Hybrid` |
+| `Customer Responsibility` | No | **Yes** | Customer obligation, if any |
+| `Implementation Guidance` | No | **Yes** | Free-text implementation narrative |
 
-### Part A (Assessment Objectives) Columns
+### Quick Reference — TPR Columns
 
-| Column Name | Description | Example |
-|-------------|-------------|---------|
-| `family` | NIST or other control family | `ACCESS CONTROL` |
-| `control_id` | Control identifier | `AC-1` |
-| `title` | Control title | `ACCESS CONTROL POLICY AND PROCEDURES` |
-| `decision` | Pass/fail determination criteria | `Determine if the organization: ...` |
-| `examine` | What needs to be reviewed/tested | `Access control policy and procedures...` |
-| `test` | Test to be performed | `Organizational processes for account management...` |
-| `interview` | Interview guidance | `Organizational personnel with access control responsibilities...` |
+| Column | Required | Description |
+|--------|----------|-------------|
+| `Control ID` | Yes | NIST control identifier (e.g., `AC-1`) |
+| `Control Title` | Yes | Human-readable control name |
+| `Test Status` | No | `Pass`, `Partial`, `Fail`, `Not Tested`, `Not Applicable` |
+| `Test Date` | No | Date the test was performed |
+| `Tester Name` | No | Name of the assessor |
+| `Test Results` | No | Narrative findings |
+| `Remediation Plan` | No | Corrective action for failing controls |
+
+> **Note:** Column order does not matter. Null / blank values are stored as empty strings.
 
 ---
 
