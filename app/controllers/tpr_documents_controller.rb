@@ -1,5 +1,5 @@
 class TprDocumentsController < ApplicationController
-  before_action :set_tpr_document, only: [:show, :edit, :update, :destroy, :download_json]
+  before_action :set_tpr_document, only: [ :show, :destroy, :download_json ]
   
   def index
     @tpr_documents = TprDocument.order(created_at: :desc)
