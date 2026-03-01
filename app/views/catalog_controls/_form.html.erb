@@ -1,0 +1,46 @@
+<%= form_with model: [control_family, catalog_control], local: true do |f| %>
+  <% if catalog_control.errors.any? %>
+    <div class="flash error" style="margin-bottom: 1.5rem;">
+      <strong><%= pluralize(catalog_control.errors.count, "error") %>:</strong>
+      <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+        <% catalog_control.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="display: grid; grid-template-columns: 160px 1fr; gap: 1rem;">
+    <div class="form-group">
+      <%= f.label :control_id, "Control ID *" %>
+      <%= f.text_field :control_id, class: "form-control", placeholder: "e.g. AC-1", style: "font-family: monospace; font-weight: 600;" %>
+    </div>
+    <div class="form-group">
+      <%= f.label :title %>
+      <%= f.text_field :title, class: "form-control", placeholder: "Control title..." %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :description %>
+    <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Control description..." %>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="form-group">
+      <%= f.label :priority %>
+      <%= f.select :priority, [["—", ""], ["P0", "P0"], ["P1", "P1"], ["P2", "P2"], ["P3", "P3"]],
+          { selected: catalog_control.priority },
+          class: "form-control" %>
+    </div>
+    <div class="form-group">
+      <%= f.label :baseline_impact, "Baseline Impact" %>
+      <%= f.text_field :baseline_impact, class: "form-control", placeholder: "e.g. LOW, MODERATE, HIGH" %>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <%= f.submit "Save Control", class: "btn btn-success" %>
+    <%= link_to "Cancel", control_family, class: "btn", style: "background: #95a5a6; color: white;" %>
+  </div>
+<% end %>

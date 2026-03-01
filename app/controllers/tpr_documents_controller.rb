@@ -7,6 +7,7 @@ class TprDocumentsController < ApplicationController
   
   def show
     @controls = @tpr_document.tpr_controls.includes(:tpr_control_fields).order(:control_id)
+    @heatmap_data, @heatmap_families, @heatmap_statuses = build_heatmap(@controls, 'test_status')
   end
   
   def new
@@ -69,5 +70,28 @@ class TprDocumentsController < ApplicationController
   
   def set_tpr_document
     @tpr_document = TprDocument.find(params[:id])
+  end
+
+  TPR_STATUS_ORDER = [
+    'Pass', 'Partial', 'Fail', 'Not Tested', 'Not Applicable'
+  ].freeze
+
+  def build_heatmap(controls, status_field_name)
+    data = {}
+    controls.each do |control|
+      family = control.control_id.to_s.split('-').first.upcase
+      status_field = control.tpr_control_fields.find { |f| f.field_name == status_field_name }
+      status = status_field&.field_value.presence || '(Unknown)'
+
+      data[family] ||= {}
+      data[family][status] ||= 0
+      data[family][status] += 1
+    end
+
+    families = data.keys.sort
+    all_statuses = data.values.flat_map(&:keys).uniq
+    ordered = TPR_STATUS_ORDER.select { |s| all_statuses.include?(s) }
+    ordered += (all_statuses - TPR_STATUS_ORDER).sort
+    [data, families, ordered]
   end
 end

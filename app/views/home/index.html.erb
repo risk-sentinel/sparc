@@ -1,31 +1,113 @@
-<div class="card">
-  <h2>Welcome to SSP/TPR Manager</h2>
-  <p>Manage your System Security Plans and Test Plan Reports with ease.</p>
-  
-  <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-    <div style="text-align: center;">
-      <h3>📄 SSP Documents</h3>
-      <p>Upload and manage System Security Plans</p>
-      <%= link_to "View SSP Documents", ssp_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Upload New SSP", new_ssp_document_path, class: "btn btn-success" %>
+<div class="card" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; padding: 2.5rem 2rem;">
+  <div style="margin-bottom: 0.25rem;">
+    <span style="font-size: 2rem; font-weight: 800; letter-spacing: 0.08em; color: white;">SPARC</span>
+    <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6); letter-spacing: 0.06em; text-transform: uppercase; margin-left: 0.75rem; vertical-align: middle;">Systemized Policy and Regulatory Controls</span>
+  </div>
+  <p style="color: rgba(255,255,255,0.8); font-size: 1.05rem;">
+    Centralize, track, and operationalize NIST 800-53 controls — from catalog management and SSP authoring to test plan results and compliance reporting.
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 2rem;">
+    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 700;"><%= @ssp_count %></div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">SSP Documents</div>
     </div>
-    
-    <div style="text-align: center;">
-      <h3>📋 TPR Documents</h3>
-      <p>Upload and manage Test Plan Reports</p>
-      <%= link_to "View TPR Documents", tpr_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Upload New TPR", new_tpr_document_path, class: "btn btn-success" %>
+    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 700;"><%= @tpr_count %></div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">TPR Documents</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 700;"><%= @catalog_count %></div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Control Catalogs</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 700;"><%= @family_count %></div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Control Families</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 700;"><%= @control_count %></div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Catalog Controls</div>
     </div>
   </div>
 </div>
 
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+
+  <div class="card" style="margin-bottom: 0; text-align: center;">
+    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128196;</div>
+    <h3 style="margin-bottom: 0.5rem;">SSP Documents</h3>
+    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
+      Upload, parse, and manage System Security Plans. Edit implementation status fields and export to JSON.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <%= link_to "View SSP Documents", ssp_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Upload New SSP", new_ssp_document_path, class: "btn btn-success" %>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 0; text-align: center;">
+    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128203;</div>
+    <h3 style="margin-bottom: 0.5rem;">TPR Documents</h3>
+    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
+      Upload and manage Test Plan Reports. View test status results with color-coded heat maps by control family.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <%= link_to "View TPR Documents", tpr_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Upload New TPR", new_tpr_document_path, class: "btn btn-success" %>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 0; text-align: center; border: 2px solid #3498db;">
+    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128218;</div>
+    <h3 style="margin-bottom: 0.5rem;">Control Catalogs</h3>
+    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
+      Browse NIST SP 800-53 Rev 4 and Rev 5 control families and base controls. Add custom catalogs or entries.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <%= link_to "View Catalogs", control_catalogs_path, class: "btn btn-primary" %>
+      <%= link_to "New Catalog", new_control_catalog_path, class: "btn btn-success" %>
+    </div>
+    <div style="margin-top: 1rem; padding: 0.5rem; background: #eaf2fb; border-radius: 6px; font-size: 0.8rem; color: #2980b9;">
+      NIST SP 800-53 Rev 4 &amp; Rev 5 pre-loaded
+    </div>
+  </div>
+
+</div>
+
 <div class="card">
-  <h3>Features</h3>
-  <ul style="line-height: 2;">
-    <li>✅ Convert Excel files to JSON format</li>
-    <li>✅ Edit control fields with validation</li>
-    <li>✅ Export to JSON</li>
-    <li>✅ Track document versions</li>
-    <li>✅ Bulk update capabilities</li>
-  </ul>
+  <h3 style="margin-bottom: 1.25rem;">Features</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem;">
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Convert Excel files (SSP &amp; TPR) to JSON format</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>NIST SP 800-53 Rev 4 &amp; Rev 5 control catalogs pre-loaded</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Edit control fields with read-only enforcement</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Interactive heat maps by NIST control family</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Export documents to JSON</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Click-to-filter controls by family and status</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Bulk update capabilities via API</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Manage custom catalogs, families, and controls</span>
+    </div>
+  </div>
 </div>

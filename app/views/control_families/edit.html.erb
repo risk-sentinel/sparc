@@ -1,0 +1,7 @@
+<div class="card">
+  <h2 style="margin-bottom: 0.5rem;">Edit Family: <%= @control_family.code %> — <%= @control_family.name %></h2>
+  <p style="color: #666; margin-bottom: 1.5rem;">
+    Catalog: <%= link_to @control_catalog.name, @control_catalog, style: "color: #3498db;" %>
+  </p>
+  <%= render "form", control_catalog: @control_catalog, control_family: @control_family %>
+</div>

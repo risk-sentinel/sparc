@@ -3,7 +3,7 @@
     <div>
       <h2><%= @ssp_document.name %></h2>
       <p style="color: #666; margin-top: 0.5rem;">
-        Original File: <%= @ssp_document.original_filename %> | 
+        Original File: <%= @ssp_document.original_filename %> |
         Status: <span style="padding: 0.25rem 0.75rem; background: <%= @ssp_document.completed? ? '#d4edda' : '#fff3cd' %>; border-radius: 4px;"><%= @ssp_document.status %></span>
       </p>
     </div>
@@ -17,16 +17,96 @@
     <strong>Total Controls:</strong> <%= @controls.count %>
   </div>
 
+  <% if @heatmap_families.any? %>
+  <details id="heatmapSection" open style="margin-bottom: 1.5rem;">
+    <summary style="cursor: pointer; font-size: 1.05rem; font-weight: 600; color: #2c3e50; padding: 0.75rem 1rem; background: #eaf2fb; border-radius: 6px; list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+      <span id="heatmapToggleIcon">&#9660;</span>
+      Implementation Status Heat Map
+      <span style="font-size: 0.85rem; font-weight: 400; color: #666; margin-left: 0.5rem;">— by NIST Control Family (click a cell to filter)</span>
+    </summary>
+
+    <div style="padding: 1rem 0; overflow-x: auto;">
+      <div id="heatmapFilterBanner" style="display: none; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
+        <span id="heatmapFilterLabel" style="font-size: 0.9rem;"></span>
+        <button onclick="clearHeatmapFilter()" style="background: none; border: 1px solid #aaa; border-radius: 4px; padding: 0.25rem 0.75rem; cursor: pointer; font-size: 0.85rem;">&#10005; Clear Filter</button>
+      </div>
+
+      <table style="border-collapse: separate; border-spacing: 3px; margin: 0;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 0.4rem 0.8rem; font-size: 0.8rem; color: #666; background: none; border: none; white-space: nowrap;">Family</th>
+            <% @heatmap_statuses.each do |status| %>
+              <th style="text-align: center; padding: 0.4rem 0.6rem; font-size: 0.75rem; color: #555; background: none; border: none; white-space: nowrap;">
+                <div style="max-width: 90px; overflow: hidden; text-overflow: ellipsis;" title="<%= status %>"><%= status %></div>
+              </th>
+            <% end %>
+            <th style="text-align: center; padding: 0.4rem 0.6rem; font-size: 0.75rem; color: #888; background: none; border: none;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @heatmap_families.each do |family| %>
+            <% family_data = @heatmap_data[family] || {} %>
+            <% family_total = family_data.values.sum %>
+            <tr>
+              <td style="padding: 0.3rem 0.8rem; font-family: monospace; font-weight: 700; color: #2c3e50; font-size: 0.9rem; white-space: nowrap; background: none; border: none;">
+                <%= family %>
+              </td>
+              <% @heatmap_statuses.each do |status| %>
+                <% count = family_data[status] || 0 %>
+                <td style="padding: 2px; border: none; background: none;">
+                  <% if count > 0 %>
+                    <div class="heatmap-cell"
+                         data-family="<%= family %>"
+                         data-status="<%= status %>"
+                         onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.status)"
+                         style="background: <%= ssp_status_color(status) %>; color: white; text-align: center; padding: 0.4rem 0.5rem; border-radius: 4px; cursor: pointer; min-width: 40px; font-size: 0.85rem; font-weight: 600;"
+                         title="<%= family %> / <%= status %>: <%= count %> control(s)">
+                      <%= count %>
+                    </div>
+                  <% else %>
+                    <div style="text-align: center; padding: 0.4rem 0.5rem; min-width: 40px; color: #ccc; font-size: 0.8rem;">&#8212;</div>
+                  <% end %>
+                </td>
+              <% end %>
+              <td style="padding: 0.3rem 0.6rem; text-align: center; color: #888; font-size: 0.85rem; font-weight: 600; background: none; border: none;">
+                <%= family_total %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+        <span style="font-size: 0.8rem; color: #666;">Legend:</span>
+        <% ApplicationHelper::SSP_STATUS_COLORS.each do |label, color| %>
+          <span style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: #555;">
+            <span style="display: inline-block; width: 14px; height: 14px; background: <%= color %>; border-radius: 3px;"></span>
+            <%= label %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  </details>
+  <% end %>
+
   <div id="controlsContainer">
     <% @controls.each_with_index do |control, index| %>
-      <div class="control-card" style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+      <%
+        family_code = control.control_id.to_s.split('-').first.upcase
+        status_field = control.ssp_control_fields.find { |f| f.field_name == 'implementation_status' }
+        status_val = status_field&.field_value.presence || '(Unknown)'
+      %>
+      <div class="control-card"
+           data-family="<%= family_code %>"
+           data-status="<%= status_val %>"
+           style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
           <div>
             <h3 style="color: #2c3e50; margin-bottom: 0.5rem;"><%= control.control_id %></h3>
             <p style="color: #666;"><%= control.title %></p>
           </div>
           <button class="btn btn-primary" onclick="toggleEdit(<%= control.id %>)" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-            ✏️ Edit
+            Edit
           </button>
         </div>
 
@@ -37,9 +117,9 @@
                 <td style="width: 30%; font-weight: 600; vertical-align: top; padding: 0.5rem;">
                   <%= field.field_name.titleize %>
                   <% if field.editable %>
-                    <span style="color: #27ae60;">✏️</span>
+                    <span style="color: #27ae60; font-size: 0.8rem;">(editable)</span>
                   <% else %>
-                    <span style="color: #95a5a6;">🔒</span>
+                    <span style="color: #95a5a6; font-size: 0.8rem;">(read-only)</span>
                   <% end %>
                 </td>
                 <td style="padding: 0.5rem;">
@@ -53,20 +133,20 @@
         <div id="edit-<%= control.id %>" style="display: none;">
           <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :control_id, control.control_id %>
-            
+
             <% control.ssp_control_fields.each do |field| %>
               <div class="form-group">
                 <label>
                   <%= field.field_name.titleize %>
                   <% if field.editable %>
-                    <span style="color: #27ae60;">✏️ Editable</span>
+                    <span style="color: #27ae60; font-size: 0.8rem;">(editable)</span>
                   <% else %>
-                    <span style="color: #95a5a6;">🔒 Read Only</span>
+                    <span style="color: #95a5a6; font-size: 0.8rem;">(read-only)</span>
                   <% end %>
                 </label>
                 <% if field.editable %>
-                  <%= text_area_tag "fields[#{field.field_name}]", field.field_value, 
-                      class: "form-control", 
+                  <%= text_area_tag "fields[#{field.field_name}]", field.field_value,
+                      class: "form-control",
                       rows: 3 %>
                 <% else %>
                   <p style="background: #f8f9fa; padding: 0.75rem; border-radius: 4px;">
@@ -75,9 +155,9 @@
                 <% end %>
               </div>
             <% end %>
-            
+
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-              <%= f.submit "💾 Save Changes", class: "btn btn-success" %>
+              <%= f.submit "Save Changes", class: "btn btn-success" %>
               <button type="button" class="btn" onclick="toggleEdit(<%= control.id %>)" style="background: #95a5a6; color: white;">
                 Cancel
               </button>
@@ -91,9 +171,8 @@
 
 <script>
   function toggleEdit(controlId) {
-    const viewDiv = document.getElementById(`view-${controlId}`);
-    const editDiv = document.getElementById(`edit-${controlId}`);
-    
+    var viewDiv = document.getElementById('view-' + controlId);
+    var editDiv = document.getElementById('edit-' + controlId);
     if (viewDiv.style.display === 'none') {
       viewDiv.style.display = 'block';
       editDiv.style.display = 'none';
@@ -101,5 +180,57 @@
       viewDiv.style.display = 'none';
       editDiv.style.display = 'block';
     }
+  }
+
+  var activeFamily = null;
+  var activeStatus = null;
+
+  function filterByHeatmapCell(cellEl, family, status) {
+    if (activeFamily === family && activeStatus === status) {
+      clearHeatmapFilter();
+      return;
+    }
+    activeFamily = family;
+    activeStatus = status;
+
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.outline = 'none';
+      el.style.opacity = '0.55';
+    });
+    cellEl.style.outline = '3px solid #2c3e50';
+    cellEl.style.opacity = '1';
+
+    var cards = document.querySelectorAll('#controlsContainer .control-card');
+    var visible = 0;
+    cards.forEach(function(card) {
+      var match = card.dataset.family === family && card.dataset.status === status;
+      card.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+
+    var banner = document.getElementById('heatmapFilterBanner');
+    document.getElementById('heatmapFilterLabel').textContent =
+      'Showing: ' + family + ' \u2022 ' + status + ' \u2014 ' + visible + ' control(s)';
+    banner.style.display = 'flex';
+  }
+
+  function clearHeatmapFilter() {
+    activeFamily = null;
+    activeStatus = null;
+    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) {
+      card.style.display = '';
+    });
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.outline = 'none';
+      el.style.opacity = '1';
+    });
+    document.getElementById('heatmapFilterBanner').style.display = 'none';
+  }
+
+  var heatmapSection = document.getElementById('heatmapSection');
+  if (heatmapSection) {
+    heatmapSection.addEventListener('toggle', function() {
+      document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
+    });
   }
 </script>

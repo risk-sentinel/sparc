@@ -7,6 +7,7 @@ class SspDocumentsController < ApplicationController
   
   def show
     @controls = @ssp_document.ssp_controls.includes(:ssp_control_fields).order(:control_id)
+    @heatmap_data, @heatmap_families, @heatmap_statuses = build_heatmap(@controls, 'implementation_status')
   end
   
   def new
@@ -94,5 +95,29 @@ end
   
   def set_ssp_document
     @ssp_document = SspDocument.find(params[:id])
+  end
+
+  SSP_STATUS_ORDER = [
+    'Implemented', 'Partially Implemented', 'Planned',
+    'Alternative Implementation', 'Not Applicable', 'Not Implemented'
+  ].freeze
+
+  def build_heatmap(controls, status_field_name)
+    data = {}
+    controls.each do |control|
+      family = control.control_id.to_s.split('-').first.upcase
+      status_field = control.ssp_control_fields.find { |f| f.field_name == status_field_name }
+      status = status_field&.field_value.presence || '(Unknown)'
+
+      data[family] ||= {}
+      data[family][status] ||= 0
+      data[family][status] += 1
+    end
+
+    families = data.keys.sort
+    all_statuses = data.values.flat_map(&:keys).uniq
+    ordered = SSP_STATUS_ORDER.select { |s| all_statuses.include?(s) }
+    ordered += (all_statuses - SSP_STATUS_ORDER).sort
+    [data, families, ordered]
   end
 end

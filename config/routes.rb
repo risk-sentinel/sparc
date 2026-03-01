@@ -20,6 +20,12 @@ Rails.application.routes.draw do
     end
   end
   
+  resources :control_catalogs do
+    resources :control_families, shallow: true do
+      resources :catalog_controls, shallow: true
+    end
+  end
+
   namespace :api do
     namespace :v1 do
       resources :ssp_documents, only: [] do
