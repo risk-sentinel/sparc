@@ -17,16 +17,16 @@ gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
-gem 'csv', '~> 3.3'              # CSV file parsing
-gem 'roo', '~> 3.0.0'              # Excel file parsing
-gem 'roo-xls', '~> 2.0.0'          # .xls support
-gem 'rubyzip', '~> 3.2.2'          # ZIP file handling
-gem 'activerecord-import'           # Bulk imports
-gem 'pagy', '~> 43.3'              # Pagination
-gem 'sidekiq'                       # Background jobs
-gem 'redis', '~> 5.0'              # For Sidekiq
-gem 'aws-sdk-s3'                    # File storage
-gem 'dotenv-rails', require: false, groups: [:development, :test]
+gem "csv", "~> 3.3"              # CSV file parsing
+gem "roo", "~> 3.0.0"              # Excel file parsing
+gem "roo-xls", "~> 2.0.0"          # .xls support
+gem "rubyzip", "~> 3.2.2"          # ZIP file handling
+gem "activerecord-import"           # Bulk imports
+gem "pagy", "~> 43.3"              # Pagination
+gem "sidekiq"                       # Background jobs
+gem "redis", "~> 5.0"              # For Sidekiq
+gem "aws-sdk-s3"                    # File storage
+gem "dotenv-rails", require: false, groups: [ :development, :test ]
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
@@ -68,9 +68,9 @@ group :development do
 end
 
 group :development, :test do
-  gem 'rspec-rails', '~> 8.0.3'
-  gem 'factory_bot_rails'
-  gem 'faker'
+  gem "rspec-rails", "~> 8.0.3"
+  gem "factory_bot_rails"
+  gem "faker"
 end
 
 group :test do
