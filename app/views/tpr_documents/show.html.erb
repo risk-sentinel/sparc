@@ -1,124 +1,206 @@
-<div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+<%
+  total_by_status = {}
+  @heatmap_statuses.each { |s| total_by_status[s] = @heatmap_families.sum { |f| @heatmap_data.dig(f, s) || 0 } }
+  total_controls = total_by_status.values.sum
+
+  pass_count     = total_by_status["Pass"].to_i
+  not_applicable = total_by_status["Not Applicable"].to_i
+  denominator    = [total_controls - not_applicable, 1].max
+  pass_pct       = (pass_count * 100.0 / denominator).round(1)
+  score_color    = pass_pct >= 80 ? "#2ecc71" : pass_pct >= 50 ? "#f39c12" : "#e74c3c"
+%>
+
+<%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
+<div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
+
+  <%# Row 1 — title + actions %>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
     <div>
-      <h2><%= @tpr_document.name %></h2>
-      <p style="color: #666; margin-top: 0.5rem;">
-        Original File: <%= @tpr_document.original_filename %> |
-        Status: <span style="padding: 0.25rem 0.75rem; background: <%= @tpr_document.completed? ? '#d4edda' : '#fff3cd' %>; border-radius: 4px;"><%= @tpr_document.status %></span>
-      </p>
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Test Plan Report</div>
+      <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0 0 0.3rem;">
+        <%= @tpr_document.name %>
+      </h2>
+      <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5);">
+        <%= @tpr_document.original_filename %>
+        &nbsp;•&nbsp;
+        <span style="color: <%= @tpr_document.completed? ? '#2ecc71' : '#f39c12' %>; font-weight: 600;">
+          <%= @tpr_document.status %>
+        </span>
+        &nbsp;•&nbsp; <%= total_controls %> controls
+      </div>
     </div>
-    <div style="display: flex; gap: 1rem;">
-      <%= link_to "Download JSON", download_json_tpr_document_path(@tpr_document), class: "btn btn-success" %>
-      <%= link_to "Back to List", tpr_documents_path, class: "btn btn-primary" %>
+    <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
+      <%= link_to "↓ JSON", download_json_tpr_document_path(@tpr_document),
+            style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
+      <%= link_to "← Back", tpr_documents_path,
+            style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
     </div>
   </div>
 
-  <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
-    <strong>Total Controls:</strong> <%= @controls.count %>
-  </div>
-
-  <% if @heatmap_families.any? %>
-  <details id="heatmapSection" open style="margin-bottom: 1.5rem;">
-    <summary style="cursor: pointer; font-size: 1.05rem; font-weight: 600; color: #2c3e50; padding: 0.75rem 1rem; background: #eafaf1; border-radius: 6px; list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
-      <span id="heatmapToggleIcon">&#9660;</span>
-      Test Status Heat Map
-      <span style="font-size: 0.85rem; font-weight: 400; color: #666; margin-left: 0.5rem;">— by NIST Control Family (click a cell to filter)</span>
-    </summary>
-
-    <div style="padding: 1rem 0; overflow-x: auto;">
-      <div id="heatmapFilterBanner" style="display: none; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
-        <span id="heatmapFilterLabel" style="font-size: 0.9rem;"></span>
-        <button onclick="clearHeatmapFilter()" style="background: none; border: 1px solid #aaa; border-radius: 4px; padding: 0.25rem 0.75rem; cursor: pointer; font-size: 0.85rem;">&#10005; Clear Filter</button>
+  <%# Row 2 — pass rate score + status chips %>
+  <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
+      <div style="font-size: 2.6rem; font-weight: 800; color: <%= score_color %>; line-height: 1; font-variant-numeric: tabular-nums;">
+        <%= pass_pct %>%
       </div>
-
-      <table style="border-collapse: separate; border-spacing: 3px; margin: 0;">
-        <thead>
-          <tr>
-            <th style="text-align: left; padding: 0.4rem 0.8rem; font-size: 0.8rem; color: #666; background: none; border: none; white-space: nowrap;">Family</th>
-            <% @heatmap_statuses.each do |status| %>
-              <th style="text-align: center; padding: 0.4rem 0.6rem; font-size: 0.75rem; color: #555; background: none; border: none; white-space: nowrap;">
-                <div style="max-width: 90px; overflow: hidden; text-overflow: ellipsis;" title="<%= status %>"><%= status %></div>
-              </th>
-            <% end %>
-            <th style="text-align: center; padding: 0.4rem 0.6rem; font-size: 0.75rem; color: #888; background: none; border: none;">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @heatmap_families.each do |family| %>
-            <% family_data = @heatmap_data[family] || {} %>
-            <% family_total = family_data.values.sum %>
-            <tr>
-              <td style="padding: 0.3rem 0.8rem; font-family: monospace; font-weight: 700; color: #2c3e50; font-size: 0.9rem; white-space: nowrap; background: none; border: none;">
-                <%= family %>
-              </td>
-              <% @heatmap_statuses.each do |status| %>
-                <% count = family_data[status] || 0 %>
-                <td style="padding: 2px; border: none; background: none;">
-                  <% if count > 0 %>
-                    <div class="heatmap-cell"
-                         data-family="<%= family %>"
-                         data-status="<%= status %>"
-                         onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.status)"
-                         style="background: <%= tpr_status_color(status) %>; color: white; text-align: center; padding: 0.4rem 0.5rem; border-radius: 4px; cursor: pointer; min-width: 40px; font-size: 0.85rem; font-weight: 600;"
-                         title="<%= family %> / <%= status %>: <%= count %> control(s)">
-                      <%= count %>
-                    </div>
-                  <% else %>
-                    <div style="text-align: center; padding: 0.4rem 0.5rem; min-width: 40px; color: #ccc; font-size: 0.8rem;">&#8212;</div>
-                  <% end %>
-                </td>
-              <% end %>
-              <td style="padding: 0.3rem 0.6rem; text-align: center; color: #888; font-size: 0.85rem; font-weight: 600; background: none; border: none;">
-                <%= family_total %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-
-      <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-        <span style="font-size: 0.8rem; color: #666;">Legend:</span>
-        <% ApplicationHelper::TPR_STATUS_COLORS.each do |label, color| %>
-          <span style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: #555;">
-            <span style="display: inline-block; width: 14px; height: 14px; background: <%= color %>; border-radius: 3px;"></span>
-            <%= label %>
-          </span>
-        <% end %>
+      <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">
+        Pass Rate
       </div>
     </div>
-  </details>
-  <% end %>
 
-  <div id="controlsContainer">
-    <% @controls.each do |control| %>
-      <%
-        family_code = control.control_id.to_s.split('-').first.upcase
-        status_field = control.tpr_control_fields.find { |f| f.field_name == 'test_status' }
-        status_val = status_field&.field_value.presence || '(Unknown)'
-      %>
-      <div class="control-card"
-           data-family="<%= family_code %>"
-           data-status="<%= status_val %>"
-           style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
-        <div style="margin-bottom: 1rem;">
-          <h3 style="color: #2c3e50; margin-bottom: 0.5rem;"><%= control.control_id %></h3>
-          <p style="color: #666;"><%= control.title %></p>
+    <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; flex: 1;">
+      <% total_by_status.each do |status, count| %>
+        <% next if count == 0 %>
+        <div class="summary-chip"
+             data-filter-status="<%= status %>"
+             onclick="filterByStatus(this.dataset.filterStatus)"
+             title="Click to filter controls by: <%= status %>"
+             style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= tpr_status_color(status) %>; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; transition: background 0.15s; min-width: 64px;">
+          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;">
+            <%= count %>
+          </div>
+          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;">
+            <%= status %>
+          </div>
         </div>
+      <% end %>
+    </div>
+  </div>
 
-        <table style="width: 100%;">
+  <%# Row 3 — stacked progress bar %>
+  <div style="margin-top: 1.25rem;">
+    <div style="height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: rgba(255,255,255,0.08);">
+      <% total_by_status.each do |status, count| %>
+        <% next if count == 0 %>
+        <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= tpr_status_color(status) %>; transition: width 0.3s;"
+             title="<%= status %>: <%= count %>"></div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ── FAMILY RESULTS GRID ─────────────────────────────────────────── %>
+<% if @heatmap_families.any? %>
+<details id="heatmapSection" open style="margin-bottom: 1.5rem;">
+  <summary style="cursor: pointer; padding: 0.7rem 1rem; background: #f0f4f8; border-radius: 8px; font-size: 0.95rem; font-weight: 600; color: #2c3e50; list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; border: 1px solid #e0e6ef;">
+    <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
+    Results by Control Family
+    <span style="font-size: 0.78rem; font-weight: 400; color: #95a5a6; margin-left: 0.25rem;">— click a count badge to filter</span>
+  </summary>
+
+  <div style="padding: 1rem 0 0.5rem;">
+    <div id="heatmapFilterBanner"
+         style="display: none; background: #1a252f; color: white; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; gap: 0.75rem;">
+      <span id="heatmapFilterLabel" style="font-size: 0.88rem; color: rgba(255,255,255,0.9);"></span>
+      <button onclick="clearHeatmapFilter()"
+              style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;">
+        ✕ Clear Filter
+      </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 0.7rem;">
+      <% @heatmap_families.each do |family| %>
+        <% family_data = @heatmap_data[family] || {} %>
+        <% family_total = family_data.values.sum %>
+        <% family_pass = family_data["Pass"].to_i %>
+        <% family_na = family_data["Not Applicable"].to_i %>
+        <% family_denom = [family_total - family_na, 1].max %>
+        <% family_pct = (family_pass * 100.0 / family_denom).round %>
+        <div style="background: white; border: 1px solid #e0e6ef; border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
+            <span style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: #1a252f;"><%= family %></span>
+            <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;">
+              <%= family_pct %>%
+            </span>
+          </div>
+          <div style="font-size: 0.62rem; color: #aaa; margin-bottom: 0.55rem;"><%= family_total %> controls</div>
+
+          <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: #f0f0f0; margin-bottom: 0.55rem;">
+            <% @heatmap_statuses.each do |status| %>
+              <% count = family_data[status] || 0 %>
+              <% next if count == 0 %>
+              <div style="width: <%= (count * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= tpr_status_color(status) %>;"></div>
+            <% end %>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+            <% @heatmap_statuses.each do |status| %>
+              <% count = family_data[status] || 0 %>
+              <% next if count == 0 %>
+              <div class="heatmap-cell"
+                   data-family="<%= family %>"
+                   data-status="<%= status %>"
+                   onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.status)"
+                   title="<%= family %> / <%= status %>: <%= count %>"
+                   style="background: <%= tpr_status_color(status) %>; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
+                <%= count %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.5rem 0;">
+      <span style="font-size: 0.72rem; color: #999;">Legend:</span>
+      <% ApplicationHelper::TPR_STATUS_COLORS.each do |label, color| %>
+        <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: #666;">
+          <span style="display: inline-block; width: 11px; height: 11px; background: <%= color %>; border-radius: 2px; flex-shrink: 0;"></span>
+          <%= label %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+</details>
+<% end %>
+
+<%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
+<div id="controlsContainer">
+  <% @controls.each do |control| %>
+    <%
+      family_code  = control.control_id.to_s.split("-").first.upcase
+      status_field = control.tpr_control_fields.find { |f| f.field_name == "test_status" }
+      status_val   = status_field&.field_value.presence || "(Unknown)"
+      status_color = tpr_status_color(status_val)
+    %>
+    <div class="control-card"
+         data-family="<%= family_code %>"
+         data-status="<%= status_val %>"
+         style="background: white; border: 1px solid #e0e6ef; border-left: 4px solid <%= status_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+
+      <div style="display: flex; align-items: flex-start; gap: 1rem;">
+        <div style="min-width: 0; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
+            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: #1a252f;">
+              <%= control.control_id %>
+            </span>
+            <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap; letter-spacing: 0.02em;">
+              <%= status_val %>
+            </span>
+            <span style="font-size: 0.68rem; color: #aaa; font-family: monospace;">
+              <%= family_code %>
+            </span>
+          </div>
+          <div style="font-size: 0.85rem; color: #555; margin-top: 0.1rem;">
+            <%= control.title %>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 0.75rem;">
+        <table style="width: 100%; border-collapse: collapse;">
           <% control.tpr_control_fields.each do |field| %>
-            <tr>
-              <td style="width: 30%; font-weight: 600; vertical-align: top; padding: 0.5rem;">
-                <%= field.field_name.titleize %>
-                <% if field.editable %>
-                  <span style="color: #27ae60; font-size: 0.8rem;">(editable)</span>
-                <% else %>
-                  <span style="color: #95a5a6; font-size: 0.8rem;">(read-only)</span>
-                <% end %>
+            <tr style="border-top: 1px solid #f4f6f8;">
+              <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #999; vertical-align: top; white-space: nowrap;">
+                <%= field.field_name.tr("_", " ") %>
               </td>
-              <td style="padding: 0.5rem;">
-                <% if field.field_name == 'test_status' %>
-                  <span style="padding: 0.25rem 0.75rem; background: <%= tpr_status_color(field.field_value.to_s) %>; color: white; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+              <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: #333; vertical-align: top;">
+                <% if field.field_value.blank? %>
+                  <span style="color: #ccc;">—</span>
+                <% elsif field.field_name == "test_status" %>
+                  <span style="background: <%= status_color %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
                     <%= field.field_value %>
                   </span>
                 <% else %>
@@ -129,8 +211,8 @@
           <% end %>
         </table>
       </div>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 </div>
 
 <script>
@@ -138,44 +220,53 @@
   var activeStatus = null;
 
   function filterByHeatmapCell(cellEl, family, status) {
-    if (activeFamily === family && activeStatus === status) {
-      clearHeatmapFilter();
-      return;
-    }
+    if (activeFamily === family && activeStatus === status) { clearHeatmapFilter(); return; }
     activeFamily = family;
     activeStatus = status;
-
+    applyFilter();
     document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = (el.dataset.family === family && el.dataset.status === status) ? '1' : '0.35';
       el.style.outline = 'none';
-      el.style.opacity = '0.55';
     });
-    cellEl.style.outline = '3px solid #2c3e50';
-    cellEl.style.opacity = '1';
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
+    if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
+  }
 
+  function filterByStatus(status) {
+    if (activeFamily === null && activeStatus === status) { clearHeatmapFilter(); return; }
+    activeFamily = null;
+    activeStatus = status;
+    applyFilter();
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = el.dataset.status === status ? '1' : '0.35';
+      el.style.outline = 'none';
+    });
+    document.querySelectorAll('.summary-chip').forEach(function(el) {
+      el.style.background = el.dataset.filterStatus === status ? 'rgba(255,255,255,0.15)' : '';
+    });
+  }
+
+  function applyFilter() {
     var cards = document.querySelectorAll('#controlsContainer .control-card');
     var visible = 0;
     cards.forEach(function(card) {
-      var match = card.dataset.family === family && card.dataset.status === status;
-      card.style.display = match ? '' : 'none';
-      if (match) visible++;
+      var familyMatch = activeFamily === null || card.dataset.family === activeFamily;
+      var statusMatch = card.dataset.status === activeStatus;
+      var show = familyMatch && statusMatch;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
     });
-
-    var banner = document.getElementById('heatmapFilterBanner');
-    document.getElementById('heatmapFilterLabel').textContent =
-      'Showing: ' + family + ' \u2022 ' + status + ' \u2014 ' + visible + ' control(s)';
-    banner.style.display = 'flex';
+    var label = activeFamily ? activeFamily + ' \u2022 ' + activeStatus : activeStatus;
+    document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
+    document.getElementById('heatmapFilterBanner').style.display = 'flex';
   }
 
   function clearHeatmapFilter() {
     activeFamily = null;
     activeStatus = null;
-    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) {
-      card.style.display = '';
-    });
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.outline = 'none';
-      el.style.opacity = '1';
-    });
+    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) { card.style.display = ''; });
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
     document.getElementById('heatmapFilterBanner').style.display = 'none';
   }
 
