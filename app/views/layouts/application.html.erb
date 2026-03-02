@@ -229,8 +229,9 @@
   <body>
     <div class="navbar">
       <div>
-        <div style="font-size: 1.4rem; font-weight: 700; letter-spacing: 0.05em;">SPARC</div>
-        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; text-transform: uppercase;">Systemized Policy and Regulatory Controls</div>
+        <%= link_to root_path, style: "display: flex; align-items: center; text-decoration: none;" do %>
+          <%= image_tag "sparc.png", alt: "SPARC", style: "height: 40px; width: auto; display: block;" %>
+        <% end %>
       </div>
       <nav>
         <%= link_to "Home", root_path %>
