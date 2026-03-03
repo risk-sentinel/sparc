@@ -807,23 +807,19 @@ puts "Done! NIST SP 800-53 Rev 4 catalog is ready."
 
 puts "\nSeeding demo SSP and TPR documents..."
 
-def upsert_ssp_control(doc, ctrl_id, title, fields)
-  ctrl = doc.ssp_controls.find_or_create_by!(control_id: ctrl_id) { |c| c.title = title }
-  ctrl.update!(title: title)
+def seed_ssp_control(doc, ctrl_id, title, fields)
+  ctrl = doc.ssp_controls.create!(control_id: ctrl_id, title: title)
   fields.each do |name, val|
-    f = ctrl.ssp_control_fields.find_or_initialize_by(field_name: name.to_s)
-    f.field_value = val.to_s
-    f.save!
+    next if val.blank?
+    ctrl.ssp_control_fields.create!(field_name: name.to_s, field_value: val.to_s)
   end
 end
 
-def upsert_tpr_control(doc, ctrl_id, title, fields)
-  ctrl = doc.tpr_controls.find_or_create_by!(control_id: ctrl_id) { |c| c.title = title }
-  ctrl.update!(title: title)
+def seed_tpr_control(doc, ctrl_id, title, section, fields)
+  ctrl = doc.tpr_controls.create!(control_id: ctrl_id, title: title, section: section)
   fields.each do |name, val|
-    f = ctrl.tpr_control_fields.find_or_initialize_by(field_name: name.to_s)
-    f.field_value = val.to_s
-    f.save!
+    next if val.blank?
+    ctrl.tpr_control_fields.create!(field_name: name.to_s, field_value: val.to_s)
   end
 end
 
@@ -858,10 +854,10 @@ REV5_CONTROLS = [
     test_result: "Tested 15 user roles; all access decisions enforced correctly. No unauthorized access paths discovered.",
     remediation: "" },
   { id: "AC-4",  title: "Information Flow Enforcement",
-    ssp_status: "Partially Implemented", role: "Security Engineer",
+    ssp_status: "Deferred", role: "Security Engineer",
     origin: "Hybrid",                   cust: "Agency responsible for data classification labels",
     guidance: "Network-level information flow controls are in place via firewall rules. Application-level data flow labeling is in progress.",
-    test_status: "Partial", test_date: "2025-10-17", tester: "A. Patel",
+    test_status: "Failed", test_date: "2025-10-17", tester: "A. Patel",
     test_result: "Network flow controls verified. Application-level DLP controls are incomplete; three data paths lack enforced classification labels.",
     remediation: "Complete application-level data classification labeling by Q1 2026. Track in POA&M item AC-4-001." },
   { id: "AC-5",  title: "Separation of Duties",
@@ -872,10 +868,10 @@ REV5_CONTROLS = [
     test_result: "Role matrix reviewed; no violations of separation of duties found across all 342 active accounts.",
     remediation: "" },
   { id: "AC-6",  title: "Least Privilege",
-    ssp_status: "Partially Implemented", role: "System Administrator",
+    ssp_status: "Deferred", role: "System Administrator",
     origin: "System Specific",          cust: "None",
     guidance: "Least privilege is enforced at the OS and application layer. Admin account review is scheduled quarterly; last review identified 4 accounts requiring privilege reduction.",
-    test_status: "Partial", test_date: "2025-10-18", tester: "A. Patel",
+    test_status: "Failed", test_date: "2025-10-18", tester: "A. Patel",
     test_result: "OS and application privilege verified. Four service accounts with excessive privilege identified; remediation in progress.",
     remediation: "Reduce privilege on service accounts SA-DB-01, SA-APP-03, SA-NET-02, SA-MON-01 by December 2025." },
   { id: "AC-7",  title: "Unsuccessful Logon Attempts",
@@ -936,10 +932,10 @@ REV5_CONTROLS = [
     test_result: "LMS records reviewed; 97% completion rate for FY2025 security awareness training. Non-completions tracked via HR escalation process.",
     remediation: "" },
   { id: "AT-3",  title: "Role-Based Training",
-    ssp_status: "Partially Implemented", role: "Training Manager",
+    ssp_status: "Deferred", role: "Training Manager",
     origin: "System Specific",          cust: "None",
     guidance: "Role-based training is available for system administrators, security engineers, and developers. Training for data owners is under development.",
-    test_status: "Partial", test_date: "2025-11-06", tester: "K. Johnson",
+    test_status: "Failed", test_date: "2025-11-06", tester: "K. Johnson",
     test_result: "Training records reviewed for privileged roles. Data owner training curriculum not yet finalized; expected Q2 2026.",
     remediation: "Develop and deploy data owner role-based training by March 2026. Track in POA&M AT-3-001." },
   { id: "AT-4",  title: "Training Records",
@@ -986,17 +982,17 @@ REV5_CONTROLS = [
     test_result: "Cloud storage auto-scaling confirmed active; no capacity alerts triggered in past 12 months. Retention validated.",
     remediation: "" },
   { id: "AU-5",  title: "Response to Audit Logging Process Failures",
-    ssp_status: "Partially Implemented", role: "Security Engineer",
+    ssp_status: "Deferred", role: "Security Engineer",
     origin: "System Specific",          cust: "None",
     guidance: "Automated alerts are configured for SIEM pipeline failures. Manual failover to local logging is documented but not fully tested.",
-    test_status: "Partial", test_date: "2025-09-24", tester: "A. Patel",
+    test_status: "Failed", test_date: "2025-09-24", tester: "A. Patel",
     test_result: "Alert notification verified. Manual failover procedure exists but last tested 18 months ago; exceeds 12-month test cycle requirement.",
     remediation: "Conduct failover test by January 2026. Update PROC-AU-005 with test results." },
   { id: "AU-6",  title: "Audit Record Review, Analysis, and Reporting",
-    ssp_status: "Planned",              role: "ISSO",
+    ssp_status: "Deferred",              role: "ISSO",
     origin: "System Specific",          cust: "None",
     guidance: "SIEM-driven alert triage is operational. Automated weekly audit review reports are under development; target deployment Q1 2026.",
-    test_status: "Not Tested", test_date: "", tester: "",
+    test_status: "Not Specified", test_date: "", tester: "",
     test_result: "Capability not yet implemented; scheduled for Q1 2026.",
     remediation: "Deploy automated audit review reporting by March 2026. Track in POA&M AU-6-001." },
   { id: "AU-8",  title: "Time Stamps",
@@ -1043,10 +1039,10 @@ REV5_CONTROLS = [
     test_result: "Assessment documentation reviewed; independent assessment conducted in August 2025 by third-party assessor.",
     remediation: "" },
   { id: "CA-3",  title: "Information Exchange",
-    ssp_status: "Partially Implemented", role: "System Owner",
+    ssp_status: "Deferred", role: "System Owner",
     origin: "System Specific",          cust: "Agency responsible for ISA reviews",
     guidance: "ISAs are established with external systems. Annual review process is defined but one ISA (with Partner System B) is overdue for renewal.",
-    test_status: "Partial", test_date: "2025-08-12", tester: "J. Smith",
+    test_status: "Failed", test_date: "2025-08-12", tester: "J. Smith",
     test_result: "ISA inventory reviewed. ISA with Partner System B expired July 2025; renewal initiated but not complete.",
     remediation: "Renew ISA with Partner System B by November 2025. Track in POA&M CA-3-001." },
   { id: "CA-5",  title: "Plan of Action and Milestones",
@@ -1064,10 +1060,10 @@ REV5_CONTROLS = [
     test_result: "ATO documentation verified; authorization valid and current.",
     remediation: "" },
   { id: "CA-7",  title: "Continuous Monitoring",
-    ssp_status: "Planned",              role: "ISSO",
+    ssp_status: "Deferred",              role: "ISSO",
     origin: "System Specific",          cust: "None",
     guidance: "Continuous monitoring strategy is documented. Automated vulnerability scanning is operational; configuration drift detection is planned for Q2 2026.",
-    test_status: "Not Tested", test_date: "", tester: "",
+    test_status: "Not Specified", test_date: "", tester: "",
     test_result: "Continuous monitoring program partially operational. Configuration drift detection not yet implemented.",
     remediation: "Deploy configuration drift detection tooling by June 2026. Track in POA&M CA-7-001." },
   # -- CONFIGURATION MANAGEMENT ----------------------------------------
@@ -1093,10 +1089,10 @@ REV5_CONTROLS = [
     test_result: "Sample of 20 change records reviewed; all required approvals present. No unauthorized changes detected.",
     remediation: "" },
   { id: "CM-4",  title: "Impact Analyses",
-    ssp_status: "Partially Implemented", role: "Security Engineer",
+    ssp_status: "Deferred", role: "Security Engineer",
     origin: "System Specific",          cust: "None",
     guidance: "Security impact analysis is required for all major changes. Minor change impact analysis process is not yet formalized.",
-    test_status: "Partial", test_date: "2025-11-19", tester: "A. Patel",
+    test_status: "Failed", test_date: "2025-11-19", tester: "A. Patel",
     test_result: "Major change impact analyses reviewed and found complete. Minor change impact analysis not consistently documented.",
     remediation: "Formalize minor change impact analysis process in PROC-CM-004 by January 2026." },
   { id: "CM-6",  title: "Configuration Settings",
@@ -1114,10 +1110,10 @@ REV5_CONTROLS = [
     test_result: "Port and service audit performed; no unauthorized services detected. Firewall rules reviewed and current.",
     remediation: "" },
   { id: "CM-8",  title: "System Component Inventory",
-    ssp_status: "Partially Implemented", role: "IT Operations",
+    ssp_status: "Deferred", role: "IT Operations",
     origin: "System Specific",          cust: "None",
     guidance: "System inventory is maintained in the CMDB. Cloud assets are auto-discovered. On-premises components require manual updates; last update 6 months ago.",
-    test_status: "Partial", test_date: "2025-11-21", tester: "J. Smith",
+    test_status: "Failed", test_date: "2025-11-21", tester: "J. Smith",
     test_result: "Cloud asset inventory verified via automated discovery. On-prem inventory has 12 unreconciled entries dating to last manual update.",
     remediation: "Reconcile on-premises CMDB entries and establish monthly automated reconciliation by February 2026." },
   # -- CONTINGENCY PLANNING --------------------------------------------
@@ -1136,10 +1132,10 @@ REV5_CONTROLS = [
     test_result: "Contingency plan documentation reviewed; current version dated June 2025. RTO/RPO objectives documented and achievable.",
     remediation: "" },
   { id: "CP-4",  title: "Contingency Plan Testing",
-    ssp_status: "Planned",              role: "Business Continuity Manager",
+    ssp_status: "Deferred",              role: "Business Continuity Manager",
     origin: "System Specific",          cust: "None",
     guidance: "Annual tabletop exercises are conducted. Full failover test is scheduled for Q2 2026 following environment migration.",
-    test_status: "Not Tested", test_date: "", tester: "",
+    test_status: "Not Specified", test_date: "", tester: "",
     test_result: "Full failover test not yet conducted for current environment version; scheduled for Q2 2026.",
     remediation: "Conduct full failover test by June 2026. Track in POA&M CP-4-001." },
   { id: "CP-9",  title: "System Backup",
@@ -1165,10 +1161,10 @@ REV5_CONTROLS = [
     test_result: "MFA enforcement verified for all 342 active organizational accounts. No accounts with MFA bypass exceptions.",
     remediation: "" },
   { id: "IA-3",  title: "Device Identification and Authentication",
-    ssp_status: "Partially Implemented", role: "System Administrator",
+    ssp_status: "Deferred", role: "System Administrator",
     origin: "System Specific",          cust: "None",
     guidance: "Managed devices use certificate-based authentication. BYOD device authentication policy is under review.",
-    test_status: "Partial", test_date: "2025-12-02", tester: "R. Garcia",
+    test_status: "Failed", test_date: "2025-12-02", tester: "R. Garcia",
     test_result: "Certificate-based auth verified for managed fleet. BYOD policy not finalized; 12 unmanaged devices detected accessing the network.",
     remediation: "Finalize BYOD policy and enforce device authentication by February 2026. Track in POA&M IA-3-001." },
   { id: "IA-4",  title: "Identifier Management",
@@ -1215,10 +1211,10 @@ REV5_CONTROLS = [
     test_result: "Incident handling procedures and 5 past incident records reviewed. Escalation paths followed correctly in all cases.",
     remediation: "" },
   { id: "IR-5",  title: "Incident Monitoring",
-    ssp_status: "Partially Implemented", role: "ISSO",
+    ssp_status: "Deferred", role: "ISSO",
     origin: "System Specific",          cust: "None",
     guidance: "SIEM-based incident detection is operational. Automated response playbooks are in development for the top 5 incident types.",
-    test_status: "Partial", test_date: "2025-10-07", tester: "A. Patel",
+    test_status: "Failed", test_date: "2025-10-07", tester: "A. Patel",
     test_result: "SIEM monitoring confirmed active. Only 2 of 5 planned automated playbooks deployed; remaining 3 in development.",
     remediation: "Deploy remaining 3 automated incident response playbooks by January 2026." },
   { id: "IR-6",  title: "Incident Reporting",
@@ -1279,10 +1275,10 @@ REV4_CONTROLS = [
     test_result: "Banner text verified against legal-approved language.",
     remediation: "" },
   { id: "AC-17", title: "Remote Access",
-    ssp_status: "Planned",              role: "Security Engineer",
+    ssp_status: "Deferred",              role: "Security Engineer",
     origin: "System Specific",          cust: "None",
     guidance: "Remote access policy is defined. VPN with MFA deployment is planned for Q3 2025.",
-    test_status: "Not Tested", test_date: "", tester: "",
+    test_status: "Not Specified", test_date: "", tester: "",
     test_result: "Remote access controls not yet fully implemented.",
     remediation: "Deploy VPN and MFA for remote access by September 2025." },
   { id: "AC-18", title: "Wireless Access",
@@ -1308,10 +1304,10 @@ REV4_CONTROLS = [
     test_result: "LMS records reviewed; 94% completion for FY2025.",
     remediation: "" },
   { id: "AT-3",  title: "Role-Based Security Training",
-    ssp_status: "Partially Implemented", role: "Training Manager",
+    ssp_status: "Deferred", role: "Training Manager",
     origin: "System Specific",          cust: "None",
     guidance: "Role-based training delivered for administrators and developers. End-user advanced training curriculum in development.",
-    test_status: "Partial", test_date: "2025-07-16", tester: "D. Lee",
+    test_status: "Failed", test_date: "2025-07-16", tester: "D. Lee",
     test_result: "Admin and developer training records reviewed and current. End-user advanced training not yet deployed.",
     remediation: "Deploy end-user advanced training curriculum by November 2025." },
   { id: "AT-4",  title: "Security Training Records",
@@ -1344,10 +1340,10 @@ REV4_CONTROLS = [
     test_result: "Sample of 30 audit records reviewed; all required fields present.",
     remediation: "" },
   { id: "AU-6",  title: "Audit Review, Analysis, and Reporting",
-    ssp_status: "Planned",              role: "ISSO",
+    ssp_status: "Deferred",              role: "ISSO",
     origin: "System Specific",          cust: "None",
     guidance: "Manual weekly audit review is conducted. Automated reporting tooling is planned for deployment in Q1 2026.",
-    test_status: "Not Tested", test_date: "", tester: "",
+    test_status: "Not Specified", test_date: "", tester: "",
     test_result: "Automated reporting not yet implemented.",
     remediation: "Implement automated audit review reporting by March 2026." },
   { id: "AU-9",  title: "Protection of Audit Information",
@@ -1380,10 +1376,10 @@ REV4_CONTROLS = [
     test_result: "Baseline documentation verified for all in-scope components.",
     remediation: "" },
   { id: "CM-6",  title: "Configuration Settings",
-    ssp_status: "Partially Implemented", role: "System Administrator",
+    ssp_status: "Deferred", role: "System Administrator",
     origin: "System Specific",          cust: "None",
     guidance: "CIS Benchmark applied to servers. Desktop configuration hardening is in progress.",
-    test_status: "Partial", test_date: "2025-09-11", tester: "M. Torres",
+    test_status: "Failed", test_date: "2025-09-11", tester: "M. Torres",
     test_result: "Server hardening verified. Desktop hardening incomplete; 15% of workstations below benchmark.",
     remediation: "Complete workstation hardening by December 2025." },
   { id: "CM-7",  title: "Least Functionality",
@@ -1394,10 +1390,10 @@ REV4_CONTROLS = [
     test_result: "Port and service audit performed; no unauthorized services found.",
     remediation: "" },
   { id: "CM-8",  title: "Information System Component Inventory",
-    ssp_status: "Partially Implemented", role: "IT Operations",
+    ssp_status: "Deferred", role: "IT Operations",
     origin: "System Specific",          cust: "None",
     guidance: "Asset inventory maintained in CMDB. Some legacy systems not yet included.",
-    test_status: "Partial", test_date: "2025-09-12", tester: "M. Torres",
+    test_status: "Failed", test_date: "2025-09-12", tester: "M. Torres",
     test_result: "CMDB reviewed; 8 legacy components not yet catalogued.",
     remediation: "Add legacy components to CMDB by November 2025." },
   # -- IDENTIFICATION AND AUTHENTICATION --------------------------------
@@ -1431,75 +1427,91 @@ REV4_CONTROLS = [
     remediation: "" }
 ].freeze
 
+# Demo docs are always destroyed and recreated to keep field names current.
+[
+  "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+  "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)"
+].each { |n| SspDocument.find_by(name: n)&.destroy }
+
+[
+  "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
+  "ACME HR Portal — Security Assessment (Rev 4)"
+].each { |n| TprDocument.find_by(name: n)&.destroy }
+
 # -- SSP 1: Rev 5 Moderate Baseline ----------------------------------
-ssp1 = SspDocument.find_or_create_by!(name: "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)") do |d|
-  d.file_type         = "excel"
-  d.original_filename = "demo_acme_cloud_platform_ssp_rev5.xlsx"
-  d.status            = "completed"
-end
-ssp1.update!(status: "completed")
+ssp1 = SspDocument.create!(
+  name:              "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+  file_type:         "excel",
+  original_filename: "demo_acme_cloud_platform_ssp_rev5.xlsx",
+  status:            "completed"
+)
 
 REV5_CONTROLS.each do |c|
-  upsert_ssp_control(ssp1, c[:id], c[:title],
-    implementation_status:    c[:ssp_status],
-    responsible_role:         c[:role],
-    control_origination:      c[:origin],
-    customer_responsibility:  c[:cust],
-    implementation_guidance:  c[:guidance])
+  seed_ssp_control(ssp1, c[:id], c[:title],
+    status:              c[:ssp_status],
+    responsible_entities: c[:role],
+    control_origination: c[:origin],
+    private_implementation: c[:guidance])
 end
 puts "  SSP 1 '#{ssp1.name}': #{ssp1.ssp_controls.count} controls"
 
 # -- SSP 2: Rev 4 Low Baseline ----------------------------------------
-ssp2 = SspDocument.find_or_create_by!(name: "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)") do |d|
-  d.file_type         = "excel"
-  d.original_filename = "demo_acme_hr_portal_ssp_rev4.xlsx"
-  d.status            = "completed"
-end
-ssp2.update!(status: "completed")
+ssp2 = SspDocument.create!(
+  name:              "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)",
+  file_type:         "excel",
+  original_filename: "demo_acme_hr_portal_ssp_rev4.xlsx",
+  status:            "completed"
+)
 
 REV4_CONTROLS.each do |c|
-  upsert_ssp_control(ssp2, c[:id], c[:title],
-    implementation_status:    c[:ssp_status],
-    responsible_role:         c[:role],
-    control_origination:      c[:origin],
-    customer_responsibility:  c[:cust],
-    implementation_guidance:  c[:guidance])
+  seed_ssp_control(ssp2, c[:id], c[:title],
+    status:               c[:ssp_status],
+    responsible_entities: c[:role],
+    control_origination:  c[:origin],
+    private_implementation: c[:guidance])
 end
 puts "  SSP 2 '#{ssp2.name}': #{ssp2.ssp_controls.count} controls"
 
-# -- TPR 1: Rev 5 Annual Assessment -----------------------------------
-tpr1 = TprDocument.find_or_create_by!(name: "ACME Cloud Platform — Annual Security Assessment (Rev 5)") do |d|
-  d.file_type         = "excel"
-  d.original_filename = "demo_acme_cloud_platform_tpr_rev5.xlsx"
-  d.status            = "completed"
-end
-tpr1.update!(status: "completed")
+# -- TPR 1: Rev 5 Annual Assessment (multi-section demo) --------------
+tpr1 = TprDocument.create!(
+  name:              "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
+  file_type:         "excel",
+  original_filename: "demo_acme_cloud_platform_tpr_rev5.xlsx",
+  status:            "completed"
+)
 
 REV5_CONTROLS.each do |c|
-  upsert_tpr_control(tpr1, c[:id], c[:title],
-    test_status:      c[:test_status],
-    test_date:        c[:test_date],
-    tester_name:      c[:tester],
-    test_results:     c[:test_result],
-    remediation_plan: c[:remediation])
+  # Derive a section from the control family for multi-section demo
+  family = c[:id].split("-").first
+  section_name = case family
+                 when "AC", "AT" then "System Test"
+                 when "AU", "CA" then "Location Tests"
+                 else "System Test"
+                 end
+  seed_tpr_control(tpr1, c[:id], c[:title], section_name,
+    result:           c[:test_status],
+    date:             c[:test_date],
+    tester:           c[:tester],
+    notes_weakness:   c[:test_result],
+    recommended_fix:  c[:remediation])
 end
 puts "  TPR 1 '#{tpr1.name}': #{tpr1.tpr_controls.count} controls"
 
 # -- TPR 2: Rev 4 HR Assessment ----------------------------------------
-tpr2 = TprDocument.find_or_create_by!(name: "ACME HR Portal — Security Assessment (Rev 4)") do |d|
-  d.file_type         = "excel"
-  d.original_filename = "demo_acme_hr_portal_tpr_rev4.xlsx"
-  d.status            = "completed"
-end
-tpr2.update!(status: "completed")
+tpr2 = TprDocument.create!(
+  name:              "ACME HR Portal — Security Assessment (Rev 4)",
+  file_type:         "excel",
+  original_filename: "demo_acme_hr_portal_tpr_rev4.xlsx",
+  status:            "completed"
+)
 
 REV4_CONTROLS.each do |c|
-  upsert_tpr_control(tpr2, c[:id], c[:title],
-    test_status:      c[:test_status],
-    test_date:        c[:test_date],
-    tester_name:      c[:tester],
-    test_results:     c[:test_result],
-    remediation_plan: c[:remediation])
+  seed_tpr_control(tpr2, c[:id], c[:title], "System Test",
+    result:           c[:test_status],
+    date:             c[:test_date],
+    tester:           c[:tester],
+    notes_weakness:   c[:test_result],
+    recommended_fix:  c[:remediation])
 end
 puts "  TPR 2 '#{tpr2.name}': #{tpr2.tpr_controls.count} controls"
 
