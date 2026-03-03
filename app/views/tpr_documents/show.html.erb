@@ -9,13 +9,13 @@
   pass_pct    = (pass_count * 100.0 / tested).round(1)
   score_color = pass_pct >= 80 ? "#2ecc71" : pass_pct >= 50 ? "#f39c12" : "#e74c3c"
 
-  # Field display order for the read view
-  FIELD_ORDER = %w[
+  # Field display order for the read view (local variable — constants are forbidden inside method scope)
+  field_order = %w[
     date tester notes_weakness recommended_fix
     working_comments working_status
     control_text implementation
     responsibility control_status provided_as inherited row_number
-  ].freeze
+  ]
 %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
@@ -273,12 +273,12 @@
         <%# ── View mode: field table ── %>
         <div id="view-<%= control.id %>" style="margin-top: 0.75rem;">
           <%
-            # Build ordered field list: FIELD_ORDER first, then any extras
-            ordered_fields = FIELD_ORDER.map { |fn| field_map[fn] }.compact
+            # Build ordered field list: field_order first, then any extras
+            ordered_fields = field_order.map { |fn| field_map[fn] }.compact
             extra_fields   = field_map.values.reject { |f|
               f.field_name == "result" ||
               f.field_name == "working_status" ||
-              FIELD_ORDER.include?(f.field_name)
+              field_order.include?(f.field_name)
             }
             display_fields = ordered_fields + extra_fields
           %>
