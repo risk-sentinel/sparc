@@ -1,5 +1,5 @@
 class TprDocumentsController < ApplicationController
-  before_action :set_tpr_document, only: [ :show, :destroy, :download_json ]
+  before_action :set_tpr_document, only: [ :show, :update, :destroy, :download_json ]
 
   def index
     @tpr_documents = TprDocument.order(created_at: :desc)
@@ -10,13 +10,36 @@ class TprDocumentsController < ApplicationController
                                  .includes(:tpr_control_fields)
 
     # Section list in import order (first appearance of each section name)
-    @sections          = all_controls.map(&:section).compact.uniq
+    @sections            = all_controls.map(&:section).compact.uniq
     @controls_by_section = all_controls.group_by(&:section)
-    @controls          = all_controls
+    @controls            = all_controls
+
+    # Asset / environment filter options (sorted, blank-stripped)
+    @assets       = all_controls.map(&:subject_asset).compact.map(&:strip).uniq.sort
+    @environments = all_controls.map(&:subject_environment).compact.map(&:strip).uniq.sort
 
     # Heatmap across all controls; result field drives the colour
     @heatmap_data, @heatmap_families, @heatmap_statuses =
       build_heatmap(@controls, "result")
+  end
+
+  def update
+    control = @tpr_document.tpr_controls.find(params[:tpr_control_id])
+
+    (params[:fields] || {}).each do |field_name, value|
+      field = control.tpr_control_fields.find_or_initialize_by(field_name: field_name.to_s)
+      field.field_value = value.to_s.strip
+      field.save!
+    end
+
+    flash[:success] = "Test updated successfully"
+    redirect_to @tpr_document
+  rescue ActiveRecord::RecordNotFound
+    flash[:error] = "Control not found"
+    redirect_to @tpr_document
+  rescue StandardError => e
+    flash[:error] = "Error updating: #{e.message}"
+    redirect_to @tpr_document
   end
 
   def new

@@ -815,13 +815,43 @@ def seed_ssp_control(doc, ctrl_id, title, fields)
   end
 end
 
-def seed_tpr_control(doc, ctrl_id, title, section, fields)
-  ctrl = doc.tpr_controls.create!(control_id: ctrl_id, title: title, section: section)
+def seed_tpr_control(doc, ctrl_id, title, section, subject_asset, subject_env, fields)
+  ctrl = doc.tpr_controls.create!(
+    control_id:          ctrl_id,
+    title:               title,
+    section:             section,
+    subject_asset:       subject_asset.presence,
+    subject_environment: subject_env.presence
+  )
   fields.each do |name, val|
     next if val.blank?
     ctrl.tpr_control_fields.create!(field_name: name.to_s, field_value: val.to_s)
   end
 end
+
+# Asset / environment mapping for Rev5 TPR demo.
+# Controls not listed here are boundary-level (no specific asset tested).
+REV5_SUBJECTS = {
+  "AC-2"  => { asset: "IAM-Platform",  env: "Production" },
+  "AC-3"  => { asset: "WebApp-Portal", env: "Production" },
+  "AC-4"  => { asset: "API-Gateway",   env: "Staging"    },
+  "AC-6"  => { asset: "IAM-Platform",  env: "Production" },
+  "AC-7"  => { asset: "IAM-Platform",  env: "Production" },
+  "AC-8"  => { asset: "WebApp-Portal", env: "Production" },
+  "AC-17" => { asset: "VPN-Gateway",   env: "Production" },
+  "AT-2"  => { asset: "LMS-System",    env: "Production" },
+  "AT-3"  => { asset: "LMS-System",    env: "Staging"    },
+  "AU-2"  => { asset: "Cloud-SIEM",    env: "Production" },
+  "AU-3"  => { asset: "Cloud-SIEM",    env: "Production" },
+  "AU-4"  => { asset: "Log-Storage",   env: "Production" },
+  "AU-5"  => { asset: "Cloud-SIEM",    env: "Production" },
+  "AU-8"  => { asset: "NTP-Service",   env: "Production" },
+  "AU-9"  => { asset: "Log-Storage",   env: "Production" },
+  "AU-11" => { asset: "Log-Storage",   env: "Production" },
+  "AU-12" => { asset: "Cloud-SIEM",    env: "Production" },
+  "CA-3"  => { asset: "API-Gateway",   env: "Production" },
+  "CA-7"  => { asset: "Cloud-SIEM",    env: "Production" },
+}.freeze
 
 # ------------------------------------------------------------------
 # Demo data: Rev 5 controls (used for both SSP 1 and TPR 1)
@@ -1481,14 +1511,15 @@ tpr1 = TprDocument.create!(
 )
 
 REV5_CONTROLS.each do |c|
-  # Derive a section from the control family for multi-section demo
   family = c[:id].split("-").first
   section_name = case family
                  when "AC", "AT" then "System Test"
                  when "AU", "CA" then "Location Tests"
                  else "System Test"
                  end
+  subj = REV5_SUBJECTS[c[:id]] || {}
   seed_tpr_control(tpr1, c[:id], c[:title], section_name,
+    subj[:asset].to_s, subj[:env].to_s,
     result:           c[:test_status],
     date:             c[:test_date],
     tester:           c[:tester],
@@ -1507,6 +1538,7 @@ tpr2 = TprDocument.create!(
 
 REV4_CONTROLS.each do |c|
   seed_tpr_control(tpr2, c[:id], c[:title], "System Test",
+    nil, nil,
     result:           c[:test_status],
     date:             c[:test_date],
     tester:           c[:tester],

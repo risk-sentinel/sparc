@@ -13,7 +13,6 @@
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
 
-  <%# Row 1 — title + actions %>
   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
     <div>
       <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Test Plan Results</div>
@@ -27,8 +26,11 @@
           <%= @tpr_document.status %>
         </span>
         &nbsp;•&nbsp; <%= total_controls %> tests
-        <% if @sections.any? %>
-          &nbsp;•&nbsp; <%= @sections.size %> section<%= @sections.size == 1 ? "" : "s" %>
+        <% if @sections.size > 1 %>
+          &nbsp;•&nbsp; <%= @sections.size %> sections
+        <% end %>
+        <% if @assets.any? %>
+          &nbsp;•&nbsp; <%= @assets.size %> assets
         <% end %>
       </div>
     </div>
@@ -40,51 +42,90 @@
     </div>
   </div>
 
-  <%# Row 2 — pass rate score + status chips %>
+  <%# Pass rate score + status chips %>
   <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
     <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
       <div style="font-size: 2.6rem; font-weight: 800; color: <%= score_color %>; line-height: 1; font-variant-numeric: tabular-nums;">
         <%= pass_pct %>%
       </div>
-      <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">
-        Pass Rate
-      </div>
+      <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">Pass Rate</div>
     </div>
-
     <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
-
     <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; flex: 1;">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
         <div class="summary-chip"
              data-filter-status="<%= status %>"
              onclick="filterByStatus(this.dataset.filterStatus)"
-             title="Click to filter controls by: <%= status %>"
+             title="Click to filter by: <%= status %>"
              style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= tpr_status_color(status) %>; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; transition: background 0.15s; min-width: 64px;">
-          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;">
-            <%= count %>
-          </div>
-          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;">
-            <%= status %>
-          </div>
+          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= count %></div>
+          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;"><%= status %></div>
         </div>
       <% end %>
     </div>
   </div>
 
-  <%# Row 3 — stacked progress bar %>
+  <%# Stacked progress bar %>
   <div style="margin-top: 1.25rem;">
     <div style="height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: rgba(255,255,255,0.08);">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
-        <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= tpr_status_color(status) %>; transition: width 0.3s;"
+        <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= tpr_status_color(status) %>;"
              title="<%= status %>: <%= count %>"></div>
       <% end %>
     </div>
   </div>
 </div>
 
-<%# ── SECTION TABS (only if multiple sections) ────────────────────── %>
+<%# ── ASSET / ENVIRONMENT FILTER BAR ──────────────────────────────── %>
+<% if @assets.any? || @environments.any? %>
+<div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
+
+  <% if @assets.any? %>
+  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+    <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); white-space: nowrap; min-width: 6rem;">
+      &#x1F4BB; Asset
+    </span>
+    <button class="asset-btn" data-filter-value="__all__"
+            onclick="filterByAsset(null)"
+            style="padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #2c3e50; color: white; font-size: 0.78rem; cursor: pointer; font-weight: 600;">
+      All
+    </button>
+    <% @assets.each do |asset| %>
+      <button class="asset-btn" data-filter-value="<%= asset %>"
+              onclick="filterByAsset('<%= j asset %>')"
+              style="padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font-size: 0.78rem; cursor: pointer;">
+        <%= asset %>
+      </button>
+    <% end %>
+  </div>
+  <% end %>
+
+  <% if @environments.any? %>
+  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+    <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); white-space: nowrap; min-width: 6rem;">
+      &#x1F30D; Environment
+    </span>
+    <button class="env-btn" data-filter-value="__all__"
+            onclick="filterByEnv(null)"
+            style="padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #2c3e50; color: white; font-size: 0.78rem; cursor: pointer; font-weight: 600;">
+      All
+    </button>
+    <% @environments.each do |env| %>
+      <button class="env-btn" data-filter-value="<%= env %>"
+              onclick="filterByEnv('<%= j env %>')"
+              style="padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font-size: 0.78rem; cursor: pointer;">
+        <%= env %>
+      </button>
+    <% end %>
+  </div>
+  <% end %>
+
+</div>
+<% end %>
+
+<%# ── SECTION TABS ─────────────────────────────────────────────────── %>
 <% if @sections.size > 1 %>
 <div id="sectionTabs" style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem;">
   <button class="section-tab active" data-section="__all__"
@@ -109,16 +150,16 @@
   <summary style="cursor: pointer; padding: 0.7rem 1rem; background: var(--summary-bg); border-radius: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; border: 1px solid var(--border-soft);">
     <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
     Results by Control Family
-    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">— click a count badge to filter</span>
+    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">— click a badge to filter</span>
   </summary>
 
   <div style="padding: 1rem 0 0.5rem;">
     <div id="heatmapFilterBanner"
          style="display: none; background: #1a252f; color: white; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; gap: 0.75rem;">
       <span id="heatmapFilterLabel" style="font-size: 0.88rem; color: rgba(255,255,255,0.9);"></span>
-      <button onclick="clearHeatmapFilter()"
+      <button onclick="clearStatusFilter()"
               style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;">
-        ✕ Clear Filter
+        ✕ Clear
       </button>
     </div>
 
@@ -133,12 +174,9 @@
         <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
           <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
             <span style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text);"><%= family %></span>
-            <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;">
-              <%= family_pct %>%
-            </span>
+            <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= family_pct %>%</span>
           </div>
           <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= family_total %> tests</div>
-
           <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: var(--border-soft); margin-bottom: 0.55rem;">
             <% @heatmap_statuses.each do |status| %>
               <% count = family_data[status] || 0 %>
@@ -146,14 +184,12 @@
               <div style="width: <%= (count * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= tpr_status_color(status) %>;"></div>
             <% end %>
           </div>
-
           <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
             <% @heatmap_statuses.each do |status| %>
               <% count = family_data[status] || 0 %>
               <% next if count == 0 %>
               <div class="heatmap-cell"
-                   data-family="<%= family %>"
-                   data-status="<%= status %>"
+                   data-family="<%= family %>" data-status="<%= status %>"
                    onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.status)"
                    title="<%= family %> / <%= status %>: <%= count %>"
                    style="background: <%= tpr_status_color(status) %>; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
@@ -180,10 +216,7 @@
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
-
-  <%# Render sectioned (new data) or flat (legacy/unsectioned) %>
   <% render_sections = @sections.any? %>
-
   <% sections_to_render = render_sections ? @sections : [nil] %>
 
   <% sections_to_render.each do |section_name| %>
@@ -193,19 +226,17 @@
     <% if render_sections %>
       <div class="section-group" data-section="<%= section_name %>"
            style="margin-bottom: 1.5rem;">
+        <%
+          sec_pass   = section_controls.count { |c| c.tpr_control_fields.any? { |f| f.field_name == "result" && f.field_value == "Pass" } }
+          sec_fail   = section_controls.count { |c| c.tpr_control_fields.any? { |f| f.field_name == "result" && f.field_value == "Failed" } }
+          sec_tested = [sec_pass + sec_fail, 1].max
+          sec_pct    = (sec_pass * 100.0 / sec_tested).round
+        %>
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem; padding: 0.5rem 0; border-bottom: 2px solid var(--border-soft);">
-          <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text);">
-            <%= section_name %>
-          </h3>
+          <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text);"><%= section_name %></h3>
           <span style="font-size: 0.72rem; color: var(--text-faint); background: var(--surface-alt); padding: 0.15rem 0.55rem; border-radius: 10px;">
             <%= section_controls.size %> tests
           </span>
-          <%
-            sec_pass = section_controls.count { |c| c.tpr_control_fields.any? { |f| f.field_name == "result" && f.field_value == "Pass" } }
-            sec_fail = section_controls.count { |c| c.tpr_control_fields.any? { |f| f.field_name == "result" && f.field_value == "Failed" } }
-            sec_tested = [sec_pass + sec_fail, 1].max
-            sec_pct = (sec_pass * 100.0 / sec_tested).round
-          %>
           <span style="font-size: 0.75rem; font-weight: 700; color: <%= sec_pct >= 80 ? '#27ae60' : sec_pct >= 50 ? '#e67e22' : '#e74c3c' %>;">
             <%= sec_pct %>% pass
           </span>
@@ -218,100 +249,149 @@
         result_field = control.tpr_control_fields.find { |f| f.field_name == "result" }
         status_val   = result_field&.field_value.presence || "(Unknown)"
         status_color = tpr_status_color(status_val)
-
-        # Working status for secondary badge
-        ws_field = control.tpr_control_fields.find { |f| f.field_name == "working_status" }
-        ws_val   = ws_field&.field_value.presence
+        ws_field     = control.tpr_control_fields.find { |f| f.field_name == "working_status" }
+        ws_val       = ws_field&.field_value.presence
+        card_asset   = control.subject_asset.to_s.strip
+        card_env     = control.subject_environment.to_s.strip
       %>
       <div class="control-card"
            data-family="<%= family_code %>"
            data-status="<%= status_val %>"
            data-section="<%= section_name %>"
+           data-asset="<%= card_asset %>"
+           data-env="<%= card_env %>"
            style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= status_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
 
-        <div style="display: flex; align-items: flex-start; gap: 1rem;">
+        <%# ── Card header ── %>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
           <div style="min-width: 0; flex: 1;">
-            <%# Control ID + result badge + family %>
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
               <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);">
                 <%= control.control_id.presence || "—" %>
               </span>
-              <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap; letter-spacing: 0.02em;">
+              <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;">
                 <%= status_val %>
               </span>
               <% if ws_val.present? %>
-                <span style="background: <%= tpr_status_color(ws_val) %>22; color: <%= tpr_status_color(ws_val) %>; border: 1px solid <%= tpr_status_color(ws_val) %>44; padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.66rem; font-weight: 600; white-space: nowrap;">
+                <span style="background: <%= tpr_status_color(ws_val) %>22; color: <%= tpr_status_color(ws_val) %>; border: 1px solid <%= tpr_status_color(ws_val) %>55; padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.66rem; font-weight: 600; white-space: nowrap;">
                   <%= ws_val %>
                 </span>
               <% end %>
               <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace;"><%= family_code %></span>
             </div>
 
-            <%# Title %>
             <% if control.title.present? %>
-              <div style="font-size: 0.85rem; color: var(--text); font-weight: 500; margin-top: 0.1rem; margin-bottom: 0.1rem;">
-                <%= control.title %>
-              </div>
+              <div style="font-size: 0.85rem; color: var(--text); font-weight: 500; margin-top: 0.1rem;"><%= control.title %></div>
             <% end %>
 
-            <%# Subject / Asset / Environment %>
-            <% if control.subject_asset.present? || control.subject_environment.present? %>
-              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; flex-wrap: wrap;">
-                <% if control.subject_asset.present? %>
-                  <span style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; color: var(--text-muted);">
-                    <span style="color: var(--text-faint);">&#x1F4BB;</span>
-                    <%= control.subject_asset %>
+            <%# Subject asset / environment pills %>
+            <% if card_asset.present? || card_env.present? %>
+              <div style="display: flex; gap: 0.4rem; margin-top: 0.3rem; flex-wrap: wrap;">
+                <% if card_asset.present? %>
+                  <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #1a252f22; border: 1px solid #2c3e5044; color: var(--text-muted); padding: 0.18rem 0.55rem; border-radius: 20px; font-size: 0.72rem;">
+                    &#x1F4BB; <%= card_asset %>
                   </span>
                 <% end %>
-                <% if control.subject_environment.present? %>
-                  <span style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; color: var(--text-muted);">
-                    <span style="color: var(--text-faint);">&#x1F30D;</span>
-                    <%= control.subject_environment %>
+                <% if card_env.present? %>
+                  <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #27ae6011; border: 1px solid #27ae6033; color: var(--text-muted); padding: 0.18rem 0.55rem; border-radius: 20px; font-size: 0.72rem;">
+                    &#x1F30D; <%= card_env %>
                   </span>
                 <% end %>
               </div>
             <% end %>
           </div>
+
+          <button onclick="toggleEdit(<%= control.id %>)"
+                  id="edit-btn-<%= control.id %>"
+                  style="padding: 0.35rem 0.85rem; font-size: 0.8rem; flex-shrink: 0; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+            Edit
+          </button>
         </div>
 
-        <%# Field table — show only non-empty fields %>
-        <% visible_fields = control.tpr_control_fields.reject { |f| f.field_value.blank? } %>
-        <% if visible_fields.any? %>
-          <div style="margin-top: 0.75rem;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <% visible_fields.each do |field| %>
-                <tr style="border-top: 1px solid var(--border-soft);">
-                  <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
-                    <%= field.field_name.tr("_", " ") %>
-                    <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
-                  </td>
-                  <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
-                    <% if field.field_name == "result" %>
-                      <span style="background: <%= status_color %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+        <%# ── View: field table ── %>
+        <div id="view-<%= control.id %>">
+          <% visible_fields = control.tpr_control_fields.reject { |f| f.field_value.blank? } %>
+          <% if visible_fields.any? %>
+            <div style="margin-top: 0.75rem;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <% visible_fields.each do |field| %>
+                  <tr style="border-top: 1px solid var(--border-soft);">
+                    <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                      <%= field.field_name.tr("_", " ") %>
+                      <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
+                    </td>
+                    <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
+                      <% if field.field_name == "result" %>
+                        <span style="background: <%= status_color %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
+                      <% elsif field.field_name == "working_status" %>
+                        <span style="background: <%= tpr_status_color(field.field_value) %>22; color: <%= tpr_status_color(field.field_value) %>; border: 1px solid <%= tpr_status_color(field.field_value) %>55; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
+                      <% else %>
                         <%= field.field_value %>
-                      </span>
-                    <% elsif field.field_name == "working_status" %>
-                      <span style="background: <%= tpr_status_color(field.field_value) %>22; color: <%= tpr_status_color(field.field_value) %>; border: 1px solid <%= tpr_status_color(field.field_value) %>55; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
-                        <%= field.field_value %>
-                      </span>
-                    <% else %>
-                      <%= field.field_value %>
-                    <% end %>
-                  </td>
-                </tr>
-              <% end %>
-            </table>
-          </div>
-        <% end %>
-      </div>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </table>
+            </div>
+          <% end %>
+        </div>
+
+        <%# ── Edit form ── %>
+        <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem;">
+          <%= form_with url: tpr_document_path(@tpr_document), method: :patch, local: true do |f| %>
+            <%= hidden_field_tag :tpr_control_id, control.id %>
+            <% control.tpr_control_fields.each do |field| %>
+              <div class="form-group">
+                <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);">
+                  <%= field.field_name.tr("_", " ") %>
+                  <% if field.editable %>
+                    <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
+                  <% else %>
+                    <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
+                  <% end %>
+                </label>
+                <% if field.editable %>
+                  <% if field.field_name == "result" %>
+                    <%= select_tag "fields[#{field.field_name}]",
+                          options_for_select(TprControlField::RESULT_VALUES, field.field_value),
+                          include_blank: true, class: "form-control",
+                          style: "font-size: 0.875rem;" %>
+                  <% elsif field.field_name == "working_status" %>
+                    <%= select_tag "fields[#{field.field_name}]",
+                          options_for_select(TprControlField::WORKING_STATUS_VALUES, field.field_value),
+                          include_blank: true, class: "form-control",
+                          style: "font-size: 0.875rem;" %>
+                  <% else %>
+                    <%= text_area_tag "fields[#{field.field_name}]", field.field_value,
+                          class: "form-control", rows: 3, style: "font-size: 0.875rem;" %>
+                  <% end %>
+                <% else %>
+                  <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;">
+                    <%= field.field_value.presence || "—" %>
+                  </p>
+                <% end %>
+              </div>
+            <% end %>
+            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+              <%= f.submit "Save Changes",
+                    style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
+              <button type="button" onclick="toggleEdit(<%= control.id %>)"
+                      style="background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem;">
+                Cancel
+              </button>
+            </div>
+          <% end %>
+        </div>
+
+      </div><%# end .control-card %>
     <% end %>
 
     <% if render_sections %>
-      </div><%# close .section-group %>
+      </div><%# end .section-group %>
     <% end %>
   <% end %>
 
-  <%# Unsectioned controls (legacy data with no section column) %>
+  <%# Unsectioned legacy controls %>
   <% if render_sections && (unsectioned = @controls_by_section[nil]).present? %>
     <div class="section-group" data-section=""
          style="margin-bottom: 1.5rem;">
@@ -329,10 +409,9 @@
           status_color = tpr_status_color(status_val)
         %>
         <div class="control-card"
-             data-family="<%= family_code %>"
-             data-status="<%= status_val %>"
-             data-section=""
-             style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= status_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+             data-family="<%= family_code %>" data-status="<%= status_val %>"
+             data-section="" data-asset="" data-env=""
+             style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= status_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem;">
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);"><%= control.control_id.presence || "—" %></span>
             <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700;"><%= status_val %></span>
@@ -346,29 +425,59 @@
 </div>
 
 <script>
-  var activeFamily = null;
-  var activeStatus = null;
+  // ── Filter state ───────────────────────────────────────────────────
+  var activeFamily  = null;
+  var activeStatus  = null;
   var activeSection = '__all__';
+  var activeAsset   = null;
+  var activeEnv     = null;
 
-  // ── Section switching ──────────────────────────────────────────────
+  // ── Core filter ────────────────────────────────────────────────────
+  function applyFilter() {
+    var cards = document.querySelectorAll('#controlsContainer .control-card');
+    var visible = 0;
+    cards.forEach(function(card) {
+      var sectionOk = activeSection === '__all__' || card.dataset.section === activeSection;
+      var familyOk  = activeFamily === null || card.dataset.family === activeFamily;
+      var statusOk  = activeStatus === null || card.dataset.status === activeStatus;
+      var assetOk   = activeAsset  === null || card.dataset.asset  === activeAsset;
+      var envOk     = activeEnv    === null || card.dataset.env    === activeEnv;
+      var show = sectionOk && familyOk && statusOk && assetOk && envOk;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    // Heatmap banner shows when a family/status filter is active
+    var hasStatusFilter = activeFamily !== null || activeStatus !== null;
+    if (hasStatusFilter) {
+      var label = activeFamily ? activeFamily + ' \u2022 ' + activeStatus : activeStatus;
+      document.getElementById('heatmapFilterLabel').textContent =
+        'Showing: ' + label + ' \u2014 ' + visible + ' test(s)';
+      document.getElementById('heatmapFilterBanner').style.display = 'flex';
+    } else {
+      document.getElementById('heatmapFilterBanner').style.display = 'none';
+    }
+  }
+
+  // ── Section tabs ───────────────────────────────────────────────────
   function switchSection(section) {
     activeSection = section;
     document.querySelectorAll('.section-tab').forEach(function(btn) {
-      var isActive = btn.dataset.section === section;
-      btn.style.background = isActive ? '#2c3e50' : 'var(--surface)';
-      btn.style.color       = isActive ? 'white' : 'var(--text)';
-      btn.style.fontWeight  = isActive ? '600' : '400';
+      var on = btn.dataset.section === section;
+      btn.style.background  = on ? '#2c3e50' : 'var(--surface)';
+      btn.style.color       = on ? 'white'   : 'var(--text)';
+      btn.style.fontWeight  = on ? '600'     : '400';
     });
+    // Show/hide section groups without touching card visibility
     document.querySelectorAll('.section-group').forEach(function(grp) {
       grp.style.display = (section === '__all__' || grp.dataset.section === section) ? '' : 'none';
     });
-    // Re-apply any active card filter within the visible section
-    if (activeStatus !== null) { applyFilter(); } else { clearHeatmapFilter(); }
+    applyFilter();
   }
 
-  // ── Heatmap cell click ─────────────────────────────────────────────
+  // ── Heatmap cell ───────────────────────────────────────────────────
   function filterByHeatmapCell(cellEl, family, status) {
-    if (activeFamily === family && activeStatus === status) { clearHeatmapFilter(); return; }
+    if (activeFamily === family && activeStatus === status) { clearStatusFilter(); return; }
     activeFamily = family; activeStatus = status;
     applyFilter();
     document.querySelectorAll('.heatmap-cell').forEach(function(el) {
@@ -379,50 +488,67 @@
     if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
   }
 
-  // ── Status chip click ──────────────────────────────────────────────
+  // ── Status chip ────────────────────────────────────────────────────
   function filterByStatus(status) {
-    if (activeFamily === null && activeStatus === status) { clearHeatmapFilter(); return; }
+    if (activeFamily === null && activeStatus === status) { clearStatusFilter(); return; }
     activeFamily = null; activeStatus = status;
     applyFilter();
     document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.status === status ? '1' : '0.35';
-      el.style.outline = 'none';
+      el.style.opacity = el.dataset.status === status ? '1' : '0.35'; el.style.outline = 'none';
     });
     document.querySelectorAll('.summary-chip').forEach(function(el) {
       el.style.background = el.dataset.filterStatus === status ? 'rgba(255,255,255,0.15)' : '';
     });
   }
 
-  // ── Apply card filter ──────────────────────────────────────────────
-  function applyFilter() {
-    var cards = document.querySelectorAll('#controlsContainer .control-card');
-    var visible = 0;
-    cards.forEach(function(card) {
-      var sectionOk = activeSection === '__all__' || card.dataset.section === activeSection;
-      var familyOk  = activeFamily === null || card.dataset.family === activeFamily;
-      var statusOk  = card.dataset.status === activeStatus;
-      var show = sectionOk && familyOk && statusOk;
-      card.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-    var label = activeFamily ? activeFamily + ' \u2022 ' + activeStatus : activeStatus;
-    document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' test(s)';
-    document.getElementById('heatmapFilterBanner').style.display = 'flex';
-  }
-
-  // ── Clear filter ───────────────────────────────────────────────────
-  function clearHeatmapFilter() {
+  // ── Clear status/family filter ─────────────────────────────────────
+  function clearStatusFilter() {
     activeFamily = null; activeStatus = null;
-    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) {
-      var sectionOk = activeSection === '__all__' || card.dataset.section === activeSection;
-      card.style.display = sectionOk ? '' : 'none';
-    });
     document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
     document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    document.getElementById('heatmapFilterBanner').style.display = 'none';
+    applyFilter();
   }
 
-  // ── Heatmap toggle icon ────────────────────────────────────────────
+  // ── Asset filter ───────────────────────────────────────────────────
+  function filterByAsset(asset) {
+    activeAsset = (activeAsset === asset && asset !== null) ? null : asset;
+    updateSubjectBtns('asset-btn', activeAsset);
+    applyFilter();
+  }
+
+  // ── Environment filter ─────────────────────────────────────────────
+  function filterByEnv(env) {
+    activeEnv = (activeEnv === env && env !== null) ? null : env;
+    updateSubjectBtns('env-btn', activeEnv);
+    applyFilter();
+  }
+
+  // ── Highlight active subject filter button ─────────────────────────
+  function updateSubjectBtns(cssClass, activeVal) {
+    document.querySelectorAll('.' + cssClass).forEach(function(btn) {
+      var isAll    = btn.dataset.filterValue === '__all__';
+      var isActive = (activeVal === null && isAll) ||
+                     (activeVal !== null && btn.dataset.filterValue === activeVal);
+      btn.style.background = isActive ? '#2c3e50'       : 'var(--surface-alt)';
+      btn.style.color      = isActive ? 'white'         : 'var(--text)';
+      btn.style.fontWeight = isActive ? '600'           : '400';
+    });
+  }
+
+  // ── Edit toggle ────────────────────────────────────────────────────
+  function toggleEdit(controlId) {
+    var view    = document.getElementById('view-'     + controlId);
+    var edit    = document.getElementById('edit-'     + controlId);
+    var editBtn = document.getElementById('edit-btn-' + controlId);
+    var editing = edit.style.display !== 'none';
+    view.style.display    = editing ? '' : 'none';
+    edit.style.display    = editing ? 'none' : '';
+    editBtn.textContent   = editing ? 'Edit' : 'Cancel';
+    editBtn.style.background = editing ? '#3498db' : 'var(--surface-alt)';
+    editBtn.style.color      = editing ? 'white'   : 'var(--text-muted)';
+  }
+
+  // ── Heatmap collapse icon ──────────────────────────────────────────
   var heatmapSection = document.getElementById('heatmapSection');
   if (heatmapSection) {
     heatmapSection.addEventListener('toggle', function() {
