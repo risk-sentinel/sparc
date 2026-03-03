@@ -145,120 +145,252 @@
 <div id="controlsContainer">
   <% @controls.each do |control| %>
     <%
-      family_code  = control.control_id.to_s.split("-").first.upcase
-      status_field = control.ssp_control_fields.find { |f| f.field_name == "status" }
-      status_val   = status_field&.field_value.presence || "(Unknown)"
+      field_map   = control.ssp_control_fields.index_by(&:field_name)
+      status_val  = field_map["status"]&.field_value.presence || "(Unknown)"
       status_color = ssp_status_color(status_val)
+      family_code  = control.control_id.to_s.split("-").first.upcase
+      stated_req   = field_map["stated_requirement"]&.field_value.presence
+      type_use_val = field_map["type_use_as"]&.field_value.presence
+      prov_as_val  = field_map["provided_as"]&.field_value.presence
+      catalog_ctrl = @catalog_guidance[control.control_id]
     %>
     <div class="control-card"
          data-family="<%= family_code %>"
          data-status="<%= status_val %>"
          style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= status_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
 
+      <%# ── Card header ── %>
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
         <div style="min-width: 0; flex: 1;">
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
             <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);"><%= control.control_id %></span>
             <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;"><%= status_val %></span>
-            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace;"><%= family_code %></span>
+            <% if type_use_val.present? %>
+              <span style="background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-muted); padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.67rem; font-weight: 600; white-space: nowrap;"><%= type_use_val %></span>
+            <% end %>
+            <% if prov_as_val.present? %>
+              <span style="background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: var(--text-muted); padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.67rem; font-weight: 600; white-space: nowrap;">&#x2713; <%= prov_as_val %></span>
+            <% end %>
+            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace; margin-left: 0.1rem;"><%= family_code %></span>
           </div>
           <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.1rem;"><%= control.title %></div>
         </div>
         <button onclick="toggleEdit(<%= control.id %>)"
-                style="padding: 0.35rem 0.85rem; font-size: 0.8rem; flex-shrink: 0; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                id="edit-btn-<%= control.id %>"
+                style="padding: 0.35rem 0.85rem; font-size: 0.8rem; flex-shrink: 0; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap;">
           Edit
         </button>
       </div>
 
-      <%# ── Root control fields ── %>
+      <%# ── View mode ── %>
       <div id="view-<%= control.id %>" style="margin-top: 0.75rem;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <% control.ssp_control_fields.each do |field| %>
-            <tr style="border-top: 1px solid var(--border-soft);">
-              <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
-                <%= field.field_name.tr("_", " ") %>
-                <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
-              </td>
-              <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
-                <% if field.field_value.blank? %>
-                  <span style="color: var(--text-faint);">—</span>
-                <% elsif field.field_name == "status" %>
-                  <span style="background: <%= status_color %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
-                <% else %>
-                  <%= field.field_value %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </table>
 
-        <%# ── Provider Statements (collapsed by default) ── %>
-        <% if control.provider_statements.any? %>
-          <details style="margin-top: 0.75rem;">
-            <summary style="cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); padding: 0.4rem 0.6rem; background: var(--surface-alt); border-radius: 5px; list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none;">
-              <span>&#9658;</span>
-              Provider Statements (<%= control.provider_statements.count %>)
-            </summary>
-            <% control.provider_statements.each_with_index do |stmt, i| %>
-              <div style="margin-top: 0.5rem; padding: 0.75rem 1rem; background: var(--surface-alt); border-left: 3px solid var(--border-soft); border-radius: 0 6px 6px 0;">
-                <% if stmt.title.present? %>
-                  <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
-                    Provider <%= i + 1 %>: <%= stmt.title %>
-                  </div>
-                <% end %>
-                <table style="width: 100%; border-collapse: collapse;">
-                  <% stmt.ssp_control_fields.each do |field| %>
-                    <tr style="border-top: 1px solid var(--border-soft);">
-                      <td style="width: 26%; padding: 0.35rem 0.5rem 0.35rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
-                        <%= field.field_name.tr("_", " ") %>
-                        <% if field.editable %><span style="color: #27ae60; font-size: 0.63rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
-                      </td>
-                      <td style="padding: 0.35rem 0 0.35rem 0.5rem; font-size: 0.82rem; color: var(--text); vertical-align: top;">
-                        <%= field.field_value.presence || content_tag(:span, "—", style: "color: var(--text-faint);") %>
-                      </td>
-                    </tr>
+        <%# Stated requirement — highlighted block when present %>
+        <% if stated_req.present? %>
+          <div style="background: rgba(41,128,185,0.07); border: 1px solid rgba(41,128,185,0.2); border-left: 3px solid #2980b9; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
+            <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #2980b9; font-weight: 700; margin-bottom: 0.35rem;">Required Statement</div>
+            <div style="font-size: 0.84rem; color: var(--text); line-height: 1.5;"><%= stated_req %></div>
+          </div>
+        <% end %>
+
+        <%# Ordered field table — editable fields first, then supplemental %>
+        <%
+          ordered = SspControlField::FIELD_DISPLAY_ORDER.map { |fn| field_map[fn] }.compact
+          extras  = field_map.values.reject { |f|
+            SspControlField::FIELD_DISPLAY_ORDER.include?(f.field_name) ||
+            f.field_name == "stated_requirement"
+          }
+          display_fields = ordered + extras
+        %>
+        <% if display_fields.any? %>
+          <table style="width: 100%; border-collapse: collapse;">
+            <% display_fields.each do |field| %>
+              <% next if field.field_value.blank? %>
+              <tr style="border-top: 1px solid var(--border-soft);">
+                <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                  <%= field.field_name.tr("_", " ") %>
+                  <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
+                </td>
+                <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
+                  <% if field.field_name == "status" %>
+                    <span style="background: <%= ssp_status_color(field.field_value) %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
+                  <% else %>
+                    <%= field.field_value %>
                   <% end %>
-                </table>
+                </td>
+              </tr>
+            <% end %>
+          </table>
+        <% end %>
+
+        <%# ── Inherited / Provider Statements ── %>
+        <% if control.provider_statements.any? %>
+          <div style="margin-top: 0.85rem;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); font-weight: 700; margin-bottom: 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border-soft);">
+              Inherited Rows (<%= control.provider_statements.count %>)
+            </div>
+            <% control.provider_statements.each_with_index do |stmt, i| %>
+              <div style="margin-bottom: 0.6rem; padding: 0.75rem 1rem; background: var(--surface-alt); border-left: 3px solid #8e44ad; border-radius: 0 6px 6px 0;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                  <span style="background: #8e44ad; color: white; padding: 0.1rem 0.45rem; border-radius: 3px; font-size: 0.64rem; font-weight: 700;">INHERITED</span>
+                  <% if stmt.title.present? %>
+                    <span style="font-size: 0.82rem; font-weight: 600; color: var(--text);">
+                      <%= stmt.title %>
+                    </span>
+                  <% else %>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Provider Statement <%= i + 1 %></span>
+                  <% end %>
+                </div>
+                <% stmt_fields = stmt.ssp_control_fields.reject { |f| f.field_value.blank? } %>
+                <% if stmt_fields.any? %>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <% stmt_fields.each do |field| %>
+                      <tr style="border-top: 1px solid var(--border-soft);">
+                        <td style="width: 26%; padding: 0.35rem 0.5rem 0.35rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                          <%= field.field_name.tr("_", " ") %>
+                          <% if field.editable %><span style="color: #27ae60; font-size: 0.63rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
+                        </td>
+                        <td style="padding: 0.35rem 0 0.35rem 0.5rem; font-size: 0.82rem; color: var(--text); vertical-align: top;">
+                          <%= field.field_value %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </table>
+                <% end %>
               </div>
             <% end %>
+          </div>
+        <% end %>
+
+        <%# ── Catalog Guidance (collapsible) ── %>
+        <% if catalog_ctrl&.guidance_present? %>
+          <details style="margin-top: 0.85rem;">
+            <summary style="cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); padding: 0.4rem 0.65rem; background: rgba(155,89,182,0.06); border: 1px solid rgba(155,89,182,0.18); border-radius: 5px; list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none;">
+              <span class="catalog-arrow">&#9658;</span>
+              Catalog Guidance
+              <span style="font-size: 0.7rem; font-weight: 400; color: var(--text-faint);">— supplemental context from the providing catalog</span>
+            </summary>
+            <div style="margin-top: 0.5rem; padding: 0.85rem 1rem; background: rgba(155,89,182,0.04); border: 1px solid rgba(155,89,182,0.12); border-radius: 0 0 6px 6px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <% catalog_ctrl.guidance_fields.each do |fname, fval| %>
+                  <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
+                  <% next if display_val.blank? %>
+                  <tr style="border-top: 1px solid var(--border-soft);">
+                    <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #8e44ad; vertical-align: top; white-space: nowrap;">
+                      <%= fname.tr("_", " ") %>
+                    </td>
+                    <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.82rem; color: var(--text); vertical-align: top; line-height: 1.5;">
+                      <%= display_val %>
+                    </td>
+                  </tr>
+                <% end %>
+              </table>
+            </div>
           </details>
         <% end %>
       </div>
 
       <%# ── Edit form ── %>
-      <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem;">
+      <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem; border-top: 1px solid var(--border-soft); padding-top: 0.75rem;">
         <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
           <%= hidden_field_tag :control_id, control.control_id %>
-          <% control.ssp_control_fields.each do |field| %>
+
+          <%#
+            Iterate ALL EDITABLE_FIELDS so type_use_as, provided_as, etc. always
+            appear even if no DB record exists yet for that field.
+          %>
+          <% SspControlField::EDITABLE_FIELDS.each do |fname| %>
+            <% field = field_map[fname] %>
+            <% fval  = field&.field_value.to_s %>
             <div class="form-group">
               <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);">
-                <%= field.field_name.tr("_", " ") %>
-                <% if field.editable %>
-                  <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
-                <% else %>
-                  <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
-                <% end %>
+                <%= fname.tr("_", " ") %>
+                <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
               </label>
-              <% if field.editable %>
-                <% if field.field_name == "status" %>
-                  <%= select_tag "fields[#{field.field_name}]",
-                        options_for_select(SspControlField::VALID_STATUSES, field.field_value),
-                        include_blank: true, class: "form-control",
-                        style: "font-size: 0.875rem;" %>
-                <% else %>
-                  <%= text_area_tag "fields[#{field.field_name}]", field.field_value,
-                        class: "form-control", rows: 3, style: "font-size: 0.875rem;" %>
-                <% end %>
+              <% if fname == "status" %>
+                <%= select_tag "fields[#{fname}]",
+                      options_for_select(SspControlField::VALID_STATUSES, fval),
+                      include_blank: "— select —", class: "form-control",
+                      style: "font-size: 0.875rem;" %>
+              <% elsif fname == "type_use_as" %>
+                <%= select_tag "fields[#{fname}]",
+                      options_for_select(SspControlField::TYPE_USE_AS_VALUES, fval),
+                      include_blank: "— select —", class: "form-control",
+                      style: "font-size: 0.875rem;" %>
+              <% elsif fname == "provided_as" %>
+                <%= select_tag "fields[#{fname}]",
+                      options_for_select(SspControlField::PROVIDED_AS_VALUES, fval),
+                      include_blank: "— select —", class: "form-control",
+                      style: "font-size: 0.875rem;" %>
+              <% elsif fname == "control_origination" %>
+                <%= select_tag "fields[#{fname}]",
+                      options_for_select(SspControlField::CONTROL_ORIGINATION_VALUES, fval),
+                      include_blank: "— select —", class: "form-control",
+                      style: "font-size: 0.875rem;" %>
+              <% elsif fname == "expected_completion" %>
+                <%= text_field_tag "fields[#{fname}]", fval,
+                      class: "form-control", placeholder: "YYYY-MM-DD",
+                      style: "font-size: 0.875rem;" %>
               <% else %>
-                <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;">
-                  <%= field.field_value.presence || "—" %>
-                </p>
+                <%= text_area_tag "fields[#{fname}]", fval,
+                      class: "form-control", rows: 3,
+                      style: "font-size: 0.875rem;" %>
               <% end %>
             </div>
           <% end %>
+
+          <%# Read-only fields (from Excel parse, not user-editable) %>
+          <% ro_fields = field_map.values.reject { |f|
+               SspControlField::EDITABLE_FIELDS.include?(f.field_name)
+             }.select { |f| f.field_value.present? } %>
+          <% if stated_req.present? || ro_fields.any? %>
+            <details style="margin-top: 0.5rem;">
+              <summary style="font-size: 0.8rem; color: var(--text-faint); cursor: pointer; padding: 0.35rem 0; user-select: none;">
+                Read-only fields (<%= ro_fields.size + (stated_req.present? ? 1 : 0) %>)
+              </summary>
+              <% if stated_req.present? %>
+                <div class="form-group" style="margin-top: 0.5rem;">
+                  <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint);">
+                    Stated Requirement
+                    <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
+                  </label>
+                  <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;"><%= stated_req %></p>
+                </div>
+              <% end %>
+              <% ro_fields.each do |field| %>
+                <div class="form-group" style="margin-top: 0.5rem;">
+                  <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint);">
+                    <%= field.field_name.tr("_", " ") %>
+                    <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
+                  </label>
+                  <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;"><%= field.field_value %></p>
+                </div>
+              <% end %>
+            </details>
+          <% end %>
+
+          <%# Catalog guidance in edit mode (read-only context panel) %>
+          <% if catalog_ctrl&.guidance_present? %>
+            <details style="margin-top: 0.75rem; border-top: 1px solid var(--border-soft); padding-top: 0.75rem;">
+              <summary style="font-size: 0.8rem; font-weight: 600; color: #8e44ad; cursor: pointer; padding: 0.35rem 0; user-select: none;">
+                Catalog Guidance (reference only — not saved)
+              </summary>
+              <div style="margin-top: 0.5rem; padding: 0.75rem; background: rgba(155,89,182,0.04); border: 1px solid rgba(155,89,182,0.15); border-radius: 5px;">
+                <% catalog_ctrl.guidance_fields.each do |fname, fval| %>
+                  <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
+                  <% next if display_val.blank? %>
+                  <div style="margin-bottom: 0.6rem;">
+                    <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: #8e44ad; margin-bottom: 0.2rem;"><%= fname.tr("_", " ") %></div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;"><%= display_val %></div>
+                  </div>
+                <% end %>
+              </div>
+            </details>
+          <% end %>
+
           <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-            <%= f.submit "Save Changes", class: "btn btn-success",
-                  style: "background: #27ae60; color: white; padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
+            <%= f.submit "Save Changes",
+                  style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
             <button type="button" onclick="toggleEdit(<%= control.id %>)"
                     style="background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem;">
               Cancel
@@ -266,7 +398,7 @@
           </div>
         <% end %>
       </div>
-    </div>
+    </div><%# end .control-card %>
   <% end %>
 </div>
 
@@ -303,14 +435,18 @@
     var visible = 0;
     cards.forEach(function(card) {
       var familyMatch = activeFamily === null || card.dataset.family === activeFamily;
-      var statusMatch = card.dataset.status === activeStatus;
+      var statusMatch = activeStatus === null || card.dataset.status === activeStatus;
       var show = familyMatch && statusMatch;
       card.style.display = show ? '' : 'none';
       if (show) visible++;
     });
-    var label = activeFamily ? activeFamily + ' \u2022 ' + activeStatus : activeStatus;
-    document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
-    document.getElementById('heatmapFilterBanner').style.display = 'flex';
+    if (activeFamily !== null || activeStatus !== null) {
+      var label = activeFamily ? activeFamily + ' \u2022 ' + activeStatus : activeStatus;
+      document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
+      document.getElementById('heatmapFilterBanner').style.display = 'flex';
+    } else {
+      document.getElementById('heatmapFilterBanner').style.display = 'none';
+    }
   }
 
   function clearHeatmapFilter() {
@@ -324,9 +460,13 @@
   function toggleEdit(controlId) {
     var view = document.getElementById('view-' + controlId);
     var edit = document.getElementById('edit-' + controlId);
+    var btn  = document.getElementById('edit-btn-' + controlId);
     var isEditing = edit.style.display !== 'none';
-    view.style.display = isEditing ? '' : 'none';
-    edit.style.display = isEditing ? 'none' : '';
+    view.style.display   = isEditing ? '' : 'none';
+    edit.style.display   = isEditing ? 'none' : '';
+    btn.textContent      = isEditing ? 'Edit' : 'Cancel';
+    btn.style.background = isEditing ? '#3498db' : 'var(--surface-alt)';
+    btn.style.color      = isEditing ? 'white'   : 'var(--text-muted)';
   }
 
   var heatmapSection = document.getElementById('heatmapSection');
@@ -336,11 +476,11 @@
     });
   }
 
-  // Toggle provider statement arrow icon
+  // Toggle catalog guidance arrow icons
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.control-card details').forEach(function(det) {
       det.addEventListener('toggle', function() {
-        var arrow = det.querySelector('summary span');
+        var arrow = det.querySelector('summary .catalog-arrow');
         if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
       });
     });

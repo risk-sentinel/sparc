@@ -12,6 +12,14 @@ class SspDocumentsController < ApplicationController
                               .includes(:ssp_control_fields,
                                         provider_statements: :ssp_control_fields)
 
+    # Build a catalog-guidance lookup keyed by control_id so the view can
+    # display supplemental_guidance, implementation_guidance, check, fix, etc.
+    # for any control whose providing catalog has that data.
+    control_ids = @controls.map(&:control_id).compact
+    @catalog_guidance = CatalogControl
+                          .where(control_id: control_ids)
+                          .index_by(&:control_id)
+
     # Heatmap uses root controls; status field is now 'status'
     @heatmap_data, @heatmap_families, @heatmap_statuses =
       build_heatmap(@controls, "status")

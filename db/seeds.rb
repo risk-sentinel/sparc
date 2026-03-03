@@ -807,11 +807,23 @@ puts "Done! NIST SP 800-53 Rev 4 catalog is ready."
 
 puts "\nSeeding demo SSP and TPR documents..."
 
-def seed_ssp_control(doc, ctrl_id, title, fields)
+def seed_ssp_control(doc, ctrl_id, title, fields, inherited_rows: [])
   ctrl = doc.ssp_controls.create!(control_id: ctrl_id, title: title)
   fields.each do |name, val|
     next if val.blank?
     ctrl.ssp_control_fields.create!(field_name: name.to_s, field_value: val.to_s)
+  end
+  # Provider / inherited statement rows (child SspControls with parent_id set)
+  inherited_rows.each do |row|
+    child = doc.ssp_controls.create!(
+      control_id: nil,
+      title:      row[:title],
+      parent_id:  ctrl.id
+    )
+    (row[:fields] || {}).each do |name, val|
+      next if val.blank?
+      child.ssp_control_fields.create!(field_name: name.to_s, field_value: val.to_s)
+    end
   end
 end
 
@@ -1476,12 +1488,79 @@ ssp1 = SspDocument.create!(
   status:            "completed"
 )
 
+# Representative stated requirements for key Rev 5 controls.
+# Others will be blank (field simply won't display).
+SSP1_STATED_REQS = {
+  "AC-1"  => "The organization shall develop, document, and disseminate to designated personnel an access control policy and procedures that addresses purpose, scope, roles, responsibilities, and compliance.",
+  "AC-2"  => "The organization shall manage information system accounts, including establishing, activating, modifying, reviewing, disabling, and removing accounts.",
+  "AC-3"  => "The information system enforces approved authorizations for logical access to information and system resources in accordance with applicable access control policies.",
+  "AC-4"  => "The information system enforces approved authorizations for controlling the flow of information within the system and between interconnected systems.",
+  "AC-7"  => "The information system shall enforce a limit of consecutive invalid logon attempts by a user during a specified time period.",
+  "AU-2"  => "The organization shall determine that the information system is capable of auditing events, coordinate the security audit function with other organizations, and provide a rationale for the auditable events.",
+  "AU-3"  => "The information system shall produce audit records that contain sufficient information to establish the type of event, when the event occurred, where the event occurred, the source of the event, and the outcome of the event.",
+  "IA-2"  => "The information system uniquely identifies and authenticates organizational users (or processes acting on behalf of organizational users).",
+  "IA-5"  => "The organization manages information system authenticators by verifying identity prior to distribution, establishing initial authenticator content, ensuring procedures for replacing lost or compromised authenticators, and changing/refreshing authenticators.",
+  "IR-4"  => "The organization shall implement an incident handling capability for security incidents including preparation, detection and analysis, containment, eradication, and recovery.",
+  "CA-7"  => "The organization shall develop a continuous monitoring strategy and implement a continuous monitoring program that includes the establishment of metrics, monitoring frequencies, assessment of security controls, and reporting.",
+}.freeze
+
+# Provider statements (inherited rows) for selected Hybrid controls in SSP 1.
+SSP1_INHERITED = {
+  "AC-4"  => [
+    { title: "Cloud Provider — Network Boundary Controls",
+      fields: {
+        type_use_as:            "Inherited",
+        provided_as:            "Implemented",
+        control_origination:    "Inherited from provider",
+        private_implementation: "AWS VPC Security Groups and Network ACLs enforce boundary-level information flow controls. Managed by cloud provider and verified via AWS Config rules.",
+        responsible_entities:   "Cloud Provider (AWS)"
+      }
+    }
+  ],
+  "AU-4"  => [
+    { title: "Cloud Provider — Log Storage Capacity",
+      fields: {
+        type_use_as:            "Inherited",
+        provided_as:            "Configured",
+        control_origination:    "Inherited from provider",
+        private_implementation: "Audit log storage capacity is managed through AWS CloudWatch Logs with auto-scaling enabled. Retention policies are configured at the organization level.",
+        responsible_entities:   "Cloud Provider (AWS) / ACME DevOps"
+      }
+    }
+  ],
+  "IA-5"  => [
+    { title: "Enterprise IdP — Authenticator Lifecycle",
+      fields: {
+        type_use_as:            "Inherited",
+        provided_as:            "Implemented",
+        control_origination:    "Inherited from provider",
+        private_implementation: "Okta manages the full authenticator lifecycle including provisioning, MFA enforcement, and compromised credential monitoring via HaveIBeenPwned integration.",
+        responsible_entities:   "Identity Provider (Okta)"
+      }
+    }
+  ],
+}.freeze
+
 REV5_CONTROLS.each do |c|
+  # Derive type_use_as and provided_as from existing origin/status fields
+  type_use = case c[:origin]
+             when "Inherited" then "Inherited"
+             when "Hybrid"    then "Hybrid"
+             else                  "System Specific"
+             end
+  prov_as = c[:ssp_status] == "Implemented" ? "Implemented" : "Documented"
+
   seed_ssp_control(ssp1, c[:id], c[:title],
-    status:              c[:ssp_status],
-    responsible_entities: c[:role],
-    control_origination: c[:origin],
-    private_implementation: c[:guidance])
+    {
+      status:                 c[:ssp_status],
+      type_use_as:            type_use,
+      provided_as:            prov_as,
+      responsible_entities:   c[:role],
+      control_origination:    c[:origin],
+      private_implementation: c[:guidance],
+      stated_requirement:     SSP1_STATED_REQS[c[:id]]
+    },
+    inherited_rows: SSP1_INHERITED[c[:id]] || [])
 end
 puts "  SSP 1 '#{ssp1.name}': #{ssp1.ssp_controls.count} controls"
 
@@ -1494,11 +1573,22 @@ ssp2 = SspDocument.create!(
 )
 
 REV4_CONTROLS.each do |c|
+  type_use = case c[:origin]
+             when "Inherited" then "Inherited"
+             when "Hybrid"    then "Hybrid"
+             else                  "System Specific"
+             end
+  prov_as = c[:ssp_status] == "Implemented" ? "Implemented" : "Documented"
+
   seed_ssp_control(ssp2, c[:id], c[:title],
-    status:               c[:ssp_status],
-    responsible_entities: c[:role],
-    control_origination:  c[:origin],
-    private_implementation: c[:guidance])
+    {
+      status:                 c[:ssp_status],
+      type_use_as:            type_use,
+      provided_as:            prov_as,
+      responsible_entities:   c[:role],
+      control_origination:    c[:origin],
+      private_implementation: c[:guidance]
+    })
 end
 puts "  SSP 2 '#{ssp2.name}': #{ssp2.ssp_controls.count} controls"
 
@@ -1569,5 +1659,129 @@ REV4_CONTROLS.each do |c|
     working_comments: (c[:test_status] == "Failed" ? c[:remediation] : nil))
 end
 puts "  TPR 2 '#{tpr2.name}': #{tpr2.tpr_controls.count} controls"
+
+# ============================================================
+# Catalog Guidance — load from providing-catalog JSON files
+# ============================================================
+# Files live outside the repo so we load them gracefully.
+# Each JSON is an array of { family:, controls: [...] } objects.
+# For each control entry we extract extended_description / tags
+# and store the result as guidance_data on the CatalogControl row.
+# ============================================================
+puts "\nLoading catalog guidance from JSON files..."
+require "json"
+
+CATALOG_GUIDANCE_SOURCES = [
+  {
+    path:         "/Users/brandonfield/GitHub/skunkwerks/data/catalogs/r5.json",
+    catalog_name: "NIST SP 800-53 Rev 5"
+  },
+  {
+    path:         "/Users/brandonfield/GitHub/skunkwerks/data/catalogs/r4_final.json",
+    catalog_name: "NIST SP 800-53 Rev 4"
+  }
+].freeze
+
+CATALOG_GUIDANCE_SOURCES.each do |source|
+  unless File.exist?(source[:path])
+    puts "  Skipping #{source[:catalog_name]} — file not found: #{source[:path]}"
+    next
+  end
+
+  raw   = JSON.parse(File.read(source[:path]))
+  count = 0
+
+  raw.each do |family_group|
+    (family_group["controls"] || []).each do |ctrl|
+      control_id = ctrl["control_id"].to_s.strip
+      next if control_id.blank?
+
+      ext  = (ctrl["extended_description"] || []).first || {}
+      tags = (ctrl["tags"] || []).first || {}
+      refs = (ext["references"] || []).first || {}
+
+      guidance = {
+        "supplemental_guidance"   => ext["supplemental_guidance"],
+        "implementation_guidance" => ext["implementation_guidance"],
+        "check"                   => ext["check"],
+        "fix"                     => ext["fix"],
+        "related_controls"        => ext["related_controls"],
+        "org_ref"                 => refs["org_ref"].presence || tags["org_ref"],
+        "nist_references"         => refs["nist"].presence || tags["nist_references"],
+      }.reject { |_, v| v.blank? || v == [] }
+
+      next if guidance.empty?
+
+      updated = CatalogControl.where(control_id: control_id).update_all(guidance_data: guidance.to_json)
+      count  += updated
+    end
+  end
+
+  puts "  #{source[:catalog_name]}: updated guidance_data for #{count} catalog control(s)"
+end
+
+# ── Inline demo guidance (used when JSON catalog files are not present) ──────
+# Provides realistic catalog guidance for a handful of controls so the
+# "Catalog Guidance" collapsible panel can be demonstrated without external files.
+INLINE_CATALOG_GUIDANCE = {
+  "AC-2" => {
+    "supplemental_guidance"   => "Account management includes the identification of account types (individual, shared, group, system, application, guest), establishing conditions for group and role membership, and assigning account managers. Organizations should identify authorized users and specify access privileges.",
+    "implementation_guidance" => "Configure automated lifecycle management: provisioning tied to HR onboarding, deprovisioning within 24 hours of termination, quarterly access reviews with manager attestation. Integrate with SIEM for anomalous account activity alerting.",
+    "check"                   => "Review account provisioning/deprovisioning logs; verify quarterly review completion; confirm automated disabling is triggered upon termination HR events.",
+    "related_controls"        => "AC-3, AC-5, AC-6, IA-2, IA-4, IA-5, IA-8, MA-5, PE-2, PS-4",
+    "nist_references"         => "NIST SP 800-53 Rev 5 AC-2; FIPS 200"
+  },
+  "AC-3" => {
+    "supplemental_guidance"   => "Access enforcement mechanisms are employed at the application and system level. Role-based access control (RBAC) or attribute-based access control (ABAC) are common implementations. Least privilege principles should be applied.",
+    "implementation_guidance" => "Implement RBAC at application and database layers. Ensure access decisions are logged. Periodic reviews of role assignments should be conducted to detect privilege creep.",
+    "check"                   => "Test with a representative sample of user roles; confirm that users cannot access resources outside their assigned role. Review access control decision logs.",
+    "fix"                     => "Remove any overly-permissive roles; implement separation of duty constraints in the role model; add compensating controls for shared accounts.",
+    "related_controls"        => "AC-2, AC-4, AC-5, AC-6, AC-16, AC-17, AC-18, AC-19, AC-20, AU-9, CM-5, CM-11, MA-3, MA-4, MA-5, PE-2"
+  },
+  "AC-7" => {
+    "supplemental_guidance"   => "Organizations define the threshold for consecutive invalid logon attempts and the lockout time period. Care should be taken so that the lockout mechanism itself cannot be used to deny service to legitimate users.",
+    "implementation_guidance" => "Configure lockout after 5 consecutive failures with a 30-minute automatic unlock or admin-unlock. Ensure lockout events generate audit records and alert the security team.",
+    "check"                   => "Test lockout by entering invalid credentials the defined number of times. Verify automatic unlock after the defined period. Confirm audit logs capture the lockout event.",
+    "related_controls"        => "AC-2, AU-2, AU-6, IA-5"
+  },
+  "AU-2" => {
+    "supplemental_guidance"   => "Audit record generation is a fundamental security activity. Organizations should coordinate with other entities requiring audit information and determine which events are auditable given the available audit capability.",
+    "implementation_guidance" => "Define the minimum set of auditable events in policy. Configure the SIEM to ingest all required event categories. Validate completeness of event coverage quarterly.",
+    "check"                   => "Review the list of auditable events against NIST AU-2 requirements. Verify each event type is being captured in the SIEM. Confirm event coverage has been reviewed within the past year.",
+    "fix"                     => "Enable missing event source integrations; update the SIEM ingestion configuration to include all required event categories.",
+    "org_ref"                 => "POL-AU-001 Section 3.1; PROC-AU-002",
+    "related_controls"        => "AC-6, AC-17, AU-3, AU-4, AU-5, AU-6, AU-7, AU-12, MA-4, MP-2, MP-4, SI-4"
+  },
+  "AU-3" => {
+    "supplemental_guidance"   => "Audit record content that may be necessary to satisfy the requirement includes: time stamps, source and destination addresses, user/process identifiers, event descriptions, success/failure indications, filenames involved, and access control or flow control rules invoked.",
+    "implementation_guidance" => "Validate that all audit events include: ISO 8601 timestamp (UTC), event type code, source IP, user identifier, outcome (success/failure), and affected resource. Use structured logging (JSON) for all audit events.",
+    "check"                   => "Sample a minimum of 50 audit records; verify all required fields are present and populated. Check for any null or placeholder values in required fields.",
+    "related_controls"        => "AU-2, AU-7, AU-8, AU-9, AU-12, SI-7"
+  },
+  "IA-2" => {
+    "supplemental_guidance"   => "Multifactor authentication requires two or more different factors to achieve authentication. Individual authenticator types include passwords, hardware tokens, OTP devices, smart cards, biometrics, and cryptographic keys.",
+    "implementation_guidance" => "Enforce MFA for all organizational users accessing the system. Phishing-resistant MFA (FIDO2/WebAuthn or PIV/CAC) is required for privileged access. Document exceptions and obtain CISO approval.",
+    "check"                   => "Verify MFA is enforced at the IdP level with no bypass paths. Test MFA enforcement for both privileged and non-privileged accounts. Confirm MFA policies cannot be disabled by end users.",
+    "fix"                     => "Remove any MFA exception policies; enforce enrollment for all user accounts; disable legacy authentication protocols (Basic Auth, NTLM).",
+    "org_ref"                 => "POL-IA-001; Enterprise MFA Standard v2.1",
+    "nist_references"         => "NIST SP 800-53 Rev 5 IA-2; NIST SP 800-63B; FIPS 140-3",
+    "related_controls"        => "AC-2, AC-3, AC-14, AC-17, AC-18, IA-5, IA-8, MA-4, SA-8, SC-8"
+  },
+  "CA-7" => {
+    "supplemental_guidance"   => "Continuous monitoring is the ongoing observation, assessment, analysis, and diagnosis of the security state of information systems to support risk management decisions. The frequency of assessment is based on the risk tolerance of the organization.",
+    "implementation_guidance" => "Implement automated continuous monitoring using a SIEM with real-time alerting. Conduct automated vulnerability scanning weekly. Review monitoring dashboards daily; escalate anomalies per the IR procedure.",
+    "check"                   => "Review continuous monitoring strategy documentation; verify automated scanning is active; confirm alerts are being triaged within the defined SLA; check that monitoring results feed into the POA&M process.",
+    "related_controls"        => "CA-2, CA-5, CA-6, IA-5, IR-4, IR-5, PL-2, RA-3, RA-5, SA-11, SA-12, SI-2, SI-4"
+  },
+}.freeze
+
+inline_count = 0
+INLINE_CATALOG_GUIDANCE.each do |ctrl_id, guidance|
+  updated = CatalogControl.where(control_id: ctrl_id)
+                           .where("guidance_data = '{}' OR guidance_data IS NULL")
+                           .update_all(guidance_data: guidance.to_json)
+  inline_count += updated
+end
+puts "  Inline demo guidance applied to #{inline_count} catalog control(s)"
 
 puts "Done! Demo SSP and TPR documents seeded."
