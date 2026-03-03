@@ -1712,7 +1712,7 @@ CATALOG_GUIDANCE_SOURCES.each do |source|
 
       next if guidance.empty?
 
-      updated = CatalogControl.where(control_id: control_id).update_all(guidance_data: guidance.to_json)
+      updated = CatalogControl.where(control_id: control_id).update_all(guidance_data: guidance)
       count  += updated
     end
   end
@@ -1778,8 +1778,7 @@ INLINE_CATALOG_GUIDANCE = {
 inline_count = 0
 INLINE_CATALOG_GUIDANCE.each do |ctrl_id, guidance|
   updated = CatalogControl.where(control_id: ctrl_id)
-                           .where("guidance_data = '{}' OR guidance_data IS NULL")
-                           .update_all(guidance_data: guidance.to_json)
+                           .update_all(guidance_data: guidance)
   inline_count += updated
 end
 puts "  Inline demo guidance applied to #{inline_count} catalog control(s)"

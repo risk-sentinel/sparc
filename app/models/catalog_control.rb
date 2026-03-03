@@ -24,13 +24,28 @@ class CatalogControl < ApplicationRecord
 
   # Returns true when at least one guidance field has content.
   def guidance_present?
-    return false if guidance_data.blank?
-    GUIDANCE_FIELDS.any? { |f| guidance_data[f].present? }
+    data = parsed_guidance_data
+    return false if data.blank?
+    GUIDANCE_FIELDS.any? { |f| data[f].present? }
   end
 
   # Returns only populated guidance fields as { field_name => value }.
   def guidance_fields
-    return {} if guidance_data.blank?
-    guidance_data.select { |k, v| GUIDANCE_FIELDS.include?(k) && v.present? }
+    data = parsed_guidance_data
+    return {} if data.blank?
+    data.select { |k, v| GUIDANCE_FIELDS.include?(k) && v.present? }
+  end
+
+  private
+
+  # update_all bypasses ActiveRecord type casting, so guidance_data can
+  # arrive from the DB as a plain String (double-encoded JSON) rather than
+  # a Hash.  Parse defensively to handle both cases.
+  def parsed_guidance_data
+    raw = guidance_data
+    return {} if raw.blank?
+    raw.is_a?(String) ? JSON.parse(raw) : raw
+  rescue JSON::ParserError
+    {}
   end
 end
