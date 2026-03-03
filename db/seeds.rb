@@ -1518,13 +1518,27 @@ REV5_CONTROLS.each do |c|
                  else "System Test"
                  end
   subj = REV5_SUBJECTS[c[:id]] || {}
+
+  # Derive working_status from result
+  working_status = case c[:test_status]
+                   when "Pass"          then "Final Satisfied"
+                   when "Failed"        then "Not Satisfied"
+                   when "Not Specified" then "Not Specified"
+                   else nil
+                   end
+
+  # working_comments only for Failed controls
+  working_comments = c[:test_status] == "Failed" ? c[:remediation] : nil
+
   seed_tpr_control(tpr1, c[:id], c[:title], section_name,
     subj[:asset].to_s, subj[:env].to_s,
     result:           c[:test_status],
     date:             c[:test_date],
     tester:           c[:tester],
     notes_weakness:   c[:test_result],
-    recommended_fix:  c[:remediation])
+    recommended_fix:  c[:remediation],
+    working_status:   working_status,
+    working_comments: working_comments)
 end
 puts "  TPR 1 '#{tpr1.name}': #{tpr1.tpr_controls.count} controls"
 
@@ -1537,13 +1551,22 @@ tpr2 = TprDocument.create!(
 )
 
 REV4_CONTROLS.each do |c|
+  working_status = case c[:test_status]
+                   when "Pass"          then "Final Satisfied"
+                   when "Failed"        then "Not Satisfied"
+                   when "Not Specified" then "Not Specified"
+                   else nil
+                   end
+
   seed_tpr_control(tpr2, c[:id], c[:title], "System Test",
     nil, nil,
     result:           c[:test_status],
     date:             c[:test_date],
     tester:           c[:tester],
     notes_weakness:   c[:test_result],
-    recommended_fix:  c[:remediation])
+    recommended_fix:  c[:remediation],
+    working_status:   working_status,
+    working_comments: (c[:test_status] == "Failed" ? c[:remediation] : nil))
 end
 puts "  TPR 2 '#{tpr2.name}': #{tpr2.tpr_controls.count} controls"
 
