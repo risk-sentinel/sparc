@@ -3,17 +3,16 @@
   @heatmap_statuses.each { |s| total_by_status[s] = @heatmap_families.sum { |f| @heatmap_data.dig(f, s) || 0 } }
   total_controls = total_by_status.values.sum
 
-  compliant_count   = total_by_status["Implemented"].to_i + total_by_status["Alternative Implementation"].to_i
-  not_applicable    = total_by_status["Not Applicable"].to_i
-  denominator       = [total_controls - not_applicable, 1].max
-  compliance_pct    = (compliant_count * 100.0 / denominator).round(1)
-  score_color       = compliance_pct >= 80 ? "#2ecc71" : compliance_pct >= 50 ? "#f39c12" : "#e74c3c"
+  compliant_count = total_by_status["Implemented"].to_i
+  not_applicable  = total_by_status["Not Applicable"].to_i
+  denominator     = [total_controls - not_applicable, 1].max
+  compliance_pct  = (compliant_count * 100.0 / denominator).round(1)
+  score_color     = compliance_pct >= 80 ? "#2ecc71" : compliance_pct >= 50 ? "#f39c12" : "#e74c3c"
 %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
 
-  <%# Row 1 — title + actions %>
   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
     <div>
       <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Controls Implementation</div>
@@ -37,15 +36,12 @@
     </div>
   </div>
 
-  <%# Row 2 — compliance score + status chips %>
   <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
     <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
       <div style="font-size: 2.6rem; font-weight: 800; color: <%= score_color %>; line-height: 1; font-variant-numeric: tabular-nums;">
         <%= compliance_pct %>%
       </div>
-      <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">
-        Compliant
-      </div>
+      <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">Compliant</div>
     </div>
 
     <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
@@ -56,25 +52,20 @@
         <div class="summary-chip"
              data-filter-status="<%= status %>"
              onclick="filterByStatus(this.dataset.filterStatus)"
-             title="Click to filter controls by: <%= status %>"
+             title="Click to filter: <%= status %>"
              style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= ssp_status_color(status) %>; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; transition: background 0.15s; min-width: 64px;">
-          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;">
-            <%= count %>
-          </div>
-          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;">
-            <%= status %>
-          </div>
+          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= count %></div>
+          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;"><%= status %></div>
         </div>
       <% end %>
     </div>
   </div>
 
-  <%# Row 3 — stacked progress bar %>
   <div style="margin-top: 1.25rem;">
     <div style="height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: rgba(255,255,255,0.08);">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
-        <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>; transition: width 0.3s;"
+        <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>;"
              title="<%= status %>: <%= count %>"></div>
       <% end %>
     </div>
@@ -87,7 +78,7 @@
   <summary style="cursor: pointer; padding: 0.7rem 1rem; background: var(--summary-bg); border-radius: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; border: 1px solid var(--border-soft);">
     <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
     Compliance by Control Family
-    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">— click a count badge to filter</span>
+    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">— click a badge to filter</span>
   </summary>
 
   <div style="padding: 1rem 0 0.5rem;">
@@ -95,7 +86,7 @@
          style="display: none; background: #1a252f; color: white; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; gap: 0.75rem;">
       <span id="heatmapFilterLabel" style="font-size: 0.88rem; color: rgba(255,255,255,0.9);"></span>
       <button onclick="clearHeatmapFilter()"
-              style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;">
+              style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap;">
         ✕ Clear Filter
       </button>
     </div>
@@ -104,34 +95,28 @@
       <% @heatmap_families.each do |family| %>
         <% family_data = @heatmap_data[family] || {} %>
         <% family_total = family_data.values.sum %>
-        <% family_compliant = family_data["Implemented"].to_i + family_data["Alternative Implementation"].to_i %>
-        <% family_na = family_data["Not Applicable"].to_i %>
+        <% family_impl = family_data["Implemented"].to_i %>
+        <% family_na   = family_data["Not Applicable"].to_i %>
         <% family_denom = [family_total - family_na, 1].max %>
-        <% family_pct = (family_compliant * 100.0 / family_denom).round %>
+        <% family_pct   = (family_impl * 100.0 / family_denom).round %>
         <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
           <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
             <span style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text);"><%= family %></span>
-            <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;">
-              <%= family_pct %>%
-            </span>
+            <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= family_pct %>%</span>
           </div>
           <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
-
           <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: var(--border-soft); margin-bottom: 0.55rem;">
             <% @heatmap_statuses.each do |status| %>
-              <% count = family_data[status] || 0 %>
-              <% next if count == 0 %>
-              <div style="width: <%= (count * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>;"></div>
+              <% next if (family_data[status] || 0) == 0 %>
+              <div style="width: <%= ((family_data[status] || 0) * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>;"></div>
             <% end %>
           </div>
-
           <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
             <% @heatmap_statuses.each do |status| %>
               <% count = family_data[status] || 0 %>
               <% next if count == 0 %>
               <div class="heatmap-cell"
-                   data-family="<%= family %>"
-                   data-status="<%= status %>"
+                   data-family="<%= family %>" data-status="<%= status %>"
                    onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.status)"
                    title="<%= family %> / <%= status %>: <%= count %>"
                    style="background: <%= ssp_status_color(status) %>; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
@@ -145,9 +130,9 @@
 
     <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.5rem 0;">
       <span style="font-size: 0.72rem; color: var(--text-faint);">Legend:</span>
-      <% ApplicationHelper::SSP_STATUS_COLORS.each do |label, color| %>
+      <% ApplicationHelper::SSP_STATUS_COLORS.first(4).each do |label, color| %>
         <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--text-muted);">
-          <span style="display: inline-block; width: 11px; height: 11px; background: <%= color %>; border-radius: 2px; flex-shrink: 0;"></span>
+          <span style="display: inline-block; width: 11px; height: 11px; background: <%= color %>; border-radius: 2px;"></span>
           <%= label %>
         </span>
       <% end %>
@@ -161,7 +146,7 @@
   <% @controls.each do |control| %>
     <%
       family_code  = control.control_id.to_s.split("-").first.upcase
-      status_field = control.ssp_control_fields.find { |f| f.field_name == "implementation_status" }
+      status_field = control.ssp_control_fields.find { |f| f.field_name == "status" }
       status_val   = status_field&.field_value.presence || "(Unknown)"
       status_color = ssp_status_color(status_val)
     %>
@@ -173,44 +158,32 @@
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
         <div style="min-width: 0; flex: 1;">
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
-            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);">
-              <%= control.control_id %>
-            </span>
-            <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap; letter-spacing: 0.02em;">
-              <%= status_val %>
-            </span>
-            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace;">
-              <%= family_code %>
-            </span>
+            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);"><%= control.control_id %></span>
+            <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;"><%= status_val %></span>
+            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace;"><%= family_code %></span>
           </div>
-          <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.1rem;">
-            <%= control.title %>
-          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.1rem;"><%= control.title %></div>
         </div>
-        <button class="btn btn-primary"
-                onclick="toggleEdit(<%= control.id %>)"
+        <button onclick="toggleEdit(<%= control.id %>)"
                 style="padding: 0.35rem 0.85rem; font-size: 0.8rem; flex-shrink: 0; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
           Edit
         </button>
       </div>
 
+      <%# ── Root control fields ── %>
       <div id="view-<%= control.id %>" style="margin-top: 0.75rem;">
         <table style="width: 100%; border-collapse: collapse;">
           <% control.ssp_control_fields.each do |field| %>
             <tr style="border-top: 1px solid var(--border-soft);">
               <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
                 <%= field.field_name.tr("_", " ") %>
-                <% if field.editable %>
-                  <span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span>
-                <% end %>
+                <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
               </td>
               <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
                 <% if field.field_value.blank? %>
                   <span style="color: var(--text-faint);">—</span>
-                <% elsif field.field_name == "implementation_status" %>
-                  <span style="background: <%= status_color %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
-                    <%= field.field_value %>
-                  </span>
+                <% elsif field.field_name == "status" %>
+                  <span style="background: <%= status_color %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
                 <% else %>
                   <%= field.field_value %>
                 <% end %>
@@ -218,8 +191,41 @@
             </tr>
           <% end %>
         </table>
+
+        <%# ── Provider Statements (collapsed by default) ── %>
+        <% if control.provider_statements.any? %>
+          <details style="margin-top: 0.75rem;">
+            <summary style="cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); padding: 0.4rem 0.6rem; background: var(--surface-alt); border-radius: 5px; list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none;">
+              <span>&#9658;</span>
+              Provider Statements (<%= control.provider_statements.count %>)
+            </summary>
+            <% control.provider_statements.each_with_index do |stmt, i| %>
+              <div style="margin-top: 0.5rem; padding: 0.75rem 1rem; background: var(--surface-alt); border-left: 3px solid var(--border-soft); border-radius: 0 6px 6px 0;">
+                <% if stmt.title.present? %>
+                  <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                    Provider <%= i + 1 %>: <%= stmt.title %>
+                  </div>
+                <% end %>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <% stmt.ssp_control_fields.each do |field| %>
+                    <tr style="border-top: 1px solid var(--border-soft);">
+                      <td style="width: 26%; padding: 0.35rem 0.5rem 0.35rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                        <%= field.field_name.tr("_", " ") %>
+                        <% if field.editable %><span style="color: #27ae60; font-size: 0.63rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
+                      </td>
+                      <td style="padding: 0.35rem 0 0.35rem 0.5rem; font-size: 0.82rem; color: var(--text); vertical-align: top;">
+                        <%= field.field_value.presence || content_tag(:span, "—", style: "color: var(--text-faint);") %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </table>
+              </div>
+            <% end %>
+          </details>
+        <% end %>
       </div>
 
+      <%# ── Edit form ── %>
       <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem;">
         <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
           <%= hidden_field_tag :control_id, control.control_id %>
@@ -234,9 +240,15 @@
                 <% end %>
               </label>
               <% if field.editable %>
-                <%= text_area_tag "fields[#{field.field_name}]", field.field_value,
-                      class: "form-control", rows: 3,
-                      style: "font-size: 0.875rem;" %>
+                <% if field.field_name == "status" %>
+                  <%= select_tag "fields[#{field.field_name}]",
+                        options_for_select(SspControlField::VALID_STATUSES, field.field_value),
+                        include_blank: true, class: "form-control",
+                        style: "font-size: 0.875rem;" %>
+                <% else %>
+                  <%= text_area_tag "fields[#{field.field_name}]", field.field_value,
+                        class: "form-control", rows: 3, style: "font-size: 0.875rem;" %>
+                <% end %>
               <% else %>
                 <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;">
                   <%= field.field_value.presence || "—" %>
@@ -264,8 +276,7 @@
 
   function filterByHeatmapCell(cellEl, family, status) {
     if (activeFamily === family && activeStatus === status) { clearHeatmapFilter(); return; }
-    activeFamily = family;
-    activeStatus = status;
+    activeFamily = family; activeStatus = status;
     applyFilter();
     document.querySelectorAll('.heatmap-cell').forEach(function(el) {
       el.style.opacity = (el.dataset.family === family && el.dataset.status === status) ? '1' : '0.35';
@@ -277,12 +288,10 @@
 
   function filterByStatus(status) {
     if (activeFamily === null && activeStatus === status) { clearHeatmapFilter(); return; }
-    activeFamily = null;
-    activeStatus = status;
+    activeFamily = null; activeStatus = status;
     applyFilter();
     document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.status === status ? '1' : '0.35';
-      el.style.outline = 'none';
+      el.style.opacity = el.dataset.status === status ? '1' : '0.35'; el.style.outline = 'none';
     });
     document.querySelectorAll('.summary-chip').forEach(function(el) {
       el.style.background = el.dataset.filterStatus === status ? 'rgba(255,255,255,0.15)' : '';
@@ -305,8 +314,7 @@
   }
 
   function clearHeatmapFilter() {
-    activeFamily = null;
-    activeStatus = null;
+    activeFamily = null; activeStatus = null;
     document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) { card.style.display = ''; });
     document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
     document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
@@ -327,4 +335,14 @@
       document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
     });
   }
+
+  // Toggle provider statement arrow icon
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.control-card details').forEach(function(det) {
+      det.addEventListener('toggle', function() {
+        var arrow = det.querySelector('summary span');
+        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
+      });
+    });
+  });
 </script>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_01_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_03_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -101,12 +101,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_01_000003) do
   end
 
   create_table "ssp_controls", force: :cascade do |t|
-    t.string "control_id", null: false
+    t.string "control_id"
     t.datetime "created_at", null: false
+    t.bigint "parent_id"
+    t.integer "row_order", default: 0, null: false
     t.bigint "ssp_document_id", null: false
     t.string "title"
     t.datetime "updated_at", null: false
+    t.index ["parent_id"], name: "index_ssp_controls_on_parent_id"
     t.index ["ssp_document_id", "control_id"], name: "index_ssp_controls_on_ssp_document_id_and_control_id", unique: true
+    t.index ["ssp_document_id", "row_order"], name: "index_ssp_controls_on_ssp_document_id_and_row_order"
     t.index ["ssp_document_id"], name: "index_ssp_controls_on_ssp_document_id"
   end
 
@@ -135,9 +139,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_01_000003) do
   create_table "tpr_controls", force: :cascade do |t|
     t.string "control_id"
     t.datetime "created_at", null: false
+    t.integer "row_order", default: 0, null: false
+    t.string "section"
+    t.string "subject_asset"
+    t.string "subject_environment"
     t.string "title"
     t.bigint "tpr_document_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["section"], name: "index_tpr_controls_on_section"
+    t.index ["tpr_document_id", "row_order"], name: "index_tpr_controls_on_tpr_document_id_and_row_order"
     t.index ["tpr_document_id"], name: "index_tpr_controls_on_tpr_document_id"
   end
 
@@ -155,6 +165,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_01_000003) do
   add_foreign_key "catalog_controls", "control_families"
   add_foreign_key "control_families", "control_catalogs"
   add_foreign_key "ssp_control_fields", "ssp_controls"
+  add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"
   add_foreign_key "tpr_control_fields", "tpr_controls"
   add_foreign_key "tpr_controls", "tpr_documents"
