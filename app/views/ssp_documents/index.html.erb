@@ -1,7 +1,7 @@
 <div class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h2>SSP Documents</h2>
-    <%= link_to "Upload New SSP", new_ssp_document_path, class: "btn btn-success" %>
+    <h2>Controls Implementation</h2>
+    <%= link_to "Upload New", new_ssp_document_path, class: "btn btn-success" %>
   </div>
 
   <% if @ssp_documents.any? %>
@@ -34,6 +34,6 @@
       </tbody>
     </table>
   <% else %>
-        <p style="text-align: center; padding: 2rem; color: #666;">No SSP documents found. Upload your first document to get started.</p>
+        <p style="text-align: center; padding: 2rem; color: var(--text-muted);">No Controls Implementation documents found. Upload your first workbook to get started.</p>
   <% end %>
 </div>
