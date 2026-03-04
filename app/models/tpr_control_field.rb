@@ -15,7 +15,7 @@ class TprControlField < ApplicationRecord
     custom_name
     custom_author
     working_comments
-    working_status,
+    working_status
   ].freeze
 
   RESULT_VALUES = %w[Pass Failed].freeze
@@ -28,10 +28,15 @@ class TprControlField < ApplicationRecord
   ].freeze
 
   before_validation :set_editable_flag
+  after_save :sync_cached_result, if: -> { field_name == "result" }
 
   private
 
   def set_editable_flag
     self.editable = EDITABLE_FIELDS.include?(field_name)
+  end
+
+  def sync_cached_result
+    tpr_control.update_column(:cached_result, field_value)
   end
 end

@@ -1,0 +1,76 @@
+<%
+  field_map    = control.tpr_control_fields.index_by(&:field_name)
+  card_asset   = control.subject_asset.to_s.strip
+  card_env     = control.subject_environment.to_s.strip
+  ctx_field_names = %w[control_status responsibility impact_statement control_text implementation]
+
+  catalog_ctrl = @catalog_guidance[normalize_ctrl_id(control.control_id)]
+  catalog_stmt = (catalog_ctrl&.guidance_data || {})["statement"].presence
+
+  ctx_rows = [
+    ["Subject",             [card_asset, card_env].select(&:present?).join(" | ")],
+    ["Control Status",      field_map["control_status"]&.field_value.to_s],
+    ["Responsibility",      field_map["responsibility"]&.field_value.to_s],
+    ["Impact Statement",    field_map["impact_statement"]&.field_value.to_s],
+    ["Control Text",        field_map["control_text"]&.field_value.to_s],
+    ["Catalog Description", catalog_stmt.to_s],
+    ["SSP Implementation",  field_map["implementation"]&.field_value.to_s],
+  ]
+  any_ctx = ctx_rows.any? { |_, v| v.present? }
+%>
+
+<%= form_with url: tpr_document_path(tpr_document), method: :patch, local: true do |f| %>
+  <%= hidden_field_tag :tpr_control_id, control.id %>
+
+  <% if any_ctx %>
+    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
+      <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--border-soft); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint);">
+        Assessment Context
+        <span style="font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 0.4rem;">(read-only reference)</span>
+      </div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <% ctx_rows.each do |lbl, val| %>
+          <tr style="border-top: 1px solid var(--border-soft);">
+            <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+              <%= lbl %>
+            </td>
+            <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--text-muted)" : "var(--text-faint)" %>; vertical-align: top; white-space: pre-wrap;">
+              <%= val.present? ? val : "&mdash;".html_safe %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    </div>
+  <% end %>
+
+  <% TprControlField::EDITABLE_FIELDS.each do |fname| %>
+    <% field = field_map[fname] %>
+    <% fval  = field&.field_value.to_s %>
+    <div class="form-group">
+      <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);">
+        <%= fname.tr("_", " ") %>
+        <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
+      </label>
+      <% if fname == "result" %>
+        <%= select_tag "fields[#{fname}]",
+              options_for_select(TprControlField::RESULT_VALUES, fval),
+              include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
+              style: "font-size: 0.875rem;" %>
+      <% elsif fname == "working_status" %>
+        <%= select_tag "fields[#{fname}]",
+              options_for_select(TprControlField::WORKING_STATUS_VALUES, fval),
+              include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
+              style: "font-size: 0.875rem;" %>
+      <% else %>
+        <%= text_area_tag "fields[#{fname}]", fval,
+              class: "form-control", rows: 3,
+              style: "font-size: 0.875rem;" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+    <%= f.submit "Save Changes",
+          style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
+  </div>
+<% end %>
