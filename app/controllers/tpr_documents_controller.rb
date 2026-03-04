@@ -33,15 +33,26 @@ class TprDocumentsController < ApplicationController
 
     # Apply filters from query params
     filtered = controls_scope
-    filtered = filtered.where(section: params[:section])                  if params[:section].present?
-    filtered = filtered.where(control_family: params[:family])            if params[:family].present?
-    filtered = filtered.where(cached_result: params[:status])             if params[:status].present?
-    filtered = filtered.where(subject_asset: params[:asset])              if params[:asset].present?
-    filtered = filtered.where(subject_environment: params[:environment])  if params[:environment].present?
+    filtered = filtered.where(section: params[:section])                 if params[:section].present?
+    filtered = filtered.where(subject_asset: params[:asset])             if params[:asset].present?
+    filtered = filtered.where(subject_environment: params[:environment]) if params[:environment].present?
 
-    # Paginate
+    if params[:family].present?
+      filtered = filtered.where(control_family: params[:family])
+                         .or(filtered.where(control_family: nil)
+                         .where("UPPER(SPLIT_PART(control_id, '-', 1)) = ?", params[:family]))
+    end
+
+    if params[:status].present?
+      filtered = filtered.where(cached_result: params[:status])
+                         .or(filtered.where(cached_result: nil)
+                         .joins(:tpr_control_fields)
+                         .where(tpr_control_fields: { field_name: "result", field_value: params[:status] }))
+    end
+
+    # Paginate (explicit order since default_scope was removed for query performance)
     @pagy, @controls = pagy(
-      filtered.includes(:tpr_control_fields),
+      filtered.order(:row_order).includes(:tpr_control_fields),
       limit: CONTROLS_PER_PAGE
     )
 
@@ -174,10 +185,26 @@ class TprDocumentsController < ApplicationController
   ].freeze
 
   def build_heatmap_from_sql(tpr_document)
-    rows = tpr_document.tpr_controls
-      .where.not(control_family: [ nil, "" ])
-      .group(:control_family, :cached_result)
-      .count
+    scope = tpr_document.tpr_controls.where.not(control_id: [ nil, "" ])
+
+    # Use denormalized columns if available, otherwise fall back to SQL extraction
+    has_denormalized = scope.where.not(control_family: nil).exists?
+
+    if has_denormalized
+      rows = scope.group(:control_family, :cached_result).count
+    else
+      # Fallback for pre-existing data without denormalized columns:
+      # join to tpr_control_fields for result, compute family from control_id
+      rows = {}
+      scope.includes(:tpr_control_fields).find_each(batch_size: 1000) do |control|
+        family = control.control_id.to_s.split("-").first.upcase
+        next if family.blank?
+        result_field = control.tpr_control_fields.find { |f| f.field_name == "result" }
+        status = result_field&.field_value.presence || "(Unknown)"
+        rows[[ family, status ]] ||= 0
+        rows[[ family, status ]] += 1
+      end
+    end
 
     data = {}
     rows.each do |(family, result), count|
