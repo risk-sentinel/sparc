@@ -17,6 +17,8 @@
       <% end %>
     </div>
     <div style="display: flex; gap: 0.75rem;">
+      <%= link_to "↑ Import / Refresh", import_control_catalogs_path,
+            style: "background: #8e44ad; color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 5px; font-size: 0.875rem; font-weight: 600;" %>
       <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "btn", style: "background: #f39c12; color: white;" %>
       <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "btn btn-success" %>
       <%= link_to "← All Catalogs", control_catalogs_path, class: "btn btn-primary" %>

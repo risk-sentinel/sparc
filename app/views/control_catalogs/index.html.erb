@@ -4,7 +4,11 @@
       <h2>Control Catalogs</h2>
       <p style="color: #666; margin-top: 0.5rem;">Manage NIST and custom control catalogs</p>
     </div>
-    <%= link_to "＋ New Catalog", new_control_catalog_path, class: "btn btn-success" %>
+    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+      <%= link_to "↑ Import from File", import_control_catalogs_path,
+            style: "background: #8e44ad; color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 5px; font-size: 0.875rem; font-weight: 600; white-space: nowrap;" %>
+      <%= link_to "＋ New Catalog", new_control_catalog_path, class: "btn btn-success" %>
+    </div>
   </div>
 
   <% if @control_catalogs.any? %>

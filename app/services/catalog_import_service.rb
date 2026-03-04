@@ -1,0 +1,357 @@
+# CatalogImportService
+#
+# Imports control catalogs from two supported formats:
+#
+#   OSCAL JSON — NIST OSCAL 1.x catalog schema
+#     Source: https://github.com/usnistgov/oscal-content
+#     Example: NIST_SP-800-53_rev4_catalog.json
+#
+#   NIST XML — SP 800-53 SCAP feed schema v2.0
+#     Source: https://csrc.nist.gov/projects/risk-management/sp800-53-controls/downloads
+#     Example: SP_800-53_v5_1_XML.xml
+#
+# Usage:
+#   result = CatalogImportService.call(file_io, original_filename)
+#   # => { catalog: <ControlCatalog>, families: 20, controls: 323, updated: 12, created: 311 }
+#
+class CatalogImportService
+  class ImportError < StandardError; end
+
+  FAMILY_NAME_TO_CODE = {
+    "ACCESS CONTROL"                              => "AC",
+    "AWARENESS AND TRAINING"                      => "AT",
+    "AUDIT AND ACCOUNTABILITY"                    => "AU",
+    "SECURITY ASSESSMENT AND AUTHORIZATION"       => "CA",
+    "ASSESSMENT, AUTHORIZATION, AND MONITORING"  => "CA",
+    "CONFIGURATION MANAGEMENT"                   => "CM",
+    "CONTINGENCY PLANNING"                        => "CP",
+    "IDENTIFICATION AND AUTHENTICATION"           => "IA",
+    "INCIDENT RESPONSE"                           => "IR",
+    "MAINTENANCE"                                 => "MA",
+    "MEDIA PROTECTION"                            => "MP",
+    "PHYSICAL AND ENVIRONMENTAL PROTECTION"       => "PE",
+    "PLANNING"                                    => "PL",
+    "PROGRAM MANAGEMENT"                          => "PM",
+    "PERSONNEL SECURITY"                          => "PS",
+    "PII PROCESSING AND TRANSPARENCY"             => "PT",
+    "PERSONALLY IDENTIFIABLE INFORMATION PROCESSING AND TRANSPARENCY" => "PT",
+    "RISK ASSESSMENT"                             => "RA",
+    "SYSTEM AND SERVICES ACQUISITION"             => "SA",
+    "SYSTEM AND COMMUNICATIONS PROTECTION"        => "SC",
+    "SYSTEM AND INFORMATION INTEGRITY"            => "SI",
+    "SUPPLY CHAIN RISK MANAGEMENT"                => "SR",
+  }.freeze
+
+  def self.call(file_io, original_filename)
+    new(file_io, original_filename).call
+  end
+
+  def initialize(file_io, original_filename)
+    @content  = file_io.read.force_encoding("UTF-8")
+    @filename = original_filename.to_s.downcase
+  end
+
+  def call
+    case detect_format
+    when :oscal_json then import_oscal_json
+    when :nist_xml   then import_nist_xml
+    else
+      raise ImportError, "Unrecognised format. Upload an OSCAL JSON (.json) or NIST XML (.xml) catalog file."
+    end
+  end
+
+  # ── Format detection ────────────────────────────────────────────────────────
+
+  def detect_format
+    if @filename.end_with?(".json")
+      begin
+        data = JSON.parse(@content)
+        return :oscal_json if data.dig("catalog", "groups")
+      rescue JSON::ParserError
+        # fall through
+      end
+    end
+
+    if @filename.end_with?(".xml")
+      return :nist_xml if @content.include?("sp800-53") || @content.include?("<controls:control>")
+    end
+
+    # Content-sniff as fallback
+    if @content.lstrip.start_with?("{")
+      begin
+        data = JSON.parse(@content)
+        return :oscal_json if data.dig("catalog", "groups")
+      rescue JSON::ParserError
+        # fall through
+      end
+    end
+
+    return :nist_xml if @content.include?("<controls:control>")
+
+    :unknown
+  end
+
+  # ── OSCAL JSON import ───────────────────────────────────────────────────────
+  #
+  # Structure:
+  #   catalog.metadata.title   → catalog name
+  #   catalog.metadata.version → version
+  #   catalog.groups[]         → families (id=code, title=name)
+  #     .controls[]            → controls
+  #       .props[name=label]   → display ID  (e.g. "AC-1")
+  #       .props[name=priority]→ priority    (e.g. "P1")
+  #       .parts[name=statement] .prose      → statement text
+  #       .parts[name=guidance]  .prose      → supplemental guidance
+  #         .links[rel=related]              → related control IDs
+  #
+  def import_oscal_json
+    data        = JSON.parse(@content)
+    cat_data    = data.fetch("catalog") { raise ImportError, "Missing 'catalog' key — not a valid OSCAL catalog JSON." }
+    metadata    = cat_data.fetch("metadata", {})
+    groups      = cat_data.fetch("groups") { raise ImportError, "No 'groups' found in catalog." }
+
+    catalog_name = metadata["title"].presence || File.basename(@filename, ".json").titleize
+    version      = metadata["version"].presence || metadata["last-modified"]&.first(10)
+
+    catalog = upsert_catalog(catalog_name, version, "OSCAL")
+    stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+
+    groups.each_with_index do |group, idx|
+      family_code = group["id"].to_s.upcase
+      family_name = group["title"].to_s.strip
+      next if family_code.blank?
+
+      family = upsert_family(catalog, family_code, family_name, idx + 1)
+      stats[:families] += 1
+
+      (group["controls"] || []).each do |ctrl|
+        result = import_oscal_control(family, ctrl)
+        stats[:controls] += 1
+        stats[result]    += 1
+      end
+    end
+
+    stats
+  end
+
+  def import_oscal_control(family, ctrl)
+    label       = oscal_prop(ctrl["props"], "label")
+    control_id  = label.presence || ctrl["id"].to_s.upcase.tr("-", "-")
+    title       = ctrl["title"].to_s.strip
+    priority    = oscal_prop(ctrl["props"], "priority")
+    baselines   = oscal_prop_all(ctrl["props"], "impact-level")
+    baseline    = baselines.join(", ").presence
+
+    # Statement: collect prose from all statement/item parts recursively
+    statement = oscal_collect_prose(ctrl["parts"], names: %w[statement item])
+
+    # Guidance part
+    guidance_part = (ctrl["parts"] || []).find { |p| p["name"] == "guidance" }
+    supplemental  = guidance_part&.dig("prose").to_s.strip.presence
+
+    # Related controls from guidance part links
+    related = (guidance_part&.dig("links") || [])
+              .select { |l| l["rel"] == "related" }
+              .map    { |l| l["href"]&.delete("#")&.upcase }
+              .compact
+              .join(", ")
+
+    guidance_data = {
+      "statement"             => statement,
+      "supplemental_guidance" => supplemental,
+      "related_controls"      => related.presence,
+    }.compact.reject { |_, v| v.blank? }
+
+    # Recurse into enhancements (sub-controls)
+    (ctrl["controls"] || []).each do |sub|
+      import_oscal_control(family, sub)
+    end
+
+    upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data)
+  end
+
+  # ── NIST XML import ─────────────────────────────────────────────────────────
+  #
+  # Structure (SCAP SP800-53 feed v2.0):
+  #   <controls:control>
+  #     <family>ACCESS CONTROL</family>
+  #     <number>AC-1</number>
+  #     <title>POLICY AND PROCEDURES</title>
+  #     <baseline>LOW</baseline>
+  #     <statement>…nested <statement><number><description>…</statement>
+  #     <discussion><description><p>…</p></description></discussion>
+  #     <related>IA-1</related>
+  #     <references><reference><short_name>…</short_name></reference>
+  #
+  def import_nist_xml
+    require "nokogiri"
+    doc = Nokogiri::XML(@content) { |c| c.strict.noblanks }
+    doc.remove_namespaces!
+
+    controls = doc.xpath("//control")
+    raise ImportError, "No <control> elements found — not a valid NIST SP 800-53 XML feed." if controls.empty?
+
+    # Infer catalog name from pub_date attribute or filename
+    pub_date     = doc.root&.[]("pub_date")
+    catalog_name = xml_catalog_name(controls.first, pub_date)
+    version      = pub_date.presence || File.basename(@filename, ".xml")
+
+    catalog = upsert_catalog(catalog_name, version, "NIST XML")
+    stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+
+    # Group by family; build families on the fly
+    family_cache = {}
+    sort_counter = {}
+
+    controls.each do |ctrl_node|
+      family_full = ctrl_node.at_xpath("family")&.text.to_s.strip.upcase
+      number      = ctrl_node.at_xpath("number")&.text.to_s.strip
+      next if number.blank?
+
+      family_code = xml_family_code(family_full, number)
+      next if family_code.blank?
+
+      # Friendly title-case name
+      family_name = (FAMILY_NAME_TO_CODE.key(family_code) || family_full).titleize
+
+      unless family_cache.key?(family_code)
+        sort_counter[family_code] ||= sort_counter.size + 1
+        family_cache[family_code] = upsert_family(catalog, family_code, family_name, sort_counter[family_code])
+        stats[:families] += 1
+      end
+
+      family = family_cache[family_code]
+      result = import_xml_control(family, ctrl_node)
+      stats[:controls] += 1
+      stats[result]    += 1
+    end
+
+    stats
+  end
+
+  def import_xml_control(family, ctrl_node)
+    control_id  = ctrl_node.at_xpath("number")&.text.to_s.strip
+    title       = ctrl_node.at_xpath("title")&.text.to_s.strip.titleize
+    baselines   = ctrl_node.xpath("baseline").map(&:text).map(&:strip).reject(&:blank?)
+    baseline    = baselines.join(", ").presence
+
+    # Build statement text from nested structure
+    root_stmt = ctrl_node.at_xpath("statement")
+    statement = root_stmt ? xml_collect_statement(root_stmt) : nil
+
+    # Supplemental guidance from <discussion>
+    discussion = ctrl_node.at_xpath("discussion/description")
+    supplemental = discussion ? xml_text_content(discussion).strip.presence : nil
+
+    # Related controls
+    related = ctrl_node.xpath("related").map(&:text).map(&:strip).reject(&:blank?).join(", ").presence
+
+    # References
+    nist_refs = ctrl_node.xpath("references/reference/short_name").map(&:text).map(&:strip).reject(&:blank?).join(", ").presence
+
+    guidance_data = {
+      "statement"             => statement,
+      "supplemental_guidance" => supplemental,
+      "related_controls"      => related,
+      "nist_references"       => nist_refs,
+    }.compact.reject { |_, v| v.blank? }
+
+    upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data)
+  end
+
+  # ── Shared DB upsert helpers ─────────────────────────────────────────────────
+
+  def upsert_catalog(name, version, source)
+    catalog = ControlCatalog.find_or_initialize_by(name: name)
+    catalog.assign_attributes(version: version, source: source)
+    catalog.save!
+    catalog
+  end
+
+  def upsert_family(catalog, code, name, sort_order)
+    family = catalog.control_families.find_or_initialize_by(code: code)
+    family.assign_attributes(name: name, sort_order: sort_order)
+    family.save!
+    family
+  end
+
+  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data)
+    ctrl = family.catalog_controls.find_or_initialize_by(control_id: control_id)
+    is_new = ctrl.new_record?
+    ctrl.assign_attributes(
+      title:            title.presence || ctrl.title,
+      priority:         priority.presence || ctrl.priority,
+      baseline_impact:  baseline.presence || ctrl.baseline_impact,
+      guidance_data:    guidance_data.any? ? guidance_data : (ctrl.guidance_data || {})
+    )
+    ctrl.save!
+    is_new ? :created : :updated
+  end
+
+  # ── OSCAL helpers ────────────────────────────────────────────────────────────
+
+  def oscal_prop(props, name)
+    (props || []).find { |p| p["name"] == name }&.dig("value")
+  end
+
+  def oscal_prop_all(props, name)
+    (props || []).select { |p| p["name"] == name }.map { |p| p["value"] }.compact
+  end
+
+  # Recursively collect prose from parts matching given names, with label prefixes.
+  def oscal_collect_prose(parts, names: %w[statement item], depth: 0)
+    return "" if parts.blank?
+    lines = []
+    parts.each do |part|
+      next unless names.include?(part["name"])
+      label = oscal_prop(part["props"], "label")
+      prose = part["prose"].to_s.strip
+      line  = [label, prose].select(&:present?).join(" ")
+      lines << ("  " * depth + line) if line.present?
+      lines << oscal_collect_prose(part["parts"], names: names, depth: depth + 1)
+    end
+    lines.reject(&:blank?).join("\n")
+  end
+
+  # ── NIST XML helpers ─────────────────────────────────────────────────────────
+
+  def xml_family_code(family_full, control_number)
+    # Prefer FAMILY_NAME_TO_CODE lookup
+    return FAMILY_NAME_TO_CODE[family_full] if FAMILY_NAME_TO_CODE.key?(family_full)
+    # Fall back to the prefix of the control number (e.g. "AC-1" → "AC")
+    control_number.to_s.split("-").first.upcase.presence
+  end
+
+  def xml_catalog_name(first_ctrl_node, pub_date)
+    family = first_ctrl_node&.at_xpath("family")&.text.to_s
+    if family.include?("800-53") || @filename.include?("800-53")
+      rev = @filename.match(/rev\s*(\d+)/i)&.captures&.first ||
+            @filename.match(/v(\d+)/i)&.captures&.first
+      "NIST SP 800-53#{rev ? " Rev #{rev}" : ""} (XML import)"
+    else
+      "Imported Catalog#{pub_date ? " (#{pub_date})" : ""}"
+    end
+  end
+
+  # Recursively collect <number> + <description> text from nested <statement> nodes.
+  def xml_collect_statement(node, depth = 0)
+    lines = []
+    desc = node.at_xpath("description")
+    text = desc ? xml_text_content(desc).strip : nil
+    num  = node.at_xpath("number")&.text&.strip
+
+    line = [num, text].select(&:present?).join(" ")
+    lines << ("  " * depth + line) if line.present?
+
+    node.xpath("statement").each do |child|
+      lines << xml_collect_statement(child, depth + 1)
+    end
+
+    lines.reject(&:blank?).join("\n")
+  end
+
+  # Extract plain text from a Nokogiri node (strips HTML/inline tags like <p>, <i>).
+  def xml_text_content(node)
+    node.xpath(".//text()").map(&:text).join(" ").gsub(/\s+/, " ").strip
+  end
+end

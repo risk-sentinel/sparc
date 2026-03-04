@@ -21,6 +21,10 @@ Rails.application.routes.draw do
   end
   
   resources :control_catalogs do
+    collection do
+      get  :import
+      post :import
+    end
     resources :control_families, shallow: true do
       resources :catalog_controls, shallow: true
     end
