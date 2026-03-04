@@ -1,15 +1,26 @@
 class TprControl < ApplicationRecord
   belongs_to :tpr_document
   has_many :tpr_control_fields, dependent: :destroy
-  
-  validates :control_id, presence: true, uniqueness: { scope: :tpr_document_id }
-  
+
+  # Multiple test rows can share the same Paragraph (control_id)
+  # and a row may have no Paragraph — no uniqueness or presence enforced
+  validates :control_id, presence: false
+
+  default_scope { order(:row_order) }
+
+  scope :in_section, ->(s) { where(section: s) }
+  scope :boundary_findings, -> { where(subject_asset: nil) }
+
   accepts_nested_attributes_for :tpr_control_fields
-  
+
   def to_hash
     {
       control_id: control_id,
       title: title,
+      section: section,
+      subject_asset: subject_asset,
+      subject_environment: subject_environment,
+      row_order: row_order,
       fields: tpr_control_fields.map do |field|
         {
           field_name: field.field_name,

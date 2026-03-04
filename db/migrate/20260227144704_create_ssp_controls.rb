@@ -8,6 +8,6 @@ class CreateSspControls < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    add_index :ssp_controls, [:ssp_document_id, :control_id], unique: true
+    add_index :ssp_controls, [ :ssp_document_id, :control_id ], unique: true
   end
 end

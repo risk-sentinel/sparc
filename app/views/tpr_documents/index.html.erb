@@ -1,7 +1,7 @@
 <div class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h2>TPR Documents</h2>
-    <%= link_to "Upload New TPR", new_tpr_document_path, class: "btn btn-success" %>
+    <h2>Test Plan Results</h2>
+    <%= link_to "Upload New", new_tpr_document_path, class: "btn btn-success" %>
   </div>
 
   <% if @tpr_documents.any? %>
@@ -34,6 +34,6 @@
       </tbody>
     </table>
   <% else %>
-    <p style="text-align: center; padding: 2rem; color: #666;">No TPR documents found. Upload your first document to get started.</p>
+    <p style="text-align: center; padding: 2rem; color: var(--text-muted);">No Test Plan Results found. Upload your first workbook to get started.</p>
   <% end %>
 </div>

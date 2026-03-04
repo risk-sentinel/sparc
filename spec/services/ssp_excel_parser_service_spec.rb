@@ -15,14 +15,14 @@ RSpec.describe SspExcelParserService do
     it 'creates fields for each control' do
       service.parse
       control = document.ssp_controls.first
-      
+
       expect(control.ssp_control_fields.count).to be > 0
     end
 
     it 'marks appropriate fields as editable' do
       service.parse
       control = document.ssp_controls.first
-      
+
       editable_fields = control.ssp_control_fields.where(editable: true)
       expect(editable_fields.count).to be > 0
     end

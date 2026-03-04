@@ -1,15 +1,15 @@
 <div class="card">
-  <h2>Upload SSP Document</h2>
-  
+  <h2>Upload Controls Implementation</h2>
+
   <%= form_with model: @ssp_document, local: true, multipart: true do |f| %>
     <div class="form-group">
       <label for="ssp_document_file">Select Excel File (.xlsx, .xls)</label>
       <%= f.file_field :file, accept: ".xlsx,.xls", required: true %>
-      <small style="color: #666; display: block; margin-top: 0.5rem;">
-        Upload an Excel file containing your SSP controls and fields.
+      <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+        Upload an Excel workbook containing your controls implementation data.
       </small>
     </div>
-    
+
     <div style="display: flex; gap: 1rem;">
       <%= f.submit "Upload and Convert", class: "btn btn-success" %>
       <%= link_to "Cancel", ssp_documents_path, class: "btn", style: "background: #95a5a6; color: white;" %>
@@ -19,14 +19,34 @@
 
 <div class="card">
   <h3>Expected Excel Format</h3>
-  <p>Your Excel file should contain the following columns:</p>
-  <ul style="line-height: 2; margin-top: 1rem;">
-    <li><strong>Control ID</strong> - Unique identifier for the control</li>
-    <li><strong>Control Title</strong> - Name/title of the control</li>
-    <li><strong>Responsible Role</strong> - Role responsible for implementation</li>
-    <li><strong>Implementation Status</strong> - Current status (e.g., Implemented, Planned)</li>
-    <li><strong>Control Origination</strong> - Origin of control</li>
-    <li><strong>Customer Responsibility</strong> - Customer's responsibilities</li>
-    <li><strong>Implementation Guidance</strong> - How to implement the control</li>
-  </ul>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">Your workbook should contain the following columns. Read-only fields are imported as-is; editable fields can be updated after upload.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Column</th>
+        <th>Editable</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Paragraph/ReqID</strong></td><td>No</td><td>Primary identifier. Null rows are Provider Statements collapsed under the last populated ID.</td></tr>
+      <tr><td><strong>Title</strong></td><td>No</td><td>Null on provider rows.</td></tr>
+      <tr><td><strong>Stated Requirement</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Private Implementation</strong></td><td>Yes</td><td></td></tr>
+      <tr><td><strong>Public Implementation</strong></td><td>Yes</td><td>Null on provider rows; shown collapsed.</td></tr>
+      <tr><td><strong>Notes</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
+      <tr><td><strong>Status</strong></td><td>Yes</td><td>Deferred · Implemented · Not Applicable · Will Not Implement</td></tr>
+      <tr><td><strong>Expected Completion</strong></td><td>Yes</td><td>Null on provider rows; collapsed.</td></tr>
+      <tr><td><strong>Class</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Priority</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Responsible Entities</strong></td><td>Yes</td><td>Null on provider rows; collapsed.</td></tr>
+      <tr><td><strong>Control Owner</strong></td><td>No</td><td>Null on provider rows; collapsed.</td></tr>
+      <tr><td><strong>Type/Use As</strong></td><td>Yes</td><td></td></tr>
+      <tr><td><strong>Inherited From</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Provided As</strong></td><td>Yes</td><td></td></tr>
+      <tr><td><strong>Control Origination</strong></td><td>Yes</td><td></td></tr>
+      <tr><td><strong>History</strong></td><td>No</td><td></td></tr>
+    </tbody>
+  </table>
 </div>
