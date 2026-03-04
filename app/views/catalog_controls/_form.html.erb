@@ -1,4 +1,4 @@
-<%= form_with model: [control_family, catalog_control], local: true do |f| %>
+<%= form_with model: catalog_control.new_record? ? [control_family, catalog_control] : catalog_control, local: true do |f| %>
   <% if catalog_control.errors.any? %>
     <div class="flash error" style="margin-bottom: 1.5rem;">
       <strong><%= pluralize(catalog_control.errors.count, "error") %>:</strong>
