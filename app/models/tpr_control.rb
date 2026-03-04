@@ -1,12 +1,10 @@
 class TprControl < ApplicationRecord
   belongs_to :tpr_document
-  has_many :tpr_control_fields, dependent: :destroy
+  has_many :tpr_control_fields, dependent: :delete_all
 
   # Multiple test rows can share the same Paragraph (control_id)
   # and a row may have no Paragraph — no uniqueness or presence enforced
   validates :control_id, presence: false
-
-  default_scope { order(:row_order) }
 
   scope :in_section, ->(s) { where(section: s) }
   scope :boundary_findings, -> { where(subject_asset: nil) }

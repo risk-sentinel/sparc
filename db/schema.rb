@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_04_100003) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_04_100004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -172,6 +172,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_100003) do
   add_foreign_key "ssp_control_fields", "ssp_controls"
   add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"
-  add_foreign_key "tpr_control_fields", "tpr_controls"
-  add_foreign_key "tpr_controls", "tpr_documents"
+  add_foreign_key "tpr_control_fields", "tpr_controls", on_delete: :cascade
+  add_foreign_key "tpr_controls", "tpr_documents", on_delete: :cascade
 end
