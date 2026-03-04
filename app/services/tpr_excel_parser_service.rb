@@ -31,6 +31,9 @@ class TprExcelParserService
     "working status"   => { key: "working_status",   control_attr: false }
   }.freeze
 
+  BATCH_SIZE_CONTROLS = 5_000
+  BATCH_SIZE_FIELDS   = 10_000
+
   def initialize(tpr_document, file_path)
     @document    = tpr_document
     @file_path   = file_path
@@ -38,6 +41,9 @@ class TprExcelParserService
   end
 
   def parse
+    sheet_metadata   = {}
+    control_attrs    = []  # Array of attribute hashes for TprControl
+    field_entries    = []  # Array of [control_index, field_name, field_value]
     global_row_order = 0
 
     @spreadsheet.sheets.each do |sheet_name|
@@ -47,6 +53,11 @@ class TprExcelParserService
 
       raw_headers = sheet.row(1).map { |h| h.to_s.strip.downcase }
       col_config  = build_col_config(raw_headers)
+
+      # Capture original headers for Excel round-trip export
+      sheet_metadata[section] = {
+        "headers" => sheet.row(1).map { |h| h.to_s.strip }
+      }
 
       (2..sheet.last_row).each do |row_num|
         row_data = sheet.row(row_num)
@@ -73,25 +84,63 @@ class TprExcelParserService
           end
         end
 
-        control = @document.tpr_controls.create!(
-          control_id:          attrs[:control_id],
-          title:               attrs[:title],
-          section:             attrs[:section],
-          subject_asset:       attrs[:subject_asset],
-          subject_environment: attrs[:subject_environment],
-          row_order:           attrs[:row_order]
-        )
+        # Compute denormalized columns inline
+        attrs[:control_family] = attrs[:control_id].to_s.split("-").first.upcase.presence
+        attrs[:cached_result]  = fields["result"]
+
+        control_idx = control_attrs.size
+        control_attrs << attrs
+        fields.each do |fname, fval|
+          field_entries << [ control_idx, fname.to_s, fval ]
+        end
 
         global_row_order += 1
-
-        fields.each do |field_name, value|
-          control.tpr_control_fields.create!(
-            field_name:  field_name.to_s,
-            field_value: value
-          )
-        end
       end
     end
+
+    # Batch insert within a single transaction
+    ActiveRecord::Base.transaction do
+      imported_ids = []
+
+      control_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
+        records = batch.map do |attrs|
+          TprControl.new(
+            tpr_document_id:    @document.id,
+            control_id:         attrs[:control_id],
+            title:              attrs[:title],
+            section:            attrs[:section],
+            subject_asset:      attrs[:subject_asset],
+            subject_environment: attrs[:subject_environment],
+            row_order:          attrs[:row_order],
+            control_family:     attrs[:control_family],
+            cached_result:      attrs[:cached_result]
+          )
+        end
+
+        result = TprControl.import(records, validate: false, returning: :id)
+        imported_ids.concat(result.ids)
+      end
+
+      # Build field records mapped to the returned control IDs
+      field_records = field_entries.map do |ctrl_idx, fname, fval|
+        TprControlField.new(
+          tpr_control_id: imported_ids[ctrl_idx],
+          field_name:     fname,
+          field_value:    fval,
+          editable:       TprControlField::EDITABLE_FIELDS.include?(fname)
+        )
+      end
+
+      field_records.each_slice(BATCH_SIZE_FIELDS) do |batch|
+        TprControlField.import(batch, validate: false)
+      end
+    end
+
+    # Save Excel metadata for round-trip export
+    @document.update!(excel_metadata: {
+      "sheet_order" => @spreadsheet.sheets.map { |s| s.to_s.strip },
+      "sheets"      => sheet_metadata
+    })
   end
 
   private

@@ -13,6 +13,8 @@ class TprControl < ApplicationRecord
 
   accepts_nested_attributes_for :tpr_control_fields
 
+  before_save :compute_control_family
+
   def to_hash
     {
       control_id: control_id,
@@ -29,5 +31,11 @@ class TprControl < ApplicationRecord
         }
       end
     }
+  end
+
+  private
+
+  def compute_control_family
+    self.control_family = control_id.to_s.split("-").first.upcase.presence
   end
 end
