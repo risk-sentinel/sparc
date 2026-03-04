@@ -67,7 +67,7 @@ class TprExcelExportService
     when true
       control.public_send(config[:key]) rescue nil
     when :subject
-      [control.subject_asset, control.subject_environment].compact.join(" | ").presence
+      [ control.subject_asset, control.subject_environment ].compact.join(" | ").presence
     else
       field_map[config[:key].to_s]&.field_value
     end
