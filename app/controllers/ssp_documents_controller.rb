@@ -12,12 +12,12 @@ class SspDocumentsController < ApplicationController
                               .includes(:ssp_control_fields,
                                         provider_statements: :ssp_control_fields)
 
-    # Build a catalog-guidance lookup keyed by control_id so the view can
-    # display supplemental_guidance, implementation_guidance, check, fix, etc.
-    # for any control whose providing catalog has that data.
-    control_ids = @controls.map(&:control_id).compact
+    # Build a catalog-guidance lookup keyed by normalized control_id.
+    # Normalisation (AC-1 → AC-01) bridges documents that use unpadded IDs
+    # against the catalog which stores zero-padded IDs.
+    normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl
-                          .where(control_id: control_ids)
+                          .where(control_id: normalized_ids)
                           .index_by(&:control_id)
 
     # Heatmap uses root controls; status field is now 'status'

@@ -418,7 +418,7 @@ NIST_FAMILIES.each do |family_attrs|
 
   controls_for_family = NIST_CONTROLS[family_attrs[:code]] || []
   controls_for_family.each do |num, title, priority, baseline|
-    control_id = "#{family_attrs[:code]}-#{num}"
+    control_id = "#{family_attrs[:code]}-#{num.to_s.rjust(2, '0')}"
     entry = CatalogControl.find_or_create_by!(
       control_family: family,
       control_id: control_id
@@ -780,7 +780,7 @@ NIST_R4_FAMILIES.each do |family_attrs|
 
   controls_for_family = NIST_R4_CONTROLS[family_attrs[:code]] || []
   controls_for_family.each do |num, title, priority, baseline|
-    control_id = "#{family_attrs[:code]}-#{num}"
+    control_id = "#{family_attrs[:code]}-#{num.to_s.rjust(2, '0')}"
     entry = CatalogControl.find_or_create_by!(
       control_family: family,
       control_id: control_id
@@ -825,6 +825,12 @@ def seed_ssp_control(doc, ctrl_id, title, fields, inherited_rows: [])
       child.ssp_control_fields.create!(field_name: name.to_s, field_value: val.to_s)
     end
   end
+end
+
+# Zero-pad single-digit control numbers for consistent alphabetical sorting.
+# "AC-1" → "AC-01",  "AC-10" → "AC-10" (unchanged)
+def pad_ctrl_id(id)
+  id.to_s.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
 end
 
 def seed_tpr_control(doc, ctrl_id, title, section, subject_asset, subject_env, fields)
@@ -1550,7 +1556,7 @@ REV5_CONTROLS.each do |c|
              end
   prov_as = c[:ssp_status] == "Implemented" ? "Implemented" : "Documented"
 
-  seed_ssp_control(ssp1, c[:id], c[:title],
+  seed_ssp_control(ssp1, pad_ctrl_id(c[:id]), c[:title],
     {
       status:                 c[:ssp_status],
       type_use_as:            type_use,
@@ -1580,7 +1586,7 @@ REV4_CONTROLS.each do |c|
              end
   prov_as = c[:ssp_status] == "Implemented" ? "Implemented" : "Documented"
 
-  seed_ssp_control(ssp2, c[:id], c[:title],
+  seed_ssp_control(ssp2, pad_ctrl_id(c[:id]), c[:title],
     {
       status:                 c[:ssp_status],
       type_use_as:            type_use,
@@ -1620,7 +1626,7 @@ REV5_CONTROLS.each do |c|
   # working_comments only for Failed controls
   working_comments = c[:test_status] == "Failed" ? c[:remediation] : nil
 
-  seed_tpr_control(tpr1, c[:id], c[:title], section_name,
+  seed_tpr_control(tpr1, pad_ctrl_id(c[:id]), c[:title], section_name,
     subj[:asset].to_s, subj[:env].to_s,
     result:           c[:test_status],
     date:             c[:test_date],
@@ -1648,7 +1654,7 @@ REV4_CONTROLS.each do |c|
                    else nil
                    end
 
-  seed_tpr_control(tpr2, c[:id], c[:title], "System Test",
+  seed_tpr_control(tpr2, pad_ctrl_id(c[:id]), c[:title], "System Test",
     nil, nil,
     result:           c[:test_status],
     date:             c[:test_date],
@@ -1724,27 +1730,27 @@ end
 # Provides realistic catalog guidance for a handful of controls so the
 # "Catalog Guidance" collapsible panel can be demonstrated without external files.
 INLINE_CATALOG_GUIDANCE = {
-  "AC-2" => {
+  "AC-02" => {
     "supplemental_guidance"   => "Account management includes the identification of account types (individual, shared, group, system, application, guest), establishing conditions for group and role membership, and assigning account managers. Organizations should identify authorized users and specify access privileges.",
     "implementation_guidance" => "Configure automated lifecycle management: provisioning tied to HR onboarding, deprovisioning within 24 hours of termination, quarterly access reviews with manager attestation. Integrate with SIEM for anomalous account activity alerting.",
     "check"                   => "Review account provisioning/deprovisioning logs; verify quarterly review completion; confirm automated disabling is triggered upon termination HR events.",
     "related_controls"        => "AC-3, AC-5, AC-6, IA-2, IA-4, IA-5, IA-8, MA-5, PE-2, PS-4",
     "nist_references"         => "NIST SP 800-53 Rev 5 AC-2; FIPS 200"
   },
-  "AC-3" => {
+  "AC-03" => {
     "supplemental_guidance"   => "Access enforcement mechanisms are employed at the application and system level. Role-based access control (RBAC) or attribute-based access control (ABAC) are common implementations. Least privilege principles should be applied.",
     "implementation_guidance" => "Implement RBAC at application and database layers. Ensure access decisions are logged. Periodic reviews of role assignments should be conducted to detect privilege creep.",
     "check"                   => "Test with a representative sample of user roles; confirm that users cannot access resources outside their assigned role. Review access control decision logs.",
     "fix"                     => "Remove any overly-permissive roles; implement separation of duty constraints in the role model; add compensating controls for shared accounts.",
     "related_controls"        => "AC-2, AC-4, AC-5, AC-6, AC-16, AC-17, AC-18, AC-19, AC-20, AU-9, CM-5, CM-11, MA-3, MA-4, MA-5, PE-2"
   },
-  "AC-7" => {
+  "AC-07" => {
     "supplemental_guidance"   => "Organizations define the threshold for consecutive invalid logon attempts and the lockout time period. Care should be taken so that the lockout mechanism itself cannot be used to deny service to legitimate users.",
     "implementation_guidance" => "Configure lockout after 5 consecutive failures with a 30-minute automatic unlock or admin-unlock. Ensure lockout events generate audit records and alert the security team.",
     "check"                   => "Test lockout by entering invalid credentials the defined number of times. Verify automatic unlock after the defined period. Confirm audit logs capture the lockout event.",
     "related_controls"        => "AC-2, AU-2, AU-6, IA-5"
   },
-  "AU-2" => {
+  "AU-02" => {
     "supplemental_guidance"   => "Audit record generation is a fundamental security activity. Organizations should coordinate with other entities requiring audit information and determine which events are auditable given the available audit capability.",
     "implementation_guidance" => "Define the minimum set of auditable events in policy. Configure the SIEM to ingest all required event categories. Validate completeness of event coverage quarterly.",
     "check"                   => "Review the list of auditable events against NIST AU-2 requirements. Verify each event type is being captured in the SIEM. Confirm event coverage has been reviewed within the past year.",
@@ -1752,13 +1758,13 @@ INLINE_CATALOG_GUIDANCE = {
     "org_ref"                 => "POL-AU-001 Section 3.1; PROC-AU-002",
     "related_controls"        => "AC-6, AC-17, AU-3, AU-4, AU-5, AU-6, AU-7, AU-12, MA-4, MP-2, MP-4, SI-4"
   },
-  "AU-3" => {
+  "AU-03" => {
     "supplemental_guidance"   => "Audit record content that may be necessary to satisfy the requirement includes: time stamps, source and destination addresses, user/process identifiers, event descriptions, success/failure indications, filenames involved, and access control or flow control rules invoked.",
     "implementation_guidance" => "Validate that all audit events include: ISO 8601 timestamp (UTC), event type code, source IP, user identifier, outcome (success/failure), and affected resource. Use structured logging (JSON) for all audit events.",
     "check"                   => "Sample a minimum of 50 audit records; verify all required fields are present and populated. Check for any null or placeholder values in required fields.",
     "related_controls"        => "AU-2, AU-7, AU-8, AU-9, AU-12, SI-7"
   },
-  "IA-2" => {
+  "IA-02" => {
     "supplemental_guidance"   => "Multifactor authentication requires two or more different factors to achieve authentication. Individual authenticator types include passwords, hardware tokens, OTP devices, smart cards, biometrics, and cryptographic keys.",
     "implementation_guidance" => "Enforce MFA for all organizational users accessing the system. Phishing-resistant MFA (FIDO2/WebAuthn or PIV/CAC) is required for privileged access. Document exceptions and obtain CISO approval.",
     "check"                   => "Verify MFA is enforced at the IdP level with no bypass paths. Test MFA enforcement for both privileged and non-privileged accounts. Confirm MFA policies cannot be disabled by end users.",
@@ -1767,7 +1773,7 @@ INLINE_CATALOG_GUIDANCE = {
     "nist_references"         => "NIST SP 800-53 Rev 5 IA-2; NIST SP 800-63B; FIPS 140-3",
     "related_controls"        => "AC-2, AC-3, AC-14, AC-17, AC-18, IA-5, IA-8, MA-4, SA-8, SC-8"
   },
-  "CA-7" => {
+  "CA-07" => {
     "supplemental_guidance"   => "Continuous monitoring is the ongoing observation, assessment, analysis, and diagnosis of the security state of information systems to support risk management decisions. The frequency of assessment is based on the risk tolerance of the organization.",
     "implementation_guidance" => "Implement automated continuous monitoring using a SIEM with real-time alerting. Conduct automated vulnerability scanning weekly. Review monitoring dashboards daily; escalate anomalies per the IR procedure.",
     "check"                   => "Review continuous monitoring strategy documentation; verify automated scanning is active; confirm alerts are being triaged within the defined SLA; check that monitoring results feed into the POA&M process.",

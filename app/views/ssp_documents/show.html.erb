@@ -152,7 +152,7 @@
       stated_req   = field_map["stated_requirement"]&.field_value.presence
       type_use_val = field_map["type_use_as"]&.field_value.presence
       prov_as_val  = field_map["provided_as"]&.field_value.presence
-      catalog_ctrl = @catalog_guidance[control.control_id]
+      catalog_ctrl = @catalog_guidance[normalize_ctrl_id(control.control_id)]
     %>
     <div class="control-card"
          data-family="<%= family_code %>"
