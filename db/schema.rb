@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_27_151230) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_04_000007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -20,8 +20,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_151230) do
     t.string "name", null: false
     t.bigint "record_id", null: false
     t.string "record_type", null: false
-    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
-    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+    t.index [ "blob_id" ], name: "index_active_storage_attachments_on_blob_id"
+    t.index [ "record_type", "record_id", "name", "blob_id" ], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
@@ -33,13 +33,51 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_151230) do
     t.string "key", null: false
     t.text "metadata"
     t.string "service_name", null: false
-    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+    t.index [ "key" ], name: "index_active_storage_blobs_on_key", unique: true
   end
 
   create_table "active_storage_variant_records", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
-    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+    t.index [ "blob_id", "variation_digest" ], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "catalog_controls", force: :cascade do |t|
+    t.string "baseline_impact"
+    t.bigint "control_family_id", null: false
+    t.string "control_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "guidance_data", default: {}
+    t.string "priority"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index [ "control_family_id", "control_id" ], name: "index_catalog_controls_on_control_family_id_and_control_id", unique: true
+    t.index [ "control_family_id" ], name: "index_catalog_controls_on_control_family_id"
+    t.index [ "control_id" ], name: "index_catalog_controls_on_control_id"
+  end
+
+  create_table "control_catalogs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.string "source"
+    t.datetime "updated_at", null: false
+    t.string "version"
+    t.index [ "name" ], name: "index_control_catalogs_on_name"
+  end
+
+  create_table "control_families", force: :cascade do |t|
+    t.string "code", null: false
+    t.bigint "control_catalog_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.integer "sort_order", default: 0
+    t.datetime "updated_at", null: false
+    t.index [ "code" ], name: "index_control_families_on_code"
+    t.index [ "control_catalog_id", "code" ], name: "index_control_families_on_control_catalog_id_and_code", unique: true
+    t.index [ "control_catalog_id" ], name: "index_control_families_on_control_catalog_id"
   end
 
   create_table "conversion_jobs", force: :cascade do |t|
@@ -59,18 +97,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_151230) do
     t.text "field_value"
     t.bigint "ssp_control_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["ssp_control_id", "field_name"], name: "index_ssp_control_fields_on_ssp_control_id_and_field_name"
-    t.index ["ssp_control_id"], name: "index_ssp_control_fields_on_ssp_control_id"
+    t.index [ "ssp_control_id", "field_name" ], name: "index_ssp_control_fields_on_ssp_control_id_and_field_name"
+    t.index [ "ssp_control_id" ], name: "index_ssp_control_fields_on_ssp_control_id"
   end
 
   create_table "ssp_controls", force: :cascade do |t|
-    t.string "control_id", null: false
+    t.string "control_id"
     t.datetime "created_at", null: false
+    t.bigint "parent_id"
+    t.integer "row_order", default: 0, null: false
     t.bigint "ssp_document_id", null: false
     t.string "title"
     t.datetime "updated_at", null: false
-    t.index ["ssp_document_id", "control_id"], name: "index_ssp_controls_on_ssp_document_id_and_control_id", unique: true
-    t.index ["ssp_document_id"], name: "index_ssp_controls_on_ssp_document_id"
+    t.index [ "parent_id" ], name: "index_ssp_controls_on_parent_id"
+    t.index [ "ssp_document_id", "control_id" ], name: "index_ssp_controls_on_ssp_document_id_and_control_id", unique: true
+    t.index [ "ssp_document_id", "row_order" ], name: "index_ssp_controls_on_ssp_document_id_and_row_order"
+    t.index [ "ssp_document_id" ], name: "index_ssp_controls_on_ssp_document_id"
   end
 
   create_table "ssp_documents", force: :cascade do |t|
@@ -81,8 +123,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_151230) do
     t.string "original_filename"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_ssp_documents_on_created_at"
-    t.index ["status"], name: "index_ssp_documents_on_status"
+    t.index [ "created_at" ], name: "index_ssp_documents_on_created_at"
+    t.index [ "status" ], name: "index_ssp_documents_on_status"
   end
 
   create_table "tpr_control_fields", force: :cascade do |t|
@@ -92,16 +134,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_151230) do
     t.text "field_value"
     t.bigint "tpr_control_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["tpr_control_id"], name: "index_tpr_control_fields_on_tpr_control_id"
+    t.index [ "tpr_control_id" ], name: "index_tpr_control_fields_on_tpr_control_id"
   end
 
   create_table "tpr_controls", force: :cascade do |t|
     t.string "control_id"
     t.datetime "created_at", null: false
+    t.integer "row_order", default: 0, null: false
+    t.string "section"
+    t.string "subject_asset"
+    t.string "subject_environment"
     t.string "title"
     t.bigint "tpr_document_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["tpr_document_id"], name: "index_tpr_controls_on_tpr_document_id"
+    t.index [ "section" ], name: "index_tpr_controls_on_section"
+    t.index [ "tpr_document_id", "row_order" ], name: "index_tpr_controls_on_tpr_document_id_and_row_order"
+    t.index [ "tpr_document_id" ], name: "index_tpr_controls_on_tpr_document_id"
   end
 
   create_table "tpr_documents", force: :cascade do |t|
@@ -115,7 +163,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_151230) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "catalog_controls", "control_families"
+  add_foreign_key "control_families", "control_catalogs"
   add_foreign_key "ssp_control_fields", "ssp_controls"
+  add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"
   add_foreign_key "tpr_control_fields", "tpr_controls"
   add_foreign_key "tpr_controls", "tpr_documents"

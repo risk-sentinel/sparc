@@ -1,0 +1,38 @@
+<%= form_with model: [control_catalog, control_family], local: true do |f| %>
+  <% if control_family.errors.any? %>
+    <div class="flash error" style="margin-bottom: 1.5rem;">
+      <strong><%= pluralize(control_family.errors.count, "error") %>:</strong>
+      <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+        <% control_family.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="display: grid; grid-template-columns: 120px 1fr; gap: 1rem;">
+    <div class="form-group">
+      <%= f.label :code, "Code *" %>
+      <%= f.text_field :code, class: "form-control", placeholder: "AC", style: "font-family: monospace; font-size: 1rem; font-weight: 600; text-transform: uppercase;" %>
+    </div>
+    <div class="form-group">
+      <%= f.label :name, "Family Name *" %>
+      <%= f.text_field :name, class: "form-control", placeholder: "e.g. Access Control" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :description %>
+    <%= f.text_area :description, class: "form-control", rows: 2, placeholder: "Optional description..." %>
+  </div>
+
+  <div class="form-group" style="max-width: 200px;">
+    <%= f.label :sort_order, "Sort Order" %>
+    <%= f.number_field :sort_order, class: "form-control", min: 0 %>
+  </div>
+
+  <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <%= f.submit "Save Family", class: "btn btn-success" %>
+    <%= link_to "Cancel", control_catalog, class: "btn", style: "background: #95a5a6; color: white;" %>
+  </div>
+<% end %>

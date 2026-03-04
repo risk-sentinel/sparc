@@ -17,7 +17,7 @@ RSpec.describe SspDocument, type: :model do
 
     it 'returns properly formatted JSON data' do
       result = document.to_json_data
-      
+
       expect(result[:document_name]).to eq(document.name)
       expect(result[:controls]).to be_an(Array)
       expect(result[:controls].first[:control_id]).to eq(control.control_id)

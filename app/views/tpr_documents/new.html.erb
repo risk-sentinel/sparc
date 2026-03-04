@@ -1,15 +1,15 @@
 <div class="card">
-  <h2>Upload TPR Document</h2>
-  
+  <h2>Upload Test Plan Results</h2>
+
   <%= form_with model: @tpr_document, local: true, multipart: true do |f| %>
     <div class="form-group">
       <label for="tpr_document_file">Select Excel File (.xlsx, .xls)</label>
       <%= f.file_field :file, accept: ".xlsx,.xls", required: true %>
-      <small style="color: #666; display: block; margin-top: 0.5rem;">
-        Upload an Excel file containing your TPR controls and test results.
+      <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+        Upload an Excel workbook containing your test plan results. Multiple tabs (System Test, Location Tests, Equipment Tests, Cloud, Cloud Resources) will each be imported as a separate section.
       </small>
     </div>
-    
+
     <div style="display: flex; gap: 1rem;">
       <%= f.submit "Upload and Convert", class: "btn btn-success" %>
       <%= link_to "Cancel", tpr_documents_path, class: "btn", style: "background: #95a5a6; color: white;" %>
@@ -19,14 +19,40 @@
 
 <div class="card">
   <h3>Expected Excel Format</h3>
-  <p>Your Excel file should contain the following columns:</p>
-  <ul style="line-height: 2; margin-top: 1rem;">
-    <li><strong>Control ID</strong> - Unique identifier for the control</li>
-    <li><strong>Control Title</strong> - Name/title of the control</li>
-    <li><strong>Test Status</strong> - Status of testing (e.g., Pass, Fail, Not Tested)</li>
-    <li><strong>Test Date</strong> - Date when test was performed</li>
-    <li><strong>Tester Name</strong> - Name of person who performed the test</li>
-    <li><strong>Test Results</strong> - Detailed test results and findings</li>
-    <li><strong>Remediation Plan</strong> - Plan for addressing any findings</li>
-  </ul>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">Each worksheet tab is treated as a named section. Read-only fields are imported as-is; editable fields can be updated after upload.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Column</th>
+        <th>Editable</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>#</strong></td><td>No</td><td>Row index.</td></tr>
+      <tr><td><strong>Inherited</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Date</strong></td><td>Yes</td><td>Format: 23-Jan-2025. Calendar picker in UI.</td></tr>
+      <tr><td><strong>Paragraph</strong></td><td>No</td><td>Links to Paragraph/ReqID in Controls Implementation.</td></tr>
+      <tr><td><strong>Provided As</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Tester</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Result</strong></td><td>Yes</td><td>Pass · Failed · Null. Defaults to imported value.</td></tr>
+      <tr><td><strong>Notes/Weakness</strong></td><td>Yes</td><td></td></tr>
+      <tr><td><strong>Recommended Fix</strong></td><td>Yes</td><td></td></tr>
+      <tr><td><strong>Subject</strong></td><td>No</td><td>Parsed for filtering: left of | = Asset/Component, right = Environment. No | = boundary-level finding.</td></tr>
+      <tr><td><strong>Control Status</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Responsibility</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Test Title</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Impact Statement</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Test Text</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
+      <tr><td><strong>Expected Result</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
+      <tr><td><strong>Custom</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
+      <tr><td><strong>Custom Name</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
+      <tr><td><strong>Custom Author</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
+      <tr><td><strong>Control Text</strong></td><td>No</td><td></td></tr>
+      <tr><td><strong>Implementation</strong></td><td>No</td><td>Pulled from Controls Implementation.</td></tr>
+      <tr><td><strong>Working Comments</strong></td><td>Yes</td><td></td></tr>
+      <tr><td><strong>Working Status</strong></td><td>Yes</td><td>Final - Not Satisfied · Final Satisfied · Not Satisfied · Not Specified · Null</td></tr>
+    </tbody>
+  </table>
 </div>

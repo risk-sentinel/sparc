@@ -1,0 +1,130 @@
+<div class="card" style="max-width: 760px; margin: 0 auto;">
+
+  <%# Header %>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.75rem; gap: 1rem; flex-wrap: wrap;">
+    <div>
+      <h2 style="margin: 0 0 0.35rem;">Import Control Catalog</h2>
+      <p style="color: var(--text-faint); font-size: 0.88rem; margin: 0;">
+        Load a full catalog from an OSCAL JSON or NIST XML file. Existing controls are updated; new ones are created.
+      </p>
+    </div>
+    <%= link_to "← All Catalogs", control_catalogs_path,
+          style: "background: var(--surface-alt); color: var(--text-muted); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" %>
+  </div>
+
+  <%# Upload form %>
+  <%= form_with url: import_control_catalogs_path, method: :post,
+        html: { enctype: "multipart/form-data" }, local: true do |f| %>
+
+    <div class="form-group" style="margin-bottom: 1.25rem;">
+      <label for="catalog_file" style="font-size: 0.9rem; font-weight: 600; color: var(--text); display: block; margin-bottom: 0.5rem;">
+        Catalog File <span style="color: #e74c3c;">*</span>
+      </label>
+      <input type="file" name="catalog_file" id="catalog_file" accept=".json,.xml"
+             class="form-control"
+             style="font-size: 0.875rem; padding: 0.5rem 0.75rem; cursor: pointer;"
+             onchange="detectFormat(this)">
+      <div id="format-badge" style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-faint);"></div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 2rem;">
+      <%= f.submit "Import Catalog",
+            style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.55rem 1.5rem; font-size: 0.9rem; cursor: pointer; font-weight: 600;" %>
+      <span style="font-size: 0.8rem; color: var(--text-faint);">Large catalogs may take a few seconds.</span>
+    </div>
+  <% end %>
+
+  <%# ── Supported Format Reference ── %>
+  <div style="border-top: 1px solid var(--border-soft); padding-top: 1.5rem;">
+    <h3 style="font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 1rem;">Supported Formats</h3>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+
+      <%# OSCAL JSON %>
+      <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid #2980b9; border-radius: 6px; padding: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <span style="background: #2980b9; color: white; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.72rem; font-weight: 700; font-family: monospace;">.json</span>
+          <strong style="font-size: 0.9rem; color: var(--text);">OSCAL Catalog (JSON)</strong>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 0.65rem; line-height: 1.5;">
+          NIST OSCAL 1.x catalog schema. Imports families, controls, statements,
+          supplemental guidance, and related-control links.
+        </p>
+        <a href="https://github.com/usnistgov/oscal-content/tree/main/nist.gov/SP800-53"
+           target="_blank" rel="noopener"
+           style="font-size: 0.78rem; color: #2980b9; text-decoration: none;">
+          ↗ Download from usnistgov/oscal-content
+        </a>
+        <div style="margin-top: 0.5rem; background: #1a252f; border-radius: 4px; padding: 0.65rem 0.75rem; font-family: monospace; font-size: 0.72rem; color: rgba(255,255,255,0.75); line-height: 1.6; overflow-x: auto;">
+          { "catalog": {<br>
+          &nbsp;&nbsp;"metadata": { "title": "…", "version": "…" },<br>
+          &nbsp;&nbsp;"groups": [{<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;"id": "ac", "title": "Access Control",<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;"controls": [{<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "ac-1",<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"props": [{"name":"label","value":"AC-1"}],<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"parts": [<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{"name":"statement","prose":"…"},<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{"name":"guidance","prose":"…"}<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;}]<br>
+          &nbsp;&nbsp;}]<br>
+          }}
+        </div>
+      </div>
+
+      <%# NIST XML %>
+      <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid #8e44ad; border-radius: 6px; padding: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <span style="background: #8e44ad; color: white; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.72rem; font-weight: 700; font-family: monospace;">.xml</span>
+          <strong style="font-size: 0.9rem; color: var(--text);">NIST SP 800-53 XML Feed</strong>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 0.65rem; line-height: 1.5;">
+          SCAP SP 800-53 feed schema v2.0. Imports family, control ID, title, baselines,
+          statement text, discussion (supplemental guidance), and related controls.
+        </p>
+        <a href="https://csrc.nist.gov/projects/risk-management/sp800-53-controls/downloads"
+           target="_blank" rel="noopener"
+           style="font-size: 0.78rem; color: #8e44ad; text-decoration: none;">
+          ↗ Download from NIST CSRC
+        </a>
+        <div style="margin-top: 0.5rem; background: #1a252f; border-radius: 4px; padding: 0.65rem 0.75rem; font-family: monospace; font-size: 0.72rem; color: rgba(255,255,255,0.75); line-height: 1.6; overflow-x: auto;">
+          &lt;controls:control&gt;<br>
+          &nbsp;&nbsp;&lt;family&gt;ACCESS CONTROL&lt;/family&gt;<br>
+          &nbsp;&nbsp;&lt;number&gt;AC-1&lt;/number&gt;<br>
+          &nbsp;&nbsp;&lt;title&gt;POLICY AND PROCEDURES&lt;/title&gt;<br>
+          &nbsp;&nbsp;&lt;baseline&gt;LOW&lt;/baseline&gt;<br>
+          &nbsp;&nbsp;&lt;statement&gt;…&lt;/statement&gt;<br>
+          &nbsp;&nbsp;&lt;discussion&gt;…&lt;/discussion&gt;<br>
+          &nbsp;&nbsp;&lt;related&gt;IA-1&lt;/related&gt;<br>
+          &lt;/controls:control&gt;
+        </div>
+      </div>
+    </div>
+
+    <%# Warning box %>
+    <div style="background: rgba(243,156,18,0.08); border: 1px solid rgba(243,156,18,0.3); border-left: 3px solid #f39c12; border-radius: 6px; padding: 0.85rem 1rem; font-size: 0.84rem; color: var(--text); line-height: 1.5;">
+      <strong style="color: #f39c12;">⚠ Format requirement:</strong>
+      Files must match the OSCAL JSON or NIST XML schemas above exactly.
+      Other JSON/XML structures (e.g. the "skunkwerks" r4_final.json / r5.json custom format)
+      are <em>not</em> supported by this importer — use the links above to download the
+      official NIST source files.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function detectFormat(input) {
+    var badge = document.getElementById('format-badge');
+    if (!input.files || !input.files[0]) { badge.innerHTML = ''; return; }
+    var name = input.files[0].name.toLowerCase();
+    if (name.endsWith('.json')) {
+      badge.innerHTML = '<span style="background:#2980b9;color:white;padding:0.1rem 0.5rem;border-radius:3px;font-size:0.7rem;font-weight:700;font-family:monospace;">OSCAL JSON</span> detected';
+    } else if (name.endsWith('.xml')) {
+      badge.innerHTML = '<span style="background:#8e44ad;color:white;padding:0.1rem 0.5rem;border-radius:3px;font-size:0.7rem;font-weight:700;font-family:monospace;">NIST XML</span> detected';
+    } else {
+      badge.innerHTML = '<span style="color:#e74c3c;">Unsupported file type — use .json or .xml</span>';
+    }
+  }
+</script>

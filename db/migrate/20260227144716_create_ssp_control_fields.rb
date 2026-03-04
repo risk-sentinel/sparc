@@ -9,6 +9,6 @@ class CreateSspControlFields < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    add_index :ssp_control_fields, [:ssp_control_id, :field_name]
+    add_index :ssp_control_fields, [ :ssp_control_id, :field_name ]
   end
 end
