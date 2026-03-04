@@ -28,11 +28,11 @@ services:
 
   web:
     build: .
-    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -b '0.0.0.0' -p 3000"
+    command: bash -c "bundle install --quiet && rm -f tmp/pids/server.pid && bundle exec rails db:prepare && bundle exec rails s -b '0.0.0.0' -p 3000"
     volumes:
       - .:/rails
       - bundle_cache:/usr/local/bundle
-      - storage_data:/rails/storage   
+      - storage_data:/rails/storage
     ports:
       - "3000:3000"
     depends_on:
@@ -44,26 +44,33 @@ services:
       RAILS_ENV: development
       DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development
       REDIS_URL: redis://redis:6379/0
-      ACTIVE_STORAGE_SERVICE: local   # explicit for clarity
+      ACTIVE_STORAGE_SERVICE: local
       DOCKERIZED: "true"
+      BUNDLE_DEPLOYMENT: ""           # override Dockerfile production setting
+      BUNDLE_WITHOUT: ""              # allow all gem groups in dev
 
   sidekiq:
     build: .
-    command: bundle exec sidekiq
+    command: bash -c "bundle install --quiet && bundle exec sidekiq"
     volumes:
       - .:/rails
       - bundle_cache:/usr/local/bundle
+      - storage_data:/rails/storage
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      web:
+        condition: service_started
     environment:
       RAILS_ENV: development
       DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development
       REDIS_URL: redis://redis:6379/0
+      BUNDLE_DEPLOYMENT: ""           # override Dockerfile production setting
+      BUNDLE_WITHOUT: ""              # allow all gem groups in dev
 
 volumes:
   postgres_data:
   bundle_cache:
-  storage_data:          
+  storage_data:
