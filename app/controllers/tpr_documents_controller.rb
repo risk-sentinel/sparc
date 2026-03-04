@@ -1,5 +1,5 @@
 class TprDocumentsController < ApplicationController
-  before_action :set_tpr_document, only: [:show, :update, :destroy, :download_json]
+  before_action :set_tpr_document, only: [ :show, :update, :destroy, :download_json ]
 
   def index
     @tpr_documents = TprDocument.order(created_at: :desc)
@@ -59,7 +59,7 @@ class TprDocumentsController < ApplicationController
       render :new and return
     end
 
-    temp_file = Tempfile.new(["tpr", File.extname(uploaded_file.original_filename)])
+    temp_file = Tempfile.new([ "tpr", File.extname(uploaded_file.original_filename) ])
     temp_file.binmode
     temp_file.write(uploaded_file.read)
     temp_file.rewind
@@ -113,7 +113,7 @@ class TprDocumentsController < ApplicationController
     "Pass", "Failed",
     "Final Satisfied", "Final - Not Satisfied", "Not Satisfied", "Not Specified",
     # Legacy
-    "Partial", "Fail", "Not Tested", "Not Applicable",
+    "Partial", "Fail", "Not Tested", "Not Applicable"
   ].freeze
 
   def build_heatmap(controls, status_field_name)
@@ -133,6 +133,6 @@ class TprDocumentsController < ApplicationController
     all_statuses = data.values.flat_map(&:keys).uniq
     ordered      = TPR_STATUS_ORDER.select { |s| all_statuses.include?(s) }
     ordered     += (all_statuses - TPR_STATUS_ORDER).sort
-    [data, families, ordered]
+    [ data, families, ordered ]
   end
 end

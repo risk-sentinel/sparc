@@ -21,7 +21,7 @@ class SspControlField < ApplicationRecord
     "Deferred",
     "Implemented",
     "Not Applicable",
-    "Will Not Implement",
+    "Will Not Implement"
   ].freeze
 
   TYPE_USE_AS_VALUES = [
@@ -29,21 +29,21 @@ class SspControlField < ApplicationRecord
     "Hybrid",
     "Inherited",
     "Provider",
-    "Consumer",
+    "Consumer"
   ].freeze
 
   PROVIDED_AS_VALUES = [
     "Implemented",
     "Configured",
     "Documented",
-    "Not Applicable",
+    "Not Applicable"
   ].freeze
 
   CONTROL_ORIGINATION_VALUES = [
     "System Specific",
     "Hybrid — partially inherited",
     "Inherited from provider",
-    "Not Applicable",
+    "Not Applicable"
   ].freeze
 
   # Display order for the view mode (editable fields first, then supplemental).

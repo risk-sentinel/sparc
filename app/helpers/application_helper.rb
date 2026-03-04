@@ -9,7 +9,7 @@ module ApplicationHelper
     "Partially Implemented"    => "#f39c12",
     "Planned"                  => "#3498db",
     "Alternative Implementation" => "#9b59b6",
-    "Not Implemented"          => "#e74c3c",
+    "Not Implemented"          => "#e74c3c"
   }.freeze
 
   TPR_STATUS_COLORS = {
@@ -25,7 +25,7 @@ module ApplicationHelper
     "Partial"               => "#f39c12",
     "Fail"                  => "#e74c3c",
     "Not Tested"            => "#95a5a6",
-    "Not Applicable"        => "#bdc3c7",
+    "Not Applicable"        => "#bdc3c7"
   }.freeze
 
   def ssp_status_color(status, _count = 0)

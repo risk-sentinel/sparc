@@ -10,7 +10,7 @@ class CreateControlFamilies < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :control_families, [:control_catalog_id, :code], unique: true
+    add_index :control_families, [ :control_catalog_id, :code ], unique: true
     add_index :control_families, :code
   end
 end

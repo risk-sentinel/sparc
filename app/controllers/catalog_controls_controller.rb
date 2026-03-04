@@ -1,6 +1,6 @@
 class CatalogControlsController < ApplicationController
-  before_action :set_control_family, only: [:new, :create]
-  before_action :set_catalog_control, only: [:edit, :update, :destroy]
+  before_action :set_control_family, only: [ :new, :create ]
+  before_action :set_catalog_control, only: [ :edit, :update, :destroy ]
 
   def new
     @catalog_control = @control_family.catalog_controls.new

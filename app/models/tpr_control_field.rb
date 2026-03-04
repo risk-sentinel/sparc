@@ -24,7 +24,7 @@ class TprControlField < ApplicationRecord
     "Final - Not Satisfied",
     "Final Satisfied",
     "Not Satisfied",
-    "Not Specified",
+    "Not Specified"
   ].freeze
 
   before_validation :set_editable_flag

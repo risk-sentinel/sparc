@@ -43,7 +43,7 @@ class CatalogImportService
     "SYSTEM AND SERVICES ACQUISITION"             => "SA",
     "SYSTEM AND COMMUNICATIONS PROTECTION"        => "SC",
     "SYSTEM AND INFORMATION INTEGRITY"            => "SI",
-    "SUPPLY CHAIN RISK MANAGEMENT"                => "SR",
+    "SUPPLY CHAIN RISK MANAGEMENT"                => "SR"
   }.freeze
 
   def self.call(file_io, original_filename)
@@ -165,7 +165,7 @@ class CatalogImportService
     guidance_data = {
       "statement"             => statement,
       "supplemental_guidance" => supplemental,
-      "related_controls"      => related.presence,
+      "related_controls"      => related.presence
     }.compact.reject { |_, v| v.blank? }
 
     result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data)
@@ -293,7 +293,7 @@ class CatalogImportService
       "statement"             => statement,
       "supplemental_guidance" => supplemental,
       "related_controls"      => related,
-      "nist_references"       => nist_refs,
+      "nist_references"       => nist_refs
     }.compact.reject { |_, v| v.blank? }
 
     result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data)
@@ -402,7 +402,7 @@ class CatalogImportService
       next unless names.include?(part["name"])
       label = oscal_prop(part["props"], "label")
       prose = part["prose"].to_s.strip
-      line  = [label, prose].select(&:present?).join(" ")
+      line  = [ label, prose ].select(&:present?).join(" ")
       lines << ("  " * depth + line) if line.present?
       lines << oscal_collect_prose(part["parts"], names: names, depth: depth + 1)
     end
@@ -436,7 +436,7 @@ class CatalogImportService
     text = desc ? xml_text_content(desc).strip : nil
     num  = node.at_xpath("number")&.text&.strip
 
-    line = [num, text].select(&:present?).join(" ")
+    line = [ num, text ].select(&:present?).join(" ")
     lines << ("  " * depth + line) if line.present?
 
     node.xpath("statement").each do |child|

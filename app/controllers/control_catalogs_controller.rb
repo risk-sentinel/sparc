@@ -1,5 +1,5 @@
 class ControlCatalogsController < ApplicationController
-  before_action :set_control_catalog, only: [:show, :edit, :update, :destroy]
+  before_action :set_control_catalog, only: [ :show, :edit, :update, :destroy ]
 
   def index
     @control_catalogs = ControlCatalog.includes(:control_families).order(:name)

@@ -1,6 +1,6 @@
 class ControlFamiliesController < ApplicationController
-  before_action :set_control_catalog, only: [:new, :create]
-  before_action :set_control_family, only: [:show, :edit, :update, :destroy]
+  before_action :set_control_catalog, only: [ :new, :create ]
+  before_action :set_control_family, only: [ :show, :edit, :update, :destroy ]
 
   def show
     @catalog_controls = @control_family.catalog_controls.order(:control_id)
