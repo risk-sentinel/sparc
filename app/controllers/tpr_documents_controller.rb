@@ -21,6 +21,11 @@ class TprDocumentsController < ApplicationController
     # Heatmap across all controls; result field drives the colour
     @heatmap_data, @heatmap_families, @heatmap_statuses =
       build_heatmap(@controls, "result")
+
+    # Catalog guidance lookup (same pattern as SSP) — used to show
+    # the canonical control description alongside the workbook's control_text.
+    normalized_ids = all_controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
+    @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
   end
 
   def update

@@ -9,13 +9,17 @@
   pass_pct    = (pass_count * 100.0 / tested).round(1)
   score_color = pass_pct >= 80 ? "#2ecc71" : pass_pct >= 50 ? "#f39c12" : "#e74c3c"
 
-  # Field display order for the read view (local variable — constants are forbidden inside method scope)
+  # Field display order for the read view (local variable — constants are forbidden inside method scope).
+  # NOTE: control_status, responsibility, impact_statement, control_text, implementation are
+  # intentionally excluded here — they appear in the dedicated "Assessment Context" panel.
   field_order = %w[
     date tester notes_weakness recommended_fix
     working_comments working_status
-    control_text implementation
-    responsibility control_status provided_as inherited row_number
+    provided_as inherited row_number
   ]
+
+  # Context field names excluded from the generic field loop
+  ctx_field_names = %w[control_status responsibility impact_statement control_text implementation]
 %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
@@ -206,6 +210,8 @@
         family_code  = control.control_id.to_s.split("-").first.upcase
         card_asset   = control.subject_asset.to_s.strip
         card_env     = control.subject_environment.to_s.strip
+        catalog_ctrl = @catalog_guidance[normalize_ctrl_id(control.control_id)]
+        catalog_stmt = (catalog_ctrl&.guidance_data || {})["statement"].presence
       %>
       <div class="control-card"
            data-family="<%= family_code %>"
@@ -270,36 +276,55 @@
           </button>
         </div>
 
-        <%# ── View mode: field table ── %>
+        <%# ── View mode: Assessment Context + field table ── %>
         <div id="view-<%= control.id %>" style="margin-top: 0.75rem;">
           <%
-            # Build ordered field list: field_order first, then any extras
+            ctx_rows = [
+              ["Subject",             [card_asset, card_env].select(&:present?).join(" | ")],
+              ["Control Status",      field_map["control_status"]&.field_value.to_s],
+              ["Responsibility",      field_map["responsibility"]&.field_value.to_s],
+              ["Impact Statement",    field_map["impact_statement"]&.field_value.to_s],
+              ["Control Text",        field_map["control_text"]&.field_value.to_s],
+              ["Catalog Description", catalog_stmt.to_s],
+              ["SSP Implementation",  field_map["implementation"]&.field_value.to_s],
+            ]
+            any_ctx = ctx_rows.any? { |_, v| v.present? }
+          %>
+
+          <%# Assessment Context panel: always visible when any data exists %>
+          <% if any_ctx %>
+            <div style="border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; background: var(--surface-alt);">
+              <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--border-soft); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint);">
+                Assessment Context
+              </div>
+              <table style="width: 100%; border-collapse: collapse;">
+                <% ctx_rows.each do |lbl, val| %>
+                  <tr style="border-top: 1px solid var(--border-soft);">
+                    <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                      <%= lbl %>
+                    </td>
+                    <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--text)" : "var(--text-faint)" %>; vertical-align: top; white-space: pre-wrap;">
+                      <%= val.present? ? val : "—" %>
+                    </td>
+                  </tr>
+                <% end %>
+              </table>
+            </div>
+          <% end %>
+
+          <%# Remaining operational fields (date, tester, notes, etc.) %>
+          <%
             ordered_fields = field_order.map { |fn| field_map[fn] }.compact
             extra_fields   = field_map.values.reject { |f|
               f.field_name == "result" ||
               f.field_name == "working_status" ||
+              ctx_field_names.include?(f.field_name) ||
               field_order.include?(f.field_name)
             }
             display_fields = ordered_fields + extra_fields
           %>
-
-          <%# Subject row (model attributes, not a control_field) %>
-          <% if card_asset.present? || card_env.present? %>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
-              <tr style="border-top: 1px solid var(--border-soft);">
-                <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
-                  Subject
-                </td>
-                <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
-                  <% parts = [card_asset, card_env].select(&:present?) %>
-                  <%= parts.join(" | ") %>
-                </td>
-              </tr>
-            </table>
-          <% end %>
-
           <% if display_fields.any? %>
-            <table style="width: 100%; border-collapse: collapse;">
+            <table style="width: 100%; border-collapse: collapse; margin-top: 0.4rem;">
               <% display_fields.each do |field| %>
                 <% next if field.field_value.blank? %>
                 <tr style="border-top: 1px solid var(--border-soft);">
@@ -325,16 +350,25 @@
           <%= form_with url: tpr_document_path(@tpr_document), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :tpr_control_id, control.id %>
 
-            <%# Subject (read-only, shown for context) %>
-            <% if card_asset.present? || card_env.present? %>
-              <div class="form-group">
-                <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);">
-                  Subject
-                  <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
-                </label>
-                <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;">
-                  <%= [card_asset, card_env].select(&:present?).join(" | ") %>
-                </p>
+            <%# Assessment Context — same panel as view mode, shown as read-only reference %>
+            <% if any_ctx %>
+              <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
+                <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--border-soft); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint);">
+                  Assessment Context
+                  <span style="font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 0.4rem;">(read-only reference)</span>
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <% ctx_rows.each do |lbl, val| %>
+                    <tr style="border-top: 1px solid var(--border-soft);">
+                      <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                        <%= lbl %>
+                      </td>
+                      <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--text-muted)" : "var(--text-faint)" %>; vertical-align: top; white-space: pre-wrap;">
+                        <%= val.present? ? val : "—" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </table>
               </div>
             <% end %>
 
@@ -368,14 +402,18 @@
               </div>
             <% end %>
 
-            <%# Read-only informational fields %>
-            <% read_only_fields = field_map.values.reject { |f| TprControlField::EDITABLE_FIELDS.include?(f.field_name) } %>
-            <% if read_only_fields.any? %>
+            <%# Miscellaneous read-only fields (tester, row_number, inherited, etc.) %>
+            <%# Context fields are intentionally excluded — they're shown above. %>
+            <% misc_ro_fields = field_map.values.reject { |f|
+                 TprControlField::EDITABLE_FIELDS.include?(f.field_name) ||
+                 ctx_field_names.include?(f.field_name)
+               } %>
+            <% if misc_ro_fields.any? %>
               <details style="margin-top: 0.5rem;">
                 <summary style="font-size: 0.8rem; color: var(--text-faint); cursor: pointer; padding: 0.35rem 0; user-select: none;">
-                  Read-only fields (<%= read_only_fields.size %>)
+                  Other read-only fields (<%= misc_ro_fields.count { |f| f.field_value.present? } %>)
                 </summary>
-                <% read_only_fields.each do |field| %>
+                <% misc_ro_fields.each do |field| %>
                   <% next if field.field_value.blank? %>
                   <div class="form-group" style="margin-top: 0.5rem;">
                     <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint);">
