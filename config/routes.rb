@@ -13,7 +13,10 @@ Rails.application.routes.draw do
   resources :tpr_documents do
     member do
       get :download_json
+      get :download_excel
+      get :status
       get :editor
+      get "edit_control/:tpr_control_id", action: :edit_control, as: :edit_control
     end
     collection do
       post :import_json

@@ -1,31 +1,57 @@
 class TprDocumentsController < ApplicationController
-  before_action :set_tpr_document, only: [ :show, :update, :destroy, :download_json ]
+  include Pagy::Backend
+
+  CONTROLS_PER_PAGE = 50
+
+  before_action :set_tpr_document, only: [
+    :show, :update, :destroy, :download_json, :download_excel, :edit_control, :status
+  ]
+
+  helper_method :filter_params
 
   def index
     @tpr_documents = TprDocument.order(created_at: :desc)
   end
 
   def show
-    all_controls = @tpr_document.tpr_controls
-                                 .includes(:tpr_control_fields)
+    # Short-circuit for documents still being processed
+    return if @tpr_document.pending? || @tpr_document.processing? || @tpr_document.failed?
 
-    # Section list in import order (first appearance of each section name)
-    @sections            = all_controls.map(&:section).compact.uniq
-    @controls_by_section = all_controls.group_by(&:section)
-    @controls            = all_controls
+    controls_scope = @tpr_document.tpr_controls
 
-    # Asset / environment filter options (sorted, blank-stripped)
-    @assets       = all_controls.map(&:subject_asset).compact.map(&:strip).uniq.sort
-    @environments = all_controls.map(&:subject_environment).compact.map(&:strip).uniq.sort
+    # Filter options via SQL DISTINCT (no full record load)
+    @sections     = controls_scope.where.not(section: nil)
+                                  .distinct.order(:section).pluck(:section)
+    @assets       = controls_scope.where.not(subject_asset: [ nil, "" ])
+                                  .distinct.order(:subject_asset).pluck(:subject_asset)
+    @environments = controls_scope.where.not(subject_environment: [ nil, "" ])
+                                  .distinct.order(:subject_environment).pluck(:subject_environment)
 
-    # Heatmap across all controls; result field drives the colour
+    # Heatmap via aggregate SQL query (no record instantiation)
     @heatmap_data, @heatmap_families, @heatmap_statuses =
-      build_heatmap(@controls, "result")
+      build_heatmap_from_sql(@tpr_document)
 
-    # Catalog guidance lookup (same pattern as SSP) — used to show
-    # the canonical control description alongside the workbook's control_text.
-    normalized_ids = all_controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
+    # Apply filters from query params
+    filtered = controls_scope
+    filtered = filtered.where(section: params[:section])                  if params[:section].present?
+    filtered = filtered.where(control_family: params[:family])            if params[:family].present?
+    filtered = filtered.where(cached_result: params[:status])             if params[:status].present?
+    filtered = filtered.where(subject_asset: params[:asset])              if params[:asset].present?
+    filtered = filtered.where(subject_environment: params[:environment])  if params[:environment].present?
+
+    # Paginate
+    @pagy, @controls = pagy(
+      filtered.includes(:tpr_control_fields),
+      limit: CONTROLS_PER_PAGE
+    )
+
+    # Catalog guidance lookup (only for the current page)
+    normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
+
+    # Totals for display
+    @total_controls = controls_scope.count
+    @filtered_count = filtered.count
   end
 
   def update
@@ -38,7 +64,7 @@ class TprDocumentsController < ApplicationController
     end
 
     flash[:success] = "Test updated successfully"
-    redirect_to @tpr_document
+    redirect_to tpr_document_path(@tpr_document, filter_params)
   rescue ActiveRecord::RecordNotFound
     flash[:error] = "Control not found"
     redirect_to @tpr_document
@@ -62,29 +88,25 @@ class TprDocumentsController < ApplicationController
     temp_file = Tempfile.new([ "tpr", File.extname(uploaded_file.original_filename) ])
     temp_file.binmode
     temp_file.write(uploaded_file.read)
-    temp_file.rewind
+    temp_file.close
 
     begin
       @tpr_document = TprDocument.create!(
         name:              File.basename(uploaded_file.original_filename, ".*"),
         file_type:         "excel",
         original_filename: uploaded_file.original_filename,
-        status:            "processing"
+        status:            "pending"
       )
-
-      TprExcelParserService.new(@tpr_document, temp_file.path).parse
-      @tpr_document.update!(status: "completed")
       @tpr_document.file.attach(uploaded_file)
 
-      flash[:success] = "Test Plan Results workbook uploaded and processed successfully"
+      TprConversionJob.perform_later(@tpr_document.id, temp_file.path)
+
+      flash[:success] = "Test Plan Results workbook uploaded. Processing in background..."
       redirect_to @tpr_document
     rescue StandardError => e
-      @tpr_document&.update!(status: "failed")
-      flash[:error] = "Error processing file: #{e.message}"
+      temp_file.unlink rescue nil
+      flash[:error] = "Error uploading file: #{e.message}"
       render :new
-    ensure
-      temp_file.close
-      temp_file.unlink
     end
   end
 
@@ -95,6 +117,37 @@ class TprDocumentsController < ApplicationController
               filename:    "#{@tpr_document.name}_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
+  end
+
+  def download_excel
+    excel_data = TprExcelExportService.new(@tpr_document).export
+
+    send_data excel_data,
+              filename:    "#{@tpr_document.name}_#{Date.today}.xlsx",
+              type:        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              disposition: "attachment"
+  end
+
+  def edit_control
+    @control = @tpr_document.tpr_controls
+                             .includes(:tpr_control_fields)
+                             .find(params[:tpr_control_id])
+    @catalog_guidance = {}
+    normalized = normalize_ctrl_id(@control.control_id)
+    if normalized
+      ctrl = CatalogControl.find_by(control_id: normalized)
+      @catalog_guidance[normalized] = ctrl if ctrl
+    end
+
+    render partial: "tpr_documents/edit_control_form",
+           locals: { control: @control, tpr_document: @tpr_document }
+  end
+
+  def status
+    render json: {
+      status: @tpr_document.status,
+      error_message: @tpr_document.error_message
+    }
   end
 
   def destroy
@@ -109,6 +162,10 @@ class TprDocumentsController < ApplicationController
     @tpr_document = TprDocument.find(params[:id])
   end
 
+  def filter_params
+    params.permit(:section, :family, :status, :asset, :environment, :page).to_h
+  end
+
   TPR_STATUS_ORDER = [
     "Pass", "Failed",
     "Final Satisfied", "Final - Not Satisfied", "Not Satisfied", "Not Specified",
@@ -116,23 +173,24 @@ class TprDocumentsController < ApplicationController
     "Partial", "Fail", "Not Tested", "Not Applicable"
   ].freeze
 
-  def build_heatmap(controls, status_field_name)
-    data = {}
-    controls.each do |control|
-      next if control.control_id.blank?
-      family       = control.control_id.to_s.split("-").first.upcase
-      status_field = control.tpr_control_fields.find { |f| f.field_name == status_field_name }
-      status       = status_field&.field_value.presence || "(Unknown)"
+  def build_heatmap_from_sql(tpr_document)
+    rows = tpr_document.tpr_controls
+      .where.not(control_family: [ nil, "" ])
+      .group(:control_family, :cached_result)
+      .count
 
-      data[family]         ||= {}
-      data[family][status] ||= 0
-      data[family][status]  += 1
+    data = {}
+    rows.each do |(family, result), count|
+      status = result.presence || "(Unknown)"
+      data[family] ||= {}
+      data[family][status] = count
     end
 
-    families    = data.keys.sort
+    families     = data.keys.sort
     all_statuses = data.values.flat_map(&:keys).uniq
     ordered      = TPR_STATUS_ORDER.select { |s| all_statuses.include?(s) }
     ordered     += (all_statuses - TPR_STATUS_ORDER).sort
+
     [ data, families, ordered ]
   end
 end

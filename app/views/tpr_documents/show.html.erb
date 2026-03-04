@@ -1,3 +1,37 @@
+<%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
+<% unless @tpr_document.completed? %>
+  <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white; text-align: center;">
+    <% if @tpr_document.failed? %>
+      <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
+      <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
+      <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+        <%= @tpr_document.error_message.presence || "An unknown error occurred." %>
+      </p>
+      <div style="margin-top: 1.25rem;">
+        <%= link_to "&#8592; Back to Documents".html_safe, tpr_documents_path,
+              style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);" %>
+      </div>
+    <% else %>
+      <div style="margin-bottom: 0.75rem;">
+        <span style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #f39c12; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+      </div>
+      <h2 style="color: #f39c12; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Your Workbook</h2>
+      <p style="color: rgba(255,255,255,0.6); font-size: 0.88rem;">
+        <strong><%= @tpr_document.original_filename %></strong> is being parsed.
+        This page will automatically refresh when processing is complete.
+      </p>
+    <% end %>
+  </div>
+
+  <% unless @tpr_document.failed? %>
+    <meta http-equiv="refresh" content="5">
+  <% end %>
+
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+
+<% else %>
 <%
   total_by_status = {}
   @heatmap_statuses.each { |s| total_by_status[s] = @heatmap_families.sum { |f| @heatmap_data.dig(f, s) || 0 } }
@@ -9,9 +43,7 @@
   pass_pct    = (pass_count * 100.0 / tested).round(1)
   score_color = pass_pct >= 80 ? "#2ecc71" : pass_pct >= 50 ? "#f39c12" : "#e74c3c"
 
-  # Field display order for the read view (local variable — constants are forbidden inside method scope).
-  # NOTE: control_status, responsibility, impact_statement, control_text, implementation are
-  # intentionally excluded here — they appear in the dedicated "Assessment Context" panel.
+  # Field display order for the read view
   field_order = %w[
     date tester notes_weakness recommended_fix
     working_comments working_status
@@ -20,6 +52,14 @@
 
   # Context field names excluded from the generic field loop
   ctx_field_names = %w[control_status responsibility impact_statement control_text implementation]
+
+  # Active filter tracking
+  active_section = params[:section]
+  active_family  = params[:family]
+  active_status  = params[:status]
+  active_asset   = params[:asset]
+  active_env     = params[:environment]
+  has_filters    = [active_section, active_family, active_status, active_asset, active_env].any?(&:present?)
 %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
@@ -31,17 +71,19 @@
       <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0 0 0.3rem;"><%= @tpr_document.name %></h2>
       <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5);">
         <%= @tpr_document.original_filename %>
-        &nbsp;•&nbsp;
-        <span style="color: <%= @tpr_document.completed? ? '#2ecc71' : '#f39c12' %>; font-weight: 600;"><%= @tpr_document.status %></span>
-        &nbsp;•&nbsp; <%= total_controls %> tests
-        <% if @sections.size > 1 %>&nbsp;•&nbsp; <%= @sections.size %> sections<% end %>
-        <% if @assets.any? %>&nbsp;•&nbsp; <%= @assets.size %> assets<% end %>
+        &nbsp;&bull;&nbsp;
+        <span style="color: #2ecc71; font-weight: 600;"><%= @tpr_document.status %></span>
+        &nbsp;&bull;&nbsp; <%= @total_controls %> tests
+        <% if @sections.size > 1 %>&nbsp;&bull;&nbsp; <%= @sections.size %> sections<% end %>
+        <% if @assets.any? %>&nbsp;&bull;&nbsp; <%= @assets.size %> assets<% end %>
       </div>
     </div>
     <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
-      <%= link_to "↓ JSON", download_json_tpr_document_path(@tpr_document),
+      <%= link_to "&#8595; Excel".html_safe, download_excel_tpr_document_path(@tpr_document),
             style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
-      <%= link_to "← Back", tpr_documents_path,
+      <%= link_to "&#8595; JSON".html_safe, download_json_tpr_document_path(@tpr_document),
+            style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
+      <%= link_to "&#8592; Back".html_safe, tpr_documents_path,
             style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
     </div>
   </div>
@@ -55,12 +97,12 @@
     <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; flex: 1;">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
-        <div class="summary-chip" data-filter-status="<%= status %>"
-             onclick="filterByStatus(this.dataset.filterStatus)"
-             style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= tpr_status_color(status) %>; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; min-width: 64px;">
+        <% chip_active = active_status == status && active_family.blank? %>
+        <%= link_to tpr_document_path(@tpr_document, filter_params.except(:page).merge(chip_active ? { status: nil } : { status: status, family: nil })),
+              style: "background: #{chip_active ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)'}; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid #{tpr_status_color(status)}; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; min-width: 64px; text-decoration: none; display: inline-block;" do %>
           <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= count %></div>
           <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;"><%= status %></div>
-        </div>
+        <% end %>
       <% end %>
     </div>
   </div>
@@ -81,26 +123,26 @@
   <% if @assets.any? %>
   <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
     <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); white-space: nowrap; min-width: 6rem;">&#x1F4BB; Asset</span>
-    <button class="asset-btn" data-filter-value="__all__" onclick="filterByAsset(null)"
-            style="padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #2c3e50; color: white; font-size: 0.78rem; cursor: pointer; font-weight: 600;">All</button>
+    <% all_active = active_asset.blank? %>
+    <%= link_to "All", tpr_document_path(@tpr_document, filter_params.except(:page, :asset)),
+          style: "padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #{all_active ? '#2c3e50' : 'var(--surface-alt)'}; color: #{all_active ? 'white' : 'var(--text)'}; font-size: 0.78rem; cursor: pointer; font-weight: #{all_active ? '600' : '400'}; text-decoration: none;" %>
     <% @assets.each do |asset| %>
-      <button class="asset-btn" data-filter-value="<%= asset %>" onclick="filterByAsset('<%= j asset %>')"
-              style="padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font-size: 0.78rem; cursor: pointer;">
-        <%= asset %>
-      </button>
+      <% is_active = active_asset == asset %>
+      <%= link_to asset, tpr_document_path(@tpr_document, filter_params.except(:page).merge(is_active ? { asset: nil } : { asset: asset })),
+            style: "padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #{is_active ? '#2c3e50' : 'var(--surface-alt)'}; color: #{is_active ? 'white' : 'var(--text)'}; font-size: 0.78rem; cursor: pointer; font-weight: #{is_active ? '600' : '400'}; text-decoration: none;" %>
     <% end %>
   </div>
   <% end %>
   <% if @environments.any? %>
   <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
     <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); white-space: nowrap; min-width: 6rem;">&#x1F30D; Environment</span>
-    <button class="env-btn" data-filter-value="__all__" onclick="filterByEnv(null)"
-            style="padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #2c3e50; color: white; font-size: 0.78rem; cursor: pointer; font-weight: 600;">All</button>
+    <% all_active = active_env.blank? %>
+    <%= link_to "All", tpr_document_path(@tpr_document, filter_params.except(:page, :environment)),
+          style: "padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #{all_active ? '#2c3e50' : 'var(--surface-alt)'}; color: #{all_active ? 'white' : 'var(--text)'}; font-size: 0.78rem; cursor: pointer; font-weight: #{all_active ? '600' : '400'}; text-decoration: none;" %>
     <% @environments.each do |env| %>
-      <button class="env-btn" data-filter-value="<%= env %>" onclick="filterByEnv('<%= j env %>')"
-              style="padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font-size: 0.78rem; cursor: pointer;">
-        <%= env %>
-      </button>
+      <% is_active = active_env == env %>
+      <%= link_to env, tpr_document_path(@tpr_document, filter_params.except(:page).merge(is_active ? { environment: nil } : { environment: env })),
+            style: "padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #{is_active ? '#2c3e50' : 'var(--surface-alt)'}; color: #{is_active ? 'white' : 'var(--text)'}; font-size: 0.78rem; cursor: pointer; font-weight: #{is_active ? '600' : '400'}; text-decoration: none;" %>
     <% end %>
   </div>
   <% end %>
@@ -109,17 +151,31 @@
 
 <%# ── SECTION TABS ─────────────────────────────────────────────────── %>
 <% if @sections.size > 1 %>
-<div id="sectionTabs" style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem;">
-  <button class="section-tab active" data-section="__all__" onclick="switchSection('__all__')"
-          style="padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid var(--border); background: #2c3e50; color: white; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
-    All (<%= total_controls %>)
-  </button>
+<div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem;">
+  <% tab_active = active_section.blank? %>
+  <%= link_to "All (#{@total_controls})", tpr_document_path(@tpr_document, filter_params.except(:page, :section)),
+        style: "padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid var(--border); background: #{tab_active ? '#2c3e50' : 'var(--surface)'}; color: #{tab_active ? 'white' : 'var(--text)'}; font-size: 0.8rem; cursor: pointer; font-weight: #{tab_active ? '600' : '400'}; text-decoration: none;" %>
   <% @sections.each do |section_name| %>
-    <button class="section-tab" data-section="<%= section_name %>" onclick="switchSection('<%= j section_name %>')"
-            style="padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.8rem; cursor: pointer;">
-      <%= section_name %> (<%= (@controls_by_section[section_name] || []).size %>)
-    </button>
+    <% is_active = active_section == section_name %>
+    <%= link_to section_name, tpr_document_path(@tpr_document, filter_params.except(:page).merge(is_active ? { section: nil } : { section: section_name })),
+          style: "padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid var(--border); background: #{is_active ? '#2c3e50' : 'var(--surface)'}; color: #{is_active ? 'white' : 'var(--text)'}; font-size: 0.8rem; cursor: pointer; font-weight: #{is_active ? '600' : '400'}; text-decoration: none;" %>
   <% end %>
+</div>
+<% end %>
+
+<%# ── ACTIVE FILTER BANNER ──────────────────────────────────────────── %>
+<% if has_filters %>
+<div style="background: #1a252f; color: white; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+  <span style="font-size: 0.88rem; color: rgba(255,255,255,0.9);">
+    Showing: <%= @filtered_count %> of <%= @total_controls %> controls
+    <% if active_family %> &bull; Family: <strong><%= active_family %></strong><% end %>
+    <% if active_status %> &bull; Status: <strong><%= active_status %></strong><% end %>
+    <% if active_section %> &bull; Section: <strong><%= active_section %></strong><% end %>
+    <% if active_asset %> &bull; Asset: <strong><%= active_asset %></strong><% end %>
+    <% if active_env %> &bull; Env: <strong><%= active_env %></strong><% end %>
+  </span>
+  <%= link_to "&#x2715; Clear All".html_safe, tpr_document_path(@tpr_document),
+        style: "background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0; text-decoration: none;" %>
 </div>
 <% end %>
 
@@ -129,15 +185,9 @@
   <summary style="cursor: pointer; padding: 0.7rem 1rem; background: var(--summary-bg); border-radius: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; border: 1px solid var(--border-soft);">
     <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
     Results by Control Family
-    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">— click a badge to filter</span>
+    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">&mdash; click a badge to filter</span>
   </summary>
   <div style="padding: 1rem 0 0.5rem;">
-    <div id="heatmapFilterBanner"
-         style="display: none; background: #1a252f; color: white; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; gap: 0.75rem;">
-      <span id="heatmapFilterLabel" style="font-size: 0.88rem; color: rgba(255,255,255,0.9);"></span>
-      <button onclick="clearStatusFilter()"
-              style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;">✕ Clear</button>
-    </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 0.7rem;">
       <% @heatmap_families.each do |family| %>
         <% fd = @heatmap_data[family] || {} %>
@@ -157,12 +207,10 @@
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
             <% @heatmap_statuses.each do |s| %><% next if (fd[s] || 0) == 0 %>
-              <div class="heatmap-cell" data-family="<%= family %>" data-status="<%= s %>"
-                   onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.status)"
-                   title="<%= family %> / <%= s %>: <%= fd[s] %>"
-                   style="background: <%= tpr_status_color(s) %>; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
-                <%= fd[s] %>
-              </div>
+              <% cell_active = active_family == family && active_status == s %>
+              <%= link_to fd[s], tpr_document_path(@tpr_document, filter_params.except(:page).merge(cell_active ? { family: nil, status: nil } : { family: family, status: s })),
+                    title: "#{family} / #{s}: #{fd[s]}",
+                    style: "background: #{tpr_status_color(s)}; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4; text-decoration: none; opacity: #{cell_active ? '1' : (has_filters && (active_family.present? || active_status.present?) ? '0.35' : '1')}; #{'outline: 2px solid #2c3e50;' if cell_active}" %>
             <% end %>
           </div>
         </div>
@@ -180,122 +228,148 @@
 </details>
 <% end %>
 
-<%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
+<%# ── CONTROL CARDS (paginated) ─────────────────────────────────── %>
 <div id="controlsContainer">
-  <% render_sections = @sections.any? %>
-  <% (render_sections ? @sections : [nil]).each do |section_name| %>
-    <% section_controls = render_sections ? (@controls_by_section[section_name] || []) : @controls.to_a %>
-    <% next if section_controls.empty? %>
+  <% @controls.each do |control| %>
+    <%
+      field_map    = control.tpr_control_fields.index_by(&:field_name)
+      result_val   = field_map["result"]&.field_value.presence || "(Unknown)"
+      result_color = tpr_status_color(result_val)
+      ws_val       = field_map["working_status"]&.field_value.presence
+      family_code  = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
+      card_asset   = control.subject_asset.to_s.strip
+      card_env     = control.subject_environment.to_s.strip
+      catalog_ctrl = @catalog_guidance[normalize_ctrl_id(control.control_id)]
+      catalog_stmt = (catalog_ctrl&.guidance_data || {})["statement"].presence
+    %>
+    <div class="control-card"
+         style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= result_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
 
-    <% if render_sections %>
-      <%
-        sp = section_controls.count { |c| c.tpr_control_fields.any? { |f| f.field_name == "result" && f.field_value == "Pass" } }
-        sf = section_controls.count { |c| c.tpr_control_fields.any? { |f| f.field_name == "result" && f.field_value == "Failed" } }
-        spct = (sp * 100.0 / [sp + sf, 1].max).round
-      %>
-      <div class="section-group" data-section="<%= section_name %>" style="margin-bottom: 1.5rem;">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem; padding: 0.5rem 0; border-bottom: 2px solid var(--border-soft);">
-          <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text);"><%= section_name %></h3>
-          <span style="font-size: 0.72rem; color: var(--text-faint); background: var(--surface-alt); padding: 0.15rem 0.55rem; border-radius: 10px;"><%= section_controls.size %> tests</span>
-          <span style="font-size: 0.75rem; font-weight: 700; color: <%= spct >= 80 ? '#27ae60' : spct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= spct %>% pass</span>
-        </div>
-    <% end %>
+      <%# ── Card header: ID, Asset/Env, Result, WS, Family | Edit ── %>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div style="min-width: 0; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.2rem;">
+            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);">
+              <%= control.control_id.presence || "&mdash;".html_safe %>
+            </span>
 
-    <% section_controls.each do |control| %>
-      <%
-        field_map    = control.tpr_control_fields.index_by(&:field_name)
-        result_val   = field_map["result"]&.field_value.presence || "(Unknown)"
-        result_color = tpr_status_color(result_val)
-        ws_val       = field_map["working_status"]&.field_value.presence
-        family_code  = control.control_id.to_s.split("-").first.upcase
-        card_asset   = control.subject_asset.to_s.strip
-        card_env     = control.subject_environment.to_s.strip
-        catalog_ctrl = @catalog_guidance[normalize_ctrl_id(control.control_id)]
-        catalog_stmt = (catalog_ctrl&.guidance_data || {})["statement"].presence
-      %>
-      <div class="control-card"
-           data-family="<%= family_code %>"
-           data-status="<%= result_val %>"
-           data-section="<%= section_name %>"
-           data-asset="<%= card_asset %>"
-           data-env="<%= card_env %>"
-           style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= result_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-
-        <%# ── Card header: ID → Asset/Env → Result → WS → Family | Edit ── %>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
-          <div style="min-width: 0; flex: 1;">
-
-            <%# Primary identification row: control_id, subject, result %>
-            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.2rem;">
-              <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);">
-                <%= control.control_id.presence || "—" %>
+            <% if card_asset.present? %>
+              <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: rgba(44,62,80,0.1); border: 1px solid rgba(44,62,80,0.25); color: var(--text-muted); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">
+                &#x1F4BB; <%= card_asset %>
               </span>
-
-              <%# Asset/Environment immediately after control ID %>
-              <% if card_asset.present? %>
-                <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: rgba(44,62,80,0.1); border: 1px solid rgba(44,62,80,0.25); color: var(--text-muted); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">
-                  &#x1F4BB; <%= card_asset %>
-                </span>
-              <% end %>
-              <% if card_env.present? %>
-                <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: var(--text-muted); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">
-                  &#x1F30D; <%= card_env %>
-                </span>
-              <% end %>
-
-              <%# Separator chevron when subject is present %>
-              <% if card_asset.present? || card_env.present? %>
-                <span style="color: var(--text-faint); font-size: 0.65rem;">▶</span>
-              <% end %>
-
-              <%# Result badge %>
-              <span style="background: <%= result_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;">
-                <%= result_val %>
-              </span>
-
-              <%# Working status badge %>
-              <% if ws_val.present? %>
-                <span style="background: <%= tpr_status_color(ws_val) %>22; color: <%= tpr_status_color(ws_val) %>; border: 1px solid <%= tpr_status_color(ws_val) %>55; padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.66rem; font-weight: 600; white-space: nowrap;">
-                  <%= ws_val %>
-                </span>
-              <% end %>
-
-              <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace;"><%= family_code %></span>
-            </div>
-
-            <%# Title %>
-            <% if control.title.present? %>
-              <div style="font-size: 0.85rem; color: var(--text); font-weight: 500;"><%= control.title %></div>
             <% end %>
+            <% if card_env.present? %>
+              <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: var(--text-muted); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">
+                &#x1F30D; <%= card_env %>
+              </span>
+            <% end %>
+
+            <% if card_asset.present? || card_env.present? %>
+              <span style="color: var(--text-faint); font-size: 0.65rem;">&#x25B6;</span>
+            <% end %>
+
+            <span style="background: <%= result_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;">
+              <%= result_val %>
+            </span>
+
+            <% if ws_val.present? %>
+              <span style="background: <%= tpr_status_color(ws_val) %>22; color: <%= tpr_status_color(ws_val) %>; border: 1px solid <%= tpr_status_color(ws_val) %>55; padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.66rem; font-weight: 600; white-space: nowrap;">
+                <%= ws_val %>
+              </span>
+            <% end %>
+
+            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace;"><%= family_code %></span>
           </div>
 
-          <button onclick="toggleEdit(<%= control.id %>)"
-                  id="edit-btn-<%= control.id %>"
-                  style="padding: 0.35rem 0.85rem; font-size: 0.8rem; flex-shrink: 0; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap;">
-            Edit
-          </button>
+          <% if control.title.present? %>
+            <div style="font-size: 0.85rem; color: var(--text); font-weight: 500;"><%= control.title %></div>
+          <% end %>
         </div>
 
-        <%# ── View mode: Assessment Context + field table ── %>
-        <div id="view-<%= control.id %>" style="margin-top: 0.75rem;">
-          <%
-            ctx_rows = [
-              ["Subject",             [card_asset, card_env].select(&:present?).join(" | ")],
-              ["Control Status",      field_map["control_status"]&.field_value.to_s],
-              ["Responsibility",      field_map["responsibility"]&.field_value.to_s],
-              ["Impact Statement",    field_map["impact_statement"]&.field_value.to_s],
-              ["Control Text",        field_map["control_text"]&.field_value.to_s],
-              ["Catalog Description", catalog_stmt.to_s],
-              ["SSP Implementation",  field_map["implementation"]&.field_value.to_s],
-            ]
-            any_ctx = ctx_rows.any? { |_, v| v.present? }
-          %>
+        <button onclick="toggleEdit(<%= control.id %>)"
+                id="edit-btn-<%= control.id %>"
+                style="padding: 0.35rem 0.85rem; font-size: 0.8rem; flex-shrink: 0; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+          Edit
+        </button>
+      </div>
 
-          <%# Assessment Context panel: always visible when any data exists %>
+      <%# ── View mode: Assessment Context + field table ── %>
+      <div id="view-<%= control.id %>" style="margin-top: 0.75rem;">
+        <%
+          ctx_rows = [
+            ["Subject",             [card_asset, card_env].select(&:present?).join(" | ")],
+            ["Control Status",      field_map["control_status"]&.field_value.to_s],
+            ["Responsibility",      field_map["responsibility"]&.field_value.to_s],
+            ["Impact Statement",    field_map["impact_statement"]&.field_value.to_s],
+            ["Control Text",        field_map["control_text"]&.field_value.to_s],
+            ["Catalog Description", catalog_stmt.to_s],
+            ["SSP Implementation",  field_map["implementation"]&.field_value.to_s],
+          ]
+          any_ctx = ctx_rows.any? { |_, v| v.present? }
+        %>
+
+        <% if any_ctx %>
+          <div style="border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; background: var(--surface-alt);">
+            <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--border-soft); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint);">
+              Assessment Context
+            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+              <% ctx_rows.each do |lbl, val| %>
+                <tr style="border-top: 1px solid var(--border-soft);">
+                  <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                    <%= lbl %>
+                  </td>
+                  <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--text)" : "var(--text-faint)" %>; vertical-align: top; white-space: pre-wrap;">
+                    <%= val.present? ? val : "&mdash;".html_safe %>
+                  </td>
+                </tr>
+              <% end %>
+            </table>
+          </div>
+        <% end %>
+
+        <%
+          ordered_fields = field_order.map { |fn| field_map[fn] }.compact
+          extra_fields   = field_map.values.reject { |f|
+            f.field_name == "result" ||
+            f.field_name == "working_status" ||
+            ctx_field_names.include?(f.field_name) ||
+            field_order.include?(f.field_name)
+          }
+          display_fields = ordered_fields + extra_fields
+        %>
+        <% if display_fields.any? %>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 0.4rem;">
+            <% display_fields.each do |field| %>
+              <% next if field.field_value.blank? %>
+              <tr style="border-top: 1px solid var(--border-soft);">
+                <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                  <%= field.field_name.tr("_", " ") %>
+                  <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">&#x270E;</span><% end %>
+                </td>
+                <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
+                  <% if field.field_name == "working_status" %>
+                    <span style="background: <%= tpr_status_color(field.field_value) %>22; color: <%= tpr_status_color(field.field_value) %>; border: 1px solid <%= tpr_status_color(field.field_value) %>55; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
+                  <% else %>
+                    <%= field.field_value %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </table>
+        <% end %>
+      </div>
+
+      <%# ── Edit form (toggled via JS) ── %>
+      <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem; border-top: 1px solid var(--border-soft); padding-top: 0.75rem;">
+        <%= form_with url: tpr_document_path(@tpr_document, filter_params), method: :patch, local: true do |f| %>
+          <%= hidden_field_tag :tpr_control_id, control.id %>
+
           <% if any_ctx %>
-            <div style="border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; background: var(--surface-alt);">
+            <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
               <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--border-soft); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint);">
                 Assessment Context
+                <span style="font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 0.4rem;">(read-only reference)</span>
               </div>
               <table style="width: 100%; border-collapse: collapse;">
                 <% ctx_rows.each do |lbl, val| %>
@@ -303,8 +377,8 @@
                     <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
                       <%= lbl %>
                     </td>
-                    <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--text)" : "var(--text-faint)" %>; vertical-align: top; white-space: pre-wrap;">
-                      <%= val.present? ? val : "—" %>
+                    <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--text-muted)" : "var(--text-faint)" %>; vertical-align: top; white-space: pre-wrap;">
+                      <%= val.present? ? val : "&mdash;".html_safe %>
                     </td>
                   </tr>
                 <% end %>
@@ -312,255 +386,80 @@
             </div>
           <% end %>
 
-          <%# Remaining operational fields (date, tester, notes, etc.) %>
-          <%
-            ordered_fields = field_order.map { |fn| field_map[fn] }.compact
-            extra_fields   = field_map.values.reject { |f|
-              f.field_name == "result" ||
-              f.field_name == "working_status" ||
-              ctx_field_names.include?(f.field_name) ||
-              field_order.include?(f.field_name)
-            }
-            display_fields = ordered_fields + extra_fields
-          %>
-          <% if display_fields.any? %>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 0.4rem;">
-              <% display_fields.each do |field| %>
-                <% next if field.field_value.blank? %>
-                <tr style="border-top: 1px solid var(--border-soft);">
-                  <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
-                    <%= field.field_name.tr("_", " ") %>
-                    <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
-                  </td>
-                  <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
-                    <% if field.field_name == "working_status" %>
-                      <span style="background: <%= tpr_status_color(field.field_value) %>22; color: <%= tpr_status_color(field.field_value) %>; border: 1px solid <%= tpr_status_color(field.field_value) %>55; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
-                    <% else %>
-                      <%= field.field_value %>
-                    <% end %>
-                  </td>
-                </tr>
+          <% TprControlField::EDITABLE_FIELDS.each do |fname| %>
+            <% field = field_map[fname] %>
+            <% fval  = field&.field_value.to_s %>
+            <div class="form-group">
+              <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);">
+                <%= fname.tr("_", " ") %>
+                <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
+              </label>
+              <% if fname == "result" %>
+                <%= select_tag "fields[#{fname}]",
+                      options_for_select(TprControlField::RESULT_VALUES, fval),
+                      include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
+                      style: "font-size: 0.875rem;" %>
+              <% elsif fname == "working_status" %>
+                <%= select_tag "fields[#{fname}]",
+                      options_for_select(TprControlField::WORKING_STATUS_VALUES, fval),
+                      include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
+                      style: "font-size: 0.875rem;" %>
+              <% else %>
+                <%= text_area_tag "fields[#{fname}]", fval,
+                      class: "form-control", rows: 3,
+                      style: "font-size: 0.875rem;" %>
               <% end %>
-            </table>
-          <% end %>
-        </div>
-
-        <%# ── Edit form ── %>
-        <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem; border-top: 1px solid var(--border-soft); padding-top: 0.75rem;">
-          <%= form_with url: tpr_document_path(@tpr_document), method: :patch, local: true do |f| %>
-            <%= hidden_field_tag :tpr_control_id, control.id %>
-
-            <%# Assessment Context — same panel as view mode, shown as read-only reference %>
-            <% if any_ctx %>
-              <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
-                <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--border-soft); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint);">
-                  Assessment Context
-                  <span style="font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 0.4rem;">(read-only reference)</span>
-                </div>
-                <table style="width: 100%; border-collapse: collapse;">
-                  <% ctx_rows.each do |lbl, val| %>
-                    <tr style="border-top: 1px solid var(--border-soft);">
-                      <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
-                        <%= lbl %>
-                      </td>
-                      <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--text-muted)" : "var(--text-faint)" %>; vertical-align: top; white-space: pre-wrap;">
-                        <%= val.present? ? val : "—" %>
-                      </td>
-                    </tr>
-                  <% end %>
-                </table>
-              </div>
-            <% end %>
-
-            <%#
-              Iterate ALL editable fields so they always appear in the edit form,
-              even if no DB record exists yet for that field_name.
-            %>
-            <% TprControlField::EDITABLE_FIELDS.each do |fname| %>
-              <% field = field_map[fname] %>
-              <% fval  = field&.field_value.to_s %>
-              <div class="form-group">
-                <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);">
-                  <%= fname.tr("_", " ") %>
-                  <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
-                </label>
-                <% if fname == "result" %>
-                  <%= select_tag "fields[#{fname}]",
-                        options_for_select(TprControlField::RESULT_VALUES, fval),
-                        include_blank: "— select —", class: "form-control",
-                        style: "font-size: 0.875rem;" %>
-                <% elsif fname == "working_status" %>
-                  <%= select_tag "fields[#{fname}]",
-                        options_for_select(TprControlField::WORKING_STATUS_VALUES, fval),
-                        include_blank: "— select —", class: "form-control",
-                        style: "font-size: 0.875rem;" %>
-                <% else %>
-                  <%= text_area_tag "fields[#{fname}]", fval,
-                        class: "form-control", rows: 3,
-                        style: "font-size: 0.875rem;" %>
-                <% end %>
-              </div>
-            <% end %>
-
-            <%# Miscellaneous read-only fields (tester, row_number, inherited, etc.) %>
-            <%# Context fields are intentionally excluded — they're shown above. %>
-            <% misc_ro_fields = field_map.values.reject { |f|
-                 TprControlField::EDITABLE_FIELDS.include?(f.field_name) ||
-                 ctx_field_names.include?(f.field_name)
-               } %>
-            <% if misc_ro_fields.any? %>
-              <details style="margin-top: 0.5rem;">
-                <summary style="font-size: 0.8rem; color: var(--text-faint); cursor: pointer; padding: 0.35rem 0; user-select: none;">
-                  Other read-only fields (<%= misc_ro_fields.count { |f| f.field_value.present? } %>)
-                </summary>
-                <% misc_ro_fields.each do |field| %>
-                  <% next if field.field_value.blank? %>
-                  <div class="form-group" style="margin-top: 0.5rem;">
-                    <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint);">
-                      <%= field.field_name.tr("_", " ") %>
-                      <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
-                    </label>
-                    <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;"><%= field.field_value.presence || "—" %></p>
-                  </div>
-                <% end %>
-              </details>
-            <% end %>
-
-            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-              <%= f.submit "Save Changes",
-                    style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
-              <button type="button" onclick="toggleEdit(<%= control.id %>)"
-                      style="background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem;">
-                Cancel
-              </button>
             </div>
           <% end %>
-        </div>
 
-      </div><%# end .control-card %>
-    <% end %>
+          <% misc_ro_fields = field_map.values.reject { |f|
+               TprControlField::EDITABLE_FIELDS.include?(f.field_name) ||
+               ctx_field_names.include?(f.field_name)
+             } %>
+          <% if misc_ro_fields.any? %>
+            <details style="margin-top: 0.5rem;">
+              <summary style="font-size: 0.8rem; color: var(--text-faint); cursor: pointer; padding: 0.35rem 0; user-select: none;">
+                Other read-only fields (<%= misc_ro_fields.count { |f| f.field_value.present? } %>)
+              </summary>
+              <% misc_ro_fields.each do |field| %>
+                <% next if field.field_value.blank? %>
+                <div class="form-group" style="margin-top: 0.5rem;">
+                  <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint);">
+                    <%= field.field_name.tr("_", " ") %>
+                    <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
+                  </label>
+                  <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;"><%= field.field_value.presence || "&mdash;".html_safe %></p>
+                </div>
+              <% end %>
+            </details>
+          <% end %>
 
-    <% if render_sections %></div><% end %>
-  <% end %>
-
-  <%# Unsectioned legacy controls %>
-  <% if render_sections && (unsectioned = @controls_by_section[nil]).present? %>
-    <div class="section-group" data-section="" style="margin-bottom: 1.5rem;">
-      <div style="padding: 0.5rem 0; border-bottom: 2px solid var(--border-soft); margin-bottom: 0.65rem;">
-        <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text);">Unsectioned <span style="font-size: 0.72rem; font-weight: 400; color: var(--text-faint);">(<%= unsectioned.size %>)</span></h3>
+          <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+            <%= f.submit "Save Changes",
+                  style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
+            <button type="button" onclick="toggleEdit(<%= control.id %>)"
+                    style="background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem;">
+              Cancel
+            </button>
+          </div>
+        <% end %>
       </div>
-      <% unsectioned.each do |control| %>
-        <% rf = control.tpr_control_fields.find { |f| f.field_name == "result" } %>
-        <% rv = rf&.field_value.presence || "(Unknown)" %>
-        <% rc = tpr_status_color(rv) %>
-        <div class="control-card" data-family="<%= control.control_id.to_s.split('-').first.upcase %>"
-             data-status="<%= rv %>" data-section="" data-asset="" data-env=""
-             style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= rc %>; border-radius: 8px; padding: 0.85rem 1.25rem; margin-bottom: 0.65rem;">
-          <span style="font-family: monospace; font-size: 0.88rem; font-weight: 700; color: var(--text);"><%= control.control_id.presence || "—" %></span>
-          <span style="background: <%= rc %>; color: white; padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; margin-left: 0.4rem;"><%= rv %></span>
-          <span style="font-size: 0.82rem; color: var(--text-muted); margin-left: 0.4rem;"><%= control.title %></span>
-        </div>
-      <% end %>
-    </div>
+
+    </div><%# end .control-card %>
   <% end %>
 </div>
 
+<%# ── PAGINATION ──────────────────────────────────────────────────── %>
+<% if @pagy.pages > 1 %>
+<div style="margin-top: 1.5rem; text-align: center;">
+  <%== pagy_nav(@pagy) %>
+  <div style="font-size: 0.8rem; color: var(--text-faint); margin-top: 0.5rem;">
+    Showing <%= @pagy.from %>-<%= @pagy.to %> of <%= @pagy.count %> controls
+  </div>
+</div>
+<% end %>
+
 <script>
-  var activeFamily  = null;
-  var activeStatus  = null;
-  var activeSection = '__all__';
-  var activeAsset   = null;
-  var activeEnv     = null;
-
-  function applyFilter() {
-    var cards = document.querySelectorAll('#controlsContainer .control-card');
-    var visible = 0;
-    cards.forEach(function(card) {
-      var ok = (activeSection === '__all__' || card.dataset.section === activeSection) &&
-               (activeFamily === null  || card.dataset.family  === activeFamily)  &&
-               (activeStatus === null  || card.dataset.status  === activeStatus)  &&
-               (activeAsset  === null  || card.dataset.asset   === activeAsset)   &&
-               (activeEnv    === null  || card.dataset.env     === activeEnv);
-      card.style.display = ok ? '' : 'none';
-      if (ok) visible++;
-    });
-    var hasStatusFilt = activeFamily !== null || activeStatus !== null;
-    if (hasStatusFilt) {
-      var lbl = activeFamily ? activeFamily + ' \u2022 ' + activeStatus : activeStatus;
-      document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + lbl + ' \u2014 ' + visible + ' test(s)';
-      document.getElementById('heatmapFilterBanner').style.display = 'flex';
-    } else {
-      document.getElementById('heatmapFilterBanner').style.display = 'none';
-    }
-  }
-
-  function switchSection(section) {
-    activeSection = section;
-    document.querySelectorAll('.section-tab').forEach(function(btn) {
-      var on = btn.dataset.section === section;
-      btn.style.background = on ? '#2c3e50' : 'var(--surface)';
-      btn.style.color      = on ? 'white'   : 'var(--text)';
-      btn.style.fontWeight = on ? '600'     : '400';
-    });
-    document.querySelectorAll('.section-group').forEach(function(grp) {
-      grp.style.display = (section === '__all__' || grp.dataset.section === section) ? '' : 'none';
-    });
-    applyFilter();
-  }
-
-  function filterByHeatmapCell(cellEl, family, status) {
-    if (activeFamily === family && activeStatus === status) { clearStatusFilter(); return; }
-    activeFamily = family; activeStatus = status;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = (el.dataset.family === family && el.dataset.status === status) ? '1' : '0.35';
-      el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
-  }
-
-  function filterByStatus(status) {
-    if (activeFamily === null && activeStatus === status) { clearStatusFilter(); return; }
-    activeFamily = null; activeStatus = status;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.status === status ? '1' : '0.35'; el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) {
-      el.style.background = el.dataset.filterStatus === status ? 'rgba(255,255,255,0.15)' : '';
-    });
-  }
-
-  function clearStatusFilter() {
-    activeFamily = null; activeStatus = null;
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    applyFilter();
-  }
-
-  function filterByAsset(asset) {
-    activeAsset = (activeAsset === asset && asset !== null) ? null : asset;
-    updateSubjectBtns('asset-btn', activeAsset);
-    applyFilter();
-  }
-
-  function filterByEnv(env) {
-    activeEnv = (activeEnv === env && env !== null) ? null : env;
-    updateSubjectBtns('env-btn', activeEnv);
-    applyFilter();
-  }
-
-  function updateSubjectBtns(cls, val) {
-    document.querySelectorAll('.' + cls).forEach(function(btn) {
-      var active = (val === null && btn.dataset.filterValue === '__all__') ||
-                   (val !== null && btn.dataset.filterValue === val);
-      btn.style.background = active ? '#2c3e50'       : 'var(--surface-alt)';
-      btn.style.color      = active ? 'white'         : 'var(--text)';
-      btn.style.fontWeight = active ? '600'           : '400';
-    });
-  }
-
   function toggleEdit(id) {
     var view = document.getElementById('view-' + id);
     var edit = document.getElementById('edit-' + id);
@@ -578,3 +477,5 @@
     document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
   });
 </script>
+
+<% end %><%# end unless completed %>
