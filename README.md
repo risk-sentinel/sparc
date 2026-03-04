@@ -72,7 +72,7 @@ Managing **System Security Plans (SSP)** and **Test Plans & Results (TPR)** is p
 ### Docker (Recommended)
 
 ```bash
-git clone https://github.com/yourusername/sparc.git
+git clone https://github.com/Rebel-Raiders/sparc.git
 cd sparc
 docker compose up --build
 ```
@@ -104,7 +104,7 @@ This seeds NIST SP 800-53 Rev 4 (18 families, 256 controls) and Rev 5 (20 famili
 #### 1. Clone and install
 
 ```bash
-git clone https://github.com/yourusername/sparc.git
+git clone https://github.com/Rebel-Raiders/sparc.git
 cd sparc
 bundle install
 ```

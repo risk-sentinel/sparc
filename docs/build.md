@@ -1,4 +1,4 @@
-# Building the SSP-TPR-Manager
+# Building SPARC
 
 ## Setup
 
