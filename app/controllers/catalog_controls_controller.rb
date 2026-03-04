@@ -45,6 +45,9 @@ class CatalogControlsController < ApplicationController
   end
 
   def catalog_control_params
-    params.require(:catalog_control).permit(:control_id, :title, :description, :priority, :baseline_impact)
+    params.require(:catalog_control).permit(
+      :control_id, :title, :description, :priority, :baseline_impact,
+      guidance_data: {}
+    )
   end
 end

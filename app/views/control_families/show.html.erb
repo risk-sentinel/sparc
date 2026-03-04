@@ -24,11 +24,11 @@
 
   <% if @catalog_controls.any? %>
     <%
-      # Compute hierarchical depth from control_id suffix:
-      #   "AC-01"       → depth 0  (base control)
-      #   "AC-01a"      → depth 1  (letter part)
-      #   "AC-01a.1"    → depth 2  (number sub-part)
-      #   "AC-01a.1.(a)"→ depth 3  (paren sub-part)
+      # Depth from control_id suffix after the "XX-NN" base:
+      #   "AC-01"         → 0   (base control)
+      #   "AC-01a"        → 1   (letter part)
+      #   "AC-01a.1"      → 2   (number sub-part)
+      #   "AC-01a.1.(a)"  → 3   (paren sub-part)
       ctrl_depth = ->(id) {
         suffix = id.to_s.sub(/\A[A-Z]+-\d+/, "")
         suffix.blank? ? 0 : suffix.scan(/[a-z]|\.\d+|\.\([^)]+\)/).size
@@ -37,51 +37,82 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 140px;">Control ID</th>
+          <th style="width: 150px;">Control ID</th>
           <th>Title / Statement</th>
           <th style="width: 60px; text-align: center;">Priority</th>
-          <th>Baseline Impact</th>
-          <th>Actions</th>
+          <th style="width: 160px;">Baseline Impact</th>
+          <th style="width: 130px;">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% @catalog_controls.each do |control| %>
-          <% depth = ctrl_depth.call(control.control_id) %>
+          <% depth      = ctrl_depth.call(control.control_id) %>
+          <% stmt_text  = control.guidance_data["statement"].presence %>
           <tr style="<%= depth > 0 ? "background: #fafbfc;" : "" %>">
-            <td style="padding-left: <%= 0.5 + depth * 1.1 %>rem;">
+
+            <%# ── Control ID column ── %>
+            <td style="padding-left: <%= 0.5 + depth * 1.1 %>rem; vertical-align: top; padding-top: 0.55rem;">
               <% if depth > 0 %>
-                <span style="color: #bbb; margin-right: 0.2rem; font-size: 0.75rem;">&#x2514;</span>
+                <span style="color: #ccc; margin-right: 0.25rem; font-size: 0.75rem;">&#x2514;</span>
               <% end %>
-              <span style="font-family: monospace; font-weight: <%= depth == 0 ? 700 : 500 %>; color: <%= depth == 0 ? "#2c3e50" : "#555" %>; font-size: <%= depth == 0 ? "0.95rem" : "0.85rem" %>;">
+              <span style="font-family: monospace;
+                           font-weight: <%= depth == 0 ? 700 : 500 %>;
+                           color: <%= depth == 0 ? "#2c3e50" : "#666" %>;
+                           font-size: <%= depth == 0 ? "0.95rem" : "0.85rem" %>;">
                 <%= control.control_id %>
               </span>
             </td>
-            <td style="<%= depth > 0 ? "color: #666; font-size: 0.875rem;" : "" %>">
-              <% if control.guidance_data["statement"].present? && depth > 0 %>
-                <%= truncate(control.guidance_data["statement"], length: 120) %>
+
+            <%# ── Title / Statement column ── %>
+            <td style="vertical-align: top;">
+              <% if depth == 0 %>
+                <%# Base control: show title prominently, then statement below %>
+                <div style="font-weight: 600; color: #2c3e50; font-size: 0.9rem;">
+                  <%= control.title.presence || "<em style='color:#aaa; font-weight:400;'>No title</em>".html_safe %>
+                </div>
+                <% if stmt_text.present? %>
+                  <div style="margin-top: 0.3rem; color: #666; font-size: 0.8rem; line-height: 1.4;">
+                    <%= truncate(stmt_text, length: 200) %>
+                  </div>
+                <% end %>
               <% else %>
-                <%= control.title.presence || "<em style='color:#aaa'>No title</em>".html_safe %>
+                <%# Sub-part: show statement prose as the primary content %>
+                <% if stmt_text.present? %>
+                  <span style="color: #555; font-size: 0.875rem;"><%= truncate(stmt_text, length: 150) %></span>
+                <% else %>
+                  <span style="color: #999; font-size: 0.85rem; font-style: italic;"><%= control.title.presence || "No statement" %></span>
+                <% end %>
               <% end %>
             </td>
-            <td style="text-align: center;">
+
+            <%# ── Priority column ── %>
+            <td style="text-align: center; vertical-align: top; padding-top: 0.55rem;">
               <% if control.priority.present? %>
-                <span style="background: #eaf2fb; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+                <span style="background: #eaf2fb; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.82rem; font-weight: 600;">
                   <%= control.priority %>
                 </span>
               <% else %>
-                <span style="color: #ccc;">—</span>
+                <span style="color: #ddd;">—</span>
               <% end %>
             </td>
-            <td style="font-size: 0.85rem; color: #555;"><%= control.baseline_impact.presence || (depth > 0 ? "" : "—") %></td>
-            <td>
-              <% if depth == 0 %>
-                <div style="display: flex; gap: 0.5rem;">
-                  <%= link_to "Edit", edit_catalog_control_path(control), class: "btn", style: "background: #f39c12; color: white; padding: 0.3rem 0.65rem; font-size: 0.8rem;" %>
+
+            <%# ── Baseline Impact column ── %>
+            <td style="font-size: 0.82rem; color: #666; vertical-align: top; padding-top: 0.55rem;">
+              <%= control.baseline_impact.presence || (depth == 0 ? "—" : "") %>
+            </td>
+
+            <%# ── Actions column ── %>
+            <td style="vertical-align: top; padding-top: 0.45rem;">
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <%= link_to "Edit", edit_catalog_control_path(control), class: "btn",
+                    style: "background: #f39c12; color: white; padding: 0.28rem 0.6rem; font-size: 0.78rem;" %>
+                <% if depth == 0 %>
                   <%= button_to "Delete", catalog_control_path(control), method: :delete,
-                      data: { confirm: "Delete control #{control.control_id}? This will also remove all sub-parts." },
-                      class: "btn btn-danger", style: "padding: 0.3rem 0.65rem; font-size: 0.8rem;" %>
-                </div>
-              <% end %>
+                      data: { confirm: "Delete #{control.control_id}? This also removes all its sub-parts." },
+                      class: "btn btn-danger",
+                      style: "padding: 0.28rem 0.6rem; font-size: 0.78rem;" %>
+                <% end %>
+              </div>
             </td>
           </tr>
         <% end %>
