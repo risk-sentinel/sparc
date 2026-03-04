@@ -12,6 +12,8 @@ class TprConversionJob < ApplicationJob
     rescue StandardError => e
       document.update!(status: "failed", error_message: e.message)
       Rails.logger.error("TPR Conversion failed: #{e.message}")
+    ensure
+      FileUtils.rm_f(file_path)
     end
   end
 end
