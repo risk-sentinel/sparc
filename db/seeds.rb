@@ -1271,7 +1271,7 @@ REV5_CONTROLS = [
     guidance: "Incident reporting procedures include internal reporting chains and external reporting to US-CERT within required timeframes.",
     test_status: "Pass",  test_date: "2025-10-07", tester: "K. Johnson",
     test_result: "Reporting procedures reviewed. One incident from past year required US-CERT notification; confirmed reported within 1 hour of detection.",
-    remediation: "" }
+    remediation: "" },
 ].freeze
 
 # ------------------------------------------------------------------
@@ -1472,18 +1472,18 @@ REV4_CONTROLS = [
     guidance: "Password policy enforces 12+ character minimum, complexity, and breach checking.",
     test_status: "Pass",  test_date: "2025-10-02", tester: "M. Torres",
     test_result: "Password policy configuration and breach detection verified.",
-    remediation: "" }
+    remediation: "" },
 ].freeze
 
 # Demo docs are always destroyed and recreated to keep field names current.
 [
   "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
-  "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)"
+  "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)",
 ].each { |n| SspDocument.find_by(name: n)&.destroy }
 
 [
   "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
-  "ACME HR Portal — Security Assessment (Rev 4)"
+  "ACME HR Portal — Security Assessment (Rev 4)",
 ].each { |n| TprDocument.find_by(name: n)&.destroy }
 
 # -- SSP 1: Rev 5 Moderate Baseline ----------------------------------
@@ -1519,9 +1519,9 @@ SSP1_INHERITED = {
         provided_as:            "Implemented",
         control_origination:    "Inherited from provider",
         private_implementation: "AWS VPC Security Groups and Network ACLs enforce boundary-level information flow controls. Managed by cloud provider and verified via AWS Config rules.",
-        responsible_entities:   "Cloud Provider (AWS)"
+        responsible_entities:   "Cloud Provider (AWS)",
       }
-    }
+    },
   ],
   "AU-4"  => [
     { title: "Cloud Provider — Log Storage Capacity",
@@ -1530,9 +1530,9 @@ SSP1_INHERITED = {
         provided_as:            "Configured",
         control_origination:    "Inherited from provider",
         private_implementation: "Audit log storage capacity is managed through AWS CloudWatch Logs with auto-scaling enabled. Retention policies are configured at the organization level.",
-        responsible_entities:   "Cloud Provider (AWS) / ACME DevOps"
+        responsible_entities:   "Cloud Provider (AWS) / ACME DevOps",
       }
-    }
+    },
   ],
   "IA-5"  => [
     { title: "Enterprise IdP — Authenticator Lifecycle",
@@ -1541,9 +1541,9 @@ SSP1_INHERITED = {
         provided_as:            "Implemented",
         control_origination:    "Inherited from provider",
         private_implementation: "Okta manages the full authenticator lifecycle including provisioning, MFA enforcement, and compromised credential monitoring via HaveIBeenPwned integration.",
-        responsible_entities:   "Identity Provider (Okta)"
+        responsible_entities:   "Identity Provider (Okta)",
       }
-    }
+    },
   ],
 }.freeze
 
@@ -1684,8 +1684,8 @@ CATALOG_GUIDANCE_SOURCES = [
   },
   {
     path:         "/Users/brandonfield/GitHub/skunkwerks/data/catalogs/r4_final.json",
-    catalog_name: "NIST SP 800-53 Rev 4"
-  }
+    catalog_name: "NIST SP 800-53 Rev 4",
+  },
 ].freeze
 
 CATALOG_GUIDANCE_SOURCES.each do |source|

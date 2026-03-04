@@ -14,14 +14,14 @@ class SspControlField < ApplicationRecord
     private_implementation
     public_implementation
     expected_completion
-    notes
+    notes,
   ].freeze
 
   VALID_STATUSES = [
     "Deferred",
     "Implemented",
     "Not Applicable",
-    "Will Not Implement"
+    "Will Not Implement",
   ].freeze
 
   TYPE_USE_AS_VALUES = [
@@ -29,21 +29,21 @@ class SspControlField < ApplicationRecord
     "Hybrid",
     "Inherited",
     "Provider",
-    "Consumer"
+    "Consumer",
   ].freeze
 
   PROVIDED_AS_VALUES = [
     "Implemented",
     "Configured",
     "Documented",
-    "Not Applicable"
+    "Not Applicable",
   ].freeze
 
   CONTROL_ORIGINATION_VALUES = [
     "System Specific",
     "Hybrid — partially inherited",
     "Inherited from provider",
-    "Not Applicable"
+    "Not Applicable",
   ].freeze
 
   # Display order for the view mode (editable fields first, then supplemental).
@@ -62,7 +62,7 @@ class SspControlField < ApplicationRecord
     class
     priority
     control_owner
-    stated_requirement
+    stated_requirement,
   ].freeze
 
   before_validation :set_editable_flag

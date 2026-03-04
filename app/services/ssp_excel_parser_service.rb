@@ -21,7 +21,7 @@ class SspExcelParserService
     "inherited from"         => { key: "inherited_from",         control_attr: false },
     "provided as"            => { key: "provided_as",            control_attr: false },
     "control origination"    => { key: "control_origination",    control_attr: false },
-    "history"                => { key: "history",                control_attr: false }
+    "history"                => { key: "history",                control_attr: false },
   }.freeze
 
   def initialize(ssp_document, file_path)

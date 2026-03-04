@@ -1,5 +1,5 @@
 class SspDocumentsController < ApplicationController
-  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json ]
+  before_action :set_ssp_document, only: [:show, :edit, :update, :destroy, :download_json]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -41,7 +41,7 @@ class SspDocumentsController < ApplicationController
       render :new and return
     end
 
-    temp_file = Tempfile.new([ "ssp", File.extname(uploaded_file.original_filename) ])
+    temp_file = Tempfile.new(["ssp", File.extname(uploaded_file.original_filename)])
     temp_file.binmode
     temp_file.write(uploaded_file.read)
     temp_file.close
@@ -115,7 +115,7 @@ class SspDocumentsController < ApplicationController
   SSP_STATUS_ORDER = [
     "Implemented", "Deferred", "Not Applicable", "Will Not Implement",
     # Legacy values — kept so old data sorts predictably
-    "Partially Implemented", "Planned", "Alternative Implementation", "Not Implemented"
+    "Partially Implemented", "Planned", "Alternative Implementation", "Not Implemented",
   ].freeze
 
   def build_heatmap(controls, status_field_name)
@@ -135,6 +135,6 @@ class SspDocumentsController < ApplicationController
     all_statuses = data.values.flat_map(&:keys).uniq
     ordered      = SSP_STATUS_ORDER.select { |s| all_statuses.include?(s) }
     ordered     += (all_statuses - SSP_STATUS_ORDER).sort
-    [ data, families, ordered ]
+    [data, families, ordered]
   end
 end

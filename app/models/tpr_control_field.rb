@@ -15,7 +15,7 @@ class TprControlField < ApplicationRecord
     custom_name
     custom_author
     working_comments
-    working_status
+    working_status,
   ].freeze
 
   RESULT_VALUES = %w[Pass Failed].freeze
@@ -24,7 +24,7 @@ class TprControlField < ApplicationRecord
     "Final - Not Satisfied",
     "Final Satisfied",
     "Not Satisfied",
-    "Not Specified"
+    "Not Specified",
   ].freeze
 
   before_validation :set_editable_flag

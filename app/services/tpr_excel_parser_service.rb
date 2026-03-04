@@ -28,7 +28,7 @@ class TprExcelParserService
     "control text"     => { key: "control_text",     control_attr: false },
     "implementation"   => { key: "implementation",   control_attr: false },
     "working comments" => { key: "working_comments", control_attr: false },
-    "working status"   => { key: "working_status",   control_attr: false }
+    "working status"   => { key: "working_status",   control_attr: false },
   }.freeze
 
   def initialize(tpr_document, file_path)

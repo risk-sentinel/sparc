@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   root 'home#index'
-  
+
   resources :ssp_documents do
     member do
       get :download_json
@@ -9,7 +9,7 @@ Rails.application.routes.draw do
       post :import_json
     end
   end
-  
+
   resources :tpr_documents do
     member do
       get :download_json
@@ -19,7 +19,7 @@ Rails.application.routes.draw do
       post :import_json
     end
   end
-  
+
   resources :control_catalogs do
     collection do
       get  :import
@@ -41,7 +41,7 @@ Rails.application.routes.draw do
           get :export
         end
       end
-      
+
       resources :tpr_documents, only: [] do
         collection do
           post :convert
