@@ -1,0 +1,53 @@
+<div class="card" style="overflow-x: auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>Security Profiles</h2>
+    <%= link_to "Upload New", new_profile_document_path, class: "btn btn-success" %>
+  </div>
+
+  <% if @profile_documents.any? %>
+    <table style="min-width: 700px;">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Controls</th>
+          <th>Created</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @profile_documents.each do |doc| %>
+          <tr>
+            <td style="font-weight: 600;"><%= doc.name %></td>
+            <td>
+              <% type_colors = { "disa_stig" => "#e74c3c", "scap" => "#3498db", "cis" => "#f39c12", "custom" => "#95a5a6" } %>
+              <span style="padding: 0.2rem 0.6rem; background: <%= type_colors[doc.profile_type] || '#7f8c8d' %>22; color: <%= type_colors[doc.profile_type] || '#7f8c8d' %>; border: 1px solid <%= type_colors[doc.profile_type] || '#7f8c8d' %>44; border-radius: 4px; font-size: 0.78rem; font-weight: 600; white-space: nowrap;">
+                <%= doc.profile_type&.upcase&.tr("_", " ") || "Unknown" %>
+              </span>
+            </td>
+            <td>
+              <span style="padding: 0.2rem 0.6rem; background: <%= doc.completed? ? '#d4edda' : doc.failed? ? '#f8d7da' : '#fff3cd' %>; color: <%= doc.completed? ? '#155724' : doc.failed? ? '#721c24' : '#856404' %>; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+                <%= doc.status %>
+              </span>
+            </td>
+            <td><%= doc.profile_controls.count %></td>
+            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td style="text-align: right; white-space: nowrap;">
+              <div style="display: inline-flex; gap: 0.35rem;">
+                <%= link_to "View", profile_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <% if doc.completed? %>
+                  <%= link_to "OSCAL", download_oscal_profile_document_path(doc), class: "btn", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; background: #8e44ad; color: white;" %>
+                  <%= link_to "JSON", download_json_profile_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <% end %>
+                <%= link_to "Delete", profile_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p style="text-align: center; padding: 2rem; color: var(--text-muted);">No security profiles found. Upload your first profile to get started.</p>
+  <% end %>
+</div>

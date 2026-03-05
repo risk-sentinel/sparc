@@ -23,6 +23,14 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :profile_documents do
+    member do
+      get :download_json
+      get :download_oscal
+      get :status
+    end
+  end
+
   resources :control_catalogs do
     collection do
       get  :import
