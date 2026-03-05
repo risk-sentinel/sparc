@@ -2,72 +2,59 @@
 
 ![Landing Page](docs/landing_page.png)
 
-**SPARC** is a control catalog management and compliance documentation platform purpose-built to modernize how organizations manage, track, and implement NIST 800-53 (and related) security and privacy controls. SPARC transforms static spreadsheets and siloed documents into a **coordinated, web-based, real-time source of truth** — empowering security teams, assessors, system owners, and program managers to document, assess, respond to, and prove compliance.
+**SPARC** is an open-source compliance documentation platform that transforms how organizations manage NIST 800-53 security controls. It replaces fragmented spreadsheets and siloed documents with a **coordinated, web-based, real-time source of truth** — empowering security teams, assessors, system owners, and program managers to document, assess, and prove compliance across the full RMF lifecycle.
 
 ---
 
-## What is SPARC?
+## Overview
 
-**SPARC (Systemized Policy and Regulatory Controls)** centralizes, normalizes, and operationalizes compliance frameworks including:
+Managing **System Security Plans (SSPs)**, **Test Plans & Results (TPRs)**, and security baselines is painful when everything lives in large, versioned Excel files. SPARC solves that by providing:
 
-- NIST SP 800-53 Rev 4 and Rev 5 (pre-loaded)
-- FedRAMP Low / Moderate / High baselines
-- Custom internal control overlays
-
-SPARC supports the full lifecycle of compliance documentation — from catalog management and SSP authoring to test plan execution and results tracking — while producing structured, exportable data for reporting and audit packages.
-
----
-
-## Why SPARC?
-
-Managing **System Security Plans (SSP)** and **Test Plans & Results (TPR)** is painful when everything lives in large, versioned Excel spreadsheets. SPARC solves that by replacing spreadsheets with a structured, web-accessible, collaborative platform.
-
-| Benefit | Description |
-|---------|-------------|
-| Eliminate version chaos | No more `SSP_v12_final_REALLYFINAL.xlsx` — one source of truth with status tracking |
-| Enable collaboration | Security teams, assessors, and system owners view and edit the same live data simultaneously |
-| Accelerate assessor coordination | Hundreds of controls with test results, findings, and remediation plans become filterable and searchable |
-| Visual compliance coverage | Interactive heat maps show implementation and test status by NIST control family at a glance |
-| Structured data export | Export SSPs and TPRs as JSON for reporting, compliance packages, or downstream tooling |
-| Audit readiness | Track progress, assign ownership, and generate exportable artifacts for ATO packages |
+- A **structured database** backing every control, replacing `SSP_v12_final_REALLYFINAL.xlsx` with a single source of truth
+- **Real-time collaboration** so security teams, assessors, and system owners work from the same live data
+- **Visual compliance dashboards** with interactive heat maps showing implementation and test status by NIST control family
+- **Structured data export** in JSON and OSCAL formats for audit packages, reporting, and downstream tooling
+- **Background processing** for large Excel workbooks so uploads never block the UI
 
 ### Who Benefits Most
 
-- **Security / compliance teams** — maintain and update SSPs without spreadsheet coordination overhead
-- **Assessors / 3PAOs** — quickly find open findings, overdue tests, and controls needing attention
-- **System owners / ISSOs** — clear visibility into control implementation status and gaps by family
-- **Program managers** — better reporting and coordination across large control sets
+| Role | How SPARC Helps |
+|------|----------------|
+| **Security / Compliance Teams** | Maintain and update SSPs without spreadsheet coordination overhead |
+| **Assessors / 3PAOs** | Quickly find open findings, overdue tests, and controls needing attention |
+| **System Owners / ISSOs** | Clear visibility into control implementation status and gaps by family |
+| **Program Managers** | Better reporting and coordination across large control sets |
 
 ---
 
-## Features
+## What It Can Do
 
-- **Control Catalog Management** — Browse, create, and manage NIST and custom control catalogs with family and control-level CRUD. NIST SP 800-53 Rev 4 (256 controls) and Rev 5 (323 controls) are pre-loaded.
-- **SSP Management** — Upload Excel-based SSPs, automatically parse controls and fields, edit implementation status, and export to JSON.
-- **TPR Management** — Upload and manage Test Plan Reports with color-coded test status indicators.
-- **Interactive Heat Maps** — Collapsible status heat maps on SSP and TPR pages display implementation/test status by NIST control family. Click any cell to filter the control list below it.
-- **Inline Field Editing** — Edit designated fields (responsible roles, implementation status, test results, remediation plans) directly in the browser; read-only fields are enforced.
-- **Excel to JSON Conversion** — Automatic parsing of Excel files via background job (SSP) or synchronous processing (TPR).
-- **JSON Export** — Download any document as a formatted JSON file.
+SPARC supports the full lifecycle of compliance documentation across four integrated modules:
+
+**Control Catalog Management** — Browse, create, and manage NIST and custom control catalogs with family-level and control-level CRUD. NIST SP 800-53 Rev 4 (256 controls) and Rev 5 (323 controls) are pre-loaded via seeds.
+
+**SSP Document Management** — Upload Excel-based System Security Plans, automatically parse controls and fields via background processing, edit implementation details inline, and export to JSON.
+
+**TPR Document Management** — Upload and manage Test Plan Reports with multi-sheet support, color-coded test status indicators, pagination, filtering by section/asset/environment, and round-trip Excel export.
+
+**Security Profile Management** — Import DISA STIGs (XCCDF XML), InSpec profiles (JSON), STIG Viewer exports, and CIS benchmarks. Export as OSCAL Component Definitions for interoperability with the NIST OSCAL ecosystem.
+
+---
+
+## Key Features
+
+- **Interactive Heat Maps** — Collapsible status heat maps on SSP, TPR, and Profile pages display control status by NIST family. Click any cell to filter the control list below it.
+- **Inline Field Editing** — Edit designated fields (implementation status, test results, remediation plans) directly in the browser; read-only fields are enforced.
+- **Excel Round-Trip** — Upload Excel workbooks and export them back to Excel with original formatting preserved (TPR).
+- **OSCAL Export** — Export Security Profiles as OSCAL Component Definitions (v1.1.2 schema) for integration with the broader OSCAL ecosystem.
+- **Background Processing** — Async job processing for large files via Sidekiq, with real-time status updates in the UI.
 - **RESTful API** — Programmatic access to convert, update, and export documents via `/api/v1/` endpoints.
-- **Background Processing** — Async job processing for large SSP files via Sidekiq.
+- **NIST Catalog Guidance** — Catalog controls are cross-referenced with uploaded documents to provide guidance context during review.
+- **JSON Export** — Download any document as structured JSON for reporting and downstream tooling.
 
 ---
 
-## Stack
-
-| Component | Version |
-|-----------|---------|
-| Ruby | 3.4.4 |
-| Rails | 8.1.2 |
-| Database | PostgreSQL 15 |
-| Background Jobs | Sidekiq + Redis |
-| File Storage | Active Storage (local dev / S3 prod) |
-| Deployment | Docker / Kamal |
-
----
-
-## Running SPARC
+## Quick Start
 
 ### Docker (Recommended)
 
@@ -78,20 +65,12 @@ docker compose up --build
 ```
 
 - `--build` is only needed the first time or after changing `Dockerfile` / `Gemfile`
-- First run may take 3–10 minutes (downloads images, installs gems, precompiles assets, runs migrations)
+- First run may take 3-10 minutes (downloads images, installs gems, runs migrations)
 - Subsequent starts are typically under 20 seconds
 
-You should see:
+Once the app is running, open **http://localhost:3000** in your browser.
 
-```
-web-1  | Waiting for PostgreSQL...
-web-1  | PostgreSQL is ready!
-web-1  | Preparing database...
-web-1  | => Booting Puma...
-web-1  | * Listening on http://0.0.0.0:3000
-```
-
-After the app is up, load the catalog seed data:
+After the app is up, load the NIST catalog seed data:
 
 ```bash
 docker compose exec web bin/rails db:seed
@@ -101,7 +80,65 @@ This seeds NIST SP 800-53 Rev 4 (18 families, 256 controls) and Rev 5 (20 famili
 
 ### Local Development
 
-#### 1. Clone and install
+See the [Development Setup](#development-setup) section below for detailed instructions.
+
+---
+
+## Technology Stack
+
+### Core Framework
+
+| Component | Version | Purpose |
+|-----------|---------|---------|
+| Ruby | 3.4.4 | Language runtime |
+| Rails | 8.1.2 | Web framework |
+| PostgreSQL | 15 | Primary database |
+| Sidekiq | 8.1.1 | Background job processing |
+| Redis | 7+ | Job queue backend |
+| Puma | 7.2.0 | Application server |
+
+### Frontend
+
+| Component | Purpose |
+|-----------|---------|
+| Hotwire (Turbo + Stimulus) | Interactive UI without a JavaScript SPA |
+| Propshaft | Asset pipeline |
+| Importmap | JavaScript module loading (no Node.js build step) |
+
+### Testing & Quality
+
+| Tool | Purpose |
+|------|---------|
+| RSpec | Test framework |
+| FactoryBot + Faker | Test data generation |
+| RuboCop (rails-omakase) | Code style linting |
+| Brakeman | Static security analysis |
+| Capybara + Selenium | System/integration tests |
+
+### DevOps & Deployment
+
+| Tool | Purpose |
+|------|---------|
+| Docker + Docker Compose | Containerized development and deployment |
+| Kamal | Docker-based production deployment |
+| GitHub Actions | CI/CD pipeline (lint, security scan, tests) |
+| Dependabot | Automated dependency updates |
+| Active Storage | File uploads (local dev / S3 production) |
+
+---
+
+## Development Setup
+
+### Prerequisites
+
+- **Ruby** 3.4.4 (use [rbenv](https://github.com/rbenv/rbenv) or [asdf](https://asdf-vm.com/))
+- **PostgreSQL** 15+
+- **Redis** 7+
+- **Bundler** (`gem install bundler`)
+
+### Local Installation
+
+#### 1. Clone and install dependencies
 
 ```bash
 git clone https://github.com/Rebel-Raiders/sparc.git
@@ -112,25 +149,15 @@ bundle install
 #### 2. (Optional) Create a `.env` file
 
 ```bash
-touch .env
-```
-
-```bash
-# Change web port if 3000 is already in use
-WEB_PORT=3001
-
-# Optional: custom Postgres password
+# .env
+WEB_PORT=3000
 POSTGRES_PASSWORD=your-secure-password
 ```
 
 #### 3. Set up the database
 
 ```bash
-bin/rails db:create
-bin/rails db:migrate
-bin/rails active_storage:install
-bin/rails db:migrate
-bin/rails db:seed
+bin/rails db:create db:migrate db:seed
 ```
 
 #### 4. Start background services
@@ -139,7 +166,7 @@ bin/rails db:seed
 # Terminal 1 — Redis
 redis-server
 
-# Terminal 2 — Sidekiq
+# Terminal 2 — Sidekiq (needed for Excel parsing)
 bundle exec sidekiq
 ```
 
@@ -149,17 +176,88 @@ bundle exec sidekiq
 bin/rails server
 ```
 
+Open **http://localhost:3000** in your browser.
+
+### Running Tests
+
+```bash
+# Full test suite
+bundle exec rspec
+
+# Single spec file
+bundle exec rspec spec/models/ssp_document_spec.rb
+
+# Single test by line number
+bundle exec rspec spec/models/ssp_document_spec.rb:18
+
+# Linting
+bundle exec rubocop
+
+# Security scan
+bundle exec brakeman
+
+# Rails console
+bin/rails console
+```
+
 ---
 
-## Access the Application
+## Docker Deployment
 
-| Page | URL |
-|------|-----|
-| Home / Dashboard | http://localhost:3000 |
-| SSP Documents | http://localhost:3000/ssp_documents |
-| TPR Documents | http://localhost:3000/tpr_documents |
-| Control Catalogs | http://localhost:3000/control_catalogs |
-| SSP Editor | http://localhost:3000/ssp_documents/[id]/editor |
+### Development
+
+```bash
+docker compose up --build
+```
+
+Services started:
+- **web** — Rails app on port 3000
+- **db** — PostgreSQL 15 on port 5433 (avoids conflicts with local Postgres)
+- **redis** — Redis 7 on port 6380
+- **sidekiq** — Background job processor
+
+### Production
+
+A production Docker Compose configuration is available at `docker-compose-prod.yaml`. Deployment is configured for [Kamal](https://kamal-deploy.org/) via `config/deploy.yml`.
+
+```bash
+# Production build
+docker compose -f docker-compose-prod.yaml up --build -d
+```
+
+### Common Docker Commands
+
+```bash
+# View logs
+docker compose logs -f web
+
+# Run migrations
+docker compose exec web bin/rails db:migrate
+
+# Seed NIST catalogs
+docker compose exec web bin/rails db:seed
+
+# Rails console
+docker compose exec web bin/rails console
+
+# Stop all services
+docker compose down
+```
+
+---
+
+## API
+
+REST API under the `Api::V1::` namespace at `/api/v1/`:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/ssp_documents/convert` | POST | Upload and convert an SSP Excel file |
+| `/api/v1/ssp_documents/update_fields` | PUT | Update SSP control fields |
+| `/api/v1/ssp_documents/export` | GET | Export SSP as JSON |
+| `/api/v1/tpr_documents/convert` | POST | Upload and convert a TPR Excel file |
+| `/api/v1/tpr_documents/update_fields` | PUT | Update TPR control fields |
+| `/api/v1/tpr_documents/export` | GET | Export TPR as JSON |
 
 ---
 
@@ -173,64 +271,82 @@ Detailed schema documentation for each document type is available in the [`/docs
 | Test Plan Report (TPR) | [docs/tpr-schema.md](docs/tpr-schema.md) |
 | Control Catalog | [docs/catalog-schema.md](docs/catalog-schema.md) |
 
-### Quick Reference — SSP Columns
+---
 
-| Column | Required | Editable | Description |
-|--------|----------|----------|-------------|
-| `Control ID` | Yes | No | NIST control identifier (e.g., `AC-1`) |
-| `Control Title` | Yes | No | Human-readable control name |
-| `Implementation Status` | No | **Yes** | `Implemented`, `Partially Implemented`, `Planned`, `Alternative Implementation`, `Not Applicable`, `Not Implemented` |
-| `Responsible Role` | No | **Yes** | Role or team responsible for the control |
-| `Control Origination` | No | **Yes** | `System Specific`, `Inherited`, `Hybrid` |
-| `Customer Responsibility` | No | **Yes** | Customer obligation, if any |
-| `Implementation Guidance` | No | **Yes** | Free-text implementation narrative |
+## Contributing
 
-### Quick Reference — TPR Columns
+Contributions are welcome! Here's how to get started:
 
-| Column | Required | Description |
-|--------|----------|-------------|
-| `Control ID` | Yes | NIST control identifier (e.g., `AC-1`) |
-| `Control Title` | Yes | Human-readable control name |
-| `Test Status` | No | `Pass`, `Partial`, `Fail`, `Not Tested`, `Not Applicable` |
-| `Test Date` | No | Date the test was performed |
-| `Tester Name` | No | Name of the assessor |
-| `Test Results` | No | Narrative findings |
-| `Remediation Plan` | No | Corrective action for failing controls |
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Make your changes and ensure all checks pass:
+   ```bash
+   bundle exec rubocop      # Linting
+   bundle exec brakeman     # Security
+   bundle exec rspec        # Tests
+   ```
+4. Commit your changes and push to your fork
+5. Open a Pull Request against `main`
 
-> **Note:** Column order does not matter. Null / blank values are stored as empty strings.
+### Branch Naming Convention
+
+| Prefix | Purpose | Version Impact |
+|--------|---------|---------------|
+| `feature/` | New functionality | Minor bump |
+| `fix/` | Bug fixes | Patch bump |
+| `refactor/` | Code restructuring | Major bump |
+| `release/` | Release preparation | Major bump |
+
+---
+
+## Roadmap
+
+### Upcoming Features
+
+Tracked via [GitHub Issues](https://github.com/Rebel-Raiders/sparc/issues):
+
+**OSCAL Integration**
+- SAP Creation (Security Assessment Plan)
+- SAR Creation (Security Assessment Report)
+- POA&M Import & Management
+- SSP Creation & Authoring
+- Baselines to OSCAL Profiles Import & Tailoring
+
+**Compliance Scanning**
+- Vulcan/InSpec to OSCAL Component Definitions (CDEF)
+- SAF Evidence and Attestation Collection
+
+**Authentication & Access Control**
+- Okta MFA Integration & Enforcement
+- GitLab MFA Enforcement & SSO Delegation
+- Generic OIDC/SAML MFA Delegation
+
+---
+
+## Acknowledgments
+
+SPARC builds on the work of several organizations and open-source projects:
+
+- **[NIST](https://www.nist.gov/)** — For the SP 800-53 control catalog framework and the [OSCAL](https://pages.nist.gov/OSCAL/) standard that makes machine-readable compliance possible
+- **[MITRE](https://www.mitre.org/)** — For advancing security automation frameworks including [SAF](https://saf.mitre.org/) (Security Automation Framework) and the [Heimdall](https://github.com/mitre/heimdall2) visualization platform
+- **[Chef/Progress InSpec](https://www.inspec.io/)** — For the compliance-as-code framework that enables automated security testing and profile sharing
+- **[DISA](https://www.disa.mil/)** — For maintaining STIGs (Security Technical Implementation Guides) in XCCDF format
+- **[CIS](https://www.cisecurity.org/)** — For publishing security benchmarks used across industry
+
+### Individual Contributors
+
+- **[@clem-field](https://github.com/clem-field)** — Creator, lead developer, and maintainer
 
 ---
 
 ## Troubleshooting
 
-**Port 3000 already in use**
-Change the port in `docker-compose.yaml` under the `web` service (`ports: - "3001:3000"`) or stop the conflicting process.
+**Port 3000 already in use** — Change the port in `docker-compose.yaml` under the `web` service (`ports: - "3001:3000"`) or stop the conflicting process.
 
-**Database connection refused / timeout**
-Wait a bit longer — first startup can be slow. Check `docker compose logs db` to confirm Postgres is running.
+**Database connection refused** — Wait a bit longer on first startup. Check `docker compose logs db` to confirm Postgres is running.
 
-**Migrations seem stuck or fail**
-The entrypoint automatically runs `db:prepare` on web startup. If needed, run manually:
-```bash
-docker compose exec web bin/rails db:migrate
-```
+**Migrations fail** — The entrypoint automatically runs `db:prepare` on web startup. If needed, run manually: `docker compose exec web bin/rails db:migrate`
 
-**Sidekiq not starting / no jobs processing**
-Check logs: `docker compose logs sidekiq`. You should see `Sidekiq 8.x ... connecting to Redis`.
+**Sidekiq not processing jobs** — Check logs: `docker compose logs sidekiq`. Ensure Redis is running.
 
-**Still stuck?**
-Run `docker compose logs` and look for errors. Feel free to open an issue on GitHub with the output.
-
----
-
-## Related Projects
-
-- [MITRE OSCAL](https://pages.nist.gov/OSCAL/) — Open Security Controls Assessment Language
-- [Open Policy Agent (OPA)](https://www.openpolicyagent.org/) — Policy-as-code enforcement
-- [Terraform Compliance](https://terraform-compliance.com/) — Infrastructure compliance testing
-
----
-
-## Contributing
-
-Contributions are welcome. Please read the contributing guide and code of conduct before submitting a pull request.
+**Still stuck?** — Run `docker compose logs` and look for errors. Feel free to [open an issue](https://github.com/Rebel-Raiders/sparc/issues) with the output.
