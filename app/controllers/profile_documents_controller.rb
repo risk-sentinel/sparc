@@ -1,4 +1,6 @@
 class ProfileDocumentsController < ApplicationController
+  include FileUploadable
+
   before_action :set_profile_document, only: %i[show destroy download_json download_oscal status]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
@@ -25,42 +27,7 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def create
-    uploaded_file = params.dig(:profile_document, :file)
-
-    if uploaded_file.nil?
-      flash[:error] = "Please select a file to upload"
-      @profile_document = ProfileDocument.new
-      render :new and return
-    end
-
-    file_type = detect_file_type(uploaded_file.original_filename)
-
-    # Write to a persistent file (not Tempfile, which auto-deletes on GC
-    # before Sidekiq can process it). The job cleans up via FileUtils.rm_f.
-    # Map file_type to a hardcoded extension — no user-derived data in path.
-    safe_ext = { "xccdf" => ".xml", "json" => ".json" }.fetch(file_type, ".dat")
-    persist_path = Rails.root.join("tmp", "profile_#{SecureRandom.hex(8)}#{safe_ext}")
-    File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
-
-    begin
-      @profile_document = ProfileDocument.create!(
-        name:              File.basename(uploaded_file.original_filename, ".*"),
-        file_type:         file_type,
-        original_filename: uploaded_file.original_filename,
-        status:            "pending"
-      )
-      @profile_document.file.attach(uploaded_file)
-
-      ProfileConversionJob.perform_later(@profile_document.id, persist_path.to_s)
-
-      flash[:success] = "Profile uploaded. Processing in background..."
-      redirect_to @profile_document
-    rescue StandardError => e
-      FileUtils.rm_f(persist_path)
-      flash[:error] = "Error uploading file: #{e.message}"
-      @profile_document = ProfileDocument.new
-      render :new
-    end
+    handle_file_upload(:profile, param_key: :profile_document)
   end
 
   def destroy
@@ -98,14 +65,6 @@ class ProfileDocumentsController < ApplicationController
 
   def set_profile_document
     @profile_document = ProfileDocument.find(params[:id])
-  end
-
-  def detect_file_type(filename)
-    case File.extname(filename).downcase
-    when ".xml"  then "xccdf"
-    when ".json" then "json"
-    else raise "Unsupported file type. Upload .xml (XCCDF) or .json files."
-    end
   end
 
   def build_severity_heatmap(scope)

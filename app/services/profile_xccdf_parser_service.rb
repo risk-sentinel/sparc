@@ -1,6 +1,5 @@
 class ProfileXccdfParserService
-  BATCH_SIZE_CONTROLS = 5_000
-  BATCH_SIZE_FIELDS   = 10_000
+  include BatchInsertable
 
   def initialize(profile_document, file_path)
     @document  = profile_document
@@ -32,7 +31,13 @@ class ProfileXccdfParserService
       end
     end
 
-    batch_insert(control_attrs, field_entries)
+    batch_insert_records(
+      control_class: ProfileControl,
+      field_class:   ProfileControlField,
+      document_fk:   :profile_document_id,
+      control_attrs: control_attrs,
+      field_entries: field_entries
+    )
   end
 
   private
@@ -133,36 +138,6 @@ class ProfileXccdfParserService
       rule_id.split("-").first.upcase
     else
       nil
-    end
-  end
-
-  def batch_insert(control_attrs, field_entries)
-    ActiveRecord::Base.transaction do
-      imported_ids = []
-
-      control_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
-        records = batch.map do |attrs|
-          ProfileControl.new(
-            profile_document_id: @document.id,
-            **attrs
-          )
-        end
-        result = ProfileControl.import(records, validate: false, returning: :id)
-        imported_ids.concat(result.ids)
-      end
-
-      field_records = field_entries.map do |ctrl_idx, fname, fval|
-        ProfileControlField.new(
-          profile_control_id: imported_ids[ctrl_idx],
-          field_name:         fname,
-          field_value:        fval,
-          editable:           ProfileControlField::EDITABLE_FIELDS.include?(fname)
-        )
-      end
-
-      field_records.each_slice(BATCH_SIZE_FIELDS) do |batch|
-        ProfileControlField.import(batch, validate: false)
-      end
     end
   end
 end

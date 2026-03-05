@@ -1,6 +1,8 @@
 require "roo"
 
 class TprExcelParserService
+  include BatchInsertable
+
   # Maps normalized header text → { key:, control_attr: }
   # control_attr: true    = stored on TprControl directly
   # control_attr: :subject = special Subject parsing (asset | environment)
@@ -30,9 +32,6 @@ class TprExcelParserService
     "working comments" => { key: "working_comments", control_attr: false },
     "working status"   => { key: "working_status",   control_attr: false }
   }.freeze
-
-  BATCH_SIZE_CONTROLS = 5_000
-  BATCH_SIZE_FIELDS   = 10_000
 
   def initialize(tpr_document, file_path)
     @document    = tpr_document
@@ -98,43 +97,13 @@ class TprExcelParserService
       end
     end
 
-    # Batch insert within a single transaction
-    ActiveRecord::Base.transaction do
-      imported_ids = []
-
-      control_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
-        records = batch.map do |attrs|
-          TprControl.new(
-            tpr_document_id:    @document.id,
-            control_id:         attrs[:control_id],
-            title:              attrs[:title],
-            section:            attrs[:section],
-            subject_asset:      attrs[:subject_asset],
-            subject_environment: attrs[:subject_environment],
-            row_order:          attrs[:row_order],
-            control_family:     attrs[:control_family],
-            cached_result:      attrs[:cached_result]
-          )
-        end
-
-        result = TprControl.import(records, validate: false, returning: :id)
-        imported_ids.concat(result.ids)
-      end
-
-      # Build field records mapped to the returned control IDs
-      field_records = field_entries.map do |ctrl_idx, fname, fval|
-        TprControlField.new(
-          tpr_control_id: imported_ids[ctrl_idx],
-          field_name:     fname,
-          field_value:    fval,
-          editable:       TprControlField::EDITABLE_FIELDS.include?(fname)
-        )
-      end
-
-      field_records.each_slice(BATCH_SIZE_FIELDS) do |batch|
-        TprControlField.import(batch, validate: false)
-      end
-    end
+    batch_insert_records(
+      control_class: TprControl,
+      field_class:   TprControlField,
+      document_fk:   :tpr_document_id,
+      control_attrs: control_attrs,
+      field_entries: field_entries
+    )
 
     # Save Excel metadata for round-trip export
     @document.update!(excel_metadata: {
