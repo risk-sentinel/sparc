@@ -43,7 +43,8 @@ class SspDocumentsController < ApplicationController
 
     # Write to a persistent file (not Tempfile, which auto-deletes on GC
     # before Sidekiq can process it). The job cleans up via FileUtils.rm_f.
-    persist_path = Rails.root.join("tmp", "ssp_#{SecureRandom.hex(8)}#{File.extname(uploaded_file.original_filename)}")
+    # Use .xlsx extension — no user-derived data in path (satisfies Brakeman).
+    persist_path = Rails.root.join("tmp", "ssp_#{SecureRandom.hex(8)}.xlsx")
     File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
 
     begin
