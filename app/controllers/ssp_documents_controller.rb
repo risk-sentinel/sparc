@@ -41,10 +41,11 @@ class SspDocumentsController < ApplicationController
       render :new and return
     end
 
-    temp_file = Tempfile.new([ "ssp", File.extname(uploaded_file.original_filename) ])
-    temp_file.binmode
-    temp_file.write(uploaded_file.read)
-    temp_file.close
+    # Write to a persistent file (not Tempfile, which auto-deletes on GC
+    # before Sidekiq can process it). The job cleans up via FileUtils.rm_f.
+    # Use .xlsx extension — no user-derived data in path (satisfies Brakeman).
+    persist_path = Rails.root.join("tmp", "ssp_#{SecureRandom.hex(8)}.xlsx")
+    File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
 
     begin
       @ssp_document = SspDocument.create!(
@@ -55,12 +56,12 @@ class SspDocumentsController < ApplicationController
       )
       @ssp_document.file.attach(uploaded_file)
 
-      SspConversionJob.perform_later(@ssp_document.id, temp_file.path)
+      SspConversionJob.perform_later(@ssp_document.id, persist_path.to_s)
 
       flash[:success] = "Controls Implementation workbook uploaded. Processing in background…"
       redirect_to @ssp_document
     rescue StandardError => e
-      temp_file.unlink
+      FileUtils.rm_f(persist_path)
       flash[:error] = "Error uploading file: #{e.message}"
       render :new
     end
