@@ -16,6 +16,8 @@ class SspConversionJob < ApplicationJob
       document.update!(status: "failed", error_message: e.message)
       Rails.logger.error("SSP Conversion failed: #{e.message}")
       # SspMailer.conversion_failed(document, e.message).deliver_later
+    ensure
+      FileUtils.rm_f(file_path)
     end
   end
 end
