@@ -101,7 +101,8 @@
         <% family_pct   = (family_impl * 100.0 / family_denom).round %>
         <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
           <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
-            <span style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text);"><%= family %></span>
+            <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
+               style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text); text-decoration: none; cursor: pointer;"><%= family %></a>
             <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= family_pct %>%</span>
           </div>
           <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
@@ -429,6 +430,16 @@
     if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
   }
 
+  function filterByFamily(family) {
+    if (activeFamily === family && activeStatus === null) { clearHeatmapFilter(); return; }
+    activeFamily = family; activeStatus = null;
+    applyFilter();
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = el.dataset.family === family ? '1' : '0.35'; el.style.outline = 'none';
+    });
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
+  }
+
   function filterByStatus(status) {
     if (activeFamily === null && activeStatus === status) { clearHeatmapFilter(); return; }
     activeFamily = null; activeStatus = status;
@@ -452,7 +463,7 @@
       if (show) visible++;
     });
     if (activeFamily !== null || activeStatus !== null) {
-      var label = activeFamily ? activeFamily + ' \u2022 ' + activeStatus : activeStatus;
+      var label = activeFamily && activeStatus ? activeFamily + ' \u2022 ' + activeStatus : (activeFamily || activeStatus);
       document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
       document.getElementById('heatmapFilterBanner').style.display = 'flex';
     } else {
