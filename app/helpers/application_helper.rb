@@ -14,6 +14,7 @@ module ApplicationHelper
 
   TPR_STATUS_COLORS = {
     # Result field values
+    "Passed"                => "#27ae60",
     "Pass"                  => "#27ae60",
     "Failed"                => "#e74c3c",
     # Working Status values
