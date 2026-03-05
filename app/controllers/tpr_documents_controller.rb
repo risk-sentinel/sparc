@@ -19,35 +19,42 @@ class TprDocumentsController < ApplicationController
 
     controls_scope = @tpr_document.tpr_controls
 
-    # Filter options via SQL DISTINCT (no full record load)
+    # Filter options — TRIM + DISTINCT to deduplicate values with whitespace differences
     @sections     = controls_scope.where.not(section: nil)
                                   .distinct.order(:section).pluck(:section)
     @assets       = controls_scope.where.not(subject_asset: [ nil, "" ])
-                                  .distinct.order(:subject_asset).pluck(:subject_asset)
+                                  .pluck(Arel.sql("DISTINCT TRIM(subject_asset)")).sort
     @environments = controls_scope.where.not(subject_environment: [ nil, "" ])
-                                  .distinct.order(:subject_environment).pluck(:subject_environment)
+                                  .pluck(Arel.sql("DISTINCT TRIM(subject_environment)")).sort
 
-    # Heatmap via aggregate SQL query (no record instantiation)
+    # Apply context filters (section/asset/env) BEFORE building heatmap so
+    # the family cards reflect the active context selection
+    base_filtered = controls_scope
+    base_filtered = base_filtered.where(section: params[:section])                 if params[:section].present?
+    base_filtered = base_filtered.where(subject_asset: params[:asset])             if params[:asset].present?
+    base_filtered = base_filtered.where(subject_environment: params[:environment]) if params[:environment].present?
+
+    # Heatmap built from context-filtered scope (responds to asset/env/section)
     @heatmap_data, @heatmap_families, @heatmap_statuses =
-      build_heatmap_from_sql(@tpr_document)
+      build_heatmap_from_scope(base_filtered)
 
-    # Apply filters from query params
-    filtered = controls_scope
-    filtered = filtered.where(section: params[:section])                 if params[:section].present?
-    filtered = filtered.where(subject_asset: params[:asset])             if params[:asset].present?
-    filtered = filtered.where(subject_environment: params[:environment]) if params[:environment].present?
+    # Apply family/status filters using raw SQL to avoid
+    # #or structural incompatibility with :joins
+    filtered = base_filtered
 
     if params[:family].present?
-      filtered = filtered.where(control_family: params[:family])
-                         .or(filtered.where(control_family: nil)
-                         .where("UPPER(SPLIT_PART(control_id, '-', 1)) = ?", params[:family]))
+      filtered = filtered.where(
+        "control_family = :family OR (control_family IS NULL AND UPPER(SPLIT_PART(control_id, '-', 1)) = :family)",
+        family: params[:family]
+      )
     end
 
     if params[:status].present?
-      filtered = filtered.where(cached_result: params[:status])
-                         .or(filtered.where(cached_result: nil)
-                         .joins(:tpr_control_fields)
-                         .where(tpr_control_fields: { field_name: "result", field_value: params[:status] }))
+      filtered = filtered.where(
+        "cached_result = :status OR (cached_result IS NULL AND tpr_controls.id IN " \
+        "(SELECT tpr_control_id FROM tpr_control_fields WHERE field_name = 'result' AND field_value = :status))",
+        status: params[:status]
+      )
     end
 
     # Paginate (explicit order since default_scope was removed for query performance)
@@ -185,8 +192,8 @@ class TprDocumentsController < ApplicationController
     "Partial", "Fail", "Not Tested", "Not Applicable"
   ].freeze
 
-  def build_heatmap_from_sql(tpr_document)
-    scope = tpr_document.tpr_controls.where.not(control_id: [ nil, "" ])
+  def build_heatmap_from_scope(scope)
+    scope = scope.where.not(control_id: [ nil, "" ])
 
     # Use denormalized columns if available, otherwise fall back to SQL extraction
     has_denormalized = scope.where.not(control_family: nil).exists?
