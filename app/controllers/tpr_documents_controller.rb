@@ -1,5 +1,5 @@
 class TprDocumentsController < ApplicationController
-  include Pagy::Backend
+  include Pagy::Method
 
   CONTROLS_PER_PAGE = 50
 
@@ -52,6 +52,7 @@ class TprDocumentsController < ApplicationController
 
     # Paginate (explicit order since default_scope was removed for query performance)
     @pagy, @controls = pagy(
+      :offset,
       filtered.order(:row_order).includes(:tpr_control_fields),
       limit: CONTROLS_PER_PAGE
     )
