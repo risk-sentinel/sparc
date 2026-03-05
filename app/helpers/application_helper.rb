@@ -36,4 +36,15 @@ module ApplicationHelper
   def tpr_status_color(status, _count = 0)
     TPR_STATUS_COLORS[status] || "#7f8c8d"
   end
+
+  PROFILE_SEVERITY_COLORS = {
+    "high"   => "#e74c3c",
+    "medium" => "#f39c12",
+    "low"    => "#3498db",
+    "info"   => "#95a5a6"
+  }.freeze
+
+  def profile_severity_color(severity)
+    PROFILE_SEVERITY_COLORS[severity.to_s.downcase] || "#7f8c8d"
+  end
 end
