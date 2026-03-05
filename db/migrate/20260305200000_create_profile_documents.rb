@@ -33,9 +33,9 @@ class CreateProfileDocuments < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :profile_controls, [:profile_document_id, :row_order],
+    add_index :profile_controls, [ :profile_document_id, :row_order ],
               name: "idx_profile_controls_on_doc_row"
-    add_index :profile_controls, [:profile_document_id, :control_family],
+    add_index :profile_controls, [ :profile_document_id, :control_family ],
               name: "idx_profile_controls_on_doc_family"
 
     create_table :profile_control_fields do |t|
@@ -47,7 +47,7 @@ class CreateProfileDocuments < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :profile_control_fields, [:profile_control_id, :field_name],
+    add_index :profile_control_fields, [ :profile_control_id, :field_name ],
               name: "idx_profile_fields_on_ctrl_name"
   end
 end
