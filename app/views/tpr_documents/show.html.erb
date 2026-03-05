@@ -452,7 +452,7 @@
 <%# ── PAGINATION ──────────────────────────────────────────────────── %>
 <% if @pagy.pages > 1 %>
 <div style="margin-top: 1.5rem; text-align: center;">
-  <%== pagy_nav(@pagy) %>
+  <%== @pagy.series_nav %>
   <div style="font-size: 0.8rem; color: var(--text-faint); margin-top: 0.5rem;">
     Showing <%= @pagy.from %>-<%= @pagy.to %> of <%= @pagy.count %> controls
   </div>

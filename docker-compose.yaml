@@ -28,7 +28,7 @@ services:
 
   web:
     build: .
-    command: bash -c "bundle install --quiet && rm -f tmp/pids/server.pid && bundle exec rails db:prepare && bundle exec rails s -b '0.0.0.0' -p 3000"
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails db:prepare && bundle exec rails s -b '0.0.0.0' -p 3000"
     volumes:
       - .:/rails
       - bundle_cache:/usr/local/bundle
@@ -46,12 +46,12 @@ services:
       REDIS_URL: redis://redis:6379/0
       ACTIVE_STORAGE_SERVICE: local
       DOCKERIZED: "true"
-      BUNDLE_DEPLOYMENT: ""           # override Dockerfile production setting
-      BUNDLE_WITHOUT: ""              # allow all gem groups in dev
+      BUNDLE_DEPLOYMENT: ""           # override Dockerfile frozen-install setting
+      BUNDLE_WITHOUT: "development test"
 
   sidekiq:
     build: .
-    command: bash -c "bundle install --quiet && bundle exec sidekiq"
+    command: bundle exec sidekiq
     volumes:
       - .:/rails
       - bundle_cache:/usr/local/bundle
@@ -67,8 +67,8 @@ services:
       RAILS_ENV: development
       DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development
       REDIS_URL: redis://redis:6379/0
-      BUNDLE_DEPLOYMENT: ""           # override Dockerfile production setting
-      BUNDLE_WITHOUT: ""              # allow all gem groups in dev
+      BUNDLE_DEPLOYMENT: ""           # override Dockerfile frozen-install setting
+      BUNDLE_WITHOUT: "development test"
 
 volumes:
   postgres_data:

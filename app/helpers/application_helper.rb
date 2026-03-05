@@ -1,6 +1,4 @@
 module ApplicationHelper
-  include Pagy::Frontend
-
   SSP_STATUS_COLORS = {
     # Current schema values
     "Implemented"              => "#27ae60",
