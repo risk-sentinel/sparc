@@ -6,6 +6,25 @@
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [What It Can Do](#what-it-can-do)
+- [Key Features](#key-features)
+- [Quick Start](#quick-start)
+- [Technology Stack](#technology-stack)
+- [Development Setup](#development-setup)
+- [Docker Deployment](#docker-deployment)
+- [API](#api)
+- [Data Schemas](#data-schemas)
+- [Contributing](#contributing)
+- [Roadmap](#roadmap)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## Overview
 
 Managing **System Security Plans (SSPs)**, **Test Plans & Results (TPRs)**, and security baselines is painful when everything lives in large, versioned Excel files. SPARC solves that by providing:
