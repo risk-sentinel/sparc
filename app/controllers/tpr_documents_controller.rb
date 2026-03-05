@@ -104,10 +104,10 @@ class TprDocumentsController < ApplicationController
       render :new and return
     end
 
-    temp_file = Tempfile.new([ "tpr", File.extname(uploaded_file.original_filename) ])
-    temp_file.binmode
-    temp_file.write(uploaded_file.read)
-    temp_file.close
+    # Write to a persistent file (not Tempfile, which auto-deletes on GC
+    # before Sidekiq can process it). The job cleans up via FileUtils.rm_f.
+    persist_path = Rails.root.join("tmp", "tpr_#{SecureRandom.hex(8)}#{File.extname(uploaded_file.original_filename)}")
+    File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
 
     begin
       @tpr_document = TprDocument.create!(
@@ -118,12 +118,12 @@ class TprDocumentsController < ApplicationController
       )
       @tpr_document.file.attach(uploaded_file)
 
-      TprConversionJob.perform_later(@tpr_document.id, temp_file.path)
+      TprConversionJob.perform_later(@tpr_document.id, persist_path.to_s)
 
       flash[:success] = "Test Plan Results workbook uploaded. Processing in background..."
       redirect_to @tpr_document
     rescue StandardError => e
-      temp_file.unlink rescue nil
+      FileUtils.rm_f(persist_path)
       flash[:error] = "Error uploading file: #{e.message}"
       render :new
     end
