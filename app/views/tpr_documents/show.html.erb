@@ -37,10 +37,11 @@
   @heatmap_statuses.each { |s| total_by_status[s] = @heatmap_families.sum { |f| @heatmap_data.dig(f, s) || 0 } }
   total_controls = total_by_status.values.sum
 
-  pass_count  = total_by_status["Pass"].to_i
-  fail_count  = (total_by_status["Failed"].to_i + total_by_status["Fail"].to_i)
-  tested      = [pass_count + fail_count, 1].max
-  pass_pct    = (pass_count * 100.0 / tested).round(1)
+  # Case-insensitive matching for pass/fail variants (Pass, Passed, PASS, Failed, Fail, etc.)
+  pass_count  = total_by_status.sum { |s, c| s.to_s.downcase.start_with?("pass") ? c : 0 }
+  fail_count  = total_by_status.sum { |s, c| s.to_s.downcase.match?(/\A(fail|not satisfied)/) ? c : 0 }
+  tested      = pass_count + fail_count
+  pass_pct    = tested > 0 ? (pass_count * 100.0 / tested).round(1) : 0.0
   score_color = pass_pct >= 80 ? "#2ecc71" : pass_pct >= 50 ? "#f39c12" : "#e74c3c"
 
   # Field display order for the read view
@@ -92,6 +93,7 @@
     <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
       <div style="font-size: 2.6rem; font-weight: 800; color: <%= score_color %>; line-height: 1; font-variant-numeric: tabular-nums;"><%= pass_pct %>%</div>
       <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">Pass Rate</div>
+      <div style="font-size: 0.58rem; color: rgba(255,255,255,0.3); margin-top: 0.1rem;"><%= pass_count %> / <%= tested %> tested</div>
     </div>
     <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
     <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; flex: 1;">
@@ -192,11 +194,14 @@
       <% @heatmap_families.each do |family| %>
         <% fd = @heatmap_data[family] || {} %>
         <% ft = fd.values.sum %>
-        <% fp = fd["Pass"].to_i; ff = (fd["Failed"].to_i + fd["Fail"].to_i) %>
+        <% fp = fd.sum { |s, c| s.to_s.downcase.start_with?("pass") ? c : 0 } %>
+        <% ff = fd.sum { |s, c| s.to_s.downcase.match?(/\A(fail|not satisfied)/) ? c : 0 } %>
         <% fpct = (fp * 100.0 / [fp + ff, 1].max).round %>
-        <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem;">
+        <% card_family_active = active_family == family && active_status.blank? %>
+        <div style="background: var(--surface); border: 1px solid <%= card_family_active ? '#3498db' : 'var(--border-soft)' %>; border-radius: 8px; padding: 0.85rem; <%= 'box-shadow: 0 0 0 1px #3498db;' if card_family_active %>">
           <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
-            <span style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text);"><%= family %></span>
+            <%= link_to family, tpr_document_path(@tpr_document, filter_params.except(:page).merge(card_family_active ? { family: nil, status: nil } : { family: family, status: nil })),
+                  style: "font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text); text-decoration: none; cursor: pointer;" %>
             <span style="font-size: 0.72rem; font-weight: 700; color: <%= fpct >= 80 ? '#27ae60' : fpct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= fpct %>%</span>
           </div>
           <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= ft %> tests</div>
