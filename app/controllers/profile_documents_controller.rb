@@ -35,10 +35,10 @@ class ProfileDocumentsController < ApplicationController
 
     file_type = detect_file_type(uploaded_file.original_filename)
 
-    temp_file = Tempfile.new([ "profile", File.extname(uploaded_file.original_filename) ])
-    temp_file.binmode
-    temp_file.write(uploaded_file.read)
-    temp_file.close
+    # Write to a persistent file (not Tempfile, which auto-deletes on GC
+    # before Sidekiq can process it). The job cleans up via FileUtils.rm_f.
+    persist_path = Rails.root.join("tmp", "profile_#{SecureRandom.hex(8)}#{File.extname(uploaded_file.original_filename)}")
+    File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
 
     begin
       @profile_document = ProfileDocument.create!(
@@ -49,12 +49,12 @@ class ProfileDocumentsController < ApplicationController
       )
       @profile_document.file.attach(uploaded_file)
 
-      ProfileConversionJob.perform_later(@profile_document.id, temp_file.path)
+      ProfileConversionJob.perform_later(@profile_document.id, persist_path.to_s)
 
       flash[:success] = "Profile uploaded. Processing in background..."
       redirect_to @profile_document
     rescue StandardError => e
-      temp_file.unlink rescue nil
+      FileUtils.rm_f(persist_path)
       flash[:error] = "Error uploading file: #{e.message}"
       @profile_document = ProfileDocument.new
       render :new
