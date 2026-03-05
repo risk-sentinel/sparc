@@ -339,6 +339,12 @@ SPARC builds on the work of several organizations and open-source projects:
 
 ---
 
+## License
+
+SPARC is released under the [MIT License](LICENSE).
+
+---
+
 ## Troubleshooting
 
 **Port 3000 already in use** — Change the port in `docker-compose.yaml` under the `web` service (`ports: - "3001:3000"`) or stop the conflicting process.
