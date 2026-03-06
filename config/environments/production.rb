@@ -2,6 +2,7 @@ require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
+  # See docs/ENVIRONMENT_VARIABLES.md for the full SPARC configuration reference.
 
   # Code is not reloaded between requests.
   config.enable_reloading = false
@@ -28,7 +29,8 @@ Rails.application.configure do
   config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  # Configurable via FORCE_SSL env var (default: true in production).
+  config.force_ssl = ENV.fetch("FORCE_SSL", "true") == "true"
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -37,8 +39,8 @@ Rails.application.configure do
   config.log_tags = [ :request_id ]
   config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
 
-  # Change to "debug" to log everything (including potentially personally-identifiable information!)
-  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
+  # Configurable via SPARC_LOG_LEVEL (preferred) or RAILS_LOG_LEVEL (legacy fallback).
+  config.log_level = ENV.fetch("SPARC_LOG_LEVEL", ENV.fetch("RAILS_LOG_LEVEL", "info"))
 
   # Prevent health checks from clogging up the logs.
   config.silence_healthcheck_path = "/up"
@@ -53,21 +55,27 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # ── Mailer Configuration ─────────────────────────────────────────────────
+  # Set host from SPARC_APP_URL for links generated in mailer templates.
+  mailer_host = ENV.fetch("SPARC_APP_URL", "https://example.com")
+                   .gsub(%r{\Ahttps?://}, "")
+                   .split(":").first
+  config.action_mailer.default_url_options = { host: mailer_host }
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
-
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # SMTP delivery — enabled via SPARC_ENABLE_SMTP=true.
+  # See docs/ENVIRONMENT_VARIABLES.md for all SPARC_SMTP_* variables.
+  if ENV["SPARC_ENABLE_SMTP"] == "true"
+    config.action_mailer.raise_delivery_errors = true
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = {
+      address: ENV.fetch("SPARC_SMTP_ADDRESS", "localhost"),
+      port: ENV.fetch("SPARC_SMTP_PORT", "587").to_i,
+      user_name: ENV.fetch("SPARC_SMTP_USERNAME", nil),
+      password: ENV.fetch("SPARC_SMTP_PASSWORD", nil),
+      authentication: ENV.fetch("SPARC_SMTP_AUTH", "plain").to_sym,
+      enable_starttls_auto: ENV.fetch("SPARC_SMTP_STARTTLS_AUTO", "true") == "true"
+    }
+  end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

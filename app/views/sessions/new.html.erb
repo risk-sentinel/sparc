@@ -1,0 +1,115 @@
+<% if SparcConfig.any_auth_enabled? %>
+  <%# ── Tab Navigation ────────────────────────────────────────────── %>
+  <div class="login-tabs">
+    <% tab_index = 0 %>
+
+    <% if SparcConfig.enable_local_login? %>
+      <button class="login-tab <%= 'active' if tab_index == 0 %>"
+              data-tab="tab-local"
+              onclick="switchTab('tab-local')">
+        Local Login
+      </button>
+      <% tab_index += 1 %>
+    <% end %>
+
+    <% if SparcConfig.enable_oidc? %>
+      <button class="login-tab <%= 'active' if tab_index == 0 %>"
+              data-tab="tab-oidc"
+              onclick="switchTab('tab-oidc')">
+        <%= SparcConfig.oidc_provider_title %>
+      </button>
+      <% tab_index += 1 %>
+    <% end %>
+
+    <% if SparcConfig.enable_ldap? %>
+      <button class="login-tab <%= 'active' if tab_index == 0 %>"
+              data-tab="tab-ldap"
+              onclick="switchTab('tab-ldap')">
+        LDAP
+      </button>
+      <% tab_index += 1 %>
+    <% end %>
+  </div>
+
+  <%# ── Tab Panels ────────────────────────────────────────────────── %>
+  <% panel_index = 0 %>
+
+  <%# ── Local Login ─────────────────────────────────────────── %>
+  <% if SparcConfig.enable_local_login? %>
+    <div id="tab-local" class="login-tab-panel <%= 'active' if panel_index == 0 %>">
+      <div class="login-form-group">
+        <label for="local-email">Email Address</label>
+        <input type="email" id="local-email" placeholder="you@example.com" disabled>
+      </div>
+      <div class="login-form-group">
+        <label for="local-password">Password</label>
+        <input type="password" id="local-password" placeholder="Enter your password" disabled>
+      </div>
+      <button class="login-btn login-btn-primary" disabled>Sign In</button>
+      <div class="login-coming-soon">Local authentication coming soon</div>
+
+      <% if SparcConfig.enable_registration? %>
+        <div class="login-divider"><span>or</span></div>
+        <button class="login-btn login-btn-primary" disabled
+                style="background: #27ae60;">
+          Create Account
+        </button>
+        <div class="login-coming-soon">User registration coming soon</div>
+      <% end %>
+    </div>
+    <% panel_index += 1 %>
+  <% end %>
+
+  <%# ── OIDC / SSO ─────────────────────────────────────────── %>
+  <% if SparcConfig.enable_oidc? %>
+    <div id="tab-oidc" class="login-tab-panel <%= 'active' if panel_index == 0 %>">
+      <div style="text-align: center; padding: 1rem 0;">
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+          Sign in with your organization's identity provider
+        </p>
+        <button class="login-btn login-btn-oidc" disabled>
+          Sign in with <%= SparcConfig.oidc_provider_title %>
+        </button>
+        <div class="login-coming-soon">OIDC/OAuth2 integration coming soon</div>
+      </div>
+    </div>
+    <% panel_index += 1 %>
+  <% end %>
+
+  <%# ── LDAP ───────────────────────────────────────────────── %>
+  <% if SparcConfig.enable_ldap? %>
+    <div id="tab-ldap" class="login-tab-panel <%= 'active' if panel_index == 0 %>">
+      <div class="login-form-group">
+        <label for="ldap-username">Username</label>
+        <input type="text" id="ldap-username" placeholder="Enter your username" disabled>
+      </div>
+      <div class="login-form-group">
+        <label for="ldap-password">Password</label>
+        <input type="password" id="ldap-password" placeholder="Enter your password" disabled>
+      </div>
+      <button class="login-btn login-btn-primary" disabled>Sign In with LDAP</button>
+      <div class="login-coming-soon">LDAP authentication coming soon</div>
+    </div>
+    <% panel_index += 1 %>
+  <% end %>
+
+<% else %>
+  <%# ── No Auth Configured ──────────────────────────────────── %>
+  <div class="login-no-auth">
+    <div class="login-no-auth-icon">&#128274;</div>
+    <h3>Authentication Not Configured</h3>
+    <p>
+      No authentication methods are currently enabled.
+      Set one or more <code>SPARC_ENABLE_*</code> environment variables
+      to activate login.
+    </p>
+    <p style="margin-top: 1rem; font-size: 0.85rem;">
+      See
+      <a href="https://github.com/Rebel-Raiders/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md"
+         target="_blank" rel="noopener">
+        docs/ENVIRONMENT_VARIABLES.md
+      </a>
+      for configuration details.
+    </p>
+  </div>
+<% end %>
