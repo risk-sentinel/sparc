@@ -28,7 +28,7 @@
 
 ## Overview
 
-Managing **System Security Plans (SSPs)**, **Test Plans & Results (TPRs)**, and security baselines is painful when everything lives in large, versioned Excel files. SPARC solves that by providing:
+Managing **System Security Plans (SSPs)**, **Security Assessment Results (SARs)**, and security baselines is painful when everything lives in large, versioned Excel files. SPARC solves that by providing:
 
 - A **structured database** backing every control, replacing `SSP_v12_final_REALLYFINAL.xlsx` with a single source of truth
 - **Real-time collaboration** so security teams, assessors, and system owners work from the same live data
@@ -57,7 +57,7 @@ SPARC supports the full lifecycle of compliance documentation across four integr
 
 **SSP Document Management** — Upload Excel-based System Security Plans, automatically parse controls and fields via background processing, edit implementation details inline, and export to JSON.
 
-**TPR Document Management** — Upload and manage Test Plan Reports with multi-sheet support, color-coded test status indicators, pagination, filtering by section/asset/environment, and round-trip Excel export.
+**SAR Document Management** — Upload and manage Security Assessment Results with multi-sheet support, color-coded test status indicators, pagination, filtering by section/asset/environment, and round-trip Excel export.
 
 ### RMF Artifact Lifecycle Order
 
@@ -70,16 +70,16 @@ The UI navigation and landing page follow the OSCAL / RMF artifact dependency ch
 | 3 | **Component Definition (CDEF)** | Catalog / Profile (control IDs) | Reusable control implementations (tech, process, service) | Roadmap |
 | 4 | **System Security Plan (SSP)** | Profile + Component Definitions | How the system implements the baseline | Implemented |
 | 5 | **Assessment Plan (SAP)** | SSP + Profile | How the assessment will be performed | Roadmap |
-| 6 | **Assessment Results (SAR)** | Assessment Plan + SSP | Findings & evidence from actual assessment | Roadmap |
+| 6 | **Assessment Results (SAR)** | Assessment Plan + SSP | Findings & evidence from actual assessment | Implemented |
 | 7 | **POA&M** | SSP + Assessment Results | Remediation tracking for weaknesses | Roadmap |
 
 ---
 
 ## Key Features
 
-- **Interactive Heat Maps** — Collapsible status heat maps on SSP, TPR, and CDEF pages display control status by NIST family. Click any cell to filter the control list below it.
+- **Interactive Heat Maps** — Collapsible status heat maps on SSP, SAR, and CDEF pages display control status by NIST family. Click any cell to filter the control list below it.
 - **Inline Field Editing** — Edit designated fields (implementation status, test results, remediation plans) directly in the browser; read-only fields are enforced.
-- **Excel Round-Trip** — Upload Excel workbooks and export them back to Excel with original formatting preserved (TPR).
+- **Excel Round-Trip** — Upload Excel workbooks and export them back to Excel with original formatting preserved (SAR).
 - **OSCAL Export** — Export Component Definitions as OSCAL Component Definitions (v1.1.2 schema) for integration with the broader OSCAL ecosystem.
 - **Background Processing** — Async job processing for large files via Sidekiq, with real-time status updates in the UI.
 - **RESTful API** — Programmatic access to convert, update, and export documents via `/api/v1/` endpoints.
@@ -314,9 +314,9 @@ REST API under the `Api::V1::` namespace at `/api/v1/`:
 | `/api/v1/ssp_documents/convert` | POST | Upload and convert an SSP Excel file |
 | `/api/v1/ssp_documents/update_fields` | PUT | Update SSP control fields |
 | `/api/v1/ssp_documents/export` | GET | Export SSP as JSON |
-| `/api/v1/tpr_documents/convert` | POST | Upload and convert a TPR Excel file |
-| `/api/v1/tpr_documents/update_fields` | PUT | Update TPR control fields |
-| `/api/v1/tpr_documents/export` | GET | Export TPR as JSON |
+| `/api/v1/sar_documents/convert` | POST | Upload and convert a SAR Excel file |
+| `/api/v1/sar_documents/update_fields` | PUT | Update SAR control fields |
+| `/api/v1/sar_documents/export` | GET | Export SAR as JSON |
 
 ---
 
@@ -327,7 +327,7 @@ Detailed schema documentation for each document type is available in the [`/docs
 | Document | Schema Reference |
 |----------|----------------|
 | System Security Plan (SSP) | [docs/ssp-columns.md](docs/ssp-columns.md) |
-| Test Plan Report (TPR) | [docs/tpr-columns.md](docs/tpr-columns.md) |
+| Security Assessment Results (SAR) | [docs/sar-columns.md](docs/sar-columns.md) |
 | Control Catalog | [docs/catalog-schema.md](docs/catalog-schema.md) |
 
 ---

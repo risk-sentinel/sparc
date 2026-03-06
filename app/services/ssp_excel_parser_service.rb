@@ -29,7 +29,7 @@ class SspExcelParserService
   def initialize(ssp_document, file_path)
     @document  = ssp_document
     @file_path = file_path
-    @spreadsheet = Roo::Spreadsheet.open(file_path)
+    @spreadsheet = Roo::Spreadsheet.open(file_path.to_s)
   end
 
   def parse

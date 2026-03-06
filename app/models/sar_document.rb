@@ -1,5 +1,5 @@
-class TprDocument < ApplicationRecord
-  has_many :tpr_controls, dependent: :delete_all
+class SarDocument < ApplicationRecord
+  has_many :sar_controls, dependent: :delete_all
   has_one_attached :file
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
@@ -10,7 +10,7 @@ class TprDocument < ApplicationRecord
   def to_json_data
     {
       document_name: name,
-      controls: tpr_controls.order(:row_order).includes(:tpr_control_fields).map(&:to_hash)
+      controls: sar_controls.order(:row_order).includes(:sar_control_fields).map(&:to_hash)
     }
   end
 end

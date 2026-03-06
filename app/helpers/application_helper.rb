@@ -12,7 +12,7 @@ module ApplicationHelper
     "Not Implemented"          => "#e74c3c"
   }.freeze
 
-  TPR_STATUS_COLORS = {
+  SAR_STATUS_COLORS = {
     # Result field values
     "Passed"                => "#27ae60",
     "Pass"                  => "#27ae60",
@@ -33,8 +33,8 @@ module ApplicationHelper
     SSP_STATUS_COLORS[status] || "#7f8c8d"
   end
 
-  def tpr_status_color(status, _count = 0)
-    TPR_STATUS_COLORS[status] || "#7f8c8d"
+  def sar_status_color(status, _count = 0)
+    SAR_STATUS_COLORS[status] || "#7f8c8d"
   end
 
   CDEF_SEVERITY_COLORS = {

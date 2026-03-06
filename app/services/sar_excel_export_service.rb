@@ -1,9 +1,9 @@
 require "caxlsx"
 
-class TprExcelExportService
-  def initialize(tpr_document)
-    @document = tpr_document
-    @metadata = tpr_document.excel_metadata || {}
+class SarExcelExportService
+  def initialize(sar_document)
+    @document = sar_document
+    @metadata = sar_document.excel_metadata || {}
   end
 
   def export
@@ -15,14 +15,14 @@ class TprExcelExportService
     )
 
     sheet_order = @metadata["sheet_order"] ||
-                  @document.tpr_controls.distinct.order(:section).pluck(:section).compact
+                  @document.sar_controls.distinct.order(:section).pluck(:section).compact
 
     sheets_meta = @metadata["sheets"] || {}
 
     sheet_order.each do |section_name|
-      controls = @document.tpr_controls
+      controls = @document.sar_controls
                            .where(section: section_name)
-                           .includes(:tpr_control_fields)
+                           .includes(:sar_control_fields)
                            .order(:row_order)
 
       next if controls.empty?
@@ -34,7 +34,7 @@ class TprExcelExportService
         sheet.add_row headers, style: header_style
 
         controls.each do |control|
-          field_map = control.tpr_control_fields.index_by(&:field_name)
+          field_map = control.sar_control_fields.index_by(&:field_name)
           row = headers.map { |h| cell_value(h, control, field_map) }
           sheet.add_row row
         end
@@ -47,7 +47,7 @@ class TprExcelExportService
   private
 
   def default_headers
-    TprExcelParserService::COLUMN_MAP.map { |normalized, config|
+    SarExcelParserService::COLUMN_MAP.map { |normalized, config|
       # Restore original casing from the normalized key
       normalized.split.map(&:capitalize).join(" ")
     }
@@ -60,7 +60,7 @@ class TprExcelExportService
 
   def cell_value(header, control, field_map)
     normalized = header.to_s.strip.downcase
-    config = TprExcelParserService::COLUMN_MAP[normalized]
+    config = SarExcelParserService::COLUMN_MAP[normalized]
     return nil unless config
 
     case config[:control_attr]
