@@ -1,9 +1,8 @@
-class ProfileJsonParserService
-  BATCH_SIZE_CONTROLS = 5_000
-  BATCH_SIZE_FIELDS   = 10_000
+class CdefJsonParserService
+  include BatchInsertable
 
-  def initialize(profile_document, file_path)
-    @document  = profile_document
+  def initialize(cdef_document, file_path)
+    @document  = cdef_document
     @file_path = file_path
   end
 
@@ -33,8 +32,8 @@ class ProfileJsonParserService
     profile  = profiles.first
 
     @document.update!(
-      profile_type:    "custom",
-      profile_version: profile["version"],
+      cdef_type:       "custom",
+      cdef_version:    profile["version"],
       description:     profile["summary"] || profile["title"],
       import_metadata: { "format" => "inspec", "name" => profile["name"] }.compact
     )
@@ -59,7 +58,13 @@ class ProfileJsonParserService
       row_order += 1
     end
 
-    batch_insert(control_attrs, field_entries)
+    batch_insert_records(
+      control_class: CdefControl,
+      field_class:   CdefControlField,
+      document_fk:   :cdef_document_id,
+      control_attrs: control_attrs,
+      field_entries: field_entries
+    )
   end
 
   def build_inspec_fields(ctrl)
@@ -81,7 +86,7 @@ class ProfileJsonParserService
     raise "No STIG data found in JSON" unless stig
 
     @document.update!(
-      profile_type:    "disa_stig",
+      cdef_type:       "disa_stig",
       description:     stig["stig_name"],
       import_metadata: { "format" => "stigviewer" }
     )
@@ -113,14 +118,20 @@ class ProfileJsonParserService
       row_order += 1
     end
 
-    batch_insert(control_attrs, field_entries)
+    batch_insert_records(
+      control_class: CdefControl,
+      field_class:   CdefControlField,
+      document_fk:   :cdef_document_id,
+      control_attrs: control_attrs,
+      field_entries: field_entries
+    )
   end
 
   # ── Generic JSON ─────────────────────────────────────────────────
 
   def parse_generic(data)
     @document.update!(
-      profile_type:    "custom",
+      cdef_type:       "custom",
       description:     data["description"] || data["title"],
       import_metadata: { "format" => "generic" }
     )
@@ -150,7 +161,13 @@ class ProfileJsonParserService
       row_order += 1
     end
 
-    batch_insert(control_attrs, field_entries)
+    batch_insert_records(
+      control_class: CdefControl,
+      field_class:   CdefControlField,
+      document_fk:   :cdef_document_id,
+      control_attrs: control_attrs,
+      field_entries: field_entries
+    )
   end
 
   # ── Helpers ──────────────────────────────────────────────────────
@@ -162,36 +179,6 @@ class ProfileJsonParserService
     when 0.4..0.69 then "medium"
     when 0.01..0.39 then "low"
     else "info"
-    end
-  end
-
-  def batch_insert(control_attrs, field_entries)
-    ActiveRecord::Base.transaction do
-      imported_ids = []
-
-      control_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
-        records = batch.map do |attrs|
-          ProfileControl.new(
-            profile_document_id: @document.id,
-            **attrs.compact
-          )
-        end
-        result = ProfileControl.import(records, validate: false, returning: :id)
-        imported_ids.concat(result.ids)
-      end
-
-      field_records = field_entries.map do |ctrl_idx, fname, fval|
-        ProfileControlField.new(
-          profile_control_id: imported_ids[ctrl_idx],
-          field_name:         fname,
-          field_value:        fval,
-          editable:           ProfileControlField::EDITABLE_FIELDS.include?(fname)
-        )
-      end
-
-      field_records.each_slice(BATCH_SIZE_FIELDS) do |batch|
-        ProfileControlField.import(batch, validate: false)
-      end
     end
   end
 end

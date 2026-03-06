@@ -78,21 +78,27 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+# Production configuration supports both DATABASE_URL (preferred) and
+# individual SPARC_DB_* variables as fallbacks. DATABASE_URL always takes
+# priority per Rails convention when set.
+# See docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
 production:
   primary: &primary_production
     <<: *default
-    database: ssp_tpr_manager_production
-    username: ssp_tpr_manager
-    password: <%= ENV["SSP_TPR_MANAGER_DATABASE_PASSWORD"] %>
+    database: <%= ENV.fetch("SPARC_DB_NAME", "ssp_tpr_manager_production") %>
+    username: <%= ENV.fetch("SPARC_DB_USER", "ssp_tpr_manager") %>
+    password: <%= ENV["SPARC_DB_PASSWORD"] || ENV["SSP_TPR_MANAGER_DATABASE_PASSWORD"] %>
+    host: <%= ENV.fetch("SPARC_DB_HOST", "localhost") %>
+    port: <%= ENV.fetch("SPARC_DB_PORT", 5432) %>
   cache:
     <<: *primary_production
-    database: ssp_tpr_manager_production_cache
+    database: <%= ENV.fetch("SPARC_DB_NAME", "ssp_tpr_manager_production") %>_cache
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: ssp_tpr_manager_production_queue
+    database: <%= ENV.fetch("SPARC_DB_NAME", "ssp_tpr_manager_production") %>_queue
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: ssp_tpr_manager_production_cable
+    database: <%= ENV.fetch("SPARC_DB_NAME", "ssp_tpr_manager_production") %>_cable
     migrations_paths: db/cable_migrate

@@ -1,9 +1,15 @@
 Rails.application.routes.draw do
   root "home#index"
 
+  # Login page — available but NOT enforced (no before_action :authenticate_user!)
+  # Future: post "login", to: "sessions#create"
+  # Future: delete "logout", to: "sessions#destroy", as: :logout
+  get "login", to: "sessions#new", as: :login
+
   resources :ssp_documents do
     member do
       get :download_json
+      get :status
     end
     collection do
       post :import_json
@@ -23,7 +29,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :profile_documents do
+  resources :cdef_documents do
     member do
       get :download_json
       get :download_oscal

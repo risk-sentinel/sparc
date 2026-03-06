@@ -1,8 +1,8 @@
 class OscalComponentDefinitionExportService
   OSCAL_VERSION = "1.1.2"
 
-  def initialize(profile_document)
-    @document = profile_document
+  def initialize(cdef_document)
+    @document = cdef_document
   end
 
   def export
@@ -24,7 +24,7 @@ class OscalComponentDefinitionExportService
   def build_metadata
     {
       "title"         => @document.name,
-      "version"       => @document.profile_version || "1.0.0",
+      "version"       => @document.cdef_version || "1.0.0",
       "oscal-version" => OSCAL_VERSION,
       "last-modified" => Time.current.iso8601,
       "roles" => [
@@ -41,15 +41,15 @@ class OscalComponentDefinitionExportService
   end
 
   def build_component
-    controls = @document.profile_controls
+    controls = @document.cdef_controls
                         .order(:row_order)
-                        .includes(:profile_control_fields)
+                        .includes(:cdef_control_fields)
 
     {
       "uuid"        => SecureRandom.uuid,
       "type"        => "software",
       "title"       => @document.name,
-      "description" => @document.description || "Imported security profile",
+      "description" => @document.description || "Imported component definition",
       "control-implementations" => [ build_control_implementation(controls) ]
     }
   end
@@ -58,13 +58,13 @@ class OscalComponentDefinitionExportService
     {
       "uuid"        => SecureRandom.uuid,
       "source"      => determine_source,
-      "description" => "Controls from #{@document.profile_type || 'imported'} profile: #{@document.name}",
+      "description" => "Controls from #{@document.cdef_type || 'imported'} component definition: #{@document.name}",
       "implemented-requirements" => controls.map { |ctrl| build_implemented_requirement(ctrl) }
     }
   end
 
   def build_implemented_requirement(control)
-    field_map = control.profile_control_fields.index_by(&:field_name)
+    field_map = control.cdef_control_fields.index_by(&:field_name)
 
     result = {
       "uuid"        => SecureRandom.uuid,
@@ -122,11 +122,11 @@ class OscalComponentDefinitionExportService
   end
 
   def determine_source
-    case @document.profile_type
+    case @document.cdef_type
     when "disa_stig" then "https://public.cyber.mil/stigs/"
     when "cis"       then "https://www.cisecurity.org/cis-benchmarks"
     when "scap"      then "https://csrc.nist.gov/projects/security-content-automation-protocol"
-    else "https://sparc.local/profiles/#{@document.id}"
+    else "https://sparc.local/component-definitions/#{@document.id}"
     end
   end
 end
