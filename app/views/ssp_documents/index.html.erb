@@ -1,11 +1,19 @@
-<div class="card">
+<div class="card" style="overflow: hidden;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <h2>Controls Implementation</h2>
     <%= link_to "Upload New", new_ssp_document_path, class: "btn btn-success" %>
   </div>
 
   <% if @ssp_documents.any? %>
-    <table>
+    <table style="table-layout: fixed;">
+      <colgroup>
+        <col style="width: 22%;">
+        <col style="width: 28%;">
+        <col style="width: 12%;">
+        <col style="width: 10%;">
+        <col style="width: 13%;">
+        <col style="width: 15%;">
+      </colgroup>
       <thead>
         <tr>
           <th>Name</th>
@@ -19,15 +27,17 @@
       <tbody>
         <% @ssp_documents.each do |doc| %>
           <tr>
-            <td><%= doc.name %></td>
-            <td><%= doc.original_filename %></td>
-            <td><span style="padding: 0.25rem 0.75rem; background: <%= doc.completed? ? '#d4edda' : '#fff3cd' %>; border-radius: 4px;"><%= doc.status %></span></td>
+            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= doc.name %>"><%= doc.name %></td>
+            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; color: var(--text-muted);" title="<%= doc.original_filename %>"><%= doc.original_filename %></td>
+            <td><span style="padding: 0.2rem 0.6rem; background: <%= doc.completed? ? '#d4edda' : '#fff3cd' %>; border-radius: 4px; font-size: 0.85rem;"><%= doc.status %></span></td>
             <td><%= doc.ssp_controls.count %></td>
-            <td><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td style="white-space: nowrap; font-size: 0.88rem;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
-              <%= link_to "View", ssp_document_path(doc), class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
-              <%= link_to "↓ JSON", download_json_ssp_document_path(doc), class: "btn btn-success", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
-              <%= link_to "Delete", ssp_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
+              <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                <%= link_to "View", ssp_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; text-align: center;" %>
+                <%= link_to "↓ JSON", download_json_ssp_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; text-align: center;" %>
+                <%= link_to "Delete", ssp_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; text-align: center;" %>
+              </div>
             </td>
           </tr>
         <% end %>
