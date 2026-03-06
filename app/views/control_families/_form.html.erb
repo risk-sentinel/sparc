@@ -1,4 +1,4 @@
-<%= form_with model: [control_catalog, control_family], local: true do |f| %>
+<%= form_with model: control_family.persisted? ? control_family : [control_catalog, control_family], local: true do |f| %>
   <% if control_family.errors.any? %>
     <div class="flash error" style="margin-bottom: 1.5rem;">
       <strong><%= pluralize(control_family.errors.count, "error") %>:</strong>
