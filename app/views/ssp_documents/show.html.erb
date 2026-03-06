@@ -1,3 +1,37 @@
+<%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
+<% unless @ssp_document.completed? %>
+  <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white; text-align: center;">
+    <% if @ssp_document.failed? %>
+      <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
+      <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
+      <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+        <%= @ssp_document.error_message.presence || "An unknown error occurred." %>
+      </p>
+      <div style="margin-top: 1.25rem;">
+        <%= link_to "&#8592; Back to Documents".html_safe, ssp_documents_path,
+              style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);" %>
+      </div>
+    <% else %>
+      <div style="margin-bottom: 0.75rem;">
+        <span style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #f39c12; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+      </div>
+      <h2 style="color: #f39c12; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Your Workbook</h2>
+      <p style="color: rgba(255,255,255,0.6); font-size: 0.88rem;">
+        <strong><%= @ssp_document.original_filename %></strong> is being parsed.
+        This page will automatically refresh when processing is complete.
+      </p>
+    <% end %>
+  </div>
+
+  <% unless @ssp_document.failed? %>
+    <meta http-equiv="refresh" content="5">
+  <% end %>
+
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+
+<% else %>
 <%
   total_by_status = {}
   @heatmap_statuses.each { |s| total_by_status[s] = @heatmap_families.sum { |f| @heatmap_data.dig(f, s) || 0 } }
@@ -520,3 +554,4 @@
     });
   });
 </script>
+<% end %>

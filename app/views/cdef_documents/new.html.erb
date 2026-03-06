@@ -1,25 +1,25 @@
 <div class="card">
-  <h2>Upload Security Profile</h2>
+  <h2>Upload Component Definition</h2>
 
-  <%= form_with model: @profile_document, local: true, multipart: true do |f| %>
+  <%= form_with model: @cdef_document, local: true, multipart: true do |f| %>
     <div class="form-group">
-      <label for="profile_document_file">Select Profile File (.xml, .json)</label>
+      <label for="cdef_document_file">Select Component Definition File (.xml, .json)</label>
       <%= f.file_field :file, accept: ".xml,.json", required: true %>
       <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
-        Upload an XCCDF XML file (DISA STIGs, SCAP benchmarks, CIS) or a JSON profile (InSpec, STIG Viewer export).
+        Upload an XCCDF XML file (DISA STIGs, SCAP benchmarks, CIS) or a JSON file (InSpec, STIG Viewer export).
       </small>
     </div>
 
     <div style="display: flex; gap: 1rem;">
       <%= f.submit "Upload and Process", class: "btn btn-success" %>
-      <%= link_to "Cancel", profile_documents_path, class: "btn", style: "background: #95a5a6; color: white;" %>
+      <%= link_to "Cancel", cdef_documents_path, class: "btn", style: "background: #95a5a6; color: white;" %>
     </div>
   <% end %>
 </div>
 
 <div class="card">
   <h3>Supported Formats</h3>
-  <p style="color: var(--text-muted); margin-bottom: 1rem;">SPARC automatically detects the profile format and extracts controls, severity ratings, and CCI references.</p>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">SPARC automatically detects the format and extracts controls, severity ratings, and CCI references.</p>
 
   <table>
     <thead>
@@ -56,7 +56,7 @@
 
 <div class="card">
   <h3>Export Capabilities</h3>
-  <p style="color: var(--text-muted); margin-bottom: 1rem;">After processing, profiles can be exported in the following formats:</p>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">After processing, component definitions can be exported in the following formats:</p>
 
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
     <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid #8e44ad; border-radius: 6px; padding: 1rem;">

@@ -1,4 +1,5 @@
 class TprDocumentsController < ApplicationController
+  include FileUploadable
   include Pagy::Method
 
   CONTROLS_PER_PAGE = 50
@@ -97,37 +98,7 @@ class TprDocumentsController < ApplicationController
   end
 
   def create
-    uploaded_file = params[:tpr_document][:file]
-
-    if uploaded_file.nil?
-      flash[:error] = "Please select a file to upload"
-      render :new and return
-    end
-
-    # Write to a persistent file (not Tempfile, which auto-deletes on GC
-    # before Sidekiq can process it). The job cleans up via FileUtils.rm_f.
-    # Use .xlsx extension — no user-derived data in path (satisfies Brakeman).
-    persist_path = Rails.root.join("tmp", "tpr_#{SecureRandom.hex(8)}.xlsx")
-    File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
-
-    begin
-      @tpr_document = TprDocument.create!(
-        name:              File.basename(uploaded_file.original_filename, ".*"),
-        file_type:         "excel",
-        original_filename: uploaded_file.original_filename,
-        status:            "pending"
-      )
-      @tpr_document.file.attach(uploaded_file)
-
-      TprConversionJob.perform_later(@tpr_document.id, persist_path.to_s)
-
-      flash[:success] = "Test Plan Results workbook uploaded. Processing in background..."
-      redirect_to @tpr_document
-    rescue StandardError => e
-      FileUtils.rm_f(persist_path)
-      flash[:error] = "Error uploading file: #{e.message}"
-      render :new
-    end
+    handle_file_upload(:tpr, param_key: :tpr_document)
   end
 
   def download_json
@@ -183,7 +154,7 @@ class TprDocumentsController < ApplicationController
   end
 
   def filter_params
-    params.permit(:section, :family, :status, :asset, :environment, :page).to_h
+    params.except(:controller, :action, :id).permit(:section, :family, :status, :asset, :environment, :page).to_h
   end
 
   TPR_STATUS_ORDER = [

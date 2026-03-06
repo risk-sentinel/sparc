@@ -232,15 +232,18 @@
         <%= link_to root_path, style: "display: flex; align-items: center; text-decoration: none;" do %>
           <%= image_tag "sparc.png", alt: "SPARC", style: "height: 40px; width: auto; display: block;" %>
         <% end %>
-        <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.03em;">v1.0.0</span>
+        <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.03em;">v2.0.0</span>
       </div>
       <nav>
         <%= link_to "Home", root_path %>
+        <%= link_to "Control Catalogs", control_catalogs_path %>
+        <%= link_to "Component Definitions", cdef_documents_path %>
         <%= link_to "Controls Implementation", ssp_documents_path %>
         <%= link_to "Test Plan Results", tpr_documents_path %>
-        <%= link_to "Control Catalogs", control_catalogs_path %>
-        <%= link_to "Profiles", profile_documents_path %>
         <button id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+        <% if SparcConfig.any_auth_enabled? %>
+          <%= link_to "Login", login_path, style: "background: rgba(52,152,219,0.3); border: 1px solid rgba(52,152,219,0.5); border-radius: 6px; font-weight: 600;" %>
+        <% end %>
       </nav>
     </div>
 

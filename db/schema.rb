@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_05_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_06_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,6 +57,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_05_200000) do
     t.index ["control_id"], name: "index_catalog_controls_on_control_id"
   end
 
+  create_table "cdef_control_fields", force: :cascade do |t|
+    t.bigint "cdef_control_id", null: false
+    t.datetime "created_at", null: false
+    t.boolean "editable", default: false
+    t.string "field_name", null: false
+    t.text "field_value"
+    t.datetime "updated_at", null: false
+    t.index ["cdef_control_id", "field_name"], name: "idx_cdef_fields_on_ctrl_name"
+    t.index ["cdef_control_id"], name: "index_cdef_control_fields_on_cdef_control_id"
+  end
+
+  create_table "cdef_controls", force: :cascade do |t|
+    t.string "cci_references"
+    t.bigint "cdef_document_id", null: false
+    t.string "control_family"
+    t.string "control_id"
+    t.datetime "created_at", null: false
+    t.string "group_id"
+    t.integer "row_order", default: 0, null: false
+    t.string "rule_id"
+    t.string "severity"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["cdef_document_id", "control_family"], name: "idx_cdef_controls_on_doc_family"
+    t.index ["cdef_document_id", "row_order"], name: "idx_cdef_controls_on_doc_row"
+    t.index ["cdef_document_id"], name: "index_cdef_controls_on_cdef_document_id"
+  end
+
+  create_table "cdef_documents", force: :cascade do |t|
+    t.string "benchmark_id"
+    t.string "cdef_type"
+    t.string "cdef_version"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "error_message"
+    t.string "file_type"
+    t.jsonb "import_metadata", default: {}
+    t.string "name", null: false
+    t.string "original_filename"
+    t.string "status", default: "pending"
+    t.datetime "updated_at", null: false
+    t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
+    t.index ["created_at"], name: "index_cdef_documents_on_created_at"
+    t.index ["status"], name: "index_cdef_documents_on_status"
+  end
+
   create_table "control_catalogs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
@@ -88,52 +134,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_05_200000) do
     t.string "job_type"
     t.string "status"
     t.datetime "updated_at", null: false
-  end
-
-  create_table "profile_control_fields", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.boolean "editable", default: false
-    t.string "field_name", null: false
-    t.text "field_value"
-    t.bigint "profile_control_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["profile_control_id", "field_name"], name: "idx_profile_fields_on_ctrl_name"
-    t.index ["profile_control_id"], name: "index_profile_control_fields_on_profile_control_id"
-  end
-
-  create_table "profile_controls", force: :cascade do |t|
-    t.string "cci_references"
-    t.string "control_family"
-    t.string "control_id"
-    t.datetime "created_at", null: false
-    t.string "group_id"
-    t.bigint "profile_document_id", null: false
-    t.integer "row_order", default: 0, null: false
-    t.string "rule_id"
-    t.string "severity"
-    t.string "title"
-    t.datetime "updated_at", null: false
-    t.index ["profile_document_id", "control_family"], name: "idx_profile_controls_on_doc_family"
-    t.index ["profile_document_id", "row_order"], name: "idx_profile_controls_on_doc_row"
-    t.index ["profile_document_id"], name: "index_profile_controls_on_profile_document_id"
-  end
-
-  create_table "profile_documents", force: :cascade do |t|
-    t.string "benchmark_id"
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.text "error_message"
-    t.string "file_type"
-    t.jsonb "import_metadata", default: {}
-    t.string "name", null: false
-    t.string "original_filename"
-    t.string "profile_type"
-    t.string "profile_version"
-    t.string "status", default: "pending"
-    t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_profile_documents_on_created_at"
-    t.index ["profile_type"], name: "index_profile_documents_on_profile_type"
-    t.index ["status"], name: "index_profile_documents_on_status"
   end
 
   create_table "ssp_control_fields", force: :cascade do |t|
@@ -214,9 +214,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_05_200000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "catalog_controls", "control_families"
+  add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
+  add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "control_families", "control_catalogs"
-  add_foreign_key "profile_control_fields", "profile_controls", on_delete: :cascade
-  add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
   add_foreign_key "ssp_control_fields", "ssp_controls"
   add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"
