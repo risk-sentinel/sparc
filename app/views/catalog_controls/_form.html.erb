@@ -25,7 +25,7 @@
   <%# ── Statement (primary guidance_data field) ── %>
   <div class="form-group">
     <label for="catalog_control_guidance_data_statement" style="font-weight: 600;">Statement</label>
-    <p style="font-size: 0.82rem; color: #888; margin: 0.15rem 0 0.4rem;">
+    <p style="font-size: 0.82rem; color: var(--text-faint); margin: 0.15rem 0 0.4rem;">
       The formal control requirement text. For parent controls, this is the lead-in sentence;
       for sub-parts (AC-01a, AC-01a.1 …) this is the specific requirement prose.
     </p>
@@ -64,17 +64,17 @@
     ]
     has_extra = extra_fields.any? { |key, *| gd[key].present? }
   %>
-  <details <%= "open" if has_extra %> style="margin-bottom: 1.25rem; border: 1px solid #e0e0e0; border-radius: 6px; padding: 0;">
-    <summary style="padding: 0.65rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: #2c3e50; background: #f8f9fa; border-radius: 6px; list-style: none; display: flex; align-items: center; gap: 0.5rem;">
+  <details <%= "open" if has_extra %> style="margin-bottom: 1.25rem; border: 1px solid var(--border); border-radius: 6px; padding: 0;">
+    <summary style="padding: 0.65rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text); background: var(--surface-alt); border-radius: 6px; list-style: none; display: flex; align-items: center; gap: 0.5rem;">
       <span>&#9656;</span> Additional Guidance Fields
       <% if has_extra %>
-        <span style="font-size: 0.75rem; font-weight: 400; color: #888; margin-left: 0.25rem;">(populated)</span>
+        <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">(populated)</span>
       <% end %>
     </summary>
     <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
       <% extra_fields.each do |key, label, rows, placeholder| %>
         <div class="form-group" style="margin-bottom: 0;">
-          <label for="catalog_control_guidance_data_<%= key %>" style="font-size: 0.88rem; font-weight: 600; color: #555;">
+          <label for="catalog_control_guidance_data_<%= key %>" style="font-size: 0.88rem; font-weight: 600; color: var(--text-muted);">
             <%= label %>
           </label>
           <%= text_area_tag "catalog_control[guidance_data][#{key}]",
@@ -92,6 +92,6 @@
   <%# ── Submit ── %>
   <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
     <%= f.submit "Save Control", class: "btn btn-success" %>
-    <%= link_to "Cancel", control_family, class: "btn", style: "background: #95a5a6; color: white;" %>
+    <%= link_to "Cancel", control_family, class: "btn btn-secondary" %>
   </div>
 <% end %>

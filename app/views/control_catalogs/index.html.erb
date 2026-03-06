@@ -2,7 +2,7 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <div>
       <h2>Control Catalogs</h2>
-      <p style="color: #666; margin-top: 0.5rem;">Manage NIST and custom control catalogs</p>
+      <p style="color: var(--text-muted); margin-top: 0.5rem;">Manage NIST and custom control catalogs</p>
     </div>
     <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
       <%= link_to "↑ Import from File", import_control_catalogs_path,
@@ -26,7 +26,7 @@
       <tbody>
         <% @control_catalogs.each do |catalog| %>
           <tr>
-            <td><strong><%= link_to catalog.name, catalog, style: "color: #3498db; text-decoration: none;" %></strong></td>
+            <td><strong><%= link_to catalog.name, catalog, style: "color: var(--link-accent); text-decoration: none;" %></strong></td>
             <td><%= catalog.version.presence || "—" %></td>
             <td><%= catalog.source.presence || "—" %></td>
             <td><%= catalog.control_families.size %></td>
@@ -45,7 +45,7 @@
       </tbody>
     </table>
   <% else %>
-    <div style="text-align: center; padding: 3rem; color: #666;">
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
       <p style="font-size: 1.1rem; margin-bottom: 1rem;">No control catalogs yet.</p>
       <%= link_to "Create your first catalog", new_control_catalog_path, class: "btn btn-success" %>
       <p style="margin-top: 1rem; font-size: 0.9rem;">Or run <code>bin/rails db:seed</code> to load the NIST SP 800-53 Rev 5 catalog.</p>
