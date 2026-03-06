@@ -326,8 +326,8 @@ Detailed schema documentation for each document type is available in the [`/docs
 
 | Document | Schema Reference |
 |----------|----------------|
-| System Security Plan (SSP) | [docs/ssp-schema.md](docs/ssp-schema.md) |
-| Test Plan Report (TPR) | [docs/tpr-schema.md](docs/tpr-schema.md) |
+| System Security Plan (SSP) | [docs/ssp-columns.md](docs/ssp-columns.md) |
+| Test Plan Report (TPR) | [docs/tpr-columns.md](docs/tpr-columns.md) |
 | Control Catalog | [docs/catalog-schema.md](docs/catalog-schema.md) |
 
 ---
@@ -406,12 +406,4 @@ SPARC is released under the [MIT License](LICENSE).
 
 ## Troubleshooting
 
-**Port 3000 already in use** — Change the port in `docker-compose.yaml` under the `web` service (`ports: - "3001:3000"`) or stop the conflicting process.
-
-**Database connection refused** — Wait a bit longer on first startup. Check `docker compose logs db` to confirm Postgres is running.
-
-**Migrations fail** — The entrypoint automatically runs `db:prepare` on web startup. If needed, run manually: `docker compose exec web bin/rails db:migrate`
-
-**Sidekiq not processing jobs** — Check logs: `docker compose logs sidekiq`. Ensure Redis is running.
-
-**Still stuck?** — Run `docker compose logs` and look for errors. Feel free to [open an issue](https://github.com/Rebel-Raiders/sparc/issues) with the output.
+See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues and solutions covering Docker, file uploads, local development, and production deployments.
