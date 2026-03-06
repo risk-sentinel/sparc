@@ -108,15 +108,67 @@ class OscalSchemaValidationService
   private
 
   def load_schema
-    schema_path = SCHEMA_DIR.join(@config[:file])
-    raise "OSCAL schema file not found: #{schema_path}" unless File.exist?(schema_path)
+    self.class.schema_cache[@model_type] ||= begin
+      schema_path = SCHEMA_DIR.join(@config[:file])
+      raise "OSCAL schema file not found: #{schema_path}" unless File.exist?(schema_path)
 
-    # Cache parsed schemas in a class-level hash for performance.
-    self.class.schema_cache[@model_type] ||= JSON.parse(File.read(schema_path))
+      raw = JSON.parse(File.read(schema_path))
+      preprocess_schema(raw)
+    end
   end
 
   def self.schema_cache
     @schema_cache ||= {}
+  end
+
+  # OSCAL schemas use fragment $id anchors within definitions (e.g.,
+  # $id: "#assembly_oscal-component-definition_component-definition") and
+  # $ref values that point to those anchors.  json_schemer resolves $ref
+  # relative to the schema's top-level $id URI, which causes UnknownRef
+  # errors because the NIST HTTP URI is unreachable.
+  #
+  # This method rewrites anchor-style $refs to standard JSON Pointer
+  # format (#/definitions/X) so json_schemer can resolve them locally.
+  def preprocess_schema(schema)
+    anchor_map = build_anchor_map(schema)
+    rewritten  = rewrite_refs(schema, anchor_map)
+    rewritten.delete("$id") # Remove top-level HTTP $id
+    rewritten
+  end
+
+  # Build a map from $id fragment → JSON Pointer path for every definition.
+  def build_anchor_map(schema)
+    map = {}
+    (schema["definitions"] || {}).each do |key, defn|
+      next unless defn.is_a?(Hash) && defn["$id"]
+
+      fragment = defn["$id"].delete_prefix("#")
+      pointer  = "#/definitions/#{key}"
+      map[fragment]    = pointer
+      map["##{fragment}"] = pointer
+    end
+    map
+  end
+
+  # Recursively rewrite $ref anchor values to JSON Pointer paths and
+  # strip fragment $id values from definitions.
+  def rewrite_refs(obj, anchor_map)
+    case obj
+    when Hash
+      obj.each_with_object({}) do |(k, v), result|
+        if k == "$ref" && v.is_a?(String) && v.start_with?("#") && !v.start_with?("#/")
+          result[k] = anchor_map[v] || v
+        elsif k == "$id" && v.is_a?(String) && v.start_with?("#")
+          next # Strip fragment $id values from definitions
+        else
+          result[k] = rewrite_refs(v, anchor_map)
+        end
+      end
+    when Array
+      obj.map { |v| rewrite_refs(v, anchor_map) }
+    else
+      obj
+    end
   end
 
   def format_error(error)

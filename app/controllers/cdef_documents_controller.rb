@@ -1,7 +1,7 @@
 class CdefDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal status]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated status]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -47,16 +47,34 @@ class CdefDocumentsController < ApplicationController
 
   def download_oscal
     service = OscalComponentDefinitionExportService.new(@cdef_document)
+    result = service.validation_result
+
+    if result.valid?
+      download_url = download_oscal_validated_cdef_document_path(@cdef_document)
+      flash[:success] = "OSCAL export passed schema validation (v#{result.schema_version}). <a href=\"#{download_url}\">Download OSCAL file</a>.".html_safe
+    else
+      Rails.logger.warn("OSCAL validation failed for CDEF #{@cdef_document.id}: #{result.errors.first(3).join('; ')}")
+      download_url = download_oscal_unvalidated_cdef_document_path(@cdef_document)
+      flash[:warning] = "OSCAL export failed schema validation. <a href=\"#{download_url}\">Download unvalidated version</a>.".html_safe
+    end
+
+    redirect_to cdef_document_path(@cdef_document)
+  end
+
+  def download_oscal_validated
+    service = OscalComponentDefinitionExportService.new(@cdef_document)
     oscal_data = service.export
 
     send_data oscal_data,
               filename:    "#{@cdef_document.name}_oscal_component_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
-  rescue OscalValidationError => e
-    Rails.logger.warn("OSCAL validation failed for CDEF #{@cdef_document.id}: #{e.message}")
-    flash[:error] = "OSCAL export failed schema validation. Downloading unvalidated version."
+  end
+
+  def download_oscal_unvalidated
+    service = OscalComponentDefinitionExportService.new(@cdef_document)
     oscal_data = service.export_unvalidated
+
     send_data oscal_data,
               filename:    "#{@cdef_document.name}_oscal_component_unvalidated_#{Date.today}.json",
               type:        "application/json",
