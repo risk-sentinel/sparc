@@ -42,14 +42,14 @@
   <div class="card" style="margin-bottom: 0; text-align: center; border: 2px solid #3498db;">
     <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128218;</div>
     <h3 style="margin-bottom: 0.5rem;">Control Catalogs</h3>
-    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
       Browse NIST SP 800-53 Rev 4 and Rev 5 control families and base controls. Add custom catalogs or entries.
     </p>
     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
       <%= link_to "View Catalogs", control_catalogs_path, class: "btn btn-primary" %>
       <%= link_to "New Catalog", new_control_catalog_path, class: "btn btn-success" %>
     </div>
-    <div style="margin-top: 1rem; padding: 0.5rem; background: #eaf2fb; border-radius: 6px; font-size: 0.8rem; color: #2980b9;">
+    <div style="margin-top: 1rem; padding: 0.5rem; background: var(--surface-alt); border-radius: 6px; font-size: 0.8rem; color: var(--link-accent);">
       NIST SP 800-53 Rev 4 &amp; Rev 5 pre-loaded
     </div>
   </div>

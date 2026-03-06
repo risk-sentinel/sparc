@@ -12,7 +12,7 @@
 
     <div style="display: flex; gap: 1rem;">
       <%= f.submit "Upload and Process", class: "btn btn-success" %>
-      <%= link_to "Cancel", cdef_documents_path, class: "btn", style: "background: #95a5a6; color: white;" %>
+      <%= link_to "Cancel", cdef_documents_path, class: "btn btn-secondary" %>
     </div>
   <% end %>
 </div>
@@ -59,14 +59,14 @@
   <p style="color: var(--text-muted); margin-bottom: 1rem;">After processing, component definitions can be exported in the following formats:</p>
 
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid #8e44ad; border-radius: 6px; padding: 1rem;">
-      <div style="font-weight: 700; margin-bottom: 0.35rem; color: #8e44ad;">OSCAL Component Definition</div>
+    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid var(--link-purple); border-radius: 6px; padding: 1rem;">
+      <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--link-purple);">OSCAL Component Definition</div>
       <div style="font-size: 0.88rem; color: var(--text-muted);">
         NIST OSCAL v1.1.2 compliant Component Definition JSON. Maps controls to implemented-requirements with severity, CCI references, and implementation narratives.
       </div>
     </div>
-    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid #27ae60; border-radius: 6px; padding: 1rem;">
-      <div style="font-weight: 700; margin-bottom: 0.35rem; color: #27ae60;">SPARC JSON</div>
+    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid var(--btn-success); border-radius: 6px; padding: 1rem;">
+      <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--btn-success);">SPARC JSON</div>
       <div style="font-size: 0.88rem; color: var(--text-muted);">
         Standard SPARC JSON export with document metadata, controls, and all associated fields.
       </div>

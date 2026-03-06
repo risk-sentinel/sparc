@@ -27,7 +27,7 @@
               </span>
             </td>
             <td>
-              <span style="padding: 0.2rem 0.6rem; background: <%= doc.completed? ? '#d4edda' : doc.failed? ? '#f8d7da' : '#fff3cd' %>; color: <%= doc.completed? ? '#155724' : doc.failed? ? '#721c24' : '#856404' %>; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+              <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %>" style="padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
                 <%= doc.status %>
               </span>
             </td>
@@ -37,7 +37,7 @@
               <div style="display: inline-flex; gap: 0.35rem;">
                 <%= link_to "View", cdef_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% if doc.completed? %>
-                  <%= link_to "OSCAL", download_oscal_cdef_document_path(doc), class: "btn", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; background: #8e44ad; color: white;" %>
+                  <%= link_to "OSCAL", download_oscal_cdef_document_path(doc), class: "btn", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; background: var(--link-purple); color: white;" %>
                   <%= link_to "JSON", download_json_cdef_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% end %>
                 <%= link_to "Delete", cdef_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>

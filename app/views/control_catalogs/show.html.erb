@@ -2,7 +2,7 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <div>
       <h2><%= @control_catalog.name %></h2>
-      <p style="color: #666; margin-top: 0.5rem;">
+      <p style="color: var(--text-muted); margin-top: 0.5rem;">
         <% if @control_catalog.version.present? %>
           Version: <strong><%= @control_catalog.version %></strong> &nbsp;|&nbsp;
         <% end %>
@@ -13,7 +13,7 @@
         Total Controls: <strong><%= @control_catalog.total_controls %></strong>
       </p>
       <% if @control_catalog.description.present? %>
-        <p style="margin-top: 0.5rem; color: #555;"><%= @control_catalog.description %></p>
+        <p style="margin-top: 0.5rem; color: var(--text-muted);"><%= @control_catalog.description %></p>
       <% end %>
     </div>
     <div style="display: flex; gap: 0.75rem;">
@@ -40,12 +40,12 @@
         <% @control_families.each do |family| %>
           <tr>
             <td>
-              <span style="font-family: monospace; font-size: 1rem; font-weight: 700; color: #2c3e50; background: #eaf2fb; padding: 0.25rem 0.6rem; border-radius: 4px;">
+              <span style="font-family: monospace; font-size: 1rem; font-weight: 700; color: var(--text); background: var(--surface-alt); padding: 0.25rem 0.6rem; border-radius: 4px;">
                 <%= family.code %>
               </span>
             </td>
-            <td><strong><%= link_to family.name, family, style: "color: #3498db; text-decoration: none;" %></strong></td>
-            <td style="color: #666; font-size: 0.9rem;"><%= truncate(family.description, length: 80) %></td>
+            <td><strong><%= link_to family.name, family, style: "color: var(--link-accent); text-decoration: none;" %></strong></td>
+            <td style="color: var(--text-muted); font-size: 0.9rem;"><%= truncate(family.description, length: 80) %></td>
             <td style="text-align: center;"><%= family.catalog_controls.size %></td>
             <td>
               <div style="display: flex; gap: 0.5rem;">
@@ -61,8 +61,8 @@
       </tbody>
     </table>
   <% else %>
-    <div style="text-align: center; padding: 2rem; color: #666;">
-      <p>No families yet. <%= link_to "Add the first family", new_control_catalog_control_family_path(@control_catalog), style: "color: #3498db;" %></p>
+    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+      <p>No families yet. <%= link_to "Add the first family", new_control_catalog_control_family_path(@control_catalog), style: "color: var(--link-accent);" %></p>
     </div>
   <% end %>
 </div>
