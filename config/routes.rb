@@ -10,6 +10,8 @@ Rails.application.routes.draw do
     member do
       get :download_json
       get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
       get :status
     end
     collection do
@@ -34,6 +36,8 @@ Rails.application.routes.draw do
     member do
       get :download_json
       get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
       get :status
     end
   end

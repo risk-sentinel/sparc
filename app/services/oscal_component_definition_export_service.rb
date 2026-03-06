@@ -113,14 +113,22 @@ class OscalComponentDefinitionExportService
   end
 
   def normalize_control_id(control, field_map)
-    nist = field_map["nist_controls"]&.field_value
-    if nist.present?
-      nist.split(",").first.strip.downcase.gsub(/\s+/, "-")
+    raw = if (nist = field_map["nist_controls"]&.field_value).present?
+      nist.split(",").first.strip
     elsif control.control_id.present?
-      control.control_id.downcase.gsub(/\s+/, "-")
+      control.control_id
     else
       "unknown-#{control.id}"
     end
+
+    # OSCAL TokenDatatype: ^(\p{L}|_)(\p{L}|\p{N}|[.\-_])*$
+    # Convert parenthesised enhancements to dot notation: "SI-2 (2)" → "si-2.2"
+    raw.downcase
+       .gsub(/\s+/, "-")       # spaces → hyphens
+       .gsub("(", ".")         # open paren → dot (enhancement separator)
+       .gsub(")", "")          # strip close paren
+       .gsub(/\.{2,}/, ".")    # collapse multiple dots
+       .gsub(/-\./, ".")       # "si-2.2" not "si-2-.2"
   end
 
   def build_description(control, field_map)

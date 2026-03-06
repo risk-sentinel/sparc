@@ -182,8 +182,15 @@ class OscalSspExportService
 
   def normalize_control_id(raw_id)
     return "unknown" if raw_id.blank?
-    # OSCAL expects lowercase, hyphenated IDs (e.g. ac-1, cm-7.1)
-    raw_id.strip.downcase.gsub(/\s+/, "-")
+    # OSCAL TokenDatatype: ^(\p{L}|_)(\p{L}|\p{N}|[.\-_])*$
+    # Convert parenthesised enhancements to dot notation: "AC-2 (1)" → "ac-2.1"
+    raw_id.strip
+          .downcase
+          .gsub(/\s+/, "-")       # spaces → hyphens
+          .gsub("(", ".")         # open paren → dot
+          .gsub(")", "")          # strip close paren
+          .gsub(/\.{2,}/, ".")    # collapse multiple dots
+          .gsub(/-\./, ".")       # clean "ac-2.1" not "ac-2-.1"
   end
 
   def build_props(field_map)
