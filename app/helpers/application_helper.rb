@@ -37,14 +37,14 @@ module ApplicationHelper
     TPR_STATUS_COLORS[status] || "#7f8c8d"
   end
 
-  PROFILE_SEVERITY_COLORS = {
+  CDEF_SEVERITY_COLORS = {
     "high"   => "#e74c3c",
     "medium" => "#f39c12",
     "low"    => "#3498db",
     "info"   => "#95a5a6"
   }.freeze
 
-  def profile_severity_color(severity)
-    PROFILE_SEVERITY_COLORS[severity.to_s.downcase] || "#7f8c8d"
+  def cdef_severity_color(severity)
+    CDEF_SEVERITY_COLORS[severity.to_s.downcase] || "#7f8c8d"
   end
 end

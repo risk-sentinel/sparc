@@ -1,29 +1,29 @@
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
-<% unless @profile_document.completed? %>
+<% unless @cdef_document.completed? %>
   <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white; text-align: center;">
-    <% if @profile_document.failed? %>
+    <% if @cdef_document.failed? %>
       <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
       <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
       <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
-        <%= @profile_document.error_message.presence || "An unknown error occurred." %>
+        <%= @cdef_document.error_message.presence || "An unknown error occurred." %>
       </p>
       <div style="margin-top: 1.25rem;">
-        <%= link_to "&#8592; Back to Profiles".html_safe, profile_documents_path,
+        <%= link_to "&#8592; Back to Component Definitions".html_safe, cdef_documents_path,
               style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);" %>
       </div>
     <% else %>
       <div style="margin-bottom: 0.75rem;">
         <span style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #f39c12; border-radius: 50%; animation: spin 1s linear infinite;"></span>
       </div>
-      <h2 style="color: #f39c12; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Your Profile</h2>
+      <h2 style="color: #f39c12; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Your Component Definition</h2>
       <p style="color: rgba(255,255,255,0.6); font-size: 0.88rem;">
-        <strong><%= @profile_document.original_filename %></strong> is being parsed.
+        <strong><%= @cdef_document.original_filename %></strong> is being parsed.
         This page will automatically refresh when processing is complete.
       </p>
     <% end %>
   </div>
 
-  <% unless @profile_document.failed? %>
+  <% unless @cdef_document.failed? %>
     <meta http-equiv="refresh" content="5">
   <% end %>
 
@@ -40,7 +40,7 @@
   info_count   = @severity_counts["info"].to_i
 
   type_colors = { "disa_stig" => "#e74c3c", "scap" => "#3498db", "cis" => "#f39c12", "custom" => "#95a5a6" }
-  type_color  = type_colors[@profile_document.profile_type] || "#7f8c8d"
+  type_color  = type_colors[@cdef_document.cdef_type] || "#7f8c8d"
 %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
@@ -48,27 +48,27 @@
 
   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
     <div>
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Security Profile</div>
-      <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0 0 0.3rem;"><%= @profile_document.name %></h2>
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Component Definition</div>
+      <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0 0 0.3rem;"><%= @cdef_document.name %></h2>
       <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5);">
-        <%= @profile_document.original_filename %>
+        <%= @cdef_document.original_filename %>
         &nbsp;&bull;&nbsp;
-        <span style="color: <%= type_color %>; font-weight: 600;"><%= @profile_document.profile_type&.upcase&.tr("_", " ") || "Unknown" %></span>
+        <span style="color: <%= type_color %>; font-weight: 600;"><%= @cdef_document.cdef_type&.upcase&.tr("_", " ") || "Unknown" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
-        <% if @profile_document.profile_version.present? %>
-          &nbsp;&bull;&nbsp; v<%= @profile_document.profile_version %>
+        <% if @cdef_document.cdef_version.present? %>
+          &nbsp;&bull;&nbsp; v<%= @cdef_document.cdef_version %>
         <% end %>
       </div>
-      <% if @profile_document.description.present? %>
-        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@profile_document.description, length: 200) %></div>
+      <% if @cdef_document.description.present? %>
+        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@cdef_document.description, length: 200) %></div>
       <% end %>
     </div>
     <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
-      <%= link_to "Export OSCAL".html_safe, download_oscal_profile_document_path(@profile_document),
+      <%= link_to "Export OSCAL".html_safe, download_oscal_cdef_document_path(@cdef_document),
             style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
-      <%= link_to "&#8595; JSON".html_safe, download_json_profile_document_path(@profile_document),
+      <%= link_to "&#8595; JSON".html_safe, download_json_cdef_document_path(@cdef_document),
             style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
-      <%= link_to "&#8592; Back".html_safe, profile_documents_path,
+      <%= link_to "&#8592; Back".html_safe, cdef_documents_path,
             style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
     </div>
   </div>
@@ -179,7 +179,7 @@
 <div id="controlsContainer">
   <% @controls.each do |control| %>
     <%
-      field_map    = control.profile_control_fields.index_by(&:field_name)
+      field_map    = control.cdef_control_fields.index_by(&:field_name)
       sev_val      = control.severity.presence || "(Unknown)"
       sev_colors_map = { "high" => "#e74c3c", "medium" => "#f39c12", "low" => "#3498db", "info" => "#95a5a6" }
       sev_color    = sev_colors_map[sev_val] || "#7f8c8d"
@@ -238,10 +238,10 @@
 
           <%# Field table %>
           <%
-            ordered_fields = ProfileControlField::FIELD_DISPLAY_ORDER.map { |fn| field_map[fn] }.compact
+            ordered_fields = CdefControlField::FIELD_DISPLAY_ORDER.map { |fn| field_map[fn] }.compact
             extras = field_map.values.reject { |f|
               f.field_name == "description" ||
-              ProfileControlField::FIELD_DISPLAY_ORDER.include?(f.field_name)
+              CdefControlField::FIELD_DISPLAY_ORDER.include?(f.field_name)
             }
             display_fields = ordered_fields + extras
           %>

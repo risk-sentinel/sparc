@@ -1,8 +1,8 @@
-class ProfileXccdfParserService
+class CdefXccdfParserService
   include BatchInsertable
 
-  def initialize(profile_document, file_path)
-    @document  = profile_document
+  def initialize(cdef_document, file_path)
+    @document  = cdef_document
     @file_path = file_path
   end
 
@@ -14,8 +14,8 @@ class ProfileXccdfParserService
     benchmark = doc.at_xpath("//Benchmark")
     raise "No <Benchmark> element found in XCCDF file" unless benchmark
 
-    profile_type = detect_profile_type(benchmark)
-    update_document_metadata(benchmark, profile_type)
+    cdef_type = detect_cdef_type(benchmark)
+    update_document_metadata(benchmark, cdef_type)
 
     control_attrs = []
     field_entries = []
@@ -32,9 +32,9 @@ class ProfileXccdfParserService
     end
 
     batch_insert_records(
-      control_class: ProfileControl,
-      field_class:   ProfileControlField,
-      document_fk:   :profile_document_id,
+      control_class: CdefControl,
+      field_class:   CdefControlField,
+      document_fk:   :cdef_document_id,
       control_attrs: control_attrs,
       field_entries: field_entries
     )
@@ -42,7 +42,7 @@ class ProfileXccdfParserService
 
   private
 
-  def detect_profile_type(benchmark)
+  def detect_cdef_type(benchmark)
     bench_id    = benchmark["id"].to_s
     title       = benchmark.at_xpath("title")&.text.to_s
     source      = benchmark.at_xpath("//source")&.text.to_s
@@ -56,10 +56,10 @@ class ProfileXccdfParserService
     end
   end
 
-  def update_document_metadata(benchmark, profile_type)
+  def update_document_metadata(benchmark, cdef_type)
     @document.update!(
-      profile_type:    profile_type,
-      profile_version: benchmark.at_xpath("version")&.text&.strip,
+      cdef_type:       cdef_type,
+      cdef_version:    benchmark.at_xpath("version")&.text&.strip,
       benchmark_id:    benchmark["id"],
       description:     benchmark.at_xpath("description")&.text&.strip&.truncate(5000),
       import_metadata: {

@@ -1,6 +1,6 @@
-class ProfileControl < ApplicationRecord
-  belongs_to :profile_document
-  has_many :profile_control_fields, dependent: :delete_all
+class CdefControl < ApplicationRecord
+  belongs_to :cdef_document
+  has_many :cdef_control_fields, dependent: :delete_all
 
   before_save :compute_control_family
 
@@ -14,7 +14,7 @@ class ProfileControl < ApplicationRecord
       cci_references: cci_references,
       control_family: control_family,
       row_order: row_order,
-      fields: profile_control_fields.map do |field|
+      fields: cdef_control_fields.map do |field|
         {
           field_name: field.field_name,
           field_value: field.field_value,

@@ -1,6 +1,6 @@
 FactoryBot.define do
-  factory :profile_control_field do
-    profile_control
+  factory :cdef_control_field do
+    cdef_control
     field_name { "description" }
     field_value { Faker::Lorem.paragraph }
     editable { false }

@@ -1,4 +1,4 @@
-# Shared upload logic for document controllers (SSP, TPR, Profile).
+# Shared upload logic for document controllers (SSP, TPR, CDEF).
 #
 # Extracts the duplicated create-action pattern:
 #   1. Validate file presence
@@ -29,7 +29,7 @@ module FileUploadable
   SAFE_PREFIXES = {
     ssp:     "ssp",
     tpr:     "tpr",
-    profile: "profile"
+    cdef: "cdef"
   }.freeze
 
   private

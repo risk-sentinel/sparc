@@ -28,7 +28,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :profile_documents do
+  resources :cdef_documents do
     member do
       get :download_json
       get :download_oscal

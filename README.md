@@ -53,7 +53,7 @@ SPARC supports the full lifecycle of compliance documentation across four integr
 
 **Control Catalog Management** — Browse, create, and manage NIST and custom control catalogs with family-level and control-level CRUD. NIST SP 800-53 Rev 4 (256 controls) and Rev 5 (323 controls) are pre-loaded via seeds.
 
-**Security Profile Management** — Import DISA STIGs (XCCDF XML), InSpec profiles (JSON), STIG Viewer exports, and CIS benchmarks. Export as OSCAL Component Definitions for interoperability with the NIST OSCAL ecosystem.
+**Component Definition (CDEF) Management** — Import DISA STIGs (XCCDF XML), InSpec profiles (JSON), STIG Viewer exports, and CIS benchmarks. Export as OSCAL Component Definitions for interoperability with the NIST OSCAL ecosystem.
 
 **SSP Document Management** — Upload Excel-based System Security Plans, automatically parse controls and fields via background processing, edit implementation details inline, and export to JSON.
 
@@ -77,10 +77,10 @@ The UI navigation and landing page follow the OSCAL / RMF artifact dependency ch
 
 ## Key Features
 
-- **Interactive Heat Maps** — Collapsible status heat maps on SSP, TPR, and Profile pages display control status by NIST family. Click any cell to filter the control list below it.
+- **Interactive Heat Maps** — Collapsible status heat maps on SSP, TPR, and CDEF pages display control status by NIST family. Click any cell to filter the control list below it.
 - **Inline Field Editing** — Edit designated fields (implementation status, test results, remediation plans) directly in the browser; read-only fields are enforced.
 - **Excel Round-Trip** — Upload Excel workbooks and export them back to Excel with original formatting preserved (TPR).
-- **OSCAL Export** — Export Security Profiles as OSCAL Component Definitions (v1.1.2 schema) for integration with the broader OSCAL ecosystem.
+- **OSCAL Export** — Export Component Definitions as OSCAL Component Definitions (v1.1.2 schema) for integration with the broader OSCAL ecosystem.
 - **Background Processing** — Async job processing for large files via Sidekiq, with real-time status updates in the UI.
 - **RESTful API** — Programmatic access to convert, update, and export documents via `/api/v1/` endpoints.
 - **NIST Catalog Guidance** — Catalog controls are cross-referenced with uploaded documents to provide guidance context during review.

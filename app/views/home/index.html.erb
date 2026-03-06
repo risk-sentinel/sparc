@@ -23,8 +23,8 @@
   </div>
   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.75rem;">
     <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @profile_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Security Profiles</div>
+      <div style="font-size: 2rem; font-weight: 700;"><%= @cdef_count %></div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Component Definitions</div>
     </div>
     <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
       <div style="font-size: 2rem; font-weight: 700;"><%= @ssp_count %></div>
@@ -56,13 +56,13 @@
 
   <div class="card" style="margin-bottom: 0; text-align: center;">
     <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128737;</div>
-    <h3 style="margin-bottom: 0.5rem;">Security Profiles</h3>
+    <h3 style="margin-bottom: 0.5rem;">Component Definitions</h3>
     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
       Import DISA STIGs, SCAP, and CIS benchmarks. Export OSCAL-compliant Component Definitions.
     </p>
     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <%= link_to "View Profiles", profile_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Upload New", new_profile_document_path, class: "btn btn-success" %>
+      <%= link_to "View CDEFs", cdef_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Upload New", new_cdef_document_path, class: "btn btn-success" %>
     </div>
   </div>
 
@@ -129,7 +129,7 @@
     </div>
     <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
       <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
-      <span>Import security profiles from XCCDF XML (DISA STIGs, SCAP, CIS) and JSON (InSpec, STIG Viewer)</span>
+      <span>Import component definitions from XCCDF XML (DISA STIGs, SCAP, CIS) and JSON (InSpec, STIG Viewer)</span>
     </div>
     <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
       <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
