@@ -1,3 +1,13 @@
+# Builds an OSCAL v1.1.2 Component Definition JSON document from a
+# CdefDocument and its controls.  Validates the output against the
+# official NIST JSON schema before returning.
+#
+# Usage:
+#   service = OscalComponentDefinitionExportService.new(cdef_document)
+#   json_string = service.export            # validates, raises on failure
+#   json_string = service.export_unvalidated # skips validation (legacy)
+#   result      = service.validation_result  # inspect errors without raising
+#
 class OscalComponentDefinitionExportService
   OSCAL_VERSION = "1.1.2"
 
@@ -5,8 +15,23 @@ class OscalComponentDefinitionExportService
     @document = cdef_document
   end
 
+  # Build, validate, and return pretty-printed OSCAL JSON.
+  # Raises OscalValidationError if the output fails schema validation.
   def export
+    data = build_component_definition
+    OscalSchemaValidationService.validate!(:component_definition, data)
+    JSON.pretty_generate(data)
+  end
+
+  # Build and return OSCAL JSON without schema validation.
+  def export_unvalidated
     JSON.pretty_generate(build_component_definition)
+  end
+
+  # Build the document and return the validation result (does not raise).
+  def validation_result
+    data = build_component_definition
+    OscalSchemaValidationService.validate(:component_definition, data)
   end
 
   private

@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   resources :ssp_documents do
     member do
       get :download_json
+      get :download_oscal
       get :status
     end
     collection do
