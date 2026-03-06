@@ -138,11 +138,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_05_200000) do
 
   create_table "ssp_control_fields", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.boolean "editable"
-    t.string "field_name"
+    t.boolean "editable", default: false
+    t.string "field_name", null: false
     t.text "field_value"
     t.bigint "ssp_control_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["ssp_control_id", "field_name"], name: "index_ssp_control_fields_on_ssp_control_id_and_field_name"
     t.index ["ssp_control_id"], name: "index_ssp_control_fields_on_ssp_control_id"
   end
 
@@ -155,17 +156,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_05_200000) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.index ["parent_id"], name: "index_ssp_controls_on_parent_id"
+    t.index ["ssp_document_id", "control_id"], name: "index_ssp_controls_on_ssp_document_id_and_control_id", unique: true
     t.index ["ssp_document_id", "row_order"], name: "index_ssp_controls_on_ssp_document_id_and_row_order"
     t.index ["ssp_document_id"], name: "index_ssp_controls_on_ssp_document_id"
   end
 
   create_table "ssp_documents", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.string "file_type"
-    t.string "name"
+    t.text "error_message"
+    t.string "file_type", null: false
+    t.string "name", null: false
     t.string "original_filename"
-    t.string "status"
+    t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_ssp_documents_on_created_at"
+    t.index ["status"], name: "index_ssp_documents_on_status"
   end
 
   create_table "tpr_control_fields", force: :cascade do |t|
