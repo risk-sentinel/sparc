@@ -48,15 +48,29 @@ Managing **System Security Plans (SSPs)**, **Test Plans & Results (TPRs)**, and 
 
 ## What It Can Do
 
-SPARC supports the full lifecycle of compliance documentation across four integrated modules:
+SPARC supports the full lifecycle of compliance documentation across four integrated modules, ordered to follow the RMF artifact lifecycle:
 
 **Control Catalog Management** — Browse, create, and manage NIST and custom control catalogs with family-level and control-level CRUD. NIST SP 800-53 Rev 4 (256 controls) and Rev 5 (323 controls) are pre-loaded via seeds.
+
+**Security Profile Management** — Import DISA STIGs (XCCDF XML), InSpec profiles (JSON), STIG Viewer exports, and CIS benchmarks. Export as OSCAL Component Definitions for interoperability with the NIST OSCAL ecosystem.
 
 **SSP Document Management** — Upload Excel-based System Security Plans, automatically parse controls and fields via background processing, edit implementation details inline, and export to JSON.
 
 **TPR Document Management** — Upload and manage Test Plan Reports with multi-sheet support, color-coded test status indicators, pagination, filtering by section/asset/environment, and round-trip Excel export.
 
-**Security Profile Management** — Import DISA STIGs (XCCDF XML), InSpec profiles (JSON), STIG Viewer exports, and CIS benchmarks. Export as OSCAL Component Definitions for interoperability with the NIST OSCAL ecosystem.
+### RMF Artifact Lifecycle Order
+
+The UI navigation and landing page follow the OSCAL / RMF artifact dependency chain. Each artifact builds on those above it:
+
+| Order | Artifact | Imports / Depends On | Primary Purpose | Status |
+|-------|----------|----------------------|-----------------|--------|
+| 1 | **Catalog** | (none — source of truth) | Raw control definitions (e.g., NIST SP 800-53) | Implemented |
+| 2 | **Profile** | Catalog(s) | Tailored baseline / selection set (FedRAMP, DoD IL, etc.) | Implemented |
+| 3 | **Component Definition (CDEF)** | Catalog / Profile (control IDs) | Reusable control implementations (tech, process, service) | Roadmap |
+| 4 | **System Security Plan (SSP)** | Profile + Component Definitions | How the system implements the baseline | Implemented |
+| 5 | **Assessment Plan (SAP)** | SSP + Profile | How the assessment will be performed | Roadmap |
+| 6 | **Assessment Results (SAR)** | Assessment Plan + SSP | Findings & evidence from actual assessment | Roadmap |
+| 7 | **POA&M** | SSP + Assessment Results | Remediation tracking for weaknesses | Roadmap |
 
 ---
 
