@@ -1,4 +1,5 @@
-version: '3.8'
+# Production Docker Compose — see docs/ENVIRONMENT_VARIABLES.md for all SPARC_* config options.
+# Copy .env.production.example to .env and fill in required values before deploying.
 
 services:
   db:
@@ -6,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ssp_tpr_manager_production
+      POSTGRES_DB: ${SPARC_DB_NAME:-ssp_tpr_manager_production}
     volumes:
       - prod_postgres:/var/lib/postgresql/data
 
@@ -24,13 +25,44 @@ services:
     environment:
       RAILS_ENV: production
       RAILS_SERVE_STATIC_FILES: "true"
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db/ssp_tpr_manager_production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db/${SPARC_DB_NAME:-ssp_tpr_manager_production}
       REDIS_URL: redis://redis:6379/0
-      ACTIVE_STORAGE_SERVICE: amazon               # or your S3 alias
+      # ── SPARC Configuration ───────────────────────────────────────────
+      SPARC_APP_URL: ${SPARC_APP_URL:-https://localhost}
+      SPARC_APP_NAME: ${SPARC_APP_NAME:-SPARC}
+      SPARC_LOG_LEVEL: ${SPARC_LOG_LEVEL:-info}
+      SPARC_LOG_TO_STDOUT: "true"
+      FORCE_SSL: ${FORCE_SSL:-true}
+      # ── Authentication (uncomment to enable) ──────────────────────────
+      # SPARC_ENABLE_LOCAL_LOGIN: "true"
+      # SPARC_ENABLE_USER_REGISTRATION: "false"
+      # SPARC_SESSION_TIMEOUT_MINUTES: "60"
+      # SPARC_ENABLE_OIDC: "true"
+      # SPARC_OIDC_ISSUER_URL: ${SPARC_OIDC_ISSUER_URL}
+      # SPARC_OIDC_CLIENT_ID: ${SPARC_OIDC_CLIENT_ID}
+      # SPARC_OIDC_CLIENT_SECRET: ${SPARC_OIDC_CLIENT_SECRET}
+      # SPARC_OIDC_REDIRECT_URI: ${SPARC_OIDC_REDIRECT_URI}
+      # SPARC_OIDC_PROVIDER_TITLE: ${SPARC_OIDC_PROVIDER_TITLE:-SSO}
+      # SPARC_ENABLE_LDAP: "true"
+      # SPARC_LDAP_HOST: ${SPARC_LDAP_HOST}
+      # SPARC_LDAP_PORT: ${SPARC_LDAP_PORT:-636}
+      # SPARC_LDAP_BIND_DN: ${SPARC_LDAP_BIND_DN}
+      # SPARC_LDAP_BIND_PASSWORD: ${SPARC_LDAP_BIND_PASSWORD}
+      # SPARC_LDAP_BASE: ${SPARC_LDAP_BASE}
+      # ── Email (uncomment to enable) ───────────────────────────────────
+      # SPARC_ENABLE_SMTP: "true"
+      # SPARC_SMTP_ADDRESS: ${SPARC_SMTP_ADDRESS}
+      # SPARC_SMTP_PORT: ${SPARC_SMTP_PORT:-587}
+      # SPARC_SMTP_USERNAME: ${SPARC_SMTP_USERNAME}
+      # SPARC_SMTP_PASSWORD: ${SPARC_SMTP_PASSWORD}
+      # SPARC_SMTP_FROM_ADDRESS: ${SPARC_SMTP_FROM_ADDRESS}
+      # ── Storage ───────────────────────────────────────────────────────
+      ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-amazon}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_REGION: us-east-1
-      AWS_BUCKET: your-bucket-name
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_BUCKET: ${AWS_BUCKET}
 
   sidekiq:
     build: .
@@ -40,7 +72,7 @@ services:
       - redis
     environment:
       RAILS_ENV: production
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db/ssp_tpr_manager_production
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db/${SPARC_DB_NAME:-ssp_tpr_manager_production}
       REDIS_URL: redis://redis:6379/0
 
 volumes:

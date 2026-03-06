@@ -14,6 +14,7 @@
 - [Quick Start](#quick-start)
 - [Technology Stack](#technology-stack)
 - [Development Setup](#development-setup)
+- [Configuration](#configuration)
 - [Docker Deployment](#docker-deployment)
 - [API](#api)
 - [Data Schemas](#data-schemas)
@@ -232,6 +233,31 @@ bundle exec brakeman
 # Rails console
 bin/rails console
 ```
+
+---
+
+## Configuration
+
+SPARC is configured entirely via environment variables, following the [MITRE Vulcan](https://github.com/mitre/vulcan) pattern of env-var-driven feature toggling. All settings have sensible defaults — no configuration is required for local development.
+
+**Full reference**: [`docs/ENVIRONMENT_VARIABLES.md`](docs/ENVIRONMENT_VARIABLES.md)
+
+**Quick start templates**:
+- `.env.example` — Development defaults (copy to `.env`)
+- `.env.production.example` — Production template with required vars highlighted
+
+### Key Configuration Areas
+
+| Area | Key Variables | Notes |
+|------|--------------|-------|
+| **Database** | `DATABASE_URL` or `SPARC_DB_*` | `DATABASE_URL` takes priority when set |
+| **Authentication** | `SPARC_ENABLE_LOCAL_LOGIN`, `SPARC_ENABLE_OIDC`, `SPARC_ENABLE_LDAP` | All disabled by default; enable to activate `/login` |
+| **OIDC/SSO** | `SPARC_OIDC_ISSUER_URL`, `SPARC_OIDC_CLIENT_ID`, `SPARC_OIDC_CLIENT_SECRET` | Supports Okta, Entra ID, Keycloak, Auth0 |
+| **Email** | `SPARC_ENABLE_SMTP`, `SPARC_SMTP_*` | Required for registration confirmations and notifications |
+| **Logging** | `SPARC_LOG_LEVEL`, `SPARC_LOG_TO_STDOUT`, `SPARC_STRUCTURED_LOGGING` | JSON logging for CloudWatch/ELK/Splunk |
+| **Security** | `SECRET_KEY_BASE`, `FORCE_SSL` | Required in production |
+
+The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all variables with defaults and is accessible throughout the application.
 
 ---
 
