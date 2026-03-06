@@ -1,4 +1,4 @@
-# Unified conversion job that replaces SspConversionJob, TprConversionJob,
+# Unified conversion job that replaces SspConversionJob, SarConversionJob,
 # and CdefConversionJob. Uses DocumentTypeRegistry to resolve the correct
 # document class and parser service.
 #

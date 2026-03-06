@@ -1,14 +1,14 @@
-# TPR Document Schema
+# SAR Document Schema
 
-This document describes the Excel file format expected when uploading a **Test Plan Report (TPR)** into SPARC.
+This document describes the Excel file format expected when uploading a **Security Assessment Results (SAR)** into SPARC.
 
 ---
 
 ## Overview
 
-SPARC parses TPR Excel files row-by-row, mapping each row to a tested security control. Column headers are matched case-insensitively and trimmed of whitespace. The parser uses the first worksheet in the workbook.
+SPARC parses SAR Excel files row-by-row, mapping each row to a tested security control. Column headers are matched case-insensitively and trimmed of whitespace. The parser uses the first worksheet in the workbook.
 
-TPR files are processed **synchronously** (unlike SSP files, which use a background job). The document is ready immediately after upload.
+SAR files are processed **synchronously** (unlike SSP files, which use a background job). The document is ready immediately after upload.
 
 ---
 
@@ -25,7 +25,7 @@ Rows missing `control_id` are skipped.
 
 ## Optional Columns
 
-These columns are parsed and stored as control fields. All TPR fields are editable after import.
+These columns are parsed and stored as control fields. All SAR fields are editable after import.
 
 | Column Name | Accepted Header Variations | Description |
 |-------------|---------------------------|-------------|
@@ -41,7 +41,7 @@ These columns are parsed and stored as control fields. All TPR fields are editab
 
 ## Valid `test_status` Values
 
-The TPR heat map and filtering use these exact status values. Ensure consistent casing.
+The SAR heat map and filtering use these exact status values. Ensure consistent casing.
 
 | Value | Heat Map Color | Description |
 |-------|---------------|-------------|
@@ -85,10 +85,10 @@ SPARC does not parse or validate the date format; it is stored and displayed as 
 
 ## Relationship to SSP Documents
 
-TPR documents are independent of SSP documents in the database — they share `control_id` values but are not linked by foreign key. A typical workflow:
+SAR documents are independent of SSP documents in the database — they share `control_id` values but are not linked by foreign key. A typical workflow:
 
 1. Upload an SSP documenting how controls are implemented
-2. Upload a TPR documenting test results for those same controls
+2. Upload a SAR documenting test results for those same controls
 3. Use the heat maps on each document to compare implementation status vs. test results
 
 ---
@@ -97,17 +97,17 @@ TPR documents are independent of SSP documents in the database — they share `c
 
 - **Header detection:** Row 1 is the header row. All subsequent rows are data.
 - **Blank rows:** Rows with an empty `control_id` are skipped.
-- **Synchronous processing:** TPR files are parsed immediately on upload; no background job is required.
-- **Re-upload:** Uploading a new file always creates a new TPR document record.
+- **Synchronous processing:** SAR files are parsed immediately on upload; no background job is required.
+- **Re-upload:** Uploading a new file always creates a new SAR document record.
 
 ---
 
 ## Programmatic Import (API)
 
-TPR documents can be created via the REST API:
+SAR documents can be created via the REST API:
 
 ```
-POST /api/v1/tpr_documents/convert
+POST /api/v1/sar_documents/convert
 Content-Type: multipart/form-data
 
 file=<your_excel_file.xlsx>
@@ -115,10 +115,10 @@ file=<your_excel_file.xlsx>
 
 ---
 
-## Exporting TPR Data
+## Exporting SAR Data
 
-Any TPR document can be exported as structured JSON from the document show page or via:
+Any SAR document can be exported as structured JSON from the document show page or via:
 
 ```
-GET /api/v1/tpr_documents/:id/export
+GET /api/v1/sar_documents/:id/export
 ```

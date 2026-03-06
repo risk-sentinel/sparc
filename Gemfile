@@ -27,6 +27,7 @@ gem "pagy", "~> 43.3"              # Pagination
 gem "sidekiq"                       # Background jobs
 gem "redis", "~> 5.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
+gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 gem "dotenv-rails", require: false, groups: [ :development, :test ]
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
@@ -78,4 +79,5 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  gem "shoulda-matchers", "~> 6.0"
 end

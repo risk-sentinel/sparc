@@ -1,12 +1,12 @@
 require "roo"
 
-class TprExcelParserService
+class SarExcelParserService
   include BatchInsertable
 
   # Maps normalized header text → { key:, control_attr: }
-  # control_attr: true    = stored on TprControl directly
+  # control_attr: true    = stored on SarControl directly
   # control_attr: :subject = special Subject parsing (asset | environment)
-  # control_attr: false   = stored as TprControlField
+  # control_attr: false   = stored as SarControlField
   COLUMN_MAP = {
     "#"                => { key: "row_number",       control_attr: false },
     "inherited"        => { key: "inherited",        control_attr: false },
@@ -33,15 +33,15 @@ class TprExcelParserService
     "working status"   => { key: "working_status",   control_attr: false }
   }.freeze
 
-  def initialize(tpr_document, file_path)
-    @document    = tpr_document
+  def initialize(sar_document, file_path)
+    @document    = sar_document
     @file_path   = file_path
-    @spreadsheet = Roo::Spreadsheet.open(file_path)
+    @spreadsheet = Roo::Spreadsheet.open(file_path.to_s)
   end
 
   def parse
     sheet_metadata   = {}
-    control_attrs    = []  # Array of attribute hashes for TprControl
+    control_attrs    = []  # Array of attribute hashes for SarControl
     field_entries    = []  # Array of [control_index, field_name, field_value]
     global_row_order = 0
 
@@ -98,9 +98,9 @@ class TprExcelParserService
     end
 
     batch_insert_records(
-      control_class: TprControl,
-      field_class:   TprControlField,
-      document_fk:   :tpr_document_id,
+      control_class: SarControl,
+      field_class:   SarControlField,
+      document_fk:   :sar_document_id,
       control_attrs: control_attrs,
       field_entries: field_entries
     )

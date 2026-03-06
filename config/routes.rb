@@ -9,6 +9,9 @@ Rails.application.routes.draw do
   resources :ssp_documents do
     member do
       get :download_json
+      get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
       get :status
     end
     collection do
@@ -16,13 +19,13 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :tpr_documents do
+  resources :sar_documents do
     member do
       get :download_json
       get :download_excel
       get :status
       get :editor
-      get "edit_control/:tpr_control_id", action: :edit_control, as: :edit_control
+      get "edit_control/:sar_control_id", action: :edit_control, as: :edit_control
     end
     collection do
       post :import_json
@@ -33,6 +36,8 @@ Rails.application.routes.draw do
     member do
       get :download_json
       get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
       get :status
     end
   end
@@ -59,7 +64,7 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :tpr_documents, only: [] do
+      resources :sar_documents, only: [] do
         collection do
           post :convert
         end

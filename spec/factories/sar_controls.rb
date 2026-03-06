@@ -1,7 +1,7 @@
 FactoryBot.define do
-  factory :tpr_control do
+  factory :sar_control do
     control_id { "MyString" }
     title { "MyString" }
-    tpr_document { nil }
+    sar_document { nil }
   end
 end

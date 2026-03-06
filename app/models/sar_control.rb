@@ -1,6 +1,6 @@
-class TprControl < ApplicationRecord
-  belongs_to :tpr_document
-  has_many :tpr_control_fields, dependent: :delete_all
+class SarControl < ApplicationRecord
+  belongs_to :sar_document
+  has_many :sar_control_fields, dependent: :delete_all
 
   # Multiple test rows can share the same Paragraph (control_id)
   # and a row may have no Paragraph — no uniqueness or presence enforced
@@ -9,7 +9,7 @@ class TprControl < ApplicationRecord
   scope :in_section, ->(s) { where(section: s) }
   scope :boundary_findings, -> { where(subject_asset: nil) }
 
-  accepts_nested_attributes_for :tpr_control_fields
+  accepts_nested_attributes_for :sar_control_fields
 
   before_save :compute_control_family
 
@@ -21,7 +21,7 @@ class TprControl < ApplicationRecord
       subject_asset: subject_asset,
       subject_environment: subject_environment,
       row_order: row_order,
-      fields: tpr_control_fields.map do |field|
+      fields: sar_control_fields.map do |field|
         {
           field_name: field.field_name,
           field_value: field.field_value,

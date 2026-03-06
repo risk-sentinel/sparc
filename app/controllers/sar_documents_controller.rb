@@ -1,24 +1,24 @@
-class TprDocumentsController < ApplicationController
+class SarDocumentsController < ApplicationController
   include FileUploadable
   include Pagy::Method
 
   CONTROLS_PER_PAGE = 50
 
-  before_action :set_tpr_document, only: [
+  before_action :set_sar_document, only: [
     :show, :update, :destroy, :download_json, :download_excel, :edit_control, :status
   ]
 
   helper_method :filter_params
 
   def index
-    @tpr_documents = TprDocument.order(created_at: :desc)
+    @sar_documents = SarDocument.order(created_at: :desc)
   end
 
   def show
     # Short-circuit for documents still being processed
-    return if @tpr_document.pending? || @tpr_document.processing? || @tpr_document.failed?
+    return if @sar_document.pending? || @sar_document.processing? || @sar_document.failed?
 
-    controls_scope = @tpr_document.tpr_controls
+    controls_scope = @sar_document.sar_controls
 
     # Filter options — TRIM + DISTINCT to deduplicate values with whitespace differences
     @sections     = controls_scope.where.not(section: nil)
@@ -52,8 +52,8 @@ class TprDocumentsController < ApplicationController
 
     if params[:status].present?
       filtered = filtered.where(
-        "cached_result = :status OR (cached_result IS NULL AND tpr_controls.id IN " \
-        "(SELECT tpr_control_id FROM tpr_control_fields WHERE field_name = 'result' AND field_value = :status))",
+        "cached_result = :status OR (cached_result IS NULL AND sar_controls.id IN " \
+        "(SELECT sar_control_id FROM sar_control_fields WHERE field_name = 'result' AND field_value = :status))",
         status: params[:status]
       )
     end
@@ -61,7 +61,7 @@ class TprDocumentsController < ApplicationController
     # Paginate (explicit order since default_scope was removed for query performance)
     @pagy, @controls = pagy(
       :offset,
-      filtered.order(:row_order).includes(:tpr_control_fields),
+      filtered.order(:row_order).includes(:sar_control_fields),
       limit: CONTROLS_PER_PAGE
     )
 
@@ -75,54 +75,54 @@ class TprDocumentsController < ApplicationController
   end
 
   def update
-    control = @tpr_document.tpr_controls.find(params[:tpr_control_id])
+    control = @sar_document.sar_controls.find(params[:sar_control_id])
 
     (params[:fields] || {}).each do |field_name, value|
-      field = control.tpr_control_fields.find_or_initialize_by(field_name: field_name.to_s)
+      field = control.sar_control_fields.find_or_initialize_by(field_name: field_name.to_s)
       field.field_value = value.to_s.strip
       field.save!
     end
 
-    flash[:success] = "Test updated successfully"
-    redirect_to tpr_document_path(@tpr_document, filter_params)
+    flash[:success] = "Assessment result updated successfully"
+    redirect_to sar_document_path(@sar_document, filter_params)
   rescue ActiveRecord::RecordNotFound
     flash[:error] = "Control not found"
-    redirect_to @tpr_document
+    redirect_to @sar_document
   rescue StandardError => e
     flash[:error] = "Error updating: #{e.message}"
-    redirect_to @tpr_document
+    redirect_to @sar_document
   end
 
   def new
-    @tpr_document = TprDocument.new
+    @sar_document = SarDocument.new
   end
 
   def create
-    handle_file_upload(:tpr, param_key: :tpr_document)
+    handle_file_upload(:sar, param_key: :sar_document)
   end
 
   def download_json
-    json_data = JsonExportService.export_tpr(@tpr_document)
+    json_data = JsonExportService.export_sar(@sar_document)
 
     send_data json_data,
-              filename:    "#{@tpr_document.name}_#{Date.today}.json",
+              filename:    "#{@sar_document.name}_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
   end
 
   def download_excel
-    excel_data = TprExcelExportService.new(@tpr_document).export
+    excel_data = SarExcelExportService.new(@sar_document).export
 
     send_data excel_data,
-              filename:    "#{@tpr_document.name}_#{Date.today}.xlsx",
+              filename:    "#{@sar_document.name}_#{Date.today}.xlsx",
               type:        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
               disposition: "attachment"
   end
 
   def edit_control
-    @control = @tpr_document.tpr_controls
-                             .includes(:tpr_control_fields)
-                             .find(params[:tpr_control_id])
+    @control = @sar_document.sar_controls
+                             .includes(:sar_control_fields)
+                             .find(params[:sar_control_id])
     @catalog_guidance = {}
     normalized = normalize_ctrl_id(@control.control_id)
     if normalized
@@ -130,34 +130,34 @@ class TprDocumentsController < ApplicationController
       @catalog_guidance[normalized] = ctrl if ctrl
     end
 
-    render partial: "tpr_documents/edit_control_form",
-           locals: { control: @control, tpr_document: @tpr_document }
+    render partial: "sar_documents/edit_control_form",
+           locals: { control: @control, sar_document: @sar_document }
   end
 
   def status
     render json: {
-      status: @tpr_document.status,
-      error_message: @tpr_document.error_message
+      status: @sar_document.status,
+      error_message: @sar_document.error_message
     }
   end
 
   def destroy
-    @tpr_document.destroy
-    flash[:success] = "Test Plan Results document deleted"
-    redirect_to tpr_documents_path
+    @sar_document.destroy
+    flash[:success] = "Security Assessment Results document deleted"
+    redirect_to sar_documents_path
   end
 
   private
 
-  def set_tpr_document
-    @tpr_document = TprDocument.find(params[:id])
+  def set_sar_document
+    @sar_document = SarDocument.find(params[:id])
   end
 
   def filter_params
     params.except(:controller, :action, :id).permit(:section, :family, :status, :asset, :environment, :page).to_h
   end
 
-  TPR_STATUS_ORDER = [
+  SAR_STATUS_ORDER = [
     "Pass", "Failed",
     "Final Satisfied", "Final - Not Satisfied", "Not Satisfied", "Not Specified",
     # Legacy
@@ -174,12 +174,12 @@ class TprDocumentsController < ApplicationController
       rows = scope.group(:control_family, :cached_result).count
     else
       # Fallback for pre-existing data without denormalized columns:
-      # join to tpr_control_fields for result, compute family from control_id
+      # join to sar_control_fields for result, compute family from control_id
       rows = {}
-      scope.includes(:tpr_control_fields).find_each(batch_size: 1000) do |control|
+      scope.includes(:sar_control_fields).find_each(batch_size: 1000) do |control|
         family = control.control_id.to_s.split("-").first.upcase
         next if family.blank?
-        result_field = control.tpr_control_fields.find { |f| f.field_name == "result" }
+        result_field = control.sar_control_fields.find { |f| f.field_name == "result" }
         status = result_field&.field_value.presence || "(Unknown)"
         rows[[ family, status ]] ||= 0
         rows[[ family, status ]] += 1
@@ -195,8 +195,8 @@ class TprDocumentsController < ApplicationController
 
     families     = data.keys.sort
     all_statuses = data.values.flat_map(&:keys).uniq
-    ordered      = TPR_STATUS_ORDER.select { |s| all_statuses.include?(s) }
-    ordered     += (all_statuses - TPR_STATUS_ORDER).sort
+    ordered      = SAR_STATUS_ORDER.select { |s| all_statuses.include?(s) }
+    ordered     += (all_statuses - SAR_STATUS_ORDER).sort
 
     [ data, families, ordered ]
   end

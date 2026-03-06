@@ -1,4 +1,4 @@
-# Shared batch insert logic for parser services (TPR, Profile, SSP).
+# Shared batch insert logic for parser services (SAR, Profile, SSP).
 #
 # Uses activerecord-import to insert controls and fields in batches within
 # a single transaction for maximum throughput on large files.
@@ -11,9 +11,9 @@
 #     field_entries = [ [0, "result", "Pass"], [0, "notes", "..."], ... ]
 #
 #     batch_insert_records(
-#       control_class: TprControl,
-#       field_class:   TprControlField,
-#       document_fk:   :tpr_document_id,
+#       control_class: SarControl,
+#       field_class:   SarControlField,
+#       document_fk:   :sar_document_id,
 #       control_attrs: control_attrs,
 #       field_entries: field_entries
 #     )
@@ -29,9 +29,9 @@ module BatchInsertable
 
   # Batch-inserts control records and their associated field records.
   #
-  # @param control_class [Class]  ActiveRecord model for controls (e.g. TprControl)
-  # @param field_class   [Class]  ActiveRecord model for fields (e.g. TprControlField)
-  # @param document_fk   [Symbol] Foreign key column name (e.g. :tpr_document_id)
+  # @param control_class [Class]  ActiveRecord model for controls (e.g. SarControl)
+  # @param field_class   [Class]  ActiveRecord model for fields (e.g. SarControlField)
+  # @param document_fk   [Symbol] Foreign key column name (e.g. :sar_document_id)
   # @param control_attrs [Array<Hash>] Attribute hashes for each control
   # @param field_entries [Array<Array>] Triples of [control_index, field_name, field_value]
   # @return [Array<Integer>] IDs of the imported control records

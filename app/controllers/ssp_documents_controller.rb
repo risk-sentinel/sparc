@@ -1,7 +1,7 @@
 class SspDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json, :status ]
+  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :status ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -72,6 +72,42 @@ class SspDocumentsController < ApplicationController
 
     send_data json_data,
               filename:    "#{@ssp_document.name}_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_oscal
+    service = OscalSspExportService.new(@ssp_document)
+    result = service.validation_result
+
+    if result.valid?
+      download_url = download_oscal_validated_ssp_document_path(@ssp_document)
+      flash[:success] = "OSCAL export passed schema validation (v#{result.schema_version}). <a href=\"#{download_url}\">Download OSCAL file</a>.".html_safe
+    else
+      Rails.logger.warn("OSCAL validation failed for SSP #{@ssp_document.id}: #{result.errors.first(3).join('; ')}")
+      download_url = download_oscal_unvalidated_ssp_document_path(@ssp_document)
+      flash[:warning] = "OSCAL export failed schema validation. <a href=\"#{download_url}\">Download unvalidated version</a>.".html_safe
+    end
+
+    redirect_to ssp_document_path(@ssp_document)
+  end
+
+  def download_oscal_validated
+    service = OscalSspExportService.new(@ssp_document)
+    oscal_data = service.export
+
+    send_data oscal_data,
+              filename:    "#{@ssp_document.name}_oscal_ssp_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_oscal_unvalidated
+    service = OscalSspExportService.new(@ssp_document)
+    oscal_data = service.export_unvalidated
+
+    send_data oscal_data,
+              filename:    "#{@ssp_document.name}_oscal_ssp_unvalidated_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
   end

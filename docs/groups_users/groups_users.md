@@ -15,6 +15,8 @@
 | Assessor / 3PAO | Project-specific | Full view of all project data; Read/Write access to assessment artifacts only | SAP (R/W), SAR (R/W), all others (view-only) | Independent assessment focus; protected write scope |
 | View Only Users | Project-specific | Read-only access to assigned project artifacts (no edit, no copy/import) | SSP, SAR, POA&Ms, Boundaries, Components | Auditors, stakeholders, or read-only reviewers |
 
+## Project and User Associations
+
 ```mermaid
 graph TD
     subgraph "Instance / Global Level (App-Wide Roles)"
