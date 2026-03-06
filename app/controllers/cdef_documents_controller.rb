@@ -46,10 +46,19 @@ class CdefDocumentsController < ApplicationController
   end
 
   def download_oscal
-    oscal_data = OscalComponentDefinitionExportService.new(@cdef_document).export
+    service = OscalComponentDefinitionExportService.new(@cdef_document)
+    oscal_data = service.export
 
     send_data oscal_data,
               filename:    "#{@cdef_document.name}_oscal_component_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL validation failed for CDEF #{@cdef_document.id}: #{e.message}")
+    flash[:error] = "OSCAL export failed schema validation. Downloading unvalidated version."
+    oscal_data = service.export_unvalidated
+    send_data oscal_data,
+              filename:    "#{@cdef_document.name}_oscal_component_unvalidated_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
   end

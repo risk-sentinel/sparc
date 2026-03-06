@@ -1,7 +1,7 @@
 class SspDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json, :status ]
+  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json, :download_oscal, :status ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -72,6 +72,24 @@ class SspDocumentsController < ApplicationController
 
     send_data json_data,
               filename:    "#{@ssp_document.name}_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_oscal
+    service = OscalSspExportService.new(@ssp_document)
+    oscal_data = service.export
+
+    send_data oscal_data,
+              filename:    "#{@ssp_document.name}_oscal_ssp_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL validation failed for SSP #{@ssp_document.id}: #{e.message}")
+    flash[:error] = "OSCAL export failed schema validation. Downloading unvalidated version."
+    oscal_data = service.export_unvalidated
+    send_data oscal_data,
+              filename:    "#{@ssp_document.name}_oscal_ssp_unvalidated_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
   end
