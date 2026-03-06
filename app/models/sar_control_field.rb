@@ -1,5 +1,5 @@
-class TprControlField < ApplicationRecord
-  belongs_to :tpr_control
+class SarControlField < ApplicationRecord
+  belongs_to :sar_control
 
   validates :field_name, presence: true
 
@@ -37,6 +37,6 @@ class TprControlField < ApplicationRecord
   end
 
   def sync_cached_result
-    tpr_control.update_column(:cached_result, field_value)
+    sar_control.update_column(:cached_result, field_value)
   end
 end

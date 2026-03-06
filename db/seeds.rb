@@ -799,13 +799,13 @@ puts "  Created/updated #{r4_controls} catalog controls"
 puts "Done! NIST SP 800-53 Rev 4 catalog is ready."
 
 # ============================================================
-# Demo SSP and TPR Documents
+# Demo SSP and SAR Documents
 # ============================================================
-# Generates two demo SSPs and two demo TPRs that reference the
+# Generates two demo SSPs and two demo SARs that reference the
 # NIST SP 800-53 Rev 5 and Rev 4 catalogs above.  Idempotent.
 # ============================================================
 
-puts "\nSeeding demo SSP and TPR documents..."
+puts "\nSeeding demo SSP and SAR documents..."
 
 def seed_ssp_control(doc, ctrl_id, title, fields, inherited_rows: [])
   ctrl = doc.ssp_controls.create!(control_id: ctrl_id, title: title)
@@ -833,8 +833,8 @@ def pad_ctrl_id(id)
   id.to_s.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
 end
 
-def seed_tpr_control(doc, ctrl_id, title, section, subject_asset, subject_env, fields)
-  ctrl = doc.tpr_controls.create!(
+def seed_sar_control(doc, ctrl_id, title, section, subject_asset, subject_env, fields)
+  ctrl = doc.sar_controls.create!(
     control_id:          ctrl_id,
     title:               title,
     section:             section,
@@ -843,11 +843,11 @@ def seed_tpr_control(doc, ctrl_id, title, section, subject_asset, subject_env, f
   )
   fields.each do |name, val|
     next if val.blank?
-    ctrl.tpr_control_fields.create!(field_name: name.to_s, field_value: val.to_s)
+    ctrl.sar_control_fields.create!(field_name: name.to_s, field_value: val.to_s)
   end
 end
 
-# Asset / environment mapping for Rev5 TPR demo.
+# Asset / environment mapping for Rev5 SAR demo.
 # Controls not listed here are boundary-level (no specific asset tested).
 REV5_SUBJECTS = {
   "AC-2"  => { asset: "IAM-Platform",  env: "Production" },
@@ -872,7 +872,7 @@ REV5_SUBJECTS = {
 }.freeze
 
 # ------------------------------------------------------------------
-# Demo data: Rev 5 controls (used for both SSP 1 and TPR 1)
+# Demo data: Rev 5 controls (used for both SSP 1 and SAR 1)
 # Fields: id, title, ssp_status, role, origination,
 #         customer_responsibility, guidance,
 #         test_status, test_date, tester, test_result, remediation
@@ -1484,7 +1484,7 @@ REV4_CONTROLS = [
 [
   "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
   "ACME HR Portal — Security Assessment (Rev 4)"
-].each { |n| TprDocument.find_by(name: n)&.destroy }
+].each { |n| SarDocument.find_by(name: n)&.destroy }
 
 # -- SSP 1: Rev 5 Moderate Baseline ----------------------------------
 ssp1 = SspDocument.create!(
@@ -1598,11 +1598,11 @@ REV4_CONTROLS.each do |c|
 end
 puts "  SSP 2 '#{ssp2.name}': #{ssp2.ssp_controls.count} controls"
 
-# -- TPR 1: Rev 5 Annual Assessment (multi-section demo) --------------
-tpr1 = TprDocument.create!(
+# -- SAR 1: Rev 5 Annual Assessment (multi-section demo) --------------
+sar1 = SarDocument.create!(
   name:              "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
   file_type:         "excel",
-  original_filename: "demo_acme_cloud_platform_tpr_rev5.xlsx",
+  original_filename: "demo_acme_cloud_platform_sar_rev5.xlsx",
   status:            "completed"
 )
 
@@ -1626,7 +1626,7 @@ REV5_CONTROLS.each do |c|
   # working_comments only for Failed controls
   working_comments = c[:test_status] == "Failed" ? c[:remediation] : nil
 
-  seed_tpr_control(tpr1, pad_ctrl_id(c[:id]), c[:title], section_name,
+  seed_sar_control(sar1, pad_ctrl_id(c[:id]), c[:title], section_name,
     subj[:asset].to_s, subj[:env].to_s,
     result:           c[:test_status],
     date:             c[:test_date],
@@ -1636,13 +1636,13 @@ REV5_CONTROLS.each do |c|
     working_status:   working_status,
     working_comments: working_comments)
 end
-puts "  TPR 1 '#{tpr1.name}': #{tpr1.tpr_controls.count} controls"
+puts "  SAR 1 '#{sar1.name}': #{sar1.sar_controls.count} controls"
 
-# -- TPR 2: Rev 4 HR Assessment ----------------------------------------
-tpr2 = TprDocument.create!(
+# -- SAR 2: Rev 4 HR Assessment ----------------------------------------
+sar2 = SarDocument.create!(
   name:              "ACME HR Portal — Security Assessment (Rev 4)",
   file_type:         "excel",
-  original_filename: "demo_acme_hr_portal_tpr_rev4.xlsx",
+  original_filename: "demo_acme_hr_portal_sar_rev4.xlsx",
   status:            "completed"
 )
 
@@ -1654,7 +1654,7 @@ REV4_CONTROLS.each do |c|
   else nil
   end
 
-  seed_tpr_control(tpr2, pad_ctrl_id(c[:id]), c[:title], "System Test",
+  seed_sar_control(sar2, pad_ctrl_id(c[:id]), c[:title], "System Test",
     nil, nil,
     result:           c[:test_status],
     date:             c[:test_date],
@@ -1664,7 +1664,7 @@ REV4_CONTROLS.each do |c|
     working_status:   working_status,
     working_comments: (c[:test_status] == "Failed" ? c[:remediation] : nil))
 end
-puts "  TPR 2 '#{tpr2.name}': #{tpr2.tpr_controls.count} controls"
+puts "  SAR 2 '#{sar2.name}': #{sar2.sar_controls.count} controls"
 
 # ============================================================
 # Catalog Guidance — load from providing-catalog JSON files
@@ -1789,4 +1789,4 @@ INLINE_CATALOG_GUIDANCE.each do |ctrl_id, guidance|
 end
 puts "  Inline demo guidance applied to #{inline_count} catalog control(s)"
 
-puts "Done! Demo SSP and TPR documents seeded."
+puts "Done! Demo SSP and SAR documents seeded."

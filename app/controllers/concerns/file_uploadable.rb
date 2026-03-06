@@ -1,4 +1,4 @@
-# Shared upload logic for document controllers (SSP, TPR, CDEF).
+# Shared upload logic for document controllers (SSP, SAR, CDEF).
 #
 # Extracts the duplicated create-action pattern:
 #   1. Validate file presence
@@ -28,7 +28,7 @@ module FileUploadable
 
   SAFE_PREFIXES = {
     ssp:     "ssp",
-    tpr:     "tpr",
+    sar:     "sar",
     cdef: "cdef"
   }.freeze
 
@@ -84,7 +84,7 @@ module FileUploadable
     end
   end
 
-  # Set the conventional instance variable (e.g. @ssp_document, @tpr_document)
+  # Set the conventional instance variable (e.g. @ssp_document, @sar_document)
   def set_document_ivar(type_key, document)
     instance_variable_set(:"@#{type_key}_document", document)
   end

@@ -1,5 +1,5 @@
 <%
-  field_map    = control.tpr_control_fields.index_by(&:field_name)
+  field_map    = control.sar_control_fields.index_by(&:field_name)
   card_asset   = control.subject_asset.to_s.strip
   card_env     = control.subject_environment.to_s.strip
   ctx_field_names = %w[control_status responsibility impact_statement control_text implementation]
@@ -19,8 +19,8 @@
   any_ctx = ctx_rows.any? { |_, v| v.present? }
 %>
 
-<%= form_with url: tpr_document_path(tpr_document), method: :patch, local: true do |f| %>
-  <%= hidden_field_tag :tpr_control_id, control.id %>
+<%= form_with url: sar_document_path(sar_document), method: :patch, local: true do |f| %>
+  <%= hidden_field_tag :sar_control_id, control.id %>
 
   <% if any_ctx %>
     <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
@@ -43,7 +43,7 @@
     </div>
   <% end %>
 
-  <% TprControlField::EDITABLE_FIELDS.each do |fname| %>
+  <% SarControlField::EDITABLE_FIELDS.each do |fname| %>
     <% field = field_map[fname] %>
     <% fval  = field&.field_value.to_s %>
     <div class="form-group">
@@ -53,12 +53,12 @@
       </label>
       <% if fname == "result" %>
         <%= select_tag "fields[#{fname}]",
-              options_for_select(TprControlField::RESULT_VALUES, fval),
+              options_for_select(SarControlField::RESULT_VALUES, fval),
               include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
               style: "font-size: 0.875rem;" %>
       <% elsif fname == "working_status" %>
         <%= select_tag "fields[#{fname}]",
-              options_for_select(TprControlField::WORKING_STATUS_VALUES, fval),
+              options_for_select(SarControlField::WORKING_STATUS_VALUES, fval),
               include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
               style: "font-size: 0.875rem;" %>
       <% else %>
