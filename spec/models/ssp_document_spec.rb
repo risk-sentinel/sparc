@@ -1,4 +1,4 @@
-equire 'rails_helper'
+require 'rails_helper'
 
 RSpec.describe SspDocument, type: :model do
   describe 'validations' do

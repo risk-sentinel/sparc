@@ -2,9 +2,9 @@
 # file extensions, parser services, and display messages.
 #
 # Usage:
-#   entry = DocumentTypeRegistry.for(:tpr)
-#   entry.document_class  # => TprDocument
-#   entry.parser_map      # => { "excel" => TprExcelParserService }
+#   entry = DocumentTypeRegistry.for(:sar)
+#   entry.document_class  # => SarDocument
+#   entry.parser_map      # => { "excel" => SarExcelParserService }
 #
 class DocumentTypeRegistry
   Entry = Data.define(
@@ -29,15 +29,15 @@ class DocumentTypeRegistry
       file_prefix:        "ssp",
       success_message:    "Controls Implementation workbook uploaded. Processing in background..."
     ),
-    tpr: Entry.new(
-      document_class:     TprDocument,
-      control_class:      TprControl,
-      field_class:        TprControlField,
-      document_fk:        :tpr_document_id,
+    sar: Entry.new(
+      document_class:     SarDocument,
+      control_class:      SarControl,
+      field_class:        SarControlField,
+      document_fk:        :sar_document_id,
       allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel" },
-      parser_map:         { "excel" => TprExcelParserService },
-      file_prefix:        "tpr",
-      success_message:    "Test Plan Results workbook uploaded. Processing in background..."
+      parser_map:         { "excel" => SarExcelParserService },
+      file_prefix:        "sar",
+      success_message:    "Security Assessment Results workbook uploaded. Processing in background..."
     ),
     cdef: Entry.new(
       document_class:     CdefDocument,

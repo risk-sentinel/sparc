@@ -35,6 +35,9 @@
         --flash-err-bg:       #f8d7da;
         --flash-err-text:     #721c24;
         --flash-err-border:   #f5c6cb;
+        --flash-warn-bg:      #fff3cd;
+        --flash-warn-text:    #856404;
+        --flash-warn-border:  #ffc107;
         --btn-primary:        #3498db;
         --btn-primary-hover:  #2980b9;
         --btn-success:        #27ae60;
@@ -71,6 +74,9 @@
           --flash-err-bg:     #3a1a1a;
           --flash-err-text:   #fc8181;
           --flash-err-border: #6a2929;
+          --flash-warn-bg:    #3a3520;
+          --flash-warn-text:  #fbd38d;
+          --flash-warn-border:#b7791f;
           --btn-primary:      #5dade2;
           --btn-primary-hover:#3498db;
           --btn-success:      #2ecc71;
@@ -180,11 +186,50 @@
         padding: 0 1rem;
       }
 
-      .flash {
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border-radius: 4px;
+      /* ── Flash notifications (top-right corner) ─────────────── */
+      .flash-container {
+        position: fixed;
+        top: 5rem;
+        right: 1.5rem;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 420px;
+        pointer-events: none;
       }
+
+      .flash {
+        padding: 0.85rem 2.5rem 0.85rem 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        position: relative;
+        pointer-events: auto;
+        animation: flash-slide-in 0.3s ease-out;
+      }
+
+      .flash.dismissing {
+        animation: flash-fade-out 0.4s ease-in forwards;
+      }
+
+      .flash .flash-close {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.6rem;
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        cursor: pointer;
+        opacity: 0.6;
+        color: inherit;
+        line-height: 1;
+        padding: 0;
+      }
+      .flash .flash-close:hover { opacity: 1; }
+
+      .flash a { color: inherit; font-weight: 600; text-decoration: underline; }
 
       .flash.success {
         background: var(--flash-ok-bg);
@@ -196,6 +241,22 @@
         background: var(--flash-err-bg);
         color: var(--flash-err-text);
         border: 1px solid var(--flash-err-border);
+      }
+
+      .flash.warning {
+        background: var(--flash-warn-bg);
+        color: var(--flash-warn-text);
+        border: 1px solid var(--flash-warn-border);
+      }
+
+      @keyframes flash-slide-in {
+        from { opacity: 0; transform: translateX(80px); }
+        to   { opacity: 1; transform: translateX(0); }
+      }
+
+      @keyframes flash-fade-out {
+        from { opacity: 1; transform: translateX(0); }
+        to   { opacity: 0; transform: translateX(80px); }
       }
 
       .card {
@@ -287,14 +348,14 @@
         <%= link_to root_path, style: "display: flex; align-items: center; text-decoration: none;" do %>
           <%= image_tag "sparc.png", alt: "SPARC", style: "height: 40px; width: auto; display: block;" %>
         <% end %>
-        <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.03em;">v2.0.1</span>
+        <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.03em;">v2.1.0</span>
       </div>
       <nav>
         <%= link_to "Home", root_path %>
         <%= link_to "Control Catalogs", control_catalogs_path %>
         <%= link_to "Component Definitions", cdef_documents_path %>
         <%= link_to "Controls Implementation", ssp_documents_path %>
-        <%= link_to "Test Plan Results", tpr_documents_path %>
+        <%= link_to "Assessment Results", sar_documents_path %>
         <button id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
         <% if SparcConfig.any_auth_enabled? %>
           <%= link_to "Login", login_path, style: "background: rgba(52,152,219,0.3); border: 1px solid rgba(52,152,219,0.5); border-radius: 6px; font-weight: 600;" %>
@@ -302,15 +363,31 @@
       </nav>
     </div>
 
+    <%# ── Flash notifications (fixed top-right overlay) ──────── %>
+    <% if flash[:success] || flash[:error] || flash[:warning] %>
+      <div class="flash-container" data-controller="flash">
+        <% if flash[:success] %>
+          <div class="flash success" data-flash-target="message">
+            <button class="flash-close" data-action="click->flash#dismiss">&times;</button>
+            <%= flash[:success] %>
+          </div>
+        <% end %>
+        <% if flash[:error] %>
+          <div class="flash error" data-flash-target="message">
+            <button class="flash-close" data-action="click->flash#dismiss">&times;</button>
+            <%= flash[:error] %>
+          </div>
+        <% end %>
+        <% if flash[:warning] %>
+          <div class="flash warning" data-flash-target="message">
+            <button class="flash-close" data-action="click->flash#dismiss">&times;</button>
+            <%= flash[:warning] %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
     <div class="container">
-      <% if flash[:success] %>
-        <div class="flash success"><%= flash[:success] %></div>
-      <% end %>
-
-      <% if flash[:error] %>
-        <div class="flash error"><%= flash[:error] %></div>
-      <% end %>
-
       <%= yield %>
     </div>
 

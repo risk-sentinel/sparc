@@ -1,18 +1,18 @@
 <div class="card">
-  <h2>Upload Test Plan Results</h2>
+  <h2>Upload Security Assessment Results</h2>
 
-  <%= form_with model: @tpr_document, local: true, multipart: true do |f| %>
+  <%= form_with model: @sar_document, local: true, multipart: true do |f| %>
     <div class="form-group">
-      <label for="tpr_document_file">Select Excel File (.xlsx, .xls)</label>
+      <label for="sar_document_file">Select Excel File (.xlsx, .xls)</label>
       <%= f.file_field :file, accept: ".xlsx,.xls", required: true %>
       <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
-        Upload an Excel workbook containing your test plan results. Multiple tabs (System Test, Location Tests, Equipment Tests, Cloud, Cloud Resources) will each be imported as a separate section.
+        Upload an Excel workbook containing your security assessment results. Multiple tabs (System Test, Location Tests, Equipment Tests, Cloud, Cloud Resources) will each be imported as a separate section.
       </small>
     </div>
 
     <div style="display: flex; gap: 1rem;">
       <%= f.submit "Upload and Convert", class: "btn btn-success" %>
-      <%= link_to "Cancel", tpr_documents_path, class: "btn btn-secondary" %>
+      <%= link_to "Cancel", sar_documents_path, class: "btn btn-secondary" %>
     </div>
   <% end %>
 </div>

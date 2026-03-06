@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_06_221831) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -136,6 +136,49 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_120000) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "sar_control_fields", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "editable"
+    t.string "field_name"
+    t.text "field_value"
+    t.bigint "sar_control_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["sar_control_id", "field_name"], name: "index_tpr_control_fields_on_control_id_and_field_name"
+    t.index ["sar_control_id"], name: "index_sar_control_fields_on_sar_control_id"
+  end
+
+  create_table "sar_controls", force: :cascade do |t|
+    t.string "cached_result"
+    t.string "control_family"
+    t.string "control_id"
+    t.datetime "created_at", null: false
+    t.integer "row_order", default: 0, null: false
+    t.bigint "sar_document_id", null: false
+    t.string "section"
+    t.string "subject_asset"
+    t.string "subject_environment"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["sar_document_id", "cached_result"], name: "index_sar_controls_on_sar_document_id_and_cached_result"
+    t.index ["sar_document_id", "control_family"], name: "index_sar_controls_on_sar_document_id_and_control_family"
+    t.index ["sar_document_id", "row_order"], name: "index_sar_controls_on_sar_document_id_and_row_order"
+    t.index ["sar_document_id"], name: "index_sar_controls_on_sar_document_id"
+    t.index ["section"], name: "index_sar_controls_on_section"
+  end
+
+  create_table "sar_documents", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.jsonb "excel_metadata", default: {}
+    t.string "file_type"
+    t.string "name"
+    t.string "original_filename"
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_sar_documents_on_created_at"
+    t.index ["status"], name: "index_sar_documents_on_status"
+  end
+
   create_table "ssp_control_fields", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "editable"
@@ -168,58 +211,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_120000) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "tpr_control_fields", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.boolean "editable"
-    t.string "field_name"
-    t.text "field_value"
-    t.bigint "tpr_control_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["tpr_control_id", "field_name"], name: "index_tpr_control_fields_on_control_id_and_field_name"
-    t.index ["tpr_control_id"], name: "index_tpr_control_fields_on_tpr_control_id"
-  end
-
-  create_table "tpr_controls", force: :cascade do |t|
-    t.string "cached_result"
-    t.string "control_family"
-    t.string "control_id"
-    t.datetime "created_at", null: false
-    t.integer "row_order", default: 0, null: false
-    t.string "section"
-    t.string "subject_asset"
-    t.string "subject_environment"
-    t.string "title"
-    t.bigint "tpr_document_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["section"], name: "index_tpr_controls_on_section"
-    t.index ["tpr_document_id", "cached_result"], name: "index_tpr_controls_on_tpr_document_id_and_cached_result"
-    t.index ["tpr_document_id", "control_family"], name: "index_tpr_controls_on_tpr_document_id_and_control_family"
-    t.index ["tpr_document_id", "row_order"], name: "index_tpr_controls_on_tpr_document_id_and_row_order"
-    t.index ["tpr_document_id"], name: "index_tpr_controls_on_tpr_document_id"
-  end
-
-  create_table "tpr_documents", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "error_message"
-    t.jsonb "excel_metadata", default: {}
-    t.string "file_type"
-    t.string "name"
-    t.string "original_filename"
-    t.string "status"
-    t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_tpr_documents_on_created_at"
-    t.index ["status"], name: "index_tpr_documents_on_status"
-  end
-
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "catalog_controls", "control_families"
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "control_families", "control_catalogs"
+  add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
+  add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
   add_foreign_key "ssp_control_fields", "ssp_controls"
   add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"
-  add_foreign_key "tpr_control_fields", "tpr_controls", on_delete: :cascade
-  add_foreign_key "tpr_controls", "tpr_documents", on_delete: :cascade
 end

@@ -20,7 +20,7 @@ Common issues and their solutions when running SPARC.
 
 **SSP upload stuck on "pending"** — Ensure Sidekiq is running (`docker compose logs sidekiq`). SSP files are processed asynchronously via a background job.
 
-**Unsupported file type error** — SSP and TPR documents require `.xlsx` or `.xls` Excel files. Profiles accept `.xml` (XCCDF) or `.json` (InSpec/STIG Viewer).
+**Unsupported file type error** — SSP and SAR documents require `.xlsx` or `.xls` Excel files. Profiles accept `.xml` (XCCDF) or `.json` (InSpec/STIG Viewer).
 
 **Large file timeout** — Files are persisted to disk before background processing begins, so timeouts should not occur. If the upload itself times out, check your reverse proxy configuration for request size limits.
 

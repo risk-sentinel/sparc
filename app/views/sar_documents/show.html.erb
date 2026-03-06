@@ -1,14 +1,14 @@
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
-<% unless @tpr_document.completed? %>
+<% unless @sar_document.completed? %>
   <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white; text-align: center;">
-    <% if @tpr_document.failed? %>
+    <% if @sar_document.failed? %>
       <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
       <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
       <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
-        <%= @tpr_document.error_message.presence || "An unknown error occurred." %>
+        <%= @sar_document.error_message.presence || "An unknown error occurred." %>
       </p>
       <div style="margin-top: 1.25rem;">
-        <%= link_to "&#8592; Back to Documents".html_safe, tpr_documents_path,
+        <%= link_to "&#8592; Back to Documents".html_safe, sar_documents_path,
               style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);" %>
       </div>
     <% else %>
@@ -17,13 +17,13 @@
       </div>
       <h2 style="color: #f39c12; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Your Workbook</h2>
       <p style="color: rgba(255,255,255,0.6); font-size: 0.88rem;">
-        <strong><%= @tpr_document.original_filename %></strong> is being parsed.
+        <strong><%= @sar_document.original_filename %></strong> is being parsed.
         This page will automatically refresh when processing is complete.
       </p>
     <% end %>
   </div>
 
-  <% unless @tpr_document.failed? %>
+  <% unless @sar_document.failed? %>
     <meta http-equiv="refresh" content="5">
   <% end %>
 
@@ -68,23 +68,23 @@
 
   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
     <div>
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Test Plan Results</div>
-      <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0 0 0.3rem;"><%= @tpr_document.name %></h2>
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Security Assessment Results</div>
+      <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0 0 0.3rem;"><%= @sar_document.name %></h2>
       <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5);">
-        <%= @tpr_document.original_filename %>
+        <%= @sar_document.original_filename %>
         &nbsp;&bull;&nbsp;
-        <span style="color: #2ecc71; font-weight: 600;"><%= @tpr_document.status %></span>
+        <span style="color: #2ecc71; font-weight: 600;"><%= @sar_document.status %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> tests
         <% if @sections.size > 1 %>&nbsp;&bull;&nbsp; <%= @sections.size %> sections<% end %>
         <% if @assets.any? %>&nbsp;&bull;&nbsp; <%= @assets.size %> assets<% end %>
       </div>
     </div>
     <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
-      <%= link_to "&#8595; Excel".html_safe, download_excel_tpr_document_path(@tpr_document),
+      <%= link_to "&#8595; Excel".html_safe, download_excel_sar_document_path(@sar_document),
             style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
-      <%= link_to "&#8595; JSON".html_safe, download_json_tpr_document_path(@tpr_document),
+      <%= link_to "&#8595; JSON".html_safe, download_json_sar_document_path(@sar_document),
             style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
-      <%= link_to "&#8592; Back".html_safe, tpr_documents_path,
+      <%= link_to "&#8592; Back".html_safe, sar_documents_path,
             style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
     </div>
   </div>
@@ -100,8 +100,8 @@
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
         <% chip_active = active_status == status && active_family.blank? %>
-        <%= link_to tpr_document_path(@tpr_document, filter_params.except(:page).merge(chip_active ? { status: nil } : { status: status, family: nil })),
-              style: "background: #{chip_active ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)'}; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid #{tpr_status_color(status)}; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; min-width: 64px; text-decoration: none; display: inline-block;" do %>
+        <%= link_to sar_document_path(@sar_document, filter_params.except(:page).merge(chip_active ? { status: nil } : { status: status, family: nil })),
+              style: "background: #{chip_active ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)'}; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid #{sar_status_color(status)}; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; min-width: 64px; text-decoration: none; display: inline-block;" do %>
           <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= count %></div>
           <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;"><%= status %></div>
         <% end %>
@@ -113,7 +113,7 @@
     <div style="height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: rgba(255,255,255,0.08);">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
-        <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= tpr_status_color(status) %>;" title="<%= status %>: <%= count %>"></div>
+        <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= sar_status_color(status) %>;" title="<%= status %>: <%= count %>"></div>
       <% end %>
     </div>
   </div>
@@ -127,10 +127,10 @@
     <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); white-space: nowrap;">&#x1F4BB; Asset</span>
     <select onchange="if(this.value) window.location=this.value;"
             style="padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font-size: 0.82rem; cursor: pointer; min-width: 180px; max-width: 360px;">
-      <option value="<%= tpr_document_path(@tpr_document, filter_params.except(:page, :asset)) %>"
+      <option value="<%= sar_document_path(@sar_document, filter_params.except(:page, :asset)) %>"
               <%= 'selected' if active_asset.blank? %>>All Assets (<%= @assets.size %>)</option>
       <% @assets.each do |asset| %>
-        <option value="<%= tpr_document_path(@tpr_document, filter_params.except(:page).merge(asset: asset)) %>"
+        <option value="<%= sar_document_path(@sar_document, filter_params.except(:page).merge(asset: asset)) %>"
                 <%= 'selected' if active_asset == asset %>><%= asset %></option>
       <% end %>
     </select>
@@ -140,11 +140,11 @@
   <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
     <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); white-space: nowrap; min-width: 6rem;">&#x1F30D; Environment</span>
     <% all_active = active_env.blank? %>
-    <%= link_to "All", tpr_document_path(@tpr_document, filter_params.except(:page, :environment)),
+    <%= link_to "All", sar_document_path(@sar_document, filter_params.except(:page, :environment)),
           style: "padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #{all_active ? '#2c3e50' : 'var(--surface-alt)'}; color: #{all_active ? 'white' : 'var(--text)'}; font-size: 0.78rem; cursor: pointer; font-weight: #{all_active ? '600' : '400'}; text-decoration: none;" %>
     <% @environments.each do |env| %>
       <% is_active = active_env == env %>
-      <%= link_to env, tpr_document_path(@tpr_document, filter_params.except(:page).merge(is_active ? { environment: nil } : { environment: env })),
+      <%= link_to env, sar_document_path(@sar_document, filter_params.except(:page).merge(is_active ? { environment: nil } : { environment: env })),
             style: "padding: 0.25rem 0.7rem; border-radius: 20px; border: 1px solid var(--border); background: #{is_active ? '#2c3e50' : 'var(--surface-alt)'}; color: #{is_active ? 'white' : 'var(--text)'}; font-size: 0.78rem; cursor: pointer; font-weight: #{is_active ? '600' : '400'}; text-decoration: none;" %>
     <% end %>
   </div>
@@ -156,11 +156,11 @@
 <% if @sections.size > 1 %>
 <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem;">
   <% tab_active = active_section.blank? %>
-  <%= link_to "All (#{@total_controls})", tpr_document_path(@tpr_document, filter_params.except(:page, :section)),
+  <%= link_to "All (#{@total_controls})", sar_document_path(@sar_document, filter_params.except(:page, :section)),
         style: "padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid var(--border); background: #{tab_active ? '#2c3e50' : 'var(--surface)'}; color: #{tab_active ? 'white' : 'var(--text)'}; font-size: 0.8rem; cursor: pointer; font-weight: #{tab_active ? '600' : '400'}; text-decoration: none;" %>
   <% @sections.each do |section_name| %>
     <% is_active = active_section == section_name %>
-    <%= link_to section_name, tpr_document_path(@tpr_document, filter_params.except(:page).merge(is_active ? { section: nil } : { section: section_name })),
+    <%= link_to section_name, sar_document_path(@sar_document, filter_params.except(:page).merge(is_active ? { section: nil } : { section: section_name })),
           style: "padding: 0.35rem 0.85rem; border-radius: 20px; border: 1px solid var(--border); background: #{is_active ? '#2c3e50' : 'var(--surface)'}; color: #{is_active ? 'white' : 'var(--text)'}; font-size: 0.8rem; cursor: pointer; font-weight: #{is_active ? '600' : '400'}; text-decoration: none;" %>
   <% end %>
 </div>
@@ -177,7 +177,7 @@
     <% if active_asset %> &bull; Asset: <strong><%= active_asset %></strong><% end %>
     <% if active_env %> &bull; Env: <strong><%= active_env %></strong><% end %>
   </span>
-  <%= link_to "&#x2715; Clear All".html_safe, tpr_document_path(@tpr_document),
+  <%= link_to "&#x2715; Clear All".html_safe, sar_document_path(@sar_document),
         style: "background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0; text-decoration: none;" %>
 </div>
 <% end %>
@@ -201,22 +201,22 @@
         <% card_family_active = active_family == family && active_status.blank? %>
         <div style="background: var(--surface); border: 1px solid <%= card_family_active ? '#3498db' : 'var(--border-soft)' %>; border-radius: 8px; padding: 0.85rem; <%= 'box-shadow: 0 0 0 1px #3498db;' if card_family_active %>">
           <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
-            <%= link_to family, tpr_document_path(@tpr_document, filter_params.except(:page).merge(card_family_active ? { family: nil, status: nil } : { family: family, status: nil })),
+            <%= link_to family, sar_document_path(@sar_document, filter_params.except(:page).merge(card_family_active ? { family: nil, status: nil } : { family: family, status: nil })),
                   style: "font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text); text-decoration: none; cursor: pointer;" %>
             <span style="font-size: 0.72rem; font-weight: 700; color: <%= fpct >= 80 ? '#27ae60' : fpct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= fpct %>%</span>
           </div>
           <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= ft %> tests</div>
           <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: var(--border-soft); margin-bottom: 0.55rem;">
             <% @heatmap_statuses.each do |s| %><% next if (fd[s] || 0) == 0 %>
-              <div style="width: <%= ((fd[s] || 0) * 100.0 / [ft, 1].max).round(3) %>%; background: <%= tpr_status_color(s) %>;"></div>
+              <div style="width: <%= ((fd[s] || 0) * 100.0 / [ft, 1].max).round(3) %>%; background: <%= sar_status_color(s) %>;"></div>
             <% end %>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
             <% @heatmap_statuses.each do |s| %><% next if (fd[s] || 0) == 0 %>
               <% cell_active = active_family == family && active_status == s %>
-              <%= link_to fd[s], tpr_document_path(@tpr_document, filter_params.except(:page).merge(cell_active ? { family: nil, status: nil } : { family: family, status: s })),
+              <%= link_to fd[s], sar_document_path(@sar_document, filter_params.except(:page).merge(cell_active ? { family: nil, status: nil } : { family: family, status: s })),
                     title: "#{family} / #{s}: #{fd[s]}",
-                    style: "background: #{tpr_status_color(s)}; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4; text-decoration: none; opacity: #{cell_active ? '1' : (has_filters && (active_family.present? || active_status.present?) ? '0.35' : '1')}; #{'outline: 2px solid #2c3e50;' if cell_active}" %>
+                    style: "background: #{sar_status_color(s)}; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4; text-decoration: none; opacity: #{cell_active ? '1' : (has_filters && (active_family.present? || active_status.present?) ? '0.35' : '1')}; #{'outline: 2px solid #2c3e50;' if cell_active}" %>
             <% end %>
           </div>
         </div>
@@ -238,9 +238,9 @@
 <div id="controlsContainer">
   <% @controls.each do |control| %>
     <%
-      field_map    = control.tpr_control_fields.index_by(&:field_name)
+      field_map    = control.sar_control_fields.index_by(&:field_name)
       result_val   = field_map["result"]&.field_value.presence || "(Unknown)"
-      result_color = tpr_status_color(result_val)
+      result_color = sar_status_color(result_val)
       ws_val       = field_map["working_status"]&.field_value.presence
       family_code  = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
       card_asset   = control.subject_asset.to_s.strip
@@ -279,7 +279,7 @@
             </span>
 
             <% if ws_val.present? %>
-              <span style="background: <%= tpr_status_color(ws_val) %>22; color: <%= tpr_status_color(ws_val) %>; border: 1px solid <%= tpr_status_color(ws_val) %>55; padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.66rem; font-weight: 600; white-space: nowrap;">
+              <span style="background: <%= sar_status_color(ws_val) %>22; color: <%= sar_status_color(ws_val) %>; border: 1px solid <%= sar_status_color(ws_val) %>55; padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.66rem; font-weight: 600; white-space: nowrap;">
                 <%= ws_val %>
               </span>
             <% end %>
@@ -365,7 +365,7 @@
                   </td>
                   <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
                     <% if field.field_name == "working_status" %>
-                      <span style="background: <%= tpr_status_color(field.field_value) %>22; color: <%= tpr_status_color(field.field_value) %>; border: 1px solid <%= tpr_status_color(field.field_value) %>55; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
+                      <span style="background: <%= sar_status_color(field.field_value) %>22; color: <%= sar_status_color(field.field_value) %>; border: 1px solid <%= sar_status_color(field.field_value) %>55; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
                     <% else %>
                       <%= field.field_value %>
                     <% end %>
@@ -378,8 +378,8 @@
 
         <%# ── Edit form (toggled via JS) ── %>
         <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem; border-top: 1px solid var(--border-soft); padding-top: 0.75rem;">
-          <%= form_with url: tpr_document_path(@tpr_document, filter_params), method: :patch, local: true do |f| %>
-            <%= hidden_field_tag :tpr_control_id, control.id %>
+          <%= form_with url: sar_document_path(@sar_document, filter_params), method: :patch, local: true do |f| %>
+            <%= hidden_field_tag :sar_control_id, control.id %>
 
             <% if any_ctx %>
               <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
@@ -402,7 +402,7 @@
               </div>
             <% end %>
 
-            <% TprControlField::EDITABLE_FIELDS.each do |fname| %>
+            <% SarControlField::EDITABLE_FIELDS.each do |fname| %>
               <% field = field_map[fname] %>
               <% fval  = field&.field_value.to_s %>
               <div class="form-group">
@@ -412,12 +412,12 @@
                 </label>
                 <% if fname == "result" %>
                   <%= select_tag "fields[#{fname}]",
-                        options_for_select(TprControlField::RESULT_VALUES, fval),
+                        options_for_select(SarControlField::RESULT_VALUES, fval),
                         include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "working_status" %>
                   <%= select_tag "fields[#{fname}]",
-                        options_for_select(TprControlField::WORKING_STATUS_VALUES, fval),
+                        options_for_select(SarControlField::WORKING_STATUS_VALUES, fval),
                         include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
                         style: "font-size: 0.875rem;" %>
                 <% else %>
@@ -429,7 +429,7 @@
             <% end %>
 
             <% misc_ro_fields = field_map.values.reject { |f|
-                 TprControlField::EDITABLE_FIELDS.include?(f.field_name) ||
+                 SarControlField::EDITABLE_FIELDS.include?(f.field_name) ||
                  ctx_field_names.include?(f.field_name)
                } %>
             <% if misc_ro_fields.any? %>

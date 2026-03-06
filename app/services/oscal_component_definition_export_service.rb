@@ -1,3 +1,13 @@
+# Builds an OSCAL v1.1.2 Component Definition JSON document from a
+# CdefDocument and its controls.  Validates the output against the
+# official NIST JSON schema before returning.
+#
+# Usage:
+#   service = OscalComponentDefinitionExportService.new(cdef_document)
+#   json_string = service.export            # validates, raises on failure
+#   json_string = service.export_unvalidated # skips validation (legacy)
+#   result      = service.validation_result  # inspect errors without raising
+#
 class OscalComponentDefinitionExportService
   OSCAL_VERSION = "1.1.2"
 
@@ -5,8 +15,23 @@ class OscalComponentDefinitionExportService
     @document = cdef_document
   end
 
+  # Build, validate, and return pretty-printed OSCAL JSON.
+  # Raises OscalValidationError if the output fails schema validation.
   def export
+    data = build_component_definition
+    OscalSchemaValidationService.validate!(:component_definition, data)
+    JSON.pretty_generate(data)
+  end
+
+  # Build and return OSCAL JSON without schema validation.
+  def export_unvalidated
     JSON.pretty_generate(build_component_definition)
+  end
+
+  # Build the document and return the validation result (does not raise).
+  def validation_result
+    data = build_component_definition
+    OscalSchemaValidationService.validate(:component_definition, data)
   end
 
   private
@@ -88,14 +113,22 @@ class OscalComponentDefinitionExportService
   end
 
   def normalize_control_id(control, field_map)
-    nist = field_map["nist_controls"]&.field_value
-    if nist.present?
-      nist.split(",").first.strip.downcase.gsub(/\s+/, "-")
+    raw = if (nist = field_map["nist_controls"]&.field_value).present?
+      nist.split(",").first.strip
     elsif control.control_id.present?
-      control.control_id.downcase.gsub(/\s+/, "-")
+      control.control_id
     else
       "unknown-#{control.id}"
     end
+
+    # OSCAL TokenDatatype: ^(\p{L}|_)(\p{L}|\p{N}|[.\-_])*$
+    # Convert parenthesised enhancements to dot notation: "SI-2 (2)" → "si-2.2"
+    raw.downcase
+       .gsub(/\s+/, "-")       # spaces → hyphens
+       .gsub("(", ".")         # open paren → dot (enhancement separator)
+       .gsub(")", "")          # strip close paren
+       .gsub(/\.{2,}/, ".")    # collapse multiple dots
+       .gsub(/-\./, ".")       # "si-2.2" not "si-2-.2"
   end
 
   def build_description(control, field_map)

@@ -5,7 +5,7 @@ require "rails/all"
 # Skip dotenv in production/containers
 if Rails.env.development? || Rails.env.test?
   begin
-    require "dotenv/rails-now"
+    require "dotenv/load"
   rescue LoadError
     # Silently skip if gem not present (e.g., in Docker prod build)
   end

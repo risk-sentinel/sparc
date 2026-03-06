@@ -3,8 +3,8 @@ class JsonExportService
     new(ssp_document, :ssp).export
   end
 
-  def self.export_tpr(tpr_document)
-    new(tpr_document, :tpr).export
+  def self.export_sar(sar_document)
+    new(sar_document, :sar).export
   end
 
   def self.export_cdef(cdef_document)
