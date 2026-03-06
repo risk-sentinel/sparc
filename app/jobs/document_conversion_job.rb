@@ -1,5 +1,5 @@
 # Unified conversion job that replaces SspConversionJob, TprConversionJob,
-# and ProfileConversionJob. Uses DocumentTypeRegistry to resolve the correct
+# and CdefConversionJob. Uses DocumentTypeRegistry to resolve the correct
 # document class and parser service.
 #
 # Lifecycle: pending → processing → completed / failed

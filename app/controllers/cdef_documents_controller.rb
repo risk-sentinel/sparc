@@ -1,70 +1,70 @@
-class ProfileDocumentsController < ApplicationController
+class CdefDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_profile_document, only: %i[show destroy download_json download_oscal status]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal status]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
   def index
-    @profile_documents = ProfileDocument.order(created_at: :desc)
+    @cdef_documents = CdefDocument.order(created_at: :desc)
   end
 
   def show
-    return if @profile_document.pending? || @profile_document.processing? || @profile_document.failed?
+    return if @cdef_document.pending? || @cdef_document.processing? || @cdef_document.failed?
 
-    controls_scope = @profile_document.profile_controls
+    controls_scope = @cdef_document.cdef_controls
 
     @severity_counts = controls_scope.group(:severity).count
     @total_controls  = controls_scope.count
 
     @heatmap_data, @heatmap_families, @heatmap_severities = build_severity_heatmap(controls_scope)
 
-    @controls = controls_scope.order(:row_order).includes(:profile_control_fields)
+    @controls = controls_scope.order(:row_order).includes(:cdef_control_fields)
   end
 
   def new
-    @profile_document = ProfileDocument.new
+    @cdef_document = CdefDocument.new
   end
 
   def create
-    handle_file_upload(:profile, param_key: :profile_document)
+    handle_file_upload(:cdef, param_key: :cdef_document)
   end
 
   def destroy
-    @profile_document.destroy
-    flash[:success] = "Profile document deleted"
-    redirect_to profile_documents_path
+    @cdef_document.destroy
+    flash[:success] = "Component Definition deleted"
+    redirect_to cdef_documents_path
   end
 
   def download_json
-    json_data = JsonExportService.export_profile(@profile_document)
+    json_data = JsonExportService.export_cdef(@cdef_document)
 
     send_data json_data,
-              filename:    "#{@profile_document.name}_#{Date.today}.json",
+              filename:    "#{@cdef_document.name}_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
   end
 
   def download_oscal
-    oscal_data = OscalComponentDefinitionExportService.new(@profile_document).export
+    oscal_data = OscalComponentDefinitionExportService.new(@cdef_document).export
 
     send_data oscal_data,
-              filename:    "#{@profile_document.name}_oscal_component_#{Date.today}.json",
+              filename:    "#{@cdef_document.name}_oscal_component_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
   end
 
   def status
     render json: {
-      status: @profile_document.status,
-      error_message: @profile_document.error_message
+      status: @cdef_document.status,
+      error_message: @cdef_document.error_message
     }
   end
 
   private
 
-  def set_profile_document
-    @profile_document = ProfileDocument.find(params[:id])
+  def set_cdef_document
+    @cdef_document = CdefDocument.find(params[:id])
   end
 
   def build_severity_heatmap(scope)

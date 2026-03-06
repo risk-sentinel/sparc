@@ -1,8 +1,8 @@
-class ProfileJsonParserService
+class CdefJsonParserService
   include BatchInsertable
 
-  def initialize(profile_document, file_path)
-    @document  = profile_document
+  def initialize(cdef_document, file_path)
+    @document  = cdef_document
     @file_path = file_path
   end
 
@@ -32,8 +32,8 @@ class ProfileJsonParserService
     profile  = profiles.first
 
     @document.update!(
-      profile_type:    "custom",
-      profile_version: profile["version"],
+      cdef_type:       "custom",
+      cdef_version:    profile["version"],
       description:     profile["summary"] || profile["title"],
       import_metadata: { "format" => "inspec", "name" => profile["name"] }.compact
     )
@@ -59,9 +59,9 @@ class ProfileJsonParserService
     end
 
     batch_insert_records(
-      control_class: ProfileControl,
-      field_class:   ProfileControlField,
-      document_fk:   :profile_document_id,
+      control_class: CdefControl,
+      field_class:   CdefControlField,
+      document_fk:   :cdef_document_id,
       control_attrs: control_attrs,
       field_entries: field_entries
     )
@@ -86,7 +86,7 @@ class ProfileJsonParserService
     raise "No STIG data found in JSON" unless stig
 
     @document.update!(
-      profile_type:    "disa_stig",
+      cdef_type:       "disa_stig",
       description:     stig["stig_name"],
       import_metadata: { "format" => "stigviewer" }
     )
@@ -119,9 +119,9 @@ class ProfileJsonParserService
     end
 
     batch_insert_records(
-      control_class: ProfileControl,
-      field_class:   ProfileControlField,
-      document_fk:   :profile_document_id,
+      control_class: CdefControl,
+      field_class:   CdefControlField,
+      document_fk:   :cdef_document_id,
       control_attrs: control_attrs,
       field_entries: field_entries
     )
@@ -131,7 +131,7 @@ class ProfileJsonParserService
 
   def parse_generic(data)
     @document.update!(
-      profile_type:    "custom",
+      cdef_type:       "custom",
       description:     data["description"] || data["title"],
       import_metadata: { "format" => "generic" }
     )
@@ -162,9 +162,9 @@ class ProfileJsonParserService
     end
 
     batch_insert_records(
-      control_class: ProfileControl,
-      field_class:   ProfileControlField,
-      document_fk:   :profile_document_id,
+      control_class: CdefControl,
+      field_class:   CdefControlField,
+      document_fk:   :cdef_document_id,
       control_attrs: control_attrs,
       field_entries: field_entries
     )

@@ -39,15 +39,15 @@ class DocumentTypeRegistry
       file_prefix:        "tpr",
       success_message:    "Test Plan Results workbook uploaded. Processing in background..."
     ),
-    profile: Entry.new(
-      document_class:     ProfileDocument,
-      control_class:      ProfileControl,
-      field_class:        ProfileControlField,
-      document_fk:        :profile_document_id,
+    cdef: Entry.new(
+      document_class:     CdefDocument,
+      control_class:      CdefControl,
+      field_class:        CdefControlField,
+      document_fk:        :cdef_document_id,
       allowed_extensions: { ".xml" => "xccdf", ".json" => "json" },
-      parser_map:         { "xccdf" => ProfileXccdfParserService, "json" => ProfileJsonParserService },
-      file_prefix:        "profile",
-      success_message:    "Profile uploaded. Processing in background..."
+      parser_map:         { "xccdf" => CdefXccdfParserService, "json" => CdefJsonParserService },
+      file_prefix:        "cdef",
+      success_message:    "Component Definition uploaded. Processing in background..."
     )
   }.freeze
 

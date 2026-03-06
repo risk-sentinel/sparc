@@ -7,8 +7,8 @@ class JsonExportService
     new(tpr_document, :tpr).export
   end
 
-  def self.export_profile(profile_document)
-    new(profile_document, :profile).export
+  def self.export_cdef(cdef_document)
+    new(cdef_document, :cdef).export
   end
 
   def initialize(document, type)

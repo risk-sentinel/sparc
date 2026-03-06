@@ -1,5 +1,5 @@
-class ProfileControlField < ApplicationRecord
-  belongs_to :profile_control
+class CdefControlField < ApplicationRecord
+  belongs_to :cdef_control
 
   validates :field_name, presence: true
 
