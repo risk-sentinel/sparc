@@ -1,13 +1,16 @@
 class SspDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json ]
+  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json, :status ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
   end
 
   def show
+    # Short-circuit for documents still being processed
+    return if @ssp_document.pending? || @ssp_document.processing? || @ssp_document.failed?
+
     # Load root controls only; provider statements eagerly loaded via association
     @controls = @ssp_document.ssp_controls
                               .roots
@@ -71,6 +74,13 @@ class SspDocumentsController < ApplicationController
               filename:    "#{@ssp_document.name}_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
+  end
+
+  def status
+    render json: {
+      status: @ssp_document.status,
+      error_message: @ssp_document.error_message
+    }
   end
 
   def destroy

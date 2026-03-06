@@ -154,7 +154,7 @@ class TprDocumentsController < ApplicationController
   end
 
   def filter_params
-    params.permit(:section, :family, :status, :asset, :environment, :page).to_h
+    params.except(:controller, :action, :id).permit(:section, :family, :status, :asset, :environment, :page).to_h
   end
 
   TPR_STATUS_ORDER = [
