@@ -35,6 +35,22 @@
         --flash-err-bg:       #f8d7da;
         --flash-err-text:     #721c24;
         --flash-err-border:   #f5c6cb;
+        --btn-primary:        #3498db;
+        --btn-primary-hover:  #2980b9;
+        --btn-success:        #27ae60;
+        --btn-success-hover:  #229954;
+        --btn-danger:         #e74c3c;
+        --btn-danger-hover:   #c0392b;
+        --btn-secondary:      #95a5a6;
+        --btn-secondary-hover:#7f8c8d;
+        --badge-ok-bg:        #d4edda;
+        --badge-ok-text:      #155724;
+        --badge-warn-bg:      #fff3cd;
+        --badge-warn-text:    #856404;
+        --badge-fail-bg:      #f8d7da;
+        --badge-fail-text:    #721c24;
+        --link-accent:        #3498db;
+        --link-purple:        #8e44ad;
       }
 
       /* System dark preference — skipped when user chose light explicitly */
@@ -55,6 +71,22 @@
           --flash-err-bg:     #3a1a1a;
           --flash-err-text:   #fc8181;
           --flash-err-border: #6a2929;
+          --btn-primary:      #5dade2;
+          --btn-primary-hover:#3498db;
+          --btn-success:      #2ecc71;
+          --btn-success-hover:#27ae60;
+          --btn-danger:       #ef5350;
+          --btn-danger-hover: #e53935;
+          --btn-secondary:    #b0bec5;
+          --btn-secondary-hover:#90a4ae;
+          --badge-ok-bg:      #1a3a2a;
+          --badge-ok-text:    #68d391;
+          --badge-warn-bg:    #3a3520;
+          --badge-warn-text:  #f6e05e;
+          --badge-fail-bg:    #3a1a1a;
+          --badge-fail-text:  #fc8181;
+          --link-accent:      #5dade2;
+          --link-purple:      #bb6bd9;
         }
       }
 
@@ -75,6 +107,22 @@
         --flash-err-bg:       #3a1a1a;
         --flash-err-text:     #fc8181;
         --flash-err-border:   #6a2929;
+        --btn-primary:        #5dade2;
+        --btn-primary-hover:  #3498db;
+        --btn-success:        #2ecc71;
+        --btn-success-hover:  #27ae60;
+        --btn-danger:         #ef5350;
+        --btn-danger-hover:   #e53935;
+        --btn-secondary:      #b0bec5;
+        --btn-secondary-hover:#90a4ae;
+        --badge-ok-bg:        #1a3a2a;
+        --badge-ok-text:      #68d391;
+        --badge-warn-bg:      #3a3520;
+        --badge-warn-text:    #f6e05e;
+        --badge-fail-bg:      #3a1a1a;
+        --badge-fail-text:    #fc8181;
+        --link-accent:        #5dade2;
+        --link-purple:        #bb6bd9;
       }
 
       /* ── Base ────────────────────────────────────────────── */
@@ -169,14 +217,21 @@
         font-size: 1rem;
       }
 
-      .btn-primary { background: #3498db; color: white; }
-      .btn-primary:hover { background: #2980b9; }
+      .btn-primary { background: var(--btn-primary); color: white; }
+      .btn-primary:hover { background: var(--btn-primary-hover); }
 
-      .btn-success { background: #27ae60; color: white; }
-      .btn-success:hover { background: #229954; }
+      .btn-success { background: var(--btn-success); color: white; }
+      .btn-success:hover { background: var(--btn-success-hover); }
 
-      .btn-danger { background: #e74c3c; color: white; }
-      .btn-danger:hover { background: #c0392b; }
+      .btn-danger { background: var(--btn-danger); color: white; }
+      .btn-danger:hover { background: var(--btn-danger-hover); }
+
+      .btn-secondary { background: var(--btn-secondary); color: white; }
+      .btn-secondary:hover { background: var(--btn-secondary-hover); }
+
+      .badge-ok   { background: var(--badge-ok-bg); color: var(--badge-ok-text); }
+      .badge-warn { background: var(--badge-warn-bg); color: var(--badge-warn-text); }
+      .badge-fail { background: var(--badge-fail-bg); color: var(--badge-fail-text); }
 
       table {
         width: 100%;
@@ -232,7 +287,7 @@
         <%= link_to root_path, style: "display: flex; align-items: center; text-decoration: none;" do %>
           <%= image_tag "sparc.png", alt: "SPARC", style: "height: 40px; width: auto; display: block;" %>
         <% end %>
-        <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.03em;">v2.0.0</span>
+        <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.03em;">v2.0.1</span>
       </div>
       <nav>
         <%= link_to "Home", root_path %>

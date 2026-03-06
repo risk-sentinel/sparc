@@ -230,7 +230,7 @@
           <%# Stated requirement — highlighted block when present %>
           <% if stated_req.present? %>
             <div style="background: rgba(41,128,185,0.07); border: 1px solid rgba(41,128,185,0.2); border-left: 3px solid #2980b9; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
-              <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #2980b9; font-weight: 700; margin-bottom: 0.35rem;">Required Statement</div>
+              <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link-accent); font-weight: 700; margin-bottom: 0.35rem;">Required Statement</div>
               <div style="font-size: 0.84rem; color: var(--text); line-height: 1.5;"><%= stated_req %></div>
             </div>
           <% end %>
@@ -268,7 +268,7 @@
           <%# ── Inherited / Provider Statements (collapsible) ── %>
           <% if control.provider_statements.any? %>
             <details style="margin-top: 0.85rem;">
-              <summary style="cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #8e44ad; font-weight: 700; padding: 0.4rem 0.65rem; background: rgba(142,68,173,0.06); border: 1px solid rgba(142,68,173,0.18); border-radius: 5px; list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none;">
+              <summary style="cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link-purple); font-weight: 700; padding: 0.4rem 0.65rem; background: rgba(142,68,173,0.06); border: 1px solid rgba(142,68,173,0.18); border-radius: 5px; list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none;">
                 <span class="inherited-arrow" style="font-size: 0.6rem;">&#9658;</span>
                 Inherited Rows (<%= control.provider_statements.count %>)
               </summary>
@@ -321,7 +321,7 @@
                     <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
                     <% next if display_val.blank? %>
                     <tr style="border-top: 1px solid var(--border-soft);">
-                      <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #8e44ad; vertical-align: top; white-space: nowrap;">
+                      <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--link-purple); vertical-align: top; white-space: nowrap;">
                         <%= fname.tr("_", " ") %>
                       </td>
                       <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.82rem; color: var(--text); vertical-align: top; line-height: 1.5;">
@@ -417,7 +417,7 @@
             <%# Catalog guidance in edit mode (read-only context panel) %>
             <% if catalog_ctrl&.guidance_present? %>
               <details style="margin-top: 0.75rem; border-top: 1px solid var(--border-soft); padding-top: 0.75rem;">
-                <summary style="font-size: 0.8rem; font-weight: 600; color: #8e44ad; cursor: pointer; padding: 0.35rem 0; user-select: none;">
+                <summary style="font-size: 0.8rem; font-weight: 600; color: var(--link-purple); cursor: pointer; padding: 0.35rem 0; user-select: none;">
                   Catalog Guidance (reference only — not saved)
                 </summary>
                 <div style="margin-top: 0.5rem; padding: 0.75rem; background: rgba(155,89,182,0.04); border: 1px solid rgba(155,89,182,0.15); border-radius: 5px;">
@@ -425,7 +425,7 @@
                     <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
                     <% next if display_val.blank? %>
                     <div style="margin-bottom: 0.6rem;">
-                      <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: #8e44ad; margin-bottom: 0.2rem;"><%= fname.tr("_", " ") %></div>
+                      <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--link-purple); margin-bottom: 0.2rem;"><%= fname.tr("_", " ") %></div>
                       <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;"><%= display_val %></div>
                     </div>
                   <% end %>
