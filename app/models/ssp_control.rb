@@ -4,6 +4,7 @@ class SspControl < ApplicationRecord
   has_many :provider_statements, class_name: "SspControl", foreign_key: :parent_id,
            dependent: :destroy, inverse_of: :parent
   has_many :ssp_control_fields, dependent: :destroy
+  has_many :ssp_by_components, dependent: :delete_all
 
   # Paragraph/ReqID is null for provider statement rows — allow it
   validates :control_id, uniqueness: { scope: :ssp_document_id, allow_nil: true }

@@ -2,10 +2,44 @@ class SspDocument < ApplicationRecord
   has_many :ssp_controls, dependent: :destroy
   has_one_attached :file
 
+  # OSCAL entity associations
+  has_many :ssp_information_types, dependent: :delete_all
+  has_many :ssp_components, dependent: :delete_all
+  has_many :ssp_users, dependent: :delete_all
+  has_many :ssp_leveraged_authorizations, dependent: :delete_all
+  has_many :ssp_inventory_items, dependent: :delete_all
+  has_many :ssp_by_components, through: :ssp_controls
+
+  # Source linkages
+  belongs_to :profile_document, optional: true
+  has_many :ssp_document_cdef_documents, dependent: :delete_all
+  has_many :cdef_documents, through: :ssp_document_cdef_documents
+
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 
   validates :name, presence: true
-  validates :file_type, inclusion: { in: %w[excel json] }
+  validates :file_type, inclusion: { in: %w[excel json xml] }, allow_nil: true
+  validates :creation_method, inclusion: { in: %w[excel wizard oscal_import] }, allow_nil: true
+
+  CREATION_METHODS = %w[excel wizard oscal_import].freeze
+  SYSTEM_STATUSES = %w[operational under-development under-major-modification disposition other].freeze
+  SENSITIVITY_LEVELS = %w[fips-199-low fips-199-moderate fips-199-high].freeze
+
+  def wizard_created?
+    creation_method == "wizard"
+  end
+
+  def oscal_imported?
+    creation_method == "oscal_import"
+  end
+
+  def enriched?
+    description.present? ||
+      ssp_components.exists? ||
+      ssp_information_types.exists? ||
+      ssp_users.exists? ||
+      security_sensitivity_level.present?
+  end
 
   def to_json_data
     {

@@ -14,9 +14,13 @@ Rails.application.routes.draw do
       get :download_oscal_validated
       get :download_oscal_unvalidated
       get :status
+      get :enrich
+      patch :update_enrich
     end
     collection do
       post :import_json
+      get :wizard
+      post :create_from_wizard
     end
   end
 

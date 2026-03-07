@@ -55,7 +55,7 @@ SPARC supports the full lifecycle of compliance documentation across four integr
 
 **Component Definition (CDEF) Management** — Import DISA STIGs (XCCDF XML), InSpec profiles (JSON), STIG Viewer exports, and CIS benchmarks. Export as OSCAL Component Definitions for interoperability with the NIST OSCAL ecosystem.
 
-**SSP Document Management** — Upload Excel-based System Security Plans, automatically parse controls and fields via background processing, edit implementation details inline, and export to JSON.
+**SSP Document Management** — Create System Security Plans from scratch via a guided wizard (Profile baseline + CDEFs + system characteristics), import from Excel, OSCAL JSON, or OSCAL XML, edit implementation details inline, enrich legacy imports with OSCAL-required metadata, and export as validated OSCAL SSP JSON.
 
 **SAR Document Management** — Upload and manage Security Assessment Results with multi-sheet support, color-coded test status indicators, pagination, filtering by section/asset/environment, and round-trip Excel export.
 
@@ -67,20 +67,23 @@ The UI navigation and landing page follow the OSCAL / RMF artifact dependency ch
 |-------|----------|----------------------|-----------------|--------|
 | 1 | **Catalog** | (none — source of truth) | Raw control definitions (e.g., NIST SP 800-53) | Implemented |
 | 2 | **Profile** | Catalog(s) | Tailored baseline / selection set (FedRAMP, DoD IL, etc.) | Implemented |
-| 3 | **Component Definition (CDEF)** | Catalog / Profile (control IDs) | Reusable control implementations (tech, process, service) | Roadmap |
+| 3 | **Component Definition (CDEF)** | Catalog / Profile (control IDs) | Reusable control implementations (tech, process, service) | Implemented |
 | 4 | **System Security Plan (SSP)** | Profile + Component Definitions | How the system implements the baseline | Implemented |
 | 5 | **Assessment Plan (SAP)** | SSP + Profile | How the assessment will be performed | Roadmap |
 | 6 | **Assessment Results (SAR)** | Assessment Plan + SSP | Findings & evidence from actual assessment | Implemented |
-| 7 | **POA&M** | SSP + Assessment Results | Remediation tracking for weaknesses | Roadmap |
+| 7 | **POA&M** | SSP + Assessment Results | Remediation tracking for weaknesses | Implemented |
 
 ---
 
 ## Key Features
 
+- **SSP Creation Wizard** — Build System Security Plans from scratch by selecting a Profile baseline, assembling CDEF components, and configuring system characteristics. Controls are auto-populated and implementation narratives auto-filled from matching CDEFs.
+- **SSP Enrichment** — Uplift legacy Excel-imported SSPs with OSCAL-required fields (system characteristics, components, users, information types) so exports produce fully valid OSCAL documents.
+- **Multi-Format Import** — Import documents from Excel (.xlsx/.xls), OSCAL JSON, and OSCAL XML. The XML parser delegates to the JSON parser via an intermediate hash, ensuring consistent behavior.
 - **Interactive Heat Maps** — Collapsible status heat maps on SSP, SAR, and CDEF pages display control status by NIST family. Click any cell to filter the control list below it.
 - **Inline Field Editing** — Edit designated fields (implementation status, test results, remediation plans) directly in the browser; read-only fields are enforced.
 - **Excel Round-Trip** — Upload Excel workbooks and export them back to Excel with original formatting preserved (SAR).
-- **OSCAL Export** — Export Component Definitions as OSCAL Component Definitions (v1.1.2 schema) for integration with the broader OSCAL ecosystem.
+- **OSCAL Export** — Export SSPs, Component Definitions, Profiles, and POA&Ms as validated OSCAL v1.1.2 JSON for integration with the broader OSCAL ecosystem. Uses enriched relational data when available, with placeholder fallbacks for legacy imports.
 - **Background Processing** — Async job processing for large files via Sidekiq, with real-time status updates in the UI.
 - **RESTful API** — Programmatic access to convert, update, and export documents via `/api/v1/` endpoints.
 - **NIST Catalog Guidance** — Catalog controls are cross-referenced with uploaded documents to provide guidance context during review.
@@ -366,14 +369,13 @@ Tracked via [GitHub Issues](https://github.com/Rebel-Raiders/sparc/issues):
 
 **OSCAL Integration**
 - SAP Creation (Security Assessment Plan)
-- SAR Creation (Security Assessment Report)
-- POA&M Import & Management
-- SSP Creation & Authoring
-- Baselines to OSCAL Profiles Import & Tailoring
+- SAR OSCAL Import & Export
+- Full OSCAL schema validation for all document types (Issue #58)
 
 **Compliance Scanning**
 - Vulcan/InSpec to OSCAL Component Definitions (CDEF)
 - SAF Evidence and Attestation Collection
+- Automated assessment results correlation
 
 **Authentication & Access Control**
 - Okta MFA Integration & Enforcement
