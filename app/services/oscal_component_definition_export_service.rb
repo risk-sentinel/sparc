@@ -64,12 +64,12 @@ class OscalComponentDefinitionExportService
 
   def default_metadata_extras
     {
-      "roles" => [{ "id" => "prepared-by", "title" => "Prepared By" }],
-      "parties" => [{
+      "roles" => [ { "id" => "prepared-by", "title" => "Prepared By" } ],
+      "parties" => [ {
         "uuid" => SecureRandom.uuid,
         "type" => "organization",
         "name" => "SPARC Export"
-      }]
+      } ]
     }
   end
 
