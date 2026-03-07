@@ -36,7 +36,7 @@ class PoamDocumentsController < ApplicationController
 
     @filtered_count = filtered.count
     @items = filtered.order(:row_order).includes(
-      :poam_item_risks, :poam_risks,
+      :poam_item_risks, { poam_risks: { poam_remediations: :poam_milestones } },
       :poam_item_observations, :poam_observations,
       :poam_item_findings, :poam_findings
     )
