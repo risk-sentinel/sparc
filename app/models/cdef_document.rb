@@ -1,4 +1,6 @@
 class CdefDocument < ApplicationRecord
+  include OscalMetadata
+
   has_many :cdef_controls, dependent: :delete_all
   has_one_attached :file
 

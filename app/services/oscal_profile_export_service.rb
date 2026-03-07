@@ -45,11 +45,23 @@ class OscalProfileExportService
   end
 
   def build_metadata
-    {
+    base = {
       "title"         => @document.name,
       "version"       => @document.profile_version || "1.0.0",
-      "oscal-version" => OSCAL_VERSION,
-      "last-modified" => Time.current.iso8601,
+      "oscal-version" => @document.oscal_version || OSCAL_VERSION,
+      "last-modified" => Time.current.iso8601
+    }
+
+    extra = @document.metadata_extra || {}
+    if extra.any?
+      base.merge(extra)
+    else
+      base.merge(default_metadata_extras)
+    end
+  end
+
+  def default_metadata_extras
+    {
       "roles"   => [ { "id" => "creator", "title" => "Document Creator" } ],
       "parties" => [ {
         "uuid" => SecureRandom.uuid,

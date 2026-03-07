@@ -84,11 +84,15 @@ class ProfileJsonParserService
     catalog_ref  = imports.first&.dig("href")
     back_matter  = profile.dig("back-matter", "resources") || []
 
+    # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
+    metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
+
     @document.update!(
       description:     title,
       baseline_level:  baseline,
       profile_version: metadata["version"],
       oscal_version:   metadata["oscal-version"],
+      metadata_extra:  metadata_extra.presence || {},
       import_metadata: {
         "format"       => "oscal_profile",
         "uuid"         => profile["uuid"],

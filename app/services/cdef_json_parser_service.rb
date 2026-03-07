@@ -11,7 +11,8 @@ class CdefJsonParserService
     data    = JSON.parse(content)
 
     case detect_json_format(data)
-    when :inspec_profile then parse_inspec_profile(data)
+    when :oscal_cdef      then parse_oscal_cdef(data)
+    when :inspec_profile  then parse_inspec_profile(data)
     when :stigviewer      then parse_stigviewer(data)
     else                       parse_generic(data)
     end
@@ -20,9 +21,61 @@ class CdefJsonParserService
   private
 
   def detect_json_format(data)
+    return :oscal_cdef     if data.key?("component-definition")
     return :inspec_profile if data.key?("profiles") || (data.key?("controls") && data.key?("version"))
     return :stigviewer     if data.key?("stigs")
     :generic
+  end
+
+  # ── OSCAL Component Definition JSON ─────────────────────────────
+
+  def parse_oscal_cdef(data)
+    cdef = data["component-definition"]
+    metadata = cdef["metadata"] || {}
+
+    # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
+    metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
+
+    @document.update!(
+      cdef_type:       "custom",
+      cdef_version:    metadata["version"],
+      oscal_version:   metadata["oscal-version"],
+      description:     metadata["title"],
+      metadata_extra:  metadata_extra.presence || {},
+      import_metadata: { "format" => "oscal_cdef", "uuid" => cdef["uuid"] }.compact
+    )
+
+    # Extract controls from components
+    components = cdef["components"] || []
+    control_attrs = []
+    field_entries = []
+    row_order = 0
+
+    components.each do |component|
+      (component["control-implementations"] || []).each do |ci|
+        (ci["implemented-requirements"] || []).each do |ir|
+          attrs = {
+            control_id:     ir["control-id"],
+            title:          ir["control-id"],
+            control_family: ir["control-id"].to_s.split("-").first.upcase.presence,
+            row_order:      row_order
+          }
+          fields = [
+            { field_name: "description", field_value: ir["description"], editable: false },
+            { field_name: "component",   field_value: component["title"], editable: false }
+          ]
+          ir.fetch("remarks", nil)&.then { |r| fields << { field_name: "remarks", field_value: r, editable: false } }
+
+          control_attrs << attrs
+          field_entries << fields
+          row_order += 1
+        end
+      end
+    end
+
+    batch_insert_controls_and_fields(
+      @document, :cdef, control_attrs, field_entries
+    )
   end
 
   # ── InSpec Profile JSON ──────────────────────────────────────────

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_08_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -94,8 +94,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
+    t.string "oscal_version"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
@@ -382,6 +384,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
     t.string "oscal_version"
@@ -434,6 +437,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
     t.string "oscal_version"
