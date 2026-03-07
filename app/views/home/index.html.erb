@@ -7,193 +7,241 @@
     Centralize, track, and operationalize NIST 800-53 controls — from catalog management and controls implementation to security assessment results and OSCAL-ready compliance reporting.
   </p>
 
-  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem;">
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @catalog_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Control Catalogs</div>
+  <div class="row row-cols-1 row-cols-md-3 g-3" style="margin-top: 2rem;">
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @catalog_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Control Catalogs</div>
+      </div>
     </div>
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @family_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Control Families</div>
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @family_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Control Families</div>
+      </div>
     </div>
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @control_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Catalog Controls</div>
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @control_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Catalog Controls</div>
+      </div>
     </div>
   </div>
-  <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; margin-top: 0.75rem;">
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @profile_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Baseline Profiles</div>
+  <div class="row row-cols-2 row-cols-md-6 g-3" style="margin-top: 0.75rem;">
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @profile_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Baseline Profiles</div>
+      </div>
     </div>
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @cdef_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Component Definitions</div>
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @cdef_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Component Definitions</div>
+      </div>
     </div>
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @ssp_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Controls Implementation</div>
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @ssp_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Controls Implementation</div>
+      </div>
     </div>
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @sap_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Assessment Plans</div>
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @sap_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Assessment Plans</div>
+      </div>
     </div>
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @sar_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Assessment Results</div>
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @sar_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Assessment Results</div>
+      </div>
     </div>
-    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
-      <div style="font-size: 2rem; font-weight: 700;"><%= @poam_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">POA&amp;Ms</div>
+    <div class="col">
+      <div class="rounded-3 p-3 text-center" style="background: rgba(255,255,255,0.15);">
+        <div class="fw-bold" style="font-size: 2rem;"><%= @poam_count %></div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">POA&amp;Ms</div>
+      </div>
     </div>
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+<div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
 
-  <div class="card" style="margin-bottom: 0; text-align: center; border: 2px solid #3498db;">
-    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128218;</div>
-    <h3 style="margin-bottom: 0.5rem;">Control Catalogs</h3>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
-      Browse NIST SP 800-53 Rev 4 and Rev 5 control families and base controls. Add custom catalogs or entries.
-    </p>
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <%= link_to "View Catalogs", control_catalogs_path, class: "btn btn-primary" %>
-      <%= link_to "New Catalog", new_control_catalog_path, class: "btn btn-success" %>
-    </div>
-    <div style="margin-top: 1rem; padding: 0.5rem; background: var(--surface-alt); border-radius: 6px; font-size: 0.8rem; color: var(--link-accent);">
-      NIST SP 800-53 Rev 4 &amp; Rev 5 pre-loaded
-    </div>
-  </div>
-
-  <div class="card" style="margin-bottom: 0; text-align: center;">
-    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128203;</div>
-    <h3 style="margin-bottom: 0.5rem;">Baseline Profiles</h3>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
-      Import NIST SP 800-53 baseline profiles (LOW, MODERATE, HIGH) and export OSCAL Profiles.
-    </p>
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <%= link_to "View Baselines", profile_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Upload New", new_profile_document_path, class: "btn btn-success" %>
+  <div class="col">
+    <div class="card text-center h-100" style="border: 2px solid #3498db;">
+      <div class="card-body">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128218;</div>
+        <h3 style="margin-bottom: 0.5rem;">Control Catalogs</h3>
+        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
+          Browse NIST SP 800-53 Rev 4 and Rev 5 control families and base controls. Add custom catalogs or entries.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <%= link_to "View Catalogs", control_catalogs_path, class: "btn btn-primary" %>
+          <%= link_to "New Catalog", new_control_catalog_path, class: "btn btn-success" %>
+        </div>
+        <div class="mt-3 bg-body-secondary rounded text-primary" style="padding: 0.5rem; font-size: 0.8rem;">
+          NIST SP 800-53 Rev 4 &amp; Rev 5 pre-loaded
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="card" style="margin-bottom: 0; text-align: center;">
-    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128737;</div>
-    <h3 style="margin-bottom: 0.5rem;">Component Definitions</h3>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
-      Import DISA STIGs, SCAP, and CIS benchmarks. Export OSCAL-compliant Component Definitions.
-    </p>
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <%= link_to "View CDEFs", cdef_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Upload New", new_cdef_document_path, class: "btn btn-success" %>
+  <div class="col">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128203;</div>
+        <h3 style="margin-bottom: 0.5rem;">Baseline Profiles</h3>
+        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
+          Import NIST SP 800-53 baseline profiles (LOW, MODERATE, HIGH) and export OSCAL Profiles.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <%= link_to "View Baselines", profile_documents_path, class: "btn btn-primary" %>
+          <%= link_to "Upload New", new_profile_document_path, class: "btn btn-success" %>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="card" style="margin-bottom: 0; text-align: center;">
-    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128196;</div>
-    <h3 style="margin-bottom: 0.5rem;">Controls Implementation</h3>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
-      Upload and manage controls implementation workbooks. Edit editable fields, track status, and export to JSON.
-    </p>
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <%= link_to "View Documents", ssp_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Upload New", new_ssp_document_path, class: "btn btn-success" %>
+  <div class="col">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128737;</div>
+        <h3 style="margin-bottom: 0.5rem;">Component Definitions</h3>
+        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
+          Import DISA STIGs, SCAP, and CIS benchmarks. Export OSCAL-compliant Component Definitions.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <%= link_to "View CDEFs", cdef_documents_path, class: "btn btn-primary" %>
+          <%= link_to "Upload New", new_cdef_document_path, class: "btn btn-success" %>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="card" style="margin-bottom: 0; text-align: center;">
-    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128221;</div>
-    <h3 style="margin-bottom: 0.5rem;">Assessment Plans</h3>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
-      Generate OSCAL-compliant Security Assessment Plans from SSP and Profile data with assessment method wizards.
-    </p>
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <%= link_to "View Plans", sap_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Create New", new_sap_document_path, class: "btn btn-success" %>
+  <div class="col">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128196;</div>
+        <h3 style="margin-bottom: 0.5rem;">Controls Implementation</h3>
+        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
+          Upload and manage controls implementation workbooks. Edit editable fields, track status, and export to JSON.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <%= link_to "View Documents", ssp_documents_path, class: "btn btn-primary" %>
+          <%= link_to "Upload New", new_ssp_document_path, class: "btn btn-success" %>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="card" style="margin-bottom: 0; text-align: center;">
-    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128203;</div>
-    <h3 style="margin-bottom: 0.5rem;">Assessment Results</h3>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
-      Upload multi-tab security assessment workbooks. View results by section, asset, and environment with heat maps.
-    </p>
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <%= link_to "View Documents", sar_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Upload New", new_sar_document_path, class: "btn btn-success" %>
+  <div class="col">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128221;</div>
+        <h3 style="margin-bottom: 0.5rem;">Assessment Plans</h3>
+        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
+          Generate OSCAL-compliant Security Assessment Plans from SSP and Profile data with assessment method wizards.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <%= link_to "View Plans", sap_documents_path, class: "btn btn-primary" %>
+          <%= link_to "Create New", new_sap_document_path, class: "btn btn-success" %>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="card" style="margin-bottom: 0; text-align: center;">
-    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128270;</div>
-    <h3 style="margin-bottom: 0.5rem;">POA&amp;Ms</h3>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
-      Import and manage OSCAL Plan of Action &amp; Milestones. Track risks, deadlines, and remediation progress.
-    </p>
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-      <%= link_to "View POA&Ms", poam_documents_path, class: "btn btn-primary" %>
-      <%= link_to "Upload New", new_poam_document_path, class: "btn btn-success" %>
+  <div class="col">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128203;</div>
+        <h3 style="margin-bottom: 0.5rem;">Assessment Results</h3>
+        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
+          Upload multi-tab security assessment workbooks. View results by section, asset, and environment with heat maps.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <%= link_to "View Documents", sar_documents_path, class: "btn btn-primary" %>
+          <%= link_to "Upload New", new_sar_document_path, class: "btn btn-success" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128270;</div>
+        <h3 style="margin-bottom: 0.5rem;">POA&amp;Ms</h3>
+        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
+          Import and manage OSCAL Plan of Action &amp; Milestones. Track risks, deadlines, and remediation progress.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <%= link_to "View POA&Ms", poam_documents_path, class: "btn btn-primary" %>
+          <%= link_to "Upload New", new_poam_document_path, class: "btn btn-success" %>
+        </div>
+      </div>
     </div>
   </div>
 
 </div>
 
 <div class="card">
+  <div class="card-body">
   <h3 style="margin-bottom: 1.25rem;">Features</h3>
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem;">
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+  <div class="row row-cols-1 row-cols-md-2 g-3">
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Convert Excel workbooks (Controls Implementation &amp; Security Assessment Results) to JSON</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>NIST SP 800-53 Rev 4 &amp; Rev 5 control catalogs pre-loaded</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Edit control fields with read-only enforcement</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Interactive heat maps by NIST control family</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Export documents to JSON</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Click-to-filter controls by family and status</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Bulk update capabilities via API</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Manage custom catalogs, families, and controls</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Import component definitions from XCCDF XML (DISA STIGs, SCAP, CIS) and JSON (InSpec, STIG Viewer)</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Export OSCAL-compliant Component Definitions (NIST OSCAL v1.1.2)</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Import NIST SP 800-53 baseline profiles and export OSCAL Profiles</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Generate OSCAL Security Assessment Plans (SAP) from SSP + Profile with auto-populated methods and test cases</span>
-    </div>
-    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
-      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+    </div></div>
+    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
+      <span class="fw-bold" style="color: #27ae60; flex-shrink: 0;">&#10003;</span>
       <span>Import and manage OSCAL Plan of Action &amp; Milestones with risk tracking and OSCAL export</span>
-    </div>
+    </div></div>
+  </div>
   </div>
 </div>

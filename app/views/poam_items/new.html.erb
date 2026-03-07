@@ -1,7 +1,7 @@
 <div class="card">
-  <div style="margin-bottom: 1.5rem;">
-    <%= link_to "&#8592; Back to #{@poam_document.name}".html_safe, poam_document_path(@poam_document), style: "color: var(--link-accent); text-decoration: none; font-size: 0.88rem;" %>
+  <div class="mb-4">
+    <%= link_to "&#8592; Back to #{@poam_document.name}".html_safe, poam_document_path(@poam_document), class: "text-primary", style: "text-decoration: none; font-size: 0.88rem;" %>
   </div>
-  <h2 style="margin-bottom: 1.5rem;">Add POA&amp;M Item</h2>
+  <h2 class="mb-4">Add POA&amp;M Item</h2>
   <%= render "form", poam_item: @poam_item, poam_document: @poam_document %>
 </div>

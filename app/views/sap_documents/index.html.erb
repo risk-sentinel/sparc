@@ -1,11 +1,11 @@
 <div class="card" style="overflow-x: auto;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Assessment Plans (SAP)</h2>
     <%= link_to "Create New", new_sap_document_path, class: "btn btn-success" %>
   </div>
 
   <% if @sap_documents.any? %>
-    <table style="min-width: 700px;">
+    <table class="table table-hover" style="min-width: 700px;">
       <thead>
         <tr>
           <th>Name</th>
@@ -16,29 +16,29 @@
           <th>Controls</th>
           <th>Schedule</th>
           <th>Created</th>
-          <th style="text-align: right;">Actions</th>
+          <th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% @sap_documents.each do |doc| %>
           <tr>
-            <td style="font-weight: 600;"><%= doc.name %></td>
+            <td class="fw-semibold"><%= doc.name %></td>
             <td>
               <% type_colors = { "initial" => "#3498db", "annual" => "#27ae60", "continuous" => "#8e44ad", "ad-hoc" => "#f39c12" } %>
               <% color = type_colors[doc.assessment_type] || "#7f8c8d" %>
-              <span style="padding: 0.2rem 0.6rem; background: <%= color %>22; color: <%= color %>; border: 1px solid <%= color %>44; border-radius: 4px; font-size: 0.78rem; font-weight: 600; white-space: nowrap;">
+              <span class="rounded fw-semibold" style="padding: 0.2rem 0.6rem; background: <%= color %>22; color: <%= color %>; border: 1px solid <%= color %>44; font-size: 0.78rem; white-space: nowrap;">
                 <%= doc.assessment_type&.titleize || "Initial" %>
               </span>
             </td>
-            <td style="font-size: 0.85rem; color: var(--text-muted);"><%= doc.ssp_document&.name || "—" %></td>
-            <td style="font-size: 0.85rem; color: var(--text-muted);"><%= doc.sap_version.presence || "—" %></td>
+            <td class="small text-body-secondary"><%= doc.ssp_document&.name || "—" %></td>
+            <td class="small text-body-secondary"><%= doc.sap_version.presence || "—" %></td>
             <td>
-              <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %>" style="padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+              <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
                 <%= doc.status %>
               </span>
             </td>
             <td><%= doc.sap_controls.count %></td>
-            <td style="font-size: 0.82rem; color: var(--text-muted); white-space: nowrap;">
+            <td class="text-body-secondary" style="font-size: 0.82rem; white-space: nowrap;">
               <% if doc.assessment_start.present? %>
                 <%= doc.assessment_start.strftime("%Y-%m-%d") %>
                 <% if doc.assessment_end.present? %>
@@ -49,11 +49,11 @@
               <% end %>
             </td>
             <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
-            <td style="text-align: right; white-space: nowrap;">
+            <td class="text-end" style="white-space: nowrap;">
               <div style="display: inline-flex; gap: 0.35rem;">
                 <%= link_to "View", sap_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% if doc.completed? %>
-                  <%= link_to "OSCAL", download_oscal_sap_document_path(doc), class: "btn", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; background: var(--link-purple); color: white;" %>
+                  <%= link_to "OSCAL", download_oscal_sap_document_path(doc), class: "btn btn-sm", style: "background: #8e44ad; color: white;" %>
                   <%= link_to "JSON", download_json_sap_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% end %>
                 <%= link_to "Delete", sap_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
@@ -64,6 +64,6 @@
       </tbody>
     </table>
   <% else %>
-    <p style="text-align: center; padding: 2rem; color: var(--text-muted);">No assessment plans found. Create your first Security Assessment Plan to get started.</p>
+    <p class="text-center p-4 text-body-secondary">No assessment plans found. Create your first Security Assessment Plan to get started.</p>
   <% end %>
 </div>

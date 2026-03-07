@@ -1,10 +1,137 @@
 /*
- * This is a manifest file that'll be compiled into application.css.
- *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
- *
- * Consider organizing styles into separate files for maintainability.
+ * SPARC application styles — Bootstrap 5.3 overrides and custom components.
+ * Bootstrap is loaded via CDN in the layout. This file provides project-specific
+ * styles that Bootstrap doesn't cover.
  */
+
+/* ── Smooth theme transitions ──────────────────────────── */
+body {
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ── Flash notification overlay (top-right corner) ─────── */
+.flash-container {
+  position: fixed;
+  top: 5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 420px;
+  pointer-events: none;
+}
+
+.flash-container .alert {
+  pointer-events: auto;
+  animation: flash-slide-in 0.3s ease-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.flash-container .alert.dismissing {
+  animation: flash-fade-out 0.4s ease-in forwards;
+}
+
+@keyframes flash-slide-in {
+  from { opacity: 0; transform: translateX(80px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes flash-fade-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(80px); }
+}
+
+/* ── Badge aliases (map old class names to Bootstrap) ──── */
+.badge-ok {
+  background-color: var(--bs-success-bg-subtle) !important;
+  color: var(--bs-success-text-emphasis) !important;
+}
+
+.badge-warn {
+  background-color: var(--bs-warning-bg-subtle) !important;
+  color: var(--bs-warning-text-emphasis) !important;
+}
+
+.badge-fail {
+  background-color: var(--bs-danger-bg-subtle) !important;
+  color: var(--bs-danger-text-emphasis) !important;
+}
+
+/* ── Form group compatibility ──────────────────────────── */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.form-group input[type="file"],
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.375rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ── Main content container spacing ────────────────────── */
+.container {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* ── Gradient headers on show pages ────────────────────── */
+.sparc-gradient-header {
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+  margin: -1rem -1rem 1.5rem -1rem;
+}
+
+/* ── Login tab panel show/hide ──────────────────────────── */
+.login-tab-panel {
+  display: none;
+}
+
+.login-tab-panel.active {
+  display: block;
+}
+
+/* ── Link accent colors ────────────────────────────────── */
+a.link-accent {
+  color: var(--bs-primary);
+}
+
+a.link-purple {
+  color: #8e44ad;
+}
+
+[data-bs-theme="dark"] a.link-purple {
+  color: #bb6bd9;
+}

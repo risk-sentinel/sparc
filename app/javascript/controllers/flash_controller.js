@@ -7,13 +7,13 @@ export default class extends Controller {
 
   connect() {
     this.messageTargets.forEach((el) => {
-      const delay = el.classList.contains("error") ? 12000 : 8000
+      const delay = el.classList.contains("alert-danger") ? 12000 : 8000
       setTimeout(() => this.autoDismiss(el), delay)
     })
   }
 
   dismiss(event) {
-    const el = event.currentTarget.closest(".flash")
+    const el = event.currentTarget.closest(".alert")
     if (el) this.fadeOut(el)
   }
 

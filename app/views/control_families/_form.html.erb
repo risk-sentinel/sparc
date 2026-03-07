@@ -1,6 +1,6 @@
 <%= form_with model: control_family.persisted? ? control_family : [control_catalog, control_family], local: true do |f| %>
   <% if control_family.errors.any? %>
-    <div class="flash error" style="margin-bottom: 1.5rem;">
+    <div class="flash error mb-4">
       <strong><%= pluralize(control_family.errors.count, "error") %>:</strong>
       <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
         <% control_family.errors.full_messages.each do |msg| %>
@@ -10,14 +10,18 @@
     </div>
   <% end %>
 
-  <div style="display: grid; grid-template-columns: 120px 1fr; gap: 1rem;">
-    <div class="form-group">
-      <%= f.label :code, "Code *" %>
-      <%= f.text_field :code, class: "form-control", placeholder: "AC", style: "font-family: monospace; font-size: 1rem; font-weight: 600; text-transform: uppercase;" %>
+  <div class="row g-3">
+    <div class="col-auto" style="width: 120px;">
+      <div class="form-group">
+        <%= f.label :code, "Code *" %>
+        <%= f.text_field :code, class: "form-control fw-semibold", placeholder: "AC", style: "font-family: monospace; font-size: 1rem; text-transform: uppercase;" %>
+      </div>
     </div>
-    <div class="form-group">
-      <%= f.label :name, "Family Name *" %>
-      <%= f.text_field :name, class: "form-control", placeholder: "e.g. Access Control" %>
+    <div class="col">
+      <div class="form-group">
+        <%= f.label :name, "Family Name *" %>
+        <%= f.text_field :name, class: "form-control", placeholder: "e.g. Access Control" %>
+      </div>
     </div>
   </div>
 
@@ -31,7 +35,7 @@
     <%= f.number_field :sort_order, class: "form-control", min: 0 %>
   </div>
 
-  <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+  <div class="d-flex gap-3 mt-3">
     <%= f.submit "Save Family", class: "btn btn-success" %>
     <%= link_to "Cancel", control_catalog, class: "btn btn-secondary" %>
   </div>
