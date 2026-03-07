@@ -15,6 +15,10 @@ class JsonExportService
     new(profile_document, :profile).export
   end
 
+  def self.export_poam(poam_document)
+    new(poam_document, :poam).export
+  end
+
   def initialize(document, type)
     @document = document
     @type = type

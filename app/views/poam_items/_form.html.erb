@@ -1,0 +1,112 @@
+<%= form_with model: [poam_document, poam_item], local: true do |f| %>
+  <% if poam_item.errors.any? %>
+    <div style="background: var(--flash-err-bg); color: var(--flash-err-text); border: 1px solid var(--flash-err-border); border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem;">
+      <strong><%= pluralize(poam_item.errors.count, "error") %> prevented this item from being saved:</strong>
+      <ul style="margin-top: 0.5rem; padding-left: 1.25rem;">
+        <% poam_item.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :title, "Title", style: "font-weight: 600;" %>
+    <%= f.text_field :title, class: "form-control", required: true, placeholder: "e.g., Update Django Framework Configuration" %>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :description, "Description", style: "font-weight: 600;" %>
+    <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Describe the weakness and required remediation..." %>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="form-group">
+      <%= f.label :risk_status, "Risk Status", style: "font-weight: 600;" %>
+      <%= f.select :risk_status, options_for_select([
+        ["Open", "open"], ["Investigating", "investigating"], ["Remediating", "remediating"],
+        ["Deviation Requested", "deviation-requested"], ["Deviation Approved", "deviation-approved"],
+        ["Closed", "closed"]
+      ], poam_item.risk_status), { include_blank: "— Select —" }, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :risk_level, "Risk Level", style: "font-weight: 600;" %>
+      <%= f.select :risk_level, options_for_select([["High", "high"], ["Medium", "medium"], ["Low", "low"]], poam_item.risk_level), { include_blank: "— Select —" }, class: "form-control" %>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+    <div class="form-group">
+      <%= f.label :likelihood, "Likelihood", style: "font-weight: 600;" %>
+      <%= f.select :likelihood, options_for_select([["High", "high"], ["Medium", "medium"], ["Low", "low"]], poam_item.likelihood), { include_blank: "— Select —" }, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :impact, "Impact", style: "font-weight: 600;" %>
+      <%= f.select :impact, options_for_select([["High", "high"], ["Medium", "medium"], ["Low", "low"]], poam_item.impact), { include_blank: "— Select —" }, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :deadline, "Deadline", style: "font-weight: 600;" %>
+      <%= f.date_field :deadline, class: "form-control" %>
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+
+  <%# ── Associated Entities ── %>
+  <% if defined?(@available_risks) && @available_risks&.any? %>
+    <div class="form-group">
+      <label style="font-weight: 600;">Associated Risks</label>
+      <select name="poam_risk_ids[]" multiple class="form-control" style="min-height: 80px;">
+        <% @available_risks.each do |risk| %>
+          <option value="<%= risk.id %>" <%= "selected" if poam_item.poam_risk_ids.include?(risk.id) %>><%= truncate(risk.title.to_s, length: 100) %> (<%= risk.status %>)</option>
+        <% end %>
+      </select>
+      <small style="color: var(--text-muted);">Hold Ctrl/Cmd to select multiple</small>
+    </div>
+  <% end %>
+
+  <% if defined?(@available_observations) && @available_observations&.any? %>
+    <div class="form-group">
+      <label style="font-weight: 600;">Associated Observations</label>
+      <select name="poam_observation_ids[]" multiple class="form-control" style="min-height: 80px;">
+        <% @available_observations.each do |obs| %>
+          <option value="<%= obs.id %>" <%= "selected" if poam_item.poam_observation_ids.include?(obs.id) %>><%= truncate(obs.title.to_s, length: 100) %></option>
+        <% end %>
+      </select>
+      <small style="color: var(--text-muted);">Hold Ctrl/Cmd to select multiple</small>
+    </div>
+  <% end %>
+
+  <% if defined?(@available_findings) && @available_findings&.any? %>
+    <div class="form-group">
+      <label style="font-weight: 600;">Associated Findings</label>
+      <select name="poam_finding_ids[]" multiple class="form-control" style="min-height: 80px;">
+        <% @available_findings.each do |finding| %>
+          <option value="<%= finding.id %>" <%= "selected" if poam_item.poam_finding_ids.include?(finding.id) %>><%= truncate(finding.title.to_s, length: 100) %></option>
+        <% end %>
+      </select>
+      <small style="color: var(--text-muted);">Hold Ctrl/Cmd to select multiple</small>
+    </div>
+  <% end %>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+  <h3 style="margin-bottom: 1rem; font-size: 1rem;">Notes &amp; Evidence</h3>
+
+  <div class="form-group">
+    <%= f.label :internal_notes, "Internal Notes", style: "font-weight: 600;" %>
+    <%= f.text_area :internal_notes, class: "form-control", rows: 2, placeholder: "Internal tracking notes..." %>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :closure_evidence, "Closure Evidence", style: "font-weight: 600;" %>
+    <%= f.text_area :closure_evidence, class: "form-control", rows: 2, placeholder: "Evidence or documentation for closure..." %>
+  </div>
+
+  <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <%= f.submit poam_item.persisted? ? "Update Item" : "Add Item", class: "btn btn-success" %>
+    <%= link_to "Cancel", poam_document_path(poam_document), class: "btn btn-secondary" %>
+  </div>
+<% end %>
