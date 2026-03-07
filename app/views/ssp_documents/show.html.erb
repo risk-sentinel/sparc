@@ -88,6 +88,8 @@
             style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
       <%= link_to "&#8595; JSON".html_safe, download_json_ssp_document_path(@ssp_document),
             style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
+      <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
+            style: "background: rgba(39,174,96,0.25); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(39,174,96,0.4); white-space: nowrap;" %>
       <%= link_to "&#8592; Back".html_safe, ssp_documents_path,
             style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
     </div>
@@ -128,6 +130,67 @@
     </div>
   </div>
 </div>
+
+<%# ── OSCAL ENRICHMENT PANELS ────────────────────────────────────── %>
+<% if @ssp_document.enriched? %>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+
+    <%# System Characteristics %>
+    <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem;">
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 0.5rem;">System Characteristics</div>
+      <% if @ssp_document.description.present? %>
+        <div style="font-size: 0.82rem; color: var(--text); margin-bottom: 0.4rem;"><%= truncate(@ssp_document.description, length: 120) %></div>
+      <% end %>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.25rem;">
+        <% if @ssp_document.security_sensitivity_level.present? %>
+          <span style="background: rgba(52,152,219,0.1); color: #2980b9; padding: 0.12rem 0.45rem; border-radius: 3px; font-size: 0.72rem; font-weight: 600;"><%= @ssp_document.security_sensitivity_level.split("-").last.capitalize %></span>
+        <% end %>
+        <% if @ssp_document.system_status.present? %>
+          <span style="background: rgba(39,174,96,0.1); color: #27ae60; padding: 0.12rem 0.45rem; border-radius: 3px; font-size: 0.72rem; font-weight: 600;"><%= @ssp_document.system_status.titleize %></span>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Components %>
+    <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem;">
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 0.5rem;">Components (<%= @components.count %>)</div>
+      <% @components.first(5).each do |comp| %>
+        <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem;">
+          <span style="background: <%= comp.component_type == 'this-system' ? 'rgba(142,68,173,0.12)' : 'rgba(52,152,219,0.1)' %>; color: <%= comp.component_type == 'this-system' ? '#8e44ad' : '#2980b9' %>; padding: 0.08rem 0.35rem; border-radius: 3px; font-size: 0.68rem; font-weight: 600;"><%= comp.component_type %></span>
+          <span style="font-size: 0.82rem; color: var(--text);"><%= truncate(comp.title, length: 30) %></span>
+        </div>
+      <% end %>
+      <% if @components.count > 5 %>
+        <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 0.25rem;">+ <%= @components.count - 5 %> more</div>
+      <% end %>
+    </div>
+
+    <%# Users %>
+    <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem;">
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 0.5rem;">Users (<%= @users.count %>)</div>
+      <% @users.first(5).each do |user| %>
+        <div style="font-size: 0.82rem; color: var(--text); margin-bottom: 0.2rem;">
+          <%= user.title.presence || "Unnamed User" %>
+          <% if user.role_ids_data.present? %>
+            <span style="font-size: 0.7rem; color: var(--text-faint);"> &mdash; <%= user.role_ids_data.join(", ") %></span>
+          <% end %>
+        </div>
+      <% end %>
+      <% if @users.count > 5 %>
+        <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 0.25rem;">+ <%= @users.count - 5 %> more</div>
+      <% end %>
+    </div>
+  </div>
+<% elsif !@ssp_document.enriched? %>
+  <%# Enrichment prompt banner for SSPs missing OSCAL fields %>
+  <div style="background: rgba(241,196,15,0.08); border: 1px solid rgba(241,196,15,0.25); border-radius: 8px; padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+    <div>
+      <div style="font-size: 0.88rem; font-weight: 600; color: var(--text);">Enrich for OSCAL Compliance</div>
+      <div style="font-size: 0.78rem; color: var(--text-muted);">Add system characteristics, components, and users to produce a fully valid OSCAL SSP export.</div>
+    </div>
+    <%= link_to "Enrich SSP", enrich_ssp_document_path(@ssp_document), class: "btn btn-success", style: "flex-shrink: 0; font-size: 0.85rem; padding: 0.4rem 1rem;" %>
+  </div>
+<% end %>
 
 <%# ── FAMILY COMPLIANCE GRID ─────────────────────────────────────── %>
 <% if @heatmap_families.any? %>
