@@ -126,6 +126,37 @@
   </div>
 </div>
 
+<%# ── COMPONENTS PANEL ──────────────────────────────────────────── %>
+<% components_data = @cdef_document.try(:components_data) || [] %>
+<% if components_data.any? %>
+<details class="mb-4">
+  <summary class="bg-body-secondary rounded-3 fw-semibold border d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.7rem 1rem; font-size: 0.95rem; list-style: none; user-select: none;">
+    <span style="font-size: 0.75rem;">&#9658;</span>
+    Components (<%= components_data.size %>)
+  </summary>
+  <div class="border rounded-3 p-3 mt-2">
+    <div class="row g-3">
+      <% components_data.each do |comp| %>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body py-2 px-3">
+              <h6 class="card-title mb-1"><%= comp["title"] || "Untitled" %></h6>
+              <span class="badge" style="background: rgba(142,68,173,0.2); color: #8e44ad;"><%= comp["type"] || "software" %></span>
+              <% if comp["status"].present? %>
+                <span class="badge bg-secondary"><%= comp["status"] %></span>
+              <% end %>
+              <% if comp["description"].present? %>
+                <p class="text-body-secondary small mt-1 mb-0"><%= truncate(comp["description"], length: 120) %></p>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</details>
+<% end %>
+
 <%# ── SEVERITY HEATMAP BY CONTROL FAMILY ─────────────────────────── %>
 <% if @heatmap_families.any? %>
 <details id="heatmapSection" open class="mb-4">

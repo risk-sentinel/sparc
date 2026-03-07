@@ -130,6 +130,29 @@
   </div>
 </div>
 
+<%# ── BACK MATTER PANEL ─────────────────────────────────────────── %>
+<% bm_resources = @profile_document.try(:back_matter_data) || [] %>
+<% if bm_resources.any? %>
+<details class="mb-4">
+  <summary class="bg-body-secondary rounded-3 fw-semibold border d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.7rem 1rem; font-size: 0.95rem; list-style: none; user-select: none;">
+    <span style="font-size: 0.75rem;">&#9658;</span>
+    Back Matter Resources (<%= bm_resources.size %>)
+  </summary>
+  <div class="border rounded-3 p-3 mt-2">
+    <ul class="list-unstyled mb-0">
+      <% bm_resources.each do |res| %>
+        <li class="mb-2">
+          <strong><%= res["description"] || res["uuid"] || "Resource" %></strong>
+          <% if res["uuid"].present? %>
+            <code class="ms-2 small"><%= res["uuid"] %></code>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</details>
+<% end %>
+
 <%# ── PRIORITY HEATMAP BY CONTROL FAMILY ─────────────────────────── %>
 <% if @heatmap_families.any? %>
 <details id="heatmapSection" open class="mb-4">

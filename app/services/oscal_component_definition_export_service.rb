@@ -37,13 +37,18 @@ class OscalComponentDefinitionExportService
   private
 
   def build_component_definition
-    {
+    result = {
       "component-definition" => {
-        "uuid"       => SecureRandom.uuid,
+        "uuid"       => @document.import_metadata&.dig("uuid") || SecureRandom.uuid,
         "metadata"   => build_metadata,
-        "components" => [ build_component ]
+        "components" => build_components
       }
     }
+
+    back_matter = build_back_matter
+    result["component-definition"]["back-matter"] = back_matter if back_matter.present?
+
+    result
   end
 
   def build_metadata
@@ -73,17 +78,48 @@ class OscalComponentDefinitionExportService
     }
   end
 
-  def build_component
-    controls = @document.cdef_controls
-                        .order(:row_order)
-                        .includes(:cdef_control_fields)
+  def build_components
+    components_meta = @document.try(:components_data).presence || []
+    all_controls = @document.cdef_controls
+                            .order(:row_order)
+                            .includes(:cdef_control_fields)
 
+    if components_meta.any?
+      # Multi-component export: group controls by component_uuid
+      components_meta.map do |comp_meta|
+        comp_controls = all_controls.select { |c| c.try(:component_uuid) == comp_meta["uuid"] }
+        build_component_from_meta(comp_meta, comp_controls)
+      end
+    else
+      # Legacy single-component export
+      [build_legacy_component(all_controls)]
+    end
+  end
+
+  def build_component_from_meta(meta, controls)
+    comp = {
+      "uuid"        => meta["uuid"] || SecureRandom.uuid,
+      "type"        => meta["type"] || "software",
+      "title"       => meta["title"] || @document.name,
+      "description" => meta["description"] || "Component definition"
+    }
+
+    comp["status"] = { "state" => meta["status"] } if meta["status"].present?
+    comp["responsible-roles"] = meta["responsible-roles"] if meta["responsible-roles"].present?
+    comp["protocols"] = meta["protocols"] if meta["protocols"].present?
+    comp["props"] = meta["props"] if meta["props"].present?
+    comp["control-implementations"] = [build_control_implementation(controls)] if controls.any?
+
+    comp
+  end
+
+  def build_legacy_component(controls)
     {
       "uuid"        => SecureRandom.uuid,
       "type"        => "software",
       "title"       => @document.name,
       "description" => @document.description || "Imported component definition",
-      "control-implementations" => [ build_control_implementation(controls) ]
+      "control-implementations" => [build_control_implementation(controls)]
     }
   end
 
@@ -100,7 +136,7 @@ class OscalComponentDefinitionExportService
     field_map = control.cdef_control_fields.index_by(&:field_name)
 
     result = {
-      "uuid"        => SecureRandom.uuid,
+      "uuid"        => control.try(:uuid) || SecureRandom.uuid,
       "control-id"  => normalize_control_id(control, field_map),
       "description" => build_description(control, field_map)
     }
@@ -108,13 +144,33 @@ class OscalComponentDefinitionExportService
     props = build_props(control)
     result["props"] = props if props.any?
 
-    narrative = field_map["implementation_narrative"]&.field_value
-    if narrative.present?
-      result["statements"] = [ {
-        "statement-id" => "#{result['control-id']}_stmt",
-        "uuid"         => SecureRandom.uuid,
-        "description"  => narrative
-      } ]
+    # Set-parameters
+    set_params = control.try(:set_parameters_data).presence
+    result["set-parameters"] = set_params if set_params.present?
+
+    # Responsible roles
+    resp_roles = control.try(:responsible_roles_data).presence
+    result["responsible-roles"] = resp_roles if resp_roles.present?
+
+    # Statements — use stored structured statements or fall back to narrative
+    stored_stmts = control.try(:statements_data).presence
+    if stored_stmts.present? && stored_stmts.is_a?(Hash) && stored_stmts.any?
+      result["statements"] = stored_stmts.map do |sid, stmt_data|
+        {
+          "statement-id" => sid,
+          "uuid"         => stmt_data["uuid"] || SecureRandom.uuid,
+          "description"  => stmt_data["description"] || ""
+        }.compact
+      end
+    else
+      narrative = field_map["implementation_narrative"]&.field_value
+      if narrative.present?
+        result["statements"] = [{
+          "statement-id" => "#{result['control-id']}_stmt",
+          "uuid"         => SecureRandom.uuid,
+          "description"  => narrative
+        }]
+      end
     end
 
     result
@@ -169,5 +225,12 @@ class OscalComponentDefinitionExportService
     when "scap"      then "https://csrc.nist.gov/projects/security-content-automation-protocol"
     else "https://sparc.local/component-definitions/#{@document.id}"
     end
+  end
+
+  def build_back_matter
+    resources = @document.try(:back_matter_data)
+    return nil if resources.blank? || resources.empty?
+
+    { "resources" => resources }
   end
 end

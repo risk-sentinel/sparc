@@ -17,7 +17,9 @@
         <p class="text-body-secondary" style="margin-top: 0.5rem;"><%= @control_catalog.description %></p>
       <% end %>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+      <%= link_to "Export OSCAL".html_safe, download_oscal_control_catalog_path(@control_catalog),
+            style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
       <%= link_to "↑ Import / Refresh", import_control_catalogs_path,
             class: "btn fw-semibold", style: "background: #8e44ad; color: white; text-decoration: none; font-size: 0.875rem;" %>
       <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "btn", style: "background: #f39c12; color: white;" %>
@@ -25,6 +27,25 @@
       <%= link_to "← All Catalogs", control_catalogs_path, class: "btn btn-primary" %>
     </div>
   </div>
+
+  <% if @control_catalog.uuid.present? || @control_catalog.oscal_version.present? %>
+    <div class="card bg-body-secondary mb-3" style="border: 1px solid rgba(142,68,173,0.3);">
+      <div class="card-body py-2 px-3">
+        <small class="text-body-secondary">
+          <strong>OSCAL</strong>
+          <% if @control_catalog.uuid.present? %>
+            &nbsp;|&nbsp; UUID: <code><%= @control_catalog.uuid %></code>
+          <% end %>
+          <% if @control_catalog.oscal_version.present? %>
+            &nbsp;|&nbsp; OSCAL Version: <strong><%= @control_catalog.oscal_version %></strong>
+          <% end %>
+          <% if @control_catalog.metadata_extra.present? && @control_catalog.metadata_extra.any? %>
+            &nbsp;|&nbsp; Metadata: <%= @control_catalog.metadata_extra.keys.join(", ") %>
+          <% end %>
+        </small>
+      </div>
+    </div>
+  <% end %>
 
   <% if @control_families.any? %>
     <table class="table table-hover">

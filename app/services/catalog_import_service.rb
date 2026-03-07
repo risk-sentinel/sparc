@@ -119,7 +119,23 @@ class CatalogImportService
     version      = metadata["version"].presence || metadata["last-modified"]&.first(10)
 
     catalog = upsert_catalog(catalog_name, version, "OSCAL")
-    stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+
+    # Preserve OSCAL-specific fields
+    oscal_attrs = {}
+    oscal_attrs[:uuid] = cat_data["uuid"] if cat_data["uuid"].present?
+    oscal_attrs[:oscal_version] = metadata["oscal-version"] if metadata["oscal-version"].present?
+
+    # Store metadata extras (roles, parties, revisions, etc.)
+    metadata_extra = metadata.slice("roles", "parties", "responsible-parties", "revisions", "props", "links", "document-ids")
+    oscal_attrs[:metadata_extra] = metadata_extra if metadata_extra.any?
+
+    # Store back-matter resources
+    back_matter = cat_data.dig("back-matter", "resources")
+    oscal_attrs[:back_matter_data] = back_matter if back_matter.present?
+
+    catalog.update!(oscal_attrs) if oscal_attrs.any?
+
+    stats = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
 
     groups.each_with_index do |group, idx|
       family_code = group["id"].to_s.upcase
@@ -127,6 +143,15 @@ class CatalogImportService
       next if family_code.blank?
 
       family = upsert_family(catalog, family_code, family_name, idx + 1)
+
+      # Preserve OSCAL group-level fields
+      family_attrs = {}
+      family_attrs[:uuid] = group["uuid"] if group["uuid"].present?
+      family_attrs[:props_data] = group["props"] if group["props"].present?
+      family_attrs[:links_data] = group["links"] if group["links"].present?
+      family_attrs[:parts_data] = group["parts"] if group["parts"].present?
+      family.update!(family_attrs) if family_attrs.any?
+
       stats[:families] += 1
 
       (group["controls"] || []).each do |ctrl|
@@ -169,6 +194,19 @@ class CatalogImportService
     }.compact.reject { |_, v| v.blank? }
 
     result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data)
+
+    # Preserve structured OSCAL data in JSONB columns
+    ctrl_record = family.catalog_controls.find_by(control_id: control_id)
+    if ctrl_record
+      oscal_attrs = {}
+      oscal_attrs[:uuid] = ctrl["id"] if ctrl["id"].present?
+      oscal_attrs[:control_class] = ctrl["class"] if ctrl["class"].present?
+      oscal_attrs[:params_data] = ctrl["params"] if ctrl["params"].present?
+      oscal_attrs[:props_data] = ctrl["props"] if ctrl["props"].present?
+      oscal_attrs[:links_data] = ctrl["links"] if ctrl["links"].present?
+      oscal_attrs[:parts_data] = ctrl["parts"] if ctrl["parts"].present?
+      ctrl_record.update!(oscal_attrs) if oscal_attrs.any?
+    end
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }

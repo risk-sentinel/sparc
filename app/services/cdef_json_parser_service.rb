@@ -36,29 +36,56 @@ class CdefJsonParserService
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
     metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
 
+    # Store component-level metadata for multi-component support
+    components = cdef["components"] || []
+    components_data = components.map do |c|
+      {
+        "uuid"              => c["uuid"],
+        "type"              => c["type"],
+        "title"             => c["title"],
+        "description"       => c["description"],
+        "status"            => c.dig("status", "state"),
+        "responsible-roles" => c["responsible-roles"],
+        "protocols"         => c["protocols"],
+        "props"             => c["props"]
+      }.compact
+    end
+
+    # Store back-matter
+    back_matter = cdef.dig("back-matter", "resources") || []
+
     @document.update!(
-      cdef_type:       "custom",
-      cdef_version:    metadata["version"],
-      oscal_version:   metadata["oscal-version"],
-      description:     metadata["title"],
-      metadata_extra:  metadata_extra.presence || {},
-      import_metadata: { "format" => "oscal_cdef", "uuid" => cdef["uuid"] }.compact
+      cdef_type:        "custom",
+      cdef_version:     metadata["version"],
+      oscal_version:    metadata["oscal-version"],
+      description:      metadata["title"],
+      metadata_extra:   metadata_extra.presence || {},
+      components_data:  components_data,
+      back_matter_data: back_matter,
+      import_metadata:  { "format" => "oscal_cdef", "uuid" => cdef["uuid"] }.compact
     )
 
     # Extract controls from components
-    components = cdef["components"] || []
     control_attrs = []
     field_entries = []
     row_order = 0
 
     components.each do |component|
+      comp_uuid = component["uuid"]
       (component["control-implementations"] || []).each do |ci|
         (ci["implemented-requirements"] || []).each do |ir|
           attrs = {
-            control_id:     ir["control-id"],
-            title:          ir["control-id"],
-            control_family: ir["control-id"].to_s.split("-").first.upcase.presence,
-            row_order:      row_order
+            control_id:             ir["control-id"],
+            title:                  ir["control-id"],
+            control_family:         ir["control-id"].to_s.split("-").first.upcase.presence,
+            row_order:              row_order,
+            uuid:                   ir["uuid"],
+            component_uuid:         comp_uuid,
+            props_data:             ir["props"] || [],
+            links_data:             ir["links"] || [],
+            set_parameters_data:    ir["set-parameters"] || [],
+            responsible_roles_data: ir["responsible-roles"] || [],
+            statements_data:        extract_statements(ir)
           }
           fields = [
             { field_name: "description", field_value: ir["description"], editable: false },
@@ -76,6 +103,21 @@ class CdefJsonParserService
     batch_insert_controls_and_fields(
       @document, :cdef, control_attrs, field_entries
     )
+  end
+
+  def extract_statements(ir)
+    statements = ir["statements"] || []
+    return {} if statements.empty?
+
+    statements.each_with_object({}) do |stmt, hash|
+      sid = stmt["statement-id"] || stmt["uuid"]
+      hash[sid] = {
+        "uuid"        => stmt["uuid"],
+        "description" => stmt["description"],
+        "remarks"     => stmt["remarks"],
+        "props"       => stmt["props"]
+      }.compact
+    end
   end
 
   # ── InSpec Profile JSON ──────────────────────────────────────────

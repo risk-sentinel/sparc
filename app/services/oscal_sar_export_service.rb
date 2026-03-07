@@ -157,6 +157,7 @@ class OscalSarExportService
       "description"       => result.description,
       "start"             => result.start_time&.iso8601,
       "end"               => result.end_time&.iso8601,
+      "local-definitions" => result.try(:local_definitions_data).presence,
       "reviewed-controls" => result.reviewed_controls_data.presence,
       "assessment-log"    => build_assessment_log(result.assessment_log_data),
       "attestations"      => result.attestations_data.presence,
@@ -350,7 +351,8 @@ class OscalSarExportService
   # ── Back matter ──────────────────────────────────────────────────
 
   def build_back_matter
-    resources = @document.import_metadata&.dig("back_matter")
+    resources = @document.try(:back_matter_data).presence ||
+                @document.import_metadata&.dig("back_matter")
     return nil if resources.blank?
     { "resources" => resources }
   end

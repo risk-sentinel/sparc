@@ -44,6 +44,7 @@ class SarJsonParserService
       sar_version:        metadata["version"],
       import_ap_href:     import_ap["href"],
       metadata_extra:     metadata_extra.presence || {},
+      back_matter_data:   back_matter,
       import_metadata:    {
         "uuid"        => ar["uuid"],
         "back_matter" => back_matter
@@ -92,6 +93,7 @@ class SarJsonParserService
         reviewed_controls_data: result["reviewed-controls"] || {},
         assessment_log_data:    result["assessment-log"].is_a?(Hash) ? (result["assessment-log"]["entries"] || []) : (result["assessment-log"] || []),
         attestations_data:      result["attestations"] || [],
+        local_definitions_data: result["local-definitions"] || {},
         props_data:             result["props"] || [],
         links_data:             result["links"] || [],
         remarks:                extract_text(result["remarks"]),

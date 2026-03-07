@@ -36,6 +36,23 @@ class CatalogControl < ApplicationRecord
     data.select { |k, v| GUIDANCE_FIELDS.include?(k) && v.present? }
   end
 
+  # OSCAL-aware accessors for structured data stored in JSONB columns
+  def oscal_params
+    params_data.presence || []
+  end
+
+  def oscal_props
+    props_data.presence || []
+  end
+
+  def oscal_links
+    links_data.presence || []
+  end
+
+  def oscal_parts
+    parts_data.presence || []
+  end
+
   private
 
   # update_all bypasses ActiveRecord type casting, so guidance_data can

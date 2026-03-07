@@ -33,7 +33,7 @@ class OscalProfileExportService
   private
 
   def build_profile
-    {
+    result = {
       "profile" => {
         "uuid"     => @document.import_metadata&.dig("uuid") || SecureRandom.uuid,
         "metadata" => build_metadata,
@@ -42,6 +42,11 @@ class OscalProfileExportService
         "modify"   => build_modify
       }.compact
     }
+
+    back_matter = build_back_matter
+    result["profile"]["back-matter"] = back_matter if back_matter.present?
+
+    result
   end
 
   def build_metadata
@@ -75,12 +80,21 @@ class OscalProfileExportService
     catalog_href = @document.import_metadata&.dig("catalog_href") || "#"
     controls = @document.profile_controls.order(:row_order)
 
-    [ {
-      "href" => catalog_href,
-      "include-controls" => [ {
-        "with-ids" => controls.pluck(:control_id)
-      } ]
-    } ]
+    include_all = @document.import_metadata&.dig("include_all")
+
+    import_entry = { "href" => catalog_href }
+
+    if include_all
+      import_entry["include-all"] = {}
+    else
+      included = controls.where(exclude: false).pluck(:control_id)
+      import_entry["include-controls"] = [{ "with-ids" => included }] if included.any?
+    end
+
+    excluded = controls.where(exclude: true).pluck(:control_id)
+    import_entry["exclude-controls"] = [{ "with-ids" => excluded }] if excluded.any?
+
+    [import_entry]
   end
 
   def build_merge
@@ -102,6 +116,8 @@ class OscalProfileExportService
   end
 
   def build_alter(control)
+    return nil if control.exclude?
+
     props = []
     props << { "name" => "priority", "value" => control.priority } if control.priority.present?
 
@@ -111,26 +127,51 @@ class OscalProfileExportService
       props << { "name" => prop_name, "value" => field.field_value }
     end
 
-    return nil if props.empty?
+    # Build removes from alters_data
+    removes = control.try(:alters_data).presence || []
 
-    {
-      "control-id" => control.control_id,
-      "adds" => [ { "position" => "starting", "props" => props } ]
-    }
+    return nil if props.empty? && removes.empty?
+
+    alter = { "control-id" => control.control_id }
+    alter["removes"] = removes if removes.any?
+    alter["adds"] = [{ "position" => "starting", "props" => props }] if props.any?
+
+    alter
   end
 
   def build_set_parameters(controls)
     params = []
     controls.each do |ctrl|
+      next if ctrl.exclude?
+
       ctrl.profile_control_fields.each do |field|
         next unless field.field_name.start_with?("parameter:")
         param_id = field.field_name.delete_prefix("parameter:")
-        params << {
+        param_entry = {
           "param-id" => param_id,
           "values"   => field.field_value.split(", ")
         }
+
+        # Include full parameter attributes if stored
+        %w[class constraints guidelines select].each do |attr|
+          attr_field = ctrl.profile_control_fields.find { |f| f.field_name == "parameter_#{attr}:#{param_id}" }
+          if attr_field&.field_value.present?
+            parsed = JSON.parse(attr_field.field_value) rescue nil
+            param_entry[attr] = parsed if parsed
+          end
+        end
+
+        params << param_entry
       end
     end
     params
+  end
+
+  def build_back_matter
+    resources = @document.try(:back_matter_data).presence ||
+                @document.import_metadata&.dig("back_matter")
+    return nil if resources.blank? || resources.empty?
+
+    { "resources" => resources }
   end
 end
