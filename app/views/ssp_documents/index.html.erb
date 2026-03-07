@@ -1,27 +1,32 @@
 <div class="card" style="overflow: hidden;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <h2>Controls Implementation</h2>
-    <%= link_to "Upload New", new_ssp_document_path, class: "btn btn-success" %>
+    <div style="display: flex; gap: 0.5rem;">
+      <%= link_to "Create New SSP", wizard_ssp_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Upload File", new_ssp_document_path, class: "btn btn-success" %>
+    </div>
   </div>
 
   <% if @ssp_documents.any? %>
     <table style="table-layout: fixed;">
       <colgroup>
-        <col style="width: 20%;">
-        <col style="width: 24%;">
+        <col style="width: 18%;">
+        <col style="width: 18%;">
+        <col style="width: 7%;">
         <col style="width: 8%;">
-        <col style="width: 10%;">
-        <col style="width: 10%;">
-        <col style="width: 13%;">
-        <col style="width: 15%;">
+        <col style="width: 8%;">
+        <col style="width: 8%;">
+        <col style="width: 12%;">
+        <col style="width: 21%;">
       </colgroup>
       <thead>
         <tr>
           <th>Name</th>
-          <th>Original Filename</th>
+          <th>Source</th>
           <th>Version</th>
           <th>Status</th>
           <th>Controls</th>
+          <th>OSCAL</th>
           <th>Created</th>
           <th>Actions</th>
         </tr>
@@ -30,15 +35,33 @@
         <% @ssp_documents.each do |doc| %>
           <tr>
             <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= doc.name %>"><%= doc.name %></td>
-            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; color: var(--text-muted);" title="<%= doc.original_filename %>"><%= doc.original_filename %></td>
+            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; color: var(--text-muted);">
+              <% case doc.creation_method %>
+              <% when "wizard" %>
+                <span style="background: rgba(52,152,219,0.12); color: #2980b9; padding: 0.15rem 0.45rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600;">Wizard</span>
+              <% when "oscal_import" %>
+                <span style="background: rgba(142,68,173,0.12); color: #8e44ad; padding: 0.15rem 0.45rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600;">OSCAL Import</span>
+              <% else %>
+                <span title="<%= doc.original_filename %>" style="font-size: 0.82rem;"><%= doc.original_filename.presence || "Excel" %></span>
+              <% end %>
+            </td>
             <td style="font-size: 0.85rem; color: var(--text-muted);"><%= doc.ssp_version.presence || "—" %></td>
             <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %>" style="padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;"><%= doc.status %></span></td>
             <td><%= doc.ssp_controls.count %></td>
+            <td>
+              <% if doc.enriched? %>
+                <span style="color: #27ae60; font-size: 0.82rem; font-weight: 600;">Enriched</span>
+              <% else %>
+                <span style="color: var(--text-faint); font-size: 0.82rem;">Basic</span>
+              <% end %>
+            </td>
             <td style="white-space: nowrap; font-size: 0.88rem;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
               <div style="display: flex; flex-direction: column; gap: 0.3rem;">
                 <%= link_to "View", ssp_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; text-align: center;" %>
-                <%= link_to "↓ JSON", download_json_ssp_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; text-align: center;" %>
+                <% unless doc.enriched? %>
+                  <%= link_to "Enrich", enrich_ssp_document_path(doc), class: "btn btn-secondary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; text-align: center;" %>
+                <% end %>
                 <%= link_to "Delete", ssp_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; text-align: center;" %>
               </div>
             </td>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_07_125214) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_07_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -437,6 +437,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_125214) do
     t.index ["status"], name: "index_sar_documents_on_status"
   end
 
+  create_table "ssp_by_components", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "export_data", default: {}
+    t.string "implementation_status"
+    t.jsonb "inherited_data", default: []
+    t.jsonb "links_data", default: []
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "responsible_roles_data", default: []
+    t.jsonb "satisfied_data", default: []
+    t.jsonb "set_parameters_data", default: []
+    t.bigint "ssp_component_id", null: false
+    t.bigint "ssp_control_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["ssp_component_id"], name: "index_ssp_by_components_on_ssp_component_id"
+    t.index ["ssp_control_id", "ssp_component_id"], name: "idx_ssp_by_comp_ctrl_comp", unique: true
+    t.index ["ssp_control_id"], name: "index_ssp_by_components_on_ssp_control_id"
+  end
+
+  create_table "ssp_components", force: :cascade do |t|
+    t.bigint "cdef_document_id"
+    t.string "component_type", null: false
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.jsonb "links_data", default: []
+    t.jsonb "props_data", default: []
+    t.jsonb "protocols_data", default: []
+    t.string "purpose"
+    t.text "remarks"
+    t.jsonb "responsible_roles_data", default: []
+    t.bigint "ssp_document_id", null: false
+    t.text "status_remarks"
+    t.string "status_state", default: "operational"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["cdef_document_id"], name: "index_ssp_components_on_cdef_document_id"
+    t.index ["ssp_document_id", "component_type"], name: "idx_ssp_components_doc_type"
+    t.index ["ssp_document_id", "uuid"], name: "idx_ssp_components_doc_uuid", unique: true
+    t.index ["ssp_document_id"], name: "index_ssp_components_on_ssp_document_id"
+  end
+
   create_table "ssp_control_fields", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "editable"
@@ -460,14 +504,112 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_125214) do
     t.index ["ssp_document_id"], name: "index_ssp_controls_on_ssp_document_id"
   end
 
+  create_table "ssp_document_cdef_documents", force: :cascade do |t|
+    t.bigint "cdef_document_id", null: false
+    t.bigint "ssp_document_id", null: false
+    t.index ["cdef_document_id"], name: "index_ssp_document_cdef_documents_on_cdef_document_id"
+    t.index ["ssp_document_id", "cdef_document_id"], name: "idx_ssp_cdef_unique", unique: true
+    t.index ["ssp_document_id"], name: "index_ssp_document_cdef_documents_on_ssp_document_id"
+  end
+
   create_table "ssp_documents", force: :cascade do |t|
+    t.text "authorization_boundary_description"
     t.datetime "created_at", null: false
+    t.string "creation_method", default: "excel"
+    t.text "data_flow_description"
+    t.date "date_authorized"
+    t.text "description"
+    t.text "error_message"
     t.string "file_type"
+    t.jsonb "import_metadata", default: {}
+    t.string "import_profile_href"
+    t.jsonb "metadata_extra", default: {}
     t.string "name"
+    t.text "network_architecture_description"
     t.string "original_filename"
+    t.string "oscal_version"
+    t.bigint "profile_document_id"
+    t.string "security_objective_availability"
+    t.string "security_objective_confidentiality"
+    t.string "security_objective_integrity"
+    t.string "security_sensitivity_level"
     t.string "ssp_version"
     t.string "status"
+    t.string "system_id"
+    t.string "system_name_short"
+    t.string "system_status", default: "operational"
     t.datetime "updated_at", null: false
+    t.index ["profile_document_id"], name: "index_ssp_documents_on_profile_document_id"
+  end
+
+  create_table "ssp_information_types", force: :cascade do |t|
+    t.text "availability_impact_adjustment"
+    t.string "availability_impact_base"
+    t.string "availability_impact_selected"
+    t.jsonb "categorizations_data", default: []
+    t.text "confidentiality_impact_adjustment"
+    t.string "confidentiality_impact_base"
+    t.string "confidentiality_impact_selected"
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.text "integrity_impact_adjustment"
+    t.string "integrity_impact_base"
+    t.string "integrity_impact_selected"
+    t.jsonb "links_data", default: []
+    t.jsonb "props_data", default: []
+    t.bigint "ssp_document_id", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["ssp_document_id", "uuid"], name: "idx_ssp_info_types_doc_uuid", unique: true
+    t.index ["ssp_document_id"], name: "index_ssp_information_types_on_ssp_document_id"
+  end
+
+  create_table "ssp_inventory_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.jsonb "implemented_components_data", default: []
+    t.jsonb "links_data", default: []
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "responsible_parties_data", default: []
+    t.bigint "ssp_document_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["ssp_document_id", "uuid"], name: "idx_ssp_inv_items_doc_uuid", unique: true
+    t.index ["ssp_document_id"], name: "index_ssp_inventory_items_on_ssp_document_id"
+  end
+
+  create_table "ssp_leveraged_authorizations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "date_authorized", null: false
+    t.jsonb "links_data", default: []
+    t.string "party_uuid", null: false
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.bigint "ssp_document_id", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["ssp_document_id", "uuid"], name: "idx_ssp_lev_auths_doc_uuid", unique: true
+    t.index ["ssp_document_id"], name: "index_ssp_leveraged_authorizations_on_ssp_document_id"
+  end
+
+  create_table "ssp_users", force: :cascade do |t|
+    t.jsonb "authorized_privileges_data", default: []
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "links_data", default: []
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "role_ids_data", default: []
+    t.string "short_name"
+    t.bigint "ssp_document_id", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["ssp_document_id", "uuid"], name: "idx_ssp_users_doc_uuid", unique: true
+    t.index ["ssp_document_id"], name: "index_ssp_users_on_ssp_document_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -500,7 +642,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_125214) do
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
   add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
+  add_foreign_key "ssp_by_components", "ssp_components", on_delete: :cascade
+  add_foreign_key "ssp_by_components", "ssp_controls", on_delete: :cascade
+  add_foreign_key "ssp_components", "cdef_documents", on_delete: :nullify
+  add_foreign_key "ssp_components", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_control_fields", "ssp_controls"
   add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"
+  add_foreign_key "ssp_document_cdef_documents", "cdef_documents", on_delete: :cascade
+  add_foreign_key "ssp_document_cdef_documents", "ssp_documents", on_delete: :cascade
+  add_foreign_key "ssp_documents", "profile_documents", on_delete: :nullify
+  add_foreign_key "ssp_information_types", "ssp_documents", on_delete: :cascade
+  add_foreign_key "ssp_inventory_items", "ssp_documents", on_delete: :cascade
+  add_foreign_key "ssp_leveraged_authorizations", "ssp_documents", on_delete: :cascade
+  add_foreign_key "ssp_users", "ssp_documents", on_delete: :cascade
 end

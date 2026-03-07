@@ -24,10 +24,10 @@ class DocumentTypeRegistry
       control_class:      SspControl,
       field_class:        SspControlField,
       document_fk:        :ssp_document_id,
-      allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel" },
-      parser_map:         { "excel" => SspExcelParserService },
+      allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel", ".json" => "json", ".xml" => "xml" },
+      parser_map:         { "excel" => SspExcelParserService, "json" => SspJsonParserService, "xml" => SspXmlParserService },
       file_prefix:        "ssp",
-      success_message:    "Controls Implementation workbook uploaded. Processing in background..."
+      success_message:    "Controls Implementation document uploaded. Processing in background..."
     ),
     sar: Entry.new(
       document_class:     SarDocument,
