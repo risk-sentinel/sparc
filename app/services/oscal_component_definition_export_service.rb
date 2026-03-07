@@ -92,7 +92,7 @@ class OscalComponentDefinitionExportService
       end
     else
       # Legacy single-component export
-      [build_legacy_component(all_controls)]
+      [ build_legacy_component(all_controls) ]
     end
   end
 
