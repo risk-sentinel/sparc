@@ -21,6 +21,8 @@
       <%= link_to "↑ Import / Refresh", import_control_catalogs_path,
             class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
       <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "btn btn-sparc-orange" %>
+      <%= link_to "OSCAL Export", download_oscal_control_catalog_path(@control_catalog),
+            class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
       <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "btn btn-success" %>
       <%= link_to "← All Catalogs", control_catalogs_path, class: "btn btn-primary" %>
     </div>
@@ -68,3 +70,9 @@
   <% end %>
   </div>
 </div>
+
+<%= render "shared/oscal_metadata_section",
+           document: @control_catalog,
+           update_path: update_metadata_control_catalog_path(@control_catalog),
+           param_key: :control_catalog,
+           version_field: :version %>

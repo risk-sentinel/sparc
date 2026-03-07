@@ -100,6 +100,12 @@ Rails.application.routes.draw do
   end
 
   resources :control_catalogs do
+    member do
+      patch :update_metadata
+      get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
+    end
     collection do
       get  :import
       post :import
