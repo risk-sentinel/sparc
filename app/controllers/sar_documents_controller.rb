@@ -237,7 +237,8 @@ class SarDocumentsController < ApplicationController
   private
 
   def document_metadata_params
-    params.require(:sar_document).permit(:name, :sar_version)
+    permitted = params.require(:sar_document).permit(:name, :sar_version, :oscal_version, :description)
+    merge_metadata_extra(permitted, :sar_document)
   end
 
   def wizard_params

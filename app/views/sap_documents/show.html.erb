@@ -367,6 +367,12 @@
   </div>
 <% end %>
 
+<%= render "shared/oscal_metadata_section",
+           document: @sap_document,
+           update_path: update_metadata_sap_document_path(@sap_document),
+           param_key: :sap_document,
+           version_field: :sap_version %>
+
 <script>
   var activeFamily = null;
   var activeMethod = null;

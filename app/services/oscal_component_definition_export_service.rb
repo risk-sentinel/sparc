@@ -47,21 +47,29 @@ class OscalComponentDefinitionExportService
   end
 
   def build_metadata
-    {
+    base = {
       "title"         => @document.name,
       "version"       => @document.cdef_version || "1.0.0",
-      "oscal-version" => OSCAL_VERSION,
-      "last-modified" => Time.current.iso8601,
-      "roles" => [
-        { "id" => "prepared-by", "title" => "Prepared By" }
-      ],
-      "parties" => [
-        {
-          "uuid" => SecureRandom.uuid,
-          "type" => "organization",
-          "name" => "SPARC Export"
-        }
-      ]
+      "oscal-version" => @document.oscal_version || OSCAL_VERSION,
+      "last-modified" => Time.current.iso8601
+    }
+
+    extra = @document.metadata_extra || {}
+    if extra.any?
+      base.merge(extra)
+    else
+      base.merge(default_metadata_extras)
+    end
+  end
+
+  def default_metadata_extras
+    {
+      "roles" => [{ "id" => "prepared-by", "title" => "Prepared By" }],
+      "parties" => [{
+        "uuid" => SecureRandom.uuid,
+        "type" => "organization",
+        "name" => "SPARC Export"
+      }]
     }
   end
 

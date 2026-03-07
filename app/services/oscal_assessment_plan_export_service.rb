@@ -55,20 +55,36 @@ class OscalAssessmentPlanExportService
   # ── Metadata ───────────────────────────────────────────────────────
 
   def build_metadata
-    meta = {
+    base = {
       "title"         => @document.name,
       "version"       => @document.sap_version.presence || "1.0.0",
-      "oscal-version" => OSCAL_VERSION,
-      "last-modified" => Time.current.iso8601,
-      "roles"         => build_roles,
-      "parties"       => build_parties
+      "oscal-version" => @document.oscal_version || OSCAL_VERSION,
+      "last-modified" => Time.current.iso8601
     }
 
-    props = []
-    props << { "name" => "assessment-type", "ns" => "https://sparc.local/ns", "value" => @document.assessment_type } if @document.assessment_type.present?
-    meta["props"] = props if props.any?
+    extra = @document.metadata_extra || {}
+    if extra.any?
+      # Merge preserved metadata, but ensure assessment-type prop is included
+      meta = base.merge(extra)
+      append_assessment_type_prop(meta)
+      meta
+    else
+      meta = base.merge(
+        "roles"   => build_roles,
+        "parties" => build_parties
+      )
+      append_assessment_type_prop(meta)
+      meta
+    end
+  end
 
-    meta
+  def append_assessment_type_prop(meta)
+    return unless @document.assessment_type.present?
+
+    meta["props"] ||= []
+    unless meta["props"].any? { |p| p["name"] == "assessment-type" }
+      meta["props"] << { "name" => "assessment-type", "ns" => "https://sparc.local/ns", "value" => @document.assessment_type }
+    end
   end
 
   def build_roles

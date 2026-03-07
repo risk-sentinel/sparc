@@ -9,4 +9,22 @@ class ApplicationController < ActionController::Base
     id.to_s.sub(/\A([A-Z]+-?)(\d+)/) { "#{$1}#{$2.rjust(2, '0')}" }
   end
   helper_method :normalize_ctrl_id
+
+  private
+
+  # Merge metadata_extra JSON from form params into permitted params.
+  # The form submits metadata_extra as a JSON string; we parse it and
+  # merge into the permitted hash so ActiveRecord stores it as jsonb.
+  def merge_metadata_extra(permitted, param_key)
+    raw = params.dig(param_key, :metadata_extra_json)
+    if raw.present?
+      parsed = JSON.parse(raw)
+      # Only allow known OSCAL metadata keys
+      allowed = parsed.slice(*OscalMetadata::METADATA_EXTRA_KEYS)
+      permitted[:metadata_extra] = (permitted[:metadata_extra] || {}).merge(allowed)
+    end
+    permitted
+  rescue JSON::ParserError
+    permitted
+  end
 end

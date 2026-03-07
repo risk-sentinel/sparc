@@ -44,6 +44,9 @@ class SapJsonParserService
     type_prop = props.find { |p| p["name"] == "assessment-type" }
     attrs[:assessment_type] = type_prop["value"] if type_prop
 
+    # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
+    attrs[:metadata_extra] = metadata.except("title", "version", "oscal-version", "last-modified")
+
     @document.update!(attrs.compact)
   end
 

@@ -1,4 +1,6 @@
 class ProfileDocument < ApplicationRecord
+  include OscalMetadata
+
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true
   has_one_attached :file

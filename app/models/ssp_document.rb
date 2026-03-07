@@ -1,4 +1,6 @@
 class SspDocument < ApplicationRecord
+  include OscalMetadata
+
   has_many :ssp_controls, dependent: :destroy
   has_one_attached :file
 
