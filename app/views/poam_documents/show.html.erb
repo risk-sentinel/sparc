@@ -43,6 +43,12 @@
     "deviation-requested" => "#d35400", "deviation-approved" => "#f39c12", "closed" => "#27ae60"
   }
 
+  risk_status_options = [
+    ["Open", "open"], ["Investigating", "investigating"], ["Remediating", "remediating"],
+    ["Deviation Requested", "deviation-requested"], ["Deviation Approved", "deviation-approved"],
+    ["Closed", "closed"]
+  ]
+
   active_status = params[:risk_status]
   active_impact = params[:impact]
   has_filters   = [active_status, active_impact].any?(&:present?)
@@ -173,7 +179,7 @@
   </div>
 <% end %>
 
-<%# ── POA&M ITEM CARDS ───────────────────────────────────────────── %>
+<%# ── POA&M ITEM CARDS WITH INLINE EDITING ────────────────────── %>
 <% @items.each_with_index do |item, idx| %>
   <%
     sc = status_colors[item.risk_status] || "#7f8c8d"
@@ -183,6 +189,8 @@
     findings = item.poam_findings
   %>
   <div class="card" style="border-left: 4px solid <%= sc %>; padding: 1.25rem 1.5rem;">
+
+    <%# ── Card header ── %>
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem; flex-wrap: wrap;">
       <div style="flex: 1;">
         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
@@ -194,7 +202,8 @@
         <% end %>
       </div>
       <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
-        <%= link_to "Edit", edit_poam_document_poam_item_path(@poam_document, item), class: "btn btn-primary", style: "padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
+        <button onclick="toggleItemEdit(<%= item.id %>)" id="edit-btn-<%= item.id %>" style="background: #3498db; color: white; border: none; border-radius: 4px; padding: 0.3rem 0.7rem; font-size: 0.78rem; cursor: pointer; font-weight: 600;">Edit</button>
+        <%= link_to "Full Edit", edit_poam_document_poam_item_path(@poam_document, item), style: "background: var(--surface-alt); color: var(--text-muted); text-decoration: none; border: 1px solid var(--border-soft); border-radius: 4px; padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
         <%= button_to "Delete", poam_document_poam_item_path(@poam_document, item), method: :delete, data: { turbo_confirm: "Remove \"#{item.title}\"?" }, class: "btn btn-danger", style: "padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
       </div>
     </div>
@@ -224,42 +233,142 @@
       <% end %>
     </div>
 
-    <%# ── Related risks detail ── %>
-    <% if risks.any? %>
-      <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
-        <% risks.each do |risk| %>
-          <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.6rem 0.8rem;">
-            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem;">
-              Risk: <%= risk.status %>
-              <% if risk.poam_remediations.any? %>
-                <span style="color: var(--text-muted); font-weight: 400;">
-                  &middot; <%= pluralize(risk.poam_remediations.size, "remediation") %>
-                  <% ms_count = risk.poam_milestones.size %>
-                  <% if ms_count > 0 %>
-                    &middot; <%= pluralize(ms_count, "milestone") %>
-                  <% end %>
-                </span>
-              <% end %>
-            </div>
-            <div style="font-size: 0.85rem; color: var(--text);"><%= truncate(risk.title.to_s, length: 150) %></div>
+    <%# ── Expandable details section ── %>
+    <details id="details-<%= item.id %>" class="card-details">
+      <summary style="cursor: pointer; font-size: 0.82rem; color: var(--link-accent); font-weight: 600; margin-bottom: 0.75rem; user-select: none;">
+        Show Details
+      </summary>
+
+      <%# ══════ VIEW MODE ══════ %>
+      <div id="view-<%= item.id %>">
+        <%# ── Related risks ── %>
+        <% if risks.any? %>
+          <div style="margin-bottom: 0.75rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Related Risks</div>
+            <% risks.each do |risk| %>
+              <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.6rem 0.8rem; margin-bottom: 0.4rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+                  <% rsc = status_colors[risk.status] || "#7f8c8d" %>
+                  <span style="padding: 0.1rem 0.4rem; background: <%= rsc %>22; color: <%= rsc %>; border: 1px solid <%= rsc %>44; border-radius: 3px; font-size: 0.7rem; font-weight: 600;"><%= risk.status %></span>
+                  <span style="font-size: 0.88rem; font-weight: 600; color: var(--text);"><%= risk.title %></span>
+                </div>
+                <% if risk.description.present? %>
+                  <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.3rem;"><%= truncate(risk.description, length: 300) %></div>
+                <% end %>
+                <% if risk.statement.present? %>
+                  <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin-bottom: 0.3rem; padding-left: 0.5rem; border-left: 2px solid var(--border-soft);"><%= truncate(risk.statement, length: 200) %></div>
+                <% end %>
+
+                <%# ── Remediations + Milestones ── %>
+                <% risk.poam_remediations.each do |rem| %>
+                  <div style="margin-top: 0.4rem; padding: 0.4rem 0.6rem; background: rgba(52,152,219,0.06); border: 1px solid rgba(52,152,219,0.15); border-radius: 4px;">
+                    <div style="font-size: 0.7rem; font-weight: 600; color: #3498db; text-transform: uppercase; letter-spacing: 0.05em;">
+                      Remediation: <%= rem.lifecycle %>
+                    </div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: var(--text);"><%= rem.title %></div>
+                    <% if rem.description.present? %>
+                      <div style="font-size: 0.8rem; color: var(--text-muted);"><%= truncate(rem.description, length: 200) %></div>
+                    <% end %>
+
+                    <% rem.poam_milestones.each do |ms| %>
+                      <div style="margin-top: 0.3rem; padding: 0.3rem 0.5rem; background: rgba(39,174,96,0.06); border: 1px solid rgba(39,174,96,0.15); border-radius: 4px;">
+                        <div style="font-size: 0.68rem; font-weight: 600; color: #27ae60; text-transform: uppercase;">
+                          Milestone
+                          <% if ms.due_date.present? %>
+                            <span style="color: var(--text-muted); font-weight: 400;">&middot; Due: <%= ms.due_date.strftime("%Y-%m-%d") %></span>
+                          <% end %>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text);"><%= ms.title %></div>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# ── Related observations ── %>
+        <% if observations.any? %>
+          <div style="margin-bottom: 0.75rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Related Observations</div>
+            <% observations.each do |obs| %>
+              <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.5rem 0.8rem; margin-bottom: 0.4rem;">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text);"><%= obs.title %></div>
+                <% if obs.description.present? %>
+                  <div style="font-size: 0.82rem; color: var(--text-muted);"><%= truncate(obs.description, length: 200) %></div>
+                <% end %>
+                <div style="font-size: 0.72rem; color: var(--text-faint); margin-top: 0.2rem;">
+                  <% if obs.collected.present? %>Collected: <%= obs.collected.strftime("%Y-%m-%d") %><% end %>
+                  <% if obs.methods_data.present? %>&middot; Methods: <%= obs.methods_data.join(", ") %><% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# ── Related findings ── %>
+        <% if findings.any? %>
+          <div style="margin-bottom: 0.75rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Related Findings</div>
+            <% findings.each do |finding| %>
+              <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.5rem 0.8rem; margin-bottom: 0.4rem;">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text);"><%= finding.title %></div>
+                <% if finding.description.present? %>
+                  <div style="font-size: 0.82rem; color: var(--text-muted);"><%= truncate(finding.description, length: 200) %></div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# ── Internal Notes / Closure Evidence (read-only) ── %>
+        <% if item.internal_notes.present? %>
+          <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem;">
+            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem;">Internal Notes</div>
+            <div style="font-size: 0.85rem; white-space: pre-wrap; color: var(--text);"><%= item.internal_notes %></div>
+          </div>
+        <% end %>
+        <% if item.closure_evidence.present? %>
+          <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem;">
+            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem;">Closure Evidence</div>
+            <div style="font-size: 0.85rem; white-space: pre-wrap; color: var(--text);"><%= item.closure_evidence %></div>
           </div>
         <% end %>
       </div>
-    <% end %>
 
-    <%# ── Internal notes / closure evidence ── %>
-    <% if item.internal_notes.present? %>
-      <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem;">
-        <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem;">Internal Notes</div>
-        <div style="font-size: 0.85rem; white-space: pre-wrap; color: var(--text);"><%= item.internal_notes %></div>
+      <%# ══════ EDIT MODE (hidden initially) ══════ %>
+      <div id="edit-<%= item.id %>" style="display: none;">
+        <%= form_with url: poam_document_path(@poam_document), method: :patch, local: true do |f| %>
+          <%= hidden_field_tag :poam_item_id, item.id %>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-weight: 600; font-size: 0.82rem;">Risk Status</label>
+              <%= select_tag "fields[risk_status]",
+                    options_for_select(risk_status_options, item.risk_status),
+                    include_blank: "— Select —",
+                    class: "form-control", style: "font-size: 0.88rem;" %>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label style="font-weight: 600; font-size: 0.82rem;">Internal Notes</label>
+            <textarea name="fields[internal_notes]" class="form-control" rows="3" style="font-size: 0.88rem;" placeholder="Internal tracking notes..."><%= item.internal_notes %></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label style="font-weight: 600; font-size: 0.82rem;">Closure Evidence</label>
+            <textarea name="fields[closure_evidence]" class="form-control" rows="3" style="font-size: 0.88rem;" placeholder="Evidence or documentation for closure..."><%= item.closure_evidence %></textarea>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <%= f.submit "Save Changes", class: "btn btn-success", style: "padding: 0.35rem 0.9rem; font-size: 0.82rem;" %>
+            <button type="button" onclick="toggleItemEdit(<%= item.id %>)" class="btn btn-secondary" style="padding: 0.35rem 0.9rem; font-size: 0.82rem;">Cancel</button>
+          </div>
+        <% end %>
       </div>
-    <% end %>
-    <% if item.closure_evidence.present? %>
-      <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.6rem 0.8rem;">
-        <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem;">Closure Evidence</div>
-        <div style="font-size: 0.85rem; white-space: pre-wrap; color: var(--text);"><%= item.closure_evidence %></div>
-      </div>
-    <% end %>
+    </details>
   </div>
 <% end %>
 
@@ -284,5 +393,22 @@
       view.style.display = hidden ? 'none' : '';
       edit.style.display = hidden ? '' : 'none';
     }
+  }
+
+  function toggleItemEdit(itemId) {
+    var details = document.getElementById('details-' + itemId);
+    if (details && !details.open) details.open = true;
+
+    var view = document.getElementById('view-' + itemId);
+    var edit = document.getElementById('edit-' + itemId);
+    var btn  = document.getElementById('edit-btn-' + itemId);
+
+    var isEditing = edit.style.display !== 'none';
+
+    view.style.display   = isEditing ? '' : 'none';
+    edit.style.display   = isEditing ? 'none' : '';
+    btn.textContent      = isEditing ? 'Edit' : 'Cancel';
+    btn.style.background = isEditing ? '#3498db' : 'var(--surface-alt)';
+    btn.style.color      = isEditing ? 'white' : 'var(--text-muted)';
   }
 </script>
