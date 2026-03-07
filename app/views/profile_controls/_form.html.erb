@@ -1,0 +1,44 @@
+<%= form_with(model: [profile_document, profile_control], local: true) do |f| %>
+  <% if profile_control.errors.any? %>
+    <div style="background: var(--flash-err-bg); border: 1px solid var(--flash-err-border); border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem;">
+      <% profile_control.errors.full_messages.each do |msg| %>
+        <p style="color: var(--flash-err-text); font-size: 0.85rem; margin: 0.2rem 0;"><%= msg %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <label>Control ID <span style="color: #e74c3c;">*</span></label>
+    <%= f.text_field :control_id, class: "form-control", placeholder: "e.g. AC-1, SI-3(1)" %>
+  </div>
+
+  <div class="form-group">
+    <label>Title</label>
+    <%= f.text_field :title, class: "form-control", placeholder: "Control title" %>
+  </div>
+
+  <div class="form-group">
+    <label>Priority</label>
+    <%= f.select :priority,
+          options_for_select([["P1", "P1"], ["P2", "P2"], ["P3", "P3"]], profile_control.priority),
+          { include_blank: "-- select --" },
+          class: "form-control" %>
+  </div>
+
+  <% ProfileControlField::EDITABLE_FIELDS.each do |fname| %>
+    <% field = profile_control.profile_control_fields.find { |pcf| pcf.field_name == fname } %>
+    <div class="form-group">
+      <label>
+        <%= fname.tr("_", " ").titleize %>
+        <span style="color: var(--btn-success); font-size: 0.75rem; font-weight: 400;">(editable)</span>
+      </label>
+      <%= text_area_tag "fields[#{fname}]", field&.field_value.to_s,
+            class: "form-control", rows: 3 %>
+    </div>
+  <% end %>
+
+  <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+    <%= f.submit(profile_control.persisted? ? "Save Changes" : "Add Control", class: "btn btn-success") %>
+    <%= link_to "Cancel", profile_document_path(profile_document), class: "btn btn-secondary" %>
+  </div>
+<% end %>

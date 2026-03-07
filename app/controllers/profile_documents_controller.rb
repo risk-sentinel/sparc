@@ -4,6 +4,7 @@ class ProfileDocumentsController < ApplicationController
   before_action :set_profile_document, only: %i[
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated status
+    update_metadata
   ]
 
   PRIORITY_ORDER = %w[P1 P2 P3].freeze
@@ -84,6 +85,15 @@ class ProfileDocumentsController < ApplicationController
               disposition: "attachment"
   end
 
+  def update_metadata
+    if @profile_document.update(document_metadata_params)
+      flash[:success] = "Document updated"
+    else
+      flash[:error] = @profile_document.errors.full_messages.join(", ")
+    end
+    redirect_to profile_document_path(@profile_document)
+  end
+
   def status
     render json: {
       status: @profile_document.status,
@@ -92,6 +102,10 @@ class ProfileDocumentsController < ApplicationController
   end
 
   private
+
+  def document_metadata_params
+    params.require(:profile_document).permit(:name, :profile_version)
+  end
 
   def set_profile_document
     @profile_document = ProfileDocument.find(params[:id])
