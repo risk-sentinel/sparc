@@ -1,0 +1,42 @@
+<h2 class="h5 fw-bold text-center mb-4">Create Your Account</h2>
+
+<%= form_with model: @user, url: register_path, method: :post, local: true do |f| %>
+  <div class="row mb-3">
+    <div class="col-6">
+      <%= f.label :first_name, class: "form-label fw-semibold small" %>
+      <%= f.text_field :first_name, class: "form-control", placeholder: "Jane" %>
+    </div>
+    <div class="col-6">
+      <%= f.label :last_name, class: "form-label fw-semibold small" %>
+      <%= f.text_field :last_name, class: "form-control", placeholder: "Doe" %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :email, class: "form-label fw-semibold small" %>
+    <%= f.email_field :email, class: "form-control", placeholder: "you@example.com", required: true, autofocus: true %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :password, class: "form-label fw-semibold small" %>
+    <%= f.password_field :password, class: "form-control", placeholder: "Minimum 12 characters", required: true, minlength: 12 %>
+    <div class="form-text">Minimum 12 characters (NIST 800-63B)</div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :password_confirmation, "Confirm Password", class: "form-label fw-semibold small" %>
+    <%= f.password_field :password_confirmation, class: "form-control", placeholder: "Re-enter your password", required: true, minlength: 12 %>
+  </div>
+
+  <div class="d-grid">
+    <%= f.submit "Create Account", class: "btn btn-success fw-semibold" %>
+  </div>
+<% end %>
+
+<div class="d-flex align-items-center my-3 text-body-tertiary small">
+  <hr class="flex-grow-1 m-0"><span class="px-3">already have an account?</span><hr class="flex-grow-1 m-0">
+</div>
+
+<div class="d-grid">
+  <%= link_to "Sign In", login_path, class: "btn btn-outline-primary fw-semibold" %>
+</div>

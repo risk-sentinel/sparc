@@ -1,0 +1,67 @@
+<div class="row justify-content-center my-4">
+  <div class="col-lg-7">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 fw-bold mb-0">Edit User</h1>
+      <%= link_to "Cancel", admin_user_path(@user), class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-4">
+        <%= form_with model: @user, url: admin_user_path(@user), method: :patch, local: true do |f| %>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Email</label>
+            <input type="text" class="form-control" value="<%= @user.email %>" disabled>
+            <div class="form-text">Email cannot be changed (it's the identity anchor).</div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= f.label :first_name, class: "form-label fw-semibold small" %>
+              <%= f.text_field :first_name, class: "form-control" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :last_name, class: "form-label fw-semibold small" %>
+              <%= f.text_field :last_name, class: "form-control" %>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :display_name, class: "form-label fw-semibold small" %>
+            <%= f.text_field :display_name, class: "form-control" %>
+          </div>
+
+          <div class="mb-3 form-check">
+            <%= f.check_box :admin, class: "form-check-input" %>
+            <%= f.label :admin, "Instance Admin", class: "form-check-label fw-semibold" %>
+            <div class="form-text">Admins bypass all role checks and can manage users.</div>
+          </div>
+
+          <hr>
+          <h5 class="fw-semibold mb-3">Instance Roles</h5>
+
+          <div class="row g-2 mb-4">
+            <% @roles.each do |role| %>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input type="checkbox" name="user[role_ids][]" value="<%= role.id %>"
+                         id="role_<%= role.id %>" class="form-check-input"
+                         <%= "checked" if @user.user_roles.where(project_id: nil).exists?(role_id: role.id) %>>
+                  <label for="role_<%= role.id %>" class="form-check-label">
+                    <strong><%= role.display_name %></strong>
+                    <% if role.description.present? %>
+                      <br><small class="text-body-secondary"><%= role.description %></small>
+                    <% end %>
+                  </label>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="d-grid">
+            <%= f.submit "Save Changes", class: "btn btn-primary fw-semibold" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

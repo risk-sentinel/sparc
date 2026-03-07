@@ -1,6 +1,16 @@
 class ApplicationController < ActionController::Base
+  include Authentication
+  include Authorization
+
+  # Register custom flash types so `redirect_to path, success: "msg"` works
+  add_flash_types :success, :error, :warning
+
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
+
+  before_action :require_authentication
+  before_action :check_session_timeout
+  before_action :check_password_reset
 
   # Zero-pad single-digit control numbers so catalog lookups work regardless of
   # whether the SSP/SAR document uses "AC-1" or the catalog stores "AC-01".

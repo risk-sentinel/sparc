@@ -52,6 +52,7 @@ approach). Enable one or more to activate the login page at `/login`.
 | SPARC_ENABLE_LOCAL_LOGIN | Enable email/password login | false | `true` | No |
 | SPARC_ENABLE_EMAIL_CONFIRMATION | Require email confirmation for new local accounts | false | `true` | No |
 | SPARC_SESSION_TIMEOUT_MINUTES | Inactivity timeout in minutes | 60 | `30` | No |
+| SPARC_ADMIN_EMAIL | Email for the bootstrapped admin account | admin@sparc.local | `admin@yourorg.com` | No |
 
 ### User Registration
 
@@ -59,10 +60,30 @@ approach). Enable one or more to activate the login page at `/login`.
 | --- | --- | --- | --- | --- |
 | SPARC_ENABLE_USER_REGISTRATION | Allow self-service account creation (often false in prod) | false | `true` | No |
 
+### GitHub OAuth
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_GITHUB_CLIENT_ID | GitHub OAuth App Client ID (auto-enables GitHub login when set) | (none) | `Iv1.abc123def456` | No |
+| SPARC_GITHUB_CLIENT_SECRET | GitHub OAuth App Client Secret | (none) | `1234567890abcdef` | Yes (if GitHub) |
+
+Create an OAuth App at `https://github.com/organizations/YOUR_ORG/settings/applications`. Set the callback URL to `http://localhost:3000/auth/github/callback`.
+
+### GitLab OAuth
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_GITLAB_CLIENT_ID | GitLab Application ID (auto-enables GitLab login when set) | (none) | `abc123...` | No |
+| SPARC_GITLAB_CLIENT_SECRET | GitLab Application Secret | (none) | `def456...` | Yes (if GitLab) |
+| SPARC_GITLAB_SITE | GitLab instance URL (for self-hosted) | `https://gitlab.com` | `https://gitlab.yourorg.com` | No |
+
+Create an application at `https://gitlab.com/-/user_settings/applications`. Set the callback URL to `http://localhost:3000/auth/gitlab/callback` with `read_user` scope.
+
 ### OIDC / OAuth2 (Generic & Provider-Agnostic)
 
 These variables configure OpenID Connect login delegation
-(Okta, Entra ID, Keycloak, Auth0, etc.).
+(Okta, Entra ID, Keycloak, Auth0, etc.). See `docs/OKTA_DEV_SETUP.md` for
+an Okta-specific configuration guide.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
