@@ -1,7 +1,11 @@
 class SspDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :status, :update_metadata ]
+  before_action :set_ssp_document, only: [
+    :show, :edit, :update, :destroy,
+    :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
+    :status, :update_metadata, :enrich, :update_enrich
+  ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -15,10 +19,17 @@ class SspDocumentsController < ApplicationController
     @controls = @ssp_document.ssp_controls
                               .roots
                               .includes(:ssp_control_fields,
+                                        ssp_by_components: :ssp_component,
                                         provider_statements: :ssp_control_fields)
 
+    # OSCAL entity panels (always load regardless of creation_method)
+    @components      = @ssp_document.ssp_components.order(:title)
+    @users           = @ssp_document.ssp_users.order(:title)
+    @info_types      = @ssp_document.ssp_information_types.order(:title)
+    @leveraged_auths = @ssp_document.ssp_leveraged_authorizations.order(:title)
+
     # Build a catalog-guidance lookup keyed by normalized control_id.
-    # Normalisation (AC-1 → AC-01) bridges documents that use unpadded IDs
+    # Normalisation (AC-1 -> AC-01) bridges documents that use unpadded IDs
     # against the catalog which stores zero-padded IDs.
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl
@@ -66,6 +77,50 @@ class SspDocumentsController < ApplicationController
       redirect_to edit_ssp_document_path(@ssp_document)
     end
   end
+
+  # ── Wizard (create SSP from scratch) ─────────────────────────────
+
+  def wizard
+    @ssp_document = SspDocument.new
+    @profiles = ProfileDocument.where(status: "completed").order(:name)
+    @cdefs    = CdefDocument.where(status: "completed").order(:name)
+  end
+
+  def create_from_wizard
+    service = SspWizardService.new(wizard_params)
+    document = service.create
+
+    flash[:success] = "SSP '#{document.name}' created from wizard."
+    redirect_to ssp_document_path(document)
+  rescue StandardError => e
+    flash[:error] = "Error creating SSP: #{e.message}"
+    redirect_to wizard_ssp_documents_path
+  end
+
+  # ── Enrichment (uplift legacy SSPs) ──────────────────────────────
+
+  def enrich
+    @components  = @ssp_document.ssp_components.order(:title)
+    @users       = @ssp_document.ssp_users.order(:title)
+    @info_types  = @ssp_document.ssp_information_types.order(:title)
+  end
+
+  def update_enrich
+    ActiveRecord::Base.transaction do
+      @ssp_document.update!(enrich_params)
+      sync_information_types
+      sync_components
+      sync_users
+    end
+
+    flash[:success] = "SSP enrichment data saved."
+    redirect_to ssp_document_path(@ssp_document)
+  rescue StandardError => e
+    flash[:error] = "Error saving enrichment: #{e.message}"
+    redirect_to enrich_ssp_document_path(@ssp_document)
+  end
+
+  # ── Downloads ────────────────────────────────────────────────────
 
   def download_json
     json_data = JsonExportService.export_ssp(@ssp_document)
@@ -140,13 +195,126 @@ class SspDocumentsController < ApplicationController
     params.require(:ssp_document).permit(:name, :ssp_version)
   end
 
+  def wizard_params
+    params.permit(
+      :name, :description, :profile_document_id,
+      :system_status, :security_sensitivity_level,
+      :security_objective_confidentiality,
+      :security_objective_integrity,
+      :security_objective_availability,
+      :authorization_boundary_description,
+      cdef_document_ids: []
+    )
+  end
+
+  def enrich_params
+    params.require(:ssp_document).permit(
+      :description, :system_name_short, :system_id,
+      :system_status, :date_authorized,
+      :security_sensitivity_level,
+      :security_objective_confidentiality,
+      :security_objective_integrity,
+      :security_objective_availability,
+      :authorization_boundary_description,
+      :network_architecture_description,
+      :data_flow_description
+    )
+  end
+
   def set_ssp_document
     @ssp_document = SspDocument.find(params[:id])
   end
 
+  # ── Enrichment sync helpers ──────────────────────────────────────
+
+  def sync_information_types
+    incoming = params.dig(:ssp_document, :information_types) || []
+    existing_ids = @ssp_document.ssp_information_types.pluck(:id)
+    seen_ids = []
+
+    incoming.each do |it_params|
+      it_params = it_params.permit(:id, :title, :description,
+                                   :confidentiality_impact_base, :integrity_impact_base,
+                                   :availability_impact_base)
+      if it_params[:id].present? && existing_ids.include?(it_params[:id].to_i)
+        record = @ssp_document.ssp_information_types.find(it_params[:id])
+        record.update!(it_params.except(:id))
+        seen_ids << record.id
+      else
+        record = @ssp_document.ssp_information_types.create!(
+          uuid: SecureRandom.uuid,
+          title: it_params[:title] || "Information Type",
+          description: it_params[:description] || "No description provided.",
+          confidentiality_impact_base: it_params[:confidentiality_impact_base],
+          integrity_impact_base: it_params[:integrity_impact_base],
+          availability_impact_base: it_params[:availability_impact_base]
+        )
+        seen_ids << record.id
+      end
+    end
+
+    @ssp_document.ssp_information_types.where.not(id: seen_ids).delete_all
+  end
+
+  def sync_components
+    incoming = params.dig(:ssp_document, :components) || []
+    existing_ids = @ssp_document.ssp_components.pluck(:id)
+    seen_ids = []
+
+    incoming.each do |c_params|
+      c_params = c_params.permit(:id, :component_type, :title, :description, :status_state)
+      if c_params[:id].present? && existing_ids.include?(c_params[:id].to_i)
+        record = @ssp_document.ssp_components.find(c_params[:id])
+        record.update!(c_params.except(:id))
+        seen_ids << record.id
+      else
+        record = @ssp_document.ssp_components.create!(
+          uuid: SecureRandom.uuid,
+          component_type: c_params[:component_type] || "software",
+          title: c_params[:title] || "Component",
+          description: c_params[:description] || "No description provided.",
+          status_state: c_params[:status_state] || "operational"
+        )
+        seen_ids << record.id
+      end
+    end
+
+    # Preserve "this-system" components that aren't in the form
+    protected_ids = @ssp_document.ssp_components.this_system.pluck(:id)
+    @ssp_document.ssp_components.where.not(id: seen_ids + protected_ids).delete_all
+  end
+
+  def sync_users
+    incoming = params.dig(:ssp_document, :users) || []
+    existing_ids = @ssp_document.ssp_users.pluck(:id)
+    seen_ids = []
+
+    incoming.each do |u_params|
+      u_params = u_params.permit(:id, :title, :description, :short_name, role_ids_data: [])
+      if u_params[:id].present? && existing_ids.include?(u_params[:id].to_i)
+        record = @ssp_document.ssp_users.find(u_params[:id])
+        record.update!(u_params.except(:id))
+        seen_ids << record.id
+      else
+        record = @ssp_document.ssp_users.create!(
+          uuid: SecureRandom.uuid,
+          title: u_params[:title],
+          description: u_params[:description],
+          short_name: u_params[:short_name],
+          role_ids_data: u_params[:role_ids_data] || []
+        )
+        seen_ids << record.id
+      end
+    end
+
+    @ssp_document.ssp_users.where.not(id: seen_ids).delete_all
+  end
+
+  # ── Heatmap ──────────────────────────────────────────────────────
+
   SSP_STATUS_ORDER = [
     "Implemented", "Deferred", "Not Applicable", "Will Not Implement",
-    # Legacy values — kept so old data sorts predictably
+    # Legacy values -- kept so old data sorts predictably
     "Partially Implemented", "Planned", "Alternative Implementation", "Not Implemented"
   ].freeze
 

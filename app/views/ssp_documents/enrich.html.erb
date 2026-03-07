@@ -1,0 +1,274 @@
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h2>Enrich SSP: <%= @ssp_document.name %></h2>
+      <p style="color: var(--text-muted); margin: 0;">
+        Add system characteristics, components, and users to uplift this SSP for OSCAL-compliant export.
+      </p>
+    </div>
+    <%= link_to "Back to SSP", ssp_document_path(@ssp_document), class: "btn btn-secondary", style: "flex-shrink: 0;" %>
+  </div>
+
+  <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
+
+    <%# ── System Information ── %>
+    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        System Information
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;">
+          <div class="form-group">
+            <label>Description</label>
+            <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "System description..." %>
+          </div>
+          <div class="form-group">
+            <label>Short Name</label>
+            <%= f.text_field :system_name_short, class: "form-control", placeholder: "e.g., ACME" %>
+          </div>
+          <div class="form-group">
+            <label>System ID</label>
+            <%= f.text_field :system_id, class: "form-control", placeholder: "e.g., system-uuid" %>
+          </div>
+          <div class="form-group">
+            <label>System Status</label>
+            <%= f.select :system_status,
+                  SspDocument::SYSTEM_STATUSES.map { |s| [s.titleize, s] },
+                  { include_blank: "-- Select --" },
+                  { class: "form-control" } %>
+          </div>
+          <div class="form-group">
+            <label>Date Authorized</label>
+            <%= f.date_field :date_authorized, class: "form-control" %>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Security Levels ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Security Levels
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;">
+          <div class="form-group">
+            <label>Security Sensitivity Level</label>
+            <%= f.select :security_sensitivity_level,
+                  [["Low (FIPS 199)", "fips-199-low"], ["Moderate (FIPS 199)", "fips-199-moderate"], ["High (FIPS 199)", "fips-199-high"]],
+                  { include_blank: "-- Select --" },
+                  { class: "form-control" } %>
+          </div>
+          <div class="form-group">
+            <label>Confidentiality Objective</label>
+            <%= f.select :security_objective_confidentiality,
+                  [["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]],
+                  { include_blank: "-- Select --" },
+                  { class: "form-control" } %>
+          </div>
+          <div class="form-group">
+            <label>Integrity Objective</label>
+            <%= f.select :security_objective_integrity,
+                  [["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]],
+                  { include_blank: "-- Select --" },
+                  { class: "form-control" } %>
+          </div>
+          <div class="form-group">
+            <label>Availability Objective</label>
+            <%= f.select :security_objective_availability,
+                  [["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]],
+                  { include_blank: "-- Select --" },
+                  { class: "form-control" } %>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Authorization Boundary ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Boundaries & Architecture
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <div class="form-group">
+          <label>Authorization Boundary</label>
+          <%= f.text_area :authorization_boundary_description, class: "form-control", rows: 3,
+                placeholder: "Describe the authorization boundary..." %>
+        </div>
+        <div class="form-group">
+          <label>Network Architecture</label>
+          <%= f.text_area :network_architecture_description, class: "form-control", rows: 3,
+                placeholder: "Describe the network architecture..." %>
+        </div>
+        <div class="form-group">
+          <label>Data Flow</label>
+          <%= f.text_area :data_flow_description, class: "form-control", rows: 3,
+                placeholder: "Describe the data flow..." %>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Information Types ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Information Types (<%= @info_types.count %>)
+      </summary>
+      <div style="padding: 1rem 1.25rem;" id="info-types-container">
+        <% @info_types.each_with_index do |it, idx| %>
+          <div class="info-type-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+            <input type="hidden" name="ssp_document[information_types][][id]" value="<%= it.id %>">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Title</label>
+                <input type="text" name="ssp_document[information_types][][title]" value="<%= it.title %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Description</label>
+                <input type="text" name="ssp_document[information_types][][description]" value="<%= it.description %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.75rem;">Confidentiality (Base)</label>
+                <select name="ssp_document[information_types][][confidentiality_impact_base]" class="form-control" style="font-size: 0.85rem;">
+                  <option value="">--</option>
+                  <% %w[fips-199-low fips-199-moderate fips-199-high].each do |v| %>
+                    <option value="<%= v %>" <%= "selected" if it.confidentiality_impact_base == v %>><%= v.split("-").last.capitalize %></option>
+                  <% end %>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.75rem;">Integrity (Base)</label>
+                <select name="ssp_document[information_types][][integrity_impact_base]" class="form-control" style="font-size: 0.85rem;">
+                  <option value="">--</option>
+                  <% %w[fips-199-low fips-199-moderate fips-199-high].each do |v| %>
+                    <option value="<%= v %>" <%= "selected" if it.integrity_impact_base == v %>><%= v.split("-").last.capitalize %></option>
+                  <% end %>
+                </select>
+              </div>
+            </div>
+          </div>
+        <% end %>
+        <button type="button" onclick="addInfoType()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+          + Add Information Type
+        </button>
+      </div>
+    </details>
+
+    <%# ── Components ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Components (<%= @components.count %>)
+      </summary>
+      <div style="padding: 1rem 1.25rem;" id="components-container">
+        <% @components.reject { |c| c.component_type == "this-system" }.each do |comp| %>
+          <div class="component-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+            <input type="hidden" name="ssp_document[components][][id]" value="<%= comp.id %>">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Title</label>
+                <input type="text" name="ssp_document[components][][title]" value="<%= comp.title %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Type</label>
+                <select name="ssp_document[components][][component_type]" class="form-control" style="font-size: 0.85rem;">
+                  <% SspComponent::COMPONENT_TYPES.reject { |t| t == "this-system" }.each do |t| %>
+                    <option value="<%= t %>" <%= "selected" if comp.component_type == t %>><%= t.titleize %></option>
+                  <% end %>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                <label style="font-size: 0.75rem;">Description</label>
+                <input type="text" name="ssp_document[components][][description]" value="<%= comp.description %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+            </div>
+          </div>
+        <% end %>
+        <button type="button" onclick="addComponent()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+          + Add Component
+        </button>
+      </div>
+    </details>
+
+    <%# ── Users ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        System Users (<%= @users.count %>)
+      </summary>
+      <div style="padding: 1rem 1.25rem;" id="users-container">
+        <% @users.each do |user| %>
+          <div class="user-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+            <input type="hidden" name="ssp_document[users][][id]" value="<%= user.id %>">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Title</label>
+                <input type="text" name="ssp_document[users][][title]" value="<%= user.title %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.75rem;">Description</label>
+                <input type="text" name="ssp_document[users][][description]" value="<%= user.description %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+            </div>
+          </div>
+        <% end %>
+        <button type="button" onclick="addUser()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+          + Add User
+        </button>
+      </div>
+    </details>
+
+    <%# ── Submit ── %>
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+      <%= f.submit "Save Enrichment Data", class: "btn btn-success" %>
+      <%= link_to "Cancel", ssp_document_path(@ssp_document), class: "btn btn-secondary" %>
+    </div>
+
+  <% end %>
+</div>
+
+<script>
+  function addInfoType() {
+    var container = document.getElementById('info-types-container');
+    var html = '<div class="info-type-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
+      '<input type="text" name="ssp_document[information_types][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Information Type"></div>' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Description</label>' +
+      '<input type="text" name="ssp_document[information_types][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Description"></div>' +
+      '<div class="form-group" style="margin-bottom: 0;"><label style="font-size: 0.75rem;">Confidentiality (Base)</label>' +
+      '<select name="ssp_document[information_types][][confidentiality_impact_base]" class="form-control" style="font-size: 0.85rem;">' +
+      '<option value="">--</option><option value="fips-199-low">Low</option><option value="fips-199-moderate">Moderate</option><option value="fips-199-high">High</option></select></div>' +
+      '<div class="form-group" style="margin-bottom: 0;"><label style="font-size: 0.75rem;">Integrity (Base)</label>' +
+      '<select name="ssp_document[information_types][][integrity_impact_base]" class="form-control" style="font-size: 0.85rem;">' +
+      '<option value="">--</option><option value="fips-199-low">Low</option><option value="fips-199-moderate">Moderate</option><option value="fips-199-high">High</option></select></div>' +
+      '</div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  function addComponent() {
+    var container = document.getElementById('components-container');
+    var types = '<option value="software">Software</option><option value="hardware">Hardware</option><option value="service">Service</option>' +
+      '<option value="policy">Policy</option><option value="process-procedure">Process Procedure</option><option value="plan">Plan</option>' +
+      '<option value="guidance">Guidance</option><option value="standard">Standard</option><option value="validation">Validation</option>';
+    var html = '<div class="component-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
+      '<input type="text" name="ssp_document[components][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Component name"></div>' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Type</label>' +
+      '<select name="ssp_document[components][][component_type]" class="form-control" style="font-size: 0.85rem;">' + types + '</select></div>' +
+      '<div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;"><label style="font-size: 0.75rem;">Description</label>' +
+      '<input type="text" name="ssp_document[components][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Component description"></div>' +
+      '</div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  function addUser() {
+    var container = document.getElementById('users-container');
+    var html = '<div class="user-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
+      '<input type="text" name="ssp_document[users][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="User title"></div>' +
+      '<div class="form-group" style="margin-bottom: 0;"><label style="font-size: 0.75rem;">Description</label>' +
+      '<input type="text" name="ssp_document[users][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Description"></div>' +
+      '</div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+  }
+</script>
