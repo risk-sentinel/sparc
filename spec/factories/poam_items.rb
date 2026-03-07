@@ -3,7 +3,8 @@ FactoryBot.define do
     poam_document
     title { Faker::Lorem.sentence }
     description { Faker::Lorem.paragraph }
-    risk_status { %w[open deviation-approved closed].sample }
+    poam_item_uuid { SecureRandom.uuid }
+    risk_status { %w[open investigating remediating deviation-requested deviation-approved closed].sample }
     impact { %w[high medium low].sample }
     likelihood { %w[high medium low].sample }
     row_order { 0 }
