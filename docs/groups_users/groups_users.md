@@ -20,9 +20,9 @@
 ```mermaid
 graph TD
     subgraph "Instance / Global Level (App-Wide Roles)"
-        IA[Instance Admin<br>Full access - can do anything]
-        PM[Policy Role / Manager<br>Manage Catalogs & Profiles enterprise-wide]
-        GV[Global Viewer / Anyone with access<br>Read-only on Catalogs & Profiles]
+        IA[Instance Admin Full access - can do anything]
+        PM[Policy Role / Manager Manage Catalogs & Profiles enterprise-wide]
+        GV[Global Viewer / Anyone with access Read-only on Catalogs & Profiles]
 
         IA -->|full override| MC[Master Catalog]
         IA -->|full override| P[Profiles]
@@ -35,21 +35,21 @@ graph TD
         GV -->|read only| P
     end
 
-    subgraph "Project Level (per Project - Compliance / RMF Roles)"
-        AO[Authorizing Official (AO)<br>Accepts risk & authorizes operation]
-        SO[System Owner (SO / ISO)<br>Owns system, implements controls, maintains SSP]
-        CISO[Chief Information Security Officer (CISO)<br>Org-wide oversight, policy, risk advice]
-        ISSO[Information System Security Officer (ISSO)<br>Day-to-day security, supports SO, coordinates assessments]
-        PMem[Project Member<br>Contributes to project data, copies Profiles]
-        ASS[Assessor / 3PAO<br>View everything + R/W on SAP & SAR]
-        VO[View Only Users<br>Read-only access to project artifacts]
+    subgraph Project_Level
+        AO["Authorizing Official (AO) Accepts risk & authorizes operation"]
+        SO["System Owner (SO / ISO) Owns system, implements controls, maintains SSP"]
+        CISO["Chief Information Security Officer (CISO) Org-wide oversight, policy, risk advice"]
+        ISSO["Information System Security Officer (ISSO) Day-to-day security, supports SO, coordinates assessments"]
+        PMem["Project Member Contributes to project data, copies Profiles"]
+        ASS["Assessor / 3PAO View everything + R/W on SAP & SAR"]
+        VO["View Only Users Read-only access to project artifacts"]
 
-        PersonnelGroup[Project Personnel Group<br>• AO<br>• SO / ISO<br>• CISO (oversight)<br>• ISSO<br>• SMEs<br>• Assessors<br>• Project Members<br>• View Only]
+        PersonnelGroup["Project Personnel Group • AO • SO / ISO • CISO (oversight) • ISSO • SMEs • Assessors • Project Members • View Only"]
 
-        PersonnelGroup -->|roles & responsibilities| SSP[System Security Plan<br>Single per Project]
-        PersonnelGroup -->|roles & responsibilities| SAP[Assessment Plan<br>Single]
-        PersonnelGroup -->|roles & responsibilities| SAR[Assessment Results<br>Single]
-        PersonnelGroup -->|roles & responsibilities| POAM[POA&Ms<br>Multiple]
+        PersonnelGroup -->|roles & responsibilities| SSP[System Security Plan Single per Project]
+        PersonnelGroup -->|roles & responsibilities| SAP[Assessment Plan Single]
+        PersonnelGroup -->|roles & responsibilities| SAR[Assessment Results Single]
+        PersonnelGroup -->|roles & responsibilities| POAM[POA&Ms Multiple]
 
         AO -.->|authorizes / accepts risk| SSP
         AO -.->|reviews / decides on| SAR

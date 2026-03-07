@@ -17,7 +17,7 @@
       <% end %>
     </div>
     <div class="d-flex gap-2">
-      <%= link_to "Edit Family", edit_control_family_path(@control_family), class: "btn", style: "background: #f39c12; color: white;" %>
+      <%= link_to "Edit Family", edit_control_family_path(@control_family), class: "btn btn-sparc-orange" %>
       <%= link_to "＋ Add Control", new_control_family_catalog_control_path(@control_family), class: "btn btn-success" %>
       <%= link_to "← Back to Catalog", @control_catalog, class: "btn btn-primary" %>
     </div>
@@ -105,8 +105,7 @@
             <%# ── Actions column ── %>
             <td style="vertical-align: top; padding-top: 0.45rem;">
               <div class="d-flex flex-wrap gap-1">
-                <%= link_to "Edit", edit_catalog_control_path(control), class: "btn btn-sm",
-                    style: "background: #f39c12; color: white;" %>
+                <%= link_to "Edit", edit_catalog_control_path(control), class: "btn btn-sm btn-sparc-orange" %>
                 <% if depth == 0 %>
                   <%= button_to "Delete", catalog_control_path(control), method: :delete,
                       data: { confirm: "Delete #{control.control_id}? This also removes all its sub-parts." },
