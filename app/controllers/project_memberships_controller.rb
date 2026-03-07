@@ -48,6 +48,9 @@ class ProjectMembershipsController < ApplicationController
   end
 
   def membership_params
-    params.require(:project_membership).permit(:user_name, :user_email, :role)
+    permitted = params.require(:project_membership).permit(:user_name, :user_email)
+    role = params.dig(:project_membership, :role)
+    permitted[:role] = role if role.present? && ProjectMembership::ROLES.include?(role)
+    permitted
   end
 end
