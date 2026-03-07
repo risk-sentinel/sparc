@@ -1865,3 +1865,65 @@ if SparcConfig.enable_local_login? && !User.exists?(admin: true)
 else
   puts "Admin bootstrapping skipped (local login disabled or admin already exists)."
 end
+
+# ── Sample Project ──────────────────────────────────────────────
+puts "\nSeeding sample Project..."
+
+project = Project.find_or_create_by!(name: "Cloud Web Application ATO") do |p|
+  p.description = "Authorization to Operate package for the organization's cloud-based web application. " \
+                   "Encompasses production and development environments under a single authorization boundary."
+  p.status = "active"
+  p.authorization_boundary_description = "The authorization boundary includes all cloud infrastructure, " \
+                                          "application servers, databases, and supporting services hosted in the " \
+                                          "organization's AWS GovCloud environment."
+end
+
+# Link existing SSP if present
+if (ssp = SspDocument.first)
+  ssp.update!(project: project) unless ssp.project_id
+  puts "  Linked SSP '#{ssp.name}' to project"
+end
+
+# Link existing SAR if present
+if (sar = SarDocument.first)
+  sar.update!(project: project) unless sar.project_id
+  puts "  Linked SAR '#{sar.name}' to project"
+end
+
+# Create boundaries
+prod_boundary = project.boundaries.find_or_create_by!(name: "Production Environment") do |b|
+  b.description = "Production cloud infrastructure hosting the web application"
+  b.environment = "production"
+end
+
+dev_boundary = project.boundaries.find_or_create_by!(name: "Development Environment") do |b|
+  b.description = "Development and testing infrastructure"
+  b.environment = "development"
+end
+
+# Associate CDEFs with boundaries if any exist
+cdefs = CdefDocument.where(status: "completed").limit(3)
+cdefs.each do |cdef|
+  BoundaryCdefDocument.find_or_create_by!(boundary: prod_boundary, cdef_document: cdef)
+end
+puts "  Created #{project.boundaries.count} boundaries with #{BoundaryCdefDocument.count} component associations"
+
+# Create sample project memberships
+sample_members = [
+  { user_name: "Jane Smith",     user_email: "jane.smith@example.gov",    role: "authorizing_official" },
+  { user_name: "John Doe",       user_email: "john.doe@example.gov",      role: "system_owner" },
+  { user_name: "Sarah Johnson",  user_email: "sarah.johnson@example.gov", role: "isso" },
+  { user_name: "Mike Williams",  user_email: "mike.williams@example.gov", role: "ciso" },
+  { user_name: "Emily Chen",     user_email: "emily.chen@example.gov",    role: "project_member" },
+  { user_name: "David Brown",    user_email: "david.brown@example.gov",   role: "assessor" },
+  { user_name: "Lisa Taylor",    user_email: "lisa.taylor@example.gov",   role: "view_only" }
+]
+
+sample_members.each do |attrs|
+  project.project_memberships.find_or_create_by!(user_name: attrs[:user_name], role: attrs[:role]) do |m|
+    m.user_email = attrs[:user_email]
+  end
+end
+puts "  Created #{project.project_memberships.count} project memberships"
+
+puts "Done! Sample project seeded."

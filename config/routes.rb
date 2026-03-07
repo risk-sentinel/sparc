@@ -17,6 +17,11 @@ Rails.application.routes.draw do
   match "auth/:provider/callback", to: "omniauth_callbacks#create", via: [ :get, :post ]
   get "auth/failure", to: "omniauth_callbacks#failure"
 
+  resources :projects do
+    resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :project_memberships, only: [ :new, :create, :edit, :update, :destroy ]
+  end
+
   resources :ssp_documents do
     member do
       patch :update_metadata
