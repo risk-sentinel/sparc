@@ -3,6 +3,6 @@ FactoryBot.define do
     ssp_document
     uuid { SecureRandom.uuid }
     title { Faker::Job.title }
-    role_ids_data { ["system-owner"] }
+    role_ids_data { [ "system-owner" ] }
   end
 end
