@@ -1,0 +1,11 @@
+title = "SPARC Gitleaks Configuration"
+
+[allowlist]
+  description = "Global allowlist"
+  paths = [
+    '''\.env\.example$''',
+    '''\.env\.production\.example$''',
+    '''spec/fixtures/''',
+    '''vendor/''',
+    '''node_modules/''',
+  ]

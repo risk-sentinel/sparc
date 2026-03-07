@@ -1,0 +1,182 @@
+name: Security Scanning
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  secrets_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Gitleaks SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: gitleaks
+
+      - name: Upload Gitleaks SARIF as artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: gitleaks-sarif
+          path: results.sarif
+          retention-days: 90
+
+  dependency_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Install bundler-audit
+        run: gem install bundler-audit
+
+      - name: Update advisory database
+        run: bundle-audit update
+
+      - name: Run bundler-audit
+        run: bundle-audit check --format json --output bundler-audit-results.json
+        continue-on-error: true
+
+      - name: Upload bundler-audit results as artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bundler-audit-json
+          path: bundler-audit-results.json
+          retention-days: 90
+
+  trivy_fs_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Trivy filesystem scan (SARIF)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          scanners: 'vuln,misconfig,secret'
+
+      - name: Upload Trivy FS SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-fs-results.sarif
+          category: trivy-fs
+
+      - name: Run Trivy filesystem scan (CycloneDX for SAF)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'cyclonedx'
+          output: 'trivy-fs-sbom.cdx.json'
+          scanners: 'vuln'
+
+      - name: Upload Trivy FS artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: trivy-fs-results
+          path: |
+            trivy-fs-results.sarif
+            trivy-fs-sbom.cdx.json
+          retention-days: 90
+
+  trivy_container_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t sparc:${{ github.sha }} .
+
+      - name: Run Trivy container scan (SARIF)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'sparc:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-container-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          scanners: 'vuln'
+
+      - name: Upload Trivy container SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-container-results.sarif
+          category: trivy-container
+
+      - name: Run Trivy container scan (CycloneDX for SAF)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'sparc:${{ github.sha }}'
+          format: 'cyclonedx'
+          output: 'trivy-container-sbom.cdx.json'
+          scanners: 'vuln'
+
+      - name: Upload Trivy container artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: trivy-container-results
+          path: |
+            trivy-container-results.sarif
+            trivy-container-sbom.cdx.json
+          retention-days: 90
+
+  sbom_generation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Install cyclonedx-ruby
+        run: gem install cyclonedx-ruby
+
+      - name: Generate CycloneDX SBOM
+        run: cyclonedx-ruby -p . -o sbom-ruby.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: sbom-cyclonedx
+          path: sbom-ruby.cdx.json
+          retention-days: 90
