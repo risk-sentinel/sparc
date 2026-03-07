@@ -1,14 +1,14 @@
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Security Assessment Results</h2>
-    <div style="display: flex; gap: 0.5rem;">
+    <div class="d-flex gap-2">
       <%= link_to "Create from Wizard", wizard_sar_documents_path, class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
       <%= link_to "Upload New", new_sar_document_path, class: "btn btn-success" %>
     </div>
   </div>
 
   <% if @sar_documents.any? %>
-    <table>
+    <table class="table table-hover">
       <thead>
         <tr>
           <th>Name</th>
@@ -42,13 +42,13 @@
                 <%= source_label %>
               </span>
             </td>
-            <td style="font-size: 0.85rem; color: var(--text-muted);"><%= doc.sar_version.presence || "\u2014" %></td>
-            <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %>" style="padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600;"><%= doc.status %></span></td>
+            <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.sar_version.presence || "\u2014" %></td>
+            <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;"><%= doc.status %></span></td>
             <td>
               <% if doc.enriched? %>
                 <span style="background: rgba(46,204,113,0.15); color: #27ae60; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">Enriched</span>
               <% else %>
-                <span style="color: var(--text-faint); font-size: 0.78rem;">Basic</span>
+                <span class="text-body-secondary" style="font-size: 0.78rem;">Basic</span>
               <% end %>
             </td>
             <td><%= doc.sar_controls.count %></td>
@@ -65,6 +65,6 @@
       </tbody>
     </table>
   <% else %>
-    <p style="text-align: center; padding: 2rem; color: var(--text-muted);">No Security Assessment Results found. Upload a workbook or create from the wizard to get started.</p>
+    <p class="text-center p-4 text-body-secondary">No Security Assessment Results found. Upload a workbook or create from the wizard to get started.</p>
   <% end %>
 </div>

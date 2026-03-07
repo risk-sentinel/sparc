@@ -1,8 +1,8 @@
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2>Enrich SSP: <%= @ssp_document.name %></h2>
-      <p style="color: var(--text-muted); margin: 0;">
+      <p class="text-body-secondary" style="margin: 0;">
         Add system characteristics, components, and users to uplift this SSP for OSCAL-compliant export.
       </p>
     </div>
@@ -12,12 +12,12 @@
   <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
 
     <%# ── System Information ── %>
-    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         System Information
       </summary>
       <div style="padding: 1rem 1.25rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;">
+        <div class="row row-cols-1 row-cols-md-2 g-3" style="gap: 0.75rem 1.25rem;">
           <div class="form-group">
             <label>Description</label>
             <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "System description..." %>
@@ -46,12 +46,12 @@
     </details>
 
     <%# ── Security Levels ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         Security Levels
       </summary>
       <div style="padding: 1rem 1.25rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;">
+        <div class="row row-cols-1 row-cols-md-2 g-3">
           <div class="form-group">
             <label>Security Sensitivity Level</label>
             <%= f.select :security_sensitivity_level,
@@ -85,8 +85,8 @@
     </details>
 
     <%# ── Authorization Boundary ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         Boundaries & Architecture
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -109,15 +109,15 @@
     </details>
 
     <%# ── Information Types ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         Information Types (<%= @info_types.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="info-types-container">
         <% @info_types.each_with_index do |it, idx| %>
-          <div class="info-type-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+          <div class="info-type-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
             <input type="hidden" name="ssp_document[information_types][][id]" value="<%= it.id %>">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
                 <label style="font-size: 0.75rem;">Title</label>
                 <input type="text" name="ssp_document[information_types][][title]" value="<%= it.title %>" class="form-control" style="font-size: 0.85rem;">
@@ -154,15 +154,15 @@
     </details>
 
     <%# ── Components ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         Components (<%= @components.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="components-container">
         <% @components.reject { |c| c.component_type == "this-system" }.each do |comp| %>
-          <div class="component-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+          <div class="component-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
             <input type="hidden" name="ssp_document[components][][id]" value="<%= comp.id %>">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
                 <label style="font-size: 0.75rem;">Title</label>
                 <input type="text" name="ssp_document[components][][title]" value="<%= comp.title %>" class="form-control" style="font-size: 0.85rem;">
@@ -189,15 +189,15 @@
     </details>
 
     <%# ── Users ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         System Users (<%= @users.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="users-container">
         <% @users.each do |user| %>
-          <div class="user-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+          <div class="user-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
             <input type="hidden" name="ssp_document[users][][id]" value="<%= user.id %>">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
                 <label style="font-size: 0.75rem;">Title</label>
                 <input type="text" name="ssp_document[users][][title]" value="<%= user.title %>" class="form-control" style="font-size: 0.85rem;">
@@ -216,7 +216,7 @@
     </details>
 
     <%# ── Submit ── %>
-    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <div class="d-flex gap-3 mt-3">
       <%= f.submit "Save Enrichment Data", class: "btn btn-success" %>
       <%= link_to "Cancel", ssp_document_path(@ssp_document), class: "btn btn-secondary" %>
     </div>
@@ -227,8 +227,8 @@
 <script>
   function addInfoType() {
     var container = document.getElementById('info-types-container');
-    var html = '<div class="info-type-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
-      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+    var html = '<div class="info-type-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">' +
+      '<div class="row row-cols-1 row-cols-md-2 g-2">' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
       '<input type="text" name="ssp_document[information_types][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Information Type"></div>' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Description</label>' +
@@ -248,8 +248,8 @@
     var types = '<option value="software">Software</option><option value="hardware">Hardware</option><option value="service">Service</option>' +
       '<option value="policy">Policy</option><option value="process-procedure">Process Procedure</option><option value="plan">Plan</option>' +
       '<option value="guidance">Guidance</option><option value="standard">Standard</option><option value="validation">Validation</option>';
-    var html = '<div class="component-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
-      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+    var html = '<div class="component-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">' +
+      '<div class="row row-cols-1 row-cols-md-2 g-2">' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
       '<input type="text" name="ssp_document[components][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Component name"></div>' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Type</label>' +
@@ -262,8 +262,8 @@
 
   function addUser() {
     var container = document.getElementById('users-container');
-    var html = '<div class="user-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
-      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+    var html = '<div class="user-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">' +
+      '<div class="row row-cols-1 row-cols-md-2 g-2">' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
       '<input type="text" name="ssp_document[users][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="User title"></div>' +
       '<div class="form-group" style="margin-bottom: 0;"><label style="font-size: 0.75rem;">Description</label>' +

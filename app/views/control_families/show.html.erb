@@ -1,21 +1,22 @@
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div class="card-body">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-        <span style="font-family: monospace; font-size: 1.5rem; font-weight: 700; color: var(--text); background: var(--surface-alt); padding: 0.3rem 0.8rem; border-radius: 6px;">
+      <div class="d-flex align-items-center gap-3" style="margin-bottom: 0.5rem;">
+        <span class="fw-bold bg-body-secondary rounded" style="font-family: monospace; font-size: 1.5rem; padding: 0.3rem 0.8rem;">
           <%= @control_family.code %>
         </span>
         <h2 style="margin: 0;"><%= @control_family.name %></h2>
       </div>
-      <p style="color: var(--text-muted);">
-        Catalog: <%= link_to @control_catalog.name, @control_catalog, style: "color: var(--link-accent);" %> &nbsp;|&nbsp;
+      <p class="text-body-secondary">
+        Catalog: <%= link_to @control_catalog.name, @control_catalog, class: "text-primary" %> &nbsp;|&nbsp;
         Controls: <strong><%= @catalog_controls.size %></strong>
       </p>
       <% if @control_family.description.present? %>
-        <p style="margin-top: 0.5rem; color: var(--text-muted);"><%= @control_family.description %></p>
+        <p class="text-body-secondary" style="margin-top: 0.5rem;"><%= @control_family.description %></p>
       <% end %>
     </div>
-    <div style="display: flex; gap: 0.75rem;">
+    <div class="d-flex gap-2">
       <%= link_to "Edit Family", edit_control_family_path(@control_family), class: "btn", style: "background: #f39c12; color: white;" %>
       <%= link_to "＋ Add Control", new_control_family_catalog_control_path(@control_family), class: "btn btn-success" %>
       <%= link_to "← Back to Catalog", @control_catalog, class: "btn btn-primary" %>
@@ -34,12 +35,12 @@
         suffix.blank? ? 0 : suffix.scan(/[a-z]|\.\d+|\.\([^)]+\)/).size
       }
     %>
-    <table>
+    <table class="table table-hover">
       <thead>
         <tr>
           <th style="width: 150px;">Control ID</th>
           <th>Title / Statement</th>
-          <th style="width: 60px; text-align: center;">Priority</th>
+          <th class="text-center" style="width: 60px;">Priority</th>
           <th style="width: 160px;">Baseline Impact</th>
           <th style="width: 130px;">Actions</th>
         </tr>
@@ -53,7 +54,7 @@
             <%# ── Control ID column ── %>
             <td style="padding-left: <%= 0.5 + depth * 1.1 %>rem; vertical-align: top; padding-top: 0.55rem;">
               <% if depth > 0 %>
-                <span style="color: var(--border); margin-right: 0.25rem; font-size: 0.75rem;">&#x2514;</span>
+                <span style="color: var(--bs-border-color); margin-right: 0.25rem; font-size: 0.75rem;">&#x2514;</span>
               <% end %>
               <span style="font-family: monospace;
                            font-weight: <%= depth == 0 ? 700 : 500 %>;
@@ -67,28 +68,28 @@
             <td style="vertical-align: top;">
               <% if depth == 0 %>
                 <%# Base control: show title prominently, then statement below %>
-                <div style="font-weight: 600; color: var(--text); font-size: 0.9rem;">
+                <div class="fw-semibold small">
                   <%= control.title.presence || "<em style='color:#aaa; font-weight:400;'>No title</em>".html_safe %>
                 </div>
                 <% if stmt_text.present? %>
-                  <div style="margin-top: 0.3rem; color: var(--text-muted); font-size: 0.8rem; line-height: 1.4;">
+                  <div class="text-body-secondary" style="margin-top: 0.3rem; font-size: 0.8rem; line-height: 1.4;">
                     <%= truncate(stmt_text, length: 200) %>
                   </div>
                 <% end %>
               <% else %>
                 <%# Sub-part: show statement prose as the primary content %>
                 <% if stmt_text.present? %>
-                  <span style="color: var(--text-muted); font-size: 0.875rem;"><%= truncate(stmt_text, length: 150) %></span>
+                  <span class="text-body-secondary" style="font-size: 0.875rem;"><%= truncate(stmt_text, length: 150) %></span>
                 <% else %>
-                  <span style="color: var(--text-faint); font-size: 0.85rem; font-style: italic;"><%= control.title.presence || "No statement" %></span>
+                  <span class="text-body-tertiary" style="font-size: 0.85rem; font-style: italic;"><%= control.title.presence || "No statement" %></span>
                 <% end %>
               <% end %>
             </td>
 
             <%# ── Priority column ── %>
-            <td style="text-align: center; vertical-align: top; padding-top: 0.55rem;">
+            <td class="text-center" style="vertical-align: top; padding-top: 0.55rem;">
               <% if control.priority.present? %>
-                <span style="background: var(--surface-alt); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.82rem; font-weight: 600;">
+                <span class="bg-body-secondary rounded fw-semibold" style="padding: 0.2rem 0.5rem; font-size: 0.82rem;">
                   <%= control.priority %>
                 </span>
               <% else %>
@@ -97,20 +98,19 @@
             </td>
 
             <%# ── Baseline Impact column ── %>
-            <td style="font-size: 0.82rem; color: var(--text-muted); vertical-align: top; padding-top: 0.55rem;">
+            <td class="text-body-secondary" style="font-size: 0.82rem; vertical-align: top; padding-top: 0.55rem;">
               <%= control.baseline_impact.presence || (depth == 0 ? "—" : "") %>
             </td>
 
             <%# ── Actions column ── %>
             <td style="vertical-align: top; padding-top: 0.45rem;">
-              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                <%= link_to "Edit", edit_catalog_control_path(control), class: "btn",
-                    style: "background: #f39c12; color: white; padding: 0.28rem 0.6rem; font-size: 0.78rem;" %>
+              <div class="d-flex flex-wrap gap-1">
+                <%= link_to "Edit", edit_catalog_control_path(control), class: "btn btn-sm",
+                    style: "background: #f39c12; color: white;" %>
                 <% if depth == 0 %>
                   <%= button_to "Delete", catalog_control_path(control), method: :delete,
                       data: { confirm: "Delete #{control.control_id}? This also removes all its sub-parts." },
-                      class: "btn btn-danger",
-                      style: "padding: 0.28rem 0.6rem; font-size: 0.78rem;" %>
+                      class: "btn btn-danger btn-sm" %>
                 <% end %>
               </div>
             </td>
@@ -119,10 +119,11 @@
       </tbody>
     </table>
   <% else %>
-    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+    <div class="text-center text-body-secondary p-4">
       <p>No controls in this family yet.
-        <%= link_to "Add the first control", new_control_family_catalog_control_path(@control_family), style: "color: var(--link-accent);" %>
+        <%= link_to "Add the first control", new_control_family_catalog_control_path(@control_family), class: "text-primary" %>
       </p>
     </div>
   <% end %>
+  </div>
 </div>
