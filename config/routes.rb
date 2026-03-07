@@ -32,6 +32,16 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :profile_documents do
+    member do
+      get :download_json
+      get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
+      get :status
+    end
+  end
+
   resources :cdef_documents do
     member do
       get :download_json

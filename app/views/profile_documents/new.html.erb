@@ -1,0 +1,65 @@
+<div class="card">
+  <h2>Upload OSCAL Profile (Baseline)</h2>
+
+  <%= form_with model: @profile_document, local: true, multipart: true do |f| %>
+    <div class="form-group">
+      <label for="profile_document_file">Select Profile File (.json, .xml)</label>
+      <%= f.file_field :file, accept: ".json,.xml", required: true %>
+      <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+        Upload an OSCAL Profile JSON or XML file. Supports NIST SP 800-53 baselines (LOW, MODERATE, HIGH), FedRAMP, and custom profiles.
+      </small>
+    </div>
+
+    <div style="display: flex; gap: 1rem;">
+      <%= f.submit "Upload and Process", class: "btn btn-success" %>
+      <%= link_to "Cancel", profile_documents_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="card">
+  <h3>Supported Formats</h3>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">SPARC parses OSCAL Profile files to extract selected controls, priority levels, and parameter modifications.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Format</th>
+        <th>Extension</th>
+        <th>Sources</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>OSCAL Profile JSON</strong></td>
+        <td>.json</td>
+        <td>NIST SP 800-53 baselines, FedRAMP profiles, custom OSCAL profiles</td>
+      </tr>
+      <tr>
+        <td><strong>OSCAL Profile XML</strong></td>
+        <td>.xml</td>
+        <td>NIST SP 800-53 baselines in XML format, other OSCAL-compliant profile XML</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3>Export Capabilities</h3>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">After processing, profiles can be exported in the following formats:</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid var(--link-purple); border-radius: 6px; padding: 1rem;">
+      <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--link-purple);">OSCAL Profile</div>
+      <div style="font-size: 0.88rem; color: var(--text-muted);">
+        NIST OSCAL v1.1.2 compliant Profile JSON. Includes selected controls, priority assignments, and parameter modifications.
+      </div>
+    </div>
+    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid var(--btn-success); border-radius: 6px; padding: 1rem;">
+      <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--btn-success);">SPARC JSON</div>
+      <div style="font-size: 0.88rem; color: var(--text-muted);">
+        Standard SPARC JSON export with document metadata, selected controls, and all associated fields.
+      </div>
+    </div>
+  </div>
+</div>

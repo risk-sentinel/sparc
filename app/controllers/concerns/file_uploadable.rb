@@ -1,4 +1,4 @@
-# Shared upload logic for document controllers (SSP, SAR, CDEF).
+# Shared upload logic for document controllers (SSP, SAR, CDEF, Profile).
 #
 # Extracts the duplicated create-action pattern:
 #   1. Validate file presence
@@ -23,13 +23,15 @@ module FileUploadable
   SAFE_EXTENSIONS = {
     "excel" => ".xlsx",
     "xccdf" => ".xml",
-    "json"  => ".json"
+    "json"  => ".json",
+    "xml"   => ".xml"
   }.freeze
 
   SAFE_PREFIXES = {
     ssp:     "ssp",
     sar:     "sar",
-    cdef: "cdef"
+    cdef:    "cdef",
+    profile: "profile"
   }.freeze
 
   private

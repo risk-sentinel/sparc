@@ -1,0 +1,344 @@
+<%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
+<% unless @profile_document.completed? %>
+  <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white; text-align: center;">
+    <% if @profile_document.failed? %>
+      <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
+      <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
+      <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+        <%= @profile_document.error_message.presence || "An unknown error occurred." %>
+      </p>
+      <div style="margin-top: 1.25rem;">
+        <%= link_to "&#8592; Back to Profiles".html_safe, profile_documents_path,
+              style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);" %>
+      </div>
+    <% else %>
+      <div style="margin-bottom: 0.75rem;">
+        <span style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #f39c12; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+      </div>
+      <h2 style="color: #f39c12; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Your Profile</h2>
+      <p style="color: rgba(255,255,255,0.6); font-size: 0.88rem;">
+        <strong><%= @profile_document.original_filename %></strong> is being parsed.
+        This page will automatically refresh when processing is complete.
+      </p>
+    <% end %>
+  </div>
+
+  <% unless @profile_document.failed? %>
+    <meta http-equiv="refresh" content="5">
+  <% end %>
+
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+
+<% else %>
+<%
+  priority_total = @priority_counts.values.sum
+  p1_count = @priority_counts["P1"].to_i
+  p2_count = @priority_counts["P2"].to_i
+  p3_count = @priority_counts["P3"].to_i
+  none_count = @priority_counts[nil].to_i + (@priority_counts.reject { |k, _| %w[P1 P2 P3].include?(k) || k.nil? }.values.sum)
+
+  level_colors = { "LOW" => "#27ae60", "MODERATE" => "#f39c12", "HIGH" => "#e74c3c" }
+  level_color  = level_colors[@profile_document.baseline_level] || "#7f8c8d"
+%>
+
+<%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
+<div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
+    <div>
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">OSCAL Profile / Baseline</div>
+      <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0 0 0.3rem;"><%= @profile_document.name %></h2>
+      <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5);">
+        <%= @profile_document.original_filename %>
+        &nbsp;&bull;&nbsp;
+        <span style="color: <%= level_color %>; font-weight: 600;"><%= @profile_document.baseline_level || "Custom" %></span>
+        &nbsp;&bull;&nbsp; <%= @total_controls %> controls
+        <% if @profile_document.profile_version.present? %>
+          &nbsp;&bull;&nbsp; v<%= @profile_document.profile_version %>
+        <% end %>
+      </div>
+      <% if @profile_document.description.present? %>
+        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@profile_document.description, length: 200) %></div>
+      <% end %>
+    </div>
+    <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
+      <%= link_to "Export OSCAL".html_safe, download_oscal_profile_document_path(@profile_document),
+            style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
+      <%= link_to "&#8595; JSON".html_safe, download_json_profile_document_path(@profile_document),
+            style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
+      <%= link_to "&#8592; Back".html_safe, profile_documents_path,
+            style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
+      <div style="font-size: 2.6rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= @total_controls %></div>
+      <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">Selected Controls</div>
+    </div>
+
+    <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; flex: 1;">
+      <% [["P1", p1_count, "#e74c3c"], ["P2", p2_count, "#f39c12"], ["P3", p3_count, "#3498db"], ["None", none_count, "#95a5a6"]].each do |pri, count, color| %>
+        <% next if count == 0 %>
+        <div class="summary-chip"
+             data-filter-priority="<%= pri %>"
+             onclick="filterByPriority(this.dataset.filterPriority)"
+             title="Click to filter: <%= pri %>"
+             style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= color %>; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; transition: background 0.15s; min-width: 64px;">
+          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= count %></div>
+          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;"><%= pri %></div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.25rem;">
+    <div style="height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: rgba(255,255,255,0.08);">
+      <% [["P1", p1_count, "#e74c3c"], ["P2", p2_count, "#f39c12"], ["P3", p3_count, "#3498db"], ["None", none_count, "#95a5a6"]].each do |pri, count, color| %>
+        <% next if count == 0 %>
+        <div style="width: <%= (count * 100.0 / [priority_total, 1].max).round(3) %>%; background: <%= color %>;" title="<%= pri %>: <%= count %>"></div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ── PRIORITY HEATMAP BY CONTROL FAMILY ─────────────────────────── %>
+<% if @heatmap_families.any? %>
+<details id="heatmapSection" open style="margin-bottom: 1.5rem;">
+  <summary style="cursor: pointer; padding: 0.7rem 1rem; background: var(--summary-bg); border-radius: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; border: 1px solid var(--border-soft);">
+    <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
+    Priority by Control Family
+    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">&mdash; click a badge to filter</span>
+  </summary>
+
+  <div style="padding: 1rem 0 0.5rem;">
+    <div id="heatmapFilterBanner"
+         style="display: none; background: #1a252f; color: white; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; gap: 0.75rem;">
+      <span id="heatmapFilterLabel" style="font-size: 0.88rem; color: rgba(255,255,255,0.9);"></span>
+      <button onclick="clearHeatmapFilter()"
+              style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap;">
+        &#x2715; Clear Filter
+      </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 0.7rem;">
+      <% pri_colors = { "P1" => "#e74c3c", "P2" => "#f39c12", "P3" => "#3498db", "(None)" => "#95a5a6" } %>
+      <% @heatmap_families.each do |family| %>
+        <% fd = @heatmap_data[family] || {} %>
+        <% ft = fd.values.sum %>
+        <% fp1 = fd["P1"].to_i %>
+        <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
+            <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
+               style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text); text-decoration: none; cursor: pointer;"><%= family %></a>
+            <% if fp1 > 0 %>
+              <span style="font-size: 0.72rem; font-weight: 700; color: #e74c3c;"><%= fp1 %> P1</span>
+            <% end %>
+          </div>
+          <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= ft %> controls</div>
+          <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: var(--border-soft); margin-bottom: 0.55rem;">
+            <% @heatmap_priorities.each do |pri| %>
+              <% next if (fd[pri] || 0) == 0 %>
+              <div style="width: <%= ((fd[pri] || 0) * 100.0 / [ft, 1].max).round(3) %>%; background: <%= pri_colors[pri] || '#7f8c8d' %>;"></div>
+            <% end %>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+            <% @heatmap_priorities.each do |pri| %>
+              <% next if (fd[pri] || 0) == 0 %>
+              <div class="heatmap-cell"
+                   data-family="<%= family %>" data-priority="<%= pri %>"
+                   onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.priority)"
+                   title="<%= family %> / <%= pri %>: <%= fd[pri] %>"
+                   style="background: <%= pri_colors[pri] || '#7f8c8d' %>; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
+                <%= fd[pri] %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.5rem 0;">
+      <span style="font-size: 0.72rem; color: var(--text-faint);">Legend:</span>
+      <% [["P1 (High)", "#e74c3c"], ["P2 (Medium)", "#f39c12"], ["P3 (Low)", "#3498db"], ["None", "#95a5a6"]].each do |lbl, col| %>
+        <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--text-muted);">
+          <span style="display: inline-block; width: 11px; height: 11px; background: <%= col %>; border-radius: 2px; flex-shrink: 0;"></span><%= lbl %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+</details>
+<% end %>
+
+<%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
+<div id="controlsContainer">
+  <% @controls.each do |control| %>
+    <%
+      field_map    = control.profile_control_fields.index_by(&:field_name)
+      pri_val      = control.priority.presence || "(None)"
+      pri_colors_map = { "P1" => "#e74c3c", "P2" => "#f39c12", "P3" => "#3498db" }
+      pri_color    = pri_colors_map[pri_val] || "#95a5a6"
+      family_code  = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
+    %>
+    <div class="control-card"
+         data-family="<%= family_code %>"
+         data-priority="<%= pri_val %>"
+         style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= pri_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+
+      <%# ── Card header ── %>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div style="min-width: 0; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
+            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);">
+              <%= control.control_id.presence || "&mdash;".html_safe %>
+            </span>
+            <span style="background: <%= pri_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;">
+              <%= pri_val %>
+            </span>
+            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace; margin-left: 0.1rem;"><%= family_code %></span>
+          </div>
+          <% if control.title.present? %>
+            <div style="font-size: 0.85rem; color: var(--text); font-weight: 500;"><%= control.title %></div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Card body: collapsed by default ── %>
+      <% param_fields = field_map.select { |k, _| k.start_with?("parameter:") } %>
+      <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
+      <% has_details  = param_fields.any? || prop_fields.any? %>
+      <% if has_details %>
+        <details class="card-details" style="margin-top: 0.35rem;">
+          <summary style="cursor: pointer; font-size: 0.7rem; color: var(--text-faint); padding: 0.2rem 0; list-style: none; display: flex; align-items: center; gap: 0.3rem; user-select: none;">
+            <span class="card-arrow" style="font-size: 0.55rem;">&#9658;</span>
+            <span style="border-top: 1px solid var(--border-soft); flex: 1; margin-left: 0.2rem;"></span>
+          </summary>
+
+          <div style="margin-top: 0.5rem;">
+            <% if param_fields.any? %>
+              <div style="background: rgba(41,128,185,0.07); border: 1px solid rgba(41,128,185,0.2); border-left: 3px solid #2980b9; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
+                <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link-accent); font-weight: 700; margin-bottom: 0.35rem;">Parameters</div>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <% param_fields.each do |fname, field| %>
+                    <tr style="border-top: 1px solid var(--border-soft);">
+                      <td style="width: 40%; padding: 0.3rem 0.5rem 0.3rem 0; font-size: 0.72rem; color: var(--text-faint); font-family: monospace; vertical-align: top;">
+                        <%= fname.delete_prefix("parameter:") %>
+                      </td>
+                      <td style="padding: 0.3rem 0; font-size: 0.84rem; color: var(--text);">
+                        <%= field.field_value %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </table>
+              </div>
+            <% end %>
+
+            <% if prop_fields.any? %>
+              <table style="width: 100%; border-collapse: collapse;">
+                <% prop_fields.each do |fname, field| %>
+                  <tr style="border-top: 1px solid var(--border-soft);">
+                    <td style="width: 30%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top;">
+                      <%= fname.delete_prefix("prop:").tr("_", " ") %>
+                    </td>
+                    <td style="padding: 0.4rem 0; font-size: 0.84rem; color: var(--text);">
+                      <%= field.field_value %>
+                    </td>
+                  </tr>
+                <% end %>
+              </table>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+    </div><%# end .control-card %>
+  <% end %>
+</div>
+
+<script>
+  var activeFamily = null;
+  var activePriority = null;
+
+  function filterByHeatmapCell(cellEl, family, priority) {
+    if (activeFamily === family && activePriority === priority) { clearHeatmapFilter(); return; }
+    activeFamily = family; activePriority = priority;
+    applyFilter();
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = (el.dataset.family === family && el.dataset.priority === priority) ? '1' : '0.35';
+      el.style.outline = 'none';
+    });
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
+    if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
+  }
+
+  function filterByFamily(family) {
+    if (activeFamily === family && activePriority === null) { clearHeatmapFilter(); return; }
+    activeFamily = family; activePriority = null;
+    applyFilter();
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = el.dataset.family === family ? '1' : '0.35'; el.style.outline = 'none';
+    });
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
+  }
+
+  function filterByPriority(priority) {
+    if (activeFamily === null && activePriority === priority) { clearHeatmapFilter(); return; }
+    activeFamily = null; activePriority = priority;
+    applyFilter();
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = el.dataset.priority === priority ? '1' : '0.35'; el.style.outline = 'none';
+    });
+    document.querySelectorAll('.summary-chip').forEach(function(el) {
+      el.style.background = el.dataset.filterPriority === priority ? 'rgba(255,255,255,0.15)' : '';
+    });
+  }
+
+  function applyFilter() {
+    var cards = document.querySelectorAll('#controlsContainer .control-card');
+    var visible = 0;
+    cards.forEach(function(card) {
+      var familyMatch = activeFamily === null || card.dataset.family === activeFamily;
+      var priorityMatch = activePriority === null || card.dataset.priority === activePriority;
+      var show = familyMatch && priorityMatch;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    if (activeFamily !== null || activePriority !== null) {
+      var label = activeFamily && activePriority ? activeFamily + ' \u2022 ' + activePriority : (activeFamily || activePriority);
+      document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
+      document.getElementById('heatmapFilterBanner').style.display = 'flex';
+    } else {
+      document.getElementById('heatmapFilterBanner').style.display = 'none';
+    }
+  }
+
+  function clearHeatmapFilter() {
+    activeFamily = null; activePriority = null;
+    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) { card.style.display = ''; });
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
+    document.getElementById('heatmapFilterBanner').style.display = 'none';
+  }
+
+  var heatmapSection = document.getElementById('heatmapSection');
+  if (heatmapSection) {
+    heatmapSection.addEventListener('toggle', function() {
+      document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.card-details').forEach(function(det) {
+      det.addEventListener('toggle', function() {
+        var arrow = det.querySelector('summary .card-arrow');
+        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
+      });
+    });
+  });
+</script>
+
+<% end %><%# end unless completed %>

@@ -11,6 +11,10 @@ class JsonExportService
     new(cdef_document, :cdef).export
   end
 
+  def self.export_profile(profile_document)
+    new(profile_document, :profile).export
+  end
+
   def initialize(document, type)
     @document = document
     @type = type
