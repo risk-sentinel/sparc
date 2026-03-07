@@ -1,0 +1,1031 @@
+{
+  "document_name": "ACME HR Portal — SSP (NIST SP 800-53 Rev 4, Low)",
+  "controls": [
+    {
+      "control_id": "AC-01",
+      "title": "Access Control Policy and Procedures",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "CISO",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Access Control Policy (POL-AC-001) is reviewed annually and approved by the CISO. Procedures are documented and distributed.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AC-02",
+      "title": "Account Management",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "System Administrator",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Accounts are provisioned and de-provisioned via the HR onboarding/offboarding process. Semi-annual access reviews are conducted.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AC-03",
+      "title": "Access Enforcement",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Security Engineer",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Role-based access control is implemented at the application level. Permissions are enforced on all API endpoints and UI routes.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AC-06",
+      "title": "Least Privilege",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "System Administrator",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Users are granted minimum necessary permissions. Privileged accounts are reviewed quarterly.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AC-07",
+      "title": "Unsuccessful Logon Attempts",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "Inherited",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Security Engineer",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "Inherited",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Lockout after 5 failed attempts enforced by IdP. Policy inherited from enterprise SSO.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AC-08",
+      "title": "System Use Notification",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "System Owner",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Login banner displays approved AUP text. Users must acknowledge before accessing the system.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AC-17",
+      "title": "Remote Access",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Deferred",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Documented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Security Engineer",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Remote access policy is defined. VPN with MFA deployment is planned for Q3 2025.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AC-18",
+      "title": "Wireless Access",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Not Applicable",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Documented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "IT Operations",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "System is hosted on-premises with no wireless connectivity in scope.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AT-01",
+      "title": "Security Awareness and Training Policy and Procedures",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "CISO",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Training policy reviewed annually. Training schedule distributed to department heads.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AT-02",
+      "title": "Security Awareness Training",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Human Resources",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Annual security awareness training is mandatory. Current cycle shows 94% completion.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AT-03",
+      "title": "Role-Based Security Training",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Deferred",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Documented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Training Manager",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Role-based training delivered for administrators and developers. End-user advanced training curriculum in development.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AT-04",
+      "title": "Security Training Records",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Human Resources",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Training completion records maintained in LMS with 3-year retention.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AU-01",
+      "title": "Audit and Accountability Policy and Procedures",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "CISO",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Audit policy and procedures are maintained and reviewed annually.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AU-02",
+      "title": "Audit Events",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Security Engineer",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Audit events are configured per policy. SIEM ingests and stores all required event types.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AU-03",
+      "title": "Content of Audit Records",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Security Engineer",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Audit records include required fields: timestamp, event type, source, outcome, user identity.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AU-06",
+      "title": "Audit Review, Analysis, and Reporting",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Deferred",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Documented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "ISSO",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Manual weekly audit review is conducted. Automated reporting tooling is planned for deployment in Q1 2026.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AU-09",
+      "title": "Protection of Audit Information",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Security Engineer",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Audit logs are write-protected and access is restricted to the security team. Integrity verification enabled.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "AU-12",
+      "title": "Audit Generation",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "IT Operations",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "All in-scope system components generate audit records in the required format.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "CM-01",
+      "title": "Configuration Management Policy and Procedures",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "CISO",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "CM policy and procedures are current and enforced via Change Control Board.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "CM-02",
+      "title": "Baseline Configuration",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "IT Operations",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Baseline configurations documented in configuration management tool. Reviewed quarterly.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "CM-06",
+      "title": "Configuration Settings",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Deferred",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Documented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "System Administrator",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "CIS Benchmark applied to servers. Desktop configuration hardening is in progress.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "CM-07",
+      "title": "Least Functionality",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "System Administrator",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Unnecessary services and ports are disabled per approved baseline.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "CM-08",
+      "title": "Information System Component Inventory",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Deferred",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Documented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "IT Operations",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Asset inventory maintained in CMDB. Some legacy systems not yet included.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "IA-01",
+      "title": "Identification and Authentication Policy and Procedures",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "CISO",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "I&A policy is current. Password standards enforced via IAM platform.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "IA-02",
+      "title": "Identification and Authentication (Organizational Users)",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Security Engineer",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "MFA is required for all users. SSO with TOTP enforced.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "IA-04",
+      "title": "Identifier Management",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "System Administrator",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "User identifiers managed via IAM. Reuse prevented. Inactive accounts disabled after 90 days.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    },
+    {
+      "control_id": "IA-05",
+      "title": "Authenticator Management",
+      "row_order": 0,
+      "fields": [
+        {
+          "field_name": "status",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "type_use_as",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "provided_as",
+          "field_value": "Implemented",
+          "editable": true
+        },
+        {
+          "field_name": "responsible_entities",
+          "field_value": "Security Engineer",
+          "editable": true
+        },
+        {
+          "field_name": "control_origination",
+          "field_value": "System Specific",
+          "editable": true
+        },
+        {
+          "field_name": "private_implementation",
+          "field_value": "Password policy enforces 12+ character minimum, complexity, and breach checking.",
+          "editable": true
+        }
+      ],
+      "provider_statements": []
+    }
+  ]
+}
