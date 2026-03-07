@@ -11,6 +11,7 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
+  # NOTE: Project orchestration tables added by migration 20260307200001
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +41,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "boundaries", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "environment", null: false, default: "production"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_boundaries_on_project_id"
+  end
+
+  create_table "boundary_cdef_documents", force: :cascade do |t|
+    t.bigint "boundary_id", null: false
+    t.bigint "cdef_document_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["boundary_id", "cdef_document_id"], name: "idx_boundary_cdef_unique", unique: true
+    t.index ["boundary_id"], name: "index_boundary_cdef_documents_on_boundary_id"
+    t.index ["cdef_document_id"], name: "index_boundary_cdef_documents_on_cdef_document_id"
   end
 
   create_table "catalog_controls", force: :cascade do |t|
@@ -150,10 +171,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.string "original_filename"
     t.string "oscal_version"
     t.string "poam_version"
+    t.bigint "project_id"
     t.string "status", default: "pending"
     t.string "system_id"
     t.datetime "updated_at", null: false
     t.index ["created_at"], name: "index_poam_documents_on_created_at"
+    t.index ["project_id"], name: "index_poam_documents_on_project_id"
     t.index ["status"], name: "index_poam_documents_on_status"
   end
 
@@ -351,6 +374,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.index ["poam_document_id"], name: "index_poam_risks_on_poam_document_id"
   end
 
+  create_table "project_memberships", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "user_name", null: false
+    t.string "user_email"
+    t.string "role", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "role"], name: "index_project_memberships_on_project_id_and_role"
+    t.index ["project_id"], name: "index_project_memberships_on_project_id"
+  end
+
+  create_table "projects", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "status", null: false, default: "draft"
+    t.text "authorization_boundary_description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_projects_on_status"
+  end
+
   create_table "profile_control_fields", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "editable", default: false
@@ -443,12 +487,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
+    t.bigint "project_id"
     t.string "sap_version"
     t.bigint "ssp_document_id"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.index ["created_at"], name: "index_sap_documents_on_created_at"
     t.index ["profile_document_id"], name: "index_sap_documents_on_profile_document_id"
+    t.index ["project_id"], name: "index_sap_documents_on_project_id"
     t.index ["ssp_document_id"], name: "index_sap_documents_on_ssp_document_id"
     t.index ["status"], name: "index_sap_documents_on_status"
   end
@@ -501,11 +547,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.string "original_filename"
     t.string "oscal_version"
     t.jsonb "reviewed_controls_data", default: {}
+    t.bigint "project_id"
     t.bigint "sap_document_id"
     t.string "sar_version"
     t.string "status"
     t.datetime "updated_at", null: false
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
+    t.index ["project_id"], name: "index_sar_documents_on_project_id"
     t.index ["sap_document_id"], name: "index_sar_documents_on_sap_document_id"
     t.index ["status"], name: "index_sar_documents_on_status"
   end
@@ -730,6 +778,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
+    t.bigint "project_id"
     t.string "security_objective_availability"
     t.string "security_objective_confidentiality"
     t.string "security_objective_integrity"
@@ -741,6 +790,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.string "system_status", default: "operational"
     t.datetime "updated_at", null: false
     t.index ["profile_document_id"], name: "index_ssp_documents_on_profile_document_id"
+    t.index ["project_id"], name: "index_ssp_documents_on_project_id"
   end
 
   create_table "ssp_information_types", force: :cascade do |t|
@@ -813,6 +863,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.index ["ssp_document_id"], name: "index_ssp_users_on_ssp_document_id"
   end
 
+  add_foreign_key "boundaries", "projects", on_delete: :cascade
+  add_foreign_key "boundary_cdef_documents", "boundaries", on_delete: :cascade
+  add_foreign_key "boundary_cdef_documents", "cdef_documents", on_delete: :cascade
+  add_foreign_key "project_memberships", "projects", on_delete: :cascade
+  add_foreign_key "poam_documents", "projects", on_delete: :nullify
+  add_foreign_key "sap_documents", "projects", on_delete: :nullify
+  add_foreign_key "sar_documents", "projects", on_delete: :nullify
+  add_foreign_key "ssp_documents", "projects", on_delete: :nullify
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "catalog_controls", "control_families"
