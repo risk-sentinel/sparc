@@ -69,12 +69,12 @@ class OscalComponentDefinitionExportService
 
   def default_metadata_extras
     {
-      "roles" => [{ "id" => "prepared-by", "title" => "Prepared By" }],
-      "parties" => [{
+      "roles" => [ { "id" => "prepared-by", "title" => "Prepared By" } ],
+      "parties" => [ {
         "uuid" => SecureRandom.uuid,
         "type" => "organization",
         "name" => "SPARC Export"
-      }]
+      } ]
     }
   end
 
@@ -108,7 +108,7 @@ class OscalComponentDefinitionExportService
     comp["responsible-roles"] = meta["responsible-roles"] if meta["responsible-roles"].present?
     comp["protocols"] = meta["protocols"] if meta["protocols"].present?
     comp["props"] = meta["props"] if meta["props"].present?
-    comp["control-implementations"] = [build_control_implementation(controls)] if controls.any?
+    comp["control-implementations"] = [ build_control_implementation(controls) ] if controls.any?
 
     comp
   end
@@ -119,7 +119,7 @@ class OscalComponentDefinitionExportService
       "type"        => "software",
       "title"       => @document.name,
       "description" => @document.description || "Imported component definition",
-      "control-implementations" => [build_control_implementation(controls)]
+      "control-implementations" => [ build_control_implementation(controls) ]
     }
   end
 
@@ -165,11 +165,11 @@ class OscalComponentDefinitionExportService
     else
       narrative = field_map["implementation_narrative"]&.field_value
       if narrative.present?
-        result["statements"] = [{
+        result["statements"] = [ {
           "statement-id" => "#{result['control-id']}_stmt",
           "uuid"         => SecureRandom.uuid,
           "description"  => narrative
-        }]
+        } ]
       end
     end
 

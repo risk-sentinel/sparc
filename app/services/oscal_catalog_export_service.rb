@@ -56,12 +56,12 @@ class OscalCatalogExportService
         "version"       => @catalog.version || "1.0.0",
         "oscal-version" => @catalog.oscal_version || OSCAL_VERSION,
         "last-modified" => Time.current.iso8601,
-        "roles"         => [{ "id" => "creator", "title" => "Document Creator" }],
-        "parties"       => [{
+        "roles"         => [ { "id" => "creator", "title" => "Document Creator" } ],
+        "parties"       => [ {
           "uuid" => SecureRandom.uuid,
           "type" => "organization",
           "name" => "SPARC Export"
-        }]
+        } ]
       }
     end
   end

@@ -67,12 +67,12 @@ class OscalProfileExportService
 
   def default_metadata_extras
     {
-      "roles"   => [{ "id" => "creator", "title" => "Document Creator" }],
-      "parties" => [{
+      "roles"   => [ { "id" => "creator", "title" => "Document Creator" } ],
+      "parties" => [ {
         "uuid" => SecureRandom.uuid,
         "type" => "organization",
         "name" => "SPARC Export"
-      }]
+      } ]
     }
   end
 
@@ -88,13 +88,13 @@ class OscalProfileExportService
       import_entry["include-all"] = {}
     else
       included = controls.where(exclude: false).pluck(:control_id)
-      import_entry["include-controls"] = [{ "with-ids" => included }] if included.any?
+      import_entry["include-controls"] = [ { "with-ids" => included } ] if included.any?
     end
 
     excluded = controls.where(exclude: true).pluck(:control_id)
-    import_entry["exclude-controls"] = [{ "with-ids" => excluded }] if excluded.any?
+    import_entry["exclude-controls"] = [ { "with-ids" => excluded } ] if excluded.any?
 
-    [import_entry]
+    [ import_entry ]
   end
 
   def build_merge
@@ -134,7 +134,7 @@ class OscalProfileExportService
 
     alter = { "control-id" => control.control_id }
     alter["removes"] = removes if removes.any?
-    alter["adds"] = [{ "position" => "starting", "props" => props }] if props.any?
+    alter["adds"] = [ { "position" => "starting", "props" => props } ] if props.any?
 
     alter
   end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_08_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -44,14 +44,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
 
   create_table "catalog_controls", force: :cascade do |t|
     t.string "baseline_impact"
+    t.string "control_class"
     t.bigint "control_family_id", null: false
     t.string "control_id", null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.jsonb "guidance_data", default: {}
+    t.jsonb "links_data", default: [], null: false
+    t.jsonb "params_data", default: [], null: false
+    t.jsonb "parts_data", default: [], null: false
     t.string "priority"
+    t.jsonb "props_data", default: [], null: false
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid"
     t.index ["control_family_id", "control_id"], name: "index_catalog_controls_on_control_family_id_and_control_id", unique: true
     t.index ["control_family_id"], name: "index_catalog_controls_on_control_family_id"
     t.index ["control_id"], name: "index_catalog_controls_on_control_id"
@@ -71,31 +77,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
   create_table "cdef_controls", force: :cascade do |t|
     t.string "cci_references"
     t.bigint "cdef_document_id", null: false
+    t.string "component_uuid"
     t.string "control_family"
     t.string "control_id"
     t.datetime "created_at", null: false
     t.string "group_id"
+    t.jsonb "links_data", default: [], null: false
+    t.jsonb "props_data", default: [], null: false
+    t.jsonb "responsible_roles_data", default: [], null: false
     t.integer "row_order", default: 0, null: false
     t.string "rule_id"
+    t.jsonb "set_parameters_data", default: [], null: false
     t.string "severity"
+    t.jsonb "statements_data", default: {}, null: false
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid"
     t.index ["cdef_document_id", "control_family"], name: "idx_cdef_controls_on_doc_family"
     t.index ["cdef_document_id", "row_order"], name: "idx_cdef_controls_on_doc_row"
     t.index ["cdef_document_id"], name: "index_cdef_controls_on_cdef_document_id"
   end
 
   create_table "cdef_documents", force: :cascade do |t|
+    t.jsonb "back_matter_data", default: [], null: false
     t.string "benchmark_id"
     t.string "cdef_type"
     t.string "cdef_version"
+    t.jsonb "components_data", default: [], null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
+    t.string "oscal_version"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
@@ -104,11 +121,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
   end
 
   create_table "control_catalogs", force: :cascade do |t|
+    t.jsonb "back_matter_data", default: [], null: false
     t.datetime "created_at", null: false
     t.text "description"
+    t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
+    t.string "oscal_version"
     t.string "source"
     t.datetime "updated_at", null: false
+    t.string "uuid"
     t.string "version"
     t.index ["name"], name: "index_control_catalogs_on_name"
   end
@@ -118,9 +139,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
     t.bigint "control_catalog_id", null: false
     t.datetime "created_at", null: false
     t.text "description"
+    t.jsonb "links_data", default: [], null: false
     t.string "name", null: false
+    t.jsonb "parts_data", default: [], null: false
+    t.jsonb "props_data", default: [], null: false
     t.integer "sort_order", default: 0
     t.datetime "updated_at", null: false
+    t.string "uuid"
     t.index ["code"], name: "index_control_families_on_code"
     t.index ["control_catalog_id", "code"], name: "index_control_families_on_control_catalog_id_and_code", unique: true
     t.index ["control_catalog_id"], name: "index_control_families_on_control_catalog_id"
@@ -360,9 +385,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
   end
 
   create_table "profile_controls", force: :cascade do |t|
+    t.jsonb "additions_data", default: [], null: false
+    t.jsonb "alters_data", default: [], null: false
     t.string "control_family"
     t.string "control_id"
     t.datetime "created_at", null: false
+    t.boolean "exclude", default: false, null: false
     t.string "priority"
     t.bigint "profile_document_id", null: false
     t.integer "row_order", default: 0, null: false
@@ -375,6 +403,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
   end
 
   create_table "profile_documents", force: :cascade do |t|
+    t.jsonb "back_matter_data", default: [], null: false
     t.string "baseline_level"
     t.bigint "control_catalog_id"
     t.datetime "created_at", null: false
@@ -382,6 +411,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
     t.string "oscal_version"
@@ -429,11 +459,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
     t.date "assessment_start"
     t.string "assessment_type", default: "initial"
     t.jsonb "assessors", default: []
+    t.jsonb "back_matter_data", default: [], null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
     t.string "oscal_version"
@@ -482,6 +514,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
     t.datetime "assessment_end"
     t.jsonb "assessment_log_data", default: []
     t.datetime "assessment_start"
+    t.jsonb "attestations_data", default: [], null: false
+    t.jsonb "back_matter_data", default: [], null: false
     t.datetime "created_at", null: false
     t.string "creation_method", default: "excel"
     t.text "description"
@@ -586,6 +620,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
     t.text "description"
     t.datetime "end_time"
     t.jsonb "links_data", default: []
+    t.jsonb "local_definitions_data", default: {}, null: false
     t.integer "position", default: 0
     t.jsonb "props_data", default: []
     t.text "remarks"
