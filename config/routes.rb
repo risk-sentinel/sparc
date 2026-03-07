@@ -46,6 +46,18 @@ Rails.application.routes.draw do
     resources :profile_controls, only: [ :new, :create, :edit, :update, :destroy ]
   end
 
+  resources :poam_documents do
+    member do
+      patch :update_metadata
+      get :download_json
+      get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
+      get :status
+    end
+    resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
+  end
+
   resources :cdef_documents do
     member do
       patch :update_metadata

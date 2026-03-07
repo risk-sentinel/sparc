@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_07_010432) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_07_125214) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -134,6 +134,218 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_010432) do
     t.string "job_type"
     t.string "status"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "poam_documents", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.string "file_type"
+    t.jsonb "import_metadata", default: {}
+    t.jsonb "local_definitions_extra", default: {}
+    t.jsonb "metadata_extra", default: {}
+    t.string "name", null: false
+    t.string "original_filename"
+    t.string "oscal_version"
+    t.string "poam_version"
+    t.string "status", default: "pending"
+    t.string "system_id"
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_poam_documents_on_created_at"
+    t.index ["status"], name: "index_poam_documents_on_status"
+  end
+
+  create_table "poam_finding_observations", force: :cascade do |t|
+    t.bigint "poam_finding_id", null: false
+    t.bigint "poam_observation_id", null: false
+    t.index ["poam_finding_id", "poam_observation_id"], name: "idx_poam_finding_obs_unique", unique: true
+    t.index ["poam_finding_id"], name: "index_poam_finding_observations_on_poam_finding_id"
+    t.index ["poam_observation_id"], name: "index_poam_finding_observations_on_poam_observation_id"
+  end
+
+  create_table "poam_finding_risks", force: :cascade do |t|
+    t.bigint "poam_finding_id", null: false
+    t.bigint "poam_risk_id", null: false
+    t.index ["poam_finding_id", "poam_risk_id"], name: "index_poam_finding_risks_on_poam_finding_id_and_poam_risk_id", unique: true
+    t.index ["poam_finding_id"], name: "index_poam_finding_risks_on_poam_finding_id"
+    t.index ["poam_risk_id"], name: "index_poam_finding_risks_on_poam_risk_id"
+  end
+
+  create_table "poam_findings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "implementation_statement_uuid"
+    t.jsonb "links_data", default: []
+    t.jsonb "origins_data", default: []
+    t.bigint "poam_document_id", null: false
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "target_data", default: {}
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["poam_document_id", "uuid"], name: "index_poam_findings_on_poam_document_id_and_uuid", unique: true
+    t.index ["poam_document_id"], name: "index_poam_findings_on_poam_document_id"
+  end
+
+  create_table "poam_item_findings", force: :cascade do |t|
+    t.bigint "poam_finding_id", null: false
+    t.bigint "poam_item_id", null: false
+    t.index ["poam_finding_id"], name: "index_poam_item_findings_on_poam_finding_id"
+    t.index ["poam_item_id", "poam_finding_id"], name: "index_poam_item_findings_on_poam_item_id_and_poam_finding_id", unique: true
+    t.index ["poam_item_id"], name: "index_poam_item_findings_on_poam_item_id"
+  end
+
+  create_table "poam_item_observations", force: :cascade do |t|
+    t.bigint "poam_item_id", null: false
+    t.bigint "poam_observation_id", null: false
+    t.index ["poam_item_id", "poam_observation_id"], name: "idx_poam_item_obs_unique", unique: true
+    t.index ["poam_item_id"], name: "index_poam_item_observations_on_poam_item_id"
+    t.index ["poam_observation_id"], name: "index_poam_item_observations_on_poam_observation_id"
+  end
+
+  create_table "poam_item_risks", force: :cascade do |t|
+    t.bigint "poam_item_id", null: false
+    t.bigint "poam_risk_id", null: false
+    t.index ["poam_item_id", "poam_risk_id"], name: "index_poam_item_risks_on_poam_item_id_and_poam_risk_id", unique: true
+    t.index ["poam_item_id"], name: "index_poam_item_risks_on_poam_item_id"
+    t.index ["poam_risk_id"], name: "index_poam_item_risks_on_poam_risk_id"
+  end
+
+  create_table "poam_items", force: :cascade do |t|
+    t.text "closure_evidence"
+    t.datetime "created_at", null: false
+    t.date "deadline"
+    t.text "description"
+    t.string "impact"
+    t.text "internal_notes"
+    t.string "likelihood"
+    t.jsonb "links_data", default: []
+    t.jsonb "origins_data", default: []
+    t.bigint "poam_document_id", null: false
+    t.string "poam_item_uuid"
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.string "risk_level"
+    t.string "risk_status"
+    t.integer "row_order", default: 0, null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["poam_document_id", "risk_status"], name: "index_poam_items_on_poam_document_id_and_risk_status"
+    t.index ["poam_document_id", "row_order"], name: "index_poam_items_on_poam_document_id_and_row_order"
+    t.index ["poam_document_id"], name: "index_poam_items_on_poam_document_id"
+  end
+
+  create_table "poam_local_components", force: :cascade do |t|
+    t.string "component_type"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "links_data", default: []
+    t.bigint "poam_document_id", null: false
+    t.jsonb "props_data", default: []
+    t.jsonb "protocols_data", default: []
+    t.string "purpose"
+    t.text "remarks"
+    t.jsonb "responsible_roles_data", default: []
+    t.text "status_remarks"
+    t.string "status_state"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["poam_document_id", "uuid"], name: "index_poam_local_components_on_poam_document_id_and_uuid", unique: true
+    t.index ["poam_document_id"], name: "index_poam_local_components_on_poam_document_id"
+  end
+
+  create_table "poam_milestones", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "dependencies_data", default: []
+    t.text "description"
+    t.date "due_date"
+    t.jsonb "links_data", default: []
+    t.string "milestone_type", default: "milestone"
+    t.bigint "poam_remediation_id", null: false
+    t.integer "position", default: 0
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "responsible_roles_data", default: []
+    t.jsonb "subjects_data", default: []
+    t.jsonb "timing_data", default: {}
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["poam_remediation_id", "uuid"], name: "index_poam_milestones_on_poam_remediation_id_and_uuid"
+    t.index ["poam_remediation_id"], name: "index_poam_milestones_on_poam_remediation_id"
+  end
+
+  create_table "poam_observations", force: :cascade do |t|
+    t.datetime "collected"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "expires"
+    t.jsonb "links_data", default: []
+    t.jsonb "methods_data", default: []
+    t.jsonb "origins_data", default: []
+    t.bigint "poam_document_id", null: false
+    t.jsonb "props_data", default: []
+    t.jsonb "relevant_evidence_data", default: []
+    t.text "remarks"
+    t.jsonb "subjects_data", default: []
+    t.string "title"
+    t.jsonb "types_data", default: []
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["poam_document_id", "uuid"], name: "index_poam_observations_on_poam_document_id_and_uuid", unique: true
+    t.index ["poam_document_id"], name: "index_poam_observations_on_poam_document_id"
+  end
+
+  create_table "poam_remediations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "lifecycle"
+    t.jsonb "links_data", default: []
+    t.jsonb "origins_data", default: []
+    t.bigint "poam_risk_id", null: false
+    t.integer "position", default: 0
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "required_assets_data", default: []
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["poam_risk_id", "uuid"], name: "index_poam_remediations_on_poam_risk_id_and_uuid"
+    t.index ["poam_risk_id"], name: "index_poam_remediations_on_poam_risk_id"
+  end
+
+  create_table "poam_risk_observations", force: :cascade do |t|
+    t.bigint "poam_observation_id", null: false
+    t.bigint "poam_risk_id", null: false
+    t.index ["poam_observation_id"], name: "index_poam_risk_observations_on_poam_observation_id"
+    t.index ["poam_risk_id", "poam_observation_id"], name: "idx_poam_risk_obs_unique", unique: true
+    t.index ["poam_risk_id"], name: "index_poam_risk_observations_on_poam_risk_id"
+  end
+
+  create_table "poam_risks", force: :cascade do |t|
+    t.jsonb "characterizations_data", default: []
+    t.datetime "created_at", null: false
+    t.datetime "deadline"
+    t.text "description"
+    t.string "impact"
+    t.string "likelihood"
+    t.jsonb "links_data", default: []
+    t.jsonb "mitigating_factors_data", default: []
+    t.jsonb "origins_data", default: []
+    t.bigint "poam_document_id", null: false
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "risk_log_data", default: {}
+    t.text "statement"
+    t.string "status"
+    t.jsonb "threat_ids_data", default: []
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["poam_document_id", "status"], name: "index_poam_risks_on_poam_document_id_and_status"
+    t.index ["poam_document_id", "uuid"], name: "index_poam_risks_on_poam_document_id_and_uuid", unique: true
+    t.index ["poam_document_id"], name: "index_poam_risks_on_poam_document_id"
   end
 
   create_table "profile_control_fields", force: :cascade do |t|
@@ -264,6 +476,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_010432) do
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "control_families", "control_catalogs"
+  add_foreign_key "poam_finding_observations", "poam_findings", on_delete: :cascade
+  add_foreign_key "poam_finding_observations", "poam_observations", on_delete: :cascade
+  add_foreign_key "poam_finding_risks", "poam_findings", on_delete: :cascade
+  add_foreign_key "poam_finding_risks", "poam_risks", on_delete: :cascade
+  add_foreign_key "poam_findings", "poam_documents", on_delete: :cascade
+  add_foreign_key "poam_item_findings", "poam_findings", on_delete: :cascade
+  add_foreign_key "poam_item_findings", "poam_items", on_delete: :cascade
+  add_foreign_key "poam_item_observations", "poam_items", on_delete: :cascade
+  add_foreign_key "poam_item_observations", "poam_observations", on_delete: :cascade
+  add_foreign_key "poam_item_risks", "poam_items", on_delete: :cascade
+  add_foreign_key "poam_item_risks", "poam_risks", on_delete: :cascade
+  add_foreign_key "poam_items", "poam_documents", on_delete: :cascade
+  add_foreign_key "poam_local_components", "poam_documents", on_delete: :cascade
+  add_foreign_key "poam_milestones", "poam_remediations", on_delete: :cascade
+  add_foreign_key "poam_observations", "poam_documents", on_delete: :cascade
+  add_foreign_key "poam_remediations", "poam_risks", on_delete: :cascade
+  add_foreign_key "poam_risk_observations", "poam_observations", on_delete: :cascade
+  add_foreign_key "poam_risk_observations", "poam_risks", on_delete: :cascade
+  add_foreign_key "poam_risks", "poam_documents", on_delete: :cascade
   add_foreign_key "profile_control_fields", "profile_controls", on_delete: :cascade
   add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify

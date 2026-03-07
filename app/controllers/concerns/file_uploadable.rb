@@ -31,7 +31,8 @@ module FileUploadable
     ssp:     "ssp",
     sar:     "sar",
     cdef:    "cdef",
-    profile: "profile"
+    profile: "profile",
+    poam:    "poam"
   }.freeze
 
   private
