@@ -111,17 +111,43 @@
    2. BOOTSTRAP COMPONENT OVERRIDES
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Cards — restore SPARC padding, shadow, radius */
+/* Cards — restore SPARC padding, shadow, radius.
+   IMPORTANT: use background-color (not shorthand) so gradient headers survive. */
 .card {
+  --bs-card-bg: var(--sparc-surface);
+  --bs-card-border-color: var(--bs-border-color);
+  --bs-card-border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  border-color: var(--bs-border-color);
-  background: var(--sparc-surface);
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--sparc-surface);
 }
 
 .card .card-body {
   padding: 0;  /* card itself has 2rem, avoid double-padding */
+}
+
+/* Gradient overlays on cards — must override card background */
+.card.sparc-gradient-header,
+.sparc-gradient-header {
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%) !important;
+  color: white;
+  border-color: transparent;
+}
+
+.card.sparc-dashboard-header,
+.sparc-dashboard-header {
+  background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%) !important;
+  color: white;
+  border-color: transparent;
+}
+
+.card.sparc-processing-banner,
+.sparc-processing-banner {
+  background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%) !important;
+  color: white;
+  border-color: transparent;
 }
 
 /* Buttons — restore SPARC sizing and palette */
@@ -192,6 +218,21 @@
 /* Container — original max-width */
 .container {
   max-width: 1200px;
+}
+
+/* Navbar — ensure dark navbar links stay white despite global overrides */
+.navbar-dark .nav-link,
+.navbar-dark .navbar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.7);
+}
+.navbar-dark .nav-link:hover,
+.navbar-dark .nav-link:focus,
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link:focus {
+  color: rgba(255, 255, 255, 1);
+}
+.navbar-dark .navbar-brand {
+  color: #fff;
 }
 
 
