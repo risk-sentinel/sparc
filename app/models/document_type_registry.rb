@@ -58,6 +58,16 @@ class DocumentTypeRegistry
       parser_map:         { "json" => ProfileJsonParserService, "xml" => ProfileXmlParserService },
       file_prefix:        "profile",
       success_message:    "OSCAL Profile (Baseline) uploaded. Processing in background..."
+    ),
+    poam: Entry.new(
+      document_class:     PoamDocument,
+      control_class:      PoamItem,
+      field_class:        PoamItemField,
+      document_fk:        :poam_document_id,
+      allowed_extensions: { ".json" => "json", ".xml" => "xml" },
+      parser_map:         { "json" => PoamJsonParserService, "xml" => PoamXmlParserService },
+      file_prefix:        "poam",
+      success_message:    "OSCAL POA&M uploaded. Processing in background..."
     )
   }.freeze
 
