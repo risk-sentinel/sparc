@@ -29,12 +29,19 @@ Rails.application.routes.draw do
       patch :update_metadata
       get :download_json
       get :download_excel
+      get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
       get :status
       get :editor
+      get :enrich
+      patch :update_enrich
       get "edit_control/:sar_control_id", action: :edit_control, as: :edit_control
     end
     collection do
       post :import_json
+      get :wizard
+      post :create_from_wizard
     end
   end
 
