@@ -5,7 +5,9 @@ class SarDocumentsController < ApplicationController
   CONTROLS_PER_PAGE = 50
 
   before_action :set_sar_document, only: [
-    :show, :update, :destroy, :download_json, :download_excel, :edit_control, :status, :update_metadata
+    :show, :update, :destroy, :download_json, :download_excel,
+    :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
+    :edit_control, :status, :update_metadata, :enrich, :update_enrich
   ]
 
   helper_method :filter_params
@@ -101,6 +103,22 @@ class SarDocumentsController < ApplicationController
     handle_file_upload(:sar, param_key: :sar_document)
   end
 
+  def wizard
+    @sar_document = SarDocument.new
+    @sap_documents = SapDocument.where(status: "completed").order(:name)
+  end
+
+  def create_from_wizard
+    service = SarWizardService.new(wizard_params)
+    document = service.create
+
+    flash[:success] = "SAR '#{document.name}' created from wizard."
+    redirect_to sar_document_path(document)
+  rescue StandardError => e
+    flash[:error] = "Error creating SAR: #{e.message}"
+    redirect_to wizard_sar_documents_path
+  end
+
   def download_json
     json_data = JsonExportService.export_sar(@sar_document)
 
@@ -117,6 +135,66 @@ class SarDocumentsController < ApplicationController
               filename:    "#{@sar_document.name}_#{Date.today}.xlsx",
               type:        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
               disposition: "attachment"
+  end
+
+  def download_oscal
+    service = OscalSarExportService.new(@sar_document)
+    result = service.validation_result
+
+    if result.valid?
+      download_url = download_oscal_validated_sar_document_path(@sar_document)
+      flash[:success] = "OSCAL export passed schema validation (v#{result.schema_version}). <a href=\"#{download_url}\">Download OSCAL file</a>.".html_safe
+    else
+      Rails.logger.warn("OSCAL validation failed for SAR #{@sar_document.id}: #{result.errors.first(3).join('; ')}")
+      download_url = download_oscal_unvalidated_sar_document_path(@sar_document)
+      flash[:warning] = "OSCAL export failed schema validation. <a href=\"#{download_url}\">Download unvalidated version</a>.".html_safe
+    end
+
+    redirect_to sar_document_path(@sar_document)
+  end
+
+  def download_oscal_validated
+    service = OscalSarExportService.new(@sar_document)
+    oscal_data = service.export
+
+    send_data oscal_data,
+              filename:    "#{@sar_document.name}_oscal_ar_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_oscal_unvalidated
+    service = OscalSarExportService.new(@sar_document)
+    oscal_data = service.export_unvalidated
+
+    send_data oscal_data,
+              filename:    "#{@sar_document.name}_oscal_ar_unvalidated_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def enrich
+    @results      = @sar_document.sar_results.order(:position)
+    @observations = @sar_document.sar_results.flat_map { |r| r.sar_observations.to_a }
+    @findings     = @sar_document.sar_results.flat_map { |r| r.sar_findings.to_a }
+    @risks        = @sar_document.sar_results.flat_map { |r| r.sar_risks.to_a }
+  end
+
+  def update_enrich
+    ActiveRecord::Base.transaction do
+      @sar_document.update!(enrich_params)
+      sync_results
+      sync_observations
+      sync_findings
+      sync_risks
+      auto_generate_from_excel if params.dig(:sar_document, :auto_generate) == "1"
+    end
+
+    flash[:success] = "SAR enrichment data saved."
+    redirect_to sar_document_path(@sar_document)
+  rescue StandardError => e
+    flash[:error] = "Error saving enrichment: #{e.message}"
+    redirect_to enrich_sar_document_path(@sar_document)
   end
 
   def edit_control
@@ -160,6 +238,199 @@ class SarDocumentsController < ApplicationController
 
   def document_metadata_params
     params.require(:sar_document).permit(:name, :sar_version)
+  end
+
+  def wizard_params
+    params.permit(
+      :name, :description, :sap_document_id,
+      :assessment_start, :assessment_end
+    )
+  end
+
+  def enrich_params
+    params.require(:sar_document).permit(
+      :description, :import_ap_href, :oscal_version,
+      :assessment_start, :assessment_end
+    )
+  end
+
+  # ── Enrichment sync helpers ──────────────────────────────────────
+
+  def sync_results
+    incoming = params.dig(:sar_document, :results) || []
+    existing_ids = @sar_document.sar_results.pluck(:id)
+    seen_ids = []
+
+    incoming.each_with_index do |r_params, idx|
+      r_params = r_params.permit(:id, :title, :description, :start_time, :end_time)
+      if r_params[:id].present? && existing_ids.include?(r_params[:id].to_i)
+        record = @sar_document.sar_results.find(r_params[:id])
+        record.update!(r_params.except(:id).merge(position: idx))
+        seen_ids << record.id
+      else
+        next if r_params[:start_time].blank?
+        record = @sar_document.sar_results.create!(
+          uuid: SecureRandom.uuid,
+          title: r_params[:title].presence || "Assessment Result",
+          description: r_params[:description],
+          start_time: r_params[:start_time],
+          end_time: r_params[:end_time],
+          position: idx
+        )
+        seen_ids << record.id
+      end
+    end
+
+    @sar_document.sar_results.where.not(id: seen_ids).destroy_all if incoming.any?
+  end
+
+  def sync_observations
+    incoming = params.dig(:sar_document, :observations) || []
+    return if incoming.empty?
+
+    default_result = @sar_document.sar_results.first
+    return unless default_result
+
+    existing_ids = default_result.sar_observations.pluck(:id)
+    seen_ids = []
+
+    incoming.each do |o_params|
+      o_params = o_params.permit(:id, :sar_result_id, :title, :description, :collected)
+      result = if o_params[:sar_result_id].present?
+        @sar_document.sar_results.find_by(id: o_params[:sar_result_id]) || default_result
+      else
+        default_result
+      end
+
+      if o_params[:id].present? && existing_ids.include?(o_params[:id].to_i)
+        record = SarObservation.find(o_params[:id])
+        record.update!(o_params.except(:id, :sar_result_id))
+        seen_ids << record.id
+      else
+        record = result.sar_observations.create!(
+          uuid: SecureRandom.uuid,
+          title: o_params[:title].presence || "Observation",
+          description: o_params[:description].presence || "No description provided.",
+          collected: o_params[:collected].present? ? o_params[:collected] : Time.current
+        )
+        seen_ids << record.id
+      end
+    end
+  end
+
+  def sync_findings
+    incoming = params.dig(:sar_document, :findings) || []
+    return if incoming.empty?
+
+    default_result = @sar_document.sar_results.first
+    return unless default_result
+
+    incoming.each do |f_params|
+      f_params = f_params.permit(:id, :sar_result_id, :title, :description, :target_control_id, :target_status)
+      result = if f_params[:sar_result_id].present?
+        @sar_document.sar_results.find_by(id: f_params[:sar_result_id]) || default_result
+      else
+        default_result
+      end
+
+      target_data = {
+        "type" => "objective-id",
+        "target-id" => f_params[:target_control_id].presence || "unknown",
+        "status" => { "state" => f_params[:target_status].presence || "not-satisfied" }
+      }
+
+      if f_params[:id].present?
+        record = SarFinding.find_by(id: f_params[:id])
+        record&.update!(
+          title: f_params[:title],
+          description: f_params[:description],
+          target_data: target_data
+        )
+      else
+        result.sar_findings.create!(
+          uuid: SecureRandom.uuid,
+          title: f_params[:title].presence || "Finding",
+          description: f_params[:description].presence || "No description provided.",
+          target_data: target_data
+        )
+      end
+    end
+  end
+
+  def sync_risks
+    incoming = params.dig(:sar_document, :risks) || []
+    return if incoming.empty?
+
+    default_result = @sar_document.sar_results.first
+    return unless default_result
+
+    incoming.each do |r_params|
+      r_params = r_params.permit(:id, :sar_result_id, :title, :description, :status)
+      result = if r_params[:sar_result_id].present?
+        @sar_document.sar_results.find_by(id: r_params[:sar_result_id]) || default_result
+      else
+        default_result
+      end
+
+      if r_params[:id].present?
+        record = SarRisk.find_by(id: r_params[:id])
+        record&.update!(r_params.except(:id, :sar_result_id))
+      else
+        result.sar_risks.create!(
+          uuid: SecureRandom.uuid,
+          title: r_params[:title].presence || "Risk",
+          description: r_params[:description].presence || "No description provided.",
+          status: r_params[:status].presence || "open"
+        )
+      end
+    end
+  end
+
+  def auto_generate_from_excel
+    return if @sar_document.sar_results.exists?
+
+    result = @sar_document.sar_results.create!(
+      uuid: SecureRandom.uuid,
+      title: "Assessment Results for #{@sar_document.name}",
+      description: "Auto-generated from Excel assessment data.",
+      start_time: @sar_document.assessment_start || @sar_document.created_at || Time.current,
+      end_time: @sar_document.assessment_end || Time.current,
+      position: 0
+    )
+
+    @sar_document.sar_controls.includes(:sar_control_fields).find_each do |control|
+      next if control.control_id.blank?
+
+      field_map = control.sar_control_fields.index_by(&:field_name)
+      result_val = field_map["result"]&.field_value.presence || "Not Tested"
+
+      # Create observation
+      obs = result.sar_observations.create!(
+        uuid: SecureRandom.uuid,
+        title: "Assessment of #{control.control_id}",
+        description: "Control: #{control.control_id}\nResult: #{result_val}",
+        collected: @sar_document.assessment_start || @sar_document.created_at || Time.current,
+        methods_data: [ "TEST" ]
+      )
+
+      # Create finding
+      control_id = control.control_id.strip.downcase.gsub(/\s+/, "-").gsub("(", ".").gsub(")", "")
+      status_state = result_val.to_s.downcase.start_with?("pass") ? "satisfied" : "not-satisfied"
+
+      finding = result.sar_findings.create!(
+        uuid: SecureRandom.uuid,
+        title: "Finding for #{control.control_id}",
+        description: "Assessment finding for control #{control.control_id}: #{result_val}",
+        target_data: {
+          "type" => "objective-id",
+          "target-id" => control_id,
+          "status" => { "state" => status_state }
+        }
+      )
+
+      # Link finding to observation
+      SarFindingObservation.create!(sar_finding: finding, sar_observation: obs)
+    end
   end
 
   def set_sar_document

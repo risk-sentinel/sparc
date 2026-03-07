@@ -1,7 +1,10 @@
 <div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Security Assessment Results</h2>
-    <%= link_to "Upload New", new_sar_document_path, class: "btn btn-success" %>
+    <div class="d-flex gap-2">
+      <%= link_to "Create from Wizard", wizard_sar_documents_path, class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
+      <%= link_to "Upload New", new_sar_document_path, class: "btn btn-success" %>
+    </div>
   </div>
 
   <% if @sar_documents.any? %>
@@ -9,9 +12,10 @@
       <thead>
         <tr>
           <th>Name</th>
-          <th>Original Filename</th>
+          <th>Source</th>
           <th>Version</th>
           <th>Status</th>
+          <th>OSCAL</th>
           <th>Controls</th>
           <th>Created</th>
           <th>Actions</th>
@@ -21,21 +25,46 @@
         <% @sar_documents.each do |doc| %>
           <tr>
             <td><%= doc.name %></td>
-            <td><%= doc.original_filename %></td>
-            <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.sar_version.presence || "—" %></td>
+            <td>
+              <%
+                source_label = case doc.creation_method
+                               when "wizard" then "Wizard"
+                               when "oscal_import" then "OSCAL"
+                               else "Excel"
+                               end
+                source_color = case doc.creation_method
+                               when "wizard" then "#3498db"
+                               when "oscal_import" then "#2ecc71"
+                               else "#95a5a6"
+                               end
+              %>
+              <span style="background: <%= source_color %>22; color: <%= source_color %>; border: 1px solid <%= source_color %>55; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">
+                <%= source_label %>
+              </span>
+            </td>
+            <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.sar_version.presence || "\u2014" %></td>
             <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;"><%= doc.status %></span></td>
+            <td>
+              <% if doc.enriched? %>
+                <span style="background: rgba(46,204,113,0.15); color: #27ae60; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">Enriched</span>
+              <% else %>
+                <span class="text-body-secondary" style="font-size: 0.78rem;">Basic</span>
+              <% end %>
+            </td>
             <td><%= doc.sar_controls.count %></td>
             <td><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
-            <td>
-              <%= link_to "View", sar_document_path(doc), class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
-              <%= link_to "Download JSON", download_json_sar_document_path(doc), class: "btn btn-success", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
-              <%= link_to "Delete", sar_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
+            <td style="white-space: nowrap;">
+              <%= link_to "View", sar_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+              <% unless doc.enriched? %>
+                <%= link_to "Enrich", enrich_sar_document_path(doc), style: "background: rgba(243,156,18,0.15); color: #e67e22; border: 1px solid rgba(243,156,18,0.3); padding: 0.35rem 0.75rem; border-radius: 4px; font-size: 0.8rem; text-decoration: none; font-weight: 500;" %>
+              <% end %>
+              <%= link_to "Delete", sar_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
             </td>
           </tr>
         <% end %>
       </tbody>
     </table>
   <% else %>
-    <p class="text-center p-4 text-body-secondary">No Security Assessment Results found. Upload your first workbook to get started.</p>
+    <p class="text-center p-4 text-body-secondary">No Security Assessment Results found. Upload a workbook or create from the wizard to get started.</p>
   <% end %>
 </div>

@@ -1,0 +1,87 @@
+<div class="card">
+  <h2>Create New SAR from Wizard</h2>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+    Build a Security Assessment Report by linking to an Assessment Plan (SAP), setting assessment dates,
+    and optionally populating controls from the SAP. The SAR will be created with OSCAL-ready structure.
+  </p>
+
+  <%= form_with url: create_from_wizard_sar_documents_path, method: :post, local: true do |f| %>
+
+    <%# ── Step 1: Assessment Basics ── %>
+    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+        <span style="background: #3498db; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
+        Assessment Basics
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <div class="form-group">
+          <label for="name">Assessment Name <span style="color: #e74c3c;">*</span></label>
+          <%= f.text_field :name, required: true, class: "form-control", placeholder: "e.g., FY2026 Annual Security Assessment" %>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Brief description of the assessment scope and objectives..." %>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Step 2: SAP Selection ── %>
+    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+        <span style="background: #27ae60; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
+        Assessment Plan (SAP) Selection
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <% if @sap_documents.any? %>
+          <div class="form-group">
+            <label for="sap_document_id">Link to Assessment Plan</label>
+            <%= f.select :sap_document_id,
+                  @sap_documents.map { |s| ["#{s.name} (#{s.sap_controls.count} controls)", s.id] },
+                  { include_blank: "-- No SAP (create empty SAR) --" },
+                  { class: "form-control" } %>
+            <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">
+              Controls from the selected SAP will be imported into the SAR with default "Not Tested" status.
+              Each control will also get a default OSCAL finding.
+            </small>
+          </div>
+        <% else %>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">
+            No completed SAP documents found. You can still create a SAR without linking to a SAP,
+            or <%= link_to "upload a SAP", new_sap_document_path %> first.
+          </p>
+          <%= f.hidden_field :sap_document_id, value: "" %>
+        <% end %>
+      </div>
+    </details>
+
+    <%# ── Step 3: Assessment Period ── %>
+    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+        <span style="background: #f39c12; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
+        Assessment Period
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;">
+          <div class="form-group">
+            <label for="assessment_start">Start Date</label>
+            <%= f.datetime_local_field :assessment_start, class: "form-control", value: Time.current.beginning_of_day.strftime('%Y-%m-%dT%H:%M') %>
+          </div>
+          <div class="form-group">
+            <label for="assessment_end">End Date</label>
+            <%= f.datetime_local_field :assessment_end, class: "form-control" %>
+            <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">
+              Leave blank if the assessment is ongoing.
+            </small>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Submit ── %>
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+      <%= f.submit "Create SAR", class: "btn btn-success" %>
+      <%= link_to "Cancel", sar_documents_path, class: "btn btn-secondary" %>
+    </div>
+
+  <% end %>
+</div>
