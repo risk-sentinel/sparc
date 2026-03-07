@@ -45,9 +45,9 @@ class CreateSapDocuments < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :sap_controls, [:sap_document_id, :control_family], name: "idx_sap_controls_on_doc_family"
-    add_index :sap_controls, [:sap_document_id, :row_order], name: "idx_sap_controls_on_doc_row"
-    add_index :sap_controls, [:sap_document_id, :assessment_method], name: "idx_sap_controls_on_doc_method"
+    add_index :sap_controls, [ :sap_document_id, :control_family ], name: "idx_sap_controls_on_doc_family"
+    add_index :sap_controls, [ :sap_document_id, :row_order ], name: "idx_sap_controls_on_doc_row"
+    add_index :sap_controls, [ :sap_document_id, :assessment_method ], name: "idx_sap_controls_on_doc_method"
 
     create_table :sap_control_fields do |t|
       t.references :sap_control, null: false, foreign_key: { on_delete: :cascade }
@@ -58,6 +58,6 @@ class CreateSapDocuments < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :sap_control_fields, [:sap_control_id, :field_name], name: "idx_sap_fields_on_ctrl_name"
+    add_index :sap_control_fields, [ :sap_control_id, :field_name ], name: "idx_sap_fields_on_ctrl_name"
   end
 end
