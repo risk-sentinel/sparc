@@ -1,0 +1,460 @@
+<%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
+<% unless @sap_document.completed? %>
+  <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white; text-align: center;">
+    <% if @sap_document.failed? %>
+      <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
+      <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
+      <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+        <%= @sap_document.error_message.presence || "An unknown error occurred." %>
+      </p>
+      <div style="margin-top: 1.25rem;">
+        <%= link_to "&#8592; Back to Assessment Plans".html_safe, sap_documents_path,
+              style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);" %>
+      </div>
+    <% else %>
+      <div style="margin-bottom: 0.75rem;">
+        <span style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #f39c12; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+      </div>
+      <h2 style="color: #f39c12; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Your Assessment Plan</h2>
+      <p style="color: rgba(255,255,255,0.6); font-size: 0.88rem;">
+        <strong><%= @sap_document.original_filename || @sap_document.name %></strong> is being parsed.
+        This page will automatically refresh when processing is complete.
+      </p>
+    <% end %>
+  </div>
+
+  <% unless @sap_document.failed? %>
+    <meta http-equiv="refresh" content="5">
+  <% end %>
+
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+
+<% else %>
+<%
+  examine_count = @method_counts["examine"].to_i
+  interview_count = @method_counts["interview"].to_i
+  test_count = @method_counts["test"].to_i
+  none_count = @method_counts[nil].to_i
+
+  planned_count = @status_counts["planned"].to_i
+  in_progress_count = @status_counts["in-progress"].to_i
+  completed_count = @status_counts["completed"].to_i
+
+  type_colors = { "initial" => "#3498db", "annual" => "#27ae60", "continuous" => "#8e44ad", "ad-hoc" => "#f39c12" }
+  type_color = type_colors[@sap_document.assessment_type] || "#7f8c8d"
+%>
+
+<%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
+<div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
+    <div>
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">OSCAL Security Assessment Plan</div>
+
+      <%# ── View mode ── %>
+      <div id="doc-meta-view">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0;"><%= @sap_document.name %></h2>
+          <% if @sap_document.sap_version.present? %>
+            <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.72rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px;">v<%= @sap_document.sap_version %></span>
+          <% end %>
+          <span style="background: <%= type_color %>33; color: <%= type_color %>; border: 1px solid <%= type_color %>66; padding: 0.12rem 0.55rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">
+            <%= @sap_document.assessment_type&.titleize || "Initial" %>
+          </span>
+          <button onclick="toggleDocMeta()" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.15rem 0.5rem; font-size: 0.7rem; cursor: pointer;">Edit</button>
+        </div>
+      </div>
+
+      <%# ── Edit mode (hidden) ── %>
+      <div id="doc-meta-edit" style="display: none;">
+        <%= form_with url: update_metadata_sap_document_path(@sap_document), method: :patch, local: true do |f| %>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <%= f.text_field :name, value: @sap_document.name,
+                  style: "font-size: 1.1rem; font-weight: 700; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; min-width: 200px;" %>
+            <%= f.text_field :sap_version, value: @sap_document.sap_version, placeholder: "Version",
+                  style: "font-size: 0.85rem; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; width: 100px;" %>
+            <%= f.submit "Save", style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;" %>
+            <button type="button" onclick="toggleDocMeta()" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;">Cancel</button>
+          </div>
+        <% end %>
+      </div>
+
+      <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 0.3rem;">
+        <% if @sap_document.ssp_document.present? %>
+          SSP: <span style="color: rgba(255,255,255,0.7);"><%= @sap_document.ssp_document.name %></span>
+          &nbsp;&bull;&nbsp;
+        <% end %>
+        <% if @sap_document.profile_document.present? %>
+          Profile: <span style="color: rgba(255,255,255,0.7);"><%= @sap_document.profile_document.name %></span>
+          &nbsp;&bull;&nbsp;
+        <% end %>
+        <%= @total_controls %> controls
+        <% if @sap_document.assessment_start.present? %>
+          &nbsp;&bull;&nbsp; <%= @sap_document.assessment_start.strftime("%b %d, %Y") %>
+          <% if @sap_document.assessment_end.present? %>
+            &ndash; <%= @sap_document.assessment_end.strftime("%b %d, %Y") %>
+          <% end %>
+        <% end %>
+      </div>
+      <% if @sap_document.description.present? %>
+        <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@sap_document.description, length: 200) %></div>
+      <% end %>
+    </div>
+    <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
+      <%= link_to "Export OSCAL".html_safe, download_oscal_sap_document_path(@sap_document),
+            style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
+      <%= link_to "&#8595; JSON".html_safe, download_json_sap_document_path(@sap_document),
+            style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
+      <%= link_to "&#8592; Back".html_safe, sap_documents_path,
+            style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
+    </div>
+  </div>
+
+  <%# ── Summary chips ── %>
+  <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
+      <div style="font-size: 2.6rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= @total_controls %></div>
+      <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">Total Controls</div>
+    </div>
+
+    <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
+
+    <%# ── Method breakdown ── %>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+      <% [["Examine", examine_count, "#3498db"], ["Interview", interview_count, "#f39c12"], ["Test", test_count, "#e74c3c"], ["Unset", none_count, "#95a5a6"]].each do |label, count, color| %>
+        <% next if count == 0 %>
+        <div class="summary-chip"
+             data-filter-method="<%= label.downcase %>"
+             onclick="filterByMethod(this.dataset.filterMethod)"
+             title="Click to filter: <%= label %>"
+             style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= color %>; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; transition: background 0.15s; min-width: 64px;">
+          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= count %></div>
+          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;"><%= label %></div>
+        </div>
+      <% end %>
+    </div>
+
+    <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
+
+    <%# ── Status breakdown ── %>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+      <% [["Planned", planned_count, "#95a5a6"], ["In Progress", in_progress_count, "#f39c12"], ["Completed", completed_count, "#27ae60"]].each do |label, count, color| %>
+        <% next if count == 0 %>
+        <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= color %>; border-radius: 6px; padding: 0.35rem 0.65rem; min-width: 64px;">
+          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= count %></div>
+          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;"><%= label %></div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Progress bar by method ── %>
+  <div style="margin-top: 1.25rem;">
+    <div style="height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: rgba(255,255,255,0.08);">
+      <% total = [examine_count + interview_count + test_count + none_count, 1].max %>
+      <% [["examine", examine_count, "#3498db"], ["interview", interview_count, "#f39c12"], ["test", test_count, "#e74c3c"], ["unset", none_count, "#95a5a6"]].each do |m, count, color| %>
+        <% next if count == 0 %>
+        <div style="width: <%= (count * 100.0 / total).round(3) %>%; background: <%= color %>;" title="<%= m.titleize %>: <%= count %>"></div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ── ASSESSMENT METHOD HEATMAP BY CONTROL FAMILY ──────────────── %>
+<% if @heatmap_families.any? %>
+<details id="heatmapSection" open style="margin-bottom: 1.5rem;">
+  <summary style="cursor: pointer; padding: 0.7rem 1rem; background: var(--summary-bg); border-radius: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; border: 1px solid var(--border-soft);">
+    <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
+    Assessment Methods by Control Family
+    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">&mdash; click a badge to filter</span>
+  </summary>
+
+  <div style="padding: 1rem 0 0.5rem;">
+    <div id="heatmapFilterBanner"
+         style="display: none; background: #1a252f; color: white; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; gap: 0.75rem;">
+      <span id="heatmapFilterLabel" style="font-size: 0.88rem; color: rgba(255,255,255,0.9);"></span>
+      <button onclick="clearHeatmapFilter()"
+              style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap;">
+        &#x2715; Clear Filter
+      </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 0.7rem;">
+      <% method_colors = { "examine" => "#3498db", "interview" => "#f39c12", "test" => "#e74c3c", "(None)" => "#95a5a6" } %>
+      <% @heatmap_families.each do |family| %>
+        <% fd = @heatmap_data[family] || {} %>
+        <% ft = fd.values.sum %>
+        <% ft_test = fd["test"].to_i %>
+        <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
+            <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
+               style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text); text-decoration: none; cursor: pointer;"><%= family %></a>
+            <% if ft_test > 0 %>
+              <span style="font-size: 0.72rem; font-weight: 700; color: #e74c3c;"><%= ft_test %> test</span>
+            <% end %>
+          </div>
+          <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= ft %> controls</div>
+          <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: var(--border-soft); margin-bottom: 0.55rem;">
+            <% @heatmap_methods.each do |m| %>
+              <% next if (fd[m] || 0) == 0 %>
+              <div style="width: <%= ((fd[m] || 0) * 100.0 / [ft, 1].max).round(3) %>%; background: <%= method_colors[m] || '#7f8c8d' %>;"></div>
+            <% end %>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+            <% @heatmap_methods.each do |m| %>
+              <% next if (fd[m] || 0) == 0 %>
+              <div class="heatmap-cell"
+                   data-family="<%= family %>" data-method="<%= m %>"
+                   onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.method)"
+                   title="<%= family %> / <%= m %>: <%= fd[m] %>"
+                   style="background: <%= method_colors[m] || '#7f8c8d' %>; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
+                <%= fd[m] %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.5rem 0;">
+      <span style="font-size: 0.72rem; color: var(--text-faint);">Legend:</span>
+      <% [["Examine", "#3498db"], ["Interview", "#f39c12"], ["Test", "#e74c3c"], ["None", "#95a5a6"]].each do |lbl, col| %>
+        <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--text-muted);">
+          <span style="display: inline-block; width: 11px; height: 11px; background: <%= col %>; border-radius: 2px; flex-shrink: 0;"></span><%= lbl %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+</details>
+<% end %>
+
+<%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
+<div id="controlsContainer">
+  <% @controls.each do |control| %>
+    <%
+      field_map = control.sap_control_fields.index_by(&:field_name)
+      method_val = control.assessment_method.presence || "(None)"
+      method_colors_map = { "examine" => "#3498db", "interview" => "#f39c12", "test" => "#e74c3c" }
+      method_color = method_colors_map[method_val] || "#95a5a6"
+      status_val = control.assessment_status.presence || "planned"
+      status_colors_map = { "planned" => "#95a5a6", "in-progress" => "#f39c12", "completed" => "#27ae60" }
+      status_color = status_colors_map[status_val] || "#95a5a6"
+      family_code = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
+    %>
+    <div class="control-card"
+         data-family="<%= family_code %>"
+         data-method="<%= method_val %>"
+         data-status="<%= status_val %>"
+         style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= method_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+
+      <%# ── Card header ── %>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div style="min-width: 0; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
+            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);">
+              <%= control.control_id.presence || "&mdash;".html_safe %>
+            </span>
+            <span style="background: <%= method_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;">
+              <%= method_val.titleize %>
+            </span>
+            <span style="background: <%= status_color %>22; color: <%= status_color %>; border: 1px solid <%= status_color %>44; padding: 0.12rem 0.45rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; white-space: nowrap;">
+              <%= status_val.titleize %>
+            </span>
+            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace; margin-left: 0.1rem;"><%= family_code %></span>
+            <% if control.assessor_name.present? %>
+              <span style="font-size: 0.68rem; color: var(--text-muted);">&#x1F464; <%= control.assessor_name %></span>
+            <% end %>
+          </div>
+          <% if control.title.present? %>
+            <div style="font-size: 0.85rem; color: var(--text); font-weight: 500;"><%= control.title %></div>
+          <% end %>
+        </div>
+        <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+          <%= link_to "Edit", sap_document_path(@sap_document, control_id: control.id),
+                style: "padding: 0.25rem 0.65rem; font-size: 0.75rem; background: var(--btn-primary); color: white; border: none; border-radius: 4px; text-decoration: none; white-space: nowrap;" %>
+        </div>
+      </div>
+
+      <%# ── Card body: collapsed by default ── %>
+      <% has_details = control.objective.present? || control.test_case.present? || field_map.any? %>
+      <% if has_details %>
+        <details class="card-details" style="margin-top: 0.35rem;">
+          <summary style="cursor: pointer; font-size: 0.7rem; color: var(--text-faint); padding: 0.2rem 0; list-style: none; display: flex; align-items: center; gap: 0.3rem; user-select: none;">
+            <span class="card-arrow" style="font-size: 0.55rem;">&#9658;</span>
+            <span style="border-top: 1px solid var(--border-soft); flex: 1; margin-left: 0.2rem;"></span>
+          </summary>
+
+          <div style="margin-top: 0.5rem;">
+            <% if control.objective.present? %>
+              <div style="background: rgba(41,128,185,0.07); border: 1px solid rgba(41,128,185,0.2); border-left: 3px solid #2980b9; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
+                <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link-accent); font-weight: 700; margin-bottom: 0.35rem;">Assessment Objective</div>
+                <div style="font-size: 0.84rem; color: var(--text); white-space: pre-wrap;"><%= control.objective %></div>
+              </div>
+            <% end %>
+
+            <% if control.test_case.present? %>
+              <div style="background: rgba(231,76,60,0.07); border: 1px solid rgba(231,76,60,0.2); border-left: 3px solid #e74c3c; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
+                <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #e74c3c; font-weight: 700; margin-bottom: 0.35rem;">Test Case / Check Content</div>
+                <div style="font-size: 0.84rem; color: var(--text); white-space: pre-wrap;"><%= control.test_case %></div>
+              </div>
+            <% end %>
+
+            <% if field_map.any? %>
+              <table style="width: 100%; border-collapse: collapse;">
+                <% field_map.each do |fname, field| %>
+                  <tr style="border-top: 1px solid var(--border-soft);">
+                    <td style="width: 30%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top;">
+                      <%= fname.tr("_", " ") %>
+                    </td>
+                    <td style="padding: 0.4rem 0; font-size: 0.84rem; color: var(--text);">
+                      <%= field.field_value %>
+                    </td>
+                  </tr>
+                <% end %>
+              </table>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+    </div><%# end .control-card %>
+  <% end %>
+</div>
+
+<%# ── Edit control modal (inline) ── %>
+<% if @control = @sap_document.sap_controls.find_by(id: params[:control_id]) %>
+  <div id="editModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+    <div style="background: var(--surface); border-radius: 12px; padding: 2rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3>Edit <%= @control.control_id %></h3>
+        <%= link_to "&times;".html_safe, sap_document_path(@sap_document),
+              style: "font-size: 1.5rem; color: var(--text-muted); text-decoration: none; line-height: 1;" %>
+      </div>
+
+      <%= form_with url: sap_document_path(@sap_document, control_id: @control.id), method: :patch, local: true do |f| %>
+        <div class="form-group">
+          <label>Assessment Method</label>
+          <%= f.select :assessment_method,
+                options_for_select(SapControl::ASSESSMENT_METHODS.map { |m| [m.titleize, m] }, @control.assessment_method),
+                { include_blank: "— Select —" }, class: "form-control", name: "sap_control[assessment_method]" %>
+        </div>
+        <div class="form-group">
+          <label>Assessment Status</label>
+          <%= f.select :assessment_status,
+                options_for_select(SapControl::ASSESSMENT_STATUSES.map { |s| [s.titleize, s] }, @control.assessment_status),
+                {}, class: "form-control", name: "sap_control[assessment_status]" %>
+        </div>
+        <div class="form-group">
+          <label>Assessor Name</label>
+          <%= f.text_field :assessor_name, value: @control.assessor_name, class: "form-control", name: "sap_control[assessor_name]" %>
+        </div>
+        <div class="form-group">
+          <label>Assessment Objective</label>
+          <%= f.text_area :objective, value: @control.objective, rows: 3, class: "form-control", name: "sap_control[objective]" %>
+        </div>
+        <div class="form-group">
+          <label>Test Case</label>
+          <%= f.text_area :test_case, value: @control.test_case, rows: 3, class: "form-control", name: "sap_control[test_case]" %>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <%= f.submit "Save Changes", class: "btn btn-success" %>
+          <%= link_to "Cancel", sap_document_path(@sap_document), class: "btn btn-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<script>
+  var activeFamily = null;
+  var activeMethod = null;
+
+  function filterByHeatmapCell(cellEl, family, method) {
+    if (activeFamily === family && activeMethod === method) { clearHeatmapFilter(); return; }
+    activeFamily = family; activeMethod = method;
+    applyFilter();
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = (el.dataset.family === family && el.dataset.method === method) ? '1' : '0.35';
+      el.style.outline = 'none';
+    });
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
+    if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
+  }
+
+  function filterByFamily(family) {
+    if (activeFamily === family && activeMethod === null) { clearHeatmapFilter(); return; }
+    activeFamily = family; activeMethod = null;
+    applyFilter();
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = el.dataset.family === family ? '1' : '0.35'; el.style.outline = 'none';
+    });
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
+  }
+
+  function filterByMethod(method) {
+    if (activeFamily === null && activeMethod === method) { clearHeatmapFilter(); return; }
+    activeFamily = null; activeMethod = method;
+    applyFilter();
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
+      el.style.opacity = el.dataset.method === method ? '1' : '0.35'; el.style.outline = 'none';
+    });
+    document.querySelectorAll('.summary-chip').forEach(function(el) {
+      el.style.background = el.dataset.filterMethod === method ? 'rgba(255,255,255,0.15)' : '';
+    });
+  }
+
+  function applyFilter() {
+    var cards = document.querySelectorAll('#controlsContainer .control-card');
+    var visible = 0;
+    cards.forEach(function(card) {
+      var familyMatch = activeFamily === null || card.dataset.family === activeFamily;
+      var methodMatch = activeMethod === null || card.dataset.method === activeMethod;
+      var show = familyMatch && methodMatch;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    if (activeFamily !== null || activeMethod !== null) {
+      var label = activeFamily && activeMethod ? activeFamily + ' \u2022 ' + activeMethod : (activeFamily || activeMethod);
+      document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
+      document.getElementById('heatmapFilterBanner').style.display = 'flex';
+    } else {
+      document.getElementById('heatmapFilterBanner').style.display = 'none';
+    }
+  }
+
+  function clearHeatmapFilter() {
+    activeFamily = null; activeMethod = null;
+    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) { card.style.display = ''; });
+    document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
+    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
+    document.getElementById('heatmapFilterBanner').style.display = 'none';
+  }
+
+  var heatmapSection = document.getElementById('heatmapSection');
+  if (heatmapSection) {
+    heatmapSection.addEventListener('toggle', function() {
+      document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
+    });
+  }
+
+  function toggleDocMeta() {
+    var view = document.getElementById('doc-meta-view');
+    var edit = document.getElementById('doc-meta-edit');
+    var isEditing = edit.style.display !== 'none';
+    view.style.display = isEditing ? '' : 'none';
+    edit.style.display = isEditing ? 'none' : '';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.card-details').forEach(function(det) {
+      det.addEventListener('toggle', function() {
+        var arrow = det.querySelector('summary .card-arrow');
+        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
+      });
+    });
+  });
+</script>
+
+<% end %><%# end unless completed %>
