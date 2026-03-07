@@ -62,7 +62,7 @@ class DocumentTypeRegistry
     poam: Entry.new(
       document_class:     PoamDocument,
       control_class:      PoamItem,
-      field_class:        PoamItemField,
+      field_class:        nil,
       document_fk:        :poam_document_id,
       allowed_extensions: { ".json" => "json", ".xml" => "xml" },
       parser_map:         { "json" => PoamJsonParserService, "xml" => PoamXmlParserService },

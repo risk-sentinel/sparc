@@ -1,6 +1,4 @@
 class PoamXmlParserService
-  include BatchInsertable
-
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0"
 
   def initialize(poam_document, file_path)
@@ -16,104 +14,66 @@ class PoamXmlParserService
 
     raise "Invalid OSCAL POA&M XML" unless root
 
-    metadata     = root.at_xpath("xmlns:metadata", "xmlns" => OSCAL_NS)
-    observations = root.xpath("xmlns:observation", "xmlns" => OSCAL_NS)
-    risks        = root.xpath("xmlns:risk", "xmlns" => OSCAL_NS)
-    items        = root.xpath("xmlns:poam-item", "xmlns" => OSCAL_NS)
+    # Convert XML nodes to intermediate hashes, then use same creation logic as JSON parser
+    observations_json = root.xpath("xmlns:observation", "xmlns" => OSCAL_NS).map { |o| observation_to_hash(o) }
+    risks_json        = root.xpath("xmlns:risk", "xmlns" => OSCAL_NS).map { |r| risk_to_hash(r) }
+    findings_json     = root.xpath("xmlns:finding", "xmlns" => OSCAL_NS).map { |f| finding_to_hash(f) }
+    items_json        = root.xpath("xmlns:poam-item", "xmlns" => OSCAL_NS).map { |i| poam_item_to_hash(i) }
+    local_defs        = local_definitions_to_hash(root.at_xpath("xmlns:local-definitions", "xmlns" => OSCAL_NS))
 
-    observations_json = observations.map { |o| observation_to_hash(o) }
-    risks_json        = risks.map { |r| risk_to_hash(r) }
+    # Build a synthetic JSON-like structure and delegate to the JSON parser logic
+    poam_hash = {
+      "uuid"             => root["uuid"],
+      "metadata"         => metadata_to_hash(root.at_xpath("xmlns:metadata", "xmlns" => OSCAL_NS)),
+      "import-ssp"       => import_ssp_to_hash(root.at_xpath("xmlns:import-ssp", "xmlns" => OSCAL_NS)),
+      "system-id"        => system_id_to_hash(root.at_xpath("xmlns:system-id", "xmlns" => OSCAL_NS)),
+      "observations"     => observations_json,
+      "risks"            => risks_json,
+      "findings"         => findings_json,
+      "local-definitions" => local_defs,
+      "poam-items"       => items_json,
+      "back-matter"      => back_matter_to_hash(root.at_xpath("xmlns:back-matter", "xmlns" => OSCAL_NS))
+    }.compact
 
-    update_document_metadata(metadata, root, observations_json, risks_json)
-
-    risk_map        = risks_json.index_by { |r| r["uuid"] }
-    observation_map = observations_json.index_by { |o| o["uuid"] }
-
-    control_attrs = []
-    field_entries = []
-
-    items.each_with_index do |item, idx|
-      related_risk_uuid = item.at_xpath("xmlns:associated-risk", "xmlns" => OSCAL_NS)&.[]("risk-uuid")
-      related_obs_uuid  = item.at_xpath("xmlns:related-observation", "xmlns" => OSCAL_NS)&.[]("observation-uuid")
-      risk = risk_map[related_risk_uuid]
-
-      attrs = {
-        title:                    text(item, "title"),
-        description:              text(item, "description"),
-        poam_item_uuid:           item["uuid"],
-        risk_status:              risk&.dig("status"),
-        risk_level:               extract_facet(risk, "impact"),
-        likelihood:               extract_facet(risk, "likelihood"),
-        impact:                   extract_facet(risk, "impact"),
-        deadline:                 parse_date(risk&.dig("deadline")),
-        related_risk_uuid:        related_risk_uuid,
-        related_observation_uuid: related_obs_uuid,
-        row_order:                idx
-      }
-
-      ctrl_idx = control_attrs.size
-      control_attrs << attrs
-
-      # Store risk details as fields
-      if risk
-        field_entries << [ ctrl_idx, "risk_title", risk["title"] ] if risk["title"].present?
-        field_entries << [ ctrl_idx, "risk_statement", risk["statement"] ] if risk["statement"].present?
-
-        factors = (risk["mitigating-factors"] || []).map { |mf| mf["description"] }.compact.join("\n\n")
-        field_entries << [ ctrl_idx, "mitigating_factors", factors ] if factors.present?
-
-        (risk["remediations"] || []).each do |rem|
-          field_entries << [ ctrl_idx, "remediation_lifecycle", rem["lifecycle"] ] if rem["lifecycle"].present?
-          field_entries << [ ctrl_idx, "remediation_title", rem["title"] ] if rem["title"].present?
-          field_entries << [ ctrl_idx, "remediation_description", rem["description"] ] if rem["description"].present?
-
-          (rem["tasks"] || []).each do |task|
-            next unless task["type"] == "milestone"
-            field_entries << [ ctrl_idx, "milestone_title", task["title"] ] if task["title"].present?
-            if task["start"] || task["end"]
-              range = [ task["start"], task["end"] ].compact.join(" → ")
-              field_entries << [ ctrl_idx, "milestone_date", range ] if range.present?
-            end
-          end
-        end
-      end
-
-      # Store observation details as fields
-      obs = observation_map[related_obs_uuid]
-      if obs
-        field_entries << [ ctrl_idx, "observation_title", obs["title"] ] if obs["title"].present?
-        field_entries << [ ctrl_idx, "observation_description", obs["description"] ] if obs["description"].present?
-      end
-    end
-
-    batch_insert_records(
-      control_class: PoamItem,
-      field_class:   PoamItemField,
-      document_fk:   :poam_document_id,
-      control_attrs: control_attrs,
-      field_entries: field_entries
-    )
+    # Wrap in expected structure and parse via JSON parser
+    data = { "plan-of-action-and-milestones" => poam_hash }
+    json_parser = PoamJsonParserService.new(@document, nil)
+    json_parser.parse_from_hash(data)
   end
 
   private
 
-  def update_document_metadata(metadata, root, observations_json, risks_json)
-    import_ssp = root.at_xpath("xmlns:import-ssp", "xmlns" => OSCAL_NS)
-    sys_id     = root.at_xpath("xmlns:system-id", "xmlns" => OSCAL_NS)
-    back_matter_resources = root.xpath("xmlns:back-matter/xmlns:resource", "xmlns" => OSCAL_NS)
+  # ── XML → Hash converters ───────────────────────────────────────
 
-    @document.update!(
-      poam_version:     text(metadata, "version"),
-      oscal_version:    text(metadata, "oscal-version"),
-      system_id:        sys_id&.text&.strip,
-      observations_data: observations_json,
-      risks_data:       risks_json,
-      import_metadata:  {
-        "uuid"        => root["uuid"],
-        "import_ssp"  => import_ssp ? { "href" => import_ssp["href"] } : nil,
-        "back_matter" => back_matter_resources.map { |r| { "uuid" => r["uuid"], "title" => text(r, "title") } }
-      }.compact
-    )
+  def metadata_to_hash(node)
+    return {} unless node
+    {
+      "title"         => text(node, "title"),
+      "version"       => text(node, "version"),
+      "oscal-version" => text(node, "oscal-version"),
+      "last-modified" => text(node, "last-modified"),
+      "revisions"     => node.xpath("xmlns:revisions/xmlns:revision", "xmlns" => OSCAL_NS).map { |r|
+        {
+          "title"         => text(r, "title"),
+          "version"       => text(r, "version"),
+          "oscal-version" => text(r, "oscal-version"),
+          "last-modified" => text(r, "last-modified")
+        }.compact
+      }.presence
+    }.compact
+  end
+
+  def import_ssp_to_hash(node)
+    return nil unless node
+    { "href" => node["href"] }.compact
+  end
+
+  def system_id_to_hash(node)
+    return nil unless node
+    {
+      "identifier-type" => node["identifier-type"],
+      "id"              => node.text.strip
+    }.compact
   end
 
   def observation_to_hash(node)
@@ -128,7 +88,10 @@ class PoamXmlParserService
       "remarks"     => text(node, "remarks"),
       "subjects"    => node.xpath("xmlns:subject", "xmlns" => OSCAL_NS).map { |s|
         { "subject-uuid" => s["subject-uuid"], "type" => s["type"] }
-      }
+      }.presence,
+      "origins"     => parse_origins(node),
+      "props"       => parse_props(node),
+      "links"       => parse_links(node)
     }.compact
   end
 
@@ -148,59 +111,223 @@ class PoamXmlParserService
             }
           },
           "facets" => c.xpath("xmlns:facet", "xmlns" => OSCAL_NS).map { |f|
-            { "name" => f["name"], "value" => f["value"], "system" => f["system"] }
+            { "name" => f["name"], "value" => f["value"], "system" => f["system"] }.compact
           }
         }
-      },
+      }.presence,
       "mitigating-factors" => node.xpath("xmlns:mitigating-factor", "xmlns" => OSCAL_NS).map { |mf|
-        { "uuid" => mf["uuid"], "description" => text(mf, "description") }
-      },
+        { "uuid" => mf["uuid"], "description" => text(mf, "description") }.compact
+      }.presence,
+      "origins"     => parse_origins(node),
+      "threat-ids"  => node.xpath("xmlns:threat-id", "xmlns" => OSCAL_NS).map { |t|
+        { "system" => t["system"], "href" => t["href"], "id" => t.text.strip }.compact
+      }.presence,
+      "risk-log"    => risk_log_to_hash(node.at_xpath("xmlns:risk-log", "xmlns" => OSCAL_NS)),
       "remediations" => node.xpath("xmlns:response", "xmlns" => OSCAL_NS).map { |r|
-        {
-          "uuid"        => r["uuid"],
-          "lifecycle"   => r["lifecycle"],
-          "title"       => text(r, "title"),
-          "description" => text(r, "description"),
-          "props"       => r.xpath("xmlns:prop", "xmlns" => OSCAL_NS).map { |p| { "name" => p["name"], "value" => p["value"] } },
-          "tasks"       => r.xpath("xmlns:task", "xmlns" => OSCAL_NS).map { |t|
-            timing = t.at_xpath("xmlns:timing/xmlns:within-date-range", "xmlns" => OSCAL_NS)
-            {
-              "uuid"  => t["uuid"],
-              "type"  => t["type"],
-              "title" => text(t, "title"),
-              "description" => text(t, "description"),
-              "start" => timing&.[]("start"),
-              "end"   => timing&.[]("end")
-            }.compact
-          }
-        }
-      },
+        remediation_to_hash(r)
+      }.presence,
       "related-observations" => node.xpath("xmlns:related-observation", "xmlns" => OSCAL_NS).map { |ro|
         { "observation-uuid" => ro["observation-uuid"] }
-      }
+      }.presence,
+      "props"       => parse_props(node),
+      "links"       => parse_links(node),
+      "remarks"     => text(node, "remarks")
     }.compact
+  end
+
+  def remediation_to_hash(node)
+    {
+      "uuid"        => node["uuid"],
+      "lifecycle"   => node["lifecycle"],
+      "title"       => text(node, "title"),
+      "description" => text(node, "description"),
+      "origins"     => parse_origins(node),
+      "required-assets" => node.xpath("xmlns:required-asset", "xmlns" => OSCAL_NS).map { |ra|
+        { "uuid" => ra["uuid"], "description" => text(ra, "description") }.compact
+      }.presence,
+      "props"       => parse_props(node),
+      "links"       => parse_links(node),
+      "remarks"     => text(node, "remarks"),
+      "tasks"       => node.xpath("xmlns:task", "xmlns" => OSCAL_NS).map { |t|
+        task_to_hash(t)
+      }.presence
+    }.compact
+  end
+
+  def task_to_hash(node)
+    timing_node = node.at_xpath("xmlns:timing", "xmlns" => OSCAL_NS)
+    timing = {}
+    if timing_node
+      range = timing_node.at_xpath("xmlns:within-date-range", "xmlns" => OSCAL_NS)
+      on_date = timing_node.at_xpath("xmlns:on-date", "xmlns" => OSCAL_NS)
+      if range
+        timing["within-date-range"] = { "start" => range["start"], "end" => range["end"] }.compact
+      elsif on_date
+        timing["on-date"] = { "date" => on_date["date"] }
+      end
+    end
+
+    {
+      "uuid"        => node["uuid"],
+      "type"        => node["type"],
+      "title"       => text(node, "title"),
+      "description" => text(node, "description"),
+      "timing"      => timing.presence,
+      "props"       => parse_props(node),
+      "links"       => parse_links(node),
+      "remarks"     => text(node, "remarks"),
+      "responsible-roles" => node.xpath("xmlns:responsible-role", "xmlns" => OSCAL_NS).map { |rr|
+        { "role-id" => rr["role-id"] }
+      }.presence,
+      "subjects"    => node.xpath("xmlns:subject", "xmlns" => OSCAL_NS).map { |s|
+        { "subject-uuid" => s["subject-uuid"], "type" => s["type"] }
+      }.presence
+    }.compact
+  end
+
+  def finding_to_hash(node)
+    {
+      "uuid"        => node["uuid"],
+      "title"       => text(node, "title"),
+      "description" => text(node, "description"),
+      "target"      => target_to_hash(node.at_xpath("xmlns:target", "xmlns" => OSCAL_NS)),
+      "implementation-statement-uuid" => node.at_xpath("xmlns:implementation-statement-uuid", "xmlns" => OSCAL_NS)&.text&.strip,
+      "origins"     => parse_origins(node),
+      "related-observations" => node.xpath("xmlns:related-observation", "xmlns" => OSCAL_NS).map { |ro|
+        { "observation-uuid" => ro["observation-uuid"] }
+      }.presence,
+      "related-risks" => node.xpath("xmlns:associated-risk", "xmlns" => OSCAL_NS).map { |rr|
+        { "risk-uuid" => rr["risk-uuid"] }
+      }.presence,
+      "props"       => parse_props(node),
+      "links"       => parse_links(node),
+      "remarks"     => text(node, "remarks")
+    }.compact
+  end
+
+  def target_to_hash(node)
+    return {} unless node
+    {
+      "type"             => node["type"],
+      "target-id"        => node["target-id"],
+      "status"           => { "state" => text(node, "status") }.compact.presence,
+      "implementation-status" => text(node, "implementation-status")
+    }.compact
+  end
+
+  def poam_item_to_hash(node)
+    {
+      "uuid"        => node["uuid"],
+      "title"       => text(node, "title"),
+      "description" => text(node, "description"),
+      "origins"     => parse_origins(node),
+      "related-observations" => node.xpath("xmlns:related-observation", "xmlns" => OSCAL_NS).map { |ro|
+        { "observation-uuid" => ro["observation-uuid"] }
+      }.presence,
+      "related-risks" => node.xpath("xmlns:associated-risk", "xmlns" => OSCAL_NS).map { |rr|
+        { "risk-uuid" => rr["risk-uuid"] }
+      }.presence,
+      "related-findings" => node.xpath("xmlns:related-finding", "xmlns" => OSCAL_NS).map { |rf|
+        { "finding-uuid" => rf["finding-uuid"] }
+      }.presence,
+      "props"       => parse_props(node),
+      "links"       => parse_links(node),
+      "remarks"     => text(node, "remarks")
+    }.compact
+  end
+
+  def local_definitions_to_hash(node)
+    return nil unless node
+    {
+      "components" => node.xpath("xmlns:component", "xmlns" => OSCAL_NS).map { |c|
+        comp_status = c.at_xpath("xmlns:status", "xmlns" => OSCAL_NS)
+        {
+          "uuid"        => c["uuid"],
+          "type"        => c["type"],
+          "title"       => text(c, "title"),
+          "description" => text(c, "description"),
+          "purpose"     => text(c, "purpose"),
+          "status"      => comp_status ? { "state" => comp_status["state"], "remarks" => text(comp_status, "remarks") }.compact : nil,
+          "responsible-roles" => c.xpath("xmlns:responsible-role", "xmlns" => OSCAL_NS).map { |rr|
+            { "role-id" => rr["role-id"] }
+          }.presence,
+          "protocols"   => c.xpath("xmlns:protocol", "xmlns" => OSCAL_NS).map { |p|
+            { "uuid" => p["uuid"], "name" => p["name"] }.compact
+          }.presence,
+          "props"       => parse_props(c),
+          "links"       => parse_links(c),
+          "remarks"     => text(c, "remarks")
+        }.compact
+      }.presence,
+      "inventory-items" => node.xpath("xmlns:inventory-item", "xmlns" => OSCAL_NS).map { |ii|
+        { "uuid" => ii["uuid"], "description" => text(ii, "description") }.compact
+      }.presence,
+      "assessment-assets" => assessment_assets_to_hash(node.at_xpath("xmlns:assessment-assets", "xmlns" => OSCAL_NS))
+    }.compact.presence
+  end
+
+  def assessment_assets_to_hash(node)
+    return nil unless node
+    { "components" => node.xpath("xmlns:component", "xmlns" => OSCAL_NS).map { |c| { "uuid" => c["uuid"] } } }.compact.presence
+  end
+
+  def risk_log_to_hash(node)
+    return {} unless node
+    {
+      "entries" => node.xpath("xmlns:entry", "xmlns" => OSCAL_NS).map { |e|
+        {
+          "uuid"        => e["uuid"],
+          "title"       => text(e, "title"),
+          "description" => text(e, "description"),
+          "start"       => text(e, "start"),
+          "end"         => text(e, "end")
+        }.compact
+      }
+    }
+  end
+
+  def back_matter_to_hash(node)
+    return nil unless node
+    {
+      "resources" => node.xpath("xmlns:resource", "xmlns" => OSCAL_NS).map { |r|
+        {
+          "uuid"   => r["uuid"],
+          "title"  => text(r, "title"),
+          "rlinks" => r.xpath("xmlns:rlink", "xmlns" => OSCAL_NS).map { |rl|
+            { "href" => rl["href"] }.compact
+          }.presence
+        }.compact
+      }
+    }
+  end
+
+  # ── Common XML helpers ──────────────────────────────────────────
+
+  def parse_props(node)
+    node.xpath("xmlns:prop", "xmlns" => OSCAL_NS).map { |p|
+      { "name" => p["name"], "value" => p["value"], "ns" => p["ns"], "class" => p["class"], "uuid" => p["uuid"] }.compact
+    }.presence
+  end
+
+  def parse_links(node)
+    node.xpath("xmlns:link", "xmlns" => OSCAL_NS).map { |l|
+      { "href" => l["href"], "rel" => l["rel"], "media-type" => l["media-type"] }.compact
+    }.presence
+  end
+
+  def parse_origins(node)
+    node.xpath("xmlns:origin", "xmlns" => OSCAL_NS).map { |o|
+      {
+        "actors" => o.xpath("xmlns:actor", "xmlns" => OSCAL_NS).map { |a|
+          { "type" => a["type"], "actor-uuid" => a["actor-uuid"] }.compact
+        }
+      }
+    }.presence
   end
 
   def text(node, child_name)
     return nil unless node
     child = node.at_xpath("xmlns:#{child_name}", "xmlns" => OSCAL_NS)
     child&.text&.strip&.presence
-  end
-
-  def extract_facet(risk, name)
-    return nil unless risk
-    (risk["characterizations"] || []).each do |char|
-      (char["facets"] || []).each do |facet|
-        return facet["value"] if facet["name"] == name
-      end
-    end
-    nil
-  end
-
-  def parse_date(value)
-    return nil if value.blank?
-    Date.parse(value)
-  rescue Date::Error
-    nil
   end
 end

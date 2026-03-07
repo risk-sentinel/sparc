@@ -7,7 +7,7 @@ class PoamDocumentsController < ApplicationController
     update_metadata status update
   ]
 
-  RISK_STATUS_ORDER = %w[open deviation-approved closed].freeze
+  RISK_STATUS_ORDER = %w[open investigating remediating deviation-requested deviation-approved closed].freeze
   IMPACT_ORDER      = %w[high medium low].freeze
 
   def index
@@ -19,7 +19,12 @@ class PoamDocumentsController < ApplicationController
 
     items_scope = @poam_document.poam_items
 
-    @total_items = items_scope.count
+    @total_items       = items_scope.count
+    @risk_count        = @poam_document.poam_risks.count
+    @observation_count = @poam_document.poam_observations.count
+    @finding_count     = @poam_document.poam_findings.count
+    @component_count   = @poam_document.poam_local_components.count
+
     @status_counts = items_scope.where.not(risk_status: [ nil, "" ]).group(:risk_status).count
     @impact_counts = items_scope.where.not(impact: [ nil, "" ]).group(:impact).count
 
@@ -30,7 +35,11 @@ class PoamDocumentsController < ApplicationController
     filtered = filtered.where(impact: params[:impact])           if params[:impact].present?
 
     @filtered_count = filtered.count
-    @items = filtered.order(:row_order).includes(:poam_item_fields)
+    @items = filtered.order(:row_order).includes(
+      :poam_item_risks, :poam_risks,
+      :poam_item_observations, :poam_observations,
+      :poam_item_findings, :poam_findings
+    )
   end
 
   def new
@@ -44,20 +53,23 @@ class PoamDocumentsController < ApplicationController
   def update
     item = @poam_document.poam_items.find(params[:poam_item_id])
 
+    editable_fields = %w[risk_status internal_notes closure_evidence]
+    update_attrs = {}
+
     (params[:fields] || {}).each do |field_name, value|
       fname = field_name.to_s
-      unless PoamItemField::EDITABLE_FIELDS.include?(fname)
+      unless editable_fields.include?(fname)
         raise StandardError, "Field '#{fname}' is not editable"
       end
-
-      field = item.poam_item_fields.find_or_initialize_by(field_name: fname)
-      field.field_value = value.to_s.strip
-      field.save!
+      update_attrs[fname] = value.to_s.strip
     end
 
-    # Sync risk_status if updated via fields
-    if params.dig(:fields, :risk_status).present?
-      item.update!(risk_status: params[:fields][:risk_status].to_s.strip)
+    item.update!(update_attrs) if update_attrs.any?
+
+    # Sync risk_status to primary risk record
+    if update_attrs["risk_status"].present?
+      primary_risk = item.primary_risk
+      primary_risk&.update!(status: update_attrs["risk_status"])
     end
 
     flash[:success] = "POA&M item updated"

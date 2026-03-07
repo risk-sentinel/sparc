@@ -4,6 +4,7 @@ class PoamItemsController < ApplicationController
 
   def new
     @poam_item = @poam_document.poam_items.build
+    load_association_options
   end
 
   def create
@@ -12,22 +13,26 @@ class PoamItemsController < ApplicationController
     @poam_item.poam_item_uuid = SecureRandom.uuid
 
     if @poam_item.save
-      save_editable_fields
+      sync_associations
       flash[:success] = "POA&M item added"
       redirect_to poam_document_path(@poam_document)
     else
+      load_association_options
       render :new, status: :unprocessable_entity
     end
   end
 
-  def edit; end
+  def edit
+    load_association_options
+  end
 
   def update
     if @poam_item.update(poam_item_params)
-      save_editable_fields
+      sync_associations
       flash[:success] = "POA&M item updated"
       redirect_to poam_document_path(@poam_document)
     else
+      load_association_options
       render :edit, status: :unprocessable_entity
     end
   end
@@ -50,15 +55,30 @@ class PoamItemsController < ApplicationController
   end
 
   def poam_item_params
-    params.require(:poam_item).permit(:title, :description, :risk_status, :risk_level, :likelihood, :impact, :deadline)
+    params.require(:poam_item).permit(
+      :title, :description, :risk_status, :risk_level,
+      :likelihood, :impact, :deadline,
+      :internal_notes, :closure_evidence, :remarks
+    )
   end
 
-  def save_editable_fields
-    (params[:fields] || {}).each do |field_name, value|
-      next unless PoamItemField::EDITABLE_FIELDS.include?(field_name.to_s)
-      field = @poam_item.poam_item_fields.find_or_initialize_by(field_name: field_name.to_s)
-      field.field_value = value.to_s.strip
-      field.save!
+  def load_association_options
+    @available_risks        = @poam_document.poam_risks.order(:title)
+    @available_observations = @poam_document.poam_observations.order(:title)
+    @available_findings     = @poam_document.poam_findings.order(:title)
+  end
+
+  def sync_associations
+    if params[:poam_risk_ids].present?
+      @poam_item.poam_risk_ids = params[:poam_risk_ids].reject(&:blank?).map(&:to_i)
+    end
+
+    if params[:poam_observation_ids].present?
+      @poam_item.poam_observation_ids = params[:poam_observation_ids].reject(&:blank?).map(&:to_i)
+    end
+
+    if params[:poam_finding_ids].present?
+      @poam_item.poam_finding_ids = params[:poam_finding_ids].reject(&:blank?).map(&:to_i)
     end
   end
 end
