@@ -47,12 +47,12 @@
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
 
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap" style="gap: 1rem;">
     <div>
       <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Controls Implementation</div>
 
       <div id="doc-meta-view">
-        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
           <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0;"><%= @ssp_document.name %></h2>
           <% if @ssp_document.ssp_version.present? %>
             <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.72rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px;">v<%= @ssp_document.ssp_version %></span>
@@ -63,7 +63,7 @@
 
       <div id="doc-meta-edit" style="display: none;">
         <%= form_with url: update_metadata_ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
-          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <div class="d-flex gap-2 align-items-center flex-wrap">
             <%= f.text_field :name, value: @ssp_document.name,
                   style: "font-size: 1.1rem; font-weight: 700; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; min-width: 200px;" %>
             <%= f.text_field :ssp_version, value: @ssp_document.ssp_version, placeholder: "Version",
@@ -83,7 +83,7 @@
         &nbsp;•&nbsp; <%= total_controls %> controls
       </div>
     </div>
-    <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
+    <div class="d-flex flex-wrap gap-2" style="flex-shrink: 0;">
       <%= link_to "Export OSCAL".html_safe, download_oscal_ssp_document_path(@ssp_document),
             style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
       <%= link_to "&#8595; JSON".html_safe, download_json_ssp_document_path(@ssp_document),
@@ -95,7 +95,7 @@
     </div>
   </div>
 
-  <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+  <div class="d-flex align-items-center flex-wrap" style="gap: 1.5rem;">
     <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
       <div style="font-size: 2.6rem; font-weight: 800; color: <%= score_color %>; line-height: 1; font-variant-numeric: tabular-nums;">
         <%= compliance_pct %>%
@@ -105,7 +105,7 @@
 
     <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
 
-    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; flex: 1;">
+    <div class="d-flex flex-wrap" style="gap: 0.45rem; flex: 1;">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
         <div class="summary-chip"
@@ -121,7 +121,7 @@
   </div>
 
   <div style="margin-top: 1.25rem;">
-    <div style="height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: rgba(255,255,255,0.08);">
+    <div class="d-flex rounded-pill" style="height: 6px; overflow: hidden; background: rgba(255,255,255,0.08);">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
         <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>;"
@@ -136,12 +136,12 @@
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
 
     <%# System Characteristics %>
-    <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem;">
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 0.5rem;">System Characteristics</div>
+    <div style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 1rem;">
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color); margin-bottom: 0.5rem;">System Characteristics</div>
       <% if @ssp_document.description.present? %>
-        <div style="font-size: 0.82rem; color: var(--text); margin-bottom: 0.4rem;"><%= truncate(@ssp_document.description, length: 120) %></div>
+        <div style="font-size: 0.82rem; color: var(--bs-body-color); margin-bottom: 0.4rem;"><%= truncate(@ssp_document.description, length: 120) %></div>
       <% end %>
-      <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.25rem;">
+      <div class="d-flex flex-wrap gap-1" style="margin-top: 0.25rem;">
         <% if @ssp_document.security_sensitivity_level.present? %>
           <span style="background: rgba(52,152,219,0.1); color: #2980b9; padding: 0.12rem 0.45rem; border-radius: 3px; font-size: 0.72rem; font-weight: 600;"><%= @ssp_document.security_sensitivity_level.split("-").last.capitalize %></span>
         <% end %>
@@ -152,41 +152,41 @@
     </div>
 
     <%# Components %>
-    <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem;">
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 0.5rem;">Components (<%= @components.count %>)</div>
+    <div style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 1rem;">
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color); margin-bottom: 0.5rem;">Components (<%= @components.count %>)</div>
       <% @components.first(5).each do |comp| %>
-        <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem;">
+        <div class="d-flex align-items-center gap-1" style="margin-bottom: 0.25rem;">
           <span style="background: <%= comp.component_type == 'this-system' ? 'rgba(142,68,173,0.12)' : 'rgba(52,152,219,0.1)' %>; color: <%= comp.component_type == 'this-system' ? '#8e44ad' : '#2980b9' %>; padding: 0.08rem 0.35rem; border-radius: 3px; font-size: 0.68rem; font-weight: 600;"><%= comp.component_type %></span>
-          <span style="font-size: 0.82rem; color: var(--text);"><%= truncate(comp.title, length: 30) %></span>
+          <span style="font-size: 0.82rem; color: var(--bs-body-color);"><%= truncate(comp.title, length: 30) %></span>
         </div>
       <% end %>
       <% if @components.count > 5 %>
-        <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 0.25rem;">+ <%= @components.count - 5 %> more</div>
+        <div style="font-size: 0.75rem; color: var(--bs-tertiary-color); margin-top: 0.25rem;">+ <%= @components.count - 5 %> more</div>
       <% end %>
     </div>
 
     <%# Users %>
-    <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem;">
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 0.5rem;">Users (<%= @users.count %>)</div>
+    <div style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 1rem;">
+      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color); margin-bottom: 0.5rem;">Users (<%= @users.count %>)</div>
       <% @users.first(5).each do |user| %>
-        <div style="font-size: 0.82rem; color: var(--text); margin-bottom: 0.2rem;">
+        <div style="font-size: 0.82rem; color: var(--bs-body-color); margin-bottom: 0.2rem;">
           <%= user.title.presence || "Unnamed User" %>
           <% if user.role_ids_data.present? %>
-            <span style="font-size: 0.7rem; color: var(--text-faint);"> &mdash; <%= user.role_ids_data.join(", ") %></span>
+            <span style="font-size: 0.7rem; color: var(--bs-tertiary-color);"> &mdash; <%= user.role_ids_data.join(", ") %></span>
           <% end %>
         </div>
       <% end %>
       <% if @users.count > 5 %>
-        <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 0.25rem;">+ <%= @users.count - 5 %> more</div>
+        <div style="font-size: 0.75rem; color: var(--bs-tertiary-color); margin-top: 0.25rem;">+ <%= @users.count - 5 %> more</div>
       <% end %>
     </div>
   </div>
 <% elsif !@ssp_document.enriched? %>
   <%# Enrichment prompt banner for SSPs missing OSCAL fields %>
-  <div style="background: rgba(241,196,15,0.08); border: 1px solid rgba(241,196,15,0.25); border-radius: 8px; padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+  <div class="d-flex align-items-center justify-content-between gap-3 rounded-3 mb-4" style="background: rgba(241,196,15,0.08); border: 1px solid rgba(241,196,15,0.25); padding: 0.85rem 1.25rem;">
     <div>
-      <div style="font-size: 0.88rem; font-weight: 600; color: var(--text);">Enrich for OSCAL Compliance</div>
-      <div style="font-size: 0.78rem; color: var(--text-muted);">Add system characteristics, components, and users to produce a fully valid OSCAL SSP export.</div>
+      <div class="fw-semibold" style="font-size: 0.88rem; color: var(--bs-body-color);">Enrich for OSCAL Compliance</div>
+      <div class="text-body-secondary" style="font-size: 0.78rem;">Add system characteristics, components, and users to produce a fully valid OSCAL SSP export.</div>
     </div>
     <%= link_to "Enrich SSP", enrich_ssp_document_path(@ssp_document), class: "btn btn-success", style: "flex-shrink: 0; font-size: 0.85rem; padding: 0.4rem 1rem;" %>
   </div>
@@ -195,10 +195,10 @@
 <%# ── FAMILY COMPLIANCE GRID ─────────────────────────────────────── %>
 <% if @heatmap_families.any? %>
 <details id="heatmapSection" open style="margin-bottom: 1.5rem;">
-  <summary style="cursor: pointer; padding: 0.7rem 1rem; background: var(--summary-bg); border-radius: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; border: 1px solid var(--border-soft);">
+  <summary class="bg-body-secondary rounded-3 fw-semibold d-flex align-items-center gap-2 border" style="cursor: pointer; padding: 0.7rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
     <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
     Compliance by Control Family
-    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">— click a badge to filter</span>
+    <span style="font-size: 0.78rem; font-weight: 400; color: var(--bs-tertiary-color); margin-left: 0.25rem;">— click a badge to filter</span>
   </summary>
 
   <div style="padding: 1rem 0 0.5rem;">
@@ -219,20 +219,20 @@
         <% family_na   = family_data["Not Applicable"].to_i %>
         <% family_denom = [family_total - family_na, 1].max %>
         <% family_pct   = (family_impl * 100.0 / family_denom).round %>
-        <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
+        <div style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+          <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
             <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
-               style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text); text-decoration: none; cursor: pointer;"><%= family %></a>
+               style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--bs-body-color); text-decoration: none; cursor: pointer;"><%= family %></a>
             <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= family_pct %>%</span>
           </div>
-          <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
-          <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: var(--border-soft); margin-bottom: 0.55rem;">
+          <div style="font-size: 0.62rem; color: var(--bs-tertiary-color); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
+          <div class="d-flex" style="height: 4px; border-radius: 2px; overflow: hidden; background: var(--bs-border-color); margin-bottom: 0.55rem;">
             <% @heatmap_statuses.each do |status| %>
               <% next if (family_data[status] || 0) == 0 %>
               <div style="width: <%= ((family_data[status] || 0) * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>;"></div>
             <% end %>
           </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+          <div class="d-flex flex-wrap gap-1">
             <% @heatmap_statuses.each do |status| %>
               <% count = family_data[status] || 0 %>
               <% next if count == 0 %>
@@ -249,10 +249,10 @@
       <% end %>
     </div>
 
-    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.5rem 0;">
-      <span style="font-size: 0.72rem; color: var(--text-faint);">Legend:</span>
+    <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
+      <span style="font-size: 0.72rem; color: var(--bs-tertiary-color);">Legend:</span>
       <% ApplicationHelper::SSP_STATUS_COLORS.first(4).each do |label, color| %>
-        <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--text-muted);">
+        <span class="d-flex align-items-center gap-1 text-body-secondary" style="font-size: 0.72rem;">
           <span style="display: inline-block; width: 11px; height: 11px; background: <%= color %>; border-radius: 2px;"></span>
           <%= label %>
         </span>
@@ -278,23 +278,23 @@
     <div class="control-card"
          data-family="<%= family_code %>"
          data-status="<%= status_val %>"
-         style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= status_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+         style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-left: 4px solid <%= status_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
 
       <%# ── Card header ── %>
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+      <div class="d-flex justify-content-between align-items-start gap-3">
         <div style="min-width: 0; flex: 1;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
-            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);"><%= control.control_id %></span>
+          <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
+            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--bs-body-color);"><%= control.control_id %></span>
             <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;"><%= status_val %></span>
             <% if type_use_val.present? %>
-              <span style="background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-muted); padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.67rem; font-weight: 600; white-space: nowrap;"><%= type_use_val %></span>
+              <span style="background: var(--bs-secondary-bg); border: 1px solid var(--bs-border-color); color: var(--bs-secondary-color); padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.67rem; font-weight: 600; white-space: nowrap;"><%= type_use_val %></span>
             <% end %>
             <% if prov_as_val.present? %>
-              <span style="background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: var(--text-muted); padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.67rem; font-weight: 600; white-space: nowrap;">&#x2713; <%= prov_as_val %></span>
+              <span style="background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: var(--bs-secondary-color); padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.67rem; font-weight: 600; white-space: nowrap;">&#x2713; <%= prov_as_val %></span>
             <% end %>
-            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace; margin-left: 0.1rem;"><%= family_code %></span>
+            <span style="font-size: 0.68rem; color: var(--bs-tertiary-color); font-family: monospace; margin-left: 0.1rem;"><%= family_code %></span>
           </div>
-          <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.1rem;"><%= control.title %></div>
+          <div style="font-size: 0.85rem; color: var(--bs-secondary-color); margin-top: 0.1rem;"><%= control.title %></div>
         </div>
         <button onclick="toggleEdit(<%= control.id %>)"
                 id="edit-btn-<%= control.id %>"
@@ -305,9 +305,9 @@
 
       <%# ── Card body: collapsed by default ── %>
       <details id="details-<%= control.id %>" class="card-details" style="margin-top: 0.35rem;">
-        <summary style="cursor: pointer; font-size: 0.7rem; color: var(--text-faint); padding: 0.2rem 0; list-style: none; display: flex; align-items: center; gap: 0.3rem; user-select: none;">
+        <summary class="d-flex align-items-center gap-1" style="cursor: pointer; font-size: 0.7rem; color: var(--bs-tertiary-color); padding: 0.2rem 0; list-style: none; user-select: none;">
           <span class="card-arrow" style="font-size: 0.55rem;">&#9658;</span>
-          <span style="border-top: 1px solid var(--border-soft); flex: 1; margin-left: 0.2rem;"></span>
+          <span style="border-top: 1px solid var(--bs-border-color); flex: 1; margin-left: 0.2rem;"></span>
         </summary>
 
         <%# ── View mode ── %>
@@ -316,8 +316,8 @@
           <%# Stated requirement — highlighted block when present %>
           <% if stated_req.present? %>
             <div style="background: rgba(41,128,185,0.07); border: 1px solid rgba(41,128,185,0.2); border-left: 3px solid #2980b9; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
-              <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link-accent); font-weight: 700; margin-bottom: 0.35rem;">Required Statement</div>
-              <div style="font-size: 0.84rem; color: var(--text); line-height: 1.5;"><%= stated_req %></div>
+              <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-primary); font-weight: 700; margin-bottom: 0.35rem;">Required Statement</div>
+              <div style="font-size: 0.84rem; color: var(--bs-body-color); line-height: 1.5;"><%= stated_req %></div>
             </div>
           <% end %>
 
@@ -334,12 +334,12 @@
             <table style="width: 100%; border-collapse: collapse;">
               <% display_fields.each do |field| %>
                 <% next if field.field_value.blank? %>
-                <tr style="border-top: 1px solid var(--border-soft);">
-                  <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                <tr style="border-top: 1px solid var(--bs-border-color);">
+                  <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top; white-space: nowrap;">
                     <%= field.field_name.tr("_", " ") %>
                     <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
                   </td>
-                  <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--text); vertical-align: top;">
+                  <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--bs-body-color); vertical-align: top;">
                     <% if field.field_name == "status" %>
                       <span style="background: <%= ssp_status_color(field.field_value) %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
                     <% else %>
@@ -354,33 +354,33 @@
           <%# ── Inherited / Provider Statements (collapsible) ── %>
           <% if control.provider_statements.any? %>
             <details style="margin-top: 0.85rem;">
-              <summary style="cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link-purple); font-weight: 700; padding: 0.4rem 0.65rem; background: rgba(142,68,173,0.06); border: 1px solid rgba(142,68,173,0.18); border-radius: 5px; list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none;">
+              <summary class="d-flex align-items-center gap-1 fw-bold rounded" style="cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sparc-purple); padding: 0.4rem 0.65rem; background: rgba(142,68,173,0.06); border: 1px solid rgba(142,68,173,0.18); list-style: none; user-select: none;">
                 <span class="inherited-arrow" style="font-size: 0.6rem;">&#9658;</span>
                 Inherited Rows (<%= control.provider_statements.count %>)
               </summary>
               <div style="margin-top: 0.5rem;">
                 <% control.provider_statements.each_with_index do |stmt, i| %>
-                  <div style="margin-bottom: 0.6rem; padding: 0.75rem 1rem; background: var(--surface-alt); border-left: 3px solid #8e44ad; border-radius: 0 6px 6px 0;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                  <div style="margin-bottom: 0.6rem; padding: 0.75rem 1rem; background: var(--bs-secondary-bg); border-left: 3px solid #8e44ad; border-radius: 0 6px 6px 0;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.4rem;">
                       <span style="background: #8e44ad; color: white; padding: 0.1rem 0.45rem; border-radius: 3px; font-size: 0.64rem; font-weight: 700;">INHERITED</span>
                       <% if stmt.title.present? %>
-                        <span style="font-size: 0.82rem; font-weight: 600; color: var(--text);">
+                        <span style="font-size: 0.82rem; font-weight: 600; color: var(--bs-body-color);">
                           <%= stmt.title %>
                         </span>
                       <% else %>
-                        <span style="font-size: 0.78rem; color: var(--text-muted);">Provider Statement <%= i + 1 %></span>
+                        <span style="font-size: 0.78rem; color: var(--bs-secondary-color);">Provider Statement <%= i + 1 %></span>
                       <% end %>
                     </div>
                     <% stmt_fields = stmt.ssp_control_fields.reject { |f| f.field_value.blank? } %>
                     <% if stmt_fields.any? %>
                       <table style="width: 100%; border-collapse: collapse;">
                         <% stmt_fields.each do |field| %>
-                          <tr style="border-top: 1px solid var(--border-soft);">
-                            <td style="width: 26%; padding: 0.35rem 0.5rem 0.35rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+                          <tr style="border-top: 1px solid var(--bs-border-color);">
+                            <td style="width: 26%; padding: 0.35rem 0.5rem 0.35rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top; white-space: nowrap;">
                               <%= field.field_name.tr("_", " ") %>
                               <% if field.editable %><span style="color: #27ae60; font-size: 0.63rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
                             </td>
-                            <td style="padding: 0.35rem 0 0.35rem 0.5rem; font-size: 0.82rem; color: var(--text); vertical-align: top;">
+                            <td style="padding: 0.35rem 0 0.35rem 0.5rem; font-size: 0.82rem; color: var(--bs-body-color); vertical-align: top;">
                               <%= field.field_value %>
                             </td>
                           </tr>
@@ -396,21 +396,21 @@
           <%# ── Catalog Guidance (collapsible) ── %>
           <% if catalog_ctrl&.guidance_present? %>
             <details style="margin-top: 0.85rem;">
-              <summary style="cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); padding: 0.4rem 0.65rem; background: rgba(155,89,182,0.06); border: 1px solid rgba(155,89,182,0.18); border-radius: 5px; list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none;">
+              <summary class="d-flex align-items-center gap-1 fw-semibold text-body-secondary rounded" style="cursor: pointer; font-size: 0.8rem; padding: 0.4rem 0.65rem; background: rgba(155,89,182,0.06); border: 1px solid rgba(155,89,182,0.18); list-style: none; user-select: none;">
                 <span class="catalog-arrow">&#9658;</span>
                 Catalog Guidance
-                <span style="font-size: 0.7rem; font-weight: 400; color: var(--text-faint);">— supplemental context from the providing catalog</span>
+                <span style="font-size: 0.7rem; font-weight: 400; color: var(--bs-tertiary-color);">— supplemental context from the providing catalog</span>
               </summary>
               <div style="margin-top: 0.5rem; padding: 0.85rem 1rem; background: rgba(155,89,182,0.04); border: 1px solid rgba(155,89,182,0.12); border-radius: 0 0 6px 6px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <% catalog_ctrl.guidance_fields.each do |fname, fval| %>
                     <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
                     <% next if display_val.blank? %>
-                    <tr style="border-top: 1px solid var(--border-soft);">
-                      <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--link-purple); vertical-align: top; white-space: nowrap;">
+                    <tr style="border-top: 1px solid var(--bs-border-color);">
+                      <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sparc-purple); vertical-align: top; white-space: nowrap;">
                         <%= fname.tr("_", " ") %>
                       </td>
-                      <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.82rem; color: var(--text); vertical-align: top; line-height: 1.5;">
+                      <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.82rem; color: var(--bs-body-color); vertical-align: top; line-height: 1.5;">
                         <%= display_val %>
                       </td>
                     </tr>
@@ -422,7 +422,7 @@
         </div>
 
         <%# ── Edit form ── %>
-        <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem; border-top: 1px solid var(--border-soft); padding-top: 0.75rem;">
+        <div id="edit-<%= control.id %>" style="display: none; margin-top: 0.75rem; border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem;">
           <%= form_with url: ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
             <%= hidden_field_tag :control_id, control.control_id %>
 
@@ -434,7 +434,7 @@
               <% field = field_map[fname] %>
               <% fval  = field&.field_value.to_s %>
               <div class="form-group">
-                <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);">
+                <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-secondary-color);">
                   <%= fname.tr("_", " ") %>
                   <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
                 </label>
@@ -476,25 +476,25 @@
                }.select { |f| f.field_value.present? } %>
             <% if stated_req.present? || ro_fields.any? %>
               <details style="margin-top: 0.5rem;">
-                <summary style="font-size: 0.8rem; color: var(--text-faint); cursor: pointer; padding: 0.35rem 0; user-select: none;">
+                <summary style="font-size: 0.8rem; color: var(--bs-tertiary-color); cursor: pointer; padding: 0.35rem 0; user-select: none;">
                   Read-only fields (<%= ro_fields.size + (stated_req.present? ? 1 : 0) %>)
                 </summary>
                 <% if stated_req.present? %>
                   <div class="form-group" style="margin-top: 0.5rem;">
-                    <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint);">
+                    <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color);">
                       Stated Requirement
-                      <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
+                      <span style="color: var(--bs-tertiary-color); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
                     </label>
-                    <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;"><%= stated_req %></p>
+                    <p style="background: var(--bs-secondary-bg); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--bs-secondary-color); margin: 0;"><%= stated_req %></p>
                   </div>
                 <% end %>
                 <% ro_fields.each do |field| %>
                   <div class="form-group" style="margin-top: 0.5rem;">
-                    <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint);">
+                    <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color);">
                       <%= field.field_name.tr("_", " ") %>
-                      <span style="color: var(--text-faint); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
+                      <span style="color: var(--bs-tertiary-color); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
                     </label>
-                    <p style="background: var(--surface-alt); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--text-muted); margin: 0;"><%= field.field_value %></p>
+                    <p style="background: var(--bs-secondary-bg); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--bs-secondary-color); margin: 0;"><%= field.field_value %></p>
                   </div>
                 <% end %>
               </details>
@@ -502,8 +502,8 @@
 
             <%# Catalog guidance in edit mode (read-only context panel) %>
             <% if catalog_ctrl&.guidance_present? %>
-              <details style="margin-top: 0.75rem; border-top: 1px solid var(--border-soft); padding-top: 0.75rem;">
-                <summary style="font-size: 0.8rem; font-weight: 600; color: var(--link-purple); cursor: pointer; padding: 0.35rem 0; user-select: none;">
+              <details style="margin-top: 0.75rem; border-top: 1px solid var(--bs-border-color); padding-top: 0.75rem;">
+                <summary style="font-size: 0.8rem; font-weight: 600; color: var(--sparc-purple); cursor: pointer; padding: 0.35rem 0; user-select: none;">
                   Catalog Guidance (reference only — not saved)
                 </summary>
                 <div style="margin-top: 0.5rem; padding: 0.75rem; background: rgba(155,89,182,0.04); border: 1px solid rgba(155,89,182,0.15); border-radius: 5px;">
@@ -511,19 +511,19 @@
                     <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
                     <% next if display_val.blank? %>
                     <div style="margin-bottom: 0.6rem;">
-                      <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--link-purple); margin-bottom: 0.2rem;"><%= fname.tr("_", " ") %></div>
-                      <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;"><%= display_val %></div>
+                      <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--sparc-purple); margin-bottom: 0.2rem;"><%= fname.tr("_", " ") %></div>
+                      <div style="font-size: 0.82rem; color: var(--bs-secondary-color); line-height: 1.5;"><%= display_val %></div>
                     </div>
                   <% end %>
                 </div>
               </details>
             <% end %>
 
-            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+            <div class="d-flex gap-2 mt-3">
               <%= f.submit "Save Changes",
                     style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
               <button type="button" onclick="toggleEdit(<%= control.id %>)"
-                      style="background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem;">
+                      style="background: var(--bs-secondary-bg); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem;">
                 Cancel
               </button>
             </div>
@@ -611,8 +611,8 @@
     view.style.display   = isEditing ? '' : 'none';
     edit.style.display   = isEditing ? 'none' : '';
     btn.textContent      = isEditing ? 'Edit' : 'Cancel';
-    btn.style.background = isEditing ? '#3498db' : 'var(--surface-alt)';
-    btn.style.color      = isEditing ? 'white'   : 'var(--text-muted)';
+    btn.style.background = isEditing ? '#3498db' : 'var(--bs-secondary-bg)';
+    btn.style.color      = isEditing ? 'white'   : 'var(--bs-secondary-color)';
   }
 
   var heatmapSection = document.getElementById('heatmapSection');

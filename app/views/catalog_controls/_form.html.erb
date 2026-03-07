@@ -1,6 +1,6 @@
 <%= form_with model: catalog_control.new_record? ? [control_family, catalog_control] : catalog_control, local: true do |f| %>
   <% if catalog_control.errors.any? %>
-    <div class="flash error" style="margin-bottom: 1.5rem;">
+    <div class="flash error mb-4">
       <strong><%= pluralize(catalog_control.errors.count, "error") %>:</strong>
       <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
         <% catalog_control.errors.full_messages.each do |msg| %>
@@ -11,21 +11,25 @@
   <% end %>
 
   <%# ── Identity row ── %>
-  <div style="display: grid; grid-template-columns: 160px 1fr; gap: 1rem;">
-    <div class="form-group">
-      <%= f.label :control_id, "Control ID *" %>
-      <%= f.text_field :control_id, class: "form-control", placeholder: "e.g. AC-01", style: "font-family: monospace; font-weight: 600;" %>
+  <div class="row g-3">
+    <div class="col-auto" style="width: 160px;">
+      <div class="form-group">
+        <%= f.label :control_id, "Control ID *" %>
+        <%= f.text_field :control_id, class: "form-control fw-semibold", placeholder: "e.g. AC-01", style: "font-family: monospace;" %>
+      </div>
     </div>
-    <div class="form-group">
-      <%= f.label :title %>
-      <%= f.text_field :title, class: "form-control", placeholder: "Control title..." %>
+    <div class="col">
+      <div class="form-group">
+        <%= f.label :title %>
+        <%= f.text_field :title, class: "form-control", placeholder: "Control title..." %>
+      </div>
     </div>
   </div>
 
   <%# ── Statement (primary guidance_data field) ── %>
   <div class="form-group">
-    <label for="catalog_control_guidance_data_statement" style="font-weight: 600;">Statement</label>
-    <p style="font-size: 0.82rem; color: var(--text-faint); margin: 0.15rem 0 0.4rem;">
+    <label for="catalog_control_guidance_data_statement" class="fw-semibold">Statement</label>
+    <p class="text-body-tertiary" style="font-size: 0.82rem; margin: 0.15rem 0 0.4rem;">
       The formal control requirement text. For parent controls, this is the lead-in sentence;
       for sub-parts (AC-01a, AC-01a.1 …) this is the specific requirement prose.
     </p>
@@ -37,16 +41,20 @@
   </div>
 
   <%# ── Priority + Baseline ── %>
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-    <div class="form-group">
-      <%= f.label :priority %>
-      <%= f.select :priority, [["—", ""], ["P0", "P0"], ["P1", "P1"], ["P2", "P2"], ["P3", "P3"]],
-          { selected: catalog_control.priority },
-          class: "form-control" %>
+  <div class="row row-cols-1 row-cols-md-2 g-3">
+    <div class="col">
+      <div class="form-group">
+        <%= f.label :priority %>
+        <%= f.select :priority, [["—", ""], ["P0", "P0"], ["P1", "P1"], ["P2", "P2"], ["P3", "P3"]],
+            { selected: catalog_control.priority },
+            class: "form-control" %>
+      </div>
     </div>
-    <div class="form-group">
-      <%= f.label :baseline_impact, "Baseline Impact" %>
-      <%= f.text_field :baseline_impact, class: "form-control", placeholder: "e.g. LOW, MODERATE, HIGH" %>
+    <div class="col">
+      <div class="form-group">
+        <%= f.label :baseline_impact, "Baseline Impact" %>
+        <%= f.text_field :baseline_impact, class: "form-control", placeholder: "e.g. LOW, MODERATE, HIGH" %>
+      </div>
     </div>
   </div>
 
@@ -64,17 +72,17 @@
     ]
     has_extra = extra_fields.any? { |key, *| gd[key].present? }
   %>
-  <details <%= "open" if has_extra %> style="margin-bottom: 1.25rem; border: 1px solid var(--border); border-radius: 6px; padding: 0;">
-    <summary style="padding: 0.65rem 1rem; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text); background: var(--surface-alt); border-radius: 6px; list-style: none; display: flex; align-items: center; gap: 0.5rem;">
+  <details <%= "open" if has_extra %> class="border rounded" style="margin-bottom: 1.25rem; padding: 0;">
+    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
       <span>&#9656;</span> Additional Guidance Fields
       <% if has_extra %>
-        <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">(populated)</span>
+        <span class="text-body-tertiary" style="font-size: 0.75rem; font-weight: 400; margin-left: 0.25rem;">(populated)</span>
       <% end %>
     </summary>
-    <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+    <div class="d-flex flex-column gap-2 p-3">
       <% extra_fields.each do |key, label, rows, placeholder| %>
         <div class="form-group" style="margin-bottom: 0;">
-          <label for="catalog_control_guidance_data_<%= key %>" style="font-size: 0.88rem; font-weight: 600; color: var(--text-muted);">
+          <label for="catalog_control_guidance_data_<%= key %>" class="fw-semibold text-body-secondary" style="font-size: 0.88rem;">
             <%= label %>
           </label>
           <%= text_area_tag "catalog_control[guidance_data][#{key}]",
@@ -90,7 +98,7 @@
   </details>
 
   <%# ── Submit ── %>
-  <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+  <div class="d-flex gap-3" style="margin-top: 0.5rem;">
     <%= f.submit "Save Control", class: "btn btn-success" %>
     <%= link_to "Cancel", control_family, class: "btn btn-secondary" %>
   </div>

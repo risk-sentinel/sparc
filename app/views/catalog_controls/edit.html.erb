@@ -1,7 +1,9 @@
 <div class="card">
+  <div class="card-body">
   <h2 style="margin-bottom: 0.5rem;">Edit Control: <%= @catalog_control.control_id %></h2>
-  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
-    Family: <%= link_to "#{@control_family.code} — #{@control_family.name}", @control_family, style: "color: var(--link-accent);" %>
+  <p class="text-body-secondary mb-4">
+    Family: <%= link_to "#{@control_family.code} — #{@control_family.name}", @control_family, class: "text-primary" %>
   </p>
   <%= render "form", control_family: @control_family, catalog_control: @catalog_control %>
+  </div>
 </div>
