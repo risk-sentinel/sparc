@@ -1,0 +1,290 @@
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h2>Enrich SAR: <%= @sar_document.name %></h2>
+      <p style="color: var(--text-muted); margin: 0;">
+        Add OSCAL metadata, observations, findings, and risks to uplift this SAR for OSCAL-compliant export.
+      </p>
+    </div>
+    <%= link_to "Back to SAR", sar_document_path(@sar_document), class: "btn btn-secondary", style: "flex-shrink: 0;" %>
+  </div>
+
+  <%= form_with model: @sar_document, url: update_enrich_sar_document_path(@sar_document), method: :patch, local: true do |f| %>
+
+    <%# ── Assessment Metadata ── %>
+    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Assessment Metadata
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Description</label>
+            <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Assessment description..." %>
+          </div>
+          <div class="form-group">
+            <label>Import AP Reference (href)</label>
+            <%= f.text_field :import_ap_href, class: "form-control", placeholder: "e.g., #assessment-plan-uuid or path/to/ap.json" %>
+          </div>
+          <div class="form-group">
+            <label>OSCAL Version</label>
+            <%= f.text_field :oscal_version, class: "form-control", placeholder: "e.g., 1.1.2", value: @sar_document.oscal_version || "1.1.2" %>
+          </div>
+          <div class="form-group">
+            <label>Assessment Start Date</label>
+            <%= f.datetime_local_field :assessment_start, class: "form-control" %>
+          </div>
+          <div class="form-group">
+            <label>Assessment End Date</label>
+            <%= f.datetime_local_field :assessment_end, class: "form-control" %>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Results ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Assessment Results (<%= @results.count %>)
+      </summary>
+      <div style="padding: 1rem 1.25rem;" id="results-container">
+        <% if @results.empty? %>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+            No OSCAL results yet. Add a result to organize observations, findings, and risks.
+          </p>
+        <% end %>
+        <% @results.each_with_index do |result, idx| %>
+          <div class="result-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+            <input type="hidden" name="sar_document[results][][id]" value="<%= result.id %>">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Title</label>
+                <input type="text" name="sar_document[results][][title]" value="<%= result.title %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Description</label>
+                <input type="text" name="sar_document[results][][description]" value="<%= result.description %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.75rem;">Start Time</label>
+                <input type="datetime-local" name="sar_document[results][][start_time]" value="<%= result.start_time&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.75rem;">End Time</label>
+                <input type="datetime-local" name="sar_document[results][][end_time]" value="<%= result.end_time&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-faint); margin-top: 0.5rem;">
+              <%= result.sar_observations.count %> observations &bull;
+              <%= result.sar_findings.count %> findings &bull;
+              <%= result.sar_risks.count %> risks
+            </div>
+          </div>
+        <% end %>
+        <button type="button" onclick="addResult()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+          + Add Result
+        </button>
+      </div>
+    </details>
+
+    <%# ── Observations ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Observations (<%= @observations.count %>)
+      </summary>
+      <div style="padding: 1rem 1.25rem;" id="observations-container">
+        <% @observations.each do |obs| %>
+          <div class="observation-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+            <input type="hidden" name="sar_document[observations][][id]" value="<%= obs.id %>">
+            <input type="hidden" name="sar_document[observations][][sar_result_id]" value="<%= obs.sar_result_id %>">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Title</label>
+                <input type="text" name="sar_document[observations][][title]" value="<%= obs.title %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Collected</label>
+                <input type="datetime-local" name="sar_document[observations][][collected]" value="<%= obs.collected&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                <label style="font-size: 0.75rem;">Description</label>
+                <input type="text" name="sar_document[observations][][description]" value="<%= obs.description %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+            </div>
+          </div>
+        <% end %>
+        <button type="button" onclick="addObservation()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+          + Add Observation
+        </button>
+      </div>
+    </details>
+
+    <%# ── Findings ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Findings (<%= @findings.count %>)
+      </summary>
+      <div style="padding: 1rem 1.25rem;" id="findings-container">
+        <% @findings.each do |finding| %>
+          <div class="finding-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+            <input type="hidden" name="sar_document[findings][][id]" value="<%= finding.id %>">
+            <input type="hidden" name="sar_document[findings][][sar_result_id]" value="<%= finding.sar_result_id %>">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Title</label>
+                <input type="text" name="sar_document[findings][][title]" value="<%= finding.title %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Target Control ID</label>
+                <input type="text" name="sar_document[findings][][target_control_id]" value="<%= finding.target_data&.dig('target-id') %>" class="form-control" style="font-size: 0.85rem;" placeholder="e.g., ac-2">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.75rem;">Status</label>
+                <select name="sar_document[findings][][target_status]" class="form-control" style="font-size: 0.85rem;">
+                  <option value="satisfied" <%= 'selected' if finding.target_data&.dig('status', 'state') == 'satisfied' %>>Satisfied</option>
+                  <option value="not-satisfied" <%= 'selected' if finding.target_data&.dig('status', 'state') == 'not-satisfied' %>>Not Satisfied</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.75rem;">Description</label>
+                <input type="text" name="sar_document[findings][][description]" value="<%= finding.description %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+            </div>
+          </div>
+        <% end %>
+        <button type="button" onclick="addFinding()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+          + Add Finding
+        </button>
+      </div>
+    </details>
+
+    <%# ── Risks ── %>
+    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
+      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+        Risks (<%= @risks.count %>)
+      </summary>
+      <div style="padding: 1rem 1.25rem;" id="risks-container">
+        <% @risks.each do |risk| %>
+          <div class="risk-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+            <input type="hidden" name="sar_document[risks][][id]" value="<%= risk.id %>">
+            <input type="hidden" name="sar_document[risks][][sar_result_id]" value="<%= risk.sar_result_id %>">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Title</label>
+                <input type="text" name="sar_document[risks][][title]" value="<%= risk.title %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0.25rem;">
+                <label style="font-size: 0.75rem;">Status</label>
+                <select name="sar_document[risks][][status]" class="form-control" style="font-size: 0.85rem;">
+                  <% SarRisk::STATUSES.each do |s| %>
+                    <option value="<%= s %>" <%= 'selected' if risk.status == s %>><%= s.titleize %></option>
+                  <% end %>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                <label style="font-size: 0.75rem;">Description</label>
+                <input type="text" name="sar_document[risks][][description]" value="<%= risk.description %>" class="form-control" style="font-size: 0.85rem;">
+              </div>
+            </div>
+          </div>
+        <% end %>
+        <button type="button" onclick="addRisk()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem;">
+          + Add Risk
+        </button>
+      </div>
+    </details>
+
+    <%# ── Auto-generate from Excel ── %>
+    <% if @sar_document.sar_controls.any? && @results.empty? %>
+      <div style="background: rgba(243,156,18,0.08); border: 1px solid rgba(243,156,18,0.3); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 1.2rem;">&#x2728;</span>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text);">Auto-generate OSCAL entities from Excel data</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+              Create a result with observations and findings from your <%= @sar_document.sar_controls.count %> imported controls.
+              Pass results become "satisfied" findings, Failed become "not-satisfied".
+            </div>
+          </div>
+          <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer; white-space: nowrap;">
+            <input type="checkbox" name="sar_document[auto_generate]" value="1">
+            Auto-generate on save
+          </label>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Submit ── %>
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+      <%= f.submit "Save Enrichment Data", class: "btn btn-success" %>
+      <%= link_to "Cancel", sar_document_path(@sar_document), class: "btn btn-secondary" %>
+    </div>
+
+  <% end %>
+</div>
+
+<script>
+  function addResult() {
+    var container = document.getElementById('results-container');
+    var html = '<div class="result-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
+      '<input type="text" name="sar_document[results][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Assessment Result"></div>' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Description</label>' +
+      '<input type="text" name="sar_document[results][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Description"></div>' +
+      '<div class="form-group" style="margin-bottom: 0;"><label style="font-size: 0.75rem;">Start Time</label>' +
+      '<input type="datetime-local" name="sar_document[results][][start_time]" class="form-control" style="font-size: 0.85rem;" required></div>' +
+      '<div class="form-group" style="margin-bottom: 0;"><label style="font-size: 0.75rem;">End Time</label>' +
+      '<input type="datetime-local" name="sar_document[results][][end_time]" class="form-control" style="font-size: 0.85rem;"></div>' +
+      '</div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  function addObservation() {
+    var container = document.getElementById('observations-container');
+    var html = '<div class="observation-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
+      '<input type="text" name="sar_document[observations][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Observation title"></div>' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Collected</label>' +
+      '<input type="datetime-local" name="sar_document[observations][][collected]" class="form-control" style="font-size: 0.85rem;"></div>' +
+      '<div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;"><label style="font-size: 0.75rem;">Description</label>' +
+      '<input type="text" name="sar_document[observations][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="What was observed"></div>' +
+      '</div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  function addFinding() {
+    var container = document.getElementById('findings-container');
+    var html = '<div class="finding-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
+      '<input type="text" name="sar_document[findings][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Finding title"></div>' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Target Control ID</label>' +
+      '<input type="text" name="sar_document[findings][][target_control_id]" class="form-control" style="font-size: 0.85rem;" placeholder="e.g., ac-2"></div>' +
+      '<div class="form-group" style="margin-bottom: 0;"><label style="font-size: 0.75rem;">Status</label>' +
+      '<select name="sar_document[findings][][target_status]" class="form-control" style="font-size: 0.85rem;">' +
+      '<option value="satisfied">Satisfied</option><option value="not-satisfied" selected>Not Satisfied</option></select></div>' +
+      '<div class="form-group" style="margin-bottom: 0;"><label style="font-size: 0.75rem;">Description</label>' +
+      '<input type="text" name="sar_document[findings][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Finding description"></div>' +
+      '</div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  function addRisk() {
+    var container = document.getElementById('risks-container');
+    var statuses = '<option value="open" selected>Open</option><option value="investigating">Investigating</option>' +
+      '<option value="remediating">Remediating</option><option value="deviation-requested">Deviation Requested</option>' +
+      '<option value="deviation-approved">Deviation Approved</option><option value="closed">Closed</option>';
+    var html = '<div class="risk-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
+      '<input type="text" name="sar_document[risks][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Risk title"></div>' +
+      '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Status</label>' +
+      '<select name="sar_document[risks][][status]" class="form-control" style="font-size: 0.85rem;">' + statuses + '</select></div>' +
+      '<div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;"><label style="font-size: 0.75rem;">Description</label>' +
+      '<input type="text" name="sar_document[risks][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Risk description"></div>' +
+      '</div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+  }
+</script>

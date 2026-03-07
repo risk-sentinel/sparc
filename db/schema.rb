@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_07_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_08_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -479,17 +479,158 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_200000) do
   end
 
   create_table "sar_documents", force: :cascade do |t|
+    t.datetime "assessment_end"
+    t.jsonb "assessment_log_data", default: []
+    t.datetime "assessment_start"
     t.datetime "created_at", null: false
+    t.string "creation_method", default: "excel"
+    t.text "description"
     t.text "error_message"
     t.jsonb "excel_metadata", default: {}
     t.string "file_type"
+    t.string "import_ap_href"
+    t.jsonb "import_metadata", default: {}
+    t.jsonb "local_definitions_extra", default: {}
+    t.jsonb "metadata_extra", default: {}
     t.string "name"
     t.string "original_filename"
+    t.string "oscal_version"
+    t.jsonb "reviewed_controls_data", default: {}
+    t.bigint "sap_document_id"
     t.string "sar_version"
     t.string "status"
     t.datetime "updated_at", null: false
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
+    t.index ["sap_document_id"], name: "index_sar_documents_on_sap_document_id"
     t.index ["status"], name: "index_sar_documents_on_status"
+  end
+
+  create_table "sar_finding_observations", force: :cascade do |t|
+    t.bigint "sar_finding_id", null: false
+    t.bigint "sar_observation_id", null: false
+    t.index ["sar_finding_id", "sar_observation_id"], name: "idx_sar_finding_obs_unique", unique: true
+    t.index ["sar_finding_id"], name: "index_sar_finding_observations_on_sar_finding_id"
+    t.index ["sar_observation_id"], name: "index_sar_finding_observations_on_sar_observation_id"
+  end
+
+  create_table "sar_finding_risks", force: :cascade do |t|
+    t.bigint "sar_finding_id", null: false
+    t.bigint "sar_risk_id", null: false
+    t.index ["sar_finding_id", "sar_risk_id"], name: "idx_sar_finding_risk_unique", unique: true
+    t.index ["sar_finding_id"], name: "index_sar_finding_risks_on_sar_finding_id"
+    t.index ["sar_risk_id"], name: "index_sar_finding_risks_on_sar_risk_id"
+  end
+
+  create_table "sar_findings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "implementation_statement_uuid"
+    t.jsonb "links_data", default: []
+    t.jsonb "origins_data", default: []
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.bigint "sar_result_id", null: false
+    t.jsonb "target_data", default: {}
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["sar_result_id", "uuid"], name: "idx_sar_findings_result_uuid", unique: true
+    t.index ["sar_result_id"], name: "index_sar_findings_on_sar_result_id"
+  end
+
+  create_table "sar_local_components", force: :cascade do |t|
+    t.string "component_type"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "links_data", default: []
+    t.jsonb "props_data", default: []
+    t.jsonb "protocols_data", default: []
+    t.string "purpose"
+    t.text "remarks"
+    t.jsonb "responsible_roles_data", default: []
+    t.bigint "sar_document_id", null: false
+    t.text "status_remarks"
+    t.string "status_state"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["sar_document_id", "uuid"], name: "idx_sar_local_comp_doc_uuid", unique: true
+    t.index ["sar_document_id"], name: "index_sar_local_components_on_sar_document_id"
+  end
+
+  create_table "sar_observations", force: :cascade do |t|
+    t.datetime "collected"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "expires"
+    t.jsonb "links_data", default: []
+    t.jsonb "methods_data", default: []
+    t.jsonb "origins_data", default: []
+    t.jsonb "props_data", default: []
+    t.jsonb "relevant_evidence_data", default: []
+    t.text "remarks"
+    t.bigint "sar_result_id", null: false
+    t.jsonb "subjects_data", default: []
+    t.string "title"
+    t.jsonb "types_data", default: []
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["sar_result_id", "uuid"], name: "idx_sar_obs_result_uuid", unique: true
+    t.index ["sar_result_id"], name: "index_sar_observations_on_sar_result_id"
+  end
+
+  create_table "sar_results", force: :cascade do |t|
+    t.jsonb "assessment_log_data", default: []
+    t.jsonb "attestations_data", default: []
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "end_time"
+    t.jsonb "links_data", default: []
+    t.integer "position", default: 0
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "reviewed_controls_data", default: {}
+    t.bigint "sar_document_id", null: false
+    t.datetime "start_time", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["sar_document_id", "uuid"], name: "idx_sar_results_doc_uuid", unique: true
+    t.index ["sar_document_id"], name: "index_sar_results_on_sar_document_id"
+  end
+
+  create_table "sar_risk_observations", force: :cascade do |t|
+    t.bigint "sar_observation_id", null: false
+    t.bigint "sar_risk_id", null: false
+    t.index ["sar_observation_id"], name: "index_sar_risk_observations_on_sar_observation_id"
+    t.index ["sar_risk_id", "sar_observation_id"], name: "idx_sar_risk_obs_unique", unique: true
+    t.index ["sar_risk_id"], name: "index_sar_risk_observations_on_sar_risk_id"
+  end
+
+  create_table "sar_risks", force: :cascade do |t|
+    t.jsonb "characterizations_data", default: []
+    t.datetime "created_at", null: false
+    t.datetime "deadline"
+    t.text "description"
+    t.string "impact"
+    t.string "likelihood"
+    t.jsonb "links_data", default: []
+    t.jsonb "mitigating_factors_data", default: []
+    t.jsonb "origins_data", default: []
+    t.jsonb "props_data", default: []
+    t.text "remarks"
+    t.jsonb "remediations_data", default: []
+    t.jsonb "risk_log_data", default: {}
+    t.bigint "sar_result_id", null: false
+    t.text "statement"
+    t.string "status"
+    t.jsonb "threat_ids_data", default: []
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["sar_result_id", "status"], name: "idx_sar_risks_result_status"
+    t.index ["sar_result_id", "uuid"], name: "idx_sar_risks_result_uuid", unique: true
+    t.index ["sar_result_id"], name: "index_sar_risks_on_sar_result_id"
   end
 
   create_table "ssp_by_components", force: :cascade do |t|
@@ -701,6 +842,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_200000) do
   add_foreign_key "sap_documents", "ssp_documents", on_delete: :nullify
   add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
+  add_foreign_key "sar_documents", "sap_documents", on_delete: :nullify
+  add_foreign_key "sar_finding_observations", "sar_findings", on_delete: :cascade
+  add_foreign_key "sar_finding_observations", "sar_observations", on_delete: :cascade
+  add_foreign_key "sar_finding_risks", "sar_findings", on_delete: :cascade
+  add_foreign_key "sar_finding_risks", "sar_risks", on_delete: :cascade
+  add_foreign_key "sar_findings", "sar_results", on_delete: :cascade
+  add_foreign_key "sar_local_components", "sar_documents", on_delete: :cascade
+  add_foreign_key "sar_observations", "sar_results", on_delete: :cascade
+  add_foreign_key "sar_results", "sar_documents", on_delete: :cascade
+  add_foreign_key "sar_risk_observations", "sar_observations", on_delete: :cascade
+  add_foreign_key "sar_risk_observations", "sar_risks", on_delete: :cascade
+  add_foreign_key "sar_risks", "sar_results", on_delete: :cascade
   add_foreign_key "ssp_by_components", "ssp_components", on_delete: :cascade
   add_foreign_key "ssp_by_components", "ssp_controls", on_delete: :cascade
   add_foreign_key "ssp_components", "cdef_documents", on_delete: :nullify

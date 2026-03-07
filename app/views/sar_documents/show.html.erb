@@ -100,6 +100,16 @@
         &nbsp;&bull;&nbsp; <%= @total_controls %> tests
         <% if @sections.size > 1 %>&nbsp;&bull;&nbsp; <%= @sections.size %> sections<% end %>
         <% if @assets.any? %>&nbsp;&bull;&nbsp; <%= @assets.size %> assets<% end %>
+        <% if @sar_document.creation_method.present? %>
+          &nbsp;&bull;&nbsp;
+          <span style="background: rgba(255,255,255,0.12); padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.68rem; font-weight: 600;">
+            <%= { "excel" => "Excel Import", "wizard" => "Wizard", "oscal_import" => "OSCAL Import" }[@sar_document.creation_method] || @sar_document.creation_method %>
+          </span>
+        <% end %>
+        <% if @sar_document.enriched? %>
+          &nbsp;
+          <span style="background: rgba(46,204,113,0.2); color: #2ecc71; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.68rem; font-weight: 600;">OSCAL Enriched</span>
+        <% end %>
       </div>
     </div>
     <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
@@ -107,6 +117,12 @@
             style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
       <%= link_to "&#8595; JSON".html_safe, download_json_sar_document_path(@sar_document),
             style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
+      <%= link_to "&#8595; OSCAL".html_safe, download_oscal_sar_document_path(@sar_document),
+            style: "background: rgba(46,204,113,0.2); color: #2ecc71; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(46,204,113,0.4); white-space: nowrap; font-weight: 600;" %>
+      <% unless @sar_document.enriched? %>
+        <%= link_to "&#x2728; Enrich".html_safe, enrich_sar_document_path(@sar_document),
+              style: "background: rgba(243,156,18,0.2); color: #f39c12; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(243,156,18,0.4); white-space: nowrap; font-weight: 600;" %>
+      <% end %>
       <%= link_to "&#8592; Back".html_safe, sar_documents_path,
             style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
     </div>
