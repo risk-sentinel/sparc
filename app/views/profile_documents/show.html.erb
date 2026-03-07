@@ -49,21 +49,45 @@
   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
     <div>
       <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">OSCAL Profile / Baseline</div>
-      <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0 0 0.3rem;"><%= @profile_document.name %></h2>
-      <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5);">
+
+      <%# ── View mode ── %>
+      <div id="doc-meta-view">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0;"><%= @profile_document.name %></h2>
+          <% if @profile_document.profile_version.present? %>
+            <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.72rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px;">v<%= @profile_document.profile_version %></span>
+          <% end %>
+          <button onclick="toggleDocMeta()" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.15rem 0.5rem; font-size: 0.7rem; cursor: pointer;">Edit</button>
+        </div>
+      </div>
+
+      <%# ── Edit mode (hidden) ── %>
+      <div id="doc-meta-edit" style="display: none;">
+        <%= form_with url: update_metadata_profile_document_path(@profile_document), method: :patch, local: true do |f| %>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <%= f.text_field :name, value: @profile_document.name,
+                  style: "font-size: 1.1rem; font-weight: 700; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; min-width: 200px;" %>
+            <%= f.text_field :profile_version, value: @profile_document.profile_version, placeholder: "Version",
+                  style: "font-size: 0.85rem; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; width: 100px;" %>
+            <%= f.submit "Save", style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;" %>
+            <button type="button" onclick="toggleDocMeta()" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;">Cancel</button>
+          </div>
+        <% end %>
+      </div>
+
+      <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 0.3rem;">
         <%= @profile_document.original_filename %>
         &nbsp;&bull;&nbsp;
         <span style="color: <%= level_color %>; font-weight: 600;"><%= @profile_document.baseline_level || "Custom" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
-        <% if @profile_document.profile_version.present? %>
-          &nbsp;&bull;&nbsp; v<%= @profile_document.profile_version %>
-        <% end %>
       </div>
       <% if @profile_document.description.present? %>
         <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@profile_document.description, length: 200) %></div>
       <% end %>
     </div>
     <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
+      <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
+            style: "background: rgba(39,174,96,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(39,174,96,0.5); white-space: nowrap;" %>
       <%= link_to "Export OSCAL".html_safe, download_oscal_profile_document_path(@profile_document),
             style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
       <%= link_to "&#8595; JSON".html_safe, download_json_profile_document_path(@profile_document),
@@ -205,6 +229,14 @@
             <div style="font-size: 0.85rem; color: var(--text); font-weight: 500;"><%= control.title %></div>
           <% end %>
         </div>
+        <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+          <%= link_to "Edit", edit_profile_document_profile_control_path(@profile_document, control),
+                style: "padding: 0.25rem 0.65rem; font-size: 0.75rem; background: var(--btn-primary); color: white; border: none; border-radius: 4px; text-decoration: none; white-space: nowrap;" %>
+          <%= button_to "Delete", profile_document_profile_control_path(@profile_document, control),
+                method: :delete,
+                form: { data: { turbo_confirm: "Remove #{control.control_id} from this profile?" } },
+                style: "padding: 0.25rem 0.65rem; font-size: 0.75rem; background: var(--btn-danger); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;" %>
+        </div>
       </div>
 
       <%# ── Card body: collapsed by default ── %>
@@ -329,6 +361,14 @@
     heatmapSection.addEventListener('toggle', function() {
       document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
     });
+  }
+
+  function toggleDocMeta() {
+    var view = document.getElementById('doc-meta-view');
+    var edit = document.getElementById('doc-meta-edit');
+    var isEditing = edit.style.display !== 'none';
+    view.style.display = isEditing ? '' : 'none';
+    edit.style.display = isEditing ? 'none' : '';
   }
 
   document.addEventListener('DOMContentLoaded', function() {

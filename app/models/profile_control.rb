@@ -2,6 +2,9 @@ class ProfileControl < ApplicationRecord
   belongs_to :profile_document
   has_many :profile_control_fields, dependent: :delete_all
 
+  validates :control_id, presence: true,
+                         uniqueness: { scope: :profile_document_id, message: "already exists in this profile" }
+
   before_save :compute_control_family
 
   def to_hash

@@ -5,7 +5,7 @@ class SarDocumentsController < ApplicationController
   CONTROLS_PER_PAGE = 50
 
   before_action :set_sar_document, only: [
-    :show, :update, :destroy, :download_json, :download_excel, :edit_control, :status
+    :show, :update, :destroy, :download_json, :download_excel, :edit_control, :status, :update_metadata
   ]
 
   helper_method :filter_params
@@ -134,6 +134,15 @@ class SarDocumentsController < ApplicationController
            locals: { control: @control, sar_document: @sar_document }
   end
 
+  def update_metadata
+    if @sar_document.update(document_metadata_params)
+      flash[:success] = "Document updated"
+    else
+      flash[:error] = @sar_document.errors.full_messages.join(", ")
+    end
+    redirect_to sar_document_path(@sar_document)
+  end
+
   def status
     render json: {
       status: @sar_document.status,
@@ -148,6 +157,10 @@ class SarDocumentsController < ApplicationController
   end
 
   private
+
+  def document_metadata_params
+    params.require(:sar_document).permit(:name, :sar_version)
+  end
 
   def set_sar_document
     @sar_document = SarDocument.find(params[:id])

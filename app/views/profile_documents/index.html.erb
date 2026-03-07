@@ -10,6 +10,7 @@
         <tr>
           <th>Name</th>
           <th>Baseline</th>
+          <th>Version</th>
           <th>Status</th>
           <th>Controls</th>
           <th>Created</th>
@@ -27,6 +28,7 @@
                 <%= doc.baseline_level || "Custom" %>
               </span>
             </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);"><%= doc.profile_version.presence || "—" %></td>
             <td>
               <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %>" style="padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
                 <%= doc.status %>
