@@ -1,0 +1,43 @@
+<div class="row justify-content-center mt-5">
+  <div class="col-lg-5 col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h2 class="h4 fw-bold mb-1">Change Password</h2>
+        <% if current_user.must_reset_password? %>
+          <p class="text-body-secondary small mb-4">
+            You must change your password before continuing.
+          </p>
+        <% else %>
+          <p class="text-body-secondary small mb-4">
+            Update your account password.
+          </p>
+        <% end %>
+
+        <%= form_tag password_path, method: :patch do %>
+          <div class="mb-3">
+            <label for="current_password" class="form-label fw-semibold small">Current Password</label>
+            <input type="password" name="current_password" id="current_password"
+                   class="form-control" required autofocus>
+          </div>
+
+          <div class="mb-3">
+            <label for="new_password" class="form-label fw-semibold small">New Password</label>
+            <input type="password" name="new_password" id="new_password"
+                   class="form-control" required minlength="12">
+            <div class="form-text">Minimum 12 characters (NIST 800-63B)</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="new_password_confirmation" class="form-label fw-semibold small">Confirm New Password</label>
+            <input type="password" name="new_password_confirmation" id="new_password_confirmation"
+                   class="form-control" required minlength="12">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-semibold">
+            Update Password
+          </button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

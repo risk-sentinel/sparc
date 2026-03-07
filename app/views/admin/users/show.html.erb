@@ -1,0 +1,111 @@
+<div class="my-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0"><%= @user.display_label %></h1>
+    <div class="d-flex gap-2">
+      <%= link_to "Edit", edit_admin_user_path(@user), class: "btn btn-sm btn-outline-primary" %>
+      <% if @user.active? && @user != current_user %>
+        <%= button_to "Suspend", suspend_admin_user_path(@user), method: :patch,
+              class: "btn btn-sm btn-outline-warning",
+              data: { turbo_confirm: "Suspend #{@user.email}?" } %>
+      <% elsif @user.suspended? %>
+        <%= button_to "Reactivate", reactivate_admin_user_path(@user), method: :patch,
+              class: "btn btn-sm btn-outline-success" %>
+      <% end %>
+      <%= link_to "Back to Users", admin_users_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <%# ── User Details ──────────────────────────────────── %>
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header fw-semibold">Account Details</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Email</dt>
+            <dd class="col-sm-8"><%= @user.email %></dd>
+            <dt class="col-sm-4">Display Name</dt>
+            <dd class="col-sm-8"><%= @user.display_name || "—" %></dd>
+            <dt class="col-sm-4">Name</dt>
+            <dd class="col-sm-8"><%= [@user.first_name, @user.last_name].compact_blank.join(" ").presence || "—" %></dd>
+            <dt class="col-sm-4">Status</dt>
+            <dd class="col-sm-8"><span class="badge text-bg-<%= @user.active? ? 'success' : 'warning' %>"><%= @user.status.capitalize %></span></dd>
+            <dt class="col-sm-4">Admin</dt>
+            <dd class="col-sm-8"><%= @user.admin? ? "Yes" : "No" %></dd>
+            <dt class="col-sm-4">Sign-in Count</dt>
+            <dd class="col-sm-8"><%= @user.sign_in_count %></dd>
+            <dt class="col-sm-4">Last Sign-in</dt>
+            <dd class="col-sm-8"><%= @user.last_sign_in_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></dd>
+            <dt class="col-sm-4">Last IP</dt>
+            <dd class="col-sm-8"><%= @user.last_sign_in_ip || "—" %></dd>
+            <dt class="col-sm-4">Created</dt>
+            <dd class="col-sm-8"><%= @user.created_at.strftime("%Y-%m-%d %H:%M UTC") %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Roles ──────────────────────────────────────────── %>
+    <div class="col-lg-6">
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">Roles</div>
+        <div class="card-body">
+          <% if @user_roles.any? %>
+            <% @user_roles.each do |ur| %>
+              <span class="badge text-bg-info me-1"><%= ur.role.display_name %></span>
+            <% end %>
+          <% else %>
+            <p class="text-body-secondary small mb-0">No roles assigned.</p>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Linked Identities ────────────────────────────── %>
+      <div class="card">
+        <div class="card-header fw-semibold">Linked Identities</div>
+        <div class="card-body">
+          <% if @identities.any? %>
+            <% @identities.each do |id| %>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span><span class="badge text-bg-dark"><%= id.provider.titleize %></span> <small class="text-body-secondary"><%= id.uid %></small></span>
+                <small class="text-body-tertiary"><%= id.last_used_at&.strftime("%Y-%m-%d") || "Never used" %></small>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="text-body-secondary small mb-0">No linked providers.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Audit Events ──────────────────────────────────────── %>
+  <div class="card mt-4">
+    <div class="card-header fw-semibold">Recent Activity</div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Action</th>
+            <th>Provider</th>
+            <th>IP Address</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @audit_events.each do |event| %>
+            <tr>
+              <td class="small"><%= event.created_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
+              <td><span class="badge text-bg-<%= event.action.include?('failure') ? 'danger' : 'secondary' %>"><%= event.action.humanize %></span></td>
+              <td><%= event.provider || "—" %></td>
+              <td class="small text-body-secondary"><%= event.ip_address || "—" %></td>
+            </tr>
+          <% end %>
+          <% if @audit_events.empty? %>
+            <tr><td colspan="4" class="text-center text-body-secondary small py-3">No activity recorded.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

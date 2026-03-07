@@ -1,0 +1,56 @@
+<div class="d-flex justify-content-between align-items-center my-4">
+  <h1 class="h3 fw-bold mb-0">User Management</h1>
+  <span class="badge text-bg-secondary"><%= @users.count %> users</span>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Admin</th>
+          <th>Roles</th>
+          <th>Sign-ins</th>
+          <th>Last Active</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @users.each do |user| %>
+          <tr>
+            <td><%= user.email %></td>
+            <td><%= user.display_label %></td>
+            <td>
+              <% case user.status %>
+              <% when "active" %>
+                <span class="badge text-bg-success">Active</span>
+              <% when "suspended" %>
+                <span class="badge text-bg-warning">Suspended</span>
+              <% when "deactivated" %>
+                <span class="badge text-bg-secondary">Deactivated</span>
+              <% end %>
+            </td>
+            <td>
+              <% if user.admin? %>
+                <span class="badge text-bg-danger">Admin</span>
+              <% end %>
+            </td>
+            <td>
+              <% user.roles.each do |role| %>
+                <span class="badge text-bg-info"><%= role.display_name %></span>
+              <% end %>
+            </td>
+            <td><%= user.sign_in_count %></td>
+            <td><%= user.last_sign_in_at&.strftime("%Y-%m-%d %H:%M") || "Never" %></td>
+            <td>
+              <%= link_to "View", admin_user_path(user), class: "btn btn-sm btn-outline-primary" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

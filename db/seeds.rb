@@ -1790,3 +1790,78 @@ end
 puts "  Inline demo guidance applied to #{inline_count} catalog control(s)"
 
 puts "Done! Demo SSP and SAR documents seeded."
+
+# ── Role Seeding ──────────────────────────────────────────────────────────
+# Roles from docs/groups_users/groups_users.md
+puts "\nSeeding roles..."
+
+SPARC_ROLES = [
+  { name: "policy_manager",  display_name: "Policy Manager",    scope: "instance", sort_order: 1,
+    description: "Manages organizational security policies and compliance frameworks" },
+  { name: "global_viewer",   display_name: "Global Viewer",     scope: "instance", sort_order: 2,
+    description: "Read-only access to all projects and documents instance-wide" },
+  { name: "ao",              display_name: "Authorizing Official", scope: "project", sort_order: 3,
+    description: "Makes risk acceptance decisions and authorizes system operation" },
+  { name: "so_iso",          display_name: "System Owner / ISO", scope: "project", sort_order: 4,
+    description: "Responsible for system security and day-to-day operations" },
+  { name: "ciso",            display_name: "CISO",              scope: "project", sort_order: 5,
+    description: "Chief Information Security Officer — oversees security program" },
+  { name: "isso",            display_name: "ISSO",              scope: "project", sort_order: 6,
+    description: "Information System Security Officer — manages system-level security" },
+  { name: "project_member",  display_name: "Project Member",    scope: "project", sort_order: 7,
+    description: "Team member who contributes to project documentation" },
+  { name: "assessor_3pao",   display_name: "Assessor / 3PAO",   scope: "project", sort_order: 8,
+    description: "Third-party assessor who evaluates security controls" },
+  { name: "view_only",       display_name: "View Only",         scope: "project", sort_order: 9,
+    description: "Read-only access limited to assigned projects" }
+].freeze
+
+SPARC_ROLES.each do |attrs|
+  Role.find_or_create_by!(name: attrs[:name]) do |role|
+    role.display_name = attrs[:display_name]
+    role.scope        = attrs[:scope]
+    role.sort_order   = attrs[:sort_order]
+    role.description  = attrs[:description]
+  end
+end
+puts "  #{SPARC_ROLES.size} roles seeded."
+
+# ── Admin User Bootstrapping ──────────────────────────────────────────────
+# Creates an admin account when local login is enabled and no admin exists.
+# The generated password is printed to the console and must be changed on
+# first login.
+if SparcConfig.enable_local_login? && !User.exists?(admin: true)
+  password = SecureRandom.alphanumeric(20)
+  email = ENV.fetch("SPARC_ADMIN_EMAIL", "admin@sparc.local")
+
+  admin = User.create!(
+    email: email,
+    password: password,
+    password_confirmation: password,
+    display_name: "SPARC Admin",
+    admin: true,
+    status: "active",
+    must_reset_password: true
+  )
+
+  AuditEvent.log(
+    user: admin,
+    action: "admin_bootstrap",
+    provider: "local",
+    metadata: { email: admin.email }
+  )
+
+  puts ""
+  puts "=" * 60
+  puts "  SPARC Admin Account Created"
+  puts "=" * 60
+  puts "  Email:    #{admin.email}"
+  puts "  Password: #{password}"
+  puts ""
+  puts "  *** Save this password — it will not be shown again ***"
+  puts "  You will be required to change it on first login."
+  puts "=" * 60
+  puts ""
+else
+  puts "Admin bootstrapping skipped (local login disabled or admin already exists)."
+end

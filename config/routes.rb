@@ -1,10 +1,21 @@
 Rails.application.routes.draw do
   root "home#index"
 
-  # Login page — available but NOT enforced (no before_action :authenticate_user!)
-  # Future: post "login", to: "sessions#create"
-  # Future: delete "logout", to: "sessions#destroy", as: :logout
-  get "login", to: "sessions#new", as: :login
+  # ── Authentication ────────────────────────────────────────────────────
+  get    "login",  to: "sessions#new",     as: :login
+  post   "login",  to: "sessions#create"
+  delete "logout", to: "sessions#destroy", as: :logout
+
+  # Self-service registration
+  get  "register", to: "registrations#new",    as: :register
+  post "register", to: "registrations#create"
+
+  # Password change (forced reset for bootstrapped admin)
+  resource :password, only: [ :edit, :update ]
+
+  # OmniAuth callbacks (GitHub, GitLab, OIDC)
+  match "auth/:provider/callback", to: "omniauth_callbacks#create", via: [ :get, :post ]
+  get "auth/failure", to: "omniauth_callbacks#failure"
 
   resources :ssp_documents do
     member do
@@ -101,6 +112,16 @@ Rails.application.routes.draw do
     end
     resources :control_families, shallow: true do
       resources :catalog_controls, shallow: true
+    end
+  end
+
+  # ── Admin ───────────────────────────────────────────────────────────
+  namespace :admin do
+    resources :users, only: [ :index, :show, :edit, :update ] do
+      member do
+        patch :suspend
+        patch :reactivate
+      end
     end
   end
 
