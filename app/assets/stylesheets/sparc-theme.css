@@ -1,0 +1,1094 @@
+/*
+ * SPARC Theme — Bootstrap 5.3 overrides restoring the original SPARC visual identity.
+ * Loaded AFTER bootstrap.min.css and application.css so these rules win by source order.
+ *
+ * Structure:
+ *   1. Design token overrides (light + dark)
+ *   2. Bootstrap component overrides (card, btn, table, form, container)
+ *   3. Badge aliases with SPARC palette
+ *   4. Reusable component classes (dashboard headers, control cards, heatmaps, etc.)
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   1. DESIGN TOKEN OVERRIDES
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root,
+[data-bs-theme="light"] {
+  /* Backgrounds */
+  --bs-body-bg: #f5f5f5;
+  --bs-secondary-bg: #f8f9fa;
+  --bs-tertiary-bg: #ffffff;
+
+  /* Text */
+  --bs-body-color: #333333;
+  --bs-secondary-color: #666666;
+  --bs-tertiary-color: #999999;
+
+  /* Borders */
+  --bs-border-color: #dddddd;
+
+  /* Primary palette (RGB triplets for Bootstrap's rgba() helpers) */
+  --bs-primary-rgb: 52, 152, 219;
+  --bs-success-rgb: 39, 174, 96;
+  --bs-danger-rgb: 231, 76, 60;
+  --bs-secondary-rgb: 149, 165, 166;
+  --bs-warning-rgb: 243, 156, 18;
+
+  /* Links */
+  --bs-link-color-rgb: 52, 152, 219;
+  --bs-link-hover-color-rgb: 41, 128, 185;
+
+  /* SPARC custom tokens */
+  --sparc-primary: #3498db;
+  --sparc-primary-hover: #2980b9;
+  --sparc-success: #27ae60;
+  --sparc-success-hover: #229954;
+  --sparc-danger: #e74c3c;
+  --sparc-danger-hover: #c0392b;
+  --sparc-secondary: #95a5a6;
+  --sparc-secondary-hover: #7f8c8d;
+  --sparc-warning: #f39c12;
+  --sparc-purple: #8e44ad;
+  --sparc-purple-hover: #7d3c98;
+  --sparc-orange: #e67e22;
+  --sparc-surface: #ffffff;
+  --sparc-surface-alt: #f8f9fa;
+  --sparc-border: #dddddd;
+  --sparc-border-soft: #e0e6ef;
+  --sparc-text-muted: #666666;
+  --sparc-text-faint: #999999;
+}
+
+[data-bs-theme="dark"] {
+  /* Backgrounds */
+  --bs-body-bg: #0f1419;
+  --bs-secondary-bg: #1e2632;
+  --bs-tertiary-bg: #252d3a;
+
+  /* Text */
+  --bs-body-color: #e2e8f0;
+  --bs-secondary-color: #94a3b8;
+  --bs-tertiary-color: #718096;
+
+  /* Borders */
+  --bs-border-color: #2d3748;
+
+  /* Primary palette */
+  --bs-primary-rgb: 93, 173, 226;
+  --bs-success-rgb: 46, 204, 113;
+  --bs-danger-rgb: 239, 83, 80;
+  --bs-secondary-rgb: 176, 190, 197;
+  --bs-warning-rgb: 246, 224, 94;
+
+  /* Links */
+  --bs-link-color-rgb: 93, 173, 226;
+  --bs-link-hover-color-rgb: 52, 152, 219;
+
+  /* SPARC custom tokens */
+  --sparc-primary: #5dade2;
+  --sparc-primary-hover: #3498db;
+  --sparc-success: #2ecc71;
+  --sparc-success-hover: #27ae60;
+  --sparc-danger: #ef5350;
+  --sparc-danger-hover: #e53935;
+  --sparc-secondary: #b0bec5;
+  --sparc-secondary-hover: #90a4ae;
+  --sparc-warning: #f6e05e;
+  --sparc-purple: #bb6bd9;
+  --sparc-purple-hover: #a855c7;
+  --sparc-orange: #f6ad55;
+  --sparc-surface: #1e2632;
+  --sparc-surface-alt: #252d3a;
+  --sparc-border: #2d3748;
+  --sparc-border-soft: #263244;
+  --sparc-text-muted: #94a3b8;
+  --sparc-text-faint: #718096;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   2. BOOTSTRAP COMPONENT OVERRIDES
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Cards — restore SPARC padding, shadow, radius */
+.card {
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  border-color: var(--bs-border-color);
+  background: var(--sparc-surface);
+}
+
+.card .card-body {
+  padding: 0;  /* card itself has 2rem, avoid double-padding */
+}
+
+/* Buttons — restore SPARC sizing and palette */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--sparc-primary);
+  --bs-btn-border-color: var(--sparc-primary);
+  --bs-btn-hover-bg: var(--sparc-primary-hover);
+  --bs-btn-hover-border-color: var(--sparc-primary-hover);
+}
+
+.btn-success {
+  --bs-btn-bg: var(--sparc-success);
+  --bs-btn-border-color: var(--sparc-success);
+  --bs-btn-hover-bg: var(--sparc-success-hover);
+  --bs-btn-hover-border-color: var(--sparc-success-hover);
+}
+
+.btn-danger {
+  --bs-btn-bg: var(--sparc-danger);
+  --bs-btn-border-color: var(--sparc-danger);
+  --bs-btn-hover-bg: var(--sparc-danger-hover);
+  --bs-btn-hover-border-color: var(--sparc-danger-hover);
+}
+
+.btn-secondary {
+  --bs-btn-bg: var(--sparc-secondary);
+  --bs-btn-border-color: var(--sparc-secondary);
+  --bs-btn-hover-bg: var(--sparc-secondary-hover);
+  --bs-btn-hover-border-color: var(--sparc-secondary-hover);
+}
+
+/* Tables — restore original padding and header bg */
+.table th {
+  background-color: var(--bs-secondary-bg);
+  font-weight: 600;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  border-bottom-color: var(--sparc-border);
+  color: var(--bs-body-color);
+}
+
+/* Forms — restore original SPARC padding and radius */
+.form-control,
+.form-select {
+  padding: 0.75rem;
+  border-radius: 4px;
+  background-color: var(--sparc-surface);
+  border-color: var(--sparc-border);
+  color: var(--bs-body-color);
+}
+
+/* Container — original max-width */
+.container {
+  max-width: 1200px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   3. BADGE ALIASES WITH SPARC PALETTE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.badge-ok {
+  background-color: #d4edda !important;
+  color: #155724 !important;
+}
+
+.badge-warn {
+  background-color: #fff3cd !important;
+  color: #856404 !important;
+}
+
+.badge-fail {
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
+}
+
+[data-bs-theme="dark"] .badge-ok {
+  background-color: #1a3a2a !important;
+  color: #68d391 !important;
+}
+
+[data-bs-theme="dark"] .badge-warn {
+  background-color: #3a3520 !important;
+  color: #f6e05e !important;
+}
+
+[data-bs-theme="dark"] .badge-fail {
+  background-color: #3a1a1a !important;
+  color: #fc8181 !important;
+}
+
+/* Custom button variants */
+.btn-sparc-purple {
+  background-color: var(--sparc-purple);
+  border-color: var(--sparc-purple);
+  color: white;
+}
+.btn-sparc-purple:hover {
+  background-color: var(--sparc-purple-hover);
+  border-color: var(--sparc-purple-hover);
+  color: white;
+}
+
+.btn-sparc-orange {
+  background-color: var(--sparc-orange);
+  border-color: var(--sparc-orange);
+  color: white;
+}
+
+/* Link accent colors */
+a.link-accent { color: var(--sparc-primary); }
+a.link-purple { color: var(--sparc-purple); }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   4. REUSABLE COMPONENT CLASSES
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Dashboard header buttons (dark gradient backgrounds) ──────── */
+
+.sparc-btn-ghost {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  text-decoration: none;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  display: inline-block;
+}
+.sparc-btn-ghost:hover { background: rgba(255, 255, 255, 0.2); color: white; text-decoration: none; }
+
+.sparc-btn-ghost-muted {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+  display: inline-block;
+}
+.sparc-btn-ghost-muted:hover { background: rgba(255, 255, 255, 0.15); color: white; text-decoration: none; }
+
+.sparc-btn-oscal {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  text-decoration: none;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(46, 204, 113, 0.4);
+  white-space: nowrap;
+  font-weight: 600;
+  display: inline-block;
+}
+.sparc-btn-oscal:hover { background: rgba(46, 204, 113, 0.3); color: #2ecc71; text-decoration: none; }
+
+.sparc-btn-enrich {
+  background: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+  text-decoration: none;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(243, 156, 18, 0.4);
+  white-space: nowrap;
+  font-weight: 600;
+  display: inline-block;
+}
+.sparc-btn-enrich:hover { background: rgba(243, 156, 18, 0.3); color: #f39c12; text-decoration: none; }
+
+
+/* ── Dashboard header text elements ────────────────────────────── */
+
+.sparc-header-subtitle {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.3rem;
+}
+
+.sparc-header-title {
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.sparc-header-meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.3rem;
+}
+
+.sparc-version-badge {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+}
+
+.sparc-creation-badge {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.sparc-enriched-badge {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+
+/* ── Dashboard header editing controls ─────────────────────────── */
+
+.sparc-btn-header-edit {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.sparc-input-dark {
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.sparc-input-dark-lg {
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  min-width: 200px;
+}
+
+.sparc-input-dark-sm {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  width: 100px;
+}
+
+.sparc-btn-save {
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.sparc-btn-save:hover { background: #229954; }
+
+.sparc-btn-cancel-dark {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+
+/* ── Score displays (SSP + SAR show) ───────────────────────────── */
+
+.sparc-score {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sparc-score-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 0.2rem;
+}
+
+.sparc-score-detail {
+  font-size: 0.58rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 0.1rem;
+}
+
+.sparc-divider-v {
+  width: 1px;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+
+/* ── Summary chips (status counts in dashboard headers) ────────── */
+
+.sparc-summary-chip {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  min-width: 64px;
+  text-decoration: none;
+  display: inline-block;
+}
+.sparc-summary-chip:hover { background: rgba(0, 0, 0, 0.35); text-decoration: none; }
+.sparc-summary-chip.active { background: rgba(255, 255, 255, 0.15); }
+
+.sparc-chip-count {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sparc-chip-label {
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  margin-top: 0.1rem;
+}
+
+
+/* ── Progress bars (dark backgrounds) ──────────────────────────── */
+
+.sparc-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+
+/* ── Control cards ─────────────────────────────────────────────── */
+
+.control-card {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 0.65rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.sparc-ctrl-id {
+  font-family: monospace;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--bs-body-color);
+}
+
+.sparc-ctrl-title {
+  font-size: 0.85rem;
+  color: var(--bs-body-color);
+  font-weight: 500;
+}
+
+.sparc-ctrl-family {
+  font-size: 0.68rem;
+  color: var(--bs-tertiary-color);
+  font-family: monospace;
+}
+
+.sparc-btn-edit {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sparc-btn-edit:hover { background: #2980b9; }
+
+
+/* ── Status pill / outline tag ─────────────────────────────────── */
+
+.sparc-status-pill {
+  padding: 0.15rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: white;
+  display: inline-block;
+}
+
+.sparc-tag-outline {
+  padding: 0.12rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.67rem;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+
+/* ── Asset / Environment tags on control cards ─────────────────── */
+
+.sparc-asset-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: rgba(44, 62, 80, 0.1);
+  border: 1px solid rgba(44, 62, 80, 0.25);
+  color: var(--bs-secondary-color);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.sparc-env-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: rgba(39, 174, 96, 0.08);
+  border: 1px solid rgba(39, 174, 96, 0.2);
+  color: var(--bs-secondary-color);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.sparc-tag-separator {
+  color: var(--bs-tertiary-color);
+  font-size: 0.65rem;
+}
+
+
+/* ── Field tables (inside control card details) ────────────────── */
+
+.sparc-field-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sparc-field-table tr {
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.sparc-field-label {
+  width: 26%;
+  padding: 0.4rem 0.5rem 0.4rem 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bs-tertiary-color);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.sparc-field-label-padded {
+  width: 26%;
+  padding: 0.38rem 0.5rem 0.38rem 0.75rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bs-tertiary-color);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.sparc-field-value {
+  padding: 0.4rem 0 0.4rem 0.5rem;
+  font-size: 0.84rem;
+  color: var(--bs-body-color);
+  vertical-align: top;
+}
+
+.sparc-field-value-padded {
+  padding: 0.38rem 0.75rem 0.38rem 0.5rem;
+  font-size: 0.83rem;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+
+.sparc-editable-indicator {
+  color: #27ae60;
+  font-size: 0.65rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+
+/* ── Heatmap grid ──────────────────────────────────────────────── */
+
+.sparc-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 0.7rem;
+}
+
+.sparc-heatmap-card {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+.sparc-heatmap-card.active {
+  border-color: #3498db;
+  box-shadow: 0 0 0 1px #3498db;
+}
+
+.sparc-family-link {
+  font-family: monospace;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--bs-body-color);
+  text-decoration: none;
+  cursor: pointer;
+}
+.sparc-family-link:hover { color: var(--sparc-primary); }
+
+.sparc-heatmap-bar {
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  background: var(--bs-border-color);
+  margin-bottom: 0.55rem;
+}
+
+.sparc-heatmap-badge {
+  color: white;
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.4;
+  text-decoration: none;
+  display: inline-block;
+}
+.sparc-heatmap-badge:hover { opacity: 0.85; color: white; text-decoration: none; }
+
+.sparc-legend-label {
+  font-size: 0.72rem;
+  color: var(--bs-tertiary-color);
+}
+
+.sparc-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--bs-secondary-color);
+}
+
+.sparc-legend-dot {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+
+/* ── Section summary header ────────────────────────────────────── */
+
+.sparc-section-summary {
+  cursor: pointer;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  color: var(--bs-body-color);
+  list-style: none;
+  user-select: none;
+}
+
+.sparc-section-hint {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--bs-tertiary-color);
+  margin-left: 0.25rem;
+}
+
+.sparc-section-arrow {
+  font-size: 0.75rem;
+}
+
+
+/* ── Card details (collapsible sections inside control cards) ──── */
+
+.sparc-card-arrow {
+  font-size: 0.55rem;
+}
+
+.sparc-card-detail-toggle {
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: var(--bs-tertiary-color);
+  padding: 0.2rem 0;
+  list-style: none;
+  user-select: none;
+}
+
+.sparc-card-detail-separator {
+  border-top: 1px solid var(--bs-border-color);
+  flex: 1;
+  margin-left: 0.2rem;
+}
+
+
+/* ── Assessment context panel ──────────────────────────────────── */
+
+.sparc-ctx-panel {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bs-secondary-bg);
+}
+
+.sparc-ctx-header {
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.63rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bs-tertiary-color);
+  list-style: none;
+  user-select: none;
+}
+
+.sparc-ctx-arrow {
+  font-size: 0.6rem;
+}
+
+
+/* ── Edit form sections ────────────────────────────────────────── */
+
+.sparc-edit-ctx-panel {
+  background: var(--bs-secondary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.sparc-edit-ctx-header {
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color);
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bs-tertiary-color);
+}
+
+.sparc-edit-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bs-secondary-color);
+}
+
+.sparc-edit-editable-hint {
+  color: #27ae60;
+  font-size: 0.7rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.sparc-edit-readonly-hint {
+  color: var(--bs-tertiary-color);
+  font-size: 0.7rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.sparc-readonly-value {
+  background: var(--bs-secondary-bg);
+  padding: 0.6rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: var(--bs-secondary-color);
+  margin: 0;
+}
+
+
+/* ── Filter banner ─────────────────────────────────────────────── */
+
+.sparc-filter-banner {
+  background: #1a252f;
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.sparc-filter-text {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.sparc-btn-clear-filter {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 5px;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  display: inline-block;
+}
+.sparc-btn-clear-filter:hover { background: rgba(255, 255, 255, 0.2); color: white; text-decoration: none; }
+
+
+/* ── Pill filter tabs (SAR sections, environments) ─────────────── */
+
+.sparc-pill-filter {
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  border: 1px solid var(--bs-border-color);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  color: var(--bs-body-color);
+  background: var(--bs-body-bg);
+  font-weight: 400;
+}
+.sparc-pill-filter:hover { text-decoration: none; }
+.sparc-pill-filter.active {
+  background: #2c3e50;
+  color: white;
+  font-weight: 600;
+}
+
+
+/* ── Processing state ──────────────────────────────────────────── */
+
+.sparc-spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #f39c12;
+  border-radius: 50%;
+  animation: sparc-spin 1s linear infinite;
+}
+
+@keyframes sparc-spin { to { transform: rotate(360deg); } }
+
+.sparc-processing-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.sparc-processing-title {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.sparc-processing-title-error { color: #e74c3c; }
+.sparc-processing-title-pending { color: #f39c12; }
+
+.sparc-processing-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.sparc-processing-text-muted {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.88rem;
+}
+
+
+/* ── Home page tiles ───────────────────────────────────────────── */
+
+.sparc-hero-tile {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.sparc-hero-tile-count {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.sparc-hero-tile-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 0.25rem;
+}
+
+.sparc-check-icon {
+  color: #27ae60;
+  flex-shrink: 0;
+}
+
+[data-bs-theme="dark"] .sparc-check-icon {
+  color: #2ecc71;
+}
+
+
+/* ── Source badges (index tables) ──────────────────────────────── */
+
+.sparc-source-badge {
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  display: inline-block;
+}
+
+.sparc-source-excel {
+  background: rgba(149, 165, 166, 0.13);
+  color: #95a5a6;
+  border: 1px solid rgba(149, 165, 166, 0.33);
+}
+
+.sparc-source-wizard {
+  background: rgba(52, 152, 219, 0.13);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.33);
+}
+
+.sparc-source-oscal {
+  background: rgba(46, 204, 113, 0.13);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.33);
+}
+
+/* Index table "Enriched" / "Basic" indicators */
+.sparc-oscal-enriched {
+  background: rgba(46, 204, 113, 0.15);
+  color: #27ae60;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.sparc-oscal-basic {
+  color: var(--bs-tertiary-color);
+  font-size: 0.78rem;
+}
+
+/* Index table "Enrich" action link */
+.sparc-btn-enrich-sm {
+  background: rgba(243, 156, 18, 0.15);
+  color: #e67e22;
+  border: 1px solid rgba(243, 156, 18, 0.3);
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-block;
+}
+.sparc-btn-enrich-sm:hover { background: rgba(243, 156, 18, 0.25); color: #e67e22; text-decoration: none; }
+
+
+/* ── Enrich page sections ──────────────────────────────────────── */
+
+.sparc-enrich-section {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  background: var(--sparc-surface);
+}
+
+.sparc-enrich-section-header {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--bs-body-color);
+}
+
+.sparc-enrich-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bs-secondary-color);
+  margin-bottom: 0.35rem;
+}
+
+
+/* ── Statement block (blue-bordered info blocks) ───────────────── */
+
+.sparc-statement-block {
+  background: rgba(41, 128, 185, 0.07);
+  border: 1px solid rgba(41, 128, 185, 0.2);
+  border-left: 3px solid #2980b9;
+  border-radius: 6px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.sparc-statement-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  color: var(--bs-secondary-color);
+}
+
+
+/* ── Pagination ────────────────────────────────────────────────── */
+
+.sparc-pagination-info {
+  font-size: 0.8rem;
+  color: var(--bs-tertiary-color);
+  margin-top: 0.5rem;
+}
+
+
+/* ── Misc utilities ────────────────────────────────────────────── */
+
+.sparc-monospace {
+  font-family: monospace;
+}
+
+.sparc-text-success-bold {
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+.sparc-text-warning-bold {
+  color: #f39c12;
+  font-weight: 600;
+}

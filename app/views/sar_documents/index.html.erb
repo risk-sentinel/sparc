@@ -26,29 +26,20 @@
           <tr>
             <td><%= doc.name %></td>
             <td>
-              <%
-                source_label = case doc.creation_method
-                               when "wizard" then "Wizard"
-                               when "oscal_import" then "OSCAL"
-                               else "Excel"
-                               end
-                source_color = case doc.creation_method
-                               when "wizard" then "#3498db"
-                               when "oscal_import" then "#2ecc71"
-                               else "#95a5a6"
-                               end
-              %>
-              <span style="background: <%= source_color %>22; color: <%= source_color %>; border: 1px solid <%= source_color %>55; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">
-                <%= source_label %>
-              </span>
+              <% source_label, source_class = case doc.creation_method
+                               when "wizard" then ["Wizard", "sparc-source-wizard"]
+                               when "oscal_import" then ["OSCAL", "sparc-source-oscal"]
+                               else ["Excel", "sparc-source-excel"]
+                               end %>
+              <span class="sparc-source-badge <%= source_class %>"><%= source_label %></span>
             </td>
             <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.sar_version.presence || "\u2014" %></td>
             <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;"><%= doc.status %></span></td>
             <td>
               <% if doc.enriched? %>
-                <span style="background: rgba(46,204,113,0.15); color: #27ae60; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">Enriched</span>
+                <span class="sparc-oscal-enriched">Enriched</span>
               <% else %>
-                <span class="text-body-secondary" style="font-size: 0.78rem;">Basic</span>
+                <span class="sparc-oscal-basic">Basic</span>
               <% end %>
             </td>
             <td><%= doc.sar_controls.count %></td>
@@ -56,7 +47,7 @@
             <td style="white-space: nowrap;">
               <%= link_to "View", sar_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
               <% unless doc.enriched? %>
-                <%= link_to "Enrich", enrich_sar_document_path(doc), style: "background: rgba(243,156,18,0.15); color: #e67e22; border: 1px solid rgba(243,156,18,0.3); padding: 0.35rem 0.75rem; border-radius: 4px; font-size: 0.8rem; text-decoration: none; font-weight: 500;" %>
+                <%= link_to "Enrich", enrich_sar_document_path(doc), class: "sparc-btn-enrich-sm" %>
               <% end %>
               <%= link_to "Delete", sar_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
             </td>
