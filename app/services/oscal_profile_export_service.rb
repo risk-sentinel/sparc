@@ -62,12 +62,12 @@ class OscalProfileExportService
 
   def default_metadata_extras
     {
-      "roles"   => [{ "id" => "creator", "title" => "Document Creator" }],
-      "parties" => [{
+      "roles"   => [ { "id" => "creator", "title" => "Document Creator" } ],
+      "parties" => [ {
         "uuid" => SecureRandom.uuid,
         "type" => "organization",
         "name" => "SPARC Export"
-      }]
+      } ]
     }
   end
 

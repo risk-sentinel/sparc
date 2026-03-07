@@ -84,12 +84,12 @@ module OscalMetadata
 
   def default_oscal_metadata_extras
     {
-      "roles" => [{ "id" => "prepared-by", "title" => "Prepared By" }],
-      "parties" => [{
+      "roles" => [ { "id" => "prepared-by", "title" => "Prepared By" } ],
+      "parties" => [ {
         "uuid" => SecureRandom.uuid,
         "type" => "organization",
         "name" => "SPARC Export"
-      }]
+      } ]
     }
   end
 
@@ -100,6 +100,6 @@ module OscalMetadata
   end
 
   def deep_copy(obj)
-    Marshal.load(Marshal.dump(obj))
+    JSON.parse(obj.to_json)
   end
 end
