@@ -153,7 +153,8 @@ class PoamDocumentsController < ApplicationController
   end
 
   def document_metadata_params
-    params.require(:poam_document).permit(:name, :poam_version)
+    permitted = params.require(:poam_document).permit(:name, :poam_version, :oscal_version, :description)
+    merge_metadata_extra(permitted, :poam_document)
   end
 
   def filter_params

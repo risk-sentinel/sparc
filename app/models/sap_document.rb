@@ -1,4 +1,6 @@
 class SapDocument < ApplicationRecord
+  include OscalMetadata
+
   has_many :sap_controls, dependent: :delete_all
   has_one_attached :file
 

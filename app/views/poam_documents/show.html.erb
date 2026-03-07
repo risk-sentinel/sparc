@@ -386,6 +386,12 @@
 
 <% end %>
 
+<%= render "shared/oscal_metadata_section",
+           document: @poam_document,
+           update_path: update_metadata_poam_document_path(@poam_document),
+           param_key: :poam_document,
+           version_field: :poam_version %>
+
 <script>
   function toggleDocMeta() {
     var view = document.getElementById('doc-meta-view');

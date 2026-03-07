@@ -1,4 +1,6 @@
 class SarDocument < ApplicationRecord
+  include OscalMetadata
+
   has_many :sar_controls, dependent: :delete_all
   has_many :sar_results, dependent: :delete_all
   has_many :sar_local_components, dependent: :delete_all
