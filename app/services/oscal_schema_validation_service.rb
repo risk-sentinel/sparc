@@ -33,6 +33,10 @@ class OscalSchemaValidationService
     poam: {
       file: "oscal_poam_schema.json",
       root_key: "plan-of-action-and-milestones"
+    },
+    profile: {
+      file: "oscal_profile_schema.json",
+      root_key: "profile"
     }
   }.freeze
 

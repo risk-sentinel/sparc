@@ -48,6 +48,16 @@ class DocumentTypeRegistry
       parser_map:         { "xccdf" => CdefXccdfParserService, "json" => CdefJsonParserService },
       file_prefix:        "cdef",
       success_message:    "Component Definition uploaded. Processing in background..."
+    ),
+    profile: Entry.new(
+      document_class:     ProfileDocument,
+      control_class:      ProfileControl,
+      field_class:        ProfileControlField,
+      document_fk:        :profile_document_id,
+      allowed_extensions: { ".json" => "json", ".xml" => "xml" },
+      parser_map:         { "json" => ProfileJsonParserService, "xml" => ProfileXmlParserService },
+      file_prefix:        "profile",
+      success_message:    "OSCAL Profile (Baseline) uploaded. Processing in background..."
     )
   }.freeze
 

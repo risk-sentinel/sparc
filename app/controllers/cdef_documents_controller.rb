@@ -1,7 +1,7 @@
 class CdefDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated status]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated status update_metadata]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -81,6 +81,15 @@ class CdefDocumentsController < ApplicationController
               disposition: "attachment"
   end
 
+  def update_metadata
+    if @cdef_document.update(document_metadata_params)
+      flash[:success] = "Document updated"
+    else
+      flash[:error] = @cdef_document.errors.full_messages.join(", ")
+    end
+    redirect_to cdef_document_path(@cdef_document)
+  end
+
   def status
     render json: {
       status: @cdef_document.status,
@@ -89,6 +98,10 @@ class CdefDocumentsController < ApplicationController
   end
 
   private
+
+  def document_metadata_params
+    params.require(:cdef_document).permit(:name, :cdef_version)
+  end
 
   def set_cdef_document
     @cdef_document = CdefDocument.find(params[:id])

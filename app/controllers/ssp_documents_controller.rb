@@ -1,7 +1,7 @@
 class SspDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :status ]
+  before_action :set_ssp_document, only: [ :show, :edit, :update, :destroy, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :status, :update_metadata ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -112,6 +112,15 @@ class SspDocumentsController < ApplicationController
               disposition: "attachment"
   end
 
+  def update_metadata
+    if @ssp_document.update(document_metadata_params)
+      flash[:success] = "Document updated"
+    else
+      flash[:error] = @ssp_document.errors.full_messages.join(", ")
+    end
+    redirect_to ssp_document_path(@ssp_document)
+  end
+
   def status
     render json: {
       status: @ssp_document.status,
@@ -126,6 +135,10 @@ class SspDocumentsController < ApplicationController
   end
 
   private
+
+  def document_metadata_params
+    params.require(:ssp_document).permit(:name, :ssp_version)
+  end
 
   def set_ssp_document
     @ssp_document = SspDocument.find(params[:id])
