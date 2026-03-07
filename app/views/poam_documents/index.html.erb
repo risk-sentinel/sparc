@@ -1,11 +1,11 @@
 <div class="card" style="overflow-x: auto;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Plan of Action &amp; Milestones</h2>
     <%= link_to "Upload New", new_poam_document_path, class: "btn btn-success" %>
   </div>
 
   <% if @poam_documents.any? %>
-    <table style="min-width: 700px;">
+    <table class="table table-hover" style="min-width: 700px;">
       <thead>
         <tr>
           <th>Name</th>
@@ -14,35 +14,35 @@
           <th>Items</th>
           <th>Entities</th>
           <th>Created</th>
-          <th style="text-align: right;">Actions</th>
+          <th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% @poam_documents.each do |doc| %>
           <tr>
-            <td style="font-weight: 600;"><%= doc.name %></td>
-            <td style="font-size: 0.85rem; color: var(--text-muted);"><%= doc.poam_version.presence || "—" %></td>
+            <td class="fw-semibold"><%= doc.name %></td>
+            <td class="small text-body-secondary"><%= doc.poam_version.presence || "—" %></td>
             <td>
-              <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %>" style="padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+              <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
                 <%= doc.status %>
               </span>
             </td>
             <td><%= doc.poam_items.count %></td>
             <td style="font-size: 0.8rem;">
               <% if doc.completed? %>
-                <span style="color: #3498db;" title="Risks"><%= doc.poam_risks.count %>R</span>
+                <span class="text-primary" title="Risks"><%= doc.poam_risks.count %>R</span>
                 <span style="color: #9b59b6;" title="Observations"><%= doc.poam_observations.count %>O</span>
                 <span style="color: #e67e22;" title="Findings"><%= doc.poam_findings.count %>F</span>
               <% else %>
-                <span style="color: var(--text-faint);">—</span>
+                <span class="text-body-tertiary">—</span>
               <% end %>
             </td>
             <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
-            <td style="text-align: right; white-space: nowrap;">
+            <td class="text-end" style="white-space: nowrap;">
               <div style="display: inline-flex; gap: 0.35rem;">
                 <%= link_to "View", poam_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% if doc.completed? %>
-                  <%= link_to "OSCAL", download_oscal_poam_document_path(doc), class: "btn", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; background: var(--link-purple); color: white;" %>
+                  <%= link_to "OSCAL", download_oscal_poam_document_path(doc), class: "btn btn-sm", style: "background: #8e44ad; color: white;" %>
                   <%= link_to "JSON", download_json_poam_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% end %>
                 <%= link_to "Delete", poam_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
@@ -53,6 +53,6 @@
       </tbody>
     </table>
   <% else %>
-    <p style="text-align: center; padding: 2rem; color: var(--text-muted);">No POA&M documents found. Upload your first OSCAL POA&M to get started.</p>
+    <p class="text-center p-4 text-body-secondary">No POA&M documents found. Upload your first OSCAL POA&M to get started.</p>
   <% end %>
 </div>

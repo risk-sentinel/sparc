@@ -1,6 +1,6 @@
 <div class="card">
   <h2>Create Security Assessment Plan (SAP)</h2>
-  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+  <p class="text-body-secondary mb-4">
     Generate an OSCAL-compliant Security Assessment Plan from your existing SSP and Profile data.
     Select controls, choose assessment methods, and assign assessors.
   </p>
@@ -8,100 +8,118 @@
   <%= form_with model: @sap_document, local: true do |f| %>
 
     <%# ── Step 1: Plan Metadata ── %>
-    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 4px solid #3498db; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
-      <h3 style="margin-bottom: 1rem; font-size: 1rem; color: #3498db;">Step 1: Plan Details</h3>
+    <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #3498db; padding: 1.25rem;">
+      <h3 class="mb-3" style="font-size: 1rem; color: #3498db;">Step 1: Plan Details</h3>
 
       <div class="form-group">
         <label for="sap_document_name">Plan Name</label>
         <%= f.text_field :name, placeholder: "e.g., FY26 Annual Assessment - System XYZ", class: "form-control" %>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-        <div class="form-group">
-          <label for="sap_document_assessment_type">Assessment Type</label>
-          <%= f.select :assessment_type,
-                options_for_select(SapDocument::ASSESSMENT_TYPES.map { |t| [t.titleize, t] }, "initial"),
-                {}, class: "form-control" %>
+      <div class="row row-cols-1 row-cols-md-2 g-3">
+        <div class="col">
+          <div class="form-group">
+            <label for="sap_document_assessment_type">Assessment Type</label>
+            <%= f.select :assessment_type,
+                  options_for_select(SapDocument::ASSESSMENT_TYPES.map { |t| [t.titleize, t] }, "initial"),
+                  {}, class: "form-control" %>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="sap_document_description">Description</label>
-          <%= f.text_area :description, rows: 2, placeholder: "Brief description of the assessment scope and objectives", class: "form-control", style: "min-height: 60px;" %>
+        <div class="col">
+          <div class="form-group">
+            <label for="sap_document_description">Description</label>
+            <%= f.text_area :description, rows: 2, placeholder: "Brief description of the assessment scope and objectives", class: "form-control", style: "min-height: 60px;" %>
+          </div>
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-        <div class="form-group">
-          <label for="sap_document_assessment_start">Assessment Start Date</label>
-          <%= f.date_field :assessment_start, class: "form-control" %>
+      <div class="row row-cols-1 row-cols-md-2 g-3">
+        <div class="col">
+          <div class="form-group">
+            <label for="sap_document_assessment_start">Assessment Start Date</label>
+            <%= f.date_field :assessment_start, class: "form-control" %>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="sap_document_assessment_end">Assessment End Date</label>
-          <%= f.date_field :assessment_end, class: "form-control" %>
+        <div class="col">
+          <div class="form-group">
+            <label for="sap_document_assessment_end">Assessment End Date</label>
+            <%= f.date_field :assessment_end, class: "form-control" %>
+          </div>
         </div>
       </div>
     </div>
 
     <%# ── Step 2: Source Documents ── %>
-    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 4px solid #27ae60; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
-      <h3 style="margin-bottom: 1rem; font-size: 1rem; color: #27ae60;">Step 2: Select Source Documents</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+    <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #27ae60; padding: 1.25rem;">
+      <h3 class="mb-3" style="font-size: 1rem; color: #27ae60;">Step 2: Select Source Documents</h3>
+      <p class="text-body-secondary mb-3" style="font-size: 0.85rem;">
         Controls will be pulled from the selected SSP. If no SSP is selected, controls will be pulled from the selected Profile/Baseline.
       </p>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-        <div class="form-group">
-          <label for="sap_document_ssp_document_id">System Security Plan (SSP)</label>
-          <%= f.select :ssp_document_id,
-                options_for_select(
-                  @ssp_documents.map { |s| ["#{s.name} (#{s.ssp_controls.count} controls)", s.id] },
-                  nil
-                ),
-                { include_blank: "— Select SSP (optional) —" },
-                class: "form-control", id: "ssp-select",
-                onchange: "loadControlsFromSSP(this.value)" %>
+      <div class="row row-cols-1 row-cols-md-2 g-3">
+        <div class="col">
+          <div class="form-group">
+            <label for="sap_document_ssp_document_id">System Security Plan (SSP)</label>
+            <%= f.select :ssp_document_id,
+                  options_for_select(
+                    @ssp_documents.map { |s| ["#{s.name} (#{s.ssp_controls.count} controls)", s.id] },
+                    nil
+                  ),
+                  { include_blank: "— Select SSP (optional) —" },
+                  class: "form-control", id: "ssp-select",
+                  onchange: "loadControlsFromSSP(this.value)" %>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="sap_document_profile_document_id">Baseline Profile</label>
-          <%= f.select :profile_document_id,
-                options_for_select(
-                  @profile_documents.map { |p| ["#{p.name} (#{p.baseline_level || 'Custom'}, #{p.profile_controls.count} controls)", p.id] },
-                  nil
-                ),
-                { include_blank: "— Select Profile (optional) —" },
-                class: "form-control" %>
+        <div class="col">
+          <div class="form-group">
+            <label for="sap_document_profile_document_id">Baseline Profile</label>
+            <%= f.select :profile_document_id,
+                  options_for_select(
+                    @profile_documents.map { |p| ["#{p.name} (#{p.baseline_level || 'Custom'}, #{p.profile_controls.count} controls)", p.id] },
+                    nil
+                  ),
+                  { include_blank: "— Select Profile (optional) —" },
+                  class: "form-control" %>
+          </div>
         </div>
       </div>
     </div>
 
     <%# ── Step 3: Assessment Methods ── %>
-    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 4px solid #8e44ad; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
-      <h3 style="margin-bottom: 1rem; font-size: 1rem; color: #8e44ad;">Step 3: Default Assessment Methods</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+    <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #8e44ad; padding: 1.25rem;">
+      <h3 class="mb-3" style="font-size: 1rem; color: #8e44ad;">Step 3: Default Assessment Methods</h3>
+      <p class="text-body-secondary mb-3" style="font-size: 0.85rem;">
         Methods are auto-assigned based on control family heuristics (technical controls default to <strong>Test</strong>,
         personnel/physical to <strong>Interview</strong>, policy to <strong>Examine</strong>).
         You can override individual controls after the plan is created.
       </p>
 
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-        <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem; text-align: center;">
-          <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128269;</div>
-          <div style="font-weight: 700; margin-bottom: 0.25rem;">Examine</div>
-          <div style="font-size: 0.78rem; color: var(--text-muted);">Review documentation, policies, procedures, and artifacts</div>
+      <div class="row row-cols-1 row-cols-md-3 g-3">
+        <div class="col">
+          <div class="bg-body border rounded-3 p-3 text-center">
+            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128269;</div>
+            <div class="fw-bold" style="margin-bottom: 0.25rem;">Examine</div>
+            <div class="text-body-secondary" style="font-size: 0.78rem;">Review documentation, policies, procedures, and artifacts</div>
+          </div>
         </div>
-        <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem; text-align: center;">
-          <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128483;</div>
-          <div style="font-weight: 700; margin-bottom: 0.25rem;">Interview</div>
-          <div style="font-size: 0.78rem; color: var(--text-muted);">Discuss with personnel responsible for control implementation</div>
+        <div class="col">
+          <div class="bg-body border rounded-3 p-3 text-center">
+            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128483;</div>
+            <div class="fw-bold" style="margin-bottom: 0.25rem;">Interview</div>
+            <div class="text-body-secondary" style="font-size: 0.78rem;">Discuss with personnel responsible for control implementation</div>
+          </div>
         </div>
-        <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1rem; text-align: center;">
-          <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#9881;</div>
-          <div style="font-weight: 700; margin-bottom: 0.25rem;">Test</div>
-          <div style="font-size: 0.78rem; color: var(--text-muted);">Execute automated or manual procedures to validate implementation</div>
+        <div class="col">
+          <div class="bg-body border rounded-3 p-3 text-center">
+            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#9881;</div>
+            <div class="fw-bold" style="margin-bottom: 0.25rem;">Test</div>
+            <div class="text-body-secondary" style="font-size: 0.78rem;">Execute automated or manual procedures to validate implementation</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div style="display: flex; gap: 1rem;">
+    <div class="d-flex gap-3">
       <%= f.submit "Generate Assessment Plan", class: "btn btn-success" %>
       <%= link_to "Cancel", sap_documents_path, class: "btn btn-secondary" %>
     </div>
@@ -111,7 +129,7 @@
 <%# ── OR: Upload existing SAP file ── %>
 <div class="card">
   <h3>Or Upload Existing SAP</h3>
-  <p style="color: var(--text-muted); margin-bottom: 1rem;">
+  <p class="text-body-secondary mb-3">
     Already have an OSCAL Assessment Plan? Upload the JSON file directly.
   </p>
 
@@ -120,7 +138,7 @@
       <label for="sap_document_file">Select SAP File (.json)</label>
       <%= f.file_field :file, accept: ".json", required: true %>
     </div>
-    <div style="display: flex; gap: 1rem;">
+    <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-primary" %>
     </div>
   <% end %>

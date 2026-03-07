@@ -1,13 +1,13 @@
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
 <% unless @sap_document.completed? %>
-  <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white; text-align: center;">
+  <div class="sparc-gradient-header text-center" style="border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white;">
     <% if @sap_document.failed? %>
       <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
       <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
       <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
         <%= @sap_document.error_message.presence || "An unknown error occurred." %>
       </p>
-      <div style="margin-top: 1.25rem;">
+      <div class="mt-3">
         <%= link_to "&#8592; Back to Assessment Plans".html_safe, sap_documents_path,
               style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);" %>
       </div>
@@ -47,30 +47,30 @@
 %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
+<div class="sparc-gradient-header" style="border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
 
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
+  <div class="d-flex justify-content-between align-items-start mb-4 gap-3 flex-wrap">
     <div>
       <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">OSCAL Security Assessment Plan</div>
 
       <%# ── View mode ── %>
       <div id="doc-meta-view">
-        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-          <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0;"><%= @sap_document.name %></h2>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h2 class="fw-bold" style="color: white; font-size: 1.4rem; margin: 0;"><%= @sap_document.name %></h2>
           <% if @sap_document.sap_version.present? %>
-            <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.72rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px;">v<%= @sap_document.sap_version %></span>
+            <span class="rounded fw-semibold" style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.72rem; padding: 0.12rem 0.45rem;">v<%= @sap_document.sap_version %></span>
           <% end %>
-          <span style="background: <%= type_color %>33; color: <%= type_color %>; border: 1px solid <%= type_color %>66; padding: 0.12rem 0.55rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">
+          <span class="rounded fw-semibold" style="background: <%= type_color %>33; color: <%= type_color %>; border: 1px solid <%= type_color %>66; padding: 0.12rem 0.55rem; font-size: 0.72rem;">
             <%= @sap_document.assessment_type&.titleize || "Initial" %>
           </span>
-          <button onclick="toggleDocMeta()" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.15rem 0.5rem; font-size: 0.7rem; cursor: pointer;">Edit</button>
+          <button onclick="toggleDocMeta()" class="rounded" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); padding: 0.15rem 0.5rem; font-size: 0.7rem; cursor: pointer;">Edit</button>
         </div>
       </div>
 
       <%# ── Edit mode (hidden) ── %>
       <div id="doc-meta-edit" style="display: none;">
         <%= form_with url: update_metadata_sap_document_path(@sap_document), method: :patch, local: true do |f| %>
-          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <div class="d-flex gap-2 align-items-center flex-wrap">
             <%= f.text_field :name, value: @sap_document.name,
                   style: "font-size: 1.1rem; font-weight: 700; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; min-width: 200px;" %>
             <%= f.text_field :sap_version, value: @sap_document.sap_version, placeholder: "Version",
@@ -102,7 +102,7 @@
         <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@sap_document.description, length: 200) %></div>
       <% end %>
     </div>
-    <div style="display: flex; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap;">
+    <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
       <%= link_to "Export OSCAL".html_safe, download_oscal_sap_document_path(@sap_document),
             style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
       <%= link_to "&#8595; JSON".html_safe, download_json_sap_document_path(@sap_document),
@@ -113,8 +113,8 @@
   </div>
 
   <%# ── Summary chips ── %>
-  <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-    <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
+  <div class="d-flex align-items-center gap-4 flex-wrap">
+    <div class="text-center flex-shrink-0" style="min-width: 80px;">
       <div style="font-size: 2.6rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= @total_controls %></div>
       <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">Total Controls</div>
     </div>
@@ -122,7 +122,7 @@
     <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
 
     <%# ── Method breakdown ── %>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+    <div class="d-flex flex-wrap" style="gap: 0.45rem;">
       <% [["Examine", examine_count, "#3498db"], ["Interview", interview_count, "#f39c12"], ["Test", test_count, "#e74c3c"], ["Unset", none_count, "#95a5a6"]].each do |label, count, color| %>
         <% next if count == 0 %>
         <div class="summary-chip"
@@ -139,7 +139,7 @@
     <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
 
     <%# ── Status breakdown ── %>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+    <div class="d-flex flex-wrap" style="gap: 0.45rem;">
       <% [["Planned", planned_count, "#95a5a6"], ["In Progress", in_progress_count, "#f39c12"], ["Completed", completed_count, "#27ae60"]].each do |label, count, color| %>
         <% next if count == 0 %>
         <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= color %>; border-radius: 6px; padding: 0.35rem 0.65rem; min-width: 64px;">
@@ -151,7 +151,7 @@
   </div>
 
   <%# ── Progress bar by method ── %>
-  <div style="margin-top: 1.25rem;">
+  <div class="mt-3">
     <div style="height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: rgba(255,255,255,0.08);">
       <% total = [examine_count + interview_count + test_count + none_count, 1].max %>
       <% [["examine", examine_count, "#3498db"], ["interview", interview_count, "#f39c12"], ["test", test_count, "#e74c3c"], ["unset", none_count, "#95a5a6"]].each do |m, count, color| %>
@@ -164,11 +164,11 @@
 
 <%# ── ASSESSMENT METHOD HEATMAP BY CONTROL FAMILY ──────────────── %>
 <% if @heatmap_families.any? %>
-<details id="heatmapSection" open style="margin-bottom: 1.5rem;">
-  <summary style="cursor: pointer; padding: 0.7rem 1rem; background: var(--summary-bg); border-radius: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; border: 1px solid var(--border-soft);">
+<details id="heatmapSection" open class="mb-4">
+  <summary class="bg-body-secondary rounded-3 fw-semibold border d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.7rem 1rem; font-size: 0.95rem; list-style: none; user-select: none;">
     <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
     Assessment Methods by Control Family
-    <span style="font-size: 0.78rem; font-weight: 400; color: var(--text-faint); margin-left: 0.25rem;">&mdash; click a badge to filter</span>
+    <span class="text-body-tertiary" style="font-size: 0.78rem; font-weight: 400; margin-left: 0.25rem;">&mdash; click a badge to filter</span>
   </summary>
 
   <div style="padding: 1rem 0 0.5rem;">
@@ -187,29 +187,29 @@
         <% fd = @heatmap_data[family] || {} %>
         <% ft = fd.values.sum %>
         <% ft_test = fd["test"].to_i %>
-        <div style="background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
+        <div class="bg-body border rounded-3" style="padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+          <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
             <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
-               style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text); text-decoration: none; cursor: pointer;"><%= family %></a>
+               style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--bs-body-color); text-decoration: none; cursor: pointer;"><%= family %></a>
             <% if ft_test > 0 %>
               <span style="font-size: 0.72rem; font-weight: 700; color: #e74c3c;"><%= ft_test %> test</span>
             <% end %>
           </div>
-          <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.55rem;"><%= ft %> controls</div>
-          <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: var(--border-soft); margin-bottom: 0.55rem;">
+          <div class="text-body-tertiary" style="font-size: 0.62rem; margin-bottom: 0.55rem;"><%= ft %> controls</div>
+          <div style="height: 4px; border-radius: 2px; overflow: hidden; display: flex; background: var(--bs-border-color); margin-bottom: 0.55rem;">
             <% @heatmap_methods.each do |m| %>
               <% next if (fd[m] || 0) == 0 %>
               <div style="width: <%= ((fd[m] || 0) * 100.0 / [ft, 1].max).round(3) %>%; background: <%= method_colors[m] || '#7f8c8d' %>;"></div>
             <% end %>
           </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+          <div class="d-flex flex-wrap" style="gap: 0.3rem;">
             <% @heatmap_methods.each do |m| %>
               <% next if (fd[m] || 0) == 0 %>
-              <div class="heatmap-cell"
+              <div class="heatmap-cell rounded"
                    data-family="<%= family %>" data-method="<%= m %>"
                    onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.method)"
                    title="<%= family %> / <%= m %>: <%= fd[m] %>"
-                   style="background: <%= method_colors[m] || '#7f8c8d' %>; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
+                   style="background: <%= method_colors[m] || '#7f8c8d' %>; color: white; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
                 <%= fd[m] %>
               </div>
             <% end %>
@@ -218,10 +218,10 @@
       <% end %>
     </div>
 
-    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.5rem 0;">
-      <span style="font-size: 0.72rem; color: var(--text-faint);">Legend:</span>
+    <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
+      <span class="text-body-tertiary" style="font-size: 0.72rem;">Legend:</span>
       <% [["Examine", "#3498db"], ["Interview", "#f39c12"], ["Test", "#e74c3c"], ["None", "#95a5a6"]].each do |lbl, col| %>
-        <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--text-muted);">
+        <span class="d-flex align-items-center text-body-secondary" style="gap: 0.3rem; font-size: 0.72rem;">
           <span style="display: inline-block; width: 11px; height: 11px; background: <%= col %>; border-radius: 2px; flex-shrink: 0;"></span><%= lbl %>
         </span>
       <% end %>
@@ -243,37 +243,37 @@
       status_color = status_colors_map[status_val] || "#95a5a6"
       family_code = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
     %>
-    <div class="control-card"
+    <div class="control-card rounded-3"
          data-family="<%= family_code %>"
          data-method="<%= method_val %>"
          data-status="<%= status_val %>"
-         style="background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid <%= method_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+         style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-left: 4px solid <%= method_color %>; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
 
       <%# ── Card header ── %>
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+      <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
         <div style="min-width: 0; flex: 1;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
-            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--text);">
+          <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
+            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--bs-body-color);">
               <%= control.control_id.presence || "&mdash;".html_safe %>
             </span>
-            <span style="background: <%= method_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;">
+            <span class="rounded" style="background: <%= method_color %>; color: white; padding: 0.15rem 0.55rem; font-size: 0.68rem; font-weight: 700; white-space: nowrap;">
               <%= method_val.titleize %>
             </span>
-            <span style="background: <%= status_color %>22; color: <%= status_color %>; border: 1px solid <%= status_color %>44; padding: 0.12rem 0.45rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; white-space: nowrap;">
+            <span class="rounded fw-semibold" style="background: <%= status_color %>22; color: <%= status_color %>; border: 1px solid <%= status_color %>44; padding: 0.12rem 0.45rem; font-size: 0.65rem; white-space: nowrap;">
               <%= status_val.titleize %>
             </span>
-            <span style="font-size: 0.68rem; color: var(--text-faint); font-family: monospace; margin-left: 0.1rem;"><%= family_code %></span>
+            <span class="text-body-tertiary" style="font-size: 0.68rem; font-family: monospace; margin-left: 0.1rem;"><%= family_code %></span>
             <% if control.assessor_name.present? %>
-              <span style="font-size: 0.68rem; color: var(--text-muted);">&#x1F464; <%= control.assessor_name %></span>
+              <span class="text-body-secondary" style="font-size: 0.68rem;">&#x1F464; <%= control.assessor_name %></span>
             <% end %>
           </div>
           <% if control.title.present? %>
-            <div style="font-size: 0.85rem; color: var(--text); font-weight: 500;"><%= control.title %></div>
+            <div style="font-size: 0.85rem; color: var(--bs-body-color); font-weight: 500;"><%= control.title %></div>
           <% end %>
         </div>
-        <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+        <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
           <%= link_to "Edit", sap_document_path(@sap_document, control_id: control.id),
-                style: "padding: 0.25rem 0.65rem; font-size: 0.75rem; background: var(--btn-primary); color: white; border: none; border-radius: 4px; text-decoration: none; white-space: nowrap;" %>
+                class: "btn btn-primary btn-sm" %>
         </div>
       </div>
 
@@ -281,34 +281,34 @@
       <% has_details = control.objective.present? || control.test_case.present? || field_map.any? %>
       <% if has_details %>
         <details class="card-details" style="margin-top: 0.35rem;">
-          <summary style="cursor: pointer; font-size: 0.7rem; color: var(--text-faint); padding: 0.2rem 0; list-style: none; display: flex; align-items: center; gap: 0.3rem; user-select: none;">
+          <summary class="d-flex align-items-center text-body-tertiary" style="cursor: pointer; font-size: 0.7rem; padding: 0.2rem 0; list-style: none; gap: 0.3rem; user-select: none;">
             <span class="card-arrow" style="font-size: 0.55rem;">&#9658;</span>
-            <span style="border-top: 1px solid var(--border-soft); flex: 1; margin-left: 0.2rem;"></span>
+            <span class="border-top" style="flex: 1; margin-left: 0.2rem;"></span>
           </summary>
 
-          <div style="margin-top: 0.5rem;">
+          <div class="mt-2">
             <% if control.objective.present? %>
               <div style="background: rgba(41,128,185,0.07); border: 1px solid rgba(41,128,185,0.2); border-left: 3px solid #2980b9; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
-                <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link-accent); font-weight: 700; margin-bottom: 0.35rem;">Assessment Objective</div>
-                <div style="font-size: 0.84rem; color: var(--text); white-space: pre-wrap;"><%= control.objective %></div>
+                <div class="text-primary fw-bold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.35rem;">Assessment Objective</div>
+                <div style="font-size: 0.84rem; color: var(--bs-body-color); white-space: pre-wrap;"><%= control.objective %></div>
               </div>
             <% end %>
 
             <% if control.test_case.present? %>
               <div style="background: rgba(231,76,60,0.07); border: 1px solid rgba(231,76,60,0.2); border-left: 3px solid #e74c3c; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
-                <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #e74c3c; font-weight: 700; margin-bottom: 0.35rem;">Test Case / Check Content</div>
-                <div style="font-size: 0.84rem; color: var(--text); white-space: pre-wrap;"><%= control.test_case %></div>
+                <div class="fw-bold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #e74c3c; margin-bottom: 0.35rem;">Test Case / Check Content</div>
+                <div style="font-size: 0.84rem; color: var(--bs-body-color); white-space: pre-wrap;"><%= control.test_case %></div>
               </div>
             <% end %>
 
             <% if field_map.any? %>
               <table style="width: 100%; border-collapse: collapse;">
                 <% field_map.each do |fname, field| %>
-                  <tr style="border-top: 1px solid var(--border-soft);">
-                    <td style="width: 30%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top;">
+                  <tr style="border-top: 1px solid var(--bs-border-color);">
+                    <td class="text-body-tertiary" style="width: 30%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; vertical-align: top;">
                       <%= fname.tr("_", " ") %>
                     </td>
-                    <td style="padding: 0.4rem 0; font-size: 0.84rem; color: var(--text);">
+                    <td style="padding: 0.4rem 0; font-size: 0.84rem; color: var(--bs-body-color);">
                       <%= field.field_value %>
                     </td>
                   </tr>
@@ -326,11 +326,11 @@
 <%# ── Edit control modal (inline) ── %>
 <% if @control = @sap_document.sap_controls.find_by(id: params[:control_id]) %>
   <div id="editModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
-    <div style="background: var(--surface); border-radius: 12px; padding: 2rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div class="bg-body rounded-3" style="padding: 2rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <div class="d-flex justify-content-between align-items-center mb-4">
         <h3>Edit <%= @control.control_id %></h3>
         <%= link_to "&times;".html_safe, sap_document_path(@sap_document),
-              style: "font-size: 1.5rem; color: var(--text-muted); text-decoration: none; line-height: 1;" %>
+              class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
       </div>
 
       <%= form_with url: sap_document_path(@sap_document, control_id: @control.id), method: :patch, local: true do |f| %>
@@ -358,7 +358,7 @@
           <label>Test Case</label>
           <%= f.text_area :test_case, value: @control.test_case, rows: 3, class: "form-control", name: "sap_control[test_case]" %>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
+        <div class="d-flex gap-2">
           <%= f.submit "Save Changes", class: "btn btn-success" %>
           <%= link_to "Cancel", sap_document_path(@sap_document), class: "btn btn-secondary" %>
         </div>
