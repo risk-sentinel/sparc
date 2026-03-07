@@ -291,6 +291,12 @@
   <% end %>
 </div>
 
+<%= render "shared/oscal_metadata_section",
+           document: @profile_document,
+           update_path: update_metadata_profile_document_path(@profile_document),
+           param_key: :profile_document,
+           version_field: :profile_version %>
+
 <script>
   var activeFamily = null;
   var activePriority = null;

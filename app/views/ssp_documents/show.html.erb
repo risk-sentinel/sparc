@@ -534,6 +534,12 @@
   <% end %>
 </div>
 
+<%= render "shared/oscal_metadata_section",
+           document: @ssp_document,
+           update_path: update_metadata_ssp_document_path(@ssp_document),
+           param_key: :ssp_document,
+           version_field: :ssp_version %>
+
 <script>
   var activeFamily = null;
   var activeStatus = null;

@@ -1,0 +1,220 @@
+<%# OSCAL Metadata Section — shared across all document show pages.
+    Locals:
+      document      — the document record (SspDocument, SarDocument, etc.)
+      update_path   — the update_metadata path for this document
+      param_key     — the form param key (e.g., :ssp_document)
+      version_field — the version attribute name (e.g., :ssp_version)
+%>
+
+<% metadata = document.metadata_extra || {} %>
+<% roles = metadata["roles"] || [] %>
+<% parties = metadata["parties"] || [] %>
+<% responsible_parties = metadata["responsible-parties"] || [] %>
+<% props = metadata["props"] || [] %>
+<% links = metadata["links"] || [] %>
+<% revisions = metadata["revisions"] || [] %>
+<% document_ids = metadata["document-ids"] || [] %>
+
+<div class="card mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="cursor: pointer;"
+       onclick="document.getElementById('oscal-meta-body').classList.toggle('d-none');
+                this.querySelector('.toggle-icon').textContent =
+                  document.getElementById('oscal-meta-body').classList.contains('d-none') ? '+' : '-';">
+    <h5 class="mb-0 fw-semibold">OSCAL Metadata</h5>
+    <span class="toggle-icon fw-bold">+</span>
+  </div>
+
+  <div id="oscal-meta-body" class="card-body d-none">
+
+    <%# ── Core Fields ─────────────────────────────────────────── %>
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold small">OSCAL Version</label>
+        <p class="mb-0"><%= document.oscal_version.presence || "Not set" %></p>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold small">Document Version</label>
+        <p class="mb-0"><%= document.oscal_document_version.presence || "Not set" %></p>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold small">Last Modified</label>
+        <p class="mb-0"><%= document.updated_at.iso8601 %></p>
+      </div>
+    </div>
+
+    <%# ── Roles ───────────────────────────────────────────────── %>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Roles <span class="badge bg-secondary"><%= roles.size %></span></h6>
+      <% if roles.any? %>
+        <table class="table table-sm table-hover">
+          <thead><tr><th>ID</th><th>Title</th><th>Description</th></tr></thead>
+          <tbody>
+            <% roles.each do |role| %>
+              <tr>
+                <td><code><%= role["id"] %></code></td>
+                <td><%= role["title"] %></td>
+                <td class="text-body-secondary small"><%= role["description"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No roles defined</p>
+      <% end %>
+    </div>
+
+    <%# ── Parties ─────────────────────────────────────────────── %>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Parties <span class="badge bg-secondary"><%= parties.size %></span></h6>
+      <% if parties.any? %>
+        <table class="table table-sm table-hover">
+          <thead><tr><th>Name</th><th>Type</th><th>UUID</th></tr></thead>
+          <tbody>
+            <% parties.each do |party| %>
+              <tr>
+                <td><%= party["name"] %></td>
+                <td><span class="badge bg-body-secondary text-body"><%= party["type"] %></span></td>
+                <td><code class="small"><%= party["uuid"] %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No parties defined</p>
+      <% end %>
+    </div>
+
+    <%# ── Responsible Parties ─────────────────────────────────── %>
+    <% if responsible_parties.any? %>
+      <div class="mb-4">
+        <h6 class="fw-semibold">Responsible Parties <span class="badge bg-secondary"><%= responsible_parties.size %></span></h6>
+        <table class="table table-sm table-hover">
+          <thead><tr><th>Role ID</th><th>Party UUIDs</th></tr></thead>
+          <tbody>
+            <% responsible_parties.each do |rp| %>
+              <tr>
+                <td><code><%= rp["role-id"] %></code></td>
+                <td>
+                  <% (rp["party-uuids"] || []).each do |uuid| %>
+                    <code class="small"><%= uuid %></code><br>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <%# ── Properties ──────────────────────────────────────────── %>
+    <% if props.any? %>
+      <div class="mb-4">
+        <h6 class="fw-semibold">Properties <span class="badge bg-secondary"><%= props.size %></span></h6>
+        <table class="table table-sm table-hover">
+          <thead><tr><th>Name</th><th>Value</th><th>Namespace</th></tr></thead>
+          <tbody>
+            <% props.each do |prop| %>
+              <tr>
+                <td><code><%= prop["name"] %></code></td>
+                <td><%= prop["value"] %></td>
+                <td class="text-body-secondary small"><%= prop["ns"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <%# ── Links ───────────────────────────────────────────────── %>
+    <% if links.any? %>
+      <div class="mb-4">
+        <h6 class="fw-semibold">Links <span class="badge bg-secondary"><%= links.size %></span></h6>
+        <table class="table table-sm table-hover">
+          <thead><tr><th>Relation</th><th>Href</th><th>Media Type</th></tr></thead>
+          <tbody>
+            <% links.each do |link| %>
+              <tr>
+                <td><code><%= link["rel"] %></code></td>
+                <td class="text-break"><%= link["href"] %></td>
+                <td class="small"><%= link["media-type"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <%# ── Document IDs ────────────────────────────────────────── %>
+    <% if document_ids.any? %>
+      <div class="mb-4">
+        <h6 class="fw-semibold">Document IDs <span class="badge bg-secondary"><%= document_ids.size %></span></h6>
+        <table class="table table-sm table-hover">
+          <thead><tr><th>Scheme</th><th>Identifier</th></tr></thead>
+          <tbody>
+            <% document_ids.each do |did| %>
+              <tr>
+                <td><code><%= did["scheme"] %></code></td>
+                <td><%= did["identifier"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <%# ── Revisions ───────────────────────────────────────────── %>
+    <% if revisions.any? %>
+      <div class="mb-4">
+        <h6 class="fw-semibold">Revision History <span class="badge bg-secondary"><%= revisions.size %></span></h6>
+        <table class="table table-sm table-hover">
+          <thead><tr><th>Version</th><th>Title</th><th>Published</th><th>Last Modified</th></tr></thead>
+          <tbody>
+            <% revisions.each do |rev| %>
+              <tr>
+                <td><%= rev["version"] %></td>
+                <td><%= rev["title"] %></td>
+                <td class="small"><%= rev["published"] %></td>
+                <td class="small"><%= rev["last-modified"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <%# ── Edit Metadata Form ──────────────────────────────────── %>
+    <hr>
+    <div id="oscal-meta-edit-section">
+      <h6 class="fw-semibold mb-3">Edit OSCAL Metadata</h6>
+      <%= form_with url: update_path, method: :patch, local: true do |f| %>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">OSCAL Version</label>
+            <%= f.text_field :oscal_version, value: document.oscal_version, class: "form-control form-control-sm", placeholder: "1.1.2" %>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label small fw-semibold">Description</label>
+            <%= f.text_area :description, value: document.description, class: "form-control form-control-sm", rows: 2 %>
+          </div>
+        </div>
+
+        <%# Roles JSON editor %>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Roles (JSON)</label>
+          <textarea name="<%= param_key %>[metadata_extra_json]"
+                    class="form-control form-control-sm font-monospace"
+                    rows="4"
+                    placeholder='{"roles": [{"id": "prepared-by", "title": "Prepared By"}]}'
+          ><%= JSON.pretty_generate(metadata.slice("roles", "parties", "responsible-parties", "props", "links", "document-ids")) if metadata.any? %></textarea>
+          <div class="form-text">Edit the OSCAL metadata JSON directly. Supported keys: roles, parties, responsible-parties, props, links, document-ids.</div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <%= f.submit "Save Metadata", class: "btn btn-primary btn-sm" %>
+        </div>
+      <% end %>
+    </div>
+
+  </div>
+</div>

@@ -130,8 +130,9 @@ class SapDocumentsController < ApplicationController
   private
 
   def document_metadata_params
-    params.require(:sap_document).permit(:name, :sap_version, :description,
+    permitted = params.require(:sap_document).permit(:name, :sap_version, :oscal_version, :description,
       :assessment_type, :assessment_start, :assessment_end)
+    merge_metadata_extra(permitted, :sap_document)
   end
 
   def set_sap_document
