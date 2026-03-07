@@ -5,17 +5,17 @@
     <div class="form-group">
       <label for="sar_document_file">Select File (.xlsx, .xls, .json, .xml)</label>
       <%= f.file_field :file, accept: ".xlsx,.xls,.json,.xml", required: true %>
-      <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+      <small class="text-body-secondary d-block" style="margin-top: 0.5rem;">
         Upload an Excel workbook, OSCAL Assessment Results JSON, or OSCAL Assessment Results XML file.
         Excel workbooks with multiple tabs will each be imported as a separate section.
         OSCAL files will import observations, findings, risks, and metadata.
       </small>
     </div>
 
-    <div style="display: flex; gap: 1rem; align-items: center;">
+    <div class="d-flex gap-3 align-items-center">
       <%= f.submit "Upload and Convert", class: "btn btn-success" %>
       <%= link_to "or Create from Wizard", wizard_sar_documents_path,
-            style: "color: var(--link); font-size: 0.9rem;" %>
+            style: "color: var(--bs-link-color); font-size: 0.9rem;" %>
       <%= link_to "Cancel", sar_documents_path, class: "btn btn-secondary" %>
     </div>
   <% end %>
@@ -23,9 +23,9 @@
 
 <div class="card">
   <h3>Expected Excel Format</h3>
-  <p style="color: var(--text-muted); margin-bottom: 1rem;">Each worksheet tab is treated as a named section. Read-only fields are imported as-is; editable fields can be updated after upload.</p>
+  <p class="text-body-secondary mb-3">Each worksheet tab is treated as a named section. Read-only fields are imported as-is; editable fields can be updated after upload.</p>
 
-  <table>
+  <table class="table table-hover">
     <thead>
       <tr>
         <th>Column</th>

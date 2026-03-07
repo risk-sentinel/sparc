@@ -1,8 +1,8 @@
 <%= form_with(model: [profile_document, profile_control], local: true) do |f| %>
   <% if profile_control.errors.any? %>
-    <div style="background: var(--flash-err-bg); border: 1px solid var(--flash-err-border); border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem;">
+    <div class="rounded mb-3" style="background: var(--bs-danger-bg-subtle); border: 1px solid var(--bs-danger-border-subtle); padding: 0.75rem;">
       <% profile_control.errors.full_messages.each do |msg| %>
-        <p style="color: var(--flash-err-text); font-size: 0.85rem; margin: 0.2rem 0;"><%= msg %></p>
+        <p style="color: var(--bs-danger-text-emphasis); font-size: 0.85rem; margin: 0.2rem 0;"><%= msg %></p>
       <% end %>
     </div>
   <% end %>
@@ -30,14 +30,14 @@
     <div class="form-group">
       <label>
         <%= fname.tr("_", " ").titleize %>
-        <span style="color: var(--btn-success); font-size: 0.75rem; font-weight: 400;">(editable)</span>
+        <span style="color: var(--bs-success); font-size: 0.75rem; font-weight: 400;">(editable)</span>
       </label>
       <%= text_area_tag "fields[#{fname}]", field&.field_value.to_s,
             class: "form-control", rows: 3 %>
     </div>
   <% end %>
 
-  <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+  <div class="d-flex gap-2 mt-4">
     <%= f.submit(profile_control.persisted? ? "Save Changes" : "Add Control", class: "btn btn-success") %>
     <%= link_to "Cancel", profile_document_path(profile_document), class: "btn btn-secondary" %>
   </div>

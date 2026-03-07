@@ -1,6 +1,6 @@
 <div class="card">
   <h2>Create New SSP from Wizard</h2>
-  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+  <p class="text-body-secondary mb-4">
     Build a System Security Plan by selecting a Profile baseline, assembling components from CDEFs,
     and configuring system characteristics. Controls are auto-populated from the selected profile.
   </p>
@@ -8,8 +8,8 @@
   <%= form_with url: create_from_wizard_ssp_documents_path, method: :post, local: true do |f| %>
 
     <%# ── Step 1: Basics ── %>
-    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         <span style="background: #3498db; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
         System Basics
       </summary>
@@ -29,7 +29,7 @@
                   @profiles.map { |p| ["#{p.name} (#{p.profile_controls.count} controls)", p.id] },
                   { include_blank: "-- Select a Profile --" },
                   { required: true, class: "form-control" } %>
-            <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">
+            <small class="text-body-secondary d-block" style="margin-top: 0.3rem;">
               Controls from this profile will be imported into the SSP.
             </small>
           <% else %>
@@ -43,22 +43,22 @@
     </details>
 
     <%# ── Step 2: Components (CDEFs) ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         <span style="background: #27ae60; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
         Component Definitions (Optional)
       </summary>
       <div style="padding: 1rem 1.25rem;">
         <% if @cdefs.any? %>
-          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 0.75rem;">
+          <p class="text-body-secondary" style="font-size: 0.88rem; margin-bottom: 0.75rem;">
             Select CDEFs to import as components. Matching control implementations will be auto-filled.
           </p>
           <% @cdefs.each do |cdef| %>
-            <label style="display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.75rem; border: 1px solid var(--border-soft); border-radius: 6px; margin-bottom: 0.4rem; cursor: pointer; background: var(--surface);">
+            <label class="d-flex align-items-center gap-2 border rounded-2 bg-body" style="padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer;">
               <%= check_box_tag "cdef_document_ids[]", cdef.id, false, style: "width: 16px; height: 16px;" %>
               <div>
-                <div style="font-weight: 600; font-size: 0.88rem;"><%= cdef.name %></div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                <div class="fw-semibold" style="font-size: 0.88rem;"><%= cdef.name %></div>
+                <div class="text-body-secondary" style="font-size: 0.75rem;">
                   <%= cdef.cdef_controls.count %> controls
                   <% if cdef.description.present? %>
                     &mdash; <%= truncate(cdef.description, length: 80) %>
@@ -68,7 +68,7 @@
             </label>
           <% end %>
         <% else %>
-          <p style="color: var(--text-muted); font-size: 0.88rem;">
+          <p class="text-body-secondary" style="font-size: 0.88rem;">
             No completed CDEFs found. You can still create an SSP without components, or
             <%= link_to "upload a CDEF", new_cdef_document_path %> first.
           </p>
@@ -77,13 +77,13 @@
     </details>
 
     <%# ── Step 3: System Characteristics ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         <span style="background: #e67e22; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
         System Characteristics
       </summary>
       <div style="padding: 1rem 1.25rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;">
+        <div class="row row-cols-1 row-cols-md-2 g-3">
           <div class="form-group">
             <label for="security_sensitivity_level">Security Sensitivity Level</label>
             <%= f.select :security_sensitivity_level,
@@ -129,17 +129,17 @@
     </details>
 
     <%# ── Step 4: Review & Create ── %>
-    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
         <span style="background: #8e44ad; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">4</span>
         Review & Create
       </summary>
       <div style="padding: 1rem 1.25rem;">
-        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1rem;">
+        <p class="text-body-secondary mb-3" style="font-size: 0.88rem;">
           Review your selections above, then click "Create SSP" to generate the System Security Plan.
           Controls from the selected profile will be imported, and matching CDEF implementations will be auto-filled.
         </p>
-        <div style="display: flex; gap: 1rem;">
+        <div class="d-flex gap-3">
           <%= f.submit "Create SSP", class: "btn btn-success" %>
           <%= link_to "Cancel", ssp_documents_path, class: "btn btn-secondary" %>
         </div>

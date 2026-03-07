@@ -5,12 +5,12 @@
     <div class="form-group">
       <label for="cdef_document_file">Select Component Definition File (.xml, .json)</label>
       <%= f.file_field :file, accept: ".xml,.json", required: true %>
-      <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+      <small class="text-body-secondary d-block mt-2">
         Upload an XCCDF XML file (DISA STIGs, SCAP benchmarks, CIS) or a JSON file (InSpec, STIG Viewer export).
       </small>
     </div>
 
-    <div style="display: flex; gap: 1rem;">
+    <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-success" %>
       <%= link_to "Cancel", cdef_documents_path, class: "btn btn-secondary" %>
     </div>
@@ -19,9 +19,9 @@
 
 <div class="card">
   <h3>Supported Formats</h3>
-  <p style="color: var(--text-muted); margin-bottom: 1rem;">SPARC automatically detects the format and extracts controls, severity ratings, and CCI references.</p>
+  <p class="text-body-secondary mb-3">SPARC automatically detects the format and extracts controls, severity ratings, and CCI references.</p>
 
-  <table>
+  <table class="table table-hover">
     <thead>
       <tr>
         <th>Format</th>
@@ -56,19 +56,23 @@
 
 <div class="card">
   <h3>Export Capabilities</h3>
-  <p style="color: var(--text-muted); margin-bottom: 1rem;">After processing, component definitions can be exported in the following formats:</p>
+  <p class="text-body-secondary mb-3">After processing, component definitions can be exported in the following formats:</p>
 
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid var(--link-purple); border-radius: 6px; padding: 1rem;">
-      <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--link-purple);">OSCAL Component Definition</div>
-      <div style="font-size: 0.88rem; color: var(--text-muted);">
-        NIST OSCAL v1.1.2 compliant Component Definition JSON. Maps controls to implemented-requirements with severity, CCI references, and implementation narratives.
+  <div class="row row-cols-1 row-cols-md-2 g-3">
+    <div class="col">
+      <div class="bg-body-secondary p-3 rounded" style="border: 1px solid var(--bs-border-color); border-left: 3px solid #8e44ad;">
+        <div class="fw-bold" style="margin-bottom: 0.35rem; color: #8e44ad;">OSCAL Component Definition</div>
+        <div class="text-body-secondary" style="font-size: 0.88rem;">
+          NIST OSCAL v1.1.2 compliant Component Definition JSON. Maps controls to implemented-requirements with severity, CCI references, and implementation narratives.
+        </div>
       </div>
     </div>
-    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid var(--btn-success); border-radius: 6px; padding: 1rem;">
-      <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--btn-success);">SPARC JSON</div>
-      <div style="font-size: 0.88rem; color: var(--text-muted);">
-        Standard SPARC JSON export with document metadata, controls, and all associated fields.
+    <div class="col">
+      <div class="bg-body-secondary p-3 rounded" style="border: 1px solid var(--bs-border-color); border-left: 3px solid var(--bs-success);">
+        <div class="fw-bold" style="margin-bottom: 0.35rem; color: var(--bs-success);">SPARC JSON</div>
+        <div class="text-body-secondary" style="font-size: 0.88rem;">
+          Standard SPARC JSON export with document metadata, controls, and all associated fields.
+        </div>
       </div>
     </div>
   </div>
