@@ -50,6 +50,20 @@ Rails.application.routes.draw do
     resources :profile_controls, only: [ :new, :create, :edit, :update, :destroy ]
   end
 
+  resources :sap_documents do
+    member do
+      patch :update_metadata
+      get :download_json
+      get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
+      get :status
+    end
+    collection do
+      post :import_json
+    end
+  end
+
   resources :poam_documents do
     member do
       patch :update_metadata

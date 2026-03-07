@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_07_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_07_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -393,6 +393,61 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_140000) do
     t.index ["status"], name: "index_profile_documents_on_status"
   end
 
+  create_table "sap_control_fields", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "editable", default: false
+    t.string "field_name", null: false
+    t.text "field_value"
+    t.bigint "sap_control_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["sap_control_id", "field_name"], name: "idx_sap_fields_on_ctrl_name"
+    t.index ["sap_control_id"], name: "index_sap_control_fields_on_sap_control_id"
+  end
+
+  create_table "sap_controls", force: :cascade do |t|
+    t.string "assessment_method"
+    t.string "assessment_status", default: "planned"
+    t.string "assessor_name"
+    t.string "control_family"
+    t.string "control_id"
+    t.datetime "created_at", null: false
+    t.text "objective"
+    t.integer "row_order", default: 0, null: false
+    t.bigint "sap_document_id", null: false
+    t.text "test_case"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["sap_document_id", "assessment_method"], name: "idx_sap_controls_on_doc_method"
+    t.index ["sap_document_id", "control_family"], name: "idx_sap_controls_on_doc_family"
+    t.index ["sap_document_id", "row_order"], name: "idx_sap_controls_on_doc_row"
+    t.index ["sap_document_id"], name: "index_sap_controls_on_sap_document_id"
+  end
+
+  create_table "sap_documents", force: :cascade do |t|
+    t.date "assessment_end"
+    t.jsonb "assessment_scope", default: {}
+    t.date "assessment_start"
+    t.string "assessment_type", default: "initial"
+    t.jsonb "assessors", default: []
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "error_message"
+    t.string "file_type"
+    t.jsonb "import_metadata", default: {}
+    t.string "name", null: false
+    t.string "original_filename"
+    t.string "oscal_version"
+    t.bigint "profile_document_id"
+    t.string "sap_version"
+    t.bigint "ssp_document_id"
+    t.string "status", default: "pending"
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_sap_documents_on_created_at"
+    t.index ["profile_document_id"], name: "index_sap_documents_on_profile_document_id"
+    t.index ["ssp_document_id"], name: "index_sap_documents_on_ssp_document_id"
+    t.index ["status"], name: "index_sap_documents_on_status"
+  end
+
   create_table "sar_control_fields", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "editable"
@@ -640,6 +695,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_140000) do
   add_foreign_key "profile_control_fields", "profile_controls", on_delete: :cascade
   add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
+  add_foreign_key "sap_control_fields", "sap_controls", on_delete: :cascade
+  add_foreign_key "sap_controls", "sap_documents", on_delete: :cascade
+  add_foreign_key "sap_documents", "profile_documents", on_delete: :nullify
+  add_foreign_key "sap_documents", "ssp_documents", on_delete: :nullify
   add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
   add_foreign_key "ssp_by_components", "ssp_components", on_delete: :cascade

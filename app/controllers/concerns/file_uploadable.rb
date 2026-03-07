@@ -32,6 +32,7 @@ module FileUploadable
     sar:     "sar",
     cdef:    "cdef",
     profile: "profile",
+    sap:     "sap",
     poam:    "poam"
   }.freeze
 

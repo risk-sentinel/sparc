@@ -7,6 +7,7 @@ class HomeController < ApplicationController
     @control_count = CatalogControl.count
     @cdef_count = CdefDocument.count
     @profile_count = ProfileDocument.count
+    @sap_count     = SapDocument.count
     @poam_count    = PoamDocument.count
   end
 end

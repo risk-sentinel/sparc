@@ -59,6 +59,16 @@ class DocumentTypeRegistry
       file_prefix:        "profile",
       success_message:    "OSCAL Profile (Baseline) uploaded. Processing in background..."
     ),
+    sap: Entry.new(
+      document_class:     SapDocument,
+      control_class:      SapControl,
+      field_class:        SapControlField,
+      document_fk:        :sap_document_id,
+      allowed_extensions: { ".json" => "json" },
+      parser_map:         { "json" => SapJsonParserService },
+      file_prefix:        "sap",
+      success_message:    "OSCAL Assessment Plan uploaded. Processing in background..."
+    ),
     poam: Entry.new(
       document_class:     PoamDocument,
       control_class:      PoamItem,

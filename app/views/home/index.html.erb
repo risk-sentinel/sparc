@@ -21,7 +21,7 @@
       <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Catalog Controls</div>
     </div>
   </div>
-  <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 0.75rem;">
+  <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; margin-top: 0.75rem;">
     <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
       <div style="font-size: 2rem; font-weight: 700;"><%= @profile_count %></div>
       <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Baseline Profiles</div>
@@ -33,6 +33,10 @@
     <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
       <div style="font-size: 2rem; font-weight: 700;"><%= @ssp_count %></div>
       <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Controls Implementation</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 700;"><%= @sap_count %></div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Assessment Plans</div>
     </div>
     <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
       <div style="font-size: 2rem; font-weight: 700;"><%= @sar_count %></div>
@@ -95,6 +99,18 @@
     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
       <%= link_to "View Documents", ssp_documents_path, class: "btn btn-primary" %>
       <%= link_to "Upload New", new_ssp_document_path, class: "btn btn-success" %>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 0; text-align: center;">
+    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128221;</div>
+    <h3 style="margin-bottom: 0.5rem;">Assessment Plans</h3>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
+      Generate OSCAL-compliant Security Assessment Plans from SSP and Profile data with assessment method wizards.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <%= link_to "View Plans", sap_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Create New", new_sap_document_path, class: "btn btn-success" %>
     </div>
   </div>
 
@@ -170,6 +186,10 @@
     <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
       <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
       <span>Import NIST SP 800-53 baseline profiles and export OSCAL Profiles</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Generate OSCAL Security Assessment Plans (SAP) from SSP + Profile with auto-populated methods and test cases</span>
     </div>
     <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
       <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
