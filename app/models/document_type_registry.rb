@@ -34,10 +34,10 @@ class DocumentTypeRegistry
       control_class:      SarControl,
       field_class:        SarControlField,
       document_fk:        :sar_document_id,
-      allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel" },
-      parser_map:         { "excel" => SarExcelParserService },
+      allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel", ".json" => "json", ".xml" => "xml" },
+      parser_map:         { "excel" => SarExcelParserService, "json" => SarJsonParserService, "xml" => SarXmlParserService },
       file_prefix:        "sar",
-      success_message:    "Security Assessment Results workbook uploaded. Processing in background..."
+      success_message:    "Security Assessment Results uploaded. Processing in background..."
     ),
     cdef: Entry.new(
       document_class:     CdefDocument,
