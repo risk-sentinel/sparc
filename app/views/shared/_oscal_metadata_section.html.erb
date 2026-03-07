@@ -29,15 +29,19 @@
 
     <%# ── Core Fields ─────────────────────────────────────────── %>
     <div class="row mb-4">
-      <div class="col-md-4">
+      <div class="col-md-3">
         <label class="form-label fw-semibold small">OSCAL Version</label>
         <p class="mb-0"><%= document.oscal_version.presence || "Not set" %></p>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-3">
         <label class="form-label fw-semibold small">Document Version</label>
         <p class="mb-0"><%= document.oscal_document_version.presence || "Not set" %></p>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold small">Published</label>
+        <p class="mb-0"><%= document.try(:published).presence || "Not set" %></p>
+      </div>
+      <div class="col-md-3">
         <label class="form-label fw-semibold small">Last Modified</label>
         <p class="mb-0"><%= document.updated_at.iso8601 %></p>
       </div>
@@ -188,33 +192,199 @@
     <div id="oscal-meta-edit-section">
       <h6 class="fw-semibold mb-3">Edit OSCAL Metadata</h6>
       <%= form_with url: update_path, method: :patch, local: true do |f| %>
+
+        <%# ── Core fields row ── %>
         <div class="row g-3 mb-3">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label small fw-semibold">OSCAL Version</label>
             <%= f.text_field :oscal_version, value: document.oscal_version, class: "form-control form-control-sm", placeholder: "1.1.2" %>
           </div>
-          <div class="col-md-8">
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Published Date</label>
+            <%= f.text_field :published, value: document.try(:published), class: "form-control form-control-sm", placeholder: "2024-01-15T00:00:00Z" %>
+          </div>
+          <div class="col-md-6">
             <label class="form-label small fw-semibold">Description</label>
             <%= f.text_area :description, value: document.description, class: "form-control form-control-sm", rows: 2 %>
           </div>
         </div>
 
-        <%# Roles JSON editor %>
+        <%# ── Structured Roles Editor ── %>
         <div class="mb-3">
-          <label class="form-label small fw-semibold">Roles (JSON)</label>
-          <textarea name="<%= param_key %>[metadata_extra_json]"
-                    class="form-control form-control-sm font-monospace"
-                    rows="4"
-                    placeholder='{"roles": [{"id": "prepared-by", "title": "Prepared By"}]}'
-          ><%= JSON.pretty_generate(metadata.slice("roles", "parties", "responsible-parties", "props", "links", "document-ids")) if metadata.any? %></textarea>
-          <div class="form-text">Edit the OSCAL metadata JSON directly. Supported keys: roles, parties, responsible-parties, props, links, document-ids.</div>
+          <label class="form-label small fw-semibold">Roles</label>
+          <div id="roles-editor">
+            <% roles.each_with_index do |role, idx| %>
+              <div class="row g-2 mb-2 role-row">
+                <div class="col-md-3">
+                  <input type="text" class="form-control form-control-sm" placeholder="Role ID (e.g. prepared-by)" data-field="id" value="<%= role["id"] %>">
+                </div>
+                <div class="col-md-4">
+                  <input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title" value="<%= role["title"] %>">
+                </div>
+                <div class="col-md-4">
+                  <input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description" value="<%= role["description"] %>">
+                </div>
+                <div class="col-md-1">
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.role-row').remove(); syncMetadataJson();">x</button>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addRoleRow()">+ Add Role</button>
         </div>
 
+        <%# ── Structured Parties Editor ── %>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Parties</label>
+          <div id="parties-editor">
+            <% parties.each_with_index do |party, idx| %>
+              <div class="row g-2 mb-2 party-row">
+                <div class="col-md-4">
+                  <input type="text" class="form-control form-control-sm" placeholder="Name" data-field="name" value="<%= party["name"] %>">
+                </div>
+                <div class="col-md-2">
+                  <select class="form-select form-select-sm" data-field="type">
+                    <option value="organization" <%= "selected" if party["type"] == "organization" %>>Organization</option>
+                    <option value="person" <%= "selected" if party["type"] == "person" %>>Person</option>
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid" value="<%= party["uuid"] %>">
+                </div>
+                <div class="col-md-1">
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.party-row').remove(); syncMetadataJson();">x</button>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addPartyRow()">+ Add Party</button>
+        </div>
+
+        <%# ── Structured Revisions Editor ── %>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Revisions</label>
+          <div id="revisions-editor">
+            <% revisions.each_with_index do |rev, idx| %>
+              <div class="row g-2 mb-2 revision-row">
+                <div class="col-md-2">
+                  <input type="text" class="form-control form-control-sm" placeholder="Version" data-field="version" value="<%= rev["version"] %>">
+                </div>
+                <div class="col-md-3">
+                  <input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title" value="<%= rev["title"] %>">
+                </div>
+                <div class="col-md-3">
+                  <input type="text" class="form-control form-control-sm" placeholder="Published (ISO 8601)" data-field="published" value="<%= rev["published"] %>">
+                </div>
+                <div class="col-md-3">
+                  <input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified" value="<%= rev["last-modified"] %>">
+                </div>
+                <div class="col-md-1">
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.revision-row').remove(); syncMetadataJson();">x</button>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addRevisionRow()">+ Add Revision</button>
+        </div>
+
+        <%# ── Advanced: Raw JSON for remaining fields ── %>
+        <details class="mb-3">
+          <summary class="form-label small fw-semibold" style="cursor: pointer;">Advanced: Edit Raw JSON (responsible-parties, props, links, document-ids)</summary>
+          <textarea id="metadata-extra-json"
+                    name="<%= param_key %>[metadata_extra_json]"
+                    class="form-control form-control-sm font-monospace mt-2"
+                    rows="6"
+                    placeholder='{"props": [{"name": "keywords", "value": "security"}]}'
+          ><%= JSON.pretty_generate(metadata.slice("responsible-parties", "props", "links", "document-ids")) if metadata.any? %></textarea>
+          <div class="form-text">Edit additional OSCAL metadata JSON. Structured editors above for roles, parties, and revisions are merged automatically.</div>
+        </details>
+
+        <%# Hidden field that holds the merged metadata_extra JSON (roles + parties + revisions + advanced) %>
+        <input type="hidden" id="merged-metadata-extra" name="<%= param_key %>[metadata_extra_json]">
+
         <div class="d-flex gap-2">
-          <%= f.submit "Save Metadata", class: "btn btn-primary btn-sm" %>
+          <%= f.submit "Save Metadata", class: "btn btn-primary btn-sm", onclick: "syncMetadataJson();" %>
         </div>
       <% end %>
     </div>
 
   </div>
 </div>
+
+<script>
+  function collectRows(containerId, fields) {
+    var rows = document.querySelectorAll('#' + containerId + ' > div');
+    var items = [];
+    rows.forEach(function(row) {
+      var item = {};
+      var hasValue = false;
+      fields.forEach(function(field) {
+        var el = row.querySelector('[data-field="' + field + '"]');
+        if (el && el.value.trim() !== '') {
+          item[field] = el.value.trim();
+          hasValue = true;
+        }
+      });
+      if (hasValue) items.push(item);
+    });
+    return items;
+  }
+
+  function syncMetadataJson() {
+    var roles = collectRows('roles-editor', ['id', 'title', 'description']);
+    var parties = collectRows('parties-editor', ['name', 'type', 'uuid']);
+    // Auto-generate UUIDs for parties missing them
+    parties.forEach(function(p) {
+      if (!p.uuid) p.uuid = crypto.randomUUID();
+    });
+    var revisions = collectRows('revisions-editor', ['version', 'title', 'published', 'last-modified']);
+
+    // Parse advanced JSON
+    var advanced = {};
+    var advEl = document.getElementById('metadata-extra-json');
+    if (advEl && advEl.value.trim()) {
+      try { advanced = JSON.parse(advEl.value); } catch(e) { /* ignore parse errors */ }
+    }
+
+    // Merge structured + advanced
+    var merged = Object.assign({}, advanced);
+    if (roles.length > 0) merged['roles'] = roles;
+    if (parties.length > 0) merged['parties'] = parties;
+    if (revisions.length > 0) merged['revisions'] = revisions;
+
+    document.getElementById('merged-metadata-extra').value = JSON.stringify(merged);
+    // Clear the textarea name so only the hidden field submits
+    if (advEl) advEl.removeAttribute('name');
+  }
+
+  function addRoleRow() {
+    var html = '<div class="row g-2 mb-2 role-row">' +
+      '<div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Role ID (e.g. prepared-by)" data-field="id"></div>' +
+      '<div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title"></div>' +
+      '<div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description"></div>' +
+      '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.role-row\').remove(); syncMetadataJson();">x</button></div>' +
+      '</div>';
+    document.getElementById('roles-editor').insertAdjacentHTML('beforeend', html);
+  }
+
+  function addPartyRow() {
+    var html = '<div class="row g-2 mb-2 party-row">' +
+      '<div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Name" data-field="name"></div>' +
+      '<div class="col-md-2"><select class="form-select form-select-sm" data-field="type"><option value="organization">Organization</option><option value="person">Person</option></select></div>' +
+      '<div class="col-md-5"><input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid"></div>' +
+      '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.party-row\').remove(); syncMetadataJson();">x</button></div>' +
+      '</div>';
+    document.getElementById('parties-editor').insertAdjacentHTML('beforeend', html);
+  }
+
+  function addRevisionRow() {
+    var html = '<div class="row g-2 mb-2 revision-row">' +
+      '<div class="col-md-2"><input type="text" class="form-control form-control-sm" placeholder="Version" data-field="version"></div>' +
+      '<div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title"></div>' +
+      '<div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Published (ISO 8601)" data-field="published"></div>' +
+      '<div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified"></div>' +
+      '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.revision-row\').remove(); syncMetadataJson();">x</button></div>' +
+      '</div>';
+    document.getElementById('revisions-editor').insertAdjacentHTML('beforeend', html);
+  }
+</script>
