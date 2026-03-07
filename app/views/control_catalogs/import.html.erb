@@ -41,9 +41,9 @@
     <div class="row row-cols-1 row-cols-md-2 g-3" style="margin-bottom: 1.25rem;">
 
       <%# OSCAL JSON %>
-      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid #2980b9 !important; padding: 1rem;">
+      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid var(--sparc-primary) !important; padding: 1rem;">
         <div class="d-flex align-items-center gap-2" style="margin-bottom: 0.5rem;">
-          <span class="fw-bold" style="background: #2980b9; color: white; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.72rem; font-family: monospace;">.json</span>
+          <span class="fw-bold" style="background: var(--sparc-primary); color: white; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.72rem; font-family: monospace;">.json</span>
           <strong class="small">OSCAL Catalog (JSON)</strong>
         </div>
         <p class="text-body-secondary" style="font-size: 0.82rem; margin: 0 0 0.65rem; line-height: 1.5;">
@@ -74,9 +74,9 @@
       </div></div>
 
       <%# NIST XML %>
-      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid #8e44ad !important; padding: 1rem;">
+      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid var(--sparc-purple) !important; padding: 1rem;">
         <div class="d-flex align-items-center gap-2" style="margin-bottom: 0.5rem;">
-          <span class="fw-bold" style="background: #8e44ad; color: white; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.72rem; font-family: monospace;">.xml</span>
+          <span class="fw-bold" style="background: var(--sparc-purple); color: white; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.72rem; font-family: monospace;">.xml</span>
           <strong class="small">NIST SP 800-53 XML Feed</strong>
         </div>
         <p class="text-body-secondary" style="font-size: 0.82rem; margin: 0 0 0.65rem; line-height: 1.5;">
@@ -104,7 +104,7 @@
 
     <%# Warning box %>
     <div class="border rounded" style="background: rgba(243,156,18,0.08); border-left: 3px solid #f39c12 !important; padding: 0.85rem 1rem; font-size: 0.84rem; line-height: 1.5;">
-      <strong style="color: #f39c12;">⚠ Format requirement:</strong>
+      <strong style="color: var(--sparc-warning);">⚠ Format requirement:</strong>
       Files must match the OSCAL JSON or NIST XML schemas above exactly.
       Other JSON/XML structures (e.g. the "skunkwerks" r4_final.json / r5.json custom format)
       are <em>not</em> supported by this importer — use the links above to download the

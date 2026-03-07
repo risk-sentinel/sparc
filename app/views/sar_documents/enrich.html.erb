@@ -2,7 +2,7 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <div>
       <h2>Enrich SAR: <%= @sar_document.name %></h2>
-      <p style="color: var(--text-muted); margin: 0;">
+      <p style="color: var(--sparc-text-muted); margin: 0;">
         Add OSCAL metadata, observations, findings, and risks to uplift this SAR for OSCAL-compliant export.
       </p>
     </div>
@@ -12,8 +12,8 @@
   <%= form_with model: @sar_document, url: update_enrich_sar_document_path(@sar_document), method: :patch, local: true do |f| %>
 
     <%# ── Assessment Metadata ── %>
-    <details open style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details open class="sparc-enrich-section" style="margin-bottom: 1rem; padding: 0; overflow: hidden;">
+      <summary class="sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; background: var(--sparc-surface-alt); list-style: none; user-select: none;">
         Assessment Metadata
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -43,18 +43,18 @@
     </details>
 
     <%# ── Results ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="sparc-enrich-section" style="margin-bottom: 1rem; padding: 0; overflow: hidden;">
+      <summary class="sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; background: var(--sparc-surface-alt); list-style: none; user-select: none;">
         Assessment Results (<%= @results.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="results-container">
         <% if @results.empty? %>
-          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+          <p style="color: var(--sparc-text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
             No OSCAL results yet. Add a result to organize observations, findings, and risks.
           </p>
         <% end %>
         <% @results.each_with_index do |result, idx| %>
-          <div class="result-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+          <div class="result-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <input type="hidden" name="sar_document[results][][id]" value="<%= result.id %>">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
@@ -74,7 +74,7 @@
                 <input type="datetime-local" name="sar_document[results][][end_time]" value="<%= result.end_time&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;">
               </div>
             </div>
-            <div style="font-size: 0.72rem; color: var(--text-faint); margin-top: 0.5rem;">
+            <div style="font-size: 0.72rem; color: var(--sparc-text-faint); margin-top: 0.5rem;">
               <%= result.sar_observations.count %> observations &bull;
               <%= result.sar_findings.count %> findings &bull;
               <%= result.sar_risks.count %> risks
@@ -88,13 +88,13 @@
     </details>
 
     <%# ── Observations ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="sparc-enrich-section" style="margin-bottom: 1rem; padding: 0; overflow: hidden;">
+      <summary class="sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; background: var(--sparc-surface-alt); list-style: none; user-select: none;">
         Observations (<%= @observations.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="observations-container">
         <% @observations.each do |obs| %>
-          <div class="observation-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+          <div class="observation-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <input type="hidden" name="sar_document[observations][][id]" value="<%= obs.id %>">
             <input type="hidden" name="sar_document[observations][][sar_result_id]" value="<%= obs.sar_result_id %>">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
@@ -120,13 +120,13 @@
     </details>
 
     <%# ── Findings ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="sparc-enrich-section" style="margin-bottom: 1rem; padding: 0; overflow: hidden;">
+      <summary class="sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; background: var(--sparc-surface-alt); list-style: none; user-select: none;">
         Findings (<%= @findings.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="findings-container">
         <% @findings.each do |finding| %>
-          <div class="finding-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+          <div class="finding-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <input type="hidden" name="sar_document[findings][][id]" value="<%= finding.id %>">
             <input type="hidden" name="sar_document[findings][][sar_result_id]" value="<%= finding.sar_result_id %>">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
@@ -159,13 +159,13 @@
     </details>
 
     <%# ── Risks ── %>
-    <details style="margin-bottom: 1rem; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden;">
-      <summary style="cursor: pointer; padding: 0.85rem 1rem; background: var(--summary-bg); font-size: 0.95rem; font-weight: 600; color: var(--text); list-style: none; user-select: none;">
+    <details class="sparc-enrich-section" style="margin-bottom: 1rem; padding: 0; overflow: hidden;">
+      <summary class="sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; background: var(--sparc-surface-alt); list-style: none; user-select: none;">
         Risks (<%= @risks.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="risks-container">
         <% @risks.each do |risk| %>
-          <div class="risk-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">
+          <div class="risk-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <input type="hidden" name="sar_document[risks][][id]" value="<%= risk.id %>">
             <input type="hidden" name="sar_document[risks][][sar_result_id]" value="<%= risk.sar_result_id %>">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
@@ -200,8 +200,8 @@
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <span style="font-size: 1.2rem;">&#x2728;</span>
           <div style="flex: 1;">
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text);">Auto-generate OSCAL entities from Excel data</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--bs-body-color);">Auto-generate OSCAL entities from Excel data</div>
+            <div style="font-size: 0.78rem; color: var(--sparc-text-muted); margin-top: 0.15rem;">
               Create a result with observations and findings from your <%= @sar_document.sar_controls.count %> imported controls.
               Pass results become "satisfied" findings, Failed become "not-satisfied".
             </div>
@@ -226,7 +226,7 @@
 <script>
   function addResult() {
     var container = document.getElementById('results-container');
-    var html = '<div class="result-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+    var html = '<div class="result-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">' +
       '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
       '<input type="text" name="sar_document[results][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Assessment Result"></div>' +
@@ -242,7 +242,7 @@
 
   function addObservation() {
     var container = document.getElementById('observations-container');
-    var html = '<div class="observation-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+    var html = '<div class="observation-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">' +
       '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
       '<input type="text" name="sar_document[observations][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Observation title"></div>' +
@@ -256,7 +256,7 @@
 
   function addFinding() {
     var container = document.getElementById('findings-container');
-    var html = '<div class="finding-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+    var html = '<div class="finding-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">' +
       '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
       '<input type="text" name="sar_document[findings][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Finding title"></div>' +
@@ -276,7 +276,7 @@
     var statuses = '<option value="open" selected>Open</option><option value="investigating">Investigating</option>' +
       '<option value="remediating">Remediating</option><option value="deviation-requested">Deviation Requested</option>' +
       '<option value="deviation-approved">Deviation Approved</option><option value="closed">Closed</option>';
-    var html = '<div class="risk-entry" style="border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--surface);">' +
+    var html = '<div class="risk-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">' +
       '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">' +
       '<div class="form-group" style="margin-bottom: 0.25rem;"><label style="font-size: 0.75rem;">Title</label>' +
       '<input type="text" name="sar_document[risks][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Risk title"></div>' +
