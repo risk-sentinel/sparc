@@ -104,7 +104,7 @@ class ProfileDocumentsController < ApplicationController
   private
 
   def document_metadata_params
-    permitted = params.require(:profile_document).permit(:name, :profile_version, :oscal_version, :description)
+    permitted = params.require(:profile_document).permit(:name, :profile_version, :oscal_version, :description, :published)
     merge_metadata_extra(permitted, :profile_document)
   end
 

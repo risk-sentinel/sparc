@@ -129,7 +129,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
   create_table "control_catalogs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
+    t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
+    t.string "oscal_version"
+    t.string "published"
     t.string "source"
     t.datetime "updated_at", null: false
     t.string "version"
@@ -434,6 +437,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.string "original_filename"
     t.string "oscal_version"
     t.string "profile_version"
+    t.string "published"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"

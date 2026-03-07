@@ -115,10 +115,15 @@ class CatalogImportService
     metadata    = cat_data.fetch("metadata", {})
     groups      = cat_data.fetch("groups") { raise ImportError, "No 'groups' found in catalog." }
 
-    catalog_name = metadata["title"].presence || File.basename(@filename, ".json").titleize
-    version      = metadata["version"].presence || metadata["last-modified"]&.first(10)
+    catalog_name  = metadata["title"].presence || File.basename(@filename, ".json").titleize
+    version       = metadata["version"].presence || metadata["last-modified"]&.first(10)
+    oscal_version = metadata["oscal-version"]
+    published     = metadata["published"]
+    metadata_extra = metadata.slice(*OscalMetadata::METADATA_EXTRA_KEYS)
 
-    catalog = upsert_catalog(catalog_name, version, "OSCAL")
+    catalog = upsert_catalog(catalog_name, version, "OSCAL",
+                             oscal_version: oscal_version, published: published,
+                             metadata_extra: metadata_extra)
     stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
 
     groups.each_with_index do |group, idx|
@@ -335,9 +340,13 @@ class CatalogImportService
 
   # ── Shared DB upsert helpers ─────────────────────────────────────────────────
 
-  def upsert_catalog(name, version, source)
+  def upsert_catalog(name, version, source, oscal_version: nil, published: nil, metadata_extra: {})
     catalog = ControlCatalog.find_or_initialize_by(name: name)
-    catalog.assign_attributes(version: version, source: source)
+    attrs = { version: version, source: source }
+    attrs[:oscal_version] = oscal_version if oscal_version.present?
+    attrs[:published] = published if published.present?
+    attrs[:metadata_extra] = metadata_extra if metadata_extra.present?
+    catalog.assign_attributes(attrs)
     catalog.save!
     catalog
   end
