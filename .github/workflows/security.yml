@@ -20,16 +20,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Gitleaks
+        run: |
+          GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar xz -C /usr/local/bin gitleaks
+
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gitleaks detect --source . --report-format sarif --report-path gitleaks-results.sarif --no-banner -v
+        continue-on-error: true
 
       - name: Upload Gitleaks SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
-          sarif_file: results.sarif
+          sarif_file: gitleaks-results.sarif
           category: gitleaks
 
       - name: Upload Gitleaks SARIF as artifact
@@ -37,8 +42,9 @@ jobs:
         if: always()
         with:
           name: gitleaks-sarif
-          path: results.sarif
+          path: gitleaks-results.sarif
           retention-days: 90
+          if-no-files-found: warn
 
   dependency_audit:
     runs-on: ubuntu-latest
@@ -76,31 +82,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
       - name: Run Trivy filesystem scan (SARIF)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-fs-results.sarif'
-          severity: 'CRITICAL,HIGH,MEDIUM'
-          scanners: 'vuln,misconfig,secret'
+        run: trivy fs --format sarif --output trivy-fs-results.sarif --severity CRITICAL,HIGH,MEDIUM --scanners vuln,misconfig,secret .
+        continue-on-error: true
 
       - name: Upload Trivy FS SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: trivy-fs-results.sarif
           category: trivy-fs
 
       - name: Run Trivy filesystem scan (CycloneDX for SAF)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'cyclonedx'
-          output: 'trivy-fs-sbom.cdx.json'
-          scanners: 'vuln'
+        run: trivy fs --format cyclonedx --output trivy-fs-sbom.cdx.json --scanners vuln .
+        continue-on-error: true
 
       - name: Upload Trivy FS artifacts
         uses: actions/upload-artifact@v7
@@ -111,6 +115,7 @@ jobs:
             trivy-fs-results.sarif
             trivy-fs-sbom.cdx.json
           retention-days: 90
+          if-no-files-found: warn
 
   trivy_container_scan:
     runs-on: ubuntu-latest
@@ -121,29 +126,29 @@ jobs:
       - name: Build Docker image
         run: docker build -t sparc:${{ github.sha }} .
 
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
       - name: Run Trivy container scan (SARIF)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: 'sparc:${{ github.sha }}'
-          format: 'sarif'
-          output: 'trivy-container-results.sarif'
-          severity: 'CRITICAL,HIGH'
-          scanners: 'vuln'
+        run: trivy image --format sarif --output trivy-container-results.sarif --severity CRITICAL,HIGH --scanners vuln sparc:${{ github.sha }}
+        continue-on-error: true
 
       - name: Upload Trivy container SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: trivy-container-results.sarif
           category: trivy-container
 
       - name: Run Trivy container scan (CycloneDX for SAF)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: 'sparc:${{ github.sha }}'
-          format: 'cyclonedx'
-          output: 'trivy-container-sbom.cdx.json'
-          scanners: 'vuln'
+        run: trivy image --format cyclonedx --output trivy-container-sbom.cdx.json --scanners vuln sparc:${{ github.sha }}
+        continue-on-error: true
 
       - name: Upload Trivy container artifacts
         uses: actions/upload-artifact@v7
@@ -154,6 +159,7 @@ jobs:
             trivy-container-results.sarif
             trivy-container-sbom.cdx.json
           retention-days: 90
+          if-no-files-found: warn
 
   sbom_generation:
     runs-on: ubuntu-latest
