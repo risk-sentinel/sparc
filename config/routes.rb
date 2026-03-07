@@ -6,6 +6,11 @@ Rails.application.routes.draw do
   # Future: delete "logout", to: "sessions#destroy", as: :logout
   get "login", to: "sessions#new", as: :login
 
+  resources :projects do
+    resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :project_memberships, only: [ :new, :create, :edit, :update, :destroy ]
+  end
+
   resources :ssp_documents do
     member do
       patch :update_metadata
