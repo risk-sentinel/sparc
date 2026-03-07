@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_07_010432) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_07_115926) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -134,6 +134,55 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_010432) do
     t.string "job_type"
     t.string "status"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "poam_documents", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.string "file_type"
+    t.jsonb "import_metadata", default: {}
+    t.string "name", null: false
+    t.jsonb "observations_data", default: []
+    t.string "original_filename"
+    t.string "oscal_version"
+    t.string "poam_version"
+    t.jsonb "risks_data", default: []
+    t.string "status", default: "pending"
+    t.string "system_id"
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_poam_documents_on_created_at"
+    t.index ["status"], name: "index_poam_documents_on_status"
+  end
+
+  create_table "poam_item_fields", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "editable", default: false
+    t.string "field_name", null: false
+    t.text "field_value"
+    t.bigint "poam_item_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["poam_item_id", "field_name"], name: "index_poam_item_fields_on_poam_item_id_and_field_name"
+    t.index ["poam_item_id"], name: "index_poam_item_fields_on_poam_item_id"
+  end
+
+  create_table "poam_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "deadline"
+    t.text "description"
+    t.string "impact"
+    t.string "likelihood"
+    t.bigint "poam_document_id", null: false
+    t.string "poam_item_uuid"
+    t.string "related_observation_uuid"
+    t.string "related_risk_uuid"
+    t.string "risk_level"
+    t.string "risk_status"
+    t.integer "row_order", default: 0, null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["poam_document_id", "risk_status"], name: "index_poam_items_on_poam_document_id_and_risk_status"
+    t.index ["poam_document_id", "row_order"], name: "index_poam_items_on_poam_document_id_and_row_order"
+    t.index ["poam_document_id"], name: "index_poam_items_on_poam_document_id"
   end
 
   create_table "profile_control_fields", force: :cascade do |t|
@@ -264,6 +313,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_07_010432) do
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "control_families", "control_catalogs"
+  add_foreign_key "poam_item_fields", "poam_items", on_delete: :cascade
+  add_foreign_key "poam_items", "poam_documents", on_delete: :cascade
   add_foreign_key "profile_control_fields", "profile_controls", on_delete: :cascade
   add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify

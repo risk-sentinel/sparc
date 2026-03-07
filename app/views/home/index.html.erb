@@ -21,7 +21,7 @@
       <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Catalog Controls</div>
     </div>
   </div>
-  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 0.75rem;">
+  <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 0.75rem;">
     <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
       <div style="font-size: 2rem; font-weight: 700;"><%= @profile_count %></div>
       <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Baseline Profiles</div>
@@ -36,12 +36,16 @@
     </div>
     <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
       <div style="font-size: 2rem; font-weight: 700;"><%= @sar_count %></div>
-      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Security Assessment Results</div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">Assessment Results</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 700;"><%= @poam_count %></div>
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 0.25rem;">POA&amp;Ms</div>
     </div>
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
 
   <div class="card" style="margin-bottom: 0; text-align: center; border: 2px solid #3498db;">
     <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128218;</div>
@@ -96,13 +100,25 @@
 
   <div class="card" style="margin-bottom: 0; text-align: center;">
     <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128203;</div>
-    <h3 style="margin-bottom: 0.5rem;">Security Assessment Results</h3>
+    <h3 style="margin-bottom: 0.5rem;">Assessment Results</h3>
     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
-      Upload multi-tab security assessment workbooks. View results by section, asset, and environment with heat maps by control family.
+      Upload multi-tab security assessment workbooks. View results by section, asset, and environment with heat maps.
     </p>
     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
       <%= link_to "View Documents", sar_documents_path, class: "btn btn-primary" %>
       <%= link_to "Upload New", new_sar_document_path, class: "btn btn-success" %>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 0; text-align: center;">
+    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128270;</div>
+    <h3 style="margin-bottom: 0.5rem;">POA&amp;Ms</h3>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; min-height: 2.5rem;">
+      Import and manage OSCAL Plan of Action &amp; Milestones. Track risks, deadlines, and remediation progress.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <%= link_to "View POA&Ms", poam_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Upload New", new_poam_document_path, class: "btn btn-success" %>
     </div>
   </div>
 
@@ -154,6 +170,10 @@
     <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
       <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
       <span>Import NIST SP 800-53 baseline profiles and export OSCAL Profiles</span>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0;">
+      <span style="color: #27ae60; font-weight: 700; flex-shrink: 0;">&#10003;</span>
+      <span>Import and manage OSCAL Plan of Action &amp; Milestones with risk tracking and OSCAL export</span>
     </div>
   </div>
 </div>

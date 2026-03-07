@@ -1,0 +1,61 @@
+<div class="card">
+  <h2>Upload OSCAL POA&amp;M</h2>
+
+  <%= form_with model: @poam_document, local: true, multipart: true do |f| %>
+    <div class="form-group">
+      <label for="poam_document_file">Select POA&amp;M File (.json, .xml)</label>
+      <%= f.file_field :file, accept: ".json,.xml", required: true %>
+      <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+        Upload an OSCAL Plan of Action and Milestones (POA&amp;M) in JSON or XML format.
+      </small>
+    </div>
+
+    <div style="display: flex; gap: 1rem;">
+      <%= f.submit "Upload and Process", class: "btn btn-success" %>
+      <%= link_to "Cancel", poam_documents_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="card">
+  <h3>Supported Formats</h3>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">SPARC parses OSCAL POA&amp;M files to extract action items, risks, observations, and milestones.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Format</th>
+        <th>Extension</th>
+        <th>Sources</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>OSCAL POA&amp;M JSON</strong></td>
+        <td>.json</td>
+        <td>NIST OSCAL examples, FedRAMP POA&amp;Ms, tool-generated outputs</td>
+      </tr>
+      <tr>
+        <td><strong>OSCAL POA&amp;M XML</strong></td>
+        <td>.xml</td>
+        <td>NIST OSCAL examples, XSLT-transformed outputs</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3>What Gets Parsed</h3>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">The following OSCAL elements are extracted and stored:</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid #e74c3c; border-radius: 6px; padding: 1rem;">
+      <div style="font-weight: 700; margin-bottom: 0.35rem; color: #e74c3c;">POA&amp;M Items</div>
+      <div style="font-size: 0.88rem; color: var(--text-muted);">Action items with titles, descriptions, and links to related risks and observations.</div>
+    </div>
+    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-left: 3px solid #f39c12; border-radius: 6px; padding: 1rem;">
+      <div style="font-weight: 700; margin-bottom: 0.35rem; color: #f39c12;">Risks &amp; Observations</div>
+      <div style="font-size: 0.88rem; color: var(--text-muted);">Risk characterizations (likelihood, impact, status) and assessment observations are preserved for OSCAL round-trip export.</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,170 @@
+class PoamDocumentsController < ApplicationController
+  include FileUploadable
+
+  before_action :set_poam_document, only: %i[
+    show destroy download_json download_oscal
+    download_oscal_validated download_oscal_unvalidated
+    update_metadata status update
+  ]
+
+  RISK_STATUS_ORDER = %w[open deviation-approved closed].freeze
+  IMPACT_ORDER      = %w[high medium low].freeze
+
+  def index
+    @poam_documents = PoamDocument.order(created_at: :desc)
+  end
+
+  def show
+    return if @poam_document.pending? || @poam_document.processing? || @poam_document.failed?
+
+    items_scope = @poam_document.poam_items
+
+    @total_items = items_scope.count
+    @status_counts = items_scope.where.not(risk_status: [ nil, "" ]).group(:risk_status).count
+    @impact_counts = items_scope.where.not(impact: [ nil, "" ]).group(:impact).count
+
+    @heatmap_data, @heatmap_statuses, @heatmap_impacts = build_heatmap(items_scope)
+
+    filtered = items_scope
+    filtered = filtered.where(risk_status: params[:risk_status]) if params[:risk_status].present?
+    filtered = filtered.where(impact: params[:impact])           if params[:impact].present?
+
+    @filtered_count = filtered.count
+    @items = filtered.order(:row_order).includes(:poam_item_fields)
+  end
+
+  def new
+    @poam_document = PoamDocument.new
+  end
+
+  def create
+    handle_file_upload(:poam, param_key: :poam_document)
+  end
+
+  def update
+    item = @poam_document.poam_items.find(params[:poam_item_id])
+
+    (params[:fields] || {}).each do |field_name, value|
+      fname = field_name.to_s
+      unless PoamItemField::EDITABLE_FIELDS.include?(fname)
+        raise StandardError, "Field '#{fname}' is not editable"
+      end
+
+      field = item.poam_item_fields.find_or_initialize_by(field_name: fname)
+      field.field_value = value.to_s.strip
+      field.save!
+    end
+
+    # Sync risk_status if updated via fields
+    if params.dig(:fields, :risk_status).present?
+      item.update!(risk_status: params[:fields][:risk_status].to_s.strip)
+    end
+
+    flash[:success] = "POA&M item updated"
+    redirect_to poam_document_path(@poam_document, filter_params)
+  rescue StandardError => e
+    flash[:error] = "Error updating: #{e.message}"
+    redirect_to @poam_document
+  end
+
+  def destroy
+    @poam_document.destroy
+    flash[:success] = "POA&M document deleted"
+    redirect_to poam_documents_path
+  end
+
+  def download_json
+    json_data = JsonExportService.export_poam(@poam_document)
+
+    send_data json_data,
+              filename:    "#{@poam_document.name}_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_oscal
+    service = OscalPoamExportService.new(@poam_document)
+    result = service.validation_result
+
+    if result.valid?
+      download_url = download_oscal_validated_poam_document_path(@poam_document)
+      flash[:success] = "OSCAL export passed schema validation (v#{result.schema_version}). <a href=\"#{download_url}\">Download OSCAL file</a>.".html_safe
+    else
+      Rails.logger.warn("OSCAL validation failed for POA&M #{@poam_document.id}: #{result.errors.first(3).join('; ')}")
+      download_url = download_oscal_unvalidated_poam_document_path(@poam_document)
+      flash[:warning] = "OSCAL export failed schema validation. <a href=\"#{download_url}\">Download unvalidated version</a>.".html_safe
+    end
+
+    redirect_to poam_document_path(@poam_document)
+  end
+
+  def download_oscal_validated
+    service = OscalPoamExportService.new(@poam_document)
+    oscal_data = service.export
+
+    send_data oscal_data,
+              filename:    "#{@poam_document.name}_oscal_poam_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_oscal_unvalidated
+    service = OscalPoamExportService.new(@poam_document)
+    oscal_data = service.export_unvalidated
+
+    send_data oscal_data,
+              filename:    "#{@poam_document.name}_oscal_poam_unvalidated_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def update_metadata
+    if @poam_document.update(document_metadata_params)
+      flash[:success] = "Document updated"
+    else
+      flash[:error] = @poam_document.errors.full_messages.join(", ")
+    end
+    redirect_to poam_document_path(@poam_document)
+  end
+
+  def status
+    render json: {
+      status: @poam_document.status,
+      error_message: @poam_document.error_message
+    }
+  end
+
+  private
+
+  def set_poam_document
+    @poam_document = PoamDocument.find(params[:id])
+  end
+
+  def document_metadata_params
+    params.require(:poam_document).permit(:name, :poam_version)
+  end
+
+  def filter_params
+    params.except(:controller, :action, :id).permit(:risk_status, :impact).to_h
+  end
+
+  def build_heatmap(scope)
+    rows = scope.where.not(risk_status: [ nil, "" ])
+                .where.not(impact: [ nil, "" ])
+                .group(:risk_status, :impact).count
+
+    data = {}
+    rows.each do |(status, impact), count|
+      data[status] ||= {}
+      data[status][impact] = count
+    end
+
+    statuses = RISK_STATUS_ORDER.select { |s| data.key?(s) } +
+               (data.keys - RISK_STATUS_ORDER).sort
+    all_impacts = data.values.flat_map(&:keys).uniq
+    impacts = IMPACT_ORDER.select { |i| all_impacts.include?(i) } +
+              (all_impacts - IMPACT_ORDER).sort
+
+    [ data, statuses, impacts ]
+  end
+end
