@@ -1,6 +1,6 @@
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
 <% unless @ssp_document.completed? %>
-  <div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white; text-align: center;">
+  <div class="sparc-processing-banner">
     <% if @ssp_document.failed? %>
       <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
       <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
@@ -45,7 +45,7 @@
 %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
-<div style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
+<div class="sparc-dashboard-header">
 
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap" style="gap: 1rem;">
     <div>
