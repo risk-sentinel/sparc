@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_06_221831) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_07_010432) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -136,6 +136,51 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_221831) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "profile_control_fields", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "editable", default: false
+    t.string "field_name", null: false
+    t.text "field_value"
+    t.bigint "profile_control_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["profile_control_id", "field_name"], name: "idx_profile_fields_on_ctrl_name"
+    t.index ["profile_control_id"], name: "index_profile_control_fields_on_profile_control_id"
+  end
+
+  create_table "profile_controls", force: :cascade do |t|
+    t.string "control_family"
+    t.string "control_id"
+    t.datetime "created_at", null: false
+    t.string "priority"
+    t.bigint "profile_document_id", null: false
+    t.integer "row_order", default: 0, null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["profile_document_id", "control_family"], name: "idx_profile_controls_on_doc_family"
+    t.index ["profile_document_id", "control_id"], name: "idx_profile_controls_on_doc_ctrl", unique: true
+    t.index ["profile_document_id", "row_order"], name: "idx_profile_controls_on_doc_row"
+    t.index ["profile_document_id"], name: "index_profile_controls_on_profile_document_id"
+  end
+
+  create_table "profile_documents", force: :cascade do |t|
+    t.string "baseline_level"
+    t.bigint "control_catalog_id"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "error_message"
+    t.string "file_type"
+    t.jsonb "import_metadata", default: {}
+    t.string "name", null: false
+    t.string "original_filename"
+    t.string "oscal_version"
+    t.string "profile_version"
+    t.string "status", default: "pending"
+    t.datetime "updated_at", null: false
+    t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
+    t.index ["created_at"], name: "index_profile_documents_on_created_at"
+    t.index ["status"], name: "index_profile_documents_on_status"
+  end
+
   create_table "sar_control_fields", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "editable"
@@ -173,6 +218,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_221831) do
     t.string "file_type"
     t.string "name"
     t.string "original_filename"
+    t.string "sar_version"
     t.string "status"
     t.datetime "updated_at", null: false
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
@@ -207,6 +253,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_221831) do
     t.string "file_type"
     t.string "name"
     t.string "original_filename"
+    t.string "ssp_version"
     t.string "status"
     t.datetime "updated_at", null: false
   end
@@ -217,6 +264,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_221831) do
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "control_families", "control_catalogs"
+  add_foreign_key "profile_control_fields", "profile_controls", on_delete: :cascade
+  add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
+  add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
   add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
   add_foreign_key "ssp_control_fields", "ssp_controls"

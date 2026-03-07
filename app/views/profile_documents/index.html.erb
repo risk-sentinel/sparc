@@ -1,0 +1,56 @@
+<div class="card" style="overflow-x: auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>Baselines / Profiles</h2>
+    <%= link_to "Upload New", new_profile_document_path, class: "btn btn-success" %>
+  </div>
+
+  <% if @profile_documents.any? %>
+    <table style="min-width: 700px;">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Baseline</th>
+          <th>Version</th>
+          <th>Status</th>
+          <th>Controls</th>
+          <th>Created</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @profile_documents.each do |doc| %>
+          <tr>
+            <td style="font-weight: 600;"><%= doc.name %></td>
+            <td>
+              <% level_colors = { "LOW" => "#27ae60", "MODERATE" => "#f39c12", "HIGH" => "#e74c3c" } %>
+              <% color = level_colors[doc.baseline_level] || "#7f8c8d" %>
+              <span style="padding: 0.2rem 0.6rem; background: <%= color %>22; color: <%= color %>; border: 1px solid <%= color %>44; border-radius: 4px; font-size: 0.78rem; font-weight: 600; white-space: nowrap;">
+                <%= doc.baseline_level || "Custom" %>
+              </span>
+            </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);"><%= doc.profile_version.presence || "—" %></td>
+            <td>
+              <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %>" style="padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">
+                <%= doc.status %>
+              </span>
+            </td>
+            <td><%= doc.profile_controls.count %></td>
+            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td style="text-align: right; white-space: nowrap;">
+              <div style="display: inline-flex; gap: 0.35rem;">
+                <%= link_to "View", profile_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <% if doc.completed? %>
+                  <%= link_to "OSCAL", download_oscal_profile_document_path(doc), class: "btn", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem; background: var(--link-purple); color: white;" %>
+                  <%= link_to "JSON", download_json_profile_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <% end %>
+                <%= link_to "Delete", profile_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p style="text-align: center; padding: 2rem; color: var(--text-muted);">No profiles found. Upload your first OSCAL Profile (Baseline) to get started.</p>
+  <% end %>
+</div>

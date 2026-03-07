@@ -8,6 +8,7 @@ Rails.application.routes.draw do
 
   resources :ssp_documents do
     member do
+      patch :update_metadata
       get :download_json
       get :download_oscal
       get :download_oscal_validated
@@ -21,6 +22,7 @@ Rails.application.routes.draw do
 
   resources :sar_documents do
     member do
+      patch :update_metadata
       get :download_json
       get :download_excel
       get :status
@@ -32,8 +34,21 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :profile_documents do
+    member do
+      patch :update_metadata
+      get :download_json
+      get :download_oscal
+      get :download_oscal_validated
+      get :download_oscal_unvalidated
+      get :status
+    end
+    resources :profile_controls, only: [ :new, :create, :edit, :update, :destroy ]
+  end
+
   resources :cdef_documents do
     member do
+      patch :update_metadata
       get :download_json
       get :download_oscal
       get :download_oscal_validated

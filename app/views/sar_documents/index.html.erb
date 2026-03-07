@@ -10,6 +10,7 @@
         <tr>
           <th>Name</th>
           <th>Original Filename</th>
+          <th>Version</th>
           <th>Status</th>
           <th>Controls</th>
           <th>Created</th>
@@ -21,6 +22,7 @@
           <tr>
             <td><%= doc.name %></td>
             <td><%= doc.original_filename %></td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);"><%= doc.sar_version.presence || "—" %></td>
             <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %>" style="padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600;"><%= doc.status %></span></td>
             <td><%= doc.sar_controls.count %></td>
             <td><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
