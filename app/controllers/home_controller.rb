@@ -6,5 +6,6 @@ class HomeController < ApplicationController
     @family_count  = ControlFamily.count
     @control_count = CatalogControl.count
     @cdef_count = CdefDocument.count
+    @profile_count = ProfileDocument.count
   end
 end
