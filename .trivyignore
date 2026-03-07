@@ -1,0 +1,3 @@
+# Trivy vulnerability suppressions for SPARC
+# Add accepted-risk CVE IDs here (one per line) after reviewing scan results.
+# Example: CVE-2024-12345
