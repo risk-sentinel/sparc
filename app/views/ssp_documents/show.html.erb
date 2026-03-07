@@ -2,21 +2,21 @@
 <% unless @ssp_document.completed? %>
   <div class="sparc-processing-banner">
     <% if @ssp_document.failed? %>
-      <div style="font-size: 2rem; margin-bottom: 0.75rem;">&#x26A0;</div>
-      <h2 style="color: #e74c3c; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Failed</h2>
-      <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+      <div class="sparc-processing-icon">&#x26A0;</div>
+      <h2 class="sparc-processing-title sparc-processing-title-error">Processing Failed</h2>
+      <p class="sparc-processing-text">
         <%= @ssp_document.error_message.presence || "An unknown error occurred." %>
       </p>
       <div style="margin-top: 1.25rem;">
         <%= link_to "&#8592; Back to Documents".html_safe, ssp_documents_path,
-              style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);" %>
+              class: "sparc-btn-ghost" %>
       </div>
     <% else %>
       <div style="margin-bottom: 0.75rem;">
-        <span style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #f39c12; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+        <span class="sparc-spinner"></span>
       </div>
-      <h2 style="color: #f39c12; font-size: 1.3rem; margin-bottom: 0.5rem;">Processing Your Workbook</h2>
-      <p style="color: rgba(255,255,255,0.6); font-size: 0.88rem;">
+      <h2 class="sparc-processing-title sparc-processing-title-pending">Processing Your Workbook</h2>
+      <p class="sparc-processing-text-muted">
         <strong><%= @ssp_document.original_filename %></strong> is being parsed.
         This page will automatically refresh when processing is complete.
       </p>
@@ -27,9 +27,6 @@
     <meta http-equiv="refresh" content="5">
   <% end %>
 
-  <style>
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
 
 <% else %>
 <%
@@ -49,15 +46,15 @@
 
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap" style="gap: 1rem;">
     <div>
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.4); margin-bottom: 0.3rem;">Controls Implementation</div>
+      <div class="sparc-header-subtitle">Controls Implementation</div>
 
       <div id="doc-meta-view">
         <div class="d-flex align-items-center gap-2 flex-wrap">
-          <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin: 0;"><%= @ssp_document.name %></h2>
+          <h2 class="sparc-header-title"><%= @ssp_document.name %></h2>
           <% if @ssp_document.ssp_version.present? %>
-            <span style="background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 0.72rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px;">v<%= @ssp_document.ssp_version %></span>
+            <span class="sparc-version-badge">v<%= @ssp_document.ssp_version %></span>
           <% end %>
-          <button onclick="toggleDocMeta()" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.15rem 0.5rem; font-size: 0.7rem; cursor: pointer;">Edit</button>
+          <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
         </div>
       </div>
 
@@ -65,16 +62,16 @@
         <%= form_with url: update_metadata_ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
           <div class="d-flex gap-2 align-items-center flex-wrap">
             <%= f.text_field :name, value: @ssp_document.name,
-                  style: "font-size: 1.1rem; font-weight: 700; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; min-width: 200px;" %>
+                  class: "sparc-input-dark sparc-input-dark-lg" %>
             <%= f.text_field :ssp_version, value: @ssp_document.ssp_version, placeholder: "Version",
-                  style: "font-size: 0.85rem; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; width: 100px;" %>
-            <%= f.submit "Save", style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;" %>
-            <button type="button" onclick="toggleDocMeta()" style="background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;">Cancel</button>
+                  class: "sparc-input-dark sparc-input-dark-sm" %>
+            <%= f.submit "Save", class: "sparc-btn-save" %>
+            <button type="button" onclick="toggleDocMeta()" class="sparc-btn-cancel-dark">Cancel</button>
           </div>
         <% end %>
       </div>
 
-      <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 0.3rem;">
+      <div class="sparc-header-meta">
         <%= @ssp_document.original_filename %>
         &nbsp;•&nbsp;
         <span style="color: <%= @ssp_document.completed? ? '#2ecc71' : '#f39c12' %>; font-weight: 600;">
@@ -85,43 +82,43 @@
     </div>
     <div class="d-flex flex-wrap gap-2" style="flex-shrink: 0;">
       <%= link_to "Export OSCAL".html_safe, download_oscal_ssp_document_path(@ssp_document),
-            style: "background: rgba(142,68,173,0.3); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(142,68,173,0.5); white-space: nowrap;" %>
+            class: "sparc-btn-oscal" %>
       <%= link_to "&#8595; JSON".html_safe, download_json_ssp_document_path(@ssp_document),
-            style: "background: rgba(255,255,255,0.12); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" %>
+            class: "sparc-btn-ghost" %>
       <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
-            style: "background: rgba(39,174,96,0.25); color: white; text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(39,174,96,0.4); white-space: nowrap;" %>
+            class: "sparc-btn-enrich" %>
       <%= link_to "&#8592; Back".html_safe, ssp_documents_path,
-            style: "background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); text-decoration: none; padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;" %>
+            class: "sparc-btn-ghost-muted" %>
     </div>
   </div>
 
   <div class="d-flex align-items-center flex-wrap" style="gap: 1.5rem;">
     <div style="text-align: center; min-width: 80px; flex-shrink: 0;">
-      <div style="font-size: 2.6rem; font-weight: 800; color: <%= score_color %>; line-height: 1; font-variant-numeric: tabular-nums;">
+      <div class="sparc-score" style="color: <%= score_color %>;">
         <%= compliance_pct %>%
       </div>
-      <div style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 0.2rem;">Compliant</div>
+      <div class="sparc-score-label">Compliant</div>
     </div>
 
-    <div style="width: 1px; height: 52px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
+    <div class="sparc-divider-v"></div>
 
     <div class="d-flex flex-wrap" style="gap: 0.45rem; flex: 1;">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
-        <div class="summary-chip"
+        <div class="summary-chip sparc-summary-chip"
              data-filter-status="<%= status %>"
              onclick="filterByStatus(this.dataset.filterStatus)"
              title="Click to filter: <%= status %>"
-             style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid <%= ssp_status_color(status) %>; border-radius: 6px; padding: 0.35rem 0.65rem; cursor: pointer; transition: background 0.15s; min-width: 64px;">
-          <div style="font-size: 1.15rem; font-weight: 800; color: white; line-height: 1; font-variant-numeric: tabular-nums;"><%= count %></div>
-          <div style="font-size: 0.62rem; color: rgba(255,255,255,0.55); white-space: nowrap; margin-top: 0.1rem;"><%= status %></div>
+             style="border-left: 3px solid <%= ssp_status_color(status) %>;">
+          <div class="sparc-chip-count"><%= count %></div>
+          <div class="sparc-chip-label"><%= status %></div>
         </div>
       <% end %>
     </div>
   </div>
 
   <div style="margin-top: 1.25rem;">
-    <div class="d-flex rounded-pill" style="height: 6px; overflow: hidden; background: rgba(255,255,255,0.08);">
+    <div class="sparc-progress-bar rounded-pill">
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
         <div style="width: <%= (count * 100.0 / [total_controls, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>;"
@@ -195,23 +192,23 @@
 <%# ── FAMILY COMPLIANCE GRID ─────────────────────────────────────── %>
 <% if @heatmap_families.any? %>
 <details id="heatmapSection" open style="margin-bottom: 1.5rem;">
-  <summary class="bg-body-secondary rounded-3 fw-semibold d-flex align-items-center gap-2 border" style="cursor: pointer; padding: 0.7rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-    <span id="heatmapToggleIcon" style="font-size: 0.75rem;">&#9660;</span>
+  <summary class="sparc-section-summary bg-body-secondary rounded-3 fw-semibold d-flex align-items-center gap-2 border">
+    <span id="heatmapToggleIcon" class="sparc-section-arrow">&#9660;</span>
     Compliance by Control Family
-    <span style="font-size: 0.78rem; font-weight: 400; color: var(--bs-tertiary-color); margin-left: 0.25rem;">— click a badge to filter</span>
+    <span class="sparc-section-hint">— click a badge to filter</span>
   </summary>
 
   <div style="padding: 1rem 0 0.5rem;">
     <div id="heatmapFilterBanner"
-         style="display: none; background: #1a252f; color: white; border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; gap: 0.75rem;">
-      <span id="heatmapFilterLabel" style="font-size: 0.88rem; color: rgba(255,255,255,0.9);"></span>
-      <button onclick="clearHeatmapFilter()"
-              style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; padding: 0.25rem 0.7rem; cursor: pointer; font-size: 0.8rem; white-space: nowrap;">
+         class="sparc-filter-banner d-flex align-items-center justify-content-between"
+         style="display: none; gap: 0.75rem;">
+      <span id="heatmapFilterLabel" class="sparc-filter-text"></span>
+      <button onclick="clearHeatmapFilter()" class="sparc-btn-clear-filter">
         ✕ Clear Filter
       </button>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 0.7rem;">
+    <div class="sparc-heatmap-grid">
       <% @heatmap_families.each do |family| %>
         <% family_data = @heatmap_data[family] || {} %>
         <% family_total = family_data.values.sum %>
@@ -219,14 +216,14 @@
         <% family_na   = family_data["Not Applicable"].to_i %>
         <% family_denom = [family_total - family_na, 1].max %>
         <% family_pct   = (family_impl * 100.0 / family_denom).round %>
-        <div style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+        <div class="sparc-heatmap-card">
           <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
             <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
-               style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--bs-body-color); text-decoration: none; cursor: pointer;"><%= family %></a>
+               class="sparc-family-link"><%= family %></a>
             <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= family_pct %>%</span>
           </div>
           <div style="font-size: 0.62rem; color: var(--bs-tertiary-color); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
-          <div class="d-flex" style="height: 4px; border-radius: 2px; overflow: hidden; background: var(--bs-border-color); margin-bottom: 0.55rem;">
+          <div class="sparc-heatmap-bar d-flex">
             <% @heatmap_statuses.each do |status| %>
               <% next if (family_data[status] || 0) == 0 %>
               <div style="width: <%= ((family_data[status] || 0) * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>;"></div>
@@ -236,11 +233,11 @@
             <% @heatmap_statuses.each do |status| %>
               <% count = family_data[status] || 0 %>
               <% next if count == 0 %>
-              <div class="heatmap-cell"
+              <div class="heatmap-cell sparc-heatmap-badge"
                    data-family="<%= family %>" data-status="<%= status %>"
                    onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.status)"
                    title="<%= family %> / <%= status %>: <%= count %>"
-                   style="background: <%= ssp_status_color(status) %>; color: white; border-radius: 4px; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 700; cursor: pointer; line-height: 1.4;">
+                   style="background: <%= ssp_status_color(status) %>;">
                 <%= count %>
               </div>
             <% end %>
@@ -250,10 +247,10 @@
     </div>
 
     <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
-      <span style="font-size: 0.72rem; color: var(--bs-tertiary-color);">Legend:</span>
+      <span class="sparc-legend-label">Legend:</span>
       <% ApplicationHelper::SSP_STATUS_COLORS.first(4).each do |label, color| %>
-        <span class="d-flex align-items-center gap-1 text-body-secondary" style="font-size: 0.72rem;">
-          <span style="display: inline-block; width: 11px; height: 11px; background: <%= color %>; border-radius: 2px;"></span>
+        <span class="sparc-legend-item">
+          <span class="sparc-legend-dot" style="background: <%= color %>;"></span>
           <%= label %>
         </span>
       <% end %>
@@ -278,36 +275,36 @@
     <div class="control-card"
          data-family="<%= family_code %>"
          data-status="<%= status_val %>"
-         style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-left: 4px solid <%= status_color %>; border-radius: 8px; padding: 1.1rem 1.25rem; margin-bottom: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+         style="border-left: 4px solid <%= status_color %>;">
 
       <%# ── Card header ── %>
       <div class="d-flex justify-content-between align-items-start gap-3">
         <div style="min-width: 0; flex: 1;">
           <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
-            <span style="font-family: monospace; font-size: 0.92rem; font-weight: 800; color: var(--bs-body-color);"><%= control.control_id %></span>
-            <span style="background: <%= status_color %>; color: white; padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;"><%= status_val %></span>
+            <span class="sparc-ctrl-id"><%= control.control_id %></span>
+            <span class="sparc-status-pill" style="background: <%= status_color %>;"><%= status_val %></span>
             <% if type_use_val.present? %>
-              <span style="background: var(--bs-secondary-bg); border: 1px solid var(--bs-border-color); color: var(--bs-secondary-color); padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.67rem; font-weight: 600; white-space: nowrap;"><%= type_use_val %></span>
+              <span class="sparc-asset-tag"><%= type_use_val %></span>
             <% end %>
             <% if prov_as_val.present? %>
-              <span style="background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.2); color: var(--bs-secondary-color); padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.67rem; font-weight: 600; white-space: nowrap;">&#x2713; <%= prov_as_val %></span>
+              <span class="sparc-env-tag">&#x2713; <%= prov_as_val %></span>
             <% end %>
-            <span style="font-size: 0.68rem; color: var(--bs-tertiary-color); font-family: monospace; margin-left: 0.1rem;"><%= family_code %></span>
+            <span class="sparc-ctrl-family" style="margin-left: 0.1rem;"><%= family_code %></span>
           </div>
-          <div style="font-size: 0.85rem; color: var(--bs-secondary-color); margin-top: 0.1rem;"><%= control.title %></div>
+          <div class="sparc-ctrl-title" style="margin-top: 0.1rem;"><%= control.title %></div>
         </div>
         <button onclick="toggleEdit(<%= control.id %>)"
                 id="edit-btn-<%= control.id %>"
-                style="padding: 0.35rem 0.85rem; font-size: 0.8rem; flex-shrink: 0; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+                class="sparc-btn-edit">
           Edit
         </button>
       </div>
 
       <%# ── Card body: collapsed by default ── %>
       <details id="details-<%= control.id %>" class="card-details" style="margin-top: 0.35rem;">
-        <summary class="d-flex align-items-center gap-1" style="cursor: pointer; font-size: 0.7rem; color: var(--bs-tertiary-color); padding: 0.2rem 0; list-style: none; user-select: none;">
-          <span class="card-arrow" style="font-size: 0.55rem;">&#9658;</span>
-          <span style="border-top: 1px solid var(--bs-border-color); flex: 1; margin-left: 0.2rem;"></span>
+        <summary class="sparc-card-detail-toggle d-flex align-items-center gap-1">
+          <span class="card-arrow sparc-card-arrow">&#9658;</span>
+          <span class="sparc-card-detail-separator"></span>
         </summary>
 
         <%# ── View mode ── %>
@@ -315,8 +312,8 @@
 
           <%# Stated requirement — highlighted block when present %>
           <% if stated_req.present? %>
-            <div style="background: rgba(41,128,185,0.07); border: 1px solid rgba(41,128,185,0.2); border-left: 3px solid #2980b9; border-radius: 6px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;">
-              <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-primary); font-weight: 700; margin-bottom: 0.35rem;">Required Statement</div>
+            <div class="sparc-statement-block">
+              <div class="sparc-statement-label" style="color: var(--bs-primary);">Required Statement</div>
               <div style="font-size: 0.84rem; color: var(--bs-body-color); line-height: 1.5;"><%= stated_req %></div>
             </div>
           <% end %>
@@ -331,17 +328,17 @@
             display_fields = ordered + extras
           %>
           <% if display_fields.any? %>
-            <table style="width: 100%; border-collapse: collapse;">
+            <table class="sparc-field-table">
               <% display_fields.each do |field| %>
                 <% next if field.field_value.blank? %>
-                <tr style="border-top: 1px solid var(--bs-border-color);">
-                  <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top; white-space: nowrap;">
+                <tr>
+                  <td class="sparc-field-label">
                     <%= field.field_name.tr("_", " ") %>
-                    <% if field.editable %><span style="color: #27ae60; font-size: 0.65rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
+                    <% if field.editable %><span class="sparc-editable-indicator">✎</span><% end %>
                   </td>
-                  <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.84rem; color: var(--bs-body-color); vertical-align: top;">
+                  <td class="sparc-field-value">
                     <% if field.field_name == "status" %>
-                      <span style="background: <%= ssp_status_color(field.field_value) %>; color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
+                      <span class="sparc-status-pill" style="background: <%= ssp_status_color(field.field_value) %>; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
                     <% else %>
                       <%= field.field_value %>
                     <% end %>
@@ -354,8 +351,8 @@
           <%# ── Inherited / Provider Statements (collapsible) ── %>
           <% if control.provider_statements.any? %>
             <details style="margin-top: 0.85rem;">
-              <summary class="d-flex align-items-center gap-1 fw-bold rounded" style="cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sparc-purple); padding: 0.4rem 0.65rem; background: rgba(142,68,173,0.06); border: 1px solid rgba(142,68,173,0.18); list-style: none; user-select: none;">
-                <span class="inherited-arrow" style="font-size: 0.6rem;">&#9658;</span>
+              <summary class="sparc-ctx-header d-flex align-items-center gap-1 fw-bold rounded" style="color: var(--sparc-purple); background: rgba(142,68,173,0.06); border: 1px solid rgba(142,68,173,0.18);">
+                <span class="inherited-arrow sparc-ctx-arrow">&#9658;</span>
                 Inherited Rows (<%= control.provider_statements.count %>)
               </summary>
               <div style="margin-top: 0.5rem;">
@@ -373,14 +370,14 @@
                     </div>
                     <% stmt_fields = stmt.ssp_control_fields.reject { |f| f.field_value.blank? } %>
                     <% if stmt_fields.any? %>
-                      <table style="width: 100%; border-collapse: collapse;">
+                      <table class="sparc-field-table">
                         <% stmt_fields.each do |field| %>
-                          <tr style="border-top: 1px solid var(--bs-border-color);">
-                            <td style="width: 26%; padding: 0.35rem 0.5rem 0.35rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top; white-space: nowrap;">
+                          <tr>
+                            <td class="sparc-field-label">
                               <%= field.field_name.tr("_", " ") %>
-                              <% if field.editable %><span style="color: #27ae60; font-size: 0.63rem; text-transform: none; letter-spacing: 0;">✎</span><% end %>
+                              <% if field.editable %><span class="sparc-editable-indicator">✎</span><% end %>
                             </td>
-                            <td style="padding: 0.35rem 0 0.35rem 0.5rem; font-size: 0.82rem; color: var(--bs-body-color); vertical-align: top;">
+                            <td class="sparc-field-value">
                               <%= field.field_value %>
                             </td>
                           </tr>
@@ -396,21 +393,21 @@
           <%# ── Catalog Guidance (collapsible) ── %>
           <% if catalog_ctrl&.guidance_present? %>
             <details style="margin-top: 0.85rem;">
-              <summary class="d-flex align-items-center gap-1 fw-semibold text-body-secondary rounded" style="cursor: pointer; font-size: 0.8rem; padding: 0.4rem 0.65rem; background: rgba(155,89,182,0.06); border: 1px solid rgba(155,89,182,0.18); list-style: none; user-select: none;">
-                <span class="catalog-arrow">&#9658;</span>
+              <summary class="sparc-ctx-header d-flex align-items-center gap-1 fw-semibold text-body-secondary rounded" style="font-size: 0.8rem; background: rgba(155,89,182,0.06); border: 1px solid rgba(155,89,182,0.18);">
+                <span class="catalog-arrow sparc-ctx-arrow">&#9658;</span>
                 Catalog Guidance
-                <span style="font-size: 0.7rem; font-weight: 400; color: var(--bs-tertiary-color);">— supplemental context from the providing catalog</span>
+                <span class="sparc-section-hint" style="font-size: 0.7rem;">— supplemental context from the providing catalog</span>
               </summary>
               <div style="margin-top: 0.5rem; padding: 0.85rem 1rem; background: rgba(155,89,182,0.04); border: 1px solid rgba(155,89,182,0.12); border-radius: 0 0 6px 6px;">
-                <table style="width: 100%; border-collapse: collapse;">
+                <table class="sparc-field-table">
                   <% catalog_ctrl.guidance_fields.each do |fname, fval| %>
                     <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
                     <% next if display_val.blank? %>
-                    <tr style="border-top: 1px solid var(--bs-border-color);">
-                      <td style="width: 26%; padding: 0.4rem 0.5rem 0.4rem 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sparc-purple); vertical-align: top; white-space: nowrap;">
+                    <tr>
+                      <td class="sparc-field-label" style="color: var(--sparc-purple);">
                         <%= fname.tr("_", " ") %>
                       </td>
-                      <td style="padding: 0.4rem 0 0.4rem 0.5rem; font-size: 0.82rem; color: var(--bs-body-color); vertical-align: top; line-height: 1.5;">
+                      <td class="sparc-field-value" style="line-height: 1.5;">
                         <%= display_val %>
                       </td>
                     </tr>
@@ -434,9 +431,9 @@
               <% field = field_map[fname] %>
               <% fval  = field&.field_value.to_s %>
               <div class="form-group">
-                <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-secondary-color);">
+                <label class="sparc-edit-label">
                   <%= fname.tr("_", " ") %>
-                  <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
+                  <span class="sparc-edit-editable-hint">(editable)</span>
                 </label>
                 <% if fname == "status" %>
                   <%= select_tag "fields[#{fname}]",
@@ -481,20 +478,20 @@
                 </summary>
                 <% if stated_req.present? %>
                   <div class="form-group" style="margin-top: 0.5rem;">
-                    <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color);">
+                    <label class="sparc-edit-label" style="color: var(--bs-tertiary-color);">
                       Stated Requirement
-                      <span style="color: var(--bs-tertiary-color); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
+                      <span class="sparc-edit-readonly-hint">(read-only)</span>
                     </label>
-                    <p style="background: var(--bs-secondary-bg); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--bs-secondary-color); margin: 0;"><%= stated_req %></p>
+                    <p class="sparc-readonly-value"><%= stated_req %></p>
                   </div>
                 <% end %>
                 <% ro_fields.each do |field| %>
                   <div class="form-group" style="margin-top: 0.5rem;">
-                    <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color);">
+                    <label class="sparc-edit-label" style="color: var(--bs-tertiary-color);">
                       <%= field.field_name.tr("_", " ") %>
-                      <span style="color: var(--bs-tertiary-color); font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(read-only)</span>
+                      <span class="sparc-edit-readonly-hint">(read-only)</span>
                     </label>
-                    <p style="background: var(--bs-secondary-bg); padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.875rem; color: var(--bs-secondary-color); margin: 0;"><%= field.field_value %></p>
+                    <p class="sparc-readonly-value"><%= field.field_value %></p>
                   </div>
                 <% end %>
               </details>
@@ -511,7 +508,7 @@
                     <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
                     <% next if display_val.blank? %>
                     <div style="margin-bottom: 0.6rem;">
-                      <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--sparc-purple); margin-bottom: 0.2rem;"><%= fname.tr("_", " ") %></div>
+                      <div class="sparc-edit-label" style="font-size: 0.68rem; letter-spacing: 0.07em; color: var(--sparc-purple); margin-bottom: 0.2rem;"><%= fname.tr("_", " ") %></div>
                       <div style="font-size: 0.82rem; color: var(--bs-secondary-color); line-height: 1.5;"><%= display_val %></div>
                     </div>
                   <% end %>
@@ -521,7 +518,7 @@
 
             <div class="d-flex gap-2 mt-3">
               <%= f.submit "Save Changes",
-                    style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
+                    class: "sparc-btn-save", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
               <button type="button" onclick="toggleEdit(<%= control.id %>)"
                       style="background: var(--bs-secondary-bg); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem;">
                 Cancel

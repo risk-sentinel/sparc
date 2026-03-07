@@ -12,8 +12,8 @@
   <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch, local: true do |f| %>
 
     <%# ── System Information ── %>
-    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+    <details open class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
+      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
         System Information
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -46,8 +46,8 @@
     </details>
 
     <%# ── Security Levels ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
+      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
         Security Levels
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -85,8 +85,8 @@
     </details>
 
     <%# ── Authorization Boundary ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
+      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
         Boundaries & Architecture
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -109,8 +109,8 @@
     </details>
 
     <%# ── Information Types ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
+      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
         Information Types (<%= @info_types.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="info-types-container">
@@ -154,8 +154,8 @@
     </details>
 
     <%# ── Components ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
+      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
         Components (<%= @components.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="components-container">
@@ -189,8 +189,8 @@
     </details>
 
     <%# ── Users ── %>
-    <details class="mb-3 border rounded-3" style="overflow: hidden;">
-      <summary class="bg-body-secondary fw-semibold" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+    <details class="mb-3 sparc-enrich-section" style="padding: 0; overflow: hidden;">
+      <summary class="bg-body-secondary sparc-enrich-section-header" style="cursor: pointer; padding: 0.85rem 1rem; list-style: none; user-select: none;">
         System Users (<%= @users.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="users-container">

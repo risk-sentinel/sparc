@@ -35,14 +35,14 @@
         <% @ssp_documents.each do |doc| %>
           <tr>
             <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= doc.name %>"><%= doc.name %></td>
-            <td class="text-body-secondary" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem;">
+            <td class="text-body-secondary" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
               <% case doc.creation_method %>
               <% when "wizard" %>
-                <span class="fw-semibold" style="background: rgba(52,152,219,0.12); color: #2980b9; padding: 0.15rem 0.45rem; border-radius: 3px; font-size: 0.75rem;">Wizard</span>
+                <span class="sparc-source-badge sparc-source-wizard">Wizard</span>
               <% when "oscal_import" %>
-                <span class="fw-semibold" style="background: rgba(142,68,173,0.12); color: #8e44ad; padding: 0.15rem 0.45rem; border-radius: 3px; font-size: 0.75rem;">OSCAL Import</span>
+                <span class="sparc-source-badge sparc-source-oscal">OSCAL Import</span>
               <% else %>
-                <span title="<%= doc.original_filename %>" style="font-size: 0.82rem;"><%= doc.original_filename.presence || "Excel" %></span>
+                <span class="sparc-source-badge sparc-source-excel" title="<%= doc.original_filename %>"><%= doc.original_filename.presence || "Excel" %></span>
               <% end %>
             </td>
             <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.ssp_version.presence || "—" %></td>
@@ -50,9 +50,9 @@
             <td><%= doc.ssp_controls.count %></td>
             <td>
               <% if doc.enriched? %>
-                <span class="fw-semibold" style="color: #27ae60; font-size: 0.82rem;">Enriched</span>
+                <span class="sparc-oscal-enriched">Enriched</span>
               <% else %>
-                <span class="text-body-tertiary" style="font-size: 0.82rem;">Basic</span>
+                <span class="sparc-oscal-basic">Basic</span>
               <% end %>
             </td>
             <td style="white-space: nowrap; font-size: 0.88rem;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
@@ -60,7 +60,7 @@
               <div class="d-flex flex-column gap-1">
                 <%= link_to "View", ssp_document_path(doc), class: "btn btn-primary text-center", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% unless doc.enriched? %>
-                  <%= link_to "Enrich", enrich_ssp_document_path(doc), class: "btn btn-secondary text-center", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                  <%= link_to "Enrich", enrich_ssp_document_path(doc), class: "sparc-btn-enrich-sm text-center" %>
                 <% end %>
                 <%= link_to "Delete", ssp_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger text-center", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
               </div>
