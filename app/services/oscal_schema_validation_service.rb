@@ -37,6 +37,10 @@ class OscalSchemaValidationService
     profile: {
       file: "oscal_profile_schema.json",
       root_key: "profile"
+    },
+    catalog: {
+      file: "oscal_catalog_schema.json",
+      root_key: "catalog"
     }
   }.freeze
 
