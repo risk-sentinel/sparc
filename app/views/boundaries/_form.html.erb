@@ -1,0 +1,35 @@
+<%= form_with(model: [ @project, boundary ], class: "mb-4") do |f| %>
+  <div class="mb-3">
+    <%= f.label :name, class: "form-label fw-semibold" %>
+    <%= f.text_field :name, class: "form-control", required: true %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, class: "form-label fw-semibold" %>
+    <%= f.text_area :description, class: "form-control", rows: 3 %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :environment, class: "form-label fw-semibold" %>
+    <%= f.select :environment, Boundary::ENVIRONMENTS.map { |e| [ e.titleize, e ] }, {}, class: "form-select" %>
+  </div>
+
+  <% if @cdef_documents.any? %>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Components (CDEFs)</label>
+      <% @cdef_documents.each do |cdef| %>
+        <div class="form-check">
+          <%= check_box_tag "boundary[cdef_document_ids][]", cdef.id,
+              boundary.cdef_document_ids.include?(cdef.id),
+              class: "form-check-input", id: "cdef_#{cdef.id}" %>
+          <%= label_tag "cdef_#{cdef.id}", cdef.name, class: "form-check-label" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="d-flex gap-2">
+    <%= f.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", project_path(@project), class: "btn btn-secondary" %>
+  </div>
+<% end %>

@@ -1,0 +1,63 @@
+<div class="card" style="overflow: hidden;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Projects</h2>
+    <%= link_to "New Project", new_project_path, class: "btn btn-primary" %>
+  </div>
+
+  <% if @projects.any? %>
+    <table class="table table-hover" style="table-layout: fixed;">
+      <colgroup>
+        <col style="width: 22%;">
+        <col style="width: 30%;">
+        <col style="width: 10%;">
+        <col style="width: 10%;">
+        <col style="width: 10%;">
+        <col style="width: 18%;">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Members</th>
+          <th>Boundaries</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @projects.each do |project| %>
+          <tr>
+            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= project.name %>">
+              <%= link_to project.name, project_path(project) %>
+            </td>
+            <td class="text-body-secondary" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <%= project.description.presence || "—" %>
+            </td>
+            <td>
+              <% badge_class = case project.status
+                               when "authorized" then "badge-ok"
+                               when "active" then "badge-ok"
+                               when "draft" then "badge-warn"
+                               else "badge-warn"
+                               end %>
+              <span class="<%= badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                <%= project.status.titleize %>
+              </span>
+            </td>
+            <td><%= project.project_memberships.count %></td>
+            <td><%= project.boundaries.count %></td>
+            <td>
+              <div class="d-flex gap-1">
+                <%= link_to "View", project_path(project), class: "btn btn-primary btn-sm" %>
+                <%= link_to "Edit", edit_project_path(project), class: "btn btn-secondary btn-sm" %>
+                <%= link_to "Delete", project_path(project), method: :delete, data: { confirm: "Delete project '#{project.name}'?" }, class: "btn btn-danger btn-sm" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-center p-4 text-body-secondary">No projects yet. Create your first project to organize RMF artifacts and personnel.</p>
+  <% end %>
+</div>
