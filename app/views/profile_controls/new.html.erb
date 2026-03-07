@@ -1,7 +1,7 @@
 <div class="card" style="max-width: 640px; margin: 0 auto;">
-  <div style="margin-bottom: 1.5rem;">
-    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.25rem;">
-      <%= link_to @profile_document.name, profile_document_path(@profile_document), style: "color: var(--link-accent); text-decoration: none;" %>
+  <div class="mb-4">
+    <div class="text-body-secondary" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.25rem;">
+      <%= link_to @profile_document.name, profile_document_path(@profile_document), class: "text-primary", style: "text-decoration: none;" %>
     </div>
     <h2 style="margin: 0;">Add Control</h2>
   </div>

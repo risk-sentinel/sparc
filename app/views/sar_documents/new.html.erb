@@ -5,12 +5,12 @@
     <div class="form-group">
       <label for="sar_document_file">Select Excel File (.xlsx, .xls)</label>
       <%= f.file_field :file, accept: ".xlsx,.xls", required: true %>
-      <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+      <small class="text-body-secondary d-block" style="margin-top: 0.5rem;">
         Upload an Excel workbook containing your security assessment results. Multiple tabs (System Test, Location Tests, Equipment Tests, Cloud, Cloud Resources) will each be imported as a separate section.
       </small>
     </div>
 
-    <div style="display: flex; gap: 1rem;">
+    <div class="d-flex gap-3">
       <%= f.submit "Upload and Convert", class: "btn btn-success" %>
       <%= link_to "Cancel", sar_documents_path, class: "btn btn-secondary" %>
     </div>
@@ -19,9 +19,9 @@
 
 <div class="card">
   <h3>Expected Excel Format</h3>
-  <p style="color: var(--text-muted); margin-bottom: 1rem;">Each worksheet tab is treated as a named section. Read-only fields are imported as-is; editable fields can be updated after upload.</p>
+  <p class="text-body-secondary mb-3">Each worksheet tab is treated as a named section. Read-only fields are imported as-is; editable fields can be updated after upload.</p>
 
-  <table>
+  <table class="table table-hover">
     <thead>
       <tr>
         <th>Column</th>

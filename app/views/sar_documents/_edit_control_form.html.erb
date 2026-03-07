@@ -23,18 +23,18 @@
   <%= hidden_field_tag :sar_control_id, control.id %>
 
   <% if any_ctx %>
-    <div style="background: var(--surface-alt); border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
-      <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--border-soft); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint);">
+    <div style="background: var(--bs-secondary-bg); border: 1px solid var(--bs-border-color); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem;">
+      <div style="padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--bs-border-color); font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color);">
         Assessment Context
         <span style="font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 0.4rem;">(read-only reference)</span>
       </div>
       <table style="width: 100%; border-collapse: collapse;">
         <% ctx_rows.each do |lbl, val| %>
-          <tr style="border-top: 1px solid var(--border-soft);">
-            <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); vertical-align: top; white-space: nowrap;">
+          <tr style="border-top: 1px solid var(--bs-border-color);">
+            <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top; white-space: nowrap;">
               <%= lbl %>
             </td>
-            <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--text-muted)" : "var(--text-faint)" %>; vertical-align: top; white-space: pre-wrap;">
+            <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--bs-secondary-color)" : "var(--bs-tertiary-color)" %>; vertical-align: top; white-space: pre-wrap;">
               <%= val.present? ? val : "&mdash;".html_safe %>
             </td>
           </tr>
@@ -47,7 +47,7 @@
     <% field = field_map[fname] %>
     <% fval  = field&.field_value.to_s %>
     <div class="form-group">
-      <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);">
+      <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-secondary-color);">
         <%= fname.tr("_", " ") %>
         <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
       </label>
@@ -69,7 +69,7 @@
     </div>
   <% end %>
 
-  <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+  <div class="d-flex gap-2 mt-3">
     <%= f.submit "Save Changes",
           style: "background: #27ae60; color: white; border: none; border-radius: 4px; padding: 0.5rem 1.25rem; font-size: 0.875rem; cursor: pointer;" %>
   </div>
