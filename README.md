@@ -6,88 +6,18 @@
 
 ---
 
-## Table of Contents
-
-- [Overview](#overview)
-- [What It Can Do](#what-it-can-do)
-- [Key Features](#key-features)
-- [Quick Start](#quick-start)
-- [Technology Stack](#technology-stack)
-- [Development Setup](#development-setup)
-- [Configuration](#configuration)
-- [Docker Deployment](#docker-deployment)
-- [API](#api)
-- [Data Schemas](#data-schemas)
-- [Contributing](#contributing)
-- [Roadmap](#roadmap)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
-- [Troubleshooting](#troubleshooting)
-
----
-
-## Overview
-
-Managing **System Security Plans (SSPs)**, **Security Assessment Results (SARs)**, and security baselines is painful when everything lives in large, versioned Excel files. SPARC solves that by providing:
-
-- A **structured database** backing every control, replacing `SSP_v12_final_REALLYFINAL.xlsx` with a single source of truth
-- **Real-time collaboration** so security teams, assessors, and system owners work from the same live data
-- **Visual compliance dashboards** with interactive heat maps showing implementation and test status by NIST control family
-- **Structured data export** in JSON and OSCAL formats for audit packages, reporting, and downstream tooling
-- **Background processing** for large Excel workbooks so uploads never block the UI
-
-### Who Benefits Most
-
-| Role | How SPARC Helps |
-|------|----------------|
-| **Security / Compliance Teams** | Maintain and update SSPs without spreadsheet coordination overhead |
-| **Assessors / 3PAOs** | Quickly find open findings, overdue tests, and controls needing attention |
-| **System Owners / ISSOs** | Clear visibility into control implementation status and gaps by family |
-| **Program Managers** | Better reporting and coordination across large control sets |
-
----
-
-## What It Can Do
-
-SPARC supports the full lifecycle of compliance documentation across four integrated modules, ordered to follow the RMF artifact lifecycle:
-
-**Control Catalog Management** — Browse, create, and manage NIST and custom control catalogs with family-level and control-level CRUD. NIST SP 800-53 Rev 4 (256 controls) and Rev 5 (323 controls) are pre-loaded via seeds.
-
-**Component Definition (CDEF) Management** — Import DISA STIGs (XCCDF XML), InSpec profiles (JSON), STIG Viewer exports, and CIS benchmarks. Export as OSCAL Component Definitions for interoperability with the NIST OSCAL ecosystem.
-
-**SSP Document Management** — Create System Security Plans from scratch via a guided wizard (Profile baseline + CDEFs + system characteristics), import from Excel, OSCAL JSON, or OSCAL XML, edit implementation details inline, enrich legacy imports with OSCAL-required metadata, and export as validated OSCAL SSP JSON.
-
-**SAR Document Management** — Upload and manage Security Assessment Results with multi-sheet support, color-coded test status indicators, pagination, filtering by section/asset/environment, and round-trip Excel export.
-
-### RMF Artifact Lifecycle Order
-
-The UI navigation and landing page follow the OSCAL / RMF artifact dependency chain. Each artifact builds on those above it:
-
-| Order | Artifact | Imports / Depends On | Primary Purpose | Status |
-|-------|----------|----------------------|-----------------|--------|
-| 1 | **Catalog** | (none — source of truth) | Raw control definitions (e.g., NIST SP 800-53) | Implemented |
-| 2 | **Profile** | Catalog(s) | Tailored baseline / selection set (FedRAMP, DoD IL, etc.) | Implemented |
-| 3 | **Component Definition (CDEF)** | Catalog / Profile (control IDs) | Reusable control implementations (tech, process, service) | Implemented |
-| 4 | **System Security Plan (SSP)** | Profile + Component Definitions | How the system implements the baseline | Implemented |
-| 5 | **Assessment Plan (SAP)** | SSP + Profile | How the assessment will be performed | Roadmap |
-| 6 | **Assessment Results (SAR)** | Assessment Plan + SSP | Findings & evidence from actual assessment | Implemented |
-| 7 | **POA&M** | SSP + Assessment Results | Remediation tracking for weaknesses | Implemented |
-
----
-
 ## Key Features
 
-- **SSP Creation Wizard** — Build System Security Plans from scratch by selecting a Profile baseline, assembling CDEF components, and configuring system characteristics. Controls are auto-populated and implementation narratives auto-filled from matching CDEFs.
-- **SSP Enrichment** — Uplift legacy Excel-imported SSPs with OSCAL-required fields (system characteristics, components, users, information types) so exports produce fully valid OSCAL documents.
-- **Multi-Format Import** — Import documents from Excel (.xlsx/.xls), OSCAL JSON, and OSCAL XML. The XML parser delegates to the JSON parser via an intermediate hash, ensuring consistent behavior.
-- **Interactive Heat Maps** — Collapsible status heat maps on SSP, SAR, and CDEF pages display control status by NIST family. Click any cell to filter the control list below it.
-- **Inline Field Editing** — Edit designated fields (implementation status, test results, remediation plans) directly in the browser; read-only fields are enforced.
-- **Excel Round-Trip** — Upload Excel workbooks and export them back to Excel with original formatting preserved (SAR).
-- **OSCAL Export** — Export SSPs, Component Definitions, Profiles, and POA&Ms as validated OSCAL v1.1.2 JSON for integration with the broader OSCAL ecosystem. Uses enriched relational data when available, with placeholder fallbacks for legacy imports.
-- **Background Processing** — Async job processing for large files via Sidekiq, with real-time status updates in the UI.
-- **RESTful API** — Programmatic access to convert, update, and export documents via `/api/v1/` endpoints.
-- **NIST Catalog Guidance** — Catalog controls are cross-referenced with uploaded documents to provide guidance context during review.
-- **JSON Export** — Download any document as structured JSON for reporting and downstream tooling.
+- **Full RMF Artifact Lifecycle** — Manage Catalogs, Profiles, Component Definitions (CDEFs), SSPs, SAPs, SARs, and POA&Ms in one platform
+- **SSP Creation Wizard** — Build System Security Plans from scratch by selecting baselines and assembling components
+- **Multi-Format Import** — Import from Excel (.xlsx/.xls), OSCAL JSON, OSCAL XML, DISA STIGs (XCCDF), and InSpec profiles
+- **OSCAL Export** — Export validated OSCAL v1.1.2 JSON for SSPs, CDEFs, Profiles, SARs, and POA&Ms
+- **Interactive Heat Maps** — Visual compliance dashboards showing control status by NIST family
+- **Inline Field Editing** — Edit implementation details directly in the browser
+- **Authentication & SSO** — Local login, GitHub/GitLab OAuth, OIDC (Okta/Keycloak/Entra ID), and LDAP
+- **Role-Based Access** — 9 RMF roles with project-level scoping and admin UI
+- **Background Processing** — Async job processing for large files via Sidekiq
+- **RESTful API** — Programmatic access at `/api/v1/`
 
 ---
 
@@ -101,300 +31,143 @@ cd sparc
 docker compose up --build
 ```
 
-- `--build` is only needed the first time or after changing `Dockerfile` / `Gemfile`
-- First run may take 3-10 minutes (downloads images, installs gems, runs migrations)
-- Subsequent starts are typically under 20 seconds
-
-Once the app is running, open **http://localhost:3000** in your browser.
-
-After the app is up, load the NIST catalog seed data:
+Open **http://localhost:3000**. Then seed the NIST catalogs:
 
 ```bash
 docker compose exec web bin/rails db:seed
 ```
 
-This seeds NIST SP 800-53 Rev 4 (18 families, 256 controls) and Rev 5 (20 families, 323 controls).
+See [Docker Deployment](docs/DOCKER.md) for full details.
 
 ### Local Development
-
-See the [Development Setup](#development-setup) section below for detailed instructions.
-
----
-
-## Technology Stack
-
-### Core Framework
-
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Ruby | 3.4.4 | Language runtime |
-| Rails | 8.1.2 | Web framework |
-| PostgreSQL | 15 | Primary database |
-| Sidekiq | 8.1.1 | Background job processing |
-| Redis | 7+ | Job queue backend |
-| Puma | 7.2.0 | Application server |
-
-### Frontend
-
-| Component | Purpose |
-|-----------|---------|
-| Hotwire (Turbo + Stimulus) | Interactive UI without a JavaScript SPA |
-| Propshaft | Asset pipeline |
-| Importmap | JavaScript module loading (no Node.js build step) |
-
-### Testing & Quality
-
-| Tool | Purpose |
-|------|---------|
-| RSpec | Test framework |
-| FactoryBot + Faker | Test data generation |
-| RuboCop (rails-omakase) | Code style linting |
-| Brakeman | Static security analysis |
-| Capybara + Selenium | System/integration tests |
-
-### DevOps & Deployment
-
-| Tool | Purpose |
-|------|---------|
-| Docker + Docker Compose | Containerized development and deployment |
-| Kamal | Docker-based production deployment |
-| GitHub Actions | CI/CD pipeline (lint, security scan, tests) |
-| Dependabot | Automated dependency updates |
-| Active Storage | File uploads (local dev / S3 production) |
-
----
-
-## Development Setup
-
-### Prerequisites
-
-- **Ruby** 3.4.4 (use [rbenv](https://github.com/rbenv/rbenv) or [asdf](https://asdf-vm.com/))
-- **PostgreSQL** 15+
-- **Redis** 7+
-- **Bundler** (`gem install bundler`)
-
-### Local Installation
-
-#### 1. Clone and install dependencies
 
 ```bash
 git clone https://github.com/Rebel-Raiders/sparc.git
 cd sparc
 bundle install
-```
-
-#### 2. (Optional) Create a `.env` file
-
-```bash
-# .env
-WEB_PORT=3000
-POSTGRES_PASSWORD=your-secure-password
-```
-
-#### 3. Set up the database
-
-```bash
 bin/rails db:create db:migrate db:seed
-```
-
-#### 4. Start background services
-
-```bash
-# Terminal 1 — Redis
-redis-server
-
-# Terminal 2 — Sidekiq (needed for Excel parsing)
-bundle exec sidekiq
-```
-
-#### 5. Start the server
-
-```bash
 bin/rails server
 ```
 
-Open **http://localhost:3000** in your browser.
+**Prerequisites:** Ruby 3.4.4, PostgreSQL 15+, Redis 7+, Bundler
 
-### Running Tests
+Start Redis (`redis-server`) and Sidekiq (`bundle exec sidekiq`) in separate terminals for background job processing.
+
+---
+
+## Authentication Setup
+
+Authentication is **opt-in** — all routes are public by default until you enable an auth method.
+
+### 1. Enable local login
+
+Copy `.env.example` to `.env` and set:
+
+```
+SPARC_ENABLE_LOCAL_LOGIN=true
+SPARC_ENABLE_USER_REGISTRATION=true
+```
+
+### 2. Seed the admin account
 
 ```bash
-# Full test suite
-bundle exec rspec
+bin/rails db:seed
+```
 
-# Single spec file
-bundle exec rspec spec/models/ssp_document_spec.rb
+The seed task creates an admin account and prints the credentials to the console. The admin must change their password on first login.
 
-# Single test by line number
-bundle exec rspec spec/models/ssp_document_spec.rb:18
+> **Lost your admin password?** Run `bin/rails sparc:bootstrap_admin` to regenerate credentials.
 
-# Linting
-bundle exec rubocop
+### 3. (Optional) Enable SSO
 
-# Security scan
-bundle exec brakeman
+Add GitHub, GitLab, or Okta credentials to your `.env` — see [Authentication & Authorization](docs/AUTHENTICATION.md) for full setup instructions.
 
-# Rails console
-bin/rails console
+**Important:** After any `.env` change, restart the Rails server. dotenv loads environment variables at boot time only.
+
+---
+
+## Running Tests
+
+```bash
+bundle exec rspec        # Full test suite
+bundle exec rubocop      # Linting
+bundle exec brakeman     # Security scan
 ```
 
 ---
 
 ## Configuration
 
-SPARC is configured entirely via environment variables, following the [MITRE Vulcan](https://github.com/mitre/vulcan) pattern of env-var-driven feature toggling. All settings have sensible defaults — no configuration is required for local development.
+SPARC is configured via environment variables with sensible defaults. No configuration is required for local development.
 
-**Full reference**: [`docs/ENVIRONMENT_VARIABLES.md`](docs/ENVIRONMENT_VARIABLES.md)
+- **Full reference:** [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md)
+- **Quick start templates:** `.env.example` (development), `.env.production.example` (production)
 
-**Quick start templates**:
-- `.env.example` — Development defaults (copy to `.env`)
-- `.env.production.example` — Production template with required vars highlighted
-
-### Key Configuration Areas
-
-| Area | Key Variables | Notes |
-|------|--------------|-------|
-| **Database** | `DATABASE_URL` or `SPARC_DB_*` | `DATABASE_URL` takes priority when set |
-| **Authentication** | `SPARC_ENABLE_LOCAL_LOGIN`, `SPARC_ENABLE_OIDC`, `SPARC_ENABLE_LDAP` | All disabled by default; enable to activate `/login` |
-| **OIDC/SSO** | `SPARC_OIDC_ISSUER_URL`, `SPARC_OIDC_CLIENT_ID`, `SPARC_OIDC_CLIENT_SECRET` | Supports Okta, Entra ID, Keycloak, Auth0 |
-| **Email** | `SPARC_ENABLE_SMTP`, `SPARC_SMTP_*` | Required for registration confirmations and notifications |
-| **Logging** | `SPARC_LOG_LEVEL`, `SPARC_LOG_TO_STDOUT`, `SPARC_STRUCTURED_LOGGING` | JSON logging for CloudWatch/ELK/Splunk |
-| **Security** | `SECRET_KEY_BASE`, `FORCE_SSL` | Required in production |
-
-The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all variables with defaults and is accessible throughout the application.
+The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all variables with defaults.
 
 ---
 
-## Docker Deployment
+## Documentation
 
-### Development
-
-```bash
-docker compose up --build
-```
-
-Services started:
-- **web** — Rails app on port 3000
-- **db** — PostgreSQL 15 on port 5433 (avoids conflicts with local Postgres)
-- **redis** — Redis 7 on port 6380
-- **sidekiq** — Background job processor
-
-### Production
-
-A production Docker Compose configuration is available at `docker-compose-prod.yaml`. Deployment is configured for [Kamal](https://kamal-deploy.org/) via `config/deploy.yml`.
-
-```bash
-# Production build
-docker compose -f docker-compose-prod.yaml up --build -d
-```
-
-### Common Docker Commands
-
-```bash
-# View logs
-docker compose logs -f web
-
-# Run migrations
-docker compose exec web bin/rails db:migrate
-
-# Seed NIST catalogs
-docker compose exec web bin/rails db:seed
-
-# Rails console
-docker compose exec web bin/rails console
-
-# Stop all services
-docker compose down
-```
+| Topic | Link |
+|-------|------|
+| Authentication & Authorization | [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) |
+| Okta Developer Setup | [docs/OKTA_DEV_SETUP.md](docs/OKTA_DEV_SETUP.md) |
+| Environment Variables | [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) |
+| Docker Deployment | [docs/DOCKER.md](docs/DOCKER.md) |
+| REST API | [docs/API.md](docs/API.md) |
+| Technology Stack | [docs/TECH_STACK.md](docs/TECH_STACK.md) |
+| SSP Schema | [docs/ssp-columns.md](docs/ssp-columns.md) |
+| SAR Schema | [docs/sar-columns.md](docs/sar-columns.md) |
+| Catalog Schema | [docs/catalog-schema.md](docs/catalog-schema.md) |
+| Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
 
 ---
 
-## API
+## RMF Artifact Lifecycle
 
-REST API under the `Api::V1::` namespace at `/api/v1/`:
+The UI follows the OSCAL / RMF artifact dependency chain:
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/ssp_documents/convert` | POST | Upload and convert an SSP Excel file |
-| `/api/v1/ssp_documents/update_fields` | PUT | Update SSP control fields |
-| `/api/v1/ssp_documents/export` | GET | Export SSP as JSON |
-| `/api/v1/sar_documents/convert` | POST | Upload and convert a SAR Excel file |
-| `/api/v1/sar_documents/update_fields` | PUT | Update SAR control fields |
-| `/api/v1/sar_documents/export` | GET | Export SAR as JSON |
-
----
-
-## Data Schemas
-
-Detailed schema documentation for each document type is available in the [`/docs`](docs/) directory:
-
-| Document | Schema Reference |
-|----------|----------------|
-| System Security Plan (SSP) | [docs/ssp-columns.md](docs/ssp-columns.md) |
-| Security Assessment Results (SAR) | [docs/sar-columns.md](docs/sar-columns.md) |
-| Control Catalog | [docs/catalog-schema.md](docs/catalog-schema.md) |
+| Order | Artifact | Purpose | Status |
+|-------|----------|---------|--------|
+| 1 | **Catalog** | Raw control definitions (e.g., NIST SP 800-53) | Implemented |
+| 2 | **Profile** | Tailored baseline / selection set | Implemented |
+| 3 | **Component Definition (CDEF)** | Reusable control implementations | Implemented |
+| 4 | **System Security Plan (SSP)** | How the system implements the baseline | Implemented |
+| 5 | **Assessment Plan (SAP)** | How the assessment will be performed | Implemented |
+| 6 | **Assessment Results (SAR)** | Findings & evidence from assessment | Implemented |
+| 7 | **POA&M** | Remediation tracking for weaknesses | Implemented |
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Here's how to get started:
-
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Make your changes and ensure all checks pass:
+3. Ensure all checks pass:
    ```bash
-   bundle exec rubocop      # Linting
-   bundle exec brakeman     # Security
-   bundle exec rspec        # Tests
+   bundle exec rubocop && bundle exec brakeman && bundle exec rspec
    ```
-4. Commit your changes and push to your fork
-5. Open a Pull Request against `main`
+4. Commit your changes and open a Pull Request against `main`
 
-### Branch Naming Convention
-
-| Prefix | Purpose | Version Impact |
-|--------|---------|---------------|
-| `feature/` | New functionality | Minor bump |
-| `fix/` | Bug fixes | Patch bump |
-| `refactor/` | Code restructuring | Major bump |
-| `release/` | Release preparation | Major bump |
-
----
-
-## Roadmap
-
-### Upcoming Features
-
-Tracked via [GitHub Issues](https://github.com/Rebel-Raiders/sparc/issues):
-
-**OSCAL Integration**
-- SAP Creation (Security Assessment Plan)
-- SAR OSCAL Import & Export
-- Full OSCAL schema validation for all document types (Issue #58)
-
-**Compliance Scanning**
-- Vulcan/InSpec to OSCAL Component Definitions (CDEF)
-- SAF Evidence and Attestation Collection
-- Automated assessment results correlation
-
-**Authentication & Access Control**
-- Okta MFA Integration & Enforcement
-- GitLab MFA Enforcement & SSO Delegation
-- Generic OIDC/SAML MFA Delegation
+| Branch Prefix | Purpose |
+|---------------|---------|
+| `feature/` | New functionality |
+| `fix/` | Bug fixes |
+| `refactor/` | Code restructuring |
+| `docs/` | Documentation |
 
 ---
 
 ## Acknowledgments
 
-SPARC builds on the work of several organizations and open-source projects:
+- **[NIST](https://www.nist.gov/)** — SP 800-53 control catalog framework and [OSCAL](https://pages.nist.gov/OSCAL/) standard
+- **[MITRE](https://www.mitre.org/)** — [SAF](https://saf.mitre.org/) and [Heimdall](https://github.com/mitre/heimdall2)
+- **[Chef/Progress InSpec](https://www.inspec.io/)** — Compliance-as-code framework
+- **[DISA](https://www.disa.mil/)** — STIGs in XCCDF format
+- **[CIS](https://www.cisecurity.org/)** — Security benchmarks
 
-- **[NIST](https://www.nist.gov/)** — For the SP 800-53 control catalog framework and the [OSCAL](https://pages.nist.gov/OSCAL/) standard that makes machine-readable compliance possible
-- **[MITRE](https://www.mitre.org/)** — For advancing security automation frameworks including [SAF](https://saf.mitre.org/) (Security Automation Framework) and the [Heimdall](https://github.com/mitre/heimdall2) visualization platform
-- **[Chef/Progress InSpec](https://www.inspec.io/)** — For the compliance-as-code framework that enables automated security testing and profile sharing
-- **[DISA](https://www.disa.mil/)** — For maintaining STIGs (Security Technical Implementation Guides) in XCCDF format
-- **[CIS](https://www.cisecurity.org/)** — For publishing security benchmarks used across industry
-
-### Individual Contributors
+### Contributors
 
 - **[@clem-field](https://github.com/clem-field)** — Creator, lead developer, and maintainer
 
@@ -403,9 +176,3 @@ SPARC builds on the work of several organizations and open-source projects:
 ## License
 
 SPARC is released under the [MIT License](LICENSE).
-
----
-
-## Troubleshooting
-
-See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues and solutions covering Docker, file uploads, local development, and production deployments.
