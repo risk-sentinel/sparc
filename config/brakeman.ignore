@@ -1,0 +1,10 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "c9c58dcbb8a057384f80b5f6084815496c6a1d3cdee8756bf4fdaa16b715f9d6",
+      "note": "Attestation role is a descriptive string (e.g. isso, assessor), not an authorization role. Safe to permit."
+    }
+  ],
+  "updated": "2026-03-08",
+  "brakeman_version": "8.0.4"
+}
