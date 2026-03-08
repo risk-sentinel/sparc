@@ -32,6 +32,30 @@
         <p class="text-body-secondary"><%= "Compliance documentation platform" %></p>
       </div>
 
+      <%# ── Flash notifications ──────── %>
+      <% if flash[:success] || flash[:error] || flash[:warning] %>
+        <div class="mb-3">
+          <% if flash[:success] %>
+            <div class="alert alert-success alert-dismissible fade show small" role="alert">
+              <%= flash[:success] %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% end %>
+          <% if flash[:error] %>
+            <div class="alert alert-danger alert-dismissible fade show small" role="alert">
+              <%= flash[:error] %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% end %>
+          <% if flash[:warning] %>
+            <div class="alert alert-warning alert-dismissible fade show small" role="alert">
+              <%= flash[:warning] %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
       <div class="card shadow-sm border">
         <div class="card-body p-4">
           <%= yield %>

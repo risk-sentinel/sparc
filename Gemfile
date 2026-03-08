@@ -31,7 +31,15 @@ gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 gem "dotenv-rails", require: false, groups: [ :development, :test ]
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7"
+
+# ── Authentication ──────────────────────────────────────────────────────────
+gem "omniauth", "~> 2.1"                       # OAuth/OIDC foundation
+gem "omniauth-rails_csrf_protection", "~> 1.0" # CSRF protection for OmniAuth POST
+gem "omniauth-github", "~> 2.0"                # GitHub OAuth
+gem "omniauth-gitlab", "~> 4.0"                # GitLab OAuth
+gem "omniauth_openid_connect", "~> 0.8"        # Generic OIDC (Okta, Keycloak, Entra ID)
+gem "net-ldap", "~> 0.19"                      # LDAP authentication
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ mswin mingw jruby ]

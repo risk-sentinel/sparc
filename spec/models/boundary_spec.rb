@@ -15,6 +15,7 @@ RSpec.describe Boundary, type: :model do
   describe "enums" do
     it {
       is_expected.to define_enum_for(:environment)
+        .backed_by_column_of_type(:string)
         .with_values(production: "production", development: "development", staging: "staging", test: "test")
     }
   end
