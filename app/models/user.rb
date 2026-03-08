@@ -67,6 +67,26 @@ class User < ApplicationRecord
     scope.pluck("roles.name")
   end
 
+  # ── Permission helpers ─────────────────────────────────────────────
+
+  # Check if user has a specific granular permission, optionally scoped
+  # to a project. Instance Admin bypasses all permission checks.
+  #
+  #   user.has_permission?("ssp.write")
+  #   user.has_permission?("ssp.write", project_id: 5)
+  def has_permission?(permission_key, project_id: nil)
+    return true if admin?
+
+    role_scope = user_roles.joins(:role)
+    role_scope = if project_id
+      role_scope.where(project_id: [ project_id, nil ])
+    else
+      role_scope.where(project_id: nil)
+    end
+
+    role_scope.where("roles.permissions @> ?", { permission_key => true }.to_json).exists?
+  end
+
   # ── Display ─────────────────────────────────────────────────────────────
 
   def display_label
