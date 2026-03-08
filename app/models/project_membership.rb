@@ -1,5 +1,6 @@
 class ProjectMembership < ApplicationRecord
   belongs_to :project
+  belongs_to :user, optional: true
 
   ROLES = %w[
     authorizing_official
@@ -28,5 +29,19 @@ class ProjectMembership < ApplicationRecord
 
   def role_label
     ROLE_LABELS[role] || role.titleize
+  end
+
+  # Link this legacy membership to a User record by matching email.
+  # Returns true if linked, false if no matching user found.
+  def link_to_user!
+    return true if user_id.present?
+
+    matched_user = User.find_by("LOWER(email) = ?", user_email.to_s.downcase.strip)
+    if matched_user
+      update!(user_id: matched_user.id)
+      true
+    else
+      false
+    end
   end
 end
