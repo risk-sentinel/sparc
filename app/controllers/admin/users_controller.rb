@@ -22,7 +22,9 @@ module Admin
     end
 
     def update
-      if @user.update(user_params)
+      @user.assign_attributes(user_params)
+      @user.admin = params.dig(:user, :admin) == "1"
+      if @user.save
         sync_roles
         redirect_to admin_user_path(@user), success: "User updated."
       else
@@ -63,7 +65,7 @@ module Admin
     end
 
     def user_params
-      params.require(:user).permit(:display_name, :first_name, :last_name, :admin)
+      params.require(:user).permit(:display_name, :first_name, :last_name)
     end
 
     def sync_roles
