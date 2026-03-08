@@ -1889,49 +1889,158 @@ PERM_EVIDENCE_ENGINEER = {
   "evidence.read" => true, "evidence.write" => true
 }.freeze
 
+PERM_CHIEF_ACQUISITION_OFFICER = {
+  "catalogs.read" => true, "profiles.read" => true, "projects.read" => true,
+  "cdef.read" => true, "evidence.read" => true
+}.freeze
+
+PERM_ISSM = {
+  "projects.read" => true,
+  "ssp.read" => true, "ssp.write" => true,
+  "sar.read" => true, "sap.read" => true,
+  "poam.read" => true, "poam.write" => true,
+  "cdef.read" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_CSP = {
+  "projects.read" => true,
+  "ssp.read" => true, "ssp.write" => true,
+  "sar.read" => true, "sap.read" => true,
+  "poam.read" => true, "poam.write" => true,
+  "cdef.read" => true, "cdef.write" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_SYSTEM_ARCHITECT = {
+  "projects.read" => true,
+  "ssp.read" => true, "ssp.write" => true,
+  "cdef.read" => true, "cdef.write" => true,
+  "evidence.read" => true
+}.freeze
+
+PERM_COMPONENT_SUPPLIER = {
+  "projects.read" => true,
+  "cdef.read" => true, "cdef.write" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_SYSTEM_OPERATOR = {
+  "projects.read" => true,
+  "ssp.read" => true, "poam.read" => true,
+  "cdef.read" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_INFO_OWNER = {
+  "projects.read" => true,
+  "ssp.read" => true, "cdef.read" => true,
+  "evidence.read" => true
+}.freeze
+
+PERM_SOLUTION_EVALUATOR = {
+  "projects.read" => true,
+  "ssp.read" => true, "sar.read" => true,
+  "cdef.read" => true, "evidence.read" => true
+}.freeze
+
+PERM_VENDOR_DEPENDENCY = {
+  "projects.read" => true, "ssp.read" => true,
+  "cdef.read" => true, "cdef.write" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
 SPARC_ROLES = [
-  { name: "policy_manager",  display_name: "Policy Manager",    scope: "instance", sort_order: 1,
-    description: "Manages organizational security policies and compliance frameworks",
+  # ── Instance-Scope Roles ──────────────────────────────────────────────────
+  { name: "policy_manager", display_name: "Policy Manager", scope: "instance", sort_order: 1,
+    description: "Manages organizational security policies, control catalogs, and compliance baselines. Develops, publishes, and maintains tailored profiles and enterprise-wide security policy frameworks aligned with NIST, FedRAMP, and OSCAL standards.",
     permissions: PERM_POLICY_MANAGER },
-  { name: "global_viewer",   display_name: "Global Viewer",     scope: "instance", sort_order: 2,
-    description: "Read-only access to all projects and documents instance-wide",
+  { name: "global_viewer", display_name: "Global Viewer", scope: "instance", sort_order: 2,
+    description: "Read-only access to shared control catalogs and baseline profiles across the instance. Provides broad visibility into reusable control libraries for stakeholders who need awareness without edit privileges.",
     permissions: PERM_ALL_READ },
-  { name: "ao",              display_name: "Authorizing Official", scope: "project", sort_order: 3,
-    description: "Makes risk acceptance decisions and authorizes system operation",
-    permissions: PERM_AO },
-  { name: "so_iso",          display_name: "System Owner / ISO", scope: "project", sort_order: 4,
-    description: "Responsible for system security and day-to-day operations",
-    permissions: PERM_SO_ISO },
-  { name: "ciso",            display_name: "CISO",              scope: "project", sort_order: 5,
-    description: "Chief Information Security Officer — oversees security program",
-    permissions: PERM_CISO },
-  { name: "isso",            display_name: "ISSO",              scope: "project", sort_order: 6,
-    description: "Information System Security Officer — manages system-level security",
-    permissions: PERM_ISSO },
-  { name: "project_member",  display_name: "Project Member",    scope: "project", sort_order: 7,
-    description: "Team member who contributes to project documentation",
-    permissions: PERM_PROJECT_MEMBER },
-  { name: "assessor_3pao",   display_name: "Assessor / 3PAO",   scope: "project", sort_order: 8,
-    description: "Third-party assessor who evaluates security controls",
-    permissions: PERM_ASSESSOR },
-  { name: "view_only",       display_name: "View Only",         scope: "project", sort_order: 9,
-    description: "Read-only access limited to assigned projects",
-    permissions: PERM_VIEW_ONLY },
-  { name: "senior_accountable_official", display_name: "Senior Accountable Official", scope: "instance", sort_order: 10,
-    description: "Risk management leadership — oversees organizational risk posture",
+  { name: "senior_accountable_official", display_name: "Senior Accountable Official", scope: "instance", sort_order: 3,
+    description: "Leads the Risk Executive function for the organization. Aligns security and privacy risk management with strategic planning and mission objectives. Provides enterprise-wide risk oversight and advises on organizational risk tolerance per NIST SP 800-37.",
     permissions: PERM_SAO },
-  { name: "common_control_provider", display_name: "Common Control Provider", scope: "project", sort_order: 11,
-    description: "Provides inheritable common controls shared across systems",
-    permissions: PERM_COMMON_CONTROL },
-  { name: "senior_agency_official_privacy", display_name: "Senior Agency Official for Privacy", scope: "instance", sort_order: 12,
-    description: "Privacy compliance oversight — manages PII and privacy controls",
+  { name: "senior_agency_official_privacy", display_name: "Senior Agency Official for Privacy", scope: "instance", sort_order: 4,
+    description: "Senior Agency Official for Privacy (SAOP). Oversees organization-wide privacy risk management, assesses privacy impacts, manages PII processing requirements, and ensures compliance with privacy controls and regulations.",
     permissions: PERM_SAOP },
-  { name: "sparc_sme", display_name: "SPARC SME", scope: "project", sort_order: 13,
-    description: "Subject matter expert with broad read/write access to project artifacts",
+  { name: "head_of_agency", display_name: "Head of Agency / CEO", scope: "instance", sort_order: 5,
+    description: "Ultimate accountability for risk management decisions and RMF integration across the organization. Ensures security and privacy programs are resourced and aligned with mission objectives per NIST SP 800-37.",
+    permissions: PERM_ALL_READ },
+  { name: "risk_executive", display_name: "Risk Executive", scope: "instance", sort_order: 6,
+    description: "Senior-level risk oversight function that advises on organization-wide risk tolerance, strategy, and acceptable risk levels. Coordinates risk-related activities across the enterprise per NIST SP 800-37.",
+    permissions: PERM_ALL_READ },
+  { name: "cio", display_name: "Chief Information Officer", scope: "instance", sort_order: 7,
+    description: "Oversees the organization's information security program and designates the Senior Agency Information Security Officer. Ensures IT investments integrate security and privacy requirements per FISMA and NIST SP 800-37.",
+    permissions: PERM_ALL_READ },
+  { name: "chief_acquisition_officer", display_name: "Chief Acquisition Officer", scope: "instance", sort_order: 8,
+    description: "Ensures security and privacy requirements are integrated into acquisition processes, contracts, and supply chain management. Reviews component definitions and evidence for procurement decisions.",
+    permissions: PERM_CHIEF_ACQUISITION_OFFICER },
+  { name: "fedramp_pmo", display_name: "FedRAMP PMO", scope: "instance", sort_order: 9,
+    description: "FedRAMP Program Management Office. Oversees the FedRAMP authorization program, provides OSCAL templates and validation tools, reviews cloud service authorization packages, and maintains FedRAMP baselines and guidance.",
+    permissions: PERM_ALL_READ },
+  { name: "jab", display_name: "Joint Authorization Board", scope: "instance", sort_order: 10,
+    description: "Reviews OSCAL-formatted authorization packages for Provisional Authorizations to Operate (P-ATOs) for cloud services intended for government-wide use. Composed of CIOs from DHS, DOD, and GSA.",
+    permissions: PERM_ALL_READ },
+
+  # ── Project-Scope Roles ───────────────────────────────────────────────────
+  { name: "ao", display_name: "Authorizing Official", scope: "project", sort_order: 11,
+    description: "Senior official who accepts residual risk and issues the Authorization to Operate (ATO) decision. Reviews Security Assessment Report (SAR) findings and POA&M remediation progress to make risk-informed authorization decisions per NIST SP 800-37.",
+    permissions: PERM_AO },
+  { name: "agency_ao", display_name: "Agency Authorizing Official", scope: "project", sort_order: 12,
+    description: "Issues agency-specific Authorizations to Operate (ATOs) based on FedRAMP baselines and OSCAL artifacts. Evaluates residual risk within the agency's specific operating context and mission requirements.",
+    permissions: PERM_AO },
+  { name: "so_iso", display_name: "System Owner / ISO", scope: "project", sort_order: 13,
+    description: "Owns the information system and is accountable for its security posture. Responsible for control implementation, SSP development and maintenance, system boundary definition, and coordination with ISSOs and security teams per NIST SP 800-37.",
+    permissions: PERM_SO_ISO },
+  { name: "ciso", display_name: "CISO", scope: "project", sort_order: 14,
+    description: "Senior Agency Information Security Officer (SAISO) / Chief Information Security Officer. Provides strategic security oversight, policy direction, risk advice, and compliance program leadership across the organization per NIST SP 800-37.",
+    permissions: PERM_CISO },
+  { name: "issm", display_name: "ISSM", scope: "project", sort_order: 15,
+    description: "Information System Security Manager. Oversees the system security posture, supports the System Owner, coordinates with ISSOs, and ensures security requirements are implemented and maintained across the system lifecycle per NIST SP 800-37.",
+    permissions: PERM_ISSM },
+  { name: "isso", display_name: "ISSO", scope: "project", sort_order: 16,
+    description: "Information System Security Officer. Day-to-day security operations for the information system. Maintains security controls, coordinates assessment activities, tracks POA&M findings, supports the System Owner, and ensures continuous monitoring compliance per NIST SP 800-37.",
+    permissions: PERM_ISSO },
+  { name: "cloud_service_provider", display_name: "Cloud Service Provider", scope: "project", sort_order: 17,
+    description: "Develops and maintains the OSCAL-formatted System Security Plan (SSP), implements controls, prepares authorization packages, manages POA&Ms, and provides component definitions for cloud service offerings under FedRAMP.",
+    permissions: PERM_CSP },
+  { name: "assessor_3pao", display_name: "Assessor / 3PAO", scope: "project", sort_order: 18,
+    description: "Independent control assessor or Third-Party Assessment Organization (3PAO). Conducts security assessments, develops Security Assessment Plans (SAPs), produces Security Assessment Reports (SARs), and provides objective evaluation of control effectiveness.",
+    permissions: PERM_ASSESSOR },
+  { name: "common_control_provider", display_name: "Common Control Provider", scope: "project", sort_order: 19,
+    description: "Implements, assesses, and monitors common (inherited) controls shared across multiple information systems. Documents common control details and disseminates implementation information for use in system-level SSPs per NIST SP 800-37.",
+    permissions: PERM_COMMON_CONTROL },
+  { name: "system_architect_engineer", display_name: "System Architect / Engineer", scope: "project", sort_order: 20,
+    description: "Designs and implements security architecture and controls. Contributes to SSP technical sections, develops component definitions, and ensures system design meets security requirements and OSCAL documentation standards.",
+    permissions: PERM_SYSTEM_ARCHITECT },
+  { name: "component_supplier", display_name: "Component Supplier / Product Engineer", scope: "project", sort_order: 21,
+    description: "Provides reusable components with documented control implementations for OSCAL Component Definitions. Supplies evidence of component security capabilities and maintains component-level security documentation.",
+    permissions: PERM_COMPONENT_SUPPLIER },
+  { name: "system_operator_admin", display_name: "System Operator / Administrator", scope: "project", sort_order: 22,
+    description: "Performs daily system operations, monitoring, and maintenance. Implements operational controls, collects operational evidence, and supports continuous monitoring activities for the information system.",
+    permissions: PERM_SYSTEM_OPERATOR },
+  { name: "information_owner_steward", display_name: "Information Owner / Steward", scope: "project", sort_order: 23,
+    description: "Defines protection requirements for information types processed by the system. Supports system categorization per FIPS 199, establishes data governance policies, and ensures information handling complies with applicable regulations.",
+    permissions: PERM_INFO_OWNER },
+  { name: "vendor_dependency_manager", display_name: "Vendor Dependency Manager", scope: "project", sort_order: 24,
+    description: "Tracks and documents vendor-supplied components and inherited controls critical for OSCAL Component Definitions. Manages vendor security documentation, supply chain dependencies, and third-party evidence collection.",
+    permissions: PERM_VENDOR_DEPENDENCY },
+  { name: "solution_evaluator", display_name: "Solution Evaluator", scope: "project", sort_order: 25,
+    description: "Assesses tools, solutions, and services for OSCAL compliance and integration readiness. Reviews SSP content, SAR findings, and component definitions to evaluate solution suitability for security requirements.",
+    permissions: PERM_SOLUTION_EVALUATOR },
+  { name: "project_member", display_name: "Project Member", scope: "project", sort_order: 26,
+    description: "General team member who contributes to project documentation and artifacts. Can view and edit SSP content, manage POA&Ms, work with component definitions, and collect evidence. Cannot alter global catalogs or baselines.",
+    permissions: PERM_PROJECT_MEMBER },
+  { name: "sparc_sme", display_name: "SPARC SME", scope: "project", sort_order: 27,
+    description: "Subject matter expert with broad read/write access to project artifacts. Supports multiple artifact types including SSP, SAR, SAP, POA&M, component definitions, and evidence. Read-only access to enterprise catalogs and profiles.",
     permissions: PERM_SPARC_SME },
-  { name: "evidence_integration_engineer", display_name: "Evidence Integration Engineer", scope: "project", sort_order: 14,
-    description: "Manages evidence collection and integration with assessment results",
-    permissions: PERM_EVIDENCE_ENGINEER }
+  { name: "evidence_integration_engineer", display_name: "Evidence Integration Engineer", scope: "project", sort_order: 28,
+    description: "Specialized in evidence lifecycle management and assessment integration. Collects, organizes, and links evidence artifacts to control implementations. Supports SAR development with evidence-backed findings and attestations.",
+    permissions: PERM_EVIDENCE_ENGINEER },
+  { name: "view_only", display_name: "View Only", scope: "project", sort_order: 29,
+    description: "Read-only access to assigned project artifacts. Intended for auditors, oversight stakeholders, or reviewers who need visibility into SSP, SAR, POA&M, and component documentation without edit capabilities.",
+    permissions: PERM_VIEW_ONLY }
 ].freeze
 
 SPARC_ROLES.each do |attrs|
