@@ -67,7 +67,7 @@ class OmniauthCallbacksController < ApplicationController
       metadata: { uid: auth.uid }
     )
 
-    redirect_to (session.delete(:return_to) || root_path), success: "Signed in with #{auth.provider.titleize}."
+    redirect_to (session.delete(:return_to) || root_path), success: "Signed in with #{auth.provider.to_s.titleize}."
   end
 
   # GET /auth/failure
