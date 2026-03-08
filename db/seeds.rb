@@ -1860,7 +1860,7 @@ if SparcConfig.enable_local_login?
       puts "=" * 60
       puts "  Email:    #{admin.email}"
       if Rails.env.production?
-        puts "  Password: [REDACTED — run 'rails sparc:bootstrap_admin' to generate a new password]"
+        puts "  Password: [REDACTED]"
       else
         puts "  Password: #{password}"
       end
