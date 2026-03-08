@@ -1827,43 +1827,52 @@ end
 puts "  #{SPARC_ROLES.size} roles seeded."
 
 # ── Admin User Bootstrapping ──────────────────────────────────────────────
-# Creates an admin account when local login is enabled and no admin exists.
-# The generated password is printed to the console and must be changed on
-# first login.
-if SparcConfig.enable_local_login? && !User.exists?(admin: true)
-  password = SecureRandom.alphanumeric(20)
+# Creates or resets the admin account when local login is enabled.
+# Uses find_or_initialize_by so re-running seeds handles the case where
+# local login was enabled after the initial setup.
+if SparcConfig.enable_local_login?
   email = ENV.fetch("SPARC_ADMIN_EMAIL", "admin@sparc.local")
+  admin = User.find_or_initialize_by(email: email.downcase.strip)
 
-  admin = User.create!(
-    email: email,
-    password: password,
-    password_confirmation: password,
-    display_name: "SPARC Admin",
-    admin: true,
-    status: "active",
-    must_reset_password: true
-  )
+  if admin.new_record? || !admin.password_digest.present?
+    password = SecureRandom.alphanumeric(20)
+    admin.assign_attributes(
+      password: password,
+      password_confirmation: password,
+      display_name: admin.display_name.presence || "SPARC Admin",
+      admin: true,
+      status: "active",
+      must_reset_password: true,
+      password_changed_at: nil
+    )
 
-  AuditEvent.log(
-    user: admin,
-    action: "admin_bootstrap",
-    provider: "local",
-    metadata: { email: admin.email }
-  )
+    if admin.save
+      AuditEvent.log(
+        user: admin,
+        action: "admin_bootstrap",
+        provider: "local",
+        metadata: { email: admin.email }
+      )
 
-  puts ""
-  puts "=" * 60
-  puts "  SPARC Admin Account Created"
-  puts "=" * 60
-  puts "  Email:    #{admin.email}"
-  puts "  Password: #{password}"
-  puts ""
-  puts "  *** Save this password — it will not be shown again ***"
-  puts "  You will be required to change it on first login."
-  puts "=" * 60
-  puts ""
+      puts ""
+      puts "=" * 60
+      puts "  SPARC Admin Account #{admin.previously_new_record? ? 'Created' : 'Reset'}"
+      puts "=" * 60
+      puts "  Email:    #{admin.email}"
+      puts "  Password: #{password}"
+      puts ""
+      puts "  *** Save this password — it will not be shown again ***"
+      puts "  You will be required to change it on first login."
+      puts "=" * 60
+      puts ""
+    else
+      puts "ERROR: Could not bootstrap admin: #{admin.errors.full_messages.join(', ')}"
+    end
+  else
+    puts "Admin account already exists with a password set — skipping bootstrap."
+  end
 else
-  puts "Admin bootstrapping skipped (local login disabled or admin already exists)."
+  puts "Admin bootstrapping skipped (local login not enabled)."
 end
 
 # ── Sample Project ──────────────────────────────────────────────
