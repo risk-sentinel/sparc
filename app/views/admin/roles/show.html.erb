@@ -1,0 +1,97 @@
+<div class="my-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0"><%= @role.display_name %></h1>
+    <div class="d-flex gap-2">
+      <%= link_to "Edit", edit_admin_role_path(@role), class: "btn btn-sm btn-outline-primary" %>
+      <% unless @role.user_roles.exists? %>
+        <%= button_to "Delete", admin_role_path(@role), method: :delete,
+              class: "btn btn-sm btn-outline-danger",
+              data: { turbo_confirm: "Delete role '#{@role.display_name}'? This cannot be undone." } %>
+      <% end %>
+      <%= link_to "Back to Roles", admin_roles_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <%# ── Role Details ──────────────────────────────────── %>
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header fw-semibold">Role Details</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Name</dt>
+            <dd class="col-sm-8"><code><%= @role.name %></code></dd>
+            <dt class="col-sm-4">Display Name</dt>
+            <dd class="col-sm-8"><%= @role.display_name %></dd>
+            <dt class="col-sm-4">Scope</dt>
+            <dd class="col-sm-8">
+              <span class="badge text-bg-<%= @role.scope == 'instance' ? 'warning' : 'info' %>">
+                <%= @role.scope.capitalize %>
+              </span>
+            </dd>
+            <dt class="col-sm-4">Sort Order</dt>
+            <dd class="col-sm-8"><%= @role.sort_order %></dd>
+            <dt class="col-sm-4">Description</dt>
+            <dd class="col-sm-8"><%= @role.description.presence || "—" %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Permissions Grid ──────────────────────────────── %>
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header fw-semibold">Permissions</div>
+        <div class="card-body">
+          <% Role::PERMISSION_GROUPS.each do |resource, keys| %>
+            <h6 class="fw-semibold mt-3 mb-2"><%= Role::RESOURCE_LABELS[resource] || resource.titleize %></h6>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <% keys.each do |key| %>
+                <% action = key.split(".").last %>
+                <span class="badge text-bg-<%= @role.has_permission?(key) ? 'success' : 'light border' %>">
+                  <%= action.capitalize %>
+                </span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Assigned Users ──────────────────────────────────── %>
+  <div class="card mt-4">
+    <div class="card-header fw-semibold">Assigned Users (<%= @user_roles.size %>)</div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Project</th>
+            <th>Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @user_roles.each do |ur| %>
+            <tr>
+              <td><%= link_to ur.user.display_label, admin_user_path(ur.user) %></td>
+              <td class="small text-body-secondary"><%= ur.user.email %></td>
+              <td>
+                <% if ur.project %>
+                  <%= link_to ur.project.name, admin_project_path(ur.project), class: "badge text-bg-info text-decoration-none" %>
+                <% else %>
+                  <span class="text-body-secondary">Instance-wide</span>
+                <% end %>
+              </td>
+              <td class="small text-body-secondary"><%= ur.created_at.strftime("%Y-%m-%d") %></td>
+            </tr>
+          <% end %>
+          <% if @user_roles.empty? %>
+            <tr><td colspan="4" class="text-center text-body-secondary small py-3">No users assigned to this role.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

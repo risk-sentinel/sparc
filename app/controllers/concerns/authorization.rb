@@ -32,6 +32,17 @@ module Authorization
     raise NotAuthorizedError, "Role '#{role_name}' required"
   end
 
+  # Require the current user to have a specific granular permission.
+  #
+  #   authorize_permission!("ssp.write")
+  #   authorize_permission!("ssp.write", project_id: @project.id)
+  def authorize_permission!(permission_key, project_id: nil)
+    return unless SparcConfig.any_auth_enabled?
+    return if current_user&.has_permission?(permission_key, project_id: project_id)
+
+    raise NotAuthorizedError, "Permission '#{permission_key}' required"
+  end
+
   private
 
   def handle_not_authorized(exception)
