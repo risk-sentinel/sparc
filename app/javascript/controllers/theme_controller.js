@@ -2,18 +2,18 @@ import { Controller } from "@hotwired/stimulus"
 
 // Stimulus controller for light/dark theme switching.
 //
-// Respects OS-level prefers-color-scheme on first visit, allows manual
-// override (persisted in localStorage), and provides a "use system"
-// reset that clears the override and re-follows the OS preference.
+// Defaults to OS prefers-color-scheme on first visit. Each click
+// toggles between light and dark (two-state). The choice is saved
+// in localStorage so it persists across page loads.
 //
-// Place data-controller="theme" on the <body> element (or any wrapper).
+// If the OS preference changes and the user hasn't manually toggled,
+// the UI follows the OS automatically.
 //
 // Targets:
 //   icon — the toggle button element whose text content shows the current mode
 //
 // Actions:
-//   theme#toggle — cycle: light → dark → system (clears override)
-//   theme#setLight / theme#setDark / theme#useSystem — explicit setters
+//   theme#toggle — flip between light and dark
 export default class extends Controller {
   static targets = ["icon"]
 
@@ -32,35 +32,12 @@ export default class extends Controller {
     }
   }
 
-  // Action: cycle through light → dark → system
+  // Action: simple two-state toggle — light ↔ dark
   toggle() {
-    const saved = localStorage.getItem("sparc-theme")
     const current = document.documentElement.getAttribute("data-bs-theme")
-
-    if (saved === "light" || (!saved && current === "light")) {
-      // Currently light (whether saved or system) → switch to dark
-      this.setExplicit("dark")
-    } else if (saved === "dark" || (!saved && current === "dark")) {
-      // Currently dark → switch to system
-      this.useSystem()
-    } else {
-      // Fallback: go to light
-      this.setExplicit("light")
-    }
-  }
-
-  setLight() {
-    this.setExplicit("light")
-  }
-
-  setDark() {
-    this.setExplicit("dark")
-  }
-
-  useSystem() {
-    localStorage.removeItem("sparc-theme")
-    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-    document.documentElement.setAttribute("data-bs-theme", systemDark ? "dark" : "light")
+    const next = current === "dark" ? "light" : "dark"
+    localStorage.setItem("sparc-theme", next)
+    document.documentElement.setAttribute("data-bs-theme", next)
     this.updateIcon()
   }
 
@@ -77,7 +54,7 @@ export default class extends Controller {
   }
 
   handleSystemChange() {
-    // Only auto-switch if the user hasn't set an explicit override
+    // Auto-switch only if the user hasn't manually toggled
     if (!localStorage.getItem("sparc-theme")) {
       const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches
       document.documentElement.setAttribute("data-bs-theme", systemDark ? "dark" : "light")
@@ -85,30 +62,18 @@ export default class extends Controller {
     }
   }
 
-  setExplicit(theme) {
-    localStorage.setItem("sparc-theme", theme)
-    document.documentElement.setAttribute("data-bs-theme", theme)
-    this.updateIcon()
-  }
-
   updateIcon() {
     if (!this.hasIconTarget) return
 
-    const saved = localStorage.getItem("sparc-theme")
     const current = document.documentElement.getAttribute("data-bs-theme")
-
-    if (!saved) {
-      // Following system — show computer icon
-      this.iconTarget.textContent = "\uD83D\uDCBB"
-      this.iconTarget.title = "Theme: System \u2014 click to switch"
-    } else if (current === "dark") {
-      // Explicit dark — show sun (click to go to system)
+    if (current === "dark") {
+      // Dark mode active — show sun icon (click to switch to light)
       this.iconTarget.textContent = "\u2600\uFE0F"
-      this.iconTarget.title = "Theme: Dark \u2014 click to use system"
+      this.iconTarget.title = "Switch to light mode"
     } else {
-      // Explicit light — show moon (click to go to dark)
+      // Light mode active — show moon icon (click to switch to dark)
       this.iconTarget.textContent = "\uD83C\uDF19"
-      this.iconTarget.title = "Theme: Light \u2014 click to switch to dark"
+      this.iconTarget.title = "Switch to dark mode"
     }
   }
 }
