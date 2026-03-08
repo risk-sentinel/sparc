@@ -7,6 +7,7 @@ class Project < ApplicationRecord
   has_one  :sap_document, dependent: :nullify
   has_one  :sar_document, dependent: :nullify
   has_many :poam_documents, dependent: :nullify
+  has_many :evidences, dependent: :nullify
 
   enum :status, {
     draft: "draft",

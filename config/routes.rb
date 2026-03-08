@@ -99,6 +99,10 @@ Rails.application.routes.draw do
     resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
   end
 
+  resources :evidences do
+    resources :attestations, only: [ :new, :create, :destroy ]
+  end
+
   resources :cdef_documents do
     member do
       patch :update_metadata

@@ -10,5 +10,6 @@ class HomeController < ApplicationController
     @profile_count = ProfileDocument.count
     @sap_count     = SapDocument.count
     @poam_count    = PoamDocument.count
+    @evidence_count = Evidence.count
   end
 end
