@@ -106,9 +106,11 @@
       <% total_by_status.each do |status, count| %>
         <% next if count == 0 %>
         <div class="summary-chip sparc-summary-chip"
-             data-filter-status="<%= status %>"
-             onclick="filterByStatus(this.dataset.filterStatus)"
+             data-filter-value="<%= status %>"
+             role="button"
+             tabindex="0"
              title="Click to filter: <%= status %>"
+             onclick="document.getElementById('heatmapSection').dispatchEvent(new CustomEvent('heatmap:chip', {detail: {filter: '<%= j status %>'}}))"
              style="border-left: 3px solid <%= ssp_status_color(status) %>;">
           <div class="sparc-chip-count"><%= count %></div>
           <div class="sparc-chip-label"><%= status %></div>
@@ -190,74 +192,17 @@
 <% end %>
 
 <%# ── FAMILY COMPLIANCE GRID ─────────────────────────────────────── %>
-<% if @heatmap_families.any? %>
-<details id="heatmapSection" open style="margin-bottom: 1.5rem;">
-  <summary class="sparc-section-summary bg-body-secondary rounded-3 fw-semibold d-flex align-items-center gap-2 border">
-    <span id="heatmapToggleIcon" class="sparc-section-arrow">&#9660;</span>
-    Compliance by Control Family
-    <span class="sparc-section-hint">— click a badge to filter</span>
-  </summary>
-
-  <div style="padding: 1rem 0 0.5rem;">
-    <div id="heatmapFilterBanner"
-         class="sparc-filter-banner d-flex align-items-center justify-content-between"
-         style="display: none; gap: 0.75rem;">
-      <span id="heatmapFilterLabel" class="sparc-filter-text"></span>
-      <button onclick="clearHeatmapFilter()" class="sparc-btn-clear-filter">
-        ✕ Clear Filter
-      </button>
-    </div>
-
-    <div class="sparc-heatmap-grid">
-      <% @heatmap_families.each do |family| %>
-        <% family_data = @heatmap_data[family] || {} %>
-        <% family_total = family_data.values.sum %>
-        <% family_impl = family_data["Implemented"].to_i %>
-        <% family_na   = family_data["Not Applicable"].to_i %>
-        <% family_denom = [family_total - family_na, 1].max %>
-        <% family_pct   = (family_impl * 100.0 / family_denom).round %>
-        <div class="sparc-heatmap-card">
-          <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
-            <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
-               class="sparc-family-link"><%= family %></a>
-            <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= family_pct %>%</span>
-          </div>
-          <div style="font-size: 0.62rem; color: var(--bs-tertiary-color); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
-          <div class="sparc-heatmap-bar d-flex">
-            <% @heatmap_statuses.each do |status| %>
-              <% next if (family_data[status] || 0) == 0 %>
-              <div style="width: <%= ((family_data[status] || 0) * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= ssp_status_color(status) %>;"></div>
-            <% end %>
-          </div>
-          <div class="d-flex flex-wrap gap-1">
-            <% @heatmap_statuses.each do |status| %>
-              <% count = family_data[status] || 0 %>
-              <% next if count == 0 %>
-              <div class="heatmap-cell sparc-heatmap-badge"
-                   data-family="<%= family %>" data-status="<%= status %>"
-                   onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.status)"
-                   title="<%= family %> / <%= status %>: <%= count %>"
-                   style="background: <%= ssp_status_color(status) %>;">
-                <%= count %>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-
-    <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
-      <span class="sparc-legend-label">Legend:</span>
-      <% ApplicationHelper::SSP_STATUS_COLORS.first(4).each do |label, color| %>
-        <span class="sparc-legend-item">
-          <span class="sparc-legend-dot" style="background: <%= color %>;"></span>
-          <%= label %>
-        </span>
-      <% end %>
-    </div>
-  </div>
-</details>
-<% end %>
+<%= render "shared/heatmap",
+     heatmap_data: @heatmap_data,
+     heatmap_families: @heatmap_families,
+     heatmap_statuses: @heatmap_statuses,
+     title: "Compliance by Control Family",
+     color_helper: :ssp_status_color,
+     filter_key: "status",
+     url_sync: true,
+     initial_family: params[:family],
+     initial_filter: params[:status],
+     legend_items: ApplicationHelper::SSP_STATUS_COLORS.first(4).to_a %>
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
@@ -538,70 +483,6 @@
            version_field: :ssp_version %>
 
 <script>
-  var activeFamily = null;
-  var activeStatus = null;
-
-  function filterByHeatmapCell(cellEl, family, status) {
-    if (activeFamily === family && activeStatus === status) { clearHeatmapFilter(); return; }
-    activeFamily = family; activeStatus = status;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = (el.dataset.family === family && el.dataset.status === status) ? '1' : '0.35';
-      el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
-  }
-
-  function filterByFamily(family) {
-    if (activeFamily === family && activeStatus === null) { clearHeatmapFilter(); return; }
-    activeFamily = family; activeStatus = null;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.family === family ? '1' : '0.35'; el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-  }
-
-  function filterByStatus(status) {
-    if (activeFamily === null && activeStatus === status) { clearHeatmapFilter(); return; }
-    activeFamily = null; activeStatus = status;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.status === status ? '1' : '0.35'; el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) {
-      el.style.background = el.dataset.filterStatus === status ? 'rgba(255,255,255,0.15)' : '';
-    });
-  }
-
-  function applyFilter() {
-    var cards = document.querySelectorAll('#controlsContainer .control-card');
-    var visible = 0;
-    cards.forEach(function(card) {
-      var familyMatch = activeFamily === null || card.dataset.family === activeFamily;
-      var statusMatch = activeStatus === null || card.dataset.status === activeStatus;
-      var show = familyMatch && statusMatch;
-      card.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-    if (activeFamily !== null || activeStatus !== null) {
-      var label = activeFamily && activeStatus ? activeFamily + ' \u2022 ' + activeStatus : (activeFamily || activeStatus);
-      document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
-      document.getElementById('heatmapFilterBanner').style.display = 'flex';
-    } else {
-      document.getElementById('heatmapFilterBanner').style.display = 'none';
-    }
-  }
-
-  function clearHeatmapFilter() {
-    activeFamily = null; activeStatus = null;
-    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) { card.style.display = ''; });
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    document.getElementById('heatmapFilterBanner').style.display = 'none';
-  }
-
   function toggleEdit(controlId) {
     // Auto-expand card details if collapsed
     var details = document.getElementById('details-' + controlId);
@@ -616,13 +497,6 @@
     btn.textContent      = isEditing ? 'Edit' : 'Cancel';
     btn.style.background = isEditing ? '#3498db' : 'var(--bs-secondary-bg)';
     btn.style.color      = isEditing ? 'white'   : 'var(--bs-secondary-color)';
-  }
-
-  var heatmapSection = document.getElementById('heatmapSection');
-  if (heatmapSection) {
-    heatmapSection.addEventListener('toggle', function() {
-      document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
-    });
   }
 
   // Toggle arrow icons for card details, inherited rows, and catalog guidance

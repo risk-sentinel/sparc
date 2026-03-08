@@ -104,8 +104,10 @@
       <% [["high", high_count, "#e74c3c"], ["medium", medium_count, "#f39c12"], ["low", low_count, "#3498db"], ["info", info_count, "#95a5a6"]].each do |sev, count, color| %>
         <% next if count == 0 %>
         <div class="summary-chip sparc-summary-chip"
-             data-filter-severity="<%= sev %>"
-             onclick="filterBySeverity(this.dataset.filterSeverity)"
+             data-filter-value="<%= sev %>"
+             onclick="document.getElementById('heatmapSection').dispatchEvent(new CustomEvent('heatmap:chip', {detail: {filter: '<%= j sev %>'}}))"
+             role="button"
+             tabindex="0"
              title="Click to filter: <%= sev %>"
              style="border-left: 3px solid <%= color %>;">
           <div class="sparc-chip-count"><%= count %></div>
@@ -126,73 +128,15 @@
 </div>
 
 <%# ── SEVERITY HEATMAP BY CONTROL FAMILY ─────────────────────────── %>
-<% if @heatmap_families.any? %>
-<details id="heatmapSection" open class="mb-4">
-  <summary class="sparc-section-summary bg-body-secondary rounded-3 fw-semibold border d-flex align-items-center gap-2">
-    <span id="heatmapToggleIcon" class="sparc-section-arrow">&#9660;</span>
-    Severity by Control Family
-    <span class="sparc-section-hint">&mdash; click a badge to filter</span>
-  </summary>
-
-  <div style="padding: 1rem 0 0.5rem;">
-    <div id="heatmapFilterBanner"
-         class="sparc-filter-banner d-flex align-items-center justify-content-between"
-         style="display: none; gap: 0.75rem;">
-      <span id="heatmapFilterLabel" class="sparc-filter-text"></span>
-      <button onclick="clearHeatmapFilter()" class="sparc-btn-clear-filter">
-        &#x2715; Clear Filter
-      </button>
-    </div>
-
-    <div class="sparc-heatmap-grid">
-      <% sev_colors = { "high" => "#e74c3c", "medium" => "#f39c12", "low" => "#3498db", "info" => "#95a5a6" } %>
-      <% @heatmap_families.each do |family| %>
-        <% fd = @heatmap_data[family] || {} %>
-        <% ft = fd.values.sum %>
-        <% fh = fd["high"].to_i %>
-        <% high_pct = ft > 0 ? (fh * 100.0 / ft).round : 0 %>
-        <div class="sparc-heatmap-card">
-          <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
-            <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
-               class="sparc-family-link"><%= family %></a>
-            <% if fh > 0 %>
-              <span style="font-size: 0.72rem; font-weight: 700; color: #e74c3c;"><%= fh %> high</span>
-            <% end %>
-          </div>
-          <div class="text-body-tertiary" style="font-size: 0.62rem; margin-bottom: 0.55rem;"><%= ft %> controls</div>
-          <div class="sparc-heatmap-bar d-flex">
-            <% @heatmap_severities.each do |sev| %>
-              <% next if (fd[sev] || 0) == 0 %>
-              <div style="width: <%= ((fd[sev] || 0) * 100.0 / [ft, 1].max).round(3) %>%; background: <%= sev_colors[sev] || '#7f8c8d' %>;"></div>
-            <% end %>
-          </div>
-          <div class="d-flex flex-wrap" style="gap: 0.3rem;">
-            <% @heatmap_severities.each do |sev| %>
-              <% next if (fd[sev] || 0) == 0 %>
-              <div class="heatmap-cell sparc-heatmap-badge"
-                   data-family="<%= family %>" data-severity="<%= sev %>"
-                   onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.severity)"
-                   title="<%= family %> / <%= sev.capitalize %>: <%= fd[sev] %>"
-                   style="background: <%= sev_colors[sev] || '#7f8c8d' %>;">
-                <%= fd[sev] %>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-
-    <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
-      <span class="sparc-legend-label">Legend:</span>
-      <% [["High", "#e74c3c"], ["Medium", "#f39c12"], ["Low", "#3498db"], ["Info", "#95a5a6"]].each do |lbl, col| %>
-        <span class="sparc-legend-item">
-          <span class="sparc-legend-dot" style="background: <%= col %>;"></span><%= lbl %>
-        </span>
-      <% end %>
-    </div>
-  </div>
-</details>
-<% end %>
+<%= render "shared/heatmap",
+     heatmap_data: @heatmap_data,
+     heatmap_families: @heatmap_families,
+     heatmap_statuses: @heatmap_severities,
+     title: "Severity by Control Family",
+     color_helper: :cdef_severity_color,
+     filter_key: "severity",
+     show_percentage: false,
+     legend_items: [["High", "#e74c3c"], ["Medium", "#f39c12"], ["Low", "#3498db"], ["Info", "#95a5a6"]] %>
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
@@ -305,78 +249,6 @@
            version_field: :cdef_version %>
 
 <script>
-  var activeFamily = null;
-  var activeSeverity = null;
-
-  function filterByHeatmapCell(cellEl, family, severity) {
-    if (activeFamily === family && activeSeverity === severity) { clearHeatmapFilter(); return; }
-    activeFamily = family; activeSeverity = severity;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = (el.dataset.family === family && el.dataset.severity === severity) ? '1' : '0.35';
-      el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
-  }
-
-  function filterByFamily(family) {
-    if (activeFamily === family && activeSeverity === null) { clearHeatmapFilter(); return; }
-    activeFamily = family; activeSeverity = null;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.family === family ? '1' : '0.35'; el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-  }
-
-  function filterBySeverity(severity) {
-    if (activeFamily === null && activeSeverity === severity) { clearHeatmapFilter(); return; }
-    activeFamily = null; activeSeverity = severity;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.severity === severity ? '1' : '0.35'; el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) {
-      el.style.background = el.dataset.filterSeverity === severity ? 'rgba(255,255,255,0.15)' : '';
-    });
-  }
-
-  function applyFilter() {
-    var cards = document.querySelectorAll('#controlsContainer .control-card');
-    var visible = 0;
-    cards.forEach(function(card) {
-      var familyMatch = activeFamily === null || card.dataset.family === activeFamily;
-      var severityMatch = activeSeverity === null || card.dataset.severity === activeSeverity;
-      var show = familyMatch && severityMatch;
-      card.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-    if (activeFamily !== null || activeSeverity !== null) {
-      var label = activeFamily && activeSeverity ? activeFamily + ' \u2022 ' + activeSeverity : (activeFamily || activeSeverity);
-      document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
-      document.getElementById('heatmapFilterBanner').style.display = 'flex';
-    } else {
-      document.getElementById('heatmapFilterBanner').style.display = 'none';
-    }
-  }
-
-  function clearHeatmapFilter() {
-    activeFamily = null; activeSeverity = null;
-    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) { card.style.display = ''; });
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    document.getElementById('heatmapFilterBanner').style.display = 'none';
-  }
-
-  var heatmapSection = document.getElementById('heatmapSection');
-  if (heatmapSection) {
-    heatmapSection.addEventListener('toggle', function() {
-      document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
-    });
-  }
-
-  // Toggle arrow icons for card details
   function toggleDocMeta() {
     var view = document.getElementById('doc-meta-view');
     var edit = document.getElementById('doc-meta-edit');

@@ -148,7 +148,10 @@
             <td class="text-center">
               <% if count > 0 %>
                 <%= link_to count, poam_document_path(@poam_document, risk_status: status, impact: imp),
-                      class: "sparc-heatmap-badge", style: "background: #{ic}22; color: #{ic}; border: 1px solid #{ic}44; min-width: 28px;" %>
+                      class: "sparc-heatmap-badge",
+                      role: "button",
+                      "aria-label": "#{status} #{imp}: #{count} items",
+                      style: "background: #{ic}22; color: #{ic}; border: 1px solid #{ic}44; min-width: 28px;" %>
               <% else %>
                 <span class="text-body-tertiary">—</span>
               <% end %>

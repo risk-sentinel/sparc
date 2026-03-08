@@ -108,8 +108,10 @@
       <% [["P1", p1_count, "#e74c3c"], ["P2", p2_count, "#f39c12"], ["P3", p3_count, "#3498db"], ["None", none_count, "#95a5a6"]].each do |pri, count, color| %>
         <% next if count == 0 %>
         <div class="summary-chip sparc-summary-chip"
-             data-filter-priority="<%= pri %>"
-             onclick="filterByPriority(this.dataset.filterPriority)"
+             data-filter-value="<%= pri %>"
+             onclick="document.getElementById('heatmapSection').dispatchEvent(new CustomEvent('heatmap:chip', {detail: {filter: '<%= j pri %>'}}))"
+             role="button"
+             tabindex="0"
              title="Click to filter: <%= pri %>"
              style="border-left: 3px solid <%= color %>;">
           <div class="sparc-chip-count"><%= count %></div>
@@ -130,72 +132,15 @@
 </div>
 
 <%# ── PRIORITY HEATMAP BY CONTROL FAMILY ─────────────────────────── %>
-<% if @heatmap_families.any? %>
-<details id="heatmapSection" open class="mb-4">
-  <summary class="sparc-section-summary bg-body-secondary rounded-3 fw-semibold border d-flex align-items-center gap-2">
-    <span id="heatmapToggleIcon" class="sparc-section-arrow">&#9660;</span>
-    Priority by Control Family
-    <span class="sparc-section-hint">&mdash; click a badge to filter</span>
-  </summary>
-
-  <div style="padding: 1rem 0 0.5rem;">
-    <div id="heatmapFilterBanner"
-         class="sparc-filter-banner d-flex align-items-center justify-content-between"
-         style="display: none; gap: 0.75rem;">
-      <span id="heatmapFilterLabel" class="sparc-filter-text"></span>
-      <button onclick="clearHeatmapFilter()" class="sparc-btn-clear-filter">
-        &#x2715; Clear Filter
-      </button>
-    </div>
-
-    <div class="sparc-heatmap-grid">
-      <% pri_colors = { "P1" => "#e74c3c", "P2" => "#f39c12", "P3" => "#3498db", "(None)" => "#95a5a6" } %>
-      <% @heatmap_families.each do |family| %>
-        <% fd = @heatmap_data[family] || {} %>
-        <% ft = fd.values.sum %>
-        <% fp1 = fd["P1"].to_i %>
-        <div class="sparc-heatmap-card">
-          <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
-            <a href="#" onclick="filterByFamily('<%= family %>'); return false;"
-               class="sparc-family-link"><%= family %></a>
-            <% if fp1 > 0 %>
-              <span style="font-size: 0.72rem; font-weight: 700; color: #e74c3c;"><%= fp1 %> P1</span>
-            <% end %>
-          </div>
-          <div class="text-body-tertiary" style="font-size: 0.62rem; margin-bottom: 0.55rem;"><%= ft %> controls</div>
-          <div class="sparc-heatmap-bar d-flex">
-            <% @heatmap_priorities.each do |pri| %>
-              <% next if (fd[pri] || 0) == 0 %>
-              <div style="width: <%= ((fd[pri] || 0) * 100.0 / [ft, 1].max).round(3) %>%; background: <%= pri_colors[pri] || '#7f8c8d' %>;"></div>
-            <% end %>
-          </div>
-          <div class="d-flex flex-wrap" style="gap: 0.3rem;">
-            <% @heatmap_priorities.each do |pri| %>
-              <% next if (fd[pri] || 0) == 0 %>
-              <div class="heatmap-cell sparc-heatmap-badge"
-                   data-family="<%= family %>" data-priority="<%= pri %>"
-                   onclick="filterByHeatmapCell(this, this.dataset.family, this.dataset.priority)"
-                   title="<%= family %> / <%= pri %>: <%= fd[pri] %>"
-                   style="background: <%= pri_colors[pri] || '#7f8c8d' %>;">
-                <%= fd[pri] %>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-
-    <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
-      <span class="sparc-legend-label">Legend:</span>
-      <% [["P1 (High)", "#e74c3c"], ["P2 (Medium)", "#f39c12"], ["P3 (Low)", "#3498db"], ["None", "#95a5a6"]].each do |lbl, col| %>
-        <span class="sparc-legend-item">
-          <span class="sparc-legend-dot" style="background: <%= col %>;"></span><%= lbl %>
-        </span>
-      <% end %>
-    </div>
-  </div>
-</details>
-<% end %>
+<%= render "shared/heatmap",
+     heatmap_data: @heatmap_data,
+     heatmap_families: @heatmap_families,
+     heatmap_statuses: @heatmap_priorities,
+     title: "Priority by Control Family",
+     color_helper: :profile_priority_color,
+     filter_key: "priority",
+     show_percentage: false,
+     legend_items: [["P1 (High)", "#e74c3c"], ["P2 (Medium)", "#f39c12"], ["P3 (Low)", "#3498db"], ["None", "#95a5a6"]] %>
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
@@ -297,77 +242,6 @@
            version_field: :profile_version %>
 
 <script>
-  var activeFamily = null;
-  var activePriority = null;
-
-  function filterByHeatmapCell(cellEl, family, priority) {
-    if (activeFamily === family && activePriority === priority) { clearHeatmapFilter(); return; }
-    activeFamily = family; activePriority = priority;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = (el.dataset.family === family && el.dataset.priority === priority) ? '1' : '0.35';
-      el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    if (cellEl) { cellEl.style.opacity = '1'; cellEl.style.outline = '2px solid #2c3e50'; }
-  }
-
-  function filterByFamily(family) {
-    if (activeFamily === family && activePriority === null) { clearHeatmapFilter(); return; }
-    activeFamily = family; activePriority = null;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.family === family ? '1' : '0.35'; el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-  }
-
-  function filterByPriority(priority) {
-    if (activeFamily === null && activePriority === priority) { clearHeatmapFilter(); return; }
-    activeFamily = null; activePriority = priority;
-    applyFilter();
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) {
-      el.style.opacity = el.dataset.priority === priority ? '1' : '0.35'; el.style.outline = 'none';
-    });
-    document.querySelectorAll('.summary-chip').forEach(function(el) {
-      el.style.background = el.dataset.filterPriority === priority ? 'rgba(255,255,255,0.15)' : '';
-    });
-  }
-
-  function applyFilter() {
-    var cards = document.querySelectorAll('#controlsContainer .control-card');
-    var visible = 0;
-    cards.forEach(function(card) {
-      var familyMatch = activeFamily === null || card.dataset.family === activeFamily;
-      var priorityMatch = activePriority === null || card.dataset.priority === activePriority;
-      var show = familyMatch && priorityMatch;
-      card.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-    if (activeFamily !== null || activePriority !== null) {
-      var label = activeFamily && activePriority ? activeFamily + ' \u2022 ' + activePriority : (activeFamily || activePriority);
-      document.getElementById('heatmapFilterLabel').textContent = 'Showing: ' + label + ' \u2014 ' + visible + ' control(s)';
-      document.getElementById('heatmapFilterBanner').style.display = 'flex';
-    } else {
-      document.getElementById('heatmapFilterBanner').style.display = 'none';
-    }
-  }
-
-  function clearHeatmapFilter() {
-    activeFamily = null; activePriority = null;
-    document.querySelectorAll('#controlsContainer .control-card').forEach(function(card) { card.style.display = ''; });
-    document.querySelectorAll('.heatmap-cell').forEach(function(el) { el.style.opacity = '1'; el.style.outline = 'none'; });
-    document.querySelectorAll('.summary-chip').forEach(function(el) { el.style.background = ''; });
-    document.getElementById('heatmapFilterBanner').style.display = 'none';
-  }
-
-  var heatmapSection = document.getElementById('heatmapSection');
-  if (heatmapSection) {
-    heatmapSection.addEventListener('toggle', function() {
-      document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
-    });
-  }
-
   function toggleDocMeta() {
     var view = document.getElementById('doc-meta-view');
     var edit = document.getElementById('doc-meta-edit');
