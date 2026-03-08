@@ -1,0 +1,102 @@
+<div class="card">
+  <div class="card-body">
+    <h2 class="mb-4"><%= @evidence.persisted? ? "Edit Evidence" : "Upload Evidence" %></h2>
+
+    <%= form_with model: @evidence, local: true, html: { multipart: true } do |f| %>
+      <% if @evidence.errors.any? %>
+        <div class="alert alert-danger">
+          <h6 class="fw-semibold"><%= pluralize(@evidence.errors.count, "error") %> prevented saving:</h6>
+          <ul class="mb-0">
+            <% @evidence.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+          <%= f.text_field :title, class: "form-control", placeholder: "e.g. AC-1 Policy Document Screenshot" %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Evidence Type <span class="text-danger">*</span></label>
+          <%= f.select :evidence_type,
+              options_for_select(Evidence::EVIDENCE_TYPE_LABELS.map { |k, v| [ v, k ] }, @evidence.evidence_type),
+              {}, class: "form-select" %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Status</label>
+          <%= f.select :status,
+              options_for_select(Evidence::STATUS_LABELS.map { |k, v| [ v, k ] }, @evidence.status),
+              {}, class: "form-select" %>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Description</label>
+        <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Describe the evidence and its relevance to the control(s)..." %>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Collected By</label>
+          <%= f.text_field :collected_by, class: "form-control", placeholder: "Name or system" %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Collection Date</label>
+          <%= f.datetime_local_field :collected_at, class: "form-control", value: @evidence.collected_at&.strftime("%Y-%m-%dT%H:%M") %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Source</label>
+          <%= f.text_field :source, class: "form-control", placeholder: "e.g. InSpec, Vulcan, Manual" %>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Project</label>
+          <%= f.select :project_id,
+              options_for_select(Project.order(:name).pluck(:name, :id), @evidence.project_id),
+              { include_blank: "None" }, class: "form-select" %>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Control IDs</label>
+          <%= text_field_tag "evidence[control_ids]",
+              @evidence.evidence_control_links.pluck(:control_id).join(", "),
+              class: "form-control", placeholder: "e.g. AC-01, AC-02, IA-05 (comma-separated)" %>
+          <div class="form-text">Comma-separated list of control IDs to link this evidence to.</div>
+        </div>
+      </div>
+
+      <%# ── File Upload ── %>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Evidence File</label>
+        <div class="border rounded p-4 text-center bg-body-secondary" style="border-style: dashed !important;">
+          <%= f.file_field :file, class: "form-control", accept: ".pdf,.png,.jpg,.jpeg,.gif,.xlsx,.xls,.csv,.json,.xml,.txt,.log,.zip,.html" %>
+          <p class="text-body-secondary small mt-2 mb-0">
+            Upload screenshots, logs, config exports, scan results, or policy documents.
+            <br>Supported formats: PDF, images, Excel, JSON, XML, text, ZIP, HTML
+          </p>
+        </div>
+        <% if @evidence.persisted? && @evidence.file.attached? %>
+          <div class="mt-2">
+            <span class="text-success small">Current file: <strong><%= @evidence.original_filename || @evidence.file.filename %></strong></span>
+            <% if @evidence.file_hash.present? %>
+              <br><span class="text-body-secondary small">SHA-256: <code><%= @evidence.file_hash.first(16) %>...</code></span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= f.submit(@evidence.persisted? ? "Update Evidence" : "Upload Evidence", class: "btn btn-primary") %>
+        <% if @evidence.persisted? %>
+          <%= link_to "Cancel", evidence_path(@evidence), class: "btn btn-outline-secondary" %>
+        <% else %>
+          <%= link_to "Cancel", evidences_path, class: "btn btn-outline-secondary" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

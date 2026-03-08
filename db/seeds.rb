@@ -1927,3 +1927,84 @@ end
 puts "  Created #{project.project_memberships.count} project memberships"
 
 puts "Done! Sample project seeded."
+
+# ── Evidence & Attestations ─────────────────────────────────────────────────
+puts ""
+puts "Seeding sample evidence records..."
+
+sample_evidences = [
+  {
+    title: "AC-1 Access Control Policy v3.2",
+    description: "Current access control policy document approved by the CISO. Covers user provisioning, de-provisioning, and periodic access reviews.",
+    evidence_type: "policy_document",
+    status: "attested",
+    collected_by: "Jane Smith (ISSO)",
+    source: "Manual",
+    control_ids: ["AC-01", "AC-02"]
+  },
+  {
+    title: "InSpec Scan Results — Production (March 2026)",
+    description: "Automated InSpec compliance scan of production environment covering CIS Level 1 and STIG controls.",
+    evidence_type: "scan_result",
+    status: "collected",
+    collected_by: "InSpec Runner (CI/CD)",
+    source: "InSpec",
+    control_ids: ["CM-06", "SC-07", "SI-02"]
+  },
+  {
+    title: "AC-2 Account Management — User Provisioning Screenshot",
+    description: "Screenshot showing the account provisioning workflow in the identity management system.",
+    evidence_type: "screenshot",
+    status: "reviewed",
+    collected_by: "Mike Johnson (Admin)",
+    source: "Manual",
+    control_ids: ["AC-02"]
+  },
+  {
+    title: "AU-6 Audit Log Review Report — Q1 2026",
+    description: "Quarterly audit log review report showing analysis of security-relevant events.",
+    evidence_type: "log",
+    status: "collected",
+    collected_by: "SOC Team",
+    source: "SIEM Export",
+    control_ids: ["AU-06", "AU-12"]
+  },
+  {
+    title: "RA-5 Vulnerability Scan Results — Feb 2026",
+    description: "Nessus vulnerability scan results for all production hosts.",
+    evidence_type: "scan_result",
+    status: "attested",
+    collected_by: "Vulcan Scanner",
+    source: "Vulcan",
+    control_ids: ["RA-05", "SI-02"]
+  }
+]
+
+sample_evidences.each do |attrs|
+  control_ids = attrs.delete(:control_ids)
+  evidence = Evidence.find_or_create_by!(title: attrs[:title]) do |e|
+    e.assign_attributes(attrs.merge(collected_at: Time.current - rand(1..90).days))
+  end
+
+  control_ids.each do |cid|
+    evidence.evidence_control_links.find_or_create_by!(control_id: cid)
+  end
+end
+
+# Add sample attestations to attested evidence
+Evidence.where(status: "attested").each do |evidence|
+  next if evidence.attestations.any?
+  evidence.attestations.create!(
+    attester_name: "Dr. Sarah Chen",
+    attester_email: "sarah.chen@example.gov",
+    role: "isso",
+    statement: "I attest that the evidence provided is accurate, complete, and represents the current state of the control implementation as of the attestation date.",
+    attested_at: Time.current - rand(1..30).days
+  )
+  evidence.attestations.last.generate_signature!
+end
+
+puts "  Created #{Evidence.count} evidence records"
+puts "  Created #{EvidenceControlLink.count} control links"
+puts "  Created #{Attestation.count} attestations"
+puts "Done! Evidence seeded."

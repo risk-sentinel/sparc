@@ -70,6 +70,12 @@
         <div class="sparc-hero-tile-label">POA&amp;Ms</div>
       </div>
     </div>
+    <div class="col">
+      <div class="sparc-hero-tile">
+        <div class="sparc-hero-tile-count"><%= @evidence_count %></div>
+        <div class="sparc-hero-tile-label">Evidence</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -201,6 +207,22 @@
         <div class="d-flex flex-column gap-2">
           <%= link_to "View POA&Ms", poam_documents_path, class: "btn btn-primary" %>
           <%= link_to "Upload New", new_poam_document_path, class: "btn btn-success" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card text-center h-100" style="border: 2px solid #27ae60;">
+      <div class="card-body">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128274;</div>
+        <h3 style="margin-bottom: 0.5rem;">Evidence</h3>
+        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
+          Collect, tag, and attest to evidence artifacts. Link screenshots, logs, and scan results to controls.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <%= link_to "View Evidence", evidences_path, class: "btn btn-primary" %>
+          <%= link_to "Upload New", new_evidence_path, class: "btn btn-success" %>
         </div>
       </div>
     </div>

@@ -1,0 +1,141 @@
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2><%= @evidence.title %></h2>
+        <p class="text-body-secondary mb-0">
+          <span class="badge bg-body-secondary text-body"><%= @evidence.type_label %></span>
+          <% badge_class = case @evidence.status
+             when "draft" then "bg-secondary"
+             when "collected" then "bg-info"
+             when "reviewed" then "bg-primary"
+             when "attested" then "bg-success"
+             when "expired" then "bg-danger"
+             else "bg-secondary"
+             end %>
+          <span class="badge <%= badge_class %>"><%= @evidence.status_label %></span>
+          <% if @evidence.project %>
+            &nbsp;|&nbsp; Project: <strong><%= @evidence.project.name %></strong>
+          <% end %>
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <%= link_to "Edit", edit_evidence_path(@evidence), class: "btn btn-sparc-orange" %>
+        <%= link_to "Attest", new_evidence_attestation_path(@evidence), class: "btn btn-success" %>
+        <%= link_to "All Evidence", evidences_path, class: "btn btn-primary" %>
+      </div>
+    </div>
+
+    <%# ── Details ── %>
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <h6 class="fw-semibold">Details</h6>
+        <table class="table table-sm">
+          <tbody>
+            <tr><td class="fw-semibold" style="width: 160px;">Description</td><td><%= @evidence.description.presence || "N/A" %></td></tr>
+            <tr><td class="fw-semibold">Collected At</td><td><%= @evidence.collected_at&.strftime("%Y-%m-%d %H:%M UTC") || "N/A" %></td></tr>
+            <tr><td class="fw-semibold">Collected By</td><td><%= @evidence.collected_by.presence || "N/A" %></td></tr>
+            <tr><td class="fw-semibold">Source</td><td><%= @evidence.source.presence || "N/A" %></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <h6 class="fw-semibold">File Information</h6>
+        <% if @evidence.file.attached? %>
+          <table class="table table-sm">
+            <tbody>
+              <tr><td class="fw-semibold" style="width: 160px;">Filename</td><td><%= @evidence.original_filename || @evidence.file.filename %></td></tr>
+              <tr><td class="fw-semibold">Content Type</td><td><%= @evidence.file_content_type || @evidence.file.content_type %></td></tr>
+              <tr><td class="fw-semibold">Size</td><td><%= number_to_human_size(@evidence.file_size || @evidence.file.byte_size) %></td></tr>
+              <tr>
+                <td class="fw-semibold">SHA-256 Hash</td>
+                <td>
+                  <% if @evidence.file_hash.present? %>
+                    <code class="small text-break"><%= @evidence.file_hash %></code>
+                  <% else %>
+                    <span class="text-body-tertiary fst-italic">Not computed</span>
+                  <% end %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="d-flex gap-2">
+            <%= link_to "Download File", rails_blob_path(@evidence.file, disposition: "attachment"), class: "btn btn-outline-primary btn-sm" %>
+          </div>
+        <% else %>
+          <p class="text-body-tertiary fst-italic">No file attached</p>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Linked Controls ── %>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Linked Controls <span class="badge bg-secondary"><%= @control_links.size %></span></h6>
+      <% if @control_links.any? %>
+        <div class="d-flex flex-wrap gap-2">
+          <% @control_links.each do |link| %>
+            <span class="badge bg-body-secondary text-body" style="font-size: 0.85rem;">
+              <code><%= link.control_id %></code>
+              <% if link.document_type.present? %>
+                <small class="text-body-secondary">(<%= link.document_type.delete_suffix("Document") %>)</small>
+              <% end %>
+            </span>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No controls linked. Edit this evidence to tag controls.</p>
+      <% end %>
+    </div>
+
+    <%# ── Attestations ── %>
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-semibold mb-0">Attestations <span class="badge bg-secondary"><%= @attestations.size %></span></h6>
+        <%= link_to "+ Add Attestation", new_evidence_attestation_path(@evidence), class: "btn btn-outline-success btn-sm" %>
+      </div>
+      <% if @attestations.any? %>
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Attester</th>
+              <th>Role</th>
+              <th>Statement</th>
+              <th>Date</th>
+              <th>Signature</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @attestations.each do |att| %>
+              <tr>
+                <td>
+                  <strong><%= att.attester_name %></strong>
+                  <% if att.attester_email.present? %>
+                    <br><span class="text-body-secondary small"><%= att.attester_email %></span>
+                  <% end %>
+                </td>
+                <td><span class="badge bg-body-secondary text-body"><%= att.role_label %></span></td>
+                <td class="small"><%= truncate(att.statement, length: 120) %></td>
+                <td class="small"><%= att.attested_at.strftime("%Y-%m-%d %H:%M") %></td>
+                <td>
+                  <% if att.signature_hash.present? %>
+                    <code class="small" title="<%= att.signature_hash %>"><%= att.signature_hash.first(12) %>...</code>
+                  <% else %>
+                    <span class="text-body-tertiary">Unsigned</span>
+                  <% end %>
+                </td>
+                <td>
+                  <%= button_to "Remove", evidence_attestation_path(@evidence, att), method: :delete,
+                      data: { confirm: "Remove this attestation?" },
+                      class: "btn btn-outline-danger btn-sm" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No attestations yet. <%= link_to "Add one", new_evidence_attestation_path(@evidence), class: "text-primary" %>.</p>
+      <% end %>
+    </div>
+  </div>
+</div>
