@@ -3,7 +3,7 @@ class SspControlField < ApplicationRecord
 
   validates :field_name, presence: true
 
-  # Fields editable by users per the Controls Implementation schema.
+  # Fields editable by users per the System Security Plan (SSP) schema.
   # Order here controls the edit-form render order.
   EDITABLE_FIELDS = %w[
     status
