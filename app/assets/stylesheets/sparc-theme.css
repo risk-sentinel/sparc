@@ -235,6 +235,28 @@
   color: #fff;
 }
 
+/* Navbar logo — responsive sizing */
+.sparc-navbar-logo {
+  height: 44px;
+  width: auto;
+}
+@media (min-width: 992px) {
+  .sparc-navbar-logo {
+    height: 52px;
+  }
+}
+
+/* Login page logo — larger for prominent branding */
+.sparc-login-logo {
+  height: 72px;
+  width: auto;
+}
+@media (min-width: 576px) {
+  .sparc-login-logo {
+    height: 88px;
+  }
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════
    3. BADGE ALIASES WITH SPARC PALETTE
