@@ -1,4 +1,6 @@
 class ControlFamiliesController < ApplicationController
+  skip_before_action :require_authentication, only: [ :show ]
+
   before_action :set_control_catalog, only: [ :new, :create ]
   before_action :set_control_family, only: [ :show, :edit, :update, :destroy ]
 

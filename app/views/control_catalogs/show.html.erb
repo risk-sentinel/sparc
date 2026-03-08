@@ -18,12 +18,14 @@
       <% end %>
     </div>
     <div class="d-flex gap-2">
-      <%= link_to "↑ Import / Refresh", import_control_catalogs_path,
-            class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
-      <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "btn btn-sparc-orange" %>
-      <%= link_to "OSCAL Export", download_oscal_control_catalog_path(@control_catalog),
-            class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
-      <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "btn btn-success" %>
+      <% if signed_in? %>
+        <%= link_to "↑ Import / Refresh", import_control_catalogs_path,
+              class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
+        <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "btn btn-sparc-orange" %>
+        <%= link_to "OSCAL Export", download_oscal_control_catalog_path(@control_catalog),
+              class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
+        <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "btn btn-success" %>
+      <% end %>
       <%= link_to "← All Catalogs", control_catalogs_path, class: "btn btn-primary" %>
     </div>
   </div>
@@ -53,10 +55,12 @@
             <td>
               <div class="d-flex gap-2">
                 <%= link_to "View", family, class: "btn btn-primary btn-sm" %>
-                <%= link_to "Edit", edit_control_family_path(family), class: "btn btn-sm btn-sparc-orange" %>
-                <%= button_to "Delete", family, method: :delete,
-                    data: { confirm: "Delete family #{family.code}? This removes all its controls." },
-                    class: "btn btn-danger btn-sm" %>
+                <% if signed_in? %>
+                  <%= link_to "Edit", edit_control_family_path(family), class: "btn btn-sm btn-sparc-orange" %>
+                  <%= button_to "Delete", family, method: :delete,
+                      data: { confirm: "Delete family #{family.code}? This removes all its controls." },
+                      class: "btn btn-danger btn-sm" %>
+                <% end %>
               </div>
             </td>
           </tr>
@@ -65,14 +69,20 @@
     </table>
   <% else %>
     <div class="text-center text-body-secondary p-4">
-      <p>No families yet. <%= link_to "Add the first family", new_control_catalog_control_family_path(@control_catalog), class: "text-primary" %></p>
+      <p>No families yet.
+        <% if signed_in? %>
+          <%= link_to "Add the first family", new_control_catalog_control_family_path(@control_catalog), class: "text-primary" %>
+        <% end %>
+      </p>
     </div>
   <% end %>
   </div>
 </div>
 
-<%= render "shared/oscal_metadata_section",
-           document: @control_catalog,
-           update_path: update_metadata_control_catalog_path(@control_catalog),
-           param_key: :control_catalog,
-           version_field: :version %>
+<% if signed_in? %>
+  <%= render "shared/oscal_metadata_section",
+             document: @control_catalog,
+             update_path: update_metadata_control_catalog_path(@control_catalog),
+             param_key: :control_catalog,
+             version_field: :version %>
+<% end %>
