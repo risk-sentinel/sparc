@@ -45,17 +45,36 @@
       </div>
     </div>
 
-    <%# ── Roles ──────────────────────────────────────────── %>
     <div class="col-lg-6">
+      <%# ── Instance Roles ──────────────────────────────── %>
       <div class="card mb-4">
-        <div class="card-header fw-semibold">Roles</div>
+        <div class="card-header fw-semibold">Instance Roles</div>
         <div class="card-body">
-          <% if @user_roles.any? %>
-            <% @user_roles.each do |ur| %>
-              <span class="badge text-bg-info me-1"><%= ur.role.display_name %></span>
+          <% if @instance_roles.any? %>
+            <% @instance_roles.each do |ur| %>
+              <span class="badge text-bg-warning me-1"><%= ur.role.display_name %></span>
             <% end %>
           <% else %>
-            <p class="text-body-secondary small mb-0">No roles assigned.</p>
+            <p class="text-body-secondary small mb-0">No instance roles assigned.</p>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Project Roles ───────────────────────────────── %>
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">Project Roles</div>
+        <div class="card-body">
+          <% if @project_roles.any? %>
+            <% @project_roles.group_by(&:project).each do |project, urs| %>
+              <div class="mb-2">
+                <strong><%= project&.name || "Unknown Project" %></strong>
+                <% urs.each do |ur| %>
+                  <span class="badge text-bg-info ms-1"><%= ur.role.display_name %></span>
+                <% end %>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="text-body-secondary small mb-0">No project roles assigned.</p>
           <% end %>
         </div>
       </div>

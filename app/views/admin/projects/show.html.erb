@@ -1,0 +1,111 @@
+<div class="my-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0"><%= @project.name %></h1>
+    <%= link_to "Back to Projects", admin_projects_path, class: "btn btn-sm btn-outline-secondary" %>
+  </div>
+
+  <%# ── Add Member Form ──────────────────────────────────── %>
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">Assign User to Project</div>
+    <div class="card-body">
+      <%= form_tag add_member_admin_project_path(@project), method: :post, class: "row g-3 align-items-end" do %>
+        <div class="col-md-5">
+          <label for="user_id" class="form-label fw-semibold small">User</label>
+          <select name="user_id" id="user_id" class="form-select" required>
+            <option value="">Select a user...</option>
+            <% @available_users.each do |user| %>
+              <option value="<%= user.id %>"><%= user.display_label %> (<%= user.email %>)</option>
+            <% end %>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="role_id" class="form-label fw-semibold small">Role</label>
+          <select name="role_id" id="role_id" class="form-select" required>
+            <option value="">Select a role...</option>
+            <% @available_roles.each do |role| %>
+              <option value="<%= role.id %>"><%= role.display_name %></option>
+            <% end %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100 fw-semibold">Assign</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Current Members (UserRoles) ──────────────────────── %>
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">Current Members (<%= @user_roles.size %>)</div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Assigned</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @user_roles.each do |ur| %>
+            <tr>
+              <td><%= link_to ur.user.display_label, admin_user_path(ur.user) %></td>
+              <td class="small text-body-secondary"><%= ur.user.email %></td>
+              <td><span class="badge text-bg-info"><%= ur.role.display_name %></span></td>
+              <td class="small text-body-secondary"><%= ur.created_at.strftime("%Y-%m-%d") %></td>
+              <td class="text-end">
+                <%= button_to "Remove", remove_member_admin_project_path(@project, user_role_id: ur.id),
+                      method: :delete,
+                      class: "btn btn-sm btn-outline-danger",
+                      data: { turbo_confirm: "Remove #{ur.user.display_label} from #{ur.role.display_name}?" } %>
+              </td>
+            </tr>
+          <% end %>
+          <% if @user_roles.empty? %>
+            <tr><td colspan="5" class="text-center text-body-secondary small py-3">No members assigned via roles.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%# ── Legacy Memberships ───────────────────────────────── %>
+  <% if @project_memberships.any? %>
+    <div class="card">
+      <div class="card-header fw-semibold">
+        Legacy Memberships
+        <span class="badge text-bg-secondary ms-1"><%= @project_memberships.size %></span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Linked User</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @project_memberships.each do |pm| %>
+              <tr>
+                <td><%= pm.user_name %></td>
+                <td class="small text-body-secondary"><%= pm.user_email.presence || "—" %></td>
+                <td><span class="badge text-bg-secondary"><%= pm.role_label %></span></td>
+                <td>
+                  <% if pm.user %>
+                    <%= link_to pm.user.display_label, admin_user_path(pm.user), class: "text-decoration-none" %>
+                  <% else %>
+                    <span class="text-body-secondary small">Not linked</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div>
