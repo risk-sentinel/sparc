@@ -1,0 +1,170 @@
+<%#
+  Shared heatmap grid partial.
+
+  Required locals:
+    heatmap_data      — Hash { family => { status => count } }
+    heatmap_families  — Array of family codes (sorted)
+    heatmap_statuses  — Array of status/severity keys (ordered)
+    title             — Section title (e.g. "Compliance by Control Family")
+    color_helper      — Symbol: method name to call for status color (:ssp_status_color, :sar_status_color, etc.)
+    filter_key        — "status" or "severity" — the secondary filter dimension
+
+  Optional locals:
+    legend_items      — Array of [label, color] pairs for the legend
+    show_percentage   — Boolean, whether to show compliance percentage per family (default: true)
+    percentage_calc   — Lambda/Proc: ->(family_data, family_total) { pct } — custom % logic
+    url_sync          — Boolean, whether to sync filters to URL (default: false)
+    initial_family    — Pre-applied family filter (from URL param)
+    initial_filter    — Pre-applied status/severity filter (from URL param)
+    link_mode         — :stimulus (default) or :server — how badges interact
+    document          — Document record (for server-mode link_to paths)
+    filter_params     — Hash of current filter params (for server-mode links)
+    path_helper       — Symbol (e.g. :sar_document_path) for server-mode links
+%>
+<%
+  show_pct       = local_assigns.fetch(:show_percentage, true)
+  pct_calc       = local_assigns[:percentage_calc]
+  sync_url       = local_assigns.fetch(:url_sync, false)
+  init_family    = local_assigns[:initial_family].to_s
+  init_filter    = local_assigns[:initial_filter].to_s
+  mode           = local_assigns.fetch(:link_mode, :stimulus)
+  doc            = local_assigns[:document]
+  f_params       = local_assigns.fetch(:filter_params, {})
+  p_helper       = local_assigns[:path_helper]
+  fkey           = local_assigns.fetch(:filter_key, "status")
+  legends        = local_assigns[:legend_items]
+  active_family  = local_assigns[:active_family].to_s.presence
+  active_status  = local_assigns[:active_status].to_s.presence
+%>
+<% if heatmap_families.any? %>
+<details id="heatmapSection" open style="margin-bottom: 1.5rem;"
+         data-controller="heatmap"
+         data-heatmap-filter-key-value="<%= fkey %>"
+         data-heatmap-initial-family-value="<%= init_family %>"
+         data-heatmap-initial-filter-value="<%= init_filter %>"
+         data-heatmap-url-sync-value="<%= sync_url %>">
+  <summary class="sparc-section-summary bg-body-secondary rounded-3 fw-semibold d-flex align-items-center gap-2 border">
+    <span id="heatmapToggleIcon" class="sparc-section-arrow">&#9660;</span>
+    <%= title %>
+    <span class="sparc-section-hint">&mdash; click a badge to filter</span>
+  </summary>
+
+  <div style="padding: 1rem 0 0.5rem;">
+    <%# ── Filter banner (Stimulus-managed) ── %>
+    <% if mode == :stimulus %>
+      <div data-heatmap-target="banner"
+           class="sparc-filter-banner d-flex align-items-center justify-content-between"
+           style="display: none; gap: 0.75rem;">
+        <span data-heatmap-target="bannerLabel" class="sparc-filter-text"></span>
+        <button data-action="heatmap#clear" class="sparc-btn-clear-filter"
+                aria-label="Clear filter">
+          &#x2715; Clear Filter
+        </button>
+      </div>
+    <% end %>
+
+    <%# ── Grid of family cards ── %>
+    <div class="sparc-heatmap-grid" data-heatmap-target="container">
+      <% heatmap_families.each do |family| %>
+        <% family_data  = heatmap_data[family] || {} %>
+        <% family_total = family_data.values.sum %>
+        <%
+          if show_pct
+            if pct_calc
+              family_pct = pct_calc.call(family_data, family_total)
+            else
+              impl  = family_data["Implemented"].to_i
+              na    = family_data["Not Applicable"].to_i
+              denom = [family_total - na, 1].max
+              family_pct = (impl * 100.0 / denom).round
+            end
+          end
+        %>
+        <% card_active = (mode == :server && active_family == family && active_status.blank?) %>
+        <div class="sparc-heatmap-card<%= ' active' if card_active %>">
+          <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
+            <% if mode == :server && doc && p_helper %>
+              <%= link_to family,
+                    send(p_helper, doc,
+                      f_params.except(:page).merge(
+                        card_active ? { family: nil, status: nil } : { family: family, status: nil }
+                      )),
+                    class: "sparc-family-link" %>
+            <% else %>
+              <a href="#"
+                 class="sparc-family-link"
+                 role="button"
+                 tabindex="0"
+                 data-family="<%= family %>"
+                 data-action="heatmap#filterByFamily"
+                 aria-label="Filter by family <%= family %>"><%= family %></a>
+            <% end %>
+            <% if show_pct %>
+              <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= family_pct %>%</span>
+            <% end %>
+          </div>
+          <div style="font-size: 0.62rem; color: var(--bs-tertiary-color); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
+
+          <%# ── Stacked progress bar ── %>
+          <div class="sparc-heatmap-bar d-flex">
+            <% heatmap_statuses.each do |s| %>
+              <% next if (family_data[s] || 0) == 0 %>
+              <div style="width: <%= ((family_data[s] || 0) * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= send(color_helper, s) %>;"></div>
+            <% end %>
+          </div>
+
+          <%# ── Status/severity badges ── %>
+          <div class="d-flex flex-wrap gap-1">
+            <% heatmap_statuses.each do |s| %>
+              <% count = family_data[s] || 0 %>
+              <% next if count == 0 %>
+              <% if mode == :server && doc && p_helper %>
+                <% cell_active = active_family == family && active_status == s %>
+                <% has_any_filter = active_family.present? || active_status.present? %>
+                <%= link_to count,
+                      send(p_helper, doc,
+                        f_params.except(:page).merge(
+                          cell_active ? { family: nil, status: nil } : { family: family, status: s }
+                        )),
+                      title: "#{family} / #{s}: #{count}",
+                      class: "sparc-heatmap-badge",
+                      role: "button",
+                      "aria-label": "#{family} #{s}: #{count} controls",
+                      "aria-pressed": cell_active ? "true" : "false",
+                      style: "background: #{send(color_helper, s)}; opacity: #{cell_active ? '1' : (has_any_filter ? '0.35' : '1')}; #{'outline: 2px solid #2c3e50;' if cell_active}" %>
+              <% else %>
+                <div class="sparc-heatmap-badge"
+                     data-heatmap-target="badge"
+                     data-family="<%= family %>"
+                     data-<%= fkey %>="<%= s %>"
+                     data-action="click->heatmap#filterByCell"
+                     role="button"
+                     tabindex="0"
+                     aria-label="<%= family %> <%= s %>: <%= count %> controls"
+                     aria-pressed="false"
+                     title="<%= family %> / <%= s %>: <%= count %>"
+                     style="background: <%= send(color_helper, s) %>;">
+                  <%= count %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ── Legend ── %>
+    <% if legends.present? %>
+      <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
+        <span class="sparc-legend-label">Legend:</span>
+        <% legends.each do |lbl, col| %>
+          <span class="sparc-legend-item">
+            <span class="sparc-legend-dot" style="background: <%= col %>;"></span>
+            <%= lbl %>
+          </span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</details>
+<% end %>
