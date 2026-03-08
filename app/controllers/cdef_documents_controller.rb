@@ -1,7 +1,7 @@
 class CdefDocumentsController < ApplicationController
   include FileUploadable
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated status update_metadata]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated status update_metadata copy]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -88,6 +88,14 @@ class CdefDocumentsController < ApplicationController
       flash[:error] = @cdef_document.errors.full_messages.join(", ")
     end
     redirect_to cdef_document_path(@cdef_document)
+  end
+
+  def copy
+    service = DocumentDuplicationService.new(@cdef_document)
+    copy = service.duplicate
+
+    flash[:success] = "Component Definition duplicated as '#{copy.name}'"
+    redirect_to cdef_document_path(copy)
   end
 
   def status

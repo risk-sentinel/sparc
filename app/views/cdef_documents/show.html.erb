@@ -81,6 +81,8 @@
       <% end %>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
+      <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
+            class: "sparc-btn-ghost", data: { confirm: "Duplicate this component definition?" } %>
       <%= link_to "Export OSCAL".html_safe, download_oscal_cdef_document_path(@cdef_document),
             class: "sparc-btn-oscal" %>
       <%= link_to "&#8595; JSON".html_safe, download_json_cdef_document_path(@cdef_document),
