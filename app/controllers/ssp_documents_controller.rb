@@ -136,15 +136,15 @@ class SspDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
-      download_url = download_oscal_validated_ssp_document_path(@ssp_document)
-      flash[:success] = "OSCAL export passed schema validation (v#{result.schema_version}). <a href=\"#{download_url}\">Download OSCAL file</a>.".html_safe
+      send_data service.export,
+                filename:    "#{@ssp_document.name}_oscal_ssp_#{Date.today}.json",
+                type:        "application/json",
+                disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for SSP #{@ssp_document.id}: #{result.errors.first(3).join('; ')}")
-      download_url = download_oscal_unvalidated_ssp_document_path(@ssp_document)
-      flash[:warning] = "OSCAL export failed schema validation. <a href=\"#{download_url}\">Download unvalidated version</a>.".html_safe
+      flash[:warning] = "OSCAL export failed schema validation. Use the unvalidated download instead."
+      redirect_to ssp_document_path(@ssp_document)
     end
-
-    redirect_to ssp_document_path(@ssp_document)
   end
 
   def download_oscal_validated

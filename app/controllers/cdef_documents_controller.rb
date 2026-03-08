@@ -50,15 +50,15 @@ class CdefDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
-      download_url = download_oscal_validated_cdef_document_path(@cdef_document)
-      flash[:success] = "OSCAL export passed schema validation (v#{result.schema_version}). <a href=\"#{download_url}\">Download OSCAL file</a>.".html_safe
+      send_data service.export,
+                filename:    "#{@cdef_document.name}_oscal_cdef_#{Date.today}.json",
+                type:        "application/json",
+                disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for CDEF #{@cdef_document.id}: #{result.errors.first(3).join('; ')}")
-      download_url = download_oscal_unvalidated_cdef_document_path(@cdef_document)
-      flash[:warning] = "OSCAL export failed schema validation. <a href=\"#{download_url}\">Download unvalidated version</a>.".html_safe
+      flash[:warning] = "OSCAL export failed schema validation. Use the unvalidated download instead."
+      redirect_to cdef_document_path(@cdef_document)
     end
-
-    redirect_to cdef_document_path(@cdef_document)
   end
 
   def download_oscal_validated
