@@ -47,4 +47,26 @@ module ApplicationHelper
   def cdef_severity_color(severity)
     CDEF_SEVERITY_COLORS[severity.to_s.downcase] || "#7f8c8d"
   end
+
+  SAP_METHOD_COLORS = {
+    "examine"   => "#3498db",
+    "interview" => "#f39c12",
+    "test"      => "#e74c3c",
+    "(None)"    => "#95a5a6"
+  }.freeze
+
+  def sap_method_color(method)
+    SAP_METHOD_COLORS[method.to_s] || "#7f8c8d"
+  end
+
+  PROFILE_PRIORITY_COLORS = {
+    "P1"     => "#e74c3c",
+    "P2"     => "#f39c12",
+    "P3"     => "#3498db",
+    "(None)" => "#95a5a6"
+  }.freeze
+
+  def profile_priority_color(priority)
+    PROFILE_PRIORITY_COLORS[priority.to_s] || "#7f8c8d"
+  end
 end

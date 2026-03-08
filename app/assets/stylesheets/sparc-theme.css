@@ -699,6 +699,10 @@ a.link-purple { color: var(--sparc-purple); }
   border: 1px solid var(--bs-border-color);
   border-radius: 8px;
   padding: 0.85rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.sparc-heatmap-card:hover {
+  border-color: var(--bs-secondary-color);
 }
 .sparc-heatmap-card.active {
   border-color: #3498db;
@@ -736,6 +740,15 @@ a.link-purple { color: var(--sparc-purple); }
   display: inline-block;
 }
 .sparc-heatmap-badge:hover { opacity: 0.85; color: white; text-decoration: none; }
+.sparc-heatmap-badge:focus-visible {
+  outline: 2px solid var(--sparc-primary);
+  outline-offset: 2px;
+}
+.sparc-family-link:focus-visible {
+  outline: 2px solid var(--sparc-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 
 .sparc-legend-label {
   font-size: 0.72rem;

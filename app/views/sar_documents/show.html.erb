@@ -220,57 +220,25 @@
 <% end %>
 
 <%# ── FAMILY RESULTS GRID ─────────────────────────────────────────── %>
-<% if @heatmap_families.any? %>
-<details id="heatmapSection" open style="margin-bottom: 1.5rem;">
-  <summary class="sparc-section-summary bg-body-secondary rounded-3 fw-semibold d-flex align-items-center gap-2 border">
-    <span id="heatmapToggleIcon" class="sparc-section-arrow">&#9660;</span>
-    Results by Control Family
-    <span class="sparc-section-hint">&mdash; click a badge to filter</span>
-  </summary>
-  <div style="padding: 1rem 0 0.5rem;">
-    <div class="sparc-heatmap-grid">
-      <% @heatmap_families.each do |family| %>
-        <% fd = @heatmap_data[family] || {} %>
-        <% ft = fd.values.sum %>
-        <% fp = fd.sum { |s, c| s.to_s.downcase.start_with?("pass") ? c : 0 } %>
-        <% ff = fd.sum { |s, c| s.to_s.downcase.match?(/\A(fail|not satisfied)/) ? c : 0 } %>
-        <% fpct = (fp * 100.0 / [fp + ff, 1].max).round %>
-        <% card_family_active = active_family == family && active_status.blank? %>
-        <div class="sparc-heatmap-card<%= ' active' if card_family_active %>">
-          <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
-            <%= link_to family, sar_document_path(@sar_document, filter_params.except(:page).merge(card_family_active ? { family: nil, status: nil } : { family: family, status: nil })),
-                  class: "sparc-family-link" %>
-            <span style="font-size: 0.72rem; font-weight: 700; color: <%= fpct >= 80 ? '#27ae60' : fpct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= fpct %>%</span>
-          </div>
-          <div style="font-size: 0.62rem; color: var(--bs-tertiary-color); margin-bottom: 0.55rem;"><%= ft %> tests</div>
-          <div class="sparc-heatmap-bar d-flex">
-            <% @heatmap_statuses.each do |s| %><% next if (fd[s] || 0) == 0 %>
-              <div style="width: <%= ((fd[s] || 0) * 100.0 / [ft, 1].max).round(3) %>%; background: <%= sar_status_color(s) %>;"></div>
-            <% end %>
-          </div>
-          <div class="d-flex flex-wrap gap-1">
-            <% @heatmap_statuses.each do |s| %><% next if (fd[s] || 0) == 0 %>
-              <% cell_active = active_family == family && active_status == s %>
-              <%= link_to fd[s], sar_document_path(@sar_document, filter_params.except(:page).merge(cell_active ? { family: nil, status: nil } : { family: family, status: s })),
-                    title: "#{family} / #{s}: #{fd[s]}",
-                    class: "sparc-heatmap-badge",
-                    style: "background: #{sar_status_color(s)}; opacity: #{cell_active ? '1' : (has_filters && (active_family.present? || active_status.present?) ? '0.35' : '1')}; #{'outline: 2px solid #2c3e50;' if cell_active}" %>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-    <div class="d-flex flex-wrap align-items-center mt-3" style="gap: 0.6rem; padding: 0.5rem 0;">
-      <span class="sparc-legend-label">Legend:</span>
-      <% [["Passed", "#27ae60"], ["Failed", "#e74c3c"], ["Not Satisfied", "#f39c12"], ["Not Specified", "#95a5a6"]].each do |lbl, col| %>
-        <span class="sparc-legend-item">
-          <span class="sparc-legend-dot" style="background: <%= col %>;"></span><%= lbl %>
-        </span>
-      <% end %>
-    </div>
-  </div>
-</details>
-<% end %>
+<%= render "shared/heatmap",
+     heatmap_data: @heatmap_data,
+     heatmap_families: @heatmap_families,
+     heatmap_statuses: @heatmap_statuses,
+     title: "Results by Control Family",
+     color_helper: :sar_status_color,
+     filter_key: "status",
+     link_mode: :server,
+     document: @sar_document,
+     path_helper: :sar_document_path,
+     filter_params: filter_params,
+     active_family: active_family,
+     active_status: active_status,
+     percentage_calc: ->(fd, _ft) {
+       fp = fd.sum { |s, c| s.to_s.downcase.start_with?("pass") ? c : 0 }
+       ff = fd.sum { |s, c| s.to_s.downcase.match?(/\A(fail|not satisfied)/) ? c : 0 }
+       (fp * 100.0 / [fp + ff, 1].max).round
+     },
+     legend_items: [["Passed", "#27ae60"], ["Failed", "#e74c3c"], ["Not Satisfied", "#f39c12"], ["Not Specified", "#95a5a6"]] %>
 
 <%# ── CONTROL CARDS (paginated) ─────────────────────────────────── %>
 <div id="controlsContainer">
