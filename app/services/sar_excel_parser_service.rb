@@ -3,35 +3,11 @@ require "roo"
 class SarExcelParserService
   include BatchInsertable
 
-  # Maps normalized header text → { key:, control_attr: }
-  # control_attr: true    = stored on SarControl directly
-  # control_attr: :subject = special Subject parsing (asset | environment)
-  # control_attr: false   = stored as SarControlField
-  COLUMN_MAP = {
-    "#"                => { key: "row_number",       control_attr: false },
-    "inherited"        => { key: "inherited",        control_attr: false },
-    "date"             => { key: "date",             control_attr: false },
-    "paragraph"        => { key: :control_id,        control_attr: true  },
-    "provided as"      => { key: "coverage_level",      control_attr: false },
-    "tester"           => { key: "tester",           control_attr: false },
-    "result"           => { key: "result",           control_attr: false },
-    "notes/weakness"   => { key: "notes_weakness",   control_attr: false },
-    "recommended fix"  => { key: "recommended_fix",  control_attr: false },
-    "subject"          => { key: :subject,           control_attr: :subject },
-    "control status"   => { key: "control_status",   control_attr: false },
-    "responsibility"   => { key: "responsibility",   control_attr: false },
-    "test title"       => { key: :title,             control_attr: true  },
-    "impact statement" => { key: "impact_statement", control_attr: false },
-    "test text"        => { key: "test_text",        control_attr: false },
-    "expected result"  => { key: "expected_result",  control_attr: false },
-    "custom"           => { key: "custom",           control_attr: false },
-    "custom name"      => { key: "custom_name",      control_attr: false },
-    "custom author"    => { key: "custom_author",    control_attr: false },
-    "control text"     => { key: "control_text",     control_attr: false },
-    "implementation"   => { key: "implementation",   control_attr: false },
-    "working comments" => { key: "working_comments", control_attr: false },
-    "working status"   => { key: "working_status",   control_attr: false }
-  }.freeze
+  # Column mapping is loaded from lib/data_mappings/sar_excel.json via DataMappingSchema.
+  # This provides a vendor-neutral, declarative mapping that includes editability,
+  # validation rules, and OSCAL export field mappings alongside the import config.
+  SCHEMA = DataMappingSchema.load(:sar_excel)
+  COLUMN_MAP = SCHEMA.column_map.freeze
 
   def initialize(sar_document, file_path)
     @document    = sar_document
