@@ -81,10 +81,23 @@ module SparcConfig
 
   def force_ssl? = ENV.fetch("FORCE_SSL", "true") == "true"
 
+  # ── GitHub OAuth ──────────────────────────────────────────────────────────
+
+  def github_enabled?      = ENV.fetch("SPARC_GITHUB_CLIENT_ID", "").present?
+  def github_client_id     = ENV.fetch("SPARC_GITHUB_CLIENT_ID", nil)
+  def github_client_secret = ENV.fetch("SPARC_GITHUB_CLIENT_SECRET", nil)
+
+  # ── GitLab OAuth ─────────────────────────────────────────────────────────
+
+  def gitlab_enabled?      = ENV.fetch("SPARC_GITLAB_CLIENT_ID", "").present?
+  def gitlab_client_id     = ENV.fetch("SPARC_GITLAB_CLIENT_ID", nil)
+  def gitlab_client_secret = ENV.fetch("SPARC_GITLAB_CLIENT_SECRET", nil)
+  def gitlab_site          = ENV.fetch("SPARC_GITLAB_SITE", "https://gitlab.com")
+
   # ── Convenience ───────────────────────────────────────────────────────────
 
   def any_auth_enabled?
-    enable_local_login? || enable_oidc? || enable_ldap?
+    enable_local_login? || enable_oidc? || enable_ldap? || github_enabled? || gitlab_enabled?
   end
 
   # Extract hostname from app_url for mailer configuration

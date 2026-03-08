@@ -12,15 +12,17 @@ RSpec.describe ProjectMembership, type: :model do
 
   describe "enums" do
     it {
-      is_expected.to define_enum_for(:role).with_values(
-        authorizing_official: "authorizing_official",
-        system_owner: "system_owner",
-        ciso: "ciso",
-        isso: "isso",
-        project_member: "project_member",
-        assessor: "assessor",
-        view_only: "view_only"
-      )
+      is_expected.to define_enum_for(:role)
+        .backed_by_column_of_type(:string)
+        .with_values(
+          authorizing_official: "authorizing_official",
+          system_owner: "system_owner",
+          ciso: "ciso",
+          isso: "isso",
+          project_member: "project_member",
+          assessor: "assessor",
+          view_only: "view_only"
+        )
     }
   end
 
