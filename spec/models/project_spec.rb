@@ -18,6 +18,7 @@ RSpec.describe Project, type: :model do
   describe "enums" do
     it {
       is_expected.to define_enum_for(:status)
+        .backed_by_column_of_type(:string)
         .with_values(draft: "draft", active: "active", authorized: "authorized", deauthorized: "deauthorized")
     }
   end
