@@ -35,6 +35,23 @@
     <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Optional description of this catalog..." %>
   </div>
 
+  <% if control_catalog.new_record? %>
+    <div class="form-group">
+      <%= f.label :template, "Starting Template" %>
+      <%= f.select :template,
+            options_for_select([
+              [ "Blank catalog (no families)", "blank" ],
+              [ "NIST SP 800-53 families (20 standard families pre-created)", "nist_families" ]
+            ], params.dig(:control_catalog, :template) || "blank"),
+            {},
+            class: "form-control" %>
+      <small class="text-body-secondary">
+        Choose "NIST SP 800-53 families" to pre-populate the catalog with the 20 standard NIST control families (AC, AT, AU, CA, CM, etc.).
+        You can then add individual controls to each family.
+      </small>
+    </div>
+  <% end %>
+
   <div class="d-flex gap-3 mt-3">
     <%= f.submit "Save Catalog", class: "btn btn-success" %>
     <%= link_to "Cancel", control_catalogs_path, class: "btn btn-secondary" %>
