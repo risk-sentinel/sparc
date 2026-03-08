@@ -49,11 +49,7 @@ class DataMappingSchema
   # Returns: { "normalized_header" => { key: <symbol_or_string>, control_attr: <true|false|:subject> } }
   def column_map
     @column_map ||= fields.each_with_object({}) do |field, map|
-      control_attr = case field["storage"]
-                     when "control_attribute" then true
-                     when "subject" then :subject
-                     else false
-                     end
+      control_attr = storage_to_control_attr(field["storage"])
 
       key = control_attr == true ? field["key"].to_sym : field["key"]
 
@@ -90,6 +86,14 @@ class DataMappingSchema
   end
 
   private
+
+  def storage_to_control_attr(storage)
+    case storage
+    when "control_attribute" then true
+    when "subject" then :subject
+    else false
+    end
+  end
 
   def validate!
     raise InvalidSchema, "format is required" if @format.blank?
