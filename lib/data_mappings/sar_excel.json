@@ -1,0 +1,200 @@
+{
+  "format": "sar_excel",
+  "version": "1.0",
+  "description": "Mapping schema for SAR (Security Assessment Results) Excel import/export",
+  "document_type": "SarDocument",
+  "control_type": "SarControl",
+  "field_type": "SarControlField",
+  "fields": [
+    {
+      "key": "row_number",
+      "source_header": "#",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "Original row number from the Excel sheet"
+    },
+    {
+      "key": "inherited",
+      "source_header": "inherited",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "Whether the control is inherited"
+    },
+    {
+      "key": "date",
+      "source_header": "date",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "description": "Date of the assessment"
+    },
+    {
+      "key": "control_id",
+      "source_header": "paragraph",
+      "storage": "control_attribute",
+      "data_type": "string",
+      "required": true,
+      "description": "NIST control identifier"
+    },
+    {
+      "key": "provided_as",
+      "source_header": "provided as",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "How the control is provided"
+    },
+    {
+      "key": "tester",
+      "source_header": "tester",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "Name of the tester/assessor"
+    },
+    {
+      "key": "result",
+      "source_header": "result",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "validation": {
+        "allowed_values": ["Pass", "Failed"]
+      },
+      "description": "Test result (Pass/Failed)"
+    },
+    {
+      "key": "notes_weakness",
+      "source_header": "notes/weakness",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "description": "Notes or weakness description"
+    },
+    {
+      "key": "recommended_fix",
+      "source_header": "recommended fix",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "description": "Recommended fix for identified weaknesses"
+    },
+    {
+      "key": "subject",
+      "source_header": "subject",
+      "storage": "subject",
+      "data_type": "string",
+      "editable": false,
+      "description": "Subject field parsed as asset|environment"
+    },
+    {
+      "key": "control_status",
+      "source_header": "control status",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "Status of the control"
+    },
+    {
+      "key": "responsibility",
+      "source_header": "responsibility",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "Responsibility assignment"
+    },
+    {
+      "key": "title",
+      "source_header": "test title",
+      "storage": "control_attribute",
+      "data_type": "string",
+      "required": false,
+      "description": "Title of the test"
+    },
+    {
+      "key": "impact_statement",
+      "source_header": "impact statement",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": false,
+      "description": "Statement describing the impact"
+    },
+    {
+      "key": "test_text",
+      "source_header": "test text",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "description": "Text describing the test procedure"
+    },
+    {
+      "key": "expected_result",
+      "source_header": "expected result",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "description": "Expected result of the test"
+    },
+    {
+      "key": "custom",
+      "source_header": "custom",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "description": "Custom field value"
+    },
+    {
+      "key": "custom_name",
+      "source_header": "custom name",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "description": "Name for the custom field"
+    },
+    {
+      "key": "custom_author",
+      "source_header": "custom author",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "description": "Author of the custom content"
+    },
+    {
+      "key": "control_text",
+      "source_header": "control text",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": false,
+      "description": "Full text of the control requirement"
+    },
+    {
+      "key": "implementation",
+      "source_header": "implementation",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": false,
+      "description": "Implementation description"
+    },
+    {
+      "key": "working_comments",
+      "source_header": "working comments",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "description": "Working comments for the assessment"
+    },
+    {
+      "key": "working_status",
+      "source_header": "working status",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "validation": {
+        "allowed_values": ["Final - Not Satisfied", "Final Satisfied", "Not Satisfied", "Not Specified"]
+      },
+      "description": "Working status of the assessment"
+    }
+  ]
+}
