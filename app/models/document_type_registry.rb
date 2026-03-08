@@ -27,7 +27,7 @@ class DocumentTypeRegistry
       allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel", ".json" => "json", ".xml" => "xml" },
       parser_map:         { "excel" => SspExcelParserService, "json" => SspJsonParserService, "xml" => SspXmlParserService },
       file_prefix:        "ssp",
-      success_message:    "Controls Implementation document uploaded. Processing in background..."
+      success_message:    "System Security Plan document uploaded. Processing in background..."
     ),
     sar: Entry.new(
       document_class:     SarDocument,
