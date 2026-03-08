@@ -29,6 +29,8 @@ class DataMappingSchema
     @fields        = data.fetch("fields")
 
     validate!
+  rescue KeyError => e
+    raise InvalidSchema, "#{e.key} is required"
   end
 
   # Load a mapping schema by name (e.g. :ssp_excel, :sar_excel).
@@ -51,7 +53,7 @@ class DataMappingSchema
     @column_map ||= fields.each_with_object({}) do |field, map|
       control_attr = storage_to_control_attr(field["storage"])
 
-      key = control_attr == true ? field["key"].to_sym : field["key"]
+      key = control_attr ? field["key"].to_sym : field["key"]
 
       map[field["source_header"]] = { key: key, control_attr: control_attr }
     end

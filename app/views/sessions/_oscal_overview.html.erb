@@ -1,0 +1,48 @@
+<%# OSCAL Layers & Models Overview — shown on login left panel %>
+<div class="small text-body-secondary" style="text-align: left;">
+  <h6 class="fw-bold text-body mb-2">Understanding OSCAL</h6>
+
+  <p class="mb-3">
+    OSCAL is a standardized format developed by NIST for expressing security controls,
+    assessment plans, and compliance results in a machine-readable way. SPARC uses OSCAL
+    to automate and streamline your compliance workflow.
+  </p>
+
+  <%# ── OSCAL Layers Diagram (inline SVG) ── %>
+  <div class="text-center mb-3" role="img" aria-label="OSCAL layers diagram showing Controls Layer, Implementation Layer, and Assessment Layer with their models">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 270"
+         style="max-width: 100%; height: auto;"
+         aria-hidden="true">
+
+      <%# ── Controls Layer (top) ── %>
+      <rect x="0" y="0" width="420" height="80" rx="6"
+            fill="#3498db" opacity="0.12"
+            stroke="#3498db" stroke-width="1.5"/>
+      <text x="12" y="20" font-size="11" font-weight="700" fill="#3498db">Controls Layer</text>
+      <rect x="10" y="28" width="400" height="20" rx="4" fill="#3498db" opacity="0.18"/>
+      <text x="210" y="42" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">Catalog Model</text>
+      <rect x="10" y="52" width="400" height="20" rx="4" fill="#3498db" opacity="0.18"/>
+      <text x="210" y="66" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">Profile Model</text>
+
+      <%# ── Implementation Layer (middle) ── %>
+      <rect x="0" y="92" width="420" height="80" rx="6"
+            fill="#27ae60" opacity="0.12"
+            stroke="#27ae60" stroke-width="1.5"/>
+      <text x="12" y="112" font-size="11" font-weight="700" fill="#27ae60">Implementation Layer</text>
+      <rect x="10" y="120" width="400" height="20" rx="4" fill="#27ae60" opacity="0.18"/>
+      <text x="210" y="134" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">System Security Plan Model</text>
+      <rect x="10" y="144" width="400" height="20" rx="4" fill="#27ae60" opacity="0.18"/>
+      <text x="210" y="158" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">Component Model</text>
+
+      <%# ── Assessment Layer (bottom) ── %>
+      <rect x="0" y="184" width="420" height="86" rx="6"
+            fill="#f39c12" opacity="0.12"
+            stroke="#f39c12" stroke-width="1.5"/>
+      <text x="12" y="204" font-size="11" font-weight="700" fill="#f39c12">Assessment Layer</text>
+      <rect x="10" y="212" width="400" height="20" rx="4" fill="#f39c12" opacity="0.18"/>
+      <text x="210" y="226" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">Assessment Plan Model</text>
+      <rect x="10" y="236" width="400" height="20" rx="4" fill="#f39c12" opacity="0.18"/>
+      <text x="210" y="250" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">Assessment Results Model</text>
+    </svg>
+  </div>
+</div>

@@ -42,15 +42,17 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto align-items-center">
             <li class="nav-item"><%= link_to "Home", root_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Projects", projects_path, class: "nav-link" %></li>
             <li class="nav-item"><%= link_to "Control Catalogs", control_catalogs_path, class: "nav-link" %></li>
             <li class="nav-item"><%= link_to "Baselines", profile_documents_path, class: "nav-link" %></li>
             <li class="nav-item"><%= link_to "Component Definitions", cdef_documents_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Controls Implementation", ssp_documents_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Assessment Plans", sap_documents_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Assessment Results", sar_documents_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "POA&Ms", poam_documents_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Evidence", evidences_path, class: "nav-link" %></li>
+            <% if !SparcConfig.any_auth_enabled? || signed_in? %>
+              <li class="nav-item"><%= link_to "Projects", projects_path, class: "nav-link" %></li>
+              <li class="nav-item"><%= link_to "Controls Implementation", ssp_documents_path, class: "nav-link" %></li>
+              <li class="nav-item"><%= link_to "Assessment Plans", sap_documents_path, class: "nav-link" %></li>
+              <li class="nav-item"><%= link_to "Assessment Results", sar_documents_path, class: "nav-link" %></li>
+              <li class="nav-item"><%= link_to "Evidence", evidences_path, class: "nav-link" %></li>
+              <li class="nav-item"><%= link_to "POA&Ms", poam_documents_path, class: "nav-link" %></li>
+            <% end %>
             <li class="nav-item" data-controller="theme">
               <button class="btn btn-outline-light btn-sm ms-2"
                       data-theme-target="icon"
