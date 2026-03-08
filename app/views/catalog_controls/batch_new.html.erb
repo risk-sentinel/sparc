@@ -1,0 +1,40 @@
+<div class="card">
+  <div class="card-body">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>Batch Add Controls</h2>
+      <p class="text-body-secondary">
+        Family: <strong><%= @control_family.code %> - <%= @control_family.name %></strong>
+        &nbsp;|&nbsp;
+        Catalog: <%= link_to @control_catalog.name, @control_catalog, class: "text-primary" %>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to "Cancel", @control_family, class: "btn btn-secondary" %>
+    </div>
+  </div>
+
+  <%= form_with url: batch_create_control_family_catalog_controls_path(@control_family), method: :post, local: true do |f| %>
+    <div class="form-group">
+      <%= f.label :controls_text, "Controls (one per line)" %>
+      <%= f.text_area :controls_text, class: "form-control", rows: 15,
+            placeholder: "Enter one control per line. Use pipe (|) or comma (,) to separate control ID from title.\n\nExamples:\nAC-01 | Access Policy and Procedures\nAC-02 | Account Management\nAC-03 | Access Enforcement\nAC-04, Information Flow Enforcement\nAC-05\nAC-06 | Least Privilege",
+            value: params[:controls_text] %>
+    </div>
+
+    <div class="mt-3 p-3 bg-body-secondary rounded">
+      <strong>Format:</strong>
+      <code>CONTROL_ID | Title</code> or <code>CONTROL_ID, Title</code> or just <code>CONTROL_ID</code>
+      <br>
+      <small class="text-body-secondary">
+        Each line creates one control. The title is optional. Blank lines are skipped.
+      </small>
+    </div>
+
+    <div class="d-flex gap-3 mt-3">
+      <%= f.submit "Add Controls", class: "btn btn-success" %>
+      <%= link_to "Back to Family", @control_family, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+  </div>
+</div>
