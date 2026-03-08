@@ -20,6 +20,7 @@
     document          — Document record (for server-mode link_to paths)
     filter_params     — Hash of current filter params (for server-mode links)
     path_helper       — Symbol (e.g. :sar_document_path) for server-mode links
+    family_url_builder — Lambda: ->(family) { path } — makes family names link to a custom URL
 %>
 <%
   show_pct       = local_assigns.fetch(:show_percentage, true)
@@ -35,6 +36,7 @@
   legends        = local_assigns[:legend_items]
   active_family  = local_assigns[:active_family].to_s.presence
   active_status  = local_assigns[:active_status].to_s.presence
+  fam_url        = local_assigns[:family_url_builder]
 %>
 <% if heatmap_families.any? %>
 <details id="heatmapSection" open style="margin-bottom: 1.5rem;"
@@ -90,6 +92,10 @@
                         card_active ? { family: nil, status: nil } : { family: family, status: nil }
                       )),
                     class: "sparc-family-link" %>
+            <% elsif fam_url %>
+              <%= link_to family, fam_url.call(family),
+                    class: "sparc-family-link",
+                    aria: { label: "View #{family} family controls" } %>
             <% else %>
               <a href="#"
                  class="sparc-family-link"

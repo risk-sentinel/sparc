@@ -1,0 +1,46 @@
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h2><%= @family %> Family Controls</h2>
+  <%= link_to "&larr; Back to Dashboard".html_safe, root_path, class: "btn btn-outline-secondary btn-sm" %>
+</div>
+
+<p class="text-body-secondary mb-4">
+  Showing all controls across SSP documents in the <strong><%= @family %></strong> family
+  &mdash; <strong><%= @controls.size %></strong> control(s) found.
+</p>
+
+<% if @controls.any? %>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Control ID</th>
+          <th>Status</th>
+          <th>SSP Document</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @controls.each do |control| %>
+          <% status_field = control.ssp_control_fields.find { |f| f.field_name == "status" } %>
+          <% status = status_field&.field_value.presence || "(Unknown)" %>
+          <tr>
+            <td><strong><%= control.control_id %></strong></td>
+            <td>
+              <span class="badge" style="background: <%= ssp_status_color(status) %>; color: #fff;">
+                <%= status %>
+              </span>
+            </td>
+            <td><%= control.ssp_document.name %></td>
+            <td class="text-end">
+              <%= link_to "View", ssp_document_path(control.ssp_document), class: "btn btn-sm btn-outline-primary" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <div class="alert alert-info">
+    No controls found for the <strong><%= @family %></strong> family.
+  </div>
+<% end %>
