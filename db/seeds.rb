@@ -1859,10 +1859,13 @@ if SparcConfig.enable_local_login?
       puts "  SPARC Admin Account #{admin.previously_new_record? ? 'Created' : 'Reset'}"
       puts "=" * 60
       puts "  Email:    #{admin.email}"
-      puts "  Password: #{password}"
+      if Rails.env.production?
+        puts "  Password: [REDACTED — run 'rails sparc:bootstrap_admin' to generate a new password]"
+      else
+        puts "  Password: #{password}"
+      end
       puts ""
-      puts "  *** Save this password — it will not be shown again ***"
-      puts "  You will be required to change it on first login."
+      puts "  *** You will be required to change this password on first login. ***"
       puts "=" * 60
       puts ""
     else
