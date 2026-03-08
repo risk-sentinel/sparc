@@ -1940,7 +1940,7 @@ sample_evidences = [
     status: "attested",
     collected_by: "Jane Smith (ISSO)",
     source: "Manual",
-    control_ids: ["AC-01", "AC-02"]
+    control_ids: [ "AC-01", "AC-02" ]
   },
   {
     title: "InSpec Scan Results — Production (March 2026)",
@@ -1949,7 +1949,7 @@ sample_evidences = [
     status: "collected",
     collected_by: "InSpec Runner (CI/CD)",
     source: "InSpec",
-    control_ids: ["CM-06", "SC-07", "SI-02"]
+    control_ids: [ "CM-06", "SC-07", "SI-02" ]
   },
   {
     title: "AC-2 Account Management — User Provisioning Screenshot",
@@ -1958,7 +1958,7 @@ sample_evidences = [
     status: "reviewed",
     collected_by: "Mike Johnson (Admin)",
     source: "Manual",
-    control_ids: ["AC-02"]
+    control_ids: [ "AC-02" ]
   },
   {
     title: "AU-6 Audit Log Review Report — Q1 2026",
@@ -1967,7 +1967,7 @@ sample_evidences = [
     status: "collected",
     collected_by: "SOC Team",
     source: "SIEM Export",
-    control_ids: ["AU-06", "AU-12"]
+    control_ids: [ "AU-06", "AU-12" ]
   },
   {
     title: "RA-5 Vulnerability Scan Results — Feb 2026",
@@ -1976,7 +1976,7 @@ sample_evidences = [
     status: "attested",
     collected_by: "Vulcan Scanner",
     source: "Vulcan",
-    control_ids: ["RA-05", "SI-02"]
+    control_ids: [ "RA-05", "SI-02" ]
   }
 ]
 
