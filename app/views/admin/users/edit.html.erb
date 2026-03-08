@@ -1,5 +1,5 @@
 <div class="row justify-content-center my-4">
-  <div class="col-lg-7">
+  <div class="col-lg-8">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1 class="h3 fw-bold mb-0">Edit User</h1>
       <%= link_to "Cancel", admin_user_path(@user), class: "btn btn-sm btn-outline-secondary" %>
@@ -40,7 +40,7 @@
           <h5 class="fw-semibold mb-3">Instance Roles</h5>
 
           <div class="row g-2 mb-4">
-            <% @roles.each do |role| %>
+            <% @instance_roles.each do |role| %>
               <div class="col-md-6">
                 <div class="form-check">
                   <input type="checkbox" name="user[role_ids][]" value="<%= role.id %>"
@@ -55,6 +55,62 @@
                 </div>
               </div>
             <% end %>
+          </div>
+
+          <hr>
+          <h5 class="fw-semibold mb-3">Project Roles</h5>
+
+          <%# ── Current project role assignments ──────────────── %>
+          <% if @project_roles_data.any? %>
+            <div class="table-responsive mb-3">
+              <table class="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Role</th>
+                    <th>Keep</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @project_roles_data.each do |ur| %>
+                    <tr>
+                      <td><%= ur.project&.name || "Unknown" %></td>
+                      <td><span class="badge text-bg-info"><%= ur.role.display_name %></span></td>
+                      <td>
+                        <input type="checkbox" name="user[keep_project_role_ids][]"
+                               value="<%= ur.id %>" checked class="form-check-input">
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+            <p class="form-text mb-3">Uncheck "Keep" to remove a project role assignment.</p>
+          <% end %>
+
+          <%# ── Add new project role assignment ───────────────── %>
+          <div class="card bg-body-tertiary mb-4">
+            <div class="card-body py-2">
+              <p class="small fw-semibold mb-2">Add Project Role</p>
+              <div class="row g-2 align-items-end">
+                <div class="col-md-5">
+                  <select name="user[project_roles][][project_id]" class="form-select form-select-sm">
+                    <option value="">Select project...</option>
+                    <% @available_projects.each do |project| %>
+                      <option value="<%= project.id %>"><%= project.name %></option>
+                    <% end %>
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <select name="user[project_roles][][role_id]" class="form-select form-select-sm">
+                    <option value="">Select role...</option>
+                    <% @available_project_roles.each do |role| %>
+                      <option value="<%= role.id %>"><%= role.display_name %></option>
+                    <% end %>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="d-grid">

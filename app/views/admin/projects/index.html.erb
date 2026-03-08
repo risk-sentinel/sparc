@@ -1,0 +1,43 @@
+<div class="d-flex justify-content-between align-items-center my-4">
+  <h1 class="h3 fw-bold mb-0">Project Administration</h1>
+  <span class="badge text-bg-secondary"><%= @projects.count %> projects</span>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Status</th>
+          <th>Members</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @projects.each do |project| %>
+          <tr>
+            <td><%= project.name %></td>
+            <td>
+              <% badge_class = case project.status
+                 when "active" then "success"
+                 when "draft" then "secondary"
+                 when "authorized" then "primary"
+                 when "deauthorized" then "danger"
+                 else "secondary"
+                 end %>
+              <span class="badge text-bg-<%= badge_class %>"><%= project.status.capitalize %></span>
+            </td>
+            <td><%= project.user_roles.count %></td>
+            <td class="text-end">
+              <%= link_to "Manage", admin_project_path(project), class: "btn btn-sm btn-outline-primary" %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @projects.empty? %>
+          <tr><td colspan="4" class="text-center text-body-secondary small py-3">No projects found.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

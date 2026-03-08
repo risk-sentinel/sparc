@@ -1,0 +1,43 @@
+<div class="d-flex justify-content-between align-items-center my-4">
+  <h1 class="h3 fw-bold mb-0">Role Management</h1>
+  <div class="d-flex gap-2">
+    <span class="badge text-bg-secondary align-self-center"><%= @roles.count %> roles</span>
+    <%= link_to "New Role", new_admin_role_path, class: "btn btn-sm btn-primary" %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Display Name</th>
+          <th>Scope</th>
+          <th>Users</th>
+          <th>Sort</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @roles.each do |role| %>
+          <tr>
+            <td><code><%= role.name %></code></td>
+            <td><%= role.display_name %></td>
+            <td>
+              <span class="badge text-bg-<%= role.scope == 'instance' ? 'warning' : 'info' %>">
+                <%= role.scope.capitalize %>
+              </span>
+            </td>
+            <td><%= role.user_roles.count %></td>
+            <td><%= role.sort_order %></td>
+            <td class="text-end">
+              <%= link_to "View", admin_role_path(role), class: "btn btn-sm btn-outline-primary" %>
+              <%= link_to "Edit", edit_admin_role_path(role), class: "btn btn-sm btn-outline-secondary" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

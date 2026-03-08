@@ -17,6 +17,11 @@ class AuditEvent < ApplicationRecord
     password_change
     role_grant
     role_revoke
+    role_created
+    role_updated
+    role_deleted
+    project_member_added
+    project_member_removed
     user_suspended
     user_reactivated
     admin_bootstrap

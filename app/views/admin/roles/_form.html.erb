@@ -1,0 +1,61 @@
+<%= form_with model: [:admin, role], local: true do |f| %>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :name, class: "form-label fw-semibold small" %>
+      <%= f.text_field :name, class: "form-control", placeholder: "e.g. security_reviewer" %>
+      <div class="form-text">Lowercase snake_case identifier (must be unique).</div>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :display_name, class: "form-label fw-semibold small" %>
+      <%= f.text_field :display_name, class: "form-control", placeholder: "e.g. Security Reviewer" %>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :scope, class: "form-label fw-semibold small" %>
+      <%= f.select :scope, [["Instance-wide", "instance"], ["Project-scoped", "project"]],
+            {}, class: "form-select" %>
+      <div class="form-text">Instance roles apply globally. Project roles require a project assignment.</div>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :sort_order, class: "form-label fw-semibold small" %>
+      <%= f.number_field :sort_order, class: "form-control", min: 0 %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, class: "form-label fw-semibold small" %>
+    <%= f.text_area :description, class: "form-control", rows: 2 %>
+  </div>
+
+  <hr>
+  <h5 class="fw-semibold mb-3">Permissions</h5>
+
+  <% Role::PERMISSION_GROUPS.each do |resource, keys| %>
+    <div class="mb-3">
+      <h6 class="fw-semibold text-body-secondary small text-uppercase">
+        <%= Role::RESOURCE_LABELS[resource] || resource.titleize %>
+      </h6>
+      <div class="row g-2">
+        <% keys.each do |key| %>
+          <% action = key.split(".").last %>
+          <div class="col-auto">
+            <div class="form-check form-check-inline">
+              <input type="checkbox" name="role[permissions][<%= key %>]" value="1"
+                     id="perm_<%= key.tr('.', '_') %>" class="form-check-input"
+                     <%= "checked" if role.has_permission?(key) %>>
+              <label for="perm_<%= key.tr('.', '_') %>" class="form-check-label small">
+                <%= action.capitalize %>
+              </label>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="d-grid mt-4">
+    <%= f.submit role.persisted? ? "Save Changes" : "Create Role", class: "btn btn-primary fw-semibold" %>
+  </div>
+<% end %>

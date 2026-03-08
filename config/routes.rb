@@ -150,6 +150,13 @@ Rails.application.routes.draw do
         patch :reactivate
       end
     end
+    resources :roles
+    resources :projects, only: [ :index, :show ] do
+      member do
+        post :add_member
+        delete :remove_member
+      end
+    end
   end
 
   namespace :api do

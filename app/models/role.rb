@@ -5,8 +5,10 @@
 # users.admin boolean column.
 #
 # Seeded roles come from docs/groups_users/groups_users.md:
-#   Instance: policy_manager, global_viewer
-#   Project:  ao, so_iso, ciso, isso, project_member, assessor_3pao, view_only
+#   Instance: policy_manager, global_viewer, senior_accountable_official, senior_agency_official_privacy
+#   Project:  ao, so_iso, ciso, isso, project_member, assessor_3pao, view_only, common_control_provider
+#
+# Permissions are stored as a JSONB hash of "resource.action" => boolean keys.
 class Role < ApplicationRecord
   has_many :user_roles, dependent: :destroy
   has_many :users, through: :user_roles
@@ -18,4 +20,56 @@ class Role < ApplicationRecord
   scope :instance_scoped, -> { where(scope: "instance") }
   scope :project_scoped, -> { where(scope: "project") }
   scope :sorted, -> { order(:sort_order) }
+
+  # ── Permissions ──────────────────────────────────────────────────────────
+  # Canonical list of all permission keys. Each is "resource.action".
+  PERMISSION_KEYS = %w[
+    catalogs.read
+    catalogs.write
+    profiles.read
+    profiles.write
+    projects.read
+    projects.write
+    projects.manage_members
+    ssp.read
+    ssp.write
+    sar.read
+    sar.write
+    sap.read
+    sap.write
+    poam.read
+    poam.write
+    cdef.read
+    cdef.write
+    evidence.read
+    evidence.write
+  ].freeze
+
+  # Group permission keys by resource for UI rendering
+  PERMISSION_GROUPS = PERMISSION_KEYS.group_by { |k| k.split(".").first }.freeze
+
+  # Human-readable labels for resource groups
+  RESOURCE_LABELS = {
+    "catalogs" => "Control Catalogs",
+    "profiles" => "Baselines / Profiles",
+    "projects" => "Projects",
+    "ssp"      => "System Security Plans",
+    "sar"      => "Security Assessment Results",
+    "sap"      => "Security Assessment Plans",
+    "poam"     => "POA&Ms",
+    "cdef"     => "Component Definitions",
+    "evidence" => "Evidence"
+  }.freeze
+
+  # Check if this role has a specific permission
+  def has_permission?(key)
+    permissions[key] == true
+  end
+
+  # Bulk-set permissions from form params ({ "catalogs.read" => "1", ... })
+  def assign_permissions(perm_params)
+    self.permissions = PERMISSION_KEYS.each_with_object({}) do |key, hash|
+      hash[key] = perm_params[key] == "1"
+    end
+  end
 end

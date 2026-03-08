@@ -1795,34 +1795,127 @@ puts "Done! Demo SSP and SAR documents seeded."
 # Roles from docs/groups_users/groups_users.md
 puts "\nSeeding roles..."
 
+# Default permission hashes aligned with docs/groups_users/groups_users.md
+PERM_ALL_READ = Role::PERMISSION_KEYS.select { |k| k.end_with?(".read") }
+                                      .each_with_object({}) { |k, h| h[k] = true }.freeze
+
+PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
+  "catalogs.write" => true, "profiles.write" => true
+).freeze
+
+PERM_AO = {
+  "projects.read" => true, "ssp.read" => true, "sar.read" => true,
+  "sap.read" => true, "poam.read" => true, "poam.write" => true,
+  "cdef.read" => true, "evidence.read" => true
+}.freeze
+
+PERM_SO_ISO = {
+  "projects.read" => true, "ssp.read" => true, "ssp.write" => true,
+  "sar.read" => true, "sap.read" => true, "poam.read" => true,
+  "poam.write" => true, "cdef.read" => true, "cdef.write" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_CISO = {
+  "catalogs.read" => true, "profiles.read" => true,
+  "projects.read" => true, "ssp.read" => true,
+  "sar.read" => true, "sap.read" => true,
+  "poam.read" => true, "cdef.read" => true, "evidence.read" => true
+}.freeze
+
+PERM_ISSO = {
+  "projects.read" => true, "ssp.read" => true, "ssp.write" => true,
+  "sar.read" => true, "sar.write" => true,
+  "sap.read" => true, "sap.write" => true,
+  "poam.read" => true, "poam.write" => true,
+  "cdef.read" => true, "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_PROJECT_MEMBER = {
+  "projects.read" => true, "profiles.read" => true,
+  "ssp.read" => true, "ssp.write" => true,
+  "poam.read" => true, "poam.write" => true,
+  "cdef.read" => true, "cdef.write" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_ASSESSOR = {
+  "projects.read" => true, "ssp.read" => true,
+  "sar.read" => true, "sar.write" => true,
+  "sap.read" => true, "sap.write" => true,
+  "poam.read" => true, "cdef.read" => true, "evidence.read" => true
+}.freeze
+
+PERM_VIEW_ONLY = {
+  "projects.read" => true, "ssp.read" => true,
+  "sar.read" => true, "poam.read" => true,
+  "cdef.read" => true, "evidence.read" => true
+}.freeze
+
+PERM_SAO = PERM_CISO.dup.freeze  # Senior Accountable Official — oversight role
+
+PERM_COMMON_CONTROL = {
+  "projects.read" => true, "ssp.read" => true, "ssp.write" => true,
+  "cdef.read" => true, "cdef.write" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_SAOP = {
+  "catalogs.read" => true, "profiles.read" => true,
+  "projects.read" => true, "ssp.read" => true,
+  "sar.read" => true, "sap.read" => true,
+  "poam.read" => true, "cdef.read" => true, "evidence.read" => true
+}.freeze
+
 SPARC_ROLES = [
   { name: "policy_manager",  display_name: "Policy Manager",    scope: "instance", sort_order: 1,
-    description: "Manages organizational security policies and compliance frameworks" },
+    description: "Manages organizational security policies and compliance frameworks",
+    permissions: PERM_POLICY_MANAGER },
   { name: "global_viewer",   display_name: "Global Viewer",     scope: "instance", sort_order: 2,
-    description: "Read-only access to all projects and documents instance-wide" },
+    description: "Read-only access to all projects and documents instance-wide",
+    permissions: PERM_ALL_READ },
   { name: "ao",              display_name: "Authorizing Official", scope: "project", sort_order: 3,
-    description: "Makes risk acceptance decisions and authorizes system operation" },
+    description: "Makes risk acceptance decisions and authorizes system operation",
+    permissions: PERM_AO },
   { name: "so_iso",          display_name: "System Owner / ISO", scope: "project", sort_order: 4,
-    description: "Responsible for system security and day-to-day operations" },
+    description: "Responsible for system security and day-to-day operations",
+    permissions: PERM_SO_ISO },
   { name: "ciso",            display_name: "CISO",              scope: "project", sort_order: 5,
-    description: "Chief Information Security Officer — oversees security program" },
+    description: "Chief Information Security Officer — oversees security program",
+    permissions: PERM_CISO },
   { name: "isso",            display_name: "ISSO",              scope: "project", sort_order: 6,
-    description: "Information System Security Officer — manages system-level security" },
+    description: "Information System Security Officer — manages system-level security",
+    permissions: PERM_ISSO },
   { name: "project_member",  display_name: "Project Member",    scope: "project", sort_order: 7,
-    description: "Team member who contributes to project documentation" },
+    description: "Team member who contributes to project documentation",
+    permissions: PERM_PROJECT_MEMBER },
   { name: "assessor_3pao",   display_name: "Assessor / 3PAO",   scope: "project", sort_order: 8,
-    description: "Third-party assessor who evaluates security controls" },
+    description: "Third-party assessor who evaluates security controls",
+    permissions: PERM_ASSESSOR },
   { name: "view_only",       display_name: "View Only",         scope: "project", sort_order: 9,
-    description: "Read-only access limited to assigned projects" }
+    description: "Read-only access limited to assigned projects",
+    permissions: PERM_VIEW_ONLY },
+  { name: "senior_accountable_official", display_name: "Senior Accountable Official", scope: "instance", sort_order: 10,
+    description: "Risk management leadership — oversees organizational risk posture",
+    permissions: PERM_SAO },
+  { name: "common_control_provider", display_name: "Common Control Provider", scope: "project", sort_order: 11,
+    description: "Provides inheritable common controls shared across systems",
+    permissions: PERM_COMMON_CONTROL },
+  { name: "senior_agency_official_privacy", display_name: "Senior Agency Official for Privacy", scope: "instance", sort_order: 12,
+    description: "Privacy compliance oversight — manages PII and privacy controls",
+    permissions: PERM_SAOP }
 ].freeze
 
 SPARC_ROLES.each do |attrs|
-  Role.find_or_create_by!(name: attrs[:name]) do |role|
-    role.display_name = attrs[:display_name]
-    role.scope        = attrs[:scope]
-    role.sort_order   = attrs[:sort_order]
-    role.description  = attrs[:description]
-  end
+  role = Role.find_or_initialize_by(name: attrs[:name])
+  role.assign_attributes(
+    display_name: attrs[:display_name],
+    scope:        attrs[:scope],
+    sort_order:   attrs[:sort_order],
+    description:  attrs[:description],
+    permissions:  attrs[:permissions]
+  )
+  role.save!
 end
 puts "  #{SPARC_ROLES.size} roles seeded."
 
