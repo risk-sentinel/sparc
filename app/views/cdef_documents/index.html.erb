@@ -1,7 +1,9 @@
 <div class="card" style="overflow-x: auto;">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Component Definitions</h2>
-    <%= link_to "Upload New", new_cdef_document_path, class: "btn btn-success" %>
+    <% if signed_in? %>
+      <%= link_to "Upload New", new_cdef_document_path, class: "btn btn-success" %>
+    <% end %>
   </div>
 
   <% if @cdef_documents.any? %>
@@ -38,14 +40,16 @@
             <td class="text-end" style="white-space: nowrap;">
               <div style="display: inline-flex; gap: 0.35rem;">
                 <%= link_to "View", cdef_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
-                <% if doc.completed? %>
+                <% if signed_in? && doc.completed? %>
                   <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.35rem 0.75rem; font-size: 0.8rem;", data: { confirm: "Duplicate this component definition?" } %>
                 <% end %>
                 <% if doc.completed? %>
                   <%= link_to "OSCAL", download_oscal_cdef_document_path(doc), class: "btn btn-sm", style: "background: #8e44ad; color: white;" %>
                   <%= link_to "JSON", download_json_cdef_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% end %>
-                <%= link_to "Delete", cdef_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <% if signed_in? %>
+                  <%= link_to "Delete", cdef_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <% end %>
               </div>
             </td>
           </tr>

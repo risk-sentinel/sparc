@@ -127,3 +127,14 @@ body {
 .login-tab-panel.active {
   display: block;
 }
+
+/* ── OSCAL overview toggle icon rotation ──────────────── */
+.oscal-toggle-icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 0.7rem;
+}
+
+[aria-expanded="true"] .oscal-toggle-icon {
+  transform: rotate(90deg);
+}
