@@ -34,7 +34,7 @@
           <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
             <%= image_tag "sparc.png", alt: "SPARC", class: "sparc-navbar-logo" %>
           <% end %>
-          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.0.0</span>
+          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.1.0</span>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -69,7 +69,10 @@
                     <li><span class="dropdown-item-text small text-body-secondary"><%= current_user.email %></span></li>
                     <% if current_user.admin? %>
                       <li><hr class="dropdown-divider"></li>
-                      <li><%= link_to "Admin: Users", admin_users_path, class: "dropdown-item" %></li>
+                      <li><h6 class="dropdown-header">Administration</h6></li>
+                      <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
+                      <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
+                      <li><%= link_to "Projects", admin_projects_path, class: "dropdown-item" %></li>
                     <% end %>
                     <li><hr class="dropdown-divider"></li>
                     <li><%= link_to "Change Password", edit_password_path, class: "dropdown-item" %></li>

@@ -89,6 +89,42 @@ RSpec.describe User, type: :model do
     end
   end
 
+  describe "#has_permission?" do
+    let(:user) { create(:user) }
+    let(:role) { create(:role, permissions: { "ssp.read" => true, "ssp.write" => true }) }
+
+    it "returns true when user has a role with the permission" do
+      create(:user_role, user: user, role: role)
+      expect(user.has_permission?("ssp.read")).to be true
+    end
+
+    it "returns false when user has no matching permission" do
+      create(:user_role, user: user, role: role)
+      expect(user.has_permission?("sar.write")).to be false
+    end
+
+    it "returns true for admins regardless of permissions" do
+      admin = create(:user, :admin)
+      expect(admin.has_permission?("ssp.read")).to be true
+    end
+
+    context "with project scope" do
+      let(:project) { create(:project) }
+      let(:project_role) { create(:role, :project_scoped, permissions: { "ssp.write" => true }) }
+
+      it "checks project-scoped roles" do
+        create(:user_role, user: user, role: project_role, project: project)
+        expect(user.has_permission?("ssp.write", project_id: project.id)).to be true
+      end
+
+      it "does not leak project permissions to other projects" do
+        other_project = create(:project)
+        create(:user_role, user: user, role: project_role, project: project)
+        expect(user.has_permission?("ssp.write", project_id: other_project.id)).to be false
+      end
+    end
+  end
+
   describe "#record_sign_in!" do
     it "increments sign_in_count and sets last_sign_in_at" do
       user = create(:user, sign_in_count: 0)

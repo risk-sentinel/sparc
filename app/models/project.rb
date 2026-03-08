@@ -1,6 +1,8 @@
 class Project < ApplicationRecord
   has_many :boundaries, dependent: :destroy
   has_many :project_memberships, dependent: :destroy
+  has_many :user_roles, dependent: :destroy
+  has_many :assigned_users, through: :user_roles, source: :user
   has_many :cdef_documents, through: :boundaries
 
   has_one  :ssp_document, dependent: :nullify

@@ -1,6 +1,32 @@
 <div class="d-flex justify-content-between align-items-center my-4">
   <h1 class="h3 fw-bold mb-0">User Management</h1>
-  <span class="badge text-bg-secondary"><%= @users.count %> users</span>
+  <span class="badge text-bg-secondary"><%= @pagy.count %> users</span>
+</div>
+
+<%# ── Search / Filter ──────────────────────────────────── %>
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <%= form_tag admin_users_path, method: :get, class: "row g-2 align-items-end" do %>
+      <div class="col-md-5">
+        <input type="text" name="q" value="<%= params[:q] %>" class="form-control form-control-sm"
+               placeholder="Search by email or name...">
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All statuses</option>
+          <% %w[active suspended deactivated].each do |s| %>
+            <option value="<%= s %>" <%= "selected" if params[:status] == s %>><%= s.capitalize %></option>
+          <% end %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-sm btn-primary w-100">Search</button>
+      </div>
+      <div class="col-md-2">
+        <%= link_to "Clear", admin_users_path, class: "btn btn-sm btn-outline-secondary w-100" %>
+      </div>
+    <% end %>
+  </div>
 </div>
 
 <div class="card">
@@ -54,3 +80,10 @@
     </table>
   </div>
 </div>
+
+<%# ── Pagination ──────────────────────────────────────── %>
+<% if @pagy.pages > 1 %>
+  <div class="mt-3 text-center">
+    <%== @pagy.series_nav %>
+  </div>
+<% end %>
