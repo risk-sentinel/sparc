@@ -185,7 +185,7 @@ class SspDocumentsController < ApplicationController
 
   def destroy
     @ssp_document.destroy
-    flash[:success] = "Controls Implementation document deleted"
+    flash[:success] = "System Security Plan document deleted"
     redirect_to ssp_documents_path
   end
 

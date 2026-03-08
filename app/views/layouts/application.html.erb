@@ -34,7 +34,7 @@
           <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
             <%= image_tag "sparc.png", alt: "SPARC", class: "sparc-navbar-logo" %>
           <% end %>
-          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.1.0</span>
+          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.1.1</span>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -47,7 +47,7 @@
             <li class="nav-item"><%= link_to "Component Definitions", cdef_documents_path, class: "nav-link" %></li>
             <% if !SparcConfig.any_auth_enabled? || signed_in? %>
               <li class="nav-item"><%= link_to "Projects", projects_path, class: "nav-link" %></li>
-              <li class="nav-item"><%= link_to "Controls Implementation", ssp_documents_path, class: "nav-link" %></li>
+              <li class="nav-item"><%= link_to "System Security Plans", ssp_documents_path, class: "nav-link" %></li>
               <li class="nav-item"><%= link_to "Assessment Plans", sap_documents_path, class: "nav-link" %></li>
               <li class="nav-item"><%= link_to "Assessment Results", sar_documents_path, class: "nav-link" %></li>
               <li class="nav-item"><%= link_to "Evidence", evidences_path, class: "nav-link" %></li>
