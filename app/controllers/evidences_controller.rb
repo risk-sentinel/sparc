@@ -2,6 +2,9 @@ class EvidencesController < ApplicationController
   before_action :set_evidence, only: [ :show, :edit, :update, :destroy ]
 
   def index
+    @total_count = Evidence.count
+    @link_count = EvidenceControlLink.count
+
     @evidences = Evidence.order(created_at: :desc)
     @evidences = @evidences.where(evidence_type: params[:type]) if params[:type].present?
     @evidences = @evidences.where(status: params[:status]) if params[:status].present?

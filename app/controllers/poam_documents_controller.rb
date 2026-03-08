@@ -12,6 +12,9 @@ class PoamDocumentsController < ApplicationController
 
   def index
     @poam_documents = PoamDocument.order(created_at: :desc)
+    @total_count = @poam_documents.count
+    @items_count = PoamItem.count
+    @completed_count = @poam_documents.where(status: "completed").count
   end
 
   def show

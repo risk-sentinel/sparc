@@ -3,7 +3,15 @@
 require "rails_helper"
 
 RSpec.describe "ControlFamilies", type: :request do
-  let(:user) { create(:user, password: "SecurePassword123!", password_confirmation: "SecurePassword123!") }
+  let(:catalog_write_role) do
+    create(:role, name: "policy_manager", scope: "instance",
+           permissions: { "catalogs.write" => true })
+  end
+  let(:user) do
+    u = create(:user, password: "SecurePassword123!", password_confirmation: "SecurePassword123!")
+    create(:user_role, user: u, role: catalog_write_role)
+    u
+  end
   let(:catalog) { create(:control_catalog) }
 
   before { sign_in(user) }
