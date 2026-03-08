@@ -99,15 +99,15 @@ class PoamDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
-      download_url = download_oscal_validated_poam_document_path(@poam_document)
-      flash[:success] = "OSCAL export passed schema validation (v#{result.schema_version}). <a href=\"#{download_url}\">Download OSCAL file</a>.".html_safe
+      send_data service.export,
+                filename:    "#{@poam_document.name}_oscal_poam_#{Date.today}.json",
+                type:        "application/json",
+                disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for POA&M #{@poam_document.id}: #{result.errors.first(3).join('; ')}")
-      download_url = download_oscal_unvalidated_poam_document_path(@poam_document)
-      flash[:warning] = "OSCAL export failed schema validation. <a href=\"#{download_url}\">Download unvalidated version</a>.".html_safe
+      flash[:warning] = "OSCAL export failed schema validation. Use the unvalidated download instead."
+      redirect_to poam_document_path(@poam_document)
     end
-
-    redirect_to poam_document_path(@poam_document)
   end
 
   def download_oscal_validated
