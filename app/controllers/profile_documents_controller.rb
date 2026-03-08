@@ -4,7 +4,7 @@ class ProfileDocumentsController < ApplicationController
   before_action :set_profile_document, only: %i[
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated status
-    update_metadata
+    update_metadata copy
   ]
 
   PRIORITY_ORDER = %w[P1 P2 P3].freeze
@@ -92,6 +92,49 @@ class ProfileDocumentsController < ApplicationController
       flash[:error] = @profile_document.errors.full_messages.join(", ")
     end
     redirect_to profile_document_path(@profile_document)
+  end
+
+  def copy
+    service = DocumentDuplicationService.new(@profile_document)
+    copy = service.duplicate
+
+    flash[:success] = "Profile duplicated as '#{copy.name}'"
+    redirect_to profile_document_path(copy)
+  end
+
+  def select_catalog
+    @catalogs = ControlCatalog.order(:name)
+  end
+
+  def create_from_catalog
+    catalog = ControlCatalog.find(params[:catalog_id])
+    control_ids = Array(params[:control_ids]).reject(&:blank?)
+
+    if control_ids.empty?
+      flash[:error] = "Please select at least one control"
+      redirect_to select_catalog_profile_documents_path and return
+    end
+
+    profile = ProfileDocument.create!(
+      name: params[:profile_name].presence || "Profile from #{catalog.name}",
+      baseline_level: params[:baseline_level],
+      control_catalog: catalog,
+      status: "completed",
+      description: "Created from #{catalog.name} catalog"
+    )
+
+    catalog_controls = catalog.catalog_controls.where(control_id: control_ids).includes(:control_family)
+    catalog_controls.each_with_index do |cc, idx|
+      profile.profile_controls.create!(
+        control_id: cc.control_id,
+        title: cc.title,
+        control_family: cc.control_family&.code || cc.family_code,
+        row_order: idx
+      )
+    end
+
+    flash[:success] = "Profile created with #{profile.profile_controls.count} controls from #{catalog.name}"
+    redirect_to profile_document_path(profile)
   end
 
   def status
