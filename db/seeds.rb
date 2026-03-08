@@ -1867,6 +1867,28 @@ PERM_SAOP = {
   "poam.read" => true, "cdef.read" => true, "evidence.read" => true
 }.freeze
 
+PERM_SPARC_SME = {
+  "catalogs.read" => true, "profiles.read" => true,
+  "projects.read" => true,
+  "ssp.read" => true, "ssp.write" => true,
+  "sar.read" => true, "sar.write" => true,
+  "sap.read" => true, "sap.write" => true,
+  "poam.read" => true, "poam.write" => true,
+  "cdef.read" => true, "cdef.write" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
+PERM_EVIDENCE_ENGINEER = {
+  "catalogs.read" => true, "profiles.read" => true,
+  "projects.read" => true,
+  "ssp.read" => true,
+  "sar.read" => true, "sar.write" => true,
+  "sap.read" => true,
+  "poam.read" => true,
+  "cdef.read" => true,
+  "evidence.read" => true, "evidence.write" => true
+}.freeze
+
 SPARC_ROLES = [
   { name: "policy_manager",  display_name: "Policy Manager",    scope: "instance", sort_order: 1,
     description: "Manages organizational security policies and compliance frameworks",
@@ -1903,7 +1925,13 @@ SPARC_ROLES = [
     permissions: PERM_COMMON_CONTROL },
   { name: "senior_agency_official_privacy", display_name: "Senior Agency Official for Privacy", scope: "instance", sort_order: 12,
     description: "Privacy compliance oversight — manages PII and privacy controls",
-    permissions: PERM_SAOP }
+    permissions: PERM_SAOP },
+  { name: "sparc_sme", display_name: "SPARC SME", scope: "project", sort_order: 13,
+    description: "Subject matter expert with broad read/write access to project artifacts",
+    permissions: PERM_SPARC_SME },
+  { name: "evidence_integration_engineer", display_name: "Evidence Integration Engineer", scope: "project", sort_order: 14,
+    description: "Manages evidence collection and integration with assessment results",
+    permissions: PERM_EVIDENCE_ENGINEER }
 ].freeze
 
 SPARC_ROLES.each do |attrs|

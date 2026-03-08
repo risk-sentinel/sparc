@@ -14,6 +14,9 @@ class SarDocumentsController < ApplicationController
 
   def index
     @sar_documents = SarDocument.order(created_at: :desc)
+    @total_count = @sar_documents.count
+    @controls_count = SarControl.count
+    @completed_count = @sar_documents.where(status: "completed").count
   end
 
   def show

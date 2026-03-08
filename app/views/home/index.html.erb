@@ -40,154 +40,34 @@
      family_url_builder: ->(family) { dashboard_family_path(family: family) }
    } %>
 
-<div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
-
-  <div class="col">
-    <div class="card text-center h-100" style="border: 2px solid #9b59b6;">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128188;</div>
-        <h3 style="margin-bottom: 0.5rem;">Projects</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Organize RMF artifacts under authorization boundaries. Assign personnel with RMF-defined roles.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View Projects", projects_path, class: "btn btn-primary" %>
-          <%= link_to "New Project", new_project_path, class: "btn btn-success" %>
+<%# ── Compact section navigation grid ── %>
+<div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
+  <%
+    sections = [
+      { title: "Projects",           path: projects_path,          new_path: new_project_path,          icon: "&#128188;", color: "#9b59b6" },
+      { title: "Control Catalogs",   path: control_catalogs_path,  new_path: new_control_catalog_path,  icon: "&#128218;", color: "#3498db" },
+      { title: "Baselines",          path: profile_documents_path, new_path: new_profile_document_path, icon: "&#128203;", color: nil },
+      { title: "CDEFs",              path: cdef_documents_path,    new_path: new_cdef_document_path,    icon: "&#128737;", color: nil },
+      { title: "SSPs",               path: ssp_documents_path,     new_path: new_ssp_document_path,     icon: "&#128196;", color: nil },
+      { title: "SAPs",               path: sap_documents_path,     new_path: new_sap_document_path,     icon: "&#128221;", color: nil },
+      { title: "SARs",               path: sar_documents_path,     new_path: new_sar_document_path,     icon: "&#128203;", color: nil },
+      { title: "POA&Ms",             path: poam_documents_path,    new_path: new_poam_document_path,    icon: "&#128270;", color: nil },
+      { title: "Evidence",           path: evidences_path,         new_path: new_evidence_path,         icon: "&#128274;", color: "#27ae60" },
+    ]
+  %>
+  <% sections.each do |s| %>
+    <div class="col">
+      <div class="card text-center h-100" style="<%= s[:color] ? "border: 2px solid #{s[:color]};" : "" %>">
+        <div class="card-body" style="padding: 1rem;">
+          <div style="font-size: 1.75rem; margin-bottom: 0.5rem;"><%= s[:icon].html_safe %></div>
+          <h5 style="margin-bottom: 0.75rem; font-size: 0.95rem;"><%= s[:title] %></h5>
+          <div class="d-flex flex-column gap-1">
+            <%= link_to "View", s[:path], class: "btn btn-primary btn-sm" %>
+            <%= link_to "New", s[:new_path], class: "btn btn-success btn-sm" %>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="col">
-    <div class="card text-center h-100" style="border: 2px solid #3498db;">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128218;</div>
-        <h3 style="margin-bottom: 0.5rem;">Control Catalogs</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Browse NIST SP 800-53 Rev 4 and Rev 5 control families and base controls. Add custom catalogs or entries.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View Catalogs", control_catalogs_path, class: "btn btn-primary" %>
-          <%= link_to "New Catalog", new_control_catalog_path, class: "btn btn-success" %>
-        </div>
-        <div class="mt-3 bg-body-secondary rounded text-primary" style="padding: 0.5rem; font-size: 0.8rem;">
-          NIST SP 800-53 Rev 4 &amp; Rev 5 pre-loaded
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card text-center h-100">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128203;</div>
-        <h3 style="margin-bottom: 0.5rem;">Baseline Profiles</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Import NIST SP 800-53 baseline profiles (LOW, MODERATE, HIGH) and export OSCAL Profiles.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View Baselines", profile_documents_path, class: "btn btn-primary" %>
-          <%= link_to "Upload New", new_profile_document_path, class: "btn btn-success" %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card text-center h-100">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128737;</div>
-        <h3 style="margin-bottom: 0.5rem;">Component Definitions</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Import DISA STIGs, SCAP, and CIS benchmarks. Export OSCAL-compliant Component Definitions.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View CDEFs", cdef_documents_path, class: "btn btn-primary" %>
-          <%= link_to "Upload New", new_cdef_document_path, class: "btn btn-success" %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card text-center h-100">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128196;</div>
-        <h3 style="margin-bottom: 0.5rem;">System Security Plans</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Upload and manage System Security Plan workbooks. Edit editable fields, track status, and export to JSON.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View Documents", ssp_documents_path, class: "btn btn-primary" %>
-          <%= link_to "Upload New", new_ssp_document_path, class: "btn btn-success" %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card text-center h-100">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128221;</div>
-        <h3 style="margin-bottom: 0.5rem;">Assessment Plans</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Generate OSCAL-compliant Security Assessment Plans from SSP and Profile data with assessment method wizards.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View Plans", sap_documents_path, class: "btn btn-primary" %>
-          <%= link_to "Create New", new_sap_document_path, class: "btn btn-success" %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card text-center h-100">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128203;</div>
-        <h3 style="margin-bottom: 0.5rem;">Assessment Results</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Upload multi-tab security assessment workbooks. View results by section, asset, and environment with heat maps.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View Documents", sar_documents_path, class: "btn btn-primary" %>
-          <%= link_to "Upload New", new_sar_document_path, class: "btn btn-success" %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card text-center h-100">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128270;</div>
-        <h3 style="margin-bottom: 0.5rem;">POA&amp;Ms</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Import and manage OSCAL Plan of Action &amp; Milestones. Track risks, deadlines, and remediation progress.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View POA&Ms", poam_documents_path, class: "btn btn-primary" %>
-          <%= link_to "Upload New", new_poam_document_path, class: "btn btn-success" %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card text-center h-100" style="border: 2px solid #27ae60;">
-      <div class="card-body">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#128274;</div>
-        <h3 style="margin-bottom: 0.5rem;">Evidence</h3>
-        <p class="text-body-secondary small" style="margin-bottom: 1.25rem; min-height: 2.5rem;">
-          Collect, tag, and attest to evidence artifacts. Link screenshots, logs, and scan results to controls.
-        </p>
-        <div class="d-flex flex-column gap-2">
-          <%= link_to "View Evidence", evidences_path, class: "btn btn-primary" %>
-          <%= link_to "Upload New", new_evidence_path, class: "btn btn-success" %>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <% end %>
 </div>
 

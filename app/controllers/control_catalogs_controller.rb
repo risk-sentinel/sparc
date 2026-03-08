@@ -5,9 +5,15 @@ class ControlCatalogsController < ApplicationController
     :show, :edit, :update, :destroy, :update_metadata,
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated
   ]
+  before_action :authorize_catalog_write!, only: [
+    :new, :create, :edit, :update, :destroy, :import, :update_metadata
+  ]
 
   def index
     @control_catalogs = ControlCatalog.includes(:control_families).order(:name)
+    @total_count = @control_catalogs.size
+    @family_count = ControlFamily.count
+    @control_count = CatalogControl.count
   end
 
   def show
@@ -157,5 +163,9 @@ class ControlCatalogsController < ApplicationController
   def catalog_metadata_params
     permitted = params.require(:control_catalog).permit(:name, :version, :oscal_version, :description, :published)
     merge_metadata_extra(permitted, :control_catalog)
+  end
+
+  def authorize_catalog_write!
+    authorize_permission!("catalogs.write")
   end
 end

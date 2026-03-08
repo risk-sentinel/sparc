@@ -9,6 +9,9 @@ class SspDocumentsController < ApplicationController
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
+    @total_count = @ssp_documents.count
+    @controls_count = SspControl.count
+    @completed_count = @ssp_documents.where(status: "completed").count
   end
 
   def show

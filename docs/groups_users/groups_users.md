@@ -14,6 +14,8 @@
 | Project Member | Project-specific | View and contribute to project artifacts; copy/import Profiles into the project for tailoring/use | SSP, Boundaries, Components, POA&Ms, Project-specific Profile | General contributors; cannot alter global baselines |
 | Assessor / 3PAO | Project-specific | Full view of all project data; Read/Write access to assessment artifacts only | SAP (R/W), SAR (R/W), all others (view-only) | Independent assessment focus; protected write scope |
 | View Only Users | Project-specific | Read-only access to assigned project artifacts (no edit, no copy/import) | SSP, SAR, POA&Ms, Boundaries, Components | Auditors, stakeholders, or read-only reviewers |
+| SPARC SME | Project-specific | Broad read/write on SSP, SAR, SAP, POA&M, CDEF, Evidence; catalogs and profiles read-only | SSP (R/W), SAR (R/W), SAP (R/W), POA&Ms (R/W), CDEFs (R/W), Evidence (R/W) | Subject matter expert supporting multiple artifact types |
+| Evidence Integration Engineer | Project-specific | Focused on evidence collection and SAR integration; read-only on other artifacts | Evidence (R/W), SAR (R/W), all others (read-only) | Specialized in evidence lifecycle and assessment integration |
 
 ## Project and User Associations
 
@@ -43,8 +45,10 @@ graph TD
         PMem["Project Member Contributes to project data, copies Profiles"]
         ASS["Assessor / 3PAO View everything + R/W on SAP & SAR"]
         VO["View Only Users Read-only access to project artifacts"]
+        SME["SPARC SME Broad R/W on project artifacts"]
+        EIE["Evidence Integration Engineer Evidence & SAR focused"]
 
-        PersonnelGroup["Project Personnel Group • AO • SO / ISO • CISO (oversight) • ISSO • SMEs • Assessors • Project Members • View Only"]
+        PersonnelGroup["Project Personnel Group • AO • SO / ISO • CISO (oversight) • ISSO • SMEs • Assessors • Project Members • Evidence Engineers • View Only"]
 
         PersonnelGroup -->|roles & responsibilities| SSP[System Security Plan Single per Project]
         PersonnelGroup -->|roles & responsibilities| SAP[Assessment Plan Single]
@@ -74,6 +78,13 @@ graph TD
         ASS -->|full R/W| SAR
         ASS -->|view all| SSP & POAM & B & C
 
+        SME -->|full R/W| SSP & SAP & SAR & POAM & C & B
+        SME -->|view only| MC & P
+
+        EIE -->|full R/W| E[Evidence]
+        EIE -->|full R/W| SAR
+        EIE -->|view only| SSP & POAM & C
+
         IA -.->|app-level override| SSP & SAP & SAR & POAM
         PM -.->|view project artifacts| SSP & SAP & SAR & POAM
     end
@@ -95,6 +106,7 @@ graph TD
     class AO,SO,CISO,ISSO rmf
     class PMem,VO project
     class ASS assessor
+    class SME,EIE project
 ```
 
 ## Projects and User Relationships

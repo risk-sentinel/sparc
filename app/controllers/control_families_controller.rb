@@ -3,6 +3,7 @@ class ControlFamiliesController < ApplicationController
 
   before_action :set_control_catalog, only: [ :new, :create ]
   before_action :set_control_family, only: [ :show, :edit, :update, :destroy ]
+  before_action :authorize_catalog_write!, only: [ :new, :create, :edit, :update, :destroy ]
 
   def show
     @catalog_controls = @control_family.catalog_controls.order(:control_id)
@@ -53,5 +54,9 @@ class ControlFamiliesController < ApplicationController
 
   def control_family_params
     params.require(:control_family).permit(:code, :name, :description, :sort_order)
+  end
+
+  def authorize_catalog_write!
+    authorize_permission!("catalogs.write")
   end
 end
