@@ -69,6 +69,11 @@ Rails.application.routes.draw do
       get :download_oscal_validated
       get :download_oscal_unvalidated
       get :status
+      post :copy
+    end
+    collection do
+      get :select_catalog
+      post :create_from_catalog
     end
     resources :profile_controls, only: [ :new, :create, :edit, :update, :destroy ]
   end
@@ -111,6 +116,7 @@ Rails.application.routes.draw do
       get :download_oscal_validated
       get :download_oscal_unvalidated
       get :status
+      post :copy
     end
   end
 

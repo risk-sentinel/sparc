@@ -10,6 +10,25 @@ class ControlCatalogsController < ApplicationController
 
   def show
     @control_families = @control_catalog.control_families.includes(:catalog_controls)
+
+    respond_to do |format|
+      format.html
+      format.json do
+        render json: {
+          id: @control_catalog.id,
+          name: @control_catalog.name,
+          control_families: @control_families.map do |family|
+            {
+              code: family.code,
+              name: family.name,
+              catalog_controls: family.catalog_controls.map do |ctrl|
+                { control_id: ctrl.control_id, title: ctrl.title }
+              end
+            }
+          end
+        }
+      end
+    end
   end
 
   def new
