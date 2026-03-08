@@ -1,81 +1,29 @@
-<div class="card sparc-gradient-header" style="padding: 2.5rem 2rem; margin: 0 0 2rem 0; border-radius: 0.5rem;">
-  <div style="margin-bottom: 0.25rem;">
-    <span style="font-size: 2rem; font-weight: 800; letter-spacing: 0.08em; color: white;">SPARC</span>
-    <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6); letter-spacing: 0.06em; text-transform: uppercase; margin-left: 0.75rem; vertical-align: middle;">Systemized Policy and Regulatory Controls</span>
-  </div>
-  <p style="color: rgba(255,255,255,0.8); font-size: 1.05rem;">
-    Centralize, track, and operationalize NIST 800-53 controls — from catalog management and controls implementation to security assessment results and OSCAL-ready compliance reporting.
-  </p>
-
-  <div class="row row-cols-1 row-cols-md-3 g-3" style="margin-top: 2rem;">
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @catalog_count %></div>
-        <div class="sparc-hero-tile-label">Control Catalogs</div>
+<%# ── Compact stat tiles ── %>
+<div class="card sparc-gradient-header mb-3" style="padding: 1rem 1.25rem; border-radius: 0.5rem;">
+  <div class="row row-cols-3 row-cols-md-5 row-cols-lg-10 g-2 text-center">
+    <%
+      tiles = [
+        [@catalog_count, "Catalogs"],
+        [@family_count, "Families"],
+        [@control_count, "Controls"],
+        [@project_count, "Projects"],
+        [@profile_count, "Baselines"],
+        [@cdef_count, "CDEFs"],
+        [@ssp_count, "SSPs"],
+        [@sap_count, "SAPs"],
+        [@sar_count, "SARs"],
+        [@poam_count, "POA&Ms"],
+        [@evidence_count, "Evidence"],
+      ]
+    %>
+    <% tiles.each do |count, label| %>
+      <div class="col">
+        <div class="sparc-hero-tile" style="padding: 0.5rem 0.25rem;">
+          <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
+          <div class="sparc-hero-tile-label" style="font-size: 0.65rem;"><%= label %></div>
+        </div>
       </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @family_count %></div>
-        <div class="sparc-hero-tile-label">Control Families</div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @control_count %></div>
-        <div class="sparc-hero-tile-label">Catalog Controls</div>
-      </div>
-    </div>
-  </div>
-  <div class="row row-cols-2 row-cols-md-7 g-3" style="margin-top: 0.75rem;">
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @project_count %></div>
-        <div class="sparc-hero-tile-label">Projects</div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @profile_count %></div>
-        <div class="sparc-hero-tile-label">Baseline Profiles</div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @cdef_count %></div>
-        <div class="sparc-hero-tile-label">Component Definitions</div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @ssp_count %></div>
-        <div class="sparc-hero-tile-label">Controls Implementation</div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @sap_count %></div>
-        <div class="sparc-hero-tile-label">Assessment Plans</div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @sar_count %></div>
-        <div class="sparc-hero-tile-label">Assessment Results</div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @poam_count %></div>
-        <div class="sparc-hero-tile-label">POA&amp;Ms</div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="sparc-hero-tile">
-        <div class="sparc-hero-tile-count"><%= @evidence_count %></div>
-        <div class="sparc-hero-tile-label">Evidence</div>
-      </div>
-    </div>
+    <% end %>
   </div>
 </div>
 
@@ -243,62 +191,3 @@
 
 </div>
 
-<div class="card">
-  <div class="card-body">
-  <h3 style="margin-bottom: 1.25rem;">Features</h3>
-  <div class="row row-cols-1 row-cols-md-2 g-3">
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Convert Excel workbooks (Controls Implementation &amp; Security Assessment Results) to JSON</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>NIST SP 800-53 Rev 4 &amp; Rev 5 control catalogs pre-loaded</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Edit control fields with read-only enforcement</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Interactive heat maps by NIST control family</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Export documents to JSON</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Click-to-filter controls by family and status</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Bulk update capabilities via API</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Manage custom catalogs, families, and controls</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Import component definitions from XCCDF XML (DISA STIGs, SCAP, CIS) and JSON (InSpec, STIG Viewer)</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Export OSCAL-compliant Component Definitions (NIST OSCAL v1.1.2)</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Import NIST SP 800-53 baseline profiles and export OSCAL Profiles</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Generate OSCAL Security Assessment Plans (SAP) from SSP + Profile with auto-populated methods and test cases</span>
-    </div></div>
-    <div class="col"><div class="d-flex align-items-start gap-2" style="padding: 0.4rem 0;">
-      <span class="sparc-check-icon fw-bold">&#10003;</span>
-      <span>Import and manage OSCAL Plan of Action &amp; Milestones with risk tracking and OSCAL export</span>
-    </div></div>
-  </div>
-  </div>
-</div>
