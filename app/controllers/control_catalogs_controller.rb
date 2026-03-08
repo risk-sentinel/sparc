@@ -36,10 +36,21 @@ class ControlCatalogsController < ApplicationController
   end
 
   def create
-    @control_catalog = ControlCatalog.new(control_catalog_params)
-    if @control_catalog.save
+    template = params.dig(:control_catalog, :template) || "blank"
+
+    begin
+      @control_catalog = CatalogBuilderService.new(
+        name: control_catalog_params[:name],
+        template: template,
+        version: control_catalog_params[:version],
+        source: control_catalog_params[:source],
+        description: control_catalog_params[:description]
+      ).build
+
       redirect_to @control_catalog, notice: "Catalog '#{@control_catalog.name}' was created successfully."
-    else
+    rescue ActiveRecord::RecordInvalid => e
+      @control_catalog = ControlCatalog.new(control_catalog_params)
+      @control_catalog.valid?
       render :new, status: :unprocessable_entity
     end
   end

@@ -132,7 +132,12 @@ Rails.application.routes.draw do
       post :import
     end
     resources :control_families, shallow: true do
-      resources :catalog_controls, shallow: true
+      resources :catalog_controls, shallow: true do
+        collection do
+          get :batch_new
+          post :batch_create
+        end
+      end
     end
   end
 
