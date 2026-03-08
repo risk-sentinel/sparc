@@ -1,6 +1,7 @@
 class CatalogControlsController < ApplicationController
   before_action :set_control_family, only: [ :new, :create, :batch_new, :batch_create ]
   before_action :set_catalog_control, only: [ :edit, :update, :destroy ]
+  before_action :authorize_catalog_write!
 
   def new
     @catalog_control = @control_family.catalog_controls.new
@@ -93,5 +94,9 @@ class CatalogControlsController < ApplicationController
       :control_id, :title, :description, :priority, :baseline_impact,
       guidance_data: {}
     )
+  end
+
+  def authorize_catalog_write!
+    authorize_permission!("catalogs.write")
   end
 end

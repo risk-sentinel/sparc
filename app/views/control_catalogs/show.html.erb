@@ -18,13 +18,15 @@
       <% end %>
     </div>
     <div class="d-flex gap-2">
-      <% if signed_in? %>
+      <% if can_write_catalogs? %>
         <%= link_to "↑ Import / Refresh", import_control_catalogs_path,
               class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
         <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "btn btn-sparc-orange" %>
+        <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "btn btn-success" %>
+      <% end %>
+      <% if signed_in? %>
         <%= link_to "OSCAL Export", download_oscal_control_catalog_path(@control_catalog),
               class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
-        <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "btn btn-success" %>
       <% end %>
       <%= link_to "← All Catalogs", control_catalogs_path, class: "btn btn-primary" %>
     </div>
@@ -55,7 +57,7 @@
             <td>
               <div class="d-flex gap-2">
                 <%= link_to "View", family, class: "btn btn-primary btn-sm" %>
-                <% if signed_in? %>
+                <% if can_write_catalogs? %>
                   <%= link_to "Edit", edit_control_family_path(family), class: "btn btn-sm btn-sparc-orange" %>
                   <%= button_to "Delete", family, method: :delete,
                       data: { confirm: "Delete family #{family.code}? This removes all its controls." },
@@ -70,7 +72,7 @@
   <% else %>
     <div class="text-center text-body-secondary p-4">
       <p>No families yet.
-        <% if signed_in? %>
+        <% if can_write_catalogs? %>
           <%= link_to "Add the first family", new_control_catalog_control_family_path(@control_catalog), class: "text-primary" %>
         <% end %>
       </p>
@@ -79,7 +81,7 @@
   </div>
 </div>
 
-<% if signed_in? %>
+<% if can_write_catalogs? %>
   <%= render "shared/oscal_metadata_section",
              document: @control_catalog,
              update_path: update_metadata_control_catalog_path(@control_catalog),

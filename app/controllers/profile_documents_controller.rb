@@ -12,6 +12,9 @@ class ProfileDocumentsController < ApplicationController
 
   def index
     @profile_documents = ProfileDocument.order(created_at: :desc)
+    @total_count = @profile_documents.count
+    @controls_count = ProfileControl.count
+    @completed_count = @profile_documents.where(status: "completed").count
   end
 
   def show

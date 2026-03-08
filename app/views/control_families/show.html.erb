@@ -17,7 +17,7 @@
       <% end %>
     </div>
     <div class="d-flex gap-2">
-      <% if signed_in? %>
+      <% if can_write_catalogs? %>
         <%= link_to "Edit Family", edit_control_family_path(@control_family), class: "btn btn-sparc-orange" %>
         <%= link_to "＋ Add Control", new_control_family_catalog_control_path(@control_family), class: "btn btn-success" %>
         <%= link_to "＋ Batch Add", batch_new_control_family_catalog_controls_path(@control_family), class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
@@ -45,7 +45,7 @@
           <th>Title / Statement</th>
           <th class="text-center" style="width: 60px;">Priority</th>
           <th style="width: 160px;">Baseline Impact</th>
-          <% if signed_in? %><th style="width: 130px;">Actions</th><% end %>
+          <% if can_write_catalogs? %><th style="width: 130px;">Actions</th><% end %>
         </tr>
       </thead>
       <tbody>
@@ -106,7 +106,7 @@
             </td>
 
             <%# ── Actions column ── %>
-            <% if signed_in? %>
+            <% if can_write_catalogs? %>
               <td style="vertical-align: top; padding-top: 0.45rem;">
                 <div class="d-flex flex-wrap gap-1">
                   <%= link_to "Edit", edit_catalog_control_path(control), class: "btn btn-sm btn-sparc-orange" %>
@@ -125,7 +125,7 @@
   <% else %>
     <div class="text-center text-body-secondary p-4">
       <p>No controls in this family yet.
-        <% if signed_in? %>
+        <% if can_write_catalogs? %>
           <%= link_to "Add the first control", new_control_family_catalog_control_path(@control_family), class: "text-primary" %>
         <% end %>
       </p>
