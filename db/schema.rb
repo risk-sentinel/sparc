@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_08_100002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -53,6 +53,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.index ["action"], name: "index_audit_events_on_action"
     t.index ["created_at"], name: "index_audit_events_on_created_at"
     t.index ["user_id"], name: "index_audit_events_on_user_id"
+  end
+
+  create_table "attestations", force: :cascade do |t|
+    t.datetime "attested_at", null: false
+    t.string "attester_email"
+    t.string "attester_name", null: false
+    t.datetime "created_at", null: false
+    t.bigint "evidence_id", null: false
+    t.string "role"
+    t.string "signature_hash"
+    t.text "statement", null: false
+    t.datetime "updated_at", null: false
+    t.index ["attested_at"], name: "index_attestations_on_attested_at"
+    t.index ["evidence_id"], name: "index_attestations_on_evidence_id"
   end
 
   create_table "boundaries", force: :cascade do |t|
@@ -172,6 +186,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
     t.string "job_type"
     t.string "status"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "evidence_control_links", force: :cascade do |t|
+    t.string "control_id", null: false
+    t.string "control_type"
+    t.datetime "created_at", null: false
+    t.bigint "document_id"
+    t.string "document_type"
+    t.bigint "evidence_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["evidence_id", "control_id", "document_type", "document_id"], name: "idx_evidence_ctrl_link_unique", unique: true
+    t.index ["evidence_id"], name: "index_evidence_control_links_on_evidence_id"
+  end
+
+  create_table "evidences", force: :cascade do |t|
+    t.string "collected_by"
+    t.datetime "collected_at"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "evidence_type", default: "artifact", null: false
+    t.string "file_content_type"
+    t.string "file_hash"
+    t.integer "file_size"
+    t.string "original_filename"
+    t.bigint "project_id"
+    t.string "source"
+    t.string "status", default: "draft", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["collected_at"], name: "index_evidences_on_collected_at"
+    t.index ["evidence_type"], name: "index_evidences_on_evidence_type"
+    t.index ["project_id"], name: "index_evidences_on_project_id"
+    t.index ["status"], name: "index_evidences_on_status"
   end
 
   create_table "identities", force: :cascade do |t|
@@ -937,6 +984,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "attestations", "evidences", on_delete: :cascade
   add_foreign_key "audit_events", "users", on_delete: :nullify
   add_foreign_key "boundaries", "projects", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "boundaries", on_delete: :cascade
@@ -945,6 +993,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_100001) do
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "control_families", "control_catalogs"
+  add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
+  add_foreign_key "evidences", "projects", on_delete: :nullify
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "poam_documents", "projects", on_delete: :nullify
   add_foreign_key "poam_finding_observations", "poam_findings", on_delete: :cascade

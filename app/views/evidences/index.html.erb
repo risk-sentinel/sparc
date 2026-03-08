@@ -1,0 +1,126 @@
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2>Evidence Repository</h2>
+        <p class="text-body-secondary mb-0">
+          <%= @evidences.size %> evidence record<%= @evidences.size == 1 ? "" : "s" %>
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <%= link_to "Upload Evidence", new_evidence_path, class: "btn btn-success" %>
+      </div>
+    </div>
+
+    <%# ── Filters ── %>
+    <div class="card bg-body-secondary mb-3">
+      <div class="card-body py-2">
+        <%= form_with url: evidences_path, method: :get, local: true, class: "row g-2 align-items-end" do |f| %>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold mb-1">Search</label>
+            <%= f.text_field :search, value: params[:search], class: "form-control form-control-sm", placeholder: "Title, filename..." %>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Type</label>
+            <%= f.select :type, options_for_select(Evidence::EVIDENCE_TYPE_LABELS.map { |k, v| [ v, k ] }, params[:type]),
+                         { include_blank: "All Types" }, class: "form-select form-select-sm" %>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Status</label>
+            <%= f.select :status, options_for_select(Evidence::STATUS_LABELS.map { |k, v| [ v, k ] }, params[:status]),
+                         { include_blank: "All Statuses" }, class: "form-select form-select-sm" %>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Control ID</label>
+            <%= f.text_field :control_id, value: params[:control_id], class: "form-control form-control-sm", placeholder: "e.g. AC-01" %>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Project</label>
+            <%= f.select :project_id, options_for_select(Project.order(:name).pluck(:name, :id), params[:project_id]),
+                         { include_blank: "All Projects" }, class: "form-select form-select-sm" %>
+          </div>
+          <div class="col-md-1">
+            <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @evidences.any? %>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Controls</th>
+            <th>Collected</th>
+            <th>File</th>
+            <th>Attestations</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @evidences.each do |evidence| %>
+            <tr>
+              <td>
+                <strong><%= link_to evidence.title, evidence, class: "text-primary", style: "text-decoration: none;" %></strong>
+                <% if evidence.description.present? %>
+                  <br><span class="text-body-secondary small"><%= truncate(evidence.description, length: 60) %></span>
+                <% end %>
+              </td>
+              <td><span class="badge bg-body-secondary text-body"><%= evidence.type_label %></span></td>
+              <td>
+                <% badge_class = case evidence.status
+                   when "draft" then "bg-secondary"
+                   when "collected" then "bg-info"
+                   when "reviewed" then "bg-primary"
+                   when "attested" then "bg-success"
+                   when "expired" then "bg-danger"
+                   else "bg-secondary"
+                   end %>
+                <span class="badge <%= badge_class %>"><%= evidence.status_label %></span>
+              </td>
+              <td>
+                <% evidence.evidence_control_links.limit(3).each do |link| %>
+                  <code class="small"><%= link.control_id %></code>
+                <% end %>
+                <% if evidence.evidence_control_links.size > 3 %>
+                  <span class="text-body-secondary small">+<%= evidence.evidence_control_links.size - 3 %></span>
+                <% end %>
+              </td>
+              <td class="small"><%= evidence.collected_at&.strftime("%Y-%m-%d") %></td>
+              <td>
+                <% if evidence.file.attached? %>
+                  <span class="text-success small"><%= evidence.original_filename || evidence.file.filename %></span>
+                <% else %>
+                  <span class="text-body-tertiary small fst-italic">No file</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <% if evidence.attestations.any? %>
+                  <span class="badge bg-success"><%= evidence.attestations.count %></span>
+                <% else %>
+                  <span class="text-body-tertiary">0</span>
+                <% end %>
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <%= link_to "View", evidence, class: "btn btn-primary btn-sm" %>
+                  <%= link_to "Edit", edit_evidence_path(evidence), class: "btn btn-sm btn-sparc-orange" %>
+                  <%= button_to "Delete", evidence, method: :delete,
+                      data: { confirm: "Delete evidence '#{evidence.title}'?" },
+                      class: "btn btn-danger btn-sm" %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="text-center text-body-secondary p-4">
+        <p>No evidence records found. <%= link_to "Upload evidence", new_evidence_path, class: "text-primary" %> to get started.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

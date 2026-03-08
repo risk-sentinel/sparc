@@ -1,0 +1,62 @@
+<div class="card">
+  <div class="card-body">
+    <h2 class="mb-2">Record Attestation</h2>
+    <p class="text-body-secondary mb-4">
+      Attesting to evidence: <strong><%= @evidence.title %></strong>
+    </p>
+
+    <%= form_with model: [ @evidence, @attestation ], local: true do |f| %>
+      <% if @attestation.errors.any? %>
+        <div class="alert alert-danger">
+          <h6 class="fw-semibold"><%= pluralize(@attestation.errors.count, "error") %> prevented saving:</h6>
+          <ul class="mb-0">
+            <% @attestation.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Attester Name <span class="text-danger">*</span></label>
+          <%= f.text_field :attester_name, class: "form-control", placeholder: "Full name" %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Email</label>
+          <%= f.text_field :attester_email, class: "form-control", placeholder: "email@example.com" %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Role</label>
+          <%= f.select :role,
+              options_for_select(Attestation::ROLE_LABELS.map { |k, v| [ v, k ] }, @attestation.role),
+              { include_blank: "Select role..." }, class: "form-select" %>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Attestation Statement <span class="text-danger">*</span></label>
+        <%= f.text_area :statement, class: "form-control", rows: 4,
+            placeholder: "I attest that the evidence provided is accurate, complete, and represents the current state of the control implementation..." %>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Attestation Date <span class="text-danger">*</span></label>
+          <%= f.datetime_local_field :attested_at, class: "form-control",
+              value: @attestation.attested_at&.strftime("%Y-%m-%dT%H:%M") || Time.current.strftime("%Y-%m-%dT%H:%M") %>
+        </div>
+      </div>
+
+      <div class="alert alert-info small">
+        <strong>Note:</strong> A tamper-evident digital signature hash (SHA-256) will be automatically generated
+        from your name, email, statement, and attestation date. This hash serves as a non-repudiation record.
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= f.submit "Record Attestation", class: "btn btn-success" %>
+        <%= link_to "Cancel", evidence_path(@evidence), class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
