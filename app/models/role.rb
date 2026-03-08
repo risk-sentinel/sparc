@@ -5,8 +5,14 @@
 # users.admin boolean column.
 #
 # Seeded roles come from docs/groups_users/groups_users.md:
-#   Instance: policy_manager, global_viewer, senior_accountable_official, senior_agency_official_privacy
-#   Project:  ao, so_iso, ciso, isso, project_member, assessor_3pao, view_only, common_control_provider
+#   Instance (10): policy_manager, global_viewer, senior_accountable_official,
+#                  senior_agency_official_privacy, head_of_agency, risk_executive,
+#                  cio, chief_acquisition_officer, fedramp_pmo, jab
+#   Project  (19): ao, agency_ao, so_iso, ciso, issm, isso, cloud_service_provider,
+#                  assessor_3pao, common_control_provider, system_architect_engineer,
+#                  component_supplier, system_operator_admin, information_owner_steward,
+#                  vendor_dependency_manager, solution_evaluator, project_member,
+#                  sparc_sme, evidence_integration_engineer, view_only
 #
 # Permissions are stored as a JSONB hash of "resource.action" => boolean keys.
 class Role < ApplicationRecord

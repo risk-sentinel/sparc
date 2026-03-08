@@ -8,6 +8,9 @@ class CdefDocumentsController < ApplicationController
 
   def index
     @cdef_documents = CdefDocument.order(created_at: :desc)
+    @total_count = @cdef_documents.count
+    @controls_count = CdefControl.count
+    @completed_count = @cdef_documents.where(status: "completed").count
   end
 
   def show

@@ -3,6 +3,9 @@ class ProjectsController < ApplicationController
 
   def index
     @projects = Project.order(updated_at: :desc)
+    @total_count = @projects.count
+    @active_count = @projects.where(status: "active").count
+    @member_count = ProjectMembership.count
   end
 
   def show

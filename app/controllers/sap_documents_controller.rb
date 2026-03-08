@@ -11,6 +11,9 @@ class SapDocumentsController < ApplicationController
 
   def index
     @sap_documents = SapDocument.order(created_at: :desc)
+    @total_count = @sap_documents.count
+    @controls_count = SapControl.count
+    @completed_count = @sap_documents.where(status: "completed").count
   end
 
   def show

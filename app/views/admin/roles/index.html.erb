@@ -14,6 +14,7 @@
           <th>Name</th>
           <th>Display Name</th>
           <th>Scope</th>
+          <th>Description</th>
           <th>Users</th>
           <th>Sort</th>
           <th></th>
@@ -29,6 +30,7 @@
                 <%= role.scope.capitalize %>
               </span>
             </td>
+            <td class="small text-body-secondary" style="max-width: 300px;"><%= truncate(role.description.to_s, length: 80) %></td>
             <td><%= role.user_roles.count %></td>
             <td><%= role.sort_order %></td>
             <td class="text-end">
