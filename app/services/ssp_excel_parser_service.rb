@@ -3,28 +3,11 @@ require "roo"
 class SspExcelParserService
   include BatchInsertable
 
-  # Maps normalized header text → { key:, control_attr: }
-  # control_attr: true  = stored directly on SspControl
-  # control_attr: false = stored as SspControlField
-  COLUMN_MAP = {
-    "paragraph/reqid"        => { key: :control_id,             control_attr: true  },
-    "title"                  => { key: :title,                   control_attr: true  },
-    "stated requirement"     => { key: "stated_requirement",     control_attr: false },
-    "private implementation" => { key: "private_implementation", control_attr: false },
-    "public implementation"  => { key: "public_implementation",  control_attr: false },
-    "notes"                  => { key: "notes",                  control_attr: false },
-    "status"                 => { key: "status",                 control_attr: false },
-    "expected completion"    => { key: "expected_completion",    control_attr: false },
-    "class"                  => { key: "class",                  control_attr: false },
-    "priority"               => { key: "priority",               control_attr: false },
-    "responsible entities"   => { key: "responsible_entities",   control_attr: false },
-    "control owner"          => { key: "control_owner",          control_attr: false },
-    "type/use as"            => { key: "type_use_as",            control_attr: false },
-    "inherited from"         => { key: "inherited_from",         control_attr: false },
-    "provided as"            => { key: "provided_as",            control_attr: false },
-    "control origination"    => { key: "control_origination",    control_attr: false },
-    "history"                => { key: "history",                control_attr: false }
-  }.freeze
+  # Column mapping is loaded from lib/data_mappings/ssp_excel.json via DataMappingSchema.
+  # This provides a vendor-neutral, declarative mapping that includes editability,
+  # validation rules, and OSCAL export field mappings alongside the import config.
+  SCHEMA = DataMappingSchema.load(:ssp_excel)
+  COLUMN_MAP = SCHEMA.column_map.freeze
 
   def initialize(ssp_document, file_path)
     @document  = ssp_document

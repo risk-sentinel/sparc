@@ -1,0 +1,211 @@
+{
+  "format": "ssp_excel",
+  "version": "1.0",
+  "description": "Mapping schema for SSP (System Security Plan) Excel import/export",
+  "document_type": "SspDocument",
+  "control_type": "SspControl",
+  "field_type": "SspControlField",
+  "fields": [
+    {
+      "key": "control_id",
+      "source_header": "paragraph/reqid",
+      "storage": "control_attribute",
+      "data_type": "string",
+      "required": true,
+      "description": "NIST control identifier (e.g. AC-1, AC-2)"
+    },
+    {
+      "key": "title",
+      "source_header": "title",
+      "storage": "control_attribute",
+      "data_type": "string",
+      "required": false,
+      "description": "Control title"
+    },
+    {
+      "key": "stated_requirement",
+      "source_header": "stated requirement",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": false,
+      "oscal_mapping": {
+        "target": "remarks",
+        "prefix": "Stated Requirement"
+      },
+      "description": "The stated requirement text for the control"
+    },
+    {
+      "key": "private_implementation",
+      "source_header": "private implementation",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "oscal_mapping": {
+        "target": "statement",
+        "statement_suffix": "_priv"
+      },
+      "description": "Private (internal) implementation description"
+    },
+    {
+      "key": "public_implementation",
+      "source_header": "public implementation",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "oscal_mapping": {
+        "target": "statement",
+        "statement_suffix": "_pub"
+      },
+      "description": "Public-facing implementation description"
+    },
+    {
+      "key": "notes",
+      "source_header": "notes",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": true,
+      "oscal_mapping": {
+        "target": "remarks",
+        "prefix": "Notes"
+      },
+      "description": "Additional notes about the control implementation"
+    },
+    {
+      "key": "status",
+      "source_header": "status",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "validation": {
+        "allowed_values": ["Deferred", "Implemented", "Not Applicable", "Will Not Implement"]
+      },
+      "oscal_mapping": {
+        "target": "prop",
+        "prop_name": "implementation-status",
+        "transform": "downcase_hyphenate"
+      },
+      "description": "Implementation status of the control"
+    },
+    {
+      "key": "expected_completion",
+      "source_header": "expected completion",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "oscal_mapping": {
+        "target": "remarks",
+        "prefix": "Expected Completion"
+      },
+      "description": "Expected completion date for implementation"
+    },
+    {
+      "key": "class",
+      "source_header": "class",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "Control classification"
+    },
+    {
+      "key": "priority",
+      "source_header": "priority",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "Control priority"
+    },
+    {
+      "key": "responsible_entities",
+      "source_header": "responsible entities",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "oscal_mapping": {
+        "target": "prop",
+        "prop_name": "responsible-entities",
+        "namespace": "https://sparc.local/ns"
+      },
+      "description": "Entities responsible for the control"
+    },
+    {
+      "key": "control_owner",
+      "source_header": "control owner",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "description": "Owner of the control"
+    },
+    {
+      "key": "type_use_as",
+      "source_header": "type/use as",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "validation": {
+        "allowed_values": ["System Specific", "Hybrid", "Inherited", "Provider", "Consumer"]
+      },
+      "oscal_mapping": {
+        "target": "prop",
+        "prop_name": "control-type",
+        "namespace": "https://sparc.local/ns"
+      },
+      "description": "Control type classification"
+    },
+    {
+      "key": "inherited_from",
+      "source_header": "inherited from",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": false,
+      "oscal_mapping": {
+        "target": "remarks",
+        "prefix": "Inherited From"
+      },
+      "description": "Source system the control is inherited from"
+    },
+    {
+      "key": "provided_as",
+      "source_header": "provided as",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "validation": {
+        "allowed_values": ["Implemented", "Configured", "Documented", "Not Applicable"]
+      },
+      "oscal_mapping": {
+        "target": "prop",
+        "prop_name": "provided-as",
+        "namespace": "https://sparc.local/ns"
+      },
+      "description": "How the control is provided"
+    },
+    {
+      "key": "control_origination",
+      "source_header": "control origination",
+      "storage": "control_field",
+      "data_type": "string",
+      "editable": true,
+      "validation": {
+        "allowed_values": ["System Specific", "Hybrid — partially inherited", "Inherited from provider", "Not Applicable"]
+      },
+      "oscal_mapping": {
+        "target": "prop",
+        "prop_name": "control-origination",
+        "namespace": "https://sparc.local/ns"
+      },
+      "description": "Control origination type"
+    },
+    {
+      "key": "history",
+      "source_header": "history",
+      "storage": "control_field",
+      "data_type": "text",
+      "editable": false,
+      "oscal_mapping": {
+        "target": "remarks",
+        "prefix": "History"
+      },
+      "description": "Change history for the control"
+    }
+  ]
+}
