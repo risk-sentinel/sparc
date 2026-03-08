@@ -14,7 +14,7 @@ class DashboardAggregationService
 
     SspControl
       .joins(:ssp_document)
-      .where.not(control_id: [nil, ""])
+      .where.not(control_id: [ nil, "" ])
       .includes(:ssp_control_fields)
       .find_each(batch_size: 1000) do |control|
         family = control.control_id.to_s.split("-").first.upcase
@@ -33,6 +33,6 @@ class DashboardAggregationService
     ordered = SSP_STATUS_ORDER.select { |s| all_statuses.include?(s) }
     ordered += (all_statuses - SSP_STATUS_ORDER).sort
 
-    [data, families, ordered]
+    [ data, families, ordered ]
   end
 end
