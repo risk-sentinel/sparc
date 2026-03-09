@@ -1,0 +1,79 @@
+<%= render "shared/section_summary", tiles: [
+  [@total_count, "Control Mappings"],
+  [@complete_count, "Complete"],
+  [@draft_count, "Draft"]
+] %>
+
+<div class="card" style="overflow: hidden;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Control Mappings</h2>
+    <% if can_write_mappings? %>
+      <div class="d-flex gap-2">
+        <%= link_to "New Mapping", new_control_mapping_path, class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @control_mappings.any? %>
+    <table class="table table-hover" style="table-layout: fixed;">
+      <colgroup>
+        <col style="width: 20%;">
+        <col style="width: 28%;">
+        <col style="width: 10%;">
+        <col style="width: 8%;">
+        <col style="width: 10%;">
+        <col style="width: 12%;">
+        <col style="width: 12%;">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Source &rarr; Target</th>
+          <th>Status</th>
+          <th>Entries</th>
+          <th>Method</th>
+          <th>Last Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @control_mappings.each do |mapping| %>
+          <tr>
+            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= mapping.name %>">
+              <%= link_to mapping.name, control_mapping_path(mapping), class: "text-decoration-none" %>
+            </td>
+            <td class="small text-body-secondary" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                title="<%= mapping.source_catalog.name %> → <%= mapping.target_catalog.name %>">
+              <%= mapping.source_catalog.name %> &rarr; <%= mapping.target_catalog.name %>
+            </td>
+            <td>
+              <span class="badge text-bg-<%= mapping_status_color(mapping.status) %>">
+                <%= mapping.status.titleize %>
+              </span>
+            </td>
+            <td><%= mapping.entries_count %></td>
+            <td class="small text-body-secondary"><%= mapping.method_type.titleize %></td>
+            <td class="small text-body-secondary"><%= mapping.updated_at.strftime("%Y-%m-%d") %></td>
+            <td>
+              <div class="d-flex gap-1 justify-content-end">
+                <%= link_to "View", control_mapping_path(mapping), class: "btn btn-sm btn-outline-primary" %>
+                <% if can_write_mappings? %>
+                  <%= button_to "Delete", control_mapping_path(mapping), method: :delete,
+                        class: "btn btn-sm btn-outline-danger",
+                        data: { turbo_confirm: "Delete mapping '#{mapping.name}'?" } %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="text-center text-body-secondary p-4">
+      <p>No control mappings found.</p>
+      <% if can_write_mappings? %>
+        <%= link_to "Create your first mapping", new_control_mapping_path, class: "btn btn-success" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

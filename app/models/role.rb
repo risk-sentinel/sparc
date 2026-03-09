@@ -49,6 +49,8 @@ class Role < ApplicationRecord
     cdef.write
     evidence.read
     evidence.write
+    mappings.read
+    mappings.write
   ].freeze
 
   # Group permission keys by resource for UI rendering
@@ -64,7 +66,8 @@ class Role < ApplicationRecord
     "sap"      => "Security Assessment Plans",
     "poam"     => "POA&Ms",
     "cdef"     => "Component Definitions",
-    "evidence" => "Evidence"
+    "evidence" => "Evidence",
+    "mappings" => "Control Mappings"
   }.freeze
 
   # Check if this role has a specific permission

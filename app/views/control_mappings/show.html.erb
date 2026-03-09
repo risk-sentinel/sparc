@@ -1,0 +1,176 @@
+<div class="my-4">
+  <%# ── Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0"><%= @control_mapping.name %></h1>
+    <div class="d-flex gap-2">
+      <% if can_write_mappings? %>
+        <%= link_to "Edit", edit_control_mapping_path(@control_mapping), class: "btn btn-sm btn-outline-primary" %>
+        <% if @control_mapping.status == "draft" || @control_mapping.status == "not-complete" %>
+          <%= button_to "Publish", publish_control_mapping_path(@control_mapping),
+                method: :patch, class: "btn btn-sm btn-success",
+                data: { turbo_confirm: "Publish this mapping? It will be marked as complete." } %>
+        <% end %>
+        <% if @control_mapping.status == "complete" %>
+          <%= button_to "Deprecate", deprecate_control_mapping_path(@control_mapping),
+                method: :patch, class: "btn btn-sm btn-outline-warning",
+                data: { turbo_confirm: "Deprecate this mapping?" } %>
+        <% end %>
+      <% end %>
+      <%= link_to "Export OSCAL", download_oscal_control_mapping_path(@control_mapping),
+            class: "btn btn-sm btn-outline-info" %>
+      <%= link_to "Back", control_mappings_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <%# ── Two-column details ── %>
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header fw-semibold">Mapping Details</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Status</dt>
+            <dd class="col-sm-8">
+              <span class="badge text-bg-<%= mapping_status_color(@control_mapping.status) %>">
+                <%= @control_mapping.status.titleize %>
+              </span>
+            </dd>
+            <dt class="col-sm-4">Version</dt>
+            <dd class="col-sm-8"><%= @control_mapping.mapping_version %></dd>
+            <dt class="col-sm-4">Method</dt>
+            <dd class="col-sm-8"><%= @control_mapping.method_type.titleize %></dd>
+            <dt class="col-sm-4">Rationale</dt>
+            <dd class="col-sm-8"><%= @control_mapping.matching_rationale.titleize %></dd>
+            <dt class="col-sm-4">OSCAL Version</dt>
+            <dd class="col-sm-8"><%= @control_mapping.oscal_version %></dd>
+            <dt class="col-sm-4">Created</dt>
+            <dd class="col-sm-8"><%= @control_mapping.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
+            <dt class="col-sm-4">Updated</dt>
+            <dd class="col-sm-8"><%= @control_mapping.updated_at.strftime("%Y-%m-%d %H:%M") %></dd>
+          </dl>
+          <% if @control_mapping.description.present? %>
+            <hr>
+            <p class="small text-body-secondary mb-0"><%= @control_mapping.description %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header fw-semibold">Catalog References</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Source</dt>
+            <dd class="col-sm-8">
+              <%= link_to @control_mapping.source_catalog.name,
+                    control_catalog_path(@control_mapping.source_catalog),
+                    class: "text-decoration-none" %>
+              <% if @control_mapping.source_catalog.version.present? %>
+                <span class="badge text-bg-light border ms-1"><%= @control_mapping.source_catalog.version %></span>
+              <% end %>
+            </dd>
+            <dt class="col-sm-4">Target</dt>
+            <dd class="col-sm-8">
+              <%= link_to @control_mapping.target_catalog.name,
+                    control_catalog_path(@control_mapping.target_catalog),
+                    class: "text-decoration-none" %>
+              <% if @control_mapping.target_catalog.version.present? %>
+                <span class="badge text-bg-light border ms-1"><%= @control_mapping.target_catalog.version %></span>
+              <% end %>
+            </dd>
+            <dt class="col-sm-4">Entries</dt>
+            <dd class="col-sm-8"><span class="badge text-bg-info"><%= @entries.size %></span></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Mapping Entries ── %>
+  <div class="card mt-4">
+    <div class="card-header fw-semibold">Mapping Entries (<%= @entries.size %>)</div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Source Control</th>
+            <th>Type</th>
+            <th class="text-center">&rarr;</th>
+            <th>Target Control</th>
+            <th>Type</th>
+            <th>Relationship</th>
+            <th>Remarks</th>
+            <% if can_write_mappings? %>
+              <th></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% @entries.each do |entry| %>
+            <tr>
+              <td><code><%= entry.source_control_id %></code></td>
+              <td class="small text-body-secondary"><%= entry.source_type %></td>
+              <td class="text-center text-body-secondary">&rarr;</td>
+              <td><code><%= entry.target_control_id %></code></td>
+              <td class="small text-body-secondary"><%= entry.target_type %></td>
+              <td>
+                <span class="badge text-bg-<%= mapping_relationship_color(entry.relationship) %>">
+                  <%= entry.relationship.titleize %>
+                </span>
+              </td>
+              <td class="small text-body-secondary" style="max-width: 200px;">
+                <%= truncate(entry.remarks.to_s, length: 60) %>
+              </td>
+              <% if can_write_mappings? %>
+                <td class="text-end">
+                  <%= button_to "Remove", control_mapping_entry_path(@control_mapping, entry),
+                        method: :delete, class: "btn btn-sm btn-outline-danger",
+                        data: { turbo_confirm: "Remove this mapping entry?" } %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+
+          <%# ── Add entry form row ── %>
+          <% if can_write_mappings? %>
+            <tr class="table-light">
+              <td colspan="8">
+                <%= form_with model: [@control_mapping, @entry], url: control_mapping_entries_path(@control_mapping), class: "row g-2 align-items-end" do |f| %>
+                  <div class="col-md-2">
+                    <%= f.text_field :source_control_id, class: "form-control form-control-sm",
+                          placeholder: "e.g. AC-1" %>
+                  </div>
+                  <div class="col-md-1">
+                    <%= f.select :source_type, ControlMappingEntry::SUBJECT_TYPES.map { |t| [t.titleize, t] },
+                          {}, class: "form-select form-select-sm" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.text_field :target_control_id, class: "form-control form-control-sm",
+                          placeholder: "e.g. A.5.1" %>
+                  </div>
+                  <div class="col-md-1">
+                    <%= f.select :target_type, ControlMappingEntry::SUBJECT_TYPES.map { |t| [t.titleize, t] },
+                          {}, class: "form-select form-select-sm" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.select :relationship,
+                          ControlMappingEntry::RELATIONSHIPS.map { |r| [r.titleize, r] },
+                          { prompt: "Relationship..." }, class: "form-select form-select-sm" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.text_field :remarks, class: "form-control form-control-sm",
+                          placeholder: "Remarks (optional)" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.submit "Add Entry", class: "btn btn-sm btn-success w-100" %>
+                  </div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
