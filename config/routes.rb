@@ -1,6 +1,5 @@
 Rails.application.routes.draw do
   root "home#index"
-  get "dashboard/family/:family", to: "home#family_drilldown", as: :dashboard_family
 
   # ── Authentication ────────────────────────────────────────────────────
   get    "login",  to: "sessions#new",     as: :login
