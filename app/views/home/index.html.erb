@@ -27,19 +27,6 @@
   </div>
 </div>
 
-<%= render partial: "shared/heatmap",
-   locals: {
-     heatmap_data:     @heatmap_data,
-     heatmap_families: @heatmap_families,
-     heatmap_statuses: @heatmap_statuses,
-     title:            "Aggregate Compliance by NIST Control Family",
-     color_helper:     :ssp_status_color,
-     filter_key:       "status",
-     legend_items:     ApplicationHelper::SSP_STATUS_COLORS.map { |k, v| [k, v] },
-     show_percentage:  true,
-     family_url_builder: ->(family) { dashboard_family_path(family: family) }
-   } %>
-
 <%# ── Compact section navigation grid ── %>
 <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
   <%
