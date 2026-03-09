@@ -4,6 +4,14 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.5 -- Heatmap Removal & Environment UX Fix (2026-03-09)
+
+### Fixed
+- Removed aggregate compliance heatmap from home page -- document-level heatmaps remain on individual SSP, SAR, CDEF, SAP, and Profile pages ([Issue #136](https://github.com/Rebel-Raiders/sparc/issues/136))
+- Renamed "Boundaries & Components" section to "Environments & Components" on authorization boundary show page for clearer terminology ([Issue #136](https://github.com/Rebel-Raiders/sparc/issues/136))
+
+---
+
 ## v3.4.4 -- Authorization Boundary Rebrand (2026-03-09)
 
 ### Changed

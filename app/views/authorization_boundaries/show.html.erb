@@ -80,12 +80,12 @@
   </div>
 </div>
 
-<%# ── Boundaries & Components ──────────────────────────────── %>
+<%# ── Environments & Components ────────────────────────────── %>
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Boundaries &amp; Components</h4>
-      <%= link_to "Add Boundary", new_authorization_boundary_boundary_path(@authorization_boundary), class: "btn btn-success btn-sm" %>
+      <h4 class="mb-0">Environments &amp; Components</h4>
+      <%= link_to "Add Environment", new_authorization_boundary_boundary_path(@authorization_boundary), class: "btn btn-success btn-sm" %>
     </div>
 
     <% if @boundaries.any? %>
@@ -102,7 +102,7 @@
               </div>
               <div class="d-flex gap-1">
                 <%= link_to "Edit", edit_authorization_boundary_boundary_path(@authorization_boundary, boundary), class: "btn btn-outline-secondary btn-sm" %>
-                <%= link_to "Delete", authorization_boundary_boundary_path(@authorization_boundary, boundary), method: :delete, data: { confirm: "Delete boundary?" }, class: "btn btn-outline-danger btn-sm" %>
+                <%= link_to "Delete", authorization_boundary_boundary_path(@authorization_boundary, boundary), method: :delete, data: { confirm: "Delete environment?" }, class: "btn btn-outline-danger btn-sm" %>
               </div>
             </div>
             <% if boundary.cdef_documents.any? %>
@@ -118,7 +118,7 @@
         </div>
       <% end %>
     <% else %>
-      <p class="text-body-secondary text-center">No boundaries defined. Add a boundary to associate components.</p>
+      <p class="text-body-secondary text-center">No environments defined. Add an environment to associate components.</p>
     <% end %>
   </div>
 </div>
