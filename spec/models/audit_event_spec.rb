@@ -85,6 +85,27 @@ RSpec.describe AuditEvent, type: :model do
       expect(event.subject_type).to be_nil
       expect(event.subject_id).to be_nil
     end
+
+    it "emits structured JSON to Rails logger" do
+      allow(Rails.logger).to receive(:info)
+
+      AuditEvent.log(user: user, action: "login_success", ip_address: "10.0.0.1")
+
+      expect(Rails.logger).to have_received(:info).with(a_string_including('"audit_event"'))
+      expect(Rails.logger).to have_received(:info).with(a_string_including('"action":"login_success"'))
+      expect(Rails.logger).to have_received(:info).with(a_string_including('"ip_address":"10.0.0.1"'))
+      expect(Rails.logger).to have_received(:info).with(a_string_including(user.email))
+    end
+
+    it "includes subject info in structured log when subject provided" do
+      allow(Rails.logger).to receive(:info)
+      project = create(:project)
+
+      AuditEvent.log(user: user, action: "project_created", ip_address: "10.0.0.1", subject: project)
+
+      expect(Rails.logger).to have_received(:info).with(a_string_including('"subject_type":"Project"'))
+      expect(Rails.logger).to have_received(:info).with(a_string_including("\"subject_id\":#{project.id}"))
+    end
   end
 
   describe "#category" do
