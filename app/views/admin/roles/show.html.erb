@@ -68,7 +68,7 @@
           <tr>
             <th>User</th>
             <th>Email</th>
-            <th>Project</th>
+            <th>Authorization Boundary</th>
             <th>Assigned</th>
           </tr>
         </thead>
@@ -78,8 +78,8 @@
               <td><%= link_to ur.user.display_label, admin_user_path(ur.user) %></td>
               <td class="small text-body-secondary"><%= ur.user.email %></td>
               <td>
-                <% if ur.project %>
-                  <%= link_to ur.project.name, admin_project_path(ur.project), class: "badge text-bg-info text-decoration-none" %>
+                <% if ur.authorization_boundary %>
+                  <%= link_to ur.authorization_boundary.name, admin_authorization_boundary_path(ur.authorization_boundary), class: "badge text-bg-info text-decoration-none" %>
                 <% else %>
                   <span class="text-body-secondary">Instance-wide</span>
                 <% end %>

@@ -8,7 +8,7 @@ RSpec.describe Evidence, type: :model do
   end
 
   describe "associations" do
-    it { is_expected.to belong_to(:project).optional }
+    it { is_expected.to belong_to(:authorization_boundary).optional }
     it { is_expected.to have_many(:evidence_control_links).dependent(:destroy) }
     it { is_expected.to have_many(:attestations).dependent(:destroy) }
   end

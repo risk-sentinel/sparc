@@ -60,21 +60,21 @@
         </div>
       </div>
 
-      <%# ── Project Roles ───────────────────────────────── %>
+      <%# ── Authorization Boundary Roles ───────────────────────────────── %>
       <div class="card mb-4">
-        <div class="card-header fw-semibold">Project Roles</div>
+        <div class="card-header fw-semibold">Authorization Boundary Roles</div>
         <div class="card-body">
-          <% if @project_roles.any? %>
-            <% @project_roles.group_by(&:project).each do |project, urs| %>
+          <% if @authorization_boundary_roles.any? %>
+            <% @authorization_boundary_roles.group_by(&:authorization_boundary).each do |authorization_boundary, urs| %>
               <div class="mb-2">
-                <strong><%= project&.name || "Unknown Project" %></strong>
+                <strong><%= authorization_boundary&.name || "Unknown Authorization Boundary" %></strong>
                 <% urs.each do |ur| %>
                   <span class="badge text-bg-info ms-1"><%= ur.role.display_name %></span>
                 <% end %>
               </div>
             <% end %>
           <% else %>
-            <p class="text-body-secondary small mb-0">No project roles assigned.</p>
+            <p class="text-body-secondary small mb-0">No authorization boundary roles assigned.</p>
           <% end %>
         </div>
       </div>

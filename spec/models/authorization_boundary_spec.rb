@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe Project, type: :model do
+RSpec.describe AuthorizationBoundary, type: :model do
   describe "validations" do
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_presence_of(:status) }
@@ -8,7 +8,7 @@ RSpec.describe Project, type: :model do
 
   describe "associations" do
     it { is_expected.to have_many(:boundaries).dependent(:destroy) }
-    it { is_expected.to have_many(:project_memberships).dependent(:destroy) }
+    it { is_expected.to have_many(:authorization_boundary_memberships).dependent(:destroy) }
     it { is_expected.to have_one(:ssp_document).dependent(:nullify) }
     it { is_expected.to have_one(:sap_document).dependent(:nullify) }
     it { is_expected.to have_one(:sar_document).dependent(:nullify) }
@@ -25,8 +25,8 @@ RSpec.describe Project, type: :model do
 
   describe "#artifact_summary" do
     it "returns a hash with artifact counts" do
-      project = create(:project)
-      summary = project.artifact_summary
+      authorization_boundary = create(:authorization_boundary)
+      summary = authorization_boundary.artifact_summary
 
       expect(summary).to include(:ssp, :sap, :sar, :poam_count, :boundary_count, :component_count)
       expect(summary[:poam_count]).to eq(0)
@@ -35,8 +35,8 @@ RSpec.describe Project, type: :model do
 
   describe "#members_by_role" do
     it "groups memberships by role" do
-      project = create(:project, :with_members)
-      grouped = project.members_by_role
+      authorization_boundary = create(:authorization_boundary, :with_members)
+      grouped = authorization_boundary.members_by_role
 
       expect(grouped.keys).to include("system_owner", "isso")
     end

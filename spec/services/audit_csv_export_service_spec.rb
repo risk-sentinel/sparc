@@ -27,11 +27,11 @@ RSpec.describe AuditCsvExportService do
     end
 
     it "includes subject info when present" do
-      project = create(:project)
-      AuditEvent.log(action: "project_created", ip_address: "127.0.0.1", subject: project)
+      authorization_boundary = create(:authorization_boundary)
+      AuditEvent.log(action: "authorization_boundary_created", ip_address: "127.0.0.1", subject: authorization_boundary)
       csv = described_class.new(AuditEvent.all).export
-      expect(csv).to include("Project")
-      expect(csv).to include(project.id.to_s)
+      expect(csv).to include("AuthorizationBoundary")
+      expect(csv).to include(authorization_boundary.id.to_s)
     end
 
     it "generates valid CSV for empty scope" do

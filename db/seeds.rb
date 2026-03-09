@@ -1804,13 +1804,13 @@ PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
 ).freeze
 
 PERM_AO = {
-  "projects.read" => true, "ssp.read" => true, "sar.read" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true, "sar.read" => true,
   "sap.read" => true, "poam.read" => true, "poam.write" => true,
   "cdef.read" => true, "evidence.read" => true, "mappings.read" => true
 }.freeze
 
 PERM_SO_ISO = {
-  "projects.read" => true, "ssp.read" => true, "ssp.write" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sap.read" => true, "poam.read" => true,
   "poam.write" => true, "cdef.read" => true, "cdef.write" => true,
   "evidence.read" => true, "evidence.write" => true, "mappings.read" => true
@@ -1818,14 +1818,14 @@ PERM_SO_ISO = {
 
 PERM_CISO = {
   "catalogs.read" => true, "profiles.read" => true,
-  "projects.read" => true, "ssp.read" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true,
   "sar.read" => true, "sap.read" => true,
   "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
   "mappings.read" => true
 }.freeze
 
 PERM_ISSO = {
-  "projects.read" => true, "ssp.read" => true, "ssp.write" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true, "sap.write" => true,
   "poam.read" => true, "poam.write" => true,
@@ -1833,8 +1833,8 @@ PERM_ISSO = {
   "mappings.read" => true
 }.freeze
 
-PERM_PROJECT_MEMBER = {
-  "projects.read" => true, "profiles.read" => true,
+PERM_TEAM_MEMBER = {
+  "authorization_boundaries.read" => true, "profiles.read" => true,
   "ssp.read" => true, "ssp.write" => true,
   "poam.read" => true, "poam.write" => true,
   "cdef.read" => true, "cdef.write" => true,
@@ -1842,7 +1842,7 @@ PERM_PROJECT_MEMBER = {
 }.freeze
 
 PERM_ASSESSOR = {
-  "projects.read" => true, "ssp.read" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true,
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true, "sap.write" => true,
   "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
@@ -1850,7 +1850,7 @@ PERM_ASSESSOR = {
 }.freeze
 
 PERM_VIEW_ONLY = {
-  "projects.read" => true, "ssp.read" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true,
   "sar.read" => true, "poam.read" => true,
   "cdef.read" => true, "evidence.read" => true
 }.freeze
@@ -1858,14 +1858,14 @@ PERM_VIEW_ONLY = {
 PERM_SAO = PERM_CISO.dup.freeze  # Senior Accountable Official — oversight role
 
 PERM_COMMON_CONTROL = {
-  "projects.read" => true, "ssp.read" => true, "ssp.write" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true, "ssp.write" => true,
   "cdef.read" => true, "cdef.write" => true,
   "evidence.read" => true, "evidence.write" => true
 }.freeze
 
 PERM_SAOP = {
   "catalogs.read" => true, "profiles.read" => true,
-  "projects.read" => true, "ssp.read" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true,
   "sar.read" => true, "sap.read" => true,
   "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
   "mappings.read" => true
@@ -1873,7 +1873,7 @@ PERM_SAOP = {
 
 PERM_SPARC_SME = {
   "catalogs.read" => true, "profiles.read" => true,
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true, "sap.write" => true,
@@ -1885,7 +1885,7 @@ PERM_SPARC_SME = {
 
 PERM_EVIDENCE_ENGINEER = {
   "catalogs.read" => true, "profiles.read" => true,
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "ssp.read" => true,
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true,
@@ -1896,12 +1896,12 @@ PERM_EVIDENCE_ENGINEER = {
 }.freeze
 
 PERM_CHIEF_ACQUISITION_OFFICER = {
-  "catalogs.read" => true, "profiles.read" => true, "projects.read" => true,
+  "catalogs.read" => true, "profiles.read" => true, "authorization_boundaries.read" => true,
   "cdef.read" => true, "evidence.read" => true, "mappings.read" => true
 }.freeze
 
 PERM_ISSM = {
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sap.read" => true,
   "poam.read" => true, "poam.write" => true,
@@ -1911,7 +1911,7 @@ PERM_ISSM = {
 }.freeze
 
 PERM_CSP = {
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sap.read" => true,
   "poam.read" => true, "poam.write" => true,
@@ -1921,39 +1921,39 @@ PERM_CSP = {
 }.freeze
 
 PERM_SYSTEM_ARCHITECT = {
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "ssp.read" => true, "ssp.write" => true,
   "cdef.read" => true, "cdef.write" => true,
   "evidence.read" => true
 }.freeze
 
 PERM_COMPONENT_SUPPLIER = {
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "cdef.read" => true, "cdef.write" => true,
   "evidence.read" => true, "evidence.write" => true
 }.freeze
 
 PERM_SYSTEM_OPERATOR = {
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "ssp.read" => true, "poam.read" => true,
   "cdef.read" => true,
   "evidence.read" => true, "evidence.write" => true
 }.freeze
 
 PERM_INFO_OWNER = {
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "ssp.read" => true, "cdef.read" => true,
   "evidence.read" => true
 }.freeze
 
 PERM_SOLUTION_EVALUATOR = {
-  "projects.read" => true,
+  "authorization_boundaries.read" => true,
   "ssp.read" => true, "sar.read" => true,
   "cdef.read" => true, "evidence.read" => true
 }.freeze
 
 PERM_VENDOR_DEPENDENCY = {
-  "projects.read" => true, "ssp.read" => true,
+  "authorization_boundaries.read" => true, "ssp.read" => true,
   "cdef.read" => true, "cdef.write" => true,
   "evidence.read" => true, "evidence.write" => true
 }.freeze
@@ -1991,63 +1991,63 @@ SPARC_ROLES = [
     description: "Reviews OSCAL-formatted authorization packages for Provisional Authorizations to Operate (P-ATOs) for cloud services intended for government-wide use. Composed of CIOs from DHS, DOD, and GSA.",
     permissions: PERM_ALL_READ },
 
-  # ── Project-Scope Roles ───────────────────────────────────────────────────
-  { name: "ao", display_name: "Authorizing Official", scope: "project", sort_order: 11,
+  # ── Authorization-Boundary-Scope Roles ───────────────────────────────────
+  { name: "ao", display_name: "Authorizing Official", scope: "authorization_boundary", sort_order: 11,
     description: "Senior official who accepts residual risk and issues the Authorization to Operate (ATO) decision. Reviews Security Assessment Report (SAR) findings and POA&M remediation progress to make risk-informed authorization decisions per NIST SP 800-37.",
     permissions: PERM_AO },
-  { name: "agency_ao", display_name: "Agency Authorizing Official", scope: "project", sort_order: 12,
+  { name: "agency_ao", display_name: "Agency Authorizing Official", scope: "authorization_boundary", sort_order: 12,
     description: "Issues agency-specific Authorizations to Operate (ATOs) based on FedRAMP baselines and OSCAL artifacts. Evaluates residual risk within the agency's specific operating context and mission requirements.",
     permissions: PERM_AO },
-  { name: "so_iso", display_name: "System Owner / ISO", scope: "project", sort_order: 13,
+  { name: "so_iso", display_name: "System Owner / ISO", scope: "authorization_boundary", sort_order: 13,
     description: "Owns the information system and is accountable for its security posture. Responsible for control implementation, SSP development and maintenance, system boundary definition, and coordination with ISSOs and security teams per NIST SP 800-37.",
     permissions: PERM_SO_ISO },
-  { name: "ciso", display_name: "CISO", scope: "project", sort_order: 14,
+  { name: "ciso", display_name: "CISO", scope: "authorization_boundary", sort_order: 14,
     description: "Senior Agency Information Security Officer (SAISO) / Chief Information Security Officer. Provides strategic security oversight, policy direction, risk advice, and compliance program leadership across the organization per NIST SP 800-37.",
     permissions: PERM_CISO },
-  { name: "issm", display_name: "ISSM", scope: "project", sort_order: 15,
+  { name: "issm", display_name: "ISSM", scope: "authorization_boundary", sort_order: 15,
     description: "Information System Security Manager. Oversees the system security posture, supports the System Owner, coordinates with ISSOs, and ensures security requirements are implemented and maintained across the system lifecycle per NIST SP 800-37.",
     permissions: PERM_ISSM },
-  { name: "isso", display_name: "ISSO", scope: "project", sort_order: 16,
+  { name: "isso", display_name: "ISSO", scope: "authorization_boundary", sort_order: 16,
     description: "Information System Security Officer. Day-to-day security operations for the information system. Maintains security controls, coordinates assessment activities, tracks POA&M findings, supports the System Owner, and ensures continuous monitoring compliance per NIST SP 800-37.",
     permissions: PERM_ISSO },
-  { name: "cloud_service_provider", display_name: "Cloud Service Provider", scope: "project", sort_order: 17,
+  { name: "cloud_service_provider", display_name: "Cloud Service Provider", scope: "authorization_boundary", sort_order: 17,
     description: "Develops and maintains the OSCAL-formatted System Security Plan (SSP), implements controls, prepares authorization packages, manages POA&Ms, and provides component definitions for cloud service offerings under FedRAMP.",
     permissions: PERM_CSP },
-  { name: "assessor_3pao", display_name: "Assessor / 3PAO", scope: "project", sort_order: 18,
+  { name: "assessor_3pao", display_name: "Assessor / 3PAO", scope: "authorization_boundary", sort_order: 18,
     description: "Independent control assessor or Third-Party Assessment Organization (3PAO). Conducts security assessments, develops Security Assessment Plans (SAPs), produces Security Assessment Reports (SARs), and provides objective evaluation of control effectiveness.",
     permissions: PERM_ASSESSOR },
-  { name: "common_control_provider", display_name: "Common Control Provider", scope: "project", sort_order: 19,
+  { name: "common_control_provider", display_name: "Common Control Provider", scope: "authorization_boundary", sort_order: 19,
     description: "Implements, assesses, and monitors common (inherited) controls shared across multiple information systems. Documents common control details and disseminates implementation information for use in system-level SSPs per NIST SP 800-37.",
     permissions: PERM_COMMON_CONTROL },
-  { name: "system_architect_engineer", display_name: "System Architect / Engineer", scope: "project", sort_order: 20,
+  { name: "system_architect_engineer", display_name: "System Architect / Engineer", scope: "authorization_boundary", sort_order: 20,
     description: "Designs and implements security architecture and controls. Contributes to SSP technical sections, develops component definitions, and ensures system design meets security requirements and OSCAL documentation standards.",
     permissions: PERM_SYSTEM_ARCHITECT },
-  { name: "component_supplier", display_name: "Component Supplier / Product Engineer", scope: "project", sort_order: 21,
+  { name: "component_supplier", display_name: "Component Supplier / Product Engineer", scope: "authorization_boundary", sort_order: 21,
     description: "Provides reusable components with documented control implementations for OSCAL Component Definitions. Supplies evidence of component security capabilities and maintains component-level security documentation.",
     permissions: PERM_COMPONENT_SUPPLIER },
-  { name: "system_operator_admin", display_name: "System Operator / Administrator", scope: "project", sort_order: 22,
+  { name: "system_operator_admin", display_name: "System Operator / Administrator", scope: "authorization_boundary", sort_order: 22,
     description: "Performs daily system operations, monitoring, and maintenance. Implements operational controls, collects operational evidence, and supports continuous monitoring activities for the information system.",
     permissions: PERM_SYSTEM_OPERATOR },
-  { name: "information_owner_steward", display_name: "Information Owner / Steward", scope: "project", sort_order: 23,
+  { name: "information_owner_steward", display_name: "Information Owner / Steward", scope: "authorization_boundary", sort_order: 23,
     description: "Defines protection requirements for information types processed by the system. Supports system categorization per FIPS 199, establishes data governance policies, and ensures information handling complies with applicable regulations.",
     permissions: PERM_INFO_OWNER },
-  { name: "vendor_dependency_manager", display_name: "Vendor Dependency Manager", scope: "project", sort_order: 24,
+  { name: "vendor_dependency_manager", display_name: "Vendor Dependency Manager", scope: "authorization_boundary", sort_order: 24,
     description: "Tracks and documents vendor-supplied components and inherited controls critical for OSCAL Component Definitions. Manages vendor security documentation, supply chain dependencies, and third-party evidence collection.",
     permissions: PERM_VENDOR_DEPENDENCY },
-  { name: "solution_evaluator", display_name: "Solution Evaluator", scope: "project", sort_order: 25,
+  { name: "solution_evaluator", display_name: "Solution Evaluator", scope: "authorization_boundary", sort_order: 25,
     description: "Assesses tools, solutions, and services for OSCAL compliance and integration readiness. Reviews SSP content, SAR findings, and component definitions to evaluate solution suitability for security requirements.",
     permissions: PERM_SOLUTION_EVALUATOR },
-  { name: "project_member", display_name: "Project Member", scope: "project", sort_order: 26,
-    description: "General team member who contributes to project documentation and artifacts. Can view and edit SSP content, manage POA&Ms, work with component definitions, and collect evidence. Cannot alter global catalogs or baselines.",
-    permissions: PERM_PROJECT_MEMBER },
-  { name: "sparc_sme", display_name: "SPARC SME", scope: "project", sort_order: 27,
-    description: "Subject matter expert with broad read/write access to project artifacts. Supports multiple artifact types including SSP, SAR, SAP, POA&M, component definitions, and evidence. Read-only access to enterprise catalogs and profiles.",
+  { name: "project_member", display_name: "Team Member", scope: "authorization_boundary", sort_order: 26,
+    description: "General team member who contributes to authorization boundary documentation and artifacts. Can view and edit SSP content, manage POA&Ms, work with component definitions, and collect evidence. Cannot alter global catalogs or baselines.",
+    permissions: PERM_TEAM_MEMBER },
+  { name: "sparc_sme", display_name: "SPARC SME", scope: "authorization_boundary", sort_order: 27,
+    description: "Subject matter expert with broad read/write access to authorization boundary artifacts. Supports multiple artifact types including SSP, SAR, SAP, POA&M, component definitions, and evidence. Read-only access to enterprise catalogs and profiles.",
     permissions: PERM_SPARC_SME },
-  { name: "evidence_integration_engineer", display_name: "Evidence Integration Engineer", scope: "project", sort_order: 28,
+  { name: "evidence_integration_engineer", display_name: "Evidence Integration Engineer", scope: "authorization_boundary", sort_order: 28,
     description: "Specialized in evidence lifecycle management and assessment integration. Collects, organizes, and links evidence artifacts to control implementations. Supports SAR development with evidence-backed findings and attestations.",
     permissions: PERM_EVIDENCE_ENGINEER },
-  { name: "view_only", display_name: "View Only", scope: "project", sort_order: 29,
-    description: "Read-only access to assigned project artifacts. Intended for auditors, oversight stakeholders, or reviewers who need visibility into SSP, SAR, POA&M, and component documentation without edit capabilities.",
+  { name: "view_only", display_name: "View Only", scope: "authorization_boundary", sort_order: 29,
+    description: "Read-only access to assigned authorization boundary artifacts. Intended for auditors, oversight stakeholders, or reviewers who need visibility into SSP, SAR, POA&M, and component documentation without edit capabilities.",
     permissions: PERM_VIEW_ONLY }
 ].freeze
 
@@ -2116,10 +2116,10 @@ else
   puts "Admin bootstrapping skipped (local login not enabled)."
 end
 
-# ── Sample Project ──────────────────────────────────────────────
-puts "\nSeeding sample Project..."
+# ── Sample Authorization Boundary ──────────────────────────────
+puts "\nSeeding sample Authorization Boundary..."
 
-project = Project.find_or_create_by!(name: "Cloud Web Application ATO") do |p|
+auth_boundary = AuthorizationBoundary.find_or_create_by!(name: "Cloud Web Application ATO") do |p|
   p.description = "Authorization to Operate package for the organization's cloud-based web application. " \
                    "Encompasses production and development environments under a single authorization boundary."
   p.status = "active"
@@ -2130,23 +2130,23 @@ end
 
 # Link existing SSP if present
 if (ssp = SspDocument.first)
-  ssp.update!(project: project) unless ssp.project_id
-  puts "  Linked SSP '#{ssp.name}' to project"
+  ssp.update!(authorization_boundary: auth_boundary) unless ssp.authorization_boundary_id
+  puts "  Linked SSP '#{ssp.name}' to authorization boundary"
 end
 
 # Link existing SAR if present
 if (sar = SarDocument.first)
-  sar.update!(project: project) unless sar.project_id
-  puts "  Linked SAR '#{sar.name}' to project"
+  sar.update!(authorization_boundary: auth_boundary) unless sar.authorization_boundary_id
+  puts "  Linked SAR '#{sar.name}' to authorization boundary"
 end
 
 # Create boundaries
-prod_boundary = project.boundaries.find_or_create_by!(name: "Production Environment") do |b|
+prod_boundary = auth_boundary.boundaries.find_or_create_by!(name: "Production Environment") do |b|
   b.description = "Production cloud infrastructure hosting the web application"
   b.environment = "production"
 end
 
-dev_boundary = project.boundaries.find_or_create_by!(name: "Development Environment") do |b|
+dev_boundary = auth_boundary.boundaries.find_or_create_by!(name: "Development Environment") do |b|
   b.description = "Development and testing infrastructure"
   b.environment = "development"
 end
@@ -2156,9 +2156,9 @@ cdefs = CdefDocument.where(status: "completed").limit(3)
 cdefs.each do |cdef|
   BoundaryCdefDocument.find_or_create_by!(boundary: prod_boundary, cdef_document: cdef)
 end
-puts "  Created #{project.boundaries.count} boundaries with #{BoundaryCdefDocument.count} component associations"
+puts "  Created #{auth_boundary.boundaries.count} boundaries with #{BoundaryCdefDocument.count} component associations"
 
-# Create sample project memberships
+# Create sample authorization boundary memberships
 sample_members = [
   { user_name: "Jane Smith",     user_email: "jane.smith@example.gov",    role: "authorizing_official" },
   { user_name: "John Doe",       user_email: "john.doe@example.gov",      role: "system_owner" },
@@ -2170,13 +2170,13 @@ sample_members = [
 ]
 
 sample_members.each do |attrs|
-  project.project_memberships.find_or_create_by!(user_name: attrs[:user_name], role: attrs[:role]) do |m|
+  auth_boundary.authorization_boundary_memberships.find_or_create_by!(user_name: attrs[:user_name], role: attrs[:role]) do |m|
     m.user_email = attrs[:user_email]
   end
 end
-puts "  Created #{project.project_memberships.count} project memberships"
+puts "  Created #{auth_boundary.authorization_boundary_memberships.count} authorization boundary memberships"
 
-puts "Done! Sample project seeded."
+puts "Done! Sample authorization boundary seeded."
 
 # ── Evidence & Attestations ─────────────────────────────────────────────────
 puts ""

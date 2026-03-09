@@ -24,10 +24,10 @@ module Authorization
   # Require the current user to have a specific role.
   #
   #   authorize_role!("isso")
-  #   authorize_role!("isso", project_id: @project.id)
-  def authorize_role!(role_name, project_id: nil)
+  #   authorize_role!("isso", authorization_boundary_id: @authorization_boundary.id)
+  def authorize_role!(role_name, authorization_boundary_id: nil)
     return unless SparcConfig.any_auth_enabled?
-    return if current_user&.has_role?(role_name, project_id: project_id)
+    return if current_user&.has_role?(role_name, authorization_boundary_id: authorization_boundary_id)
 
     raise NotAuthorizedError, "Role '#{role_name}' required"
   end
@@ -35,10 +35,10 @@ module Authorization
   # Require the current user to have a specific granular permission.
   #
   #   authorize_permission!("ssp.write")
-  #   authorize_permission!("ssp.write", project_id: @project.id)
-  def authorize_permission!(permission_key, project_id: nil)
+  #   authorize_permission!("ssp.write", authorization_boundary_id: @authorization_boundary.id)
+  def authorize_permission!(permission_key, authorization_boundary_id: nil)
     return unless SparcConfig.any_auth_enabled?
-    return if current_user&.has_permission?(permission_key, project_id: project_id)
+    return if current_user&.has_permission?(permission_key, authorization_boundary_id: authorization_boundary_id)
 
     raise NotAuthorizedError, "Permission '#{permission_key}' required"
   end

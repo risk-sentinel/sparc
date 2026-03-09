@@ -1,28 +1,28 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2><%= @project.name %></h2>
+  <h2><%= @authorization_boundary.name %></h2>
   <div class="d-flex gap-2">
-    <%= link_to "Edit", edit_project_path(@project), class: "btn btn-secondary btn-sm" %>
-    <%= link_to "All Projects", projects_path, class: "btn btn-outline-primary btn-sm" %>
+    <%= link_to "Edit", edit_authorization_boundary_path(@authorization_boundary), class: "btn btn-secondary btn-sm" %>
+    <%= link_to "All Authorization Boundaries", authorization_boundaries_path, class: "btn btn-outline-primary btn-sm" %>
   </div>
 </div>
 
-<%# ── Project Details ──────────────────────────────────────── %>
+<%# ── Authorization Boundary Details ──────────────────────────────────────── %>
 <div class="card mb-4">
   <div class="card-body">
     <div class="row">
       <div class="col-md-6">
         <p class="mb-1"><strong>Status:</strong>
-          <% badge_class = @project.authorized? ? "badge-ok" : "badge-warn" %>
+          <% badge_class = @authorization_boundary.authorized? ? "badge-ok" : "badge-warn" %>
           <span class="<%= badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-            <%= @project.status.titleize %>
+            <%= @authorization_boundary.status.titleize %>
           </span>
         </p>
-        <p class="mb-1 text-body-secondary"><%= @project.description.presence || "No description." %></p>
+        <p class="mb-1 text-body-secondary"><%= @authorization_boundary.description.presence || "No description." %></p>
       </div>
       <div class="col-md-6">
-        <% if @project.authorization_boundary_description.present? %>
+        <% if @authorization_boundary.authorization_boundary_description.present? %>
           <p class="mb-1"><strong>Authorization Boundary:</strong></p>
-          <p class="text-body-secondary"><%= @project.authorization_boundary_description %></p>
+          <p class="text-body-secondary"><%= @authorization_boundary.authorization_boundary_description %></p>
         <% end %>
       </div>
     </div>
@@ -38,8 +38,8 @@
         <div class="sparc-hero-tile">
           <div class="sparc-hero-tile-label">SSP</div>
           <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-            <% if @project.ssp_document %>
-              <%= link_to @project.ssp_document.name, ssp_document_path(@project.ssp_document) %>
+            <% if @authorization_boundary.ssp_document %>
+              <%= link_to @authorization_boundary.ssp_document.name, ssp_document_path(@authorization_boundary.ssp_document) %>
             <% else %>
               <span class="text-body-secondary">None</span>
             <% end %>
@@ -50,8 +50,8 @@
         <div class="sparc-hero-tile">
           <div class="sparc-hero-tile-label">SAP</div>
           <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-            <% if @project.sap_document %>
-              <%= link_to @project.sap_document.name, sap_document_path(@project.sap_document) %>
+            <% if @authorization_boundary.sap_document %>
+              <%= link_to @authorization_boundary.sap_document.name, sap_document_path(@authorization_boundary.sap_document) %>
             <% else %>
               <span class="text-body-secondary">None</span>
             <% end %>
@@ -62,8 +62,8 @@
         <div class="sparc-hero-tile">
           <div class="sparc-hero-tile-label">SAR</div>
           <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-            <% if @project.sar_document %>
-              <%= link_to @project.sar_document.name, sar_document_path(@project.sar_document) %>
+            <% if @authorization_boundary.sar_document %>
+              <%= link_to @authorization_boundary.sar_document.name, sar_document_path(@authorization_boundary.sar_document) %>
             <% else %>
               <span class="text-body-secondary">None</span>
             <% end %>
@@ -85,7 +85,7 @@
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">Boundaries &amp; Components</h4>
-      <%= link_to "Add Boundary", new_project_boundary_path(@project), class: "btn btn-success btn-sm" %>
+      <%= link_to "Add Boundary", new_authorization_boundary_boundary_path(@authorization_boundary), class: "btn btn-success btn-sm" %>
     </div>
 
     <% if @boundaries.any? %>
@@ -101,8 +101,8 @@
                 <% end %>
               </div>
               <div class="d-flex gap-1">
-                <%= link_to "Edit", edit_project_boundary_path(@project, boundary), class: "btn btn-outline-secondary btn-sm" %>
-                <%= link_to "Delete", project_boundary_path(@project, boundary), method: :delete, data: { confirm: "Delete boundary?" }, class: "btn btn-outline-danger btn-sm" %>
+                <%= link_to "Edit", edit_authorization_boundary_boundary_path(@authorization_boundary, boundary), class: "btn btn-outline-secondary btn-sm" %>
+                <%= link_to "Delete", authorization_boundary_boundary_path(@authorization_boundary, boundary), method: :delete, data: { confirm: "Delete boundary?" }, class: "btn btn-outline-danger btn-sm" %>
               </div>
             </div>
             <% if boundary.cdef_documents.any? %>
@@ -128,7 +128,7 @@
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">Personnel Roster</h4>
-      <%= link_to "Add Member", new_project_project_membership_path(@project), class: "btn btn-success btn-sm" %>
+      <%= link_to "Add Member", new_authorization_boundary_membership_path(@authorization_boundary), class: "btn btn-success btn-sm" %>
     </div>
 
     <% if @memberships.any? %>
@@ -149,8 +149,8 @@
               <td><span class="badge bg-primary"><%= m.role_label %></span></td>
               <td>
                 <div class="d-flex gap-1">
-                  <%= link_to "Edit", edit_project_project_membership_path(@project, m), class: "btn btn-outline-secondary btn-sm" %>
-                  <%= link_to "Remove", project_project_membership_path(@project, m), method: :delete, data: { confirm: "Remove member?" }, class: "btn btn-outline-danger btn-sm" %>
+                  <%= link_to "Edit", edit_authorization_boundary_membership_path(@authorization_boundary, m), class: "btn btn-outline-secondary btn-sm" %>
+                  <%= link_to "Remove", authorization_boundary_membership_path(@authorization_boundary, m), method: :delete, data: { confirm: "Remove member?" }, class: "btn btn-outline-danger btn-sm" %>
                 </div>
               </td>
             </tr>
