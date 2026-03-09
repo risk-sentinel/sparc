@@ -4,6 +4,7 @@ class PoamDocumentsController < ApplicationController
   before_action :set_poam_document, only: %i[
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
+    download_yaml download_xml
     update_metadata status update
   ]
 
@@ -136,6 +137,28 @@ class PoamDocumentsController < ApplicationController
     send_data oscal_data,
               filename:    "#{@poam_document.name}_oscal_poam_unvalidated_#{Date.today}.json",
               type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_yaml
+    json_string = OscalPoamExportService.new(@poam_document).export
+    yaml_data = OscalExportFormatService.to_yaml(json_string)
+
+    audit_log("poam_document_exported", subject: @poam_document, metadata: { name: @poam_document.name, format: "yaml" })
+    send_data yaml_data,
+              filename:    "#{@poam_document.name}_oscal_poam_#{Date.today}.yaml",
+              type:        "application/x-yaml",
+              disposition: "attachment"
+  end
+
+  def download_xml
+    json_string = OscalPoamExportService.new(@poam_document).export
+    xml_data = OscalExportFormatService.to_xml(json_string, :poam)
+
+    audit_log("poam_document_exported", subject: @poam_document, metadata: { name: @poam_document.name, format: "xml" })
+    send_data xml_data,
+              filename:    "#{@poam_document.name}_oscal_poam_#{Date.today}.xml",
+              type:        "application/xml",
               disposition: "attachment"
   end
 

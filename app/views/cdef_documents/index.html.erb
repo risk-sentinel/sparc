@@ -50,8 +50,17 @@
                   <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.35rem 0.75rem; font-size: 0.8rem;", data: { confirm: "Duplicate this component definition?" } %>
                 <% end %>
                 <% if doc.completed? %>
-                  <%= link_to "OSCAL", download_oscal_cdef_document_path(doc), class: "btn btn-sm", style: "background: #8e44ad; color: white;" %>
-                  <%= link_to "JSON", download_json_cdef_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white;" data-bs-toggle="dropdown" aria-expanded="false">
+                      Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><%= link_to "OSCAL", download_oscal_cdef_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "JSON", download_json_cdef_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "YAML", download_yaml_cdef_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "XML", download_xml_cdef_document_path(doc), class: "dropdown-item" %></li>
+                    </ul>
+                  </div>
                 <% end %>
                 <% if signed_in? %>
                   <%= link_to "Delete", cdef_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>

@@ -4,6 +4,19 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.1 -- Full Multi-Format Support (2026-03-09)
+
+- Full OSCAL tri-format support: import and export JSON, YAML, and XML for all six document types ([Issue #120](https://github.com/Rebel-Raiders/sparc/issues/120))
+- Six new YAML parser services (SSP, SAR, POAM, Profile, CDEF, SAP) using delegation pattern to avoid logic duplication
+- New SAP XML parser service (`SapXmlParserService`) completing XML import coverage for all document types
+- OSCAL export format conversion via `OscalExportFormatService` (JSON to YAML/XML)
+- OSCAL JSON-to-XML converter (`OscalJsonToXmlConverter`) with Nokogiri XML::Builder and OSCAL namespace
+- XSD schema validation for XML exports via `Nokogiri::XML::Schema` with 7 OSCAL XSD schemas
+- Format auto-detection service (`OscalFormatDetectionService`) with extension and content sniffing
+- Bootstrap 5 split-button dropdown for OSCAL export format selection across all document views
+- Upload forms updated to accept `.yaml` and `.yml` extensions
+- Fixed pre-existing bug in `CdefJsonParserService#parse_oscal_cdef` (wrong method call for batch insert)
+
 ## v3.4.0 -- Robust Audit Logging (2026-03-09)
 
 - Comprehensive audit logging with approximately 80 tracked actions across 16 categories ([PR #121](https://github.com/Rebel-Raiders/sparc/pull/121), [Issue #101](https://github.com/Rebel-Raiders/sparc/issues/101))

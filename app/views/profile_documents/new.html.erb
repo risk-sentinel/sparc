@@ -3,10 +3,10 @@
 
   <%= form_with model: @profile_document, local: true, multipart: true do |f| %>
     <div class="form-group">
-      <label for="profile_document_file">Select Profile File (.json, .xml)</label>
-      <%= f.file_field :file, accept: ".json,.xml", required: true %>
+      <label for="profile_document_file">Select Profile File (.json, .xml, .yaml, .yml)</label>
+      <%= f.file_field :file, accept: ".json,.xml,.yaml,.yml", required: true %>
       <small class="text-body-secondary d-block mt-2">
-        Upload an OSCAL Profile JSON or XML file. Supports NIST SP 800-53 baselines (LOW, MODERATE, HIGH), FedRAMP, and custom profiles.
+        Upload an OSCAL Profile JSON, XML, or YAML file. Supports NIST SP 800-53 baselines (LOW, MODERATE, HIGH), FedRAMP, and custom profiles.
       </small>
     </div>
 

@@ -3,10 +3,10 @@
 
   <%= form_with model: @sar_document, local: true, multipart: true do |f| %>
     <div class="form-group">
-      <label for="sar_document_file">Select File (.xlsx, .xls, .json, .xml)</label>
-      <%= f.file_field :file, accept: ".xlsx,.xls,.json,.xml", required: true %>
+      <label for="sar_document_file">Select File (.xlsx, .xls, .json, .xml, .yaml, .yml)</label>
+      <%= f.file_field :file, accept: ".xlsx,.xls,.json,.xml,.yaml,.yml", required: true %>
       <small class="text-body-secondary d-block" style="margin-top: 0.5rem;">
-        Upload an Excel workbook, OSCAL Assessment Results JSON, or OSCAL Assessment Results XML file.
+        Upload an Excel workbook, OSCAL Assessment Results JSON, XML, or YAML file.
         Excel workbooks with multiple tabs will each be imported as a separate section.
         OSCAL files will import observations, findings, risks, and metadata.
       </small>
