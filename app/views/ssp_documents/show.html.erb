@@ -81,10 +81,20 @@
       </div>
     </div>
     <div class="d-flex flex-wrap gap-2" style="flex-shrink: 0;">
-      <%= link_to "Export OSCAL".html_safe, download_oscal_ssp_document_path(@ssp_document),
-            class: "sparc-btn-oscal" %>
-      <%= link_to "&#8595; JSON".html_safe, download_json_ssp_document_path(@ssp_document),
-            class: "sparc-btn-ghost" %>
+      <div class="btn-group">
+        <%= link_to "Export OSCAL", download_oscal_ssp_document_path(@ssp_document),
+              class: "sparc-btn-oscal" %>
+        <button type="button" class="sparc-btn-oscal dropdown-toggle dropdown-toggle-split"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="visually-hidden">Format options</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><%= link_to "OSCAL JSON (validated)", download_oscal_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
+          <li><%= link_to "JSON", download_json_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
+          <li><%= link_to "YAML", download_yaml_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
+          <li><%= link_to "XML", download_xml_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
+        </ul>
+      </div>
       <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
             class: "sparc-btn-enrich" %>
       <%= link_to "&#8592; Back".html_safe, ssp_documents_path,

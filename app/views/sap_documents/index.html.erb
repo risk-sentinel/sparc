@@ -59,8 +59,17 @@
               <div style="display: inline-flex; gap: 0.35rem;">
                 <%= link_to "View", sap_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% if doc.completed? %>
-                  <%= link_to "OSCAL", download_oscal_sap_document_path(doc), class: "btn btn-sm", style: "background: #8e44ad; color: white;" %>
-                  <%= link_to "JSON", download_json_sap_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white;" data-bs-toggle="dropdown" aria-expanded="false">
+                      Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><%= link_to "OSCAL", download_oscal_sap_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "JSON", download_json_sap_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "YAML", download_yaml_sap_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "XML", download_xml_sap_document_path(doc), class: "dropdown-item" %></li>
+                    </ul>
+                  </div>
                 <% end %>
                 <%= link_to "Delete", sap_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
               </div>

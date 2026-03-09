@@ -54,27 +54,29 @@ class CdefJsonParserService
     components.each do |component|
       (component["control-implementations"] || []).each do |ci|
         (ci["implemented-requirements"] || []).each do |ir|
+          idx = control_attrs.size
           attrs = {
             control_id:     ir["control-id"],
             title:          ir["control-id"],
             control_family: ir["control-id"].to_s.split("-").first.upcase.presence,
             row_order:      row_order
           }
-          fields = [
-            { field_name: "description", field_value: ir["description"], editable: false },
-            { field_name: "component",   field_value: component["title"], editable: false }
-          ]
-          ir.fetch("remarks", nil)&.then { |r| fields << { field_name: "remarks", field_value: r, editable: false } }
 
           control_attrs << attrs
-          field_entries << fields
+          field_entries << [ idx, "description", ir["description"] ] if ir["description"].present?
+          field_entries << [ idx, "component", component["title"] ] if component["title"].present?
+          field_entries << [ idx, "remarks", ir["remarks"] ] if ir["remarks"].present?
           row_order += 1
         end
       end
     end
 
-    batch_insert_controls_and_fields(
-      @document, :cdef, control_attrs, field_entries
+    batch_insert_records(
+      control_class: CdefControl,
+      field_class:   CdefControlField,
+      document_fk:   :cdef_document_id,
+      control_attrs: control_attrs,
+      field_entries: field_entries
     )
   end
 
