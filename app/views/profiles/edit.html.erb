@@ -1,0 +1,41 @@
+<div class="row justify-content-center my-4">
+  <div class="col-lg-6">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 fw-bold mb-0">Profile</h1>
+      <%= link_to "Back", root_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3">Avatar</h5>
+
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <span class="sparc-avatar sparc-avatar-lg">
+            <% if current_user.avatar.attached? %>
+              <%= image_tag current_user.avatar, alt: current_user.initials %>
+            <% else %>
+              <%= current_user.initials %>
+            <% end %>
+          </span>
+          <div>
+            <div class="fw-semibold"><%= current_user.display_label %></div>
+            <div class="text-body-secondary small"><%= current_user.email %></div>
+          </div>
+        </div>
+
+        <%= form_with url: update_avatar_profile_path, method: :patch, multipart: true, class: "mb-3" do |f| %>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Upload new avatar</label>
+            <%= f.file_field :avatar, name: "user[avatar]", accept: "image/png,image/jpeg,image/gif,image/webp", class: "form-control" %>
+            <div class="form-text">PNG, JPG, GIF, or WebP. Max 2 MB.</div>
+          </div>
+          <%= f.submit "Upload Avatar", class: "btn btn-primary btn-sm" %>
+        <% end %>
+
+        <% if current_user.avatar.attached? %>
+          <%= button_to "Remove Avatar", remove_avatar_profile_path, method: :delete, class: "btn btn-outline-danger btn-sm", data: { turbo_confirm: "Remove your avatar?" } %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

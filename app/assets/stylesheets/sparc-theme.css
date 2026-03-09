@@ -235,6 +235,177 @@
   color: #fff;
 }
 
+/* ── Navbar button-styled items ────────────────────────────────── */
+
+.sparc-nav-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.sparc-nav-btn:hover,
+.sparc-nav-btn:focus {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff !important;
+}
+
+.sparc-nav-btn.show {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff !important;
+}
+
+/* OSCAL layer accent borders on active/hover */
+.sparc-nav-controls:hover,
+.sparc-nav-controls.show {
+  border-bottom-color: #6ba3d6;
+}
+.sparc-nav-implementation:hover,
+.sparc-nav-implementation.show {
+  border-bottom-color: #6abf69;
+}
+.sparc-nav-assessment:hover,
+.sparc-nav-assessment.show {
+  border-bottom-color: #e8a838;
+}
+
+/* Vertical separator between nav sections */
+.sparc-nav-separator {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  vertical-align: middle;
+  margin: 0 0.25rem;
+}
+
+/* Theme toggle button (compact) */
+.sparc-nav-theme-btn {
+  padding: 0.3rem 0.6rem !important;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+
+/* User menu toggle */
+.sparc-nav-user {
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.85) !important;
+  transition: background 0.2s;
+}
+
+.sparc-nav-user:hover,
+.sparc-nav-user.show {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff !important;
+}
+
+
+/* ── OSCAL-layer dropdown menus ───────────────────────────────── */
+
+.sparc-dropdown-menu {
+  background: var(--sparc-surface);
+  border: 1px solid var(--sparc-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  padding: 0.35rem 0;
+  min-width: 220px;
+  margin-top: 0.35rem !important;
+}
+
+.sparc-dropdown-menu .dropdown-item {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  margin: 0.1rem 0.35rem;
+  color: var(--bs-body-color);
+  transition: background 0.15s;
+}
+
+.sparc-dropdown-menu .dropdown-item:hover,
+.sparc-dropdown-menu .dropdown-item:focus {
+  background: var(--sparc-surface-alt);
+}
+
+/* Dropdown header with OSCAL layer accent */
+.sparc-dropdown-header {
+  padding: 0.4rem 0.85rem 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sparc-text-faint);
+  pointer-events: none;
+}
+
+.sparc-dropdown-header-controls {
+  color: #6ba3d6;
+}
+
+.sparc-dropdown-header-implementation {
+  color: #6abf69;
+}
+
+.sparc-dropdown-header-assessment {
+  color: #d4943c;
+}
+
+/* Dropdown item icons */
+.sparc-dropdown-icon {
+  display: inline-block;
+  width: 1.4em;
+  text-align: center;
+  margin-right: 0.15rem;
+  font-size: 0.9em;
+}
+
+
+/* ── User avatar ──────────────────────────────────────────────── */
+
+.sparc-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sparc-primary), var(--sparc-purple));
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.sparc-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Medium size (dropdown header, profile page) */
+.sparc-avatar-md {
+  width: 36px;
+  height: 36px;
+  font-size: 0.8rem;
+}
+
+/* Large size (profile edit page) */
+.sparc-avatar-lg {
+  width: 64px;
+  height: 64px;
+  font-size: 1.3rem;
+}
+
 /* Navbar logo — responsive sizing */
 .sparc-navbar-logo {
   height: 44px;

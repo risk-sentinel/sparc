@@ -13,6 +13,8 @@ class User < ApplicationRecord
   # Allow password_digest to be null for OIDC-only users
   has_secure_password validations: false
 
+  has_one_attached :avatar
+
   has_many :identities, dependent: :destroy
   has_many :user_roles, dependent: :destroy
   has_many :roles, through: :user_roles
@@ -91,6 +93,15 @@ class User < ApplicationRecord
 
   def display_label
     display_name.presence || [ first_name, last_name ].compact_blank.join(" ").presence || email
+  end
+
+  def initials
+    parts = [ first_name, last_name ].compact_blank
+    if parts.any?
+      parts.map { |p| p[0] }.join.upcase[0, 2]
+    else
+      email[0, 2].upcase
+    end
   end
 
   # ── Sign-in tracking ───────────────────────────────────────────────────
