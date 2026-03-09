@@ -1,5 +1,6 @@
-# Validates OSCAL JSON documents against the official NIST OSCAL v1.1.2
-# JSON schemas.  Uses the json_schemer gem for Draft 2020-12 support.
+# Validates OSCAL documents against the official NIST OSCAL schemas.
+# Supports both JSON Schema validation (via json_schemer) and XSD validation
+# (via Nokogiri) for XML documents.
 #
 # Usage:
 #   result = OscalSchemaValidationService.validate(:component_definition, data_hash)
@@ -7,10 +8,15 @@
 #   result.errors          # => [] or array of error strings
 #   result.schema_version  # => "1.1.2"
 #
+#   # XML validation:
+#   result = OscalSchemaValidationService.validate_xml(:ssp, xml_string)
+#   OscalSchemaValidationService.validate_xml!(:ssp, xml_string)
+#
 class OscalSchemaValidationService
   OSCAL_VERSION = "1.1.2"
 
-  SCHEMA_DIR = Rails.root.join("lib", "oscal_schemas").freeze
+  SCHEMA_DIR     = Rails.root.join("lib", "oscal_schemas").freeze
+  XSD_SCHEMA_DIR = Rails.root.join("lib", "oscal_xsd_schemas").freeze
 
   # Map logical model names to their schema files and expected root keys.
   SCHEMA_MAP = {
@@ -48,6 +54,17 @@ class OscalSchemaValidationService
     }
   }.freeze
 
+  # Map logical model names to their XSD schema files.
+  XSD_SCHEMA_MAP = {
+    component_definition: "oscal_component_schema.xsd",
+    ssp:                  "oscal_ssp_schema.xsd",
+    assessment_plan:      "oscal_assessment-plan_schema.xsd",
+    assessment_results:   "oscal_assessment-results_schema.xsd",
+    poam:                 "oscal_poam_schema.xsd",
+    profile:              "oscal_profile_schema.xsd",
+    catalog:              "oscal_catalog_schema.xsd"
+  }.freeze
+
   Result = Struct.new(:valid?, :errors, :schema_version, keyword_init: true)
 
   # ── Class API ──────────────────────────────────────────────────────
@@ -77,9 +94,58 @@ class OscalSchemaValidationService
     result
   end
 
+  # Validate an XML string against the named XSD schema.
+  #   model_type  — one of XSD_SCHEMA_MAP keys, e.g. :ssp
+  #   xml_string  — the raw XML string to validate
+  #   Returns a Result struct.
+  def self.validate_xml(model_type, xml_string)
+    xsd_file = XSD_SCHEMA_MAP.fetch(model_type.to_sym) do
+      return Result.new(valid?: false,
+        errors: [ "No XSD schema available for model type: #{model_type}" ],
+        schema_version: OSCAL_VERSION)
+    end
+
+    xsd_path = XSD_SCHEMA_DIR.join(xsd_file)
+    unless File.exist?(xsd_path)
+      return Result.new(valid?: false,
+        errors: [ "XSD schema file not found: #{xsd_path}" ],
+        schema_version: OSCAL_VERSION)
+    end
+
+    xsd_schema = xsd_schema_cache[model_type.to_sym] ||= Nokogiri::XML::Schema(File.read(xsd_path))
+    doc = Nokogiri::XML(xml_string) { |config| config.noblanks }
+
+    validation_errors = xsd_schema.validate(doc)
+    error_messages = validation_errors.first(50).map { |err| err.message }
+
+    Result.new(
+      valid?: error_messages.empty?,
+      errors: error_messages,
+      schema_version: OSCAL_VERSION
+    )
+  rescue Nokogiri::XML::SyntaxError => e
+    Result.new(valid?: false, errors: [ "Invalid XML: #{e.message}" ], schema_version: OSCAL_VERSION)
+  rescue StandardError => e
+    Result.new(valid?: false, errors: [ "XSD validation error: #{e.message}" ], schema_version: OSCAL_VERSION)
+  end
+
+  # Validate XML and raise on failure (for use in export pipelines).
+  def self.validate_xml!(model_type, xml_string)
+    result = validate_xml(model_type, xml_string)
+    unless result.valid?
+      raise OscalValidationError, "OSCAL #{model_type} XML validation failed:\n#{result.errors.join("\n")}"
+    end
+    result
+  end
+
   # List available schema types.
   def self.available_schemas
     SCHEMA_MAP.keys
+  end
+
+  # List available XSD schema types.
+  def self.available_xsd_schemas
+    XSD_SCHEMA_MAP.keys
   end
 
   # ── Instance ───────────────────────────────────────────────────────
@@ -131,6 +197,10 @@ class OscalSchemaValidationService
 
   def self.schema_cache
     @schema_cache ||= {}
+  end
+
+  def self.xsd_schema_cache
+    @xsd_schema_cache ||= {}
   end
 
   # OSCAL schemas use fragment $id anchors within definitions (e.g.,

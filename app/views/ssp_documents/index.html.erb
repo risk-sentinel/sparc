@@ -4,35 +4,25 @@
   [@completed_count, "Completed"]
 ] %>
 
-<div class="card" style="overflow: hidden;">
+<div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>System Security Plans</h2>
     <div class="d-flex gap-2">
-      <%= link_to "Create New SSP", wizard_ssp_documents_path, class: "btn btn-primary" %>
+      <%= link_to "Create New SSP", wizard_ssp_documents_path, class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
       <%= link_to "Upload File", new_ssp_document_path, class: "btn btn-success" %>
     </div>
   </div>
 
   <% if @ssp_documents.any? %>
-    <table class="table table-hover" style="table-layout: fixed;">
-      <colgroup>
-        <col style="width: 18%;">
-        <col style="width: 18%;">
-        <col style="width: 7%;">
-        <col style="width: 8%;">
-        <col style="width: 8%;">
-        <col style="width: 8%;">
-        <col style="width: 12%;">
-        <col style="width: 21%;">
-      </colgroup>
+    <table class="table table-hover">
       <thead>
         <tr>
           <th>Name</th>
           <th>Source</th>
           <th>Version</th>
           <th>Status</th>
-          <th>Controls</th>
           <th>OSCAL</th>
+          <th>Controls</th>
           <th>Created</th>
           <th>Actions</th>
         </tr>
@@ -40,20 +30,17 @@
       <tbody>
         <% @ssp_documents.each do |doc| %>
           <tr>
-            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= doc.name %>"><%= doc.name %></td>
-            <td class="text-body-secondary" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <% case doc.creation_method %>
-              <% when "wizard" %>
-                <span class="sparc-source-badge sparc-source-wizard">Wizard</span>
-              <% when "oscal_import" %>
-                <span class="sparc-source-badge sparc-source-oscal">OSCAL Import</span>
-              <% else %>
-                <span class="sparc-source-badge sparc-source-excel" title="<%= doc.original_filename %>"><%= doc.original_filename.presence || "Excel" %></span>
-              <% end %>
+            <td><%= doc.name %></td>
+            <td>
+              <% source_label, source_class = case doc.creation_method
+                               when "wizard" then ["Wizard", "sparc-source-wizard"]
+                               when "oscal_import" then ["OSCAL", "sparc-source-oscal"]
+                               else ["Excel", "sparc-source-excel"]
+                               end %>
+              <span class="sparc-source-badge <%= source_class %>"><%= source_label %></span>
             </td>
-            <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.ssp_version.presence || "—" %></td>
-            <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;"><%= doc.status %></span></td>
-            <td><%= doc.ssp_controls.count %></td>
+            <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.ssp_version.presence || "\u2014" %></td>
+            <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;"><%= doc.status %></span></td>
             <td>
               <% if doc.enriched? %>
                 <span class="sparc-oscal-enriched">Enriched</span>
@@ -61,14 +48,28 @@
                 <span class="sparc-oscal-basic">Basic</span>
               <% end %>
             </td>
-            <td style="white-space: nowrap; font-size: 0.88rem;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
-            <td>
-              <div class="d-flex flex-column gap-1">
-                <%= link_to "View", ssp_document_path(doc), class: "btn btn-primary text-center", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+            <td><%= doc.ssp_controls.count %></td>
+            <td><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td style="white-space: nowrap;">
+              <div style="display: inline-flex; gap: 0.35rem;">
+                <%= link_to "View", ssp_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% unless doc.enriched? %>
-                  <%= link_to "Enrich", enrich_ssp_document_path(doc), class: "sparc-btn-enrich-sm text-center" %>
+                  <%= link_to "Enrich", enrich_ssp_document_path(doc), class: "sparc-btn-enrich-sm" %>
                 <% end %>
-                <%= link_to "Delete", ssp_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger text-center", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <% if doc.completed? %>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white;" data-bs-toggle="dropdown" aria-expanded="false">
+                      Export OSCAL
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+                      <li><%= link_to "JSON", download_oscal_ssp_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "YAML", download_yaml_ssp_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "XML", download_xml_ssp_document_path(doc), class: "dropdown-item" %></li>
+                    </ul>
+                  </div>
+                <% end %>
+                <%= link_to "Delete", ssp_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
               </div>
             </td>
           </tr>

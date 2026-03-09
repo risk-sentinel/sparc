@@ -36,6 +36,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
       get :enrich
       patch :update_enrich
@@ -55,6 +57,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
       get :editor
       get :enrich
@@ -75,6 +79,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
       post :copy
     end
@@ -92,6 +98,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
     end
     collection do
@@ -106,6 +114,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
     end
     resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
@@ -122,6 +132,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
       post :copy
     end
@@ -133,6 +145,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
     end
     collection do
       get  :import
