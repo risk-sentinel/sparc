@@ -70,6 +70,10 @@ module FileUploadable
 
       DocumentConversionJob.perform_later(type_key.to_s, document.id, persist_path.to_s)
 
+      audit_log("#{type_key}_document_created", subject: document,
+        metadata: { name: document.name, file_type: file_type,
+                    original_filename: uploaded_file.original_filename })
+
       flash[:success] = registry.success_message
       redirect_to document
     rescue StandardError => e

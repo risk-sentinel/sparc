@@ -29,7 +29,7 @@ class ControlMappingsController < ApplicationController
     @control_mapping = ControlMapping.new(control_mapping_params)
 
     if @control_mapping.save
-      log_audit("control_mapping_created", "Created control mapping '#{@control_mapping.name}'")
+      audit_log("control_mapping_created", subject: @control_mapping, metadata: { name: @control_mapping.name })
       redirect_to @control_mapping, flash: { success: "Control mapping created." }
     else
       load_catalogs
@@ -44,7 +44,7 @@ class ControlMappingsController < ApplicationController
 
   def update
     if @control_mapping.update(control_mapping_params)
-      log_audit("control_mapping_updated", "Updated control mapping '#{@control_mapping.name}'")
+      audit_log("control_mapping_updated", subject: @control_mapping, metadata: { name: @control_mapping.name })
       redirect_to @control_mapping, flash: { success: "Control mapping updated." }
     else
       load_catalogs
@@ -55,22 +55,22 @@ class ControlMappingsController < ApplicationController
 
   def destroy
     name = @control_mapping.name
+    audit_log("control_mapping_deleted", subject: @control_mapping, metadata: { name: name })
     @control_mapping.destroy
-    log_audit("control_mapping_deleted", "Deleted control mapping '#{name}'")
     redirect_to control_mappings_path, flash: { success: "Control mapping '#{name}' deleted." }
   end
 
   # PATCH /control_mappings/:id/publish
   def publish
     @control_mapping.update!(status: "complete")
-    log_audit("control_mapping_published", "Published control mapping '#{@control_mapping.name}'")
+    audit_log("control_mapping_published", subject: @control_mapping, metadata: { name: @control_mapping.name })
     redirect_to @control_mapping, flash: { success: "Control mapping published." }
   end
 
   # PATCH /control_mappings/:id/deprecate
   def deprecate
     @control_mapping.update!(status: "deprecated")
-    log_audit("control_mapping_deprecated", "Deprecated control mapping '#{@control_mapping.name}'")
+    audit_log("control_mapping_deprecated", subject: @control_mapping, metadata: { name: @control_mapping.name })
     redirect_to @control_mapping, flash: { success: "Control mapping deprecated." }
   end
 
@@ -79,6 +79,7 @@ class ControlMappingsController < ApplicationController
     service = OscalMappingExportService.new(@control_mapping)
     json_data = service.export_unvalidated
 
+    audit_log("control_mapping_exported", subject: @control_mapping, metadata: { name: @control_mapping.name, format: "oscal" })
     send_data json_data,
               filename: "#{@control_mapping.name.parameterize}_mapping_#{Date.today}.json",
               type: "application/json",
@@ -105,17 +106,5 @@ class ControlMappingsController < ApplicationController
 
   def authorize_mapping_write!
     authorize_permission!("mappings.write")
-  end
-
-  def log_audit(action, message)
-    return unless defined?(AuditEvent) && current_user
-
-    AuditEvent.log(
-      user: current_user,
-      action: action,
-      ip_address: request.remote_ip,
-      user_agent: request.user_agent,
-      metadata: { control_mapping_id: @control_mapping&.id, message: message }
-    )
   end
 end

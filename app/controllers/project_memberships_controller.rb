@@ -10,6 +10,7 @@ class ProjectMembershipsController < ApplicationController
     @membership = @project.project_memberships.new(membership_params)
 
     if @membership.save
+      audit_log("project_membership_created", subject: @membership, metadata: { project_id: @project.id, user_name: @membership.user_name })
       flash[:success] = "Member '#{@membership.user_name}' added as #{@membership.role_label}."
       redirect_to @project
     else
@@ -23,6 +24,7 @@ class ProjectMembershipsController < ApplicationController
 
   def update
     if @membership.update(membership_params)
+      audit_log("project_membership_updated", subject: @membership, metadata: { project_id: @project.id })
       flash[:success] = "Membership updated."
       redirect_to @project
     else
@@ -32,6 +34,7 @@ class ProjectMembershipsController < ApplicationController
   end
 
   def destroy
+    audit_log("project_membership_deleted", subject: @membership, metadata: { project_id: @project.id })
     @membership.destroy
     flash[:success] = "Member removed."
     redirect_to @project

@@ -25,18 +25,13 @@ module Admin
       user_role = @project.user_roles.build(user: user, role: role)
 
       if user_role.save
-        AuditEvent.log(
-          user: current_user,
-          action: "project_member_added",
-          ip_address: request.remote_ip,
-          user_agent: request.user_agent,
+        audit_log("project_member_added", subject: @project,
           metadata: {
             project_id: @project.id,
             target_user_id: user.id,
             target_email: user.email,
             role_name: role.name
-          }
-        )
+          })
         redirect_to admin_project_path(@project), success: "#{user.display_label} assigned as #{role.display_name}."
       else
         redirect_to admin_project_path(@project), error: user_role.errors.full_messages.to_sentence
@@ -48,18 +43,13 @@ module Admin
       user = user_role.user
       role = user_role.role
 
-      AuditEvent.log(
-        user: current_user,
-        action: "project_member_removed",
-        ip_address: request.remote_ip,
-        user_agent: request.user_agent,
+      audit_log("project_member_removed", subject: @project,
         metadata: {
           project_id: @project.id,
           target_user_id: user.id,
           target_email: user.email,
           role_name: role.name
-        }
-      )
+        })
       user_role.destroy!
       redirect_to admin_project_path(@project), success: "#{user.display_label} removed from #{role.display_name}."
     end

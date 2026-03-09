@@ -55,6 +55,7 @@ class ControlCatalogsController < ApplicationController
         description: control_catalog_params[:description]
       ).build
 
+      audit_log("control_catalog_created", subject: @control_catalog, metadata: { name: @control_catalog.name })
       redirect_to @control_catalog, notice: "Catalog '#{@control_catalog.name}' was created successfully."
     rescue ActiveRecord::RecordInvalid => e
       @control_catalog = ControlCatalog.new(control_catalog_params)
@@ -67,6 +68,7 @@ class ControlCatalogsController < ApplicationController
 
   def update
     if @control_catalog.update(control_catalog_params)
+      audit_log("control_catalog_updated", subject: @control_catalog, metadata: { name: @control_catalog.name })
       redirect_to @control_catalog, notice: "Catalog updated successfully."
     else
       render :edit, status: :unprocessable_entity
@@ -75,6 +77,7 @@ class ControlCatalogsController < ApplicationController
 
   def destroy
     name = @control_catalog.name
+    audit_log("control_catalog_deleted", subject: @control_catalog, metadata: { name: name })
     @control_catalog.destroy
     redirect_to control_catalogs_path, notice: "Catalog '#{name}' was deleted."
   end
@@ -92,6 +95,7 @@ class ControlCatalogsController < ApplicationController
 
     begin
       stats = CatalogImportService.call(file, file.original_filename)
+      audit_log("control_catalog_imported", subject: stats[:catalog], metadata: { name: stats[:catalog].name })
       flash[:success] = "Imported \u201c#{stats[:catalog].name}\u201d: " \
                         "#{stats[:families]} families, #{stats[:controls]} controls " \
                         "(#{stats[:created]} created, #{stats[:updated]} updated)."
@@ -107,6 +111,7 @@ class ControlCatalogsController < ApplicationController
 
   def update_metadata
     if @control_catalog.update(catalog_metadata_params)
+      audit_log("control_catalog_updated", subject: @control_catalog, metadata: { name: @control_catalog.name, metadata_update: true })
       flash[:success] = "Catalog metadata updated"
     else
       flash[:error] = @control_catalog.errors.full_messages.join(", ")
@@ -119,6 +124,7 @@ class ControlCatalogsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
+      audit_log("control_catalog_exported", subject: @control_catalog, metadata: { name: @control_catalog.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@control_catalog.name}_oscal_catalog_#{Date.today}.json",
                 type:        "application/json",
@@ -134,6 +140,7 @@ class ControlCatalogsController < ApplicationController
     service = OscalCatalogExportService.new(@control_catalog)
     oscal_data = service.export
 
+    audit_log("control_catalog_exported", subject: @control_catalog, metadata: { name: @control_catalog.name, format: "oscal" })
     send_data oscal_data,
               filename:    "#{@control_catalog.name}_oscal_catalog_#{Date.today}.json",
               type:        "application/json",
@@ -144,6 +151,7 @@ class ControlCatalogsController < ApplicationController
     service = OscalCatalogExportService.new(@control_catalog)
     oscal_data = service.export_unvalidated
 
+    audit_log("control_catalog_exported", subject: @control_catalog, metadata: { name: @control_catalog.name, format: "oscal" })
     send_data oscal_data,
               filename:    "#{@control_catalog.name}_oscal_catalog_unvalidated_#{Date.today}.json",
               type:        "application/json",

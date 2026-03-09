@@ -74,6 +74,8 @@ class SspDocumentsController < ApplicationController
         flash[:success] = "Control updated successfully"
       end
 
+      audit_log("ssp_document_updated", subject: @ssp_document,
+        metadata: { name: @ssp_document.name, bulk: params[:bulk_update].present? })
       redirect_to @ssp_document
     rescue StandardError => e
       flash[:error] = "Error updating: #{e.message}"
@@ -93,6 +95,8 @@ class SspDocumentsController < ApplicationController
     service = SspWizardService.new(wizard_params)
     document = service.create
 
+    audit_log("ssp_document_created", subject: document,
+      metadata: { name: document.name, creation_method: "wizard" })
     flash[:success] = "SSP '#{document.name}' created from wizard."
     redirect_to ssp_document_path(document)
   rescue StandardError => e
@@ -116,6 +120,8 @@ class SspDocumentsController < ApplicationController
       sync_users
     end
 
+    audit_log("ssp_document_updated", subject: @ssp_document,
+      metadata: { name: @ssp_document.name, enrichment: true })
     flash[:success] = "SSP enrichment data saved."
     redirect_to ssp_document_path(@ssp_document)
   rescue StandardError => e
@@ -128,6 +134,9 @@ class SspDocumentsController < ApplicationController
   def download_json
     json_data = JsonExportService.export_ssp(@ssp_document)
 
+    audit_log("ssp_document_exported", subject: @ssp_document,
+      metadata: { name: @ssp_document.name, format: "json" })
+
     send_data json_data,
               filename:    "#{@ssp_document.name}_#{Date.today}.json",
               type:        "application/json",
@@ -139,6 +148,8 @@ class SspDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
+      audit_log("ssp_document_exported", subject: @ssp_document,
+        metadata: { name: @ssp_document.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@ssp_document.name}_oscal_ssp_#{Date.today}.json",
                 type:        "application/json",
@@ -154,6 +165,9 @@ class SspDocumentsController < ApplicationController
     service = OscalSspExportService.new(@ssp_document)
     oscal_data = service.export
 
+    audit_log("ssp_document_exported", subject: @ssp_document,
+      metadata: { name: @ssp_document.name, format: "oscal_validated" })
+
     send_data oscal_data,
               filename:    "#{@ssp_document.name}_oscal_ssp_#{Date.today}.json",
               type:        "application/json",
@@ -164,6 +178,9 @@ class SspDocumentsController < ApplicationController
     service = OscalSspExportService.new(@ssp_document)
     oscal_data = service.export_unvalidated
 
+    audit_log("ssp_document_exported", subject: @ssp_document,
+      metadata: { name: @ssp_document.name, format: "oscal_unvalidated" })
+
     send_data oscal_data,
               filename:    "#{@ssp_document.name}_oscal_ssp_unvalidated_#{Date.today}.json",
               type:        "application/json",
@@ -172,6 +189,8 @@ class SspDocumentsController < ApplicationController
 
   def update_metadata
     if @ssp_document.update(document_metadata_params)
+      audit_log("ssp_document_updated", subject: @ssp_document,
+        metadata: { name: @ssp_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
       flash[:error] = @ssp_document.errors.full_messages.join(", ")
@@ -187,6 +206,9 @@ class SspDocumentsController < ApplicationController
   end
 
   def destroy
+    name = @ssp_document.name
+    audit_log("ssp_document_deleted", subject: @ssp_document,
+      metadata: { name: name })
     @ssp_document.destroy
     flash[:success] = "System Security Plan document deleted"
     redirect_to ssp_documents_path

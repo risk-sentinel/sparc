@@ -22,6 +22,7 @@ class ProjectsController < ApplicationController
     @project = Project.new(project_params)
 
     if @project.save
+      audit_log("project_created", subject: @project, metadata: { name: @project.name })
       flash[:success] = "Project '#{@project.name}' created."
       redirect_to @project
     else
@@ -35,6 +36,7 @@ class ProjectsController < ApplicationController
 
   def update
     if @project.update(project_params)
+      audit_log("project_updated", subject: @project, metadata: { name: @project.name })
       flash[:success] = "Project updated."
       redirect_to @project
     else
@@ -44,8 +46,10 @@ class ProjectsController < ApplicationController
   end
 
   def destroy
+    name = @project.name
+    audit_log("project_deleted", subject: @project, metadata: { name: name })
     @project.destroy
-    flash[:success] = "Project '#{@project.name}' deleted."
+    flash[:success] = "Project '#{name}' deleted."
     redirect_to projects_path
   end
 
