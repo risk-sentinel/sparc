@@ -10,6 +10,7 @@ class CatalogControlsController < ApplicationController
   def create
     @catalog_control = @control_family.catalog_controls.new(catalog_control_params)
     if @catalog_control.save
+      audit_log("catalog_control_created", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
       redirect_to @control_family, notice: "Control '#{@catalog_control.control_id}' was added."
     else
       render :new, status: :unprocessable_entity
@@ -22,6 +23,7 @@ class CatalogControlsController < ApplicationController
 
   def update
     if @catalog_control.update(catalog_control_params)
+      audit_log("catalog_control_updated", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
       redirect_to @catalog_control.control_family, notice: "Control updated successfully."
     else
       @control_family = @catalog_control.control_family
@@ -31,6 +33,7 @@ class CatalogControlsController < ApplicationController
 
   def destroy
     family = @catalog_control.control_family
+    audit_log("catalog_control_deleted", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
     @catalog_control.destroy
     redirect_to family, notice: "Control was deleted."
   end
@@ -75,6 +78,7 @@ class CatalogControlsController < ApplicationController
       flash.now[:error] = "#{created} controls added. Errors: #{errors.join('; ')}"
       render :batch_new, status: :unprocessable_entity
     else
+      audit_log("catalog_control_created", subject: @control_family, metadata: { count: created, family_id: @control_family.id })
       redirect_to @control_family, notice: "#{created} #{'control'.pluralize(created)} added successfully."
     end
   end

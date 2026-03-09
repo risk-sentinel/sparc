@@ -88,6 +88,8 @@ class SarDocumentsController < ApplicationController
       field.save!
     end
 
+    audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, control_id: params[:sar_control_id] })
+
     flash[:success] = "Assessment result updated successfully"
     redirect_to sar_document_path(@sar_document, filter_params)
   rescue ActiveRecord::RecordNotFound
@@ -115,6 +117,8 @@ class SarDocumentsController < ApplicationController
     service = SarWizardService.new(wizard_params)
     document = service.create
 
+    audit_log("sar_document_created", subject: document, metadata: { name: document.name, creation_method: "wizard" })
+
     flash[:success] = "SAR '#{document.name}' created from wizard."
     redirect_to sar_document_path(document)
   rescue StandardError => e
@@ -125,6 +129,8 @@ class SarDocumentsController < ApplicationController
   def download_json
     json_data = JsonExportService.export_sar(@sar_document)
 
+    audit_log("sar_document_exported", subject: @sar_document, metadata: { name: @sar_document.name, format: "json" })
+
     send_data json_data,
               filename:    "#{@sar_document.name}_#{Date.today}.json",
               type:        "application/json",
@@ -133,6 +139,8 @@ class SarDocumentsController < ApplicationController
 
   def download_excel
     excel_data = SarExcelExportService.new(@sar_document).export
+
+    audit_log("sar_document_exported", subject: @sar_document, metadata: { name: @sar_document.name, format: "excel" })
 
     send_data excel_data,
               filename:    "#{@sar_document.name}_#{Date.today}.xlsx",
@@ -145,6 +153,8 @@ class SarDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
+      audit_log("sar_document_exported", subject: @sar_document, metadata: { name: @sar_document.name, format: "oscal" })
+
       send_data service.export,
                 filename:    "#{@sar_document.name}_oscal_sar_#{Date.today}.json",
                 type:        "application/json",
@@ -160,6 +170,8 @@ class SarDocumentsController < ApplicationController
     service = OscalSarExportService.new(@sar_document)
     oscal_data = service.export
 
+    audit_log("sar_document_exported", subject: @sar_document, metadata: { name: @sar_document.name, format: "oscal_validated" })
+
     send_data oscal_data,
               filename:    "#{@sar_document.name}_oscal_ar_#{Date.today}.json",
               type:        "application/json",
@@ -169,6 +181,8 @@ class SarDocumentsController < ApplicationController
   def download_oscal_unvalidated
     service = OscalSarExportService.new(@sar_document)
     oscal_data = service.export_unvalidated
+
+    audit_log("sar_document_exported", subject: @sar_document, metadata: { name: @sar_document.name, format: "oscal_unvalidated" })
 
     send_data oscal_data,
               filename:    "#{@sar_document.name}_oscal_ar_unvalidated_#{Date.today}.json",
@@ -192,6 +206,8 @@ class SarDocumentsController < ApplicationController
       sync_risks
       auto_generate_from_excel if params.dig(:sar_document, :auto_generate) == "1"
     end
+
+    audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, enrichment: true })
 
     flash[:success] = "SAR enrichment data saved."
     redirect_to sar_document_path(@sar_document)
@@ -217,6 +233,7 @@ class SarDocumentsController < ApplicationController
 
   def update_metadata
     if @sar_document.update(document_metadata_params)
+      audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
       flash[:error] = @sar_document.errors.full_messages.join(", ")
@@ -232,6 +249,8 @@ class SarDocumentsController < ApplicationController
   end
 
   def destroy
+    name = @sar_document.name
+    audit_log("sar_document_deleted", subject: @sar_document, metadata: { name: name })
     @sar_document.destroy
     flash[:success] = "Security Assessment Results document deleted"
     redirect_to sar_documents_path

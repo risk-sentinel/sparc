@@ -24,13 +24,8 @@ module Admin
       @role.assign_permissions(params.dig(:role, :permissions) || {})
 
       if @role.save
-        AuditEvent.log(
-          user: current_user,
-          action: "role_created",
-          ip_address: request.remote_ip,
-          user_agent: request.user_agent,
-          metadata: { role_id: @role.id, role_name: @role.name }
-        )
+        audit_log("role_created", subject: @role,
+          metadata: { role_id: @role.id, role_name: @role.name })
         redirect_to admin_role_path(@role), success: "Role created."
       else
         flash.now[:error] = @role.errors.full_messages.to_sentence
@@ -46,13 +41,8 @@ module Admin
       @role.assign_permissions(params.dig(:role, :permissions) || {})
 
       if @role.save
-        AuditEvent.log(
-          user: current_user,
-          action: "role_updated",
-          ip_address: request.remote_ip,
-          user_agent: request.user_agent,
-          metadata: { role_id: @role.id, role_name: @role.name }
-        )
+        audit_log("role_updated", subject: @role,
+          metadata: { role_id: @role.id, role_name: @role.name })
         redirect_to admin_role_path(@role), success: "Role updated."
       else
         flash.now[:error] = @role.errors.full_messages.to_sentence
@@ -67,13 +57,8 @@ module Admin
         return
       end
 
-      AuditEvent.log(
-        user: current_user,
-        action: "role_deleted",
-        ip_address: request.remote_ip,
-        user_agent: request.user_agent,
-        metadata: { role_id: @role.id, role_name: @role.name }
-      )
+      audit_log("role_deleted", subject: @role,
+        metadata: { role_id: @role.id, role_name: @role.name })
       @role.destroy!
       redirect_to admin_roles_path, success: "Role deleted."
     end

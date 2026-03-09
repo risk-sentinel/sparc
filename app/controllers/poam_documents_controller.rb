@@ -83,6 +83,8 @@ class PoamDocumentsController < ApplicationController
   end
 
   def destroy
+    name = @poam_document.name
+    audit_log("poam_document_deleted", subject: @poam_document, metadata: { name: name })
     @poam_document.destroy
     flash[:success] = "POA&M document deleted"
     redirect_to poam_documents_path
@@ -91,6 +93,7 @@ class PoamDocumentsController < ApplicationController
   def download_json
     json_data = JsonExportService.export_poam(@poam_document)
 
+    audit_log("poam_document_exported", subject: @poam_document, metadata: { name: @poam_document.name, format: "json" })
     send_data json_data,
               filename:    "#{@poam_document.name}_#{Date.today}.json",
               type:        "application/json",
@@ -102,6 +105,7 @@ class PoamDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
+      audit_log("poam_document_exported", subject: @poam_document, metadata: { name: @poam_document.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@poam_document.name}_oscal_poam_#{Date.today}.json",
                 type:        "application/json",
@@ -117,6 +121,7 @@ class PoamDocumentsController < ApplicationController
     service = OscalPoamExportService.new(@poam_document)
     oscal_data = service.export
 
+    audit_log("poam_document_exported", subject: @poam_document, metadata: { name: @poam_document.name, format: "oscal_validated" })
     send_data oscal_data,
               filename:    "#{@poam_document.name}_oscal_poam_#{Date.today}.json",
               type:        "application/json",
@@ -127,6 +132,7 @@ class PoamDocumentsController < ApplicationController
     service = OscalPoamExportService.new(@poam_document)
     oscal_data = service.export_unvalidated
 
+    audit_log("poam_document_exported", subject: @poam_document, metadata: { name: @poam_document.name, format: "oscal_unvalidated" })
     send_data oscal_data,
               filename:    "#{@poam_document.name}_oscal_poam_unvalidated_#{Date.today}.json",
               type:        "application/json",
@@ -135,6 +141,7 @@ class PoamDocumentsController < ApplicationController
 
   def update_metadata
     if @poam_document.update(document_metadata_params)
+      audit_log("poam_document_updated", subject: @poam_document, metadata: { name: @poam_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
       flash[:error] = @poam_document.errors.full_messages.join(", ")

@@ -39,6 +39,8 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def destroy
+    name = @profile_document.name
+    audit_log("profile_document_deleted", subject: @profile_document, metadata: { name: name })
     @profile_document.destroy
     flash[:success] = "Profile (Baseline) deleted"
     redirect_to profile_documents_path
@@ -47,6 +49,7 @@ class ProfileDocumentsController < ApplicationController
   def download_json
     json_data = JsonExportService.export_profile(@profile_document)
 
+    audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "json" })
     send_data json_data,
               filename:    "#{@profile_document.name}_#{Date.today}.json",
               type:        "application/json",
@@ -58,6 +61,7 @@ class ProfileDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
+      audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@profile_document.name}_oscal_profile_#{Date.today}.json",
                 type:        "application/json",
@@ -73,6 +77,7 @@ class ProfileDocumentsController < ApplicationController
     service = OscalProfileExportService.new(@profile_document)
     oscal_data = service.export
 
+    audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal_validated" })
     send_data oscal_data,
               filename:    "#{@profile_document.name}_oscal_profile_#{Date.today}.json",
               type:        "application/json",
@@ -83,6 +88,7 @@ class ProfileDocumentsController < ApplicationController
     service = OscalProfileExportService.new(@profile_document)
     oscal_data = service.export_unvalidated
 
+    audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal_unvalidated" })
     send_data oscal_data,
               filename:    "#{@profile_document.name}_oscal_profile_unvalidated_#{Date.today}.json",
               type:        "application/json",
@@ -91,6 +97,7 @@ class ProfileDocumentsController < ApplicationController
 
   def update_metadata
     if @profile_document.update(document_metadata_params)
+      audit_log("profile_document_updated", subject: @profile_document, metadata: { name: @profile_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
       flash[:error] = @profile_document.errors.full_messages.join(", ")
@@ -102,6 +109,7 @@ class ProfileDocumentsController < ApplicationController
     service = DocumentDuplicationService.new(@profile_document)
     copy = service.duplicate
 
+    audit_log("profile_document_copied", subject: copy, metadata: { source_id: @profile_document.id, source_name: @profile_document.name, copy_name: copy.name })
     flash[:success] = "Profile duplicated as '#{copy.name}'"
     redirect_to profile_document_path(copy)
   end
@@ -137,6 +145,7 @@ class ProfileDocumentsController < ApplicationController
       )
     end
 
+    audit_log("profile_document_created", subject: profile, metadata: { name: profile.name, creation_method: "catalog" })
     flash[:success] = "Profile created with #{profile.profile_controls.count} controls from #{catalog.name}"
     redirect_to profile_document_path(profile)
   end

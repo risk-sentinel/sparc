@@ -12,6 +12,7 @@ class ProfileControlsController < ApplicationController
 
     if @profile_control.save
       save_editable_fields
+      audit_log("profile_control_created", subject: @profile_control, metadata: { control_id: @profile_control.control_id, profile_document_id: @profile_document.id })
       flash[:success] = "Control #{@profile_control.control_id} added to profile"
       redirect_to profile_document_path(@profile_document)
     else
@@ -24,6 +25,7 @@ class ProfileControlsController < ApplicationController
   def update
     if @profile_control.update(profile_control_params)
       save_editable_fields
+      audit_log("profile_control_updated", subject: @profile_control, metadata: { control_id: @profile_control.control_id })
       flash[:success] = "Control #{@profile_control.control_id} updated"
       redirect_to profile_document_path(@profile_document)
     else
@@ -33,6 +35,7 @@ class ProfileControlsController < ApplicationController
 
   def destroy
     control_id = @profile_control.control_id
+    audit_log("profile_control_deleted", subject: @profile_control, metadata: { control_id: control_id })
     @profile_control.destroy
     flash[:success] = "Control #{control_id} removed from profile"
     redirect_to profile_document_path(@profile_document)

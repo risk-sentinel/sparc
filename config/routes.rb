@@ -166,6 +166,7 @@ Rails.application.routes.draw do
       end
     end
     resources :roles
+    resources :audit_logs, only: [ :index, :show ]
     resources :projects, only: [ :index, :show ] do
       member do
         post :add_member
