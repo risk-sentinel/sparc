@@ -8,6 +8,7 @@ class ControlMappingEntriesController < ApplicationController
     @entry = @control_mapping.control_mapping_entries.new(entry_params)
 
     if @entry.save
+      audit_log("mapping_entry_created", subject: @entry, metadata: { mapping_id: @control_mapping.id, source_control_id: @entry.source_control_id, target_control_id: @entry.target_control_id })
       redirect_to @control_mapping, flash: { success: "Mapping entry added." }
     else
       redirect_to @control_mapping, flash: { error: "Failed to add entry: #{@entry.errors.full_messages.join(', ')}" }
@@ -16,6 +17,7 @@ class ControlMappingEntriesController < ApplicationController
 
   def destroy
     entry = @control_mapping.control_mapping_entries.find(params[:id])
+    audit_log("mapping_entry_deleted", subject: entry, metadata: { mapping_id: @control_mapping.id })
     entry.destroy
     redirect_to @control_mapping, flash: { success: "Mapping entry removed." }
   end

@@ -14,6 +14,7 @@ class PoamItemsController < ApplicationController
 
     if @poam_item.save
       sync_associations
+      audit_log("poam_item_created", subject: @poam_item, metadata: { title: @poam_item.title, poam_document_id: @poam_document.id })
       flash[:success] = "POA&M item added"
       redirect_to poam_document_path(@poam_document)
     else
@@ -29,6 +30,7 @@ class PoamItemsController < ApplicationController
   def update
     if @poam_item.update(poam_item_params)
       sync_associations
+      audit_log("poam_item_updated", subject: @poam_item, metadata: { title: @poam_item.title })
       flash[:success] = "POA&M item updated"
       redirect_to poam_document_path(@poam_document)
     else
@@ -39,6 +41,7 @@ class PoamItemsController < ApplicationController
 
   def destroy
     title = @poam_item.title
+    audit_log("poam_item_deleted", subject: @poam_item, metadata: { title: title })
     @poam_item.destroy
     flash[:success] = "POA&M item \"#{title}\" removed"
     redirect_to poam_document_path(@poam_document)

@@ -35,6 +35,7 @@ class EvidencesController < ApplicationController
     @evidence.collected_at ||= Time.current
 
     if @evidence.save
+      audit_log("evidence_created", subject: @evidence, metadata: { title: @evidence.title })
       process_file_upload if @evidence.file.attached?
       sync_control_links
       redirect_to @evidence, notice: "Evidence '#{@evidence.title}' uploaded successfully."
@@ -47,6 +48,7 @@ class EvidencesController < ApplicationController
 
   def update
     if @evidence.update(evidence_params)
+      audit_log("evidence_updated", subject: @evidence, metadata: { title: @evidence.title })
       process_file_upload if @evidence.file.attached? && @evidence.file_hash.blank?
       sync_control_links
       redirect_to @evidence, notice: "Evidence updated successfully."
@@ -57,6 +59,7 @@ class EvidencesController < ApplicationController
 
   def destroy
     title = @evidence.title
+    audit_log("evidence_deleted", subject: @evidence, metadata: { title: title })
     @evidence.destroy
     redirect_to evidences_path, notice: "Evidence '#{title}' deleted."
   end

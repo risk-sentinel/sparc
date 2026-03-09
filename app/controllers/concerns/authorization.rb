@@ -48,6 +48,9 @@ module Authorization
   def handle_not_authorized(exception)
     Rails.logger.warn("[Authorization] Denied: #{exception.message} for user #{current_user&.id}")
 
+    audit_log("authorization_failure",
+      metadata: { reason: exception.message, path: request.fullpath, method: request.method })
+
     if request.format.json?
       render json: { error: "Forbidden" }, status: :forbidden
     else

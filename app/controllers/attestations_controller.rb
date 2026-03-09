@@ -11,6 +11,7 @@ class AttestationsController < ApplicationController
     if @attestation.save
       @attestation.generate_signature!
       @evidence.update!(status: :attested) unless @evidence.attested?
+      audit_log("attestation_created", subject: @attestation, metadata: { evidence_id: @evidence.id })
       redirect_to evidence_path(@evidence), notice: "Attestation recorded by #{@attestation.attester_name}."
     else
       render :new, status: :unprocessable_entity
@@ -19,6 +20,7 @@ class AttestationsController < ApplicationController
 
   def destroy
     attestation = @evidence.attestations.find(params[:id])
+    audit_log("attestation_deleted", subject: attestation, metadata: { evidence_id: @evidence.id })
     attestation.destroy
     redirect_to evidence_path(@evidence), notice: "Attestation removed."
   end

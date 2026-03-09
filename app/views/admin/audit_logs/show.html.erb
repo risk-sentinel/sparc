@@ -1,0 +1,90 @@
+<div class="row justify-content-center my-4">
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 fw-bold mb-0">Audit Event #<%= @audit_event.id %></h1>
+      <%= link_to "Back to Audit Log", admin_audit_logs_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+
+    <%# ── Event Details ──────────────────────────────────── %>
+    <div class="card mb-3">
+      <div class="card-header fw-semibold">Event Details</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="small fw-semibold text-body-secondary">Action</div>
+            <% badge_class = case @audit_event.action
+               when /failure/ then "text-bg-danger"
+               when /deleted/ then "text-bg-warning"
+               when /created|imported/ then "text-bg-success"
+               when /exported|copied/ then "text-bg-info"
+               when /published/ then "text-bg-primary"
+               else "text-bg-secondary"
+               end %>
+            <span class="badge <%= badge_class %>"><%= @audit_event.action.humanize %></span>
+          </div>
+          <div class="col-md-6">
+            <div class="small fw-semibold text-body-secondary">Category</div>
+            <div><%= @audit_event.category %></div>
+          </div>
+          <div class="col-md-6">
+            <div class="small fw-semibold text-body-secondary">Timestamp</div>
+            <div><%= @audit_event.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") %></div>
+          </div>
+          <div class="col-md-6">
+            <div class="small fw-semibold text-body-secondary">User</div>
+            <div>
+              <% if @audit_event.user %>
+                <%= link_to @audit_event.user.email, admin_user_path(@audit_event.user),
+                    class: "text-decoration-none" %>
+                <span class="text-body-secondary small">(<%= @audit_event.user.display_label %>)</span>
+              <% else %>
+                <span class="text-body-secondary">(system / unauthenticated)</span>
+              <% end %>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="small fw-semibold text-body-secondary">IP Address</div>
+            <div><%= @audit_event.ip_address || "&mdash;".html_safe %></div>
+          </div>
+          <div class="col-md-6">
+            <div class="small fw-semibold text-body-secondary">Provider</div>
+            <div><%= @audit_event.provider || "&mdash;".html_safe %></div>
+          </div>
+          <div class="col-12">
+            <div class="small fw-semibold text-body-secondary">User Agent</div>
+            <div class="small text-body-secondary text-break"><%= @audit_event.user_agent || "&mdash;".html_safe %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Subject ────────────────────────────────────────── %>
+    <% if @audit_event.subject_type.present? %>
+      <div class="card mb-3">
+        <div class="card-header fw-semibold">Subject</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="small fw-semibold text-body-secondary">Type</div>
+              <div><%= @audit_event.subject_type.underscore.humanize %></div>
+            </div>
+            <div class="col-md-6">
+              <div class="small fw-semibold text-body-secondary">ID</div>
+              <div><%= @audit_event.subject_id %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Metadata ───────────────────────────────────────── %>
+    <% if @audit_event.metadata.present? %>
+      <div class="card mb-3">
+        <div class="card-header fw-semibold">Metadata</div>
+        <div class="card-body">
+          <pre class="mb-0 small"><code><%= JSON.pretty_generate(@audit_event.metadata) %></code></pre>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

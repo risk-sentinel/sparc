@@ -52,25 +52,15 @@ module Admin
 
     def suspend
       @user.update!(status: "suspended")
-      AuditEvent.log(
-        user: current_user,
-        action: "user_suspended",
-        ip_address: request.remote_ip,
-        user_agent: request.user_agent,
-        metadata: { target_user_id: @user.id, target_email: @user.email }
-      )
+      audit_log("user_suspended", subject: @user,
+        metadata: { target_user_id: @user.id, target_email: @user.email })
       redirect_to admin_user_path(@user), success: "User suspended."
     end
 
     def reactivate
       @user.update!(status: "active")
-      AuditEvent.log(
-        user: current_user,
-        action: "user_reactivated",
-        ip_address: request.remote_ip,
-        user_agent: request.user_agent,
-        metadata: { target_user_id: @user.id, target_email: @user.email }
-      )
+      audit_log("user_reactivated", subject: @user,
+        metadata: { target_user_id: @user.id, target_email: @user.email })
       redirect_to admin_user_path(@user), success: "User reactivated."
     end
 

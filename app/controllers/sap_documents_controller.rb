@@ -64,6 +64,8 @@ class SapDocumentsController < ApplicationController
   end
 
   def destroy
+    name = @sap_document.name
+    audit_log("sap_document_deleted", subject: @sap_document, metadata: { name: name })
     @sap_document.destroy
     flash[:success] = "Assessment Plan deleted"
     redirect_to sap_documents_path
@@ -72,6 +74,7 @@ class SapDocumentsController < ApplicationController
   def download_json
     json_data = JsonExportService.export_sap(@sap_document)
 
+    audit_log("sap_document_exported", subject: @sap_document, metadata: { name: @sap_document.name, format: "json" })
     send_data json_data,
               filename:    "#{@sap_document.name}_#{Date.today}.json",
               type:        "application/json",
@@ -83,6 +86,7 @@ class SapDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
+      audit_log("sap_document_exported", subject: @sap_document, metadata: { name: @sap_document.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@sap_document.name}_oscal_sap_#{Date.today}.json",
                 type:        "application/json",
@@ -98,6 +102,7 @@ class SapDocumentsController < ApplicationController
     service = OscalAssessmentPlanExportService.new(@sap_document)
     oscal_data = service.export
 
+    audit_log("sap_document_exported", subject: @sap_document, metadata: { name: @sap_document.name, format: "oscal_validated" })
     send_data oscal_data,
               filename:    "#{@sap_document.name}_oscal_assessment-plan_#{Date.today}.json",
               type:        "application/json",
@@ -108,6 +113,7 @@ class SapDocumentsController < ApplicationController
     service = OscalAssessmentPlanExportService.new(@sap_document)
     oscal_data = service.export_unvalidated
 
+    audit_log("sap_document_exported", subject: @sap_document, metadata: { name: @sap_document.name, format: "oscal_unvalidated" })
     send_data oscal_data,
               filename:    "#{@sap_document.name}_oscal_assessment-plan_unvalidated_#{Date.today}.json",
               type:        "application/json",
@@ -116,6 +122,7 @@ class SapDocumentsController < ApplicationController
 
   def update_metadata
     if @sap_document.update(document_metadata_params)
+      audit_log("sap_document_updated", subject: @sap_document, metadata: { name: @sap_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
       flash[:error] = @sap_document.errors.full_messages.join(", ")
@@ -167,6 +174,7 @@ class SapDocumentsController < ApplicationController
         assessment_methods: wizard_params[:assessment_methods]&.to_unsafe_h
       ).generate
 
+      audit_log("sap_document_created", subject: sap, metadata: { name: sap.name, creation_method: "wizard" })
       flash[:success] = "Security Assessment Plan created with #{sap.sap_controls.count} controls"
       redirect_to sap
     rescue StandardError => e
