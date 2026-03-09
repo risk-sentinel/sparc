@@ -11,7 +11,11 @@
 #
 # See docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
 module SparcConfig
+  VERSION = "3.4.3"
+
   module_function
+
+  def version = VERSION
 
   # ── Database ──────────────────────────────────────────────────────────────
   # These are fallbacks when DATABASE_URL is not set. DATABASE_URL always
