@@ -4,6 +4,12 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.2 -- Hide Expected Excel Fields from Upload UI (2026-03-09)
+
+- Removed hardcoded "Expected Excel Format" tables from SSP and SAR upload pages ([Issue #129](https://github.com/Rebel-Raiders/sparc/issues/129))
+- Replaced with concise import notes referencing data mapping definitions (`lib/data_mappings/`)
+- OSCAL files (JSON, XML, YAML) noted as auto-detected with no mapping required
+
 ## v3.4.1 -- Full Multi-Format Support (2026-03-09)
 
 - Full OSCAL tri-format support: import and export JSON, YAML, and XML for all six document types ([Issue #120](https://github.com/Rebel-Raiders/sparc/issues/120))

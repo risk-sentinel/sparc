@@ -19,35 +19,9 @@
 </div>
 
 <div class="card">
-  <h3>Expected Excel Format</h3>
-  <p class="text-body-secondary mb-3">Your workbook should contain the following columns. Read-only fields are imported as-is; editable fields can be updated after upload.</p>
-
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th>Column</th>
-        <th>Editable</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td><strong>Paragraph/ReqID</strong></td><td>No</td><td>Primary identifier. Null rows are Provider Statements collapsed under the last populated ID.</td></tr>
-      <tr><td><strong>Title</strong></td><td>No</td><td>Null on provider rows.</td></tr>
-      <tr><td><strong>Stated Requirement</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Private Implementation</strong></td><td>Yes</td><td></td></tr>
-      <tr><td><strong>Public Implementation</strong></td><td>Yes</td><td>Null on provider rows; shown collapsed.</td></tr>
-      <tr><td><strong>Notes</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
-      <tr><td><strong>Status</strong></td><td>Yes</td><td>Deferred · Implemented · Not Applicable · Will Not Implement</td></tr>
-      <tr><td><strong>Expected Completion</strong></td><td>Yes</td><td>Null on provider rows; collapsed.</td></tr>
-      <tr><td><strong>Class</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Priority</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Responsible Entities</strong></td><td>Yes</td><td>Null on provider rows; collapsed.</td></tr>
-      <tr><td><strong>Control Owner</strong></td><td>No</td><td>Null on provider rows; collapsed.</td></tr>
-      <tr><td><strong>Type/Use As</strong></td><td>Yes</td><td></td></tr>
-      <tr><td><strong>Inherited From</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Provided As</strong></td><td>Yes</td><td></td></tr>
-      <tr><td><strong>Control Origination</strong></td><td>Yes</td><td></td></tr>
-      <tr><td><strong>History</strong></td><td>No</td><td></td></tr>
-    </tbody>
-  </table>
+  <h3>Import Notes</h3>
+  <div class="text-body-secondary" style="font-size: 0.9rem; line-height: 1.6;">
+    <p class="mb-2"><strong>Excel (.xlsx, .xls)</strong> &mdash; Workbooks must follow the expected column mapping for successful import. The mapping definition is located at <code>lib/data_mappings/ssp_excel.json</code>.</p>
+    <p class="mb-0"><strong>OSCAL (JSON, XML, YAML)</strong> &mdash; OSCAL System Security Plan files are auto-detected and require no column mapping.</p>
+  </div>
 </div>
