@@ -41,6 +41,10 @@ class OscalSchemaValidationService
     catalog: {
       file: "oscal_catalog_schema.json",
       root_key: "catalog"
+    },
+    mapping: {
+      file: "oscal_mapping_schema.json",
+      root_key: "mapping-collection"
     }
   }.freeze
 

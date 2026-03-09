@@ -142,6 +142,15 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :control_mappings do
+    member do
+      patch :publish
+      patch :deprecate
+      get :download_oscal
+    end
+    resources :control_mapping_entries, only: [ :create, :destroy ], as: :entries, path: "entries"
+  end
+
   # ── Admin ───────────────────────────────────────────────────────────
   namespace :admin do
     resources :users, only: [ :index, :show, :edit, :update ] do

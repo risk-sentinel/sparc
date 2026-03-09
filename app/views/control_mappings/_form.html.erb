@@ -1,0 +1,59 @@
+<%= form_with model: control_mapping, local: true do |f| %>
+  <div class="row mb-3">
+    <div class="col-md-8">
+      <%= f.label :name, class: "form-label fw-semibold small" %>
+      <%= f.text_field :name, class: "form-control", placeholder: "e.g. NIST 800-53 to ISO 27001 Mapping" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :mapping_version, "Version", class: "form-label fw-semibold small" %>
+      <%= f.text_field :mapping_version, class: "form-control", placeholder: "1.0.0" %>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :source_catalog_id, "Source Catalog", class: "form-label fw-semibold small" %>
+      <%= f.select :source_catalog_id,
+            @catalogs.map { |c| ["#{c.name} (#{c.version})", c.id] },
+            { prompt: "Select source catalog..." }, class: "form-select" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :target_catalog_id, "Target Catalog", class: "form-label fw-semibold small" %>
+      <%= f.select :target_catalog_id,
+            @catalogs.map { |c| ["#{c.name} (#{c.version})", c.id] },
+            { prompt: "Select target catalog..." }, class: "form-select" %>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <%= f.label :status, class: "form-label fw-semibold small" %>
+      <%= f.select :status,
+            ControlMapping::STATUSES.map { |s| [s.titleize, s] },
+            {}, class: "form-select" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :method_type, "Method", class: "form-label fw-semibold small" %>
+      <%= f.select :method_type,
+            ControlMapping::METHODS.map { |m| [m.titleize, m] },
+            {}, class: "form-select" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :matching_rationale, "Matching Rationale", class: "form-label fw-semibold small" %>
+      <%= f.select :matching_rationale,
+            ControlMapping::RATIONALES.map { |r| [r.titleize, r] },
+            {}, class: "form-select" %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, class: "form-label fw-semibold small" %>
+    <%= f.text_area :description, class: "form-control", rows: 3,
+          placeholder: "Describe the purpose and scope of this control mapping..." %>
+  </div>
+
+  <div class="d-grid mt-4">
+    <%= f.submit control_mapping.persisted? ? "Save Changes" : "Create Mapping",
+          class: "btn btn-primary fw-semibold" %>
+  </div>
+<% end %>
