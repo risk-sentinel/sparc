@@ -24,9 +24,11 @@ Rails.application.routes.draw do
   match "auth/:provider/callback", to: "omniauth_callbacks#create", via: [ :get, :post ]
   get "auth/failure", to: "omniauth_callbacks#failure"
 
-  resources :projects do
+  resources :authorization_boundaries do
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
-    resources :project_memberships, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :memberships,
+      controller: "authorization_boundary_memberships",
+      only: [ :new, :create, :edit, :update, :destroy ]
   end
 
   resources :ssp_documents do
@@ -181,7 +183,7 @@ Rails.application.routes.draw do
     end
     resources :roles
     resources :audit_logs, only: [ :index, :show ]
-    resources :projects, only: [ :index, :show ] do
+    resources :authorization_boundaries, only: [ :index, :show ] do
       member do
         post :add_member
         delete :remove_member

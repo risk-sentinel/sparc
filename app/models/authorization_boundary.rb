@@ -1,6 +1,6 @@
-class Project < ApplicationRecord
+class AuthorizationBoundary < ApplicationRecord
   has_many :boundaries, dependent: :destroy
-  has_many :project_memberships, dependent: :destroy
+  has_many :authorization_boundary_memberships, dependent: :destroy
   has_many :user_roles, dependent: :destroy
   has_many :assigned_users, through: :user_roles, source: :user
   has_many :cdef_documents, through: :boundaries
@@ -35,6 +35,6 @@ class Project < ApplicationRecord
   end
 
   def members_by_role
-    project_memberships.order(:role, :user_name).group_by(&:role)
+    authorization_boundary_memberships.order(:role, :user_name).group_by(&:role)
   end
 end

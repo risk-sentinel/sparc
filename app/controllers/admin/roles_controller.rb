@@ -12,11 +12,11 @@ module Admin
     end
 
     def show
-      @user_roles = @role.user_roles.includes(:user, :project).order("users.email")
+      @user_roles = @role.user_roles.includes(:user, :authorization_boundary).order("users.email")
     end
 
     def new
-      @role = Role.new(scope: "project")
+      @role = Role.new(scope: "authorization_boundary")
     end
 
     def create

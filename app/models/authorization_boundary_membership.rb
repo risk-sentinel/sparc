@@ -1,5 +1,5 @@
-class ProjectMembership < ApplicationRecord
-  belongs_to :project
+class AuthorizationBoundaryMembership < ApplicationRecord
+  belongs_to :authorization_boundary
   belongs_to :user, optional: true
 
   ROLES = %w[
@@ -17,7 +17,7 @@ class ProjectMembership < ApplicationRecord
     "system_owner"         => "System Owner (SO/ISO)",
     "ciso"                 => "CISO",
     "isso"                 => "ISSO",
-    "project_member"       => "Project Member",
+    "project_member"       => "Team Member",
     "assessor"             => "Assessor / 3PAO",
     "view_only"            => "View Only"
   }.freeze

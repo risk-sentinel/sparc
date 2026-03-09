@@ -1,7 +1,7 @@
 class SarDocument < ApplicationRecord
   include OscalMetadata
 
-  belongs_to :project, optional: true
+  belongs_to :authorization_boundary, optional: true
 
   has_many :sar_controls, dependent: :delete_all
   has_many :sar_results, dependent: :delete_all

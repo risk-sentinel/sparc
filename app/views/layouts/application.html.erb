@@ -109,9 +109,9 @@
                 </ul>
               </li>
 
-              <%# ── Projects (standalone) ── %>
+              <%# ── Auth Boundaries (standalone) ── %>
               <li class="nav-item">
-                <%= link_to "Projects", projects_path, class: "nav-link sparc-nav-btn" %>
+                <%= link_to "Auth Boundaries", authorization_boundaries_path, class: "nav-link sparc-nav-btn" %>
               </li>
             <% end %>
 
@@ -163,7 +163,7 @@
                       <li><h6 class="dropdown-header">Administration</h6></li>
                       <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "Projects", admin_projects_path, class: "dropdown-item" %></li>
+                      <li><%= link_to "Auth Boundaries", admin_authorization_boundaries_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Audit Log", admin_audit_logs_path, class: "dropdown-item" %></li>
                       <li><hr class="dropdown-divider"></li>
                     <% end %>

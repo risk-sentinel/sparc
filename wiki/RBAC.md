@@ -9,8 +9,8 @@ Authorization is enforced through **three layers**, evaluated in order:
 | Layer | Mechanism | Scope |
 |-------|-----------|-------|
 | 1. Instance Admin | Boolean flag on `User` model | Global bypass -- all checks pass |
-| 2. Role-based | `has_role?(role_name, project_id:)` | Structural access by job function |
-| 3. Permission-based | `has_permission?(key, project_id:)` | Granular control over specific resources |
+| 2. Role-based | `has_role?(role_name, authorization_boundary_id:)` | Structural access by job function |
+| 3. Permission-based | `has_permission?(key, authorization_boundary_id:)` | Granular control over specific resources |
 
 **Backward Compatibility:** All authorization checks are no-ops when `SparcConfig.any_auth_enabled?` returns `false`. This allows existing deployments to upgrade without breaking changes until RBAC is explicitly enabled.
 
@@ -20,7 +20,7 @@ Authorization is enforced through **three layers**, evaluated in order:
 
 Instance Admin is a **boolean column on the User model**, not a role. It provides unrestricted access to the entire SPARC instance.
 
-- Bypasses ALL authorization checks across all projects and resources.
+- Bypasses ALL authorization checks across all authorization boundaries and resources.
 - The first Instance Admin account is bootstrapped during `db:seed` with a randomly generated 16-character password.
 - The bootstrapped admin **must change their password on first login**.
 - Instance Admin status can only be granted by another Instance Admin through the admin interface.
@@ -33,13 +33,13 @@ Instance Admin is a **boolean column on the User model**, not a role. It provide
 
 SPARC roles are divided into two categories based on their scope:
 
-- **Instance-Scoped Roles** (10 roles) -- Apply globally across all projects. Stored with `project_id = NULL` in the `user_roles` table.
-- **Project-Scoped Roles** (19 roles) -- Apply only to the specific project they are assigned to. Stored with a `project_id` value in the `user_roles` table.
+- **Instance-Scoped Roles** (10 roles) -- Apply globally across all authorization boundaries. Stored with `authorization_boundary_id = NULL` in the `user_roles` table.
+- **Authorization-Boundary-Scoped Roles** (19 roles) -- Apply only to the specific authorization boundary they are assigned to. Stored with an `authorization_boundary_id` value in the `user_roles` table.
 
 A single user can hold:
 - Multiple instance-scoped roles simultaneously.
-- Different project-scoped roles across different projects.
-- A combination of instance-scoped and project-scoped roles.
+- Different authorization-boundary-scoped roles across different authorization boundaries.
+- A combination of instance-scoped and authorization-boundary-scoped roles.
 
 ---
 
@@ -51,8 +51,8 @@ SPARC defines **20 permission keys** across 10 resource areas. Each key controls
 |----------|----------|-----------|
 | Catalogs | `catalogs.read` | `catalogs.write` |
 | Profiles | `profiles.read` | `profiles.write` |
-| Projects | `projects.read` | `projects.write` |
-| Project Members | -- | `projects.manage_members` |
+| Authorization Boundaries | `authorization_boundaries.read` | `authorization_boundaries.write` |
+| Authorization Boundary Members | -- | `authorization_boundaries.manage_members` |
 | SSP | `ssp.read` | `ssp.write` |
 | SAR | `sar.read` | `sar.write` |
 | SAP | `sap.read` | `sap.write` |
@@ -65,30 +65,30 @@ SPARC defines **20 permission keys** across 10 resource areas. Each key controls
 
 ## Permission Resolution
 
-When a permission check is performed, the system resolves the effective permission set by combining both instance-scoped and project-scoped roles:
+When a permission check is performed, the system resolves the effective permission set by combining both instance-scoped and authorization-boundary-scoped roles:
 
 ```
 Effective permissions = permissions from user_roles
-                        WHERE project_id IN (target_project_id, NULL)
+                        WHERE authorization_boundary_id IN (target_authorization_boundary_id, NULL)
 ```
 
 This means:
-1. Instance-scoped role permissions always apply, regardless of the target project.
-2. Project-scoped role permissions apply only when the target project matches.
-3. If a user has multiple roles (instance or project), their permissions are the **union** of all granted permissions.
+1. Instance-scoped role permissions always apply, regardless of the target authorization boundary.
+2. Authorization-boundary-scoped role permissions apply only when the target authorization boundary matches.
+3. If a user has multiple roles (instance or authorization-boundary-scoped), their permissions are the **union** of all granted permissions.
 
 ### Example
 
-A user with the **Global Viewer** instance role and the **ISSO** project role on Project A would have:
+A user with the **Global Viewer** instance role and the **ISSO** authorization-boundary-scoped role on Authorization Boundary A would have:
 - Read access to all resources globally (from Global Viewer).
-- Read/write access to SSP, SAR, SAP, POA&M, and Evidence on Project A (from ISSO).
-- Only read access on Project B (from Global Viewer alone).
+- Read/write access to SSP, SAR, SAP, POA&M, and Evidence on Authorization Boundary A (from ISSO).
+- Only read access on Authorization Boundary B (from Global Viewer alone).
 
 ---
 
 ## Instance-Scoped Roles
 
-These 10 roles apply across the entire SPARC instance and are not tied to any specific project.
+These 10 roles apply across the entire SPARC instance and are not tied to any specific authorization boundary.
 
 ### Policy Manager
 
@@ -120,7 +120,7 @@ Oversees the IT security program. Read access to all resources for strategic tec
 
 ### Chief Acquisition Officer
 
-Supply chain security oversight. Read access to catalogs, profiles, projects, CDEFs, evidence, and mappings. Does not have access to SSP, SAR, SAP, or POA&M resources.
+Supply chain security oversight. Read access to catalogs, profiles, authorization boundaries, CDEFs, evidence, and mappings. Does not have access to SSP, SAR, SAP, or POA&M resources.
 
 ### FedRAMP PMO
 
@@ -134,8 +134,8 @@ Provisional Authority to Operate (P-ATO) reviews. Read access to all resources f
 
 ### Instance-Scoped Permission Matrix
 
-| Role | Catalogs | Profiles | Projects | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings |
-|------|----------|----------|----------|-----|-----|-----|-------|------|----------|----------|
+| Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings |
+|------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|
 | Policy Manager | R/W | R/W | R | R | R | R | R | R | R | R/W |
 | Global Viewer | R | R | R | R | R | R | R | R | R | R |
 | Senior Accountable Official | R | R | R | R | R | R | R | R | R | R |
@@ -149,13 +149,13 @@ Provisional Authority to Operate (P-ATO) reviews. Read access to all resources f
 
 ---
 
-## Project-Scoped Roles
+## Authorization-Boundary-Scoped Roles
 
-These 19 roles are assigned per-project and only grant access within the context of that project.
+These 19 roles are assigned per authorization boundary and only grant access within the context of that authorization boundary.
 
 ### Authorizing Official (AO)
 
-Accepts risk and issues Authority to Operate (ATO) decisions. Has read access to project documentation and write access to POA&M items to track risk acceptance.
+Accepts risk and issues Authority to Operate (ATO) decisions. Has read access to authorization boundary documentation and write access to POA&M items to track risk acceptance.
 
 ### Agency Authorizing Official
 
@@ -167,7 +167,7 @@ Owns the information system. Broad read/write access to SSP, POA&M, CDEF, and ev
 
 ### CISO
 
-Chief Information Security Officer. Strategic oversight with read access across all project resources. Does not have direct write access to project artifacts.
+Chief Information Security Officer. Strategic oversight with read access across all authorization boundary resources. Does not have direct write access to authorization boundary artifacts.
 
 ### ISSM (Information System Security Manager)
 
@@ -175,7 +175,7 @@ Oversees the security posture of the system. Read/write access to SSP, POA&M, an
 
 ### ISSO (Information System Security Officer)
 
-Day-to-day security operations. Broadest write access among project roles -- read/write to SSP, SAR, SAP, POA&M, and evidence.
+Day-to-day security operations. Broadest write access among authorization-boundary-scoped roles -- read/write to SSP, SAR, SAP, POA&M, and evidence.
 
 ### Cloud Service Provider (CSP)
 
@@ -213,13 +213,13 @@ Tracks vendor security dependencies. Read access to SSP. Read/write access to CD
 
 Evaluates tools and services for security fitness. Read access to SSP, SAR, CDEF, and evidence.
 
-### Project Member
+### Team Member
 
-General project contributor. Read/write access to SSP, POA&M, CDEF, and evidence. Read access to profiles.
+General authorization boundary contributor. Read/write access to SSP, POA&M, CDEF, and evidence. Read access to profiles.
 
 ### SPARC SME (Subject Matter Expert)
 
-Broad expertise across the SPARC platform. Read access to catalogs, profiles, and mappings. Read/write access to SSP, SAR, SAP, POA&M, CDEF, and evidence.
+Broad expertise across the SPARC platform. Read access to catalogs, profiles, and mappings. Read/write access to SSP, SAR, SAP, POA&M, CDEF, and evidence. Scoped to a specific authorization boundary.
 
 ### Evidence Integration Engineer
 
@@ -227,14 +227,14 @@ Manages the evidence lifecycle including collection, validation, and linking to 
 
 ### View Only
 
-Read-only project access for stakeholders who need visibility but no modification rights. Read access to projects, SSP, SAR, POA&M, CDEF, and evidence.
+Read-only authorization boundary access for stakeholders who need visibility but no modification rights. Read access to authorization boundaries, SSP, SAR, POA&M, CDEF, and evidence.
 
 ---
 
-### Project-Scoped Permission Matrix
+### Authorization-Boundary-Scoped Permission Matrix
 
-| Role | Catalogs | Profiles | Projects | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings |
-|------|----------|----------|----------|-----|-----|-----|-------|------|----------|----------|
+| Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings |
+|------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|
 | Authorizing Official (AO) | - | - | R | R | R | R | R/W | R | R | R |
 | Agency Authorizing Official | - | - | R | R | R | R | R/W | R | R | R |
 | System Owner (SO/ISO) | - | - | R | R/W | R | R | R/W | R/W | R/W | R |
@@ -250,7 +250,7 @@ Read-only project access for stakeholders who need visibility but no modificatio
 | Information Owner / Steward | - | - | R | R | - | - | - | R | R | - |
 | Vendor Dependency Manager | - | - | R | R | - | - | - | R/W | R/W | - |
 | Solution Evaluator | - | - | R | R | R | - | - | R | R | - |
-| Project Member | - | R | R | R/W | - | - | R/W | R/W | R/W | - |
+| Team Member | - | R | R | R/W | - | - | R/W | R/W | R/W | - |
 | SPARC SME | R | R | R | R/W | R/W | R/W | R/W | R/W | R/W | R |
 | Evidence Integration Engineer | R | R | R | R | R/W | R | R | R | R/W | R |
 | View Only | - | - | R | R | R | - | R | R | R | - |
@@ -267,11 +267,11 @@ Authorization is enforced in controllers using three methods, each corresponding
 # Layer 1: Require Instance Admin (boolean flag check)
 authorize_admin!
 
-# Layer 2: Require a specific role (instance or project-scoped)
-authorize_role!("isso", project_id: @project.id)
+# Layer 2: Require a specific role (instance or authorization-boundary-scoped)
+authorize_role!("isso", authorization_boundary_id: @authorization_boundary.id)
 
 # Layer 3: Require a specific permission (most granular)
-authorize_permission!("ssp.write", project_id: @project.id)
+authorize_permission!("ssp.write", authorization_boundary_id: @authorization_boundary.id)
 ```
 
 ### Failure Handling
@@ -289,7 +289,7 @@ All three methods raise `Authorization::NotAuthorizedError` on failure. When thi
 | Pages restricted to a job function (e.g., only assessors) | `authorize_role!` |
 | Actions on specific resource types (e.g., editing an SSP) | `authorize_permission!` |
 
-For most controller actions, `authorize_permission!` is the preferred method because it provides the most granular control and automatically accounts for both instance-scoped and project-scoped roles.
+For most controller actions, `authorize_permission!` is the preferred method because it provides the most granular control and automatically accounts for both instance-scoped and authorization-boundary-scoped roles.
 
 ---
 

@@ -49,41 +49,41 @@ class User < ApplicationRecord
 
   # ── Role helpers ────────────────────────────────────────────────────────
 
-  # Check if user has a given role (by name) optionally scoped to a project.
-  # Instance Admin bypasses all role checks.
+  # Check if user has a given role (by name) optionally scoped to an
+  # authorization boundary. Instance Admin bypasses all role checks.
   #
-  #   user.has_role?("isso")                # instance-level
-  #   user.has_role?("isso", project_id: 5) # project-level
-  def has_role?(role_name, project_id: nil)
+  #   user.has_role?("isso")                              # instance-level
+  #   user.has_role?("isso", authorization_boundary_id: 5) # boundary-level
+  def has_role?(role_name, authorization_boundary_id: nil)
     return true if admin?
 
     scope = user_roles.joins(:role).where(roles: { name: role_name })
-    scope = scope.where(project_id: project_id) if project_id
+    scope = scope.where(authorization_boundary_id: authorization_boundary_id) if authorization_boundary_id
     scope.exists?
   end
 
-  # All role names for this user (optionally project-scoped)
-  def role_names(project_id: nil)
+  # All role names for this user (optionally authorization boundary-scoped)
+  def role_names(authorization_boundary_id: nil)
     scope = user_roles.joins(:role)
-    scope = scope.where(project_id: project_id) if project_id
+    scope = scope.where(authorization_boundary_id: authorization_boundary_id) if authorization_boundary_id
     scope.pluck("roles.name")
   end
 
   # ── Permission helpers ─────────────────────────────────────────────
 
   # Check if user has a specific granular permission, optionally scoped
-  # to a project. Instance Admin bypasses all permission checks.
+  # to an authorization boundary. Instance Admin bypasses all permission checks.
   #
   #   user.has_permission?("ssp.write")
-  #   user.has_permission?("ssp.write", project_id: 5)
-  def has_permission?(permission_key, project_id: nil)
+  #   user.has_permission?("ssp.write", authorization_boundary_id: 5)
+  def has_permission?(permission_key, authorization_boundary_id: nil)
     return true if admin?
 
     role_scope = user_roles.joins(:role)
-    role_scope = if project_id
-      role_scope.where(project_id: [ project_id, nil ])
+    role_scope = if authorization_boundary_id
+      role_scope.where(authorization_boundary_id: [ authorization_boundary_id, nil ])
     else
-      role_scope.where(project_id: nil)
+      role_scope.where(authorization_boundary_id: nil)
     end
 
     role_scope.where("roles.permissions @> ?", { permission_key => true }.to_json).exists?

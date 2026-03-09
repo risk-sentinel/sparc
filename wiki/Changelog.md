@@ -4,6 +4,18 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.4 -- Authorization Boundary Rebrand (2026-03-09)
+
+### Changed
+- Rebranded "Project" to "Authorization Boundary" throughout the application -- models, controllers, views, routes, database schema, and documentation now align with NIST RMF / FedRAMP terminology ([Issue #124](https://github.com/Rebel-Raiders/sparc/issues/124))
+- Renamed database tables `projects` to `authorization_boundaries`, `project_memberships` to `authorization_boundary_memberships`
+- Renamed all `project_id` foreign key columns to `authorization_boundary_id`
+- Updated role scope from `project` to `authorization_boundary`
+- Updated permission keys from `projects.*` to `authorization_boundaries.*`
+- Added `docs/groups_users/mindmap.md` capturing Organization to Authorization Boundary to OSCAL Artifacts hierarchy
+
+---
+
 ## v3.4.3 -- HTTPS Enforcement & Security Headers (2026-03-09)
 
 - Enforce HTTPS-only traffic with HSTS preload, subdomains, and 1-year max-age ([Issue #106](https://github.com/Rebel-Raiders/sparc/issues/106))
@@ -71,7 +83,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 - User administration screen with search, suspend, and reactivate capabilities ([Issue #93](https://github.com/Rebel-Raiders/sparc/issues/93))
 - Role administration with permission matrix editing ([Issue #94](https://github.com/Rebel-Raiders/sparc/issues/94))
-- Project administration with member and role management ([Issue #92](https://github.com/Rebel-Raiders/sparc/issues/92))
+- Authorization boundary administration with member and role management ([Issue #92](https://github.com/Rebel-Raiders/sparc/issues/92))
 - [PR #112](https://github.com/Rebel-Raiders/sparc/pull/112)
 
 ## v3.0.0 -- Authentication & RBAC Foundation (2026-03-08)
@@ -112,6 +124,6 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ### Other
 - Evidence and attestation collection ([Issue #31](https://github.com/Rebel-Raiders/sparc/issues/31))
-- Project orchestration with RMF roles ([Issue #46](https://github.com/Rebel-Raiders/sparc/issues/46))
+- Authorization boundary orchestration with RMF roles ([Issue #46](https://github.com/Rebel-Raiders/sparc/issues/46))
 - Document duplication ([Issue #56](https://github.com/Rebel-Raiders/sparc/issues/56))
 - Control catalog and family CRUD ([Issue #48](https://github.com/Rebel-Raiders/sparc/issues/48), [Issue #49](https://github.com/Rebel-Raiders/sparc/issues/49))
