@@ -184,7 +184,7 @@ class AuditEvent < ApplicationRecord
   #                  subject: @ssp_document)
   def self.log(user: nil, action:, provider: nil, ip_address: nil,
                user_agent: nil, metadata: {}, subject: nil)
-    create!(
+    event = create!(
       user: user,
       action: action,
       provider: provider,
@@ -194,6 +194,27 @@ class AuditEvent < ApplicationRecord
       subject_type: subject&.class&.name,
       subject_id: subject&.id
     )
+
+    # Emit structured JSON to Rails log so audit events flow through
+    # container logs → CloudWatch / Datadog / any log aggregator.
+    Rails.logger.info(
+      {
+        audit_event: {
+          id: event.id,
+          action: event.action,
+          category: event.category,
+          user_id: event.user_id,
+          user_email: event.user&.email,
+          subject_type: event.subject_type,
+          subject_id: event.subject_id,
+          ip_address: event.ip_address,
+          metadata: event.metadata,
+          timestamp: event.created_at.iso8601
+        }
+      }.to_json
+    )
+
+    event
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error("[AuditEvent] Failed to log #{action}: #{e.message}")
   end
