@@ -1,13 +1,13 @@
 require "rails_helper"
 
-RSpec.describe ProjectMembership, type: :model do
+RSpec.describe AuthorizationBoundaryMembership, type: :model do
   describe "validations" do
     it { is_expected.to validate_presence_of(:user_name) }
     it { is_expected.to validate_presence_of(:role) }
   end
 
   describe "associations" do
-    it { is_expected.to belong_to(:project) }
+    it { is_expected.to belong_to(:authorization_boundary) }
   end
 
   describe "enums" do
@@ -28,19 +28,19 @@ RSpec.describe ProjectMembership, type: :model do
 
   describe "#role_label" do
     it "returns a human-readable label for the role" do
-      membership = build(:project_membership, role: "authorizing_official")
+      membership = build(:authorization_boundary_membership, role: "authorizing_official")
       expect(membership.role_label).to eq("Authorizing Official (AO)")
     end
 
     it "returns ISSO label" do
-      membership = build(:project_membership, role: "isso")
+      membership = build(:authorization_boundary_membership, role: "isso")
       expect(membership.role_label).to eq("ISSO")
     end
   end
 
   describe "ROLES constant" do
-    it "lists all 7 project-level RMF roles" do
-      expect(ProjectMembership::ROLES).to contain_exactly(
+    it "lists all 7 authorization-boundary-level RMF roles" do
+      expect(AuthorizationBoundaryMembership::ROLES).to contain_exactly(
         "authorizing_official", "system_owner", "ciso", "isso",
         "project_member", "assessor", "view_only"
       )

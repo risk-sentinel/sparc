@@ -14,9 +14,9 @@
   <div class="row mb-3">
     <div class="col-md-6">
       <%= f.label :scope, class: "form-label fw-semibold small" %>
-      <%= f.select :scope, [["Instance-wide", "instance"], ["Project-scoped", "project"]],
+      <%= f.select :scope, [["Instance-wide", "instance"], ["Authorization Boundary-scoped", "authorization_boundary"]],
             {}, class: "form-select" %>
-      <div class="form-text">Instance roles apply globally. Project roles require a project assignment.</div>
+      <div class="form-text">Instance roles apply globally. Authorization boundary roles require an authorization boundary assignment.</div>
     </div>
     <div class="col-md-6">
       <%= f.label :sort_order, class: "form-label fw-semibold small" %>

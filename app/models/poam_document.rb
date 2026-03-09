@@ -1,7 +1,7 @@
 class PoamDocument < ApplicationRecord
   include OscalMetadata
 
-  belongs_to :project, optional: true
+  belongs_to :authorization_boundary, optional: true
 
   has_many :poam_items, dependent: :delete_all
   has_many :poam_risks, dependent: :delete_all

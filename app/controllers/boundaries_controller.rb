@@ -1,20 +1,20 @@
 class BoundariesController < ApplicationController
-  before_action :set_project
+  before_action :set_authorization_boundary
   before_action :set_boundary, only: [ :edit, :update, :destroy ]
 
   def new
-    @boundary = @project.boundaries.new
+    @boundary = @authorization_boundary.boundaries.new
     @cdef_documents = CdefDocument.where(status: "completed").order(:name)
   end
 
   def create
-    @boundary = @project.boundaries.new(boundary_params)
+    @boundary = @authorization_boundary.boundaries.new(boundary_params)
 
     if @boundary.save
       sync_cdef_documents
-      audit_log("boundary_created", subject: @boundary, metadata: { name: @boundary.name, project_id: @project.id })
+      audit_log("boundary_created", subject: @boundary, metadata: { name: @boundary.name, authorization_boundary_id: @authorization_boundary.id })
       flash[:success] = "Boundary '#{@boundary.name}' created."
-      redirect_to @project
+      redirect_to @authorization_boundary
     else
       @cdef_documents = CdefDocument.where(status: "completed").order(:name)
       flash.now[:error] = @boundary.errors.full_messages.join(", ")
@@ -31,7 +31,7 @@ class BoundariesController < ApplicationController
       sync_cdef_documents
       audit_log("boundary_updated", subject: @boundary, metadata: { name: @boundary.name })
       flash[:success] = "Boundary updated."
-      redirect_to @project
+      redirect_to @authorization_boundary
     else
       @cdef_documents = CdefDocument.where(status: "completed").order(:name)
       flash.now[:error] = @boundary.errors.full_messages.join(", ")
@@ -44,17 +44,17 @@ class BoundariesController < ApplicationController
     audit_log("boundary_deleted", subject: @boundary, metadata: { name: name })
     @boundary.destroy
     flash[:success] = "Boundary deleted."
-    redirect_to @project
+    redirect_to @authorization_boundary
   end
 
   private
 
-  def set_project
-    @project = Project.find(params[:project_id])
+  def set_authorization_boundary
+    @authorization_boundary = AuthorizationBoundary.find(params[:authorization_boundary_id])
   end
 
   def set_boundary
-    @boundary = @project.boundaries.find(params[:id])
+    @boundary = @authorization_boundary.boundaries.find(params[:id])
   end
 
   def boundary_params

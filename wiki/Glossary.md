@@ -62,8 +62,9 @@
 | Term | Definition |
 |------|------------|
 | **Instance Admin** | A boolean flag on the User model granting full system access. Not a role -- it is a superuser designation that bypasses role checks. |
-| **Instance-Scoped Role** | A role that applies to the entire SPARC instance regardless of project context (e.g., Policy Manager). |
-| **Project-Scoped Role** | A role that applies only within a specific project (e.g., ISSO). Assigned via the `UserRole` join model with a `project_id`. |
+| **Authorization Boundary** | The top-level container in SPARC for organizing compliance artifacts (SSP, SAR, SAP, POA&M, CDEFs, Evidence) around a system's security perimeter, aligned with NIST RMF / FedRAMP terminology. |
+| **Instance-Scoped Role** | A role that applies to the entire SPARC instance regardless of authorization boundary context (e.g., Policy Manager). |
+| **Authorization-Boundary-Scoped Role** | A role that applies only within a specific authorization boundary (e.g., ISSO). Assigned via the `UserRole` join model with an `authorization_boundary_id`. |
 | **Provider Statement** | An inherited control implementation from a parent or leveraged system. Appears as a child row in the SSP control view. |
 | **Enrichment** | The process of adding OSCAL metadata (components, users, information types, leveraged authorizations) to a legacy-imported document to bring it into full OSCAL compliance. |
 | **Heatmap** | An interactive grid visualization showing control distribution by NIST family and implementation status. Color-coded cells indicate density and status. |

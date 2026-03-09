@@ -7,8 +7,8 @@ FactoryBot.define do
     scope { "instance" }
     sort_order { 0 }
 
-    trait :project_scoped do
-      scope { "project" }
+    trait :authorization_boundary_scoped do
+      scope { "authorization_boundary" }
     end
   end
 end

@@ -1,4 +1,4 @@
-<%= form_with(model: project, class: "mb-4") do |f| %>
+<%= form_with(model: authorization_boundary, class: "mb-4") do |f| %>
   <div class="mb-3">
     <%= f.label :name, class: "form-label fw-semibold" %>
     <%= f.text_field :name, class: "form-control", required: true %>
@@ -11,7 +11,7 @@
 
   <div class="mb-3">
     <%= f.label :status, class: "form-label fw-semibold" %>
-    <%= f.select :status, Project::STATUSES.map { |s| [ s.titleize, s ] }, {}, class: "form-select" %>
+    <%= f.select :status, AuthorizationBoundary::STATUSES.map { |s| [ s.titleize, s ] }, {}, class: "form-select" %>
   </div>
 
   <div class="mb-3">
@@ -21,6 +21,6 @@
 
   <div class="d-flex gap-2">
     <%= f.submit class: "btn btn-primary" %>
-    <%= link_to "Cancel", projects_path, class: "btn btn-secondary" %>
+    <%= link_to "Cancel", authorization_boundaries_path, class: "btn btn-secondary" %>
   </div>
 <% end %>

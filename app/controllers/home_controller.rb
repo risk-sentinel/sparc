@@ -1,6 +1,6 @@
 class HomeController < ApplicationController
   def index
-    @project_count = Project.count
+    @authorization_boundary_count = AuthorizationBoundary.count
     @ssp_count     = SspDocument.count
     @sar_count     = SarDocument.count
     @catalog_count = ControlCatalog.count

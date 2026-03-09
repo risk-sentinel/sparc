@@ -14,8 +14,8 @@
              else "bg-secondary"
              end %>
           <span class="badge <%= badge_class %>"><%= @evidence.status_label %></span>
-          <% if @evidence.project %>
-            &nbsp;|&nbsp; Project: <strong><%= @evidence.project.name %></strong>
+          <% if @evidence.authorization_boundary %>
+            &nbsp;|&nbsp; Authorization Boundary: <strong><%= @evidence.authorization_boundary.name %></strong>
           <% end %>
         </p>
       </div>
