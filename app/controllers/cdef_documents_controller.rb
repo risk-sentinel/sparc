@@ -35,6 +35,8 @@ class CdefDocumentsController < ApplicationController
   end
 
   def destroy
+    name = @cdef_document.name
+    audit_log("cdef_document_deleted", subject: @cdef_document, metadata: { name: name })
     @cdef_document.destroy
     flash[:success] = "Component Definition deleted"
     redirect_to cdef_documents_path
@@ -43,6 +45,7 @@ class CdefDocumentsController < ApplicationController
   def download_json
     json_data = JsonExportService.export_cdef(@cdef_document)
 
+    audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "json" })
     send_data json_data,
               filename:    "#{@cdef_document.name}_#{Date.today}.json",
               type:        "application/json",
@@ -54,6 +57,7 @@ class CdefDocumentsController < ApplicationController
     result = service.validation_result
 
     if result.valid?
+      audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@cdef_document.name}_oscal_cdef_#{Date.today}.json",
                 type:        "application/json",
@@ -69,6 +73,7 @@ class CdefDocumentsController < ApplicationController
     service = OscalComponentDefinitionExportService.new(@cdef_document)
     oscal_data = service.export
 
+    audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "oscal_validated" })
     send_data oscal_data,
               filename:    "#{@cdef_document.name}_oscal_component_#{Date.today}.json",
               type:        "application/json",
@@ -79,6 +84,7 @@ class CdefDocumentsController < ApplicationController
     service = OscalComponentDefinitionExportService.new(@cdef_document)
     oscal_data = service.export_unvalidated
 
+    audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "oscal_unvalidated" })
     send_data oscal_data,
               filename:    "#{@cdef_document.name}_oscal_component_unvalidated_#{Date.today}.json",
               type:        "application/json",
@@ -87,6 +93,7 @@ class CdefDocumentsController < ApplicationController
 
   def update_metadata
     if @cdef_document.update(document_metadata_params)
+      audit_log("cdef_document_updated", subject: @cdef_document, metadata: { name: @cdef_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
       flash[:error] = @cdef_document.errors.full_messages.join(", ")
@@ -98,6 +105,7 @@ class CdefDocumentsController < ApplicationController
     service = DocumentDuplicationService.new(@cdef_document)
     copy = service.duplicate
 
+    audit_log("cdef_document_copied", subject: copy, metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name, copy_name: copy.name })
     flash[:success] = "Component Definition duplicated as '#{copy.name}'"
     redirect_to cdef_document_path(copy)
   end

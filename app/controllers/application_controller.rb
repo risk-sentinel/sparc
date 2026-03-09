@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
   include Authentication
   include Authorization
+  include Auditable
 
   # Register custom flash types so `redirect_to path, success: "msg"` works
   add_flash_types :success, :error, :warning

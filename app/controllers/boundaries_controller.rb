@@ -12,6 +12,7 @@ class BoundariesController < ApplicationController
 
     if @boundary.save
       sync_cdef_documents
+      audit_log("boundary_created", subject: @boundary, metadata: { name: @boundary.name, project_id: @project.id })
       flash[:success] = "Boundary '#{@boundary.name}' created."
       redirect_to @project
     else
@@ -28,6 +29,7 @@ class BoundariesController < ApplicationController
   def update
     if @boundary.update(boundary_params)
       sync_cdef_documents
+      audit_log("boundary_updated", subject: @boundary, metadata: { name: @boundary.name })
       flash[:success] = "Boundary updated."
       redirect_to @project
     else
@@ -38,6 +40,8 @@ class BoundariesController < ApplicationController
   end
 
   def destroy
+    name = @boundary.name
+    audit_log("boundary_deleted", subject: @boundary, metadata: { name: name })
     @boundary.destroy
     flash[:success] = "Boundary deleted."
     redirect_to @project

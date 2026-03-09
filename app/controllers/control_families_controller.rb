@@ -17,6 +17,7 @@ class ControlFamiliesController < ApplicationController
   def create
     @control_family = @control_catalog.control_families.new(control_family_params)
     if @control_family.save
+      audit_log("control_family_created", subject: @control_family, metadata: { code: @control_family.code, name: @control_family.name })
       redirect_to @control_family, notice: "Family '#{@control_family.code} - #{@control_family.name}' was created."
     else
       render :new, status: :unprocessable_entity
@@ -29,6 +30,7 @@ class ControlFamiliesController < ApplicationController
 
   def update
     if @control_family.update(control_family_params)
+      audit_log("control_family_updated", subject: @control_family, metadata: { code: @control_family.code, name: @control_family.name })
       redirect_to @control_family, notice: "Family updated successfully."
     else
       @control_catalog = @control_family.control_catalog
@@ -38,6 +40,9 @@ class ControlFamiliesController < ApplicationController
 
   def destroy
     catalog = @control_family.control_catalog
+    code = @control_family.code
+    name = @control_family.name
+    audit_log("control_family_deleted", subject: @control_family, metadata: { code: code, name: name })
     @control_family.destroy
     redirect_to catalog, notice: "Family was deleted."
   end
