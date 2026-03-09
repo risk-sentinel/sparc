@@ -59,8 +59,8 @@
                       Export OSCAL
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                      <li><%= link_to "OSCAL (validated)", download_oscal_profile_document_path(doc), class: "dropdown-item" %></li>
-                      <li><%= link_to "JSON", download_json_profile_document_path(doc), class: "dropdown-item" %></li>
+                      <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+                      <li><%= link_to "JSON", download_oscal_profile_document_path(doc), class: "dropdown-item" %></li>
                       <li><%= link_to "YAML", download_yaml_profile_document_path(doc), class: "dropdown-item" %></li>
                       <li><%= link_to "XML", download_xml_profile_document_path(doc), class: "dropdown-item" %></li>
                     </ul>
