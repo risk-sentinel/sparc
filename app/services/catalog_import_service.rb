@@ -173,7 +173,10 @@ class CatalogImportService
       "related_controls"      => related.presence
     }.compact.reject { |_, v| v.blank? }
 
-    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data)
+    # Parameter definitions (Assignment/Selection placeholders for profiles to resolve)
+    params_data = ctrl["params"].presence || []
+
+    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: params_data)
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
@@ -358,15 +361,17 @@ class CatalogImportService
     family
   end
 
-  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data)
+  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: [])
     ctrl = family.catalog_controls.find_or_initialize_by(control_id: control_id)
     is_new = ctrl.new_record?
-    ctrl.assign_attributes(
+    attrs = {
       title:            title.presence || ctrl.title,
       priority:         priority.presence || ctrl.priority,
       baseline_impact:  baseline.presence || ctrl.baseline_impact,
       guidance_data:    guidance_data.any? ? guidance_data : (ctrl.guidance_data || {})
-    )
+    }
+    attrs[:params_data] = params_data if params_data.present?
+    ctrl.assign_attributes(attrs)
     ctrl.save!
     is_new ? :created : :updated
   end

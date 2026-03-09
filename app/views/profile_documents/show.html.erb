@@ -216,11 +216,18 @@
                 <div class="sparc-statement-label" style="color: var(--bs-primary);">Parameters</div>
                 <table class="sparc-field-table">
                   <% param_fields.each do |fname, field| %>
+                    <% param_id = fname.delete_prefix("parameter:") %>
+                    <% label_field = field_map["parameter_label:#{param_id}"] %>
                     <tr>
-                      <td class="sparc-field-label" style="width: 40%; font-family: monospace;">
-                        <%= fname.delete_prefix("parameter:") %>
+                      <td class="sparc-field-label" style="width: 30%; font-family: monospace;">
+                        <%= param_id %>
                       </td>
-                      <td class="sparc-field-value">
+                      <% if label_field %>
+                        <td class="text-body-secondary" style="width: 25%; font-size: 0.82rem;">
+                          <%= label_field.field_value %>
+                        </td>
+                      <% end %>
+                      <td class="sparc-field-value" <%= "colspan=2" unless label_field %>>
                         <%= field.field_value %>
                       </td>
                     </tr>

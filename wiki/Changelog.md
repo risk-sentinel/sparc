@@ -4,6 +4,22 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.7 -- Catalog Parameter Traceability (2026-03-09)
+
+### Added
+- Catalog-level OSCAL parameter definitions (`params`) extracted and stored during catalog import as `params_data` JSONB column on `catalog_controls` ([Issue #143](https://github.com/Rebel-Raiders/sparc/issues/143))
+- Control family show view displays parameter badges and expandable parameter details (ID, label, constraint/choices)
+- Catalog control edit form shows read-only parameter definitions imported from OSCAL
+- OSCAL catalog export now emits `params` array on controls when present
+
+### Fixed
+- Profile show view now displays parameter labels alongside parameter IDs and values
+
+### Note
+- Re-seed catalogs (`bin/rails db:seed`) to populate `params_data` on existing catalog controls
+
+---
+
 ## v3.4.6 -- Fix Docker Migration Failure (2026-03-09)
 
 ### Fixed

@@ -36,6 +36,21 @@ class CatalogControl < ApplicationRecord
     data.select { |k, v| GUIDANCE_FIELDS.include?(k) && v.present? }
   end
 
+  # Returns true when at least one parameter definition exists.
+  def params_present?
+    params_list.present?
+  end
+
+  # Returns the parsed params array, handling String (double-encoded) vs Array.
+  def params_list
+    raw = params_data
+    return [] if raw.blank?
+    result = raw.is_a?(String) ? JSON.parse(raw) : raw
+    result.is_a?(Array) ? result : []
+  rescue JSON::ParserError
+    []
+  end
+
   private
 
   # update_all bypasses ActiveRecord type casting, so guidance_data can
