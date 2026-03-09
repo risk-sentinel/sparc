@@ -51,6 +51,22 @@ class CatalogControl < ApplicationRecord
     []
   end
 
+  # Merges a hash of { param_id => new_label } into the params_data array.
+  # Only the "label" key is updated; all other param fields (id, select,
+  # guidelines, props) are preserved.  Returns the updated array.
+  def merge_params_labels(labels_hash)
+    return params_list if labels_hash.blank?
+
+    params_list.map do |param|
+      if labels_hash.key?(param["id"])
+        new_label = labels_hash[param["id"]].presence
+        new_label ? param.merge("label" => new_label) : param.except("label")
+      else
+        param
+      end
+    end
+  end
+
   private
 
   # update_all bypasses ActiveRecord type casting, so guidance_data can

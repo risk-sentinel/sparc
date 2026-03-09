@@ -58,7 +58,7 @@
     </div>
   </div>
 
-  <%# ── Parameters (read-only, populated from OSCAL import) ── %>
+  <%# ── Parameters (editable labels, populated from OSCAL import) ── %>
   <% if catalog_control.params_present? %>
     <details class="border rounded" style="margin-bottom: 1.25rem; padding: 0;" open>
       <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
@@ -69,22 +69,31 @@
       </summary>
       <div class="p-3">
         <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
-          Parameters imported from the OSCAL catalog. These define organization-specific values
-          that profiles and SSPs must resolve.
+          Parameters referenced by the control statement via <code>{{ insert: param, &lt;id&gt; }}</code>.
+          Edit the <strong>Label</strong> to customize organization-specific values.
+          Param IDs and structural constraints are read-only.
         </p>
         <table class="table table-sm mb-0" style="font-size: 0.82rem;">
           <thead>
             <tr>
-              <th style="width: 25%; padding: 0.3rem 0.5rem;">Param ID</th>
-              <th style="width: 35%; padding: 0.3rem 0.5rem;">Label</th>
+              <th style="width: 22%; padding: 0.3rem 0.5rem;">Param ID</th>
+              <th style="width: 40%; padding: 0.3rem 0.5rem;">Label</th>
               <th style="padding: 0.3rem 0.5rem;">Constraint / Choices</th>
             </tr>
           </thead>
           <tbody>
             <% catalog_control.params_list.each do |param| %>
               <tr>
-                <td style="padding: 0.3rem 0.5rem; font-family: monospace; color: var(--bs-primary);"><%= param["id"] %></td>
-                <td style="padding: 0.3rem 0.5rem;"><%= param["label"] %></td>
+                <td style="padding: 0.3rem 0.5rem; font-family: monospace; color: var(--bs-primary);">
+                  <%= param["id"] %>
+                </td>
+                <td style="padding: 0.3rem 0.5rem;">
+                  <%= text_field_tag "catalog_control[params_labels][#{param['id']}]",
+                      param["label"],
+                      class: "form-control form-control-sm",
+                      style: "font-size: 0.82rem;",
+                      placeholder: "Organization-defined value..." %>
+                </td>
                 <td style="padding: 0.3rem 0.5rem;">
                   <% if param.dig("select", "choice").present? %>
                     <span class="text-body-secondary">Select <%= param.dig("select", "how-many") || "one" %>:</span>
