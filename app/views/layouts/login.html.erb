@@ -38,7 +38,7 @@
           <%= link_to login_path, class: "navbar-brand d-flex align-items-center" do %>
             <%= image_tag "sparc.png", alt: "SPARC", class: "sparc-navbar-logo" %>
           <% end %>
-          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.4.2</span>
+          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
