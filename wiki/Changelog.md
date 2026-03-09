@@ -4,6 +4,13 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.6 -- Fix Docker Migration Failure (2026-03-09)
+
+### Fixed
+- Removed duplicate `error_message` column addition from `AddOscalSspEntities` migration that caused `docker compose up --build` to fail on existing Postgres volumes ([Issue #140](https://github.com/Rebel-Raiders/sparc/issues/140))
+
+---
+
 ## v3.4.5 -- Heatmap Removal & Environment UX Fix (2026-03-09)
 
 ### Fixed
