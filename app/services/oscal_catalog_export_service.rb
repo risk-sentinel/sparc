@@ -98,6 +98,8 @@ class OscalCatalogExportService
       "title" => control.title
     }
 
+    result["params"] = control.params_list if control.params_present?
+
     props = build_control_props(control)
     result["props"] = props if props.any?
 
