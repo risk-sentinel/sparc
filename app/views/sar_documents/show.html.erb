@@ -111,11 +111,9 @@
     </div>
     <div class="d-flex flex-wrap gap-2" style="flex-shrink: 0;">
       <div class="btn-group">
-        <%= link_to "Export OSCAL", download_oscal_sar_document_path(@sar_document),
-              class: "sparc-btn-oscal" %>
-        <button type="button" class="sparc-btn-oscal dropdown-toggle dropdown-toggle-split"
+        <button type="button" class="sparc-btn-oscal dropdown-toggle"
                 data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="visually-hidden">Format options</span>
+          Export OSCAL
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
           <li><%= link_to "OSCAL JSON (validated)", download_oscal_sar_document_path(@sar_document), class: "dropdown-item" %></li>

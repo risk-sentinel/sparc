@@ -41,8 +41,18 @@
             <td><%= catalog.control_families.size %></td>
             <td><%= catalog.total_controls %></td>
             <td>
-              <div class="d-flex gap-2">
+              <div style="display: inline-flex; gap: 0.35rem;">
                 <%= link_to "View", catalog, class: "btn btn-primary", style: "padding: 0.4rem 0.8rem; font-size: 0.85rem;" %>
+                <div class="btn-group">
+                  <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white;" data-bs-toggle="dropdown" aria-expanded="false">
+                    Export OSCAL
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><%= link_to "OSCAL JSON (validated)", download_oscal_control_catalog_path(catalog), class: "dropdown-item" %></li>
+                    <li><%= link_to "YAML", download_yaml_control_catalog_path(catalog), class: "dropdown-item" %></li>
+                    <li><%= link_to "XML", download_xml_control_catalog_path(catalog), class: "dropdown-item" %></li>
+                  </ul>
+                </div>
                 <% if can_write_catalogs? %>
                   <%= link_to "Edit", edit_control_catalog_path(catalog), class: "btn", style: "background: #f39c12; color: white; padding: 0.4rem 0.8rem; font-size: 0.85rem;" %>
                   <%= button_to "Delete", catalog, method: :delete,

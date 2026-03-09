@@ -26,11 +26,9 @@
       <% end %>
       <% if signed_in? %>
         <div class="btn-group">
-          <%= link_to "Export OSCAL", download_oscal_control_catalog_path(@control_catalog),
-                class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem;" %>
-          <button type="button" class="btn btn-sparc-purple dropdown-toggle dropdown-toggle-split fw-semibold"
+          <button type="button" class="btn btn-sparc-purple fw-semibold dropdown-toggle"
                   data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.875rem;">
-            <span class="visually-hidden">Format options</span>
+            Export OSCAL
           </button>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><%= link_to "OSCAL JSON (validated)", download_oscal_control_catalog_path(@control_catalog), class: "dropdown-item" %></li>

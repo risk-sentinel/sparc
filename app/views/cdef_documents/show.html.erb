@@ -90,11 +90,9 @@
               class: "sparc-btn-ghost", data: { confirm: "Duplicate this component definition?" } %>
       <% end %>
       <div class="btn-group">
-        <%= link_to "Export OSCAL", download_oscal_cdef_document_path(@cdef_document),
-              class: "sparc-btn-oscal" %>
-        <button type="button" class="sparc-btn-oscal dropdown-toggle dropdown-toggle-split"
+        <button type="button" class="sparc-btn-oscal dropdown-toggle"
                 data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="visually-hidden">Format options</span>
+          Export OSCAL
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
           <li><%= link_to "OSCAL JSON (validated)", download_oscal_cdef_document_path(@cdef_document), class: "dropdown-item" %></li>
