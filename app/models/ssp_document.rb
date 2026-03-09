@@ -22,7 +22,7 @@ class SspDocument < ApplicationRecord
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 
   validates :name, presence: true
-  validates :file_type, inclusion: { in: %w[excel json xml] }, allow_nil: true
+  validates :file_type, inclusion: { in: %w[excel json xml yaml] }, allow_nil: true
   validates :creation_method, inclusion: { in: %w[excel wizard oscal_import] }, allow_nil: true
 
   CREATION_METHODS = %w[excel wizard oscal_import].freeze

@@ -54,8 +54,17 @@
                   <%= button_to "Copy", copy_profile_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.35rem 0.75rem; font-size: 0.8rem;", data: { confirm: "Duplicate this profile?" } %>
                 <% end %>
                 <% if doc.completed? %>
-                  <%= link_to "OSCAL", download_oscal_profile_document_path(doc), class: "btn btn-sm", style: "background: #8e44ad; color: white;" %>
-                  <%= link_to "JSON", download_json_profile_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white;" data-bs-toggle="dropdown" aria-expanded="false">
+                      Export OSCAL
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+                      <li><%= link_to "JSON", download_oscal_profile_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "YAML", download_yaml_profile_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "XML", download_xml_profile_document_path(doc), class: "dropdown-item" %></li>
+                    </ul>
+                  </div>
                 <% end %>
                 <% if signed_in? %>
                   <%= link_to "Delete", profile_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>

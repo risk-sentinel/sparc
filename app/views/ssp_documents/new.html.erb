@@ -3,10 +3,10 @@
 
   <%= form_with model: @ssp_document, local: true, multipart: true do |f| %>
     <div class="form-group">
-      <label for="ssp_document_file">Select File (.xlsx, .xls, .json, .xml)</label>
-      <%= f.file_field :file, accept: ".xlsx,.xls,.json,.xml", required: true %>
+      <label for="ssp_document_file">Select File (.xlsx, .xls, .json, .xml, .yaml, .yml)</label>
+      <%= f.file_field :file, accept: ".xlsx,.xls,.json,.xml,.yaml,.yml", required: true %>
       <small class="text-body-secondary d-block" style="margin-top: 0.5rem;">
-        Upload an Excel workbook, OSCAL SSP JSON, or OSCAL SSP XML file.
+        Upload an Excel workbook, OSCAL SSP JSON, OSCAL SSP XML, or OSCAL SSP YAML file.
       </small>
     </div>
 

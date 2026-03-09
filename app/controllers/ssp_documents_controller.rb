@@ -4,6 +4,7 @@ class SspDocumentsController < ApplicationController
   before_action :set_ssp_document, only: [
     :show, :edit, :update, :destroy,
     :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
+    :download_yaml, :download_xml,
     :status, :update_metadata, :enrich, :update_enrich
   ]
 
@@ -184,6 +185,32 @@ class SspDocumentsController < ApplicationController
     send_data oscal_data,
               filename:    "#{@ssp_document.name}_oscal_ssp_unvalidated_#{Date.today}.json",
               type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_yaml
+    json_string = OscalSspExportService.new(@ssp_document).export
+    yaml_data = OscalExportFormatService.to_yaml(json_string)
+
+    audit_log("ssp_document_exported", subject: @ssp_document,
+      metadata: { name: @ssp_document.name, format: "yaml" })
+
+    send_data yaml_data,
+              filename:    "#{@ssp_document.name}_oscal_ssp_#{Date.today}.yaml",
+              type:        "application/x-yaml",
+              disposition: "attachment"
+  end
+
+  def download_xml
+    json_string = OscalSspExportService.new(@ssp_document).export
+    xml_data = OscalExportFormatService.to_xml(json_string, :ssp)
+
+    audit_log("ssp_document_exported", subject: @ssp_document,
+      metadata: { name: @ssp_document.name, format: "xml" })
+
+    send_data xml_data,
+              filename:    "#{@ssp_document.name}_oscal_ssp_#{Date.today}.xml",
+              type:        "application/xml",
               disposition: "attachment"
   end
 
