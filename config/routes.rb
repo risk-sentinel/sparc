@@ -14,6 +14,12 @@ Rails.application.routes.draw do
   # Password change (forced reset for bootstrapped admin)
   resource :password, only: [ :edit, :update ]
 
+  # User profile (avatar upload)
+  resource :profile, only: [ :edit ] do
+    patch :update_avatar, on: :member
+    delete :remove_avatar, on: :member
+  end
+
   # OmniAuth callbacks (GitHub, GitLab, OIDC)
   match "auth/:provider/callback", to: "omniauth_callbacks#create", via: [ :get, :post ]
   get "auth/failure", to: "omniauth_callbacks#failure"
@@ -140,6 +146,15 @@ Rails.application.routes.draw do
         end
       end
     end
+  end
+
+  resources :control_mappings do
+    member do
+      patch :publish
+      patch :deprecate
+      get :download_oscal
+    end
+    resources :control_mapping_entries, only: [ :create, :destroy ], as: :entries, path: "entries"
   end
 
   # ── Admin ───────────────────────────────────────────────────────────

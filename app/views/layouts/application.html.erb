@@ -38,57 +38,147 @@
           <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
             <%= image_tag "sparc.png", alt: "SPARC", class: "sparc-navbar-logo" %>
           <% end %>
-          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.2.1</span>
+          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.3.0</span>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto align-items-center">
-            <li class="nav-item"><%= link_to "Home", root_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Control Catalogs", control_catalogs_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Baselines", profile_documents_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Component Definitions", cdef_documents_path, class: "nav-link" %></li>
+          <ul class="navbar-nav ms-auto align-items-center gap-1">
+
+            <%# ── Home ── %>
+            <li class="nav-item">
+              <%= link_to "Home", root_path, class: "nav-link sparc-nav-btn" %>
+            </li>
+
+            <%# ── Controls Layer (blue — always visible) ── %>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-controls" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Controls
+              </a>
+              <ul class="dropdown-menu sparc-dropdown-menu">
+                <li class="sparc-dropdown-header sparc-dropdown-header-controls">Controls Layer</li>
+                <li><%= link_to control_catalogs_path, class: "dropdown-item" do %>
+                  <span class="sparc-dropdown-icon">&#128218;</span> Control Catalogs
+                <% end %></li>
+                <li><%= link_to profile_documents_path, class: "dropdown-item" do %>
+                  <span class="sparc-dropdown-icon">&#128203;</span> Baselines
+                <% end %></li>
+                <li><%= link_to control_mappings_path, class: "dropdown-item" do %>
+                  <span class="sparc-dropdown-icon">&#128260;</span> Mappings
+                <% end %></li>
+              </ul>
+            </li>
+
             <% if !SparcConfig.any_auth_enabled? || signed_in? %>
-              <li class="nav-item"><%= link_to "Projects", projects_path, class: "nav-link" %></li>
-              <li class="nav-item"><%= link_to "System Security Plans", ssp_documents_path, class: "nav-link" %></li>
-              <li class="nav-item"><%= link_to "Assessment Plans", sap_documents_path, class: "nav-link" %></li>
-              <li class="nav-item"><%= link_to "Assessment Results", sar_documents_path, class: "nav-link" %></li>
-              <li class="nav-item"><%= link_to "Evidence", evidences_path, class: "nav-link" %></li>
-              <li class="nav-item"><%= link_to "POA&Ms", poam_documents_path, class: "nav-link" %></li>
+              <%# ── Implementation Layer (green) ── %>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-implementation" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Implementation
+                </a>
+                <ul class="dropdown-menu sparc-dropdown-menu">
+                  <li class="sparc-dropdown-header sparc-dropdown-header-implementation">Implementation Layer</li>
+                  <li><%= link_to ssp_documents_path, class: "dropdown-item" do %>
+                    <span class="sparc-dropdown-icon">&#128196;</span> System Security Plans
+                  <% end %></li>
+                  <li><%= link_to cdef_documents_path, class: "dropdown-item" do %>
+                    <span class="sparc-dropdown-icon">&#128295;</span> Component Definitions
+                  <% end %></li>
+                </ul>
+              </li>
+
+              <%# ── Assessment Layer (orange) ── %>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-assessment" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Assessment
+                </a>
+                <ul class="dropdown-menu sparc-dropdown-menu">
+                  <li class="sparc-dropdown-header sparc-dropdown-header-assessment">Assessment Layer</li>
+                  <li><%= link_to sap_documents_path, class: "dropdown-item" do %>
+                    <span class="sparc-dropdown-icon">&#128221;</span> Assessment Plans
+                  <% end %></li>
+                  <li><%= link_to sar_documents_path, class: "dropdown-item" do %>
+                    <span class="sparc-dropdown-icon">&#128200;</span> Assessment Results
+                  <% end %></li>
+                  <li><%= link_to evidences_path, class: "dropdown-item" do %>
+                    <span class="sparc-dropdown-icon">&#128206;</span> Evidence
+                  <% end %></li>
+                  <li><%= link_to poam_documents_path, class: "dropdown-item" do %>
+                    <span class="sparc-dropdown-icon">&#9888;&#65039;</span> POA&amp;Ms
+                  <% end %></li>
+                </ul>
+              </li>
+
+              <%# ── Projects (standalone) ── %>
+              <li class="nav-item">
+                <%= link_to "Projects", projects_path, class: "nav-link sparc-nav-btn" %>
+              </li>
             <% end %>
+
+            <%# ── Separator ── %>
+            <li class="nav-item d-none d-lg-block">
+              <span class="sparc-nav-separator"></span>
+            </li>
+
+            <%# ── Theme toggle ── %>
             <li class="nav-item" data-controller="theme">
-              <button class="btn btn-outline-light btn-sm ms-2"
+              <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
                       data-theme-target="icon"
                       data-action="theme#toggle"
                       title="Toggle light/dark mode">&#127769;</button>
             </li>
+
+            <%# ── User menu / Login ── %>
             <% if SparcConfig.any_auth_enabled? %>
               <% if signed_in? %>
-                <li class="nav-item dropdown ms-2">
-                  <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <%= current_user.display_label %>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 sparc-nav-user" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="sparc-avatar">
+                      <% if current_user.avatar.attached? %>
+                        <%= image_tag current_user.avatar, alt: current_user.initials %>
+                      <% else %>
+                        <%= current_user.initials %>
+                      <% end %>
+                    </span>
+                    <span class="d-none d-xl-inline"><%= current_user.display_label %></span>
                   </a>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li><span class="dropdown-item-text small text-body-secondary"><%= current_user.email %></span></li>
+                  <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu">
+                    <li class="px-3 py-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="sparc-avatar sparc-avatar-md">
+                          <% if current_user.avatar.attached? %>
+                            <%= image_tag current_user.avatar, alt: current_user.initials %>
+                          <% else %>
+                            <%= current_user.initials %>
+                          <% end %>
+                        </span>
+                        <div>
+                          <div class="fw-semibold small"><%= current_user.display_label %></div>
+                          <div class="text-body-secondary" style="font-size: 0.75rem;"><%= current_user.email %></div>
+                        </div>
+                      </div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
                     <% if current_user.admin? %>
-                      <li><hr class="dropdown-divider"></li>
                       <li><h6 class="dropdown-header">Administration</h6></li>
                       <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Projects", admin_projects_path, class: "dropdown-item" %></li>
+                      <li><hr class="dropdown-divider"></li>
                     <% end %>
-                    <li><hr class="dropdown-divider"></li>
+                    <li><%= link_to "Profile", edit_profile_path, class: "dropdown-item" %></li>
                     <li><%= link_to "Change Password", edit_password_path, class: "dropdown-item" %></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><%= button_to "Sign Out", logout_path, method: :delete, class: "dropdown-item" %></li>
                   </ul>
                 </li>
               <% else %>
                 <li class="nav-item">
-                  <%= link_to "Login", login_path, class: "btn btn-outline-info btn-sm ms-2 fw-semibold" %>
+                  <%= link_to "Login", login_path, class: "btn btn-outline-info btn-sm fw-semibold" %>
                 </li>
               <% end %>
             <% end %>
+
           </ul>
         </div>
       </div>
