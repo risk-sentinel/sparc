@@ -38,22 +38,46 @@
           <%= link_to login_path, class: "navbar-brand d-flex align-items-center" do %>
             <%= image_tag "sparc.png", alt: "SPARC", class: "sparc-navbar-logo" %>
           <% end %>
-          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.2.1</span>
+          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.3.0</span>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto align-items-center">
-            <li class="nav-item"><%= link_to "Control Catalogs", control_catalogs_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Baselines", profile_documents_path, class: "nav-link" %></li>
-            <li class="nav-item"><%= link_to "Component Definitions", cdef_documents_path, class: "nav-link" %></li>
+          <ul class="navbar-nav ms-auto align-items-center gap-1">
+
+            <%# ── Controls Layer (public — always visible) ── %>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-controls" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Controls
+              </a>
+              <ul class="dropdown-menu sparc-dropdown-menu">
+                <li class="sparc-dropdown-header sparc-dropdown-header-controls">Controls Layer</li>
+                <li><%= link_to control_catalogs_path, class: "dropdown-item" do %>
+                  <span class="sparc-dropdown-icon">&#128218;</span> Control Catalogs
+                <% end %></li>
+                <li><%= link_to profile_documents_path, class: "dropdown-item" do %>
+                  <span class="sparc-dropdown-icon">&#128203;</span> Baselines
+                <% end %></li>
+                <li><%= link_to control_mappings_path, class: "dropdown-item" do %>
+                  <span class="sparc-dropdown-icon">&#128260;</span> Mappings
+                <% end %></li>
+              </ul>
+            </li>
+
+            <%# ── Separator ── %>
+            <li class="nav-item d-none d-lg-block">
+              <span class="sparc-nav-separator"></span>
+            </li>
+
+            <%# ── Theme toggle ── %>
             <li class="nav-item" data-controller="theme">
-              <button class="btn btn-outline-light btn-sm ms-2"
+              <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
                       data-theme-target="icon"
                       data-action="theme#toggle"
                       title="Toggle light/dark mode">&#127769;</button>
             </li>
+
           </ul>
         </div>
       </div>

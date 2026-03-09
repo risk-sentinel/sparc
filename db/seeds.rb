@@ -1800,27 +1800,28 @@ PERM_ALL_READ = Role::PERMISSION_KEYS.select { |k| k.end_with?(".read") }
                                       .each_with_object({}) { |k, h| h[k] = true }.freeze
 
 PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
-  "catalogs.write" => true, "profiles.write" => true
+  "catalogs.write" => true, "profiles.write" => true, "mappings.write" => true
 ).freeze
 
 PERM_AO = {
   "projects.read" => true, "ssp.read" => true, "sar.read" => true,
   "sap.read" => true, "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true, "evidence.read" => true
+  "cdef.read" => true, "evidence.read" => true, "mappings.read" => true
 }.freeze
 
 PERM_SO_ISO = {
   "projects.read" => true, "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sap.read" => true, "poam.read" => true,
   "poam.write" => true, "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true
+  "evidence.read" => true, "evidence.write" => true, "mappings.read" => true
 }.freeze
 
 PERM_CISO = {
   "catalogs.read" => true, "profiles.read" => true,
   "projects.read" => true, "ssp.read" => true,
   "sar.read" => true, "sap.read" => true,
-  "poam.read" => true, "cdef.read" => true, "evidence.read" => true
+  "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
+  "mappings.read" => true
 }.freeze
 
 PERM_ISSO = {
@@ -1828,7 +1829,8 @@ PERM_ISSO = {
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true, "sap.write" => true,
   "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true, "evidence.read" => true, "evidence.write" => true
+  "cdef.read" => true, "evidence.read" => true, "evidence.write" => true,
+  "mappings.read" => true
 }.freeze
 
 PERM_PROJECT_MEMBER = {
@@ -1843,7 +1845,8 @@ PERM_ASSESSOR = {
   "projects.read" => true, "ssp.read" => true,
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true, "sap.write" => true,
-  "poam.read" => true, "cdef.read" => true, "evidence.read" => true
+  "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
+  "mappings.read" => true
 }.freeze
 
 PERM_VIEW_ONLY = {
@@ -1864,7 +1867,8 @@ PERM_SAOP = {
   "catalogs.read" => true, "profiles.read" => true,
   "projects.read" => true, "ssp.read" => true,
   "sar.read" => true, "sap.read" => true,
-  "poam.read" => true, "cdef.read" => true, "evidence.read" => true
+  "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
+  "mappings.read" => true
 }.freeze
 
 PERM_SPARC_SME = {
@@ -1875,7 +1879,8 @@ PERM_SPARC_SME = {
   "sap.read" => true, "sap.write" => true,
   "poam.read" => true, "poam.write" => true,
   "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true
+  "evidence.read" => true, "evidence.write" => true,
+  "mappings.read" => true
 }.freeze
 
 PERM_EVIDENCE_ENGINEER = {
@@ -1886,12 +1891,13 @@ PERM_EVIDENCE_ENGINEER = {
   "sap.read" => true,
   "poam.read" => true,
   "cdef.read" => true,
-  "evidence.read" => true, "evidence.write" => true
+  "evidence.read" => true, "evidence.write" => true,
+  "mappings.read" => true
 }.freeze
 
 PERM_CHIEF_ACQUISITION_OFFICER = {
   "catalogs.read" => true, "profiles.read" => true, "projects.read" => true,
-  "cdef.read" => true, "evidence.read" => true
+  "cdef.read" => true, "evidence.read" => true, "mappings.read" => true
 }.freeze
 
 PERM_ISSM = {
@@ -1900,7 +1906,8 @@ PERM_ISSM = {
   "sar.read" => true, "sap.read" => true,
   "poam.read" => true, "poam.write" => true,
   "cdef.read" => true,
-  "evidence.read" => true, "evidence.write" => true
+  "evidence.read" => true, "evidence.write" => true,
+  "mappings.read" => true
 }.freeze
 
 PERM_CSP = {
@@ -1909,7 +1916,8 @@ PERM_CSP = {
   "sar.read" => true, "sap.read" => true,
   "poam.read" => true, "poam.write" => true,
   "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true
+  "evidence.read" => true, "evidence.write" => true,
+  "mappings.read" => true
 }.freeze
 
 PERM_SYSTEM_ARCHITECT = {

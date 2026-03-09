@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_08_180748) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_09_002634) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -176,6 +176,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_180748) do
     t.index ["code"], name: "index_control_families_on_code"
     t.index ["control_catalog_id", "code"], name: "index_control_families_on_control_catalog_id_and_code", unique: true
     t.index ["control_catalog_id"], name: "index_control_families_on_control_catalog_id"
+  end
+
+  create_table "control_mapping_entries", force: :cascade do |t|
+    t.bigint "control_mapping_id", null: false
+    t.datetime "created_at", null: false
+    t.string "matching_rationale"
+    t.string "relationship", null: false
+    t.text "remarks"
+    t.integer "row_order", default: 0
+    t.string "source_control_id", null: false
+    t.string "source_type", default: "control"
+    t.string "target_control_id", null: false
+    t.string "target_type", default: "control"
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["control_mapping_id", "row_order"], name: "idx_on_control_mapping_id_row_order_77f827c1b5"
+    t.index ["control_mapping_id", "source_control_id", "target_control_id"], name: "idx_mapping_entries_unique_pair", unique: true
+    t.index ["control_mapping_id"], name: "index_control_mapping_entries_on_control_mapping_id"
+    t.index ["uuid"], name: "index_control_mapping_entries_on_uuid", unique: true
+  end
+
+  create_table "control_mappings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "mapping_version", default: "1.0.0"
+    t.string "matching_rationale", default: "semantic"
+    t.jsonb "metadata_extra", default: {}
+    t.string "method_type", default: "human"
+    t.string "name", null: false
+    t.string "oscal_version", default: "1.2.1"
+    t.bigint "source_catalog_id", null: false
+    t.string "status", default: "draft", null: false
+    t.bigint "target_catalog_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["source_catalog_id", "target_catalog_id"], name: "idx_on_source_catalog_id_target_catalog_id_6bb4f5897d"
+    t.index ["source_catalog_id"], name: "index_control_mappings_on_source_catalog_id"
+    t.index ["status"], name: "index_control_mappings_on_status"
+    t.index ["target_catalog_id"], name: "index_control_mappings_on_target_catalog_id"
+    t.index ["uuid"], name: "index_control_mappings_on_uuid", unique: true
   end
 
   create_table "conversion_jobs", force: :cascade do |t|
@@ -997,6 +1037,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_08_180748) do
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "control_families", "control_catalogs"
+  add_foreign_key "control_mapping_entries", "control_mappings"
+  add_foreign_key "control_mappings", "control_catalogs", column: "source_catalog_id"
+  add_foreign_key "control_mappings", "control_catalogs", column: "target_catalog_id"
   add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
   add_foreign_key "evidences", "projects", on_delete: :nullify
   add_foreign_key "identities", "users", on_delete: :cascade
