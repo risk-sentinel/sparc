@@ -4,6 +4,8 @@
 
 **SPARC** is an open-source compliance documentation platform that transforms how organizations manage NIST 800-53 security controls. It replaces fragmented spreadsheets and siloed documents with a **coordinated, web-based, real-time source of truth** — empowering security teams, assessors, system owners, and program managers to document, assess, and prove compliance across the full RMF lifecycle.
 
+> **Documentation:** See the **[SPARC Wiki](https://github.com/Rebel-Raiders/sparc/wiki)** for comprehensive documentation covering RBAC, screens, core functions, integrations, architecture, and configuration.
+
 ---
 
 ## Key Features
@@ -15,7 +17,7 @@
 - **Interactive Heat Maps** — Visual compliance dashboards showing control status by NIST family
 - **Inline Field Editing** — Edit implementation details directly in the browser
 - **Authentication & SSO** — Local login, GitHub/GitLab OAuth, OIDC (Okta/Keycloak/Entra ID), and LDAP
-- **Role-Based Access** — 9 RMF roles with project-level scoping and admin UI
+- **Role-Based Access** — 29 NIST RMF roles with project-level scoping and admin UI
 - **Background Processing** — Async job processing for large files via Sidekiq
 - **RESTful API** — Programmatic access at `/api/v1/`
 
