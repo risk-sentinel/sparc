@@ -20,6 +20,7 @@ This page documents every major subsystem and feature in SPARC, the Systemized P
 12. [JSON Export](#12-json-export)
 13. [REST API](#13-rest-api)
 14. [Dark Mode & Theming](#14-dark-mode--theming)
+15. [HTTPS Enforcement & Security Headers](#15-https-enforcement--security-headers)
 
 ---
 
@@ -939,3 +940,58 @@ Uses Bootstrap 5.3 color mode support via the `data-bs-theme` attribute on the r
 ### Related
 
 - Issue #85 (PR #86), Issue #51 (PR #62)
+
+---
+
+## 15. HTTPS Enforcement & Security Headers
+
+SPARC enforces encrypted communications in production per NIST SP 800-53 SC-8 (Transmission Confidentiality and Integrity) while allowing plain HTTP for local development.
+
+### Production HTTPS Enforcement
+
+Configured in `config/environments/production.rb`:
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| `config.assume_ssl` | `true` | Trust X-Forwarded-Proto from reverse proxy |
+| `config.force_ssl` | `ENV.fetch("FORCE_SSL", "true")` | Redirect HTTP to HTTPS, set secure cookies |
+| HSTS `max-age` | 1 year | Browsers remember to use HTTPS |
+| HSTS `subdomains` | `true` | Covers all subdomains |
+| HSTS `preload` | `true` | Eligible for browser preload lists |
+| Health-check bypass | `/up` excluded | Container probes (ALB, K8s) use HTTP internally |
+
+Set `FORCE_SSL=false` to disable (e.g., behind a proxy that already handles HTTPS).
+
+### Security Headers Middleware
+
+`config/initializers/security_headers.rb` sets defence-in-depth headers on every response:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Content-Type-Options` | `nosniff` | Prevent MIME-type sniffing |
+| `X-Frame-Options` | `SAMEORIGIN` | Clickjacking protection |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Control Referer leakage |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Restrict unused browser APIs |
+| `X-Permitted-Cross-Domain-Policies` | `none` | Block Flash/Acrobat cross-domain loading |
+
+### Content Security Policy
+
+`config/initializers/content_security_policy.rb` configures CSP in **report-only** mode. Violations appear in the browser console but do not block content. The Bootstrap 5.3 CDN (`cdn.jsdelivr.net`) is allowlisted for scripts, styles, and fonts.
+
+To switch to enforcing mode set `config.content_security_policy_report_only = false`.
+
+### Local Development
+
+Development mode (`Rails.env.development?`) does not set `force_ssl`, so `http://localhost:3000` works without certificates.
+
+### Container Deployment
+
+The Docker image exposes port 80 (HTTP). HTTPS termination is handled at the reverse proxy / load balancer layer (Nginx, Traefik, ALB). The `/up` health-check endpoint responds over HTTP so internal probes work without TLS.
+
+### Version Constant
+
+The application version is centralized in `SparcConfig::VERSION` (defined in `app/models/sparc_config.rb`). Both layout files reference it dynamically via `<%= SparcConfig::VERSION %>`.
+
+### Related
+
+- Issue #106
