@@ -55,9 +55,9 @@
 
       <div class="row g-3 mb-3">
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Project</label>
-          <%= f.select :project_id,
-              options_for_select(Project.order(:name).pluck(:name, :id), @evidence.project_id),
+          <label class="form-label fw-semibold">Authorization Boundary</label>
+          <%= f.select :authorization_boundary_id,
+              options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), @evidence.authorization_boundary_id),
               { include_blank: "None" }, class: "form-select" %>
         </div>
         <div class="col-md-6">

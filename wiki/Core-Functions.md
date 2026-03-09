@@ -12,7 +12,7 @@ This page documents every major subsystem and feature in SPARC, the Systemized P
 4. [SSP Enrichment](#4-ssp-enrichment)
 5. [Control Mapping](#5-control-mapping)
 6. [Evidence & Attestation Management](#6-evidence--attestation-management)
-7. [Project Management](#7-project-management)
+7. [Authorization Boundary Management](#7-authorization-boundary-management)
 8. [Audit Logging](#8-audit-logging)
 9. [Heatmap Analytics](#9-heatmap-analytics)
 10. [Document Duplication & Copy](#10-document-duplication--copy)
@@ -548,15 +548,15 @@ end
 
 ---
 
-## 7. Project Management
+## 7. Authorization Boundary Management
 
-**Models:** `app/models/project.rb`, `app/models/boundary.rb`, `app/models/project_membership.rb`
+**Models:** `app/models/authorization_boundary.rb`, `app/models/boundary.rb`, `app/models/authorization_boundary_membership.rb`
 
-Projects serve as the top-level container for compliance artifacts, organizing them around a system boundary.
+Authorization boundaries serve as the top-level container for compliance artifacts, organizing them around a system boundary.
 
-### Project
+### Authorization Boundary
 
-A project aggregates:
+An authorization boundary aggregates:
 
 - `ssp_document` (has_one)
 - `sap_document` (has_one)
@@ -564,7 +564,7 @@ A project aggregates:
 - `poam_documents` (has_many)
 - `evidences` (has_many)
 - `boundaries` (has_many)
-- `project_memberships` (has_many)
+- `authorization_boundary_memberships` (has_many)
 
 **Status** (enum): `draft`, `active`, `authorized`, `deauthorized`.
 
@@ -587,13 +587,13 @@ end
 
 System boundaries define network and security perimeters. Each boundary:
 
-- Belongs to a project.
+- Belongs to an authorization boundary.
 - Has an `environment` enum: `production`, `development`, `staging`, `test`.
 - Links to Component Definitions (CDEFs) via the `BoundaryCdefDocument` join table.
 
 ### Team Members
 
-`ProjectMembership` records assign team members to projects with specific roles:
+`AuthorizationBoundaryMembership` records assign team members to authorization boundaries with specific roles:
 
 | Role Key                | Display Label                |
 |-------------------------|------------------------------|
@@ -601,7 +601,7 @@ System boundaries define network and security perimeters. Each boundary:
 | `system_owner`          | System Owner (SO/ISO)        |
 | `ciso`                  | CISO                         |
 | `isso`                  | ISSO                         |
-| `project_member`        | Project Member               |
+| `project_member`        | Team Member                  |
 | `assessor`              | Assessor / 3PAO              |
 | `view_only`             | View Only                    |
 
@@ -636,7 +636,7 @@ Approximately 80 actions are tracked across 16 categories:
 | Authorization      | `authorization_failure`                                                        |
 | User Management    | `user_suspended`, `user_reactivated`, `admin_bootstrap`                        |
 | Role Management    | `role_grant`, `role_revoke`, `role_created`, `role_updated`, `role_deleted`     |
-| Project Members    | `project_member_added`, `project_member_removed`, `project_membership_*`       |
+| Team Members       | `project_member_added`, `project_member_removed`, `authorization_boundary_membership_*` |
 | SSP Documents      | `ssp_document_created`, `_updated`, `_deleted`, `_exported`, `_imported`       |
 | SAR Documents      | `sar_document_created`, `_updated`, `_deleted`, `_exported`, `_imported`       |
 | CDEF Documents     | `cdef_document_created`, `_updated`, `_deleted`, `_exported`, `_copied`        |
@@ -646,7 +646,7 @@ Approximately 80 actions are tracked across 16 categories:
 | Control Catalogs   | `control_catalog_*`, `control_family_*`, `catalog_control_*`                   |
 | Control Mappings   | `control_mapping_*`, `mapping_entry_*`                                         |
 | Evidence           | `evidence_created`, `_updated`, `_deleted`, `attestation_created`, `_deleted`  |
-| Projects           | `project_created`, `_updated`, `_deleted`, `boundary_*`                        |
+| Authorization Boundaries | `authorization_boundary_created`, `_updated`, `_deleted`, `boundary_*`   |
 
 ### Auditable Concern
 

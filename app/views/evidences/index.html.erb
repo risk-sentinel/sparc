@@ -40,9 +40,9 @@
             <%= f.text_field :control_id, value: params[:control_id], class: "form-control form-control-sm", placeholder: "e.g. AC-01" %>
           </div>
           <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Project</label>
-            <%= f.select :project_id, options_for_select(Project.order(:name).pluck(:name, :id), params[:project_id]),
-                         { include_blank: "All Projects" }, class: "form-select form-select-sm" %>
+            <label class="form-label small fw-semibold mb-1">Authorization Boundary</label>
+            <%= f.select :authorization_boundary_id, options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), params[:authorization_boundary_id]),
+                         { include_blank: "All Authorization Boundaries" }, class: "form-select form-select-sm" %>
           </div>
           <div class="col-md-1">
             <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
