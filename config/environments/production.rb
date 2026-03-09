@@ -32,8 +32,13 @@ Rails.application.configure do
   # Configurable via FORCE_SSL env var (default: true in production).
   config.force_ssl = ENV.fetch("FORCE_SSL", "true") == "true"
 
-  # Skip http-to-https redirect for the default health check endpoint.
-  # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
+  # HSTS: 1-year max-age with subdomains and preload per NIST SP 800-53 SC-8.
+  # Skip http-to-https redirect for the /up health check endpoint so container
+  # probes (ALB, Kubernetes) that hit HTTP internally still get a 200.
+  config.ssl_options = {
+    hsts: { expires: 1.year, subdomains: true, preload: true },
+    redirect: { exclude: ->(request) { request.path == "/up" } }
+  }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]

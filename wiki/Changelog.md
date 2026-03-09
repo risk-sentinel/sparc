@@ -4,6 +4,15 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.3 -- HTTPS Enforcement & Security Headers (2026-03-09)
+
+- Enforce HTTPS-only traffic with HSTS preload, subdomains, and 1-year max-age ([Issue #106](https://github.com/Rebel-Raiders/sparc/issues/106))
+- Health-check endpoint `/up` excluded from SSL redirect for container probes (ALB, Kubernetes)
+- Security headers middleware: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Permitted-Cross-Domain-Policies`
+- Content Security Policy enabled in report-only mode (Bootstrap CDN allowlisted)
+- Centralized version constant in `SparcConfig::VERSION` — no longer hardcoded in layouts
+- HTTPS enforcement and security headers test coverage
+
 ## v3.4.2 -- Hide Expected Excel Fields from Upload UI (2026-03-09)
 
 - Removed hardcoded "Expected Excel Format" tables from SSP and SAR upload pages ([Issue #129](https://github.com/Rebel-Raiders/sparc/issues/129))
