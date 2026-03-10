@@ -98,9 +98,10 @@ class ProfileJsonParserService
         "uuid"         => profile["uuid"],
         "catalog_href" => catalog_ref,
         "merge"        => profile["merge"],
-        "back_matter"  => back_matter.map { |r| { "uuid" => r["uuid"], "description" => r["description"] } }
+        "back_matter"  => back_matter
       }.compact
     )
+    @document.assign_oscal_uuid!(profile["uuid"])
   end
 
   def extract_selected_control_ids(imports)

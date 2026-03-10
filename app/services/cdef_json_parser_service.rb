@@ -42,8 +42,13 @@ class CdefJsonParserService
       oscal_version:   metadata["oscal-version"],
       description:     metadata["title"],
       metadata_extra:  metadata_extra.presence || {},
-      import_metadata: { "format" => "oscal_cdef", "uuid" => cdef["uuid"] }.compact
+      import_metadata: {
+        "format"      => "oscal_cdef",
+        "uuid"        => cdef["uuid"],
+        "back_matter" => cdef.dig("back-matter", "resources")
+      }.compact
     )
+    @document.assign_oscal_uuid!(cdef["uuid"])
 
     # Extract controls from components
     components = cdef["components"] || []

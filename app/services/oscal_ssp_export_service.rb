@@ -62,7 +62,7 @@ class OscalSspExportService
   def build_ssp
     {
       "system-security-plan" => {
-        "uuid"                     => @document.import_metadata&.dig("uuid") || SecureRandom.uuid,
+        "uuid"                     => @document.uuid,
         "metadata"                 => build_metadata,
         "import-profile"           => build_import_profile,
         "system-characteristics"   => build_system_characteristics,
@@ -397,9 +397,7 @@ class OscalSspExportService
   # ── Back matter ────────────────────────────────────────────────────
 
   def build_back_matter
-    resources = @document.import_metadata&.dig("back_matter")
-    return nil if resources.blank?
-    { "resources" => resources }
+    @document.build_oscal_back_matter
   end
 
   # ── Helpers ────────────────────────────────────────────────────────

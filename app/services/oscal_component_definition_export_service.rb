@@ -39,10 +39,11 @@ class OscalComponentDefinitionExportService
   def build_component_definition
     {
       "component-definition" => {
-        "uuid"       => SecureRandom.uuid,
-        "metadata"   => build_metadata,
-        "components" => [ build_component ]
-      }
+        "uuid"         => @document.uuid,
+        "metadata"     => build_metadata,
+        "components"   => [ build_component ],
+        "back-matter"  => build_back_matter
+      }.compact
     }
   end
 
@@ -169,5 +170,9 @@ class OscalComponentDefinitionExportService
     when "scap"      then "https://csrc.nist.gov/projects/security-content-automation-protocol"
     else "https://sparc.local/component-definitions/#{@document.id}"
     end
+  end
+
+  def build_back_matter
+    @document.build_oscal_back_matter
   end
 end
