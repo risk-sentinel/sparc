@@ -4,6 +4,29 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.7 -- Control Parameters & Profile Publish (2026-03-09)
+
+### Added
+- Catalog-level OSCAL parameter definitions (`params`) extracted and stored during catalog import as `params_data` JSONB column on `catalog_controls` ([Issue #143](https://github.com/Rebel-Raiders/sparc/issues/143))
+- Control family show view displays parameter badges and expandable parameter details (ID, label, constraint/choices)
+- Catalog control edit form with editable parameter labels for organization-specific customization
+- OSCAL catalog export now emits `params` array on controls when present
+- Profile "Create from Catalog" inherits parameter definitions from the catalog (not empty)
+- Per-parameter value editing in profile control form with save-your-work support
+- **Publish** action on profiles generates a fully-resolved OSCAL catalog merging catalog data with profile modifications (priority, parameter values)
+- Resolved catalog download available after publish via Export dropdown
+- `OscalResolvedProfileCatalogService` for building resolved profile catalogs
+
+### Fixed
+- Delete buttons across all index views now work with Turbo (changed `link_to method: :delete` to `button_to` with `turbo_confirm`)
+- Profiles index table fits viewport without horizontal scrolling (fixed-layout table with truncated names)
+
+### Note
+- Re-seed catalogs (`bin/rails db:seed`) to populate `params_data` on existing catalog controls
+- Run migration for new `resolved_catalog_json` column on `profile_documents`
+
+---
+
 ## v3.4.6 -- Fix Docker Migration Failure (2026-03-09)
 
 ### Fixed

@@ -1789,6 +1789,67 @@ INLINE_CATALOG_GUIDANCE.each do |ctrl_id, guidance|
 end
 puts "  Inline demo guidance applied to #{inline_count} catalog control(s)"
 
+# Catalog Parameters — backfill params_data from OSCAL fixtures
+# ==============================================================
+# Reads the OSCAL catalog/profile JSON fixtures and populates the
+# params_data column on existing CatalogControl rows.
+# ==============================================================
+puts "\nBackfilling catalog parameter definitions from OSCAL fixtures..."
+
+OSCAL_PARAM_SOURCES = [
+  {
+    path:         Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev4_catalog.json"),
+    catalog_name: "NIST SP 800-53 Rev 4"
+  },
+  {
+    path:         Rails.root.join("spec/fixtures/files/profiles/NIST_SP-800-53_rev5_LOW-baseline-resolved-profile_catalog.json"),
+    catalog_name: "NIST SP 800-53 Rev 5"
+  }
+].freeze
+
+# Converts an OSCAL lowercase id like "ac-1" to our DB format "AC-01"
+def oscal_id_to_db_id(oscal_id)
+  oscal_id.to_s.upcase.sub(/\A([A-Z]+-?)(\d+)/) { "#{$1}#{$2.rjust(2, '0')}" }
+end
+
+# Recursively extracts controls (including enhancements) with params
+def extract_params_from_controls(controls)
+  result = {}
+  (controls || []).each do |ctrl|
+    params = ctrl["params"]
+    if params.present?
+      db_id = oscal_id_to_db_id(ctrl.dig("props")&.find { |p| p["name"] == "label" }&.dig("value") || ctrl["id"])
+      result[db_id] = params
+    end
+    # Recurse into enhancements
+    result.merge!(extract_params_from_controls(ctrl["controls"]))
+  end
+  result
+end
+
+OSCAL_PARAM_SOURCES.each do |source|
+  unless File.exist?(source[:path])
+    puts "  Skipping #{source[:catalog_name]} params — file not found: #{source[:path]}"
+    next
+  end
+
+  raw    = JSON.parse(File.read(source[:path]))
+  groups = raw.dig("catalog", "groups") || []
+  count  = 0
+
+  groups.each do |group|
+    params_map = extract_params_from_controls(group["controls"])
+    params_map.each do |ctrl_id, params|
+      updated = CatalogControl.where(control_id: ctrl_id)
+                               .where("params_data = '[]'::jsonb OR params_data IS NULL")
+                               .update_all(params_data: params.to_json)
+      count += updated
+    end
+  end
+
+  puts "  #{source[:catalog_name]}: backfilled params_data for #{count} catalog control(s)"
+end
+
 puts "Done! Demo SSP and SAR documents seeded."
 
 # ── Role Seeding ──────────────────────────────────────────────────────────

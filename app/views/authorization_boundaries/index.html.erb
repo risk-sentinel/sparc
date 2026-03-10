@@ -56,7 +56,9 @@
               <div class="d-flex gap-1">
                 <%= link_to "View", authorization_boundary_path(authorization_boundary), class: "btn btn-primary btn-sm" %>
                 <%= link_to "Edit", edit_authorization_boundary_path(authorization_boundary), class: "btn btn-secondary btn-sm" %>
-                <%= link_to "Delete", authorization_boundary_path(authorization_boundary), method: :delete, data: { confirm: "Delete authorization boundary '#{authorization_boundary.name}'?" }, class: "btn btn-danger btn-sm" %>
+                <%= button_to "Delete", authorization_boundary_path(authorization_boundary), method: :delete,
+                      class: "btn btn-danger btn-sm",
+                      form: { data: { turbo_confirm: "Delete '#{authorization_boundary.name}'? This cannot be undone." }, style: "display: inline;" } %>
               </div>
             </td>
           </tr>

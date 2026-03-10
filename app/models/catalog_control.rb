@@ -36,6 +36,37 @@ class CatalogControl < ApplicationRecord
     data.select { |k, v| GUIDANCE_FIELDS.include?(k) && v.present? }
   end
 
+  # Returns true when at least one parameter definition exists.
+  def params_present?
+    params_list.present?
+  end
+
+  # Returns the parsed params array, handling String (double-encoded) vs Array.
+  def params_list
+    raw = params_data
+    return [] if raw.blank?
+    result = raw.is_a?(String) ? JSON.parse(raw) : raw
+    result.is_a?(Array) ? result : []
+  rescue JSON::ParserError
+    []
+  end
+
+  # Merges a hash of { param_id => new_label } into the params_data array.
+  # Only the "label" key is updated; all other param fields (id, select,
+  # guidelines, props) are preserved.  Returns the updated array.
+  def merge_params_labels(labels_hash)
+    return params_list if labels_hash.blank?
+
+    params_list.map do |param|
+      if labels_hash.key?(param["id"])
+        new_label = labels_hash[param["id"]].presence
+        new_label ? param.merge("label" => new_label) : param.except("label")
+      else
+        param
+      end
+    end
+  end
+
   private
 
   # update_all bypasses ActiveRecord type casting, so guidance_data can
