@@ -2177,6 +2177,25 @@ else
   puts "Admin bootstrapping skipped (local login not enabled)."
 end
 
+# ── Default Organization ──────────────────────────────────────────────────
+puts "\nSeeding default Organization..."
+
+default_org = Organization.find_or_create_by!(name: SparcConfig.org_name) do |org|
+  org.description    = SparcConfig.org_description
+  org.address        = SparcConfig.org_address
+  org.contact_person = SparcConfig.org_contact_person
+  org.contact_email  = SparcConfig.org_contact_email
+end
+puts "  Organization '#{default_org.name}' (UUID: #{default_org.uuid})"
+
+# Add admin user as org_admin if they exist
+if defined?(admin) && admin&.persisted?
+  OrganizationMembership.find_or_create_by!(organization: default_org, user: admin) do |m|
+    m.role = "org_admin"
+  end
+  puts "  Added #{admin.email} as org_admin"
+end
+
 # ── Sample Authorization Boundary ──────────────────────────────
 puts "\nSeeding sample Authorization Boundary..."
 
@@ -2188,6 +2207,10 @@ auth_boundary = AuthorizationBoundary.find_or_create_by!(name: "Cloud Web Applic
                                           "application servers, databases, and supporting services hosted in the " \
                                           "organization's AWS GovCloud environment."
 end
+
+# Link auth boundary to default organization
+auth_boundary.update!(organization: default_org) unless auth_boundary.organization_id
+puts "  Linked auth boundary to organization '#{default_org.name}'"
 
 # Link existing SSP if present
 if (ssp = SspDocument.first)
