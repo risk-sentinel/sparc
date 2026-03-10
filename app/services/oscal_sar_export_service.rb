@@ -52,7 +52,7 @@ class OscalSarExportService
   def build_assessment_results
     {
       "assessment-results" => {
-        "uuid"              => @document.import_metadata&.dig("uuid") || SecureRandom.uuid,
+        "uuid"              => @document.uuid,
         "metadata"          => build_metadata,
         "import-ap"         => build_import_ap,
         "local-definitions" => build_local_definitions,
@@ -350,9 +350,7 @@ class OscalSarExportService
   # ── Back matter ──────────────────────────────────────────────────
 
   def build_back_matter
-    resources = @document.import_metadata&.dig("back_matter")
-    return nil if resources.blank?
-    { "resources" => resources }
+    @document.build_oscal_back_matter
   end
 
   # ── Helpers ──────────────────────────────────────────────────────

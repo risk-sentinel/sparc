@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -177,9 +177,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
     t.string "oscal_version"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
     t.index ["status"], name: "index_cdef_documents_on_status"
+    t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
   end
 
   create_table "control_catalogs", force: :cascade do |t|
@@ -347,9 +349,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
     t.string "status", default: "pending"
     t.string "system_id"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_poam_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_poam_documents_on_created_at"
     t.index ["status"], name: "index_poam_documents_on_status"
+    t.index ["uuid"], name: "index_poam_documents_on_uuid", unique: true
   end
 
   create_table "poam_finding_observations", force: :cascade do |t|
@@ -589,9 +593,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
     t.jsonb "resolved_catalog_json", default: {}
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
     t.index ["created_at"], name: "index_profile_documents_on_created_at"
     t.index ["status"], name: "index_profile_documents_on_status"
+    t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
   end
 
   create_table "roles", force: :cascade do |t|
@@ -657,11 +663,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
     t.bigint "ssp_document_id"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sap_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sap_documents_on_created_at"
     t.index ["profile_document_id"], name: "index_sap_documents_on_profile_document_id"
     t.index ["ssp_document_id"], name: "index_sap_documents_on_ssp_document_id"
     t.index ["status"], name: "index_sap_documents_on_status"
+    t.index ["uuid"], name: "index_sap_documents_on_uuid", unique: true
   end
 
   create_table "sar_control_fields", force: :cascade do |t|
@@ -717,10 +725,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
     t.string "sar_version"
     t.string "status"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sar_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
     t.index ["sap_document_id"], name: "index_sar_documents_on_sap_document_id"
     t.index ["status"], name: "index_sar_documents_on_status"
+    t.index ["uuid"], name: "index_sar_documents_on_uuid", unique: true
   end
 
   create_table "sar_finding_observations", force: :cascade do |t|
@@ -954,8 +964,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
     t.string "system_name_short"
     t.string "system_status", default: "operational"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_ssp_documents_on_authorization_boundary_id"
     t.index ["profile_document_id"], name: "index_ssp_documents_on_profile_document_id"
+    t.index ["uuid"], name: "index_ssp_documents_on_uuid", unique: true
   end
 
   create_table "ssp_information_types", force: :cascade do |t|

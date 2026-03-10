@@ -16,6 +16,7 @@ class PoamJsonParserService
 
     ActiveRecord::Base.transaction do
       update_document_metadata(poam)
+      @document.assign_oscal_uuid!(poam["uuid"])
 
       obs_map     = parse_observations(poam["observations"] || [])
       risk_map    = parse_risks(poam["risks"] || [], obs_map)
