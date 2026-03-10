@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_10_162642) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1044,9 +1044,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_162642) do
     t.boolean "admin", default: false, null: false
     t.string "avatar_url"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "display_name"
     t.string "email", null: false
     t.string "first_name"
+    t.string "inactive_reason"
     t.string "last_name"
     t.datetime "last_sign_in_at"
     t.string "last_sign_in_ip"
@@ -1056,8 +1058,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_162642) do
     t.integer "sign_in_count", default: 0, null: false
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["status"], name: "index_users_on_status"
+    t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
