@@ -81,6 +81,10 @@
         &nbsp;&bull;&nbsp;
         <span class="fw-semibold" style="color: <%= level_color %>;"><%= @profile_document.baseline_level || "Custom" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
+        <% if @profile_document.published.present? %>
+          &nbsp;&bull;&nbsp;
+          <span class="fw-semibold" style="color: #27ae60;">Published</span>
+        <% end %>
       </div>
       <% if @profile_document.description.present? %>
         <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@profile_document.description, length: 200) %></div>
@@ -92,6 +96,11 @@
               class: "sparc-btn-ghost", data: { confirm: "Duplicate this profile?" } %>
         <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
               class: "sparc-btn-oscal" %>
+        <% if @profile_document.control_catalog.present? %>
+          <%= button_to "Publish", publish_profile_document_path(@profile_document), method: :patch,
+                class: "btn btn-warning btn-sm fw-semibold",
+                data: { confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } %>
+        <% end %>
       <% end %>
       <div class="btn-group">
         <button type="button" class="sparc-btn-oscal dropdown-toggle"
@@ -99,10 +108,15 @@
           Export OSCAL
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
-          <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+          <li><h6 class="dropdown-header">OSCAL Profile</h6></li>
           <li><%= link_to "JSON", download_oscal_profile_document_path(@profile_document), class: "dropdown-item" %></li>
           <li><%= link_to "YAML", download_yaml_profile_document_path(@profile_document), class: "dropdown-item" %></li>
           <li><%= link_to "XML", download_xml_profile_document_path(@profile_document), class: "dropdown-item" %></li>
+          <% if @profile_document.resolved_catalog_json.present? %>
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header">Resolved Catalog</h6></li>
+            <li><%= link_to "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document), class: "dropdown-item" %></li>
+          <% end %>
         </ul>
       </div>
       <%= link_to "&#8592; Back".html_safe, profile_documents_path,

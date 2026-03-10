@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_09_202242) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_120718) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -558,6 +558,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_202242) do
     t.string "oscal_version"
     t.string "profile_version"
     t.string "published"
+    t.jsonb "resolved_catalog_json", default: {}
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
