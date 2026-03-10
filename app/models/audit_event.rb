@@ -50,6 +50,7 @@ class AuditEvent < ApplicationRecord
     cdef_document_updated
     cdef_document_deleted
     cdef_document_exported
+    cdef_document_imported
     cdef_document_copied
     sap_document_created
     sap_document_updated
@@ -60,10 +61,12 @@ class AuditEvent < ApplicationRecord
     poam_document_updated
     poam_document_deleted
     poam_document_exported
+    poam_document_imported
     profile_document_created
     profile_document_updated
     profile_document_deleted
     profile_document_exported
+    profile_document_imported
     profile_document_copied
     control_catalog_created
     control_catalog_updated
@@ -138,14 +141,14 @@ class AuditEvent < ApplicationRecord
     "SAR Documents" => %w[sar_document_created sar_document_updated sar_document_deleted
                           sar_document_exported sar_document_imported],
     "CDEF Documents" => %w[cdef_document_created cdef_document_updated cdef_document_deleted
-                           cdef_document_exported cdef_document_copied],
+                           cdef_document_exported cdef_document_imported cdef_document_copied],
     "SAP Documents" => %w[sap_document_created sap_document_updated sap_document_deleted
                           sap_document_exported sap_document_imported],
     "POAM Documents" => %w[poam_document_created poam_document_updated poam_document_deleted
-                           poam_document_exported poam_item_created poam_item_updated
-                           poam_item_deleted],
+                           poam_document_exported poam_document_imported poam_item_created
+                           poam_item_updated poam_item_deleted],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
-                     profile_document_exported profile_document_copied
+                     profile_document_exported profile_document_imported profile_document_copied
                      profile_control_created profile_control_updated profile_control_deleted],
     "Control Catalogs" => %w[control_catalog_created control_catalog_updated control_catalog_deleted
                              control_catalog_exported control_catalog_imported

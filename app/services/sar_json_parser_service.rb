@@ -22,6 +22,7 @@ class SarJsonParserService
 
     ActiveRecord::Base.transaction do
       update_document_metadata(ar)
+      @document.assign_oscal_uuid!(ar["uuid"])
       parse_local_definitions(ar["local-definitions"])
       parse_results(ar["results"] || [])
     end
