@@ -190,6 +190,14 @@ Rails.application.routes.draw do
         delete :remove_member
       end
     end
+    resources :organizations, except: :destroy do
+      member do
+        patch :deactivate
+        patch :reactivate
+        post :add_member
+        delete :remove_member
+      end
+    end
   end
 
   namespace :api do

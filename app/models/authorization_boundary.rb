@@ -1,4 +1,5 @@
 class AuthorizationBoundary < ApplicationRecord
+  belongs_to :organization, optional: true
   has_many :boundaries, dependent: :destroy
   has_many :authorization_boundary_memberships, dependent: :destroy
   has_many :user_roles, dependent: :destroy

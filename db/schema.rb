@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_10_120718) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_162642) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -78,8 +78,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_120718) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.bigint "organization_id"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
+    t.index ["organization_id"], name: "index_authorization_boundaries_on_organization_id"
     t.index ["status"], name: "index_authorization_boundaries_on_status"
   end
 
@@ -301,6 +303,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_120718) do
     t.bigint "user_id", null: false
     t.index ["provider", "uid"], name: "index_identities_on_provider_and_uid", unique: true
     t.index ["user_id"], name: "index_identities_on_user_id"
+  end
+
+  create_table "organization_memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "organization_id", null: false
+    t.string "role", default: "member", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["organization_id", "user_id"], name: "index_organization_memberships_on_organization_id_and_user_id", unique: true
+    t.index ["organization_id"], name: "index_organization_memberships_on_organization_id"
+    t.index ["user_id"], name: "index_organization_memberships_on_user_id"
+  end
+
+  create_table "organizations", force: :cascade do |t|
+    t.text "address"
+    t.string "contact_email"
+    t.string "contact_person"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["name"], name: "index_organizations_on_name", unique: true
+    t.index ["status"], name: "index_organizations_on_status"
+    t.index ["uuid"], name: "index_organizations_on_uuid", unique: true
   end
 
   create_table "poam_documents", force: :cascade do |t|
@@ -1036,6 +1064,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_120718) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "attestations", "evidences", on_delete: :cascade
   add_foreign_key "audit_events", "users", on_delete: :nullify
+  add_foreign_key "authorization_boundaries", "organizations", on_delete: :nullify
   add_foreign_key "authorization_boundary_memberships", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "authorization_boundary_memberships", "users", on_delete: :nullify
   add_foreign_key "boundaries", "authorization_boundaries", on_delete: :cascade
@@ -1051,6 +1080,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_120718) do
   add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
   add_foreign_key "evidences", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "identities", "users", on_delete: :cascade
+  add_foreign_key "organization_memberships", "organizations", on_delete: :cascade
+  add_foreign_key "organization_memberships", "users", on_delete: :cascade
   add_foreign_key "poam_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "poam_finding_observations", "poam_findings", on_delete: :cascade
   add_foreign_key "poam_finding_observations", "poam_observations", on_delete: :cascade
