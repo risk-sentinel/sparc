@@ -35,6 +35,14 @@ module SparcConfig
   def contact_email = ENV.fetch("SPARC_CONTACT_EMAIL", nil)
   def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
 
+  # ── Organization ─────────────────────────────────────────────────────────
+
+  def org_name           = ENV.fetch("SPARC_ORG_NAME", "Default Organization")
+  def org_description    = ENV.fetch("SPARC_ORG_DESCRIPTION", nil)
+  def org_address        = ENV.fetch("SPARC_ORG_ADDRESS", nil)
+  def org_contact_person = ENV.fetch("SPARC_ORG_CONTACT_PERSON", nil)
+  def org_contact_email  = ENV.fetch("SPARC_ORG_CONTACT_EMAIL", nil)
+
   # ── Authentication Toggles ────────────────────────────────────────────────
   # All default to false — features must be explicitly enabled.
 
