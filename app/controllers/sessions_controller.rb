@@ -48,6 +48,22 @@ class SessionsController < ApplicationController
 
     user = User.find_by("LOWER(email) = ?", params[:email].to_s.downcase.strip)
 
+    # Show specific message for deactivated accounts (before generic auth check)
+    if user&.deactivated?
+      AuditEvent.log(
+        user: user,
+        action: "login_failure",
+        provider: "local",
+        ip_address: request.remote_ip,
+        user_agent: request.user_agent,
+        metadata: { email: params[:email].to_s, reason: "account_deactivated" }
+      )
+
+      flash.now[:error] = "Your account has been deactivated. Contact an administrator."
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     if user&.active? && user&.authenticate(params[:password])
       start_session(user, ip_address: request.remote_ip)
       AuditEvent.log(
@@ -100,7 +116,7 @@ class SessionsController < ApplicationController
       end
 
       unless user.active?
-        redirect_to login_path, error: "Your account has been suspended. Contact an administrator."
+        redirect_to login_path, error: "Your account is not active. Contact an administrator."
         return
       end
 

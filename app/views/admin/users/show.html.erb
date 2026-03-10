@@ -7,9 +7,25 @@
         <%= button_to "Suspend", suspend_admin_user_path(@user), method: :patch,
               class: "btn btn-sm btn-outline-warning",
               data: { turbo_confirm: "Suspend #{@user.email}?" } %>
+        <%= button_to "Deactivate", deactivate_admin_user_path(@user), method: :patch,
+              class: "btn btn-sm btn-outline-danger",
+              data: { turbo_confirm: "Deactivate #{@user.email}? This will soft-delete the account." } %>
       <% elsif @user.suspended? %>
         <%= button_to "Reactivate", reactivate_admin_user_path(@user), method: :patch,
               class: "btn btn-sm btn-outline-success" %>
+        <%= button_to "Deactivate", deactivate_admin_user_path(@user), method: :patch,
+              class: "btn btn-sm btn-outline-danger",
+              data: { turbo_confirm: "Deactivate #{@user.email}? This will soft-delete the account." } %>
+      <% elsif @user.deactivated? %>
+        <%= form_with url: reactivate_admin_user_path(@user), method: :patch, class: "d-inline" do |f| %>
+          <div class="d-inline-flex align-items-center gap-2">
+            <div class="form-check form-check-inline mb-0">
+              <%= f.check_box :force_password_reset, { class: "form-check-input", id: "force_pw_reset" }, "1", "0" %>
+              <label class="form-check-label small" for="force_pw_reset">Force password reset</label>
+            </div>
+            <%= f.submit "Reactivate", class: "btn btn-sm btn-outline-success" %>
+          </div>
+        <% end %>
       <% end %>
       <%= link_to "Back to Users", admin_users_path, class: "btn btn-sm btn-outline-secondary" %>
     </div>
@@ -21,15 +37,23 @@
       <div class="card">
         <div class="card-header fw-semibold">Account Details</div>
         <div class="card-body">
+          <% status_badge = case @user.status
+               when "active" then "success"
+               when "suspended" then "warning"
+               when "deactivated" then "danger"
+               else "secondary"
+               end %>
           <dl class="row mb-0">
+            <dt class="col-sm-4">UUID</dt>
+            <dd class="col-sm-8"><code class="small"><%= @user.uuid %></code></dd>
             <dt class="col-sm-4">Email</dt>
             <dd class="col-sm-8"><%= @user.email %></dd>
             <dt class="col-sm-4">Display Name</dt>
-            <dd class="col-sm-8"><%= @user.display_name || "—" %></dd>
+            <dd class="col-sm-8"><%= @user.display_name || "\u2014" %></dd>
             <dt class="col-sm-4">Name</dt>
-            <dd class="col-sm-8"><%= [@user.first_name, @user.last_name].compact_blank.join(" ").presence || "—" %></dd>
+            <dd class="col-sm-8"><%= [@user.first_name, @user.last_name].compact_blank.join(" ").presence || "\u2014" %></dd>
             <dt class="col-sm-4">Status</dt>
-            <dd class="col-sm-8"><span class="badge text-bg-<%= @user.active? ? 'success' : 'warning' %>"><%= @user.status.capitalize %></span></dd>
+            <dd class="col-sm-8"><span class="badge text-bg-<%= status_badge %>"><%= @user.status.capitalize %></span></dd>
             <dt class="col-sm-4">Admin</dt>
             <dd class="col-sm-8"><%= @user.admin? ? "Yes" : "No" %></dd>
             <dt class="col-sm-4">Sign-in Count</dt>
@@ -37,7 +61,15 @@
             <dt class="col-sm-4">Last Sign-in</dt>
             <dd class="col-sm-8"><%= @user.last_sign_in_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></dd>
             <dt class="col-sm-4">Last IP</dt>
-            <dd class="col-sm-8"><%= @user.last_sign_in_ip || "—" %></dd>
+            <dd class="col-sm-8"><%= @user.last_sign_in_ip || "\u2014" %></dd>
+            <dt class="col-sm-4">Password Changed</dt>
+            <dd class="col-sm-8"><%= @user.password_changed_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></dd>
+            <% if @user.deactivated? %>
+              <dt class="col-sm-4">Deactivated At</dt>
+              <dd class="col-sm-8"><%= @user.deleted_at&.strftime("%Y-%m-%d %H:%M UTC") || "\u2014" %></dd>
+              <dt class="col-sm-4">Inactive Reason</dt>
+              <dd class="col-sm-8"><span class="badge text-bg-secondary"><%= @user.inactive_reason&.titleize || "\u2014" %></span></dd>
+            <% end %>
             <dt class="col-sm-4">Created</dt>
             <dd class="col-sm-8"><%= @user.created_at.strftime("%Y-%m-%d %H:%M UTC") %></dd>
           </dl>
@@ -116,8 +148,8 @@
             <tr>
               <td class="small"><%= event.created_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
               <td><span class="badge text-bg-<%= event.action.include?('failure') ? 'danger' : 'secondary' %>"><%= event.action.humanize %></span></td>
-              <td><%= event.provider || "—" %></td>
-              <td class="small text-body-secondary"><%= event.ip_address || "—" %></td>
+              <td><%= event.provider || "\u2014" %></td>
+              <td class="small text-body-secondary"><%= event.ip_address || "\u2014" %></td>
             </tr>
           <% end %>
           <% if @audit_events.empty? %>
