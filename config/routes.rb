@@ -84,6 +84,8 @@ Rails.application.routes.draw do
       get :download_xml
       get :status
       post :copy
+      patch :publish
+      get :download_resolved_catalog
     end
     collection do
       get :select_catalog

@@ -6,5 +6,36 @@ FactoryBot.define do
     priority { %w[P0 P1 P2 P3].sample }
     baseline_impact { "LOW, MODERATE, HIGH" }
     guidance_data { {} }
+
+    trait :with_params do
+      params_data do
+        [
+          { "id" => "#{control_id.downcase.tr(' ', '-')}_prm_1",
+            "label" => "organization-defined personnel or roles" },
+          { "id" => "#{control_id.downcase.tr(' ', '-')}_prm_2",
+            "label" => "organization-defined frequency" }
+        ]
+      end
+    end
+
+    trait :with_select_param do
+      params_data do
+        [
+          { "id" => "#{control_id.downcase.tr(' ', '-')}_prm_1",
+            "select" => { "how-many" => "one-or-more",
+                          "choice" => [ "removes", "disables" ] } }
+        ]
+      end
+    end
+
+    trait :with_guidelines_param do
+      params_data do
+        [
+          { "id" => "#{control_id.downcase.tr(' ', '-')}_prm_1",
+            "label" => "personnel or roles",
+            "guidelines" => [ { "prose" => "some assessment guidance" } ] }
+        ]
+      end
+    end
   end
 end

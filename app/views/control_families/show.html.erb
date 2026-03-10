@@ -73,11 +73,51 @@
                 <%# Base control: show title prominently, then statement below %>
                 <div class="fw-semibold small">
                   <%= control.title.presence || "<em style='color:#aaa; font-weight:400;'>No title</em>".html_safe %>
+                  <% if control.params_present? %>
+                    <span class="badge rounded-pill text-bg-info" style="font-size: 0.68rem; font-weight: 500; margin-left: 0.4rem; vertical-align: middle;"
+                          title="<%= control.params_list.size %> parameter(s) requiring organization-defined values">
+                      <%= control.params_list.size %> param<%= control.params_list.size == 1 ? "" : "s" %>
+                    </span>
+                  <% end %>
                 </div>
                 <% if stmt_text.present? %>
                   <div class="text-body-secondary" style="margin-top: 0.3rem; font-size: 0.8rem; line-height: 1.4;">
                     <%= truncate(stmt_text, length: 200) %>
                   </div>
+                <% end %>
+                <% if control.params_present? %>
+                  <details style="margin-top: 0.4rem;">
+                    <summary class="text-primary" style="font-size: 0.78rem; cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+                      <span class="card-arrow" style="font-size: 0.6rem;">&#9658;</span> View parameters
+                    </summary>
+                    <table class="table table-sm mb-0" style="font-size: 0.78rem; margin-top: 0.3rem; background: transparent;">
+                      <thead>
+                        <tr>
+                          <th style="width: 25%; padding: 0.2rem 0.4rem; border-bottom-width: 1px;">Param ID</th>
+                          <th style="width: 40%; padding: 0.2rem 0.4rem; border-bottom-width: 1px;">Label</th>
+                          <th style="padding: 0.2rem 0.4rem; border-bottom-width: 1px;">Constraint / Choices</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% control.params_list.each do |param| %>
+                          <tr>
+                            <td style="padding: 0.2rem 0.4rem; font-family: monospace; color: var(--bs-primary);"><%= param["id"] %></td>
+                            <td style="padding: 0.2rem 0.4rem;"><%= param["label"] %></td>
+                            <td style="padding: 0.2rem 0.4rem;">
+                              <% if param.dig("select", "choice").present? %>
+                                <span class="text-body-secondary">Select <%= param.dig("select", "how-many") || "one" %>:</span>
+                                <%= param["select"]["choice"].join("; ") %>
+                              <% elsif param.dig("guidelines").present? %>
+                                <span class="text-body-tertiary"><%= param["guidelines"].map { |g| g["prose"] }.compact.join("; ").truncate(120) %></span>
+                              <% else %>
+                                <span class="text-body-tertiary">Organization-defined</span>
+                              <% end %>
+                            </td>
+                          </tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </details>
                 <% end %>
               <% else %>
                 <%# Sub-part: show statement prose as the primary content %>

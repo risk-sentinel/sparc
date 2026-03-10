@@ -11,7 +11,7 @@
 #
 # See docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
 module SparcConfig
-  VERSION = "3.4.6"
+  VERSION = "3.4.7"
 
   module_function
 

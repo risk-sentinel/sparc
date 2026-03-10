@@ -58,6 +58,60 @@
     </div>
   </div>
 
+  <%# ── Parameters (editable labels, populated from OSCAL import) ── %>
+  <% if catalog_control.params_present? %>
+    <details class="border rounded" style="margin-bottom: 1.25rem; padding: 0;" open>
+      <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+        <span>&#9656;</span> OSCAL Parameters
+        <span class="badge rounded-pill text-bg-info" style="font-size: 0.7rem; font-weight: 500;">
+          <%= catalog_control.params_list.size %> param<%= catalog_control.params_list.size == 1 ? "" : "s" %>
+        </span>
+      </summary>
+      <div class="p-3">
+        <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
+          Parameters referenced by the control statement via <code>{{ insert: param, &lt;id&gt; }}</code>.
+          Edit the <strong>Label</strong> to customize organization-specific values.
+          Param IDs and structural constraints are read-only.
+        </p>
+        <table class="table table-sm mb-0" style="font-size: 0.82rem;">
+          <thead>
+            <tr>
+              <th style="width: 22%; padding: 0.3rem 0.5rem;">Param ID</th>
+              <th style="width: 40%; padding: 0.3rem 0.5rem;">Label</th>
+              <th style="padding: 0.3rem 0.5rem;">Constraint / Choices</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% catalog_control.params_list.each do |param| %>
+              <tr>
+                <td style="padding: 0.3rem 0.5rem; font-family: monospace; color: var(--bs-primary);">
+                  <%= param["id"] %>
+                </td>
+                <td style="padding: 0.3rem 0.5rem;">
+                  <%= text_field_tag "catalog_control[params_labels][#{param['id']}]",
+                      param["label"],
+                      class: "form-control form-control-sm",
+                      style: "font-size: 0.82rem;",
+                      placeholder: "Organization-defined value..." %>
+                </td>
+                <td style="padding: 0.3rem 0.5rem;">
+                  <% if param.dig("select", "choice").present? %>
+                    <span class="text-body-secondary">Select <%= param.dig("select", "how-many") || "one" %>:</span>
+                    <%= param["select"]["choice"].join("; ") %>
+                  <% elsif param.dig("guidelines").present? %>
+                    <span class="text-body-tertiary"><%= param["guidelines"].map { |g| g["prose"] }.compact.join("; ").truncate(120) %></span>
+                  <% else %>
+                    <span class="text-body-tertiary">Organization-defined</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  <% end %>
+
   <%# ── Additional guidance fields (collapsible) ── %>
   <%
     gd = (catalog_control.guidance_data || {})

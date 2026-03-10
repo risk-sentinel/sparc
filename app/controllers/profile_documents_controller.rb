@@ -6,7 +6,7 @@ class ProfileDocumentsController < ApplicationController
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml status
-    update_metadata copy
+    update_metadata copy publish download_resolved_catalog
   ]
 
   PRIORITY_ORDER = %w[P1 P2 P3].freeze
@@ -137,6 +137,41 @@ class ProfileDocumentsController < ApplicationController
     redirect_to profile_document_path(copy)
   end
 
+  def publish
+    unless @profile_document.control_catalog
+      flash[:error] = "Cannot publish: no source catalog linked to this profile."
+      redirect_to profile_document_path(@profile_document) and return
+    end
+
+    service = OscalResolvedProfileCatalogService.new(@profile_document)
+    resolved_json = service.export
+
+    @profile_document.update!(
+      published: Time.current.iso8601,
+      resolved_catalog_json: JSON.parse(resolved_json)
+    )
+
+    audit_log("profile_document_published", subject: @profile_document,
+              metadata: { name: @profile_document.name })
+    flash[:success] = "Profile published. Resolved catalog is now available for download."
+    redirect_to profile_document_path(@profile_document)
+  end
+
+  def download_resolved_catalog
+    if @profile_document.resolved_catalog_json.blank?
+      flash[:error] = "No resolved catalog available. Publish the profile first."
+      redirect_to profile_document_path(@profile_document) and return
+    end
+
+    json_data = JSON.pretty_generate(@profile_document.resolved_catalog_json)
+    audit_log("profile_document_exported", subject: @profile_document,
+              metadata: { name: @profile_document.name, format: "resolved_catalog" })
+    send_data json_data,
+              filename:    "#{@profile_document.name}_resolved_catalog_#{Date.today}.json",
+              type:        "application/json",
+              disposition: "attachment"
+  end
+
   def select_catalog
     @catalogs = ControlCatalog.order(:name)
   end
@@ -160,12 +195,19 @@ class ProfileDocumentsController < ApplicationController
 
     catalog_controls = catalog.catalog_controls.where(control_id: control_ids).includes(:control_family)
     catalog_controls.each_with_index do |cc, idx|
-      profile.profile_controls.create!(
+      pc = profile.profile_controls.create!(
         control_id: cc.control_id,
         title: cc.title,
         control_family: cc.control_family&.code || cc.family_code,
         row_order: idx
       )
+
+      # Inherit parameter definitions from catalog
+      cc.params_list.each do |param|
+        label = param["label"].to_s
+        pc.profile_control_fields.create!(field_name: "parameter:#{param['id']}", field_value: label)
+        pc.profile_control_fields.create!(field_name: "parameter_label:#{param['id']}", field_value: label)
+      end
     end
 
     audit_log("profile_document_created", subject: profile, metadata: { name: profile.name, creation_method: "catalog" })
