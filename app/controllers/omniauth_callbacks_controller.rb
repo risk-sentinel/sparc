@@ -45,7 +45,7 @@ class OmniauthCallbacksController < ApplicationController
     end
 
     unless user.active?
-      redirect_to login_path, error: "Your account has been suspended. Contact an administrator."
+      redirect_to login_path, error: "Your account is not active. Contact an administrator."
       return
     end
 

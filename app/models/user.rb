@@ -40,15 +40,51 @@ class User < ApplicationRecord
 
   # ── Callbacks ───────────────────────────────────────────────────────────
   before_validation :normalize_email
+  before_update :enforce_uuid_immutability
 
   # ── Scopes ──────────────────────────────────────────────────────────────
   scope :active, -> { where(status: "active") }
   scope :admins, -> { where(admin: true) }
 
+  # Users who have been active longer than `days` without signing in.
+  # Includes users who have never signed in (uses created_at as fallback).
+  scope :inactive_past_threshold, ->(days) {
+    cutoff = days.days.ago
+    active.where(
+      "last_sign_in_at < :cutoff OR (last_sign_in_at IS NULL AND created_at < :cutoff)",
+      cutoff: cutoff
+    )
+  }
+
   # ── Status helpers ──────────────────────────────────────────────────────
 
-  def active?    = status == "active"
-  def suspended? = status == "suspended"
+  def active?      = status == "active"
+  def suspended?   = status == "suspended"
+  def deactivated? = status == "deactivated"
+
+  # Soft-delete: set status to deactivated with timestamp and reason.
+  def deactivate!(reason: "admin_action")
+    update!(status: "deactivated", deleted_at: Time.current, inactive_reason: reason)
+  end
+
+  # Restore a deactivated (or suspended) user to active status.
+  def reactivate!(force_password_reset: false)
+    attrs = { status: "active", deleted_at: nil, inactive_reason: nil }
+    attrs[:must_reset_password] = true if force_password_reset
+    update!(attrs)
+  end
+
+  # ── Password expiry ──────────────────────────────────────────────────────
+
+  # Returns true when a local-auth user's password is older than the
+  # configured expiry threshold. OAuth/SSO-only users are exempt.
+  def password_expired?
+    return false unless password_digest.present? # OAuth-only users have no password
+    return false if identities.exists?           # Users with linked providers are exempt
+    return false if password_changed_at.blank?   # No timestamp — treat as not expired
+
+    password_changed_at < SparcConfig.password_expiry_days.days.ago
+  end
 
   # ── Role helpers ────────────────────────────────────────────────────────
 
@@ -121,5 +157,10 @@ class User < ApplicationRecord
 
   def normalize_email
     self.email = email.to_s.downcase.strip if email.present?
+  end
+
+  # UUID is immutable once set — prevent accidental overwrites.
+  def enforce_uuid_immutability
+    self.uuid = uuid_was if uuid_changed? && uuid_was.present?
   end
 end

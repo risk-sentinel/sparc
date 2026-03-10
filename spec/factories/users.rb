@@ -29,5 +29,21 @@ FactoryBot.define do
       password_confirmation { nil }
       password_digest { nil }
     end
+
+    trait :deactivated do
+      status { "deactivated" }
+      deleted_at { Time.current }
+      inactive_reason { "admin_action" }
+    end
+
+    trait :auto_deactivated do
+      status { "deactivated" }
+      deleted_at { Time.current }
+      inactive_reason { "auto_inactivity" }
+    end
+
+    trait :with_expired_password do
+      password_changed_at { 60.days.ago }
+    end
   end
 end

@@ -43,6 +43,11 @@ module SparcConfig
   def org_contact_person = ENV.fetch("SPARC_ORG_CONTACT_PERSON", nil)
   def org_contact_email  = ENV.fetch("SPARC_ORG_CONTACT_EMAIL", nil)
 
+  # ── User Lifecycle ───────────────────────────────────────────────────────
+
+  def inactivity_days      = ENV.fetch("SPARC_INACTIVITY_DAYS", "30").to_i
+  def password_expiry_days = ENV.fetch("SPARC_PASSWORD_EXPIRY_DAYS", "30").to_i
+
   # ── Authentication Toggles ────────────────────────────────────────────────
   # All default to false — features must be explicitly enabled.
 

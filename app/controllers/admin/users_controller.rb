@@ -7,7 +7,7 @@ module Admin
     include Pagy::Method
 
     before_action :authorize_admin!
-    before_action :set_user, only: [ :show, :edit, :update, :suspend, :reactivate ]
+    before_action :set_user, only: [ :show, :edit, :update, :suspend, :reactivate, :deactivate ]
 
     USERS_PER_PAGE = 25
 
@@ -53,15 +53,25 @@ module Admin
     def suspend
       @user.update!(status: "suspended")
       audit_log("user_suspended", subject: @user,
-        metadata: { target_user_id: @user.id, target_email: @user.email })
+        metadata: { target_user_id: @user.id, target_email: @user.email, uuid: @user.uuid })
       redirect_to admin_user_path(@user), success: "User suspended."
     end
 
     def reactivate
-      @user.update!(status: "active")
+      force_reset = params[:force_password_reset] == "1"
+      @user.reactivate!(force_password_reset: force_reset)
       audit_log("user_reactivated", subject: @user,
-        metadata: { target_user_id: @user.id, target_email: @user.email })
+        metadata: { target_user_id: @user.id, target_email: @user.email, uuid: @user.uuid,
+                    force_password_reset: force_reset })
       redirect_to admin_user_path(@user), success: "User reactivated."
+    end
+
+    def deactivate
+      @user.deactivate!(reason: "admin_action")
+      audit_log("user_deactivated", subject: @user,
+        metadata: { target_user_id: @user.id, target_email: @user.email, uuid: @user.uuid,
+                    reason: "admin_action" })
+      redirect_to admin_user_path(@user), success: "User deactivated."
     end
 
     private
