@@ -69,4 +69,27 @@ module ApplicationHelper
   def profile_priority_color(priority)
     PROFILE_PRIORITY_COLORS[priority.to_s] || "#7f8c8d"
   end
+
+  AB_STATUS_COLORS = {
+    "draft"         => "#95a5a6",
+    "active"        => "#3498db",
+    "authorized"    => "#27ae60",
+    "deauthorized"  => "#e74c3c"
+  }.freeze
+
+  # Returns the authorization boundaries to display in the navbar.
+  # Admins see all boundaries; regular users see only their assigned ones.
+  def nav_authorization_boundaries
+    return [] unless defined?(current_user) && current_user
+
+    if current_user.admin?
+      AuthorizationBoundary.order(:name).limit(10)
+    else
+      current_user.authorization_boundaries.order(:name).limit(10)
+    end
+  end
+
+  def ab_status_color(status)
+    AB_STATUS_COLORS[status.to_s] || "#7f8c8d"
+  end
 end

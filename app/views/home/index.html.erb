@@ -33,18 +33,18 @@
     sections = [
       { title: "Auth Boundaries",    path: authorization_boundaries_path, new_path: new_authorization_boundary_path, icon: "&#128188;", color: "#9b59b6" },
       { title: "Control Catalogs",   path: control_catalogs_path,  new_path: new_control_catalog_path,  icon: "&#128218;", color: "#3498db" },
-      { title: "Baselines",          path: profile_documents_path, new_path: new_profile_document_path, icon: "&#128203;", color: nil },
-      { title: "CDEFs",              path: cdef_documents_path,    new_path: new_cdef_document_path,    icon: "&#128737;", color: nil },
-      { title: "SSPs",               path: ssp_documents_path,     new_path: new_ssp_document_path,     icon: "&#128196;", color: nil },
-      { title: "SAPs",               path: sap_documents_path,     new_path: new_sap_document_path,     icon: "&#128221;", color: nil },
-      { title: "SARs",               path: sar_documents_path,     new_path: new_sar_document_path,     icon: "&#128203;", color: nil },
-      { title: "POA&Ms",             path: poam_documents_path,    new_path: new_poam_document_path,    icon: "&#128270;", color: nil },
-      { title: "Evidence",           path: evidences_path,         new_path: new_evidence_path,         icon: "&#128274;", color: "#27ae60" },
+      { title: "Baselines / Profiles", path: profile_documents_path, new_path: new_profile_document_path, icon: "&#128203;", color: "#3498db" },
+      { title: "CDEFs",              path: cdef_documents_path,    new_path: new_cdef_document_path,    icon: "&#128737;", color: "#27ae60" },
+      { title: "SSPs",               path: ssp_documents_path,     new_path: new_ssp_document_path,     icon: "&#128196;", color: "#27ae60" },
+      { title: "SAPs",               path: sap_documents_path,     new_path: new_sap_document_path,     icon: "&#128221;", color: "#e67e22" },
+      { title: "SARs",               path: sar_documents_path,     new_path: new_sar_document_path,     icon: "&#128203;", color: "#e67e22" },
+      { title: "POA&Ms",             path: poam_documents_path,    new_path: new_poam_document_path,    icon: "&#128270;", color: "#e67e22" },
+      { title: "Evidence",           path: evidences_path,         new_path: new_evidence_path,         icon: "&#128274;", color: "#e67e22" },
     ]
   %>
   <% sections.each do |s| %>
     <div class="col">
-      <div class="card text-center h-100" style="<%= s[:color] ? "border: 2px solid #{s[:color]};" : "" %>">
+      <div class="card sparc-section-card text-center h-100" style="border-color: <%= s[:color] %>; --sparc-card-accent: <%= s[:color] %>;">
         <div class="card-body" style="padding: 1rem;">
           <div style="font-size: 1.75rem; margin-bottom: 0.5rem;"><%= s[:icon].html_safe %></div>
           <h5 style="margin-bottom: 0.75rem; font-size: 0.95rem;"><%= s[:title] %></h5>
