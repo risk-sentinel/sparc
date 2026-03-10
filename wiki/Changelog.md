@@ -4,6 +4,14 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v3.4.8 -- Home Screen & Navigation UX (2026-03-09)
+
+### Fixed
+- Dashboard section cards now have consistent OSCAL-layer-colored borders — Controls (blue), Implementation (green), Assessment (orange), Boundaries (purple) — with uniform hover effect ([Issue #152](https://github.com/Rebel-Raiders/sparc/issues/152))
+- "Auth Boundaries" navbar link upgraded to dropdown showing the user's assigned boundaries with status badges and quick navigation; admins see all boundaries ([Issue #153](https://github.com/Rebel-Raiders/sparc/issues/153))
+
+---
+
 ## v3.4.7 -- Control Parameters & Profile Publish (2026-03-09)
 
 ### Added

@@ -18,6 +18,7 @@ class User < ApplicationRecord
   has_many :identities, dependent: :destroy
   has_many :user_roles, dependent: :destroy
   has_many :roles, through: :user_roles
+  has_many :authorization_boundaries, -> { distinct }, through: :user_roles
   has_many :audit_events, dependent: :nullify
 
   # ── Validations ─────────────────────────────────────────────────────────
