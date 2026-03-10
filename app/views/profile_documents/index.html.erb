@@ -40,7 +40,7 @@
               </span>
             </td>
             <td class="small text-body-secondary"><%= doc.profile_version.presence || "—" %></td>
-            <td>
+            <td style="white-space: nowrap;">
               <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
                 <%= doc.status %>
               </span>
@@ -67,7 +67,10 @@
                   </div>
                 <% end %>
                 <% if signed_in? %>
-                  <%= link_to "Delete", profile_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                  <%= button_to "Delete", profile_document_path(doc), method: :delete,
+                        class: "btn btn-danger",
+                        style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;",
+                        form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
                 <% end %>
               </div>
             </td>

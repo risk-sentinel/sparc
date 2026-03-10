@@ -102,7 +102,9 @@
               </div>
               <div class="d-flex gap-1">
                 <%= link_to "Edit", edit_authorization_boundary_boundary_path(@authorization_boundary, boundary), class: "btn btn-outline-secondary btn-sm" %>
-                <%= link_to "Delete", authorization_boundary_boundary_path(@authorization_boundary, boundary), method: :delete, data: { confirm: "Delete environment?" }, class: "btn btn-outline-danger btn-sm" %>
+                <%= button_to "Delete", authorization_boundary_boundary_path(@authorization_boundary, boundary), method: :delete,
+                      class: "btn btn-outline-danger btn-sm",
+                      form: { data: { turbo_confirm: "Delete this environment? This cannot be undone." }, style: "display: inline;" } %>
               </div>
             </div>
             <% if boundary.cdef_documents.any? %>
@@ -150,7 +152,9 @@
               <td>
                 <div class="d-flex gap-1">
                   <%= link_to "Edit", edit_authorization_boundary_membership_path(@authorization_boundary, m), class: "btn btn-outline-secondary btn-sm" %>
-                  <%= link_to "Remove", authorization_boundary_membership_path(@authorization_boundary, m), method: :delete, data: { confirm: "Remove member?" }, class: "btn btn-outline-danger btn-sm" %>
+                  <%= button_to "Remove", authorization_boundary_membership_path(@authorization_boundary, m), method: :delete,
+                        class: "btn btn-outline-danger btn-sm",
+                        form: { data: { turbo_confirm: "Remove this member? This cannot be undone." }, style: "display: inline;" } %>
                 </div>
               </td>
             </tr>

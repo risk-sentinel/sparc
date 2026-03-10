@@ -71,7 +71,10 @@
                     </ul>
                   </div>
                 <% end %>
-                <%= link_to "Delete", sap_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <%= button_to "Delete", sap_document_path(doc), method: :delete,
+                      class: "btn btn-danger",
+                      style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;",
+                      form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
               </div>
             </td>
           </tr>
