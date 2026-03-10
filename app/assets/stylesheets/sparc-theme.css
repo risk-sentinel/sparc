@@ -275,6 +275,10 @@
 .sparc-nav-assessment.show {
   border-bottom-color: #e8a838;
 }
+.sparc-nav-boundaries:hover,
+.sparc-nav-boundaries.show {
+  border-bottom-color: #bb6bd9;
+}
 
 /* Vertical separator between nav sections */
 .sparc-nav-separator {
@@ -355,6 +359,10 @@
 
 .sparc-dropdown-header-assessment {
   color: #d4943c;
+}
+
+.sparc-dropdown-header-boundaries {
+  color: #bb6bd9;
 }
 
 /* Dropdown item icons */
@@ -1176,6 +1184,24 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-processing-text-muted {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.88rem;
+}
+
+
+/* ── Home page section cards ──────────────────────────────────── */
+
+.sparc-section-card {
+  border-width: 2px;
+  border-style: solid;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.sparc-section-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+[data-bs-theme="dark"] .sparc-section-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 
