@@ -4,6 +4,19 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## (unreleased) -- Organization Management (2026-03-10)
+
+### Added
+- **Organization entity** with UUID-based audit traceability — organizations own authorization boundaries and serve as the parent grouping unit ([Issue #145](https://github.com/Rebel-Raiders/sparc/issues/145), [Issue #137](https://github.com/Rebel-Raiders/sparc/issues/137))
+- Admin CRUD interface for organizations with search, status filtering, and pagination
+- Organization membership management with senior-official-pattern roles (Org Admin, Head of Agency, CIO, CISO, Risk Executive, etc.)
+- Soft-delete via deactivate/reactivate — organizations are never hard-deleted, preserving UUID for audit trails
+- Authorization boundaries now link to a parent organization (`organization_id` foreign key)
+- `SPARC_ORG_*` environment variables for configuring the default organization name, description, address, and contact info
+- Default organization seeded with admin user as org_admin
+
+---
+
 ## v3.4.8 -- Home Screen & Navigation UX (2026-03-09)
 
 ### Fixed
