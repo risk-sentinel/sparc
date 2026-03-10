@@ -1,8 +1,45 @@
 <div class="my-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 fw-bold mb-0"><%= @authorization_boundary.name %></h1>
-    <%= link_to "Back to Authorization Boundaries", admin_authorization_boundaries_path, class: "btn btn-sm btn-outline-secondary" %>
+    <div>
+      <h1 class="h3 fw-bold mb-1"><%= @authorization_boundary.name %></h1>
+      <div class="d-flex align-items-center gap-2">
+        <% badge_class = case @authorization_boundary.status
+           when "active" then "success"
+           when "draft" then "secondary"
+           when "authorized" then "primary"
+           when "deauthorized" then "danger"
+           else "secondary"
+           end %>
+        <span class="badge text-bg-<%= badge_class %>"><%= @authorization_boundary.status.capitalize %></span>
+        <% if @authorization_boundary.organization %>
+          <span class="text-body-secondary small">
+            Org: <%= link_to @authorization_boundary.organization.name, admin_organization_path(@authorization_boundary.organization), class: "text-decoration-none" %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to "Edit", edit_admin_authorization_boundary_path(@authorization_boundary), class: "btn btn-sm btn-outline-primary" %>
+      <%= link_to "Back to Auth Boundaries", admin_authorization_boundaries_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
   </div>
+
+  <%# ── Details ──────────────────────────────────────────── %>
+  <% if @authorization_boundary.description.present? || @authorization_boundary.authorization_boundary_description.present? %>
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Details</div>
+      <div class="card-body">
+        <% if @authorization_boundary.description.present? %>
+          <dt class="small text-body-secondary">Description</dt>
+          <dd><%= @authorization_boundary.description %></dd>
+        <% end %>
+        <% if @authorization_boundary.authorization_boundary_description.present? %>
+          <dt class="small text-body-secondary">Authorization Boundary</dt>
+          <dd><%= @authorization_boundary.authorization_boundary_description %></dd>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
   <%# ── Add Member Form ──────────────────────────────────── %>
   <div class="card mb-4">

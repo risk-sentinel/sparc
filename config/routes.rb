@@ -184,7 +184,7 @@ Rails.application.routes.draw do
     end
     resources :roles
     resources :audit_logs, only: [ :index, :show ]
-    resources :authorization_boundaries, only: [ :index, :show ] do
+    resources :authorization_boundaries, except: :destroy do
       member do
         post :add_member
         delete :remove_member
