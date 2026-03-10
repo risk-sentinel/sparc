@@ -180,6 +180,7 @@ Rails.application.routes.draw do
       member do
         patch :suspend
         patch :reactivate
+        patch :deactivate
       end
     end
     resources :roles

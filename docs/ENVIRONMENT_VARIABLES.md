@@ -111,6 +111,21 @@ an Okta-specific configuration guide.
 
 ---
 
+## User Lifecycle
+
+Controls automatic account deactivation and password expiration
+policies. These settings apply to all users unless noted otherwise.
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_INACTIVITY_DAYS | Number of days of inactivity (no sign-in) before a user account is automatically deactivated by `InactivityCheckJob`. Applies to all users. | 30 | `90` | No |
+| SPARC_PASSWORD_EXPIRY_DAYS | Number of days before a local-auth user's password expires and must be reset. OAuth/SSO-only users are exempt. | 30 | `90` | No |
+
+The `InactivityCheckJob` should be scheduled via cron or your job
+scheduler (e.g., `rails runner "InactivityCheckJob.perform_now"`).
+
+---
+
 ## General Application & Logging
 
 | Variable | Description | Default | Example | Required? |
