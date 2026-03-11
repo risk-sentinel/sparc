@@ -7,6 +7,13 @@ class ProfileControl < ApplicationRecord
 
   before_save :compute_control_family
 
+  # Returns the control ID in human-readable format for display.
+  # Converts OSCAL canonical format to label-style:
+  #   "ac-2.1" → "AC-2(1)"   "ac-1" → "AC-1"
+  def display_id
+    control_id.to_s.upcase.gsub(/\.(\d+)/) { "(#{$1})" }
+  end
+
   def to_hash
     {
       control_id: control_id,

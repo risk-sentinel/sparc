@@ -14,7 +14,7 @@ RSpec.describe ControlFamily, type: :model do
 
     it "destroys catalog controls when destroyed" do
       family = create(:control_family)
-      family.catalog_controls.create!(control_id: "AC-01", title: "Test")
+      family.catalog_controls.create!(control_id: "ac-1", title: "Test")
       expect { family.destroy }.to change(CatalogControl, :count).by(-1)
     end
   end
@@ -112,8 +112,8 @@ RSpec.describe ControlFamily, type: :model do
   describe "#total_controls" do
     it "returns the count of catalog controls" do
       family = create(:control_family)
-      family.catalog_controls.create!(control_id: "AC-01", title: "First")
-      family.catalog_controls.create!(control_id: "AC-02", title: "Second")
+      family.catalog_controls.create!(control_id: "ac-1", title: "First")
+      family.catalog_controls.create!(control_id: "ac-2", title: "Second")
 
       expect(family.total_controls).to eq(2)
     end
