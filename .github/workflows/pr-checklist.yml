@@ -1,0 +1,40 @@
+name: PR Checklist
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  checklist:
+    name: Test plan checklist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all checkboxes are checked
+        run: |
+          # Extract the PR body from the GitHub event payload
+          BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
+
+          if [ -z "$BODY" ]; then
+            echo "::warning::PR description is empty — no checklist to verify."
+            exit 0
+          fi
+
+          # Count unchecked boxes (- [ ])
+          UNCHECKED=$(echo "$BODY" | grep -cE '^\s*-\s*\[ \]' || true)
+          # Count checked boxes (- [x] or - [X])
+          CHECKED=$(echo "$BODY" | grep -ciE '^\s*-\s*\[x\]' || true)
+          TOTAL=$((CHECKED + UNCHECKED))
+
+          echo "Checkboxes found: $TOTAL ($CHECKED checked, $UNCHECKED unchecked)"
+
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "::warning::No checklist items found in PR description."
+            exit 0
+          fi
+
+          if [ "$UNCHECKED" -gt 0 ]; then
+            echo "::error::$UNCHECKED unchecked checkbox(es) remaining in the PR description. Complete all test plan items before merging."
+            exit 1
+          fi
+
+          echo "All $TOTAL checklist items are checked."
