@@ -69,6 +69,9 @@ class ProfileJsonParserService
       control_attrs: control_attrs,
       field_entries: field_entries
     )
+
+    # Enrich profile controls with titles from the linked catalog
+    enrich_titles_from_catalog
   end
 
   private
@@ -102,6 +105,70 @@ class ProfileJsonParserService
       }.compact
     )
     @document.assign_oscal_uuid!(profile["uuid"])
+
+    # Auto-link to the source catalog if one is already imported
+    link_source_catalog(catalog_ref, back_matter) unless @document.control_catalog_id.present?
+  end
+
+  # Attempt to find a matching ControlCatalog for this imported profile.
+  #
+  # OSCAL profiles reference their source catalog via:
+  #   imports[].href = "#<uuid>"   (a back-matter resource UUID)
+  #   back-matter.resources[uuid].rlinks[].href = "NIST_SP-800-53_rev4_catalog.json"
+  #
+  # Matching strategy (in priority order):
+  #   1. The catalog href may directly contain the catalog's OSCAL document UUID
+  #      stored in metadata_extra["catalog_uuid"].
+  #   2. The back-matter resource rlinks contain filenames that can be matched
+  #      against catalog names (e.g., "800-53" + "rev4" → "NIST SP 800-53 Rev 4").
+  def link_source_catalog(catalog_ref, back_matter)
+    catalogs = ControlCatalog.all
+    return if catalogs.none?
+
+    # Strategy 1: Direct UUID match — catalog_ref may be "#<catalog_uuid>" directly
+    if catalog_ref.present?
+      ref_uuid = catalog_ref.delete_prefix("#")
+      match = catalogs.find { |c| c.metadata_extra&.dig("catalog_uuid") == ref_uuid }
+      if match
+        @document.update_column(:control_catalog_id, match.id)
+        return
+      end
+    end
+
+    # Strategy 2: Resolve back-matter resource and match rlinks against catalog names
+    if catalog_ref&.start_with?("#") && back_matter.any?
+      resource_uuid = catalog_ref.delete_prefix("#")
+      resource = back_matter.find { |r| r["uuid"] == resource_uuid }
+
+      if resource
+        # Check if any rlink filename matches a known catalog
+        rlinks = resource["rlinks"] || []
+        rlink_hrefs = rlinks.map { |rl| rl["href"].to_s.downcase }
+
+        catalogs.each do |catalog|
+          next unless catalog_rlinks_match?(rlink_hrefs, catalog)
+          @document.update_column(:control_catalog_id, catalog.id)
+          return
+        end
+      end
+    end
+  end
+
+  # Check if any rlink href contains identifiers that match a catalog.
+  # Looks for revision indicators (rev4, rev5) and catalog identifiers (800-53).
+  def catalog_rlinks_match?(rlink_hrefs, catalog)
+    catalog_name = catalog.name.downcase
+
+    rlink_hrefs.any? do |href|
+      # Extract revision indicator from rlink (e.g., "rev4", "rev5")
+      rlink_rev = href[/rev\.?\s*(\d+)/i, 1] || href[/revision[_\s]*(\d+)/i, 1]
+      catalog_rev = catalog_name[/rev\.?\s*(\d+)/i, 1] || catalog_name[/revision[_\s]*(\d+)/i, 1]
+
+      # Both must reference 800-53 and have matching revision numbers
+      href.include?("800-53") && catalog_name.include?("800-53") &&
+        rlink_rev.present? && catalog_rev.present? &&
+        rlink_rev == catalog_rev
+    end
   end
 
   def extract_selected_control_ids(imports)
@@ -136,5 +203,21 @@ class ProfileJsonParserService
       end
     end
     nil
+  end
+
+  # Populate profile control titles from the matched source catalog.
+  # OSCAL profiles only reference controls by ID; titles live in the catalog.
+  def enrich_titles_from_catalog
+    @document.reload
+    catalog = @document.control_catalog
+    return unless catalog
+
+    title_map = catalog.catalog_controls.pluck(:control_id, :title).to_h
+    return if title_map.empty?
+
+    @document.profile_controls.where(title: nil).find_each do |pc|
+      mapped_title = title_map[pc.control_id]
+      pc.update_column(:title, mapped_title) if mapped_title.present?
+    end
   end
 end

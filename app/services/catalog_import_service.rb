@@ -121,6 +121,12 @@ class CatalogImportService
     published     = metadata["published"]
     metadata_extra = metadata.slice(*OscalMetadata::METADATA_EXTRA_KEYS)
 
+    # Preserve the catalog's OSCAL document UUID and back-matter resources for
+    # cross-referencing when profiles are imported later.
+    metadata_extra["catalog_uuid"] = cat_data["uuid"] if cat_data["uuid"].present?
+    back_matter_resources = cat_data.dig("back-matter", "resources")
+    metadata_extra["back_matter_resources"] = back_matter_resources if back_matter_resources.present?
+
     catalog = upsert_catalog(catalog_name, version, "OSCAL",
                              oscal_version: oscal_version, published: published,
                              metadata_extra: metadata_extra)
