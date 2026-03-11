@@ -31,6 +31,17 @@
     label_map = profile_control.profile_control_fields
                   .select { |pcf| pcf.field_name.start_with?("parameter_label:") }
                   .index_by { |pcf| pcf.field_name.delete_prefix("parameter_label:") }
+
+    # Build select/choice metadata from the linked catalog control (if available)
+    select_meta = {}
+    if profile_document.control_catalog.present?
+      cat_ctrl = profile_document.control_catalog.catalog_controls.find_by(control_id: profile_control.control_id)
+      if cat_ctrl
+        cat_ctrl.params_list.each do |p|
+          select_meta[p["id"]] = p["select"] if p["select"].present?
+        end
+      end
+    end
   %>
   <% if param_fields.any? %>
     <details class="border rounded" style="margin-bottom: 1.25rem; padding: 0;" open>
@@ -43,6 +54,9 @@
       <div class="p-3">
         <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
           Parameters inherited from the catalog. Edit the <strong>Value</strong> to set organization-specific definitions.
+          <% if select_meta.any? %>
+            Click a suggestion badge to use a catalog-defined value, or type a custom value.
+          <% end %>
         </p>
         <table class="table table-sm mb-0" style="font-size: 0.82rem;">
           <thead>
@@ -56,6 +70,7 @@
             <% param_fields.each do |pf| %>
               <% param_id = pf.field_name.delete_prefix("parameter:") %>
               <% label_field = label_map[param_id] %>
+              <% sel = select_meta[param_id] %>
               <tr>
                 <td style="padding: 0.3rem 0.5rem; font-family: monospace; color: var(--bs-primary);">
                   <%= param_id %>
@@ -64,11 +79,28 @@
                   <%= label_field&.field_value %>
                 </td>
                 <td style="padding: 0.3rem 0.5rem;">
+                  <% if sel %>
+                    <% choices = sel["choice"] || [] %>
+                    <% is_multi = sel["how-many"] == "one-or-more" %>
+                    <div style="margin-bottom: 0.35rem;">
+                      <span class="text-body-tertiary" style="font-size: 0.72rem;">
+                        Selection<%= is_multi ? " (one or more)" : "" %>:
+                      </span>
+                      <% choices.each do |choice| %>
+                        <span class="badge bg-primary-subtle text-primary-emphasis sparc-param-choice"
+                              style="cursor: pointer; font-size: 0.72rem; font-weight: 500; margin: 0.1rem 0;"
+                              data-multi="<%= is_multi %>"
+                              onclick="sparc.pickParamChoice(this)">
+                          <%= choice %>
+                        </span>
+                      <% end %>
+                    </div>
+                  <% end %>
                   <%= text_field_tag "param_values[#{param_id}]",
                       pf.field_value,
                       class: "form-control form-control-sm",
                       style: "font-size: 0.82rem;",
-                      placeholder: "Organization-defined value..." %>
+                      placeholder: sel ? "Choose above or enter custom value..." : "Organization-defined value..." %>
                 </td>
               </tr>
             <% end %>

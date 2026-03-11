@@ -4,6 +4,16 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## (unreleased) -- OSCAL XML Catalog Parameters & Baseline Adjustments (2026-03-11)
+
+### Added
+- **OSCAL XML catalog import** — full support for OSCAL 1.x XML serialization format alongside existing JSON and legacy SCAP XML imports; correctly parses `<param>`, `<select>`, `<choice>`, `<label>`, and `<guideline>` elements into the same `params_data` structure as JSON imports ([Issue #162](https://github.com/Rebel-Raiders/sparc/issues/162))
+- **Parameter suggestion badges** — profile control edit form now shows clickable catalog-defined choices as quick-pick badges above the text input for selection-type parameters; users can click to fill or type custom values ([Issue #162](https://github.com/Rebel-Raiders/sparc/issues/162))
+- **Selection info in profile show view** — read-only parameter display now shows available catalog options for selection-type parameters
+- **CatalogImportService specs** — 29 new tests covering OSCAL XML format detection, parameter extraction (label, select/choice, guideline, props), enhancement recursion, and JSON regression
+
+---
+
 ## (unreleased) -- Home Screen OSCAL Layer Alignment (2026-03-11)
 
 ### Changed
