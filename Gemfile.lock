@@ -187,7 +187,7 @@ GEM
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
     jmespath (1.6.2)
-    json (2.18.1)
+    json (2.19.1)
     json-jwt (1.17.0)
       activesupport (>= 4.2)
       aes_key_wrap
@@ -315,7 +315,7 @@ GEM
       validate_url
       webfinger (~> 2.0)
     ostruct (0.6.3)
-    pagy (43.3.1)
+    pagy (43.3.2)
       json
       uri
       yaml
@@ -427,14 +427,14 @@ GEM
     rspec-mocks (3.13.8)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
-    rspec-rails (8.0.3)
+    rspec-rails (8.0.4)
       actionpack (>= 7.2)
       activesupport (>= 7.2)
       railties (>= 7.2)
-      rspec-core (~> 3.13)
-      rspec-expectations (~> 3.13)
-      rspec-mocks (~> 3.13)
-      rspec-support (~> 3.13)
+      rspec-core (>= 3.13.0, < 5.0.0)
+      rspec-expectations (>= 3.13.0, < 5.0.0)
+      rspec-mocks (>= 3.13.0, < 5.0.0)
+      rspec-support (>= 3.13.0, < 5.0.0)
     rspec-support (3.13.7)
     rubocop (1.85.0)
       json (~> 2.3)
@@ -523,10 +523,10 @@ GEM
       faraday (~> 2.0)
       faraday-follow_redirects
     thor (1.5.0)
-    thruster (0.1.18)
-    thruster (0.1.18-aarch64-linux)
-    thruster (0.1.18-arm64-darwin)
-    thruster (0.1.18-x86_64-linux)
+    thruster (0.1.19)
+    thruster (0.1.19-aarch64-linux)
+    thruster (0.1.19-arm64-darwin)
+    thruster (0.1.19-x86_64-linux)
     timeout (0.6.0)
     tsort (0.2.0)
     turbo-rails (2.0.23)
@@ -603,7 +603,7 @@ DEPENDENCIES
   redis (~> 5.0)
   roo (~> 3.0.0)
   roo-xls (~> 2.0.0)
-  rspec-rails (~> 8.0.3)
+  rspec-rails (~> 8.0.4)
   rubocop-rails-omakase
   rubyzip (~> 3.2.2)
   selenium-webdriver
