@@ -16,7 +16,13 @@ class CatalogControl < ApplicationRecord
 
   validates :control_id, presence: true, uniqueness: { scope: :control_family_id }
 
-  default_scope { order(:control_id) }
+  default_scope { order(Arel.sql("COALESCE(sort_id, control_id)")) }
+
+  # Returns the human-readable label (e.g., "AC-1", "AC-2(1)") or falls back to
+  # the canonical OSCAL id (e.g., "ac-1", "ac-2.1") when no label is stored.
+  def display_id
+    label.presence || control_id
+  end
 
   def family_code
     control_family.code

@@ -1,5 +1,5 @@
 namespace :profile do
-  desc "Normalize profile control IDs to catalog format (AC-01) and backfill titles"
+  desc "Normalize profile control IDs to OSCAL canonical format (ac-1) and backfill titles"
   task normalize_control_ids: :environment do
     total_profiles = 0
     total_normalized = 0
@@ -7,7 +7,11 @@ namespace :profile do
     ProfileDocument.find_each do |profile|
       profile.profile_controls.find_each do |pc|
         raw = pc.control_id.to_s
-        normalized = raw.upcase.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
+        # Convert any format (AC-01, AC-1, ac-1) to canonical OSCAL: ac-1
+        normalized = raw.strip.downcase
+                        .gsub(/\s+/, "-")
+                        .gsub("(", ".").gsub(")", "")
+                        .sub(/\A([a-z]+-?)0+(\d)/) { "#{$1}#{$2}" }
         next if raw == normalized
 
         pc.update_column(:control_id, normalized)

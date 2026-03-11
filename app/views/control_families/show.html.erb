@@ -28,13 +28,14 @@
 
   <% if @catalog_controls.any? %>
     <%
-      # Depth from control_id suffix after the "XX-NN" base:
-      #   "AC-01"         → 0   (base control)
-      #   "AC-01a"        → 1   (letter part)
-      #   "AC-01a.1"      → 2   (number sub-part)
-      #   "AC-01a.1.(a)"  → 3   (paren sub-part)
+      # Depth from control_id suffix after the "xx-N" base:
+      #   "ac-1"          → 0   (base control)
+      #   "ac-1a"         → 1   (letter part)
+      #   "ac-1a.1"       → 2   (number sub-part)
+      #   "ac-1a.1.(a)"   → 3   (paren sub-part)
+      #   "ac-2.1"        → 0   (enhancement — treated as top-level)
       ctrl_depth = ->(id) {
-        suffix = id.to_s.sub(/\A[A-Z]+-\d+/, "")
+        suffix = id.to_s.sub(/\A[a-z]+-\d+(\.\d+)?/i, "")
         suffix.blank? ? 0 : suffix.scan(/[a-z]|\.\d+|\.\([^)]+\)/).size
       }
     %>
@@ -63,7 +64,7 @@
                            font-weight: <%= depth == 0 ? 700 : 500 %>;
                            color: <%= depth == 0 ? "#2c3e50" : "#666" %>;
                            font-size: <%= depth == 0 ? "0.95rem" : "0.85rem" %>;">
-                <%= control.control_id %>
+                <%= control.display_id %>
               </span>
             </td>
 

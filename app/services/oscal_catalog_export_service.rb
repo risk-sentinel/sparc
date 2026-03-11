@@ -93,7 +93,7 @@ class OscalCatalogExportService
 
   def build_control(control, family)
     result = {
-      "id"    => control.control_id.downcase.tr(" ", "-"),
+      "id"    => control.control_id,
       "class" => "SP800-53",
       "title" => control.title
     }
@@ -111,7 +111,10 @@ class OscalCatalogExportService
 
   def build_control_props(control)
     props = []
-    props << { "name" => "label", "value" => control.control_id }
+    props << { "name" => "label", "value" => control.display_id }
+    if control.sort_id.present?
+      props << { "name" => "sort-id", "value" => control.sort_id }
+    end
     props << { "name" => "priority", "value" => control.priority } if control.priority.present?
 
     if control.baseline_impact.present?
@@ -129,7 +132,7 @@ class OscalCatalogExportService
 
     if guidance["statement"].present?
       parts << {
-        "id"    => "#{control.control_id.downcase}_smt",
+        "id"    => "#{control.control_id}_smt",
         "name"  => "statement",
         "prose" => guidance["statement"]
       }
@@ -137,7 +140,7 @@ class OscalCatalogExportService
 
     if guidance["supplemental_guidance"].present?
       guidance_part = {
-        "id"    => "#{control.control_id.downcase}_gdn",
+        "id"    => "#{control.control_id}_gdn",
         "name"  => "guidance",
         "prose" => guidance["supplemental_guidance"]
       }
@@ -155,7 +158,7 @@ class OscalCatalogExportService
   end
 
   def top_level_control?(control_id)
-    # Top-level controls match patterns like "AC-01", "AC-01(1)" but not "AC-01a" or "AC-01a.1"
-    control_id.match?(/\A[A-Z]+-\d+(\(\d+\))?\z/)
+    # Top-level controls match canonical OSCAL format: "ac-1", "ac-2.1" but not "ac-1a" or "ac-1a.1"
+    control_id.match?(/\A[a-z]+-\d+(\.\d+)?\z/i)
   end
 end

@@ -14,9 +14,11 @@
 #   result = CatalogImportService.call(file_io, original_filename)
 #   # => { catalog: <ControlCatalog>, families: 20, controls: 323, updated: 12, created: 311 }
 #
-# Control ID format: single-digit numbers are zero-padded (AC-1 → AC-01, AC-10 unchanged).
+# Control ID format: OSCAL canonical `id` is stored as the primary key (e.g., "ac-1", "ac-2.1").
+# The OSCAL `props.label` (e.g., "AC-1", "AC-2(1)") is stored in the `label` column for display.
+# The OSCAL `props.sort-id` (e.g., "ac-01", "ac-02.01") is stored in the `sort_id` column for ordering.
 # Sub-parts (a., 1., (a)) are stored as sibling CatalogControl records under the same family:
-#   AC-01, AC-01a, AC-01a.1, AC-01a.1.(a), AC-01a.1.(b), AC-01b, AC-01c, AC-01c.1, AC-01c.2
+#   ac-1, ac-1a, ac-1a.1, ac-1a.1.(a), ac-1a.1.(b), ac-1b, ac-1c, ac-1c.1, ac-1c.2
 #
 class CatalogImportService
   class ImportError < StandardError; end
@@ -151,13 +153,15 @@ class CatalogImportService
   end
 
   def import_oscal_control(family, ctrl)
-    label       = oscal_prop(ctrl["props"], "label")
-    raw_id      = label.presence || ctrl["id"].to_s.upcase.tr("-", "-")
-    control_id  = pad_control_id(raw_id)
-    title       = ctrl["title"].to_s.strip
-    priority    = oscal_prop(ctrl["props"], "priority")
-    baselines   = oscal_prop_all(ctrl["props"], "impact-level")
-    baseline    = baselines.join(", ").presence
+    # Store the OSCAL canonical id as the primary key for cross-referencing.
+    # The label prop is stored separately for display; sort-id for ordering.
+    control_id = ctrl["id"].to_s.strip                         # "ac-1", "ac-2.1"
+    ctrl_label = oscal_prop(ctrl["props"], "label")            # "AC-1", "AC-2(1)"
+    sort_id    = oscal_prop(ctrl["props"], "sort-id")          # "ac-01", "ac-02.01"
+    title      = ctrl["title"].to_s.strip
+    priority   = oscal_prop(ctrl["props"], "priority")
+    baselines  = oscal_prop_all(ctrl["props"], "impact-level")
+    baseline   = baselines.join(", ").presence
 
     # Statement: collect prose from all statement/item parts recursively (for the parent record)
     statement = oscal_collect_prose(ctrl["parts"], names: %w[statement item])
@@ -169,7 +173,7 @@ class CatalogImportService
     # Related controls from guidance part links
     related = (guidance_part&.dig("links") || [])
               .select { |l| l["rel"] == "related" }
-              .map    { |l| l["href"]&.delete("#")&.upcase }
+              .map    { |l| l["href"]&.delete("#") }
               .compact
               .join(", ")
 
@@ -182,7 +186,8 @@ class CatalogImportService
     # Parameter definitions (Assignment/Selection placeholders for profiles to resolve)
     params_data = ctrl["params"].presence || []
 
-    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: params_data)
+    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data,
+                                    params_data: params_data, label: ctrl_label, sort_id: sort_id)
 
     # Create sub-control records for each statement item part (a., 1., (a), …)
     stmt_part = (ctrl["parts"] || []).find { |p| p["name"] == "statement" }
@@ -198,9 +203,9 @@ class CatalogImportService
 
   # Recursively create CatalogControl records for OSCAL statement item parts.
   # Each item part becomes a sibling record with a hierarchical ID suffix:
-  #   parent "AC-01" + label "a." → "AC-01a"
-  #   parent "AC-01a" + label "1." → "AC-01a.1"
-  #   parent "AC-01a.1" + label "(a)" → "AC-01a.1.(a)"
+  #   parent "ac-1" + label "a." → "ac-1a"
+  #   parent "ac-1a" + label "1." → "ac-1a.1"
+  #   parent "ac-1a.1" + label "(a)" → "ac-1a.1.(a)"
   def import_oscal_item_parts(family, parent_id, parts)
     return if parts.blank?
     parts.each do |part|
@@ -224,7 +229,7 @@ class CatalogImportService
   # Structure (SCAP SP800-53 feed v2.0):
   #   <controls:control>
   #     <family>ACCESS CONTROL</family>
-  #     <number>AC-1</number>  → stored as "AC-01"
+  #     <number>AC-1</number>  → stored as "ac-1" (canonical OSCAL format)
   #     <title>POLICY AND PROCEDURES</title>
   #     <baseline>LOW</baseline>
   #     <statement>
@@ -284,7 +289,10 @@ class CatalogImportService
   end
 
   def import_xml_control(family, ctrl_node)
-    control_id  = pad_control_id(ctrl_node.at_xpath("number")&.text.to_s.strip)
+    raw_number  = ctrl_node.at_xpath("number")&.text.to_s.strip  # "AC-1"
+    control_id  = raw_number.downcase                              # "ac-1" (canonical OSCAL format)
+    ctrl_label  = raw_number                                       # "AC-1" (display)
+    sort_id     = pad_control_id(raw_number).downcase              # "ac-01" (ordering)
     title       = ctrl_node.at_xpath("title")&.text.to_s.strip.titleize
     baselines   = ctrl_node.xpath("baseline").map(&:text).map(&:strip).reject(&:blank?)
     baseline    = baselines.join(", ").presence
@@ -310,7 +318,8 @@ class CatalogImportService
       "nist_references"       => nist_refs
     }.compact.reject { |_, v| v.blank? }
 
-    result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data)
+    result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data,
+                                    label: ctrl_label, sort_id: sort_id)
 
     # Create sub-control records from nested <statement> elements
     import_xml_item_parts(family, control_id, root_stmt) if root_stmt
@@ -321,26 +330,28 @@ class CatalogImportService
   # Recursively create CatalogControl records for XML nested statement elements.
   #
   # The NIST XML <number> contains the FULL control sub-ID (not just a label suffix):
-  #   "AC-1a."       → sub_id "AC-01a"
-  #   "AC-1a.1."     → sub_id "AC-01a.1"
-  #   "AC-1a.1.(a)"  → sub_id "AC-01a.1.(a)"
+  #   "AC-1a."       → sub_id "ac-1a"     (label: "AC-1a")
+  #   "AC-1a.1."     → sub_id "ac-1a.1"   (label: "AC-1a.1")
+  #   "AC-1a.1.(a)"  → sub_id "ac-1a.1.(a)" (label: "AC-1a.1.(a)")
   #
-  # We strip the trailing dot and zero-pad the base number.
+  # We strip the trailing dot and lowercase for canonical format.
   def import_xml_item_parts(family, _parent_id, stmt_node)
     return if stmt_node.nil?
     stmt_node.xpath("statement").each do |child|
       number = child.at_xpath("number")&.text.to_s.strip
       next if number.blank?
 
-      # Build canonical ID: strip trailing "." then zero-pad first number segment
-      sub_id = number.chomp(".").sub(/\A([A-Z]+-?)(\d+)/) { "#{$1}#{$2.rjust(2, '0')}" }
+      raw    = number.chomp(".")          # "AC-1a" (strip trailing dot)
+      sub_id = raw.downcase               # "ac-1a" (canonical)
+      label  = raw                        # "AC-1a" (display)
       next if sub_id.blank?
 
       desc   = child.at_xpath("description")
       prose  = desc ? xml_text_content(desc).strip.presence : nil
 
-      upsert_catalog_control(family, sub_id, number.chomp("."), nil, nil,
-        prose ? { "statement" => prose } : {})
+      upsert_catalog_control(family, sub_id, label, nil, nil,
+        prose ? { "statement" => prose } : {},
+        label: label)
 
       # Recurse into deeper nesting
       import_xml_item_parts(family, sub_id, child)
@@ -367,7 +378,7 @@ class CatalogImportService
     family
   end
 
-  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: [])
+  def upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data, params_data: [], label: nil, sort_id: nil)
     ctrl = family.catalog_controls.find_or_initialize_by(control_id: control_id)
     is_new = ctrl.new_record?
     attrs = {
@@ -377,6 +388,8 @@ class CatalogImportService
       guidance_data:    guidance_data.any? ? guidance_data : (ctrl.guidance_data || {})
     }
     attrs[:params_data] = params_data if params_data.present?
+    attrs[:label] = label if label.present?
+    attrs[:sort_id] = sort_id if sort_id.present?
     ctrl.assign_attributes(attrs)
     ctrl.save!
     is_new ? :created : :updated
@@ -391,9 +404,9 @@ class CatalogImportService
   end
 
   # Convert an OSCAL/XML statement label into an ID suffix for the parent control:
-  #   "a."  → "a"    (letter — appended directly: "AC-01" + "a" = "AC-01a")
-  #   "1."  → ".1"   (digit  — dot separator:     "AC-01a" + ".1" = "AC-01a.1")
-  #   "(a)" → ".(a)" (paren  — dot separator:     "AC-01a.1" + ".(a)" = "AC-01a.1.(a)")
+  #   "a."  → "a"    (letter — appended directly: "ac-1" + "a" = "ac-1a")
+  #   "1."  → ".1"   (digit  — dot separator:     "ac-1a" + ".1" = "ac-1a.1")
+  #   "(a)" → ".(a)" (paren  — dot separator:     "ac-1a.1" + ".(a)" = "ac-1a.1.(a)")
   def label_to_suffix(label)
     l = label.strip
     case l
