@@ -900,6 +900,7 @@ a.link-purple { color: var(--sparc-purple); }
   border: 1px solid var(--bs-border-color);
   border-radius: 8px;
   padding: 0.85rem;
+  cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .sparc-heatmap-card:hover {

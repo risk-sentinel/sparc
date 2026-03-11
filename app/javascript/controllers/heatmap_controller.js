@@ -94,6 +94,25 @@ export default class extends Controller {
     }
   }
 
+  // Action: click anywhere on a heatmap card body (delegates to family filter).
+  // Skips if the click landed on a badge or family link that has its own handler.
+  filterByCard(event) {
+    if (event.target.closest("[data-action*='heatmap#filterByCell']") ||
+        event.target.closest("[data-action*='heatmap#filterByFamily']")) {
+      return
+    }
+    event.preventDefault()
+    const family = event.currentTarget.dataset.family
+
+    if (this.activeFamily === family && !this.activeFilter) {
+      this.clear()
+    } else {
+      this.activeFamily = family
+      this.activeFilter = null
+      this.applyFilter()
+    }
+  }
+
   // Action: click a summary chip (filter by status/severity only)
   filterByChip(event) {
     event.preventDefault()
