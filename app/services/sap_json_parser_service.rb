@@ -47,7 +47,13 @@ class SapJsonParserService
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
     attrs[:metadata_extra] = metadata.except("title", "version", "oscal-version", "last-modified")
 
+    attrs[:import_metadata] = {
+      "uuid"        => plan["uuid"],
+      "back_matter" => plan.dig("back-matter", "resources")
+    }.compact
+
     @document.update!(attrs.compact)
+    @document.assign_oscal_uuid!(plan["uuid"])
   end
 
   def parse_controls(plan)

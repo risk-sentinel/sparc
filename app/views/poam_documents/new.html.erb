@@ -3,10 +3,10 @@
 
   <%= form_with model: @poam_document, local: true, multipart: true do |f| %>
     <div class="form-group">
-      <label for="poam_document_file">Select POA&amp;M File (.json, .xml)</label>
-      <%= f.file_field :file, accept: ".json,.xml", required: true %>
+      <label for="poam_document_file">Select POA&amp;M File (.json, .xml, .yaml, .yml)</label>
+      <%= f.file_field :file, accept: ".json,.xml,.yaml,.yml", required: true %>
       <small class="text-body-secondary d-block mt-2">
-        Upload an OSCAL Plan of Action and Milestones (POA&amp;M) in JSON or XML format.
+        Upload an OSCAL Plan of Action and Milestones (POA&amp;M) in JSON, XML, or YAML format.
       </small>
     </div>
 

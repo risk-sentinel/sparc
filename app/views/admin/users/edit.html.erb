@@ -45,7 +45,7 @@
                 <div class="form-check">
                   <input type="checkbox" name="user[role_ids][]" value="<%= role.id %>"
                          id="role_<%= role.id %>" class="form-check-input"
-                         <%= "checked" if @user.user_roles.where(project_id: nil).exists?(role_id: role.id) %>>
+                         <%= "checked" if @user.user_roles.where(authorization_boundary_id: nil).exists?(role_id: role.id) %>>
                   <label for="role_<%= role.id %>" class="form-check-label">
                     <strong><%= role.display_name %></strong>
                     <% if role.description.present? %>
@@ -58,26 +58,26 @@
           </div>
 
           <hr>
-          <h5 class="fw-semibold mb-3">Project Roles</h5>
+          <h5 class="fw-semibold mb-3">Authorization Boundary Roles</h5>
 
-          <%# ── Current project role assignments ──────────────── %>
-          <% if @project_roles_data.any? %>
+          <%# ── Current authorization boundary role assignments ──────────────── %>
+          <% if @authorization_boundary_roles_data.any? %>
             <div class="table-responsive mb-3">
               <table class="table table-sm align-middle mb-0">
                 <thead>
                   <tr>
-                    <th>Project</th>
+                    <th>Authorization Boundary</th>
                     <th>Role</th>
                     <th>Keep</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <% @project_roles_data.each do |ur| %>
+                  <% @authorization_boundary_roles_data.each do |ur| %>
                     <tr>
-                      <td><%= ur.project&.name || "Unknown" %></td>
+                      <td><%= ur.authorization_boundary&.name || "Unknown" %></td>
                       <td><span class="badge text-bg-info"><%= ur.role.display_name %></span></td>
                       <td>
-                        <input type="checkbox" name="user[keep_project_role_ids][]"
+                        <input type="checkbox" name="user[keep_authorization_boundary_role_ids][]"
                                value="<%= ur.id %>" checked class="form-check-input">
                       </td>
                     </tr>
@@ -85,26 +85,26 @@
                 </tbody>
               </table>
             </div>
-            <p class="form-text mb-3">Uncheck "Keep" to remove a project role assignment.</p>
+            <p class="form-text mb-3">Uncheck "Keep" to remove an authorization boundary role assignment.</p>
           <% end %>
 
-          <%# ── Add new project role assignment ───────────────── %>
+          <%# ── Add new authorization boundary role assignment ───────────────── %>
           <div class="card bg-body-tertiary mb-4">
             <div class="card-body py-2">
-              <p class="small fw-semibold mb-2">Add Project Role</p>
+              <p class="small fw-semibold mb-2">Add Authorization Boundary Role</p>
               <div class="row g-2 align-items-end">
                 <div class="col-md-5">
-                  <select name="user[project_roles][][project_id]" class="form-select form-select-sm">
-                    <option value="">Select project...</option>
-                    <% @available_projects.each do |project| %>
-                      <option value="<%= project.id %>"><%= project.name %></option>
+                  <select name="user[authorization_boundary_roles][][authorization_boundary_id]" class="form-select form-select-sm">
+                    <option value="">Select authorization boundary...</option>
+                    <% @available_authorization_boundaries.each do |authorization_boundary| %>
+                      <option value="<%= authorization_boundary.id %>"><%= authorization_boundary.name %></option>
                     <% end %>
                   </select>
                 </div>
                 <div class="col-md-5">
-                  <select name="user[project_roles][][role_id]" class="form-select form-select-sm">
+                  <select name="user[authorization_boundary_roles][][role_id]" class="form-select form-select-sm">
                     <option value="">Select role...</option>
-                    <% @available_project_roles.each do |role| %>
+                    <% @available_authorization_boundary_roles.each do |role| %>
                       <option value="<%= role.id %>"><%= role.display_name %></option>
                     <% end %>
                   </select>

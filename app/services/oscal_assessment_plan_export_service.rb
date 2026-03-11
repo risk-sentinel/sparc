@@ -40,14 +40,15 @@ class OscalAssessmentPlanExportService
   def build_assessment_plan
     {
       "assessment-plan" => {
-        "uuid"                => SecureRandom.uuid,
+        "uuid"                => @document.uuid,
         "metadata"            => build_metadata,
         "import-ssp"          => build_import_ssp,
         "local-definitions"   => build_local_definitions,
         "terms-and-conditions" => build_terms_and_conditions,
         "reviewed-controls"   => build_reviewed_controls,
         "assessment-subjects" => build_assessment_subjects,
-        "assessment-assets"   => build_assessment_assets
+        "assessment-assets"   => build_assessment_assets,
+        "back-matter"         => build_back_matter
       }.compact
     }
   end
@@ -272,5 +273,9 @@ class OscalAssessmentPlanExportService
           .gsub(")", "")
           .gsub(/\.{2,}/, ".")
           .gsub(/-\./, ".")
+  end
+
+  def build_back_matter
+    @document.build_oscal_back_matter
   end
 end

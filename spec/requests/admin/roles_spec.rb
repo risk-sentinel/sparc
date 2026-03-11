@@ -60,7 +60,7 @@ RSpec.describe "Admin::Roles", type: :request do
           role: {
             name: "test_role",
             display_name: "Test Role",
-            scope: "project",
+            scope: "authorization_boundary",
             sort_order: 99,
             description: "A test role",
             permissions: { "ssp.read" => "1", "ssp.write" => "1" }

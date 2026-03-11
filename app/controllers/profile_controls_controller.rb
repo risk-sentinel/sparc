@@ -12,6 +12,7 @@ class ProfileControlsController < ApplicationController
 
     if @profile_control.save
       save_editable_fields
+      save_param_values
       audit_log("profile_control_created", subject: @profile_control, metadata: { control_id: @profile_control.control_id, profile_document_id: @profile_document.id })
       flash[:success] = "Control #{@profile_control.control_id} added to profile"
       redirect_to profile_document_path(@profile_document)
@@ -25,6 +26,7 @@ class ProfileControlsController < ApplicationController
   def update
     if @profile_control.update(profile_control_params)
       save_editable_fields
+      save_param_values
       audit_log("profile_control_updated", subject: @profile_control, metadata: { control_id: @profile_control.control_id })
       flash[:success] = "Control #{@profile_control.control_id} updated"
       redirect_to profile_document_path(@profile_document)
@@ -60,6 +62,16 @@ class ProfileControlsController < ApplicationController
       next unless ProfileControlField::EDITABLE_FIELDS.include?(field_name.to_s)
 
       field = @profile_control.profile_control_fields.find_or_initialize_by(field_name: field_name.to_s)
+      field.field_value = value.to_s.strip
+      field.save!
+    end
+  end
+
+  def save_param_values
+    (params[:param_values] || {}).each do |param_id, value|
+      field = @profile_control.profile_control_fields.find_or_initialize_by(
+        field_name: "parameter:#{param_id}"
+      )
       field.field_value = value.to_s.strip
       field.save!
     end

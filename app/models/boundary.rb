@@ -1,5 +1,5 @@
 class Boundary < ApplicationRecord
-  belongs_to :project
+  belongs_to :authorization_boundary
   has_many :boundary_cdef_documents, dependent: :destroy
   has_many :cdef_documents, through: :boundary_cdef_documents
 

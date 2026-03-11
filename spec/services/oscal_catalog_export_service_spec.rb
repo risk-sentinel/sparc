@@ -19,7 +19,9 @@ RSpec.describe OscalCatalogExportService do
 
   before do
     family.catalog_controls.create!(
-      control_id: "AC-01",
+      control_id: "ac-1",
+      label: "AC-1",
+      sort_id: "ac-01",
       title: "Policy and Procedures",
       priority: "P1",
       baseline_impact: "LOW, MODERATE, HIGH",

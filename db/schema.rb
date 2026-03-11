@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_11_094112) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -73,14 +73,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.index ["user_id"], name: "index_audit_events_on_user_id"
   end
 
+  create_table "authorization_boundaries", force: :cascade do |t|
+    t.text "authorization_boundary_description"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.bigint "organization_id"
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id"], name: "index_authorization_boundaries_on_organization_id"
+    t.index ["status"], name: "index_authorization_boundaries_on_status"
+  end
+
+  create_table "authorization_boundary_memberships", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
+    t.datetime "created_at", null: false
+    t.string "role", null: false
+    t.datetime "updated_at", null: false
+    t.string "user_email"
+    t.bigint "user_id"
+    t.string "user_name", null: false
+    t.index ["authorization_boundary_id", "role"], name: "idx_on_authorization_boundary_id_role_d3bdd5cff4"
+    t.index ["authorization_boundary_id"], name: "idx_on_authorization_boundary_id_4def66765a"
+    t.index ["user_id"], name: "index_authorization_boundary_memberships_on_user_id"
+  end
+
   create_table "boundaries", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.string "environment", default: "production", null: false
     t.string "name", null: false
-    t.bigint "project_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["project_id"], name: "index_boundaries_on_project_id"
+    t.index ["authorization_boundary_id"], name: "index_boundaries_on_authorization_boundary_id"
   end
 
   create_table "boundary_cdef_documents", force: :cascade do |t|
@@ -100,7 +125,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.datetime "created_at", null: false
     t.text "description"
     t.jsonb "guidance_data", default: {}
+    t.string "label"
+    t.jsonb "params_data", default: []
     t.string "priority"
+    t.string "sort_id"
     t.string "title"
     t.datetime "updated_at", null: false
     t.index ["control_family_id", "control_id"], name: "index_catalog_controls_on_control_family_id_and_control_id", unique: true
@@ -151,9 +179,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.string "oscal_version"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
     t.index ["status"], name: "index_cdef_documents_on_status"
+    t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
   end
 
   create_table "control_catalogs", force: :cascade do |t|
@@ -245,6 +275,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
   end
 
   create_table "evidences", force: :cascade do |t|
+    t.bigint "authorization_boundary_id"
     t.datetime "collected_at"
     t.string "collected_by"
     t.datetime "created_at", null: false
@@ -254,14 +285,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.string "file_hash"
     t.integer "file_size"
     t.string "original_filename"
-    t.bigint "project_id"
     t.string "source"
     t.string "status", default: "draft", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index ["authorization_boundary_id"], name: "index_evidences_on_authorization_boundary_id"
     t.index ["collected_at"], name: "index_evidences_on_collected_at"
     t.index ["evidence_type"], name: "index_evidences_on_evidence_type"
-    t.index ["project_id"], name: "index_evidences_on_project_id"
     t.index ["status"], name: "index_evidences_on_status"
   end
 
@@ -279,7 +309,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.index ["user_id"], name: "index_identities_on_user_id"
   end
 
+  create_table "organization_memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "organization_id", null: false
+    t.string "role", default: "member", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["organization_id", "user_id"], name: "index_organization_memberships_on_organization_id_and_user_id", unique: true
+    t.index ["organization_id"], name: "index_organization_memberships_on_organization_id"
+    t.index ["user_id"], name: "index_organization_memberships_on_user_id"
+  end
+
+  create_table "organizations", force: :cascade do |t|
+    t.text "address"
+    t.string "contact_email"
+    t.string "contact_person"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["name"], name: "index_organizations_on_name", unique: true
+    t.index ["status"], name: "index_organizations_on_status"
+    t.index ["uuid"], name: "index_organizations_on_uuid", unique: true
+  end
+
   create_table "poam_documents", force: :cascade do |t|
+    t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
     t.text "description"
     t.text "error_message"
@@ -291,13 +348,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.string "original_filename"
     t.string "oscal_version"
     t.string "poam_version"
-    t.bigint "project_id"
     t.string "status", default: "pending"
     t.string "system_id"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["authorization_boundary_id"], name: "index_poam_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_poam_documents_on_created_at"
-    t.index ["project_id"], name: "index_poam_documents_on_project_id"
     t.index ["status"], name: "index_poam_documents_on_status"
+    t.index ["uuid"], name: "index_poam_documents_on_uuid", unique: true
   end
 
   create_table "poam_finding_observations", force: :cascade do |t|
@@ -534,34 +592,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.string "oscal_version"
     t.string "profile_version"
     t.string "published"
+    t.jsonb "resolved_catalog_json", default: {}
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
     t.index ["created_at"], name: "index_profile_documents_on_created_at"
     t.index ["status"], name: "index_profile_documents_on_status"
-  end
-
-  create_table "project_memberships", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "project_id", null: false
-    t.string "role", null: false
-    t.datetime "updated_at", null: false
-    t.string "user_email"
-    t.bigint "user_id"
-    t.string "user_name", null: false
-    t.index ["project_id", "role"], name: "index_project_memberships_on_project_id_and_role"
-    t.index ["project_id"], name: "index_project_memberships_on_project_id"
-    t.index ["user_id"], name: "index_project_memberships_on_user_id"
-  end
-
-  create_table "projects", force: :cascade do |t|
-    t.text "authorization_boundary_description"
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "name", null: false
-    t.string "status", default: "draft", null: false
-    t.datetime "updated_at", null: false
-    t.index ["status"], name: "index_projects_on_status"
+    t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
   end
 
   create_table "roles", force: :cascade do |t|
@@ -612,6 +650,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.date "assessment_start"
     t.string "assessment_type", default: "initial"
     t.jsonb "assessors", default: []
+    t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
     t.text "description"
     t.text "error_message"
@@ -622,16 +661,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
-    t.bigint "project_id"
     t.string "sap_version"
     t.bigint "ssp_document_id"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["authorization_boundary_id"], name: "index_sap_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sap_documents_on_created_at"
     t.index ["profile_document_id"], name: "index_sap_documents_on_profile_document_id"
-    t.index ["project_id"], name: "index_sap_documents_on_project_id"
     t.index ["ssp_document_id"], name: "index_sap_documents_on_ssp_document_id"
     t.index ["status"], name: "index_sap_documents_on_status"
+    t.index ["uuid"], name: "index_sap_documents_on_uuid", unique: true
   end
 
   create_table "sar_control_fields", force: :cascade do |t|
@@ -668,6 +708,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.datetime "assessment_end"
     t.jsonb "assessment_log_data", default: []
     t.datetime "assessment_start"
+    t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
     t.string "creation_method", default: "excel"
     t.text "description"
@@ -681,16 +722,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.string "name"
     t.string "original_filename"
     t.string "oscal_version"
-    t.bigint "project_id"
     t.jsonb "reviewed_controls_data", default: {}
     t.bigint "sap_document_id"
     t.string "sar_version"
     t.string "status"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["authorization_boundary_id"], name: "index_sar_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
-    t.index ["project_id"], name: "index_sar_documents_on_project_id"
     t.index ["sap_document_id"], name: "index_sar_documents_on_sap_document_id"
     t.index ["status"], name: "index_sar_documents_on_status"
+    t.index ["uuid"], name: "index_sar_documents_on_uuid", unique: true
   end
 
   create_table "sar_finding_observations", force: :cascade do |t|
@@ -898,6 +940,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
 
   create_table "ssp_documents", force: :cascade do |t|
     t.text "authorization_boundary_description"
+    t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
     t.string "creation_method", default: "excel"
     t.text "data_flow_description"
@@ -913,7 +956,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
-    t.bigint "project_id"
     t.string "security_objective_availability"
     t.string "security_objective_confidentiality"
     t.string "security_objective_integrity"
@@ -924,8 +966,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.string "system_name_short"
     t.string "system_status", default: "operational"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["authorization_boundary_id"], name: "index_ssp_documents_on_authorization_boundary_id"
     t.index ["profile_document_id"], name: "index_ssp_documents_on_profile_document_id"
-    t.index ["project_id"], name: "index_ssp_documents_on_project_id"
+    t.index ["uuid"], name: "index_ssp_documents_on_uuid", unique: true
   end
 
   create_table "ssp_information_types", force: :cascade do |t|
@@ -999,14 +1043,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
   end
 
   create_table "user_roles", force: :cascade do |t|
+    t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
-    t.bigint "project_id"
     t.bigint "role_id", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.index ["project_id"], name: "index_user_roles_on_project_id"
+    t.index ["authorization_boundary_id"], name: "index_user_roles_on_authorization_boundary_id"
     t.index ["role_id"], name: "index_user_roles_on_role_id"
-    t.index ["user_id", "role_id", "project_id"], name: "idx_user_roles_unique", unique: true
+    t.index ["user_id", "role_id", "authorization_boundary_id"], name: "idx_user_roles_unique", unique: true
     t.index ["user_id"], name: "index_user_roles_on_user_id"
   end
 
@@ -1014,9 +1058,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.boolean "admin", default: false, null: false
     t.string "avatar_url"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "display_name"
     t.string "email", null: false
     t.string "first_name"
+    t.string "inactive_reason"
     t.string "last_name"
     t.datetime "last_sign_in_at"
     t.string "last_sign_in_ip"
@@ -1026,15 +1072,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
     t.integer "sign_in_count", default: 0, null: false
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["status"], name: "index_users_on_status"
+    t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "attestations", "evidences", on_delete: :cascade
   add_foreign_key "audit_events", "users", on_delete: :nullify
-  add_foreign_key "boundaries", "projects", on_delete: :cascade
+  add_foreign_key "authorization_boundaries", "organizations", on_delete: :nullify
+  add_foreign_key "authorization_boundary_memberships", "authorization_boundaries", on_delete: :cascade
+  add_foreign_key "authorization_boundary_memberships", "users", on_delete: :nullify
+  add_foreign_key "boundaries", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "boundaries", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "cdef_documents", on_delete: :cascade
   add_foreign_key "catalog_controls", "control_families"
@@ -1045,9 +1097,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
   add_foreign_key "control_mappings", "control_catalogs", column: "source_catalog_id"
   add_foreign_key "control_mappings", "control_catalogs", column: "target_catalog_id"
   add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
-  add_foreign_key "evidences", "projects", on_delete: :nullify
+  add_foreign_key "evidences", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "identities", "users", on_delete: :cascade
-  add_foreign_key "poam_documents", "projects", on_delete: :nullify
+  add_foreign_key "organization_memberships", "organizations", on_delete: :cascade
+  add_foreign_key "organization_memberships", "users", on_delete: :cascade
+  add_foreign_key "poam_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "poam_finding_observations", "poam_findings", on_delete: :cascade
   add_foreign_key "poam_finding_observations", "poam_observations", on_delete: :cascade
   add_foreign_key "poam_finding_risks", "poam_findings", on_delete: :cascade
@@ -1070,16 +1124,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
   add_foreign_key "profile_control_fields", "profile_controls", on_delete: :cascade
   add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
-  add_foreign_key "project_memberships", "projects", on_delete: :cascade
-  add_foreign_key "project_memberships", "users", on_delete: :nullify
   add_foreign_key "sap_control_fields", "sap_controls", on_delete: :cascade
   add_foreign_key "sap_controls", "sap_documents", on_delete: :cascade
+  add_foreign_key "sap_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "sap_documents", "profile_documents", on_delete: :nullify
-  add_foreign_key "sap_documents", "projects", on_delete: :nullify
   add_foreign_key "sap_documents", "ssp_documents", on_delete: :nullify
   add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
-  add_foreign_key "sar_documents", "projects", on_delete: :nullify
+  add_foreign_key "sar_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "sar_documents", "sap_documents", on_delete: :nullify
   add_foreign_key "sar_finding_observations", "sar_findings", on_delete: :cascade
   add_foreign_key "sar_finding_observations", "sar_observations", on_delete: :cascade
@@ -1101,13 +1153,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_013704) do
   add_foreign_key "ssp_controls", "ssp_documents"
   add_foreign_key "ssp_document_cdef_documents", "cdef_documents", on_delete: :cascade
   add_foreign_key "ssp_document_cdef_documents", "ssp_documents", on_delete: :cascade
+  add_foreign_key "ssp_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "ssp_documents", "profile_documents", on_delete: :nullify
-  add_foreign_key "ssp_documents", "projects", on_delete: :nullify
   add_foreign_key "ssp_information_types", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_inventory_items", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_leveraged_authorizations", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_users", "ssp_documents", on_delete: :cascade
-  add_foreign_key "user_roles", "projects", on_delete: :cascade
+  add_foreign_key "user_roles", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "user_roles", "roles", on_delete: :cascade
   add_foreign_key "user_roles", "users", on_delete: :cascade
 end

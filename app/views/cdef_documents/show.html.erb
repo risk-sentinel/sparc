@@ -89,10 +89,18 @@
         <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
               class: "sparc-btn-ghost", data: { confirm: "Duplicate this component definition?" } %>
       <% end %>
-      <%= link_to "Export OSCAL".html_safe, download_oscal_cdef_document_path(@cdef_document),
-            class: "sparc-btn-oscal" %>
-      <%= link_to "&#8595; JSON".html_safe, download_json_cdef_document_path(@cdef_document),
-            class: "sparc-btn-ghost" %>
+      <div class="btn-group">
+        <button type="button" class="sparc-btn-oscal dropdown-toggle"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          Export OSCAL
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+          <li><%= link_to "JSON", download_oscal_cdef_document_path(@cdef_document), class: "dropdown-item" %></li>
+          <li><%= link_to "YAML", download_yaml_cdef_document_path(@cdef_document), class: "dropdown-item" %></li>
+          <li><%= link_to "XML", download_xml_cdef_document_path(@cdef_document), class: "dropdown-item" %></li>
+        </ul>
+      </div>
       <%= link_to "&#8592; Back".html_safe, cdef_documents_path,
             class: "sparc-btn-ghost-muted" %>
     </div>

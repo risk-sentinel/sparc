@@ -1,0 +1,54 @@
+<div class="d-flex justify-content-between align-items-center my-4">
+  <h1 class="h3 fw-bold mb-0">Authorization Boundary Administration</h1>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge text-bg-secondary"><%= @authorization_boundaries.count %> auth boundaries</span>
+    <%= link_to "New Auth Boundary", new_admin_authorization_boundary_path, class: "btn btn-sm btn-success fw-semibold" %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Organization</th>
+          <th>Status</th>
+          <th>Members</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @authorization_boundaries.each do |authorization_boundary| %>
+          <tr>
+            <td class="fw-semibold"><%= authorization_boundary.name %></td>
+            <td class="small text-body-secondary">
+              <% if authorization_boundary.organization %>
+                <%= link_to authorization_boundary.organization.name, admin_organization_path(authorization_boundary.organization), class: "text-decoration-none" %>
+              <% else %>
+                <span class="text-body-tertiary">—</span>
+              <% end %>
+            </td>
+            <td>
+              <% badge_class = case authorization_boundary.status
+                 when "active" then "success"
+                 when "draft" then "secondary"
+                 when "authorized" then "primary"
+                 when "deauthorized" then "danger"
+                 else "secondary"
+                 end %>
+              <span class="badge text-bg-<%= badge_class %>"><%= authorization_boundary.status.capitalize %></span>
+            </td>
+            <td><%= authorization_boundary.user_roles.count %></td>
+            <td class="text-end">
+              <%= link_to "Manage", admin_authorization_boundary_path(authorization_boundary), class: "btn btn-sm btn-outline-primary" %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @authorization_boundaries.empty? %>
+          <tr><td colspan="5" class="text-center text-body-secondary small py-3">No authorization boundaries found.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

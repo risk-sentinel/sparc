@@ -1,6 +1,5 @@
 Rails.application.routes.draw do
   root "home#index"
-  get "dashboard/family/:family", to: "home#family_drilldown", as: :dashboard_family
 
   # ── Authentication ────────────────────────────────────────────────────
   get    "login",  to: "sessions#new",     as: :login
@@ -24,9 +23,11 @@ Rails.application.routes.draw do
   match "auth/:provider/callback", to: "omniauth_callbacks#create", via: [ :get, :post ]
   get "auth/failure", to: "omniauth_callbacks#failure"
 
-  resources :projects do
+  resources :authorization_boundaries do
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
-    resources :project_memberships, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :memberships,
+      controller: "authorization_boundary_memberships",
+      only: [ :new, :create, :edit, :update, :destroy ]
   end
 
   resources :ssp_documents do
@@ -36,6 +37,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
       get :enrich
       patch :update_enrich
@@ -55,6 +58,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
       get :editor
       get :enrich
@@ -75,8 +80,14 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
       post :copy
+      patch :publish
+      get :download_resolved_catalog
+      get :manage_controls
+      patch :update_controls
     end
     collection do
       get :select_catalog
@@ -92,6 +103,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
     end
     collection do
@@ -106,6 +119,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
     end
     resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
@@ -122,6 +137,8 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
       get :status
       post :copy
     end
@@ -133,6 +150,9 @@ Rails.application.routes.draw do
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
+      get :download_yaml
+      get :download_xml
+      get :baseline_controls
     end
     collection do
       get  :import
@@ -163,12 +183,21 @@ Rails.application.routes.draw do
       member do
         patch :suspend
         patch :reactivate
+        patch :deactivate
       end
     end
     resources :roles
     resources :audit_logs, only: [ :index, :show ]
-    resources :projects, only: [ :index, :show ] do
+    resources :authorization_boundaries, except: :destroy do
       member do
+        post :add_member
+        delete :remove_member
+      end
+    end
+    resources :organizations, except: :destroy do
+      member do
+        patch :deactivate
+        patch :reactivate
         post :add_member
         delete :remove_member
       end

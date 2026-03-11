@@ -2,7 +2,7 @@ class CdefDocumentsController < ApplicationController
   include FileUploadable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated status update_metadata copy]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml status update_metadata copy]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -88,6 +88,28 @@ class CdefDocumentsController < ApplicationController
     send_data oscal_data,
               filename:    "#{@cdef_document.name}_oscal_component_unvalidated_#{Date.today}.json",
               type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_yaml
+    json_string = OscalComponentDefinitionExportService.new(@cdef_document).export
+    yaml_data = OscalExportFormatService.to_yaml(json_string)
+
+    audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "yaml" })
+    send_data yaml_data,
+              filename:    "#{@cdef_document.name}_oscal_cdef_#{Date.today}.yaml",
+              type:        "application/x-yaml",
+              disposition: "attachment"
+  end
+
+  def download_xml
+    json_string = OscalComponentDefinitionExportService.new(@cdef_document).export
+    xml_data = OscalExportFormatService.to_xml(json_string, :component_definition)
+
+    audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "xml" })
+    send_data xml_data,
+              filename:    "#{@cdef_document.name}_oscal_cdef_#{Date.today}.xml",
+              type:        "application/xml",
               disposition: "attachment"
   end
 

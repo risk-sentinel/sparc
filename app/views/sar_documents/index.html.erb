@@ -51,11 +51,31 @@
             <td><%= doc.sar_controls.count %></td>
             <td><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td style="white-space: nowrap;">
-              <%= link_to "View", sar_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
-              <% unless doc.enriched? %>
-                <%= link_to "Enrich", enrich_sar_document_path(doc), class: "sparc-btn-enrich-sm" %>
-              <% end %>
-              <%= link_to "Delete", sar_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+              <div style="display: inline-flex; gap: 0.35rem;">
+                <%= link_to "View", sar_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                <% unless doc.enriched? %>
+                  <%= link_to "Enrich", enrich_sar_document_path(doc), class: "sparc-btn-enrich-sm" %>
+                <% end %>
+                <% if doc.completed? %>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white;" data-bs-toggle="dropdown" aria-expanded="false">
+                      Export OSCAL
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+                      <li><%= link_to "JSON", download_oscal_sar_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "YAML", download_yaml_sar_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "XML", download_xml_sar_document_path(doc), class: "dropdown-item" %></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><%= link_to "Excel", download_excel_sar_document_path(doc), class: "dropdown-item" %></li>
+                    </ul>
+                  </div>
+                <% end %>
+                <%= button_to "Delete", sar_document_path(doc), method: :delete,
+                      class: "btn btn-danger",
+                      style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;",
+                      form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
+              </div>
             </td>
           </tr>
         <% end %>
