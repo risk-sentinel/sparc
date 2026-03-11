@@ -224,7 +224,11 @@ class ProfileDocumentsController < ApplicationController
 
     @catalog = @profile_document.control_catalog
     @families = @catalog.control_families.includes(:catalog_controls).order(:sort_order, :code)
-    @existing_control_ids = @profile_document.profile_controls.pluck(:control_id).to_set
+    # Normalize profile control IDs to catalog format (AC-01) for comparison,
+    # since OSCAL imports may store them as lowercase/unpadded (ac-1).
+    @existing_control_ids = @profile_document.profile_controls.pluck(:control_id).map { |id|
+      id.to_s.upcase.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
+    }.to_set
   end
 
   def update_controls
@@ -234,13 +238,24 @@ class ProfileDocumentsController < ApplicationController
     end
 
     desired_ids = Array(params[:control_ids]).reject(&:blank?).to_set
-    existing_ids = @profile_document.profile_controls.pluck(:control_id).to_set
+    # Build a map of normalized ID → original stored ID for matching
+    raw_ids = @profile_document.profile_controls.pluck(:control_id)
+    normalized_existing = raw_ids.map { |id|
+      id.to_s.upcase.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
+    }.to_set
 
-    to_add    = desired_ids - existing_ids
-    to_remove = existing_ids - desired_ids
+    to_add    = desired_ids - normalized_existing
+    to_remove = normalized_existing - desired_ids
 
     ActiveRecord::Base.transaction do
-      @profile_document.profile_controls.where(control_id: to_remove.to_a).delete_all if to_remove.any?
+      if to_remove.any?
+        # Match controls by both normalized and raw formats for removal
+        removable = @profile_document.profile_controls.select { |pc|
+          norm = pc.control_id.to_s.upcase.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
+          to_remove.include?(norm)
+        }
+        @profile_document.profile_controls.where(id: removable.map(&:id)).delete_all if removable.any?
+      end
 
       if to_add.any?
         catalog_controls = @profile_document.control_catalog

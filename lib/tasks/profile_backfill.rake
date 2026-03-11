@@ -1,4 +1,38 @@
 namespace :profile do
+  desc "Normalize profile control IDs to catalog format (AC-01) and backfill titles"
+  task normalize_control_ids: :environment do
+    total_profiles = 0
+    total_normalized = 0
+
+    ProfileDocument.find_each do |profile|
+      profile.profile_controls.find_each do |pc|
+        raw = pc.control_id.to_s
+        normalized = raw.upcase.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
+        next if raw == normalized
+
+        pc.update_column(:control_id, normalized)
+        total_normalized += 1
+      end
+      total_profiles += 1
+    end
+
+    puts "Done. Scanned #{total_profiles} profile(s), normalized #{total_normalized} control ID(s)."
+
+    # Also backfill titles from linked catalogs
+    ProfileDocument.where.not(control_catalog_id: nil).find_each do |profile|
+      title_map = profile.control_catalog.catalog_controls.pluck(:control_id, :title).to_h
+      updated = 0
+      profile.profile_controls.where(title: nil).find_each do |pc|
+        mapped = title_map[pc.control_id]
+        if mapped.present?
+          pc.update_column(:title, mapped)
+          updated += 1
+        end
+      end
+      puts "  '#{profile.name}': enriched #{updated} title(s)" if updated.positive?
+    end
+  end
+
   desc "Backfill control_catalog_id and control titles on existing profile documents"
   task backfill_catalog: :environment do
     # Step 1: Ensure catalogs have their OSCAL UUIDs stored
