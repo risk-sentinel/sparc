@@ -18,6 +18,11 @@ class CatalogControl < ApplicationRecord
 
   default_scope { order(Arel.sql("COALESCE(sort_id, control_id)")) }
 
+  # Scope to only base controls (e.g. "ac-1") and enhancements (e.g. "ac-2.1"),
+  # excluding statement sub-parts like "ac-1a", "ac-1a.1", "ac-1a.1.(a)".
+  # OSCAL base/enhancement IDs match: letter(s) + dash + digits + optional .digits
+  scope :top_level, -> { where("control_id ~ ?", '^[a-z]+-[0-9]+(\\.[0-9]+)?$') }
+
   # Returns the human-readable label (e.g., "AC-1", "AC-2(1)") or falls back to
   # the canonical OSCAL id (e.g., "ac-1", "ac-2.1") when no label is stored.
   def display_id

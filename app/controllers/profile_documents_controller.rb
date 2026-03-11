@@ -224,7 +224,7 @@ class ProfileDocumentsController < ApplicationController
 
     @catalog = @profile_document.control_catalog
     @families = @catalog.control_families.includes(:catalog_controls).order(:sort_order, :code)
-    # Both profile controls and catalog controls now use the same OSCAL canonical id format
+    # Both profile controls and catalog controls now use the same OSCAL canonical id format.
     @existing_control_ids = @profile_document.profile_controls.pluck(:control_id).to_set
   end
 
