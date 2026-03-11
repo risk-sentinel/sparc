@@ -86,6 +86,8 @@ Rails.application.routes.draw do
       post :copy
       patch :publish
       get :download_resolved_catalog
+      get :manage_controls
+      patch :update_controls
     end
     collection do
       get :select_catalog
@@ -150,6 +152,7 @@ Rails.application.routes.draw do
       get :download_oscal_unvalidated
       get :download_yaml
       get :download_xml
+      get :baseline_controls
     end
     collection do
       get  :import
