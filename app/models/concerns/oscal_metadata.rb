@@ -116,6 +116,7 @@ module OscalMetadata
   private
 
   def enforce_oscal_uuid_immutability
+    return unless respond_to?(:uuid) && respond_to?(:uuid_changed?)
     self.uuid = uuid_was if uuid_changed? && uuid_was.present?
   end
 
