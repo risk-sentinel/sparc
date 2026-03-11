@@ -1,0 +1,89 @@
+<div class="card"
+     data-controller="family-selector"
+     data-family-selector-mode-value="server-rendered"
+     data-family-selector-catalog-url-value="/control_catalogs"
+     data-family-selector-catalog-id="<%= @catalog.id %>">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>Manage Controls</h2>
+      <p class="text-muted mb-0">
+        <strong><%= @profile_document.name %></strong> &mdash; Source: <%= @catalog.name %>
+      </p>
+    </div>
+    <%= link_to "Back to Profile", profile_document_path(@profile_document), class: "btn btn-secondary" %>
+  </div>
+
+  <%= form_with url: update_controls_profile_document_path(@profile_document), method: :patch, local: true do |f| %>
+    <div class="mb-4">
+      <label class="form-label fw-semibold">Auto-select by Baseline Level</label>
+      <%= f.select :baseline_level,
+            ProfileDocument::BASELINE_LEVELS.map { |l| [ l, l ] },
+            { include_blank: "Choose baseline level..." },
+            class: "form-select",
+            data: { family_selector_target: "baselineSelect", action: "change->family-selector#baselineChanged" } %>
+      <div class="form-text">Selecting a baseline will check all controls at that impact level. You can then adjust individual controls.</div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <label class="form-label fw-semibold mb-0">
+        <span data-family-selector-target="selectedCount"><%= @existing_control_ids.size %></span> controls selected
+      </label>
+      <div class="d-flex gap-1 flex-wrap">
+        <button type="button" class="btn btn-sm btn-outline-primary" data-action="click->family-selector#selectAll">Select All</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->family-selector#deselectAll">Deselect All</button>
+        <button type="button" class="btn btn-sm btn-outline-info" data-action="click->family-selector#expandAll">Expand All</button>
+        <button type="button" class="btn btn-sm btn-outline-info" data-action="click->family-selector#collapseAll">Collapse All</button>
+      </div>
+    </div>
+
+    <div data-family-selector-target="controlsList"
+         style="max-height: 600px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem;">
+      <% @families.each do |family| %>
+        <% controls = family.catalog_controls.sort_by(&:control_id) %>
+        <% next if controls.empty? %>
+        <% checked_count = controls.count { |c| @existing_control_ids.include?(c.control_id) } %>
+
+        <details class="sparc-family-group" open>
+          <summary>
+            <input type="checkbox" class="form-check-input family-checkbox"
+                   data-family="<%= family.code %>"
+                   data-action="change->family-selector#toggleFamily"
+                   <%= "checked" if checked_count == controls.size %>
+            >
+            <strong><%= family.code %></strong> - <%= family.name %>
+            <span class="badge bg-secondary"><%= controls.size %></span>
+            <span class="sparc-family-indicator" data-family-indicator="<%= family.code %>">
+              <%= checked_count %> / <%= controls.size %> selected
+            </span>
+          </summary>
+          <div class="ms-4 mt-2">
+            <% controls.each do |ctrl| %>
+              <div class="form-check">
+                <input class="form-check-input control-checkbox" type="checkbox"
+                       name="control_ids[]"
+                       value="<%= ctrl.control_id %>"
+                       id="ctrl-<%= ctrl.control_id %>"
+                       data-family="<%= family.code %>"
+                       data-action="change->family-selector#controlChanged"
+                       <%= "checked" if @existing_control_ids.include?(ctrl.control_id) %>
+                >
+                <label class="form-check-label" for="ctrl-<%= ctrl.control_id %>">
+                  <strong><%= ctrl.control_id %></strong>
+                  <% if ctrl.title.present? %>
+                    - <%= ctrl.title %>
+                  <% end %>
+                </label>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <%= f.submit "Update Controls", class: "btn btn-success btn-lg" %>
+      <%= link_to "Cancel", profile_document_path(@profile_document), class: "btn btn-secondary btn-lg" %>
+    </div>
+  <% end %>
+</div>

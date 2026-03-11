@@ -4,6 +4,17 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## (unreleased) -- Control Family Selection/Deselection (2026-03-10)
+
+### Added
+- **Family-level control selection** — "Create Profile from Catalog" page now groups controls by family in collapsible accordions with family-level select/deselect checkboxes, tri-state indicators, and expand/collapse all ([Issue #151](https://github.com/Rebel-Raiders/sparc/issues/151))
+- **Baseline auto-select** — choosing a baseline level (LOW, MODERATE, HIGH) auto-checks all controls matching that impact level via a dedicated server endpoint, keeping baseline logic server-side
+- **Manage Controls page** — existing catalog-linked profiles now have a "Manage Controls" button to bulk add/remove controls with parameter inheritance from the source catalog
+- **Stimulus controller** — `family_selector_controller.js` replaces inline vanilla JS with proper Hotwire architecture; supports both dynamic (create) and server-rendered (manage) modes
+- `profile_controls_bulk_updated` audit event action for tracking bulk control changes
+
+---
+
 ## (unreleased) -- OSCAL Document UUID & Back Matter (2026-03-10)
 
 ### Added

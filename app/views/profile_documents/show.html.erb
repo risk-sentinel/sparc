@@ -97,6 +97,10 @@
         <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
               class: "sparc-btn-oscal" %>
         <% if @profile_document.control_catalog.present? %>
+          <%= link_to "Manage Controls", manage_controls_profile_document_path(@profile_document),
+                class: "sparc-btn-oscal" %>
+        <% end %>
+        <% if @profile_document.control_catalog.present? %>
           <%= button_to "Publish", publish_profile_document_path(@profile_document), method: :patch,
                 class: "btn btn-warning btn-sm fw-semibold",
                 data: { confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } %>
