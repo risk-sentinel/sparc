@@ -97,6 +97,10 @@
         <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
               class: "sparc-btn-oscal" %>
         <% if @profile_document.control_catalog.present? %>
+          <%= link_to "Manage Controls", manage_controls_profile_document_path(@profile_document),
+                class: "sparc-btn-oscal" %>
+        <% end %>
+        <% if @profile_document.control_catalog.present? %>
           <%= button_to "Publish", publish_profile_document_path(@profile_document), method: :patch,
                 class: "btn btn-warning btn-sm fw-semibold",
                 data: { confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } %>
@@ -190,7 +194,7 @@
         <div style="min-width: 0; flex: 1;">
           <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
             <span class="sparc-ctrl-id">
-              <%= control.control_id.presence || "&mdash;".html_safe %>
+              <%= control.display_id.presence || "&mdash;".html_safe %>
             </span>
             <span class="sparc-status-pill" style="background: <%= pri_color %>;">
               <%= pri_val %>
@@ -207,7 +211,7 @@
                   class: "btn btn-primary btn-sm" %>
             <%= button_to "Delete", profile_document_profile_control_path(@profile_document, control),
                   method: :delete,
-                  form: { data: { turbo_confirm: "Remove #{control.control_id} from this profile?" } },
+                  form: { data: { turbo_confirm: "Remove #{control.display_id} from this profile?" } },
                   class: "btn btn-danger btn-sm" %>
           </div>
         <% end %>
