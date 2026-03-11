@@ -475,8 +475,8 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
-    shoulda-matchers (6.5.0)
-      activesupport (>= 5.2.0)
+    shoulda-matchers (7.0.1)
+      activesupport (>= 7.1)
     sidekiq (8.1.1)
       connection_pool (>= 3.0.0)
       json (>= 2.16.0)
@@ -607,7 +607,7 @@ DEPENDENCIES
   rubocop-rails-omakase
   rubyzip (~> 3.2.2)
   selenium-webdriver
-  shoulda-matchers (~> 6.0)
+  shoulda-matchers (~> 7.0)
   sidekiq
   solid_cable
   solid_cache
