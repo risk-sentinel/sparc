@@ -68,6 +68,7 @@ class AuditEvent < ApplicationRecord
     profile_document_exported
     profile_document_imported
     profile_document_copied
+    profile_controls_bulk_updated
     control_catalog_created
     control_catalog_updated
     control_catalog_deleted
@@ -149,6 +150,7 @@ class AuditEvent < ApplicationRecord
                            poam_item_updated poam_item_deleted],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
                      profile_document_exported profile_document_imported profile_document_copied
+                     profile_controls_bulk_updated
                      profile_control_created profile_control_updated profile_control_deleted],
     "Control Catalogs" => %w[control_catalog_created control_catalog_updated control_catalog_deleted
                              control_catalog_exported control_catalog_imported

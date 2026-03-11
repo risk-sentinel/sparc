@@ -1,4 +1,4 @@
-<div class="card">
+<div class="card" data-controller="family-selector" data-family-selector-catalog-url-value="/control_catalogs">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Create Profile from Catalog</h2>
     <%= link_to "Back to Profiles", profile_documents_path, class: "btn btn-secondary" %>
@@ -14,31 +14,35 @@
       <div class="mb-4">
         <label class="form-label fw-semibold">Baseline Level</label>
         <%= f.select :baseline_level, ProfileDocument::BASELINE_LEVELS.map { |l| [ l, l ] },
-              { include_blank: "Select level (optional)" }, class: "form-select" %>
+              { include_blank: "Select level (optional)" }, class: "form-select",
+              data: { family_selector_target: "baselineSelect", action: "change->family-selector#baselineChanged" } %>
       </div>
 
       <div class="mb-4">
         <label class="form-label fw-semibold">Select Catalog</label>
         <%= f.select :catalog_id, @catalogs.map { |c| [ "#{c.name} (#{c.total_controls} controls)", c.id ] },
-              { include_blank: "Choose a catalog..." }, class: "form-select", id: "catalog-select",
-              onchange: "loadCatalogControls(this.value)" %>
+              { include_blank: "Choose a catalog..." }, class: "form-select",
+              data: { family_selector_target: "catalogSelect", action: "change->family-selector#catalogChanged" } %>
       </div>
 
-      <div id="catalog-controls" style="display: none;">
+      <div style="display: none;" data-family-selector-target="controlsSection">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <label class="form-label fw-semibold mb-0">Select Controls</label>
-          <div>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAllControls(true)">Select All</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllControls(false)">Deselect All</button>
+          <div class="d-flex gap-1 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-primary" data-action="click->family-selector#selectAll">Select All</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->family-selector#deselectAll">Deselect All</button>
+            <button type="button" class="btn btn-sm btn-outline-info" data-action="click->family-selector#expandAll">Expand All</button>
+            <button type="button" class="btn btn-sm btn-outline-info" data-action="click->family-selector#collapseAll">Collapse All</button>
           </div>
         </div>
 
-        <div id="controls-list" style="max-height: 500px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem;">
+        <div data-family-selector-target="controlsList"
+             style="max-height: 600px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem;">
           <p class="text-muted">Select a catalog to load controls...</p>
         </div>
 
         <div class="mt-2 text-muted small">
-          <span id="selected-count">0</span> controls selected
+          <span data-family-selector-target="selectedCount">0</span> controls selected
         </div>
       </div>
 
@@ -50,57 +54,3 @@
     <p class="text-center p-4 text-body-secondary">No catalogs available. Import a control catalog first.</p>
   <% end %>
 </div>
-
-<script>
-function loadCatalogControls(catalogId) {
-  if (!catalogId) {
-    document.getElementById('catalog-controls').style.display = 'none';
-    return;
-  }
-
-  document.getElementById('catalog-controls').style.display = 'block';
-  var controlsList = document.getElementById('controls-list');
-  controlsList.innerHTML = '<p class="text-muted">Loading controls...</p>';
-
-  fetch('/control_catalogs/' + catalogId + '.json')
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-      var families = data.control_families || [];
-      var html = '';
-
-      families.forEach(function(family) {
-        html += '<div class="mb-3">';
-        html += '<h6 class="fw-semibold" style="color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 0.3rem;">' + family.code + ' - ' + family.name + '</h6>';
-
-        (family.catalog_controls || []).forEach(function(ctrl) {
-          html += '<div class="form-check" style="margin-left: 1rem;">';
-          html += '<input class="form-check-input control-checkbox" type="checkbox" name="control_ids[]" value="' + ctrl.control_id + '" id="ctrl-' + ctrl.control_id + '" onchange="updateCount()">';
-          html += '<label class="form-check-label" for="ctrl-' + ctrl.control_id + '">';
-          html += '<strong>' + ctrl.control_id + '</strong>';
-          if (ctrl.title) { html += ' - ' + ctrl.title; }
-          html += '</label>';
-          html += '</div>';
-        });
-
-        html += '</div>';
-      });
-
-      if (html === '') { html = '<p class="text-muted">No controls found in this catalog.</p>'; }
-      controlsList.innerHTML = html;
-      updateCount();
-    })
-    .catch(function() {
-      controlsList.innerHTML = '<p class="text-danger">Failed to load controls. Try again.</p>';
-    });
-}
-
-function toggleAllControls(checked) {
-  document.querySelectorAll('.control-checkbox').forEach(function(cb) { cb.checked = checked; });
-  updateCount();
-}
-
-function updateCount() {
-  var count = document.querySelectorAll('.control-checkbox:checked').length;
-  document.getElementById('selected-count').textContent = count;
-}
-</script>
