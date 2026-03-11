@@ -4,6 +4,22 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## (unreleased) -- Home Screen OSCAL Layer Alignment (2026-03-11)
+
+### Changed
+- **Home screen cards grouped by OSCAL layers** — Controls (blue), Implementation (green), Assessment (orange), and Environments (purple) with section headers and colored accent bars ([Issue #164](https://github.com/Rebel-Raiders/sparc/issues/164))
+- **Control Mapping card added** to home screen under Controls Layer
+- **Stat tiles grouped by OSCAL layer** — top metrics bar now visually separates Controls, Implementation, Assessment, and Environments with layer badges
+- **Unique family & control counts** — Families and Controls tiles now show distinct counts across all catalogs instead of total rows
+- **Login page OSCAL diagram** updated to include Mapping Model in the Controls Layer
+
+### Fixed
+- **Heatmap card click filtering** — clicking anywhere on a heatmap family card body now filters by that family, not just badges/links ([Issue #159](https://github.com/Rebel-Raiders/sparc/issues/159))
+- **Family group visibility** — empty family groups are hidden when heatmap filter is active
+- **Profile show page** — controls grouped by collapsible NIST families with Expand/Collapse All buttons; catalog sub-parts shown as nested implementation statements
+
+---
+
 ## (unreleased) -- Control Family Selection/Deselection (2026-03-10)
 
 ### Added
