@@ -25,15 +25,18 @@ class ProfileJsonParserService
     field_entries = []
     row_order     = 0
 
-    selected_ids.each do |control_id|
-      alter    = alter_map[control_id]
+    selected_ids.each do |raw_id|
+      # Normalize to catalog format (AC-01) for cross-referencing.
+      # Keep raw OSCAL ID for alter/param lookups since those use the original format.
+      normalized_id = normalize_control_id(raw_id)
+      alter    = alter_map[raw_id]
       priority = extract_priority(alter)
 
       attrs = {
-        control_id:     control_id,
+        control_id:     normalized_id,
         title:          nil,
         priority:       priority,
-        control_family: control_id.split("-").first.upcase.presence,
+        control_family: normalized_id.split("-").first.upcase.presence,
         row_order:      row_order
       }
 
@@ -50,9 +53,9 @@ class ProfileJsonParserService
         end
       end
 
-      # Store matching parameters as fields
+      # Store matching parameters as fields (raw OSCAL IDs in param keys)
       param_map.each do |param_id, param_data|
-        next unless param_id.start_with?("#{control_id}_")
+        next unless param_id.start_with?("#{raw_id}_")
         values = Array(param_data["values"]).join(", ")
         field_entries << [ idx, "parameter:#{param_id}", values ] if values.present?
         label = param_data["label"]
@@ -193,6 +196,14 @@ class ProfileJsonParserService
       pid = param["param-id"]
       map[pid] = param if pid
     end
+  end
+
+  # Normalize OSCAL control IDs to match the catalog storage format:
+  #   "ac-1"  → "AC-01"     (upcase + zero-pad single digits)
+  #   "ac-14" → "AC-14"     (upcase only, no padding needed)
+  #   "AC-01" → "AC-01"     (already normalized, no-op)
+  def normalize_control_id(id)
+    id.to_s.upcase.sub(/\A([A-Z]+-?)(\d+)\z/) { "#{$1}#{$2.rjust(2, '0')}" }
   end
 
   def extract_priority(alter)
