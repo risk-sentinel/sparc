@@ -17,7 +17,7 @@ namespace :catalog do
         next
       end
 
-      puts "Re-importing '#{catalog_name}' from #{File.basename(fixture_path)}..."
+      puts "Re-importing '#{catalog_name}' (id=#{catalog.id}) from #{File.basename(fixture_path)}..."
       old_count = catalog.catalog_controls.count
 
       # Delete existing catalog controls (cascade through families)
@@ -28,14 +28,34 @@ namespace :catalog do
 
       puts "  Cleared #{old_count} old control(s) and associated families."
 
-      # Re-import using the updated CatalogImportService
+      # Re-import using the updated CatalogImportService, passing the existing
+      # catalog so that controls are imported into the SAME catalog (not a new
+      # one named after the OSCAL metadata title).
       file_io = File.open(fixture_path)
-      result = CatalogImportService.call(file_io, File.basename(fixture_path))
+      result = CatalogImportService.call(file_io, File.basename(fixture_path), existing_catalog: catalog)
       file_io.close
 
-      new_count = result[:catalog].catalog_controls.count
-      puts "  Imported: #{result[:families]} families, #{new_count} controls (#{result[:created]} new, #{result[:updated]} updated)"
+      # Count top-level controls vs sub-parts for clarity
+      all_count = result[:catalog].catalog_controls.count
+      top_level_count = result[:catalog].catalog_controls.where("control_id ~ ?", '^[a-z]+-[0-9]+(\\.[0-9]+)?$').count
+      sub_part_count = all_count - top_level_count
+      puts "  Imported: #{result[:families]} families, #{all_count} total records (#{top_level_count} controls + #{sub_part_count} sub-parts)"
       puts "  Controls now include enhancements, label, and sort_id columns."
+
+      # Clean up any duplicate catalog that was created by a previous (buggy)
+      # run where CatalogImportService used the OSCAL metadata title instead
+      # of the existing catalog name.
+      oscal_title = JSON.parse(File.read(fixture_path)).dig("catalog", "metadata", "title")
+      if oscal_title.present? && oscal_title != catalog_name
+        dupe = ControlCatalog.find_by(name: oscal_title)
+        if dupe
+          dupe_controls = dupe.catalog_controls.count
+          dupe.control_families.each { |f| f.catalog_controls.delete_all }
+          dupe.control_families.delete_all
+          dupe.destroy!
+          puts "  🧹 Cleaned up duplicate catalog '#{oscal_title}' (had #{dupe_controls} controls)"
+        end
+      end
     end
 
     # Normalize existing profile control IDs to OSCAL canonical format
@@ -46,10 +66,14 @@ namespace :catalog do
     ProfileDocument.find_each do |profile|
       profile.profile_controls.find_each do |pc|
         raw = pc.control_id.to_s
+        # Convert uppercase padded IDs to OSCAL canonical format:
+        #   "AC-01"    → "ac-1"
+        #   "AC-02(1)" → "ac-2.1"
+        #   "AC-02.01" → "ac-2.1"
         normalized = raw.strip.downcase
                         .gsub(/\s+/, "-")
                         .gsub("(", ".").gsub(")", "")
-                        .sub(/\A([a-z]+-?)0+(\d)/) { "#{$1}#{$2}" }
+                        .gsub(/(?<=-|\.)0+(\d)/) { $1 }
         next if raw == normalized
 
         pc.update_column(:control_id, normalized)
@@ -75,5 +99,7 @@ namespace :catalog do
 
     puts "\n" + "=" * 60
     puts "Done. Catalogs now use OSCAL canonical IDs (ac-1, ac-2.1) with label/sort_id columns."
+    puts "Top-level controls (base + enhancements) are selectable on the Manage Controls page."
+    puts "Sub-parts (statement fragments like ac-1a) are stored but not shown as selectable."
   end
 end

@@ -21,7 +21,7 @@ class ApplicationController < ActionController::Base
     id.to_s.strip.downcase
       .gsub(/\s+/, "-")
       .gsub("(", ".").gsub(")", "")
-      .sub(/\A([a-z]+-?)0+(\d)/) { "#{$1}#{$2}" }
+      .gsub(/(?<=-|\.)0+(\d)/) { $1 }
   end
   helper_method :normalize_ctrl_id
 

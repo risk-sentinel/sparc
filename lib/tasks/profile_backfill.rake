@@ -11,7 +11,7 @@ namespace :profile do
         normalized = raw.strip.downcase
                         .gsub(/\s+/, "-")
                         .gsub("(", ".").gsub(")", "")
-                        .sub(/\A([a-z]+-?)0+(\d)/) { "#{$1}#{$2}" }
+                        .gsub(/(?<=-|\.)0+(\d)/) { $1 }
         next if raw == normalized
 
         pc.update_column(:control_id, normalized)

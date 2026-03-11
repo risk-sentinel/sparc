@@ -48,13 +48,14 @@ class CatalogImportService
     "SUPPLY CHAIN RISK MANAGEMENT"                => "SR"
   }.freeze
 
-  def self.call(file_io, original_filename)
-    new(file_io, original_filename).call
+  def self.call(file_io, original_filename, existing_catalog: nil)
+    new(file_io, original_filename, existing_catalog: existing_catalog).call
   end
 
-  def initialize(file_io, original_filename)
+  def initialize(file_io, original_filename, existing_catalog: nil)
     @content  = file_io.read.force_encoding("UTF-8")
     @filename = original_filename.to_s.downcase
+    @existing_catalog = existing_catalog
   end
 
   def call
@@ -129,9 +130,19 @@ class CatalogImportService
     back_matter_resources = cat_data.dig("back-matter", "resources")
     metadata_extra["back_matter_resources"] = back_matter_resources if back_matter_resources.present?
 
-    catalog = upsert_catalog(catalog_name, version, "OSCAL",
-                             oscal_version: oscal_version, published: published,
-                             metadata_extra: metadata_extra)
+    catalog = if @existing_catalog
+      @existing_catalog.update!(
+        version: version, source: "OSCAL",
+        oscal_version: oscal_version.presence || @existing_catalog.oscal_version,
+        published: published.presence || @existing_catalog.published,
+        metadata_extra: metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      )
+      @existing_catalog
+    else
+      upsert_catalog(catalog_name, version, "OSCAL",
+                     oscal_version: oscal_version, published: published,
+                     metadata_extra: metadata_extra)
+    end
     stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
 
     groups.each_with_index do |group, idx|
@@ -216,7 +227,11 @@ class CatalogImportService
       sub_id = parent_id + label_to_suffix(label)
       prose  = part["prose"].to_s.strip
 
-      upsert_catalog_control(family, sub_id, label, nil, nil,
+      # Use the prose text as the title (truncated for readability) instead of
+      # the raw label ("a.", "1.") which is meaningless as a title.
+      title = prose.present? ? prose.truncate(200) : label
+
+      upsert_catalog_control(family, sub_id, title, nil, nil,
         prose.present? ? { "statement" => prose } : {})
 
       # Recurse into nested item parts
@@ -255,7 +270,7 @@ class CatalogImportService
     catalog_name = xml_catalog_name(controls.first, pub_date)
     version      = pub_date.presence || File.basename(@filename, ".xml")
 
-    catalog = upsert_catalog(catalog_name, version, "NIST XML")
+    catalog = @existing_catalog || upsert_catalog(catalog_name, version, "NIST XML")
     stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
 
     # Group by family; build families on the fly
@@ -349,7 +364,10 @@ class CatalogImportService
       desc   = child.at_xpath("description")
       prose  = desc ? xml_text_content(desc).strip.presence : nil
 
-      upsert_catalog_control(family, sub_id, label, nil, nil,
+      # Use prose text as the title (truncated) instead of the raw label
+      title = prose.present? ? prose.truncate(200) : label
+
+      upsert_catalog_control(family, sub_id, title, nil, nil,
         prose ? { "statement" => prose } : {},
         label: label)
 
