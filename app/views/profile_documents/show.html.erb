@@ -174,105 +174,141 @@
      show_percentage: false,
      legend_items: [["P1 (High)", "#e74c3c"], ["P2 (Medium)", "#f39c12"], ["P3 (Low)", "#3498db"], ["None", "#95a5a6"]] %>
 
-<%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
+<%# ── FAMILY-GROUPED CONTROL LIST ──────────────────────────────── %>
 <div id="controlsContainer">
-  <% @controls.each do |control| %>
-    <%
-      field_map    = control.profile_control_fields.index_by(&:field_name)
-      pri_val      = control.priority.presence || "(None)"
-      pri_colors_map = { "P1" => "#e74c3c", "P2" => "#f39c12", "P3" => "#3498db" }
-      pri_color    = pri_colors_map[pri_val] || "#95a5a6"
-      family_code  = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
-    %>
-    <div class="control-card"
-         data-family="<%= family_code %>"
-         data-priority="<%= pri_val %>"
-         style="border-left: 4px solid <%= pri_color %>;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <label class="form-label fw-semibold mb-0"><%= @total_controls %> controls in this profile</label>
+    <div class="d-flex gap-1">
+      <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAllFamilies(true)">Expand All</button>
+      <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAllFamilies(false)">Collapse All</button>
+    </div>
+  </div>
 
-      <%# ── Card header ── %>
-      <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
-        <div style="min-width: 0; flex: 1;">
-          <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
-            <span class="sparc-ctrl-id">
-              <%= control.display_id.presence || "&mdash;".html_safe %>
-            </span>
-            <span class="sparc-status-pill" style="background: <%= pri_color %>;">
-              <%= pri_val %>
-            </span>
-            <span class="sparc-ctrl-family" style="margin-left: 0.1rem;"><%= family_code %></span>
-          </div>
-          <% if control.title.present? %>
-            <div class="sparc-ctrl-title"><%= control.title %></div>
-          <% end %>
-        </div>
-        <% if signed_in? %>
-          <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
-            <%= link_to "Edit", edit_profile_document_profile_control_path(@profile_document, control),
-                  class: "btn btn-primary btn-sm" %>
-            <%= button_to "Delete", profile_document_profile_control_path(@profile_document, control),
-                  method: :delete,
-                  form: { data: { turbo_confirm: "Remove #{control.display_id} from this profile?" } },
-                  class: "btn btn-danger btn-sm" %>
-          </div>
+  <% @sorted_families.each do |family_code| %>
+    <% family_controls = @controls_by_family[family_code] %>
+    <% next if family_controls.blank? %>
+
+    <details class="sparc-family-group">
+      <summary>
+        <strong><%= family_code %></strong> &mdash; <%= @family_names[family_code] || family_code %>
+        <span class="badge bg-secondary"><%= family_controls.size %></span>
+      </summary>
+
+      <div class="mt-2">
+        <% family_controls.sort_by { |c| @sort_id_map[c.control_id] || c.control_id.gsub(/\d+/) { |n| n.rjust(3, "0") } }.each do |control| %>
+          <%
+            field_map    = control.profile_control_fields.index_by(&:field_name)
+            pri_val      = control.priority.presence || "(None)"
+            pri_colors_map = { "P1" => "#e74c3c", "P2" => "#f39c12", "P3" => "#3498db" }
+            pri_color    = pri_colors_map[pri_val] || "#95a5a6"
+          %>
+          <div class="control-card"
+               data-family="<%= family_code %>"
+               data-priority="<%= pri_val %>"
+               style="border-left: 4px solid <%= pri_color %>;">
+
+            <%# ── Card header ── %>
+            <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
+              <div style="min-width: 0; flex: 1;">
+                <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
+                  <span class="sparc-ctrl-id">
+                    <%= control.display_id.presence || "&mdash;".html_safe %>
+                  </span>
+                  <span class="sparc-status-pill" style="background: <%= pri_color %>;">
+                    <%= pri_val %>
+                  </span>
+                </div>
+                <% if control.title.present? %>
+                  <div class="sparc-ctrl-title"><%= control.title %></div>
+                <% end %>
+              </div>
+              <% if signed_in? %>
+                <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
+                  <%= link_to "Edit", edit_profile_document_profile_control_path(@profile_document, control),
+                        class: "btn btn-primary btn-sm" %>
+                  <%= button_to "Delete", profile_document_profile_control_path(@profile_document, control),
+                        method: :delete,
+                        form: { data: { turbo_confirm: "Remove #{control.display_id} from this profile?" } },
+                        class: "btn btn-danger btn-sm" %>
+                </div>
+              <% end %>
+            </div>
+
+            <%# ── Parameters & properties (collapsed by default) ── %>
+            <% param_fields = field_map.select { |k, _| k.start_with?("parameter:") } %>
+            <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
+            <% sub_parts    = @catalog_sub_parts[control.control_id] %>
+            <% has_details  = param_fields.any? || prop_fields.any? || sub_parts&.any? %>
+            <% if has_details %>
+              <details class="card-details" style="margin-top: 0.35rem;">
+                <summary class="sparc-card-detail-toggle d-flex align-items-center gap-1">
+                  <span class="card-arrow sparc-card-arrow">&#9658;</span>
+                  <span class="sparc-card-detail-separator"></span>
+                </summary>
+
+                <div class="mt-2">
+                  <% if param_fields.any? %>
+                    <div class="sparc-statement-block">
+                      <div class="sparc-statement-label" style="color: var(--bs-primary);">Parameters</div>
+                      <table class="sparc-field-table">
+                        <% param_fields.each do |fname, field| %>
+                          <% param_id = fname.delete_prefix("parameter:") %>
+                          <% label_field = field_map["parameter_label:#{param_id}"] %>
+                          <tr>
+                            <td class="sparc-field-label" style="width: 30%; font-family: monospace;">
+                              <%= param_id %>
+                            </td>
+                            <% if label_field %>
+                              <td class="text-body-secondary" style="width: 25%; font-size: 0.82rem;">
+                                <%= label_field.field_value %>
+                              </td>
+                            <% end %>
+                            <td class="sparc-field-value" <%= "colspan=2" unless label_field %>>
+                              <%= field.field_value %>
+                            </td>
+                          </tr>
+                        <% end %>
+                      </table>
+                    </div>
+                  <% end %>
+
+                  <% if prop_fields.any? %>
+                    <table class="sparc-field-table">
+                      <% prop_fields.each do |fname, field| %>
+                        <tr>
+                          <td class="sparc-field-label" style="width: 30%;">
+                            <%= fname.delete_prefix("prop:").tr("_", " ") %>
+                          </td>
+                          <td class="sparc-field-value">
+                            <%= field.field_value %>
+                          </td>
+                        </tr>
+                      <% end %>
+                    </table>
+                  <% end %>
+
+                  <%# ── Catalog sub-parts / implementation statements ── %>
+                  <% if sub_parts&.any? %>
+                    <div class="sparc-sub-parts-section">
+                      <div class="sparc-statement-label">Implementation Statements</div>
+                      <% sub_parts.sort_by { |sp| sp.sort_id || sp.control_id.gsub(/\d+/) { |n| n.rjust(3, "0") } }.each do |sp| %>
+                        <div class="sparc-sub-part-item">
+                          <span class="sparc-sub-part-id"><%= sp.display_id %></span>
+                          <% if sp.title.present? %>
+                            <span class="sparc-sub-part-title"><%= sp.title %></span>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </details>
+            <% end %>
+
+          </div><%# end .control-card %>
         <% end %>
       </div>
-
-      <%# ── Card body: collapsed by default ── %>
-      <% param_fields = field_map.select { |k, _| k.start_with?("parameter:") } %>
-      <% prop_fields  = field_map.select { |k, _| k.start_with?("prop:") } %>
-      <% has_details  = param_fields.any? || prop_fields.any? %>
-      <% if has_details %>
-        <details class="card-details" style="margin-top: 0.35rem;">
-          <summary class="sparc-card-detail-toggle d-flex align-items-center gap-1">
-            <span class="card-arrow sparc-card-arrow">&#9658;</span>
-            <span class="sparc-card-detail-separator"></span>
-          </summary>
-
-          <div class="mt-2">
-            <% if param_fields.any? %>
-              <div class="sparc-statement-block">
-                <div class="sparc-statement-label" style="color: var(--bs-primary);">Parameters</div>
-                <table class="sparc-field-table">
-                  <% param_fields.each do |fname, field| %>
-                    <% param_id = fname.delete_prefix("parameter:") %>
-                    <% label_field = field_map["parameter_label:#{param_id}"] %>
-                    <tr>
-                      <td class="sparc-field-label" style="width: 30%; font-family: monospace;">
-                        <%= param_id %>
-                      </td>
-                      <% if label_field %>
-                        <td class="text-body-secondary" style="width: 25%; font-size: 0.82rem;">
-                          <%= label_field.field_value %>
-                        </td>
-                      <% end %>
-                      <td class="sparc-field-value" <%= "colspan=2" unless label_field %>>
-                        <%= field.field_value %>
-                      </td>
-                    </tr>
-                  <% end %>
-                </table>
-              </div>
-            <% end %>
-
-            <% if prop_fields.any? %>
-              <table class="sparc-field-table">
-                <% prop_fields.each do |fname, field| %>
-                  <tr>
-                    <td class="sparc-field-label" style="width: 30%;">
-                      <%= fname.delete_prefix("prop:").tr("_", " ") %>
-                    </td>
-                    <td class="sparc-field-value">
-                      <%= field.field_value %>
-                    </td>
-                  </tr>
-                <% end %>
-              </table>
-            <% end %>
-          </div>
-        </details>
-      <% end %>
-
-    </div><%# end .control-card %>
+    </details>
   <% end %>
 </div>
 
@@ -291,6 +327,12 @@
     var isEditing = edit.style.display !== 'none';
     view.style.display = isEditing ? '' : 'none';
     edit.style.display = isEditing ? 'none' : '';
+  }
+
+  function toggleAllFamilies(expand) {
+    document.querySelectorAll('#controlsContainer > details.sparc-family-group').forEach(function(det) {
+      det.open = expand;
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function() {
