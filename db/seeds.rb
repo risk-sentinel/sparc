@@ -437,18 +437,42 @@ puts "  Created/updated #{total_controls} catalog controls"
 puts "Done! NIST SP 800-53 Rev 5 catalog is ready."
 
 # ---------------------------------------------------------------------------
-# NIST SP 800-53 Rev 4
+# NIST SP 800-53 Rev 4 — imported from OSCAL JSON fixture
 # ---------------------------------------------------------------------------
-puts "\nSeeding NIST SP 800-53 Rev 4 catalog..."
+puts "\nSeeding NIST SP 800-53 Rev 4 catalog from OSCAL fixture..."
 
-catalog_r4 = ControlCatalog.find_or_create_by!(name: "NIST SP 800-53 Rev 4") do |c|
-  c.version     = "4.0"
-  c.source      = "NIST"
-  c.description = "Security and Privacy Controls for Federal Information Systems and Organizations. " \
-                  "Published by the National Institute of Standards and Technology (superseded by Rev 5)."
+oscal_rev4_path = Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev4_catalog.json")
+if File.exist?(oscal_rev4_path)
+  # Find existing catalog by UUID first, then by name
+  catalog_r4 = ControlCatalog.find_by("metadata_extra->>'catalog_uuid' = ?", "b954d3b7-d2c7-453b-8eb2-459e8d3b8462")
+  catalog_r4 ||= ControlCatalog.find_by(name: "NIST SP 800-53 Rev 4")
+
+  if catalog_r4 && catalog_r4.catalog_controls.exists?
+    puts "  Rev 4 catalog already seeded (#{catalog_r4.catalog_controls.count} controls) — skipping import."
+  else
+    # Create or reuse the catalog record, then import via CatalogImportService
+    catalog_r4 ||= ControlCatalog.create!(name: "NIST SP 800-53 Rev 4", version: "4.0", source: "NIST")
+    file_io = File.open(oscal_rev4_path)
+    result = CatalogImportService.call(file_io, File.basename(oscal_rev4_path), existing_catalog: catalog_r4)
+    file_io.close
+    puts "  Imported #{result[:families]} families, #{result[:catalog].catalog_controls.count} controls (with enhancements and sub-parts)"
+  end
+else
+  puts "  ⚠ OSCAL fixture not found at #{oscal_rev4_path}"
+  # Fallback: create an empty catalog record so downstream seeds don't break
+  catalog_r4 = ControlCatalog.find_or_create_by!(name: "NIST SP 800-53 Rev 4") do |c|
+    c.version     = "4.0"
+    c.source      = "NIST"
+    c.description = "Security and Privacy Controls for Federal Information Systems and Organizations. " \
+                    "Published by the National Institute of Standards and Technology (superseded by Rev 5)."
+  end
 end
+puts "Done! NIST SP 800-53 Rev 4 catalog is ready."
 
-NIST_R4_FAMILIES = [
+# The inline Rev 4 control data below has been replaced by the OSCAL fixture import above.
+# Keeping the constant definitions commented out for reference in case the fixture is unavailable.
+=begin
+NIST_R4_FAMILIES_LEGACY = [
   { code: "AC", name: "Access Control",                          sort_order: 1 },
   { code: "AT", name: "Awareness and Training",                  sort_order: 2 },
   { code: "AU", name: "Audit and Accountability",                sort_order: 3 },
@@ -794,9 +818,7 @@ NIST_R4_FAMILIES.each do |family_attrs|
   end
 end
 
-puts "  Created/updated #{r4_families} control families"
-puts "  Created/updated #{r4_controls} catalog controls"
-puts "Done! NIST SP 800-53 Rev 4 catalog is ready."
+=end
 
 # ============================================================
 # Demo SSP and SAR Documents
@@ -1718,7 +1740,10 @@ CATALOG_GUIDANCE_SOURCES.each do |source|
 
       next if guidance.empty?
 
-      updated = CatalogControl.where(control_id: control_id).update_all(guidance_data: guidance)
+      # Normalize the control_id from external JSON to match OSCAL canonical format
+      normalized_id = control_id.downcase.gsub(/\s+/, "-").gsub("(", ".").gsub(")", "")
+                                .gsub(/(?<=-|\.)0+(\d)/) { $1 }
+      updated = CatalogControl.where(control_id: [ control_id, normalized_id ]).update_all(guidance_data: guidance)
       count  += updated
     end
   end
@@ -1783,7 +1808,9 @@ INLINE_CATALOG_GUIDANCE = {
 
 inline_count = 0
 INLINE_CATALOG_GUIDANCE.each do |ctrl_id, guidance|
-  updated = CatalogControl.where(control_id: ctrl_id)
+  # Match both old (AC-02) and new (ac-2) formats
+  normalized_id = ctrl_id.downcase.gsub(/(?<=-|\.)0+(\d)/) { $1 }
+  updated = CatalogControl.where(control_id: [ ctrl_id, normalized_id ])
                            .update_all(guidance_data: guidance)
   inline_count += updated
 end
@@ -1807,19 +1834,15 @@ OSCAL_PARAM_SOURCES = [
   }
 ].freeze
 
-# Converts an OSCAL lowercase id like "ac-1" to our DB format "AC-01"
-def oscal_id_to_db_id(oscal_id)
-  oscal_id.to_s.upcase.sub(/\A([A-Z]+-?)(\d+)/) { "#{$1}#{$2.rjust(2, '0')}" }
-end
-
-# Recursively extracts controls (including enhancements) with params
+# Recursively extracts controls (including enhancements) with params.
+# Uses the OSCAL canonical id (e.g., "ac-1", "ac-2.1") as the key.
 def extract_params_from_controls(controls)
   result = {}
   (controls || []).each do |ctrl|
     params = ctrl["params"]
     if params.present?
-      db_id = oscal_id_to_db_id(ctrl.dig("props")&.find { |p| p["name"] == "label" }&.dig("value") || ctrl["id"])
-      result[db_id] = params
+      # Use the canonical OSCAL id directly — matches catalog_controls.control_id
+      result[ctrl["id"].to_s.strip] = params
     end
     # Recurse into enhancements
     result.merge!(extract_params_from_controls(ctrl["controls"]))

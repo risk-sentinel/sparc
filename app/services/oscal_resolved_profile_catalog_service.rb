@@ -85,7 +85,7 @@ class OscalResolvedProfileCatalogService
 
   def build_control(catalog_control, profile_control)
     result = {
-      "id"    => catalog_control.control_id.downcase.tr(" ", "-"),
+      "id"    => catalog_control.control_id,
       "class" => "SP800-53",
       "title" => catalog_control.title
     }
@@ -129,7 +129,10 @@ class OscalResolvedProfileCatalogService
 
   def build_control_props(catalog_control, profile_control)
     props = []
-    props << { "name" => "label", "value" => catalog_control.control_id }
+    props << { "name" => "label", "value" => catalog_control.display_id }
+    if catalog_control.sort_id.present?
+      props << { "name" => "sort-id", "value" => catalog_control.sort_id }
+    end
 
     # Use profile priority if set, otherwise fall back to catalog priority
     priority = profile_control&.priority.presence || catalog_control.priority.presence
@@ -150,7 +153,7 @@ class OscalResolvedProfileCatalogService
 
     if guidance["statement"].present?
       parts << {
-        "id"    => "#{catalog_control.control_id.downcase}_smt",
+        "id"    => "#{catalog_control.control_id}_smt",
         "name"  => "statement",
         "prose" => guidance["statement"]
       }
@@ -158,7 +161,7 @@ class OscalResolvedProfileCatalogService
 
     if guidance["supplemental_guidance"].present?
       guidance_part = {
-        "id"    => "#{catalog_control.control_id.downcase}_gdn",
+        "id"    => "#{catalog_control.control_id}_gdn",
         "name"  => "guidance",
         "prose" => guidance["supplemental_guidance"]
       }
