@@ -30,6 +30,42 @@ class ProfileDocumentsController < ApplicationController
     @heatmap_data, @heatmap_families, @heatmap_priorities = build_priority_heatmap(controls_scope)
 
     @controls = controls_scope.order(:row_order).includes(:profile_control_fields)
+
+    # Group controls by family for collapsible display
+    @controls_by_family = @controls.group_by { |c|
+      c.control_family.presence || c.control_id.to_s.split("-").first.upcase
+    }
+    @sorted_families = @controls_by_family.keys.sort
+
+    # Build family name lookup, sub-parts map, and sort ordering from the catalog
+    @family_names = {}
+    @catalog_sub_parts = {}
+    @sort_id_map = {}
+
+    if @profile_document.control_catalog.present?
+      catalog = @profile_document.control_catalog
+      catalog.control_families.each { |f| @family_names[f.code] = f.name }
+
+      profile_control_ids = @controls.map(&:control_id).to_set
+      sorted_parent_ids = profile_control_ids.sort_by { |id| -id.length }
+
+      catalog.catalog_controls.includes(:control_family).each do |cc|
+        @sort_id_map[cc.control_id] = cc.sort_id if cc.sort_id.present?
+        next if profile_control_ids.include?(cc.control_id)
+
+        # Sub-parts start with a parent ID followed by a lowercase letter (e.g., ac-1a, ac-1a.1)
+        parent = sorted_parent_ids.find { |pid|
+          cc.control_id.start_with?(pid) &&
+          cc.control_id.length > pid.length &&
+          cc.control_id[pid.length]&.match?(/[a-z]/)
+        }
+
+        if parent
+          @catalog_sub_parts[parent] ||= []
+          @catalog_sub_parts[parent] << cc
+        end
+      end
+    end
   end
 
   def new

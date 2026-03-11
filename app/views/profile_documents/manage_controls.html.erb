@@ -44,7 +44,7 @@
         <% next if controls.empty? %>
         <% checked_count = controls.count { |c| @existing_control_ids.include?(c.control_id) } %>
 
-        <details class="sparc-family-group" open>
+        <details class="sparc-family-group">
           <summary>
             <input type="checkbox" class="form-check-input family-checkbox"
                    data-family="<%= family.code %>"
