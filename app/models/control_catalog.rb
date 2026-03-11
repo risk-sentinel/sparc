@@ -4,6 +4,8 @@ class ControlCatalog < ApplicationRecord
   has_many :control_families, dependent: :destroy
   has_many :catalog_controls, through: :control_families
 
+  enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
+
   validates :name, presence: true, uniqueness: true
 
   def total_controls
