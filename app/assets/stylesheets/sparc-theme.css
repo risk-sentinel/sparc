@@ -1387,3 +1387,27 @@ a.link-purple { color: var(--sparc-purple); }
   color: var(--bs-secondary-color);
   margin-left: auto;
 }
+
+/* ── Sub-parts / Implementation Statements (profile show) ──────── */
+.sparc-sub-parts-section {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--bs-border-color);
+}
+.sparc-sub-part-item {
+  padding: 0.25rem 0 0.25rem 0.75rem;
+  border-left: 2px solid var(--bs-border-color);
+  margin-bottom: 0.25rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+.sparc-sub-part-id {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--bs-tertiary-color);
+  margin-right: 0.4rem;
+}
+.sparc-sub-part-title {
+  color: var(--bs-body-color);
+}
