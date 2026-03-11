@@ -1,60 +1,117 @@
-<%# ── Compact stat tiles ── %>
+<%# ── Stat tiles grouped by OSCAL layer ── %>
 <div class="card sparc-gradient-header mb-3" style="padding: 1rem 1.25rem; border-radius: 0.5rem;">
-  <div class="row row-cols-3 row-cols-md-5 row-cols-lg-10 g-2 text-center">
-    <%
-      tiles = [
-        [@catalog_count, "Catalogs"],
-        [@family_count, "Families"],
-        [@control_count, "Controls"],
-        [@authorization_boundary_count, "Auth Boundaries"],
-        [@profile_count, "Baselines"],
-        [@cdef_count, "CDEFs"],
-        [@ssp_count, "SSPs"],
-        [@sap_count, "SAPs"],
-        [@sar_count, "SARs"],
-        [@poam_count, "POA&Ms"],
-        [@evidence_count, "Evidence"],
-      ]
-    %>
-    <% tiles.each do |count, label| %>
-      <div class="col">
-        <div class="sparc-hero-tile" style="padding: 0.5rem 0.25rem;">
-          <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
-          <div class="sparc-hero-tile-label" style="font-size: 0.65rem;"><%= label %></div>
-        </div>
+  <div class="d-flex flex-wrap justify-content-center gap-4">
+    <%# ── Controls Layer ── %>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge" style="background: #3498db; font-size: 0.6rem; writing-mode: vertical-rl; text-orientation: mixed; padding: 0.35rem 0.2rem; letter-spacing: 0.05rem;">CONTROLS</span>
+      <div class="d-flex gap-2">
+        <% [[@catalog_count, "Catalogs"], [@family_count, "Families"], [@control_count, "Controls"], [@profile_count, "Baselines"], [@mapping_count, "Mappings"]].each do |count, label| %>
+          <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
+            <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
+            <div class="sparc-hero-tile-label" style="font-size: 0.6rem;"><%= label %></div>
+          </div>
+        <% end %>
       </div>
-    <% end %>
+    </div>
+
+    <%# ── Implementation Layer ── %>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge" style="background: #27ae60; font-size: 0.6rem; writing-mode: vertical-rl; text-orientation: mixed; padding: 0.35rem 0.2rem; letter-spacing: 0.05rem;">IMPL</span>
+      <div class="d-flex gap-2">
+        <% [[@ssp_count, "SSPs"], [@cdef_count, "CDEFs"]].each do |count, label| %>
+          <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
+            <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
+            <div class="sparc-hero-tile-label" style="font-size: 0.6rem;"><%= label %></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Assessment Layer ── %>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge" style="background: #e67e22; font-size: 0.6rem; writing-mode: vertical-rl; text-orientation: mixed; padding: 0.35rem 0.2rem; letter-spacing: 0.05rem;">ASSESS</span>
+      <div class="d-flex gap-2">
+        <% [[@sap_count, "SAPs"], [@evidence_count, "Evidence"], [@sar_count, "SARs"], [@poam_count, "POA&Ms"]].each do |count, label| %>
+          <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
+            <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
+            <div class="sparc-hero-tile-label" style="font-size: 0.6rem;"><%= label %></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Cross-cutting ── %>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge" style="background: #9b59b6; font-size: 0.6rem; writing-mode: vertical-rl; text-orientation: mixed; padding: 0.35rem 0.2rem; letter-spacing: 0.05rem;">ENV</span>
+      <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
+        <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= @authorization_boundary_count %></div>
+        <div class="sparc-hero-tile-label" style="font-size: 0.6rem;">Auth Boundaries</div>
+      </div>
+    </div>
   </div>
 </div>
 
-<%# ── Compact section navigation grid ── %>
-<div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
-  <%
-    sections = [
-      { title: "Auth Boundaries",    path: authorization_boundaries_path, new_path: new_authorization_boundary_path, icon: "&#128188;", color: "#9b59b6" },
-      { title: "Control Catalogs",   path: control_catalogs_path,  new_path: new_control_catalog_path,  icon: "&#128218;", color: "#3498db" },
-      { title: "Baselines / Profiles", path: profile_documents_path, new_path: new_profile_document_path, icon: "&#128203;", color: "#3498db" },
-      { title: "CDEFs",              path: cdef_documents_path,    new_path: new_cdef_document_path,    icon: "&#128737;", color: "#27ae60" },
-      { title: "SSPs",               path: ssp_documents_path,     new_path: new_ssp_document_path,     icon: "&#128196;", color: "#27ae60" },
-      { title: "SAPs",               path: sap_documents_path,     new_path: new_sap_document_path,     icon: "&#128221;", color: "#e67e22" },
-      { title: "SARs",               path: sar_documents_path,     new_path: new_sar_document_path,     icon: "&#128203;", color: "#e67e22" },
-      { title: "POA&Ms",             path: poam_documents_path,    new_path: new_poam_document_path,    icon: "&#128270;", color: "#e67e22" },
-      { title: "Evidence",           path: evidences_path,         new_path: new_evidence_path,         icon: "&#128274;", color: "#e67e22" },
-    ]
-  %>
-  <% sections.each do |s| %>
-    <div class="col">
-      <div class="card sparc-section-card text-center h-100" style="border-color: <%= s[:color] %>; --sparc-card-accent: <%= s[:color] %>;">
-        <div class="card-body" style="padding: 1rem;">
-          <div style="font-size: 1.75rem; margin-bottom: 0.5rem;"><%= s[:icon].html_safe %></div>
-          <h5 style="margin-bottom: 0.75rem; font-size: 0.95rem;"><%= s[:title] %></h5>
-          <div class="d-flex flex-column gap-1">
-            <%= link_to "View", s[:path], class: "btn btn-primary btn-sm" %>
-            <%= link_to "New", s[:new_path], class: "btn btn-success btn-sm" %>
+<%# ── Section navigation grid grouped by OSCAL layers ── %>
+<%
+  layer_groups = [
+    {
+      label: "Controls Layer",
+      color: "#3498db",
+      cards: [
+        { title: "Control Catalogs",     path: control_catalogs_path,   new_path: new_control_catalog_path,   icon: "&#128218;" },
+        { title: "Baselines / Profiles", path: profile_documents_path,  new_path: new_profile_document_path,  icon: "&#128203;" },
+        { title: "Control Mapping",      path: control_mappings_path,   new_path: new_control_mapping_path,   icon: "&#128279;" },
+      ]
+    },
+    {
+      label: "Implementation Layer",
+      color: "#27ae60",
+      cards: [
+        { title: "SSPs",  path: ssp_documents_path,  new_path: new_ssp_document_path,  icon: "&#128196;" },
+        { title: "CDEFs", path: cdef_documents_path,  new_path: new_cdef_document_path, icon: "&#128737;" },
+      ]
+    },
+    {
+      label: "Assessment Layer",
+      color: "#e67e22",
+      cards: [
+        { title: "SAPs",      path: sap_documents_path,  new_path: new_sap_document_path,  icon: "&#128221;" },
+        { title: "Evidence",   path: evidences_path,       new_path: new_evidence_path,      icon: "&#128274;" },
+        { title: "SARs",      path: sar_documents_path,   new_path: new_sar_document_path,  icon: "&#128203;" },
+        { title: "POA&Ms",    path: poam_documents_path,  new_path: new_poam_document_path, icon: "&#128270;" },
+      ]
+    },
+    {
+      label: "Environments",
+      color: "#9b59b6",
+      cards: [
+        { title: "Auth Boundaries", path: authorization_boundaries_path, new_path: new_authorization_boundary_path, icon: "&#128188;" },
+      ]
+    }
+  ]
+%>
+
+<% layer_groups.each do |group| %>
+  <div class="mb-3">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span style="display: inline-block; width: 4px; height: 1.1rem; background: <%= group[:color] %>; border-radius: 2px;"></span>
+      <h6 class="mb-0 fw-bold" style="font-size: 0.85rem; color: <%= group[:color] %>;"><%= group[:label] %></h6>
+    </div>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+      <% group[:cards].each do |s| %>
+        <div class="col">
+          <div class="card sparc-section-card text-center h-100" style="border-color: <%= group[:color] %>; --sparc-card-accent: <%= group[:color] %>;">
+            <div class="card-body" style="padding: 1rem;">
+              <div style="font-size: 1.75rem; margin-bottom: 0.5rem;"><%= s[:icon].html_safe %></div>
+              <h5 style="margin-bottom: 0.75rem; font-size: 0.95rem;"><%= s[:title] %></h5>
+              <div class="d-flex flex-column gap-1">
+                <%= link_to "View", s[:path], class: "btn btn-primary btn-sm" %>
+                <%= link_to "New", s[:new_path], class: "btn btn-success btn-sm" %>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      <% end %>
     </div>
-  <% end %>
-</div>
-
+  </div>
+<% end %>
