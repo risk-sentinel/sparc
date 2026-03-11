@@ -83,7 +83,14 @@
           end
         %>
         <% card_active = (mode == :server && active_family == family && active_status.blank?) %>
-        <div class="sparc-heatmap-card<%= ' active' if card_active %>">
+        <div class="sparc-heatmap-card<%= ' active' if card_active %>"
+             data-family="<%= family %>"
+             <% if mode == :server && doc && p_helper %>
+               data-href="<%= send(p_helper, doc, f_params.except(:page).merge(card_active ? { family: nil, status: nil } : { family: family, status: nil })) %>"
+               onclick="if(!event.target.closest('a')){window.location.href=this.dataset.href}"
+             <% else %>
+               data-action="click->heatmap#filterByCard"
+             <% end %>>
           <div class="d-flex justify-content-between align-items-baseline" style="margin-bottom: 0.15rem;">
             <% if mode == :server && doc && p_helper %>
               <%= link_to family,

@@ -94,6 +94,25 @@ export default class extends Controller {
     }
   }
 
+  // Action: click anywhere on a heatmap card body (delegates to family filter).
+  // Skips if the click landed on a badge or family link that has its own handler.
+  filterByCard(event) {
+    if (event.target.closest("[data-action*='heatmap#filterByCell']") ||
+        event.target.closest("[data-action*='heatmap#filterByFamily']")) {
+      return
+    }
+    event.preventDefault()
+    const family = event.currentTarget.dataset.family
+
+    if (this.activeFamily === family && !this.activeFilter) {
+      this.clear()
+    } else {
+      this.activeFamily = family
+      this.activeFilter = null
+      this.applyFilter()
+    }
+  }
+
   // Action: click a summary chip (filter by status/severity only)
   filterByChip(event) {
     event.preventDefault()
@@ -117,6 +136,9 @@ export default class extends Controller {
     if (container) {
       container.querySelectorAll(".control-card").forEach(card => {
         card.style.display = ""
+      })
+      container.querySelectorAll("details.sparc-family-group").forEach(group => {
+        group.style.display = ""
       })
     }
 
@@ -169,6 +191,12 @@ export default class extends Controller {
         const show = familyMatch && filterMatch
         card.style.display = show ? "" : "none"
         if (show) visible++
+      })
+
+      // Hide family group wrappers that have no visible cards
+      container.querySelectorAll("details.sparc-family-group").forEach(group => {
+        const hasVisible = group.querySelector(".control-card:not([style*='display: none'])")
+        group.style.display = hasVisible ? "" : "none"
       })
     }
 
