@@ -137,6 +137,9 @@ export default class extends Controller {
       container.querySelectorAll(".control-card").forEach(card => {
         card.style.display = ""
       })
+      container.querySelectorAll("details.sparc-family-group").forEach(group => {
+        group.style.display = ""
+      })
     }
 
     this.badgeTargets.forEach(el => {
@@ -188,6 +191,12 @@ export default class extends Controller {
         const show = familyMatch && filterMatch
         card.style.display = show ? "" : "none"
         if (show) visible++
+      })
+
+      // Hide family group wrappers that have no visible cards
+      container.querySelectorAll("details.sparc-family-group").forEach(group => {
+        const hasVisible = group.querySelector(".control-card:not([style*='display: none'])")
+        group.style.display = hasVisible ? "" : "none"
       })
     }
 
