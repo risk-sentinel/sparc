@@ -9,14 +9,18 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 ### Changed
 - **Home screen cards grouped by OSCAL layers** — Controls (blue), Implementation (green), Assessment (orange), and Environments (purple) with section headers and colored accent bars ([Issue #164](https://github.com/Rebel-Raiders/sparc/issues/164))
 - **Control Mapping card added** to home screen under Controls Layer
-- **Stat tiles grouped by OSCAL layer** — top metrics bar now visually separates Controls, Implementation, Assessment, and Environments with layer badges
+- **Stat tiles redesigned with horizontal OSCAL layer labels** — replaced vertical truncated text badges with full horizontal labels (CONTROLS, IMPLEMENTATION, ASSESSMENT, ENVIRONMENTS) above each metric group; each group wrapped in a color-coded container with accent border and tinted background ([Issue #164](https://github.com/Rebel-Raiders/sparc/issues/164))
 - **Unique family & control counts** — Families and Controls tiles now show distinct counts across all catalogs instead of total rows
 - **Login page OSCAL diagram** updated to include Mapping Model in the Controls Layer
+- **Login page branding upsized** — SPARC logo enlarged from 72px/88px to 96px/120px (mobile/desktop), Welcome heading upgraded from h4 to h3, and description text set to standard body size
 
 ### Fixed
 - **Heatmap card click filtering** — clicking anywhere on a heatmap family card body now filters by that family, not just badges/links ([Issue #159](https://github.com/Rebel-Raiders/sparc/issues/159))
 - **Family group visibility** — empty family groups are hidden when heatmap filter is active
 - **Profile show page** — controls grouped by collapsible NIST families with Expand/Collapse All buttons; catalog sub-parts shown as nested implementation statements
+
+### Added
+- **NIST catalog fixture files** — Rev 4 (XML, YAML) and Rev 5 (JSON, YAML) catalog fixtures for test coverage
 
 ---
 
