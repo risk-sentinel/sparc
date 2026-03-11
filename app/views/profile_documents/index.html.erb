@@ -4,7 +4,7 @@
   [@completed_count, "Completed"]
 ] %>
 
-<div class="card" style="overflow-x: auto;">
+<div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Baselines / Profiles</h2>
     <% if signed_in? %>
@@ -16,22 +16,24 @@
   </div>
 
   <% if @profile_documents.any? %>
-    <table class="table table-hover" style="min-width: 700px;">
+    <table class="table table-hover" style="table-layout: fixed; width: 100%;">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Baseline</th>
-          <th>Version</th>
-          <th>Status</th>
-          <th>Controls</th>
-          <th>Created</th>
-          <th class="text-end">Actions</th>
+          <th style="width: 28%;">Name</th>
+          <th style="width: 9%;">Baseline</th>
+          <th style="width: 8%;">Version</th>
+          <th style="width: 9%;">Status</th>
+          <th style="width: 7%;">Controls</th>
+          <th style="width: 13%;">Created</th>
+          <th style="width: 26%;" class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% @profile_documents.each do |doc| %>
           <tr>
-            <td class="fw-semibold"><%= doc.name %></td>
+            <td class="fw-semibold" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= doc.name %>">
+              <%= link_to doc.name, profile_document_path(doc), style: "color: inherit; text-decoration: none;" %>
+            </td>
             <td>
               <% level_colors = { "LOW" => "#27ae60", "MODERATE" => "#f39c12", "HIGH" => "#e74c3c" } %>
               <% color = level_colors[doc.baseline_level] || "#7f8c8d" %>
@@ -40,25 +42,39 @@
               </span>
             </td>
             <td class="small text-body-secondary"><%= doc.profile_version.presence || "—" %></td>
-            <td>
+            <td style="white-space: nowrap;">
               <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
                 <%= doc.status %>
               </span>
             </td>
             <td><%= doc.profile_controls.count %></td>
-            <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td style="white-space: nowrap; font-size: 0.85rem;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td class="text-end" style="white-space: nowrap;">
-              <div style="display: inline-flex; gap: 0.35rem;">
-                <%= link_to "View", profile_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+              <div style="display: inline-flex; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end;">
+                <%= link_to "View", profile_document_path(doc), class: "btn btn-primary btn-sm", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
                 <% if signed_in? && doc.completed? %>
-                  <%= button_to "Copy", copy_profile_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.35rem 0.75rem; font-size: 0.8rem;", data: { confirm: "Duplicate this profile?" } %>
+                  <%= button_to "Copy", copy_profile_document_path(doc), method: :post,
+                        class: "btn btn-sm", style: "background: #2980b9; color: white; font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+                        form: { data: { turbo_confirm: "Duplicate this profile?" }, style: "display: inline;" } %>
                 <% end %>
                 <% if doc.completed? %>
-                  <%= link_to "OSCAL", download_oscal_profile_document_path(doc), class: "btn btn-sm", style: "background: #8e44ad; color: white;" %>
-                  <%= link_to "JSON", download_json_profile_document_path(doc), class: "btn btn-success", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white; font-size: 0.75rem; padding: 0.25rem 0.5rem;" data-bs-toggle="dropdown" aria-expanded="false">
+                      Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+                      <li><%= link_to "JSON", download_oscal_profile_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "YAML", download_yaml_profile_document_path(doc), class: "dropdown-item" %></li>
+                      <li><%= link_to "XML", download_xml_profile_document_path(doc), class: "dropdown-item" %></li>
+                    </ul>
+                  </div>
                 <% end %>
                 <% if signed_in? %>
-                  <%= link_to "Delete", profile_document_path(doc), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+                  <%= button_to "Delete", profile_document_path(doc), method: :delete,
+                        class: "btn btn-outline-danger btn-sm",
+                        style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+                        form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
                 <% end %>
               </div>
             </td>

@@ -1,0 +1,42 @@
+# The Metadata Standards
+
+## Quick Summary
+
+How Metadata Supports the OSCAL Lifecycle presented as a clean Markdown table:
+
+| Lifecycle Stage              | Most Important Metadata Fields                              | Primary Value Provided                                      |
+|------------------------------|-------------------------------------------------------------|-------------------------------------------------------------|
+| Authoring / Creation         | `title`, `version`, `oscal-version`, `last-modified`        | Establishes document identity, ensures tool compatibility, sets baseline version and OSCAL conformance |
+| Versioning & Change Tracking | `last-modified`, `version`, `revisions`, `published`        | Provides provenance, tracks evolution, enables comparison of document states over time |
+| Publishing / Sharing         | `published`, `document-id`, `link rel=canonical|source`, `last-modified` | Marks official release point, provides persistent identifiers, supports discovery and citation |
+| Responsibility & Accountability | `role`, `party`, `responsible-party`, `responsible-role`   | Defines who created, owns, approves, maintains, or can be contacted about the document/content |
+| Validation & Interoperability | `oscal-version`, namespaced `prop`, `link`                  | Guides correct schema/validation, enables extension semantics, connects to external resources/authorities |
+| Audit / Assessment           | `revisions`, `remarks`, `responsible-party`, timestamps, `document-id` | Supplies evidence of control implementation, change history, accountability, and traceability for assessors/auditors |
+
+## Metadata section
+
+The metadata assembly andvits key child constructs with a focus on:
+
+- What it is
+- Where it's typically used
+- Why it's important in the OSCAL lifecycle
+- Common relationships / references
+
+| Element / Assembly          | Formal Name                  | Required?          | Primary Location(s) in OSCAL documents                  | Main Purpose / Why It Matters                                                                 | Common References / Relationships                          | Typical Consumers / Use Cases                              |
+|-----------------------------|------------------------------|--------------------|----------------------------------------------------------|-----------------------------------------------------------------------------------------------|-------------------------------------------------------------------|-------------------------------------------------------------|
+| `metadata`                  | Document Metadata            | Yes (top-level)    | Catalog, Profile, SSP, POA&M, Component, Assessment Plan/Results | Single source of truth for document identity, provenance, versioning, responsibility         | Referenced indirectly via responsible-party, back-matter links   | Tools, repositories, auditors, version control              |
+| `title`                     | Document Title               | Yes                | Inside `metadata`                                        | Human-readable name of the document                                                           | Displayed in tools, reports, search indexes                      | All users, dashboards, document management systems          |
+| `published`                 | Publication Timestamp        | No                 | Inside `metadata` and `revision`                         | When the document was officially made available/published                                    | Compared with `last-modified` to understand publication state    | Compliance timelines, audit trails                          |
+| `last-modified`             | Last Modified Timestamp      | Yes                | Inside `metadata` and `revision`                         | When the document content was last changed (most authoritative "freshness" indicator)        | Used for change detection, caching, synchronization              | Version control, synchronization tools, auditors            |
+| `version`                   | Document Version             | Yes                | Inside `metadata` and `revision`                         | Business / release version of this content (e.g. 2.1.3, 2025-03-rel1)                       | Compared across documents to determine lineage                   | Authors, configuration management, release notes            |
+| `oscal-version`             | OSCAL Version                | Yes                | Inside `metadata` and `revision`                         | Which OSCAL model version this document claims conformance to (e.g. 1.1.0, 1.2.0)            | Determines which schema / validator to use                       | Validation tools, converters, migration scripts             |
+| `revisions`                 | Revision History Entry       | No (recommended)   | Inside `metadata`                                        | Chronological (usually reverse) list of significant versions / changes                       | Links can point to predecessor/successor/version-history         | Audit, provenance, understanding evolution of the document  |
+| `document-id`               | Document Identifier          | No                 | Inside `metadata`                                        | Persistent, scheme-qualified identifier (most commonly DOI)                                 | Used to group different representations/versions of "same" doc   | Publishers, digital libraries, DOI resolvers                |
+| `prop` / `props`            | Property                     | No                 | Almost everywhere (metadata, controls, parties, etc.)    | Flexible, namespaced key-value metadata extension point                                      | Namespaced props are more semantic / interoperable               | Organization-specific extensions, tooling hints             |
+| `link` / `links`            | Link                         | No                 | Almost everywhere                                        | External references (source, canonical, predecessor, media, evidence, etc.)                  | `rel` values carry strong semantics (canonical, alternate, …)   | Linking to source catalogs, policies, evidence, tools       |
+| `role`                      | Role                         | No                 | Inside `metadata`                                        | Defines named functions/responsibilities (creator, contact, prepared-by, …)                 | Referenced by `responsible-party` and `responsible-role`         | Consistent responsibility assignment across documents       |
+| `party`                     | Party                        | No                 | Inside `metadata`                                        | People or organizations (with uuid, type=person\|organization)                              | Referenced by `responsible-party`, `responsible-role`, locations | Identity & accountability in compliance processes           |
+| `responsible-party`         | Responsible Party            | No                 | Inside `metadata`, and many other objects                | Says which party/parties are responsible for a given `role-id`                               | Links `role-id` → one or more `party-uuid`                       | Accountability, contact information for audits              |
+| `responsible-role`          | Responsible Role             | No                 | Inside controls, assessment activities, etc.             | Says a `role-id` is responsible for an activity (may or may not yet be assigned to parties) | Often used when parties are not yet known                        | Planning / template documents                               |
+| `location`                  | Location                     | No                 | Inside `metadata`                                        | Physical or logical sites (data centers, offices, …)                                        | Referenced indirectly via parties or responsible-party           | Physical security, asset location tracking                  |
+| `remarks`                   | Remarks                      | No                 | Almost everywhere                                        | Human-readable explanatory notes (should not be used for structured data)                    | —                                                                 | Audit explanation, rationale, caveats                       |

@@ -38,7 +38,7 @@
           <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
             <%= image_tag "sparc.png", alt: "SPARC", class: "sparc-navbar-logo" %>
           <% end %>
-          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v3.4.0</span>
+          <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -109,10 +109,39 @@
                 </ul>
               </li>
 
-              <%# ── Projects (standalone) ── %>
-              <li class="nav-item">
-                <%= link_to "Projects", projects_path, class: "nav-link sparc-nav-btn" %>
-              </li>
+              <%# ── Auth Boundaries (dropdown with user's boundaries) ── %>
+              <% if signed_in? %>
+                <% boundaries = nav_authorization_boundaries %>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-boundaries" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Auth Boundaries
+                  </a>
+                  <ul class="dropdown-menu sparc-dropdown-menu">
+                    <li class="sparc-dropdown-header sparc-dropdown-header-boundaries">Authorization Boundaries</li>
+                    <% if boundaries.any? %>
+                      <% boundaries.each do |ab| %>
+                        <li><%= link_to authorization_boundary_path(ab), class: "dropdown-item d-flex align-items-center justify-content-between gap-2" do %>
+                          <span class="text-truncate" style="max-width: 160px;"><%= ab.name %></span>
+                          <span class="badge rounded-pill" style="background: <%= ab_status_color(ab.status) %>22; color: <%= ab_status_color(ab.status) %>; border: 1px solid <%= ab_status_color(ab.status) %>44; font-size: 0.65rem; padding: 0.1rem 0.4rem;">
+                            <%= ab.status.capitalize %>
+                          </span>
+                        <% end %></li>
+                      <% end %>
+                      <li><hr class="dropdown-divider"></li>
+                    <% else %>
+                      <li class="px-3 py-2"><span class="text-body-secondary" style="font-size: 0.8rem;">No boundaries assigned</span></li>
+                      <li><hr class="dropdown-divider"></li>
+                    <% end %>
+                    <li><%= link_to authorization_boundaries_path, class: "dropdown-item" do %>
+                      <span class="sparc-dropdown-icon">&#128203;</span> View All
+                    <% end %></li>
+                  </ul>
+                </li>
+              <% else %>
+                <li class="nav-item">
+                  <%= link_to "Auth Boundaries", authorization_boundaries_path, class: "nav-link sparc-nav-btn" %>
+                </li>
+              <% end %>
             <% end %>
 
             <%# ── Separator ── %>
@@ -163,7 +192,8 @@
                       <li><h6 class="dropdown-header">Administration</h6></li>
                       <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
-                      <li><%= link_to "Projects", admin_projects_path, class: "dropdown-item" %></li>
+                      <li><%= link_to "Auth Boundaries", admin_authorization_boundaries_path, class: "dropdown-item" %></li>
+                      <li><%= link_to "Organizations", admin_organizations_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Audit Log", admin_audit_logs_path, class: "dropdown-item" %></li>
                       <li><hr class="dropdown-divider"></li>
                     <% end %>

@@ -3,7 +3,8 @@ class SapDocumentsController < ApplicationController
 
   before_action :set_sap_document, only: %i[
     show edit update destroy download_json download_oscal
-    download_oscal_validated download_oscal_unvalidated status
+    download_oscal_validated download_oscal_unvalidated
+    download_yaml download_xml status
     update_metadata
   ]
 
@@ -117,6 +118,28 @@ class SapDocumentsController < ApplicationController
     send_data oscal_data,
               filename:    "#{@sap_document.name}_oscal_assessment-plan_unvalidated_#{Date.today}.json",
               type:        "application/json",
+              disposition: "attachment"
+  end
+
+  def download_yaml
+    json_string = OscalAssessmentPlanExportService.new(@sap_document).export
+    yaml_data = OscalExportFormatService.to_yaml(json_string)
+
+    audit_log("sap_document_exported", subject: @sap_document, metadata: { name: @sap_document.name, format: "yaml" })
+    send_data yaml_data,
+              filename:    "#{@sap_document.name}_oscal_sap_#{Date.today}.yaml",
+              type:        "application/x-yaml",
+              disposition: "attachment"
+  end
+
+  def download_xml
+    json_string = OscalAssessmentPlanExportService.new(@sap_document).export
+    xml_data = OscalExportFormatService.to_xml(json_string, :assessment_plan)
+
+    audit_log("sap_document_exported", subject: @sap_document, metadata: { name: @sap_document.name, format: "xml" })
+    send_data xml_data,
+              filename:    "#{@sap_document.name}_oscal_sap_#{Date.today}.xml",
+              type:        "application/xml",
               disposition: "attachment"
   end
 

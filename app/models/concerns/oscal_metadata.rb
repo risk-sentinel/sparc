@@ -1,6 +1,10 @@
 module OscalMetadata
   extend ActiveSupport::Concern
 
+  included do
+    before_update :enforce_oscal_uuid_immutability
+  end
+
   OSCAL_VERSION = "1.1.2"
 
   METADATA_EXTRA_KEYS = %w[
@@ -80,7 +84,41 @@ module OscalMetadata
     self.metadata_extra = merged.compact
   end
 
+  # Assign the OSCAL UUID from an imported document. If the source document
+  # had a UUID, use it; otherwise keep the Postgres-generated default.
+  def assign_oscal_uuid!(source_uuid)
+    return if source_uuid.blank?
+
+    update_column(:uuid, source_uuid) if persisted?
+  end
+
+  # Build an OSCAL-compliant back-matter resource identifying SPARC as the
+  # document manager. Appended to every export for auditor traceability.
+  def sparc_back_matter_resource
+    {
+      "uuid"        => SecureRandom.uuid,
+      "title"       => "SPARC Document Source",
+      "description" => "Managed by #{SparcConfig.app_name}",
+      "rlinks"      => [
+        { "href" => SparcConfig.app_url, "media-type" => "text/html" }
+      ]
+    }
+  end
+
+  # Build the OSCAL back-matter hash for export. Merges preserved resources
+  # from import_metadata with the SPARC-identifying resource.
+  def build_oscal_back_matter
+    preserved = import_metadata&.dig("back_matter") || []
+    resources = preserved + [ sparc_back_matter_resource ]
+    { "resources" => resources }
+  end
+
   private
+
+  def enforce_oscal_uuid_immutability
+    return unless respond_to?(:uuid) && respond_to?(:uuid_changed?)
+    self.uuid = uuid_was if uuid_changed? && uuid_was.present?
+  end
 
   def default_oscal_metadata_extras
     {

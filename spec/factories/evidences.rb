@@ -8,8 +8,8 @@ FactoryBot.define do
     collected_at { Time.current }
     source { Faker::Internet.url }
 
-    trait :with_project do
-      association :project
+    trait :with_authorization_boundary do
+      association :authorization_boundary
     end
 
     trait :collected do

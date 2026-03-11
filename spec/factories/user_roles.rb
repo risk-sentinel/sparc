@@ -4,6 +4,6 @@ FactoryBot.define do
   factory :user_role do
     user
     role
-    project_id { nil }
+    authorization_boundary_id { nil }
   end
 end

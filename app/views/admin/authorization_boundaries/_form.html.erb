@@ -1,0 +1,39 @@
+<%= form_with(model: [:admin, authorization_boundary], class: "needs-validation") do |f| %>
+  <div class="mb-3">
+    <%= f.label :name, class: "form-label fw-semibold" %>
+    <%= f.text_field :name, class: "form-control", required: true, placeholder: "Authorization boundary name" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, class: "form-label fw-semibold" %>
+    <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Brief description" %>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <%= f.label :status, class: "form-label fw-semibold" %>
+      <%= f.select :status, AuthorizationBoundary::STATUSES.map { |s| [s.titleize, s] }, {}, class: "form-select" %>
+    </div>
+    <div class="col-md-6 mb-3">
+      <%= f.label :organization_id, "Organization", class: "form-label fw-semibold" %>
+      <%= f.select :organization_id,
+            @organizations.map { |o| [o.name, o.id] },
+            { include_blank: "— None —" },
+            class: "form-select" %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :authorization_boundary_description, "Authorization Boundary Description", class: "form-label fw-semibold" %>
+    <%= f.text_area :authorization_boundary_description, class: "form-control", rows: 3, placeholder: "Detailed boundary description for OSCAL export" %>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center">
+    <%= f.submit authorization_boundary.persisted? ? "Save Changes" : "Create Auth Boundary", class: "btn btn-primary fw-semibold" %>
+    <% if authorization_boundary.persisted? %>
+      <%= link_to "Cancel", admin_authorization_boundary_path(authorization_boundary), class: "btn btn-outline-secondary" %>
+    <% else %>
+      <%= link_to "Cancel", admin_authorization_boundaries_path, class: "btn btn-outline-secondary" %>
+    <% end %>
+  </div>
+<% end %>

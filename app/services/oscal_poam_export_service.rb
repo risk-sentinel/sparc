@@ -51,7 +51,7 @@ class OscalPoamExportService
   def build_poam
     {
       "plan-of-action-and-milestones" => {
-        "uuid"              => @document.import_metadata&.dig("uuid") || SecureRandom.uuid,
+        "uuid"              => @document.uuid,
         "metadata"          => build_metadata,
         "import-ssp"        => @document.import_metadata&.dig("import_ssp"),
         "system-id"         => build_system_id,
@@ -286,8 +286,6 @@ class OscalPoamExportService
   # ── Back matter ──────────────────────────────────────────────────
 
   def build_back_matter
-    resources = @document.import_metadata&.dig("back_matter")
-    return nil if resources.blank?
-    { "resources" => resources }
+    @document.build_oscal_back_matter
   end
 end

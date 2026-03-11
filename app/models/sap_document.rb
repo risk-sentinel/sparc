@@ -1,7 +1,7 @@
 class SapDocument < ApplicationRecord
   include OscalMetadata
 
-  belongs_to :project, optional: true
+  belongs_to :authorization_boundary, optional: true
 
   has_many :sap_controls, dependent: :delete_all
   has_one_attached :file

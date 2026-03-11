@@ -1,0 +1,168 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2><%= @authorization_boundary.name %></h2>
+  <div class="d-flex gap-2">
+    <%= link_to "Edit", edit_authorization_boundary_path(@authorization_boundary), class: "btn btn-secondary btn-sm" %>
+    <%= link_to "All Authorization Boundaries", authorization_boundaries_path, class: "btn btn-outline-primary btn-sm" %>
+  </div>
+</div>
+
+<%# ── Authorization Boundary Details ──────────────────────────────────────── %>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <p class="mb-1"><strong>Status:</strong>
+          <% badge_class = @authorization_boundary.authorized? ? "badge-ok" : "badge-warn" %>
+          <span class="<%= badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+            <%= @authorization_boundary.status.titleize %>
+          </span>
+        </p>
+        <p class="mb-1 text-body-secondary"><%= @authorization_boundary.description.presence || "No description." %></p>
+      </div>
+      <div class="col-md-6">
+        <% if @authorization_boundary.authorization_boundary_description.present? %>
+          <p class="mb-1"><strong>Authorization Boundary:</strong></p>
+          <p class="text-body-secondary"><%= @authorization_boundary.authorization_boundary_description %></p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── Artifact Summary ─────────────────────────────────────── %>
+<div class="card mb-4">
+  <div class="card-body">
+    <h4 class="mb-3">Artifact Summary</h4>
+    <div class="row row-cols-2 row-cols-md-4 g-3">
+      <div class="col">
+        <div class="sparc-hero-tile">
+          <div class="sparc-hero-tile-label">SSP</div>
+          <div class="sparc-hero-tile-count" style="font-size: 1rem;">
+            <% if @authorization_boundary.ssp_document %>
+              <%= link_to @authorization_boundary.ssp_document.name, ssp_document_path(@authorization_boundary.ssp_document) %>
+            <% else %>
+              <span class="text-body-secondary">None</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sparc-hero-tile">
+          <div class="sparc-hero-tile-label">SAP</div>
+          <div class="sparc-hero-tile-count" style="font-size: 1rem;">
+            <% if @authorization_boundary.sap_document %>
+              <%= link_to @authorization_boundary.sap_document.name, sap_document_path(@authorization_boundary.sap_document) %>
+            <% else %>
+              <span class="text-body-secondary">None</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sparc-hero-tile">
+          <div class="sparc-hero-tile-label">SAR</div>
+          <div class="sparc-hero-tile-count" style="font-size: 1rem;">
+            <% if @authorization_boundary.sar_document %>
+              <%= link_to @authorization_boundary.sar_document.name, sar_document_path(@authorization_boundary.sar_document) %>
+            <% else %>
+              <span class="text-body-secondary">None</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sparc-hero-tile">
+          <div class="sparc-hero-tile-label">POA&amp;Ms</div>
+          <div class="sparc-hero-tile-count"><%= @summary[:poam_count] %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── Environments & Components ────────────────────────────── %>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Environments &amp; Components</h4>
+      <%= link_to "Add Environment", new_authorization_boundary_boundary_path(@authorization_boundary), class: "btn btn-success btn-sm" %>
+    </div>
+
+    <% if @boundaries.any? %>
+      <% @boundaries.each do |boundary| %>
+        <div class="card mb-2">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong><%= boundary.name %></strong>
+                <span class="badge bg-secondary ms-2"><%= boundary.environment.titleize %></span>
+                <% if boundary.description.present? %>
+                  <span class="text-body-secondary ms-2"><%= boundary.description %></span>
+                <% end %>
+              </div>
+              <div class="d-flex gap-1">
+                <%= link_to "Edit", edit_authorization_boundary_boundary_path(@authorization_boundary, boundary), class: "btn btn-outline-secondary btn-sm" %>
+                <%= button_to "Delete", authorization_boundary_boundary_path(@authorization_boundary, boundary), method: :delete,
+                      class: "btn btn-outline-danger btn-sm",
+                      form: { data: { turbo_confirm: "Delete this environment? This cannot be undone." }, style: "display: inline;" } %>
+              </div>
+            </div>
+            <% if boundary.cdef_documents.any? %>
+              <div class="mt-2">
+                <% boundary.cdef_documents.each do |cdef| %>
+                  <%= link_to cdef.name, cdef_document_path(cdef), class: "badge bg-info text-decoration-none me-1" %>
+                <% end %>
+              </div>
+            <% else %>
+              <small class="text-body-secondary mt-1 d-block">No components assigned</small>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="text-body-secondary text-center">No environments defined. Add an environment to associate components.</p>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Personnel Roster ─────────────────────────────────────── %>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Personnel Roster</h4>
+      <%= link_to "Add Member", new_authorization_boundary_membership_path(@authorization_boundary), class: "btn btn-success btn-sm" %>
+    </div>
+
+    <% if @memberships.any? %>
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @memberships.each do |m| %>
+            <tr>
+              <td><%= m.user_name %></td>
+              <td class="text-body-secondary"><%= m.user_email.presence || "—" %></td>
+              <td><span class="badge bg-primary"><%= m.role_label %></span></td>
+              <td>
+                <div class="d-flex gap-1">
+                  <%= link_to "Edit", edit_authorization_boundary_membership_path(@authorization_boundary, m), class: "btn btn-outline-secondary btn-sm" %>
+                  <%= button_to "Remove", authorization_boundary_membership_path(@authorization_boundary, m), method: :delete,
+                        class: "btn btn-outline-danger btn-sm",
+                        form: { data: { turbo_confirm: "Remove this member? This cannot be undone." }, style: "display: inline;" } %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-body-secondary text-center">No members assigned. Add personnel with RMF roles.</p>
+    <% end %>
+  </div>
+</div>

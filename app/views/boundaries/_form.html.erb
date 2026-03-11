@@ -1,4 +1,4 @@
-<%= form_with(model: [ @project, boundary ], class: "mb-4") do |f| %>
+<%= form_with(model: [ @authorization_boundary, boundary ], class: "mb-4") do |f| %>
   <div class="mb-3">
     <%= f.label :name, class: "form-label fw-semibold" %>
     <%= f.text_field :name, class: "form-control", required: true %>
@@ -30,6 +30,6 @@
 
   <div class="d-flex gap-2">
     <%= f.submit class: "btn btn-primary" %>
-    <%= link_to "Cancel", project_path(@project), class: "btn btn-secondary" %>
+    <%= link_to "Cancel", authorization_boundary_path(@authorization_boundary), class: "btn btn-secondary" %>
   </div>
 <% end %>

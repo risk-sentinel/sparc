@@ -100,10 +100,18 @@
       <% end %>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
-      <%= link_to "Export OSCAL".html_safe, download_oscal_sap_document_path(@sap_document),
-            class: "sparc-btn-oscal" %>
-      <%= link_to "&#8595; JSON".html_safe, download_json_sap_document_path(@sap_document),
-            class: "sparc-btn-ghost" %>
+      <div class="btn-group">
+        <button type="button" class="sparc-btn-oscal dropdown-toggle"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          Export OSCAL
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+          <li><%= link_to "JSON", download_oscal_sap_document_path(@sap_document), class: "dropdown-item" %></li>
+          <li><%= link_to "YAML", download_yaml_sap_document_path(@sap_document), class: "dropdown-item" %></li>
+          <li><%= link_to "XML", download_xml_sap_document_path(@sap_document), class: "dropdown-item" %></li>
+        </ul>
+      </div>
       <%= link_to "&#8592; Back".html_safe, sap_documents_path,
             class: "sparc-btn-ghost-muted" %>
     </div>

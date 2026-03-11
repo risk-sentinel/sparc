@@ -8,7 +8,7 @@ class EvidencesController < ApplicationController
     @evidences = Evidence.order(created_at: :desc)
     @evidences = @evidences.where(evidence_type: params[:type]) if params[:type].present?
     @evidences = @evidences.where(status: params[:status]) if params[:status].present?
-    @evidences = @evidences.where(project_id: params[:project_id]) if params[:project_id].present?
+    @evidences = @evidences.where(authorization_boundary_id: params[:authorization_boundary_id]) if params[:authorization_boundary_id].present?
 
     if params[:control_id].present?
       evidence_ids = EvidenceControlLink.where(control_id: params[:control_id]).select(:evidence_id)
@@ -73,7 +73,7 @@ class EvidencesController < ApplicationController
   def evidence_params
     params.require(:evidence).permit(
       :title, :description, :evidence_type, :status,
-      :collected_at, :collected_by, :source, :project_id, :file
+      :collected_at, :collected_by, :source, :authorization_boundary_id, :file
     )
   end
 

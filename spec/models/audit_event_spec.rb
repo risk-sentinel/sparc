@@ -71,13 +71,13 @@ RSpec.describe AuditEvent, type: :model do
 
     it "stores subject_type and subject_id when subject is provided" do
       # Create an actual record to use as subject
-      project = create(:project)
+      authorization_boundary = create(:authorization_boundary)
       event = AuditEvent.log(
-        user: user, action: "project_created",
-        ip_address: "127.0.0.1", subject: project
+        user: user, action: "authorization_boundary_created",
+        ip_address: "127.0.0.1", subject: authorization_boundary
       )
-      expect(event.subject_type).to eq("Project")
-      expect(event.subject_id).to eq(project.id)
+      expect(event.subject_type).to eq("AuthorizationBoundary")
+      expect(event.subject_id).to eq(authorization_boundary.id)
     end
 
     it "leaves subject columns nil when no subject provided" do
@@ -99,12 +99,12 @@ RSpec.describe AuditEvent, type: :model do
 
     it "includes subject info in structured log when subject provided" do
       allow(Rails.logger).to receive(:info)
-      project = create(:project)
+      authorization_boundary = create(:authorization_boundary)
 
-      AuditEvent.log(user: user, action: "project_created", ip_address: "10.0.0.1", subject: project)
+      AuditEvent.log(user: user, action: "authorization_boundary_created", ip_address: "10.0.0.1", subject: authorization_boundary)
 
-      expect(Rails.logger).to have_received(:info).with(a_string_including('"subject_type":"Project"'))
-      expect(Rails.logger).to have_received(:info).with(a_string_including("\"subject_id\":#{project.id}"))
+      expect(Rails.logger).to have_received(:info).with(a_string_including('"subject_type":"AuthorizationBoundary"'))
+      expect(Rails.logger).to have_received(:info).with(a_string_including("\"subject_id\":#{authorization_boundary.id}"))
     end
   end
 
@@ -130,20 +130,20 @@ RSpec.describe AuditEvent, type: :model do
 
     describe ".for_subject" do
       it "returns events for a specific subject" do
-        project = create(:project)
-        AuditEvent.log(user: user, action: "project_created", ip_address: "127.0.0.1", subject: project)
+        authorization_boundary = create(:authorization_boundary)
+        AuditEvent.log(user: user, action: "authorization_boundary_created", ip_address: "127.0.0.1", subject: authorization_boundary)
         AuditEvent.log(user: user, action: "login_success", ip_address: "127.0.0.1")
 
-        results = AuditEvent.for_subject(project)
+        results = AuditEvent.for_subject(authorization_boundary)
         expect(results.count).to eq(1)
-        expect(results.first.action).to eq("project_created")
+        expect(results.first.action).to eq("authorization_boundary_created")
       end
     end
 
     describe ".by_subject_type" do
       it "filters by subject type string" do
         AuditEvent.create!(action: "ssp_document_created", subject_type: "SspDocument", subject_id: 1, metadata: {})
-        AuditEvent.create!(action: "project_created", subject_type: "Project", subject_id: 1, metadata: {})
+        AuditEvent.create!(action: "authorization_boundary_created", subject_type: "AuthorizationBoundary", subject_id: 1, metadata: {})
 
         results = AuditEvent.by_subject_type("SspDocument")
         expect(results.count).to eq(1)
