@@ -3,7 +3,7 @@ class AddOscalSspEntities < ActiveRecord::Migration[8.0]
     # ── A. Expand ssp_documents with OSCAL system-characteristics fields ──
     change_table :ssp_documents, bulk: true do |t|
       t.string  :creation_method, default: "excel"
-      t.text    :error_message
+      # error_message already exists from create_ssp_documents migration
       t.string  :oscal_version
       t.string  :system_id
       t.text    :description

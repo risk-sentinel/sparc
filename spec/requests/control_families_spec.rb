@@ -19,13 +19,13 @@ RSpec.describe "ControlFamilies", type: :request do
   describe "GET /control_families/:id" do
     it "shows the family with its controls" do
       family = create(:control_family, control_catalog: catalog, code: "AC", name: "Access Control")
-      family.catalog_controls.create!(control_id: "AC-01", title: "Access Policy")
+      family.catalog_controls.create!(control_id: "ac-1", label: "AC-1", title: "Access Policy")
 
       get control_family_path(family)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("AC")
       expect(response.body).to include("Access Control")
-      expect(response.body).to include("AC-01")
+      expect(response.body).to include("AC-1")
     end
   end
 
@@ -135,7 +135,7 @@ RSpec.describe "ControlFamilies", type: :request do
 
     it "cascades deletion to catalog controls" do
       family = create(:control_family, control_catalog: catalog, code: "AC")
-      family.catalog_controls.create!(control_id: "AC-01", title: "Test")
+      family.catalog_controls.create!(control_id: "ac-1", title: "Test")
 
       expect {
         delete control_family_path(family)

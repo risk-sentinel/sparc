@@ -1,9 +1,10 @@
 class ControlCatalogsController < ApplicationController
-  skip_before_action :require_authentication, only: [ :index, :show ]
+  skip_before_action :require_authentication, only: [ :index, :show, :baseline_controls ]
 
   before_action :set_control_catalog, only: [
     :show, :edit, :update, :destroy, :update_metadata,
-    :download_oscal, :download_oscal_validated, :download_oscal_unvalidated
+    :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
+    :download_yaml, :download_xml, :baseline_controls
   ]
   before_action :authorize_catalog_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :update_metadata
@@ -156,6 +157,43 @@ class ControlCatalogsController < ApplicationController
               filename:    "#{@control_catalog.name}_oscal_catalog_unvalidated_#{Date.today}.json",
               type:        "application/json",
               disposition: "attachment"
+  end
+
+  def download_yaml
+    json_string = OscalCatalogExportService.new(@control_catalog).export
+    yaml_data = OscalExportFormatService.to_yaml(json_string)
+
+    audit_log("control_catalog_exported", subject: @control_catalog, metadata: { name: @control_catalog.name, format: "yaml" })
+    send_data yaml_data,
+              filename:    "#{@control_catalog.name}_oscal_catalog_#{Date.today}.yaml",
+              type:        "application/x-yaml",
+              disposition: "attachment"
+  end
+
+  def download_xml
+    json_string = OscalCatalogExportService.new(@control_catalog).export
+    xml_data = OscalExportFormatService.to_xml(json_string, :catalog)
+
+    audit_log("control_catalog_exported", subject: @control_catalog, metadata: { name: @control_catalog.name, format: "xml" })
+    send_data xml_data,
+              filename:    "#{@control_catalog.name}_oscal_catalog_#{Date.today}.xml",
+              type:        "application/xml",
+              disposition: "attachment"
+  end
+
+  # Returns control IDs matching a given baseline level.
+  # Used by the family-selector Stimulus controller for baseline auto-select.
+  # GET /control_catalogs/:id/baseline_controls.json?level=MODERATE
+  def baseline_controls
+    level = params[:level].to_s.strip.downcase
+    control_ids = if level.present?
+      @control_catalog.catalog_controls
+                      .where("LOWER(baseline_impact) LIKE ?", "%#{level}%")
+                      .pluck(:control_id)
+    else
+      []
+    end
+    render json: { control_ids: control_ids }
   end
 
   private

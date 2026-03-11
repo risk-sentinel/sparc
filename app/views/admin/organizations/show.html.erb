@@ -1,0 +1,180 @@
+<div class="my-4">
+  <%# ── Header ──────────────────────────────────────────── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-1"><%= @organization.name %></h1>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge text-bg-light text-body-secondary" style="font-family: monospace; font-size: 0.7rem;">
+          UUID: <%= @organization.uuid %>
+        </span>
+        <% if @organization.active? %>
+          <span class="badge text-bg-success">Active</span>
+        <% else %>
+          <span class="badge text-bg-secondary">Inactive</span>
+        <% end %>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to "Edit", edit_admin_organization_path(@organization), class: "btn btn-sm btn-outline-primary" %>
+      <% if @organization.active? %>
+        <%= button_to "Deactivate", deactivate_admin_organization_path(@organization),
+              method: :patch,
+              class: "btn btn-sm btn-outline-warning",
+              data: { turbo_confirm: "Deactivate #{@organization.name}? The organization will be marked inactive but preserved for audit purposes." } %>
+      <% else %>
+        <%= button_to "Reactivate", reactivate_admin_organization_path(@organization),
+              method: :patch,
+              class: "btn btn-sm btn-outline-success",
+              data: { turbo_confirm: "Reactivate #{@organization.name}?" } %>
+      <% end %>
+      <%= link_to "Back to Organizations", admin_organizations_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <%# ── Organization Details ─────────────────────────────── %>
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">Organization Details</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <dl class="mb-0">
+            <% if @organization.description.present? %>
+              <dt class="small text-body-secondary">Description</dt>
+              <dd><%= @organization.description %></dd>
+            <% end %>
+            <% if @organization.address.present? %>
+              <dt class="small text-body-secondary">Address</dt>
+              <dd style="white-space: pre-line;"><%= @organization.address %></dd>
+            <% end %>
+          </dl>
+        </div>
+        <div class="col-md-6">
+          <dl class="mb-0">
+            <% if @organization.contact_person.present? %>
+              <dt class="small text-body-secondary">Contact Person</dt>
+              <dd><%= @organization.contact_person %></dd>
+            <% end %>
+            <% if @organization.contact_email.present? %>
+              <dt class="small text-body-secondary">Contact Email</dt>
+              <dd><%= @organization.contact_email %></dd>
+            <% end %>
+          </dl>
+        </div>
+      </div>
+      <% unless @organization.description.present? || @organization.address.present? || @organization.contact_person.present? || @organization.contact_email.present? %>
+        <p class="text-body-secondary small mb-0">No additional details provided.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Authorization Boundaries ──────────────────────────── %>
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">
+      Authorization Boundaries
+      <span class="badge text-bg-secondary ms-1"><%= @authorization_boundaries.size %></span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @authorization_boundaries.each do |ab| %>
+            <tr>
+              <td><%= ab.name %></td>
+              <td>
+                <% badge_class = case ab.status
+                   when "active" then "success"
+                   when "draft" then "secondary"
+                   when "authorized" then "primary"
+                   when "deauthorized" then "danger"
+                   else "secondary"
+                   end %>
+                <span class="badge text-bg-<%= badge_class %>"><%= ab.status.capitalize %></span>
+              </td>
+              <td class="text-end">
+                <%= link_to "View", authorization_boundary_path(ab), class: "btn btn-sm btn-outline-primary" %>
+              </td>
+            </tr>
+          <% end %>
+          <% if @authorization_boundaries.empty? %>
+            <tr><td colspan="3" class="text-center text-body-secondary small py-3">No authorization boundaries linked to this organization.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%# ── Add Member Form ──────────────────────────────────── %>
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">Add Member</div>
+    <div class="card-body">
+      <%= form_tag add_member_admin_organization_path(@organization), method: :post, class: "row g-3 align-items-end" do %>
+        <div class="col-md-5">
+          <label for="user_id" class="form-label fw-semibold small">User</label>
+          <select name="user_id" id="user_id" class="form-select" required>
+            <option value="">Select a user...</option>
+            <% @available_users.each do |user| %>
+              <option value="<%= user.id %>"><%= user.display_label %> (<%= user.email %>)</option>
+            <% end %>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="role" class="form-label fw-semibold small">Role</label>
+          <select name="role" id="role" class="form-select" required>
+            <% OrganizationMembership::ROLES.each do |role| %>
+              <option value="<%= role %>"><%= OrganizationMembership::ROLE_LABELS[role] %></option>
+            <% end %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100 fw-semibold">Assign</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Current Members ──────────────────────────────────── %>
+  <div class="card">
+    <div class="card-header fw-semibold">
+      Current Members
+      <span class="badge text-bg-secondary ms-1"><%= @memberships.size %></span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Joined</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @memberships.each do |m| %>
+            <tr>
+              <td><%= link_to m.user.display_label, admin_user_path(m.user) %></td>
+              <td class="small text-body-secondary"><%= m.user.email %></td>
+              <td><span class="badge text-bg-info"><%= m.role_label %></span></td>
+              <td class="small text-body-secondary"><%= m.created_at.strftime("%Y-%m-%d") %></td>
+              <td class="text-end">
+                <%= button_to "Remove", remove_member_admin_organization_path(@organization, membership_id: m.id),
+                      method: :delete,
+                      class: "btn btn-sm btn-outline-danger",
+                      data: { turbo_confirm: "Remove #{m.user.display_label} from #{@organization.name}?" } %>
+              </td>
+            </tr>
+          <% end %>
+          <% if @memberships.empty? %>
+            <tr><td colspan="5" class="text-center text-body-secondary small py-3">No members assigned.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

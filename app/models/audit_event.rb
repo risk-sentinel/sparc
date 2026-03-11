@@ -13,6 +13,8 @@ class AuditEvent < ApplicationRecord
   validates :action, presence: true
 
   # ── Actions ────────────────────────────────────────────────────────────
+  # New actions use "authorization_boundary_*" naming; old "project_*" actions
+  # are kept for backward compatibility with historical audit records.
   ACTIONS = %w[
     login_success
     login_failure
@@ -24,10 +26,15 @@ class AuditEvent < ApplicationRecord
     role_created
     role_updated
     role_deleted
+    authorization_boundary_member_added
+    authorization_boundary_member_removed
     project_member_added
     project_member_removed
     user_suspended
     user_reactivated
+    user_deactivated
+    user_auto_deactivated
+    user_password_expired
     admin_bootstrap
     ssp_document_created
     ssp_document_updated
@@ -43,6 +50,7 @@ class AuditEvent < ApplicationRecord
     cdef_document_updated
     cdef_document_deleted
     cdef_document_exported
+    cdef_document_imported
     cdef_document_copied
     sap_document_created
     sap_document_updated
@@ -53,11 +61,14 @@ class AuditEvent < ApplicationRecord
     poam_document_updated
     poam_document_deleted
     poam_document_exported
+    poam_document_imported
     profile_document_created
     profile_document_updated
     profile_document_deleted
     profile_document_exported
+    profile_document_imported
     profile_document_copied
+    profile_controls_bulk_updated
     control_catalog_created
     control_catalog_updated
     control_catalog_deleted
@@ -82,12 +93,18 @@ class AuditEvent < ApplicationRecord
     evidence_deleted
     attestation_created
     attestation_deleted
+    authorization_boundary_created
+    authorization_boundary_updated
+    authorization_boundary_deleted
     project_created
     project_updated
     project_deleted
     boundary_created
     boundary_updated
     boundary_deleted
+    authorization_boundary_membership_created
+    authorization_boundary_membership_updated
+    authorization_boundary_membership_deleted
     project_membership_created
     project_membership_updated
     project_membership_deleted
@@ -97,6 +114,12 @@ class AuditEvent < ApplicationRecord
     profile_control_created
     profile_control_updated
     profile_control_deleted
+    organization_created
+    organization_updated
+    organization_deactivated
+    organization_reactivated
+    organization_member_added
+    organization_member_removed
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }
@@ -105,24 +128,29 @@ class AuditEvent < ApplicationRecord
   ACTION_CATEGORIES = {
     "Authentication" => %w[login_success login_failure logout password_change],
     "Authorization" => %w[authorization_failure],
-    "User Management" => %w[user_suspended user_reactivated admin_bootstrap],
+    "User Management" => %w[user_suspended user_reactivated user_deactivated
+                            user_auto_deactivated user_password_expired admin_bootstrap],
     "Role Management" => %w[role_grant role_revoke role_created role_updated role_deleted],
-    "Project Members" => %w[project_member_added project_member_removed
-                            project_membership_created project_membership_updated
-                            project_membership_deleted],
+    "Auth Boundary Members" => %w[authorization_boundary_member_added authorization_boundary_member_removed
+                                  authorization_boundary_membership_created authorization_boundary_membership_updated
+                                  authorization_boundary_membership_deleted
+                                  project_member_added project_member_removed
+                                  project_membership_created project_membership_updated
+                                  project_membership_deleted],
     "SSP Documents" => %w[ssp_document_created ssp_document_updated ssp_document_deleted
                           ssp_document_exported ssp_document_imported],
     "SAR Documents" => %w[sar_document_created sar_document_updated sar_document_deleted
                           sar_document_exported sar_document_imported],
     "CDEF Documents" => %w[cdef_document_created cdef_document_updated cdef_document_deleted
-                           cdef_document_exported cdef_document_copied],
+                           cdef_document_exported cdef_document_imported cdef_document_copied],
     "SAP Documents" => %w[sap_document_created sap_document_updated sap_document_deleted
                           sap_document_exported sap_document_imported],
     "POAM Documents" => %w[poam_document_created poam_document_updated poam_document_deleted
-                           poam_document_exported poam_item_created poam_item_updated
-                           poam_item_deleted],
+                           poam_document_exported poam_document_imported poam_item_created
+                           poam_item_updated poam_item_deleted],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
-                     profile_document_exported profile_document_copied
+                     profile_document_exported profile_document_imported profile_document_copied
+                     profile_controls_bulk_updated
                      profile_control_created profile_control_updated profile_control_deleted],
     "Control Catalogs" => %w[control_catalog_created control_catalog_updated control_catalog_deleted
                              control_catalog_exported control_catalog_imported
@@ -133,8 +161,11 @@ class AuditEvent < ApplicationRecord
                              control_mapping_deprecated mapping_entry_created mapping_entry_deleted],
     "Evidence" => %w[evidence_created evidence_updated evidence_deleted
                      attestation_created attestation_deleted],
-    "Projects" => %w[project_created project_updated project_deleted
-                     boundary_created boundary_updated boundary_deleted]
+    "Authorization Boundaries" => %w[authorization_boundary_created authorization_boundary_updated
+                                     authorization_boundary_deleted project_created project_updated
+                                     project_deleted boundary_created boundary_updated boundary_deleted],
+    "Organizations" => %w[organization_created organization_updated organization_deactivated
+                          organization_reactivated organization_member_added organization_member_removed]
   }.freeze
 
   # ── Scopes ─────────────────────────────────────────────────────────────

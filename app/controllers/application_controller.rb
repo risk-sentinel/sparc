@@ -13,11 +13,15 @@ class ApplicationController < ActionController::Base
   before_action :check_session_timeout
   before_action :check_password_reset
 
-  # Zero-pad single-digit control numbers so catalog lookups work regardless of
-  # whether the SSP/SAR document uses "AC-1" or the catalog stores "AC-01".
-  #   "AC-1"  → "AC-01"   "AC-10" → "AC-10" (unchanged)
+  # Convert SSP/SAR control IDs (from Excel: "AC-1", "AC-01", "AC-2(1)")
+  # to the OSCAL canonical format used by catalogs:
+  #   "AC-1"    → "ac-1"      "AC-01"   → "ac-1"
+  #   "AC-2(1)" → "ac-2.1"    "ac-2.1"  → "ac-2.1" (already canonical)
   def normalize_ctrl_id(id)
-    id.to_s.sub(/\A([A-Z]+-?)(\d+)/) { "#{$1}#{$2.rjust(2, '0')}" }
+    id.to_s.strip.downcase
+      .gsub(/\s+/, "-")
+      .gsub("(", ".").gsub(")", "")
+      .gsub(/(?<=-|\.)0+(\d)/) { $1 }
   end
   helper_method :normalize_ctrl_id
 

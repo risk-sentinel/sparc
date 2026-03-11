@@ -16,7 +16,7 @@ The application uses a dark sticky navbar (`navbar-dark bg-dark sticky-top`) tha
 | Center-Right | Controls dropdown (blue) | Always | Control Catalogs, Baselines, Mappings |
 | Center-Right | Implementation dropdown (green) | Auth required | System Security Plans, Component Definitions |
 | Center-Right | Assessment dropdown (orange) | Auth required | Assessment Plans, Assessment Results, Evidence, POA&Ms |
-| Center-Right | Projects | Auth required | Standalone nav link |
+| Center-Right | Authorization Boundaries | Auth required | Standalone nav link |
 | Right | Theme toggle | Always | Light/dark mode button, persisted via `localStorage` key `sparc-theme` |
 | Right | User menu | Signed in | Avatar/initials, display name, dropdown with Profile, Change Password, Admin section (Instance Admin only), Sign Out |
 | Right | Login button | Not signed in | `btn-outline-info` button linking to `/login` |
@@ -29,7 +29,7 @@ The application uses a dark sticky navbar (`navbar-dark bg-dark sticky-top`) tha
 - **Administration** (Instance Admin only):
   - Users -- `/admin/users`
   - Roles -- `/admin/roles`
-  - Projects -- `/admin/projects`
+  - Authorization Boundaries -- `/admin/authorization_boundaries`
   - Audit Log -- `/admin/audit_logs`
 - **Sign Out** -- `DELETE /logout`
 
@@ -140,11 +140,11 @@ Current password and new password fields. Also used for forced password reset on
 
 The dashboard consists of three main sections:
 
-1. **Statistics Tiles** -- A gradient header card with a responsive grid (up to 10 columns on large screens) showing counts for: Catalogs, Families, Controls, Projects, Baselines, CDEFs, SSPs, SAPs, SARs, POA&Ms, and Evidence.
+1. **Statistics Tiles** -- A gradient header card with a responsive grid (up to 10 columns on large screens) showing counts for: Catalogs, Families, Controls, Authorization Boundaries, Baselines, CDEFs, SSPs, SAPs, SARs, POA&Ms, and Evidence.
 
 2. **Aggregate Compliance Heatmap** -- An interactive heatmap showing compliance status across all SSPs, grouped by NIST control family. Uses `ssp_status_color` helper for color coding. Families are clickable, linking to the family drilldown view.
 
-3. **Section Navigation Grid** -- A card grid (5 columns on large screens) with "View" and "New" buttons for each major document type: Projects, Control Catalogs, Baselines, CDEFs, SSPs, SAPs, SARs, POA&Ms, and Evidence.
+3. **Section Navigation Grid** -- A card grid (5 columns on large screens) with "View" and "New" buttons for each major document type: Authorization Boundaries, Control Catalogs, Baselines, CDEFs, SSPs, SAPs, SARs, POA&Ms, and Evidence.
 
 #### Family Drilldown
 
@@ -533,7 +533,7 @@ Form for adding OSCAL assessment result metadata: results, observations, finding
 | **Controller** | `EvidencesController#index` |
 | **Auth** | Required |
 
-Summary tiles. Lists all evidence items with filters for type, status, project, and associated control. Search functionality. "Upload" button for new evidence.
+Summary tiles. Lists all evidence items with filters for type, status, authorization boundary, and associated control. Search functionality. "Upload" button for new evidence.
 
 #### Evidence Detail
 
@@ -587,27 +587,27 @@ Form fields: risk ID, finding source, status, impact level, remediation plan, sc
 
 ---
 
-### Projects
+### Authorization Boundaries
 
-#### Projects List
-
-| | |
-|---|---|
-| **Route** | `GET /projects` |
-| **Controller** | `ProjectsController#index` |
-| **Auth** | Required |
-
-Lists all projects with name, description, member count. "Create New" button.
-
-#### Project Detail
+#### Authorization Boundaries List
 
 | | |
 |---|---|
-| **Route** | `GET /projects/:id` |
-| **Controller** | `ProjectsController#show` |
+| **Route** | `GET /authorization_boundaries` |
+| **Controller** | `AuthorizationBoundariesController#index` |
 | **Auth** | Required |
 
-Shows project details with:
+Lists all authorization boundaries with name, description, member count. "Create New" button.
+
+#### Authorization Boundary Detail
+
+| | |
+|---|---|
+| **Route** | `GET /authorization_boundaries/:id` |
+| **Controller** | `AuthorizationBoundariesController#show` |
+| **Auth** | Required |
+
+Shows authorization boundary details with:
 - System boundaries (with create/edit/delete)
 - Team members and their roles (with add/edit/remove)
 - Artifact summary linking to associated documents
@@ -616,18 +616,18 @@ Shows project details with:
 
 | | |
 |---|---|
-| **Routes** | `GET /projects/:project_id/boundaries/new`, `GET /projects/:project_id/boundaries/:id/edit` |
+| **Routes** | `GET /authorization_boundaries/:authorization_boundary_id/boundaries/new`, `GET /authorization_boundaries/:authorization_boundary_id/boundaries/:id/edit` |
 | **Controller** | `BoundariesController#new`, `#edit` |
 | **Auth** | Required |
 
 Form fields: name, description, environment classification.
 
-#### Project Memberships
+#### Authorization Boundary Memberships
 
 | | |
 |---|---|
-| **Routes** | `GET /projects/:project_id/project_memberships/new`, `GET /projects/:project_id/project_memberships/:id/edit` |
-| **Controller** | `ProjectMembershipsController#new`, `#edit` |
+| **Routes** | `GET /authorization_boundaries/:authorization_boundary_id/authorization_boundary_memberships/new`, `GET /authorization_boundaries/:authorization_boundary_id/authorization_boundary_memberships/:id/edit` |
+| **Controller** | `AuthorizationBoundaryMembershipsController#new`, `#edit` |
 | **Auth** | Required |
 
 Add, edit, or remove team members with role assignment via dropdown.
@@ -657,7 +657,7 @@ Search input, status filter, paginated user list (25 per page). Each row shows e
 Displays:
 - User identities (local, OIDC, LDAP, GitHub, GitLab)
 - Instance roles assigned
-- Project roles assigned
+- Authorization boundary roles assigned
 - Recent audit events (last 50)
 
 #### User Edit
@@ -668,7 +668,7 @@ Displays:
 | **Controller** | `Admin::UsersController#edit` |
 | **Auth** | Instance Admin |
 
-Form fields: display name, instance role assignments, project-specific role assignments.
+Form fields: display name, instance role assignments, authorization-boundary-specific role assignments.
 
 #### Roles List
 
@@ -678,7 +678,7 @@ Form fields: display name, instance role assignments, project-specific role assi
 | **Controller** | `Admin::RolesController#index` |
 | **Auth** | Instance Admin |
 
-Lists all roles with name, display name, scope (instance or project), user count. "Create New" button.
+Lists all roles with name, display name, scope (instance or authorization boundary), user count. "Create New" button.
 
 #### Role Detail
 
@@ -698,24 +698,24 @@ Shows assigned users and the full permission matrix for the role.
 | **Controller** | `Admin::RolesController#new`, `#edit` |
 | **Auth** | Instance Admin |
 
-Form fields: name, display name, scope selector (instance/project), 20 permission checkboxes covering CRUD operations across document types and admin features.
+Form fields: name, display name, scope selector (instance/authorization boundary), 20 permission checkboxes covering CRUD operations across document types and admin features.
 
-#### Admin Projects List
+#### Admin Authorization Boundaries List
 
 | | |
 |---|---|
-| **Route** | `GET /admin/projects` |
-| **Controller** | `Admin::ProjectsController#index` |
+| **Route** | `GET /admin/authorization_boundaries` |
+| **Controller** | `Admin::AuthorizationBoundariesController#index` |
 | **Auth** | Instance Admin |
 
-Lists all projects with member management capabilities.
+Lists all authorization boundaries with member management capabilities.
 
-#### Admin Project Detail
+#### Admin Authorization Boundary Detail
 
 | | |
 |---|---|
-| **Route** | `GET /admin/projects/:id` |
-| **Controller** | `Admin::ProjectsController#show` |
+| **Route** | `GET /admin/authorization_boundaries/:id` |
+| **Controller** | `Admin::AuthorizationBoundariesController#show` |
 | **Auth** | Instance Admin |
 
 User-role assignments table. Actions: Add member (`POST add_member`), Remove member (`DELETE remove_member`).

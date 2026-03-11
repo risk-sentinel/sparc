@@ -12,32 +12,32 @@ RSpec.describe "Audit logging integration", type: :request do
 
   before { sign_in_as(user) }
 
-  describe "project CRUD" do
-    it "logs project_created on create" do
+  describe "authorization boundary CRUD" do
+    it "logs authorization_boundary_created on create" do
       expect {
-        post projects_path, params: { project: { name: "Audit Test", status: "active" } }
-      }.to change(AuditEvent.where(action: "project_created"), :count).by(1)
+        post authorization_boundaries_path, params: { authorization_boundary: { name: "Audit Test", status: "active" } }
+      }.to change(AuditEvent.where(action: "authorization_boundary_created"), :count).by(1)
 
-      event = AuditEvent.where(action: "project_created").last
-      expect(event.subject_type).to eq("Project")
+      event = AuditEvent.where(action: "authorization_boundary_created").last
+      expect(event.subject_type).to eq("AuthorizationBoundary")
       expect(event.user).to eq(user)
       expect(event.metadata["name"]).to eq("Audit Test")
     end
 
-    it "logs project_updated on update" do
-      project = create(:project, name: "Original")
+    it "logs authorization_boundary_updated on update" do
+      authorization_boundary = create(:authorization_boundary, name: "Original")
       expect {
-        patch project_path(project), params: { project: { name: "Updated" } }
-      }.to change(AuditEvent.where(action: "project_updated"), :count).by(1)
+        patch authorization_boundary_path(authorization_boundary), params: { authorization_boundary: { name: "Updated" } }
+      }.to change(AuditEvent.where(action: "authorization_boundary_updated"), :count).by(1)
     end
 
-    it "logs project_deleted on destroy" do
-      project = create(:project, name: "To Delete")
+    it "logs authorization_boundary_deleted on destroy" do
+      authorization_boundary = create(:authorization_boundary, name: "To Delete")
       expect {
-        delete project_path(project)
-      }.to change(AuditEvent.where(action: "project_deleted"), :count).by(1)
+        delete authorization_boundary_path(authorization_boundary)
+      }.to change(AuditEvent.where(action: "authorization_boundary_deleted"), :count).by(1)
 
-      event = AuditEvent.where(action: "project_deleted").last
+      event = AuditEvent.where(action: "authorization_boundary_deleted").last
       expect(event.metadata["name"]).to eq("To Delete")
     end
   end

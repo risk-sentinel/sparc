@@ -35,11 +35,12 @@ class OscalProfileExportService
   def build_profile
     {
       "profile" => {
-        "uuid"     => @document.import_metadata&.dig("uuid") || SecureRandom.uuid,
-        "metadata" => build_metadata,
-        "imports"  => build_imports,
-        "merge"    => build_merge,
-        "modify"   => build_modify
+        "uuid"         => @document.uuid,
+        "metadata"     => build_metadata,
+        "imports"      => build_imports,
+        "merge"        => build_merge,
+        "modify"       => build_modify,
+        "back-matter"  => build_back_matter
       }.compact
     }
   end
@@ -132,5 +133,9 @@ class OscalProfileExportService
       end
     end
     params
+  end
+
+  def build_back_matter
+    @document.build_oscal_back_matter
   end
 end

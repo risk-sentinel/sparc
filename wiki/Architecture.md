@@ -80,18 +80,18 @@ Special case:
 +---------+       +----------+       +--------------------+
 |  User   | 1---* | UserRole | *---1 |       Role         |
 +---------+       +----+-----+       +--------------------+
-| email   |       | project_id       | name               |
-| admin   |       | (optional)       | permissions (JSONB) |
-+---------+       +----------+       +--------------------+
-     | 1                | *
-     | *                | 0..1
-+----+------+     +-----+-----+
-| Identity  |     |  Project  |
-+-----------+     +-----------+
-| provider  |     | name      |
-| uid       |     | status    |
-| auth_data |     +-----------+
-+-----------+
+| email   |       | authorization    | name               |
+| admin   |       | _boundary_id     | permissions (JSONB) |
++---------+       | (optional)       +--------------------+
+     | 1          +----------+
+     | *                | *
++----+------+           | 0..1
+| Identity  |     +-----+-------------------+
++-----------+     | AuthorizationBoundary   |
+| provider  |     +-------------------------+
+| uid       |     | name                    |
+| auth_data |     | status                  |
++-----------+     +-------------------------+
 
 
 +------------+       +---------------------+
@@ -197,7 +197,7 @@ Authentication Flow:
 
 - `User` holds core profile, `admin` flag, sign-in tracking, and `must_reset_password`
 - `Identity` stores OAuth/OIDC/LDAP provider data (`provider`, `uid`, `auth_data` JSONB)
-- `UserRole` assigns a `Role` to a `User`, optionally scoped to a `Project`
+- `UserRole` assigns a `Role` to a `User`, optionally scoped to an `AuthorizationBoundary`
 - `Role` contains a `permissions` JSONB field with 20 boolean permission keys
 
 ---

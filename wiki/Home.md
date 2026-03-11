@@ -14,10 +14,10 @@ Welcome to the official SPARC wiki. SPARC is a Rails application for managing NI
 ## Wiki Sections
 
 ### [Role-Based Access Control (RBAC)](RBAC)
-29 roles aligned with NIST SP 800-37 Rev. 2 and OSCAL standards, 20 granular permission keys, instance vs. project scoping, and the Instance Admin bypass flag.
+29 roles aligned with NIST SP 800-37 Rev. 2 and OSCAL standards, 20 granular permission keys, instance vs. authorization boundary scoping, and the Instance Admin bypass flag.
 
 ### [Screens & UI](Screens)
-Complete inventory of every page in the application — Controls Layer, Implementation Layer, Assessment Layer, Project Management, Evidence, Admin, and API endpoints.
+Complete inventory of every page in the application — Controls Layer, Implementation Layer, Assessment Layer, Authorization Boundary Management, Evidence, Admin, and API endpoints.
 
 ### [Core Functions & Features](Core-Functions)
 OSCAL import/export/validation, document processing pipeline, SSP wizard, control mapping, audit logging, heatmap analytics, and more.

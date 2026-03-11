@@ -22,6 +22,7 @@ class ProfileControlField < ApplicationRecord
   private
 
   def set_editable_flag
-    self.editable = EDITABLE_FIELDS.include?(field_name)
+    self.editable = EDITABLE_FIELDS.include?(field_name) ||
+      (field_name.start_with?("parameter:") && !field_name.start_with?("parameter_label:"))
   end
 end

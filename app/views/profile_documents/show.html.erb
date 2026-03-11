@@ -81,6 +81,10 @@
         &nbsp;&bull;&nbsp;
         <span class="fw-semibold" style="color: <%= level_color %>;"><%= @profile_document.baseline_level || "Custom" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
+        <% if @profile_document.published.present? %>
+          &nbsp;&bull;&nbsp;
+          <span class="fw-semibold" style="color: #27ae60;">Published</span>
+        <% end %>
       </div>
       <% if @profile_document.description.present? %>
         <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@profile_document.description, length: 200) %></div>
@@ -92,11 +96,33 @@
               class: "sparc-btn-ghost", data: { confirm: "Duplicate this profile?" } %>
         <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
               class: "sparc-btn-oscal" %>
+        <% if @profile_document.control_catalog.present? %>
+          <%= link_to "Manage Controls", manage_controls_profile_document_path(@profile_document),
+                class: "sparc-btn-oscal" %>
+        <% end %>
+        <% if @profile_document.control_catalog.present? %>
+          <%= button_to "Publish", publish_profile_document_path(@profile_document), method: :patch,
+                class: "btn btn-warning btn-sm fw-semibold",
+                data: { confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } %>
+        <% end %>
       <% end %>
-      <%= link_to "Export OSCAL".html_safe, download_oscal_profile_document_path(@profile_document),
-            class: "sparc-btn-oscal" %>
-      <%= link_to "&#8595; JSON".html_safe, download_json_profile_document_path(@profile_document),
-            class: "sparc-btn-ghost" %>
+      <div class="btn-group">
+        <button type="button" class="sparc-btn-oscal dropdown-toggle"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          Export OSCAL
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><h6 class="dropdown-header">OSCAL Profile</h6></li>
+          <li><%= link_to "JSON", download_oscal_profile_document_path(@profile_document), class: "dropdown-item" %></li>
+          <li><%= link_to "YAML", download_yaml_profile_document_path(@profile_document), class: "dropdown-item" %></li>
+          <li><%= link_to "XML", download_xml_profile_document_path(@profile_document), class: "dropdown-item" %></li>
+          <% if @profile_document.resolved_catalog_json.present? %>
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header">Resolved Catalog</h6></li>
+            <li><%= link_to "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document), class: "dropdown-item" %></li>
+          <% end %>
+        </ul>
+      </div>
       <%= link_to "&#8592; Back".html_safe, profile_documents_path,
             class: "sparc-btn-ghost-muted" %>
     </div>
@@ -168,7 +194,7 @@
         <div style="min-width: 0; flex: 1;">
           <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
             <span class="sparc-ctrl-id">
-              <%= control.control_id.presence || "&mdash;".html_safe %>
+              <%= control.display_id.presence || "&mdash;".html_safe %>
             </span>
             <span class="sparc-status-pill" style="background: <%= pri_color %>;">
               <%= pri_val %>
@@ -185,7 +211,7 @@
                   class: "btn btn-primary btn-sm" %>
             <%= button_to "Delete", profile_document_profile_control_path(@profile_document, control),
                   method: :delete,
-                  form: { data: { turbo_confirm: "Remove #{control.control_id} from this profile?" } },
+                  form: { data: { turbo_confirm: "Remove #{control.display_id} from this profile?" } },
                   class: "btn btn-danger btn-sm" %>
           </div>
         <% end %>
@@ -208,11 +234,18 @@
                 <div class="sparc-statement-label" style="color: var(--bs-primary);">Parameters</div>
                 <table class="sparc-field-table">
                   <% param_fields.each do |fname, field| %>
+                    <% param_id = fname.delete_prefix("parameter:") %>
+                    <% label_field = field_map["parameter_label:#{param_id}"] %>
                     <tr>
-                      <td class="sparc-field-label" style="width: 40%; font-family: monospace;">
-                        <%= fname.delete_prefix("parameter:") %>
+                      <td class="sparc-field-label" style="width: 30%; font-family: monospace;">
+                        <%= param_id %>
                       </td>
-                      <td class="sparc-field-value">
+                      <% if label_field %>
+                        <td class="text-body-secondary" style="width: 25%; font-size: 0.82rem;">
+                          <%= label_field.field_value %>
+                        </td>
+                      <% end %>
+                      <td class="sparc-field-value" <%= "colspan=2" unless label_field %>>
                         <%= field.field_value %>
                       </td>
                     </tr>

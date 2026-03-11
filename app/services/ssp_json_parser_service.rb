@@ -22,6 +22,7 @@ class SspJsonParserService
 
     ActiveRecord::Base.transaction do
       update_document_metadata(ssp)
+      @document.assign_oscal_uuid!(ssp["uuid"])
       parse_system_characteristics(ssp["system-characteristics"])
       @component_map = parse_system_implementation(ssp["system-implementation"])
       parse_control_implementation(ssp["control-implementation"], @component_map)
