@@ -49,11 +49,35 @@ namespace :catalog do
       if oscal_title.present? && oscal_title != catalog_name
         dupe = ControlCatalog.find_by(name: oscal_title)
         if dupe
+          # Re-link any profiles that were pointing at the duplicate catalog
+          relinked = ProfileDocument.where(control_catalog_id: dupe.id).update_all(control_catalog_id: catalog.id)
+          puts "  🔗 Re-linked #{relinked} profile(s) from duplicate catalog (id=#{dupe.id}) → canonical catalog (id=#{catalog.id})" if relinked.positive?
+
           dupe_controls = dupe.catalog_controls.count
           dupe.control_families.each { |f| f.catalog_controls.delete_all }
           dupe.control_families.delete_all
           dupe.destroy!
-          puts "  🧹 Cleaned up duplicate catalog '#{oscal_title}' (had #{dupe_controls} controls)"
+          puts "  🧹 Cleaned up duplicate catalog '#{oscal_title}' (id=#{dupe.id}, had #{dupe_controls} controls)"
+        end
+      end
+    end
+
+    # Also link any unlinked profiles that reference Rev 4 via their import metadata
+    puts "\nChecking for unlinked profiles..."
+    unlinked_profiles = ProfileDocument.where(control_catalog_id: nil)
+    if unlinked_profiles.any?
+      rev4_catalog = ControlCatalog.find_by(name: "NIST SP 800-53 Rev 4")
+      if rev4_catalog
+        unlinked_profiles.find_each do |profile|
+          catalog_ref = profile.import_metadata&.dig("catalog_href")
+          back_matter = profile.import_metadata&.dig("back_matter") || []
+          # Check if this profile references 800-53 Rev 4
+          rlink_hrefs = back_matter.flat_map { |r| (r["rlinks"] || []).map { |rl| rl["href"].to_s } }
+          refs = [ catalog_ref.to_s, *rlink_hrefs ]
+          if refs.any? { |r| r.include?("800-53") && (r.include?("rev4") || r.include?("rev-4") || r.include?("revision-4")) }
+            profile.update_column(:control_catalog_id, rev4_catalog.id)
+            puts "  🔗 Linked '#{profile.name}' → '#{rev4_catalog.name}' (id=#{rev4_catalog.id})"
+          end
         end
       end
     end
@@ -64,12 +88,12 @@ namespace :catalog do
 
     total_normalized = 0
     ProfileDocument.find_each do |profile|
+      profile_normalized = 0
       profile.profile_controls.find_each do |pc|
         raw = pc.control_id.to_s
         # Convert uppercase padded IDs to OSCAL canonical format:
-        #   "AC-01"    → "ac-1"
-        #   "AC-02(1)" → "ac-2.1"
-        #   "AC-02.01" → "ac-2.1"
+        #   "AC-01"    → "ac-1"       "AC-01A"   → "ac-1a"
+        #   "AC-02(1)" → "ac-2.1"     "AC-01A.1" → "ac-1a.1"
         normalized = raw.strip.downcase
                         .gsub(/\s+/, "-")
                         .gsub("(", ".").gsub(")", "")
@@ -78,28 +102,41 @@ namespace :catalog do
 
         pc.update_column(:control_id, normalized)
         total_normalized += 1
+        profile_normalized += 1
       end
+      puts "  '#{profile.name}': normalized #{profile_normalized} control ID(s)" if profile_normalized.positive?
     end
-    puts "  Normalized #{total_normalized} profile control ID(s)."
+    puts "  Normalized #{total_normalized} total profile control ID(s)."
 
     # Re-enrich titles from newly linked catalogs
     puts "\nRe-enriching profile control titles from catalogs..."
     total_enriched = 0
     ProfileDocument.where.not(control_catalog_id: nil).find_each do |profile|
       title_map = profile.control_catalog.catalog_controls.pluck(:control_id, :title).to_h
+      profile_enriched = 0
       profile.profile_controls.find_each do |pc|
         mapped = title_map[pc.control_id]
         if mapped.present? && pc.title != mapped
           pc.update_column(:title, mapped)
           total_enriched += 1
+          profile_enriched += 1
         end
       end
+      puts "  '#{profile.name}': enriched #{profile_enriched} title(s)" if profile_enriched.positive?
     end
-    puts "  Enriched #{total_enriched} profile control title(s)."
+    puts "  Enriched #{total_enriched} total profile control title(s)."
 
+    # Print summary
     puts "\n" + "=" * 60
-    puts "Done. Catalogs now use OSCAL canonical IDs (ac-1, ac-2.1) with label/sort_id columns."
-    puts "Top-level controls (base + enhancements) are selectable on the Manage Controls page."
-    puts "Sub-parts (statement fragments like ac-1a) are stored but not shown as selectable."
+    puts "Done. Summary:"
+    ControlCatalog.all.each do |cat|
+      puts "  Catalog '#{cat.name}' (id=#{cat.id}): #{cat.catalog_controls.count} controls"
+    end
+    ProfileDocument.where.not(control_catalog_id: nil).each do |prof|
+      profile_ids = prof.profile_controls.pluck(:control_id).to_set
+      catalog_ids = prof.control_catalog.catalog_controls.pluck(:control_id).to_set
+      matched = (profile_ids & catalog_ids).size
+      puts "  Profile '#{prof.name}' → catalog_id=#{prof.control_catalog_id}: #{matched}/#{profile_ids.size} controls matched"
+    end
   end
 end
