@@ -35,7 +35,7 @@ gem "bcrypt", "~> 3.1.7"
 
 # ── Authentication ──────────────────────────────────────────────────────────
 gem "omniauth", "~> 2.1"                       # OAuth/OIDC foundation
-gem "omniauth-rails_csrf_protection", "~> 1.0" # CSRF protection for OmniAuth POST
+gem "omniauth-rails_csrf_protection", "~> 2.0" # CSRF protection for OmniAuth POST
 gem "omniauth-github", "~> 2.0"                # GitHub OAuth
 gem "omniauth-gitlab", "~> 4.0"                # GitLab OAuth
 gem "omniauth_openid_connect", "~> 0.8"        # Generic OIDC (Okta, Keycloak, Entra ID)
