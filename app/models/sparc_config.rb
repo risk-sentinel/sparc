@@ -11,7 +11,11 @@
 #
 # See docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
 module SparcConfig
+  VERSION = "3.4.8"
+
   module_function
+
+  def version = VERSION
 
   # ── Database ──────────────────────────────────────────────────────────────
   # These are fallbacks when DATABASE_URL is not set. DATABASE_URL always
@@ -30,6 +34,19 @@ module SparcConfig
   def app_name      = ENV.fetch("SPARC_APP_NAME", "SPARC")
   def contact_email = ENV.fetch("SPARC_CONTACT_EMAIL", nil)
   def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
+
+  # ── Organization ─────────────────────────────────────────────────────────
+
+  def org_name           = ENV.fetch("SPARC_ORG_NAME", "Default Organization")
+  def org_description    = ENV.fetch("SPARC_ORG_DESCRIPTION", nil)
+  def org_address        = ENV.fetch("SPARC_ORG_ADDRESS", nil)
+  def org_contact_person = ENV.fetch("SPARC_ORG_CONTACT_PERSON", nil)
+  def org_contact_email  = ENV.fetch("SPARC_ORG_CONTACT_EMAIL", nil)
+
+  # ── User Lifecycle ───────────────────────────────────────────────────────
+
+  def inactivity_days      = ENV.fetch("SPARC_INACTIVITY_DAYS", "30").to_i
+  def password_expiry_days = ENV.fetch("SPARC_PASSWORD_EXPIRY_DAYS", "30").to_i
 
   # ── Authentication Toggles ────────────────────────────────────────────────
   # All default to false — features must be explicitly enabled.

@@ -7,7 +7,7 @@ RSpec.describe DocumentDuplicationService do
     end
 
     let!(:control) do
-      create(:profile_control, profile_document: source, control_id: "AC-01", title: "Access Control Policy", priority: "P1")
+      create(:profile_control, profile_document: source, control_id: "ac-1", title: "Access Control Policy", priority: "P1")
     end
 
     let!(:field) do
@@ -32,7 +32,7 @@ RSpec.describe DocumentDuplicationService do
     it "deep-clones controls" do
       copy = described_class.new(source).duplicate
       expect(copy.profile_controls.count).to eq(1)
-      expect(copy.profile_controls.first.control_id).to eq("AC-01")
+      expect(copy.profile_controls.first.control_id).to eq("ac-1")
       expect(copy.profile_controls.first.title).to eq("Access Control Policy")
     end
 

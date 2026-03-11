@@ -17,16 +17,16 @@ RSpec.describe CatalogControl, type: :model do
 
     it "requires control_id to be unique within a family" do
       family = create(:control_family)
-      create(:catalog_control, control_family: family, control_id: "AC-01")
-      duplicate = build(:catalog_control, control_family: family, control_id: "AC-01")
+      create(:catalog_control, control_family: family, control_id: "ac-1")
+      duplicate = build(:catalog_control, control_family: family, control_id: "ac-1")
       expect(duplicate).not_to be_valid
     end
 
     it "allows same control_id in different families" do
       family1 = create(:control_family)
       family2 = create(:control_family)
-      create(:catalog_control, control_family: family1, control_id: "AC-01")
-      control = build(:catalog_control, control_family: family2, control_id: "AC-01")
+      create(:catalog_control, control_family: family1, control_id: "ac-1")
+      control = build(:catalog_control, control_family: family2, control_id: "ac-1")
       expect(control).to be_valid
     end
   end

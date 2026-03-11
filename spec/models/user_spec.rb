@@ -108,19 +108,19 @@ RSpec.describe User, type: :model do
       expect(admin.has_permission?("ssp.read")).to be true
     end
 
-    context "with project scope" do
-      let(:project) { create(:project) }
-      let(:project_role) { create(:role, :project_scoped, permissions: { "ssp.write" => true }) }
+    context "with authorization boundary scope" do
+      let(:authorization_boundary) { create(:authorization_boundary) }
+      let(:boundary_role) { create(:role, :authorization_boundary_scoped, permissions: { "ssp.write" => true }) }
 
-      it "checks project-scoped roles" do
-        create(:user_role, user: user, role: project_role, project: project)
-        expect(user.has_permission?("ssp.write", project_id: project.id)).to be true
+      it "checks authorization-boundary-scoped roles" do
+        create(:user_role, user: user, role: boundary_role, authorization_boundary: authorization_boundary)
+        expect(user.has_permission?("ssp.write", authorization_boundary_id: authorization_boundary.id)).to be true
       end
 
-      it "does not leak project permissions to other projects" do
-        other_project = create(:project)
-        create(:user_role, user: user, role: project_role, project: project)
-        expect(user.has_permission?("ssp.write", project_id: other_project.id)).to be false
+      it "does not leak authorization boundary permissions to other authorization boundaries" do
+        other_authorization_boundary = create(:authorization_boundary)
+        create(:user_role, user: user, role: boundary_role, authorization_boundary: authorization_boundary)
+        expect(user.has_permission?("ssp.write", authorization_boundary_id: other_authorization_boundary.id)).to be false
       end
     end
   end

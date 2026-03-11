@@ -7,6 +7,10 @@
           <p class="text-body-secondary small mb-4">
             You must change your password before continuing.
           </p>
+        <% elsif current_user.password_expired? %>
+          <p class="text-body-secondary small mb-4">
+            Your password has expired (policy: every <%= SparcConfig.password_expiry_days %> days). Please set a new password to continue.
+          </p>
         <% else %>
           <p class="text-body-secondary small mb-4">
             Update your account password.

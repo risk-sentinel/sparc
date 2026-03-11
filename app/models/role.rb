@@ -1,18 +1,19 @@
 # frozen_string_literal: true
 
 # Defines the available roles in SPARC. Roles are either instance-scoped
-# (global) or project-scoped. Instance Admin is NOT a role — it's the
-# users.admin boolean column.
+# (global) or authorization boundary-scoped. Instance Admin is NOT a role —
+# it's the users.admin boolean column.
 #
 # Seeded roles come from docs/groups_users/groups_users.md:
 #   Instance (10): policy_manager, global_viewer, senior_accountable_official,
 #                  senior_agency_official_privacy, head_of_agency, risk_executive,
 #                  cio, chief_acquisition_officer, fedramp_pmo, jab
-#   Project  (19): ao, agency_ao, so_iso, ciso, issm, isso, cloud_service_provider,
-#                  assessor_3pao, common_control_provider, system_architect_engineer,
-#                  component_supplier, system_operator_admin, information_owner_steward,
-#                  vendor_dependency_manager, solution_evaluator, project_member,
-#                  sparc_sme, evidence_integration_engineer, view_only
+#   Authorization Boundary (19): ao, agency_ao, so_iso, ciso, issm, isso,
+#                  cloud_service_provider, assessor_3pao, common_control_provider,
+#                  system_architect_engineer, component_supplier, system_operator_admin,
+#                  information_owner_steward, vendor_dependency_manager,
+#                  solution_evaluator, project_member, sparc_sme,
+#                  evidence_integration_engineer, view_only
 #
 # Permissions are stored as a JSONB hash of "resource.action" => boolean keys.
 class Role < ApplicationRecord
@@ -21,10 +22,10 @@ class Role < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
   validates :display_name, presence: true
-  validates :scope, inclusion: { in: %w[instance project] }
+  validates :scope, inclusion: { in: %w[instance authorization_boundary] }
 
   scope :instance_scoped, -> { where(scope: "instance") }
-  scope :project_scoped, -> { where(scope: "project") }
+  scope :authorization_boundary_scoped, -> { where(scope: "authorization_boundary") }
   scope :sorted, -> { order(:sort_order) }
 
   # ── Permissions ──────────────────────────────────────────────────────────
@@ -34,9 +35,9 @@ class Role < ApplicationRecord
     catalogs.write
     profiles.read
     profiles.write
-    projects.read
-    projects.write
-    projects.manage_members
+    authorization_boundaries.read
+    authorization_boundaries.write
+    authorization_boundaries.manage_members
     ssp.read
     ssp.write
     sar.read
@@ -60,7 +61,7 @@ class Role < ApplicationRecord
   RESOURCE_LABELS = {
     "catalogs" => "Control Catalogs",
     "profiles" => "Baselines / Profiles",
-    "projects" => "Projects",
+    "authorization_boundaries" => "Authorization Boundaries",
     "ssp"      => "System Security Plans",
     "sar"      => "Security Assessment Results",
     "sap"      => "Security Assessment Plans",

@@ -3,10 +3,10 @@
 
   <%= form_with model: @cdef_document, local: true, multipart: true do |f| %>
     <div class="form-group">
-      <label for="cdef_document_file">Select Component Definition File (.xml, .json)</label>
-      <%= f.file_field :file, accept: ".xml,.json", required: true %>
+      <label for="cdef_document_file">Select Component Definition File (.xml, .json, .yaml, .yml)</label>
+      <%= f.file_field :file, accept: ".xml,.json,.yaml,.yml", required: true %>
       <small class="text-body-secondary d-block mt-2">
-        Upload an XCCDF XML file (DISA STIGs, SCAP benchmarks, CIS) or a JSON file (InSpec, STIG Viewer export).
+        Upload an XCCDF XML file (DISA STIGs, SCAP benchmarks, CIS), a JSON file (InSpec, STIG Viewer export), or an OSCAL YAML file.
       </small>
     </div>
 

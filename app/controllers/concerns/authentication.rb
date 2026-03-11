@@ -80,12 +80,15 @@ module Authentication
 
   # ── Password Reset Check ──────────────────────────────────────────────
 
-  # Force password change for bootstrapped admin accounts.
+  # Force password change for bootstrapped admin accounts and expired passwords.
   def check_password_reset
     return unless signed_in?
-    return unless current_user.must_reset_password?
     return if controller_name == "passwords" || controller_name == "sessions"
 
-    redirect_to edit_password_path, warning: "You must change your password before continuing."
+    if current_user.must_reset_password?
+      redirect_to edit_password_path, warning: "You must change your password before continuing."
+    elsif current_user.password_expired?
+      redirect_to edit_password_path, warning: "Your password has expired. Please set a new password to continue."
+    end
   end
 end

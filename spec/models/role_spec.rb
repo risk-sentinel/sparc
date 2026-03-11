@@ -9,7 +9,7 @@ RSpec.describe Role, type: :model do
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_uniqueness_of(:name) }
     it { is_expected.to validate_presence_of(:display_name) }
-    it { is_expected.to validate_inclusion_of(:scope).in_array(%w[instance project]) }
+    it { is_expected.to validate_inclusion_of(:scope).in_array(%w[instance authorization_boundary]) }
   end
 
   describe "associations" do
@@ -19,16 +19,16 @@ RSpec.describe Role, type: :model do
 
   describe "scopes" do
     let!(:instance_role) { create(:role, scope: "instance") }
-    let!(:project_role) { create(:role, scope: "project") }
+    let!(:authorization_boundary_role) { create(:role, scope: "authorization_boundary") }
 
     it ".instance_scoped returns instance roles" do
       expect(Role.instance_scoped).to include(instance_role)
-      expect(Role.instance_scoped).not_to include(project_role)
+      expect(Role.instance_scoped).not_to include(authorization_boundary_role)
     end
 
-    it ".project_scoped returns project roles" do
-      expect(Role.project_scoped).to include(project_role)
-      expect(Role.project_scoped).not_to include(instance_role)
+    it ".authorization_boundary_scoped returns authorization boundary roles" do
+      expect(Role.authorization_boundary_scoped).to include(authorization_boundary_role)
+      expect(Role.authorization_boundary_scoped).not_to include(instance_role)
     end
   end
 
@@ -72,7 +72,7 @@ RSpec.describe Role, type: :model do
     end
 
     it "groups permissions by resource" do
-      expect(Role::PERMISSION_GROUPS.keys).to include("ssp", "catalogs", "projects")
+      expect(Role::PERMISSION_GROUPS.keys).to include("ssp", "catalogs", "authorization_boundaries")
     end
   end
 end

@@ -24,7 +24,8 @@ module FileUploadable
     "excel" => ".xlsx",
     "xccdf" => ".xml",
     "json"  => ".json",
-    "xml"   => ".xml"
+    "xml"   => ".xml",
+    "yaml"  => ".yaml"
   }.freeze
 
   SAFE_PREFIXES = {

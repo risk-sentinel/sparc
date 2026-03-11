@@ -16,7 +16,18 @@ class CatalogControl < ApplicationRecord
 
   validates :control_id, presence: true, uniqueness: { scope: :control_family_id }
 
-  default_scope { order(:control_id) }
+  default_scope { order(Arel.sql("COALESCE(sort_id, control_id)")) }
+
+  # Scope to only base controls (e.g. "ac-1") and enhancements (e.g. "ac-2.1"),
+  # excluding statement sub-parts like "ac-1a", "ac-1a.1", "ac-1a.1.(a)".
+  # OSCAL base/enhancement IDs match: letter(s) + dash + digits + optional .digits
+  scope :top_level, -> { where("control_id ~ ?", '^[a-z]+-[0-9]+(\\.[0-9]+)?$') }
+
+  # Returns the human-readable label (e.g., "AC-1", "AC-2(1)") or falls back to
+  # the canonical OSCAL id (e.g., "ac-1", "ac-2.1") when no label is stored.
+  def display_id
+    label.presence || control_id
+  end
 
   def family_code
     control_family.code
@@ -34,6 +45,37 @@ class CatalogControl < ApplicationRecord
     data = parsed_guidance_data
     return {} if data.blank?
     data.select { |k, v| GUIDANCE_FIELDS.include?(k) && v.present? }
+  end
+
+  # Returns true when at least one parameter definition exists.
+  def params_present?
+    params_list.present?
+  end
+
+  # Returns the parsed params array, handling String (double-encoded) vs Array.
+  def params_list
+    raw = params_data
+    return [] if raw.blank?
+    result = raw.is_a?(String) ? JSON.parse(raw) : raw
+    result.is_a?(Array) ? result : []
+  rescue JSON::ParserError
+    []
+  end
+
+  # Merges a hash of { param_id => new_label } into the params_data array.
+  # Only the "label" key is updated; all other param fields (id, select,
+  # guidelines, props) are preserved.  Returns the updated array.
+  def merge_params_labels(labels_hash)
+    return params_list if labels_hash.blank?
+
+    params_list.map do |param|
+      if labels_hash.key?(param["id"])
+        new_label = labels_hash[param["id"]].presence
+        new_label ? param.merge("label" => new_label) : param.except("label")
+      else
+        param
+      end
+    end
   end
 
   private

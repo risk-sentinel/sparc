@@ -8,7 +8,9 @@ class CatalogControlsController < ApplicationController
   end
 
   def create
-    @catalog_control = @control_family.catalog_controls.new(catalog_control_params)
+    permitted = catalog_control_params
+    @catalog_control = @control_family.catalog_controls.new(permitted.except(:params_labels))
+    apply_params_labels!(permitted)
     if @catalog_control.save
       audit_log("catalog_control_created", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
       redirect_to @control_family, notice: "Control '#{@catalog_control.control_id}' was added."
@@ -22,7 +24,9 @@ class CatalogControlsController < ApplicationController
   end
 
   def update
-    if @catalog_control.update(catalog_control_params)
+    permitted = catalog_control_params
+    apply_params_labels!(permitted)
+    if @catalog_control.update(permitted.except(:params_labels))
       audit_log("catalog_control_updated", subject: @catalog_control, metadata: { control_id: @catalog_control.control_id })
       redirect_to @catalog_control.control_family, notice: "Control updated successfully."
     else
@@ -96,8 +100,18 @@ class CatalogControlsController < ApplicationController
   def catalog_control_params
     params.require(:catalog_control).permit(
       :control_id, :title, :description, :priority, :baseline_impact,
-      guidance_data: {}
+      guidance_data: {},
+      params_labels: {}
     )
+  end
+
+  # Extracts params_labels from the permitted params hash and merges
+  # the updated labels back into @catalog_control.params_data.
+  def apply_params_labels!(permitted)
+    labels = permitted[:params_labels]
+    return if labels.blank?
+
+    @catalog_control.params_data = @catalog_control.merge_params_labels(labels.to_h)
   end
 
   def authorize_catalog_write!

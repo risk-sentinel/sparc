@@ -24,8 +24,8 @@ class DocumentTypeRegistry
       control_class:      SspControl,
       field_class:        SspControlField,
       document_fk:        :ssp_document_id,
-      allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel", ".json" => "json", ".xml" => "xml" },
-      parser_map:         { "excel" => SspExcelParserService, "json" => SspJsonParserService, "xml" => SspXmlParserService },
+      allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel", ".json" => "json", ".xml" => "xml", ".yaml" => "yaml", ".yml" => "yaml" },
+      parser_map:         { "excel" => SspExcelParserService, "json" => SspJsonParserService, "xml" => SspXmlParserService, "yaml" => SspYamlParserService },
       file_prefix:        "ssp",
       success_message:    "System Security Plan document uploaded. Processing in background..."
     ),
@@ -34,8 +34,8 @@ class DocumentTypeRegistry
       control_class:      SarControl,
       field_class:        SarControlField,
       document_fk:        :sar_document_id,
-      allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel", ".json" => "json", ".xml" => "xml" },
-      parser_map:         { "excel" => SarExcelParserService, "json" => SarJsonParserService, "xml" => SarXmlParserService },
+      allowed_extensions: { ".xlsx" => "excel", ".xls" => "excel", ".json" => "json", ".xml" => "xml", ".yaml" => "yaml", ".yml" => "yaml" },
+      parser_map:         { "excel" => SarExcelParserService, "json" => SarJsonParserService, "xml" => SarXmlParserService, "yaml" => SarYamlParserService },
       file_prefix:        "sar",
       success_message:    "Security Assessment Results uploaded. Processing in background..."
     ),
@@ -44,8 +44,8 @@ class DocumentTypeRegistry
       control_class:      CdefControl,
       field_class:        CdefControlField,
       document_fk:        :cdef_document_id,
-      allowed_extensions: { ".xml" => "xccdf", ".json" => "json" },
-      parser_map:         { "xccdf" => CdefXccdfParserService, "json" => CdefJsonParserService },
+      allowed_extensions: { ".xml" => "xccdf", ".json" => "json", ".yaml" => "yaml", ".yml" => "yaml" },
+      parser_map:         { "xccdf" => CdefXccdfParserService, "json" => CdefJsonParserService, "yaml" => CdefYamlParserService },
       file_prefix:        "cdef",
       success_message:    "Component Definition uploaded. Processing in background..."
     ),
@@ -54,8 +54,8 @@ class DocumentTypeRegistry
       control_class:      ProfileControl,
       field_class:        ProfileControlField,
       document_fk:        :profile_document_id,
-      allowed_extensions: { ".json" => "json", ".xml" => "xml" },
-      parser_map:         { "json" => ProfileJsonParserService, "xml" => ProfileXmlParserService },
+      allowed_extensions: { ".json" => "json", ".xml" => "xml", ".yaml" => "yaml", ".yml" => "yaml" },
+      parser_map:         { "json" => ProfileJsonParserService, "xml" => ProfileXmlParserService, "yaml" => ProfileYamlParserService },
       file_prefix:        "profile",
       success_message:    "OSCAL Profile (Baseline) uploaded. Processing in background..."
     ),
@@ -64,8 +64,8 @@ class DocumentTypeRegistry
       control_class:      SapControl,
       field_class:        SapControlField,
       document_fk:        :sap_document_id,
-      allowed_extensions: { ".json" => "json" },
-      parser_map:         { "json" => SapJsonParserService },
+      allowed_extensions: { ".json" => "json", ".xml" => "xml", ".yaml" => "yaml", ".yml" => "yaml" },
+      parser_map:         { "json" => SapJsonParserService, "xml" => SapXmlParserService, "yaml" => SapYamlParserService },
       file_prefix:        "sap",
       success_message:    "OSCAL Assessment Plan uploaded. Processing in background..."
     ),
@@ -74,8 +74,8 @@ class DocumentTypeRegistry
       control_class:      PoamItem,
       field_class:        nil,
       document_fk:        :poam_document_id,
-      allowed_extensions: { ".json" => "json", ".xml" => "xml" },
-      parser_map:         { "json" => PoamJsonParserService, "xml" => PoamXmlParserService },
+      allowed_extensions: { ".json" => "json", ".xml" => "xml", ".yaml" => "yaml", ".yml" => "yaml" },
+      parser_map:         { "json" => PoamJsonParserService, "xml" => PoamXmlParserService, "yaml" => PoamYamlParserService },
       file_prefix:        "poam",
       success_message:    "OSCAL POA&M uploaded. Processing in background..."
     )

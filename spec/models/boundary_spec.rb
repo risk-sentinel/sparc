@@ -7,7 +7,7 @@ RSpec.describe Boundary, type: :model do
   end
 
   describe "associations" do
-    it { is_expected.to belong_to(:project) }
+    it { is_expected.to belong_to(:authorization_boundary) }
     it { is_expected.to have_many(:boundary_cdef_documents).dependent(:destroy) }
     it { is_expected.to have_many(:cdef_documents).through(:boundary_cdef_documents) }
   end

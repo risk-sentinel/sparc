@@ -3,10 +3,10 @@
 
   <%= form_with model: @sar_document, local: true, multipart: true do |f| %>
     <div class="form-group">
-      <label for="sar_document_file">Select File (.xlsx, .xls, .json, .xml)</label>
-      <%= f.file_field :file, accept: ".xlsx,.xls,.json,.xml", required: true %>
+      <label for="sar_document_file">Select File (.xlsx, .xls, .json, .xml, .yaml, .yml)</label>
+      <%= f.file_field :file, accept: ".xlsx,.xls,.json,.xml,.yaml,.yml", required: true %>
       <small class="text-body-secondary d-block" style="margin-top: 0.5rem;">
-        Upload an Excel workbook, OSCAL Assessment Results JSON, or OSCAL Assessment Results XML file.
+        Upload an Excel workbook, OSCAL Assessment Results JSON, XML, or YAML file.
         Excel workbooks with multiple tabs will each be imported as a separate section.
         OSCAL files will import observations, findings, risks, and metadata.
       </small>
@@ -22,41 +22,9 @@
 </div>
 
 <div class="card">
-  <h3>Expected Excel Format</h3>
-  <p class="text-body-secondary mb-3">Each worksheet tab is treated as a named section. Read-only fields are imported as-is; editable fields can be updated after upload.</p>
-
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th>Column</th>
-        <th>Editable</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td><strong>#</strong></td><td>No</td><td>Row index.</td></tr>
-      <tr><td><strong>Inherited</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Date</strong></td><td>Yes</td><td>Format: 23-Jan-2025. Calendar picker in UI.</td></tr>
-      <tr><td><strong>Paragraph</strong></td><td>No</td><td>Links to Paragraph/ReqID in the System Security Plan.</td></tr>
-      <tr><td><strong>Provided As</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Tester</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Result</strong></td><td>Yes</td><td>Pass · Failed · Null. Defaults to imported value.</td></tr>
-      <tr><td><strong>Notes/Weakness</strong></td><td>Yes</td><td></td></tr>
-      <tr><td><strong>Recommended Fix</strong></td><td>Yes</td><td></td></tr>
-      <tr><td><strong>Subject</strong></td><td>No</td><td>Parsed for filtering: left of | = Asset/Component, right = Environment. No | = boundary-level finding.</td></tr>
-      <tr><td><strong>Control Status</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Responsibility</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Test Title</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Impact Statement</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Test Text</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
-      <tr><td><strong>Expected Result</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
-      <tr><td><strong>Custom</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
-      <tr><td><strong>Custom Name</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
-      <tr><td><strong>Custom Author</strong></td><td>Yes</td><td>Collapsed by default.</td></tr>
-      <tr><td><strong>Control Text</strong></td><td>No</td><td></td></tr>
-      <tr><td><strong>Implementation</strong></td><td>No</td><td>Pulled from the System Security Plan.</td></tr>
-      <tr><td><strong>Working Comments</strong></td><td>Yes</td><td></td></tr>
-      <tr><td><strong>Working Status</strong></td><td>Yes</td><td>Final - Not Satisfied · Final Satisfied · Not Satisfied · Not Specified · Null</td></tr>
-    </tbody>
-  </table>
+  <h3>Import Notes</h3>
+  <div class="text-body-secondary" style="font-size: 0.9rem; line-height: 1.6;">
+    <p class="mb-2"><strong>Excel (.xlsx, .xls)</strong> &mdash; Workbooks must follow the expected column mapping for successful import. Each worksheet tab is treated as a named section.</p>
+    <p class="mb-0"><strong>OSCAL (JSON, XML, YAML)</strong> &mdash; OSCAL Assessment Results files are auto-detected and require no column mapping.</p>
+  </div>
 </div>

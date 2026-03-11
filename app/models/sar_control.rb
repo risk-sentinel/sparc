@@ -34,6 +34,6 @@ class SarControl < ApplicationRecord
   private
 
   def compute_control_family
-    self.control_family = control_id.to_s.split("-").first.upcase.presence
+    self.control_family = control_id.to_s.split("-").first&.upcase.presence
   end
 end

@@ -25,7 +25,7 @@ class DocumentDuplicationService
   private
 
   def build_document_copy(new_name)
-    attrs = @source.attributes.except(*SKIP_ATTRIBUTES, "status", "error_message", "original_filename", "file_type")
+    attrs = @source.attributes.except(*SKIP_ATTRIBUTES, "uuid", "status", "error_message", "original_filename", "file_type")
     attrs["name"] = new_name
     attrs[@config[:version_attr].to_s] = nil
     attrs["status"] = "completed"

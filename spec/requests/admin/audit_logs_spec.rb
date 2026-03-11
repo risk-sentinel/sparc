@@ -84,13 +84,13 @@ RSpec.describe "Admin::AuditLogs", type: :request do
     end
 
     it "shows subject details when present" do
-      project = create(:project, name: "Test Project")
-      event = AuditEvent.log(user: admin, action: "project_created", ip_address: "127.0.0.1",
-                             subject: project, metadata: { name: "Test Project" })
+      authorization_boundary = create(:authorization_boundary, name: "Test Authorization Boundary")
+      event = AuditEvent.log(user: admin, action: "authorization_boundary_created", ip_address: "127.0.0.1",
+                             subject: authorization_boundary, metadata: { name: "Test Authorization Boundary" })
       get admin_audit_log_path(event)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Subject")
-      expect(response.body).to include("Project")
+      expect(response.body).to include("Authorization boundary")
     end
   end
 end

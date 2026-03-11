@@ -12,7 +12,7 @@ This page documents every major subsystem and feature in SPARC, the Systemized P
 4. [SSP Enrichment](#4-ssp-enrichment)
 5. [Control Mapping](#5-control-mapping)
 6. [Evidence & Attestation Management](#6-evidence--attestation-management)
-7. [Project Management](#7-project-management)
+7. [Authorization Boundary Management](#7-authorization-boundary-management)
 8. [Audit Logging](#8-audit-logging)
 9. [Heatmap Analytics](#9-heatmap-analytics)
 10. [Document Duplication & Copy](#10-document-duplication--copy)
@@ -20,6 +20,7 @@ This page documents every major subsystem and feature in SPARC, the Systemized P
 12. [JSON Export](#12-json-export)
 13. [REST API](#13-rest-api)
 14. [Dark Mode & Theming](#14-dark-mode--theming)
+15. [HTTPS Enforcement & Security Headers](#15-https-enforcement--security-headers)
 
 ---
 
@@ -29,14 +30,14 @@ All document uploads follow a unified flow driven by the `FileUploadable` contro
 
 ### Supported Document Types
 
-| Type Key | Document Class     | Control Class     | Field Class            | Allowed Extensions        |
-|----------|--------------------|-------------------|------------------------|---------------------------|
-| `ssp`    | `SspDocument`      | `SspControl`      | `SspControlField`      | `.xlsx`, `.xls`, `.json`, `.xml` |
-| `sar`    | `SarDocument`      | `SarControl`      | `SarControlField`      | `.xlsx`, `.xls`, `.json`, `.xml` |
-| `cdef`   | `CdefDocument`     | `CdefControl`     | `CdefControlField`     | `.xml`, `.json`           |
-| `profile`| `ProfileDocument`  | `ProfileControl`  | `ProfileControlField`  | `.json`, `.xml`           |
-| `sap`    | `SapDocument`      | `SapControl`      | `SapControlField`      | `.json`                   |
-| `poam`   | `PoamDocument`     | `PoamItem`        | (none)                 | `.json`, `.xml`           |
+| Type Key | Document Class     | Control Class     | Field Class            | Allowed Extensions                           |
+|----------|--------------------|-------------------|------------------------|----------------------------------------------|
+| `ssp`    | `SspDocument`      | `SspControl`      | `SspControlField`      | `.xlsx`, `.xls`, `.json`, `.xml`, `.yaml`, `.yml` |
+| `sar`    | `SarDocument`      | `SarControl`      | `SarControlField`      | `.xlsx`, `.xls`, `.json`, `.xml`, `.yaml`, `.yml` |
+| `cdef`   | `CdefDocument`     | `CdefControl`     | `CdefControlField`     | `.xml`, `.json`, `.yaml`, `.yml`             |
+| `profile`| `ProfileDocument`  | `ProfileControl`  | `ProfileControlField`  | `.json`, `.xml`, `.yaml`, `.yml`             |
+| `sap`    | `SapDocument`      | `SapControl`      | `SapControlField`      | `.json`, `.xml`, `.yaml`, `.yml`             |
+| `poam`   | `PoamDocument`     | `PoamItem`        | (none)                 | `.json`, `.xml`, `.yaml`, `.yml`             |
 
 ### DocumentTypeRegistry
 
@@ -157,17 +158,34 @@ Key behaviors:
 - Extracts guidance data including statements, supplemental guidance, related controls, and references.
 - Supports all 20 NIST 800-53 control families via a `FAMILY_NAME_TO_CODE` lookup table.
 
-#### SapJsonParserService
+#### SapJsonParserService, SapXmlParserService, and SapYamlParserService
 
-**File:** `app/services/sap_json_parser_service.rb`
+**Files:** `app/services/sap_json_parser_service.rb`, `app/services/sap_xml_parser_service.rb`, `app/services/sap_yaml_parser_service.rb`
 
-Parses OSCAL Assessment Plan documents from JSON.
+Parse OSCAL Assessment Plan documents from JSON, XML, and YAML. The XML parser uses Nokogiri to extract metadata, activities, reviewed controls, and assessment subjects, then delegates via a temporary JSON file. The YAML parser loads via `YAML.safe_load` and delegates via temporary JSON file.
 
-#### PoamJsonParserService and PoamXmlParserService
+#### PoamJsonParserService, PoamXmlParserService, and PoamYamlParserService
 
-**Files:** `app/services/poam_json_parser_service.rb`, `app/services/poam_xml_parser_service.rb`
+**Files:** `app/services/poam_json_parser_service.rb`, `app/services/poam_xml_parser_service.rb`, `app/services/poam_yaml_parser_service.rb`
 
-Parse Plan of Action & Milestones documents from JSON and XML. The POA&M model uses `PoamItem` rather than a generic control class, reflecting the distinct structure of POA&M findings.
+Parse Plan of Action & Milestones documents from JSON, XML, and YAML. The POA&M model uses `PoamItem` rather than a generic control class, reflecting the distinct structure of POA&M findings. The YAML parser delegates to `PoamJsonParserService#parse_from_hash`.
+
+#### YAML Parser Services
+
+**Files:** `app/services/ssp_yaml_parser_service.rb`, `app/services/sar_yaml_parser_service.rb`, `app/services/poam_yaml_parser_service.rb`, `app/services/profile_yaml_parser_service.rb`, `app/services/cdef_yaml_parser_service.rb`, `app/services/sap_yaml_parser_service.rb`
+
+All six document types support YAML import. YAML parsers use two delegation patterns to avoid duplicating parsing logic:
+
+- **Pattern A** (SSP, SAR, POAM) -- the JSON parser exposes a `parse_from_hash(data)` method; the YAML parser calls `YAML.safe_load` and passes the resulting hash directly.
+- **Pattern B** (Profile, CDEF, SAP) -- the JSON parser has no `parse_from_hash`; the YAML parser writes the parsed data to a temporary JSON file and delegates to the JSON parser's `parse` method.
+
+Both patterns use `YAML.safe_load` with `permitted_classes: [Date, Time]` for safe deserialization.
+
+#### OscalFormatDetectionService
+
+**File:** `app/services/oscal_format_detection_service.rb`
+
+Detects the format of an OSCAL file by extension first (`.json`, `.yaml`, `.yml`, `.xml`), falling back to content sniffing (first non-whitespace character: `{` or `[` for JSON, `<` for XML, otherwise YAML). Returns a `Result` struct with `format` and `detected_by` fields.
 
 ### BatchInsertable Concern
 
@@ -216,7 +234,7 @@ schema.oscal_mappings      # => { "status" => { "target" => "prop", ... } }
 
 ## 2. OSCAL Export & Validation
 
-SPARC provides full OSCAL v1.1.2 JSON export for all document types, with schema validation against the official NIST JSON schemas.
+SPARC provides full OSCAL v1.1.2 export in three formats (JSON, YAML, XML) for all document types, with schema validation against the official NIST JSON schemas and XSD schemas.
 
 ### Export Services
 
@@ -263,11 +281,26 @@ Supports NIST, CIS, and DISA source mappings for component definitions.
 
 Exports assessment results with synthesized observations and findings.
 
+### Multi-Format Export
+
+**File:** `app/services/oscal_export_format_service.rb`
+
+All OSCAL export services produce JSON natively. The `OscalExportFormatService` wraps these exports to provide YAML and XML output:
+
+- `OscalExportFormatService.to_yaml(json_string)` -- parses the JSON and converts to YAML via `.to_yaml`.
+- `OscalExportFormatService.to_xml(json_string, model_type)` -- delegates to `OscalJsonToXmlConverter`.
+
+**File:** `app/services/oscal_json_to_xml_converter.rb`
+
+Converts OSCAL JSON to XML using `Nokogiri::XML::Builder` with the OSCAL namespace (`http://csrc.nist.gov/ns/oscal/1.0`). Uses an explicit `ATTRIBUTE_KEYS` set (uuid, id, href, type, name, value, etc.) to distinguish XML attributes from child elements per OSCAL convention. Handles plural-to-singular element unwrapping (e.g., `controls` -> `control`) and recursive hash-to-XML conversion.
+
+Each document controller provides `download_yaml` and `download_xml` actions that call the appropriate export service and format converter. The UI presents a Bootstrap 5 split-button dropdown allowing the user to select the export format (OSCAL JSON validated, JSON, YAML, XML).
+
 ### Schema Validation
 
 **File:** `app/services/oscal_schema_validation_service.rb`
 
-Validates OSCAL JSON against the official NIST v1.1.2 schemas using the `json_schemer` gem (Draft 2020-12 support). Supports all eight OSCAL model types:
+Validates OSCAL JSON against the official NIST v1.1.2 JSON schemas using the `json_schemer` gem (Draft 2020-12 support), and validates OSCAL XML against XSD schemas using `Nokogiri::XML::Schema`. Supports all eight OSCAL model types:
 
 ```ruby
 SCHEMA_MAP = {
@@ -290,13 +323,37 @@ The validation service performs:
 
 Schema files are cached after first load. An internal `preprocess_schema` step rewrites NIST anchor-style `$ref` values to standard JSON Pointer format (`#/definitions/X`) so `json_schemer` can resolve them locally without network access.
 
+#### XSD Validation
+
+**Directory:** `lib/oscal_xsd_schemas/`
+
+XML exports are validated against NIST OSCAL v1.1.2 XSD schemas using `Nokogiri::XML::Schema`. Seven XSD schema files are stored locally:
+
+| Schema File | OSCAL Model |
+|---|---|
+| `oscal_ssp_schema.xsd` | System Security Plan |
+| `oscal_assessment-results_schema.xsd` | Security Assessment Results |
+| `oscal_assessment-plan_schema.xsd` | Security Assessment Plan |
+| `oscal_poam_schema.xsd` | Plan of Action & Milestones |
+| `oscal_profile_schema.xsd` | Profile |
+| `oscal_catalog_schema.xsd` | Catalog |
+| `oscal_component_schema.xsd` | Component Definition |
+
+```ruby
+result = OscalSchemaValidationService.validate_xml(:ssp, xml_string)
+result.valid?   # => true/false
+result.errors   # => array of error messages
+```
+
 ### Download Options
 
-Three download modes are available in the UI for every document type:
+Five download modes are available in the UI for every document type:
 
 - **Validated** (`download_oscal_validated`) -- validates against the NIST schema; fails with an error if invalid.
 - **Unvalidated** (`download_oscal_unvalidated`) -- always downloads, skipping validation.
 - **Auto** (`download_oscal`) -- attempts validated export first; on failure, redirects to the unvalidated endpoint.
+- **YAML** (`download_yaml`) -- exports as OSCAL YAML.
+- **XML** (`download_xml`) -- exports as OSCAL XML with XSD validation.
 
 ### OSCAL Metadata Inheritance
 
@@ -321,6 +378,7 @@ OscalMetadataInheritanceService.new(ssp_document).resolve!
 - PR #67 -- Full schema uplift for CDEF, Catalogs, Profiles, SAR (#58)
 - PR #64 -- OSCAL metadata management & inheritance (#52)
 - PR #60 -- SSP creation wizard, OSCAL import, enrichment
+- Issue #120 -- Full multi-format support (JSON, YAML, XML import and export for all document types)
 
 ---
 
@@ -490,15 +548,15 @@ end
 
 ---
 
-## 7. Project Management
+## 7. Authorization Boundary Management
 
-**Models:** `app/models/project.rb`, `app/models/boundary.rb`, `app/models/project_membership.rb`
+**Models:** `app/models/authorization_boundary.rb`, `app/models/boundary.rb`, `app/models/authorization_boundary_membership.rb`
 
-Projects serve as the top-level container for compliance artifacts, organizing them around a system boundary.
+Authorization boundaries serve as the top-level container for compliance artifacts, organizing them around a system boundary.
 
-### Project
+### Authorization Boundary
 
-A project aggregates:
+An authorization boundary aggregates:
 
 - `ssp_document` (has_one)
 - `sap_document` (has_one)
@@ -506,7 +564,7 @@ A project aggregates:
 - `poam_documents` (has_many)
 - `evidences` (has_many)
 - `boundaries` (has_many)
-- `project_memberships` (has_many)
+- `authorization_boundary_memberships` (has_many)
 
 **Status** (enum): `draft`, `active`, `authorized`, `deauthorized`.
 
@@ -529,13 +587,13 @@ end
 
 System boundaries define network and security perimeters. Each boundary:
 
-- Belongs to a project.
+- Belongs to an authorization boundary.
 - Has an `environment` enum: `production`, `development`, `staging`, `test`.
 - Links to Component Definitions (CDEFs) via the `BoundaryCdefDocument` join table.
 
 ### Team Members
 
-`ProjectMembership` records assign team members to projects with specific roles:
+`AuthorizationBoundaryMembership` records assign team members to authorization boundaries with specific roles:
 
 | Role Key                | Display Label                |
 |-------------------------|------------------------------|
@@ -543,7 +601,7 @@ System boundaries define network and security perimeters. Each boundary:
 | `system_owner`          | System Owner (SO/ISO)        |
 | `ciso`                  | CISO                         |
 | `isso`                  | ISSO                         |
-| `project_member`        | Project Member               |
+| `project_member`        | Team Member                  |
 | `assessor`              | Assessor / 3PAO              |
 | `view_only`             | View Only                    |
 
@@ -578,7 +636,7 @@ Approximately 80 actions are tracked across 16 categories:
 | Authorization      | `authorization_failure`                                                        |
 | User Management    | `user_suspended`, `user_reactivated`, `admin_bootstrap`                        |
 | Role Management    | `role_grant`, `role_revoke`, `role_created`, `role_updated`, `role_deleted`     |
-| Project Members    | `project_member_added`, `project_member_removed`, `project_membership_*`       |
+| Team Members       | `project_member_added`, `project_member_removed`, `authorization_boundary_membership_*` |
 | SSP Documents      | `ssp_document_created`, `_updated`, `_deleted`, `_exported`, `_imported`       |
 | SAR Documents      | `sar_document_created`, `_updated`, `_deleted`, `_exported`, `_imported`       |
 | CDEF Documents     | `cdef_document_created`, `_updated`, `_deleted`, `_exported`, `_copied`        |
@@ -588,7 +646,7 @@ Approximately 80 actions are tracked across 16 categories:
 | Control Catalogs   | `control_catalog_*`, `control_family_*`, `catalog_control_*`                   |
 | Control Mappings   | `control_mapping_*`, `mapping_entry_*`                                         |
 | Evidence           | `evidence_created`, `_updated`, `_deleted`, `attestation_created`, `_deleted`  |
-| Projects           | `project_created`, `_updated`, `_deleted`, `boundary_*`                        |
+| Authorization Boundaries | `authorization_boundary_created`, `_updated`, `_deleted`, `boundary_*`   |
 
 ### Auditable Concern
 
@@ -882,3 +940,58 @@ Uses Bootstrap 5.3 color mode support via the `data-bs-theme` attribute on the r
 ### Related
 
 - Issue #85 (PR #86), Issue #51 (PR #62)
+
+---
+
+## 15. HTTPS Enforcement & Security Headers
+
+SPARC enforces encrypted communications in production per NIST SP 800-53 SC-8 (Transmission Confidentiality and Integrity) while allowing plain HTTP for local development.
+
+### Production HTTPS Enforcement
+
+Configured in `config/environments/production.rb`:
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| `config.assume_ssl` | `true` | Trust X-Forwarded-Proto from reverse proxy |
+| `config.force_ssl` | `ENV.fetch("FORCE_SSL", "true")` | Redirect HTTP to HTTPS, set secure cookies |
+| HSTS `max-age` | 1 year | Browsers remember to use HTTPS |
+| HSTS `subdomains` | `true` | Covers all subdomains |
+| HSTS `preload` | `true` | Eligible for browser preload lists |
+| Health-check bypass | `/up` excluded | Container probes (ALB, K8s) use HTTP internally |
+
+Set `FORCE_SSL=false` to disable (e.g., behind a proxy that already handles HTTPS).
+
+### Security Headers Middleware
+
+`config/initializers/security_headers.rb` sets defence-in-depth headers on every response:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Content-Type-Options` | `nosniff` | Prevent MIME-type sniffing |
+| `X-Frame-Options` | `SAMEORIGIN` | Clickjacking protection |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Control Referer leakage |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Restrict unused browser APIs |
+| `X-Permitted-Cross-Domain-Policies` | `none` | Block Flash/Acrobat cross-domain loading |
+
+### Content Security Policy
+
+`config/initializers/content_security_policy.rb` configures CSP in **report-only** mode. Violations appear in the browser console but do not block content. The Bootstrap 5.3 CDN (`cdn.jsdelivr.net`) is allowlisted for scripts, styles, and fonts.
+
+To switch to enforcing mode set `config.content_security_policy_report_only = false`.
+
+### Local Development
+
+Development mode (`Rails.env.development?`) does not set `force_ssl`, so `http://localhost:3000` works without certificates.
+
+### Container Deployment
+
+The Docker image exposes port 80 (HTTP). HTTPS termination is handled at the reverse proxy / load balancer layer (Nginx, Traefik, ALB). The `/up` health-check endpoint responds over HTTP so internal probes work without TLS.
+
+### Version Constant
+
+The application version is centralized in `SparcConfig::VERSION` (defined in `app/models/sparc_config.rb`). Both layout files reference it dynamically via `<%= SparcConfig::VERSION %>`.
+
+### Related
+
+- Issue #106
