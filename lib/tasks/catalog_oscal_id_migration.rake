@@ -1,23 +1,32 @@
 namespace :catalog do
   desc "Re-import OSCAL catalogs with canonical IDs (ac-1 format) and normalize existing profile controls"
   task reimport_oscal: :environment do
-    oscal_fixtures = {
-      "NIST SP 800-53 Rev 4" => Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev4_catalog.json")
-    }
+    # Map each OSCAL fixture by its document UUID (from catalog.uuid in the JSON).
+    # UUID is the OSCAL-standard identifier — names can vary between environments.
+    oscal_fixtures = [
+      {
+        uuid: "b954d3b7-d2c7-453b-8eb2-459e8d3b8462",
+        fallback_name: "NIST SP 800-53 Rev 4",
+        path: Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev4_catalog.json")
+      }
+    ]
 
-    oscal_fixtures.each do |catalog_name, fixture_path|
-      unless File.exist?(fixture_path)
-        puts "  ⚠ Fixture not found: #{fixture_path} — skipping #{catalog_name}"
+    oscal_fixtures.each do |fixture|
+      unless File.exist?(fixture[:path])
+        puts "  ⚠ Fixture not found: #{fixture[:path]} — skipping"
         next
       end
 
-      catalog = ControlCatalog.find_by(name: catalog_name)
+      # Find catalog by UUID first (stored in metadata_extra), then fall back to name
+      catalog = ControlCatalog.find_by("metadata_extra->>'catalog_uuid' = ?", fixture[:uuid])
+      catalog ||= ControlCatalog.find_by(name: fixture[:fallback_name])
+
       unless catalog
-        puts "  ⚠ Catalog '#{catalog_name}' not found in database — skipping"
+        puts "  ⚠ No catalog found for UUID #{fixture[:uuid]} or name '#{fixture[:fallback_name]}' — skipping"
         next
       end
 
-      puts "Re-importing '#{catalog_name}' (id=#{catalog.id}) from #{File.basename(fixture_path)}..."
+      puts "Re-importing catalog (id=#{catalog.id}, name='#{catalog.name}') from #{File.basename(fixture[:path])}..."
       old_count = catalog.catalog_controls.count
 
       # Delete existing catalog controls (cascade through families)
@@ -29,10 +38,9 @@ namespace :catalog do
       puts "  Cleared #{old_count} old control(s) and associated families."
 
       # Re-import using the updated CatalogImportService, passing the existing
-      # catalog so that controls are imported into the SAME catalog (not a new
-      # one named after the OSCAL metadata title).
-      file_io = File.open(fixture_path)
-      result = CatalogImportService.call(file_io, File.basename(fixture_path), existing_catalog: catalog)
+      # catalog so controls are imported into the SAME record.
+      file_io = File.open(fixture[:path])
+      result = CatalogImportService.call(file_io, File.basename(fixture[:path]), existing_catalog: catalog)
       file_io.close
 
       # Count top-level controls vs sub-parts for clarity
@@ -40,44 +48,67 @@ namespace :catalog do
       top_level_count = result[:catalog].catalog_controls.where("control_id ~ ?", '^[a-z]+-[0-9]+(\\.[0-9]+)?$').count
       sub_part_count = all_count - top_level_count
       puts "  Imported: #{result[:families]} families, #{all_count} total records (#{top_level_count} controls + #{sub_part_count} sub-parts)"
-      puts "  Controls now include enhancements, label, and sort_id columns."
 
-      # Clean up any duplicate catalog that was created by a previous (buggy)
-      # run where CatalogImportService used the OSCAL metadata title instead
-      # of the existing catalog name.
-      oscal_title = JSON.parse(File.read(fixture_path)).dig("catalog", "metadata", "title")
-      if oscal_title.present? && oscal_title != catalog_name
-        dupe = ControlCatalog.find_by(name: oscal_title)
-        if dupe
-          # Re-link any profiles that were pointing at the duplicate catalog
-          relinked = ProfileDocument.where(control_catalog_id: dupe.id).update_all(control_catalog_id: catalog.id)
-          puts "  🔗 Re-linked #{relinked} profile(s) from duplicate catalog (id=#{dupe.id}) → canonical catalog (id=#{catalog.id})" if relinked.positive?
+      # Clean up any duplicate catalog created by a previous run (matched by
+      # the OSCAL metadata title which differs from the seeded catalog name).
+      oscal_data = JSON.parse(File.read(fixture[:path]))
+      oscal_title = oscal_data.dig("catalog", "metadata", "title")
+      oscal_uuid  = oscal_data.dig("catalog", "uuid")
 
-          dupe_controls = dupe.catalog_controls.count
-          dupe.control_families.each { |f| f.catalog_controls.delete_all }
-          dupe.control_families.delete_all
-          dupe.destroy!
-          puts "  🧹 Cleaned up duplicate catalog '#{oscal_title}' (id=#{dupe.id}, had #{dupe_controls} controls)"
-        end
+      # Find duplicates: any OTHER catalog with same UUID or same OSCAL title
+      ControlCatalog.where.not(id: catalog.id).find_each do |other|
+        other_uuid = other.metadata_extra&.dig("catalog_uuid")
+        is_dupe = (other_uuid.present? && other_uuid == oscal_uuid) ||
+                  (oscal_title.present? && other.name == oscal_title)
+        next unless is_dupe
+
+        # Re-link profiles before destroying the duplicate
+        relinked = ProfileDocument.where(control_catalog_id: other.id).update_all(control_catalog_id: catalog.id)
+        puts "  🔗 Re-linked #{relinked} profile(s) from duplicate (id=#{other.id}) → canonical (id=#{catalog.id})" if relinked.positive?
+
+        dupe_controls = other.catalog_controls.count
+        other.control_families.each { |f| f.catalog_controls.delete_all }
+        other.control_families.delete_all
+        other.destroy!
+        puts "  🧹 Cleaned up duplicate catalog '#{other.name}' (id=#{other.id}, had #{dupe_controls} controls)"
       end
     end
 
-    # Also link any unlinked profiles that reference Rev 4 via their import metadata
+    # Link unlinked profiles by matching their import_metadata catalog UUID
     puts "\nChecking for unlinked profiles..."
     unlinked_profiles = ProfileDocument.where(control_catalog_id: nil)
     if unlinked_profiles.any?
-      rev4_catalog = ControlCatalog.find_by(name: "NIST SP 800-53 Rev 4")
-      if rev4_catalog
-        unlinked_profiles.find_each do |profile|
-          catalog_ref = profile.import_metadata&.dig("catalog_href")
+      catalogs = ControlCatalog.all.to_a
+      unlinked_profiles.find_each do |profile|
+        catalog_ref = profile.import_metadata&.dig("catalog_href")
+        next if catalog_ref.blank?
+
+        # Strategy 1: Direct UUID match (catalog_ref = "#<uuid>")
+        ref_uuid = catalog_ref.delete_prefix("#")
+        match = catalogs.find { |c| c.metadata_extra&.dig("catalog_uuid") == ref_uuid }
+
+        # Strategy 2: Resolve back-matter rlinks for revision matching
+        unless match
           back_matter = profile.import_metadata&.dig("back_matter") || []
-          # Check if this profile references 800-53 Rev 4
-          rlink_hrefs = back_matter.flat_map { |r| (r["rlinks"] || []).map { |rl| rl["href"].to_s } }
-          refs = [ catalog_ref.to_s, *rlink_hrefs ]
-          if refs.any? { |r| r.include?("800-53") && (r.include?("rev4") || r.include?("rev-4") || r.include?("revision-4")) }
-            profile.update_column(:control_catalog_id, rev4_catalog.id)
-            puts "  🔗 Linked '#{profile.name}' → '#{rev4_catalog.name}' (id=#{rev4_catalog.id})"
+          resource = back_matter.find { |r| r["uuid"] == ref_uuid }
+          if resource
+            rlink_hrefs = (resource["rlinks"] || []).map { |rl| rl["href"].to_s.downcase }
+            match = catalogs.find do |c|
+              cat_name = c.name.downcase
+              rlink_hrefs.any? do |href|
+                rlink_rev = href[/rev\.?\s*(\d+)/i, 1] || href[/revision[_\s]*(\d+)/i, 1]
+                catalog_rev = cat_name[/rev\.?\s*(\d+)/i, 1] || cat_name[/revision[_\s]*(\d+)/i, 1]
+                href.include?("800-53") && cat_name.include?("800-53") &&
+                  rlink_rev.present? && catalog_rev.present? &&
+                  rlink_rev == catalog_rev
+              end
+            end
           end
+        end
+
+        if match
+          profile.update_column(:control_catalog_id, match.id)
+          puts "  🔗 Linked '#{profile.name}' → '#{match.name}' (id=#{match.id})"
         end
       end
     end
@@ -130,13 +161,14 @@ namespace :catalog do
     puts "\n" + "=" * 60
     puts "Done. Summary:"
     ControlCatalog.all.each do |cat|
-      puts "  Catalog '#{cat.name}' (id=#{cat.id}): #{cat.catalog_controls.count} controls"
+      uuid = cat.metadata_extra&.dig("catalog_uuid")
+      puts "  Catalog '#{cat.name}' (id=#{cat.id}, uuid=#{uuid || 'none'}): #{cat.catalog_controls.count} controls"
     end
     ProfileDocument.where.not(control_catalog_id: nil).each do |prof|
       profile_ids = prof.profile_controls.pluck(:control_id).to_set
       catalog_ids = prof.control_catalog.catalog_controls.pluck(:control_id).to_set
       matched = (profile_ids & catalog_ids).size
-      puts "  Profile '#{prof.name}' → catalog_id=#{prof.control_catalog_id}: #{matched}/#{profile_ids.size} controls matched"
+      puts "  Profile '#{prof.name}' → catalog_id=#{prof.control_catalog_id}: #{matched}/#{profile_ids.size} matched"
     end
   end
 end
