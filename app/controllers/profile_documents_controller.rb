@@ -239,8 +239,9 @@ class ProfileDocumentsController < ApplicationController
         row_order: idx
       )
 
-      # Inherit parameter definitions from catalog
-      cc.params_list.each do |param|
+      # Inherit parameter definitions from catalog (including parent-control params
+      # referenced by sub-controls via {{ insert: param, ... }} template markup)
+      cc.effective_params_list.each do |param|
         label = param["label"].to_s
         pc.profile_control_fields.create!(field_name: "parameter:#{param['id']}", field_value: label)
         pc.profile_control_fields.create!(field_name: "parameter_label:#{param['id']}", field_value: label)
@@ -296,7 +297,7 @@ class ProfileDocumentsController < ApplicationController
             row_order: max_order + idx + 1
           )
 
-          cc.params_list.each do |param|
+          cc.effective_params_list.each do |param|
             label = param["label"].to_s
             pc.profile_control_fields.create!(field_name: "parameter:#{param['id']}", field_value: label)
             pc.profile_control_fields.create!(field_name: "parameter_label:#{param['id']}", field_value: label)

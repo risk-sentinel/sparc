@@ -254,7 +254,7 @@
                       if @profile_document.control_catalog.present?
                         show_cat_ctrl = @profile_document.control_catalog.catalog_controls.find_by(control_id: control.control_id)
                         if show_cat_ctrl
-                          show_cat_ctrl.params_list.each do |p|
+                          show_cat_ctrl.effective_params_list.each do |p|
                             show_select_meta[p["id"]] = p["select"] if p["select"].present?
                           end
                         end

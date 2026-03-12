@@ -32,12 +32,13 @@
                   .select { |pcf| pcf.field_name.start_with?("parameter_label:") }
                   .index_by { |pcf| pcf.field_name.delete_prefix("parameter_label:") }
 
-    # Build select/choice metadata from the linked catalog control (if available)
+    # Build select/choice metadata from the linked catalog control (if available),
+    # including parent-control params inherited by sub-controls
     select_meta = {}
     if profile_document.control_catalog.present?
       cat_ctrl = profile_document.control_catalog.catalog_controls.find_by(control_id: profile_control.control_id)
       if cat_ctrl
-        cat_ctrl.params_list.each do |p|
+        cat_ctrl.effective_params_list.each do |p|
           select_meta[p["id"]] = p["select"] if p["select"].present?
         end
       end

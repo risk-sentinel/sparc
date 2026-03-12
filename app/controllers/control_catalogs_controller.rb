@@ -95,6 +95,7 @@ class ControlCatalogsController < ApplicationController
     end
 
     original_filename = file.original_filename
+    sanitized_filename = File.basename(original_filename)
 
     # Create a pending catalog record and stash the file for background processing
     catalog = ControlCatalog.create!(
@@ -104,7 +105,7 @@ class ControlCatalogsController < ApplicationController
     )
 
     # Copy uploaded file to a temp path that persists past the request
-    tmp_path = Rails.root.join("tmp", "catalog_import_#{catalog.id}_#{original_filename}")
+    tmp_path = Rails.root.join("tmp", "catalog_import_#{catalog.id}_#{sanitized_filename}")
     FileUtils.cp(file.tempfile.path, tmp_path)
 
     CatalogImportJob.perform_later(catalog.id, tmp_path.to_s, original_filename)
