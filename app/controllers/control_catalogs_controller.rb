@@ -78,9 +78,13 @@ class ControlCatalogsController < ApplicationController
 
   def destroy
     name = @control_catalog.name
-    audit_log("control_catalog_deleted", subject: @control_catalog, metadata: { name: name })
-    @control_catalog.destroy
-    redirect_to control_catalogs_path, notice: "Catalog '#{name}' was deleted."
+    if @control_catalog.destroy
+      audit_log("control_catalog_deleted", subject: @control_catalog, metadata: { name: name })
+      redirect_to control_catalogs_path, notice: "Catalog '#{name}' was deleted."
+    else
+      flash[:error] = @control_catalog.errors.full_messages.join(", ")
+      redirect_to control_catalog_path(@control_catalog)
+    end
   end
 
   # GET  /control_catalogs/import
@@ -94,20 +98,23 @@ class ControlCatalogsController < ApplicationController
       return render :import, status: :unprocessable_entity
     end
 
-    begin
-      stats = CatalogImportService.call(file, file.original_filename)
-      audit_log("control_catalog_imported", subject: stats[:catalog], metadata: { name: stats[:catalog].name })
-      flash[:success] = "Imported \u201c#{stats[:catalog].name}\u201d: " \
-                        "#{stats[:families]} families, #{stats[:controls]} controls " \
-                        "(#{stats[:created]} created, #{stats[:updated]} updated)."
-      redirect_to stats[:catalog]
-    rescue CatalogImportService::ImportError => e
-      flash.now[:error] = e.message
-      render :import, status: :unprocessable_entity
-    rescue StandardError => e
-      flash.now[:error] = "Import failed: #{e.message}"
-      render :import, status: :unprocessable_entity
-    end
+    original_filename = file.original_filename
+    sanitized_filename = File.basename(original_filename)
+
+    # Create a pending catalog record and stash the file for background processing
+    catalog = ControlCatalog.create!(
+      name: File.basename(original_filename, ".*").tr("_", " "),
+      status: "pending",
+      original_filename: original_filename
+    )
+
+    # Copy uploaded file to a temp path that persists past the request
+    tmp_path = Rails.root.join("tmp", "catalog_import_#{catalog.id}_#{sanitized_filename}")
+    FileUtils.cp(file.tempfile.path, tmp_path)
+
+    CatalogImportJob.perform_later(catalog.id, tmp_path.to_s, original_filename)
+    audit_log("control_catalog_imported", subject: catalog, metadata: { name: catalog.name })
+    redirect_to catalog
   end
 
   def update_metadata
