@@ -393,7 +393,7 @@ class CatalogImportService
       next if label.blank?
 
       sub_id = parent_id + label_to_suffix(label)
-      prose  = part.at_xpath("p")&.text.to_s.strip.presence ||
+      prose  = xml_prose_with_inserts(part.at_xpath("p")).presence ||
                xml_text_content(part).strip.presence
 
       title = prose.present? ? prose.truncate(200) : label
@@ -462,7 +462,7 @@ class CatalogImportService
     parts.each do |part|
       next unless %w[statement item].include?(part["name"])
       label = oscal_xml_prop(part, "label")
-      prose = part.at_xpath("p")&.text.to_s.strip
+      prose = xml_prose_with_inserts(part.at_xpath("p"))
       line  = [ label, prose ].select(&:present?).join(" ")
       lines << ("  " * depth + line) if line.present?
       lines << oscal_xml_collect_prose(part.xpath("part"), depth: depth + 1)
@@ -731,5 +731,18 @@ class CatalogImportService
   # Extract plain text from a Nokogiri node (strips HTML/inline tags like <p>, <i>).
   def xml_text_content(node)
     node.xpath(".//text()").map(&:text).join(" ").gsub(/\s+/, " ").strip
+  end
+
+  # Extract text from a <p> element, converting <insert type="param" id-ref="..."/>
+  # into {{ insert: param, ... }} template markup so parameter references are preserved.
+  def xml_prose_with_inserts(p_node)
+    return "" if p_node.nil?
+    p_node.children.map do |child|
+      if child.element? && child.name == "insert" && child["type"] == "param"
+        "{{ insert: param, #{child['id-ref']} }}"
+      else
+        child.text
+      end
+    end.join.gsub(/\s+/, " ").strip
   end
 end
