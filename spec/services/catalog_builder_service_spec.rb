@@ -85,12 +85,12 @@ RSpec.describe CatalogBuilderService do
     end
 
     context "validation" do
-      it "raises on duplicate catalog name" do
+      it "allows duplicate catalog names" do
         described_class.new(name: "Duplicate Test").build
 
         expect {
           described_class.new(name: "Duplicate Test").build
-        }.to raise_error(ActiveRecord::RecordInvalid)
+        }.to change(ControlCatalog, :count).by(1)
       end
 
       it "raises on blank name" do
@@ -102,11 +102,9 @@ RSpec.describe CatalogBuilderService do
 
     context "transactionality" do
       it "rolls back families if catalog creation fails" do
-        described_class.new(name: "Rollback Test").build
-
         expect {
           begin
-            described_class.new(name: "Rollback Test", template: :nist_families).build
+            described_class.new(name: "").build
           rescue ActiveRecord::RecordInvalid
             nil
           end

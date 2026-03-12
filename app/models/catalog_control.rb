@@ -62,6 +62,28 @@ class CatalogControl < ApplicationRecord
     []
   end
 
+  # Returns params for this control, falling back to the parent control's params
+  # when this is a sub-control (e.g. "ac-1a") that references parameters defined
+  # on its parent (e.g. "ac-1") via {{ insert: param, ... }} template markup.
+  def effective_params_list
+    own = params_list
+    return own if own.present?
+
+    # Extract param IDs referenced in the title via {{ insert: param, <id> }}
+    referenced_ids = (title.to_s.scan(/\{\{\s*insert:\s*param,\s*([^}\s]+)\s*\}\}/).flatten)
+    return [] if referenced_ids.empty?
+
+    # Determine parent control ID: strip the trailing sub-part suffix to get the base
+    parent_id = control_id.match(/\A([a-z]+-\d+(?:\.\d+)*)/i)&.[](1)
+    return [] if parent_id.blank? || parent_id == control_id
+
+    parent = self.class.unscoped.find_by(control_family_id: control_family_id, control_id: parent_id)
+    return [] unless parent
+
+    # Return only the parent params that are actually referenced by this sub-control
+    parent.params_list.select { |p| referenced_ids.include?(p["id"]) }
+  end
+
   # Merges a hash of { param_id => new_label } into the params_data array.
   # Only the "label" key is updated; all other param fields (id, select,
   # guidelines, props) are preserved.  Returns the updated array.

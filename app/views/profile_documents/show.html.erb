@@ -248,12 +248,25 @@
 
                 <div class="mt-2">
                   <% if param_fields.any? %>
+                    <%
+                      # Build select/choice metadata from catalog for this control
+                      show_select_meta = {}
+                      if @profile_document.control_catalog.present?
+                        show_cat_ctrl = @profile_document.control_catalog.catalog_controls.find_by(control_id: control.control_id)
+                        if show_cat_ctrl
+                          show_cat_ctrl.effective_params_list.each do |p|
+                            show_select_meta[p["id"]] = p["select"] if p["select"].present?
+                          end
+                        end
+                      end
+                    %>
                     <div class="sparc-statement-block">
                       <div class="sparc-statement-label" style="color: var(--bs-primary);">Parameters</div>
                       <table class="sparc-field-table">
                         <% param_fields.each do |fname, field| %>
                           <% param_id = fname.delete_prefix("parameter:") %>
                           <% label_field = field_map["parameter_label:#{param_id}"] %>
+                          <% sel = show_select_meta[param_id] %>
                           <tr>
                             <td class="sparc-field-label" style="width: 30%; font-family: monospace;">
                               <%= param_id %>
@@ -265,6 +278,14 @@
                             <% end %>
                             <td class="sparc-field-value" <%= "colspan=2" unless label_field %>>
                               <%= field.field_value %>
+                              <% if sel %>
+                                <% choices = sel["choice"] || [] %>
+                                <% is_multi = sel["how-many"] == "one-or-more" %>
+                                <div class="text-body-tertiary" style="font-size: 0.72rem; margin-top: 0.2rem;">
+                                  Catalog options<%= is_multi ? " (one or more)" : "" %>:
+                                  <%= choices.join(", ") %>
+                                </div>
+                              <% end %>
                             </td>
                           </tr>
                         <% end %>
