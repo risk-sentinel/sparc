@@ -32,7 +32,14 @@
   <div class="card-body">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h2><%= @control_catalog.name %></h2>
+      <h2>
+        <%= @control_catalog.name %>
+        <% if @control_catalog.original_filename.present? %>
+          <% ext = File.extname(@control_catalog.original_filename).delete(".").upcase %>
+          <% badge_color = { "JSON" => "#3498db", "XML" => "#27ae60", "YAML" => "#8e44ad", "YML" => "#8e44ad" }[ext] || "#95a5a6" %>
+          <span class="badge" style="background: <%= badge_color %>; font-size: 0.55rem; vertical-align: middle;"><%= ext %></span>
+        <% end %>
+      </h2>
       <p class="text-body-secondary" style="margin-top: 0.5rem;">
         <% if @control_catalog.version.present? %>
           Version: <strong><%= @control_catalog.version %></strong> &nbsp;|&nbsp;

@@ -35,7 +35,14 @@
       <tbody>
         <% @control_catalogs.each do |catalog| %>
           <tr>
-            <td><strong><%= link_to catalog.name, catalog, class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td>
+              <strong><%= link_to catalog.name, catalog, class: "text-primary", style: "text-decoration: none;" %></strong>
+              <% if catalog.original_filename.present? %>
+                <% ext = File.extname(catalog.original_filename).delete(".").upcase %>
+                <% badge_color = { "JSON" => "#3498db", "XML" => "#27ae60", "YAML" => "#8e44ad", "YML" => "#8e44ad" }[ext] || "#95a5a6" %>
+                <span class="badge" style="background: <%= badge_color %>; font-size: 0.65rem; vertical-align: middle; margin-left: 0.35rem;"><%= ext %></span>
+              <% end %>
+            </td>
             <td><%= catalog.version.presence || "—" %></td>
             <td><%= catalog.source.presence || "—" %></td>
             <td><%= catalog.control_families.size %></td>
