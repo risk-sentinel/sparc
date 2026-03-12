@@ -84,4 +84,69 @@ RSpec.describe CatalogControl, type: :model do
       )
     end
   end
+
+  describe "#effective_params_list" do
+    let(:family) { create(:control_family, code: "AC") }
+
+    it "returns own params when present" do
+      parent = create(:catalog_control, control_family: family, control_id: "ac-1",
+                       params_data: [ { "id" => "ac-1_prm_1", "label" => "personnel or roles" } ])
+      expect(parent.effective_params_list).to eq(parent.params_list)
+    end
+
+    it "inherits referenced params from parent control for sub-controls" do
+      create(:catalog_control, control_family: family, control_id: "ac-1",
+             params_data: [
+               { "id" => "ac-1_prm_1", "label" => "personnel or roles" },
+               { "id" => "ac-1_prm_2", "label" => "frequency" }
+             ])
+      sub = create(:catalog_control, control_family: family, control_id: "ac-1a",
+                   title: "Disseminates to {{ insert: param, ac-1_prm_1 }}:",
+                   params_data: [])
+
+      result = sub.effective_params_list
+      expect(result.length).to eq(1)
+      expect(result.first["id"]).to eq("ac-1_prm_1")
+      expect(result.first["label"]).to eq("personnel or roles")
+    end
+
+    it "returns empty array when sub-control has no param references in title" do
+      create(:catalog_control, control_family: family, control_id: "ac-1",
+             params_data: [ { "id" => "ac-1_prm_1", "label" => "test" } ])
+      sub = create(:catalog_control, control_family: family, control_id: "ac-1a",
+                   title: "Plain title with no parameter references",
+                   params_data: [])
+
+      expect(sub.effective_params_list).to eq([])
+    end
+
+    it "returns only the referenced params, not all parent params" do
+      create(:catalog_control, control_family: family, control_id: "ac-1",
+             params_data: [
+               { "id" => "ac-1_prm_1", "label" => "first" },
+               { "id" => "ac-1_prm_2", "label" => "second" },
+               { "id" => "ac-1_prm_3", "label" => "third" }
+             ])
+      sub = create(:catalog_control, control_family: family, control_id: "ac-1b.1",
+                   title: "Policy {{ insert: param, ac-1_prm_2 }}; and",
+                   params_data: [])
+
+      result = sub.effective_params_list
+      expect(result.length).to eq(1)
+      expect(result.first["id"]).to eq("ac-1_prm_2")
+    end
+
+    it "includes select metadata from parent params" do
+      create(:catalog_control, control_family: family, control_id: "ac-18.1",
+             params_data: [
+               { "id" => "ac-18.1_prm_1", "select" => { "how-many" => "one-or-more", "choice" => %w[users devices] } }
+             ])
+      sub = create(:catalog_control, control_family: family, control_id: "ac-18.1a",
+                   title: "Protects {{ insert: param, ac-18.1_prm_1 }}",
+                   params_data: [])
+
+      result = sub.effective_params_list
+      expect(result.first["select"]).to eq({ "how-many" => "one-or-more", "choice" => %w[users devices] })
+    end
+  end
 end

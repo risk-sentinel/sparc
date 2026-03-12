@@ -1,12 +1,16 @@
 # CatalogImportService
 #
-# Imports control catalogs from two supported formats:
+# Imports control catalogs from three supported formats:
 #
 #   OSCAL JSON — NIST OSCAL 1.x catalog schema
 #     Source: https://github.com/usnistgov/oscal-content
 #     Example: NIST_SP-800-53_rev4_catalog.json
 #
-#   NIST XML — SP 800-53 SCAP feed schema v2.0
+#   OSCAL XML — NIST OSCAL 1.x catalog schema (XML serialization)
+#     Source: https://github.com/usnistgov/oscal-content
+#     Example: NIST_SP-800-53_rev5_catalog.xml
+#
+#   NIST XML (Legacy) — SP 800-53 SCAP feed schema v2.0
 #     Source: https://csrc.nist.gov/projects/risk-management/sp800-53-controls/downloads
 #     Example: SP_800-53_v5_1_XML.xml
 #
@@ -61,9 +65,10 @@ class CatalogImportService
   def call
     case detect_format
     when :oscal_json then import_oscal_json
+    when :oscal_xml  then import_oscal_xml
     when :nist_xml   then import_nist_xml
     else
-      raise ImportError, "Unrecognised format. Upload an OSCAL JSON (.json) or NIST XML (.xml) catalog file."
+      raise ImportError, "Unrecognised format. Upload an OSCAL JSON (.json), OSCAL XML (.xml), or NIST XML (.xml) catalog file."
     end
   end
 
@@ -80,7 +85,11 @@ class CatalogImportService
     end
 
     if @filename.end_with?(".xml")
-      return :nist_xml if @content.include?("sp800-53") || @content.include?("<controls:control>")
+      # OSCAL XML: <catalog> root element with OSCAL namespace or <group> children
+      return :oscal_xml if @content.include?("csrc.nist.gov/ns/oscal") ||
+                           (@content.include?("<catalog") && @content.include?("<group"))
+      # Legacy SCAP feed: <controls:control> elements
+      return :nist_xml if @content.include?("<controls:control>")
     end
 
     # Content-sniff as fallback
@@ -131,12 +140,11 @@ class CatalogImportService
     metadata_extra["back_matter_resources"] = back_matter_resources if back_matter_resources.present?
 
     catalog = if @existing_catalog
-      @existing_catalog.update!(
-        version: version, source: "OSCAL",
-        oscal_version: oscal_version.presence || @existing_catalog.oscal_version,
-        published: published.presence || @existing_catalog.published,
-        metadata_extra: metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
-      )
+      attrs = { name: catalog_name, version: version, source: "OSCAL" }
+      attrs[:oscal_version] = oscal_version.presence || @existing_catalog.oscal_version
+      attrs[:published] = published.presence || @existing_catalog.published
+      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      @existing_catalog.update!(attrs)
       @existing_catalog
     else
       upsert_catalog(catalog_name, version, "OSCAL",
@@ -239,7 +247,228 @@ class CatalogImportService
     end
   end
 
-  # ── NIST XML import ─────────────────────────────────────────────────────────
+  # ── OSCAL XML import ────────────────────────────────────────────────────────
+  #
+  # Structure (identical to OSCAL JSON but in XML serialization):
+  #   <catalog uuid="…">
+  #     <metadata><title>…</title><version>…</version><oscal-version>…</oscal-version></metadata>
+  #     <group id="ac" class="family">
+  #       <title>Access Control</title>
+  #       <control id="ac-1">
+  #         <title>Policy and Procedures</title>
+  #         <param id="ac-01_odp.03">
+  #           <select how-many="one-or-more"><choice>…</choice></select>
+  #         </param>
+  #         <prop name="label" value="AC-1"/>
+  #         <prop name="sort-id" value="ac-01"/>
+  #         <part name="statement"><part name="item">…</part></part>
+  #         <part name="guidance"><p>…</p></part>
+  #         <control id="ac-1.1">…</control>  ← enhancements
+  #
+  def import_oscal_xml
+    require "nokogiri"
+    doc = Nokogiri::XML(@content) { |c| c.strict.noblanks }
+    doc.remove_namespaces!
+
+    catalog_node = doc.at_xpath("//catalog")
+    raise ImportError, "No <catalog> element found — not a valid OSCAL XML catalog." unless catalog_node
+
+    metadata_node = catalog_node.at_xpath("metadata")
+    groups        = catalog_node.xpath("group")
+    raise ImportError, "No <group> elements found in catalog." if groups.empty?
+
+    catalog_name  = metadata_node&.at_xpath("title")&.text.to_s.strip.presence ||
+                    File.basename(@filename, ".xml").titleize
+    version       = metadata_node&.at_xpath("version")&.text.to_s.strip.presence ||
+                    metadata_node&.at_xpath("last-modified")&.text.to_s.first(10)
+    oscal_version = metadata_node&.at_xpath("oscal-version")&.text.to_s.strip.presence
+    published     = metadata_node&.at_xpath("published")&.text.to_s.strip.presence
+
+    # Collect metadata extras (props, links, roles, parties, etc.)
+    metadata_extra = {}
+    metadata_extra["catalog_uuid"] = catalog_node["uuid"] if catalog_node["uuid"].present?
+
+    back_matter = catalog_node.at_xpath("back-matter")
+    if back_matter
+      resources = back_matter.xpath("resource").map do |r|
+        res = { "uuid" => r["uuid"] }
+        title_node = r.at_xpath("title")
+        res["title"] = title_node.text.strip if title_node
+        r.xpath("rlink").each do |rl|
+          res["rlinks"] ||= []
+          res["rlinks"] << { "href" => rl["href"], "media-type" => rl["media-type"] }.compact
+        end
+        res
+      end
+      metadata_extra["back_matter_resources"] = resources if resources.any?
+    end
+
+    catalog = if @existing_catalog
+      attrs = { name: catalog_name, version: version, source: "OSCAL" }
+      attrs[:oscal_version] = oscal_version.presence || @existing_catalog.oscal_version
+      attrs[:published] = published.presence || @existing_catalog.published
+      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      @existing_catalog.update!(attrs)
+      @existing_catalog
+    else
+      upsert_catalog(catalog_name, version, "OSCAL",
+                     oscal_version: oscal_version, published: published,
+                     metadata_extra: metadata_extra)
+    end
+    stats = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+
+    groups.each_with_index do |group, idx|
+      family_code = group["id"].to_s.upcase
+      family_name = group.at_xpath("title")&.text.to_s.strip
+      next if family_code.blank?
+
+      family = upsert_family(catalog, family_code, family_name, idx + 1)
+      stats[:families] += 1
+
+      group.xpath("control").each do |ctrl_node|
+        import_oscal_xml_control(family, ctrl_node, stats)
+      end
+    end
+
+    stats
+  end
+
+  def import_oscal_xml_control(family, ctrl_node, stats)
+    control_id = ctrl_node["id"].to_s.strip
+    ctrl_label = oscal_xml_prop(ctrl_node, "label")
+    sort_id    = oscal_xml_prop(ctrl_node, "sort-id")
+    title      = ctrl_node.at_xpath("title")&.text.to_s.strip
+    priority   = oscal_xml_prop(ctrl_node, "priority")
+    baselines  = oscal_xml_prop_all(ctrl_node, "impact-level")
+    baseline   = baselines.join(", ").presence
+
+    # Statement prose
+    statement = oscal_xml_collect_prose(ctrl_node.xpath("part").select { |p| p["name"] == "statement" })
+
+    # Guidance part
+    guidance_node = ctrl_node.xpath("part").find { |p| p["name"] == "guidance" }
+    supplemental  = guidance_node ? xml_text_content(guidance_node).strip.presence : nil
+
+    # Related controls from guidance links
+    related = if guidance_node
+      guidance_node.xpath("link").select { |l| l["rel"] == "related" }
+                   .map { |l| l["href"]&.delete("#") }
+                   .compact.join(", ").presence
+    end
+
+    guidance_data = {
+      "statement"             => statement,
+      "supplemental_guidance" => supplemental,
+      "related_controls"      => related
+    }.compact.reject { |_, v| v.blank? }
+
+    # Parameter definitions — the key addition for issue #162
+    params_data = oscal_xml_collect_params(ctrl_node)
+
+    result = upsert_catalog_control(family, control_id, title, priority, baseline, guidance_data,
+                                    params_data: params_data, label: ctrl_label, sort_id: sort_id)
+    stats[:controls] += 1
+    stats[result]    += 1
+
+    # Sub-control records for statement item parts
+    stmt_parts = ctrl_node.xpath("part").select { |p| p["name"] == "statement" }
+    stmt_parts.each do |stmt|
+      import_oscal_xml_item_parts(family, control_id, stmt.xpath("part"))
+    end
+
+    # Recurse into enhancements (nested <control> elements)
+    ctrl_node.xpath("control").each do |sub|
+      import_oscal_xml_control(family, sub, stats)
+    end
+  end
+
+  # Recursively create CatalogControl records for OSCAL XML statement item parts.
+  def import_oscal_xml_item_parts(family, parent_id, parts)
+    return if parts.nil? || parts.empty?
+    parts.each do |part|
+      next unless part["name"] == "item"
+      label = oscal_xml_prop(part, "label").to_s.strip
+      next if label.blank?
+
+      sub_id = parent_id + label_to_suffix(label)
+      prose  = xml_prose_with_inserts(part.at_xpath("p")).presence ||
+               xml_text_content(part).strip.presence
+
+      title = prose.present? ? prose.truncate(200) : label
+
+      upsert_catalog_control(family, sub_id, title, nil, nil,
+        prose.present? ? { "statement" => prose } : {})
+
+      # Recurse into nested item parts
+      import_oscal_xml_item_parts(family, sub_id, part.xpath("part"))
+    end
+  end
+
+  # ── OSCAL XML helpers ──────────────────────────────────────────────────────
+
+  # Extract a <prop> value by name from direct children of a node.
+  def oscal_xml_prop(node, name)
+    node.xpath("prop").find { |p| p["name"] == name }&.[]("value")
+  end
+
+  # Extract all <prop> values matching a name.
+  def oscal_xml_prop_all(node, name)
+    node.xpath("prop").select { |p| p["name"] == name }.map { |p| p["value"] }.compact
+  end
+
+  # Collect all <param> children from a control node into the OSCAL JSON-equivalent structure.
+  def oscal_xml_collect_params(ctrl_node)
+    ctrl_node.xpath("param").map do |param_node|
+      entry = { "id" => param_node["id"] }
+
+      # Props (label, alt-identifier, etc.)
+      props = param_node.xpath("prop").map do |p|
+        h = { "name" => p["name"], "value" => p["value"] }
+        h["class"] = p["class"] if p["class"]
+        h["ns"] = p["ns"] if p["ns"]
+        h
+      end
+      entry["props"] = props if props.any?
+
+      # Label
+      label_node = param_node.at_xpath("label")
+      entry["label"] = label_node.text.strip if label_node
+
+      # Select with choices
+      select_node = param_node.at_xpath("select")
+      if select_node
+        sel = {}
+        sel["how-many"] = select_node["how-many"] if select_node["how-many"]
+        sel["choice"] = select_node.xpath("choice").map { |c| c.text.strip }
+        entry["select"] = sel
+      end
+
+      # Guidelines
+      guidelines = param_node.xpath("guideline").map do |g|
+        { "prose" => xml_text_content(g) }
+      end
+      entry["guidelines"] = guidelines if guidelines.any?
+
+      entry
+    end
+  end
+
+  # Recursively collect prose from OSCAL XML <part> elements matching statement/item names.
+  def oscal_xml_collect_prose(parts, depth: 0)
+    return "" if parts.nil? || parts.empty?
+    lines = []
+    parts.each do |part|
+      next unless %w[statement item].include?(part["name"])
+      label = oscal_xml_prop(part, "label")
+      prose = xml_prose_with_inserts(part.at_xpath("p"))
+      line  = [ label, prose ].select(&:present?).join(" ")
+      lines << ("  " * depth + line) if line.present?
+      lines << oscal_xml_collect_prose(part.xpath("part"), depth: depth + 1)
+    end
+    lines.reject(&:blank?).join("\n")
+  end
+
+  # ── NIST XML import (Legacy SCAP feed) ─────────────────────────────────────
   #
   # Structure (SCAP SP800-53 feed v2.0):
   #   <controls:control>
@@ -500,5 +729,18 @@ class CatalogImportService
   # Extract plain text from a Nokogiri node (strips HTML/inline tags like <p>, <i>).
   def xml_text_content(node)
     node.xpath(".//text()").map(&:text).join(" ").gsub(/\s+/, " ").strip
+  end
+
+  # Extract text from a <p> element, converting <insert type="param" id-ref="..."/>
+  # into {{ insert: param, ... }} template markup so parameter references are preserved.
+  def xml_prose_with_inserts(p_node)
+    return "" if p_node.nil?
+    p_node.children.map do |child|
+      if child.element? && child.name == "insert" && child["type"] == "param"
+        "{{ insert: param, #{child['id-ref']} }}"
+      else
+        child.text
+      end
+    end.join.gsub(/\s+/, " ").strip
   end
 end
