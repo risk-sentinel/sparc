@@ -90,7 +90,7 @@ RSpec.describe CatalogControl, type: :model do
 
     it "returns own params when present" do
       parent = create(:catalog_control, control_family: family, control_id: "ac-1",
-                       params_data: [{ "id" => "ac-1_prm_1", "label" => "personnel or roles" }])
+                       params_data: [ { "id" => "ac-1_prm_1", "label" => "personnel or roles" } ])
       expect(parent.effective_params_list).to eq(parent.params_list)
     end
 
@@ -112,7 +112,7 @@ RSpec.describe CatalogControl, type: :model do
 
     it "returns empty array when sub-control has no param references in title" do
       create(:catalog_control, control_family: family, control_id: "ac-1",
-             params_data: [{ "id" => "ac-1_prm_1", "label" => "test" }])
+             params_data: [ { "id" => "ac-1_prm_1", "label" => "test" } ])
       sub = create(:catalog_control, control_family: family, control_id: "ac-1a",
                    title: "Plain title with no parameter references",
                    params_data: [])
