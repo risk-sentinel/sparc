@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_11_094112) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_11_193023) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -189,11 +189,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_094112) do
   create_table "control_catalogs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
+    t.text "error_message"
     t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
+    t.string "original_filename"
     t.string "oscal_version"
     t.string "published"
     t.string "source"
+    t.string "status", default: "completed", null: false
     t.datetime "updated_at", null: false
     t.string "version"
     t.index ["name"], name: "index_control_catalogs_on_name"
