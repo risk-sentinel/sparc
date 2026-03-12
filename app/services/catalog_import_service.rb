@@ -140,12 +140,11 @@ class CatalogImportService
     metadata_extra["back_matter_resources"] = back_matter_resources if back_matter_resources.present?
 
     catalog = if @existing_catalog
-      @existing_catalog.update!(
-        version: version, source: "OSCAL",
-        oscal_version: oscal_version.presence || @existing_catalog.oscal_version,
-        published: published.presence || @existing_catalog.published,
-        metadata_extra: metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
-      )
+      attrs = { name: catalog_name, version: version, source: "OSCAL" }
+      attrs[:oscal_version] = oscal_version.presence || @existing_catalog.oscal_version
+      attrs[:published] = published.presence || @existing_catalog.published
+      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      @existing_catalog.update!(attrs)
       @existing_catalog
     else
       upsert_catalog(catalog_name, version, "OSCAL",
@@ -305,12 +304,11 @@ class CatalogImportService
     end
 
     catalog = if @existing_catalog
-      @existing_catalog.update!(
-        version: version, source: "OSCAL",
-        oscal_version: oscal_version.presence || @existing_catalog.oscal_version,
-        published: published.presence || @existing_catalog.published,
-        metadata_extra: metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
-      )
+      attrs = { name: catalog_name, version: version, source: "OSCAL" }
+      attrs[:oscal_version] = oscal_version.presence || @existing_catalog.oscal_version
+      attrs[:published] = published.presence || @existing_catalog.published
+      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      @existing_catalog.update!(attrs)
       @existing_catalog
     else
       upsert_catalog(catalog_name, version, "OSCAL",

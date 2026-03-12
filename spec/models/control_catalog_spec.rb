@@ -5,12 +5,32 @@ RSpec.describe ControlCatalog, type: :model do
     subject { build(:control_catalog) }
 
     it { is_expected.to validate_presence_of(:name) }
-    it { is_expected.to validate_uniqueness_of(:name) }
+
+    it "allows duplicate names" do
+      create(:control_catalog, name: "Same Name")
+      dup = build(:control_catalog, name: "Same Name")
+      expect(dup).to be_valid
+    end
   end
 
   describe "associations" do
     it { is_expected.to have_many(:control_families).dependent(:destroy) }
     it { is_expected.to have_many(:catalog_controls).through(:control_families) }
+    it { is_expected.to have_many(:profile_documents) }
+  end
+
+  describe "deletion protection" do
+    it "prevents deletion when a profile document is linked" do
+      catalog = create(:control_catalog)
+      create(:profile_document, control_catalog: catalog)
+      expect(catalog.destroy).to be_falsey
+      expect(catalog.errors[:base].first).to match(/Cannot delete catalog/)
+    end
+
+    it "allows deletion when no documents are linked" do
+      catalog = create(:control_catalog)
+      expect(catalog.destroy).to be_truthy
+    end
   end
 
   describe "OscalMetadata concern" do

@@ -78,9 +78,13 @@ class ControlCatalogsController < ApplicationController
 
   def destroy
     name = @control_catalog.name
-    audit_log("control_catalog_deleted", subject: @control_catalog, metadata: { name: name })
-    @control_catalog.destroy
-    redirect_to control_catalogs_path, notice: "Catalog '#{name}' was deleted."
+    if @control_catalog.destroy
+      audit_log("control_catalog_deleted", subject: @control_catalog, metadata: { name: name })
+      redirect_to control_catalogs_path, notice: "Catalog '#{name}' was deleted."
+    else
+      flash[:error] = @control_catalog.errors.full_messages.join(", ")
+      redirect_to control_catalog_path(@control_catalog)
+    end
   end
 
   # GET  /control_catalogs/import
