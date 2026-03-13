@@ -1,0 +1,85 @@
+{
+  "format": "scap_mapping",
+  "version": "1.3",
+  "source": "https://csrc.nist.gov/projects/security-content-automation-protocol",
+  "description": "SCAP/OVAL check families and XCCDF check-system URIs to NIST SP 800-53 Rev 5 control families. Provides family-level mappings for generic SCAP content.",
+  "total_entries": 12,
+  "check_system_mappings": [
+    {
+      "check_system": "http://oval.mitre.org/XMLSchema/oval-definitions-5",
+      "label": "OVAL Definitions",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "check_system": "http://scap.nist.gov/schema/ocil/2.0",
+      "label": "OCIL Questions",
+      "nist_controls": ["ca-2", "ca-7"],
+      "relationship": "intersects"
+    }
+  ],
+  "oval_family_mappings": [
+    {
+      "oval_family": "inventory",
+      "description": "System inventory and software identification checks",
+      "nist_controls": ["cm-8", "cm-8.1"],
+      "relationship": "subset"
+    },
+    {
+      "oval_family": "compliance",
+      "description": "Configuration compliance checks",
+      "nist_controls": ["cm-6", "cm-6.1"],
+      "relationship": "intersects"
+    },
+    {
+      "oval_family": "vulnerability",
+      "description": "Known vulnerability detection (CVE-based)",
+      "nist_controls": ["ra-5", "si-2", "si-5"],
+      "relationship": "intersects"
+    },
+    {
+      "oval_family": "patch",
+      "description": "Missing patch detection",
+      "nist_controls": ["si-2", "si-2.2"],
+      "relationship": "equivalent"
+    },
+    {
+      "oval_family": "miscellaneous",
+      "description": "General system state checks",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    }
+  ],
+  "xccdf_category_mappings": [
+    {
+      "category": "authentication",
+      "keywords": ["password", "login", "pam", "auth", "credential"],
+      "nist_controls": ["ia-2", "ia-5", "ia-5.1"],
+      "relationship": "subset"
+    },
+    {
+      "category": "access_control",
+      "keywords": ["permission", "owner", "chmod", "chown", "acl", "sudo"],
+      "nist_controls": ["ac-3", "ac-6"],
+      "relationship": "subset"
+    },
+    {
+      "category": "audit",
+      "keywords": ["audit", "log", "syslog", "rsyslog", "journald"],
+      "nist_controls": ["au-2", "au-3", "au-12"],
+      "relationship": "subset"
+    },
+    {
+      "category": "network",
+      "keywords": ["firewall", "iptables", "nftables", "tcp", "icmp", "network"],
+      "nist_controls": ["sc-7", "sc-7.5"],
+      "relationship": "subset"
+    },
+    {
+      "category": "encryption",
+      "keywords": ["crypto", "encrypt", "tls", "ssl", "fips", "cipher"],
+      "nist_controls": ["sc-8", "sc-13"],
+      "relationship": "subset"
+    }
+  ]
+}
