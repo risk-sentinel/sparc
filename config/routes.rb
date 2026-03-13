@@ -168,6 +168,17 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :converters do
+    member do
+      get :export
+    end
+    collection do
+      get :import
+      post :do_import
+    end
+    resources :converter_entries, only: [ :create, :destroy ], as: :entries, path: "entries"
+  end
+
   resources :control_mappings do
     member do
       patch :publish

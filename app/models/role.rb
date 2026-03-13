@@ -52,6 +52,8 @@ class Role < ApplicationRecord
     evidence.write
     mappings.read
     mappings.write
+    converters.read
+    converters.write
   ].freeze
 
   # Group permission keys by resource for UI rendering
@@ -68,7 +70,8 @@ class Role < ApplicationRecord
     "poam"     => "POA&Ms",
     "cdef"     => "Component Definitions",
     "evidence" => "Evidence",
-    "mappings" => "Control Mappings"
+    "mappings" => "Control Mappings",
+    "converters" => "Converters"
   }.freeze
 
   # Check if this role has a specific permission
