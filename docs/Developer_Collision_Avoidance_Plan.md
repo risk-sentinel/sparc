@@ -137,22 +137,18 @@ Sprint 3b (weeks 3-6):
 
 | Issue | Domain | Files Modified | Collision Risk |
 | ----- | ------ | -------------- | -------------- |
-| **#107** FedRAMP 20x | New (FedRAMP) | New models/services, extends export services, dashboard | **LOW** -- mostly new code |
-| **#108** Sample data | Seeds/Samples | `db/seeds.rb`, new `samples/` directory | **NONE** -- own directory |
 | **#133** Mapping docs | Documentation | `docs/` directory, minor service annotations | **NONE** -- documentation |
 | **#167** Enterprise nav | UI/Navigation | `home/index.html.erb`, layout partials, `home_controller.rb` | **NONE** with other Phase 4 work |
 | **#171** OSCAL diagram | UI (new page) | New view file, `config/routes.rb` (1 line), layout nav link | **NONE** -- new page |
 
 <!-- markdownlint-enable MD013 -->
 
-**Phase 4 Parallelism: All 5 issues can run simultaneously.**
+**Phase 4 Parallelism: All 3 issues can run simultaneously.**
 
 ```text
-Dev A: #107 (FedRAMP 20x)
-Dev B: #108 (sample data)     -- waits for #107 schema
-Dev C: #133 (mapping docs)
-Dev D: #167 (enterprise nav)
-Dev E: #171 (OSCAL diagram)
+Dev A: #133 (mapping docs)
+Dev B: #167 (enterprise nav)
+Dev C: #171 (OSCAL diagram)
 ```
 
 ---
@@ -178,6 +174,32 @@ Dev B: #109 (ECS Fargate)
 Dev C: #110 (EC2)         -- coordinate shared modules
 Dev D: #111 (Azure VM)
 ```
+
+---
+
+### Phase 6 -- FedRAMP 20x (final phase)
+
+<!-- markdownlint-disable MD013 -->
+
+| Issue | Domain | Files Modified | Collision Risk |
+| ----- | ------ | -------------- | -------------- |
+| **#107** FedRAMP 20x | New (FedRAMP) | New models/services, extends export services, dashboard | **LOW** -- mostly new code |
+| **#108** Sample data | Seeds/Samples | `db/seeds.rb`, new `samples/` directory | **NONE** -- own directory |
+
+<!-- markdownlint-enable MD013 -->
+
+**Phase 6 Strategy:** #107 ships first (defines the FedRAMP schema
+and models), then #108 follows (populates sample/seed data that
+depends on #107's schema). All core SPARC functionality from
+Phases 1-5 is complete before FedRAMP extensions begin.
+
+```text
+Dev A: #107 (FedRAMP 20x)          -- Phase 6a
+Dev B: #108 (sample data)          -- Phase 6b, AFTER #107 merges
+```
+
+> **Critical rule:** #107 must merge before #108 starts
+> (#108 needs #107 schema definitions).
 
 ---
 
@@ -282,9 +304,9 @@ These files are touched by multiple issues. Extra care required.
 | `app/views/layouts/application.html.erb` | #171 (nav link), #167 (rename), #142 (progress bar) | Each touches different parts of the layout. Use partials to isolate: `render "shared/progress_bar"`, `render "shared/nav_links"`. |
 | `Gemfile` | #100 (test gems), #171 (mermaid?), #95 (serializer gem) | Additive only. Merge conflicts are trivial. Run `bundle install` after merge. |
 | `app/models/concerns/oscal_metadata.rb` | #148, #149, #177 | **HIGH RISK.** Assign one developer to this concern per sprint. Others wait for merge. |
-| `app/services/oscal_schema_validation_service.rb` | #148, #125, #107 | Additive methods. Each adds a new validation method. Low conflict if methods are namespaced. |
+| `app/services/oscal_schema_validation_service.rb` | #148, #125, #107 | Additive methods. Each adds a new validation method. Low conflict if methods are namespaced. #107 runs last (Phase 6), so no conflict with #148/#125. |
 | `app/services/document_duplication_service.rb` | #176, #172, #173, #174 | Each document type adds its own `dup_*` method. Low conflict if well-separated. |
-| `db/seeds.rb` | #108 (dual mode), #107 (FedRAMP seeds) | Use separate seed files: `db/seeds/nist_traditional.rb`, `db/seeds/fedramp_20x.rb`. Main `seeds.rb` just dispatches. |
+| `db/seeds.rb` | #108 (dual mode), #107 (FedRAMP seeds) | Both in Phase 6 (sequential: #107 then #108). Use separate seed files: `db/seeds/nist_traditional.rb`, `db/seeds/fedramp_20x.rb`. Main `seeds.rb` just dispatches. |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -319,7 +341,7 @@ These files are touched by multiple issues. Extra care required.
 
 ## 7. Optimal Developer Assignment (4 Developers)
 
-Assuming 4 developers (A, B, C, D) across all 5 phases:
+Assuming 4 developers (A, B, C, D) across all 6 phases:
 
 ### Phase 1 (Weeks 1-3) -- Full Parallel
 
@@ -356,14 +378,32 @@ Assuming 4 developers (A, B, C, D) across all 5 phases:
 
 <!-- markdownlint-enable MD013 -->
 
-### Phase 4+5 (Weeks 16-20) -- Full Parallel
+### Phase 4 (Weeks 16-18) -- Docs & UI
+
+| Dev | Issues |
+| --- | ------ |
+| A | #133 Mapping docs |
+| B | #167 Enterprise nav |
+| C | #171 OSCAL diagram |
+| D | overflow / integration testing |
+
+### Phase 5 (Weeks 19-22) -- Infra & API
+
+| Dev | Issues |
+| --- | ------ |
+| A | #95 CRUD API |
+| B | #109 ECS Fargate |
+| C | #110 EC2 (coordinate shared TF modules with #109) |
+| D | #111 Azure VM |
+
+### Phase 6 (Weeks 23-26) -- FedRAMP 20x
 
 | Dev | Issues |
 | --- | ------ |
 | A | #107 FedRAMP 20x extensions |
-| B | #108 Sample data + #133 Mapping docs |
-| C | #109 ECS Fargate + #110 EC2 (shared TF) |
-| D | #111 Azure VM |
+| B | #108 Sample data (after #107 merges) |
+| C | overflow / integration testing |
+| D | overflow / integration testing |
 
 ---
 
@@ -424,7 +464,6 @@ Phase 3:
              +--------------------------> #125
 
 Phase 4 (all parallel):
-  #107 --> #108
   #133 (independent)
   #167 (independent)
   #171 (independent)
@@ -434,6 +473,9 @@ Phase 5 (all parallel):
   #109 (independent, share TF modules with #110)
   #110 (independent)
   #111 (independent)
+
+Phase 6 (FedRAMP 20x -- final):
+  #107 --> #108
 ```
 
 ---
@@ -473,6 +515,7 @@ Phase 5 (all parallel):
   `catalog_import_service.rb`, `routes.rb`
 - **Key sequencing constraints:** #163 before #177,
   #149 before #148/#176, #175 before #172/#173/#174,
-  all entity creation before #125
+  all entity creation before #125, all core features
+  (Phases 1-5) before FedRAMP 20x (#107/#108)
 - **Estimated time savings from parallelism:** about 40%
-  (from 24 weeks sequential to 14-16 weeks with 4 devs)
+  (from 30 weeks sequential to 18-20 weeks with 4 devs)
