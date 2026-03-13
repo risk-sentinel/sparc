@@ -93,8 +93,25 @@ class FrameworkMappingGeneratorService
       # CCI → NIST: index by CCI ID for O(1) lookup
       (data["mappings"] || []).index_by { |m| m["cci"] }
     when "cis"
-      # CIS ID → { nist_controls, relationship }
-      (data["mappings"] || []).index_by { |m| m["cis_id"] }
+      # Merge both data sources into a unified CIS ID → nist mapping index.
+      # benchmark_mappings: array of { cis_id, nist_controls, relationship }
+      # controls_mappings:  hash of  CIS ID → [{ nist, relationship }]
+      index = {}
+      (data["benchmark_mappings"] || []).each do |m|
+        index[m["cis_id"]] = {
+          "nist_controls" => m["nist_controls"],
+          "relationship"  => m["relationship"]
+        }
+      end
+      (data["controls_mappings"] || {}).each do |cis_id, nist_arr|
+        next if index.key?(cis_id)
+
+        index[cis_id] = {
+          "nist_controls" => nist_arr.map { |n| n["nist"] },
+          "relationship"  => nist_arr.first&.dig("relationship") || "subset"
+        }
+      end
+      index
     when "scap"
       # Two-tier index: OVAL family + keyword categories
       {
@@ -134,10 +151,11 @@ class FrameworkMappingGeneratorService
     end.uniq { |e| e[:nist_id] }
   end
 
-  # CIS: group_id contains numeric section (e.g. "1.1.1") → lookup
+  # CIS: group_id contains numeric section (e.g. "1.1.1") → lookup.
+  # Tries exact match first, then progressively shorter IDs (5.2.1 → 5.2 → 5).
   def resolve_via_cis(control)
     cis_id = extract_cis_id(control)
-    entry = @lookup[cis_id]
+    entry = lookup_cis_with_fallback(cis_id)
     return [] unless entry
 
     (entry["nist_controls"] || []).map do |nist_id|
@@ -193,6 +211,19 @@ class FrameworkMappingGeneratorService
 
   # ── Helpers ─────────────────────────────────────────────────────────
 
+  def lookup_cis_with_fallback(cis_id)
+    return @lookup[cis_id] if @lookup.key?(cis_id)
+
+    # Try progressively shorter IDs: "5.2.1" → "5.2" → "5"
+    parts = cis_id.split(".")
+    while parts.length > 1
+      parts.pop
+      shorter = parts.join(".")
+      return @lookup[shorter] if @lookup.key?(shorter)
+    end
+    nil
+  end
+
   def extract_cis_id(control)
     # CIS XCCDF group IDs: "xccdf_org.cisecurity.benchmarks_group_1.1.1"
     # or rule IDs:          "xccdf_org.cisecurity.benchmarks_rule_1.1.1"
@@ -233,6 +264,7 @@ class FrameworkMappingGeneratorService
       resolve_nist_controls(ctrl).each do |resolved|
         entries << ControlMappingEntry.new(
           control_mapping_id: mapping.id,
+          uuid:               SecureRandom.uuid,
           source_control_id:  ctrl.control_id,
           source_type:        "control",
           target_control_id:  resolved[:nist_id],

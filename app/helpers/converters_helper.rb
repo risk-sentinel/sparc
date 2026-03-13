@@ -6,6 +6,8 @@ module ConvertersHelper
     when "complete"    then "success"
     when "draft"       then "warning"
     when "deprecated"  then "secondary"
+    when "processing"  then "info"
+    when "failed"      then "danger"
     else "light"
     end
   end

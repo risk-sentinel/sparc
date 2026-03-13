@@ -15,13 +15,13 @@ class Converter < ApplicationRecord
   validates :name, presence: true
   validates :uuid, presence: true, uniqueness: true
   validates :converter_type, presence: true, inclusion: { in: %w[cci_to_nist cis_to_nist scap_oval_to_nist custom] }
-  validates :status, inclusion: { in: %w[draft complete deprecated] }
+  validates :status, inclusion: { in: %w[draft complete deprecated processing failed] }
 
   scope :sorted, -> { order(updated_at: :desc) }
   scope :published, -> { where(status: "complete") }
 
   TYPES = %w[cci_to_nist cis_to_nist scap_oval_to_nist custom].freeze
-  STATUSES = %w[draft complete deprecated].freeze
+  STATUSES = %w[draft complete deprecated processing failed].freeze
 
   TYPE_LABELS = {
     "cci_to_nist" => "CCI → NIST",

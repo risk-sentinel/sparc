@@ -2,14 +2,97 @@
   <%# ── Header ── %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 fw-bold mb-0"><%= @converter.name %></h1>
-    <div class="d-flex gap-2">
+    <div style="display: inline-flex; gap: 0.5rem; align-items: center;">
       <% if can_write_converters? %>
-        <%= link_to "Edit", edit_converter_path(@converter), class: "btn btn-sm btn-outline-primary" %>
+        <%= link_to "Edit", edit_converter_path(@converter), class: "btn btn-primary btn-sm" %>
       <% end %>
-      <%= link_to "Export JSON", export_converter_path(@converter), class: "btn btn-sm btn-outline-info" %>
-      <%= link_to "Back", converters_path, class: "btn btn-sm btn-outline-secondary" %>
+      <% if @converter.converter_type == "cci_to_nist" && can_write_converters? %>
+        <button type="button" class="btn btn-warning btn-sm fw-semibold"
+                data-bs-toggle="modal" data-bs-target="#refreshCciModal"
+                <%= "disabled" if @converter.status == "processing" %>>
+          Refresh from DISA
+        </button>
+      <% end %>
+      <%= link_to "Export JSON", export_converter_path(@converter), class: "btn btn-sm",
+            style: "background: #8e44ad; color: white; font-size: 0.8rem;" %>
+      <%= link_to "Back", converters_path, class: "btn btn-secondary btn-sm" %>
     </div>
   </div>
+
+  <%# ── Refresh Confirmation Modal ── %>
+  <% if @converter.converter_type == "cci_to_nist" && can_write_converters? %>
+    <div class="modal fade" id="refreshCciModal" tabindex="-1" aria-labelledby="refreshCciModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="refreshCciModalLabel">Refresh CCI from DISA</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>This will download the latest DISA CCI list and reload all converter entries.</p>
+            <ul class="small text-body-secondary mb-0">
+              <li>All existing entries will be replaced with fresh data</li>
+              <li>Only published CCIs (Rev 4 + Rev 5) will be imported</li>
+              <li>This may take a minute to complete</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <%= button_to "Refresh Now", refresh_cci_converter_path(@converter),
+                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  form: { style: "display: inline;" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Status Banners (with auto-refresh while processing) ── %>
+  <% refresh_stage = @converter.metadata_extra&.dig("refresh_stage") %>
+  <% refresh_message = @converter.metadata_extra&.dig("refresh_message") %>
+
+  <% if @converter.status == "processing" %>
+    <meta http-equiv="refresh" content="3">
+    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+      <div class="spinner-border spinner-border-sm me-2" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div>
+        <strong>CCI refresh in progress</strong>
+        <% if refresh_message.present? %>
+          <br><span class="small"><%= refresh_message %></span>
+        <% end %>
+      </div>
+    </div>
+  <% elsif @converter.status == "failed" && @converter.error_message.present? %>
+    <div class="alert alert-danger mb-4" role="alert">
+      <strong>Refresh failed:</strong> <%= @converter.error_message %>
+    </div>
+  <% elsif refresh_stage == "complete" && @converter.status == "complete" %>
+    <% refresh_stats = @converter.metadata_extra&.dig("refresh_stats") %>
+    <% completed_at = @converter.metadata_extra&.dig("refresh_completed_at") %>
+    <% if refresh_stats.present? %>
+      <div class="alert alert-success mb-4" role="alert">
+        <strong>Successfully refreshed database</strong>
+        <br>
+        <span class="small">
+          <%= refresh_stats["total_ccis"] %> CCIs &rarr; <%= refresh_stats["total_entries"] %> entries
+          <% if refresh_stats["by_revision"].present? %>
+            (<%= refresh_stats["by_revision"].map { |rev, count| "Rev #{rev}: #{count}" }.join(", ") %>)
+          <% end %>
+          <% if refresh_stats["skipped_deprecated"].to_i > 0 %>
+            &middot; <%= refresh_stats["skipped_deprecated"] %> deprecated skipped
+          <% end %>
+          <% if refresh_stats["skipped_draft"].to_i > 0 %>
+            &middot; <%= refresh_stats["skipped_draft"] %> draft skipped
+          <% end %>
+          <% if completed_at.present? %>
+            &middot; <%= Time.parse(completed_at).strftime("%Y-%m-%d %H:%M") %>
+          <% end %>
+        </span>
+      </div>
+    <% end %>
+  <% end %>
 
   <%# ── Coverage Stats ── %>
   <%= render "shared/section_summary", tiles: [
@@ -115,8 +198,9 @@
               <% if can_write_converters? %>
                 <td class="text-end">
                   <%= button_to "Remove", converter_entry_path(@converter, entry),
-                        method: :delete, class: "btn btn-sm btn-outline-danger",
-                        data: { turbo_confirm: "Remove this entry?" } %>
+                        method: :delete, class: "btn btn-outline-danger btn-sm",
+                        style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+                        form: { data: { turbo_confirm: "Remove this entry?" }, style: "display: inline;" } %>
                 </td>
               <% end %>
             </tr>

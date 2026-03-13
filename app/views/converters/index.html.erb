@@ -10,8 +10,8 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Converters</h2>
     <% if can_write_converters? %>
-      <div class="d-flex gap-2">
-        <%= link_to "Import JSON", import_converters_path, class: "btn btn-outline-info" %>
+      <div style="display: inline-flex; gap: 0.5rem;">
+        <%= link_to "Import JSON", import_converters_path, class: "btn btn-success" %>
         <%= link_to "New Converter", new_converter_path, class: "btn btn-primary" %>
       </div>
     <% end %>
@@ -64,13 +64,15 @@
             <td><%= converter.entries_count %></td>
             <td class="small text-body-secondary"><%= converter.version %></td>
             <td class="small text-body-secondary"><%= converter.updated_at.strftime("%Y-%m-%d") %></td>
-            <td>
-              <div class="d-flex gap-1 justify-content-end">
-                <%= link_to "View", converter_path(converter), class: "btn btn-sm btn-outline-primary" %>
+            <td class="text-end" style="white-space: nowrap;">
+              <div style="display: inline-flex; gap: 0.3rem; justify-content: flex-end;">
+                <%= link_to "View", converter_path(converter), class: "btn btn-primary btn-sm",
+                      style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
                 <% if can_write_converters? %>
                   <%= button_to "Delete", converter_path(converter), method: :delete,
-                        class: "btn btn-sm btn-outline-danger",
-                        data: { turbo_confirm: "Delete converter '#{converter.name}'?" } %>
+                        class: "btn btn-outline-danger btn-sm",
+                        style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+                        form: { data: { turbo_confirm: "Delete converter '#{converter.name}'?" }, style: "display: inline;" } %>
                 <% end %>
               </div>
             </td>
@@ -83,9 +85,9 @@
       <p>No converters found.</p>
       <p class="small">Converters map framework-specific control IDs (CCI, CIS, SCAP/OVAL) to NIST SP 800-53 controls.</p>
       <% if can_write_converters? %>
-        <div class="d-flex gap-2 justify-content-center">
-          <%= link_to "Import from JSON", import_converters_path, class: "btn btn-outline-info" %>
-          <%= link_to "Create from scratch", new_converter_path, class: "btn btn-success" %>
+        <div style="display: inline-flex; gap: 0.5rem; justify-content: center;">
+          <%= link_to "Import from JSON", import_converters_path, class: "btn btn-success" %>
+          <%= link_to "Create from scratch", new_converter_path, class: "btn btn-primary" %>
         </div>
       <% end %>
     </div>
