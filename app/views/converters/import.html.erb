@@ -1,0 +1,41 @@
+<div class="row justify-content-center my-4">
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h3 fw-bold mb-0">Import Converter</h1>
+      <%= link_to "Cancel", converters_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+
+    <div class="card p-4">
+      <p class="text-body-secondary mb-3">
+        Upload a JSON file matching one of the supported converter formats:
+        <strong>CCI → NIST</strong>, <strong>CIS → NIST</strong>, <strong>SCAP/OVAL → NIST</strong>,
+        or a generic converter format.
+      </p>
+
+      <%= form_with url: do_import_converters_path, method: :post, multipart: true, class: "mb-0" do |f| %>
+        <div class="mb-3">
+          <%= f.label :file, "JSON File", class: "form-label" %>
+          <%= f.file_field :file, accept: ".json", class: "form-control" %>
+          <div class="form-text">
+            Supported formats: <code>cci_mapping</code>, <code>cis_mapping</code>, <code>scap_mapping</code>,
+            or generic with <code>entries</code> array.
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <%= f.submit "Import", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="card mt-4 p-4">
+      <h5 class="fw-semibold">Supported JSON Formats</h5>
+      <div class="small text-body-secondary">
+        <p class="mb-2"><strong>CCI → NIST</strong> (<code>"format": "cci_mapping"</code>): DISA CCI XML mappings with <code>mappings</code> array containing <code>cci</code>, <code>nist_rev5</code>, and <code>nist_rev4</code> fields.</p>
+        <p class="mb-2"><strong>CIS → NIST</strong> (<code>"format": "cis_mapping"</code>): CIS Controls with <code>controls_mappings</code> (safeguard → NIST) and <code>benchmark_mappings</code> (section → NIST) hashes.</p>
+        <p class="mb-2"><strong>SCAP/OVAL → NIST</strong> (<code>"format": "scap_mapping"</code>): Multi-tier with <code>check_system_mappings</code>, <code>oval_test_type_mappings</code>, <code>oval_family_mappings</code>, and <code>keyword_mappings</code>.</p>
+        <p class="mb-0"><strong>Generic</strong>: Any JSON with <code>entries</code> or <code>mappings</code> array, each containing <code>source_id</code>, <code>target_id</code>, and optional <code>relationship</code>.</p>
+      </div>
+    </div>
+  </div>
+</div>

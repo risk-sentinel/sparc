@@ -1,0 +1,162 @@
+<div class="my-4">
+  <%# ── Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0"><%= @converter.name %></h1>
+    <div class="d-flex gap-2">
+      <% if can_write_converters? %>
+        <%= link_to "Edit", edit_converter_path(@converter), class: "btn btn-sm btn-outline-primary" %>
+      <% end %>
+      <%= link_to "Export JSON", export_converter_path(@converter), class: "btn btn-sm btn-outline-info" %>
+      <%= link_to "Back", converters_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <%# ── Coverage Stats ── %>
+  <%= render "shared/section_summary", tiles: [
+    [@stats[:total_entries], "Total Entries"],
+    [@stats[:unique_sources], "Source IDs"],
+    [@stats[:unique_targets], "NIST Controls"],
+    [@stats[:family_count], "Families"]
+  ] %>
+
+  <%# ── Two-column details ── %>
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header fw-semibold">Converter Details</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Type</dt>
+            <dd class="col-sm-8">
+              <span class="badge" style="background: <%= converter_type_color(@converter.converter_type) %>22; color: <%= converter_type_color(@converter.converter_type) %>; border: 1px solid <%= converter_type_color(@converter.converter_type) %>44;">
+                <%= @converter.type_label %>
+              </span>
+            </dd>
+            <dt class="col-sm-4">Status</dt>
+            <dd class="col-sm-8">
+              <span class="badge text-bg-<%= converter_status_color(@converter.status) %>">
+                <%= @converter.status.titleize %>
+              </span>
+            </dd>
+            <dt class="col-sm-4">Version</dt>
+            <dd class="col-sm-8"><%= @converter.version %></dd>
+            <dt class="col-sm-4">Created</dt>
+            <dd class="col-sm-8"><%= @converter.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
+            <dt class="col-sm-4">Updated</dt>
+            <dd class="col-sm-8"><%= @converter.updated_at.strftime("%Y-%m-%d %H:%M") %></dd>
+          </dl>
+          <% if @converter.description.present? %>
+            <hr>
+            <p class="small text-body-secondary mb-0"><%= @converter.description %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header fw-semibold">Framework References</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Source</dt>
+            <dd class="col-sm-8"><%= @converter.source_framework || "—" %></dd>
+            <dt class="col-sm-4">Target</dt>
+            <dd class="col-sm-8"><%= @converter.target_framework %></dd>
+            <dt class="col-sm-4">Entries</dt>
+            <dd class="col-sm-8"><span class="badge text-bg-info"><%= @entries.size %></span></dd>
+          </dl>
+          <% if @stats[:families].any? %>
+            <hr>
+            <div class="small text-body-secondary">
+              <strong>NIST Families:</strong>
+              <% @stats[:families].each do |fam| %>
+                <span class="badge text-bg-light border me-1"><%= fam %></span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Converter Entries ── %>
+  <div class="card mt-4">
+    <div class="card-header fw-semibold">Mapping Entries (<%= @entries.size %>)</div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Source ID</th>
+            <th class="text-center">&rarr;</th>
+            <th>Target (NIST)</th>
+            <th>Relationship</th>
+            <th>Category</th>
+            <th>Remarks</th>
+            <% if can_write_converters? %>
+              <th></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% @entries.each do |entry| %>
+            <tr>
+              <td><code><%= entry.source_id %></code></td>
+              <td class="text-center text-body-secondary">&rarr;</td>
+              <td><code><%= entry.target_id %></code></td>
+              <td>
+                <span class="badge text-bg-<%= converter_relationship_color(entry.relationship) %>">
+                  <%= entry.relationship.titleize %>
+                </span>
+              </td>
+              <td class="small text-body-secondary"><%= entry.category %></td>
+              <td class="small text-body-secondary" style="max-width: 200px;">
+                <%= truncate(entry.remarks.to_s, length: 60) %>
+              </td>
+              <% if can_write_converters? %>
+                <td class="text-end">
+                  <%= button_to "Remove", converter_entry_path(@converter, entry),
+                        method: :delete, class: "btn btn-sm btn-outline-danger",
+                        data: { turbo_confirm: "Remove this entry?" } %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+
+          <%# ── Add entry form row ── %>
+          <% if can_write_converters? %>
+            <tr class="table-light">
+              <td colspan="7">
+                <%= form_with model: [@converter, @entry], url: converter_entries_path(@converter), class: "row g-2 align-items-end" do |f| %>
+                  <div class="col-md-2">
+                    <%= f.text_field :source_id, class: "form-control form-control-sm",
+                          placeholder: "e.g. CCI-000015" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.text_field :target_id, class: "form-control form-control-sm",
+                          placeholder: "e.g. ac-2" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.select :relationship,
+                          ConverterEntry::RELATIONSHIPS.map { |r| [r.titleize, r] },
+                          { prompt: "Relationship..." }, class: "form-select form-select-sm" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.text_field :category, class: "form-control form-control-sm",
+                          placeholder: "Category (optional)" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.text_field :remarks, class: "form-control form-control-sm",
+                          placeholder: "Remarks (optional)" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.submit "Add Entry", class: "btn btn-sm btn-success w-100" %>
+                  </div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
