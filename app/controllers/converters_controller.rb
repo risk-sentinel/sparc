@@ -2,10 +2,10 @@
 
 class ConvertersController < ApplicationController
   before_action :authorize_converter_write!, only: [
-    :new, :create, :edit, :update, :destroy, :import, :do_import
+    :new, :create, :edit, :update, :destroy, :import, :do_import, :refresh_cci
   ]
   before_action :set_converter, only: [
-    :show, :edit, :update, :destroy, :export
+    :show, :edit, :update, :destroy, :export, :refresh_cci
   ]
 
   def index
@@ -91,6 +91,24 @@ class ConvertersController < ApplicationController
     end
   end
 
+  # POST /converters/:id/refresh_cci
+  def refresh_cci
+    unless @converter.converter_type == "cci_to_nist"
+      redirect_to @converter, flash: { error: "Refresh is only available for CCI → NIST converters." }
+      return
+    end
+
+    if @converter.status == "processing"
+      redirect_to @converter, flash: { warning: "A refresh is already in progress." }
+      return
+    end
+
+    @converter.update!(status: "processing", error_message: nil)
+    ConverterRefreshJob.perform_later(@converter.id)
+    audit_log("converter_refresh_started", subject: @converter, metadata: { name: @converter.name })
+    redirect_to @converter, flash: { success: "CCI refresh started. This may take a minute." }
+  end
+
   # GET /converters/:id/export
   def export
     json_data = build_export_json(@converter)
@@ -105,6 +123,8 @@ class ConvertersController < ApplicationController
 
   def set_converter
     @converter = Converter.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to converters_path, flash: { error: "Converter not found." }
   end
 
   def converter_params

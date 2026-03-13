@@ -15,6 +15,7 @@ RSpec.describe FrameworkMappingGeneratorService do
              import_metadata: { "title" => "RHEL 9 STIG" })
     end
 
+    # CCI-000015 → ac-2.1, CCI-000225 → ac-6 (per full DISA CCI data)
     let!(:control_with_ccis) do
       create(:cdef_control,
              cdef_document:  cdef_doc,
@@ -35,7 +36,7 @@ RSpec.describe FrameworkMappingGeneratorService do
       it "returns mapped NIST controls for controls with known CCIs" do
         result = service.preview
         expect(result).to have_key("SV-257777")
-        expect(result["SV-257777"]).to include("ac-2")
+        expect(result["SV-257777"]).to include("ac-2.1")
         expect(result["SV-257777"]).to include("ac-6")
       end
 
@@ -72,13 +73,13 @@ RSpec.describe FrameworkMappingGeneratorService do
 
         sv_entries = entries.where(source_control_id: "SV-257777")
         target_ids = sv_entries.pluck(:target_control_id)
-        expect(target_ids).to include("ac-2")
+        expect(target_ids).to include("ac-2.1")
         expect(target_ids).to include("ac-6")
       end
 
       it "sets remarks indicating CCI pivot" do
         mapping = service.generate!
-        entry = mapping.control_mapping_entries.find_by(target_control_id: "ac-2")
+        entry = mapping.control_mapping_entries.find_by(target_control_id: "ac-2.1")
         expect(entry.remarks).to match(/CCI-000015/)
       end
 
@@ -95,16 +96,16 @@ RSpec.describe FrameworkMappingGeneratorService do
       end
 
       it "deduplicates NIST controls when multiple CCIs map to the same control" do
-        # CCI-000009 through CCI-000018 all map to ac-2; ensure no duplicates
+        # CCI-000002, CCI-002107, CCI-003602 all map to ac-1-a-1.a; ensure no duplicates
         ctrl = create(:cdef_control,
                       cdef_document:  cdef_doc,
                       control_id:     "SV-111111",
-                      cci_references: "CCI-000009,CCI-000010,CCI-000011")
+                      cci_references: "CCI-000002,CCI-002107,CCI-003602")
 
         mapping = service.generate!
-        ac2_entries = mapping.control_mapping_entries
-                             .where(source_control_id: ctrl.control_id, target_control_id: "ac-2")
-        expect(ac2_entries.count).to eq(1)
+        ac1_entries = mapping.control_mapping_entries
+                             .where(source_control_id: ctrl.control_id, target_control_id: "ac-1-a-1.a")
+        expect(ac1_entries.count).to eq(1)
       end
     end
   end
