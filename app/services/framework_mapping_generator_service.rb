@@ -147,7 +147,7 @@ class FrameworkMappingGeneratorService
       nist_id = entry["nist_rev5"] || entry["nist_rev4"]
       next [] unless nist_id
 
-      [{ nist_id: nist_id, relationship: "subset", via: cci }]
+      [ { nist_id: nist_id, relationship: "subset", via: cci } ]
     end.uniq { |e| e[:nist_id] }
   end
 
@@ -193,8 +193,8 @@ class FrameworkMappingGeneratorService
 
     # 3. Keyword-based category matching (fallback)
     if results.empty? && @lookup[:categories]
-      text = [control.title, control.control_id,
-              control.cdef_control_fields.find_by(field_name: "description")&.field_value].compact.join(" ").downcase
+      text = [ control.title, control.control_id,
+              control.cdef_control_fields.find_by(field_name: "description")&.field_value ].compact.join(" ").downcase
 
       @lookup[:categories].each do |cat|
         next unless cat["keywords"]&.any? { |kw| text.include?(kw) }
@@ -227,7 +227,7 @@ class FrameworkMappingGeneratorService
   def extract_cis_id(control)
     # CIS XCCDF group IDs: "xccdf_org.cisecurity.benchmarks_group_1.1.1"
     # or rule IDs:          "xccdf_org.cisecurity.benchmarks_rule_1.1.1"
-    raw = [control.group_id, control.rule_id, control.control_id].compact.join(" ")
+    raw = [ control.group_id, control.rule_id, control.control_id ].compact.join(" ")
     raw.match(/(\d+(?:\.\d+){1,})/)&.[](1) || control.control_id
   end
 
