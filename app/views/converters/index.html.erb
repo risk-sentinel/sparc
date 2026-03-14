@@ -1,0 +1,95 @@
+<%= render "shared/section_summary", tiles: [
+  [@total_count, "Converters"],
+  [@complete_count, "Complete"],
+  [@draft_count, "Draft"],
+  [@unique_targets, "Unique NIST Controls"],
+  [@family_count, "Control Families"]
+] %>
+
+<div class="card" style="overflow: hidden;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Converters</h2>
+    <% if can_write_converters? %>
+      <div style="display: inline-flex; gap: 0.5rem;">
+        <%= link_to "Import JSON", import_converters_path, class: "btn btn-success" %>
+        <%= link_to "New Converter", new_converter_path, class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @converters.any? %>
+    <table class="table table-hover" style="table-layout: fixed;">
+      <colgroup>
+        <col style="width: 22%;">
+        <col style="width: 14%;">
+        <col style="width: 14%;">
+        <col style="width: 8%;">
+        <col style="width: 10%;">
+        <col style="width: 8%;">
+        <col style="width: 12%;">
+        <col style="width: 12%;">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Source Framework</th>
+          <th>Status</th>
+          <th>Entries</th>
+          <th>Version</th>
+          <th>Last Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @converters.each do |converter| %>
+          <tr>
+            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= converter.name %>">
+              <%= link_to converter.name, converter_path(converter), class: "text-decoration-none" %>
+            </td>
+            <td>
+              <span class="badge" style="background: <%= converter_type_color(converter.converter_type) %>22; color: <%= converter_type_color(converter.converter_type) %>; border: 1px solid <%= converter_type_color(converter.converter_type) %>44; font-size: 0.7rem;">
+                <%= converter.type_label %>
+              </span>
+            </td>
+            <td class="small text-body-secondary" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                title="<%= converter.source_framework %>">
+              <%= converter.source_framework %>
+            </td>
+            <td>
+              <span class="badge text-bg-<%= converter_status_color(converter.status) %>">
+                <%= converter.status.titleize %>
+              </span>
+            </td>
+            <td><%= converter.entries_count %></td>
+            <td class="small text-body-secondary"><%= converter.version %></td>
+            <td class="small text-body-secondary"><%= converter.updated_at.strftime("%Y-%m-%d") %></td>
+            <td class="text-end" style="white-space: nowrap;">
+              <div style="display: inline-flex; gap: 0.3rem; justify-content: flex-end;">
+                <%= link_to "View", converter_path(converter), class: "btn btn-primary btn-sm",
+                      style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
+                <% if can_write_converters? %>
+                  <%= button_to "Delete", converter_path(converter), method: :delete,
+                        class: "btn btn-outline-danger btn-sm",
+                        style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+                        form: { data: { turbo_confirm: "Delete converter '#{converter.name}'?" }, style: "display: inline;" } %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="text-center text-body-secondary p-4">
+      <p>No converters found.</p>
+      <p class="small">Converters map framework-specific control IDs (CCI, CIS, SCAP/OVAL) to NIST SP 800-53 controls.</p>
+      <% if can_write_converters? %>
+        <div style="display: inline-flex; gap: 0.5rem; justify-content: center;">
+          <%= link_to "Import from JSON", import_converters_path, class: "btn btn-success" %>
+          <%= link_to "Create from scratch", new_converter_path, class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
