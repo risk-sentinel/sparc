@@ -5,15 +5,19 @@
 # write the parsed YAML data to a temporary JSON file for delegation.
 #
 class SapYamlParserService
+  include ProgressTrackable
+
   def initialize(document, file_path)
     @document  = document
     @file_path = file_path
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     content = File.read(@file_path).force_encoding("UTF-8")
     data = YAML.safe_load(content, permitted_classes: [ Date, Time ])
 
+    update_processing_stage!(:creating_records)
     tmp_json = Tempfile.new([ "sap_yaml_", ".json" ])
     tmp_json.write(JSON.generate(data))
     tmp_json.close

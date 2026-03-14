@@ -45,7 +45,7 @@ lane for a sprint.
 
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
-| [ ] | **#142** Background upload UX | Shared (Jobs) | `document_conversion_job.rb`, `conversion_job.rb` model, new Stimulus controller, document controller upload actions | **LOW** -- touches job infra, not domain logic |
+| [x] | **#142** Background upload UX | Shared (Jobs) | `document_conversion_job.rb`, `catalog_import_job.rb`, new `ProgressTrackable` concern, shared `_processing_banner.html.erb` partial, all 20 parser services, all 7 show views, all 7 index views | **LOW** -- touches job infra, not domain logic |
 | [ ] | **#178** Safe delete | Shared (Models) | `before_destroy` callbacks across all document models, new shared modal partial, new Stimulus controller | **LOW** -- adds callbacks, doesn't change business logic |
 | [ ] | **#100** Regression testing | Testing | `spec/` directory (new files), `Gemfile`, `.github/workflows/`, `spec_helper.rb` | **NONE** -- additive only, own directory |
 | [ ] | **#134** HTTPS dev | Infrastructure | `config/puma.rb`, `config/environments/development.rb`, `docker-compose.yml` | **NONE** -- config files only |
@@ -264,7 +264,7 @@ multi-developer Rails projects.
 
 | Issue | Migration Description | Tables Affected |
 | ----- | -------------------- | --------------- |
-| #142 | Add `processed_count`, `total_count` to `conversion_jobs` | `conversion_jobs` |
+| ~~#142~~ | ~~Add `processed_count`, `total_count` to `conversion_jobs`~~ | ~~`conversion_jobs`~~ | **COMPLETED** -- no migration needed; uses existing `metadata_extra` JSONB |
 | #177 | Add `file_digest` to `control_catalogs`; possibly `locked` to `catalog_controls` | `control_catalogs`, `catalog_controls` |
 | #149 | Standardize `status` enum across all 6 document tables; add `published_at` | `ssp_documents`, `sar_documents`, `cdef_documents`, `profile_documents`, `sap_documents`, `poam_documents` |
 | #148 | Add `published_version` columns (or use existing `metadata_extra` jsonb) | Possibly all document tables |

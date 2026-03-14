@@ -25,6 +25,8 @@
 #   ac-1, ac-1a, ac-1a.1, ac-1a.1.(a), ac-1a.1.(b), ac-1b, ac-1c, ac-1c.1, ac-1c.2
 #
 class CatalogImportService
+  include ProgressTrackable
+
   class ImportError < StandardError; end
 
   FAMILY_NAME_TO_CODE = {
@@ -60,9 +62,12 @@ class CatalogImportService
     @content  = file_io.read.force_encoding("UTF-8")
     @filename = original_filename.to_s.downcase
     @existing_catalog = existing_catalog
+    @document = existing_catalog  # alias for ProgressTrackable
   end
 
   def call
+    update_processing_stage!(:reading_file, "Detecting catalog format...")
+
     case detect_format
     when :oscal_json then import_oscal_json
     when :oscal_xml  then import_oscal_xml
@@ -122,6 +127,8 @@ class CatalogImportService
   #         .links[rel=related]              → related control IDs
   #
   def import_oscal_json
+    update_processing_stage!(:parsing, "Parsing OSCAL JSON catalog...")
+
     data        = JSON.parse(@content)
     cat_data    = data.fetch("catalog") { raise ImportError, "Missing 'catalog' key — not a valid OSCAL catalog JSON." }
     metadata    = cat_data.fetch("metadata", {})
@@ -152,6 +159,8 @@ class CatalogImportService
                      metadata_extra: metadata_extra)
     end
     stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+
+    update_processing_stage!(:creating_records, "Importing #{groups.size} control families...")
 
     groups.each_with_index do |group, idx|
       family_code = group["id"].to_s.upcase
@@ -266,6 +275,8 @@ class CatalogImportService
   #         <control id="ac-1.1">…</control>  ← enhancements
   #
   def import_oscal_xml
+    update_processing_stage!(:parsing, "Parsing OSCAL XML catalog...")
+
     require "nokogiri"
     doc = Nokogiri::XML(@content) { |c| c.strict.noblanks }
     doc.remove_namespaces!
@@ -487,6 +498,8 @@ class CatalogImportService
   #     <references><reference><short_name>…</short_name></reference>
   #
   def import_nist_xml
+    update_processing_stage!(:parsing, "Parsing NIST XML catalog...")
+
     require "nokogiri"
     doc = Nokogiri::XML(@content) { |c| c.strict.noblanks }
     doc.remove_namespaces!
