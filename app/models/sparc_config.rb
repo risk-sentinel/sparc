@@ -111,6 +111,22 @@ module SparcConfig
   def gitlab_client_secret = ENV.fetch("SPARC_GITLAB_CLIENT_SECRET", nil)
   def gitlab_site          = ENV.fetch("SPARC_GITLAB_SITE", "https://gitlab.com")
 
+  # ── DISA CCI ─────────────────────────────────────────────────────────
+  # URL for the official DISA CCI XML ZIP archive.
+  # Override with SPARC_DISA_CCI_URL for air-gapped or mirror environments.
+
+  def disa_cci_url
+    ENV.fetch("SPARC_DISA_CCI_URL", "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CCI_List.zip")
+  end
+
+  # Comma-separated list of NIST SP 800-53 revision numbers to include
+  # when importing CCI mappings. Default: "4,5" (Rev 4 + Rev 5).
+  # Add "6" when Rev 6 is published: SPARC_CCI_REVS=4,5,6
+
+  def cci_revisions
+    ENV.fetch("SPARC_CCI_REVS", "4,5").split(",").map(&:strip)
+  end
+
   # ── Convenience ───────────────────────────────────────────────────────────
 
   def any_auth_enabled?

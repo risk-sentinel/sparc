@@ -1,0 +1,482 @@
+{
+  "format": "scap_mapping",
+  "version": "1.3",
+  "source": "https://csrc.nist.gov/projects/security-content-automation-protocol",
+  "description": "SCAP/OVAL mappings to NIST SP 800-53 Rev 5. Three resolution tiers: (1) OVAL test types for precise matching, (2) OVAL families for broad classification, (3) XCCDF keyword categories as fallback. Derived from ComplianceAsCode rule patterns and OVAL schema definitions.",
+  "check_system_mappings": [
+    {
+      "check_system": "http://oval.mitre.org/XMLSchema/oval-definitions-5",
+      "label": "OVAL Definitions",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "check_system": "http://scap.nist.gov/schema/ocil/2.0",
+      "label": "OCIL Questions",
+      "nist_controls": ["ca-2", "ca-7"],
+      "relationship": "intersects"
+    },
+    {
+      "check_system": "http://scap.nist.gov/schema/ocil/2",
+      "label": "OCIL 2.0 (alternate URI)",
+      "nist_controls": ["ca-2", "ca-7"],
+      "relationship": "intersects"
+    }
+  ],
+  "oval_test_type_mappings": [
+    {
+      "test_type": "unix:file_test",
+      "description": "Check file existence, type, and metadata",
+      "nist_controls": ["cm-6", "ac-3"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "unix:file_permissions_test",
+      "description": "Verify file/directory ownership and permission bits",
+      "nist_controls": ["ac-3", "ac-6"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "ind:textfilecontent54_test",
+      "description": "Check configuration file content via regex",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "ind:textfilecontent_test",
+      "description": "Check configuration file content (legacy)",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "unix:shadow_test",
+      "description": "Verify /etc/shadow password aging and hashing",
+      "nist_controls": ["ia-5", "ia-5.1"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "unix:password_test",
+      "description": "Check /etc/passwd entries and password policy",
+      "nist_controls": ["ia-5", "ia-5.1", "ac-2"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "unix:process58_test",
+      "description": "Verify running processes and their attributes",
+      "nist_controls": ["cm-7", "cm-7.1"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "unix:runlevel_test",
+      "description": "Check service runlevel/target configuration",
+      "nist_controls": ["cm-7"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "linux:rpminfo_test",
+      "description": "Verify RPM package installation and version",
+      "nist_controls": ["cm-8", "si-2"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "linux:dpkginfo_test",
+      "description": "Verify Debian package installation and version",
+      "nist_controls": ["cm-8", "si-2"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "linux:rpmverifyfile_test",
+      "description": "Verify RPM file integrity against package manifest",
+      "nist_controls": ["si-7", "cm-6"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "linux:rpmverifypackage_test",
+      "description": "Verify RPM package integrity (signatures, digests)",
+      "nist_controls": ["si-7", "si-7.1"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "linux:partition_test",
+      "description": "Check disk partition mount options and attributes",
+      "nist_controls": ["cm-6", "sc-4"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "unix:sysctl_test",
+      "description": "Verify kernel sysctl parameter values",
+      "nist_controls": ["cm-6", "sc-7"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "linux:systemdunitproperty_test",
+      "description": "Check systemd unit properties and state",
+      "nist_controls": ["cm-7"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "linux:systemdunitdependency_test",
+      "description": "Verify systemd unit dependency configuration",
+      "nist_controls": ["cm-7"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "unix:uname_test",
+      "description": "Check kernel version and platform identification",
+      "nist_controls": ["cm-8", "si-2"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "unix:interface_test",
+      "description": "Verify network interface configuration",
+      "nist_controls": ["sc-7", "cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "unix:routingtable_test",
+      "description": "Check network routing table entries",
+      "nist_controls": ["sc-7"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "unix:xinetd_test",
+      "description": "Check xinetd service configuration",
+      "nist_controls": ["cm-7", "ac-17"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "unix:inetd_test",
+      "description": "Check inetd service configuration",
+      "nist_controls": ["cm-7", "ac-17"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "linux:selinuxboolean_test",
+      "description": "Verify SELinux boolean settings",
+      "nist_controls": ["ac-3", "ac-6"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "linux:selinuxsecuritycontext_test",
+      "description": "Verify SELinux security context labels",
+      "nist_controls": ["ac-3", "ac-6"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "ind:environmentvariable58_test",
+      "description": "Check environment variable values",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "ind:variable_test",
+      "description": "Evaluate OVAL variable conditions",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "ind:family_test",
+      "description": "Detect operating system family",
+      "nist_controls": ["cm-8"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "ind:xmlfilecontent_test",
+      "description": "Check XML configuration file content via XPath",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "windows:registry_test",
+      "description": "Verify Windows registry key values",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "windows:wmi57_test",
+      "description": "Query Windows Management Instrumentation",
+      "nist_controls": ["cm-6", "cm-7"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "windows:accesstoken_test",
+      "description": "Check Windows user privilege assignments",
+      "nist_controls": ["ac-6", "ac-6.1"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "windows:auditeventpolicy_test",
+      "description": "Verify Windows audit event policy settings",
+      "nist_controls": ["au-2", "au-12"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "windows:auditeventpolicysubcategories_test",
+      "description": "Verify Windows audit subcategory policy",
+      "nist_controls": ["au-2", "au-3", "au-12"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "windows:passwordpolicy_test",
+      "description": "Verify Windows local password policy",
+      "nist_controls": ["ia-5", "ia-5.1"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "windows:lockoutpolicy_test",
+      "description": "Verify Windows account lockout policy",
+      "nist_controls": ["ac-7"],
+      "relationship": "equivalent"
+    },
+    {
+      "test_type": "windows:user_test",
+      "description": "Check Windows local user account properties",
+      "nist_controls": ["ac-2", "ia-4"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "windows:group_test",
+      "description": "Check Windows local group membership",
+      "nist_controls": ["ac-2", "ac-6"],
+      "relationship": "intersects"
+    },
+    {
+      "test_type": "windows:fileauditedpermissions53_test",
+      "description": "Verify NTFS audit ACL entries on files",
+      "nist_controls": ["au-2", "ac-6"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "windows:fileeffectiverights53_test",
+      "description": "Verify effective file permissions on Windows",
+      "nist_controls": ["ac-3", "ac-6"],
+      "relationship": "subset"
+    },
+    {
+      "test_type": "windows:service_test",
+      "description": "Check Windows service state and startup type",
+      "nist_controls": ["cm-7"],
+      "relationship": "subset"
+    }
+  ],
+  "oval_family_mappings": [
+    {
+      "oval_family": "inventory",
+      "description": "System inventory and software identification checks",
+      "nist_controls": ["cm-8", "cm-8.1"],
+      "relationship": "subset"
+    },
+    {
+      "oval_family": "compliance",
+      "description": "Configuration compliance checks",
+      "nist_controls": ["cm-6", "cm-6.1"],
+      "relationship": "intersects"
+    },
+    {
+      "oval_family": "vulnerability",
+      "description": "Known vulnerability detection (CVE-based)",
+      "nist_controls": ["ra-5", "si-2", "si-5"],
+      "relationship": "intersects"
+    },
+    {
+      "oval_family": "patch",
+      "description": "Missing patch detection",
+      "nist_controls": ["si-2", "si-2.2"],
+      "relationship": "equivalent"
+    },
+    {
+      "oval_family": "miscellaneous",
+      "description": "General system state checks",
+      "nist_controls": ["cm-6"],
+      "relationship": "intersects"
+    }
+  ],
+  "xccdf_category_mappings": [
+    {
+      "category": "authentication",
+      "keywords": ["password", "login", "pam", "auth", "credential", "faillock", "pwquality", "lastlog"],
+      "nist_controls": ["ia-2", "ia-5", "ia-5.1"],
+      "relationship": "subset"
+    },
+    {
+      "category": "account_lockout",
+      "keywords": ["lockout", "faillock", "deny", "fail_interval", "unlock_time", "account_lock"],
+      "nist_controls": ["ac-7"],
+      "relationship": "equivalent"
+    },
+    {
+      "category": "access_control",
+      "keywords": ["permission", "owner", "chmod", "chown", "acl", "sudo", "umask", "sticky", "suid", "sgid", "setuid", "setgid", "world-writable"],
+      "nist_controls": ["ac-3", "ac-6"],
+      "relationship": "subset"
+    },
+    {
+      "category": "mandatory_access_control",
+      "keywords": ["selinux", "apparmor", "enforcing", "permissive", "security_context", "mac_policy", "targeted"],
+      "nist_controls": ["ac-3", "ac-6"],
+      "relationship": "subset"
+    },
+    {
+      "category": "user_management",
+      "keywords": ["useradd", "userdel", "groupadd", "nologin", "shell", "home_dir", "uid_min", "inactive", "expire"],
+      "nist_controls": ["ac-2", "ia-4"],
+      "relationship": "subset"
+    },
+    {
+      "category": "privileged_access",
+      "keywords": ["root", "wheel", "sudoers", "su_group", "privilege", "escalat", "admin", "superuser"],
+      "nist_controls": ["ac-6", "ac-6.1", "ac-6.5"],
+      "relationship": "subset"
+    },
+    {
+      "category": "audit",
+      "keywords": ["audit", "auditd", "auditctl", "aureport", "ausearch", "audit.rules"],
+      "nist_controls": ["au-2", "au-3", "au-12"],
+      "relationship": "subset"
+    },
+    {
+      "category": "logging",
+      "keywords": ["log", "syslog", "rsyslog", "journald", "journal", "logrotate", "remote_log"],
+      "nist_controls": ["au-2", "au-4", "au-6", "au-7"],
+      "relationship": "subset"
+    },
+    {
+      "category": "audit_retention",
+      "keywords": ["max_log_file", "num_logs", "log_retention", "rotate", "space_left", "disk_full"],
+      "nist_controls": ["au-4", "au-11"],
+      "relationship": "subset"
+    },
+    {
+      "category": "network_firewall",
+      "keywords": ["firewall", "iptables", "nftables", "firewalld", "ufw", "tcp_wrapper", "chain", "rule"],
+      "nist_controls": ["sc-7", "sc-7.5"],
+      "relationship": "subset"
+    },
+    {
+      "category": "network_parameters",
+      "keywords": ["icmp", "redirect", "forward", "source_route", "syncookie", "tcp_timestamp", "rp_filter", "accept_ra", "martian", "sysctl"],
+      "nist_controls": ["cm-6", "sc-7"],
+      "relationship": "subset"
+    },
+    {
+      "category": "encryption",
+      "keywords": ["crypto", "encrypt", "tls", "ssl", "fips", "cipher", "hmac", "aes", "sha256", "sha512", "key_exchange"],
+      "nist_controls": ["sc-8", "sc-13"],
+      "relationship": "subset"
+    },
+    {
+      "category": "data_at_rest_encryption",
+      "keywords": ["luks", "dm-crypt", "encrypted_partition", "encrypt_disk", "bitlocker"],
+      "nist_controls": ["sc-28", "sc-28.1"],
+      "relationship": "subset"
+    },
+    {
+      "category": "remote_access_ssh",
+      "keywords": ["ssh", "sshd", "sshd_config", "ssh_host_key", "authorized_key", "known_hosts", "pubkey"],
+      "nist_controls": ["ac-17", "ac-17.2", "sc-8"],
+      "relationship": "subset"
+    },
+    {
+      "category": "session_management",
+      "keywords": ["timeout", "tmout", "idle", "session", "screen_lock", "vlock", "inactivity", "clientalive"],
+      "nist_controls": ["ac-11", "ac-12", "sc-10"],
+      "relationship": "subset"
+    },
+    {
+      "category": "banner_warning",
+      "keywords": ["banner", "motd", "issue", "warning", "notice", "consent", "legal"],
+      "nist_controls": ["ac-8"],
+      "relationship": "equivalent"
+    },
+    {
+      "category": "time_synchronization",
+      "keywords": ["ntp", "chrony", "chronyd", "ntpd", "timesyncd", "time_server", "time_source"],
+      "nist_controls": ["au-8", "au-8.1"],
+      "relationship": "subset"
+    },
+    {
+      "category": "file_integrity",
+      "keywords": ["aide", "tripwire", "integrity", "checksum", "hash", "file_verify", "rpm_verify", "debsums"],
+      "nist_controls": ["si-7", "si-7.1"],
+      "relationship": "subset"
+    },
+    {
+      "category": "service_management",
+      "keywords": ["systemctl", "service", "daemon", "enable", "disable", "mask", "xinetd", "inetd", "chkconfig"],
+      "nist_controls": ["cm-7", "cm-7.1"],
+      "relationship": "subset"
+    },
+    {
+      "category": "package_management",
+      "keywords": ["yum", "dnf", "apt", "rpm", "dpkg", "package", "install", "gpgcheck", "repo_gpgcheck"],
+      "nist_controls": ["cm-8", "si-2", "cm-11"],
+      "relationship": "subset"
+    },
+    {
+      "category": "kernel_hardening",
+      "keywords": ["kernel", "module", "modprobe", "blacklist", "cramfs", "freevxfs", "hfs", "jffs2", "usb-storage", "lkrg", "grub", "bootloader"],
+      "nist_controls": ["cm-6", "cm-7"],
+      "relationship": "subset"
+    },
+    {
+      "category": "filesystem_mount",
+      "keywords": ["mount", "fstab", "nodev", "nosuid", "noexec", "partition", "tmp", "var", "home"],
+      "nist_controls": ["cm-6", "sc-4"],
+      "relationship": "subset"
+    },
+    {
+      "category": "dns",
+      "keywords": ["dns", "resolv", "named", "bind", "dnssec", "hostname"],
+      "nist_controls": ["sc-20", "sc-21", "sc-22"],
+      "relationship": "subset"
+    },
+    {
+      "category": "mail",
+      "keywords": ["postfix", "sendmail", "smtp", "mail", "mta", "relay"],
+      "nist_controls": ["cm-7", "si-8"],
+      "relationship": "intersects"
+    },
+    {
+      "category": "cron_scheduling",
+      "keywords": ["cron", "crontab", "at", "anacron", "cron.allow", "cron.deny"],
+      "nist_controls": ["cm-6", "ac-3"],
+      "relationship": "subset"
+    },
+    {
+      "category": "vulnerability_scanning",
+      "keywords": ["cve", "vulnerability", "exploit", "security_patch", "errata", "advisory"],
+      "nist_controls": ["ra-5", "si-2", "si-5"],
+      "relationship": "intersects"
+    },
+    {
+      "category": "backup_recovery",
+      "keywords": ["backup", "restore", "recovery", "disaster", "continuity"],
+      "nist_controls": ["cp-9", "cp-10"],
+      "relationship": "intersects"
+    },
+    {
+      "category": "address_space_protection",
+      "keywords": ["aslr", "randomize_va_space", "nx", "execshield", "stack_protect", "ptrace", "core_dump", "dmesg_restrict"],
+      "nist_controls": ["cm-6", "si-16"],
+      "relationship": "subset"
+    },
+    {
+      "category": "wireless",
+      "keywords": ["wireless", "wifi", "wlan", "802.11", "bluetooth"],
+      "nist_controls": ["ac-18", "ac-18.1"],
+      "relationship": "subset"
+    },
+    {
+      "category": "removable_media",
+      "keywords": ["usb", "cdrom", "removable", "automount", "media", "udisk"],
+      "nist_controls": ["mp-7", "cm-7"],
+      "relationship": "subset"
+    },
+    {
+      "category": "gpg_signing",
+      "keywords": ["gpg", "gpgcheck", "repo_gpgcheck", "signature", "signing", "key_verify"],
+      "nist_controls": ["si-7", "cm-11"],
+      "relationship": "subset"
+    }
+  ]
+}
