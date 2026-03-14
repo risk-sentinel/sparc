@@ -1,5 +1,6 @@
 class SspDocument < ApplicationRecord
   include OscalMetadata
+  include SafeDestroyable
 
   belongs_to :authorization_boundary, optional: true
 
@@ -66,5 +67,14 @@ class SspDocument < ApplicationRecord
   rescue StandardError => e
     document&.update!(status: "failed")
     raise e
+  end
+
+  private
+
+  def deletion_dependencies
+    deps = []
+    sap_count = SapDocument.where(ssp_document_id: id).count
+    deps << "#{sap_count} Assessment Plan(s)" if sap_count > 0
+    deps
   end
 end

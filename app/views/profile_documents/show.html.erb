@@ -71,7 +71,7 @@
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
       <% if signed_in? %>
         <%= button_to "Copy", copy_profile_document_path(@profile_document), method: :post,
-              class: "sparc-btn-ghost", data: { confirm: "Duplicate this profile?" } %>
+              class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this profile?" } } %>
         <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
               class: "sparc-btn-oscal" %>
         <% if @profile_document.control_catalog.present? %>
@@ -81,7 +81,7 @@
         <% if @profile_document.control_catalog.present? %>
           <%= button_to "Publish", publish_profile_document_path(@profile_document), method: :patch,
                 class: "btn btn-warning btn-sm fw-semibold",
-                data: { confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } %>
+                form: { data: { turbo_confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } } %>
         <% end %>
       <% end %>
       <div class="btn-group">

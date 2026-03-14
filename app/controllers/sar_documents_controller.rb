@@ -275,10 +275,16 @@ class SarDocumentsController < ApplicationController
 
   def destroy
     name = @sar_document.name
-    audit_log("sar_document_deleted", subject: @sar_document, metadata: { name: name })
-    @sar_document.destroy
-    flash[:success] = "Security Assessment Results document deleted"
-    redirect_to sar_documents_path
+    if @sar_document.destroy
+      audit_log("sar_document_deleted", subject: @sar_document, metadata: { name: name })
+      flash[:success] = "SAR '#{name}' deleted."
+      redirect_to sar_documents_path
+    else
+      audit_log("sar_document_delete_blocked", subject: @sar_document,
+        metadata: { name: name, reason: @sar_document.errors.full_messages.join(", ") })
+      flash[:error] = @sar_document.errors.full_messages.join(", ")
+      redirect_to sar_document_path(@sar_document)
+    end
   end
 
   private

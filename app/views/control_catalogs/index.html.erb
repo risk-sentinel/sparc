@@ -77,7 +77,7 @@
                 <% if can_write_catalogs? %>
                   <%= link_to "Edit", edit_control_catalog_path(catalog), class: "btn", style: "background: #f39c12; color: white; padding: 0.4rem 0.8rem; font-size: 0.85rem;" %>
                   <%= button_to "Delete", catalog, method: :delete,
-                      data: { confirm: "Delete '#{catalog.name}'? This will remove all families and controls." },
+                      form: { data: { turbo_confirm: "Delete '#{catalog.name}'? This will remove all families and controls." } },
                       class: "btn btn-danger", style: "padding: 0.4rem 0.8rem; font-size: 0.85rem;" %>
                 <% end %>
               </div>

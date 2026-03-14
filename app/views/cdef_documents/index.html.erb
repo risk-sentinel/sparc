@@ -54,7 +54,7 @@
               <div style="display: inline-flex; gap: 0.35rem;">
                 <%= link_to "View", cdef_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
                 <% if signed_in? && doc.completed? %>
-                  <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.35rem 0.75rem; font-size: 0.8rem;", data: { confirm: "Duplicate this component definition?" } %>
+                  <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.35rem 0.75rem; font-size: 0.8rem;", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
                 <% end %>
                 <% if doc.completed? %>
                   <div class="btn-group">

@@ -85,10 +85,16 @@ class PoamDocumentsController < ApplicationController
 
   def destroy
     name = @poam_document.name
-    audit_log("poam_document_deleted", subject: @poam_document, metadata: { name: name })
-    @poam_document.destroy
-    flash[:success] = "POA&M document deleted"
-    redirect_to poam_documents_path
+    if @poam_document.destroy
+      audit_log("poam_document_deleted", subject: @poam_document, metadata: { name: name })
+      flash[:success] = "POA&M '#{name}' deleted."
+      redirect_to poam_documents_path
+    else
+      audit_log("poam_document_delete_blocked", subject: @poam_document,
+        metadata: { name: name, reason: @poam_document.errors.full_messages.join(", ") })
+      flash[:error] = @poam_document.errors.full_messages.join(", ")
+      redirect_to poam_document_path(@poam_document)
+    end
   end
 
   def download_json

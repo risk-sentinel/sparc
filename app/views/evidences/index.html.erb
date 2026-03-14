@@ -114,7 +114,7 @@
                   <%= link_to "View", evidence, class: "btn btn-primary btn-sm" %>
                   <%= link_to "Edit", edit_evidence_path(evidence), class: "btn btn-sm btn-sparc-orange" %>
                   <%= button_to "Delete", evidence, method: :delete,
-                      data: { confirm: "Delete evidence '#{evidence.title}'?" },
+                      form: { data: { turbo_confirm: "Delete evidence '#{evidence.title}'?" } },
                       class: "btn btn-danger btn-sm" %>
                 </div>
               </td>

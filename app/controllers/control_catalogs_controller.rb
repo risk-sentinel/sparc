@@ -82,6 +82,8 @@ class ControlCatalogsController < ApplicationController
       audit_log("control_catalog_deleted", subject: @control_catalog, metadata: { name: name })
       redirect_to control_catalogs_path, notice: "Catalog '#{name}' was deleted."
     else
+      audit_log("control_catalog_delete_blocked", subject: @control_catalog,
+        metadata: { name: name, reason: @control_catalog.errors.full_messages.join(", ") })
       flash[:error] = @control_catalog.errors.full_messages.join(", ")
       redirect_to control_catalog_path(@control_catalog)
     end

@@ -66,10 +66,16 @@ class SapDocumentsController < ApplicationController
 
   def destroy
     name = @sap_document.name
-    audit_log("sap_document_deleted", subject: @sap_document, metadata: { name: name })
-    @sap_document.destroy
-    flash[:success] = "Assessment Plan deleted"
-    redirect_to sap_documents_path
+    if @sap_document.destroy
+      audit_log("sap_document_deleted", subject: @sap_document, metadata: { name: name })
+      flash[:success] = "Assessment Plan '#{name}' deleted."
+      redirect_to sap_documents_path
+    else
+      audit_log("sap_document_delete_blocked", subject: @sap_document,
+        metadata: { name: name, reason: @sap_document.errors.full_messages.join(", ") })
+      flash[:error] = @sap_document.errors.full_messages.join(", ")
+      redirect_to sap_document_path(@sap_document)
+    end
   end
 
   def download_json

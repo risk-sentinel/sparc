@@ -2,6 +2,101 @@
 
 ---
 
+## 2026-03-14 -- Safe Delete Confirmation with Dependency Checks (#178)
+
+**Branch:** `feature/178_safe_delete_confirmation`
+
+### Summary
+
+All delete actions across SPARC now check for cross-document
+dependencies before allowing deletion. If an entity is referenced by
+other documents (e.g., a Profile linked to SSPs), the delete is
+blocked with a clear error message. Additionally, all confirmation
+dialogs now use a styled Bootstrap modal instead of the browser's
+native `window.confirm()`.
+
+### What Changed
+
+- **New `SafeDestroyable` concern** -- reusable model concern with
+  `before_destroy :check_deletion_dependencies`. Each including model
+  defines a `deletion_dependencies` method that returns human-readable
+  dependency strings. If any exist, the destroy is aborted with an
+  error on `:base`.
+
+- **Dependency checks across all models** -- `ControlCatalog` (profiles,
+  mappings), `ProfileDocument` (SSPs, SAPs), `SspDocument` (SAPs),
+  `SapDocument` (SARs), `CdefDocument` (SSP join table, boundary join
+  table). Leaf nodes (`SarDocument`, `PoamDocument`) include the concern
+  with empty dependencies.
+
+- **Safe controller destroy pattern** -- all 7 controllers now check
+  `destroy` return value. On success: audit log + flash success +
+  redirect to index. On failure: audit log "delete_blocked" with reason
+  + flash error + redirect back to show page.
+
+- **7 new audit actions** -- `*_delete_blocked` events registered in
+  `AuditEvent` for compliance audit trail when deletion is prevented.
+
+- **Bootstrap confirmation modal** -- `Turbo.setConfirmMethod()` override
+  in `application.js` replaces browser-native `window.confirm()` with a
+  styled Bootstrap 5 modal for all `turbo_confirm` dialogs app-wide.
+  Features red "Delete" button, Cancel default, auto-cleanup.
+
+- **Normalized all confirmation dialogs** -- migrated 9 views from
+  old Rails UJS `data: { confirm: }` pattern to Turbo-compatible
+  `form: { data: { turbo_confirm: } }` so all confirmations trigger
+  the new Bootstrap modal.
+
+### Files Created (1)
+
+- `app/models/concerns/safe_destroyable.rb`
+
+### Files Modified (17)
+
+- `app/models/control_catalog.rb`
+- `app/models/ssp_document.rb`
+- `app/models/sar_document.rb`
+- `app/models/cdef_document.rb`
+- `app/models/profile_document.rb`
+- `app/models/sap_document.rb`
+- `app/models/poam_document.rb`
+- `app/models/audit_event.rb`
+- `app/controllers/ssp_documents_controller.rb`
+- `app/controllers/sar_documents_controller.rb`
+- `app/controllers/cdef_documents_controller.rb`
+- `app/controllers/profile_documents_controller.rb`
+- `app/controllers/sap_documents_controller.rb`
+- `app/controllers/poam_documents_controller.rb`
+- `app/controllers/control_catalogs_controller.rb`
+- `app/javascript/application.js`
+- `spec/models/control_catalog_spec.rb`
+
+### Views Updated (9)
+
+- `app/views/control_catalogs/index.html.erb`
+- `app/views/control_catalogs/show.html.erb`
+- `app/views/control_families/show.html.erb`
+- `app/views/evidences/index.html.erb`
+- `app/views/evidences/show.html.erb`
+- `app/views/cdef_documents/index.html.erb`
+- `app/views/cdef_documents/show.html.erb`
+- `app/views/profile_documents/show.html.erb`
+
+### What is NOT Changed
+
+- **No database migrations** -- dependency checks use existing FK columns.
+- **No new routes** -- dependency info is in model error messages.
+- **No new Stimulus controller** -- uses official `Turbo.setConfirmMethod`.
+- **Child record cascading unchanged** -- `dependent: :destroy` still works.
+- **AuthorizationBoundary** -- already has `dependent: :nullify`, no change.
+
+### Verification
+
+- 564 RSpec tests pass
+- RuboCop clean (0 offenses)
+
+---
+
 ## 2026-03-14 -- Background Upload Processing UX (#142)
 
 **Branch:** `feature/142_background_upload_ux`
