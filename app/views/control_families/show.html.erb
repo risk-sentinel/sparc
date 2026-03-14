@@ -153,7 +153,7 @@
                   <%= link_to "Edit", edit_catalog_control_path(control), class: "btn btn-sm btn-sparc-orange" %>
                   <% if depth == 0 %>
                     <%= button_to "Delete", catalog_control_path(control), method: :delete,
-                        data: { confirm: "Delete #{control.control_id}? This also removes all its sub-parts." },
+                        form: { data: { turbo_confirm: "Delete #{control.control_id}? This also removes all its sub-parts." } },
                         class: "btn btn-danger btn-sm" %>
                   <% end %>
                 </div>

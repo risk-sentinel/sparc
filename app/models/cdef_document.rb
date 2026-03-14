@@ -1,5 +1,6 @@
 class CdefDocument < ApplicationRecord
   include OscalMetadata
+  include SafeDestroyable
 
   has_many :cdef_controls, dependent: :delete_all
   has_one_attached :file
@@ -19,5 +20,16 @@ class CdefDocument < ApplicationRecord
       description: description,
       controls: cdef_controls.order(:row_order).includes(:cdef_control_fields).map(&:to_hash)
     }
+  end
+
+  private
+
+  def deletion_dependencies
+    deps = []
+    ssp_count = SspDocumentCdefDocument.where(cdef_document_id: id).count
+    deps << "#{ssp_count} SSP(s)" if ssp_count > 0
+    boundary_count = BoundaryCdefDocument.where(cdef_document_id: id).count
+    deps << "#{boundary_count} boundary environment(s)" if boundary_count > 0
+    deps
   end
 end

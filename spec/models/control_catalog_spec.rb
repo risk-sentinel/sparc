@@ -24,7 +24,7 @@ RSpec.describe ControlCatalog, type: :model do
       catalog = create(:control_catalog)
       create(:profile_document, control_catalog: catalog)
       expect(catalog.destroy).to be_falsey
-      expect(catalog.errors[:base].first).to match(/Cannot delete catalog/)
+      expect(catalog.errors[:base].first).to match(/Cannot delete control catalog/)
     end
 
     it "allows deletion when no documents are linked" do

@@ -1,9 +1,6 @@
 class ControlCatalog < ApplicationRecord
   include OscalMetadata
-
-  # Prevent deletion when any profile or mapping still references this catalog.
-  # Must be declared before associations with dependent: options so it runs first.
-  before_destroy :ensure_no_linked_documents
+  include SafeDestroyable
 
   has_many :control_families, dependent: :destroy
   has_many :catalog_controls, through: :control_families
@@ -25,15 +22,11 @@ class ControlCatalog < ApplicationRecord
 
   private
 
-  def ensure_no_linked_documents
-    dependents = []
-    dependents << "#{profile_documents.count} profile(s)" if profile_documents.exists?
-    dependents << "source for #{source_mappings.count} mapping(s)" if source_mappings.exists?
-    dependents << "target for #{target_mappings.count} mapping(s)" if target_mappings.exists?
-
-    if dependents.any?
-      errors.add(:base, "Cannot delete catalog: linked to #{dependents.join(', ')}")
-      throw(:abort)
-    end
+  def deletion_dependencies
+    deps = []
+    deps << "#{profile_documents.count} profile(s)" if profile_documents.exists?
+    deps << "source for #{source_mappings.count} mapping(s)" if source_mappings.exists?
+    deps << "target for #{target_mappings.count} mapping(s)" if target_mappings.exists?
+    deps
   end
 end
