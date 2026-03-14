@@ -1,0 +1,246 @@
+<div class="my-4">
+  <%# ── Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0"><%= @converter.name %></h1>
+    <div style="display: inline-flex; gap: 0.5rem; align-items: center;">
+      <% if can_write_converters? %>
+        <%= link_to "Edit", edit_converter_path(@converter), class: "btn btn-primary btn-sm" %>
+      <% end %>
+      <% if @converter.converter_type == "cci_to_nist" && can_write_converters? %>
+        <button type="button" class="btn btn-warning btn-sm fw-semibold"
+                data-bs-toggle="modal" data-bs-target="#refreshCciModal"
+                <%= "disabled" if @converter.status == "processing" %>>
+          Refresh from DISA
+        </button>
+      <% end %>
+      <%= link_to "Export JSON", export_converter_path(@converter), class: "btn btn-sm",
+            style: "background: #8e44ad; color: white; font-size: 0.8rem;" %>
+      <%= link_to "Back", converters_path, class: "btn btn-secondary btn-sm" %>
+    </div>
+  </div>
+
+  <%# ── Refresh Confirmation Modal ── %>
+  <% if @converter.converter_type == "cci_to_nist" && can_write_converters? %>
+    <div class="modal fade" id="refreshCciModal" tabindex="-1" aria-labelledby="refreshCciModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="refreshCciModalLabel">Refresh CCI from DISA</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>This will download the latest DISA CCI list and reload all converter entries.</p>
+            <ul class="small text-body-secondary mb-0">
+              <li>All existing entries will be replaced with fresh data</li>
+              <li>Only published CCIs (Rev 4 + Rev 5) will be imported</li>
+              <li>This may take a minute to complete</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <%= button_to "Refresh Now", refresh_cci_converter_path(@converter),
+                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  form: { style: "display: inline;" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Status Banners (with auto-refresh while processing) ── %>
+  <% refresh_stage = @converter.metadata_extra&.dig("refresh_stage") %>
+  <% refresh_message = @converter.metadata_extra&.dig("refresh_message") %>
+
+  <% if @converter.status == "processing" %>
+    <meta http-equiv="refresh" content="3">
+    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+      <div class="spinner-border spinner-border-sm me-2" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div>
+        <strong>CCI refresh in progress</strong>
+        <% if refresh_message.present? %>
+          <br><span class="small"><%= refresh_message %></span>
+        <% end %>
+      </div>
+    </div>
+  <% elsif @converter.status == "failed" && @converter.error_message.present? %>
+    <div class="alert alert-danger mb-4" role="alert">
+      <strong>Refresh failed:</strong> <%= @converter.error_message %>
+    </div>
+  <% elsif refresh_stage == "complete" && @converter.status == "complete" %>
+    <% refresh_stats = @converter.metadata_extra&.dig("refresh_stats") %>
+    <% completed_at = @converter.metadata_extra&.dig("refresh_completed_at") %>
+    <% if refresh_stats.present? %>
+      <div class="alert alert-success mb-4" role="alert">
+        <strong>Successfully refreshed database</strong>
+        <br>
+        <span class="small">
+          <%= refresh_stats["total_ccis"] %> CCIs &rarr; <%= refresh_stats["total_entries"] %> entries
+          <% if refresh_stats["by_revision"].present? %>
+            (<%= refresh_stats["by_revision"].map { |rev, count| "Rev #{rev}: #{count}" }.join(", ") %>)
+          <% end %>
+          <% if refresh_stats["skipped_deprecated"].to_i > 0 %>
+            &middot; <%= refresh_stats["skipped_deprecated"] %> deprecated skipped
+          <% end %>
+          <% if refresh_stats["skipped_draft"].to_i > 0 %>
+            &middot; <%= refresh_stats["skipped_draft"] %> draft skipped
+          <% end %>
+          <% if completed_at.present? %>
+            &middot; <%= Time.parse(completed_at).strftime("%Y-%m-%d %H:%M") %>
+          <% end %>
+        </span>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%# ── Coverage Stats ── %>
+  <%= render "shared/section_summary", tiles: [
+    [@stats[:total_entries], "Total Entries"],
+    [@stats[:unique_sources], "Source IDs"],
+    [@stats[:unique_targets], "NIST Controls"],
+    [@stats[:family_count], "Families"]
+  ] %>
+
+  <%# ── Two-column details ── %>
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header fw-semibold">Converter Details</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Type</dt>
+            <dd class="col-sm-8">
+              <span class="badge" style="background: <%= converter_type_color(@converter.converter_type) %>22; color: <%= converter_type_color(@converter.converter_type) %>; border: 1px solid <%= converter_type_color(@converter.converter_type) %>44;">
+                <%= @converter.type_label %>
+              </span>
+            </dd>
+            <dt class="col-sm-4">Status</dt>
+            <dd class="col-sm-8">
+              <span class="badge text-bg-<%= converter_status_color(@converter.status) %>">
+                <%= @converter.status.titleize %>
+              </span>
+            </dd>
+            <dt class="col-sm-4">Version</dt>
+            <dd class="col-sm-8"><%= @converter.version %></dd>
+            <dt class="col-sm-4">Created</dt>
+            <dd class="col-sm-8"><%= @converter.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
+            <dt class="col-sm-4">Updated</dt>
+            <dd class="col-sm-8"><%= @converter.updated_at.strftime("%Y-%m-%d %H:%M") %></dd>
+          </dl>
+          <% if @converter.description.present? %>
+            <hr>
+            <p class="small text-body-secondary mb-0"><%= @converter.description %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header fw-semibold">Framework References</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Source</dt>
+            <dd class="col-sm-8"><%= @converter.source_framework || "—" %></dd>
+            <dt class="col-sm-4">Target</dt>
+            <dd class="col-sm-8"><%= @converter.target_framework %></dd>
+            <dt class="col-sm-4">Entries</dt>
+            <dd class="col-sm-8"><span class="badge text-bg-info"><%= @entries.size %></span></dd>
+          </dl>
+          <% if @stats[:families].any? %>
+            <hr>
+            <div class="small text-body-secondary">
+              <strong>NIST Families:</strong>
+              <% @stats[:families].each do |fam| %>
+                <span class="badge text-bg-light border me-1"><%= fam %></span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Converter Entries ── %>
+  <div class="card mt-4">
+    <div class="card-header fw-semibold">Mapping Entries (<%= @entries.size %>)</div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Source ID</th>
+            <th class="text-center">&rarr;</th>
+            <th>Target (NIST)</th>
+            <th>Relationship</th>
+            <th>Category</th>
+            <th>Remarks</th>
+            <% if can_write_converters? %>
+              <th></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% @entries.each do |entry| %>
+            <tr>
+              <td><code><%= entry.source_id %></code></td>
+              <td class="text-center text-body-secondary">&rarr;</td>
+              <td><code><%= entry.target_id %></code></td>
+              <td>
+                <span class="badge text-bg-<%= converter_relationship_color(entry.relationship) %>">
+                  <%= entry.relationship.titleize %>
+                </span>
+              </td>
+              <td class="small text-body-secondary"><%= entry.category %></td>
+              <td class="small text-body-secondary" style="max-width: 200px;">
+                <%= truncate(entry.remarks.to_s, length: 60) %>
+              </td>
+              <% if can_write_converters? %>
+                <td class="text-end">
+                  <%= button_to "Remove", converter_entry_path(@converter, entry),
+                        method: :delete, class: "btn btn-outline-danger btn-sm",
+                        style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+                        form: { data: { turbo_confirm: "Remove this entry?" }, style: "display: inline;" } %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+
+          <%# ── Add entry form row ── %>
+          <% if can_write_converters? %>
+            <tr class="table-light">
+              <td colspan="7">
+                <%= form_with model: [@converter, @entry], url: converter_entries_path(@converter), class: "row g-2 align-items-end" do |f| %>
+                  <div class="col-md-2">
+                    <%= f.text_field :source_id, class: "form-control form-control-sm",
+                          placeholder: "e.g. CCI-000015" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.text_field :target_id, class: "form-control form-control-sm",
+                          placeholder: "e.g. ac-2" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.select :relationship,
+                          ConverterEntry::RELATIONSHIPS.map { |r| [r.titleize, r] },
+                          { prompt: "Relationship..." }, class: "form-select form-select-sm" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.text_field :category, class: "form-control form-control-sm",
+                          placeholder: "Category (optional)" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.text_field :remarks, class: "form-control form-control-sm",
+                          placeholder: "Remarks (optional)" %>
+                  </div>
+                  <div class="col-md-2">
+                    <%= f.submit "Add Entry", class: "btn btn-sm btn-success w-100" %>
+                  </div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
