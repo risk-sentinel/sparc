@@ -1,4 +1,121 @@
+<!-- markdownlint-disable MD024 -->
+
 # SPARC Release Notes
+
+---
+
+## 2026-03-14 -- Comprehensive Automated Regression Testing Suite (#100)
+
+**Branch:** `feature/100_regression_testing_suite`
+
+### Summary
+
+Added ~210 new RSpec tests across 32 new spec files, bringing the total
+from 564 to 772 tests (0 failures). Installed SimpleCov for code
+coverage tracking with dual HTML + JSON output. Updated CI to run
+RSpec with coverage and upload reports as artifacts for SCA pipeline
+integration.
+
+### What Changed
+
+- **SimpleCov integration** -- added `simplecov` gem with
+  `MultiFormatter` producing both HTML (local viewing via
+  `open coverage/index.html`) and JSON (`coverage/coverage.json`
+  for SCA bundle ingestion). Coverage output in `coverage/`
+  directory, git-ignored.
+
+- **CI pipeline updated** -- `.github/workflows/ci.yml` now runs
+  `bundle exec rspec` instead of `bin/rails test`, sets `COVERAGE=1`,
+  and uploads `coverage/` as a downloadable CI artifact (90-day
+  retention).
+
+- **10 new request specs** -- full controller coverage for
+  `SspDocuments`, `SarDocuments`, `CdefDocuments`, `SapDocuments`,
+  `PoamDocuments`, `ProfileDocuments`, `Home`, `Evidences`,
+  `Attestations`, and `Api::V1::SspDocuments`. Tests cover index,
+  show, new, create, delete (including SafeDestroyable blocking),
+  export (JSON/YAML/XML), metadata update, status, wizard, and
+  copy actions.
+
+- **12 new model specs** -- coverage for `CdefDocument`,
+  `ProfileDocument`, `SapDocument`, `PoamDocument`,
+  `AuthorizationBoundary`, `Converter`, `SspComponent`, `PoamItem`,
+  `SparcConfig`, `DocumentTypeRegistry`, `SspDocumentCdefDocument`,
+  and `BoundaryCdefDocument`. Tests cover validations, associations,
+  SafeDestroyable behavior, scopes, and instance methods.
+
+- **3 new service specs** -- `JsonExportService` (all 6 document type
+  exports), `SspUpdateService` (editable/non-editable field updates),
+  and `OscalSchemaValidationService` (schema availability, validation).
+
+- **4 new job specs** -- `DocumentConversionJob`, `CatalogImportJob`,
+  `ConverterRefreshJob`, `InactivityCheckJob`. Tests cover queue
+  assignment and basic perform behavior.
+
+- **3 new concern specs** -- `SafeDestroyable` (blocks with deps,
+  allows without, error messages), `OscalMetadata` (constants,
+  metadata builder, accessors), `ProgressTrackable` (processing
+  stages constant).
+
+- **Issue Process documented** -- added standard 11-step issue workflow
+  to `docs/Implemenation_plan.md` covering branch creation, planning,
+  implementation, doc updates, testing, and PR workflow.
+
+### Files Created (32 spec files)
+
+- `spec/requests/home_spec.rb`
+- `spec/requests/ssp_documents_spec.rb`
+- `spec/requests/sar_documents_spec.rb`
+- `spec/requests/cdef_documents_spec.rb`
+- `spec/requests/sap_documents_spec.rb`
+- `spec/requests/poam_documents_spec.rb`
+- `spec/requests/profile_documents_spec.rb`
+- `spec/requests/evidences_spec.rb`
+- `spec/requests/attestations_spec.rb`
+- `spec/requests/api/v1/ssp_documents_spec.rb`
+- `spec/models/cdef_document_spec.rb`
+- `spec/models/profile_document_spec.rb`
+- `spec/models/sap_document_spec.rb`
+- `spec/models/poam_document_spec.rb`
+- `spec/models/authorization_boundary_spec.rb`
+- `spec/models/converter_spec.rb`
+- `spec/models/ssp_component_spec.rb`
+- `spec/models/poam_item_spec.rb`
+- `spec/models/sparc_config_spec.rb`
+- `spec/models/document_type_registry_spec.rb`
+- `spec/models/ssp_document_cdef_document_spec.rb`
+- `spec/models/boundary_cdef_document_spec.rb`
+- `spec/services/json_export_service_spec.rb`
+- `spec/services/ssp_update_service_spec.rb`
+- `spec/services/oscal_schema_validation_service_spec.rb`
+- `spec/jobs/document_conversion_job_spec.rb`
+- `spec/jobs/catalog_import_job_spec.rb`
+- `spec/jobs/converter_refresh_job_spec.rb`
+- `spec/jobs/inactivity_check_job_spec.rb`
+- `spec/models/concerns/safe_destroyable_spec.rb`
+- `spec/models/concerns/oscal_metadata_spec.rb`
+- `spec/models/concerns/progress_trackable_spec.rb`
+
+### Files Modified (5)
+
+- `.gitignore` -- added `/coverage`
+- `Gemfile` -- added `simplecov` to test group
+- `spec/spec_helper.rb` -- SimpleCov config (MultiFormatter, coverage groups)
+- `.github/workflows/ci.yml` -- `COVERAGE=1`, rspec, artifact upload
+- `docs/Implemenation_plan.md` -- Issue Process section, #100 marked complete
+
+### What is NOT Changed
+
+- **No application code changes** -- test-only addition
+- **No database migrations** -- tests use existing schema
+- **No new routes or controllers** -- test infrastructure only
+- **Existing 564 tests untouched** -- only added new specs
+
+### Verification
+
+- 772 RSpec tests pass (0 failures)
+- RuboCop clean (0 offenses)
+- `COVERAGE=1 bundle exec rspec` generates dual reports in `coverage/`
 
 ---
 
@@ -31,8 +148,8 @@ native `window.confirm()`.
 
 - **Safe controller destroy pattern** -- all 7 controllers now check
   `destroy` return value. On success: audit log + flash success +
-  redirect to index. On failure: audit log "delete_blocked" with reason
-  + flash error + redirect back to show page.
+  redirect to index. On failure: audit log "delete_blocked" with
+  reason + flash error + redirect back to show page.
 
 - **7 new audit actions** -- `*_delete_blocked` events registered in
   `AuditEvent` for compliance audit trail when deletion is prevented.
