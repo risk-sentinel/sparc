@@ -1,3 +1,32 @@
+if ENV["COVERAGE"]
+  require "simplecov"
+  require "simplecov_json_formatter"
+
+  SimpleCov.start "rails" do
+    # Output both JSON (for SCA/CI) and HTML (for local browsing)
+    formatter SimpleCov::Formatter::MultiFormatter.new([
+      SimpleCov::Formatter::HTMLFormatter,
+      SimpleCov::Formatter::JSONFormatter
+    ])
+
+    # All output goes to coverage/ directory:
+    #   coverage/index.html       — human-readable HTML report
+    #   coverage/.resultset.json  — raw data
+    #   coverage/coverage.json    — JSON report for SCA tools
+    coverage_dir "coverage"
+
+    add_filter "/spec/"
+    add_filter "/config/"
+    add_filter "/db/"
+    add_group "Models", "app/models"
+    add_group "Controllers", "app/controllers"
+    add_group "Services", "app/services"
+    add_group "Jobs", "app/jobs"
+    add_group "Concerns", "app/models/concerns"
+    minimum_coverage 50
+  end
+end
+
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|

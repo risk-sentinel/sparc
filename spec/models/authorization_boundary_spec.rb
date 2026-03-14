@@ -2,6 +2,8 @@ require "rails_helper"
 
 RSpec.describe AuthorizationBoundary, type: :model do
   describe "validations" do
+    subject { build(:authorization_boundary) }
+
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_presence_of(:status) }
   end
@@ -13,6 +15,7 @@ RSpec.describe AuthorizationBoundary, type: :model do
     it { is_expected.to have_one(:sap_document).dependent(:nullify) }
     it { is_expected.to have_one(:sar_document).dependent(:nullify) }
     it { is_expected.to have_many(:poam_documents).dependent(:nullify) }
+    it { is_expected.to have_many(:evidences).dependent(:nullify) }
   end
 
   describe "enums" do
@@ -30,6 +33,18 @@ RSpec.describe AuthorizationBoundary, type: :model do
 
       expect(summary).to include(:ssp, :sap, :sar, :poam_count, :boundary_count, :component_count)
       expect(summary[:poam_count]).to eq(0)
+      expect(summary[:boundary_count]).to eq(0)
+    end
+
+    it "reflects linked documents in the summary" do
+      authorization_boundary = create(:authorization_boundary)
+      create(:ssp_document, authorization_boundary: authorization_boundary)
+      create(:poam_document, authorization_boundary: authorization_boundary)
+
+      summary = authorization_boundary.artifact_summary
+
+      expect(summary[:ssp]).to be_present
+      expect(summary[:poam_count]).to eq(1)
     end
   end
 
