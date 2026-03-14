@@ -3,6 +3,8 @@
 # document class and parser service.
 #
 # Lifecycle: pending → processing → completed / failed
+# Progress:  Writes processing stages to document.metadata_extra["processing_*"]
+#            so the show page can display live stage messages via auto-refresh.
 # Cleanup:   ensure FileUtils.rm_f(file_path)
 #
 class DocumentConversionJob < ApplicationJob
@@ -12,7 +14,15 @@ class DocumentConversionJob < ApplicationJob
     registry = DocumentTypeRegistry.for(document_type_key)
     document = registry.document_class.find(document_id)
 
-    document.update!(status: "processing")
+    # Record start time and set processing status
+    document.update!(
+      status: "processing",
+      metadata_extra: (document.metadata_extra || {}).merge(
+        "processing_stage"      => "starting",
+        "processing_message"    => "Preparing to process file...",
+        "processing_started_at" => Time.current.iso8601
+      )
+    )
 
     begin
       parser_class = registry.parser_map.fetch(document.file_type) do
@@ -20,9 +30,26 @@ class DocumentConversionJob < ApplicationJob
       end
 
       parser_class.new(document, file_path).parse
-      document.update!(status: "completed")
+
+      document.update!(
+        status: "completed",
+        metadata_extra: (document.metadata_extra || {}).merge(
+          "processing_stage"        => "complete",
+          "processing_message"      => "Processing complete",
+          "processing_completed_at" => Time.current.iso8601
+        )
+      )
     rescue StandardError => e
-      document.update!(status: "failed", error_message: e.message)
+      failed_stage = document.reload.metadata_extra&.dig("processing_stage") || "unknown"
+      document.update!(
+        status: "failed",
+        error_message: e.message,
+        metadata_extra: (document.metadata_extra || {}).merge(
+          "processing_stage"     => "failed",
+          "processing_message"   => "Failed during: #{failed_stage}",
+          "processing_failed_at" => Time.current.iso8601
+        )
+      )
       Rails.logger.error("#{document_type_key} conversion failed for document #{document_id}: #{e.message}")
     ensure
       FileUtils.rm_f(file_path)

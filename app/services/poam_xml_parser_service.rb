@@ -1,4 +1,6 @@
 class PoamXmlParserService
+  include ProgressTrackable
+
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0"
 
   def initialize(poam_document, file_path)
@@ -7,6 +9,7 @@ class PoamXmlParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     xml  = File.read(@file_path).force_encoding("UTF-8")
     doc  = Nokogiri::XML(xml) { |config| config.noblanks }
     root = doc.at_xpath("//xmlns:plan-of-action-and-milestones", "xmlns" => OSCAL_NS) ||
@@ -36,6 +39,7 @@ class PoamXmlParserService
     }.compact
 
     # Wrap in expected structure and parse via JSON parser
+    update_processing_stage!(:creating_records)
     data = { "plan-of-action-and-milestones" => poam_hash }
     json_parser = PoamJsonParserService.new(@document, nil)
     json_parser.parse_from_hash(data)

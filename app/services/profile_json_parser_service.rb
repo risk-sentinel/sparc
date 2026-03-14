@@ -1,5 +1,6 @@
 class ProfileJsonParserService
   include BatchInsertable
+  include ProgressTrackable
 
   def initialize(profile_document, file_path)
     @document  = profile_document
@@ -7,6 +8,7 @@ class ProfileJsonParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     content = File.read(@file_path).force_encoding("UTF-8")
     data    = JSON.parse(content)
 
@@ -63,6 +65,7 @@ class ProfileJsonParserService
       row_order += 1
     end
 
+    update_processing_stage!(:creating_records)
     batch_insert_records(
       control_class: ProfileControl,
       field_class:   ProfileControlField,

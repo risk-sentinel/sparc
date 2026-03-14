@@ -1,32 +1,10 @@
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
 <% unless @poam_document.completed? %>
-  <div class="sparc-gradient-header text-center" style="border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white;">
-    <% if @poam_document.failed? %>
-      <div class="sparc-processing-icon">&#x26A0;</div>
-      <h2 class="sparc-processing-title sparc-processing-title-error">Processing Failed</h2>
-      <p class="sparc-processing-text">
-        <%= @poam_document.error_message.presence || "An unknown error occurred." %>
-      </p>
-      <div class="mt-3">
-        <%= link_to "&#8592; Back to POA&Ms".html_safe, poam_documents_path,
-              class: "sparc-btn-ghost" %>
-      </div>
-    <% else %>
-      <div style="margin-bottom: 0.75rem;">
-        <span class="sparc-spinner"></span>
-      </div>
-      <h2 class="sparc-processing-title sparc-processing-title-pending">Processing Your POA&amp;M</h2>
-      <p class="sparc-processing-text-muted">
-        <strong><%= @poam_document.original_filename %></strong> is being parsed.
-        This page will automatically refresh when processing is complete.
-      </p>
-    <% end %>
-  </div>
-
-  <% unless @poam_document.failed? %>
-    <meta http-equiv="refresh" content="5">
-  <% end %>
-
+  <%= render "shared/processing_banner",
+       document:     @poam_document,
+       title:        "Processing Your POA&amp;M",
+       back_label:   "Back to POA&amp;Ms",
+       back_path:    poam_documents_path %>
 
 <% else %>
 <%

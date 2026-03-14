@@ -9,15 +9,19 @@
 #   SapJsonParserService.new(sap_document, "/tmp/sap_abc.json").parse
 #
 class SapJsonParserService
+  include ProgressTrackable
+
   def initialize(document, file_path)
     @document = document
     @file_path = file_path
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     raw = JSON.parse(File.read(@file_path))
     plan = raw["assessment-plan"] || raw
 
+    update_processing_stage!(:creating_records)
     parse_metadata(plan)
     parse_controls(plan)
 

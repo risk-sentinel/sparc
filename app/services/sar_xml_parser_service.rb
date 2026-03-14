@@ -2,6 +2,8 @@
 # intermediate hashes then delegating to SarJsonParserService#parse_from_hash.
 #
 class SarXmlParserService
+  include ProgressTrackable
+
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
 
   def initialize(document, file_path)
@@ -10,6 +12,7 @@ class SarXmlParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     xml = File.read(@file_path).force_encoding("UTF-8")
     doc = Nokogiri::XML(xml) { |config| config.noblanks }
     root = doc.at_xpath("xmlns:assessment-results", "xmlns" => OSCAL_NS) ||
@@ -19,6 +22,7 @@ class SarXmlParserService
     ar_hash = build_ar_hash(root)
     data = { "assessment-results" => ar_hash }
 
+    update_processing_stage!(:creating_records)
     json_parser = SarJsonParserService.new(@document, nil)
     json_parser.parse_from_hash(data)
   end

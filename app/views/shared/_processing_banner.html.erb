@@ -1,0 +1,54 @@
+<%# Shared processing banner for document show pages. %>
+<%
+  document       = local_assigns[:document]
+  title          = local_assigns.fetch(:title, "Processing")
+  failed_title   = local_assigns.fetch(:failed_title, "Processing Failed")
+  back_label     = local_assigns.fetch(:back_label, "Back")
+  back_path      = local_assigns[:back_path]
+  refresh_sec    = local_assigns.fetch(:refresh_interval, 3)
+
+  progress_message = document.metadata_extra&.dig("processing_message")
+  started_at       = document.metadata_extra&.dig("processing_started_at")
+%>
+
+<% if document.failed? %>
+  <div class="sparc-processing-banner">
+    <div class="sparc-processing-icon">&#x26A0;</div>
+    <h2 class="sparc-processing-title sparc-processing-title-error"><%= failed_title %></h2>
+    <p class="sparc-processing-text">
+      <%= document.error_message.presence || "An unknown error occurred." %>
+    </p>
+    <div style="margin-top: 1.25rem;">
+      <%= link_to "&#8592; #{back_label}".html_safe, back_path, class: "sparc-btn-ghost" %>
+    </div>
+  </div>
+<% else %>
+  <div class="sparc-processing-banner">
+    <div style="margin-bottom: 0.75rem;">
+      <span class="sparc-spinner"></span>
+    </div>
+    <h2 class="sparc-processing-title sparc-processing-title-pending"><%= title %></h2>
+
+    <% if progress_message.present? %>
+      <p class="sparc-processing-text-muted" style="margin-bottom: 0.25rem;">
+        <strong><%= document.original_filename %></strong>
+      </p>
+      <p class="sparc-processing-text-muted">
+        <%= progress_message %>
+      </p>
+    <% else %>
+      <p class="sparc-processing-text-muted">
+        <strong><%= document.original_filename %></strong> is being parsed.
+        This page will automatically refresh when processing is complete.
+      </p>
+    <% end %>
+
+    <% if started_at.present? %>
+      <p class="sparc-processing-text-muted" style="font-size: 0.75rem; opacity: 0.7;">
+        Started <%= time_ago_in_words(Time.parse(started_at)) %> ago
+      </p>
+    <% end %>
+  </div>
+
+  <meta http-equiv="refresh" content="<%= refresh_sec %>">
+<% end %>

@@ -6,12 +6,15 @@
 #   SspJsonParserService.new(ssp_document, nil).parse_from_hash(data)
 #
 class SspJsonParserService
+  include ProgressTrackable
+
   def initialize(document, file_path)
     @document  = document
     @file_path = file_path
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     content = File.read(@file_path).force_encoding("UTF-8")
     data    = JSON.parse(content)
     parse_from_hash(data)
@@ -20,6 +23,7 @@ class SspJsonParserService
   def parse_from_hash(data)
     ssp = data["system-security-plan"] || raise("Invalid OSCAL SSP: missing 'system-security-plan' root key")
 
+    update_processing_stage!(:creating_records)
     ActiveRecord::Base.transaction do
       update_document_metadata(ssp)
       @document.assign_oscal_uuid!(ssp["uuid"])
