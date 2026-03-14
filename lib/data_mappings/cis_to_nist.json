@@ -1,0 +1,1900 @@
+{
+  "format": "cis_mapping",
+  "version": "8.1",
+  "source": "https://github.com/CISecurity/CISControls_OSCAL",
+  "oscal_source_file": "src/mappings/SP_800_53MOD_CISControlsv8_Mapping.xml",
+  "description": "CIS Controls v8 Safeguards mapped to NIST SP 800-53 Rev 5 (Moderate baseline). Sourced from the official CIS OSCAL repository. Also includes platform-specific CIS Benchmark section mappings for common Linux/Windows checks.",
+  "controls_mapping_count": 313,
+  "benchmark_mapping_count": 40,
+  "controls_mappings": {
+    "1.1": [
+      {
+        "nist": "cm-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-8.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "pm-5",
+        "relationship": "subset-of"
+      }
+    ],
+    "1.2": [
+      {
+        "nist": "cm-8.3",
+        "relationship": "subset-of"
+      }
+    ],
+    "1.3": [
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      }
+    ],
+    "1.4": [
+      {
+        "nist": "cm-8.3",
+        "relationship": "subset-of"
+      }
+    ],
+    "1.5": [
+      {
+        "nist": "cm-8.3",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      }
+    ],
+    "2.1": [
+      {
+        "nist": "cm-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ma-3",
+        "relationship": "superset-of"
+      }
+    ],
+    "2.2": [
+      {
+        "nist": "ma-3",
+        "relationship": "equal-to"
+      }
+    ],
+    "2.3": [
+      {
+        "nist": "cm-7.2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-8.3",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-10",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-11",
+        "relationship": "subset-of"
+      }
+    ],
+    "2.4": [
+      {
+        "nist": "cm-8.3",
+        "relationship": "subset-of"
+      }
+    ],
+    "2.5": [
+      {
+        "nist": "cm-7.5",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "cm-10",
+        "relationship": "superset-of"
+      }
+    ],
+    "2.6": [
+      {
+        "nist": "cm-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7.1",
+        "relationship": "superset-of"
+      }
+    ],
+    "2.7": [
+      {
+        "nist": "cm-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "si-7",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "si-7.1",
+        "relationship": "superset-of"
+      }
+    ],
+    "3.1": [
+      {
+        "nist": "au-11",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cm-12",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-12",
+        "relationship": "equal-to"
+      }
+    ],
+    "3.2": [
+      {
+        "nist": "cm-12",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "pm-5.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "ra-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.3": [
+      {
+        "nist": "ac-3",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "mp-2",
+        "relationship": "superset-of"
+      }
+    ],
+    "3.4": [
+      {
+        "nist": "au-11",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-12",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.5": [
+      {
+        "nist": "mp-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sr-12",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.6": [
+      {
+        "nist": "sc-28",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.7": [
+      {
+        "nist": "ra-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.8": [
+      {
+        "nist": "ac-4",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-12",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.9": [
+      {
+        "nist": "mp-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "mp-7",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.10": [
+      {
+        "nist": "ac-17.2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ia-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ia-5.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-8.1",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.11": [
+      {
+        "nist": "ia-5.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "sc-28",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "sc-28.1",
+        "relationship": "superset-of"
+      }
+    ],
+    "3.13": [
+      {
+        "nist": "ca-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-12",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-12.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-4",
+        "relationship": "subset-of"
+      }
+    ],
+    "3.14": [
+      {
+        "nist": "ac-6.9",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "au-2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "au-12",
+        "relationship": "subset-of"
+      }
+    ],
+    "4.1": [
+      {
+        "nist": "cm-1",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "cm-2",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cm-6",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cm-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cm-9",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "sa-3",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "sa-8",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "sa-10",
+        "relationship": "superset-of"
+      }
+    ],
+    "4.2": [
+      {
+        "nist": "ac-18",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "ac-18.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "ac-18.3",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cm-2",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cm-6",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cm-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-9",
+        "relationship": "equal-to"
+      }
+    ],
+    "4.3": [
+      {
+        "nist": "ac-2.5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-11",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "ac-11.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "ac-12",
+        "relationship": "superset-of"
+      }
+    ],
+    "4.4": [
+      {
+        "nist": "sc-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-7.5",
+        "relationship": "subset-of"
+      }
+    ],
+    "4.5": [
+      {
+        "nist": "sc-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-7.5",
+        "relationship": "subset-of"
+      }
+    ],
+    "4.6": [
+      {
+        "nist": "sc-7.5",
+        "relationship": "intersects-with"
+      },
+      {
+        "nist": "ma-4",
+        "relationship": "superset-of"
+      }
+    ],
+    "4.7": [
+      {
+        "nist": "ia-5",
+        "relationship": "subset-of"
+      }
+    ],
+    "4.8": [
+      {
+        "nist": "cm-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7",
+        "relationship": "subset-of"
+      }
+    ],
+    "4.9": [
+      {
+        "nist": "sc-20",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-21",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-22",
+        "relationship": "subset-of"
+      }
+    ],
+    "4.10": [
+      {
+        "nist": "ac-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-19",
+        "relationship": "subset-of"
+      }
+    ],
+    "4.11": [
+      {
+        "nist": "ac-19",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-20",
+        "relationship": "subset-of"
+      }
+    ],
+    "4.12": [
+      {
+        "nist": "ac-19.5",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "sc-39",
+        "relationship": "subset-of"
+      }
+    ],
+    "5.1": [
+      {
+        "nist": "ac-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "5.2": [
+      {
+        "nist": "ia-5.1",
+        "relationship": "subset-of"
+      }
+    ],
+    "5.3": [
+      {
+        "nist": "ac-2.3",
+        "relationship": "subset-of"
+      }
+    ],
+    "5.4": [
+      {
+        "nist": "ac-6.2",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "ac-6.5",
+        "relationship": "superset-of"
+      }
+    ],
+    "5.5": [
+      {
+        "nist": "ac-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "5.6": [
+      {
+        "nist": "ac-2.1",
+        "relationship": "subset-of"
+      }
+    ],
+    "6.1": [
+      {
+        "nist": "ia-4",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ia-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-2.1",
+        "relationship": "subset-of"
+      }
+    ],
+    "6.2": [
+      {
+        "nist": "ac-1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-2.1",
+        "relationship": "subset-of"
+      }
+    ],
+    "6.3": [
+      {
+        "nist": "ia-2.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ia-2.2",
+        "relationship": "subset-of"
+      }
+    ],
+    "6.4": [
+      {
+        "nist": "ac-19",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ia-2.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ia-2.2",
+        "relationship": "subset-of"
+      }
+    ],
+    "6.5": [
+      {
+        "nist": "ia-2.1",
+        "relationship": "equal-to"
+      }
+    ],
+    "6.6": [
+      {
+        "nist": "cm-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ia-8.2",
+        "relationship": "subset-of"
+      }
+    ],
+    "6.7": [
+      {
+        "nist": "ac-2.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-3",
+        "relationship": "subset-of"
+      }
+    ],
+    "6.8": [
+      {
+        "nist": "ac-2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-6.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "ac-6.7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "au-9.4",
+        "relationship": "superset-of"
+      }
+    ],
+    "7.1": [
+      {
+        "nist": "ra-5",
+        "relationship": "superset-of"
+      }
+    ],
+    "7.2": [
+      {
+        "nist": "ra-5",
+        "relationship": "superset-of"
+      }
+    ],
+    "7.3": [
+      {
+        "nist": "ra-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ra-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-2.2",
+        "relationship": "subset-of"
+      }
+    ],
+    "7.4": [
+      {
+        "nist": "ra-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ra-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-2.2",
+        "relationship": "subset-of"
+      }
+    ],
+    "7.5": [
+      {
+        "nist": "ra-5",
+        "relationship": "subset-of"
+      }
+    ],
+    "7.6": [
+      {
+        "nist": "ra-5",
+        "relationship": "subset-of"
+      }
+    ],
+    "7.7": [
+      {
+        "nist": "ra-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ra-5.2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ra-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "8.1": [
+      {
+        "nist": "au-1",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "au-2",
+        "relationship": "superset-of"
+      }
+    ],
+    "8.2": [
+      {
+        "nist": "au-2",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "au-7",
+        "relationship": "intersects-with"
+      },
+      {
+        "nist": "au-12",
+        "relationship": "equal-to"
+      }
+    ],
+    "8.3": [
+      {
+        "nist": "au-4",
+        "relationship": "equal-to"
+      }
+    ],
+    "8.4": [
+      {
+        "nist": "au-7",
+        "relationship": "intersects-with"
+      },
+      {
+        "nist": "au-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "8.5": [
+      {
+        "nist": "au-3",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "au-3.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "au-7",
+        "relationship": "intersects-with"
+      },
+      {
+        "nist": "au-12",
+        "relationship": "subset-of"
+      }
+    ],
+    "8.6": [
+      {
+        "nist": "au-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "8.7": [
+      {
+        "nist": "au-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "8.8": [
+      {
+        "nist": "au-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "8.9": [
+      {
+        "nist": "au-6.3",
+        "relationship": "subset-of"
+      }
+    ],
+    "8.10": [
+      {
+        "nist": "au-11",
+        "relationship": "equal-to"
+      }
+    ],
+    "8.11": [
+      {
+        "nist": "au-6",
+        "relationship": "equal-to"
+      },
+      {
+        "nist": "au-6.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "au-7.1",
+        "relationship": "superset-of"
+      }
+    ],
+    "8.12": [
+      {
+        "nist": "au-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "9.1": [
+      {
+        "nist": "cm-10",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-18",
+        "relationship": "intersects-with"
+      }
+    ],
+    "9.2": [
+      {
+        "nist": "si-8",
+        "relationship": "superset-of"
+      }
+    ],
+    "9.3": [
+      {
+        "nist": "si-7.3",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-7.4",
+        "relationship": "subset-of"
+      }
+    ],
+    "9.4": [
+      {
+        "nist": "cm-10",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-11",
+        "relationship": "intersects-with"
+      },
+      {
+        "nist": "sc-18",
+        "relationship": "intersects-with"
+      }
+    ],
+    "9.5": [
+      {
+        "nist": "sc-7",
+        "relationship": "subset-of"
+      }
+    ],
+    "9.6": [
+      {
+        "nist": "si-3",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "9.7": [
+      {
+        "nist": "si-3",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-16",
+        "relationship": "intersects-with"
+      }
+    ],
+    "10.1": [
+      {
+        "nist": "si-3",
+        "relationship": "subset-of"
+      }
+    ],
+    "10.2": [
+      {
+        "nist": "si-3",
+        "relationship": "subset-of"
+      }
+    ],
+    "10.3": [
+      {
+        "nist": "mp-7",
+        "relationship": "subset-of"
+      }
+    ],
+    "10.4": [
+      {
+        "nist": "mp-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-3",
+        "relationship": "subset-of"
+      }
+    ],
+    "10.5": [
+      {
+        "nist": "si-16",
+        "relationship": "intersects-with"
+      }
+    ],
+    "10.6": [
+      {
+        "nist": "si-3",
+        "relationship": "subset-of"
+      }
+    ],
+    "10.7": [
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      }
+    ],
+    "11.1": [
+      {
+        "nist": "cp-2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cp-10",
+        "relationship": "subset-of"
+      }
+    ],
+    "11.2": [
+      {
+        "nist": "cp-9",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cp-10",
+        "relationship": "subset-of"
+      }
+    ],
+    "11.3": [
+      {
+        "nist": "cp-9",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cp-9.8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-28",
+        "relationship": "subset-of"
+      }
+    ],
+    "11.4": [
+      {
+        "nist": "cp-6",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cp-6.1",
+        "relationship": "superset-of"
+      }
+    ],
+    "11.5": [
+      {
+        "nist": "cp-4",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cp-9.1",
+        "relationship": "subset-of"
+      }
+    ],
+    "12.1": [
+      {
+        "nist": "cm-8",
+        "relationship": "intersects-with"
+      },
+      {
+        "nist": "cm-8.1",
+        "relationship": "intersects-with"
+      }
+    ],
+    "12.2": [
+      {
+        "nist": "pl-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "pm-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sa-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cp-6",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "cp-7",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "sc-7",
+        "relationship": "superset-of"
+      }
+    ],
+    "12.3": [
+      {
+        "nist": "cm-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-23",
+        "relationship": "subset-of"
+      }
+    ],
+    "12.4": [
+      {
+        "nist": "pl-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "pm-5",
+        "relationship": "subset-of"
+      }
+    ],
+    "12.5": [
+      {
+        "nist": "ac-2.1",
+        "relationship": "intersects-with"
+      }
+    ],
+    "12.6": [
+      {
+        "nist": "ac-18",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-23",
+        "relationship": "subset-of"
+      }
+    ],
+    "12.7": [
+      {
+        "nist": "ac-17",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-17.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-17.3",
+        "relationship": "subset-of"
+      }
+    ],
+    "12.8": [
+      {
+        "nist": "ac-17.3",
+        "relationship": "intersects-with"
+      },
+      {
+        "nist": "si-7",
+        "relationship": "intersects-with"
+      }
+    ],
+    "13.1": [
+      {
+        "nist": "au-6.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "au-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-4.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "si-4.2",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "si-4.5",
+        "relationship": "subset-of"
+      }
+    ],
+    "13.3": [
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-4.4",
+        "relationship": "subset-of"
+      }
+    ],
+    "13.4": [
+      {
+        "nist": "ca-9",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-7",
+        "relationship": "subset-of"
+      }
+    ],
+    "13.5": [
+      {
+        "nist": "ac-17",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-17.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sc-7",
+        "relationship": "subset-of"
+      }
+    ],
+    "13.6": [
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-4.4",
+        "relationship": "superset-of"
+      }
+    ],
+    "13.8": [
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-4.4",
+        "relationship": "subset-of"
+      }
+    ],
+    "13.9": [
+      {
+        "nist": "cm-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7",
+        "relationship": "subset-of"
+      }
+    ],
+    "13.10": [
+      {
+        "nist": "sc-7.8",
+        "relationship": "superset-of"
+      }
+    ],
+    "13.11": [
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      }
+    ],
+    "14.1": [
+      {
+        "nist": "at-1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "at-2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "pm-13",
+        "relationship": "intersects-with"
+      }
+    ],
+    "14.2": [
+      {
+        "nist": "at-2.3",
+        "relationship": "equal-to"
+      }
+    ],
+    "14.3": [
+      {
+        "nist": "at-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "14.4": [
+      {
+        "nist": "at-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "14.5": [
+      {
+        "nist": "ac-22",
+        "relationship": "subset-of"
+      }
+    ],
+    "14.6": [
+      {
+        "nist": "at-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "14.7": [
+      {
+        "nist": "at-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "14.8": [
+      {
+        "nist": "at-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "14.9": [
+      {
+        "nist": "at-2",
+        "relationship": "subset-of"
+      }
+    ],
+    "15.1": [
+      {
+        "nist": "pm-30.1",
+        "relationship": "superset-of"
+      }
+    ],
+    "15.2": [
+      {
+        "nist": "ac-21",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "sa-9",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sa-9.2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "pm-30",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sr-1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-20",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sr-6",
+        "relationship": "superset-of"
+      }
+    ],
+    "15.3": [
+      {
+        "nist": "ac-20.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ac-20.2",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "pm-17",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sr-5",
+        "relationship": "subset-of"
+      }
+    ],
+    "15.4": [
+      {
+        "nist": "sa-4",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sr-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sr-6",
+        "relationship": "subset-of"
+      }
+    ],
+    "15.5": [
+      {
+        "nist": "ac-20.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "si-4",
+        "relationship": "subset-of"
+      }
+    ],
+    "15.6": [
+      {
+        "nist": "sr-6",
+        "relationship": "subset-of"
+      }
+    ],
+    "15.7": [
+      {
+        "nist": "sr-12",
+        "relationship": "intersects-with"
+      }
+    ],
+    "16.1": [
+      {
+        "nist": "sa-3",
+        "relationship": "intersects-with"
+      }
+    ],
+    "16.2": [
+      {
+        "nist": "ca-5",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "ra-1",
+        "relationship": "intersects-with"
+      },
+      {
+        "nist": "ra-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ra-7",
+        "relationship": "intersects-with"
+      }
+    ],
+    "16.3": [
+      {
+        "nist": "si-2",
+        "relationship": "intersects-with"
+      }
+    ],
+    "16.4": [
+      {
+        "nist": "cm-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "16.5": [
+      {
+        "nist": "sr-11",
+        "relationship": "intersects-with"
+      }
+    ],
+    "16.6": [
+      {
+        "nist": "ra-5",
+        "relationship": "subset-of"
+      }
+    ],
+    "16.7": [
+      {
+        "nist": "cm-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "cm-7",
+        "relationship": "subset-of"
+      }
+    ],
+    "16.8": [
+      {
+        "nist": "sc-7",
+        "relationship": "intersects-with"
+      }
+    ],
+    "16.9": [
+      {
+        "nist": "sa-8",
+        "relationship": "intersects-with"
+      }
+    ],
+    "16.10": [
+      {
+        "nist": "pl-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sa-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "16.11": [
+      {
+        "nist": "sa-15",
+        "relationship": "intersects-with"
+      }
+    ],
+    "16.12": [
+      {
+        "nist": "sa-11",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "sa-15",
+        "relationship": "subset-of"
+      }
+    ],
+    "16.14": [
+      {
+        "nist": "ra-3",
+        "relationship": "intersects-with"
+      }
+    ],
+    "17.1": [
+      {
+        "nist": "ir-1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-7",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "17.2": [
+      {
+        "nist": "ir-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-6.3",
+        "relationship": "subset-of"
+      }
+    ],
+    "17.3": [
+      {
+        "nist": "ir-5",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-6.1",
+        "relationship": "superset-of"
+      },
+      {
+        "nist": "ir-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "17.4": [
+      {
+        "nist": "ir-1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-6.1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "17.5": [
+      {
+        "nist": "ir-1",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "17.6": [
+      {
+        "nist": "cp-8",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-8",
+        "relationship": "subset-of"
+      }
+    ],
+    "17.7": [
+      {
+        "nist": "ir-3",
+        "relationship": "equal-to"
+      }
+    ],
+    "17.8": [
+      {
+        "nist": "ir-4",
+        "relationship": "subset-of"
+      }
+    ],
+    "17.9": [
+      {
+        "nist": "ir-6",
+        "relationship": "subset-of"
+      },
+      {
+        "nist": "ir-8",
+        "relationship": "subset-of"
+      }
+    ]
+  },
+  "benchmark_mappings": [
+    {
+      "cis_id": "1.1.1",
+      "cis_title": "Ensure mounting of cramfs filesystems is disabled",
+      "nist_controls": [
+        "cm-6",
+        "cm-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.1.2",
+      "cis_title": "Ensure mounting of freevxfs filesystems is disabled",
+      "nist_controls": [
+        "cm-6",
+        "cm-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.1.3",
+      "cis_title": "Ensure mounting of jffs2 filesystems is disabled",
+      "nist_controls": [
+        "cm-6",
+        "cm-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.1.4",
+      "cis_title": "Ensure mounting of hfs filesystems is disabled",
+      "nist_controls": [
+        "cm-6",
+        "cm-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.1.5",
+      "cis_title": "Ensure mounting of hfsplus filesystems is disabled",
+      "nist_controls": [
+        "cm-6",
+        "cm-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.3.1",
+      "cis_title": "Ensure AIDE is installed",
+      "nist_controls": [
+        "cm-3",
+        "si-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.3.2",
+      "cis_title": "Ensure filesystem integrity is regularly checked",
+      "nist_controls": [
+        "cm-3",
+        "si-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.4.1",
+      "cis_title": "Ensure bootloader password is set",
+      "nist_controls": [
+        "ac-3",
+        "ia-2"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.4.2",
+      "cis_title": "Ensure permissions on bootloader config are configured",
+      "nist_controls": [
+        "ac-3",
+        "ac-6"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.5.1",
+      "cis_title": "Ensure core dumps are restricted",
+      "nist_controls": [
+        "cm-6",
+        "sc-4"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "1.5.3",
+      "cis_title": "Ensure address space layout randomization is enabled",
+      "nist_controls": [
+        "cm-6",
+        "si-16"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "2.1.1",
+      "cis_title": "Ensure time synchronization is in use",
+      "nist_controls": [
+        "au-8"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "2.2.1",
+      "cis_title": "Ensure xinetd is not installed",
+      "nist_controls": [
+        "cm-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "3.1.1",
+      "cis_title": "Ensure packet redirect sending is disabled",
+      "nist_controls": [
+        "cm-6",
+        "sc-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "3.1.2",
+      "cis_title": "Ensure IP forwarding is disabled",
+      "nist_controls": [
+        "cm-6",
+        "sc-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "3.2.1",
+      "cis_title": "Ensure source routed packets are not accepted",
+      "nist_controls": [
+        "cm-6",
+        "sc-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "3.4.1",
+      "cis_title": "Ensure firewall software is installed",
+      "nist_controls": [
+        "sc-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "3.4.2",
+      "cis_title": "Ensure iptables-persistent is installed",
+      "nist_controls": [
+        "sc-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "4.1.1",
+      "cis_title": "Ensure auditing is enabled",
+      "nist_controls": [
+        "au-2",
+        "au-3",
+        "au-12"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "4.1.2",
+      "cis_title": "Ensure auditd service is enabled",
+      "nist_controls": [
+        "au-2",
+        "au-12"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "4.1.3",
+      "cis_title": "Ensure audit log storage size is configured",
+      "nist_controls": [
+        "au-4"
+      ],
+      "relationship": "equivalent"
+    },
+    {
+      "cis_id": "4.1.4",
+      "cis_title": "Ensure audit logs are not automatically deleted",
+      "nist_controls": [
+        "au-11"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "4.2.1",
+      "cis_title": "Ensure rsyslog is installed",
+      "nist_controls": [
+        "au-2",
+        "au-7"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "4.2.2",
+      "cis_title": "Ensure rsyslog service is enabled",
+      "nist_controls": [
+        "au-2",
+        "au-12"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "4.2.3",
+      "cis_title": "Ensure remote logging is configured",
+      "nist_controls": [
+        "au-4.1",
+        "au-6"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.1.1",
+      "cis_title": "Ensure cron daemon is enabled and running",
+      "nist_controls": [
+        "cm-6"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.1.2",
+      "cis_title": "Ensure permissions on /etc/crontab are configured",
+      "nist_controls": [
+        "ac-3",
+        "ac-6"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.2.1",
+      "cis_title": "Ensure permissions on /etc/ssh/sshd_config",
+      "nist_controls": [
+        "ac-3",
+        "ac-6"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.2.2",
+      "cis_title": "Ensure SSH access is limited",
+      "nist_controls": [
+        "ac-3",
+        "ac-17"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.2.3",
+      "cis_title": "Ensure SSH LogLevel is set to INFO",
+      "nist_controls": [
+        "au-2",
+        "ac-17"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.2.4",
+      "cis_title": "Ensure SSH root login is disabled",
+      "nist_controls": [
+        "ac-6",
+        "ia-2"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.2.5",
+      "cis_title": "Ensure SSH PermitEmptyPasswords is disabled",
+      "nist_controls": [
+        "ia-5.1"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.3.1",
+      "cis_title": "Ensure password creation requirements are configured",
+      "nist_controls": [
+        "ia-5.1"
+      ],
+      "relationship": "equivalent"
+    },
+    {
+      "cis_id": "5.3.2",
+      "cis_title": "Ensure lockout for failed password attempts",
+      "nist_controls": [
+        "ac-7"
+      ],
+      "relationship": "equivalent"
+    },
+    {
+      "cis_id": "5.3.3",
+      "cis_title": "Ensure password reuse is limited",
+      "nist_controls": [
+        "ia-5.1"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.4.1",
+      "cis_title": "Ensure password expiration is configured",
+      "nist_controls": [
+        "ia-5.1"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.4.2",
+      "cis_title": "Ensure minimum days between password changes",
+      "nist_controls": [
+        "ia-5.1"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.4.3",
+      "cis_title": "Ensure password expiration warning days",
+      "nist_controls": [
+        "ia-5.1"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "5.4.4",
+      "cis_title": "Ensure inactive password lock is configured",
+      "nist_controls": [
+        "ac-2",
+        "ia-5.1"
+      ],
+      "relationship": "subset"
+    },
+    {
+      "cis_id": "6.1.1",
+      "cis_title": "Ensure permissions on /etc/passwd are configured",
+      "nist_controls": [
+        "ac-3",
+        "ac-6"
+      ],
+      "relationship": "subset"
+    }
+  ]
+}
