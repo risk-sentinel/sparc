@@ -100,16 +100,17 @@ Sprint 2b (weeks 3-6):
 
 ---
 
-### Phase 3 -- Sequential chain but different document domains
+### Phase 3 -- Entity creation, STIG parsing & ATO Wizard
 
 <!-- markdownlint-disable MD013 -->
 
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
 | [ ] | **#175** Profile from baseline | Profile | `profile_documents_controller.rb`, `profile_document.rb`, profile views, `oscal_profile_export_service.rb` | **NONE** with SSP/SAR/CDEF work |
-| [ ] | **#172** CDEF from Profile | CDEF | `cdef_documents_controller.rb`, `cdef_document.rb`, new `CdefFromProfileService`, CDEF views | **NONE** with SSP/SAR work |
+| [ ] | **#185** STIG SV/V to CCI parser | Converters | New `StigXccdfParserService`, `converters_controller` (new action), `lib/tasks/import_stig.rake`, converter views | **NONE** with Profile/SSP/SAR -- different domain |
+| [ ] | **#172** CDEF from Profile | CDEF | `cdef_documents_controller.rb`, `cdef_document.rb`, new `CdefFromProfileService`, CDEF views | **NONE** with SSP/SAR work; uses #185 for validation |
 | [ ] | **#173** SSP from Profile | SSP | `ssp_documents_controller.rb`, `ssp_document.rb`, `ssp_wizard_service.rb`, SSP views | **NONE** with CDEF/SAR work |
-| [ ] | **#174** SAR from Profile/SSP | SAR | `sar_documents_controller.rb`, `sar_document.rb`, `sar_wizard_service.rb`, SAR views | **NONE** with SSP/CDEF work |
+| [ ] | **#174** SAR from Profile/SSP | SAR | `sar_documents_controller.rb`, `sar_document.rb`, `sar_wizard_service.rb`, SAR views | **NONE** with SSP/CDEF work; uses #185 CDEF validations |
 | [ ] | **#125** ATO Wizard | NEW domain | New `AtoWizardController`, new `AtoPackageService`, new views, new model | **LOW** -- mostly new files |
 
 <!-- markdownlint-enable MD013 -->
@@ -119,22 +120,25 @@ Sprint 2b (weeks 3-6):
 ```bash
 Sprint 3a (weeks 1-3):
   Dev A: #175 (Profile from baseline)  -- Profile domain
-  Dev B: #172 (CDEF from Profile)      -- CDEF domain
-  Dev C: #173 (SSP from Profile)       -- SSP domain
+  Dev B: #185 (STIG XCCDF parser)      -- Converters domain (parallel with #175)
+  Dev C: #173 (SSP from Profile)       -- SSP domain (can start after #175)
 
 Sprint 3b (weeks 3-6):
-  Dev A: #125 (ATO Wizard)             -- New domain
-  Dev C: #174 (SAR from Profile/SSP)   -- SAR domain
-  Dev B: overflow / integration testing
+  Dev A: #172 (CDEF from Profile)      -- CDEF domain (uses #185 for validation)
+  Dev C: #174 (SAR from Profile/SSP)   -- SAR domain (uses #185 CDEF validations)
+  Dev B: #125 (ATO Wizard)             -- New domain (after all entity types)
 ```
 
 > **Critical rule:** #175 must merge first (creates Published
-> Profiles that #172, #173, #174 consume). #172/#173 can run in
-> parallel. #174 needs #173. #125 needs all four.
+> Profiles that #172, #173, #174 consume). #185 can run in
+> parallel with #175 (Converters domain, zero file overlap).
+> #172 benefits from #185 (STIG/CCI data for CDEF validation).
+> #174 needs #173 and #185 (CDEF validation for SAR evidence).
+> #125 needs all five.
 
 ---
 
-### Phase 4 -- Highly parallelizable (different domains)
+### Phase 4 -- Documentation & UX polish (all parallel)
 
 <!-- markdownlint-disable MD013 -->
 
@@ -143,17 +147,15 @@ Sprint 3b (weeks 3-6):
 | [ ] | **#133** Mapping docs | Documentation | `docs/` directory, minor service annotations | **NONE** -- documentation |
 | [ ] | **#167** Enterprise nav | UI/Navigation | `home/index.html.erb`, layout partials, `home_controller.rb` | **NONE** with other Phase 4 work |
 | [ ] | **#171** OSCAL diagram | UI (new page) | New view file, `config/routes.rb` (1 line), layout nav link | **NONE** -- new page |
-| [ ] | **#185** STIG SV/V to CCI parser | Converters | New `StigXccdfParserService`, `converters_controller` (new action), `lib/tasks/import_stig.rake`, converter views | **LOW** -- new service files, minor controller additions |
 
 <!-- markdownlint-enable MD013 -->
 
-**Phase 4 Parallelism: All 4 issues can run simultaneously.**
+**Phase 4 Parallelism: All 3 issues can run simultaneously.**
 
 ```text
 Dev A: #133 (mapping docs)
 Dev B: #167 (enterprise nav)
 Dev C: #171 (OSCAL diagram)
-Dev D: #185 (STIG XCCDF parser)
 ```
 
 ---
@@ -383,20 +385,20 @@ Assuming 4 developers (A, B, C, D) across all 6 phases:
 
 <!-- markdownlint-enable MD013 -->
 
-### Phase 3 (Weeks 10-15) -- Domain Isolation
+### Phase 3 (Weeks 10-15) -- Entity Creation + STIG Parser
 
 <!-- markdownlint-disable MD013 -->
 
 | Dev | Sprint 3a (Wk 10-12) | Sprint 3b (Wk 13-15) |
 | --- | --------------------- | --------------------- |
-| A | #175 Profile from baseline | #125 ATO Wizard (start) |
-| B | #172 CDEF from Profile | #125 ATO Wizard (finish) |
-| C | #173 SSP from Profile | #174 SAR from Profile/SSP |
+| A | #175 Profile from baseline | #172 CDEF from Profile (uses #185 for validation) |
+| B | #185 STIG XCCDF SV/V to CCI parser | #125 ATO Wizard |
+| C | #173 SSP from Profile | #174 SAR from Profile/SSP (uses #185 CDEF validations) |
 | D | #95 CRUD API (start early) | #95 CRUD API (finish) |
 
 <!-- markdownlint-enable MD013 -->
 
-### Phase 4 (Weeks 16-18) -- Docs, UX & STIG Parser
+### Phase 4 (Weeks 16-18) -- Docs & UX Polish
 
 <!-- markdownlint-disable MD013 -->
 
@@ -405,7 +407,7 @@ Assuming 4 developers (A, B, C, D) across all 6 phases:
 | A | #133 Mapping docs |
 | B | #167 Enterprise nav (if not done in Phase 2) |
 | C | #171 OSCAL diagram |
-| D | #185 STIG XCCDF SV/V to CCI parser |
+| D | overflow / integration testing |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -486,15 +488,14 @@ Phase 2:
              +-------> #176
 
 Phase 3:
-  #175 ------+-------> #172  ------+
-             +-------> #173 --> #174 --> #125
-             +--------------------------> #125
+  #175 ------+-------> #172 (CDEF, validated by #185) --+
+             +-------> #173 --> #174 (SAR, uses #185) --+--> #125
+  #185 (STIG parser, parallel with #175) ------+--------+
 
 Phase 4 (all parallel):
   #133 (independent)
   #167 (independent)
   #171 (independent)
-  #185 (independent -- Converters domain)
 
 Phase 5 (staggered):
   #95  (independent -- API)
@@ -524,9 +525,10 @@ Phase 6 (FedRAMP 20x -- final):
 | #172 + #173 | YES | None | CDEF vs SSP -- zero file overlap |
 | #172 + #174 | YES | None | CDEF vs SAR -- zero file overlap |
 | #173 + #174 | **NO** | Medium | #174 can source from SSP, needs #173 |
-| #185 + #172 | YES | None | STIG parser vs CDEF -- different service files |
+| #185 + #175 | YES | None | STIG parser (Converters) vs Profile -- different domains |
 | #185 + #173 | YES | None | STIG parser vs SSP -- different domains |
-| #185 + #133 | YES | None | Parser code vs documentation |
+| #172 + #185 | YES (linked) | Low | CDEF uses #185 STIG/CCI data for validation |
+| #174 + #185 | YES (linked) | Low | SAR uses #185 CDEF validations for evidence |
 | #186 + #100 | YES | Low | Different workflow files in `.github/` |
 | #186 + any app | YES | None | CI pipeline is fully isolated |
 | #183 + any migration | **NO** | High | Squash must wait for all migrations |

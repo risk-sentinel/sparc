@@ -43,9 +43,10 @@ GitHub repository.
 ### 4. OSCAL Entity Creation & Workflows
 
 - [ ] #175 -- Build Published Profile creation from baseline
-- [ ] #172 -- Component Definition (CDEF) creation & import (incl. from Profile)
+- [ ] #185 -- Automate extraction of SV/V to CCI mappings from DISA STIGs (XCCDF parser for CDEF validation)
+- [ ] #172 -- Component Definition (CDEF) creation & import (incl. from Profile, validated via STIG/CCI)
 - [ ] #173 -- System Security Plan (SSP) creation & import (incl. from Profile)
-- [ ] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP)
+- [ ] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP, uses CDEF validations)
 - [ ] #125 -- End-to-end wizard for complete ATO Authorization Package
 
 ### 5. Advanced OSCAL & Compliance Extensions
@@ -65,7 +66,7 @@ GitHub repository.
 
 ### 8. DISA STIG & Framework Mapping
 
-- [ ] #185 -- Automate extraction of SV/V to CCI mappings from DISA STIGs (XCCDF parser)
+- [ ] #185 -- (Moved to Theme 4 / Phase 3 -- prerequisite for CDEF validation and SAR evidence)
 
 ### 9. CI/CD & Security Scanning
 
@@ -147,47 +148,50 @@ Sprint 2b (weeks 3-6):
 
 ---
 
-### Phase 3: OSCAL Entity Creation & ATO Wizard (4-6 weeks)
+### Phase 3: OSCAL Entity Creation, STIG Parsing & ATO Wizard (4-6 weeks)
 
-**Goal:** Full artifact lifecycle + guided ATO package generation
+**Goal:** Full artifact lifecycle + STIG-based CDEF validation + guided ATO package generation
 
 <!-- markdownlint-disable MD013 -->
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
 | [ ] | #175 | Profile creation from baseline + parameter validation | **HIGH** | Phase 2 complete |
-| [ ] | #172 | CDEF creation/import from Profile | **HIGH** | AFTER #175 merges |
+| [ ] | #185 | STIG XCCDF parser: SV/V to CCI extraction for CDEF validation & evidence | **HIGH** | None (builds on Converters domain) |
+| [ ] | #172 | CDEF creation/import from Profile, validated via STIG/CCI mappings | **HIGH** | AFTER #175 merges; #185 for validation |
 | [ ] | #173 | SSP creation/import from Profile | **HIGH** | AFTER #175 merges |
-| [ ] | #174 | SAR creation/import from Profile or SSP | MEDIUM | AFTER #173 merges |
+| [ ] | #174 | SAR creation/import from Profile or SSP (uses CDEF STIG validations) | MEDIUM | AFTER #173 and #185 merge |
 | [ ] | #125 | Multi-step ATO wizard (all OSCAL layers) | MEDIUM | AFTER #172, #173, #174 merge |
 
 <!-- markdownlint-enable MD013 -->
 
-**Deliverables:** End-to-end traceable ATO package ZIP export
+**Deliverables:** End-to-end traceable ATO package ZIP export, automated STIG-to-CCI-to-NIST traceability
 
 **Parallelism Strategy:**
 
 ```text
 Sprint 3a (weeks 1-3):
   Dev A: #175 (Profile from baseline)  -- Profile domain
-  Dev B: #172 (CDEF from Profile)      -- CDEF domain (can start after #175)
+  Dev B: #185 (STIG XCCDF parser)      -- Converters domain (parallel with #175)
   Dev C: #173 (SSP from Profile)       -- SSP domain (can start after #175)
 
 Sprint 3b (weeks 3-6):
-  Dev A: #125 (ATO Wizard)             -- New domain
-  Dev C: #174 (SAR from Profile/SSP)   -- SAR domain
-  Dev B: overflow / integration testing
+  Dev A: #172 (CDEF from Profile)      -- CDEF domain (uses #185 for validation)
+  Dev C: #174 (SAR from Profile/SSP)   -- SAR domain (uses #185 CDEF validations)
+  Dev B: #125 (ATO Wizard)             -- New domain (after all entity types)
 ```
 
 > **Critical rule:** #175 must merge first (creates Published
-> Profiles that #172, #173, #174 consume). #172/#173 can run in
-> parallel. #174 needs #173. #125 needs all four.
+> Profiles that #172, #173, #174 consume). #185 can run in
+> parallel with #175 (different domain). #172 benefits from
+> #185 (STIG/CCI data for CDEF validation). #174 needs #173
+> and #185 (CDEF validation for SAR evidence). #125 needs all.
 
 ---
 
-### Phase 4: Advanced Compliance, UX & STIG Parsing (3-4 weeks)
+### Phase 4: Documentation & UX Polish (3-4 weeks)
 
-**Goal:** FedRAMP readiness, better navigation, STIG automation
+**Goal:** Better navigation, documentation, interactive diagrams
 
 <!-- markdownlint-disable MD013 -->
 
@@ -196,19 +200,17 @@ Sprint 3b (weeks 3-6):
 | [ ] | #133 | OSCAL data mapping documentation & guidance | MEDIUM | None |
 | [ ] | #167 | Enterprise/Organization visibility & navigation | MEDIUM | None |
 | [ ] | #171 | Mermaid OSCAL relationship diagram | MEDIUM | None |
-| [ ] | #185 | STIG XCCDF parser: SV/V to CCI extraction + OSCAL CDEF generation | MEDIUM | None (builds on Converters domain) |
 
 <!-- markdownlint-enable MD013 -->
 
-**Deliverables:** Improved admin UX, interactive OSCAL diagram, automated STIG-to-CCI mappings
+**Deliverables:** Improved admin UX, interactive OSCAL diagram, comprehensive mapping docs
 
-**Parallelism: All 4 issues can run simultaneously.**
+**Parallelism: All 3 issues can run simultaneously.**
 
 ```text
 Dev A: #133 (mapping docs)
 Dev B: #167 (enterprise nav)
 Dev C: #171 (OSCAL diagram)
-Dev D: #185 (STIG XCCDF parser)
 ```
 
 ---
@@ -297,8 +299,8 @@ removed and are no longer tracked:
 | ----- | -------- | --------- | ------ | --------------- |
 | 1 | 2-4 weeks | Bugs + Testing + Dev Env | #142, #178, #100, #134 | Yes (all 4) |
 | 2 | 4-6 weeks | OSCAL Core (Import/Export/Publication) | #163, #149, #177, #148, #176 | Staggered (2a/2b) |
-| 3 | 4-6 weeks | Entity Creation + ATO Wizard | #175, #172, #173, #174, #125 | Staggered (3a/3b) |
-| 4 | 3-4 weeks | Docs + UX + STIG Parser | #133, #167, #171, #185 | Yes (all 4) |
+| 3 | 4-6 weeks | Entity Creation + STIG Parser + ATO Wizard | #175, #185, #172, #173, #174, #125 | Staggered (3a/3b) |
+| 4 | 3-4 weeks | Docs + UX Polish | #133, #167, #171 | Yes (all 3) |
 | 5 | 3-4 weeks | API + CI/CD + DB Cleanup | #95, #186, #183 | Yes (with #183 gate) |
 | 6 | 3-4 weeks | FedRAMP 20x | #107, #108 | Sequential |
 
