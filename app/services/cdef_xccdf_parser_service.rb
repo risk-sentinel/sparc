@@ -1,5 +1,6 @@
 class CdefXccdfParserService
   include BatchInsertable
+  include ProgressTrackable
 
   def initialize(cdef_document, file_path)
     @document  = cdef_document
@@ -7,6 +8,7 @@ class CdefXccdfParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     xml_content = File.read(@file_path).force_encoding("UTF-8")
     doc = Nokogiri::XML(xml_content) { |c| c.strict.noblanks }
     doc.remove_namespaces!
@@ -31,6 +33,7 @@ class CdefXccdfParserService
       end
     end
 
+    update_processing_stage!(:creating_records)
     batch_insert_records(
       control_class: CdefControl,
       field_class:   CdefControlField,

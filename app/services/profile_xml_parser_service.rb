@@ -1,5 +1,6 @@
 class ProfileXmlParserService
   include BatchInsertable
+  include ProgressTrackable
 
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
 
@@ -9,6 +10,7 @@ class ProfileXmlParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     doc = Nokogiri::XML(File.read(@file_path)) { |config| config.noblanks }
     doc.remove_namespaces!
 
@@ -58,6 +60,7 @@ class ProfileXmlParserService
       row_order += 1
     end
 
+    update_processing_stage!(:creating_records)
     batch_insert_records(
       control_class: ProfileControl,
       field_class:   ProfileControlField,

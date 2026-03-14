@@ -4,6 +4,10 @@
   [@completed_count, "Completed"]
 ] %>
 
+<% if @ssp_documents.any? { |d| d.processing? || d.pending? } %>
+  <meta http-equiv="refresh" content="10">
+<% end %>
+
 <div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>System Security Plans</h2>
@@ -40,7 +44,12 @@
               <span class="sparc-source-badge <%= source_class %>"><%= source_label %></span>
             </td>
             <td class="text-body-secondary" style="font-size: 0.85rem;"><%= doc.ssp_version.presence || "\u2014" %></td>
-            <td><span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;"><%= doc.status %></span></td>
+            <td>
+              <span class="<%= doc.completed? ? 'badge-ok' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;"><%= doc.status %></span>
+              <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
+                <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= doc.metadata_extra["processing_message"] %></span>
+              <% end %>
+            </td>
             <td>
               <% if doc.enriched? %>
                 <span class="sparc-oscal-enriched">Enriched</span>

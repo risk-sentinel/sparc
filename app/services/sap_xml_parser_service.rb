@@ -7,6 +7,8 @@
 # Pattern B document types).
 #
 class SapXmlParserService
+  include ProgressTrackable
+
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
 
   def initialize(document, file_path)
@@ -15,6 +17,7 @@ class SapXmlParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     xml = File.read(@file_path).force_encoding("UTF-8")
     doc = Nokogiri::XML(xml) { |config| config.noblanks }
     root = doc.at_xpath("xmlns:assessment-plan", "xmlns" => OSCAL_NS) ||
@@ -24,6 +27,7 @@ class SapXmlParserService
     sap_hash = build_assessment_plan_hash(root)
     data = { "assessment-plan" => sap_hash }
 
+    update_processing_stage!(:creating_records)
     tmp_json = Tempfile.new([ "sap_xml_", ".json" ])
     tmp_json.write(JSON.generate(data))
     tmp_json.close
