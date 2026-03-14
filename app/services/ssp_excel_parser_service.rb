@@ -2,6 +2,7 @@ require "roo"
 
 class SspExcelParserService
   include BatchInsertable
+  include ProgressTrackable
 
   # Column mapping is loaded from lib/data_mappings/ssp_excel.json via DataMappingSchema.
   # This provides a vendor-neutral, declarative mapping that includes editability,
@@ -16,8 +17,13 @@ class SspExcelParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file, "Opening spreadsheet...")
+
     sheet = @spreadsheet.sheet(0)
     return if sheet.last_row.nil? || sheet.last_row < 2
+
+    total_rows = sheet.last_row - 1
+    update_processing_stage!(:parsing, "Parsing #{total_rows} rows...")
 
     raw_headers = sheet.row(1).map { |h| h.to_s.strip.downcase }
     col_config = build_col_config(raw_headers)
@@ -58,10 +64,17 @@ class SspExcelParserService
         is_parent:  is_parent,
         parent_ref: parent_ref
       }
+      # Progress heartbeat every 500 rows
+      if row_order > 0 && (row_order % 500).zero?
+        update_processing_progress!("Parsed #{row_order} of #{total_rows} rows...")
+      end
+
       row_order += 1
     end
 
+    update_processing_stage!(:creating_records, "Creating #{rows.size} controls in database...")
     batch_insert_with_hierarchy(rows)
+    update_processing_stage!(:finalizing, "Finalizing #{rows.size} controls...")
   end
 
   private

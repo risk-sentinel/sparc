@@ -2,6 +2,7 @@ require "roo"
 
 class SarExcelParserService
   include BatchInsertable
+  include ProgressTrackable
 
   # Column mapping is loaded from lib/data_mappings/sar_excel.json via DataMappingSchema.
   # This provides a vendor-neutral, declarative mapping that includes editability,
@@ -16,10 +17,15 @@ class SarExcelParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file, "Opening spreadsheet...")
+
     sheet_metadata   = {}
     control_attrs    = []  # Array of attribute hashes for SarControl
     field_entries    = []  # Array of [control_index, field_name, field_value]
     global_row_order = 0
+
+    total_sheets = @spreadsheet.sheets.size
+    update_processing_stage!(:parsing, "Parsing #{total_sheets} sheets...")
 
     @spreadsheet.sheets.each do |sheet_name|
       section = sheet_name.to_s.strip
@@ -69,10 +75,16 @@ class SarExcelParserService
           field_entries << [ control_idx, fname.to_s, fval ]
         end
 
+        # Progress heartbeat every 500 rows
+        if global_row_order > 0 && (global_row_order % 500).zero?
+          update_processing_progress!("Parsed #{global_row_order} rows across #{total_sheets} sheets...")
+        end
+
         global_row_order += 1
       end
     end
 
+    update_processing_stage!(:creating_records, "Creating #{control_attrs.size} controls in database...")
     batch_insert_records(
       control_class: SarControl,
       field_class:   SarControlField,

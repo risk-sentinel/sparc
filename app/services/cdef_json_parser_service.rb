@@ -1,5 +1,6 @@
 class CdefJsonParserService
   include BatchInsertable
+  include ProgressTrackable
 
   def initialize(cdef_document, file_path)
     @document  = cdef_document
@@ -7,9 +8,11 @@ class CdefJsonParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     content = File.read(@file_path).force_encoding("UTF-8")
     data    = JSON.parse(content)
 
+    update_processing_stage!(:creating_records)
     case detect_json_format(data)
     when :oscal_cdef      then parse_oscal_cdef(data)
     when :inspec_profile  then parse_inspec_profile(data)

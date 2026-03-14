@@ -4,6 +4,10 @@
   [@completed_count, "Completed"]
 ] %>
 
+<% if @profile_documents.any? { |d| d.processing? || d.pending? } %>
+  <meta http-equiv="refresh" content="10">
+<% end %>
+
 <div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Baselines / Profiles</h2>
@@ -46,6 +50,9 @@
               <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
                 <%= doc.status %>
               </span>
+              <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
+                <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= doc.metadata_extra["processing_message"] %></span>
+              <% end %>
             </td>
             <td><%= doc.profile_controls.count %></td>
             <td style="white-space: nowrap; font-size: 0.85rem;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>

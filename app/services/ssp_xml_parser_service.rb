@@ -4,6 +4,8 @@
 # Follows the same delegation pattern as PoamXmlParserService.
 #
 class SspXmlParserService
+  include ProgressTrackable
+
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
 
   def initialize(document, file_path)
@@ -12,6 +14,7 @@ class SspXmlParserService
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     xml = File.read(@file_path).force_encoding("UTF-8")
     doc = Nokogiri::XML(xml) { |config| config.noblanks }
     root = doc.at_xpath("xmlns:system-security-plan", "xmlns" => OSCAL_NS) ||
@@ -21,6 +24,7 @@ class SspXmlParserService
     ssp_hash = build_ssp_hash(root)
     data = { "system-security-plan" => ssp_hash }
 
+    update_processing_stage!(:creating_records)
     json_parser = SspJsonParserService.new(@document, nil)
     json_parser.parse_from_hash(data)
   end

@@ -1,32 +1,10 @@
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
 <% unless @sar_document.completed? %>
-  <div class="sparc-processing-banner">
-    <% if @sar_document.failed? %>
-      <div class="sparc-processing-icon">&#x26A0;</div>
-      <h2 class="sparc-processing-title sparc-processing-title-error">Processing Failed</h2>
-      <p class="sparc-processing-text">
-        <%= @sar_document.error_message.presence || "An unknown error occurred." %>
-      </p>
-      <div style="margin-top: 1.25rem;">
-        <%= link_to "&#8592; Back to Documents".html_safe, sar_documents_path,
-              class: "sparc-btn-ghost" %>
-      </div>
-    <% else %>
-      <div style="margin-bottom: 0.75rem;">
-        <span class="sparc-spinner"></span>
-      </div>
-      <h2 class="sparc-processing-title sparc-processing-title-pending">Processing Your Workbook</h2>
-      <p class="sparc-processing-text-muted">
-        <strong><%= @sar_document.original_filename %></strong> is being parsed.
-        This page will automatically refresh when processing is complete.
-      </p>
-    <% end %>
-  </div>
-
-  <% unless @sar_document.failed? %>
-    <meta http-equiv="refresh" content="5">
-  <% end %>
-
+  <%= render "shared/processing_banner",
+       document:     @sar_document,
+       title:        "Processing Your Workbook",
+       back_label:   "Back to Documents",
+       back_path:    sar_documents_path %>
 
 <% else %>
 <%

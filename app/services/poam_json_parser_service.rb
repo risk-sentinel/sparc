@@ -1,10 +1,13 @@
 class PoamJsonParserService
+  include ProgressTrackable
+
   def initialize(poam_document, file_path)
     @document  = poam_document
     @file_path = file_path
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     content = File.read(@file_path).force_encoding("UTF-8")
     data    = JSON.parse(content)
     parse_from_hash(data)
@@ -14,6 +17,7 @@ class PoamJsonParserService
   def parse_from_hash(data)
     poam = data["plan-of-action-and-milestones"] || raise("Invalid OSCAL POA&M: missing 'plan-of-action-and-milestones' root key")
 
+    update_processing_stage!(:creating_records)
     ActiveRecord::Base.transaction do
       update_document_metadata(poam)
       @document.assign_oscal_uuid!(poam["uuid"])

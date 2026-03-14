@@ -1,32 +1,10 @@
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
 <% unless @sap_document.completed? %>
-  <div class="sparc-gradient-header text-center" style="border-radius: 12px; padding: 2.5rem; margin-bottom: 1.5rem; color: white;">
-    <% if @sap_document.failed? %>
-      <div class="sparc-processing-icon">&#x26A0;</div>
-      <h2 class="sparc-processing-title sparc-processing-title-error">Processing Failed</h2>
-      <p class="sparc-processing-text">
-        <%= @sap_document.error_message.presence || "An unknown error occurred." %>
-      </p>
-      <div class="mt-3">
-        <%= link_to "&#8592; Back to Assessment Plans".html_safe, sap_documents_path,
-              class: "sparc-btn-ghost" %>
-      </div>
-    <% else %>
-      <div style="margin-bottom: 0.75rem;">
-        <span class="sparc-spinner"></span>
-      </div>
-      <h2 class="sparc-processing-title sparc-processing-title-pending">Processing Your Assessment Plan</h2>
-      <p class="sparc-processing-text-muted">
-        <strong><%= @sap_document.original_filename || @sap_document.name %></strong> is being parsed.
-        This page will automatically refresh when processing is complete.
-      </p>
-    <% end %>
-  </div>
-
-  <% unless @sap_document.failed? %>
-    <meta http-equiv="refresh" content="5">
-  <% end %>
-
+  <%= render "shared/processing_banner",
+       document:     @sap_document,
+       title:        "Processing Your Assessment Plan",
+       back_label:   "Back to Assessment Plans",
+       back_path:    sap_documents_path %>
 
 <% else %>
 <%

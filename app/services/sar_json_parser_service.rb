@@ -6,12 +6,15 @@
 #   SarJsonParserService.new(sar_document, nil).parse_from_hash(data)
 #
 class SarJsonParserService
+  include ProgressTrackable
+
   def initialize(document, file_path)
     @document  = document
     @file_path = file_path
   end
 
   def parse
+    update_processing_stage!(:reading_file)
     content = File.read(@file_path).force_encoding("UTF-8")
     data    = JSON.parse(content)
     parse_from_hash(data)
@@ -20,6 +23,7 @@ class SarJsonParserService
   def parse_from_hash(data)
     ar = data["assessment-results"] || raise("Invalid OSCAL Assessment Results: missing 'assessment-results' root key")
 
+    update_processing_stage!(:creating_records)
     ActiveRecord::Base.transaction do
       update_document_metadata(ar)
       @document.assign_oscal_uuid!(ar["uuid"])
