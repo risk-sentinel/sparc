@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_11_193023) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_13_110409) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -263,6 +263,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_193023) do
     t.string "job_type"
     t.string "status"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "converter_entries", force: :cascade do |t|
+    t.string "category"
+    t.bigint "converter_id", null: false
+    t.datetime "created_at", null: false
+    t.string "relationship", default: "intersects"
+    t.text "remarks"
+    t.integer "row_order", default: 0
+    t.string "source_id", null: false
+    t.string "target_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["converter_id", "row_order"], name: "index_converter_entries_on_converter_id_and_row_order"
+    t.index ["converter_id", "source_id", "target_id"], name: "idx_converter_entries_unique_pair", unique: true
+    t.index ["converter_id"], name: "index_converter_entries_on_converter_id"
+    t.index ["uuid"], name: "index_converter_entries_on_uuid", unique: true
+  end
+
+  create_table "converters", force: :cascade do |t|
+    t.string "converter_type", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "error_message"
+    t.jsonb "metadata_extra", default: {}
+    t.string "name", null: false
+    t.string "source_framework"
+    t.string "status", default: "draft", null: false
+    t.string "target_framework", default: "NIST SP 800-53"
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.string "version", default: "1.0"
+    t.index ["converter_type"], name: "index_converters_on_converter_type"
+    t.index ["status"], name: "index_converters_on_status"
+    t.index ["uuid"], name: "index_converters_on_uuid", unique: true
   end
 
   create_table "evidence_control_links", force: :cascade do |t|
@@ -1099,6 +1134,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_193023) do
   add_foreign_key "control_mapping_entries", "control_mappings"
   add_foreign_key "control_mappings", "control_catalogs", column: "source_catalog_id"
   add_foreign_key "control_mappings", "control_catalogs", column: "target_catalog_id"
+  add_foreign_key "converter_entries", "converters"
   add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
   add_foreign_key "evidences", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "identities", "users", on_delete: :cascade

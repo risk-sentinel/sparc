@@ -1,0 +1,48 @@
+<%= form_with model: converter, class: "p-4" do |f| %>
+  <div class="row g-3 mb-3">
+    <div class="col-md-8">
+      <%= f.label :name, class: "form-label" %>
+      <%= f.text_field :name, class: "form-control", placeholder: "e.g. CCI to NIST SP 800-53 Rev 5" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :version, class: "form-label" %>
+      <%= f.text_field :version, class: "form-control", placeholder: "e.g. 1.0" %>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <%= f.label :converter_type, "Type", class: "form-label" %>
+      <%= f.select :converter_type,
+            Converter::TYPES.map { |t| [Converter::TYPE_LABELS[t], t] },
+            { prompt: "Select type..." }, class: "form-select" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :source_framework, class: "form-label" %>
+      <%= f.text_field :source_framework, class: "form-control", placeholder: "e.g. DISA CCI" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :target_framework, class: "form-label" %>
+      <%= f.text_field :target_framework, class: "form-control", value: converter.target_framework || "NIST SP 800-53" %>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <%= f.label :status, class: "form-label" %>
+      <%= f.select :status,
+            Converter::STATUSES.map { |s| [s.titleize, s] },
+            {}, class: "form-select" %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, class: "form-label" %>
+    <%= f.text_area :description, class: "form-control", rows: 3,
+          placeholder: "Describe this converter's purpose and data source..." %>
+  </div>
+
+  <div class="d-flex justify-content-end">
+    <%= f.submit converter.persisted? ? "Save Changes" : "Create Converter", class: "btn btn-primary" %>
+  </div>
+<% end %>
