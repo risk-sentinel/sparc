@@ -1,2 +1,22 @@
 #!/usr/bin/env ruby
+
+# Start the Rails development server.
+# Set SSL_DEV=true to enable HTTPS on port 3443
+# (requires bin/setup-ssl first).
+
+if ENV["SSL_DEV"] == "true"
+  ssl_cert = File.join(__dir__, "..", "ssl", "localhost+2.pem")
+  ssl_key  = File.join(__dir__, "..", "ssl", "localhost+2-key.pem")
+
+  unless File.exist?(ssl_cert) && File.exist?(ssl_key)
+    warn "ERROR: SSL_DEV=true but certificates not found."
+    warn "       Run `bin/setup-ssl` first."
+    exit 1
+  end
+
+  port = ENV.fetch("SSL_PORT", "3443")
+  puts "HTTPS enabled on port #{port}"
+  puts "Open https://localhost:#{port}"
+end
+
 exec "./bin/rails", "server", *ARGV

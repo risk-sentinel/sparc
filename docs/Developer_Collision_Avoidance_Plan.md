@@ -48,7 +48,7 @@ lane for a sprint.
 | [x] | **#142** Background upload UX | Shared (Jobs) | `document_conversion_job.rb`, `catalog_import_job.rb`, new `ProgressTrackable` concern, shared `_processing_banner.html.erb` partial, all 20 parser services, all 7 show views, all 7 index views | **LOW** -- touches job infra, not domain logic |
 | [x] | **#178** Safe delete | Shared (Models) | New `SafeDestroyable` concern, `before_destroy` callbacks across all 7 document models, all 7 controllers (safe destroy pattern), `audit_event.rb` (7 new actions), `application.js` (Turbo confirm modal), 9 views (turbo_confirm normalization) | **LOW** -- adds callbacks, doesn't change business logic |
 | [x] | **#100** Regression testing | Testing | `spec/` directory (new files), `Gemfile`, `.github/workflows/`, `spec_helper.rb` | **NONE** -- additive only, own directory |
-| [ ] | **#134** HTTPS dev | Infrastructure | `config/puma.rb`, `config/environments/development.rb`, `docker-compose.yml` | **NONE** -- config files only |
+| [x] | **#134** HTTPS dev | Infrastructure | `config/puma.rb`, `config/environments/development.rb`, `docker-compose.yaml`, `bin/setup-ssl`, `bin/dev` | **NONE** -- config files only |
 
 <!-- markdownlint-enable MD013 -->
 
