@@ -35,8 +35,10 @@ services:
       - .:/rails
       - bundle_cache:/usr/local/bundle
       - storage_data:/rails/storage
+      - ./ssl:/rails/ssl:ro          # SSL certs for dev HTTPS (mkcert)
     ports:
       - "3000:3000"
+      - "3443:3443"                   # HTTPS port (used when SSL_DEV=true)
     depends_on:
       db:
         condition: service_healthy
@@ -51,6 +53,7 @@ services:
       DOCKERIZED: "true"
       BUNDLE_DEPLOYMENT: ""           # override Dockerfile frozen-install setting
       BUNDLE_WITHOUT: "development test"
+      # SSL_DEV: "true"              # Uncomment to enable HTTPS on port 3443
 
   sidekiq:
     build: .

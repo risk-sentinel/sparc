@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# One-time SSL setup for development.
+# Generates mkcert certificates in ssl/ for localhost HTTPS.
+#
+# Usage:
+#   bin/setup-ssl
+#
+# Prerequisites:
+#   macOS:  brew install mkcert
+#   Linux:  See https://github.com/FiloSottile/mkcert#installation
+
+require "fileutils"
+
+APP_ROOT = File.expand_path("..", __dir__)
+SSL_DIR  = File.join(APP_ROOT, "ssl")
+
+def system!(*args)
+  system(*args, exception: true)
+end
+
+# Check for mkcert
+unless system("command -v mkcert > /dev/null 2>&1")
+  abort <<~MSG
+    ERROR: mkcert is not installed.
+
+    Install it first:
+      macOS:   brew install mkcert
+      Ubuntu:  sudo apt install mkcert
+      Other:   https://github.com/FiloSottile/mkcert#installation
+  MSG
+end
+
+# Create ssl/ directory
+FileUtils.mkdir_p(SSL_DIR)
+
+# Install local CA (idempotent — safe to run multiple times)
+puts "== Installing mkcert local CA (if not already installed) =="
+system!("mkcert -install")
+
+# Generate certs for localhost, 127.0.0.1, and ::1
+cert_file = File.join(SSL_DIR, "localhost+2.pem")
+key_file  = File.join(SSL_DIR, "localhost+2-key.pem")
+
+if File.exist?(cert_file) && File.exist?(key_file)
+  puts "\n== Certificates already exist in ssl/ =="
+  puts "   #{cert_file}"
+  puts "   #{key_file}"
+  puts "   Delete them and re-run if you need to regenerate."
+else
+  puts "\n== Generating certificates =="
+  Dir.chdir(SSL_DIR) do
+    system!("mkcert localhost 127.0.0.1 ::1")
+  end
+end
+
+puts "\n== Done! =="
+puts "Start the dev server with HTTPS:"
+puts "  SSL_DEV=true bin/dev"
+puts "  Then open https://localhost:3443"
