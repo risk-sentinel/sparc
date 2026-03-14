@@ -1,19 +1,4 @@
-<%#
-  Shared processing banner for document show pages.
-
-  Usage:
-    <%= render "shared/processing_banner",
-         document:         @ssp_document,
-         title:            "Processing Your Workbook",
-         failed_title:     "Processing Failed",
-         back_label:       "Back to Documents",
-         back_path:        ssp_documents_path,
-         refresh_interval: 3 %>
-
-  The partial reads progress from document.metadata_extra["processing_*"]
-  keys written by ProgressTrackable / DocumentConversionJob.
-  Backward compatible: if no processing_* keys exist, shows generic text.
-%>
+<%# Shared processing banner for document show pages. %>
 <%
   document       = local_assigns[:document]
   title          = local_assigns.fetch(:title, "Processing")
