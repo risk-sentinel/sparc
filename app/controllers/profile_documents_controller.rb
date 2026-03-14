@@ -78,10 +78,16 @@ class ProfileDocumentsController < ApplicationController
 
   def destroy
     name = @profile_document.name
-    audit_log("profile_document_deleted", subject: @profile_document, metadata: { name: name })
-    @profile_document.destroy
-    flash[:success] = "Profile (Baseline) deleted"
-    redirect_to profile_documents_path
+    if @profile_document.destroy
+      audit_log("profile_document_deleted", subject: @profile_document, metadata: { name: name })
+      flash[:success] = "Profile '#{name}' deleted."
+      redirect_to profile_documents_path
+    else
+      audit_log("profile_document_delete_blocked", subject: @profile_document,
+        metadata: { name: name, reason: @profile_document.errors.full_messages.join(", ") })
+      flash[:error] = @profile_document.errors.full_messages.join(", ")
+      redirect_to profile_document_path(@profile_document)
+    end
   end
 
   def download_json

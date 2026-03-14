@@ -36,10 +36,16 @@ class CdefDocumentsController < ApplicationController
 
   def destroy
     name = @cdef_document.name
-    audit_log("cdef_document_deleted", subject: @cdef_document, metadata: { name: name })
-    @cdef_document.destroy
-    flash[:success] = "Component Definition deleted"
-    redirect_to cdef_documents_path
+    if @cdef_document.destroy
+      audit_log("cdef_document_deleted", subject: @cdef_document, metadata: { name: name })
+      flash[:success] = "Component Definition '#{name}' deleted."
+      redirect_to cdef_documents_path
+    else
+      audit_log("cdef_document_delete_blocked", subject: @cdef_document,
+        metadata: { name: name, reason: @cdef_document.errors.full_messages.join(", ") })
+      flash[:error] = @cdef_document.errors.full_messages.join(", ")
+      redirect_to cdef_document_path(@cdef_document)
+    end
   end
 
   def download_json

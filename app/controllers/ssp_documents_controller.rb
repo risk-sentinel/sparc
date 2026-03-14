@@ -234,11 +234,16 @@ class SspDocumentsController < ApplicationController
 
   def destroy
     name = @ssp_document.name
-    audit_log("ssp_document_deleted", subject: @ssp_document,
-      metadata: { name: name })
-    @ssp_document.destroy
-    flash[:success] = "System Security Plan document deleted"
-    redirect_to ssp_documents_path
+    if @ssp_document.destroy
+      audit_log("ssp_document_deleted", subject: @ssp_document, metadata: { name: name })
+      flash[:success] = "SSP '#{name}' deleted."
+      redirect_to ssp_documents_path
+    else
+      audit_log("ssp_document_delete_blocked", subject: @ssp_document,
+        metadata: { name: name, reason: @ssp_document.errors.full_messages.join(", ") })
+      flash[:error] = @ssp_document.errors.full_messages.join(", ")
+      redirect_to ssp_document_path(@ssp_document)
+    end
   end
 
   private

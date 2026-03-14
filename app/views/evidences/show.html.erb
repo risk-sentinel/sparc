@@ -126,7 +126,7 @@
                 </td>
                 <td>
                   <%= button_to "Remove", evidence_attestation_path(@evidence, att), method: :delete,
-                      data: { confirm: "Remove this attestation?" },
+                      form: { data: { turbo_confirm: "Remove this attestation?" } },
                       class: "btn btn-outline-danger btn-sm" %>
                 </td>
               </tr>

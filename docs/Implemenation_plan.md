@@ -25,7 +25,7 @@ GitHub repository.
 ### 1. Bugs & Quick Wins (High priority -- Fix first)
 
 - [x] #142 -- Large Excel uploads block UI (background + progress UX) -- **COMPLETED 2026-03-14**
-- [ ] #178 -- Safe delete confirmation with dependency checks
+- [x] #178 -- Safe delete confirmation with dependency checks -- **COMPLETED 2026-03-14**
 
 ### 2. Testing & Developer Experience (Foundation)
 
@@ -89,7 +89,7 @@ GitHub repository.
 | Status | Issue | Description | Priority |
 | ------ | ----- | ----------- | -------- |
 | [x] | #142 | Background jobs + Turbo Streams/polling for large Excel uploads | **HIGH** |
-| [ ] | #178 | Dependency-aware delete modal across all OSCAL entities | **HIGH** |
+| [x] | #178 | Dependency-aware delete modal across all OSCAL entities | **HIGH** |
 | [ ] | #100 | RSpec/Capybara + RuboCop/Brakeman in CI pipeline | **HIGH** |
 | [ ] | #134 | HTTPS localhost via mkcert for dev environment | MEDIUM |
 

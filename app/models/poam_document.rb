@@ -1,5 +1,6 @@
 class PoamDocument < ApplicationRecord
   include OscalMetadata
+  include SafeDestroyable
 
   belongs_to :authorization_boundary, optional: true
 
