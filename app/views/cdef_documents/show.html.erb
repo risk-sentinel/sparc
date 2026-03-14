@@ -65,7 +65,7 @@
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
       <% if signed_in? %>
         <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
-              class: "sparc-btn-ghost", data: { confirm: "Duplicate this component definition?" } %>
+              class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
       <% end %>
       <div class="btn-group">
         <button type="button" class="sparc-btn-oscal dropdown-toggle"

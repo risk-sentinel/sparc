@@ -1,5 +1,6 @@
 class ProfileDocument < ApplicationRecord
   include OscalMetadata
+  include SafeDestroyable
 
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true
@@ -21,5 +22,16 @@ class ProfileDocument < ApplicationRecord
       catalog_name: control_catalog&.name,
       controls: profile_controls.order(:row_order).includes(:profile_control_fields).map(&:to_hash)
     }
+  end
+
+  private
+
+  def deletion_dependencies
+    deps = []
+    ssp_count = SspDocument.where(profile_document_id: id).count
+    deps << "#{ssp_count} SSP(s)" if ssp_count > 0
+    sap_count = SapDocument.where(profile_document_id: id).count
+    deps << "#{sap_count} Assessment Plan(s)" if sap_count > 0
+    deps
   end
 end

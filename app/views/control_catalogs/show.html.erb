@@ -87,7 +87,7 @@
                 <% if can_write_catalogs? %>
                   <%= link_to "Edit", edit_control_family_path(family), class: "btn btn-sm btn-sparc-orange" %>
                   <%= button_to "Delete", family, method: :delete,
-                      data: { confirm: "Delete family #{family.code}? This removes all its controls." },
+                      form: { data: { turbo_confirm: "Delete family #{family.code}? This removes all its controls." } },
                       class: "btn btn-danger btn-sm" %>
                 <% end %>
               </div>

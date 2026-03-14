@@ -1,5 +1,6 @@
 class SapDocument < ApplicationRecord
   include OscalMetadata
+  include SafeDestroyable
 
   belongs_to :authorization_boundary, optional: true
 
@@ -38,5 +39,14 @@ class SapDocument < ApplicationRecord
 
   def status_counts
     sap_controls.group(:assessment_status).count
+  end
+
+  private
+
+  def deletion_dependencies
+    deps = []
+    sar_count = SarDocument.where(sap_document_id: id).count
+    deps << "#{sar_count} SAR(s)" if sar_count > 0
+    deps
   end
 end

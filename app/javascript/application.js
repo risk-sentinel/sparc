@@ -1,6 +1,57 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
 import "@hotwired/turbo-rails"
+import { Turbo } from "@hotwired/turbo-rails"
 import "controllers"
+
+// ── Custom Turbo confirmation modal (Bootstrap 5) ──
+// Replaces browser-native window.confirm() with a styled Bootstrap modal
+// for all turbo_confirm dialogs app-wide.
+Turbo.setConfirmMethod((message, _element) => {
+  return new Promise((resolve) => {
+    const modalId = "sparc-confirm-modal"
+    let existing = document.getElementById(modalId)
+    if (existing) existing.remove()
+
+    const wrapper = document.createElement("div")
+    wrapper.innerHTML = [
+      '<div class="modal fade" id="' + modalId + '" tabindex="-1" aria-hidden="true">',
+      '  <div class="modal-dialog modal-dialog-centered">',
+      '    <div class="modal-content">',
+      '      <div class="modal-header">',
+      '        <h5 class="modal-title">Confirm Action</h5>',
+      '        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>',
+      '      </div>',
+      '      <div class="modal-body"></div>',
+      '      <div class="modal-footer">',
+      '        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>',
+      '        <button type="button" class="btn btn-danger" id="' + modalId + '-confirm">Delete</button>',
+      '      </div>',
+      '    </div>',
+      '  </div>',
+      '</div>'
+    ].join("\n")
+
+    const modal = wrapper.firstElementChild
+    modal.querySelector(".modal-body").textContent = message
+    document.body.appendChild(modal)
+
+    const bsModal = new bootstrap.Modal(modal)
+    let resolved = false
+
+    modal.querySelector("#" + modalId + "-confirm").addEventListener("click", () => {
+      resolved = true
+      resolve(true)
+      bsModal.hide()
+    })
+
+    modal.addEventListener("hidden.bs.modal", () => {
+      if (!resolved) resolve(false)
+      modal.remove()
+    }, { once: true })
+
+    bsModal.show()
+  })
+})
 
 // ── Bootstrap component re-initialization after Turbo Drive navigation ──
 //
