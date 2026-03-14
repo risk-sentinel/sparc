@@ -9,6 +9,8 @@ GitHub repository.
 
 ## Guiding Principles
 
+<!-- markdownlint-disable MD013 -->
+
 - **Prioritization** -- High-priority bugs and foundational items first
 - **Phased delivery** -- Stability -> core OSCAL -> advanced features -> deployment polish
 - **Dependencies respected** -- Prerequisites completed before dependent work
@@ -18,18 +20,48 @@ GitHub repository.
 - **Sprint length** -- 2-4 weeks
 - **Total estimated duration** -- 16-24 weeks (~4-6 months) with overlap
 
+<!-- markdownlint-enable MD013 -->
+
+---
+
+## Issue Process
+
+Standard workflow for every issue in the SPARC phased roadmap:
+
+1. Pull from Main unless otherwise noted
+2. Assign the issue to me
+3. Review the issue and updated notes
+4. Start a fresh branch `feature/` or `bug/` based on the issue
+   with the issue number in the branch name
+5. Create a plan
+6. Implement the approved plan
+7. Troubleshoot any issues
+8. Appropriately update:
+   - `docs/Implemenation_plan.md`
+   - `docs/Developer_Collision_Avoidance_Plan.md`
+   - Release notes so they are all stacked
+   - Regression testing
+9. Commit / push changes
+10. Wait for user testing
+    - Functional testing
+    - Review regression report(s)
+11. Create a PR and wait for the PR to merge before moving forward
+
 ---
 
 ## Grouped Issues by Theme
 
 ### 1. Bugs & Quick Wins (High priority -- Fix first)
 
+<!-- markdownlint-disable MD013 -->
+
 - [x] #142 -- Large Excel uploads block UI (background + progress UX) -- **COMPLETED 2026-03-14**
 - [x] #178 -- Safe delete confirmation with dependency checks -- **COMPLETED 2026-03-14**
 
 ### 2. Testing & Developer Experience (Foundation)
 
-- [ ] #100 -- Comprehensive automated regression testing suite
+- [x] #100 -- Comprehensive automated regression testing suite -- **COMPLETED 2026-03-14**
+
 - [ ] #134 -- Enable HTTPS in development environment (mkcert + Rails config)
 
 ### 3. OSCAL Core (Import/Export, Publication, Status)
@@ -76,6 +108,8 @@ GitHub repository.
 
 - [ ] #183 -- Squash accumulated migrations into a single consolidated migration file
 
+<!-- markdownlint-enable MD013 -->
+
 ---
 
 ## Phased Roadmap
@@ -90,7 +124,7 @@ GitHub repository.
 | ------ | ----- | ----------- | -------- |
 | [x] | #142 | Background jobs + Turbo Streams/polling for large Excel uploads | **HIGH** |
 | [x] | #178 | Dependency-aware delete modal across all OSCAL entities | **HIGH** |
-| [ ] | #100 | RSpec/Capybara + RuboCop/Brakeman in CI pipeline | **HIGH** |
+| [x] | #100 | RSpec/Capybara + RuboCop/Brakeman in CI pipeline -- **COMPLETED 2026-03-14** | **HIGH** |
 | [ ] | #134 | HTTPS localhost via mkcert for dev environment | MEDIUM |
 
 <!-- markdownlint-enable MD013 -->
@@ -150,7 +184,8 @@ Sprint 2b (weeks 3-6):
 
 ### Phase 3: OSCAL Entity Creation, STIG Parsing & ATO Wizard (4-6 weeks)
 
-**Goal:** Full artifact lifecycle + STIG-based CDEF validation + guided ATO package generation
+**Goal:** Full artifact lifecycle + STIG-based CDEF
+validation + guided ATO package generation
 
 <!-- markdownlint-disable MD013 -->
 
@@ -165,7 +200,8 @@ Sprint 2b (weeks 3-6):
 
 <!-- markdownlint-enable MD013 -->
 
-**Deliverables:** End-to-end traceable ATO package ZIP export, automated STIG-to-CCI-to-NIST traceability
+**Deliverables:** End-to-end traceable ATO package ZIP
+export, automated STIG-to-CCI-to-NIST traceability
 
 **Parallelism Strategy:**
 
@@ -203,7 +239,8 @@ Sprint 3b (weeks 3-6):
 
 <!-- markdownlint-enable MD013 -->
 
-**Deliverables:** Improved admin UX, interactive OSCAL diagram, comprehensive mapping docs
+**Deliverables:** Improved admin UX, interactive OSCAL
+diagram, comprehensive mapping docs
 
 **Parallelism: All 3 issues can run simultaneously.**
 
