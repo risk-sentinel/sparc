@@ -1,15 +1,17 @@
 # SPARC Developer Collision Avoidance Plan
 
-Companion to `Implementation_plan.md`. Maps every issue to exact
+Companion to `Implemenation_plan.md`. Maps every issue to exact
 files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
+
+**Last updated:** 2026-03-14
 
 ---
 
 ## 1. Domain Ownership Map
 
-The codebase divides into **12 isolated domains**. Each issue is
+The codebase divides into **13 isolated domains**. Each issue is
 assigned to exactly one primary domain. A developer "owns" a domain
 lane for a sprint.
 
@@ -22,13 +24,14 @@ lane for a sprint.
 | **SSP** | `ssp_document.rb`, `ssp_control.rb`, `ssp_documents_controller`, `ssp_wizard_service`, `ssp_*_parser_service`, `oscal_ssp_export_service`, views under `ssp_documents/` | Dev C |
 | **SAR** | `sar_document.rb`, `sar_control.rb`, `sar_documents_controller`, `sar_wizard_service`, `sar_*_parser_service`, `oscal_sar_export_service`, views under `sar_documents/` | Dev C |
 | **CDEF** | `cdef_document.rb`, `cdef_control.rb`, `cdef_documents_controller`, `cdef_*_parser_service`, `oscal_component_definition_export_service`, views under `cdef_documents/` | Dev B |
+| **Converters** | `converter.rb`, `converter_entry.rb`, `converters_controller.rb`, `cci_refresh_service.rb`, `framework_mapping_generator_service.rb`, views under `converters/` | Dev A |
 | **POAM/SAP** | `poam_document.rb`, `sap_document.rb`, related controllers/services | Dev C |
 | **Auth/Users** | `user.rb`, `role.rb`, `identity.rb`, sessions, registrations, `admin/*` controllers | Dev D |
 | **Boundary/Org** | `authorization_boundary.rb`, `organization.rb`, boundary controllers, admin org views | Dev D |
 | **Evidence** | `evidence.rb`, `attestation.rb`, `evidences_controller` | Dev D |
 | **API (v1)** | `api/v1/*_controller.rb`, API serializers, API auth middleware | Dev D |
-| **Infrastructure** | `terraform/`, `docker-compose.yml`, `Dockerfile`, CI workflows | Dev E |
-| **Shared/Cross-cutting** | `OscalMetadata` concern, `oscal_schema_validation_service`, `document_duplication_service`, `application.html.erb` layout, shared partials, routes, Stimulus controllers | Requires PR review from 2 devs |
+| **CI/Infrastructure** | `.github/workflows/`, `docker-compose.yml`, `Dockerfile`, CI pipelines | Dev E |
+| **Shared/Cross-cutting** | `OscalMetadata` concern, `oscal_schema_validation_service`, `document_duplication_service`, `application.html.erb` layout, shared partials, routes, Stimulus controllers, `db/migrate/` | Requires PR review from 2 devs |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -40,12 +43,12 @@ lane for a sprint.
 
 <!-- markdownlint-disable MD013 -->
 
-| Issue | Domain | Files Modified | Collision Risk |
-| ----- | ------ | -------------- | -------------- |
-| **#142** Background upload UX | Shared (Jobs) | `document_conversion_job.rb`, `conversion_job.rb` model, new Stimulus controller, document controller upload actions | **LOW** -- touches job infra, not domain logic |
-| **#178** Safe delete | Shared (Models) | `before_destroy` callbacks across all document models, new shared modal partial, new Stimulus controller | **LOW** -- adds callbacks, doesn't change business logic |
-| **#100** Regression testing | Testing | `spec/` directory (new files), `Gemfile`, `.github/workflows/`, `spec_helper.rb` | **NONE** -- additive only, own directory |
-| **#134** HTTPS dev | Infrastructure | `config/puma.rb`, `config/environments/development.rb`, `docker-compose.yml` | **NONE** -- config files only |
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#142** Background upload UX | Shared (Jobs) | `document_conversion_job.rb`, `conversion_job.rb` model, new Stimulus controller, document controller upload actions | **LOW** -- touches job infra, not domain logic |
+| [ ] | **#178** Safe delete | Shared (Models) | `before_destroy` callbacks across all document models, new shared modal partial, new Stimulus controller | **LOW** -- adds callbacks, doesn't change business logic |
+| [ ] | **#100** Regression testing | Testing | `spec/` directory (new files), `Gemfile`, `.github/workflows/`, `spec_helper.rb` | **NONE** -- additive only, own directory |
+| [ ] | **#134** HTTPS dev | Infrastructure | `config/puma.rb`, `config/environments/development.rb`, `docker-compose.yml` | **NONE** -- config files only |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -68,13 +71,13 @@ Dev D: #134 (HTTPS dev environment)
 
 <!-- markdownlint-disable MD013 -->
 
-| Issue | Domain | Files Modified | Collision Risk |
-| ----- | ------ | -------------- | -------------- |
-| **#163** Format interop | Catalog | `catalog_import_service.rb`, `oscal_catalog_export_service.rb`, `oscal_format_detection_service.rb`, `control_catalog.rb` | **NONE** with non-Catalog work |
-| **#177** Catalog locking/SHA | Catalog | `catalog_import_service.rb`, `control_catalog.rb`, `catalog_control.rb`, catalog views | **HIGH with #163** -- same files |
-| **#149** Status tracking | Shared (Models) | All 6 document models (status enum), all 6 document controllers (publish/copy guards), all document views (badges) | **MEDIUM** -- touches many models but only adds `status` enum + callbacks |
-| **#148** Publication metadata | Shared (Services) | All document controllers (publish action), export services, new `PublicationService`, schema validation | **MEDIUM with #149** -- both touch controllers |
-| **#176** Profile/CDEF publish | Profile + CDEF | `profile_document.rb`, `cdef_document.rb`, their controllers, `document_duplication_service.rb` | **MEDIUM with #149** -- both touch profile/cdef models |
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#163** Format interop | Catalog | `catalog_import_service.rb`, `oscal_catalog_export_service.rb`, `oscal_format_detection_service.rb`, `control_catalog.rb` | **NONE** with non-Catalog work |
+| [ ] | **#177** Catalog locking/SHA | Catalog | `catalog_import_service.rb`, `control_catalog.rb`, `catalog_control.rb`, catalog views | **HIGH with #163** -- same files |
+| [ ] | **#149** Status tracking | Shared (Models) | All 6 document models (status enum), all 6 document controllers (publish/copy guards), all document views (badges) | **MEDIUM** -- touches many models but only adds `status` enum + callbacks |
+| [ ] | **#148** Publication metadata | Shared (Services) | All document controllers (publish action), export services, new `PublicationService`, schema validation | **MEDIUM with #149** -- both touch controllers |
+| [ ] | **#176** Profile/CDEF publish | Profile + CDEF | `profile_document.rb`, `cdef_document.rb`, their controllers, `document_duplication_service.rb` | **MEDIUM with #149** -- both touch profile/cdef models |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -101,13 +104,13 @@ Sprint 2b (weeks 3-6):
 
 <!-- markdownlint-disable MD013 -->
 
-| Issue | Domain | Files Modified | Collision Risk |
-| ----- | ------ | -------------- | -------------- |
-| **#175** Profile from baseline | Profile | `profile_documents_controller.rb`, `profile_document.rb`, profile views, `oscal_profile_export_service.rb` | **NONE** with SSP/SAR/CDEF work |
-| **#172** CDEF from Profile | CDEF | `cdef_documents_controller.rb`, `cdef_document.rb`, new `CdefFromProfileService`, CDEF views | **NONE** with SSP/SAR work |
-| **#173** SSP from Profile | SSP | `ssp_documents_controller.rb`, `ssp_document.rb`, `ssp_wizard_service.rb`, SSP views | **NONE** with CDEF/SAR work |
-| **#174** SAR from Profile/SSP | SAR | `sar_documents_controller.rb`, `sar_document.rb`, `sar_wizard_service.rb`, SAR views | **NONE** with SSP/CDEF work |
-| **#125** ATO Wizard | NEW domain | New `AtoWizardController`, new `AtoPackageService`, new views, new model | **LOW** -- mostly new files |
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#175** Profile from baseline | Profile | `profile_documents_controller.rb`, `profile_document.rb`, profile views, `oscal_profile_export_service.rb` | **NONE** with SSP/SAR/CDEF work |
+| [ ] | **#172** CDEF from Profile | CDEF | `cdef_documents_controller.rb`, `cdef_document.rb`, new `CdefFromProfileService`, CDEF views | **NONE** with SSP/SAR work |
+| [ ] | **#173** SSP from Profile | SSP | `ssp_documents_controller.rb`, `ssp_document.rb`, `ssp_wizard_service.rb`, SSP views | **NONE** with CDEF/SAR work |
+| [ ] | **#174** SAR from Profile/SSP | SAR | `sar_documents_controller.rb`, `sar_document.rb`, `sar_wizard_service.rb`, SAR views | **NONE** with SSP/CDEF work |
+| [ ] | **#125** ATO Wizard | NEW domain | New `AtoWizardController`, new `AtoPackageService`, new views, new model | **LOW** -- mostly new files |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -135,45 +138,50 @@ Sprint 3b (weeks 3-6):
 
 <!-- markdownlint-disable MD013 -->
 
-| Issue | Domain | Files Modified | Collision Risk |
-| ----- | ------ | -------------- | -------------- |
-| **#133** Mapping docs | Documentation | `docs/` directory, minor service annotations | **NONE** -- documentation |
-| **#167** Enterprise nav | UI/Navigation | `home/index.html.erb`, layout partials, `home_controller.rb` | **NONE** with other Phase 4 work |
-| **#171** OSCAL diagram | UI (new page) | New view file, `config/routes.rb` (1 line), layout nav link | **NONE** -- new page |
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#133** Mapping docs | Documentation | `docs/` directory, minor service annotations | **NONE** -- documentation |
+| [ ] | **#167** Enterprise nav | UI/Navigation | `home/index.html.erb`, layout partials, `home_controller.rb` | **NONE** with other Phase 4 work |
+| [ ] | **#171** OSCAL diagram | UI (new page) | New view file, `config/routes.rb` (1 line), layout nav link | **NONE** -- new page |
+| [ ] | **#185** STIG SV/V to CCI parser | Converters | New `StigXccdfParserService`, `converters_controller` (new action), `lib/tasks/import_stig.rake`, converter views | **LOW** -- new service files, minor controller additions |
 
 <!-- markdownlint-enable MD013 -->
 
-**Phase 4 Parallelism: All 3 issues can run simultaneously.**
+**Phase 4 Parallelism: All 4 issues can run simultaneously.**
 
 ```text
 Dev A: #133 (mapping docs)
 Dev B: #167 (enterprise nav)
 Dev C: #171 (OSCAL diagram)
+Dev D: #185 (STIG XCCDF parser)
 ```
 
 ---
 
-### Phase 5 -- Fully parallelizable (zero overlap)
+### Phase 5 -- API, CI/CD & Database Cleanup
 
 <!-- markdownlint-disable MD013 -->
 
-| Issue | Domain | Files Modified | Collision Risk |
-| ----- | ------ | -------------- | -------------- |
-| **#95** CRUD API | API | New `api/v1/users_controller.rb`, `api/v1/projects_controller.rb`, routes | **NONE** -- new files in API namespace |
-| **#109** ECS Fargate | Infrastructure | New `terraform/aws-ecs-fargate/` directory | **NONE** -- own directory |
-| **#110** EC2 standalone | Infrastructure | New `terraform/aws-ec2/` directory | **LOW with #109** -- shared Terraform modules |
-| **#111** Azure VM | Infrastructure | New `terraform/azure-vm/` directory | **NONE** -- different cloud provider |
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#95** CRUD API | API | New `api/v1/users_controller.rb`, `api/v1/projects_controller.rb`, routes | **NONE** -- new files in API namespace |
+| [ ] | **#186** Hybrid security scanning | CI/Infrastructure | `.github/workflows/security-scan.yml`, new workflow files, SAF CLI config | **NONE** -- CI pipeline files only |
+| [ ] | **#183** Migration squash | Shared (DB) | `db/migrate/` (consolidate all existing into one), `db/schema.rb` | **MEDIUM** -- must coordinate timing; all in-flight migrations must merge first |
 
 <!-- markdownlint-enable MD013 -->
 
-**Phase 5 Parallelism: All 4 issues can run simultaneously.**
+**Phase 5 Parallelism Strategy:**
 
 ```text
 Dev A: #95  (CRUD API)
-Dev B: #109 (ECS Fargate)
-Dev C: #110 (EC2)         -- coordinate shared modules
-Dev D: #111 (Azure VM)
+Dev B: #186 (hybrid security scanning)
+Dev C: #183 (migration squash) -- AFTER all migration PRs merge
 ```
+
+> **Critical rule:** #183 (migration squash) must wait until all
+> issues with pending migrations (#142, #149, #148, #177, #175,
+> #172, #173, #174, #125) have merged. This is a cleanup task that
+> should run when schema is stable.
 
 ---
 
@@ -181,10 +189,10 @@ Dev D: #111 (Azure VM)
 
 <!-- markdownlint-disable MD013 -->
 
-| Issue | Domain | Files Modified | Collision Risk |
-| ----- | ------ | -------------- | -------------- |
-| **#107** FedRAMP 20x | New (FedRAMP) | New models/services, extends export services, dashboard | **LOW** -- mostly new code |
-| **#108** Sample data | Seeds/Samples | `db/seeds.rb`, new `samples/` directory | **NONE** -- own directory |
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#107** FedRAMP 20x | New (FedRAMP) | New models/services, extends export services, dashboard | **LOW** -- mostly new code |
+| [ ] | **#108** Sample data | Seeds/Samples | `db/seeds.rb`, new `samples/` directory | **NONE** -- own directory |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -216,6 +224,8 @@ Examples:
 - `feature/142_background_upload_ux`
 - `feature/178_safe_delete_confirmation`
 - `feature/163_catalog_format_interop`
+- `feature/185_stig_xccdf_parser`
+- `feature/186_hybrid_security_scanning`
 
 ### Rules
 
@@ -260,8 +270,10 @@ multi-developer Rails projects.
 | #172 | Add `source_profile_id` to `cdef_documents` | `cdef_documents` |
 | #173 | Add `source_profile_id` to `ssp_documents` | `ssp_documents` |
 | #174 | Add `source_profile_id`/`source_ssp_id` to `sar_documents` | `sar_documents` |
+| #185 | Possibly new `stig_benchmarks` table or extend `converters` with XCCDF metadata | `converters`, possibly new table |
 | #125 | Possibly new `ato_packages` table | New table |
 | #107 | Possibly new `ksi_indicators` table | New table |
+| #183 | Squash all existing migrations into single consolidated file | All tables (schema-only, no data change) |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -290,6 +302,10 @@ multi-developer Rails projects.
    fi
    ```
 
+6. **Migration squash (#183) is a gate.** All issues with pending
+   migrations must merge before #183 begins. After squash, new
+   migrations start from a clean baseline.
+
 ---
 
 ## 5. Shared File Conflict Zones (Hot Files)
@@ -300,13 +316,15 @@ These files are touched by multiple issues. Extra care required.
 
 | File | Issues That Touch It | Mitigation |
 | ---- | -------------------- | ---------- |
-| `config/routes.rb` | #95, #125, #171, #167 | Each adds routes in different blocks. Use section comments: `# === ATO Wizard ===`. Merge conflicts are trivial (additive lines). |
+| `config/routes.rb` | #95, #125, #171, #167, #185 | Each adds routes in different blocks. Use section comments: `# === ATO Wizard ===`. Merge conflicts are trivial (additive lines). |
 | `app/views/layouts/application.html.erb` | #171 (nav link), #167 (rename), #142 (progress bar) | Each touches different parts of the layout. Use partials to isolate: `render "shared/progress_bar"`, `render "shared/nav_links"`. |
 | `Gemfile` | #100 (test gems), #171 (mermaid?), #95 (serializer gem) | Additive only. Merge conflicts are trivial. Run `bundle install` after merge. |
 | `app/models/concerns/oscal_metadata.rb` | #148, #149, #177 | **HIGH RISK.** Assign one developer to this concern per sprint. Others wait for merge. |
 | `app/services/oscal_schema_validation_service.rb` | #148, #125, #107 | Additive methods. Each adds a new validation method. Low conflict if methods are namespaced. #107 runs last (Phase 6), so no conflict with #148/#125. |
 | `app/services/document_duplication_service.rb` | #176, #172, #173, #174 | Each document type adds its own `dup_*` method. Low conflict if well-separated. |
+| `.github/workflows/` | #100 (CI test), #186 (security scanning) | Different workflow files. #100 adds test runner; #186 adds security pipeline. **LOW** risk. |
 | `db/seeds.rb` | #108 (dual mode), #107 (FedRAMP seeds) | Both in Phase 6 (sequential: #107 then #108). Use separate seed files: `db/seeds/nist_traditional.rb`, `db/seeds/fedramp_20x.rb`. Main `seeds.rb` just dispatches. |
+| `db/migrate/` | All migration issues + #183 (squash) | **HIGH RISK for #183.** Squash must be the last migration-related PR to merge. See Section 4 rule 6. |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -321,9 +339,9 @@ These files are touched by multiple issues. Extra care required.
 | Single-domain (e.g., SSP-only) | 1 reviewer | Any other dev |
 | Cross-cutting (shared concerns) | 2 reviewers | Domain owners |
 | Migration | 2 reviewers | Any two devs |
+| Migration squash (#183) | 3 reviewers | All active devs |
 | New model or controller | 2 reviewers | Tech lead + 1 |
 | CI/workflow change | 1 reviewer | DevOps dev |
-| Terraform (IaC) | 1 reviewer | Infra dev |
 
 ### Merge Checklist
 
@@ -378,23 +396,31 @@ Assuming 4 developers (A, B, C, D) across all 6 phases:
 
 <!-- markdownlint-enable MD013 -->
 
-### Phase 4 (Weeks 16-18) -- Docs & UI
+### Phase 4 (Weeks 16-18) -- Docs, UX & STIG Parser
+
+<!-- markdownlint-disable MD013 -->
 
 | Dev | Issues |
 | --- | ------ |
 | A | #133 Mapping docs |
-| B | #167 Enterprise nav |
+| B | #167 Enterprise nav (if not done in Phase 2) |
 | C | #171 OSCAL diagram |
-| D | overflow / integration testing |
+| D | #185 STIG XCCDF SV/V to CCI parser |
 
-### Phase 5 (Weeks 19-22) -- Infra & API
+<!-- markdownlint-enable MD013 -->
+
+### Phase 5 (Weeks 19-22) -- API, CI & DB Cleanup
+
+<!-- markdownlint-disable MD013 -->
 
 | Dev | Issues |
 | --- | ------ |
-| A | #95 CRUD API |
-| B | #109 ECS Fargate |
-| C | #110 EC2 (coordinate shared TF modules with #109) |
-| D | #111 Azure VM |
+| A | #95 CRUD API (if not done in Phase 3) |
+| B | #186 Hybrid security scanning CI |
+| C | #183 Migration squash (AFTER all migration PRs merged) |
+| D | overflow / integration testing |
+
+<!-- markdownlint-enable MD013 -->
 
 ### Phase 6 (Weeks 23-26) -- FedRAMP 20x
 
@@ -438,8 +464,9 @@ app/models/ssp_*.rb  @ssp-dev
 app/models/sar_*.rb  @sar-dev
 app/models/cdef_*.rb  @cdef-dev
 app/models/profile_*.rb  @profile-dev
+app/models/converter*.rb  @converter-dev
 app/controllers/api/  @api-dev
-terraform/  @infra-dev
+.github/workflows/  @devops-dev
 ```
 
 ---
@@ -467,12 +494,12 @@ Phase 4 (all parallel):
   #133 (independent)
   #167 (independent)
   #171 (independent)
+  #185 (independent -- Converters domain)
 
-Phase 5 (all parallel):
-  #95  (independent)
-  #109 (independent, share TF modules with #110)
-  #110 (independent)
-  #111 (independent)
+Phase 5 (staggered):
+  #95  (independent -- API)
+  #186 (independent -- CI workflows)
+  #183 (GATE: waits for all migration PRs) -----> squash
 
 Phase 6 (FedRAMP 20x -- final):
   #107 --> #108
@@ -497,9 +524,13 @@ Phase 6 (FedRAMP 20x -- final):
 | #172 + #173 | YES | None | CDEF vs SSP -- zero file overlap |
 | #172 + #174 | YES | None | CDEF vs SAR -- zero file overlap |
 | #173 + #174 | **NO** | Medium | #174 can source from SSP, needs #173 |
+| #185 + #172 | YES | None | STIG parser vs CDEF -- different service files |
+| #185 + #173 | YES | None | STIG parser vs SSP -- different domains |
+| #185 + #133 | YES | None | Parser code vs documentation |
+| #186 + #100 | YES | Low | Different workflow files in `.github/` |
+| #186 + any app | YES | None | CI pipeline is fully isolated |
+| #183 + any migration | **NO** | High | Squash must wait for all migrations |
 | #107 + #108 | **NO** | Low | #108 needs #107 schema definitions |
-| #109 + #110 | YES | Low | Shared TF modules, different dirs |
-| #109 + #111 | YES | None | Different cloud providers |
 | #95 + any app | YES | None | API namespace is isolated |
 | #167 + #171 | YES | None | Different views, 1-line route max |
 
@@ -507,15 +538,39 @@ Phase 6 (FedRAMP 20x -- final):
 
 ---
 
+## 11. Closed / Removed Issues
+
+The following issues from the original plan have been resolved or
+removed and are no longer tracked:
+
+<!-- markdownlint-disable MD013 -->
+
+| Issue | Status | Notes |
+| ----- | ------ | ----- |
+| ~~#106~~ | CLOSED | HTTPS-only traffic with dev exceptions -- implemented |
+| ~~#109~~ | REMOVED | ECS Fargate Terraform -- deleted from repository |
+| ~~#110~~ | REMOVED | EC2 standalone Terraform -- deleted from repository |
+| ~~#111~~ | REMOVED | Azure VM Terraform -- deleted from repository |
+| ~~#150~~ | CLOSED | Status tracking -- duplicate of #149, consolidated |
+| ~~#162~~ | CLOSED | OSCAL XML catalog import with adjustable parameters -- implemented |
+
+<!-- markdownlint-enable MD013 -->
+
+---
+
 ## Summary
 
+- **Total open issues:** 23 (20 from original plan + 3 new)
+- **New issues added:** #183 (migration squash), #185 (STIG SV/V
+  to CCI parser), #186 (hybrid security scanning)
+- **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
 - **Zero-conflict pairs:** 70% of issue combinations
 - **Highest-risk shared files:** `oscal_metadata.rb`,
-  `catalog_import_service.rb`, `routes.rb`
+  `catalog_import_service.rb`, `routes.rb`, `db/migrate/`
 - **Key sequencing constraints:** #163 before #177,
   #149 before #148/#176, #175 before #172/#173/#174,
-  all entity creation before #125, all core features
-  (Phases 1-5) before FedRAMP 20x (#107/#108)
+  all entity creation before #125, all migrations before #183,
+  all core features (Phases 1-5) before FedRAMP 20x (#107/#108)
 - **Estimated time savings from parallelism:** about 40%
   (from 30 weeks sequential to 18-20 weeks with 4 devs)

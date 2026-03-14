@@ -1,134 +1,308 @@
-# SPARC Open GitHub Issues – Implementation Strategy
+# SPARC Open GitHub Issues -- Implementation Strategy
 
-Structured, prioritized roadmap for the 23 open issues in the SPARC GitHub report.
+Structured, prioritized roadmap for the open issues in the SPARC
+GitHub repository.
+
+**Last updated:** 2026-03-14
+
+---
 
 ## Guiding Principles
 
-- **Prioritization** — High-priority bugs and foundational items first  
-- **Phased delivery** — Stability → core OSCAL → advanced features → deployment
-polish
-- **Dependencies respected** — Prerequisites completed before dependent work  
-- **Testing-first mindset** — Regression suite (#100) early  
-- **Compliance focus** — NIST OSCAL schema validation on all related changes  
-- **Team size** — 3–5 developers (adjustable)  
-- **Sprint length** — 2–4 weeks  
-- **Total estimated duration** — 16–24 weeks (~4–6 months) with overlap
+- **Prioritization** -- High-priority bugs and foundational items first
+- **Phased delivery** -- Stability -> core OSCAL -> advanced features -> deployment polish
+- **Dependencies respected** -- Prerequisites completed before dependent work
+- **Testing-first mindset** -- Regression suite (#100) early
+- **Compliance focus** -- NIST OSCAL schema validation on all related changes
+- **Team size** -- 3-5 developers (adjustable)
+- **Sprint length** -- 2-4 weeks
+- **Total estimated duration** -- 16-24 weeks (~4-6 months) with overlap
+
+---
 
 ## Grouped Issues by Theme
 
-### 1. Bugs & Quick Wins (High priority – Fix first)
+### 1. Bugs & Quick Wins (High priority -- Fix first)
 
-- #142 – Large Excel uploads block UI (background + progress UX)  
-- #178 – Safe delete confirmation with dependency checks  
+- [ ] #142 -- Large Excel uploads block UI (background + progress UX)
+- [ ] #178 -- Safe delete confirmation with dependency checks
 
 ### 2. Testing & Developer Experience (Foundation)
 
-- #100 – Comprehensive automated regression testing suite  
-- #134 – Enable HTTPS in development environment (mkcert + Rails config)  
+- [ ] #100 -- Comprehensive automated regression testing suite
+- [ ] #134 -- Enable HTTPS in development environment (mkcert + Rails config)
 
 ### 3. OSCAL Core (Import/Export, Publication, Status)
 
-- #163 – Unified catalog import/export (JSON/YAML/XML interoperability)  
-- #177 – Extend Catalog import & management (locking, SHA digest, baseline impacts)
-- #148 – OSCAL-compliant publication process for key document types  
-- #149 – Status tracking for Baselines/Profiles, Components, Documents  
-- #176 – Unified publication process for Profiles and Component Definitions  
+- [ ] #163 -- Unified catalog import/export (JSON/YAML/XML interoperability)
+- [ ] #177 -- Extend Catalog import & management (locking, SHA digest, baseline impacts)
+- [ ] #148 -- OSCAL-compliant publication process for key document types
+- [ ] #149 -- Status tracking for Baselines/Profiles, Components, Documents
+- [ ] #176 -- Unified publication process for Profiles and Component Definitions
 
 ### 4. OSCAL Entity Creation & Workflows
 
-- #175 – Build Published Profile creation from baseline  
-- #172 – Component Definition (CDEF) creation & import (incl. from Profile)  
-- #173 – System Security Plan (SSP) creation & import (incl. from Profile)  
-- #174 – Security Assessment Report (SAR) creation & import (incl. from Profile/SSP)
-- #125 – End-to-end wizard for complete ATO Authorization Package  
+- [ ] #175 -- Build Published Profile creation from baseline
+- [ ] #172 -- Component Definition (CDEF) creation & import (incl. from Profile)
+- [ ] #173 -- System Security Plan (SSP) creation & import (incl. from Profile)
+- [ ] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP)
+- [ ] #125 -- End-to-end wizard for complete ATO Authorization Package
 
 ### 5. Advanced OSCAL & Compliance Extensions
 
-- #107 – Expand to support FedRAMP 20x framework  
-- #108 – Expand sample data for FedRAMP 20x + traditional NIST 800-53  
-- #133 – Documentation & guidance for building OSCAL data mapping files  
+- [ ] #107 -- Expand to support FedRAMP 20x framework
+- [ ] #108 -- Expand sample data for FedRAMP 20x + traditional NIST 800-53
+- [ ] #133 -- Documentation & guidance for building OSCAL data mapping files
 
 ### 6. UI/UX & Navigation Improvements
 
-- #167 – Enterprise/Organization visibility & navigation for admins  
-- #171 – Interactive OSCAL document relationship diagram (Mermaid)  
+- [ ] #167 -- Enterprise/Organization visibility & navigation for admins
+- [ ] #171 -- Interactive OSCAL document relationship diagram (Mermaid)
 
 ### 7. API & Backend Enhancements
 
-- #95 – Full CRUD API endpoints for Users and Projects (server mode only)  
+- [ ] #95 -- Full CRUD API endpoints for Users and Projects (server mode only)
 
-### 8. Deployment Patterns (IaC)
+### 8. DISA STIG & Framework Mapping
 
-- #109 – ECS Fargate deployment pattern (Terraform)  
-- #110 – Standalone EC2 deployment pattern (Terraform)  
-- #111 – Azure VM deployment pattern (Terraform)  
+- [ ] #185 -- Automate extraction of SV/V to CCI mappings from DISA STIGs (XCCDF parser)
+
+### 9. CI/CD & Security Scanning
+
+- [ ] #186 -- Hybrid security scanning in GitHub Actions (Trivy + CodeQL/Semgrep + Brakeman + SAF CLI)
+
+### 10. Database Maintenance
+
+- [ ] #183 -- Squash accumulated migrations into a single consolidated migration file
+
+---
 
 ## Phased Roadmap
 
-### Phase 1: Stabilization & Foundations (2–4 weeks)
+### Phase 1: Stabilization & Foundations (2-4 weeks)
 
 **Goal:** Prevent data loss, improve dev experience, establish testing safety net
 
-- Fix #142 (background jobs + Turbo Streams/polling)  
-- Fix #178 (dependency-aware delete modal)  
-- Implement #100 (RSpec/Capybara + RuboCop/Brakeman in CI)  
-- Implement #134 (HTTPS localhost via mkcert)  
+<!-- markdownlint-disable MD013 -->
 
-**Deliverables:** Stable dev env, >70–80% regression coverage, safe deletes
+| Status | Issue | Description | Priority |
+| ------ | ----- | ----------- | -------- |
+| [ ] | #142 | Background jobs + Turbo Streams/polling for large Excel uploads | **HIGH** |
+| [ ] | #178 | Dependency-aware delete modal across all OSCAL entities | **HIGH** |
+| [ ] | #100 | RSpec/Capybara + RuboCop/Brakeman in CI pipeline | **HIGH** |
+| [ ] | #134 | HTTPS localhost via mkcert for dev environment | MEDIUM |
 
-### Phase 2: OSCAL Import/Export & Publication Core (4–6 weeks)
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Stable dev env, >70-80% regression coverage, safe deletes
+
+**Parallelism:** All 4 issues can run simultaneously with 4 developers.
+
+```text
+Dev A: #142 (background upload UX)
+Dev B: #178 (safe delete confirmations)
+Dev C: #100 (regression test suite)
+Dev D: #134 (HTTPS dev environment)
+```
+
+> **Merge order:** #134 first (config only), then #100
+> (test infra), then #142 and #178 (no conflict).
+
+---
+
+### Phase 2: OSCAL Import/Export & Publication Core (4-6 weeks)
 
 **Goal:** Solid, interoperable, publishable OSCAL foundation
 
-- #163 – YAML + full XML enhancement support, round-trip tests  
-- #177 – Catalog locking, universal SHA digest, baseline impact multi-select  
-- #149 – Status enum + lifecycle rules  
-- #148 – Standardized publication metadata + validation  
-- #176 – Unified publish/copy logic for Profiles & CDEFs  
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #163 | YAML + full XML enhancement support, round-trip tests | **HIGH** | None |
+| [ ] | #149 | Status enum + lifecycle rules across all document types | **HIGH** | None |
+| [ ] | #177 | Catalog locking, universal SHA digest, baseline impact multi-select | **HIGH** | AFTER #163 merges |
+| [ ] | #148 | Standardized publication metadata + validation | MEDIUM | AFTER #149 merges |
+| [ ] | #176 | Unified publish/copy logic for Profiles & CDEFs | MEDIUM | AFTER #149 merges |
+
+<!-- markdownlint-enable MD013 -->
 
 **Deliverables:** All-format import/export, immutable published artifacts
 
-### Phase 3: OSCAL Entity Creation & ATO Wizard (4–6 weeks)
+**Parallelism Strategy:**
+
+```text
+Sprint 2a (weeks 1-3):
+  Dev A: #163 (catalog format interop) -- Catalog domain, solo
+  Dev B: #149 (status tracking)        -- Cross-cutting, additive
+  Dev C: free for #100 overflow / spec writing
+
+Sprint 2b (weeks 3-6):
+  Dev A: #177 (catalog locking/SHA)    -- AFTER #163 merges
+  Dev B: #148 (publication metadata)   -- AFTER #149 merges
+  Dev C: #176 (profile/CDEF publish)   -- AFTER #149 merges
+```
+
+> **Critical rule:** #163 must merge before #177 starts
+> (same files). #149 must merge before #148 and #176 start.
+
+---
+
+### Phase 3: OSCAL Entity Creation & ATO Wizard (4-6 weeks)
 
 **Goal:** Full artifact lifecycle + guided ATO package generation
 
-- #175 – Profile creation from baseline + parameter validation  
-- #172 – CDEF creation/import from Profile  
-- #173 – SSP creation/import from Profile  
-- #174 – SAR creation/import from Profile or SSP  
-- #125 – Multi-step ATO wizard (all OSCAL layers)  
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #175 | Profile creation from baseline + parameter validation | **HIGH** | Phase 2 complete |
+| [ ] | #172 | CDEF creation/import from Profile | **HIGH** | AFTER #175 merges |
+| [ ] | #173 | SSP creation/import from Profile | **HIGH** | AFTER #175 merges |
+| [ ] | #174 | SAR creation/import from Profile or SSP | MEDIUM | AFTER #173 merges |
+| [ ] | #125 | Multi-step ATO wizard (all OSCAL layers) | MEDIUM | AFTER #172, #173, #174 merge |
+
+<!-- markdownlint-enable MD013 -->
 
 **Deliverables:** End-to-end traceable ATO package ZIP export
 
-### Phase 4: Advanced Compliance & UX Polish (3–4 weeks)
+**Parallelism Strategy:**
 
-**Goal:** FedRAMP readiness + better onboarding/navigation
+```text
+Sprint 3a (weeks 1-3):
+  Dev A: #175 (Profile from baseline)  -- Profile domain
+  Dev B: #172 (CDEF from Profile)      -- CDEF domain (can start after #175)
+  Dev C: #173 (SSP from Profile)       -- SSP domain (can start after #175)
 
-- #107 – FedRAMP 20x extensions (KSIs, automation)  
-- #108 – Dual sample sets + seed script flags  
-- #133 – OSCAL data mapping documentation & guidance  
-- #167 – Rename Environments → Enterprise + Organizations card  
-- #171 – Mermaid OSCAL relationship diagram  
+Sprint 3b (weeks 3-6):
+  Dev A: #125 (ATO Wizard)             -- New domain
+  Dev C: #174 (SAR from Profile/SSP)   -- SAR domain
+  Dev B: overflow / integration testing
+```
 
-**Deliverables:** FedRAMP 20x support, improved admin UX & visuals
+> **Critical rule:** #175 must merge first (creates Published
+> Profiles that #172, #173, #174 consume). #172/#173 can run in
+> parallel. #174 needs #173. #125 needs all four.
 
-### Phase 5: API & Multi-Cloud Deployment (3–4 weeks – parallel with Phase 4)
+---
 
-**Goal:** Programmatic access + production IaC blueprints
+### Phase 4: Advanced Compliance, UX & STIG Parsing (3-4 weeks)
 
-- #95 – Versioned REST API for Users/Projects with RBAC  
-- #109 – Terraform ECS Fargate pattern  
-- #110 – Terraform EC2 standalone pattern  
-- #111 – Terraform Azure VM pattern  
+**Goal:** FedRAMP readiness, better navigation, STIG automation
 
-**Deliverables:** OpenAPI docs + deployable AWS/Azure blueprints
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #133 | OSCAL data mapping documentation & guidance | MEDIUM | None |
+| [ ] | #167 | Enterprise/Organization visibility & navigation | MEDIUM | None |
+| [ ] | #171 | Mermaid OSCAL relationship diagram | MEDIUM | None |
+| [ ] | #185 | STIG XCCDF parser: SV/V to CCI extraction + OSCAL CDEF generation | MEDIUM | None (builds on Converters domain) |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Improved admin UX, interactive OSCAL diagram, automated STIG-to-CCI mappings
+
+**Parallelism: All 4 issues can run simultaneously.**
+
+```text
+Dev A: #133 (mapping docs)
+Dev B: #167 (enterprise nav)
+Dev C: #171 (OSCAL diagram)
+Dev D: #185 (STIG XCCDF parser)
+```
+
+---
+
+### Phase 5: API, CI/CD & Database Cleanup (3-4 weeks)
+
+**Goal:** Programmatic access, security scanning, clean migration history
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #95 | Versioned REST API for Users/Projects with RBAC | MEDIUM | None |
+| [ ] | #186 | Hybrid security scanning CI (Trivy + SAST + SAF CLI + HDF output) | MEDIUM | None |
+| [ ] | #183 | Squash all migrations into single consolidated file | LOW | AFTER all migration PRs merge |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** OpenAPI docs, multi-tool security CI pipeline, clean `db/migrate/`
+
+**Parallelism Strategy:**
+
+```text
+Dev A: #95  (CRUD API)          -- API namespace, isolated
+Dev B: #186 (security scanning) -- CI workflows only
+Dev C: #183 (migration squash)  -- AFTER all migration PRs merge
+```
+
+> **Critical rule:** #183 (migration squash) is a gate -- it must
+> wait until every issue with pending migrations has merged. This
+> includes #142, #149, #148, #177, #175, #172, #173, #174, #125.
+> After squash, new migrations start from a clean baseline.
+
+---
+
+### Phase 6: FedRAMP 20x (final phase -- 3-4 weeks)
+
+**Goal:** FedRAMP 20x extensions + comprehensive sample data
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #107 | FedRAMP 20x extensions (KSIs, automation, new models) | **HIGH** | Phases 1-5 complete |
+| [ ] | #108 | Dual sample sets + seed script flags (FedRAMP 20x + traditional NIST) | MEDIUM | AFTER #107 merges |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** FedRAMP 20x support, comprehensive sample/seed data
+
+```text
+Dev A: #107 (FedRAMP 20x)          -- Phase 6a
+Dev B: #108 (sample data)          -- Phase 6b, AFTER #107 merges
+```
+
+> **Critical rule:** #107 must merge before #108 starts
+> (#108 needs #107 schema definitions).
+
+---
+
+## Closed / Removed Issues
+
+The following issues from the original plan have been resolved or
+removed and are no longer tracked:
+
+<!-- markdownlint-disable MD013 -->
+
+| Issue | Status | Notes |
+| ----- | ------ | ----- |
+| ~~#106~~ | CLOSED | HTTPS-only traffic with dev exceptions -- implemented |
+| ~~#109~~ | REMOVED | ECS Fargate Terraform -- deleted from repository |
+| ~~#110~~ | REMOVED | EC2 standalone Terraform -- deleted from repository |
+| ~~#111~~ | REMOVED | Azure VM Terraform -- deleted from repository |
+| ~~#150~~ | CLOSED | Status tracking -- duplicate of #149, consolidated |
+| ~~#162~~ | CLOSED | OSCAL XML catalog import with adjustable parameters -- implemented |
+
+<!-- markdownlint-enable MD013 -->
+
+---
 
 ## Summary Timeline
 
-| Phase | Duration     | Key Focus                          | Parallelizable? |
-|-------|--------------|------------------------------------|-----------------|
-| 1     | 2–4 weeks    | Bugs + Testing + Dev Env           | No              |
-| 2     | 4–6 weeks    | OSCAL Core                         | Limited         |
-| 3     | 4–6 weeks    | Entity Creation + Wizard           | Limited         |
-| 4     | 3–4 weeks    | FedRAMP + UX                       | Yes             |
-| 5     | 3–4 weeks    | API + Deployment                   | Yes             |
+<!-- markdownlint-disable MD013 -->
+
+| Phase | Duration | Key Focus | Issues | Parallelizable? |
+| ----- | -------- | --------- | ------ | --------------- |
+| 1 | 2-4 weeks | Bugs + Testing + Dev Env | #142, #178, #100, #134 | Yes (all 4) |
+| 2 | 4-6 weeks | OSCAL Core (Import/Export/Publication) | #163, #149, #177, #148, #176 | Staggered (2a/2b) |
+| 3 | 4-6 weeks | Entity Creation + ATO Wizard | #175, #172, #173, #174, #125 | Staggered (3a/3b) |
+| 4 | 3-4 weeks | Docs + UX + STIG Parser | #133, #167, #171, #185 | Yes (all 4) |
+| 5 | 3-4 weeks | API + CI/CD + DB Cleanup | #95, #186, #183 | Yes (with #183 gate) |
+| 6 | 3-4 weeks | FedRAMP 20x | #107, #108 | Sequential |
+
+<!-- markdownlint-enable MD013 -->
+
+**Total open issues:** 23 (20 original + 3 new: #183, #185, #186)
+**Estimated duration:** 18-24 weeks with 4 developers working in parallel
