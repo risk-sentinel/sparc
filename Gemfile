@@ -88,4 +88,5 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
   gem "shoulda-matchers", "~> 7.0"
+  gem "simplecov", require: false
 end

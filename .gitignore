@@ -42,3 +42,6 @@
 .DS_Store
 
 .claude
+
+# SimpleCov coverage reports (HTML + JSON)
+/coverage
