@@ -14,4 +14,9 @@ module AuthorizationHelper
   def can_write_mappings?
     !SparcConfig.any_auth_enabled? || current_user&.admin? || current_user&.has_permission?("mappings.write")
   end
+
+  # Check if the current user can perform write operations on converters.
+  def can_write_converters?
+    !SparcConfig.any_auth_enabled? || current_user&.admin? || current_user&.has_permission?("converters.write")
+  end
 end
