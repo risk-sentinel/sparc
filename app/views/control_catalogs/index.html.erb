@@ -50,12 +50,12 @@
             </td>
             <td><%= catalog.version.presence || "—" %></td>
             <td><%= catalog.source.presence || "—" %></td>
-            <td>
+            <td style="white-space: nowrap;">
               <span class="<%= catalog.completed? ? 'badge-ok' : catalog.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
                 <%= catalog.status %>
               </span>
               <% if catalog.processing? && catalog.metadata_extra&.dig("processing_message").present? %>
-                <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= catalog.metadata_extra["processing_message"] %></span>
+                <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= catalog.metadata_extra["processing_message"] %></span>
               <% end %>
             </td>
             <td><%= catalog.control_families.size %></td>
