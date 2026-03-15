@@ -163,8 +163,22 @@
   </div>
 
   <%# ── Converter Entries ── %>
-  <div class="card mt-4">
-    <div class="card-header fw-semibold">Mapping Entries (<%= @entries.size %>)</div>
+  <div class="card mt-4" data-controller="converter-search">
+    <div class="card-header fw-semibold" data-converter-search-target="count">Mapping Entries (<%= @entries.size %>)</div>
+
+    <%# ── Search Toolbar ── %>
+    <div class="px-3 py-2 border-bottom bg-body-tertiary">
+      <div class="d-flex gap-2 align-items-center">
+        <input type="text"
+               class="form-control form-control-sm"
+               style="max-width: 400px;"
+               placeholder="Search source, target, category, remarks..."
+               data-converter-search-target="searchInput"
+               data-action="input->converter-search#filter">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="converter-search#clear">Clear</button>
+      </div>
+    </div>
+
     <div class="table-responsive">
       <table class="table table-sm mb-0 align-middle">
         <thead>
@@ -182,7 +196,7 @@
         </thead>
         <tbody>
           <% @entries.each do |entry| %>
-            <tr>
+            <tr data-converter-search-target="row">
               <td><code><%= entry.source_id %></code></td>
               <td class="text-center text-body-secondary">&rarr;</td>
               <td><code><%= entry.target_id %></code></td>
