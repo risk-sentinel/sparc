@@ -9,6 +9,18 @@ FactoryBot.define do
     baseline_impact { "LOW, MODERATE, HIGH" }
     guidance_data { {} }
 
+    trait :no_baseline do
+      baseline_impact { nil }
+    end
+
+    trait :low_baseline do
+      baseline_impact { "LOW" }
+    end
+
+    trait :moderate_baseline do
+      baseline_impact { "LOW, MODERATE" }
+    end
+
     trait :with_params do
       params_data do
         [

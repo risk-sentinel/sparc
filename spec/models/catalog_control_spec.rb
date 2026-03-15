@@ -85,6 +85,95 @@ RSpec.describe CatalogControl, type: :model do
     end
   end
 
+  describe "BASELINE_LEVELS" do
+    it "contains LOW, MODERATE, HIGH" do
+      expect(CatalogControl::BASELINE_LEVELS).to eq(%w[LOW MODERATE HIGH])
+    end
+
+    it "is frozen" do
+      expect(CatalogControl::BASELINE_LEVELS).to be_frozen
+    end
+  end
+
+  describe "#baseline_levels" do
+    it "parses comma-separated string into array" do
+      control = build(:catalog_control, baseline_impact: "LOW, MODERATE, HIGH")
+      expect(control.baseline_levels).to eq(%w[LOW MODERATE HIGH])
+    end
+
+    it "returns empty array for nil" do
+      control = build(:catalog_control, baseline_impact: nil)
+      expect(control.baseline_levels).to eq([])
+    end
+
+    it "handles extra whitespace" do
+      control = build(:catalog_control, baseline_impact: "  LOW ,  HIGH  ")
+      expect(control.baseline_levels).to eq(%w[LOW HIGH])
+    end
+
+    it "uppercases values" do
+      control = build(:catalog_control, baseline_impact: "low, moderate")
+      expect(control.baseline_levels).to eq(%w[LOW MODERATE])
+    end
+  end
+
+  describe "#has_baseline_level?" do
+    it "returns true when level is present" do
+      control = build(:catalog_control, baseline_impact: "LOW, MODERATE")
+      expect(control.has_baseline_level?("LOW")).to be true
+    end
+
+    it "returns false when level is absent" do
+      control = build(:catalog_control, baseline_impact: "LOW")
+      expect(control.has_baseline_level?("HIGH")).to be false
+    end
+
+    it "is case-insensitive" do
+      control = build(:catalog_control, baseline_impact: "LOW")
+      expect(control.has_baseline_level?("low")).to be true
+    end
+  end
+
+  describe "#add_baseline_level" do
+    it "adds a new level" do
+      control = build(:catalog_control, baseline_impact: "LOW")
+      control.add_baseline_level("MODERATE")
+      expect(control.baseline_impact).to eq("LOW, MODERATE")
+    end
+
+    it "does not add duplicates" do
+      control = build(:catalog_control, baseline_impact: "LOW, MODERATE")
+      control.add_baseline_level("LOW")
+      expect(control.baseline_impact).to eq("LOW, MODERATE")
+    end
+
+    it "handles nil starting value" do
+      control = build(:catalog_control, baseline_impact: nil)
+      control.add_baseline_level("HIGH")
+      expect(control.baseline_impact).to eq("HIGH")
+    end
+  end
+
+  describe "#remove_baseline_level" do
+    it "removes a level" do
+      control = build(:catalog_control, baseline_impact: "LOW, MODERATE, HIGH")
+      control.remove_baseline_level("MODERATE")
+      expect(control.baseline_impact).to eq("LOW, HIGH")
+    end
+
+    it "sets to nil when last level removed" do
+      control = build(:catalog_control, baseline_impact: "LOW")
+      control.remove_baseline_level("LOW")
+      expect(control.baseline_impact).to be_nil
+    end
+
+    it "handles removing a level that is not present" do
+      control = build(:catalog_control, baseline_impact: "LOW")
+      control.remove_baseline_level("HIGH")
+      expect(control.baseline_impact).to eq("LOW")
+    end
+  end
+
   describe "#effective_params_list" do
     let(:family) { create(:control_family, code: "AC") }
 

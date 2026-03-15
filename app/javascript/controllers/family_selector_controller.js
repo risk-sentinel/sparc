@@ -50,7 +50,13 @@ export default class extends Controller {
 
     fetch(`${this.catalogUrlValue}/${catalogId}.json`)
       .then(response => response.json())
-      .then(data => this.buildFamilyHtml(data.control_families || []))
+      .then(data => {
+        this.buildFamilyHtml(data.control_families || [])
+        // Re-apply baseline filter if a level is already selected
+        if (this.hasBaselineSelectTarget && this.baselineSelectTarget.value) {
+          this.baselineChanged()
+        }
+      })
       .catch(() => {
         this.controlsListTarget.innerHTML = '<p class="text-danger">Failed to load controls. Try again.</p>'
       })

@@ -28,14 +28,13 @@
     <table class="table table-hover">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Version</th>
-          <th>Source</th>
-          <th>Status</th>
-          <th>Lifecycle</th>
-          <th>Families</th>
-          <th>Controls</th>
-          <th>Actions</th>
+          <th style="white-space: nowrap;">Name</th>
+          <th style="white-space: nowrap;">Version</th>
+          <th style="white-space: nowrap;">Source</th>
+          <th style="white-space: nowrap;">Status</th>
+          <th style="white-space: nowrap;">Families</th>
+          <th style="white-space: nowrap;">Controls</th>
+          <th style="white-space: nowrap;">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -52,23 +51,24 @@
             <td><%= catalog.version.presence || "—" %></td>
             <td><%= catalog.source.presence || "—" %></td>
             <td style="white-space: nowrap;">
-              <span class="<%= catalog.completed? ? 'badge-ok' : catalog.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-                <%= catalog.status %>
-              </span>
-              <% if catalog.processing? && catalog.metadata_extra&.dig("processing_message").present? %>
-                <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= catalog.metadata_extra["processing_message"] %></span>
+              <% if catalog.processing? || catalog.pending? || catalog.failed? %>
+                <span class="<%= catalog.completed? ? 'badge-ok' : catalog.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                  <%= catalog.status %>
+                </span>
+                <% if catalog.processing? && catalog.metadata_extra&.dig("processing_message").present? %>
+                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= catalog.metadata_extra["processing_message"] %></span>
+                <% end %>
+              <% else %>
+                <span class="<%= catalog.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;">
+                  <%= catalog.lifecycle_label %>
+                </span>
               <% end %>
-            </td>
-            <td>
-              <span class="<%= catalog.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;">
-                <%= catalog.lifecycle_label %>
-              </span>
             </td>
             <td><%= catalog.control_families.size %></td>
             <td><%= catalog.total_controls %></td>
             <td>
-              <div style="display: inline-flex; gap: 0.35rem;">
-                <%= link_to "View", catalog, class: "btn btn-primary", style: "padding: 0.4rem 0.8rem; font-size: 0.85rem;" %>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; max-width: 200px;">
+                <%= link_to "View", catalog, class: "btn btn-sm btn-primary" %>
                 <div class="btn-group">
                   <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white;" data-bs-toggle="dropdown" aria-expanded="false">
                     Export OSCAL
@@ -81,10 +81,10 @@
                   </ul>
                 </div>
                 <% if can_write_catalogs? %>
-                  <%= link_to "Edit", edit_control_catalog_path(catalog), class: "btn", style: "background: #f39c12; color: white; padding: 0.4rem 0.8rem; font-size: 0.85rem;" %>
+                  <%= link_to "Edit", edit_control_catalog_path(catalog), class: "btn btn-sm", style: "background: #f39c12; color: white;" %>
                   <%= button_to "Delete", catalog, method: :delete,
                       form: { data: { turbo_confirm: "Delete '#{catalog.name}'? This will remove all families and controls." } },
-                      class: "btn btn-danger", style: "padding: 0.4rem 0.8rem; font-size: 0.85rem;" %>
+                      class: "btn btn-sm btn-danger" %>
                 <% end %>
               </div>
             </td>

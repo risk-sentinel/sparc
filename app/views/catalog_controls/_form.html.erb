@@ -52,8 +52,17 @@
     </div>
     <div class="col">
       <div class="form-group">
-        <%= f.label :baseline_impact, "Baseline Impact" %>
-        <%= f.text_field :baseline_impact, class: "form-control", placeholder: "e.g. LOW, MODERATE, HIGH" %>
+        <label class="fw-semibold">Baseline Impact</label>
+        <div class="d-flex gap-3 mt-1" style="padding-top: 0.35rem;">
+          <% CatalogControl::BASELINE_LEVELS.each do |level| %>
+            <label class="form-check mb-0">
+              <input type="checkbox" class="form-check-input" name="catalog_control[baseline_levels][]"
+                     value="<%= level %>"
+                     <%= "checked" if catalog_control.has_baseline_level?(level) %>>
+              <span class="form-check-label"><%= level %></span>
+            </label>
+          <% end %>
+        </div>
       </div>
     </div>
   </div>

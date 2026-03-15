@@ -153,6 +153,8 @@ Rails.application.routes.draw do
       get :download_yaml
       get :download_xml
       get :baseline_controls
+      patch :update_baseline
+      patch :bulk_update_baselines
     end
     collection do
       get  :import
