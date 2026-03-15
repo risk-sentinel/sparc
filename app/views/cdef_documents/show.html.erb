@@ -64,8 +64,13 @@
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
       <% if signed_in? %>
-        <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
-              class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
+        <% if @cdef_document.published_lifecycle? %>
+          <%= button_to "Create Editable Copy", copy_cdef_document_path(@cdef_document), method: :post,
+                class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Create an editable copy of this published component definition?" } } %>
+        <% else %>
+          <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
+                class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
+        <% end %>
       <% end %>
       <% if signed_in? && @cdef_document.draft? %>
         <%= render "shared/publish_button", document: @cdef_document,

@@ -11,6 +11,10 @@
 # Provides two actions:
 #   - publish_check (GET)  — returns JSON readiness data for the smart modal
 #   - publish       (PATCH) — validates metadata, applies inline fixes, publishes
+#
+# Controllers may override `before_publish_lifecycle(doc)` to run custom logic
+# (e.g., Profile generates a resolved catalog) after validation but before
+# the lifecycle transition. Return `{ error: "message" }` to abort publication.
 module Publishable
   extend ActiveSupport::Concern
 
@@ -40,14 +44,56 @@ module Publishable
       redirect_to config[:redirect_path] and return
     end
 
+    # Run any controller-specific pre-publish logic (e.g., Profile resolved catalog)
+    hook_result = before_publish_lifecycle(doc)
+    if hook_result.is_a?(Hash) && hook_result[:error]
+      flash[:error] = hook_result[:error]
+      redirect_to config[:redirect_path] and return
+    end
+
+    auto_increment_version!(doc)
     doc.publish_lifecycle!
+    version = doc.oscal_document_version
     audit_log(config[:audit_event], subject: doc,
-              metadata: { name: doc.name, lifecycle_status: "published" })
-    flash[:success] = "#{config[:label]} published successfully."
+              metadata: { name: doc.name, lifecycle_status: "published", version: version })
+    flash[:success] = "#{config[:label]} published successfully as version #{version}."
     redirect_to config[:redirect_path]
   end
 
   private
+
+  # Hook for controllers to run custom logic before publication.
+  # Return nil to proceed, or { error: "message" } to abort.
+  def before_publish_lifecycle(_doc)
+    nil
+  end
+
+  # Auto-increment or initialize the document's version on publish.
+  # - Blank/nil → "1.0.0"
+  # - Semantic version (e.g., "1.0.0") → increment patch (e.g., "1.0.1")
+  # - Free-text version → left unchanged
+  def auto_increment_version!(doc)
+    column = version_column_for(doc)
+    return unless column
+
+    current = doc.send(column)
+    new_version = if current.blank?
+                    "1.0.0"
+                  elsif current.match?(/\A\d+\.\d+\.\d+\z/)
+                    parts = current.split(".")
+                    parts[-1] = (parts[-1].to_i + 1).to_s
+                    parts.join(".")
+                  end
+
+    doc.update_column(column, new_version) if new_version
+  end
+
+  # Detect the version column name for a document model.
+  def version_column_for(doc)
+    %w[ssp_version sar_version sap_version poam_version cdef_version profile_version version].find do |col|
+      doc.class.column_names.include?(col)
+    end
+  end
 
   # Merge metadata fixes submitted from the publication modal into metadata_extra.
   # Accepts roles, parties, and responsible-parties arrays from params.
