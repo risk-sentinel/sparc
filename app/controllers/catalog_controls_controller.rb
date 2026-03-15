@@ -98,11 +98,20 @@ class CatalogControlsController < ApplicationController
   end
 
   def catalog_control_params
-    params.require(:catalog_control).permit(
+    permitted = params.require(:catalog_control).permit(
       :control_id, :title, :description, :priority, :baseline_impact,
       guidance_data: {},
-      params_labels: {}
+      params_labels: {},
+      baseline_levels: []
     )
+
+    # Convert checkbox array to comma-separated string
+    if params[:catalog_control].key?(:baseline_levels)
+      levels = Array(permitted.delete(:baseline_levels)).select(&:present?).map(&:upcase)
+      permitted[:baseline_impact] = levels.any? ? levels.join(", ") : nil
+    end
+
+    permitted
   end
 
   # Extracts params_labels from the permitted params hash and merges
