@@ -315,10 +315,15 @@ class ProfileDocumentsController < ApplicationController
       redirect_path: profile_document_path(@profile_document), label: "Profile" }
   end
 
-  # Profile-specific pre-publish logic: validate catalog link and generate resolved catalog.
+  # Profile-specific pre-publish logic: validate catalog link, prioritization, and generate resolved catalog.
   def before_publish_lifecycle(doc)
     unless doc.control_catalog
       return { error: "Cannot publish: no source catalog linked to this profile." }
+    end
+
+    unprioritized = doc.profile_controls.where(priority: [nil, ""]).count
+    if unprioritized > 0
+      return { error: "Cannot publish: #{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3). Assign priorities before publishing." }
     end
 
     service = OscalResolvedProfileCatalogService.new(doc)
