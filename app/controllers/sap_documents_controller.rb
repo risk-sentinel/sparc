@@ -175,7 +175,7 @@ class SapDocumentsController < ApplicationController
   end
 
   def set_sap_document
-    @sap_document = SapDocument.find(params[:id])
+    @sap_document = SapDocument.find_by!(slug: params[:id])
   end
 
   def create_from_wizard

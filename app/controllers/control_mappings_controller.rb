@@ -89,7 +89,7 @@ class ControlMappingsController < ApplicationController
   private
 
   def set_control_mapping
-    @control_mapping = ControlMapping.find(params[:id])
+    @control_mapping = ControlMapping.find_by!(slug: params[:id])
   end
 
   def load_catalogs

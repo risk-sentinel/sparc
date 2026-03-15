@@ -56,7 +56,7 @@ class AuthorizationBoundariesController < ApplicationController
   private
 
   def set_authorization_boundary
-    @authorization_boundary = AuthorizationBoundary.find(params[:id])
+    @authorization_boundary = AuthorizationBoundary.find_by!(slug: params[:id])
   end
 
   def authorization_boundary_params

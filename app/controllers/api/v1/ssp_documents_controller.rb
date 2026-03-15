@@ -34,7 +34,7 @@ module Api
       end
 
       def update_fields
-        ssp_document = SspDocument.find(params[:id])
+        ssp_document = SspDocument.find_by!(slug: params[:id])
         update_service = SspUpdateService.new(ssp_document)
 
         begin
@@ -51,7 +51,7 @@ module Api
       end
 
       def export
-        ssp_document = SspDocument.find(params[:id])
+        ssp_document = SspDocument.find_by!(slug: params[:id])
         json_data = JsonExportService.export_ssp(ssp_document)
 
         render json: JSON.parse(json_data)

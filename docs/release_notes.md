@@ -4,6 +4,65 @@
 
 ---
 
+## 2026-03-15 -- Slug-Based URLs for All Resources (#195)
+
+**Branch:** `bug/195_slug_urls`
+
+### Summary
+
+All resource URLs now use human-readable slugs instead of numeric
+database IDs. For example, `/control_catalogs/5` becomes
+`/control_catalogs/nist-sp-800-53-rev-5`. A shared `Sluggable` concern
+handles slug generation, uniqueness, and `to_param` override for all 12
+models (including Converter which was refactored to use the concern).
+
+### What Changed
+
+- **New `Sluggable` concern** -- reusable module that auto-generates
+  URL-safe slugs from a configurable source field (defaults to `name`,
+  Evidence uses `title`). Handles uniqueness collisions with numeric
+  suffixes. Overrides `to_param` so all Rails URL helpers automatically
+  use slugs.
+
+- **Migration** -- adds `slug` column with unique index to 11 tables
+  (control_catalogs, ssp_documents, sar_documents, cdef_documents,
+  sap_documents, poam_documents, profile_documents, evidences,
+  authorization_boundaries, control_mappings, organizations).
+  Backfills existing records from name/title fields.
+
+- **Converter refactored** -- inline slug logic replaced with
+  `include Sluggable` concern.
+
+- **All controllers updated** -- `find(params[:id])` replaced with
+  `find_by!(slug: params[:id])` across 15 controllers (including
+  nested resource parent lookups and admin controllers).
+
+- **DocumentDuplicationService** -- now skips `slug` attribute when
+  copying so the duplicate gets a fresh slug.
+
+### Files Created (2)
+
+- `app/models/concerns/sluggable.rb`
+- `db/migrate/20260315120000_add_slugs_to_all_models.rb`
+
+### Files Modified (27)
+
+- 11 models: `control_catalog.rb`, `ssp_document.rb`, `sar_document.rb`,
+  `cdef_document.rb`, `sap_document.rb`, `poam_document.rb`,
+  `profile_document.rb`, `evidence.rb`, `authorization_boundary.rb`,
+  `control_mapping.rb`, `organization.rb` (add `include Sluggable`)
+- `converter.rb` (refactored to use `Sluggable` concern)
+- 14 controllers updated to `find_by!(slug:)`
+- `document_duplication_service.rb` (skip slug on copy)
+
+### Verification
+
+- 799 RSpec tests pass
+- RuboCop clean
+- Brakeman clean
+
+---
+
 ## 2026-03-15 -- Home Screen Card Alignment + Converters Card (#192)
 
 **Branch:** `bug/192_home_card_alignment`

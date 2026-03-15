@@ -4,7 +4,7 @@ class DocumentDuplicationService
     "CdefDocument" => { controls: :cdef_controls, fields: :cdef_control_fields, version_attr: :cdef_version }
   }.freeze
 
-  SKIP_ATTRIBUTES = %w[id created_at updated_at].freeze
+  SKIP_ATTRIBUTES = %w[id created_at updated_at slug].freeze
 
   def initialize(source_document)
     @source = source_document
