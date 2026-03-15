@@ -32,13 +32,13 @@
           <% if @profile_document.profile_version.present? %>
             <span class="sparc-version-badge">v<%= @profile_document.profile_version %></span>
           <% end %>
-          <% if signed_in? %>
+          <% if signed_in? && !@profile_document.published_lifecycle? %>
             <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
           <% end %>
         </div>
       </div>
 
-      <% if signed_in? %>
+      <% if signed_in? && !@profile_document.published_lifecycle? %>
         <%# ── Edit mode (hidden) ── %>
         <div id="doc-meta-edit" style="display: none;">
           <%= form_with url: update_metadata_profile_document_path(@profile_document), method: :patch, local: true do |f| %>
@@ -59,10 +59,17 @@
         &nbsp;&bull;&nbsp;
         <span class="fw-semibold" style="color: <%= level_color %>;"><%= @profile_document.baseline_level || "Custom" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
-        <% if @profile_document.published.present? %>
+        <% if @profile_document.control_catalog.present? %>
           &nbsp;&bull;&nbsp;
-          <span class="fw-semibold" style="color: #27ae60;">Published</span>
+          Source: <span class="fw-semibold"><%= @profile_document.control_catalog.name %></span>
+          <% if @profile_document.control_catalog.short_digest.present? %>
+            <code style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-left: 0.2rem;"><%= @profile_document.control_catalog.short_digest %></code>
+          <% end %>
         <% end %>
+        &nbsp;&bull;&nbsp;
+        <span class="<%= @profile_document.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.15rem 0.5rem; font-size: 0.78rem;">
+          <%= @profile_document.lifecycle_label %>
+        </span>
       </div>
       <% if @profile_document.description.present? %>
         <div style="font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 0.4rem; max-width: 600px;"><%= truncate(@profile_document.description, length: 200) %></div>
@@ -70,18 +77,23 @@
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
       <% if signed_in? %>
-        <%= button_to "Copy", copy_profile_document_path(@profile_document), method: :post,
-              class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this profile?" } } %>
-        <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
-              class: "sparc-btn-oscal" %>
-        <% if @profile_document.control_catalog.present? %>
-          <%= link_to "Manage Controls", manage_controls_profile_document_path(@profile_document),
+        <% if @profile_document.published_lifecycle? %>
+          <%= button_to "Create Editable Copy", copy_profile_document_path(@profile_document), method: :post,
+                class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Create an editable copy of this published profile?" } } %>
+        <% else %>
+          <%= button_to "Copy", copy_profile_document_path(@profile_document), method: :post,
+                class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this profile?" } } %>
+          <%= link_to "+ Add Control", new_profile_document_profile_control_path(@profile_document),
                 class: "sparc-btn-oscal" %>
-        <% end %>
-        <% if @profile_document.control_catalog.present? %>
-          <%= button_to "Publish", publish_profile_document_path(@profile_document), method: :patch,
-                class: "btn btn-warning btn-sm fw-semibold",
-                form: { data: { turbo_confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } } %>
+          <% if @profile_document.control_catalog.present? %>
+            <%= link_to "Manage Controls", manage_controls_profile_document_path(@profile_document),
+                  class: "sparc-btn-oscal" %>
+          <% end %>
+          <% if @profile_document.control_catalog.present? %>
+            <%= button_to "Publish", publish_profile_document_path(@profile_document), method: :patch,
+                  class: "btn btn-warning btn-sm fw-semibold",
+                  form: { data: { turbo_confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } } %>
+          <% end %>
         <% end %>
       <% end %>
       <div class="btn-group">

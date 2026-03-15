@@ -3,6 +3,7 @@ FactoryBot.define do
     name { Faker::Lorem.words(number: 3).join(" ") }
     file_type { "excel" }
     status { "completed" }
+    lifecycle_status { "in_progress" }
     original_filename { "#{name}.xlsx" }
 
     trait :wizard do

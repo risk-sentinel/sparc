@@ -23,13 +23,15 @@
     <table class="table table-hover" style="table-layout: fixed; width: 100%;">
       <thead>
         <tr>
-          <th style="width: 28%;">Name</th>
+          <th style="width: 22%;">Name</th>
           <th style="width: 9%;">Baseline</th>
-          <th style="width: 8%;">Version</th>
+          <th style="width: 7%;">Version</th>
           <th style="width: 9%;">Status</th>
-          <th style="width: 7%;">Controls</th>
-          <th style="width: 13%;">Created</th>
-          <th style="width: 26%;" class="text-end">Actions</th>
+          <th style="width: 9%;">Lifecycle</th>
+          <th style="width: 13%;">Source Catalog</th>
+          <th style="width: 6%;">Controls</th>
+          <th style="width: 10%;">Created</th>
+          <th style="width: 15%;" class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -52,6 +54,21 @@
               </span>
               <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
                 <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= doc.metadata_extra["processing_message"] %></span>
+              <% end %>
+            </td>
+            <td>
+              <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;">
+                <%= doc.lifecycle_label %>
+              </span>
+            </td>
+            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= doc.control_catalog&.name %>">
+              <% if doc.control_catalog.present? %>
+                <%= doc.control_catalog.name %>
+                <% if doc.control_catalog.short_digest.present? %>
+                  <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= doc.control_catalog.short_digest %></span>
+                <% end %>
+              <% else %>
+                <span class="text-body-tertiary">&mdash;</span>
               <% end %>
             </td>
             <td><%= doc.profile_controls.count %></td>

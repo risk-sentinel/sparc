@@ -7,6 +7,7 @@ class SapDocumentsController < ApplicationController
     download_yaml download_xml status
     update_metadata
   ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata ]
 
   METHOD_ORDER = %w[examine interview test].freeze
 
@@ -176,6 +177,13 @@ class SapDocumentsController < ApplicationController
 
   def set_sap_document
     @sap_document = SapDocument.find_by!(slug: params[:id])
+  end
+
+  def ensure_editable!
+    return unless @sap_document.published_lifecycle?
+
+    flash[:error] = "This assessment plan is published and read-only. Create a copy to make changes."
+    redirect_to sap_document_path(@sap_document)
   end
 
   def create_from_wizard

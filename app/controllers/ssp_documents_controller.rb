@@ -7,6 +7,7 @@ class SspDocumentsController < ApplicationController
     :download_yaml, :download_xml,
     :status, :update_metadata, :enrich, :update_enrich
   ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -281,6 +282,13 @@ class SspDocumentsController < ApplicationController
 
   def set_ssp_document
     @ssp_document = SspDocument.find_by!(slug: params[:id])
+  end
+
+  def ensure_editable!
+    return unless @ssp_document.published_lifecycle?
+
+    flash[:error] = "This SSP is published and read-only. Create a copy to make changes."
+    redirect_to ssp_document_path(@ssp_document)
   end
 
   # ── Enrichment sync helpers ──────────────────────────────────────

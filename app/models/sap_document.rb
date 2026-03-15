@@ -2,6 +2,7 @@ class SapDocument < ApplicationRecord
   include OscalMetadata
   include SafeDestroyable
   include Sluggable
+  include Lifecycle
 
   belongs_to :authorization_boundary, optional: true
 
