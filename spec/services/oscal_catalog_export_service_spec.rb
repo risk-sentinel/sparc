@@ -87,6 +87,92 @@ RSpec.describe OscalCatalogExportService do
     end
   end
 
+  describe "enhancement nesting" do
+    before do
+      # Base control ac-2
+      family.catalog_controls.create!(
+        control_id: "ac-2",
+        label: "AC-2",
+        sort_id: "ac-02",
+        title: "Account Management",
+        priority: "P1",
+        baseline_impact: "LOW, MODERATE, HIGH",
+        guidance_data: {
+          "statement" => "Manage information system accounts.",
+          "supplemental_guidance" => "Account management includes establishing accounts.",
+          "related_controls" => "AC-03, AC-04"
+        }
+      )
+
+      # Enhancement ac-2.1
+      family.catalog_controls.create!(
+        control_id: "ac-2.1",
+        label: "AC-2(1)",
+        sort_id: "ac-02.01",
+        title: "Automated System Account Management",
+        baseline_impact: "MODERATE, HIGH",
+        guidance_data: {
+          "statement" => "Employ automated mechanisms to support management of accounts.",
+          "supplemental_guidance" => "Automated account management reduces risk."
+        }
+      )
+
+      # Enhancement ac-2.2
+      family.catalog_controls.create!(
+        control_id: "ac-2.2",
+        label: "AC-2(2)",
+        sort_id: "ac-02.02",
+        title: "Automated Temporary and Emergency Account Management",
+        baseline_impact: "MODERATE, HIGH",
+        guidance_data: {
+          "statement" => "Automatically remove or disable temporary and emergency accounts."
+        }
+      )
+    end
+
+    it "nests enhancements under their parent control" do
+      json = subject.export_unvalidated
+      data = JSON.parse(json)
+      controls = data["catalog"]["groups"].first["controls"]
+
+      # Only base controls appear at the top level
+      top_level_ids = controls.map { |c| c["id"] }
+      expect(top_level_ids).to contain_exactly("ac-1", "ac-2")
+
+      # Enhancements should NOT appear at the top level
+      expect(top_level_ids).not_to include("ac-2.1", "ac-2.2")
+    end
+
+    it "places enhancements in the parent's controls array" do
+      json = subject.export_unvalidated
+      data = JSON.parse(json)
+      ac2 = data["catalog"]["groups"].first["controls"].find { |c| c["id"] == "ac-2" }
+
+      expect(ac2).to have_key("controls")
+      nested_ids = ac2["controls"].map { |c| c["id"] }
+      expect(nested_ids).to contain_exactly("ac-2.1", "ac-2.2")
+    end
+
+    it "includes full control data for nested enhancements" do
+      json = subject.export_unvalidated
+      data = JSON.parse(json)
+      ac2 = data["catalog"]["groups"].first["controls"].find { |c| c["id"] == "ac-2" }
+      enh1 = ac2["controls"].find { |c| c["id"] == "ac-2.1" }
+
+      expect(enh1["title"]).to eq("Automated System Account Management")
+      expect(enh1["props"].map { |p| p["name"] }).to include("label")
+      expect(enh1["parts"]).to be_present
+    end
+
+    it "does not add controls key when a base control has no enhancements" do
+      json = subject.export_unvalidated
+      data = JSON.parse(json)
+      ac1 = data["catalog"]["groups"].first["controls"].find { |c| c["id"] == "ac-1" }
+
+      expect(ac1).not_to have_key("controls")
+    end
+  end
+
   describe "#validation_result" do
     it "returns a result object" do
       result = subject.validation_result

@@ -70,16 +70,27 @@ class CatalogImportService
 
     case detect_format
     when :oscal_json then import_oscal_json
+    when :oscal_yaml then import_oscal_yaml
     when :oscal_xml  then import_oscal_xml
     when :nist_xml   then import_nist_xml
     else
-      raise ImportError, "Unrecognised format. Upload an OSCAL JSON (.json), OSCAL XML (.xml), or NIST XML (.xml) catalog file."
+      raise ImportError, "Unrecognised format. Upload an OSCAL JSON (.json), OSCAL YAML (.yaml/.yml), OSCAL XML (.xml), or NIST XML (.xml) catalog file."
     end
   end
 
   # ── Format detection ────────────────────────────────────────────────────────
 
   def detect_format
+    if @filename.end_with?(".yaml", ".yml")
+      begin
+        require "yaml"
+        data = YAML.safe_load(@content, permitted_classes: [ Date, Time ])
+        return :oscal_yaml if data.is_a?(Hash) && data.dig("catalog", "groups")
+      rescue Psych::SyntaxError
+        # fall through
+      end
+    end
+
     if @filename.end_with?(".json")
       begin
         data = JSON.parse(@content)
@@ -110,6 +121,23 @@ class CatalogImportService
     return :nist_xml if @content.include?("<controls:control>")
 
     :unknown
+  end
+
+  # ── OSCAL YAML import ───────────────────────────────────────────────────────
+  #
+  # OSCAL YAML has the same structure as OSCAL JSON (just a different
+  # serialization). Parse to a Ruby hash, convert to JSON, and delegate.
+  #
+  def import_oscal_yaml
+    update_processing_stage!(:parsing, "Parsing OSCAL YAML catalog...")
+
+    require "yaml"
+    data = YAML.safe_load(@content, permitted_classes: [ Date, Time ])
+    raise ImportError, "Not a valid OSCAL YAML catalog — missing 'catalog.groups'." unless data.is_a?(Hash) && data.dig("catalog", "groups")
+
+    @content = JSON.generate(data)
+    @import_format_override = "oscal_yaml"
+    import_oscal_json
   end
 
   # ── OSCAL JSON import ───────────────────────────────────────────────────────
@@ -143,6 +171,7 @@ class CatalogImportService
     # Preserve the catalog's OSCAL document UUID and back-matter resources for
     # cross-referencing when profiles are imported later.
     metadata_extra["catalog_uuid"] = cat_data["uuid"] if cat_data["uuid"].present?
+    metadata_extra["import_format"] = @import_format_override || "oscal_json"
     back_matter_resources = cat_data.dig("back-matter", "resources")
     metadata_extra["back_matter_resources"] = back_matter_resources if back_matter_resources.present?
 
@@ -298,6 +327,7 @@ class CatalogImportService
     # Collect metadata extras (props, links, roles, parties, etc.)
     metadata_extra = {}
     metadata_extra["catalog_uuid"] = catalog_node["uuid"] if catalog_node["uuid"].present?
+    metadata_extra["import_format"] = "oscal_xml"
 
     back_matter = catalog_node.at_xpath("back-matter")
     if back_matter
@@ -512,8 +542,14 @@ class CatalogImportService
     catalog_name = xml_catalog_name(controls.first, pub_date)
     version      = pub_date.presence || File.basename(@filename, ".xml")
 
-    catalog = @existing_catalog || upsert_catalog(catalog_name, version, "NIST XML")
-    stats   = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
+    metadata_extra = { "import_format" => "nist_xml" }
+    catalog = if @existing_catalog
+      @existing_catalog.update!(metadata_extra: @existing_catalog.metadata_extra.merge(metadata_extra))
+      @existing_catalog
+    else
+      upsert_catalog(catalog_name, version, "NIST XML", metadata_extra: metadata_extra)
+    end
+    stats = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
 
     # Group by family; build families on the fly
     family_cache = {}
@@ -537,15 +573,13 @@ class CatalogImportService
       end
 
       family = family_cache[family_code]
-      result = import_xml_control(family, ctrl_node)
-      stats[:controls] += 1
-      stats[result]    += 1
+      import_xml_control(family, ctrl_node, stats)
     end
 
     stats
   end
 
-  def import_xml_control(family, ctrl_node)
+  def import_xml_control(family, ctrl_node, stats)
     raw_number  = ctrl_node.at_xpath("number")&.text.to_s.strip  # "AC-1"
     control_id  = raw_number.downcase                              # "ac-1" (canonical OSCAL format)
     ctrl_label  = raw_number                                       # "AC-1" (display)
@@ -577,11 +611,51 @@ class CatalogImportService
 
     result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data,
                                     label: ctrl_label, sort_id: sort_id)
+    stats[:controls] += 1
+    stats[result]    += 1
 
     # Create sub-control records from nested <statement> elements
     import_xml_item_parts(family, control_id, root_stmt) if root_stmt
 
-    result
+    # Import control enhancements (e.g., AC-2(1), AC-2(2))
+    ctrl_node.xpath("control-enhancement").each do |enh_node|
+      import_xml_enhancement(family, enh_node, stats)
+    end
+  end
+
+  # Import a NIST XML <control-enhancement> element.
+  # Converts enhancement numbering to OSCAL canonical format:
+  #   "AC-2(1)" → "ac-2.1", "AC-2(13)" → "ac-2.13"
+  def import_xml_enhancement(family, enh_node, stats)
+    raw_number = enh_node.at_xpath("number")&.text.to_s.strip  # "AC-2(1)"
+    return if raw_number.blank?
+
+    control_id = nist_enhancement_to_oscal_id(raw_number)         # "ac-2.1"
+    ctrl_label = raw_number                                        # "AC-2(1)" (display)
+    sort_id    = pad_enhancement_id(raw_number).downcase           # "ac-02.01" (ordering)
+    title      = enh_node.at_xpath("title")&.text.to_s.strip.titleize
+    baselines  = enh_node.xpath("baseline").map(&:text).map(&:strip).reject(&:blank?)
+    baseline   = baselines.join(", ").presence
+
+    root_stmt    = enh_node.at_xpath("statement")
+    statement    = root_stmt ? xml_collect_statement(root_stmt) : nil
+    discussion   = enh_node.at_xpath("discussion/description")
+    supplemental = discussion ? xml_text_content(discussion).strip.presence : nil
+    related      = enh_node.xpath("related").map(&:text).map(&:strip).reject(&:blank?).join(", ").presence
+
+    guidance_data = {
+      "statement"             => statement,
+      "supplemental_guidance" => supplemental,
+      "related_controls"      => related
+    }.compact.reject { |_, v| v.blank? }
+
+    result = upsert_catalog_control(family, control_id, title, nil, baseline, guidance_data,
+                                    label: ctrl_label, sort_id: sort_id)
+    stats[:controls] += 1
+    stats[result]    += 1
+
+    # Enhancement sub-parts from nested <statement> elements
+    import_xml_item_parts(family, control_id, root_stmt) if root_stmt
   end
 
   # Recursively create CatalogControl records for XML nested statement elements.
@@ -675,6 +749,20 @@ class CatalogImportService
     when /\A\([^)]+\)\z/    then ".#{l}"     # "(a)" → ".(a)"
     else ".#{l.chomp('.')}"                  # fallback
     end
+  end
+
+  # Convert NIST XML enhancement numbering to OSCAL canonical format:
+  #   "AC-2(1)"  → "ac-2.1"
+  #   "AC-2(13)" → "ac-2.13"
+  def nist_enhancement_to_oscal_id(raw)
+    raw.downcase.gsub(/\((\d+)\)/, '.\1')
+  end
+
+  # Zero-pad enhancement IDs for sort ordering:
+  #   "AC-2(1)"  → "AC-02.01"
+  #   "AC-2(13)" → "AC-02.13"
+  def pad_enhancement_id(raw)
+    raw.sub(/\A([A-Z]+-?)(\d+)\((\d+)\)\z/) { "#{$1}#{$2.rjust(2, '0')}.#{$3.rjust(2, '0')}" }
   end
 
   # ── OSCAL helpers ────────────────────────────────────────────────────────────
