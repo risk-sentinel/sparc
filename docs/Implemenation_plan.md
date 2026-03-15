@@ -62,7 +62,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 - [x] #100 -- Comprehensive automated regression testing suite -- **COMPLETED 2026-03-14**
 
-- [ ] #134 -- Enable HTTPS in development environment (mkcert + Rails config)
+- [x] #134 -- Enable HTTPS in development environment (mkcert + Rails config) -- **COMPLETED 2026-03-14**
 
 ### 3. OSCAL Core (Import/Export, Publication, Status)
 
@@ -125,7 +125,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 | [x] | #142 | Background jobs + Turbo Streams/polling for large Excel uploads | **HIGH** |
 | [x] | #178 | Dependency-aware delete modal across all OSCAL entities | **HIGH** |
 | [x] | #100 | RSpec/Capybara + RuboCop/Brakeman in CI pipeline -- **COMPLETED 2026-03-14** | **HIGH** |
-| [ ] | #134 | HTTPS localhost via mkcert for dev environment | MEDIUM |
+| [x] | #134 | HTTPS localhost via mkcert for dev environment -- **COMPLETED 2026-03-14** | MEDIUM |
 
 <!-- markdownlint-enable MD013 -->
 

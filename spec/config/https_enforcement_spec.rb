@@ -30,8 +30,66 @@ RSpec.describe "HTTPS enforcement configuration" do
     let(:development_config_path) { Rails.root.join("config/environments/development.rb") }
     let(:development_source) { File.read(development_config_path) }
 
-    it "does not force SSL in development" do
-      expect(development_source).not_to include("config.force_ssl")
+    it "does not unconditionally force SSL in development" do
+      # force_ssl should only appear inside a conditional SSL_DEV block,
+      # never as a top-level unconditional setting
+      lines = development_source.lines
+      force_ssl_lines = lines.select { |l| l.match?(/^\s+config\.force_ssl\s*=/) }
+      force_ssl_lines.each do |line|
+        idx = lines.index(line)
+        preceding = lines[0...idx].reverse
+        conditional = preceding.find { |l| l.match?(/if\s+ENV/) }
+        expect(conditional).to include("SSL_DEV")
+      end
+    end
+
+    it "does not configure HSTS in development" do
+      expect(development_source).not_to include("hsts:")
+    end
+  end
+
+  describe "development HTTPS (SSL_DEV)" do
+    let(:puma_config_path) { Rails.root.join("config/puma.rb") }
+    let(:puma_source) { File.read(puma_config_path) }
+    let(:development_config_path) { Rails.root.join("config/environments/development.rb") }
+    let(:development_source) { File.read(development_config_path) }
+
+    it "conditionally enables SSL binding in Puma when SSL_DEV is true" do
+      expect(puma_source).to include('ENV["SSL_DEV"] == "true"')
+      expect(puma_source).to include("ssl_bind")
+    end
+
+    it "references mkcert certificate paths in Puma config" do
+      expect(puma_source).to include("localhost+2.pem")
+      expect(puma_source).to include("localhost+2-key.pem")
+    end
+
+    it "conditionally enables force_ssl in development when SSL_DEV is true" do
+      expect(development_source).to include('ENV["SSL_DEV"] == "true"')
+      expect(development_source).to include("config.force_ssl = true")
+    end
+
+    it "excludes /up health check from SSL redirect in development" do
+      expect(development_source).to include('request.path == "/up"')
+    end
+
+    it "configures redirect port for non-standard HTTPS port" do
+      expect(development_source).to include("SSL_PORT")
+    end
+  end
+
+  describe "bin/setup-ssl" do
+    let(:setup_ssl_path) { Rails.root.join("bin/setup-ssl") }
+
+    it "exists and is executable" do
+      expect(File.exist?(setup_ssl_path)).to be true
+      expect(File.executable?(setup_ssl_path)).to be true
+    end
+
+    it "references mkcert for certificate generation" do
+      source = File.read(setup_ssl_path)
+      expect(source).to include("mkcert")
+      expect(source).to include("localhost")
     end
   end
 

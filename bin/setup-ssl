@@ -1,0 +1,109 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# One-time SSL setup for development.
+# Generates mkcert certificates in ssl/ for localhost HTTPS.
+#
+# Usage:
+#   bin/setup-ssl
+#
+# Prerequisites:
+#   Install mkcert before running this script.
+#   macOS:    brew install mkcert
+#             — or — MacPorts: sudo port install mkcert
+#             — or — download binary from GitHub releases
+#   Linux:    sudo apt install mkcert (Ubuntu/Debian)
+#             — or — download binary from GitHub releases
+#   Windows:  choco install mkcert — or — scoop install mkcert
+#   All:      https://github.com/FiloSottile/mkcert#installation
+
+require "fileutils"
+
+APP_ROOT = File.expand_path("..", __dir__)
+SSL_DIR  = File.join(APP_ROOT, "ssl")
+
+def system!(*args)
+  system(*args, exception: true)
+end
+
+# Check for mkcert
+unless system("command -v mkcert > /dev/null 2>&1")
+  abort <<~MSG
+    ERROR: mkcert is not installed.
+
+    Install it first:
+
+      macOS (Homebrew):    brew install mkcert
+      macOS (MacPorts):    sudo port install mkcert
+      macOS (binary):      Download from https://github.com/FiloSottile/mkcert/releases
+      Ubuntu / Debian:     sudo apt install mkcert
+      Windows:             choco install mkcert  — or —  scoop install mkcert
+      Manual / Other:      https://github.com/FiloSottile/mkcert#installation
+
+    For manual install, download the binary for your platform from
+    the GitHub releases page, rename it to "mkcert", make it
+    executable (chmod +x), and place it on your PATH.
+  MSG
+end
+
+# Create ssl/ directory
+FileUtils.mkdir_p(SSL_DIR)
+
+# Check for certutil (needed for Firefox trust store)
+has_certutil = system("command -v certutil > /dev/null 2>&1")
+unless has_certutil
+  puts <<~MSG
+    == NOTE: certutil not found ==
+    Firefox uses its own certificate store (NSS). Without certutil,
+    mkcert cannot install the CA into Firefox automatically.
+
+    To enable Firefox support, install NSS first:
+      macOS (Homebrew):    brew install nss
+      macOS (MacPorts):    sudo port install nss
+      Ubuntu / Debian:     sudo apt install libnss3-tools
+      Fedora / RHEL:       sudo dnf install nss-tools
+
+    You can continue without it — Chrome and Safari will work fine.
+
+    Alternatively, import the CA manually in Firefox:
+      1. Run: mkcert -CAROOT   (prints the CA directory)
+      2. Firefox → Settings → Privacy & Security →
+         Certificates → View Certificates → Authorities → Import
+      3. Select rootCA.pem from the directory above
+      4. Check "Trust this CA to identify websites" → OK
+
+    After installing NSS, re-run: bin/setup-ssl
+
+  MSG
+end
+
+# Install local CA (idempotent — safe to run multiple times)
+puts "== Installing mkcert local CA (if not already installed) =="
+system!("mkcert -install")
+
+# Generate certs for localhost, 127.0.0.1, and ::1
+cert_file = File.join(SSL_DIR, "localhost+2.pem")
+key_file  = File.join(SSL_DIR, "localhost+2-key.pem")
+
+if File.exist?(cert_file) && File.exist?(key_file)
+  puts "\n== Certificates already exist in ssl/ =="
+  puts "   #{cert_file}"
+  puts "   #{key_file}"
+  puts "   Delete them and re-run if you need to regenerate."
+else
+  puts "\n== Generating certificates =="
+  Dir.chdir(SSL_DIR) do
+    system!("mkcert localhost 127.0.0.1 ::1")
+  end
+end
+
+puts "\n== Done! =="
+if has_certutil
+  puts "Certificates are trusted in all browsers (including Firefox)."
+else
+  puts "Certificates are trusted in Chrome and Safari."
+  puts "For Firefox support, install NSS (see note above) and re-run."
+end
+puts "\nStart the dev server with HTTPS:"
+puts "  SSL_DEV=true bin/dev"
+puts "  Then open https://localhost:3443"

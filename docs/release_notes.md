@@ -4,6 +4,94 @@
 
 ---
 
+## 2026-03-14 -- Enable HTTPS in Development Environment (#134)
+
+**Branch:** `feature/134_https_dev_environment`
+
+### Summary
+
+Added opt-in HTTPS support for the development environment using
+mkcert-generated TLS certificates. Developers can enable HTTPS by
+running `bin/setup-ssl` once, then starting the server with
+`SSL_DEV=true bin/dev`. No new gem dependencies. HTTPS is disabled
+by default to preserve the existing HTTP workflow.
+
+### What Changed
+
+- **`bin/setup-ssl`** -- new one-time setup script that installs the
+  mkcert local CA and generates certificates in `ssl/` for localhost,
+  127.0.0.1, and ::1.
+
+- **Puma SSL binding** -- `config/puma.rb` conditionally binds an
+  HTTPS listener on port 3443 when `SSL_DEV=true`, using the mkcert
+  certificates. Falls back to HTTP-only when disabled.
+
+- **Rails development config** -- `config/environments/development.rb`
+  conditionally enables `force_ssl` and configures SSL redirect
+  options (with `/up` health check exclusion and port 3443 redirect)
+  when `SSL_DEV=true`. No HSTS in development.
+
+- **`bin/dev`** -- updated to validate certificate existence and
+  display HTTPS URL when `SSL_DEV=true`.
+
+- **Docker Compose** -- `docker-compose.yaml` volume-mounts `ssl/`
+  (read-only), exposes port 3443, and includes commented `SSL_DEV`
+  environment variable.
+
+- **`.gitignore`** -- added `/ssl/` to prevent certificate commits.
+
+- **Documentation** -- new `docs/development-https.md` with full
+  setup guide, troubleshooting tips, and usage instructions for both
+  local and Docker workflows. Updated `docs/DOCKER.md` with HTTPS
+  section.
+
+- **Tests** -- updated `spec/config/https_enforcement_spec.rb` with
+  tests for conditional SSL_DEV configuration in Puma and development
+  environment. Verified no unconditional force_ssl in development.
+
+### ENV Variables Added
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `SSL_DEV` | `false` | Enable HTTPS in development |
+| `SSL_PORT` | `3443` | Override HTTPS port |
+
+### Files Created
+
+- `bin/setup-ssl`
+- `docs/development-https.md`
+
+### Files Modified
+
+- `config/puma.rb`
+- `config/environments/development.rb`
+- `bin/dev`
+- `docker-compose.yaml`
+- `.gitignore`
+- `.env.example`
+- `.env`
+- `docs/ENVIRONMENT_VARIABLES.md`
+- `docs/DOCKER.md`
+- `spec/config/https_enforcement_spec.rb`
+
+### What is NOT Changed
+
+- **No new gem dependencies** -- mkcert is an external CLI tool
+- **HTTP still works** -- port 3000 unchanged when SSL_DEV is unset
+- **Production config untouched** -- SSL_DEV is dev-only
+- **No database migrations**
+
+### Verification
+
+- `bin/setup-ssl` generates certs in `ssl/`
+- `SSL_DEV=true bin/dev` serves HTTPS on port 3443
+- `https://localhost:3443` shows green padlock
+- `http://localhost:3000` redirects to HTTPS:3443
+- `bundle exec rspec` -- all tests pass
+- `bundle exec rubocop` -- no offenses
+
+---
+
 ## 2026-03-14 -- Comprehensive Automated Regression Testing Suite (#100)
 
 **Branch:** `feature/100_regression_testing_suite`

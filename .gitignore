@@ -45,3 +45,6 @@
 
 # SimpleCov coverage reports (HTML + JSON)
 /coverage
+
+# SSL certificates for local development (mkcert)
+/ssl/
