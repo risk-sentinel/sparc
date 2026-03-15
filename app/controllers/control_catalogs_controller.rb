@@ -4,11 +4,13 @@ class ControlCatalogsController < ApplicationController
   before_action :set_control_catalog, only: [
     :show, :edit, :update, :destroy, :update_metadata,
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
-    :download_yaml, :download_xml, :baseline_controls
+    :download_yaml, :download_xml, :baseline_controls,
+    :update_baseline, :bulk_update_baselines
   ]
-  before_action :ensure_editable!, only: [ :update ]
+  before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines ]
   before_action :authorize_catalog_write!, only: [
-    :new, :create, :edit, :update, :destroy, :import, :update_metadata
+    :new, :create, :edit, :update, :destroy, :import, :update_metadata,
+    :update_baseline, :bulk_update_baselines
   ]
 
   def index
@@ -204,6 +206,59 @@ class ControlCatalogsController < ApplicationController
       []
     end
     render json: { control_ids: control_ids }
+  end
+
+  # PATCH /control_catalogs/:id/update_baseline
+  # Updates baseline_impact on a single catalog control (inline edit).
+  def update_baseline
+    control = @control_catalog.catalog_controls.find(params[:control_id])
+    control.update!(baseline_impact: params[:baseline_impact].presence)
+
+    audit_log("catalog_control_baseline_updated", subject: @control_catalog,
+      metadata: { control_id: control.control_id, baseline_impact: control.baseline_impact })
+    render json: { success: true, baseline_impact: control.baseline_impact }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, error: "Control not found" }, status: :not_found
+  end
+
+  # PATCH /control_catalogs/:id/bulk_update_baselines
+  # Bulk-updates baseline_impact on multiple catalog controls.
+  # Params: control_ids[], baseline_level (LOW/MODERATE/HIGH), action (add/remove/set)
+  def bulk_update_baselines
+    control_ids = Array(params[:control_ids]).map(&:to_i).reject(&:zero?)
+    level = params[:baseline_level].to_s.strip.upcase
+    bulk_action = params[:action_type].to_s.strip
+
+    if control_ids.empty?
+      render json: { success: false, error: "No controls selected" }, status: :unprocessable_entity
+      return
+    end
+
+    controls = @control_catalog.catalog_controls.where(id: control_ids)
+    updated = 0
+
+    ActiveRecord::Base.transaction do
+      controls.find_each do |control|
+        case bulk_action
+        when "add"
+          control.add_baseline_level(level)
+        when "remove"
+          control.remove_baseline_level(level)
+        when "set"
+          control.baseline_impact = level.present? ? level : nil
+        else
+          raise ArgumentError, "Invalid action: #{bulk_action}"
+        end
+        control.save!
+        updated += 1
+      end
+    end
+
+    audit_log("catalog_control_baselines_bulk_updated", subject: @control_catalog,
+      metadata: { action: bulk_action, level: level, updated_count: updated })
+    render json: { success: true, updated_count: updated }
+  rescue ArgumentError => e
+    render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
 
   private

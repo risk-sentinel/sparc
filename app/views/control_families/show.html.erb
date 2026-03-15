@@ -1,4 +1,11 @@
-<div class="card">
+<% can_edit_baselines = can_write_catalogs? && !@control_catalog.published_lifecycle? %>
+
+<div class="card"
+     <% if can_edit_baselines %>
+       data-controller="baseline-editor"
+       data-baseline-editor-update-url-value="<%= update_baseline_control_catalog_path(@control_catalog) %>"
+       data-baseline-editor-bulk-url-value="<%= bulk_update_baselines_control_catalog_path(@control_catalog) %>"
+     <% end %>>
   <div class="card-body">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -17,6 +24,11 @@
       <% end %>
     </div>
     <div class="d-flex gap-2">
+      <% if can_edit_baselines %>
+        <button type="button" class="btn btn-sparc-purple fw-semibold" style="font-size: 0.875rem;"
+                data-action="click->baseline-editor#toggleEdit"
+                data-baseline-editor-target="editToggle">Manage Baselines</button>
+      <% end %>
       <% if can_write_catalogs? %>
         <%= link_to "Edit Family", edit_control_family_path(@control_family), class: "btn btn-sparc-orange" %>
         <%= link_to "＋ Add Control", new_control_family_catalog_control_path(@control_family), class: "btn btn-success" %>
@@ -25,6 +37,33 @@
       <%= link_to "← Back to Catalog", @control_catalog, class: "btn btn-primary" %>
     </div>
   </div>
+
+  <%# ── Bulk toolbar (hidden by default, shown in edit mode) ── %>
+  <% if can_edit_baselines %>
+    <div data-baseline-editor-target="bulkToolbar" style="display: none; margin-bottom: 1rem; padding: 0.75rem 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <label class="form-check mb-0">
+          <input type="checkbox" class="form-check-input" data-baseline-editor-target="selectAll" data-action="change->baseline-editor#toggleSelectAll">
+          <span class="form-check-label fw-semibold" style="font-size: 0.85rem;">Select All</span>
+        </label>
+        <span class="text-body-secondary" style="font-size: 0.85rem;" data-baseline-editor-target="bulkCount">0 selected</span>
+        <div class="vr"></div>
+        <select class="form-select form-select-sm" style="width: auto;" data-baseline-editor-target="bulkLevel">
+          <option value="">Level...</option>
+          <option value="LOW">LOW</option>
+          <option value="MODERATE">MODERATE</option>
+          <option value="HIGH">HIGH</option>
+        </select>
+        <select class="form-select form-select-sm" style="width: auto;" data-baseline-editor-target="bulkAction">
+          <option value="add">Add Level</option>
+          <option value="remove">Remove Level</option>
+          <option value="set">Set to Only This Level</option>
+        </select>
+        <button type="button" class="btn btn-sm btn-success" data-action="click->baseline-editor#bulkApply">Apply</button>
+        <button type="button" class="btn btn-sm btn-outline-danger" data-action="click->baseline-editor#bulkClear">Clear Baselines</button>
+      </div>
+    </div>
+  <% end %>
 
   <% if @catalog_controls.any? %>
     <%
@@ -42,10 +81,13 @@
     <table class="table table-hover">
       <thead>
         <tr>
+          <% if can_edit_baselines %>
+            <th style="width: 40px; display: none;" data-baseline-checkbox-cell></th>
+          <% end %>
           <th style="width: 150px;">Control ID</th>
           <th>Title / Statement</th>
           <th class="text-center" style="width: 60px;">Priority</th>
-          <th style="width: 160px;">Baseline Impact</th>
+          <th style="width: 200px;">Baseline Impact</th>
           <% if can_write_catalogs? %><th style="width: 130px;">Actions</th><% end %>
         </tr>
       </thead>
@@ -53,7 +95,18 @@
         <% @catalog_controls.each do |control| %>
           <% depth      = ctrl_depth.call(control.control_id) %>
           <% stmt_text  = control.guidance_data["statement"].presence %>
-          <tr style="<%= depth > 0 ? "background: #fafbfc;" : "" %>">
+          <tr style="<%= depth > 0 ? "background: #fafbfc;" : "" %>" data-control-db-id="<%= control.id %>">
+
+            <%# ── Checkbox column (edit mode only) ── %>
+            <% if can_edit_baselines %>
+              <td style="vertical-align: top; padding-top: 0.55rem; display: none;" data-baseline-checkbox-cell>
+                <% if depth == 0 %>
+                  <input type="checkbox" class="form-check-input" value="<%= control.id %>"
+                         data-baseline-editor-target="checkbox"
+                         data-action="change->baseline-editor#checkboxChanged">
+                <% end %>
+              </td>
+            <% end %>
 
             <%# ── Control ID column ── %>
             <td style="padding-left: <%= 0.5 + depth * 1.1 %>rem; vertical-align: top; padding-top: 0.55rem;">
@@ -142,8 +195,26 @@
             </td>
 
             <%# ── Baseline Impact column ── %>
-            <td class="text-body-secondary" style="font-size: 0.82rem; vertical-align: top; padding-top: 0.55rem;">
-              <%= control.baseline_impact.presence || (depth == 0 ? "—" : "") %>
+            <td style="vertical-align: top; padding-top: 0.55rem;">
+              <%# View mode: badges %>
+              <span data-baseline-view data-baseline-badges>
+                <%= render "shared/baseline_badges", baseline_impact: control.baseline_impact %>
+              </span>
+
+              <%# Edit mode: inline checkboxes (top-level only) %>
+              <% if can_edit_baselines && depth == 0 %>
+                <span data-baseline-edit style="display: none;">
+                  <% %w[LOW MODERATE HIGH].each do |level| %>
+                    <label class="form-check form-check-inline mb-0" style="font-size: 0.78rem;">
+                      <input type="checkbox" class="form-check-input" style="margin-top: 0.15rem;"
+                             data-baseline-level="<%= level %>"
+                             data-action="change->baseline-editor#inlineToggle"
+                             <%= "checked" if control.has_baseline_level?(level) %>>
+                      <span class="form-check-label"><%= level %></span>
+                    </label>
+                  <% end %>
+                </span>
+              <% end %>
             </td>
 
             <%# ── Actions column ── %>

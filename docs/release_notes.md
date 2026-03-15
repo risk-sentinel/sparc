@@ -4,6 +4,49 @@
 
 ---
 
+## 2026-03-15 -- Catalog Baseline Management (#177)
+
+**Branch:** `feature/177_extend_catalog_import`
+
+### Summary
+
+Adds the ability for users to assign baseline impact levels (LOW/MODERATE/HIGH)
+to catalog controls that lack this data. Supports both per-control inline
+editing and bulk selection + assign on the control family page.
+
+### What Changed
+
+- **CatalogControl model** -- added `BASELINE_LEVELS` constant and helper
+  methods: `baseline_levels`, `has_baseline_level?`, `add_baseline_level`,
+  `remove_baseline_level` for clean comma-separated string manipulation.
+
+- **Controller actions** -- `update_baseline` (single control inline edit) and
+  `bulk_update_baselines` (multi-control add/remove/set) on
+  `ControlCatalogsController` with `ensure_editable!` and
+  `authorize_catalog_write!` guards.
+
+- **Baseline editor Stimulus controller** -- `baseline_editor_controller.js`
+  handles inline level toggling via fetch PATCH, bulk checkbox selection,
+  select-all, and bulk apply/clear operations.
+
+- **Control family show page** -- "Manage Baselines" toggle reveals inline
+  checkboxes per control and a bulk toolbar. Baseline impact displayed as
+  colored badges (LOW=green, MODERATE=blue, HIGH=orange) via shared partial.
+
+- **Shared partial** -- `_baseline_badges.html.erb` renders colored badges
+  from a `baseline_impact` string. Reusable across views.
+
+- **Tests** -- 25 new specs: model methods (parsing, add, remove, edge cases),
+  request specs (inline update, bulk add/remove/set, published guard, auth).
+
+### Notes
+
+- No database migration required -- uses existing `baseline_impact` column.
+- No changes to OSCAL export schema -- existing export handles the field.
+- Published catalogs are read-only; "Manage Baselines" button hidden.
+
+---
+
 ## 2026-03-15 -- Document Lifecycle Status Tracking (#149)
 
 **Branch:** `feature/149_status_tracking`
