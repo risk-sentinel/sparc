@@ -30,7 +30,7 @@ services:
   web:
     build: .
     user: root
-    command: bash -c "apt-get update -qq && apt-get install --no-install-recommends -y build-essential libpq-dev > /dev/null 2>&1; bundle install --quiet && rm -f tmp/pids/server.pid && bundle exec rails db:prepare && bundle exec rails db:seed && bundle exec rails s -b '0.0.0.0' -p 3000"
+    command: bash -c "apt-get update -qq && apt-get install --no-install-recommends -y build-essential libpq-dev > /dev/null 2>&1; bundle install --quiet && rm -f tmp/pids/server.pid && bundle exec rails db:prepare && bundle exec rails db:seed && bundle exec puma -C config/puma.rb"
     volumes:
       - .:/rails
       - bundle_cache:/usr/local/bundle
