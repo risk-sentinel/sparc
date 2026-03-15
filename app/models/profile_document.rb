@@ -1,6 +1,7 @@
 class ProfileDocument < ApplicationRecord
   include OscalMetadata
   include SafeDestroyable
+  include Sluggable
 
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true

@@ -110,7 +110,7 @@ module Admin
     private
 
     def set_organization
-      @organization = Organization.find(params[:id])
+      @organization = Organization.find_by!(slug: params[:id])
     end
 
     def organization_params

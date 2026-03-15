@@ -188,7 +188,7 @@ class PoamDocumentsController < ApplicationController
   private
 
   def set_poam_document
-    @poam_document = PoamDocument.find(params[:id])
+    @poam_document = PoamDocument.find_by!(slug: params[:id])
   end
 
   def document_metadata_params

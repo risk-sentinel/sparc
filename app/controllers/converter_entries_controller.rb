@@ -25,7 +25,7 @@ class ConverterEntriesController < ApplicationController
   private
 
   def set_converter
-    @converter = Converter.find(params[:converter_id])
+    @converter = Converter.find_by!(slug: params[:converter_id])
   end
 
   def entry_params
