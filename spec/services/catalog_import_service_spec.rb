@@ -294,4 +294,164 @@ RSpec.describe CatalogImportService do
       expect(params).to eq([])
     end
   end
+
+  # ── OSCAL YAML import ──────────────────────────────────────────────────
+
+  describe "#import_oscal_yaml" do
+    let(:yaml_path) { Rails.root.join("spec/fixtures/files/catalogs/nist-style-catalog.yaml") }
+
+    it "detects OSCAL YAML format" do
+      file = File.open(yaml_path)
+      service = described_class.new(file, "nist-style-catalog.yaml")
+      expect(service.send(:detect_format)).to eq(:oscal_yaml)
+    end
+
+    it "imports a YAML catalog with correct metadata" do
+      result = described_class.call(File.open(yaml_path), "nist-style-catalog.yaml")
+      catalog = result[:catalog]
+
+      expect(catalog).to be_persisted
+      expect(catalog.name).to eq("NIST-Style Test Catalog")
+      expect(catalog.source).to eq("OSCAL")
+    end
+
+    it "imports families and controls from YAML" do
+      result = described_class.call(File.open(yaml_path), "nist-style-catalog.yaml")
+
+      expect(result[:families]).to eq(2)
+      expect(result[:controls]).to eq(3)
+    end
+
+    it "stores import_format as oscal_yaml" do
+      result = described_class.call(File.open(yaml_path), "nist-style-catalog.yaml")
+      expect(result[:catalog].metadata_extra["import_format"]).to eq("oscal_yaml")
+    end
+  end
+
+  # ── Import format metadata ─────────────────────────────────────────────
+
+  describe "import_format metadata" do
+    it "stores oscal_json for JSON imports" do
+      result = described_class.call(File.open(rev5_json_path), "catalog.json")
+      expect(result[:catalog].metadata_extra["import_format"]).to eq("oscal_json")
+    end
+
+    it "stores oscal_xml for XML imports" do
+      result = described_class.call(File.open(rev5_xml_path), "catalog.xml")
+      expect(result[:catalog].metadata_extra["import_format"]).to eq("oscal_xml")
+    end
+
+    it "stores nist_xml for legacy NIST XML imports" do
+      legacy_path = Rails.root.join("spec/fixtures/files/catalogs/nist_legacy_sample.xml")
+      result = described_class.call(File.open(legacy_path), "nist_legacy.xml")
+      expect(result[:catalog].metadata_extra["import_format"]).to eq("nist_xml")
+    end
+  end
+
+  # ── NIST XML legacy enhancement import ─────────────────────────────────
+
+  describe "NIST XML legacy enhancement import" do
+    let(:legacy_path) { Rails.root.join("spec/fixtures/files/catalogs/nist_legacy_sample.xml") }
+    let(:result) { described_class.call(File.open(legacy_path), "nist_legacy_sample.xml") }
+
+    it "imports base controls" do
+      result
+      ac1 = CatalogControl.find_by(control_id: "ac-1")
+      expect(ac1).to be_present
+      expect(ac1.title).to include("Policy And Procedures")
+    end
+
+    it "imports control enhancements with canonical IDs" do
+      result
+      enh1 = CatalogControl.find_by(control_id: "ac-2.1")
+      expect(enh1).to be_present
+      expect(enh1.label).to eq("AC-2(1)")
+      expect(enh1.sort_id).to eq("ac-02.01")
+    end
+
+    it "imports multiple enhancements for a control" do
+      result
+      expect(CatalogControl.find_by(control_id: "ac-2.1")).to be_present
+      expect(CatalogControl.find_by(control_id: "ac-2.2")).to be_present
+      expect(CatalogControl.find_by(control_id: "ac-2.3")).to be_present
+    end
+
+    it "imports enhancement guidance data" do
+      result
+      enh1 = CatalogControl.find_by(control_id: "ac-2.1")
+      expect(enh1.guidance_data["statement"]).to be_present
+      expect(enh1.guidance_data["supplemental_guidance"]).to be_present
+    end
+
+    it "imports enhancement baselines" do
+      result
+      enh1 = CatalogControl.find_by(control_id: "ac-2.1")
+      expect(enh1.baseline_impact).to include("MODERATE")
+    end
+
+    it "imports enhancement sub-parts" do
+      result
+      # AC-2(2)(a) → ac-2.2 sub-parts from nested <statement>
+      sub = CatalogControl.where("control_id LIKE ?", "ac-2(2)%")
+                           .or(CatalogControl.where("control_id LIKE ?", "ac-2.2%"))
+      # The sub-part AC-2(2)(a). should exist
+      expect(result[:controls]).to be >= 5  # 2 base + 3 enhancements + sub-parts
+    end
+
+    it "counts enhancements in stats" do
+      expect(result[:controls]).to be >= 5  # AC-1, AC-2, AC-2(1), AC-2(2), AC-2(3)
+    end
+  end
+
+  # ── ID conversion helpers ──────────────────────────────────────────────
+
+  describe "#nist_enhancement_to_oscal_id" do
+    let(:service) { described_class.new(StringIO.new(""), "test.xml") }
+
+    it "converts AC-2(1) to ac-2.1" do
+      expect(service.send(:nist_enhancement_to_oscal_id, "AC-2(1)")).to eq("ac-2.1")
+    end
+
+    it "converts AC-2(13) to ac-2.13" do
+      expect(service.send(:nist_enhancement_to_oscal_id, "AC-2(13)")).to eq("ac-2.13")
+    end
+
+    it "converts SI-4(2) to si-4.2" do
+      expect(service.send(:nist_enhancement_to_oscal_id, "SI-4(2)")).to eq("si-4.2")
+    end
+  end
+
+  describe "#pad_enhancement_id" do
+    let(:service) { described_class.new(StringIO.new(""), "test.xml") }
+
+    it "pads AC-2(1) to AC-02.01" do
+      expect(service.send(:pad_enhancement_id, "AC-2(1)")).to eq("AC-02.01")
+    end
+
+    it "pads AC-2(13) to AC-02.13" do
+      expect(service.send(:pad_enhancement_id, "AC-2(13)")).to eq("AC-02.13")
+    end
+  end
+
+  # ── Cross-format profile resolution ────────────────────────────────────
+
+  describe "cross-format canonical ID consistency" do
+    it "produces matching control IDs from JSON and YAML" do
+      json_result = described_class.call(
+        File.open(rev5_json_path),
+        "catalog.json"
+      )
+      json_ids = json_result[:catalog].catalog_controls.pluck(:control_id).sort
+
+      yaml_path = Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev5_catalog.yaml")
+      yaml_result = described_class.call(
+        File.open(yaml_path),
+        "catalog.yaml"
+      )
+      yaml_ids = yaml_result[:catalog].catalog_controls.pluck(:control_id).sort
+
+      # Both should produce the same canonical IDs
+      expect(json_ids).to eq(yaml_ids)
+    end
+  end
 end

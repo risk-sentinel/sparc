@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<controls:controls xmlns:controls="http://scap.nist.gov/schema/sp800-53/feed/2.0" pub_date="2015-01-22">
+  <controls:control>
+    <family>ACCESS CONTROL</family>
+    <number>AC-1</number>
+    <title>POLICY AND PROCEDURES</title>
+    <baseline>LOW</baseline>
+    <baseline>MODERATE</baseline>
+    <baseline>HIGH</baseline>
+    <statement>
+      <description>The organization:</description>
+      <statement>
+        <number>AC-1a.</number>
+        <description>Develops, documents, and disseminates access control policy and procedures.</description>
+      </statement>
+      <statement>
+        <number>AC-1b.</number>
+        <description>Reviews and updates the current access control policy and procedures.</description>
+      </statement>
+    </statement>
+    <discussion>
+      <description><p>This control addresses the establishment of policy and procedures for the effective implementation of selected security controls.</p></description>
+    </discussion>
+    <related>PM-9</related>
+    <references><reference><short_name>NIST SP 800-12</short_name></reference></references>
+  </controls:control>
+  <controls:control>
+    <family>ACCESS CONTROL</family>
+    <number>AC-2</number>
+    <title>ACCOUNT MANAGEMENT</title>
+    <baseline>LOW</baseline>
+    <baseline>MODERATE</baseline>
+    <baseline>HIGH</baseline>
+    <statement>
+      <description>The organization manages information system accounts.</description>
+    </statement>
+    <discussion>
+      <description><p>Account management includes the identification of account types.</p></description>
+    </discussion>
+    <related>AC-3</related>
+    <related>AC-4</related>
+    <control-enhancement>
+      <number>AC-2(1)</number>
+      <title>AUTOMATED SYSTEM ACCOUNT MANAGEMENT</title>
+      <baseline>MODERATE</baseline>
+      <baseline>HIGH</baseline>
+      <statement>
+        <description>The organization employs automated mechanisms to support the management of information system accounts.</description>
+      </statement>
+      <discussion>
+        <description><p>Automated mechanisms can include automated notifications.</p></description>
+      </discussion>
+      <related>AC-2</related>
+    </control-enhancement>
+    <control-enhancement>
+      <number>AC-2(2)</number>
+      <title>REMOVAL OF TEMPORARY AND EMERGENCY ACCOUNTS</title>
+      <baseline>MODERATE</baseline>
+      <baseline>HIGH</baseline>
+      <statement>
+        <description>The information system automatically removes or disables temporary and emergency accounts.</description>
+        <statement>
+          <number>AC-2(2)(a).</number>
+          <description>After a defined time period for each type of account.</description>
+        </statement>
+      </statement>
+      <discussion>
+        <description><p>Temporary and emergency accounts are accounts intended for short-term use.</p></description>
+      </discussion>
+      <related>AC-2</related>
+    </control-enhancement>
+    <control-enhancement>
+      <number>AC-2(3)</number>
+      <title>DISABLE INACTIVE ACCOUNTS</title>
+      <statement>
+        <description>The information system automatically disables inactive accounts.</description>
+      </statement>
+      <related>AC-2</related>
+    </control-enhancement>
+  </controls:control>
+</controls:controls>
