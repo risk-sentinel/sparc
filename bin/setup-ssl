@@ -64,6 +64,14 @@ unless has_certutil
       Fedora / RHEL:       sudo dnf install nss-tools
 
     You can continue without it — Chrome and Safari will work fine.
+
+    Alternatively, import the CA manually in Firefox:
+      1. Run: mkcert -CAROOT   (prints the CA directory)
+      2. Firefox → Settings → Privacy & Security →
+         Certificates → View Certificates → Authorities → Import
+      3. Select rootCA.pem from the directory above
+      4. Check "Trust this CA to identify websites" → OK
+
     After installing NSS, re-run: bin/setup-ssl
 
   MSG
