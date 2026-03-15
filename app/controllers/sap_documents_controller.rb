@@ -1,13 +1,14 @@
 class SapDocumentsController < ApplicationController
   include FileUploadable
+  include Publishable
 
   before_action :set_sap_document, only: %i[
     show edit update destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml status
-    update_metadata
+    update_metadata publish publish_check
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
 
   METHOD_ORDER = %w[examine interview test].freeze
 
@@ -177,6 +178,11 @@ class SapDocumentsController < ApplicationController
 
   def set_sap_document
     @sap_document = SapDocument.find_by!(slug: params[:id])
+  end
+
+  def publish_config
+    { document: @sap_document, audit_event: "sap_document_published",
+      redirect_path: sap_document_path(@sap_document), label: "SAP" }
   end
 
   def ensure_editable!

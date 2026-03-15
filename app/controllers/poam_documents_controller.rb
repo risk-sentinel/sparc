@@ -1,13 +1,14 @@
 class PoamDocumentsController < ApplicationController
   include FileUploadable
+  include Publishable
 
   before_action :set_poam_document, only: %i[
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml
-    update_metadata status update
+    update_metadata status update publish publish_check
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
 
   RISK_STATUS_ORDER = %w[open investigating remediating deviation-requested deviation-approved closed].freeze
   IMPACT_ORDER      = %w[high medium low].freeze
@@ -187,6 +188,11 @@ class PoamDocumentsController < ApplicationController
   end
 
   private
+
+  def publish_config
+    { document: @poam_document, audit_event: "poam_document_published",
+      redirect_path: poam_document_path(@poam_document), label: "POA&M" }
+  end
 
   def set_poam_document
     @poam_document = PoamDocument.find_by!(slug: params[:id])

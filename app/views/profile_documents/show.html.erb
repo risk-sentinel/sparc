@@ -90,9 +90,9 @@
                   class: "sparc-btn-oscal" %>
           <% end %>
           <% if @profile_document.control_catalog.present? %>
-            <%= button_to "Publish", publish_profile_document_path(@profile_document), method: :patch,
-                  class: "btn btn-warning btn-sm fw-semibold",
-                  form: { data: { turbo_confirm: "Publish this profile? This will generate a resolved catalog from the source catalog and your parameter values." } } %>
+            <%= render "shared/publish_button", document: @profile_document,
+                  publish_path: publish_profile_document_path(@profile_document),
+                  check_path: publish_check_profile_document_path(@profile_document) %>
           <% end %>
         <% end %>
       <% end %>
