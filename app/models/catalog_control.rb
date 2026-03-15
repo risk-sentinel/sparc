@@ -14,6 +14,8 @@ class CatalogControl < ApplicationRecord
     nist_references
   ].freeze
 
+  BASELINE_LEVELS = %w[LOW MODERATE HIGH].freeze
+
   validates :control_id, presence: true, uniqueness: { scope: :control_family_id }
 
   default_scope { order(Arel.sql("COALESCE(sort_id, control_id)")) }
@@ -98,6 +100,32 @@ class CatalogControl < ApplicationRecord
         param
       end
     end
+  end
+
+  # ── Baseline helpers ─────────────────────────────────────────────
+  # baseline_impact is a comma-separated string of levels (e.g. "LOW, MODERATE").
+
+  # Returns an array of uppercase baseline levels, e.g. ["LOW", "MODERATE"].
+  def baseline_levels
+    baseline_impact.to_s.split(/\s*,\s*/).map(&:strip).reject(&:blank?).map(&:upcase)
+  end
+
+  # Returns true when the control includes the given level.
+  def has_baseline_level?(level)
+    baseline_levels.include?(level.to_s.upcase)
+  end
+
+  # Adds a baseline level without duplicates; updates baseline_impact in memory.
+  def add_baseline_level(level)
+    levels = baseline_levels
+    levels << level.to_s.upcase unless levels.include?(level.to_s.upcase)
+    self.baseline_impact = levels.join(", ")
+  end
+
+  # Removes a baseline level; sets baseline_impact to nil when empty.
+  def remove_baseline_level(level)
+    levels = baseline_levels - [ level.to_s.upcase ]
+    self.baseline_impact = levels.any? ? levels.join(", ") : nil
   end
 
   private
