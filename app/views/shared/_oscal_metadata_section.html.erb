@@ -187,6 +187,7 @@
       </div>
     <% end %>
 
+    <% if signed_in? && document.draft? %>
     <%# ── Edit Metadata Form ──────────────────────────────────── %>
     <hr>
     <div id="oscal-meta-edit-section"
@@ -324,6 +325,7 @@
         </div>
       <% end %>
     </div>
+    <% end %>
 
   </div>
 </div>
