@@ -23,7 +23,7 @@
         <span class="badge" style="background: #27ae60; font-size: 0.6rem; letter-spacing: 0.05rem; padding: 0.2rem 0.5rem;">IMPLEMENTATION</span>
       </div>
       <div class="d-flex gap-2">
-        <% [[@ssp_count, "SSPs"], [@cdef_count, "CDEFs"]].each do |count, label| %>
+        <% [[@ssp_count, "SSPs"], [@cdef_count, "CDEFs"], [@converter_count, "Converters"]].each do |count, label| %>
           <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
             <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
             <div class="sparc-hero-tile-label" style="font-size: 0.6rem;"><%= label %></div>
@@ -79,8 +79,9 @@
       label: "Implementation Layer",
       color: "#27ae60",
       cards: [
-        { title: "SSPs",  path: ssp_documents_path,  new_path: new_ssp_document_path,  icon: "&#128196;" },
-        { title: "CDEFs", path: cdef_documents_path,  new_path: new_cdef_document_path, icon: "&#128737;" },
+        { title: "SSPs",        path: ssp_documents_path,   new_path: new_ssp_document_path,   icon: "&#128196;" },
+        { title: "CDEFs",       path: cdef_documents_path,  new_path: new_cdef_document_path,  icon: "&#128737;" },
+        { title: "Converters",  path: converters_path,      new_path: new_converter_path,      icon: "&#128260;" },
       ]
     },
     {
@@ -113,10 +114,10 @@
       <% group[:cards].each do |s| %>
         <div class="col">
           <div class="card sparc-section-card text-center h-100" style="border-color: <%= group[:color] %>; --sparc-card-accent: <%= group[:color] %>;">
-            <div class="card-body" style="padding: 1rem;">
-              <div style="font-size: 1.75rem; margin-bottom: 0.5rem;"><%= s[:icon].html_safe %></div>
+            <div class="card-body d-flex flex-column align-items-center" style="padding: 1rem;">
+              <div style="font-size: 2.5rem; margin-bottom: 0.5rem;"><%= s[:icon].html_safe %></div>
               <h5 style="margin-bottom: 0.75rem; font-size: 0.95rem;"><%= s[:title] %></h5>
-              <div class="d-flex flex-column gap-1">
+              <div class="d-flex flex-column gap-1 w-100 mt-auto">
                 <%= link_to "View", s[:path], class: "btn btn-primary btn-sm" %>
                 <%= link_to "New", s[:new_path], class: "btn btn-success btn-sm" %>
               </div>
