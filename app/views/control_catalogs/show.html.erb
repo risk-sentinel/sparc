@@ -41,6 +41,11 @@
         <%= link_to "Edit Catalog", edit_control_catalog_path(@control_catalog), class: "btn btn-sparc-orange" %>
         <%= link_to "＋ Add Family", new_control_catalog_control_family_path(@control_catalog), class: "btn btn-success" %>
       <% end %>
+      <% if signed_in? && @control_catalog.draft? %>
+        <%= render "shared/publish_button", document: @control_catalog,
+              publish_path: publish_control_catalog_path(@control_catalog),
+              check_path: publish_check_control_catalog_path(@control_catalog) %>
+      <% end %>
       <% if signed_in? %>
         <div class="btn-group">
           <button type="button" class="btn btn-sparc-purple fw-semibold dropdown-toggle"
@@ -108,11 +113,9 @@
   </div>
 </div>
 
-<% if can_write_catalogs? %>
-  <%= render "shared/oscal_metadata_section",
-             document: @control_catalog,
-             update_path: update_metadata_control_catalog_path(@control_catalog),
-             param_key: :control_catalog,
-             version_field: :version %>
-<% end %>
+<%= render "shared/oscal_metadata_section",
+           document: @control_catalog,
+           update_path: update_metadata_control_catalog_path(@control_catalog),
+           param_key: :control_catalog,
+           version_field: :version %>
 <% end %>

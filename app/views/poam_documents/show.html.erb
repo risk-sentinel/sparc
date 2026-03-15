@@ -61,6 +61,11 @@
     <%# ── Action buttons ── %>
     <div class="d-flex gap-2 flex-wrap">
       <%= link_to "+ Add Item", new_poam_document_poam_item_path(@poam_document), class: "sparc-btn-oscal" %>
+      <% if signed_in? && @poam_document.draft? %>
+        <%= render "shared/publish_button", document: @poam_document,
+              publish_path: publish_poam_document_path(@poam_document),
+              check_path: publish_check_poam_document_path(@poam_document) %>
+      <% end %>
       <div class="btn-group">
         <button type="button" class="sparc-btn-oscal dropdown-toggle"
                 data-bs-toggle="dropdown" aria-expanded="false">

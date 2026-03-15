@@ -76,7 +76,7 @@ Dev D: #134 (HTTPS dev environment)
 | [x] | **#163** Format interop | Catalog | `catalog_import_service.rb`, `oscal_catalog_export_service.rb`, `control_catalogs/import.html.erb`, `docs/data_mapping/catalogs.md` | **NONE** with non-Catalog work -- **COMPLETED 2026-03-15** |
 | [x] | **#177** Catalog locking/SHA -- **COMPLETED 2026-03-15** | Catalog | `catalog_import_service.rb`, `control_catalog.rb`, `catalog_control.rb`, catalog views | **HIGH with #163** -- same files |
 | [x] | **#149** Status tracking | Shared (Models) | All 7 models (Lifecycle concern), all 7 controllers (ensure_editable! guard), all index/show views (lifecycle badges), `document_duplication_service.rb`, `document_conversion_job.rb`, `catalog_import_service.rb` | **NONE** remaining -- **COMPLETED 2026-03-15** |
-| [ ] | **#148** Publication metadata | Shared (Services) | All document controllers (publish action), export services, new `PublicationService`, schema validation | **MEDIUM with #149** -- both touch controllers |
+| [x] | **#148** Publication metadata -- **COMPLETED 2026-03-15** | Shared (Services) | All document controllers (publish action), `publication_validation_service.rb`, `publishable.rb` concern, `publish_modal_controller.js`, shared publish button/modal partials | **NONE** remaining |
 | [ ] | **#176** Profile/CDEF publish | Profile + CDEF | `profile_document.rb`, `cdef_document.rb`, their controllers, `document_duplication_service.rb` | **MEDIUM with #149** -- both touch profile/cdef models |
 
 <!-- markdownlint-enable MD013 -->

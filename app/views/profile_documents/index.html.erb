@@ -36,9 +36,7 @@
       <tbody>
         <% @profile_documents.each do |doc| %>
           <tr>
-            <td class="fw-semibold" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= doc.name %>">
-              <%= link_to doc.name, profile_document_path(doc), style: "color: inherit; text-decoration: none;" %>
-            </td>
+            <td><strong><%= link_to doc.name, profile_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
               <% level_colors = { "LOW" => "#27ae60", "MODERATE" => "#f39c12", "HIGH" => "#e74c3c" } %>
               <% color = level_colors[doc.baseline_level] || "#7f8c8d" %>
