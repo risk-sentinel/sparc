@@ -80,12 +80,23 @@ RSpec.describe "Unified publication lifecycle", type: :request do
       expect(profile.metadata_extra["roles"].first["id"]).to eq("prepared-by")
     end
 
-    it "returns publish_check JSON readiness data" do
+    it "returns publish_check JSON readiness data with prioritization check" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
       get publish_check_profile_document_path(profile)
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json).to include("ready", "checks")
+      expect(json["checks"]["controls_prioritized"]).to be true
       expect(json["ready"]).to be true
+    end
+
+    it "returns ready: false when controls lack prioritization" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: nil)
+      get publish_check_profile_document_path(profile)
+      json = JSON.parse(response.body)
+      expect(json["ready"]).to be false
+      expect(json["checks"]["controls_prioritized"]).to be false
+      expect(json["errors"]).to include(match(/missing prioritization/))
     end
 
     it "blocks publishing an already-published profile" do
