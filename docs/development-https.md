@@ -70,6 +70,24 @@ bin/setup-ssl
 
 The script will re-install the CA into Firefox's trust store.
 
+### Firefox Manual Import (no package manager needed)
+
+If you don't use a package manager, you can import the CA
+certificate directly in Firefox:
+
+1. Find the CA certificate directory:
+
+   ```bash
+   mkcert -CAROOT
+   ```
+
+2. Open Firefox → **Settings** → **Privacy & Security** →
+   **Certificates** → **View Certificates**
+3. Go to the **Authorities** tab → click **Import**
+4. Browse to the directory from step 1 and select `rootCA.pem`
+5. Check **"Trust this CA to identify websites"** → OK
+6. Restart Firefox
+
 ---
 
 ## One-Time Setup
@@ -161,8 +179,10 @@ then restart your browser.
 
 ### Firefox shows certificate warning but Chrome/Safari work
 
-Firefox uses its own trust store (NSS). Install `certutil`
-and re-run the setup:
+Firefox uses its own trust store (NSS). Either install
+`certutil` and re-run, or import the CA manually:
+
+**Option A — Install NSS and re-run:**
 
 ```bash
 # macOS
@@ -174,7 +194,15 @@ sudo apt install libnss3-tools
 mkcert -install
 ```
 
-Restart Firefox after running the command.
+**Option B — Manual import (no package manager):**
+
+1. Run `mkcert -CAROOT` to find the CA directory
+2. Firefox → Settings → Privacy & Security →
+   Certificates → View Certificates → Authorities → Import
+3. Select `rootCA.pem`, check "Trust this CA to identify
+   websites" → OK
+
+Restart Firefox after either option.
 
 ### Port 3443 already in use
 
