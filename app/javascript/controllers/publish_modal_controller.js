@@ -49,37 +49,68 @@ export default class extends Controller {
     }
   }
 
-  // Show a dismissible warning banner when controls lack prioritization.
+  // Show a blocking modal when controls lack prioritization.
+  // The user must acknowledge and return to the baseline to fix it.
   showPrioritizationWarning(data) {
-    // Remove any existing banner first
-    const existing = document.getElementById("prioritization-warning-banner")
+    // Remove any existing warning modal first
+    const existing = document.getElementById("prioritization-warning-modal")
     if (existing) existing.remove()
+    const existingBackdrop = document.getElementById("prioritization-warning-backdrop")
+    if (existingBackdrop) existingBackdrop.remove()
 
-    // Count unprioritized controls from the errors array
+    // Extract the count from the errors array
     const errorMsg = (data.errors || []).find(e => e.match(/missing prioritization/))
     const message = errorMsg
-      ? `${errorMsg}. All controls must be prioritized before publishing.`
-      : "Controls are missing prioritization (P1/P2/P3). All controls must be prioritized before publishing."
+      ? `${errorMsg}.`
+      : "Controls are missing prioritization (P1/P2/P3)."
 
-    const banner = document.createElement("div")
-    banner.id = "prioritization-warning-banner"
-    banner.className = "alert alert-warning alert-dismissible fade show d-flex align-items-center"
-    banner.setAttribute("role", "alert")
-    banner.style.cssText = "margin-bottom: 1rem; font-size: 0.95rem;"
-    banner.innerHTML = `
-      <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-      </svg>
-      <div>${message}</div>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    // Create backdrop
+    const backdrop = document.createElement("div")
+    backdrop.id = "prioritization-warning-backdrop"
+    backdrop.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1050;"
+
+    // Create modal
+    const modal = document.createElement("div")
+    modal.id = "prioritization-warning-modal"
+    modal.setAttribute("role", "dialog")
+    modal.setAttribute("aria-modal", "true")
+    modal.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1055;background:#fff;border-radius:0.75rem;padding:2rem;max-width:480px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.3);"
+
+    modal.innerHTML = `
+      <div style="text-align:center;margin-bottom:1.25rem;">
+        <svg width="48" height="48" fill="#e8a317" viewBox="0 0 16 16" style="margin-bottom:0.75rem;">
+          <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+        </svg>
+        <h5 style="margin:0 0 0.5rem;font-weight:600;color:#333;">Prioritization Required</h5>
+      </div>
+      <p style="margin:0 0 1rem;color:#555;font-size:0.95rem;line-height:1.5;">
+        ${message}
+      </p>
+      <p style="margin:0 0 1.5rem;color:#555;font-size:0.95rem;line-height:1.5;">
+        All controls must have a priority level (P1, P2, or P3) assigned before this baseline can be published.
+      </p>
+      <div style="text-align:center;">
+        <button id="prioritization-warning-ok-btn" type="button"
+                class="btn btn-warning"
+                style="min-width:180px;font-weight:500;">
+          Return to Baseline
+        </button>
+      </div>
     `
 
-    // Insert at the top of the main content area
-    const main = document.querySelector("main") || document.querySelector(".container") || document.body.firstElementChild
-    main.prepend(banner)
+    document.body.appendChild(backdrop)
+    document.body.appendChild(modal)
+    document.body.style.overflow = "hidden"
 
-    // Scroll to the banner so the user sees it
-    banner.scrollIntoView({ behavior: "smooth", block: "start" })
+    // Close on button click
+    const closeWarning = () => {
+      modal.remove()
+      backdrop.remove()
+      document.body.style.overflow = ""
+    }
+
+    modal.querySelector("#prioritization-warning-ok-btn").addEventListener("click", closeWarning)
+    backdrop.addEventListener("click", closeWarning)
   }
 
   close() {
