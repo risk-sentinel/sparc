@@ -10,6 +10,7 @@ class SarDocumentsController < ApplicationController
     :download_yaml, :download_xml,
     :edit_control, :status, :update_metadata, :enrich, :update_enrich
   ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata ]
 
   helper_method :filter_params
 
@@ -489,6 +490,13 @@ class SarDocumentsController < ApplicationController
 
   def set_sar_document
     @sar_document = SarDocument.find_by!(slug: params[:id])
+  end
+
+  def ensure_editable!
+    return unless @sar_document.published_lifecycle?
+
+    flash[:error] = "This SAR is published and read-only. Create a copy to make changes."
+    redirect_to sar_document_path(@sar_document)
   end
 
   def filter_params

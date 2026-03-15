@@ -141,7 +141,7 @@ export default class extends Controller {
       const controls = family.catalog_controls || []
       const count = controls.length
 
-      html += `<details class="sparc-family-group" open>`
+      html += `<details class="sparc-family-group">`
       html += `<summary>`
       html += `<input type="checkbox" class="form-check-input family-checkbox" data-family="${this.escapeHtml(family.code)}" data-action="change->family-selector#toggleFamily">`
       html += ` <strong>${this.escapeHtml(family.code)}</strong> - ${this.escapeHtml(family.name)}`

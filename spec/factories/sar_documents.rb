@@ -3,6 +3,7 @@ FactoryBot.define do
     name { Faker::Lorem.sentence(word_count: 3) }
     file_type { "excel" }
     status { "completed" }
+    lifecycle_status { "in_progress" }
     original_filename { "test_sar.xlsx" }
     creation_method { "excel" }
 

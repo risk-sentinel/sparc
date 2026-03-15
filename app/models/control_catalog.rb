@@ -2,6 +2,7 @@ class ControlCatalog < ApplicationRecord
   include OscalMetadata
   include SafeDestroyable
   include Sluggable
+  include Lifecycle
 
   has_many :control_families, dependent: :destroy
   has_many :catalog_controls, through: :control_families
@@ -19,6 +20,11 @@ class ControlCatalog < ApplicationRecord
 
   def oscal_document_version
     version
+  end
+
+  # First 8 characters of the SHA-256 content digest for display.
+  def short_digest
+    catalog_content_digest&.slice(0, 8)
   end
 
   private

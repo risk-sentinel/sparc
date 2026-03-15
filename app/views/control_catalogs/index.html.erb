@@ -32,6 +32,7 @@
           <th>Version</th>
           <th>Source</th>
           <th>Status</th>
+          <th>Lifecycle</th>
           <th>Families</th>
           <th>Controls</th>
           <th>Actions</th>
@@ -57,6 +58,11 @@
               <% if catalog.processing? && catalog.metadata_extra&.dig("processing_message").present? %>
                 <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= catalog.metadata_extra["processing_message"] %></span>
               <% end %>
+            </td>
+            <td>
+              <span class="<%= catalog.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;">
+                <%= catalog.lifecycle_label %>
+              </span>
             </td>
             <td><%= catalog.control_families.size %></td>
             <td><%= catalog.total_controls %></td>

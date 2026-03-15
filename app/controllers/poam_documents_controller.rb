@@ -7,6 +7,7 @@ class PoamDocumentsController < ApplicationController
     download_yaml download_xml
     update_metadata status update
   ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata ]
 
   RISK_STATUS_ORDER = %w[open investigating remediating deviation-requested deviation-approved closed].freeze
   IMPACT_ORDER      = %w[high medium low].freeze
@@ -189,6 +190,13 @@ class PoamDocumentsController < ApplicationController
 
   def set_poam_document
     @poam_document = PoamDocument.find_by!(slug: params[:id])
+  end
+
+  def ensure_editable!
+    return unless @poam_document.published_lifecycle?
+
+    flash[:error] = "This POA&M is published and read-only. Create a copy to make changes."
+    redirect_to poam_document_path(@poam_document)
   end
 
   def document_metadata_params
