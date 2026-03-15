@@ -222,7 +222,7 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def create_from_catalog
-    catalog = ControlCatalog.find(params[:catalog_id])
+    catalog = ControlCatalog.find_by!(slug: params[:catalog_id])
     control_ids = Array(params[:control_ids]).reject(&:blank?)
 
     if control_ids.empty?

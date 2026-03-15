@@ -212,7 +212,7 @@
                   <div class="sparc-ctrl-title"><%= control.title %></div>
                 <% end %>
               </div>
-              <% if signed_in? %>
+              <% if signed_in? && !@profile_document.published_lifecycle? %>
                 <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
                   <%= link_to "Edit", edit_profile_document_profile_control_path(@profile_document, control),
                         class: "btn btn-primary btn-sm" %>
@@ -323,7 +323,7 @@
   <% end %>
 </div>
 
-<% if signed_in? %>
+<% if signed_in? && !@profile_document.published_lifecycle? %>
   <%= render "shared/oscal_metadata_section",
              document: @profile_document,
              update_path: update_metadata_profile_document_path(@profile_document),
