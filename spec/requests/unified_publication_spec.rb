@@ -43,6 +43,21 @@ RSpec.describe "Unified publication lifecycle", type: :request do
       expect(flash[:error]).to include("no source catalog")
     end
 
+    it "rejects publishing when controls lack prioritization" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: nil)
+      patch publish_profile_document_path(profile)
+      profile.reload
+      expect(profile.lifecycle_status).not_to eq("published")
+      expect(flash[:error]).to include("missing prioritization")
+    end
+
+    it "publishes when all controls have priorities" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
+      patch publish_profile_document_path(profile)
+      profile.reload
+      expect(profile.lifecycle_status).to eq("published")
+    end
+
     it "rejects publishing with missing metadata" do
       profile.update!(metadata_extra: {})
       patch publish_profile_document_path(profile)
