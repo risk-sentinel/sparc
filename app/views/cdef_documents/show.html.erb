@@ -239,13 +239,11 @@
   <% end %>
 </div>
 
-<% if signed_in? %>
-  <%= render "shared/oscal_metadata_section",
-             document: @cdef_document,
-             update_path: update_metadata_cdef_document_path(@cdef_document),
-             param_key: :cdef_document,
-             version_field: :cdef_version %>
-<% end %>
+<%= render "shared/oscal_metadata_section",
+           document: @cdef_document,
+           update_path: update_metadata_cdef_document_path(@cdef_document),
+           param_key: :cdef_document,
+           version_field: :cdef_version %>
 
 <script>
   function toggleDocMeta() {
