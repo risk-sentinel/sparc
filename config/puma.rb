@@ -30,6 +30,24 @@ threads threads_count, threads_count
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 port ENV.fetch("PORT", 3000)
 
+# ── Development HTTPS (opt-in via SSL_DEV=true) ──────────────────────────
+# Requires mkcert certificates in ssl/. Run `bin/setup-ssl` first.
+if ENV["SSL_DEV"] == "true" && ENV.fetch("RAILS_ENV", "development") == "development"
+  ssl_cert = File.join(__dir__, "..", "ssl", "localhost+2.pem")
+  ssl_key  = File.join(__dir__, "..", "ssl", "localhost+2-key.pem")
+
+  if File.exist?(ssl_cert) && File.exist?(ssl_key)
+    ssl_bind "0.0.0.0", ENV.fetch("SSL_PORT", "3443"), {
+      key: ssl_key,
+      cert: ssl_cert,
+      verify_mode: "none"
+    }
+  else
+    puts "[WARNING] SSL_DEV=true but certificates not found in ssl/."
+    puts "          Run `bin/setup-ssl` first, then restart."
+  end
+end
+
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 

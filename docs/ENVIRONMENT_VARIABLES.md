@@ -47,12 +47,16 @@ approach). Enable one or more to activate the login page at `/login`.
 
 ### Local Login
 
+<!-- markdownlint-disable MD013 MD034 -->
+
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_ENABLE_LOCAL_LOGIN | Enable email/password login | false | `true` | No |
 | SPARC_ENABLE_EMAIL_CONFIRMATION | Require email confirmation for new local accounts | false | `true` | No |
 | SPARC_SESSION_TIMEOUT_MINUTES | Inactivity timeout in minutes | 60 | `30` | No |
 | SPARC_ADMIN_EMAIL | Email for the bootstrapped admin account | admin@sparc.local | `admin@yourorg.com` | No |
+
+<!-- markdownlint-enable MD013 MD034 -->
 
 ### User Registration
 
@@ -62,6 +66,8 @@ approach). Enable one or more to activate the login page at `/login`.
 
 ### GitHub OAuth
 
+<!-- markdownlint-disable MD013 -->
+
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_GITHUB_CLIENT_ID | GitHub OAuth App Client ID (auto-enables GitHub login when set) | (none) | `Iv1.abc123def456` | No |
@@ -69,7 +75,11 @@ approach). Enable one or more to activate the login page at `/login`.
 
 Create an OAuth App at `https://github.com/organizations/YOUR_ORG/settings/applications`. Set the callback URL to `http://localhost:3000/auth/github/callback`.
 
+<!-- markdownlint-enable MD013 -->
+
 ### GitLab OAuth
+
+<!-- markdownlint-disable MD013 -->
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
@@ -78,6 +88,8 @@ Create an OAuth App at `https://github.com/organizations/YOUR_ORG/settings/appli
 | SPARC_GITLAB_SITE | GitLab instance URL (for self-hosted) | `https://gitlab.com` | `https://gitlab.yourorg.com` | No |
 
 Create an application at `https://gitlab.com/-/user_settings/applications`. Set the callback URL to `http://localhost:3000/auth/gitlab/callback` with `read_user` scope.
+
+<!-- markdownlint-enable MD013 -->
 
 ### OIDC / OAuth2 (Generic & Provider-Agnostic)
 
@@ -167,6 +179,22 @@ notifications, etc.
 | AWS_SECRET_ACCESS_KEY | AWS secret key for S3 storage | (none) | `wJalr...` | Yes (if amazon) |
 | AWS_REGION | AWS region for S3 bucket | (none) | `us-east-1` | Yes (if amazon) |
 | AWS_BUCKET | S3 bucket name for file uploads | (none) | `sparc-uploads` | Yes (if amazon) |
+
+---
+
+## Development HTTPS
+
+<!-- markdownlint-disable MD013 -->
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SSL_DEV | Enable HTTPS in development with mkcert certificates | false | `true` | No |
+| SSL_PORT | Port for HTTPS binding in development | 3443 | `3443` | No |
+
+<!-- markdownlint-enable MD013 -->
+
+Run `bin/setup-ssl` to generate certificates before enabling.
+See `docs/development-https.md` for full setup guide.
 
 ---
 

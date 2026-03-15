@@ -71,4 +71,22 @@ Rails.application.configure do
   # config.generators.apply_rubocop_autocorrect_after_generate!
 
   config.active_storage.service = :local
+
+  # ── Development HTTPS (opt-in via SSL_DEV=true) ────────────────────────
+  # When enabled, force SSL redirects HTTP->HTTPS and sets secure cookies.
+  # Run `bin/setup-ssl` first, then start with: SSL_DEV=true bin/dev
+  if ENV["SSL_DEV"] == "true"
+    config.force_ssl = true
+    config.ssl_options = {
+      redirect: {
+        exclude: ->(request) { request.path == "/up" },
+        port: ENV.fetch("SSL_PORT", 3443).to_i
+      }
+    }
+    config.action_mailer.default_url_options = {
+      host: "localhost",
+      port: ENV.fetch("SSL_PORT", 3443).to_i,
+      protocol: "https"
+    }
+  end
 end
