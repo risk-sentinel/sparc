@@ -77,7 +77,7 @@ Dev D: #134 (HTTPS dev environment)
 | [x] | **#177** Catalog locking/SHA -- **COMPLETED 2026-03-15** | Catalog | `catalog_import_service.rb`, `control_catalog.rb`, `catalog_control.rb`, catalog views | **HIGH with #163** -- same files |
 | [x] | **#149** Status tracking | Shared (Models) | All 7 models (Lifecycle concern), all 7 controllers (ensure_editable! guard), all index/show views (lifecycle badges), `document_duplication_service.rb`, `document_conversion_job.rb`, `catalog_import_service.rb` | **NONE** remaining -- **COMPLETED 2026-03-15** |
 | [x] | **#148** Publication metadata -- **COMPLETED 2026-03-15** | Shared (Services) | All document controllers (publish action), `publication_validation_service.rb`, `publishable.rb` concern, `publish_modal_controller.js`, shared publish button/modal partials | **NONE** remaining |
-| [ ] | **#176** Profile/CDEF publish | Profile + CDEF | `profile_document.rb`, `cdef_document.rb`, their controllers, `document_duplication_service.rb` | **MEDIUM with #149** -- both touch profile/cdef models |
+| [x] | **#176** Profile/CDEF publish -- **COMPLETED 2026-03-15** | Profile + CDEF | `profile_documents_controller.rb` (refactored to Publishable), `cdef_documents/show.html.erb`, `publishable.rb` concern (hook + version) | **NONE** remaining |
 
 <!-- markdownlint-enable MD013 -->
 
