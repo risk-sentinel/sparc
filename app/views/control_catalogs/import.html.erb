@@ -6,7 +6,7 @@
     <div>
       <h2 style="margin: 0 0 0.35rem;">Import Control Catalog</h2>
       <p class="text-body-tertiary small" style="margin: 0;">
-        Load a full catalog from an OSCAL JSON, OSCAL XML, or legacy NIST XML file. Existing controls are updated; new ones are created.
+        Load a full catalog from an OSCAL JSON, OSCAL YAML, OSCAL XML, or legacy NIST XML file. Existing controls are updated; new ones are created.
       </p>
     </div>
     <%= link_to "← All Catalogs", control_catalogs_path,
@@ -21,8 +21,8 @@
       <%= render "shared/dropzone",
         form: f,
         field: :catalog_file,
-        accept: ".json,.xml",
-        hint: "Upload an OSCAL JSON, OSCAL XML, or legacy NIST SCAP XML catalog file." %>
+        accept: ".json,.yaml,.yml,.xml",
+        hint: "Upload an OSCAL JSON, OSCAL YAML, OSCAL XML, or legacy NIST SCAP XML catalog file." %>
     </div>
 
     <div class="d-flex gap-2 align-items-center mb-4">
@@ -67,6 +67,35 @@
           &nbsp;&nbsp;&nbsp;&nbsp;}]<br>
           &nbsp;&nbsp;}]<br>
           }}
+        </div>
+      </div></div>
+
+      <%# OSCAL YAML %>
+      <div class="col"><div class="bg-body-secondary border rounded" style="border-left: 3px solid #e67e22 !important; padding: 1rem;">
+        <div class="d-flex align-items-center gap-2" style="margin-bottom: 0.5rem;">
+          <span class="fw-bold" style="background: #e67e22; color: white; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.72rem; font-family: monospace;">.yaml</span>
+          <strong class="small">OSCAL Catalog (YAML)</strong>
+        </div>
+        <p class="text-body-secondary" style="font-size: 0.82rem; margin: 0 0 0.65rem; line-height: 1.5;">
+          NIST OSCAL 1.x catalog schema in YAML. Same structure as OSCAL JSON.
+          Imports families, controls, statements, parameters, and guidance.
+        </p>
+        <a href="https://github.com/usnistgov/oscal-content/tree/main/nist.gov/SP800-53"
+           target="_blank" rel="noopener"
+           class="text-warning" style="font-size: 0.78rem; text-decoration: none;">
+          ↗ Download from usnistgov/oscal-content
+        </a>
+        <div class="rounded" style="margin-top: 0.5rem; background: #1a252f; padding: 0.65rem 0.75rem; font-family: monospace; font-size: 0.72rem; color: rgba(255,255,255,0.75); line-height: 1.6; overflow-x: auto;">
+          catalog:<br>
+          &nbsp;&nbsp;metadata:<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;title: "…"<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;version: "…"<br>
+          &nbsp;&nbsp;groups:<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;- id: ac<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;title: Access Control<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;controls:<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- id: ac-1<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;title: "…"
         </div>
       </div></div>
 
@@ -131,8 +160,8 @@
     <%# Warning box %>
     <div class="border rounded" style="background: rgba(243,156,18,0.08); border-left: 3px solid #f39c12 !important; padding: 0.85rem 1rem; font-size: 0.84rem; line-height: 1.5;">
       <strong style="color: var(--sparc-warning);">⚠ Format requirement:</strong>
-      Files must match one of the OSCAL JSON, OSCAL XML, or NIST SCAP XML schemas above.
-      Other JSON/XML structures are <em>not</em> supported by this importer — use the
+      Files must match one of the OSCAL JSON, OSCAL YAML, OSCAL XML, or NIST SCAP XML schemas above.
+      Other file structures are <em>not</em> supported by this importer — use the
       links above to download the official NIST source files.
     </div>
   </div>

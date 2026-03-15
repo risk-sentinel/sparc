@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-03-14
+**Last updated:** 2026-03-15
 
 ---
 
@@ -66,7 +66,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 3. OSCAL Core (Import/Export, Publication, Status)
 
-- [ ] #163 -- Unified catalog import/export (JSON/YAML/XML interoperability)
+- [x] #163 -- Unified catalog import/export (JSON/YAML/XML interoperability) -- **COMPLETED 2026-03-15**
 - [ ] #177 -- Extend Catalog import & management (locking, SHA digest, baseline impacts)
 - [ ] #148 -- OSCAL-compliant publication process for key document types
 - [ ] #149 -- Status tracking for Baselines/Profiles, Components, Documents

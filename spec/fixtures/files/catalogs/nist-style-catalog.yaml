@@ -1,0 +1,51 @@
+catalog:
+  uuid: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  metadata:
+    title: NIST-Style Test Catalog
+    published: "2024-06-01T00:00:00Z"
+    last-modified: "2024-06-01T00:00:00Z"
+    version: "1.0"
+    oscal-version: "1.1.2"
+  groups:
+    - id: ac
+      title: Access Control
+      controls:
+        - id: ac-1
+          title: Policy and Procedures
+          props:
+            - name: label
+              value: AC-1
+            - name: sort-id
+              value: ac-01
+          parts:
+            - id: ac-1_smt
+              name: statement
+              prose: Develop and document access control policy.
+            - id: ac-1_gdn
+              name: guidance
+              prose: This control addresses policy requirements.
+        - id: ac-2
+          title: Account Management
+          props:
+            - name: label
+              value: AC-2
+            - name: sort-id
+              value: ac-02
+          parts:
+            - id: ac-2_smt
+              name: statement
+              prose: Manage information system accounts.
+    - id: au
+      title: Audit and Accountability
+      controls:
+        - id: au-1
+          title: Policy and Procedures
+          props:
+            - name: label
+              value: AU-1
+            - name: sort-id
+              value: au-01
+          parts:
+            - id: au-1_smt
+              name: statement
+              prose: Develop and document audit and accountability policy.

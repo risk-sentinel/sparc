@@ -4,6 +4,58 @@
 
 ---
 
+## 2026-03-15 -- Unified Catalog Import/Export: JSON, YAML, XML Interoperability (#163)
+
+**Branch:** `feature/163_unified_catalog_import_export`
+
+### Summary
+
+Adds OSCAL YAML import support, NIST XML legacy enhancement import,
+export enhancement nesting, and import format traceability metadata.
+All four supported formats (OSCAL JSON, OSCAL YAML, OSCAL XML, NIST XML
+Legacy) now converge to canonical OSCAL-style control IDs and produce
+consistent round-trip exports.
+
+### What Changed
+
+- **YAML import** -- `.yaml`/`.yml` files are now accepted. The importer
+  parses YAML to a hash, serializes to JSON, and delegates to the
+  existing JSON importer for zero code duplication.
+
+- **NIST XML legacy enhancements** -- `<control-enhancement>` elements
+  in SCAP SP 800-53 feeds are now imported (previously skipped). IDs
+  are converted from NIST format (`AC-2(1)`) to canonical OSCAL
+  (`ac-2.1`) with padded sort IDs (`AC-02.01`).
+
+- **Export enhancement nesting** -- OSCAL JSON exports now nest
+  enhancements as `controls[]` children of their parent control,
+  matching the OSCAL schema requirement.
+
+- **Import format metadata** -- `metadata_extra["import_format"]` is
+  now stored on every import (`oscal_json`, `oscal_yaml`, `oscal_xml`,
+  or `nist_xml`) for traceability.
+
+- **Import view updated** -- accepts `.yaml`/`.yml`, adds a YAML format
+  reference card, and updates hint text.
+
+- **Format comparison table** -- `docs/data_mapping/catalogs.md` now
+  documents field availability across all four import formats.
+
+### Files Created (1)
+
+- `spec/fixtures/files/catalogs/nist_legacy_sample.xml`
+
+### Files Modified (6)
+
+- `app/services/catalog_import_service.rb`
+- `app/services/oscal_catalog_export_service.rb`
+- `app/views/control_catalogs/import.html.erb`
+- `spec/services/catalog_import_service_spec.rb`
+- `spec/services/oscal_catalog_export_service_spec.rb`
+- `docs/data_mapping/catalogs.md`
+
+---
+
 ## 2026-03-15 -- Slug-Based URLs for All Resources (#195)
 
 **Branch:** `bug/195_slug_urls`
