@@ -13,14 +13,11 @@
       </p>
 
       <%= form_with url: do_import_converters_path, method: :post, multipart: true, class: "mb-0" do |f| %>
-        <div class="mb-3">
-          <%= f.label :file, "JSON File", class: "form-label" %>
-          <%= f.file_field :file, accept: ".json", class: "form-control" %>
-          <div class="form-text">
-            Supported formats: <code>cci_mapping</code>, <code>cis_mapping</code>, <code>scap_mapping</code>,
-            or generic with <code>entries</code> array.
-          </div>
-        </div>
+        <%= render "shared/dropzone",
+          form: f,
+          field: :file,
+          accept: ".json",
+          hint: "Supported formats: cci_mapping, cis_mapping, scap_mapping, or generic with entries array." %>
 
         <div class="d-flex justify-content-end">
           <%= f.submit "Import", class: "btn btn-primary" %>

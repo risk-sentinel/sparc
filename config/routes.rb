@@ -176,6 +176,8 @@ Rails.application.routes.draw do
     collection do
       get :import
       post :do_import
+      get :stig_parser
+      post :import_stig
     end
     resources :converter_entries, only: [ :create, :destroy ], as: :entries, path: "entries"
   end

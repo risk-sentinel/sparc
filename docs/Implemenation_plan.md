@@ -45,7 +45,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 10. Wait for user testing
     - Functional testing
     - Review regression report(s)
-11. Create a PR and wait for the PR to merge before moving forward
+11. Create a PR and wait for the PR to be merged by the user before moving forward
 
 ---
 
@@ -192,7 +192,7 @@ validation + guided ATO package generation
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
 | [ ] | #175 | Profile creation from baseline + parameter validation | **HIGH** | Phase 2 complete |
-| [ ] | #185 | STIG XCCDF parser: SV/V to CCI extraction for CDEF validation & evidence | **HIGH** | None (builds on Converters domain) |
+| [x] | #185 | STIG XCCDF parser: SV/V to CCI extraction for CDEF validation & evidence | **HIGH** | None (builds on Converters domain) |
 | [ ] | #172 | CDEF creation/import from Profile, validated via STIG/CCI mappings | **HIGH** | AFTER #175 merges; #185 for validation |
 | [ ] | #173 | SSP creation/import from Profile | **HIGH** | AFTER #175 merges |
 | [ ] | #174 | SAR creation/import from Profile or SSP (uses CDEF STIG validations) | MEDIUM | AFTER #173 and #185 merge |

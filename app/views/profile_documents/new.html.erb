@@ -2,13 +2,11 @@
   <h2>Upload OSCAL Profile (Baseline)</h2>
 
   <%= form_with model: @profile_document, local: true, multipart: true do |f| %>
-    <div class="form-group">
-      <label for="profile_document_file">Select Profile File (.json, .xml, .yaml, .yml)</label>
-      <%= f.file_field :file, accept: ".json,.xml,.yaml,.yml", required: true %>
-      <small class="text-body-secondary d-block mt-2">
-        Upload an OSCAL Profile JSON, XML, or YAML file. Supports NIST SP 800-53 baselines (LOW, MODERATE, HIGH), FedRAMP, and custom profiles.
-      </small>
-    </div>
+    <%= render "shared/dropzone",
+      form: f,
+      field: :file,
+      accept: ".json,.xml,.yaml,.yml",
+      hint: "Upload an OSCAL Profile JSON, XML, or YAML file. Supports NIST SP 800-53 baselines (LOW, MODERATE, HIGH), FedRAMP, and custom profiles." %>
 
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-success" %>
