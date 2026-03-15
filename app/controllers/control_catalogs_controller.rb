@@ -6,6 +6,7 @@ class ControlCatalogsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :baseline_controls
   ]
+  before_action :ensure_editable!, only: [ :update ]
   before_action :authorize_catalog_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :update_metadata
   ]
@@ -209,6 +210,13 @@ class ControlCatalogsController < ApplicationController
 
   def set_control_catalog
     @control_catalog = ControlCatalog.find_by!(slug: params[:id])
+  end
+
+  def ensure_editable!
+    return unless @control_catalog.published_lifecycle?
+
+    flash[:error] = "This catalog is published and read-only. Create a copy to make changes."
+    redirect_to control_catalog_path(@control_catalog)
   end
 
   def control_catalog_params

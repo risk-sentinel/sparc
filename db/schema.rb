@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_15_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -175,6 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.string "lifecycle_status", default: "in_progress"
     t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
@@ -185,15 +186,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
+    t.index ["lifecycle_status"], name: "index_cdef_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_cdef_documents_on_slug", unique: true
     t.index ["status"], name: "index_cdef_documents_on_status"
     t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
   end
 
   create_table "control_catalogs", force: :cascade do |t|
+    t.string "catalog_content_digest"
     t.datetime "created_at", null: false
     t.text "description"
     t.text "error_message"
+    t.string "lifecycle_status", default: "in_progress"
     t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
@@ -204,6 +208,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.string "status", default: "completed", null: false
     t.datetime "updated_at", null: false
     t.string "version"
+    t.index ["lifecycle_status"], name: "index_control_catalogs_on_lifecycle_status"
     t.index ["name"], name: "index_control_catalogs_on_name"
     t.index ["slug"], name: "index_control_catalogs_on_slug", unique: true
   end
@@ -394,6 +399,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.string "lifecycle_status", default: "in_progress"
     t.jsonb "local_definitions_extra", default: {}
     t.jsonb "metadata_extra", default: {}
     t.string "name", null: false
@@ -407,6 +413,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_poam_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_poam_documents_on_created_at"
+    t.index ["lifecycle_status"], name: "index_poam_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_poam_documents_on_slug", unique: true
     t.index ["status"], name: "index_poam_documents_on_status"
     t.index ["uuid"], name: "index_poam_documents_on_uuid", unique: true
@@ -640,6 +647,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.string "lifecycle_status", default: "in_progress"
     t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
@@ -653,6 +661,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
     t.index ["created_at"], name: "index_profile_documents_on_created_at"
+    t.index ["lifecycle_status"], name: "index_profile_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_profile_documents_on_slug", unique: true
     t.index ["status"], name: "index_profile_documents_on_status"
     t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
@@ -712,6 +721,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.text "error_message"
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
+    t.string "lifecycle_status", default: "in_progress"
     t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
@@ -725,6 +735,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sap_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sap_documents_on_created_at"
+    t.index ["lifecycle_status"], name: "index_sap_documents_on_lifecycle_status"
     t.index ["profile_document_id"], name: "index_sap_documents_on_profile_document_id"
     t.index ["slug"], name: "index_sap_documents_on_slug", unique: true
     t.index ["ssp_document_id"], name: "index_sap_documents_on_ssp_document_id"
@@ -775,6 +786,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.string "file_type"
     t.string "import_ap_href"
     t.jsonb "import_metadata", default: {}
+    t.string "lifecycle_status", default: "in_progress"
     t.jsonb "local_definitions_extra", default: {}
     t.jsonb "metadata_extra", default: {}
     t.string "name"
@@ -789,6 +801,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sar_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
+    t.index ["lifecycle_status"], name: "index_sar_documents_on_lifecycle_status"
     t.index ["sap_document_id"], name: "index_sar_documents_on_sap_document_id"
     t.index ["slug"], name: "index_sar_documents_on_slug", unique: true
     t.index ["status"], name: "index_sar_documents_on_status"
@@ -1010,6 +1023,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.string "file_type"
     t.jsonb "import_metadata", default: {}
     t.string "import_profile_href"
+    t.string "lifecycle_status", default: "in_progress"
     t.jsonb "metadata_extra", default: {}
     t.string "name"
     t.text "network_architecture_description"
@@ -1029,6 +1043,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_ssp_documents_on_authorization_boundary_id"
+    t.index ["lifecycle_status"], name: "index_ssp_documents_on_lifecycle_status"
     t.index ["profile_document_id"], name: "index_ssp_documents_on_profile_document_id"
     t.index ["slug"], name: "index_ssp_documents_on_slug", unique: true
     t.index ["uuid"], name: "index_ssp_documents_on_uuid", unique: true

@@ -9,6 +9,7 @@ class ProfileDocumentsController < ApplicationController
     update_metadata copy publish download_resolved_catalog
     manage_controls update_controls
   ]
+  before_action :ensure_editable!, only: %i[update_metadata update_controls publish]
 
   PRIORITY_ORDER = %w[P1 P2 P3].freeze
 
@@ -190,12 +191,13 @@ class ProfileDocumentsController < ApplicationController
     resolved_json = service.export
 
     @profile_document.update!(
-      published: Time.current.iso8601,
+      published: Time.current.utc.iso8601,
+      lifecycle_status: "published",
       resolved_catalog_json: JSON.parse(resolved_json)
     )
 
     audit_log("profile_document_published", subject: @profile_document,
-              metadata: { name: @profile_document.name })
+              metadata: { name: @profile_document.name, lifecycle_status: "published" })
     flash[:success] = "Profile published. Resolved catalog is now available for download."
     redirect_to profile_document_path(@profile_document)
   end
@@ -233,6 +235,7 @@ class ProfileDocumentsController < ApplicationController
       baseline_level: params[:baseline_level],
       control_catalog: catalog,
       status: "completed",
+      lifecycle_status: "started",
       description: "Created from #{catalog.name} catalog"
     )
 
@@ -334,6 +337,13 @@ class ProfileDocumentsController < ApplicationController
 
   def set_profile_document
     @profile_document = ProfileDocument.find_by!(slug: params[:id])
+  end
+
+  def ensure_editable!
+    return unless @profile_document.published_lifecycle?
+
+    flash[:error] = "This profile is published and read-only. Create a copy to make changes."
+    redirect_to profile_document_path(@profile_document)
   end
 
   def build_priority_heatmap(scope)

@@ -68,7 +68,7 @@ class CatalogImportService
   def call
     update_processing_stage!(:reading_file, "Detecting catalog format...")
 
-    case detect_format
+    stats = case detect_format
     when :oscal_json then import_oscal_json
     when :oscal_yaml then import_oscal_yaml
     when :oscal_xml  then import_oscal_xml
@@ -76,6 +76,13 @@ class CatalogImportService
     else
       raise ImportError, "Unrecognised format. Upload an OSCAL JSON (.json), OSCAL YAML (.yaml/.yml), OSCAL XML (.xml), or NIST XML (.xml) catalog file."
     end
+
+    # Store content digest for traceability and set catalog as published
+    catalog = stats[:catalog]
+    digest = Digest::SHA256.hexdigest(@content)
+    catalog.update!(catalog_content_digest: digest, lifecycle_status: "published")
+
+    stats
   end
 
   # ── Format detection ────────────────────────────────────────────────────────

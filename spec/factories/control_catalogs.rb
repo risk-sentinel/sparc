@@ -3,6 +3,7 @@ FactoryBot.define do
     name { Faker::Lorem.unique.words(number: 3).join(" ").titleize }
     version { "1.0.0" }
     source { "OSCAL" }
+    lifecycle_status { "published" }
     oscal_version { "1.1.2" }
     metadata_extra { {} }
 

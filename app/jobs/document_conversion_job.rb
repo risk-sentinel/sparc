@@ -33,6 +33,7 @@ class DocumentConversionJob < ApplicationJob
 
       document.update!(
         status: "completed",
+        lifecycle_status: "in_progress",
         metadata_extra: (document.metadata_extra || {}).merge(
           "processing_stage"        => "complete",
           "processing_message"      => "Processing complete",

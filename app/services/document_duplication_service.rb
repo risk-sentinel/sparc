@@ -25,10 +25,12 @@ class DocumentDuplicationService
   private
 
   def build_document_copy(new_name)
-    attrs = @source.attributes.except(*SKIP_ATTRIBUTES, "uuid", "status", "error_message", "original_filename", "file_type")
+    attrs = @source.attributes.except(*SKIP_ATTRIBUTES, "uuid", "status", "error_message", "original_filename", "file_type", "lifecycle_status", "published")
     attrs["name"] = new_name
     attrs[@config[:version_attr].to_s] = nil
     attrs["status"] = "completed"
+    attrs["lifecycle_status"] = "in_progress"
+    attrs["published"] = nil if @source.class.column_names.include?("published")
     attrs["import_metadata"] = { "copied_from" => @source.id, "copied_at" => Time.current.iso8601 }
 
     @source.class.new(attrs)
