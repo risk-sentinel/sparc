@@ -20,7 +20,7 @@
 
       <div class="mb-4">
         <label class="form-label fw-semibold">Select Catalog</label>
-        <%= f.select :catalog_id, @catalogs.map { |c| [ "#{c.name} (#{c.total_controls} controls)", c.id ] },
+        <%= f.select :catalog_id, @catalogs.map { |c| [ "#{c.name} (#{c.total_controls} controls)", c.slug ] },
               { include_blank: "Choose a catalog..." }, class: "form-select",
               data: { family_selector_target: "catalogSelect", action: "change->family-selector#catalogChanged" } %>
       </div>
