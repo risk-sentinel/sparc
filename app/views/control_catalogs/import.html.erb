@@ -17,15 +17,12 @@
   <%= form_with url: import_control_catalogs_path, method: :post,
         html: { enctype: "multipart/form-data" }, local: true do |f| %>
 
-    <div class="form-group" style="margin-bottom: 1.25rem;">
-      <label for="catalog_file" class="fw-semibold small" style="display: block; margin-bottom: 0.5rem;">
-        Catalog File <span style="color: #e74c3c;">*</span>
-      </label>
-      <input type="file" name="catalog_file" id="catalog_file" accept=".json,.xml"
-             class="form-control"
-             style="font-size: 0.875rem; padding: 0.5rem 0.75rem; cursor: pointer;"
-             onchange="detectFormat(this)">
-      <div id="format-badge" class="text-body-tertiary" style="margin-top: 0.5rem; font-size: 0.8rem;"></div>
+    <div style="margin-bottom: 1.25rem;">
+      <%= render "shared/dropzone",
+        form: f,
+        field: :catalog_file,
+        accept: ".json,.xml",
+        hint: "Upload an OSCAL JSON, OSCAL XML, or legacy NIST SCAP XML catalog file." %>
     </div>
 
     <div class="d-flex gap-2 align-items-center mb-4">
@@ -143,17 +140,3 @@
   </div>
 </div>
 
-<script>
-  function detectFormat(input) {
-    var badge = document.getElementById('format-badge');
-    if (!input.files || !input.files[0]) { badge.innerHTML = ''; return; }
-    var name = input.files[0].name.toLowerCase();
-    if (name.endsWith('.json')) {
-      badge.innerHTML = '<span style="background:#2980b9;color:white;padding:0.1rem 0.5rem;border-radius:3px;font-size:0.7rem;font-weight:700;font-family:monospace;">OSCAL JSON</span> detected';
-    } else if (name.endsWith('.xml')) {
-      badge.innerHTML = '<span style="background:#27ae60;color:white;padding:0.1rem 0.5rem;border-radius:3px;font-size:0.7rem;font-weight:700;font-family:monospace;">XML</span> detected — OSCAL or NIST SCAP format will be auto-detected';
-    } else {
-      badge.innerHTML = '<span style="color:#e74c3c;">Unsupported file type — use .json or .xml</span>';
-    }
-  }
-</script>

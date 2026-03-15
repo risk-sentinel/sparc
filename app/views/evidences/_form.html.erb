@@ -71,14 +71,12 @@
 
       <%# ── File Upload ── %>
       <div class="mb-4">
-        <label class="form-label fw-semibold">Evidence File</label>
-        <div class="border rounded p-4 text-center bg-body-secondary" style="border-style: dashed !important;">
-          <%= f.file_field :file, class: "form-control", accept: ".pdf,.png,.jpg,.jpeg,.gif,.xlsx,.xls,.csv,.json,.xml,.txt,.log,.zip,.html" %>
-          <p class="text-body-secondary small mt-2 mb-0">
-            Upload screenshots, logs, config exports, scan results, or policy documents.
-            <br>Supported formats: PDF, images, Excel, JSON, XML, text, ZIP, HTML
-          </p>
-        </div>
+        <%= render "shared/dropzone",
+          form: f,
+          field: :file,
+          accept: ".pdf,.png,.jpg,.jpeg,.gif,.xlsx,.xls,.csv,.json,.xml,.txt,.log,.zip,.html",
+          label: "Evidence File",
+          hint: "Upload screenshots, logs, config exports, scan results, or policy documents." %>
         <% if @evidence.persisted? && @evidence.file.attached? %>
           <div class="mt-2">
             <span class="text-success small">Current file: <strong><%= @evidence.original_filename || @evidence.file.filename %></strong></span>

@@ -1,0 +1,54 @@
+<%# Drag-and-drop file upload component (dropzone_controller.js). %>
+<%
+  field    ||= :file
+  accept   ||= ""
+  hint     ||= nil
+  label    ||= nil
+  required = true unless defined?(required) && required == false
+%>
+
+<% if label.present? %>
+  <label class="form-label fw-semibold"><%= label %></label>
+<% end %>
+
+<div data-controller="dropzone"
+     data-dropzone-accept-value="<%= accept %>">
+
+  <div class="sparc-dropzone"
+       data-dropzone-target="zone"
+       data-action="dragover->dropzone#dragover
+                    dragenter->dropzone#dragenter
+                    dragleave->dropzone#dragleave
+                    drop->dropzone#drop
+                    click->dropzone#browse">
+
+    <span class="sparc-dropzone__icon" data-dropzone-target="icon">&#128194;</span>
+
+    <p class="sparc-dropzone__prompt" data-dropzone-target="prompt">
+      <strong>Click to browse</strong> or drag &amp; drop a file here
+    </p>
+
+    <p class="sparc-dropzone__filename" data-dropzone-target="filename"></p>
+    <p class="sparc-dropzone__filesize" data-dropzone-target="filesize"></p>
+    <p class="sparc-dropzone__error" data-dropzone-target="error"></p>
+
+    <% if accept.present? %>
+      <span class="sparc-dropzone__hint">
+        Accepted: <code><%= accept.gsub(",", ", ") %></code>
+      </span>
+    <% end %>
+  </div>
+
+  <%= form.file_field field,
+        accept: accept,
+        required: required,
+        class: "d-none",
+        data: {
+          dropzone_target: "input",
+          action: "change->dropzone#change"
+        } %>
+
+  <% if hint.present? %>
+    <small class="text-body-secondary d-block mt-2"><%= hint %></small>
+  <% end %>
+</div>

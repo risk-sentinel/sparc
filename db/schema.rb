@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_13_110409) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -289,6 +289,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_110409) do
     t.text "error_message"
     t.jsonb "metadata_extra", default: {}
     t.string "name", null: false
+    t.string "slug"
     t.string "source_framework"
     t.string "status", default: "draft", null: false
     t.string "target_framework", default: "NIST SP 800-53"
@@ -296,6 +297,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_110409) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.string "version", default: "1.0"
     t.index ["converter_type"], name: "index_converters_on_converter_type"
+    t.index ["slug"], name: "index_converters_on_slug", unique: true
     t.index ["status"], name: "index_converters_on_status"
     t.index ["uuid"], name: "index_converters_on_uuid", unique: true
   end

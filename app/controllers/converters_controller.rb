@@ -2,7 +2,8 @@
 
 class ConvertersController < ApplicationController
   before_action :authorize_converter_write!, only: [
-    :new, :create, :edit, :update, :destroy, :import, :do_import, :refresh_cci
+    :new, :create, :edit, :update, :destroy, :import, :do_import, :refresh_cci,
+    :import_stig
   ]
   before_action :set_converter, only: [
     :show, :edit, :update, :destroy, :export, :refresh_cci
@@ -109,6 +110,48 @@ class ConvertersController < ApplicationController
     redirect_to @converter, flash: { success: "CCI refresh started. This may take a minute." }
   end
 
+  # GET /converters/stig_parser
+  def stig_parser
+    # Client-side XCCDF analysis tool — no DB data needed
+  end
+
+  # POST /converters/import_stig
+  def import_stig
+    file = params[:stig_file]
+    unless file
+      redirect_to stig_parser_converters_path, flash: { error: "Please select a STIG XCCDF XML file." }
+      return
+    end
+
+    unless file.original_filename.downcase.end_with?(".xml")
+      redirect_to stig_parser_converters_path, flash: { error: "Only XML files are supported. Please upload a STIG XCCDF XML file." }
+      return
+    end
+
+    begin
+      service = StigConverterService.new(file.read, file.original_filename)
+      result = service.call
+      converter = result[:converter]
+
+      audit_log("stig_imported", subject: converter, metadata: {
+        name: converter.name,
+        new_entries: result[:new_entries],
+        skipped: result[:skipped],
+        benchmark: result[:benchmark_title]
+      })
+
+      redirect_to converter, flash: {
+        success: "STIG '#{result[:benchmark_title]}' imported: " \
+                 "#{result[:new_entries]} new entries added" \
+                 "#{result[:skipped] > 0 ? ", #{result[:skipped]} duplicates skipped" : ""}."
+      }
+    rescue StigConverterService::ParseError => e
+      redirect_to stig_parser_converters_path, flash: { error: "Failed to parse STIG: #{e.message}" }
+    rescue StandardError => e
+      redirect_to stig_parser_converters_path, flash: { error: "Import failed: #{e.message}" }
+    end
+  end
+
   # GET /converters/:id/export
   def export
     json_data = build_export_json(@converter)
@@ -122,7 +165,7 @@ class ConvertersController < ApplicationController
   private
 
   def set_converter
-    @converter = Converter.find(params[:id])
+    @converter = Converter.find_by!(slug: params[:id])
   rescue ActiveRecord::RecordNotFound
     redirect_to converters_path, flash: { error: "Converter not found." }
   end

@@ -134,10 +134,11 @@
   </p>
 
   <%= form_with model: SapDocument.new, local: true, multipart: true do |f| %>
-    <div class="form-group">
-      <label for="sap_document_file">Select SAP File (.json, .xml, .yaml, .yml)</label>
-      <%= f.file_field :file, accept: ".json,.xml,.yaml,.yml", required: true %>
-    </div>
+    <%= render "shared/dropzone",
+      form: f,
+      field: :file,
+      accept: ".json,.xml,.yaml,.yml",
+      hint: "Upload an OSCAL Assessment Plan in JSON, XML, or YAML format." %>
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-primary" %>
     </div>

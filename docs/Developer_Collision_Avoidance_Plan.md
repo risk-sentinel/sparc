@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-03-14
+**Last updated:** 2026-03-15
 
 ---
 
@@ -107,7 +107,7 @@ Sprint 2b (weeks 3-6):
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
 | [ ] | **#175** Profile from baseline | Profile | `profile_documents_controller.rb`, `profile_document.rb`, profile views, `oscal_profile_export_service.rb` | **NONE** with SSP/SAR/CDEF work |
-| [ ] | **#185** STIG SV/V to CCI parser | Converters | New `StigXccdfParserService`, `converters_controller` (new action), `lib/tasks/import_stig.rake`, converter views | **NONE** with Profile/SSP/SAR -- different domain |
+| [x] | **#185** STIG SV/V to CCI parser + drag-drop UX | Converters + Shared | New `StigConverterService`, `stig_parser_controller.js`, `dropzone_controller.js`, `_dropzone.html.erb`, `stig_parser.html.erb`, `converters_controller` (new actions), slug migration, `converter.rb` (slug + stig_to_nist type), all 9 upload views retrofitted | **NONE** with Profile/SSP/SAR -- different domain |
 | [ ] | **#172** CDEF from Profile | CDEF | `cdef_documents_controller.rb`, `cdef_document.rb`, new `CdefFromProfileService`, CDEF views | **NONE** with SSP/SAR work; uses #185 for validation |
 | [ ] | **#173** SSP from Profile | SSP | `ssp_documents_controller.rb`, `ssp_document.rb`, `ssp_wizard_service.rb`, SSP views | **NONE** with CDEF/SAR work |
 | [ ] | **#174** SAR from Profile/SSP | SAR | `sar_documents_controller.rb`, `sar_document.rb`, `sar_wizard_service.rb`, SAR views | **NONE** with SSP/CDEF work; uses #185 CDEF validations |

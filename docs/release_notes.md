@@ -4,6 +4,93 @@
 
 ---
 
+## 2026-03-15 -- STIG XCCDF Parser + Drag-and-Drop Upload UX (#185)
+
+**Branch:** `feature/185_stig_xccdf_parser`
+
+### Summary
+
+Adds a STIG XCCDF parser as a new converter type (`stig_to_nist`) that
+extracts SV/V-ID to CCI to NIST SP 800-53 control mappings from DISA
+STIG benchmark files. Each uploaded STIG extends a single cumulative
+converter. Also introduces a reusable drag-and-drop file upload
+component applied retroactively to all 9 existing upload forms, and
+adds slug-based URLs for all converters.
+
+### What Changed
+
+- **New `stig_to_nist` converter type** -- parses XCCDF XML via
+  `StigConverterService`, resolves CCI references to NIST controls
+  using `cci_to_nist.json`, and creates `ConverterEntry` records.
+  Each STIG upload extends the same cumulative converter (duplicates
+  skipped).
+
+- **Client-side STIG preview** -- `stig_parser_controller.js` parses
+  XCCDF in-browser with DOMParser for instant preview. Includes
+  severity filtering, CCI-only toggle, free-text search, and
+  CSV/JSON export. Handles XCCDF namespaces 1.0/1.1/1.2.
+
+- **Reusable drag-and-drop upload** -- new `dropzone_controller.js`
+  Stimulus controller and `shared/_dropzone.html.erb` partial provide
+  drag-drop + browse file upload with extension/size validation,
+  file preview, and error display. Applied to all 9 upload forms.
+
+- **Slug-based converter URLs** -- converters now use parameterized
+  name slugs (e.g., `/converters/disa-cci-to-nist-sp-800-53` instead
+  of `/converters/4`). Migration adds `slug` column with unique index
+  and backfills existing records.
+
+- **Navigation** -- added "STIG Parser" link under Implementation
+  dropdown in the main navigation.
+
+### Files Created (8)
+
+- `db/migrate/20260315104927_add_slug_to_converters.rb`
+- `app/javascript/controllers/dropzone_controller.js`
+- `app/views/shared/_dropzone.html.erb`
+- `app/services/stig_converter_service.rb`
+- `app/javascript/controllers/stig_parser_controller.js`
+- `app/views/converters/stig_parser.html.erb`
+- `public/data/cci_to_nist.json`
+- `spec/services/stig_converter_service_spec.rb`
+- `spec/requests/stig_parser_spec.rb`
+
+### Files Modified (16)
+
+- `app/models/converter.rb` (slug, to_param, stig_to_nist type)
+- `app/controllers/converters_controller.rb` (slug lookup, stig_parser/import_stig actions)
+- `config/routes.rb` (stig_parser + import_stig collection routes)
+- `app/assets/stylesheets/sparc-theme.css` (dropzone + STIG parser styles)
+- `app/views/layouts/application.html.erb` (STIG Parser nav link)
+
+### Views Updated (9 upload forms retrofitted with dropzone)
+
+- `app/views/ssp_documents/new.html.erb`
+- `app/views/sar_documents/new.html.erb`
+- `app/views/cdef_documents/new.html.erb`
+- `app/views/sap_documents/new.html.erb`
+- `app/views/poam_documents/new.html.erb`
+- `app/views/profile_documents/new.html.erb`
+- `app/views/control_catalogs/import.html.erb`
+- `app/views/converters/import.html.erb`
+- `app/views/evidences/_form.html.erb`
+
+### What is NOT Changed
+
+- **Existing converter types** -- CCI-to-NIST, CIS-to-NIST, SCAP-to-NIST
+  are untouched. STIG parser is additive.
+- **No form submission behavior changes** -- dropzone wraps the existing
+  `<input type="file">` so all form submissions work identically.
+- **No new gems** -- uses existing Nokogiri for server-side XML parsing.
+
+### Verification
+
+- 799 RSpec tests pass (14 new service specs + 5 new request specs)
+- RuboCop clean (0 offenses)
+- Brakeman clean (0 warnings)
+
+---
+
 ## 2026-03-14 -- Enable HTTPS in Development Environment (#134)
 
 **Branch:** `feature/134_https_dev_environment`
