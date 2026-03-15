@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-03-15 -- Home Screen Card Alignment + Converters Card (#192)
+
+**Branch:** `bug/192_home_card_alignment`
+
+### Summary
+
+Fixes inconsistent button alignment across home screen navigation cards
+and adds the missing Converters card to the Implementation layer.
+
+### What Changed
+
+- **Button alignment** -- card bodies now use flexbox column layout with
+  `mt-auto` on the button container so View/New buttons are consistently
+  bottom-aligned across all cards regardless of content height.
+- **Larger icons** -- card icons increased from 1.75rem to 2.5rem for
+  more visual prominence.
+- **Converters card added** -- Implementation layer now includes a
+  Converters card with View/New buttons matching the existing pattern.
+- **Converters stat tile** -- Implementation stat group in the hero
+  banner now shows a Converters count.
+
+### Files Modified (2)
+
+- `app/controllers/home_controller.rb` (add `@converter_count`)
+- `app/views/home/index.html.erb` (card alignment, larger icons, Converters card + stat)
+
+### Verification
+
+- 799 RSpec tests pass
+- RuboCop clean
+
+---
+
 ## 2026-03-15 -- STIG XCCDF Parser + Drag-and-Drop Upload UX (#185)
 
 **Branch:** `feature/185_stig_xccdf_parser`

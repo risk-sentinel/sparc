@@ -8,8 +8,9 @@ class HomeController < ApplicationController
     @mapping_count = ControlMapping.count
 
     # Implementation Layer
-    @ssp_count  = SspDocument.count
-    @cdef_count = CdefDocument.count
+    @ssp_count       = SspDocument.count
+    @cdef_count      = CdefDocument.count
+    @converter_count = Converter.count
 
     # Assessment Layer
     @sap_count      = SapDocument.count
