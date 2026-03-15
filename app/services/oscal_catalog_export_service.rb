@@ -52,7 +52,7 @@ class OscalCatalogExportService
 
     base["published"] = @catalog.published if @catalog.published.present?
 
-    extra = @catalog.metadata_extra || {}
+    extra = oscal_metadata_extras
     if extra.any?
       base.merge(extra)
     else
@@ -86,8 +86,20 @@ class OscalCatalogExportService
     # Only include top-level controls (those without sub-part suffixes like "a", ".1", ".(a)")
     top_level = family.catalog_controls.order(:control_id).select { |c| top_level_control?(c.control_id) }
 
-    top_level.map do |control|
-      build_control(control, family)
+    # Separate base controls from enhancements and nest enhancements under parents.
+    # OSCAL requires enhancements (e.g., ac-2.1) nested as controls[] children of
+    # their parent (e.g., ac-2), not as siblings at the group level.
+    base_controls = top_level.select { |c| base_control?(c.control_id) }
+    enhancements  = top_level.reject { |c| base_control?(c.control_id) }
+    enh_by_parent = enhancements.group_by { |c| c.control_id.sub(/\.\d+\z/, "") }
+
+    base_controls.map do |control|
+      ctrl_hash = build_control(control, family)
+      children = enh_by_parent[control.control_id]
+      if children.present?
+        ctrl_hash["controls"] = children.map { |enh| build_control(enh, family) }
+      end
+      ctrl_hash
     end
   end
 
@@ -160,5 +172,23 @@ class OscalCatalogExportService
   def top_level_control?(control_id)
     # Top-level controls match canonical OSCAL format: "ac-1", "ac-2.1" but not "ac-1a" or "ac-1a.1"
     control_id.match?(/\A[a-z]+-\d+(\.\d+)?\z/i)
+  end
+
+  def base_control?(control_id)
+    # Base controls have no enhancement suffix: "ac-1", "ac-2" but not "ac-2.1"
+    control_id.match?(/\A[a-z]+-\d+\z/i)
+  end
+
+  # Keys from metadata_extra that are valid OSCAL metadata properties.
+  # Internal/SPARC-specific keys (catalog_uuid, back_matter_resources,
+  # import_format, etc.) are excluded to pass schema validation.
+  OSCAL_METADATA_KEYS = %w[
+    roles parties responsible-parties revisions remarks
+    links props locations
+  ].freeze
+
+  def oscal_metadata_extras
+    raw = @catalog.metadata_extra || {}
+    raw.slice(*OSCAL_METADATA_KEYS)
   end
 end
