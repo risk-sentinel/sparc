@@ -2,13 +2,11 @@
   <h2>Upload Component Definition</h2>
 
   <%= form_with model: @cdef_document, local: true, multipart: true do |f| %>
-    <div class="form-group">
-      <label for="cdef_document_file">Select Component Definition File (.xml, .json, .yaml, .yml)</label>
-      <%= f.file_field :file, accept: ".xml,.json,.yaml,.yml", required: true %>
-      <small class="text-body-secondary d-block mt-2">
-        Upload an XCCDF XML file (DISA STIGs, SCAP benchmarks, CIS), a JSON file (InSpec, STIG Viewer export), or an OSCAL YAML file.
-      </small>
-    </div>
+    <%= render "shared/dropzone",
+      form: f,
+      field: :file,
+      accept: ".xml,.json,.yaml,.yml",
+      hint: "Upload an XCCDF XML file (DISA STIGs, SCAP benchmarks, CIS), a JSON file (InSpec, STIG Viewer export), or an OSCAL YAML file." %>
 
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-success" %>
