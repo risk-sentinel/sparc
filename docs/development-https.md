@@ -43,6 +43,33 @@ Verify the installation:
 mkcert --version
 ```
 
+### Firefox Support (Required)
+
+Firefox uses its own certificate store (NSS) instead of the
+system trust store. You **must** install `certutil` (part of
+NSS) so that `mkcert` can install the local CA into Firefox.
+Without it, Firefox will show certificate warnings.
+
+<!-- markdownlint-disable MD013 -->
+
+| Platform | Command |
+| --- | --- |
+| macOS (Homebrew) | `brew install nss` |
+| macOS (MacPorts) | `sudo port install nss` |
+| Ubuntu / Debian | `sudo apt install libnss3-tools` |
+| Fedora / RHEL | `sudo dnf install nss-tools` |
+
+<!-- markdownlint-enable MD013 -->
+
+Install NSS **before** running `bin/setup-ssl`. If you already
+ran the setup script without NSS, install it and re-run:
+
+```bash
+bin/setup-ssl
+```
+
+The script will re-install the CA into Firefox's trust store.
+
 ---
 
 ## One-Time Setup
@@ -131,6 +158,23 @@ SSL_DEV=false bin/dev      # Explicit disable
 
 Run `mkcert -install` to ensure the local CA is trusted,
 then restart your browser.
+
+### Firefox shows certificate warning but Chrome/Safari work
+
+Firefox uses its own trust store (NSS). Install `certutil`
+and re-run the setup:
+
+```bash
+# macOS
+brew install nss        # or: sudo port install nss
+# Ubuntu / Debian
+sudo apt install libnss3-tools
+
+# Re-install CA into Firefox
+mkcert -install
+```
+
+Restart Firefox after running the command.
 
 ### Port 3443 already in use
 

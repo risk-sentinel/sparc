@@ -49,6 +49,26 @@ end
 # Create ssl/ directory
 FileUtils.mkdir_p(SSL_DIR)
 
+# Check for certutil (needed for Firefox trust store)
+has_certutil = system("command -v certutil > /dev/null 2>&1")
+unless has_certutil
+  puts <<~MSG
+    == NOTE: certutil not found ==
+    Firefox uses its own certificate store (NSS). Without certutil,
+    mkcert cannot install the CA into Firefox automatically.
+
+    To enable Firefox support, install NSS first:
+      macOS (Homebrew):    brew install nss
+      macOS (MacPorts):    sudo port install nss
+      Ubuntu / Debian:     sudo apt install libnss3-tools
+      Fedora / RHEL:       sudo dnf install nss-tools
+
+    You can continue without it — Chrome and Safari will work fine.
+    After installing NSS, re-run: bin/setup-ssl
+
+  MSG
+end
+
 # Install local CA (idempotent — safe to run multiple times)
 puts "== Installing mkcert local CA (if not already installed) =="
 system!("mkcert -install")
@@ -70,6 +90,12 @@ else
 end
 
 puts "\n== Done! =="
-puts "Start the dev server with HTTPS:"
+if has_certutil
+  puts "Certificates are trusted in all browsers (including Firefox)."
+else
+  puts "Certificates are trusted in Chrome and Safari."
+  puts "For Firefox support, install NSS (see note above) and re-run."
+end
+puts "\nStart the dev server with HTTPS:"
 puts "  SSL_DEV=true bin/dev"
 puts "  Then open https://localhost:3443"
