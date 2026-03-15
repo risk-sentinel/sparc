@@ -187,10 +187,28 @@
       </div>
     <% end %>
 
+    <% if signed_in? && document.draft? %>
     <%# ── Edit Metadata Form ──────────────────────────────────── %>
     <hr>
-    <div id="oscal-meta-edit-section">
-      <h6 class="fw-semibold mb-3">Edit OSCAL Metadata</h6>
+    <div id="oscal-meta-edit-section"
+         <% if signed_in? && defined?(current_user) && current_user %>
+           data-user-name="<%= current_user.display_name.presence || "#{current_user.first_name} #{current_user.last_name}".strip %>"
+           data-user-email="<%= current_user.email %>"
+           <% org = current_user.respond_to?(:organizations) ? current_user.organizations.first : nil %>
+           <% if org %>
+             data-org-name="<%= org.name %>"
+             data-org-email="<%= org.contact_email %>"
+           <% end %>
+         <% end %>
+    >
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-semibold mb-0">Edit OSCAL Metadata</h6>
+        <% if signed_in? && document.draft? %>
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick="prefillFromProfile()">
+            Pre-fill from my profile
+          </button>
+        <% end %>
+      </div>
       <%= form_with url: update_path, method: :patch, local: true do |f| %>
 
         <%# ── Core fields row ── %>
@@ -307,6 +325,7 @@
         </div>
       <% end %>
     </div>
+    <% end %>
 
   </div>
 </div>
@@ -386,5 +405,48 @@
       '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.revision-row\').remove(); syncMetadataJson();">x</button></div>' +
       '</div>';
     document.getElementById('revisions-editor').insertAdjacentHTML('beforeend', html);
+  }
+
+  function prefillFromProfile() {
+    var section = document.getElementById('oscal-meta-edit-section');
+    if (!section) return;
+
+    var userName = section.dataset.userName || '';
+    var userEmail = section.dataset.userEmail || '';
+    var orgName = section.dataset.orgName || '';
+    var orgEmail = section.dataset.orgEmail || '';
+
+    // Add prepared-by role if no roles exist yet
+    var rolesEditor = document.getElementById('roles-editor');
+    if (rolesEditor && rolesEditor.querySelectorAll('.role-row').length === 0) {
+      addRoleRow();
+      var newRow = rolesEditor.querySelector('.role-row:last-child');
+      if (newRow) {
+        var idField = newRow.querySelector('[data-field="id"]');
+        var titleField = newRow.querySelector('[data-field="title"]');
+        if (idField) idField.value = 'prepared-by';
+        if (titleField) titleField.value = 'Prepared By';
+      }
+    }
+
+    // Add contact party if no parties exist yet
+    var partiesEditor = document.getElementById('parties-editor');
+    if (partiesEditor && partiesEditor.querySelectorAll('.party-row').length === 0) {
+      addPartyRow();
+      var partyRow = partiesEditor.querySelector('.party-row:last-child');
+      if (partyRow) {
+        var nameField = partyRow.querySelector('[data-field="name"]');
+        var typeField = partyRow.querySelector('[data-field="type"]');
+        if (orgName) {
+          if (nameField) nameField.value = orgName;
+          if (typeField) typeField.value = 'organization';
+        } else if (userName) {
+          if (nameField) nameField.value = userName;
+          if (typeField) typeField.value = 'person';
+        }
+      }
+    }
+
+    syncMetadataJson();
   }
 </script>

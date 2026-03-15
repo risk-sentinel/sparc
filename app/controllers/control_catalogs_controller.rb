@@ -1,16 +1,18 @@
 class ControlCatalogsController < ApplicationController
+  include Publishable
   skip_before_action :require_authentication, only: [ :index, :show, :baseline_controls ]
 
   before_action :set_control_catalog, only: [
     :show, :edit, :update, :destroy, :update_metadata,
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :baseline_controls,
-    :update_baseline, :bulk_update_baselines
+    :update_baseline, :bulk_update_baselines,
+    :publish, :publish_check
   ]
-  before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines ]
+  before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines, :publish ]
   before_action :authorize_catalog_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :update_metadata,
-    :update_baseline, :bulk_update_baselines
+    :update_baseline, :bulk_update_baselines, :publish
   ]
 
   def index
@@ -262,6 +264,11 @@ class ControlCatalogsController < ApplicationController
   end
 
   private
+
+  def publish_config
+    { document: @control_catalog, audit_event: "control_catalog_published",
+      redirect_path: control_catalog_path(@control_catalog), label: "Catalog" }
+  end
 
   def set_control_catalog
     @control_catalog = ControlCatalog.find_by!(slug: params[:id])

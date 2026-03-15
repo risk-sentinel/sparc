@@ -6,11 +6,18 @@ import "controllers"
 // ── Custom Turbo confirmation modal (Bootstrap 5) ──
 // Replaces browser-native window.confirm() with a styled Bootstrap modal
 // for all turbo_confirm dialogs app-wide.
-Turbo.setConfirmMethod((message, _element) => {
+Turbo.setConfirmMethod((message, element) => {
   return new Promise((resolve) => {
     const modalId = "sparc-confirm-modal"
     let existing = document.getElementById(modalId)
     if (existing) existing.remove()
+
+    // Detect destructive actions: DELETE method or explicit data attribute
+    const form = element?.closest("form") || element
+    const method = (form?.querySelector("input[name='_method']")?.value || form?.method || "").toUpperCase()
+    const isDestructive = method === "DELETE" || element?.dataset?.turboConfirmDestructive === "true"
+    const buttonLabel = isDestructive ? "Delete" : "Confirm"
+    const buttonClass = isDestructive ? "btn btn-danger" : "btn btn-primary"
 
     const wrapper = document.createElement("div")
     wrapper.innerHTML = [
@@ -24,7 +31,7 @@ Turbo.setConfirmMethod((message, _element) => {
       '      <div class="modal-body"></div>',
       '      <div class="modal-footer">',
       '        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>',
-      '        <button type="button" class="btn btn-danger" id="' + modalId + '-confirm">Delete</button>',
+      '        <button type="button" class="' + buttonClass + '" id="' + modalId + '-confirm">' + buttonLabel + '</button>',
       '      </div>',
       '    </div>',
       '  </div>',

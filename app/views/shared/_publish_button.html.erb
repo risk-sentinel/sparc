@@ -1,0 +1,103 @@
+<%# Renders a Publish button that opens the smart publication modal.
+    Locals:
+      document      — the document to publish
+      publish_path  — path to the PATCH publish action
+      check_path    — path to the GET publish_check action
+%>
+<% if defined?(document) && document.draft? %>
+  <div data-controller="publish-modal"
+       data-publish-modal-check-url-value="<%= check_path %>"
+       data-publish-modal-publish-url-value="<%= publish_path %>"
+       data-publish-modal-csrf-token-value="<%= form_authenticity_token %>"
+       style="display: inline;">
+
+    <button type="button" class="btn btn-warning btn-sm fw-semibold"
+            data-action="click->publish-modal#open">
+      Publish
+    </button>
+
+    <%# ── Modal backdrop ── %>
+    <div data-publish-modal-target="backdrop"
+         data-action="click->publish-modal#close"
+         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); z-index: 1040;"></div>
+
+    <%# ── Modal dialog ── %>
+    <div data-publish-modal-target="modal"
+         style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                z-index: 1050; background: white; border-radius: 0.5rem; box-shadow: 0 0.5rem 2rem rgba(0,0,0,0.25);
+                width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto;">
+
+      <%# Header %>
+      <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
+        <h5 style="margin: 0; font-weight: 600;">Publish Document</h5>
+        <button type="button" class="btn-close" data-action="click->publish-modal#close" aria-label="Close"></button>
+      </div>
+
+      <%# Body %>
+      <div style="padding: 1.25rem;">
+        <p class="text-body-secondary" style="font-size: 0.88rem; margin-bottom: 1rem;">
+          Publishing locks this document as read-only and validates OSCAL metadata compliance.
+        </p>
+
+        <%# Readiness checklist (populated by JS) %>
+        <div style="margin-bottom: 1rem;">
+          <h6 class="fw-semibold" style="font-size: 0.9rem; margin-bottom: 0.5rem;">Metadata Checklist</h6>
+          <div data-publish-modal-target="checklist">
+            <span class="text-body-secondary">Checking...</span>
+          </div>
+        </div>
+
+        <%# Inline fix fields (shown when metadata is incomplete) %>
+        <div data-publish-modal-target="fixFields" style="display: none; border-top: 1px solid #dee2e6; padding-top: 1rem;">
+          <h6 class="fw-semibold" style="font-size: 0.9rem; margin-bottom: 0.75rem;">Complete Required Metadata</h6>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Creator / Prepared-by Name</label>
+            <input type="text" class="form-control form-control-sm"
+                   data-publish-modal-target="creatorName"
+                   placeholder="e.g. Jane Doe">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Contact Type</label>
+            <select class="form-select form-select-sm" data-publish-modal-target="contactType">
+              <option value="organization">Organization</option>
+              <option value="person">Person</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Contact Name</label>
+            <input type="text" class="form-control form-control-sm"
+                   data-publish-modal-target="contactName"
+                   placeholder="e.g. ACME Corp or Jane Doe">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Contact Email</label>
+            <input type="email" class="form-control form-control-sm"
+                   data-publish-modal-target="contactEmail"
+                   placeholder="e.g. contact@example.com">
+          </div>
+        </div>
+      </div>
+
+      <%# Footer %>
+      <div style="padding: 0.75rem 1.25rem; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
+        <a href="#" class="text-primary small" style="text-decoration: none;"
+           data-action="click->publish-modal#scrollToMetadata">
+          Full Metadata Editor ↓
+        </a>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-secondary" data-action="click->publish-modal#close">Cancel</button>
+          <button type="button" class="btn btn-sm btn-warning fw-semibold"
+                  data-publish-modal-target="publishBtn"
+                  data-action="click->publish-modal#confirmPublish">
+            Confirm & Publish
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

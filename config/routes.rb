@@ -33,6 +33,8 @@ Rails.application.routes.draw do
   resources :ssp_documents do
     member do
       patch :update_metadata
+      patch :publish
+      get :publish_check
       get :download_json
       get :download_oscal
       get :download_oscal_validated
@@ -53,6 +55,8 @@ Rails.application.routes.draw do
   resources :sar_documents do
     member do
       patch :update_metadata
+      patch :publish
+      get :publish_check
       get :download_json
       get :download_excel
       get :download_oscal
@@ -85,6 +89,7 @@ Rails.application.routes.draw do
       get :status
       post :copy
       patch :publish
+      get :publish_check
       get :download_resolved_catalog
       get :manage_controls
       patch :update_controls
@@ -99,6 +104,8 @@ Rails.application.routes.draw do
   resources :sap_documents do
     member do
       patch :update_metadata
+      patch :publish
+      get :publish_check
       get :download_json
       get :download_oscal
       get :download_oscal_validated
@@ -115,6 +122,8 @@ Rails.application.routes.draw do
   resources :poam_documents do
     member do
       patch :update_metadata
+      patch :publish
+      get :publish_check
       get :download_json
       get :download_oscal
       get :download_oscal_validated
@@ -133,6 +142,8 @@ Rails.application.routes.draw do
   resources :cdef_documents do
     member do
       patch :update_metadata
+      patch :publish
+      get :publish_check
       get :download_json
       get :download_oscal
       get :download_oscal_validated
@@ -147,6 +158,8 @@ Rails.application.routes.draw do
   resources :control_catalogs do
     member do
       patch :update_metadata
+      patch :publish
+      get :publish_check
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated

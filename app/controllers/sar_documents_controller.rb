@@ -1,6 +1,7 @@
 class SarDocumentsController < ApplicationController
   include FileUploadable
   include Pagy::Method
+  include Publishable
 
   CONTROLS_PER_PAGE = 50
 
@@ -8,9 +9,10 @@ class SarDocumentsController < ApplicationController
     :show, :update, :destroy, :download_json, :download_excel,
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml,
-    :edit_control, :status, :update_metadata, :enrich, :update_enrich
+    :edit_control, :status, :update_metadata, :enrich, :update_enrich,
+    :publish, :publish_check
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
 
   helper_method :filter_params
 
@@ -490,6 +492,15 @@ class SarDocumentsController < ApplicationController
 
   def set_sar_document
     @sar_document = SarDocument.find_by!(slug: params[:id])
+  end
+
+  def publish_config
+    {
+      document: @sar_document,
+      audit_event: "sar_document_published",
+      redirect_path: sar_document_path(@sar_document),
+      label: "SAR"
+    }
   end
 
   def ensure_editable!

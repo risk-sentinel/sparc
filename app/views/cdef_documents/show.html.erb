@@ -67,6 +67,11 @@
         <%= button_to "Copy", copy_cdef_document_path(@cdef_document), method: :post,
               class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
       <% end %>
+      <% if signed_in? && @cdef_document.draft? %>
+        <%= render "shared/publish_button", document: @cdef_document,
+              publish_path: publish_cdef_document_path(@cdef_document),
+              check_path: publish_check_cdef_document_path(@cdef_document) %>
+      <% end %>
       <div class="btn-group">
         <button type="button" class="sparc-btn-oscal dropdown-toggle"
                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -234,13 +239,11 @@
   <% end %>
 </div>
 
-<% if signed_in? %>
-  <%= render "shared/oscal_metadata_section",
-             document: @cdef_document,
-             update_path: update_metadata_cdef_document_path(@cdef_document),
-             param_key: :cdef_document,
-             version_field: :cdef_version %>
-<% end %>
+<%= render "shared/oscal_metadata_section",
+           document: @cdef_document,
+           update_path: update_metadata_cdef_document_path(@cdef_document),
+           param_key: :cdef_document,
+           version_field: :cdef_version %>
 
 <script>
   function toggleDocMeta() {

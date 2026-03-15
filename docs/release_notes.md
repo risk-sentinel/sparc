@@ -4,6 +4,73 @@
 
 ---
 
+## 2026-03-15 -- OSCAL-Compliant Publication Process (#148)
+
+**Branch:** `feature/148_oscal_publication_process`
+
+### Summary
+
+Adds a standardized publication workflow to all document types (SSP, SAR, SAP,
+CDEF, POA&M, Catalog, Profile). Before publishing, OSCAL metadata completeness
+is validated (creator role, contact party, responsible-parties). A smart
+publication modal shows a readiness checklist with inline fix fields pre-filled
+from the current user's profile and organization.
+
+### What Changed
+
+- **PublicationValidationService** -- new service validates metadata completeness
+  before publication; auto-populates defaults from user profile and organization
+- **Publishable concern** -- shared controller concern providing `publish` and
+  `publish_check` actions for SSP, SAR, SAP, CDEF, POA&M, and Catalog controllers
+- **Smart publication modal** -- Stimulus controller + shared partial renders a
+  readiness checklist with inline fix fields and "Full Metadata Editor" link
+- **6 controllers wired up** -- SSP, SAR, SAP, CDEF, POA&M, ControlCatalog
+  controllers now include Publishable with publish_config
+- **ProfileDocumentsController** -- existing publish action now validates metadata
+  and supports inline fixes from the modal; added publish_check endpoint
+- **Show pages** -- all 7 document show pages display a Publish button (draft only)
+  that opens the smart modal
+- **Metadata editor** -- "Pre-fill from my profile" button populates roles/parties
+  from current user's display name, email, and organization
+- **Routes** -- added `patch :publish` and `get :publish_check` to all document
+  types including profiles
+
+### Files Created (5)
+
+- `app/services/publication_validation_service.rb`
+- `app/controllers/concerns/publishable.rb`
+- `app/javascript/controllers/publish_modal_controller.js`
+- `app/views/shared/_publish_button.html.erb`
+- `spec/services/publication_validation_service_spec.rb`
+- `spec/requests/publication_spec.rb`
+
+### Files Modified (14)
+
+- `config/routes.rb`
+- `app/controllers/ssp_documents_controller.rb`
+- `app/controllers/sar_documents_controller.rb`
+- `app/controllers/sap_documents_controller.rb`
+- `app/controllers/cdef_documents_controller.rb`
+- `app/controllers/poam_documents_controller.rb`
+- `app/controllers/control_catalogs_controller.rb`
+- `app/controllers/profile_documents_controller.rb`
+- `app/views/ssp_documents/show.html.erb`
+- `app/views/sar_documents/show.html.erb`
+- `app/views/sap_documents/show.html.erb`
+- `app/views/cdef_documents/show.html.erb`
+- `app/views/poam_documents/show.html.erb`
+- `app/views/control_catalogs/show.html.erb`
+- `app/views/profile_documents/show.html.erb`
+- `app/views/shared/_oscal_metadata_section.html.erb`
+
+### Verification
+
+- 917 RSpec examples, 0 failures
+- Rubocop: no new offenses
+- Brakeman: 0 warnings
+
+---
+
 ## 2026-03-15 -- Catalog Baseline Management (#177)
 
 **Branch:** `feature/177_extend_catalog_import`

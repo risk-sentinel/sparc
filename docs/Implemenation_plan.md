@@ -71,7 +71,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 - [x] #163 -- Unified catalog import/export (JSON/YAML/XML interoperability) -- **COMPLETED 2026-03-15**
 - [x] #177 -- Extend Catalog import & management (locking, SHA digest, baseline impacts) -- **COMPLETED 2026-03-15**
-- [ ] #148 -- OSCAL-compliant publication process for key document types
+- [x] #148 -- OSCAL-compliant publication process for key document types -- **COMPLETED 2026-03-15**
 - [x] #149 -- Status tracking for Baselines/Profiles, Components, Documents -- **COMPLETED 2026-03-15**
 - [ ] #176 -- Unified publication process for Profiles and Component Definitions
 

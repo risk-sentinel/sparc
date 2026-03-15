@@ -17,23 +17,22 @@
   </div>
 
   <% if @cdef_documents.any? %>
-    <table class="table table-hover" style="min-width: 700px;">
+    <table class="table table-hover">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Version</th>
-          <th>Status</th>
-          <th>Lifecycle</th>
-          <th>Controls</th>
-          <th>Created</th>
-          <th class="text-end">Actions</th>
+          <th style="white-space: nowrap;">Name</th>
+          <th style="white-space: nowrap;">Type</th>
+          <th style="white-space: nowrap;">Version</th>
+          <th style="white-space: nowrap;">Status</th>
+          <th style="white-space: nowrap;">Controls</th>
+          <th style="white-space: nowrap;">Created</th>
+          <th style="white-space: nowrap;">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% @cdef_documents.each do |doc| %>
           <tr>
-            <td class="fw-semibold"><%= doc.name %></td>
+            <td><strong><%= link_to doc.name, cdef_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
               <% type_colors = { "disa_stig" => "#e74c3c", "scap" => "#3498db", "cis" => "#f39c12", "custom" => "#95a5a6" } %>
               <span class="rounded fw-semibold" style="padding: 0.2rem 0.6rem; background: <%= type_colors[doc.cdef_type] || '#7f8c8d' %>22; color: <%= type_colors[doc.cdef_type] || '#7f8c8d' %>; border: 1px solid <%= type_colors[doc.cdef_type] || '#7f8c8d' %>44; font-size: 0.78rem; white-space: nowrap;">
@@ -41,30 +40,31 @@
               </span>
             </td>
             <td class="small text-body-secondary"><%= doc.cdef_version.presence || "—" %></td>
-            <td>
-              <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-                <%= doc.status %>
-              </span>
-              <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
-                <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= doc.metadata_extra["processing_message"] %></span>
+            <td style="white-space: nowrap;">
+              <% if doc.processing? || doc.pending? || doc.failed? %>
+                <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                  <%= doc.status %>
+                </span>
+                <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
+                  <br><span class="text-body-secondary" style="font-size: 0.72rem; white-space: normal;"><%= doc.metadata_extra["processing_message"] %></span>
+                <% end %>
+              <% else %>
+                <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
+                  <%= doc.lifecycle_label %>
+                </span>
               <% end %>
-            </td>
-            <td>
-              <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;">
-                <%= doc.lifecycle_label %>
-              </span>
             </td>
             <td><%= doc.cdef_controls.count %></td>
             <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
-            <td class="text-end" style="white-space: nowrap;">
-              <div style="display: inline-flex; gap: 0.35rem;">
-                <%= link_to "View", cdef_document_path(doc), class: "btn btn-primary", style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;" %>
+            <td>
+              <div class="d-flex flex-wrap gap-1" style="max-width: 280px;">
+                <%= link_to "View", cdef_document_path(doc), class: "btn btn-primary btn-sm", style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;" %>
                 <% if signed_in? && doc.completed? %>
-                  <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.35rem 0.75rem; font-size: 0.8rem;", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
+                  <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.25rem 0.6rem; font-size: 0.78rem;", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
                 <% end %>
                 <% if doc.completed? %>
                   <div class="btn-group">
-                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white;" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white; padding: 0.25rem 0.6rem; font-size: 0.78rem;" data-bs-toggle="dropdown" aria-expanded="false">
                       Export OSCAL
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -77,8 +77,8 @@
                 <% end %>
                 <% if signed_in? %>
                   <%= button_to "Delete", cdef_document_path(doc), method: :delete,
-                        class: "btn btn-danger",
-                        style: "padding: 0.35rem 0.75rem; font-size: 0.8rem;",
+                        class: "btn btn-danger btn-sm",
+                        style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;",
                         form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
                 <% end %>
               </div>
