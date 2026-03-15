@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -79,9 +79,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.text "description"
     t.string "name", null: false
     t.bigint "organization_id"
+    t.string "slug"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.index ["organization_id"], name: "index_authorization_boundaries_on_organization_id"
+    t.index ["slug"], name: "index_authorization_boundaries_on_slug", unique: true
     t.index ["status"], name: "index_authorization_boundaries_on_status"
   end
 
@@ -177,11 +179,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "name", null: false
     t.string "original_filename"
     t.string "oscal_version"
+    t.string "slug"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
+    t.index ["slug"], name: "index_cdef_documents_on_slug", unique: true
     t.index ["status"], name: "index_cdef_documents_on_status"
     t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
   end
@@ -195,11 +199,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "original_filename"
     t.string "oscal_version"
     t.string "published"
+    t.string "slug"
     t.string "source"
     t.string "status", default: "completed", null: false
     t.datetime "updated_at", null: false
     t.string "version"
     t.index ["name"], name: "index_control_catalogs_on_name"
+    t.index ["slug"], name: "index_control_catalogs_on_slug", unique: true
   end
 
   create_table "control_families", force: :cascade do |t|
@@ -243,11 +249,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "method_type", default: "human"
     t.string "name", null: false
     t.string "oscal_version", default: "1.2.1"
+    t.string "slug"
     t.bigint "source_catalog_id", null: false
     t.string "status", default: "draft", null: false
     t.bigint "target_catalog_id", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["slug"], name: "index_control_mappings_on_slug", unique: true
     t.index ["source_catalog_id", "target_catalog_id"], name: "idx_on_source_catalog_id_target_catalog_id_6bb4f5897d"
     t.index ["source_catalog_id"], name: "index_control_mappings_on_source_catalog_id"
     t.index ["status"], name: "index_control_mappings_on_status"
@@ -325,6 +333,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "file_hash"
     t.integer "file_size"
     t.string "original_filename"
+    t.string "slug"
     t.string "source"
     t.string "status", default: "draft", null: false
     t.string "title", null: false
@@ -332,6 +341,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.index ["authorization_boundary_id"], name: "index_evidences_on_authorization_boundary_id"
     t.index ["collected_at"], name: "index_evidences_on_collected_at"
     t.index ["evidence_type"], name: "index_evidences_on_evidence_type"
+    t.index ["slug"], name: "index_evidences_on_slug", unique: true
     t.index ["status"], name: "index_evidences_on_status"
   end
 
@@ -367,10 +377,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.string "slug"
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["name"], name: "index_organizations_on_name", unique: true
+    t.index ["slug"], name: "index_organizations_on_slug", unique: true
     t.index ["status"], name: "index_organizations_on_status"
     t.index ["uuid"], name: "index_organizations_on_uuid", unique: true
   end
@@ -388,12 +400,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "original_filename"
     t.string "oscal_version"
     t.string "poam_version"
+    t.string "slug"
     t.string "status", default: "pending"
     t.string "system_id"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_poam_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_poam_documents_on_created_at"
+    t.index ["slug"], name: "index_poam_documents_on_slug", unique: true
     t.index ["status"], name: "index_poam_documents_on_status"
     t.index ["uuid"], name: "index_poam_documents_on_uuid", unique: true
   end
@@ -633,11 +647,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "profile_version"
     t.string "published"
     t.jsonb "resolved_catalog_json", default: {}
+    t.string "slug"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
     t.index ["created_at"], name: "index_profile_documents_on_created_at"
+    t.index ["slug"], name: "index_profile_documents_on_slug", unique: true
     t.index ["status"], name: "index_profile_documents_on_status"
     t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
   end
@@ -702,6 +718,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "oscal_version"
     t.bigint "profile_document_id"
     t.string "sap_version"
+    t.string "slug"
     t.bigint "ssp_document_id"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
@@ -709,6 +726,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.index ["authorization_boundary_id"], name: "index_sap_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sap_documents_on_created_at"
     t.index ["profile_document_id"], name: "index_sap_documents_on_profile_document_id"
+    t.index ["slug"], name: "index_sap_documents_on_slug", unique: true
     t.index ["ssp_document_id"], name: "index_sap_documents_on_ssp_document_id"
     t.index ["status"], name: "index_sap_documents_on_status"
     t.index ["uuid"], name: "index_sap_documents_on_uuid", unique: true
@@ -765,12 +783,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.jsonb "reviewed_controls_data", default: {}
     t.bigint "sap_document_id"
     t.string "sar_version"
+    t.string "slug"
     t.string "status"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sar_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
     t.index ["sap_document_id"], name: "index_sar_documents_on_sap_document_id"
+    t.index ["slug"], name: "index_sar_documents_on_slug", unique: true
     t.index ["status"], name: "index_sar_documents_on_status"
     t.index ["uuid"], name: "index_sar_documents_on_uuid", unique: true
   end
@@ -1000,6 +1020,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "security_objective_confidentiality"
     t.string "security_objective_integrity"
     t.string "security_sensitivity_level"
+    t.string "slug"
     t.string "ssp_version"
     t.string "status"
     t.string "system_id"
@@ -1009,6 +1030,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_104927) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_ssp_documents_on_authorization_boundary_id"
     t.index ["profile_document_id"], name: "index_ssp_documents_on_profile_document_id"
+    t.index ["slug"], name: "index_ssp_documents_on_slug", unique: true
     t.index ["uuid"], name: "index_ssp_documents_on_uuid", unique: true
   end
 

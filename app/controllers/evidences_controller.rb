@@ -67,7 +67,7 @@ class EvidencesController < ApplicationController
   private
 
   def set_evidence
-    @evidence = Evidence.find(params[:id])
+    @evidence = Evidence.find_by!(slug: params[:id])
   end
 
   def evidence_params

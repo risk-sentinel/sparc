@@ -1,6 +1,7 @@
 class ControlCatalog < ApplicationRecord
   include OscalMetadata
   include SafeDestroyable
+  include Sluggable
 
   has_many :control_families, dependent: :destroy
   has_many :catalog_controls, through: :control_families

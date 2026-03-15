@@ -280,7 +280,7 @@ class SspDocumentsController < ApplicationController
   end
 
   def set_ssp_document
-    @ssp_document = SspDocument.find(params[:id])
+    @ssp_document = SspDocument.find_by!(slug: params[:id])
   end
 
   # ── Enrichment sync helpers ──────────────────────────────────────

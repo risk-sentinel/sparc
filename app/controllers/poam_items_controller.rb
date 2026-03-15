@@ -50,7 +50,7 @@ class PoamItemsController < ApplicationController
   private
 
   def set_poam_document
-    @poam_document = PoamDocument.find(params[:poam_document_id])
+    @poam_document = PoamDocument.find_by!(slug: params[:poam_document_id])
   end
 
   def set_poam_item

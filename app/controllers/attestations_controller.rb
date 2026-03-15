@@ -28,7 +28,7 @@ class AttestationsController < ApplicationController
   private
 
   def set_evidence
-    @evidence = Evidence.find(params[:evidence_id])
+    @evidence = Evidence.find_by!(slug: params[:evidence_id])
   end
 
   def attestation_params

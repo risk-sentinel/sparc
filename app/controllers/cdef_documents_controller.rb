@@ -153,7 +153,7 @@ class CdefDocumentsController < ApplicationController
   end
 
   def set_cdef_document
-    @cdef_document = CdefDocument.find(params[:id])
+    @cdef_document = CdefDocument.find_by!(slug: params[:id])
   end
 
   def build_severity_heatmap(scope)
