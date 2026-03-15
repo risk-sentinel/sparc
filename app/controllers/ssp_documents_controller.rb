@@ -1,13 +1,15 @@
 class SspDocumentsController < ApplicationController
   include FileUploadable
+  include Publishable
 
   before_action :set_ssp_document, only: [
     :show, :edit, :update, :destroy,
     :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml,
-    :status, :update_metadata, :enrich, :update_enrich
+    :status, :update_metadata, :enrich, :update_enrich,
+    :publish, :publish_check
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -282,6 +284,15 @@ class SspDocumentsController < ApplicationController
 
   def set_ssp_document
     @ssp_document = SspDocument.find_by!(slug: params[:id])
+  end
+
+  def publish_config
+    {
+      document: @ssp_document,
+      audit_event: "ssp_document_published",
+      redirect_path: ssp_document_path(@ssp_document),
+      label: "SSP"
+    }
   end
 
   def ensure_editable!

@@ -1,9 +1,10 @@
 class CdefDocumentsController < ApplicationController
   include FileUploadable
+  include Publishable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml status update_metadata copy]
-  before_action :ensure_editable!, only: [ :update_metadata ]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml status update_metadata copy publish publish_check]
+  before_action :ensure_editable!, only: [ :update_metadata, :publish ]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -155,6 +156,11 @@ class CdefDocumentsController < ApplicationController
 
   def set_cdef_document
     @cdef_document = CdefDocument.find_by!(slug: params[:id])
+  end
+
+  def publish_config
+    { document: @cdef_document, audit_event: "cdef_document_published",
+      redirect_path: cdef_document_path(@cdef_document), label: "CDEF" }
   end
 
   def ensure_editable!

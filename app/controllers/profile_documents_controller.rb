@@ -6,7 +6,7 @@ class ProfileDocumentsController < ApplicationController
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml status
-    update_metadata copy publish download_resolved_catalog
+    update_metadata copy publish publish_check download_resolved_catalog
     manage_controls update_controls
   ]
   before_action :ensure_editable!, only: %i[update_metadata update_controls publish]
@@ -181,9 +181,25 @@ class ProfileDocumentsController < ApplicationController
     redirect_to profile_document_path(copy)
   end
 
+  def publish_check
+    service = PublicationValidationService.new(@profile_document, current_user: current_user)
+    render json: service.publication_readiness
+  end
+
   def publish
     unless @profile_document.control_catalog
       flash[:error] = "Cannot publish: no source catalog linked to this profile."
+      redirect_to profile_document_path(@profile_document) and return
+    end
+
+    # Apply any inline metadata fixes from the publish modal
+    apply_profile_metadata_fixes!(@profile_document) if params[:metadata_fixes].present?
+
+    # Validate publication metadata
+    validation = PublicationValidationService.new(@profile_document, current_user: current_user)
+    result = validation.validate
+    unless result.valid?
+      flash[:error] = "Cannot publish: #{result.errors.join('; ')}"
       redirect_to profile_document_path(@profile_document) and return
     end
 
@@ -329,6 +345,42 @@ class ProfileDocumentsController < ApplicationController
   end
 
   private
+
+  def apply_profile_metadata_fixes!(doc)
+    fixes = params[:metadata_fixes]
+    return if fixes.blank?
+
+    extra = doc.metadata_extra || {}
+
+    if fixes[:roles].present?
+      new_roles = JSON.parse(fixes[:roles]) rescue []
+      existing = extra["roles"] || []
+      combined = {}
+      existing.each { |e| combined[e["id"]] = e }
+      new_roles.each { |e| combined[e["id"]] = e }
+      extra["roles"] = combined.values if combined.values.any?
+    end
+
+    if fixes[:parties].present?
+      new_parties = JSON.parse(fixes[:parties]) rescue []
+      existing = extra["parties"] || []
+      combined = {}
+      existing.each { |e| combined[e["uuid"]] = e }
+      new_parties.each { |e| combined[e["uuid"]] = e }
+      extra["parties"] = combined.values if combined.values.any?
+    end
+
+    if fixes[:responsible_parties].present?
+      new_rps = JSON.parse(fixes[:responsible_parties]) rescue []
+      existing = extra["responsible-parties"] || []
+      combined = {}
+      existing.each { |e| combined[e["role-id"]] = e }
+      new_rps.each { |e| combined[e["role-id"]] = e }
+      extra["responsible-parties"] = combined.values if combined.values.any?
+    end
+
+    doc.update!(metadata_extra: extra) if extra != doc.metadata_extra
+  end
 
   def document_metadata_params
     permitted = params.require(:profile_document).permit(:name, :profile_version, :oscal_version, :description, :published)
