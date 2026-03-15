@@ -488,7 +488,7 @@ class SarDocumentsController < ApplicationController
   end
 
   def set_sar_document
-    @sar_document = SarDocument.find(params[:id])
+    @sar_document = SarDocument.find_by!(slug: params[:id])
   end
 
   def filter_params

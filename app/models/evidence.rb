@@ -1,4 +1,6 @@
 class Evidence < ApplicationRecord
+  include Sluggable
+  sluggable_source :title
   has_one_attached :file
 
   belongs_to :authorization_boundary, optional: true

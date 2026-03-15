@@ -50,7 +50,7 @@ class ControlFamiliesController < ApplicationController
   private
 
   def set_control_catalog
-    @control_catalog = ControlCatalog.find(params[:control_catalog_id])
+    @control_catalog = ControlCatalog.find_by!(slug: params[:control_catalog_id])
   end
 
   def set_control_family

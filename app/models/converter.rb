@@ -11,14 +11,14 @@
 # URLs use slug-based paths (e.g., /converters/disa-cci-to-nist-sp-800-53)
 # instead of numeric IDs via to_param override.
 class Converter < ApplicationRecord
+  include Sluggable
+
   has_many :converter_entries, dependent: :destroy
 
   before_validation :generate_uuid, on: :create
-  before_validation :generate_slug
 
   validates :name, presence: true
   validates :uuid, presence: true, uniqueness: true
-  validates :slug, presence: true, uniqueness: true
   validates :converter_type, presence: true, inclusion: { in: %w[cci_to_nist cis_to_nist scap_oval_to_nist stig_to_nist custom] }
   validates :status, inclusion: { in: %w[draft complete deprecated processing failed] }
 
@@ -35,11 +35,6 @@ class Converter < ApplicationRecord
     "stig_to_nist" => "STIG → NIST",
     "custom" => "Custom"
   }.freeze
-
-  # Use slug for URL generation instead of numeric ID
-  def to_param
-    slug
-  end
 
   def type_label
     TYPE_LABELS[converter_type] || converter_type.titleize
@@ -80,23 +75,5 @@ class Converter < ApplicationRecord
 
   def generate_uuid
     self.uuid ||= SecureRandom.uuid
-  end
-
-  # Generate a URL-safe slug from the converter name.
-  # Appends a numeric suffix if the slug already exists.
-  def generate_slug
-    return if slug.present?
-    return unless name.present?
-
-    base = name.parameterize
-    candidate = base
-    counter = 1
-
-    while Converter.where(slug: candidate).where.not(id: id).exists?
-      candidate = "#{base}-#{counter}"
-      counter += 1
-    end
-
-    self.slug = candidate
   end
 end

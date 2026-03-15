@@ -208,7 +208,7 @@ class ControlCatalogsController < ApplicationController
   private
 
   def set_control_catalog
-    @control_catalog = ControlCatalog.find(params[:id])
+    @control_catalog = ControlCatalog.find_by!(slug: params[:id])
   end
 
   def control_catalog_params

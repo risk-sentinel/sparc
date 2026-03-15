@@ -333,7 +333,7 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def set_profile_document
-    @profile_document = ProfileDocument.find(params[:id])
+    @profile_document = ProfileDocument.find_by!(slug: params[:id])
   end
 
   def build_priority_heatmap(scope)

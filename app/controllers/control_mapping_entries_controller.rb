@@ -25,7 +25,7 @@ class ControlMappingEntriesController < ApplicationController
   private
 
   def set_control_mapping
-    @control_mapping = ControlMapping.find(params[:control_mapping_id])
+    @control_mapping = ControlMapping.find_by!(slug: params[:control_mapping_id])
   end
 
   def entry_params

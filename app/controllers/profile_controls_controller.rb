@@ -46,7 +46,7 @@ class ProfileControlsController < ApplicationController
   private
 
   def set_profile_document
-    @profile_document = ProfileDocument.find(params[:profile_document_id])
+    @profile_document = ProfileDocument.find_by!(slug: params[:profile_document_id])
   end
 
   def set_profile_control
