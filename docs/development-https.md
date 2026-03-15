@@ -9,17 +9,38 @@ without browser certificate warnings.
 
 ## Prerequisites
 
-Install mkcert:
+**You must install [mkcert](https://github.com/FiloSottile/mkcert)
+on your local machine before running `bin/setup-ssl`.** mkcert is
+a standalone CLI tool that generates locally-trusted TLS
+certificates — no new gem or npm dependencies are needed.
+
+Choose the install method that matches your platform:
+
+<!-- markdownlint-disable MD013 -->
+
+| Platform | Method | Command |
+| --- | --- | --- |
+| macOS | Homebrew | `brew install mkcert` |
+| macOS | MacPorts | `sudo port install mkcert` |
+| macOS | Binary | Download from [GitHub Releases](https://github.com/FiloSottile/mkcert/releases) |
+| Ubuntu / Debian | apt | `sudo apt install mkcert` |
+| Linux | Binary | Download from [GitHub Releases](https://github.com/FiloSottile/mkcert/releases) |
+| Windows | Chocolatey | `choco install mkcert` |
+| Windows | Scoop | `scoop install mkcert` |
+
+<!-- markdownlint-enable MD013 -->
+
+**Manual / binary install** (any platform): download the binary
+for your OS and architecture from the
+[GitHub Releases](https://github.com/FiloSottile/mkcert/releases)
+page, rename it to `mkcert`, make it executable
+(`chmod +x mkcert`), and move it to a directory on your `PATH`
+(e.g., `/usr/local/bin`).
+
+Verify the installation:
 
 ```bash
-# macOS
-brew install mkcert
-
-# Ubuntu / Debian
-sudo apt install mkcert
-
-# Other platforms
-# https://github.com/FiloSottile/mkcert#installation
+mkcert --version
 ```
 
 ---

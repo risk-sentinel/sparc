@@ -8,8 +8,14 @@
 #   bin/setup-ssl
 #
 # Prerequisites:
-#   macOS:  brew install mkcert
-#   Linux:  See https://github.com/FiloSottile/mkcert#installation
+#   Install mkcert before running this script.
+#   macOS:    brew install mkcert
+#             — or — MacPorts: sudo port install mkcert
+#             — or — download binary from GitHub releases
+#   Linux:    sudo apt install mkcert (Ubuntu/Debian)
+#             — or — download binary from GitHub releases
+#   Windows:  choco install mkcert — or — scoop install mkcert
+#   All:      https://github.com/FiloSottile/mkcert#installation
 
 require "fileutils"
 
@@ -26,9 +32,17 @@ unless system("command -v mkcert > /dev/null 2>&1")
     ERROR: mkcert is not installed.
 
     Install it first:
-      macOS:   brew install mkcert
-      Ubuntu:  sudo apt install mkcert
-      Other:   https://github.com/FiloSottile/mkcert#installation
+
+      macOS (Homebrew):    brew install mkcert
+      macOS (MacPorts):    sudo port install mkcert
+      macOS (binary):      Download from https://github.com/FiloSottile/mkcert/releases
+      Ubuntu / Debian:     sudo apt install mkcert
+      Windows:             choco install mkcert  — or —  scoop install mkcert
+      Manual / Other:      https://github.com/FiloSottile/mkcert#installation
+
+    For manual install, download the binary for your platform from
+    the GitHub releases page, rename it to "mkcert", make it
+    executable (chmod +x), and place it on your PATH.
   MSG
 end
 
