@@ -1,0 +1,180 @@
+<div data-controller="stig-parser"
+     data-action="dropzone:fileSelected@window->stig-parser#handleFile">
+
+<%# ── Header ── %>
+<div class="sparc-dashboard-header" style="margin-bottom: 1.5rem;">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+    <div>
+      <div class="d-flex align-items-baseline gap-2">
+        <span style="font-family: monospace; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sparc-primary);">XCCDF</span>
+        <h1 class="h3 fw-bold mb-0">STIG Parser</h1>
+      </div>
+      <p class="text-body-secondary mb-0" style="font-size: 0.88rem; margin-top: 0.35rem;">
+        Analyze DISA STIG XCCDF XML files client-side. Preview SV/V-IDs, severities, CCIs, and resolved NIST controls before importing.
+      </p>
+    </div>
+    <%= link_to "All Converters", converters_path, class: "btn btn-sm btn-outline-secondary" %>
+  </div>
+</div>
+
+<%# ── Upload Card ── %>
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="fw-semibold mb-3">Upload STIG XCCDF File</h5>
+
+    <div data-controller="dropzone"
+         data-dropzone-accept-value=".xml">
+      <div class="sparc-dropzone"
+           data-dropzone-target="zone"
+           data-action="dragover->dropzone#dragover
+                        dragenter->dropzone#dragenter
+                        dragleave->dropzone#dragleave
+                        drop->dropzone#drop
+                        click->dropzone#browse">
+        <span class="sparc-dropzone__icon" data-dropzone-target="icon">&#128194;</span>
+        <p class="sparc-dropzone__prompt" data-dropzone-target="prompt">
+          <strong>Click to browse</strong> or drag &amp; drop an XCCDF XML file
+        </p>
+        <p class="sparc-dropzone__filename" data-dropzone-target="filename"></p>
+        <p class="sparc-dropzone__filesize" data-dropzone-target="filesize"></p>
+        <p class="sparc-dropzone__error" data-dropzone-target="error"></p>
+        <span class="sparc-dropzone__hint">
+          Accepted: <code>.xml</code> &mdash; e.g. <code>U_RHEL_9_STIG_V2R7_Manual-xccdf.xml</code>
+        </span>
+      </div>
+      <input type="file" accept=".xml" class="d-none"
+             data-dropzone-target="input"
+             data-action="change->dropzone#change">
+    </div>
+  </div>
+</div>
+
+<%# ── Loading Indicator ── %>
+<div class="text-center text-primary mb-3 d-none" data-stig-parser-target="loading"
+     style="font-family: monospace; font-size: 0.88rem;">
+  Parsing STIG&hellip;
+</div>
+
+<%# ── Error Message ── %>
+<div class="alert alert-danger d-none" data-stig-parser-target="errorMessage"
+     style="font-family: monospace; font-size: 0.85rem;"></div>
+
+<%# ── Results Section ── %>
+<div class="d-none" data-stig-parser-target="resultsSection">
+
+  <%# Benchmark title + stats %>
+  <div class="card mb-3">
+    <div class="card-body">
+      <div style="font-family: monospace; font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sparc-primary); margin-bottom: 0.25rem;">Benchmark</div>
+      <div class="fw-semibold mb-3" data-stig-parser-target="benchmarkTitle" style="font-size: 1rem;"></div>
+
+      <div class="sparc-stig-stats">
+        <div class="sparc-stig-stat">
+          <div class="sparc-stig-stat__value" data-stig-parser-target="summaryTotal">0</div>
+          <div class="sparc-stig-stat__label">Total Rules</div>
+        </div>
+        <div class="sparc-stig-stat">
+          <div class="sparc-stig-stat__value" style="color: var(--sparc-danger);" data-stig-parser-target="summaryHigh">0</div>
+          <div class="sparc-stig-stat__label">High</div>
+        </div>
+        <div class="sparc-stig-stat">
+          <div class="sparc-stig-stat__value" style="color: var(--sparc-warning);" data-stig-parser-target="summaryMedium">0</div>
+          <div class="sparc-stig-stat__label">Medium</div>
+        </div>
+        <div class="sparc-stig-stat">
+          <div class="sparc-stig-stat__value" style="color: var(--sparc-primary);" data-stig-parser-target="summaryLow">0</div>
+          <div class="sparc-stig-stat__label">Low</div>
+        </div>
+        <div class="sparc-stig-stat">
+          <div class="sparc-stig-stat__value" style="color: var(--sparc-primary);" data-stig-parser-target="summaryCci">0</div>
+          <div class="sparc-stig-stat__label">With CCI</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Filters %>
+  <div class="d-flex gap-2 flex-wrap mb-3 align-items-center">
+    <input type="text" placeholder="Search V-ID, SV-ID, CCI, NIST, title&hellip;"
+           class="form-control form-control-sm"
+           style="flex: 1 1 250px; min-width: 200px; font-family: monospace; font-size: 0.82rem;"
+           data-stig-parser-target="searchInput"
+           data-action="input->stig-parser#search">
+
+    <% %w[all high medium low].each_with_index do |sev, i| %>
+      <button type="button"
+              class="btn btn-sm btn-outline-secondary sparc-stig-filter-btn <%= 'active' if i == 0 %>"
+              data-stig-parser-target="severityFilter"
+              data-severity="<%= sev %>"
+              data-action="click->stig-parser#filterBySeverity">
+        <%= sev.upcase %>
+      </button>
+    <% end %>
+
+    <label class="d-flex align-items-center gap-1" style="cursor: pointer; font-size: 0.82rem; color: var(--bs-secondary-color);">
+      <input type="checkbox"
+             data-stig-parser-target="cciToggle"
+             data-action="change->stig-parser#filterByCci"
+             style="accent-color: var(--sparc-primary);">
+      CCI only
+    </label>
+
+    <div class="ms-auto d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-primary"
+              data-action="click->stig-parser#exportCsv"
+              style="font-family: monospace; font-size: 0.75rem;">
+        &#11015; CSV
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-primary"
+              data-action="click->stig-parser#exportJson"
+              style="font-family: monospace; font-size: 0.75rem;">
+        &#11015; JSON
+      </button>
+    </div>
+  </div>
+
+  <%# Result count %>
+  <div class="text-body-tertiary mb-2" data-stig-parser-target="resultCount"
+       style="font-family: monospace; font-size: 0.75rem;"></div>
+
+  <%# Table %>
+  <div class="table-responsive">
+    <table class="table table-hover sparc-stig-table" style="font-size: 0.82rem;">
+      <thead>
+        <tr>
+          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">SEV</th>
+          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">V-ID</th>
+          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">SV-ID</th>
+          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">CCIs</th>
+          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">NIST Controls</th>
+          <th style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color);">Title</th>
+        </tr>
+      </thead>
+      <tbody data-stig-parser-target="tableBody"></tbody>
+    </table>
+  </div>
+
+  <%# Import to SPARC %>
+  <div class="card mt-3">
+    <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h6 class="fw-semibold mb-1">Import to SPARC</h6>
+        <p class="text-body-secondary mb-0" style="font-size: 0.85rem;">
+          Creates or extends the STIG &rarr; NIST converter with SV/V-ID mappings resolved via CCI.
+        </p>
+      </div>
+      <button type="button" class="btn btn-success fw-semibold"
+              data-action="click->stig-parser#importToSparc">
+        Import to SPARC
+      </button>
+    </div>
+  </div>
+
+  <%# Hidden import form %>
+  <%= form_with url: import_stig_converters_path, method: :post, multipart: true, local: true,
+        data: { stig_parser_target: "importForm" }, class: "d-none" do |f| %>
+    <input type="file" name="stig_file" data-stig-parser-target="importFileInput">
+  <% end %>
+</div>
+
+</div>

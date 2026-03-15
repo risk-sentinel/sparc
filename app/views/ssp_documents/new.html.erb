@@ -2,13 +2,11 @@
   <h2>Upload System Security Plan</h2>
 
   <%= form_with model: @ssp_document, local: true, multipart: true do |f| %>
-    <div class="form-group">
-      <label for="ssp_document_file">Select File (.xlsx, .xls, .json, .xml, .yaml, .yml)</label>
-      <%= f.file_field :file, accept: ".xlsx,.xls,.json,.xml,.yaml,.yml", required: true %>
-      <small class="text-body-secondary d-block" style="margin-top: 0.5rem;">
-        Upload an Excel workbook, OSCAL SSP JSON, OSCAL SSP XML, or OSCAL SSP YAML file.
-      </small>
-    </div>
+    <%= render "shared/dropzone",
+      form: f,
+      field: :file,
+      accept: ".xlsx,.xls,.json,.xml,.yaml,.yml",
+      hint: "Upload an Excel workbook, OSCAL SSP JSON, OSCAL SSP XML, or OSCAL SSP YAML file." %>
 
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Convert", class: "btn btn-success" %>
