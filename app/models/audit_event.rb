@@ -127,6 +127,13 @@ class AuditEvent < ApplicationRecord
     organization_reactivated
     organization_member_added
     organization_member_removed
+    ssp_document_published
+    sar_document_published
+    cdef_document_published
+    sap_document_published
+    poam_document_published
+    profile_document_published
+    control_catalog_published
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }
@@ -145,28 +152,35 @@ class AuditEvent < ApplicationRecord
                                   project_membership_created project_membership_updated
                                   project_membership_deleted],
     "SSP Documents" => %w[ssp_document_created ssp_document_updated ssp_document_deleted
-                          ssp_document_delete_blocked ssp_document_exported ssp_document_imported],
+                          ssp_document_delete_blocked ssp_document_exported ssp_document_imported
+                          ssp_document_published],
     "SAR Documents" => %w[sar_document_created sar_document_updated sar_document_deleted
-                          sar_document_delete_blocked sar_document_exported sar_document_imported],
+                          sar_document_delete_blocked sar_document_exported sar_document_imported
+                          sar_document_published],
     "CDEF Documents" => %w[cdef_document_created cdef_document_updated cdef_document_deleted
                            cdef_document_delete_blocked
-                           cdef_document_exported cdef_document_imported cdef_document_copied],
+                           cdef_document_exported cdef_document_imported cdef_document_copied
+                           cdef_document_published],
     "SAP Documents" => %w[sap_document_created sap_document_updated sap_document_deleted
-                          sap_document_delete_blocked sap_document_exported sap_document_imported],
+                          sap_document_delete_blocked sap_document_exported sap_document_imported
+                          sap_document_published],
     "POAM Documents" => %w[poam_document_created poam_document_updated poam_document_deleted
                            poam_document_delete_blocked
                            poam_document_exported poam_document_imported poam_item_created
-                           poam_item_updated poam_item_deleted],
+                           poam_item_updated poam_item_deleted
+                           poam_document_published],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
                      profile_document_delete_blocked
                      profile_document_exported profile_document_imported profile_document_copied
                      profile_controls_bulk_updated
-                     profile_control_created profile_control_updated profile_control_deleted],
+                     profile_control_created profile_control_updated profile_control_deleted
+                     profile_document_published],
     "Control Catalogs" => %w[control_catalog_created control_catalog_updated control_catalog_deleted
                              control_catalog_delete_blocked
                              control_catalog_exported control_catalog_imported
                              control_family_created control_family_updated control_family_deleted
-                             catalog_control_created catalog_control_updated catalog_control_deleted],
+                             catalog_control_created catalog_control_updated catalog_control_deleted
+                             control_catalog_published],
     "Control Mappings" => %w[control_mapping_created control_mapping_updated control_mapping_deleted
                              control_mapping_exported control_mapping_published
                              control_mapping_deprecated mapping_entry_created mapping_entry_deleted],

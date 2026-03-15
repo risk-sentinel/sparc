@@ -4,5 +4,6 @@ FactoryBot.define do
     file_type { "json" }
     original_filename { "poam_#{Date.today}.json" }
     status { "completed" }
+    lifecycle_status { "in_progress" }
   end
 end

@@ -456,6 +456,11 @@
   color: #721c24 !important;
 }
 
+.badge-info {
+  background-color: #d6eaf8 !important;
+  color: #1a5276 !important;
+}
+
 [data-bs-theme="dark"] .badge-ok {
   background-color: #1a3a2a !important;
   color: #68d391 !important;
@@ -469,6 +474,11 @@
 [data-bs-theme="dark"] .badge-fail {
   background-color: #3a1a1a !important;
   color: #fc8181 !important;
+}
+
+[data-bs-theme="dark"] .badge-info {
+  background-color: #1a2a3a !important;
+  color: #5dade2 !important;
 }
 
 /* Custom button variants */

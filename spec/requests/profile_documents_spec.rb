@@ -145,8 +145,8 @@ RSpec.describe "ProfileDocuments", type: :request do
 
       expect {
         post create_from_catalog_profile_documents_path, params: {
-          catalog_id: catalog.id,
-          control_ids: [ control.id ],
+          catalog_id: catalog.slug,
+          control_ids: [ control.control_id ],
           profile_name: "From Catalog Profile"
         }
       }.to change(ProfileDocument, :count).by(1)

@@ -4,6 +4,60 @@
 
 ---
 
+## 2026-03-15 -- Document Lifecycle Status Tracking (#149)
+
+**Branch:** `feature/149_status_tracking`
+
+### Summary
+
+Adds document lifecycle tracking (started / in-progress / published) separate
+from the existing processing status. Published documents become read-only.
+Catalog traceability shows source catalog name and content digest in profiles.
+
+### What Changed
+
+- **New `Lifecycle` concern** -- shared module included in all 7 document
+  models providing lifecycle_status validation, scopes (`draft`,
+  `published_lifecycle`), predicate helpers, and `publish_lifecycle!`.
+
+- **Migration** -- adds `lifecycle_status` column (default `"in_progress"`)
+  with index to all 7 document tables. Adds `catalog_content_digest` to
+  `control_catalogs`. Backfills existing records.
+
+- **Catalog content digest** -- SHA-256 computed on import. Short 8-char
+  digest shown in profile views alongside source catalog name.
+
+- **Lifecycle status at entry points** -- profiles created from catalogs
+  start as `"started"`, file imports complete as `"in_progress"`, catalogs
+  import as `"published"`. Publish action sets `"published"`.
+
+- **Published = read-only** -- all 7 controllers enforce
+  `ensure_editable!` before mutation actions. Published profiles show
+  "Create Editable Copy" instead of edit buttons.
+
+- **Duplication service** -- copies reset `lifecycle_status` to
+  `"in_progress"` and clear `published` timestamp.
+
+- **Lifecycle badges** -- all 7 index views show lifecycle status with
+  color-coded badges (started=amber, in-progress=blue, published=green).
+
+- **Audit events** -- added `*_published` actions for all 7 document types.
+
+### Files Created (2)
+
+- `app/models/concerns/lifecycle.rb`
+- `db/migrate/20260315180000_add_lifecycle_status_and_catalog_digest.rb`
+
+### Files Modified (25+)
+
+- 7 models (include Lifecycle), 7 controllers (ensure_editable!),
+  7 index views (lifecycle badges), profile show view (catalog traceability,
+  read-only mode), `document_duplication_service.rb`,
+  `document_conversion_job.rb`, `catalog_import_service.rb`,
+  `audit_event.rb`, `sparc-theme.css`
+
+---
+
 ## 2026-03-15 -- Unified Catalog Import/Export: JSON, YAML, XML Interoperability (#163)
 
 **Branch:** `feature/163_unified_catalog_import_export`

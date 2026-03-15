@@ -21,6 +21,7 @@
           <th>Name</th>
           <th>Version</th>
           <th>Status</th>
+          <th>Lifecycle</th>
           <th>Items</th>
           <th>Entities</th>
           <th>Created</th>
@@ -39,6 +40,11 @@
               <% if doc.processing? && doc.metadata_extra&.dig("processing_message").present? %>
                 <br><span class="text-body-secondary" style="font-size: 0.72rem;"><%= doc.metadata_extra["processing_message"] %></span>
               <% end %>
+            </td>
+            <td>
+              <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.25rem 0.75rem;">
+                <%= doc.lifecycle_label %>
+              </span>
             </td>
             <td><%= doc.poam_items.count %></td>
             <td style="font-size: 0.8rem;">
