@@ -87,6 +87,8 @@ class AuditEvent < ApplicationRecord
     catalog_control_created
     catalog_control_updated
     catalog_control_deleted
+    catalog_control_baseline_updated
+    catalog_control_baselines_bulk_updated
     control_mapping_created
     control_mapping_updated
     control_mapping_deleted
@@ -180,6 +182,7 @@ class AuditEvent < ApplicationRecord
                              control_catalog_exported control_catalog_imported
                              control_family_created control_family_updated control_family_deleted
                              catalog_control_created catalog_control_updated catalog_control_deleted
+                             catalog_control_baseline_updated catalog_control_baselines_bulk_updated
                              control_catalog_published],
     "Control Mappings" => %w[control_mapping_created control_mapping_updated control_mapping_deleted
                              control_mapping_exported control_mapping_published

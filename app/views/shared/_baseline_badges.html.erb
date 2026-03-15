@@ -1,0 +1,13 @@
+<%# Renders colored badges for baseline impact levels.
+    Usage: render "shared/baseline_badges", baseline_impact: control.baseline_impact %>
+<% levels = baseline_impact.to_s.split(/\s*,\s*/).map(&:strip).reject(&:blank?) %>
+<% if levels.any? %>
+  <% level_classes = { "LOW" => "badge-ok", "MODERATE" => "badge-info", "HIGH" => "badge-warn" } %>
+  <% levels.each do |level| %>
+    <span class="<%= level_classes[level.upcase] || 'bg-body-secondary' %> rounded fw-semibold" style="padding: 0.15rem 0.45rem; font-size: 0.72rem; white-space: nowrap; display: inline-block; margin-bottom: 0.1rem;">
+      <%= level.upcase %>
+    </span>
+  <% end %>
+<% else %>
+  <span style="color: #ddd;">&mdash;</span>
+<% end %>

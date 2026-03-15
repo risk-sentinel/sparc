@@ -42,10 +42,13 @@ Standard workflow for every issue in the SPARC phased roadmap:
    - Release notes so they are all stacked
    - Regression testing
 9. Commit / push changes
+    - Reference the issue in any commit messages
 10. Wait for user testing
     - Functional testing
     - Review regression report(s)
-11. Create a PR and wait for the PR to be merged by the user before moving forward
+11. Create a PR
+    - Reference the Issue so it will close on merge
+    - Wait for the PR to be merged by the user before moving forward
 
 ---
 
@@ -67,7 +70,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 ### 3. OSCAL Core (Import/Export, Publication, Status)
 
 - [x] #163 -- Unified catalog import/export (JSON/YAML/XML interoperability) -- **COMPLETED 2026-03-15**
-- [ ] #177 -- Extend Catalog import & management (locking, SHA digest, baseline impacts)
+- [x] #177 -- Extend Catalog import & management (locking, SHA digest, baseline impacts) -- **COMPLETED 2026-03-15**
 - [ ] #148 -- OSCAL-compliant publication process for key document types
 - [x] #149 -- Status tracking for Baselines/Profiles, Components, Documents -- **COMPLETED 2026-03-15**
 - [ ] #176 -- Unified publication process for Profiles and Component Definitions
@@ -155,7 +158,7 @@ Dev D: #134 (HTTPS dev environment)
 | ------ | ----- | ----------- | -------- | ------------ |
 | [x] | #163 | YAML + full XML enhancement support, round-trip tests -- **COMPLETED 2026-03-15** | **HIGH** | None |
 | [x] | #149 | Status enum + lifecycle rules across all document types -- **COMPLETED 2026-03-15** | **HIGH** | None |
-| [ ] | #177 | Catalog locking, universal SHA digest, baseline impact multi-select | **HIGH** | AFTER #163 merges |
+| [x] | #177 | Catalog locking, universal SHA digest, baseline impact multi-select -- **COMPLETED 2026-03-15** | **HIGH** | AFTER #163 merges |
 | [ ] | #148 | Standardized publication metadata + validation | MEDIUM | AFTER #149 merges |
 | [ ] | #176 | Unified publish/copy logic for Profiles & CDEFs | MEDIUM | AFTER #149 merges |
 
