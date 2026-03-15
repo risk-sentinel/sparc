@@ -52,7 +52,7 @@ class OscalCatalogExportService
 
     base["published"] = @catalog.published if @catalog.published.present?
 
-    extra = @catalog.metadata_extra || {}
+    extra = oscal_metadata_extras
     if extra.any?
       base.merge(extra)
     else
@@ -177,5 +177,18 @@ class OscalCatalogExportService
   def base_control?(control_id)
     # Base controls have no enhancement suffix: "ac-1", "ac-2" but not "ac-2.1"
     control_id.match?(/\A[a-z]+-\d+\z/i)
+  end
+
+  # Keys from metadata_extra that are valid OSCAL metadata properties.
+  # Internal/SPARC-specific keys (catalog_uuid, back_matter_resources,
+  # import_format, etc.) are excluded to pass schema validation.
+  OSCAL_METADATA_KEYS = %w[
+    roles parties responsible-parties revisions remarks
+    links props locations
+  ].freeze
+
+  def oscal_metadata_extras
+    raw = @catalog.metadata_extra || {}
+    raw.slice(*OSCAL_METADATA_KEYS)
   end
 end
