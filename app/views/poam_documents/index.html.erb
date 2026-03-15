@@ -31,7 +31,7 @@
       <tbody>
         <% @poam_documents.each do |doc| %>
           <tr>
-            <td class="fw-semibold"><%= doc.name %></td>
+            <td><strong><%= link_to doc.name, poam_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td class="small text-body-secondary"><%= doc.poam_version.presence || "—" %></td>
             <td>
               <span class="<%= doc.completed? ? 'badge-ok' : doc.failed? ? 'badge-fail' : 'badge-warn' %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">

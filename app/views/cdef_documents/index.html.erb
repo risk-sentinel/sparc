@@ -33,7 +33,7 @@
       <tbody>
         <% @cdef_documents.each do |doc| %>
           <tr>
-            <td class="fw-semibold"><%= doc.name %></td>
+            <td><strong><%= link_to doc.name, cdef_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
               <% type_colors = { "disa_stig" => "#e74c3c", "scap" => "#3498db", "cis" => "#f39c12", "custom" => "#95a5a6" } %>
               <span class="rounded fw-semibold" style="padding: 0.2rem 0.6rem; background: <%= type_colors[doc.cdef_type] || '#7f8c8d' %>22; color: <%= type_colors[doc.cdef_type] || '#7f8c8d' %>; border: 1px solid <%= type_colors[doc.cdef_type] || '#7f8c8d' %>44; font-size: 0.78rem; white-space: nowrap;">

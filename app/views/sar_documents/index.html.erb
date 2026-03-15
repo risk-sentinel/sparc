@@ -35,7 +35,7 @@
       <tbody>
         <% @sar_documents.each do |doc| %>
           <tr>
-            <td><%= doc.name %></td>
+            <td><strong><%= link_to doc.name, sar_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
               <% source_label, source_class = case doc.creation_method
                                when "wizard" then ["Wizard", "sparc-source-wizard"]

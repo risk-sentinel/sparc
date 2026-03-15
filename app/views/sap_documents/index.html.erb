@@ -33,7 +33,7 @@
       <tbody>
         <% @sap_documents.each do |doc| %>
           <tr>
-            <td class="fw-semibold"><%= doc.name %></td>
+            <td><strong><%= link_to doc.name, sap_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
               <% type_colors = { "initial" => "#3498db", "annual" => "#27ae60", "continuous" => "#8e44ad", "ad-hoc" => "#f39c12" } %>
               <% color = type_colors[doc.assessment_type] || "#7f8c8d" %>
