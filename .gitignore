@@ -48,3 +48,6 @@
 
 # SSL certificates for local development (mkcert)
 /ssl/
+
+# puma-dev
+.powenv

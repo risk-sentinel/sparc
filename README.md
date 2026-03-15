@@ -122,6 +122,7 @@ The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all va
 | SSP Schema | [docs/ssp-columns.md](docs/ssp-columns.md) |
 | SAR Schema | [docs/sar-columns.md](docs/sar-columns.md) |
 | Catalog Schema | [docs/catalog-schema.md](docs/catalog-schema.md) |
+| Local Dev with puma-dev | [docs/puma-dev.md](docs/puma-dev.md) |
 | Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
 
 ---
