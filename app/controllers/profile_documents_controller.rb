@@ -308,6 +308,24 @@ class ProfileDocumentsController < ApplicationController
     }
   end
 
+  # Override publish_check to include Profile-specific prioritization check.
+  def publish_check
+    service = PublicationValidationService.new(@profile_document, current_user: current_user)
+    readiness = service.publication_readiness
+
+    # Add prioritization check for profiles
+    unprioritized = @profile_document.profile_controls.where(priority: [nil, ""]).count
+    prioritized = unprioritized == 0
+    readiness[:checks][:controls_prioritized] = prioritized
+
+    unless prioritized
+      readiness[:ready] = false
+      readiness[:errors] << "#{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3)"
+    end
+
+    render json: readiness
+  end
+
   private
 
   def publish_config

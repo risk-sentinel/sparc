@@ -52,6 +52,9 @@ export default class extends Controller {
     checklistHtml += this.checkItem("Creator/Prepared-by role", checks.creator_role)
     checklistHtml += this.checkItem("Contact party", checks.contact_party)
     checklistHtml += this.checkItem("Responsible parties linked", checks.responsible_parties)
+    if (checks.controls_prioritized !== undefined) {
+      checklistHtml += this.checkItem("All controls prioritized (P1/P2/P3)", checks.controls_prioritized)
+    }
     checklistHtml += this.infoItem("Title", checks.title)
     checklistHtml += this.infoItem("OSCAL version", checks.oscal_version)
 
