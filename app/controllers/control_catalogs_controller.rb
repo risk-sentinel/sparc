@@ -198,12 +198,24 @@ class ControlCatalogsController < ApplicationController
   # Returns control IDs matching a given baseline level.
   # Used by the family-selector Stimulus controller for baseline auto-select.
   # GET /control_catalogs/:id/baseline_controls.json?level=MODERATE
+  # Matches both full names ("LOW", "MODERATE", "HIGH") and abbreviated
+  # formats ("L", "M", "H") stored in baseline_impact.
   def baseline_controls
-    level = params[:level].to_s.strip.downcase
+    level = params[:level].to_s.strip.upcase
+    abbrev = { "LOW" => "L", "MODERATE" => "M", "HIGH" => "H" }[level]
+
     control_ids = if level.present?
-      @control_catalog.catalog_controls
-                      .where("LOWER(baseline_impact) LIKE ?", "%#{level}%")
-                      .pluck(:control_id)
+      scope = @control_catalog.catalog_controls
+      if abbrev
+        # Match either the full name or the abbreviation (case-insensitive)
+        scope.where(
+          "LOWER(baseline_impact) LIKE :full OR baseline_impact LIKE :abbrev_word",
+          full: "%#{level.downcase}%",
+          abbrev_word: "%#{abbrev}%"
+        ).pluck(:control_id)
+      else
+        scope.where("LOWER(baseline_impact) LIKE ?", "%#{level.downcase}%").pluck(:control_id)
+      end
     else
       []
     end

@@ -187,6 +187,7 @@ class CatalogImportService
       attrs[:oscal_version] = oscal_version.presence || @existing_catalog.oscal_version
       attrs[:published] = published.presence || @existing_catalog.published
       attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      attrs[:oscal_uuid] = metadata_extra["catalog_uuid"] if metadata_extra["catalog_uuid"].present?
       @existing_catalog.update!(attrs)
       @existing_catalog
     else
@@ -356,6 +357,7 @@ class CatalogImportService
       attrs[:oscal_version] = oscal_version.presence || @existing_catalog.oscal_version
       attrs[:published] = published.presence || @existing_catalog.published
       attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      attrs[:oscal_uuid] = metadata_extra["catalog_uuid"] if metadata_extra["catalog_uuid"].present?
       @existing_catalog.update!(attrs)
       @existing_catalog
     else
@@ -707,6 +709,10 @@ class CatalogImportService
     attrs[:oscal_version] = oscal_version if oscal_version.present?
     attrs[:published] = published if published.present?
     attrs[:metadata_extra] = metadata_extra if metadata_extra.present?
+    # Set oscal_uuid from the imported catalog's UUID if available
+    if metadata_extra["catalog_uuid"].present?
+      attrs[:oscal_uuid] = metadata_extra["catalog_uuid"]
+    end
     catalog.assign_attributes(attrs)
     catalog.save!
     catalog

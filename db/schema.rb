@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_15_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_15_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -201,6 +201,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_180000) do
     t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
     t.string "original_filename"
+    t.string "oscal_uuid", null: false
     t.string "oscal_version"
     t.string "published"
     t.string "slug"
@@ -210,6 +211,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_180000) do
     t.string "version"
     t.index ["lifecycle_status"], name: "index_control_catalogs_on_lifecycle_status"
     t.index ["name"], name: "index_control_catalogs_on_name"
+    t.index ["oscal_uuid"], name: "index_control_catalogs_on_oscal_uuid", unique: true
     t.index ["slug"], name: "index_control_catalogs_on_slug", unique: true
   end
 
@@ -656,6 +658,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_180000) do
     t.string "published"
     t.jsonb "resolved_catalog_json", default: {}
     t.string "slug"
+    t.bigint "source_profile_id"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
@@ -663,6 +666,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_180000) do
     t.index ["created_at"], name: "index_profile_documents_on_created_at"
     t.index ["lifecycle_status"], name: "index_profile_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_profile_documents_on_slug", unique: true
+    t.index ["source_profile_id"], name: "index_profile_documents_on_source_profile_id"
     t.index ["status"], name: "index_profile_documents_on_status"
     t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
   end
@@ -1202,6 +1206,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_180000) do
   add_foreign_key "profile_control_fields", "profile_controls", on_delete: :cascade
   add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
+  add_foreign_key "profile_documents", "profile_documents", column: "source_profile_id"
   add_foreign_key "sap_control_fields", "sap_controls", on_delete: :cascade
   add_foreign_key "sap_controls", "sap_documents", on_delete: :cascade
   add_foreign_key "sap_documents", "authorization_boundaries", on_delete: :nullify

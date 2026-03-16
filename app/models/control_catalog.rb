@@ -12,6 +12,8 @@ class ControlCatalog < ApplicationRecord
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 
+  before_validation :ensure_oscal_uuid
+
   validates :name, presence: true
 
   def total_controls
@@ -28,6 +30,10 @@ class ControlCatalog < ApplicationRecord
   end
 
   private
+
+  def ensure_oscal_uuid
+    self.oscal_uuid ||= SecureRandom.uuid
+  end
 
   def deletion_dependencies
     deps = []

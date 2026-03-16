@@ -6,6 +6,8 @@ class ProfileDocument < ApplicationRecord
 
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true
+  belongs_to :source_profile, class_name: "ProfileDocument", optional: true
+  has_many :derived_profiles, class_name: "ProfileDocument", foreign_key: :source_profile_id
   has_one_attached :file
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
@@ -34,6 +36,8 @@ class ProfileDocument < ApplicationRecord
     deps << "#{ssp_count} SSP(s)" if ssp_count > 0
     sap_count = SapDocument.where(profile_document_id: id).count
     deps << "#{sap_count} Assessment Plan(s)" if sap_count > 0
+    derived_count = derived_profiles.count
+    deps << "#{derived_count} derived profile(s)" if derived_count > 0
     deps
   end
 end
