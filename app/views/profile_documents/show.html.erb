@@ -66,6 +66,12 @@
             <code style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-left: 0.2rem;"><%= @profile_document.control_catalog.short_digest %></code>
           <% end %>
         <% end %>
+        <% if @profile_document.source_profile.present? %>
+          &nbsp;&bull;&nbsp;
+          Derived from: <%= link_to @profile_document.source_profile.name,
+                                    profile_document_path(@profile_document.source_profile),
+                                    style: "color: rgba(255,255,255,0.8); text-decoration: underline;" %>
+        <% end %>
         &nbsp;&bull;&nbsp;
         <span class="<%= @profile_document.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.15rem 0.5rem; font-size: 0.78rem;">
           <%= @profile_document.lifecycle_label %>

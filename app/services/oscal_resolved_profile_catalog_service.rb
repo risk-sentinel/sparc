@@ -26,9 +26,10 @@ class OscalResolvedProfileCatalogService
   def build_catalog
     {
       "catalog" => {
-        "uuid"     => SecureRandom.uuid,
-        "metadata" => build_metadata,
-        "groups"   => build_groups
+        "uuid"         => SecureRandom.uuid,
+        "metadata"     => build_metadata,
+        "groups"       => build_groups,
+        "back-matter"  => build_back_matter
       }.compact
     }
   end
@@ -41,7 +42,7 @@ class OscalResolvedProfileCatalogService
       "last-modified" => Time.current.iso8601,
       "published"     => @profile.published,
       "props"         => [ { "name" => "resolution-tool", "value" => "SPARC" } ],
-      "links"         => [ { "href" => "#", "rel" => "source-profile" } ],
+      "links"         => [ { "href" => "##{@profile.uuid}", "rel" => "source-profile" } ],
       "roles"         => [ { "id" => "creator", "title" => "Document Creator" } ],
       "parties"       => [ {
         "uuid" => SecureRandom.uuid,
@@ -176,5 +177,35 @@ class OscalResolvedProfileCatalogService
     end
 
     parts
+  end
+
+  def build_back_matter
+    resources = []
+
+    # Source profile resource
+    resources << {
+      "uuid"        => @profile.uuid,
+      "title"       => @profile.name,
+      "description" => "Source profile used to generate this resolved catalog",
+      "rlinks"      => [ { "href" => "#{@profile.name.parameterize}.json", "media-type" => "application/json" } ]
+    }
+
+    # Source catalog resource
+    resources << {
+      "uuid"        => @catalog.oscal_uuid,
+      "title"       => @catalog.name,
+      "description" => "Source catalog referenced by the profile",
+      "rlinks"      => [ { "href" => "#{@catalog.name.parameterize}.json", "media-type" => "application/json" } ]
+    }
+
+    # SPARC identifying resource
+    resources << {
+      "uuid"        => SecureRandom.uuid,
+      "title"       => "SPARC Document Source",
+      "description" => "Managed by SPARC",
+      "rlinks"      => [ { "href" => SparcConfig.app_url, "media-type" => "text/html" } ]
+    }
+
+    { "resources" => resources }
   end
 end

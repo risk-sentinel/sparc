@@ -201,6 +201,32 @@ class ProfileDocumentsController < ApplicationController
     @catalogs = ControlCatalog.order(:name)
   end
 
+  def select_profile
+    @profiles = ProfileDocument.where(lifecycle_status: "published")
+                               .includes(:control_catalog)
+                               .order(updated_at: :desc)
+  end
+
+  def create_from_profile
+    source = ProfileDocument.find_by!(slug: params[:source_profile_id])
+
+    unless source.published_lifecycle?
+      flash[:error] = "Only published profiles can be used as a source."
+      redirect_to select_profile_profile_documents_path and return
+    end
+
+    service = DocumentDuplicationService.new(source)
+    copy = service.duplicate(
+      new_name: params[:profile_name].presence || "Tailored from #{source.name}"
+    )
+    copy.update!(source_profile_id: source.id)
+
+    audit_log("profile_document_created", subject: copy,
+              metadata: { name: copy.name, creation_method: "from_profile", source_profile_id: source.id })
+    flash[:success] = "Profile created from '#{source.name}' with #{copy.profile_controls.count} controls"
+    redirect_to profile_document_path(copy)
+  end
+
   def create_from_catalog
     catalog = ControlCatalog.find_by!(slug: params[:catalog_id])
     control_ids = Array(params[:control_ids]).reject(&:blank?)
@@ -225,6 +251,7 @@ class ProfileDocumentsController < ApplicationController
         control_id: cc.control_id,
         title: cc.title,
         control_family: cc.control_family&.code || cc.family_code,
+        priority: ProfilePriorityAssignmentService.assign(cc),
         row_order: idx
       )
 
@@ -283,6 +310,7 @@ class ProfileDocumentsController < ApplicationController
             control_id: cc.control_id,
             title: cc.title,
             control_family: cc.control_family&.code || cc.family_code,
+            priority: ProfilePriorityAssignmentService.assign(cc),
             row_order: max_order + idx + 1
           )
 
@@ -323,6 +351,15 @@ class ProfileDocumentsController < ApplicationController
       readiness[:errors] << "#{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3)"
     end
 
+    # Add parameter completeness check
+    uncustomized = count_uncustomized_parameters(@profile_document)
+    readiness[:checks][:parameters_customized] = uncustomized == 0
+
+    unless uncustomized == 0
+      readiness[:ready] = false
+      readiness[:errors] << "#{uncustomized} parameter#{'s' if uncustomized != 1} still have default catalog values"
+    end
+
     render json: readiness
   end
 
@@ -348,6 +385,24 @@ class ProfileDocumentsController < ApplicationController
     resolved_json = service.export
     doc.update!(resolved_catalog_json: JSON.parse(resolved_json))
     nil
+  end
+
+  # Count parameters where the value still matches the catalog label (unchanged).
+  def count_uncustomized_parameters(profile)
+    param_fields = ProfileControlField.joins(:profile_control)
+      .where(profile_controls: { profile_document_id: profile.id })
+      .where("profile_control_fields.field_name LIKE 'parameter:%'")
+      .where("profile_control_fields.field_name NOT LIKE 'parameter_label:%'")
+
+    count = 0
+    param_fields.find_each do |field|
+      label_field = ProfileControlField.find_by(
+        profile_control_id: field.profile_control_id,
+        field_name: field.field_name.sub("parameter:", "parameter_label:")
+      )
+      count += 1 if label_field && field.field_value == label_field.field_value
+    end
+    count
   end
 
   def document_metadata_params
