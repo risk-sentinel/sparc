@@ -116,10 +116,10 @@
           <div class="card sparc-section-card h-100" style="border-color: <%= group[:color] %>; --sparc-card-accent: <%= group[:color] %>;">
             <div class="card-body d-flex flex-row align-items-center gap-3" style="padding: 0.35rem 0.85rem;">
               <div style="font-size: 2.2rem; flex-shrink: 0;"><%= s[:icon].html_safe %></div>
-              <h5 class="mb-0 flex-grow-1" style="font-size: 0.88rem;"><%= s[:title] %></h5>
-              <div class="d-flex gap-1 flex-shrink-0">
-                <%= link_to "View", s[:path], class: "btn btn-primary btn-sm" %>
-                <%= link_to "New", s[:new_path], class: "btn btn-success btn-sm" %>
+              <h5 class="mb-0 flex-grow-1" style="font-size: 0.95rem;"><%= s[:title] %></h5>
+              <div class="d-flex gap-2 flex-shrink-0">
+                <%= link_to "View", s[:path], class: "btn btn-primary btn-sm px-3" %>
+                <%= link_to "New", s[:new_path], class: "btn btn-success btn-sm px-3" %>
               </div>
             </div>
           </div>
