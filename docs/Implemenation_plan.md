@@ -105,7 +105,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 9. CI/CD & Security Scanning
 
-- [ ] #186 -- Hybrid security scanning in GitHub Actions (Trivy + CodeQL/Semgrep + Brakeman + SAF CLI)
+- [x] #186 -- Hybrid security scanning in GitHub Actions (Trivy + CodeQL/Semgrep + Brakeman + SAF CLI) -- **COMPLETED 2026-03-15**
 
 ### 10. Database Maintenance
 
@@ -264,7 +264,7 @@ Dev C: #171 (OSCAL diagram)
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
 | [ ] | #95 | Versioned REST API for Users/Projects with RBAC | MEDIUM | None |
-| [ ] | #186 | Hybrid security scanning CI (Trivy + SAST + SAF CLI + HDF output) | MEDIUM | None |
+| [x] | #186 | Hybrid security scanning CI (Trivy + SAST + SAF CLI + HDF output) -- **COMPLETED 2026-03-15** | MEDIUM | None |
 | [ ] | #183 | Squash all migrations into single consolidated file | LOW | AFTER all migration PRs merge |
 
 <!-- markdownlint-enable MD013 -->

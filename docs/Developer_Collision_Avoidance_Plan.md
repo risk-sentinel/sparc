@@ -167,7 +167,7 @@ Dev C: #171 (OSCAL diagram)
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
 | [ ] | **#95** CRUD API | API | New `api/v1/users_controller.rb`, `api/v1/projects_controller.rb`, routes | **NONE** -- new files in API namespace |
-| [ ] | **#186** Hybrid security scanning | CI/Infrastructure | `.github/workflows/security-scan.yml`, new workflow files, SAF CLI config | **NONE** -- CI pipeline files only |
+| [x] | **#186** Hybrid security scanning -- **COMPLETED 2026-03-15** | CI/Infrastructure | `.github/workflows/security.yml`, `.github/oscal-metadata.json`, `docs/security-scanning.md` | **NONE** -- CI pipeline files only |
 | [ ] | **#183** Migration squash | Shared (DB) | `db/migrate/` (consolidate all existing into one), `db/schema.rb` | **MEDIUM** -- must coordinate timing; all in-flight migrations must merge first |
 
 <!-- markdownlint-enable MD013 -->
