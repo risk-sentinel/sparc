@@ -6,13 +6,23 @@
       form: f,
       field: :file,
       accept: ".xml,.json,.yaml,.yml",
-      hint: "Upload an XCCDF XML file (DISA STIGs, SCAP benchmarks, CIS), a JSON file (InSpec, STIG Viewer export), or an OSCAL YAML file." %>
+      hint: "Upload an XCCDF XML, OSCAL XML/JSON/YAML, InSpec JSON, or STIG Viewer export file." %>
 
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-success" %>
       <%= link_to "Cancel", cdef_documents_path, class: "btn btn-secondary" %>
     </div>
   <% end %>
+</div>
+
+<div class="card">
+  <h2>Create from Published Profile</h2>
+  <p class="text-body-secondary mb-3">
+    Generate a Component Definition from a published OSCAL Profile's resolved catalog.
+    Controls, parameters, and guidance will be pre-populated. Implementation narratives
+    and notes can be added after creation.
+  </p>
+  <%= link_to "Select a Profile", select_profile_cdef_documents_path, class: "btn btn-primary" %>
 </div>
 
 <div class="card">
@@ -28,6 +38,11 @@
       </tr>
     </thead>
     <tbody>
+      <tr>
+        <td><strong>OSCAL Component Definition</strong></td>
+        <td>.json, .yaml, .xml</td>
+        <td>NIST OSCAL v1.1.2 component-definition documents (auto-detected)</td>
+      </tr>
       <tr>
         <td><strong>XCCDF XML</strong></td>
         <td>.xml</td>

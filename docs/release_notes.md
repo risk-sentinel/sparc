@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-03-16 -- CDEF Creation and Import in OSCAL Format (#172)
+
+**Branch:** `feature/172_cdef_creation_import`
+
+### Summary
+
+Adds full Component Definition (CDEF) creation and import support in OSCAL format.
+XML uploads now auto-detect between XCCDF Benchmark and OSCAL component-definition
+formats. A new "Create from Published Profile" flow generates CDEFs from a profile's
+resolved catalog with pre-populated controls, parameters, and guidance.
+
+### What Changed
+
+- **OSCAL XML auto-detection in XCCDF parser** -- `.xml` file uploads now
+  auto-detect whether the file is a XCCDF Benchmark or an OSCAL
+  component-definition, routing to the correct parser automatically.
+
+- **Full OSCAL component-definition import** -- supports JSON, YAML, and XML
+  formats for importing OSCAL component-definition documents into CdefDocument
+  records with controls and fields.
+
+- **"Create from Published Profile" flow** -- new UI allows users to generate
+  a CDEF from any published profile's resolved catalog. Controls, parameters,
+  and guidance are pre-populated from the profile data.
+
+- **CdefFromProfileService** -- new service converts a profile's
+  `resolved_catalog_json` into a CdefDocument with controls and fields,
+  mapping profile priorities to severity levels (P1=high, P2=medium, P3=low).
+
+- **Editable placeholder fields** -- generated CDEFs include editable
+  `implementation_narrative`, `notes`, and `status_override` fields for
+  user customization.
+
+- **41 new tests** -- brings total to 1001. Includes NIST sample fixtures
+  for OSCAL component definitions across JSON, YAML, and XML formats.
+
+### Verification
+
+- 1001 RSpec examples, 0 failures
+- RuboCop clean
+- Brakeman clean
+
+---
+
 ## 2026-03-15 -- Login Consent/Warning Banner (#190)
 
 **Branch:** `feature/190_login_consent_banner`

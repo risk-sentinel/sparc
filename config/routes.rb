@@ -155,6 +155,10 @@ Rails.application.routes.draw do
       get :status
       post :copy
     end
+    collection do
+      get :select_profile
+      post :create_from_profile
+    end
   end
 
   resources :control_catalogs do
