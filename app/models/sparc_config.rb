@@ -98,6 +98,11 @@ module SparcConfig
 
   def force_ssl? = ENV.fetch("FORCE_SSL", "true") == "true"
 
+  # ── Consent Banner ──────────────────────────────────────────────────────
+
+  def banner_enabled?     = ENV.fetch("SPARC_BANNER_ENABLED", "false") == "true"
+  def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil)
+
   # ── GitHub OAuth ──────────────────────────────────────────────────────────
 
   def github_enabled?      = ENV.fetch("SPARC_GITHUB_CLIENT_ID", "").present?
