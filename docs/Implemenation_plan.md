@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-03-15
+**Last updated:** 2026-03-16
 
 ---
 
@@ -79,7 +79,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 - [x] #175 -- Build Published Profile creation from baseline -- **COMPLETED 2026-03-15**
 - [x] #185 -- Automate extraction of SV/V to CCI mappings from DISA STIGs (XCCDF parser for CDEF validation) -- **COMPLETED 2026-03-15**
-- [ ] #172 -- Component Definition (CDEF) creation & import (incl. from Profile, validated via STIG/CCI)
+- [x] #172 -- Component Definition (CDEF) creation & import (incl. from Profile, validated via STIG/CCI) -- **COMPLETED 2026-03-16**
 - [ ] #173 -- System Security Plan (SSP) creation & import (incl. from Profile)
 - [ ] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP, uses CDEF validations)
 - [ ] #125 -- End-to-end wizard for complete ATO Authorization Package
@@ -197,7 +197,7 @@ validation + guided ATO package generation
 | ------ | ----- | ----------- | -------- | ------------ |
 | [x] | #175 | Profile creation from baseline + parameter validation -- **COMPLETED 2026-03-15** | **HIGH** | Phase 2 complete |
 | [x] | #185 | STIG XCCDF parser: SV/V to CCI extraction for CDEF validation & evidence | **HIGH** | None (builds on Converters domain) |
-| [ ] | #172 | CDEF creation/import from Profile, validated via STIG/CCI mappings | **HIGH** | AFTER #175 merges; #185 for validation |
+| [x] | #172 | CDEF creation/import from Profile, validated via STIG/CCI mappings -- **COMPLETED 2026-03-16** | **HIGH** | AFTER #175 merges; #185 for validation |
 | [ ] | #173 | SSP creation/import from Profile | **HIGH** | AFTER #175 merges |
 | [ ] | #174 | SAR creation/import from Profile or SSP (uses CDEF STIG validations) | MEDIUM | AFTER #173 and #185 merge |
 | [ ] | #125 | Multi-step ATO wizard (all OSCAL layers) | MEDIUM | AFTER #172, #173, #174 merge |

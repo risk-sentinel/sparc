@@ -120,4 +120,88 @@ RSpec.describe "CdefDocuments", type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
+
+  describe "GET /cdef_documents/select_profile" do
+    it "renders the profile selection page" do
+      get select_profile_cdef_documents_path
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "lists published profiles with resolved catalogs" do
+      published = create(:profile_document,
+        name: "Published Baseline",
+        lifecycle_status: "published",
+        resolved_catalog_json: { "catalog" => { "groups" => [] } })
+      unpublished = create(:profile_document, name: "Draft Profile", lifecycle_status: "in_progress")
+
+      get select_profile_cdef_documents_path
+
+      expect(response.body).to include("Published Baseline")
+      expect(response.body).not_to include("Draft Profile")
+    end
+  end
+
+  describe "POST /cdef_documents/create_from_profile" do
+    let(:resolved_catalog) do
+      {
+        "catalog" => {
+          "uuid" => SecureRandom.uuid,
+          "metadata" => { "title" => "Test", "oscal-version" => "1.1.2" },
+          "groups" => [
+            {
+              "id" => "ac", "title" => "Access Control",
+              "controls" => [
+                {
+                  "id" => "ac-1", "title" => "Policy",
+                  "props" => [ { "name" => "priority", "value" => "P1" } ],
+                  "parts" => [ { "name" => "statement", "prose" => "Test statement" } ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    end
+
+    let(:profile) do
+      create(:profile_document,
+        lifecycle_status: "published",
+        resolved_catalog_json: resolved_catalog,
+        published: Time.current.iso8601)
+    end
+
+    it "creates a CDEF from a published profile" do
+      expect {
+        post create_from_profile_cdef_documents_path, params: {
+          source_profile_id: profile.slug,
+          cdef_name: "My New CDEF"
+        }
+      }.to change(CdefDocument, :count).by(1)
+
+      cdef = CdefDocument.last
+      expect(cdef.name).to eq("My New CDEF")
+      expect(cdef.cdef_controls.count).to eq(1)
+      expect(response).to redirect_to(cdef_document_path(cdef))
+    end
+
+    it "redirects with error for unpublished profile" do
+      unpublished = create(:profile_document, lifecycle_status: "in_progress")
+
+      post create_from_profile_cdef_documents_path, params: {
+        source_profile_id: unpublished.slug
+      }
+
+      expect(response).to redirect_to(select_profile_cdef_documents_path)
+      expect(flash[:error]).to include("published")
+    end
+
+    it "redirects with error for nonexistent profile" do
+      post create_from_profile_cdef_documents_path, params: {
+        source_profile_id: "nonexistent-slug"
+      }
+
+      expect(response).to redirect_to(select_profile_cdef_documents_path)
+      expect(flash[:error]).to include("not found")
+    end
+  end
 end
