@@ -74,27 +74,18 @@ export default class extends Controller {
 
     if (!catalogId) return
 
-    const url = `${this.catalogUrlValue}/${catalogId}/baseline_controls?level=${encodeURIComponent(level)}`
-    fetch(url)
+    fetch(`${this.catalogUrlValue}/${catalogId}/baseline_controls?level=${encodeURIComponent(level)}`)
       .then(response => response.json())
       .then(data => {
         const ids = new Set(data.control_ids || [])
-        const checkboxes = this.controlCheckboxes()
-        let matched = 0
-        checkboxes.forEach(cb => {
-          const isMatch = ids.has(cb.value)
-          cb.checked = isMatch
-          if (isMatch) matched++
+        this.controlCheckboxes().forEach(cb => {
+          cb.checked = ids.has(cb.value)
         })
-        console.log(`[family-selector] baselineChanged: level=${level}, server returned ${ids.size} IDs, ${checkboxes.length} checkboxes, ${matched} matched`)
-        if (matched === 0 && ids.size > 0 && checkboxes.length > 0) {
-          console.log("[family-selector] ID mismatch debug — first 3 server IDs:", [...ids].slice(0, 3), "first 3 checkbox values:", checkboxes.slice(0, 3).map(cb => cb.value))
-        }
         this.syncAllFamilies()
         this.updateCount()
       })
-      .catch((err) => {
-        console.error("[family-selector] baselineChanged fetch failed:", err)
+      .catch(() => {
+        // Silently fail — baseline auto-select is convenience, not critical
       })
   }
 
