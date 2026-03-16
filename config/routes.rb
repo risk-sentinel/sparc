@@ -49,6 +49,8 @@ Rails.application.routes.draw do
       post :import_json
       get :wizard
       post :create_from_wizard
+      get :select_profile
+      post :create_from_profile
     end
   end
 

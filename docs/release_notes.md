@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-03-16 -- SSP OSCAL Import & Create from Published Profile (#173)
+
+**Branch:** `feature/173_ssp_oscal_import`
+
+### Summary
+
+Adds "Create SSP from Published Profile" workflow and polishes the OSCAL SSP import
+UI. Users can now generate a System Security Plan from any published profile's resolved
+catalog, with baseline controls pre-populated and editable placeholder fields for
+implementation details, status, and responsible entities.
+
+### What Changed
+
+- **"Create from Published Profile" flow** -- new UI on the SSP creation page allows
+  users to select a published profile and generate an SSP. Controls, statements, and
+  guidance are pre-populated from the profile's resolved catalog.
+
+- **SspFromProfileService** -- new service converts a profile's `resolved_catalog_json`
+  into an SspDocument with controls, fields, a "this-system" component, default
+  information type, and default user. SspByComponent records link each control to the
+  this-system component with `implementation_status: "planned"`.
+
+- **Editable placeholder fields** -- generated SSPs include editable `status` (defaulting
+  to "Deferred"), `control_origination`, `responsible_entities`, `private_implementation`,
+  `public_implementation`, and `notes` fields. Read-only `stated_requirement` and
+  `description` fields are pre-populated from catalog data.
+
+- **New `creation_method: "profile"`** -- SspDocument model now supports a `profile`
+  creation method distinct from `wizard` and `oscal_import`, with a `profile_created?`
+  convenience method.
+
+- **Updated SSP new page** -- "Create from Published Profile" card and supported formats
+  table added to the SSP upload page, matching the CDEF pattern.
+
+- **New specs** -- `SspFromProfileService`, `SspJsonParserService`, `SspXmlParserService`
+  service specs and request spec additions for `select_profile` and `create_from_profile`.
+
+### Verification
+
+- 1034 RSpec examples, 0 failures
+- RuboCop clean
+
+---
+
 ## 2026-03-16 -- CDEF Creation and Import in OSCAL Format (#172)
 
 **Branch:** `feature/172_cdef_creation_import`
