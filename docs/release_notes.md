@@ -4,6 +4,109 @@
 
 ---
 
+## 2026-03-15 -- Unified Hybrid Security Scanning Pipeline (#186)
+
+**Branch:** `feature/186_hybrid_security_scanning`
+
+### Summary
+
+Consolidates all security scanning into a single unified GitHub Actions workflow
+(`security.yml`) with 11 jobs, MITRE SAF CLI HDF normalization, and OSCAL metadata
+enrichment. Brakeman and CodeQL run as always-on SAST scanners for maximum depth
+and breadth. Semgrep is available as an opt-in via workflow_dispatch. All scan
+outputs are normalized to Heimdall Data Format (HDF) for consistent visualization
+and compliance reporting.
+
+### What Changed
+
+- **Unified security workflow** -- replaced the previous `security.yml` with a
+  comprehensive 11-job pipeline: 9 parallel scan jobs, 1 HDF normalization job,
+  and 1 bundle/summary job.
+
+- **Always-on SAST scanners** -- Brakeman (Rails-specific, fast) and CodeQL
+  (deep semantic analysis, Ruby + JavaScript/TypeScript) run on every PR, push
+  to main, and weekly schedule. CodeQL produces per-language SARIF files merged
+  into a single artifact via `jq`. Replaces GitHub's default CodeQL setup.
+
+- **Optional Semgrep** -- pattern-based SAST with Ruby/Rails rulesets, enabled
+  via `run_semgrep` boolean input on manual workflow_dispatch triggers.
+
+- **Trivy multi-format output** -- filesystem and container image scans produce
+  three output formats each: SARIF (for GitHub Code Scanning), ASFF (for SAF CLI
+  `trivy2hdf` conversion), and CycloneDX (for `cyclonedx_sbom2hdf` conversion).
+
+- **MITRE SAF CLI HDF normalization** -- all scan outputs converted to HDF via
+  `mitre/saf_action@v1` GitHub Action. Conversion map:
+  - SARIF (Gitleaks, Brakeman, CodeQL, Semgrep, Trivy FS) -> `sarif2hdf`
+  - ASFF (Trivy Container) -> `trivy2hdf`
+  - CycloneDX (Trivy FS SBOM, Trivy Container SBOM, Ruby SBOM) -> `cyclonedx_sbom2hdf`
+
+- **OSCAL metadata enrichment** -- each HDF file supplemented with OSCAL v1.1.2
+  metadata via SAF CLI `supplement passthrough write`, sourcing from
+  `.github/oscal-metadata.json` (organization party, scanner/preparer roles,
+  responsible-parties).
+
+- **Bundle and summary** -- `bundle_results` job creates organized ZIP archive
+  (`hdf/`, `sarif/`, `sbom/`, `asff/` directories), generates GitHub Step Summary
+  via `saf view summary`, and evaluates configurable severity threshold gate.
+
+- **Removed scanning from ci.yml** -- `scan_ruby` and `scan_js` jobs removed
+  from CI workflow. `ci.yml` now only runs `lint` and `test`.
+
+- **Configurable inputs** -- `workflow_dispatch` supports `run_semgrep`,
+  `rails_app_path`, `dockerfile_path`, `org_metadata_file`, `fail_on_severity`,
+  and `upload_to_code_scanning`.
+
+- **Error resilience** -- all scan steps use `continue-on-error: true`. Missing
+  artifacts produce `::warning::` annotations, not failures. Only the severity
+  threshold in `bundle_results` is a hard failure point.
+
+- **Security findings issue** -- initial scan results analyzed and documented in
+  issue #210 (339 container image CVEs, 1 suppressed SAST finding).
+
+### Files Created (3)
+
+- `.github/oscal-metadata.json`
+- `docs/security-scanning.md`
+- `.gitignore` entry for `/docs/hdf/`
+
+### Files Modified (2)
+
+- `.github/workflows/security.yml` (replaced -- unified 11-job pipeline)
+- `.github/workflows/ci.yml` (removed `scan_ruby` and `scan_js` jobs)
+
+### Artifacts Produced (per run)
+
+| Artifact | Contents | Retention |
+|----------|----------|-----------|
+| `gitleaks-sarif` | Gitleaks SARIF | 90 days |
+| `brakeman-sarif` | Brakeman SARIF | 90 days |
+| `codeql-sarif` | CodeQL merged multi-language SARIF | 90 days |
+| `semgrep-sarif` | Semgrep SARIF (when enabled) | 90 days |
+| `bundler-audit-json` | bundler-audit JSON | 90 days |
+| `trivy-fs-results` | Trivy FS SARIF + CycloneDX | 90 days |
+| `trivy-container-results` | Trivy container SARIF + ASFF + CycloneDX | 90 days |
+| `sbom-cyclonedx` | Ruby CycloneDX SBOM | 90 days |
+| `hdf-results` | All HDF files with OSCAL metadata | 90 days |
+| `security-scan-archive` | Combined ZIP of all results | 90 days |
+
+### What is NOT Changed
+
+- **No application code changes** -- CI/CD pipeline only
+- **No database migrations**
+- **No new gems or dependencies**
+- **Production deployment untouched**
+
+### Verification
+
+- All 9 parallel scan jobs complete successfully
+- HDF normalization converts all scan outputs
+- OSCAL metadata injected into HDF files
+- ZIP archive and GitHub Step Summary generated
+- SARIF uploads appear in GitHub Code Scanning tab
+
+---
+
 ## 2026-03-15 -- Published Profile Creation from Baseline (#175)
 
 **Branch:** `feature/175_published_profile_from_baseline`
