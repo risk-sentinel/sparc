@@ -92,6 +92,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 6. UI/UX & Navigation Improvements
 
+- [x] #190 -- Login consent/warning banner modal (configurable via ENV) -- **COMPLETED 2026-03-15**
 - [ ] #167 -- Enterprise/Organization visibility & navigation for admins
 - [ ] #171 -- Interactive OSCAL document relationship diagram (Mermaid)
 
