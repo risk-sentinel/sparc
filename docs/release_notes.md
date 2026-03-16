@@ -4,6 +4,48 @@
 
 ---
 
+## 2026-03-15 -- Login Consent/Warning Banner (#190)
+
+**Branch:** `feature/190_login_consent_banner`
+
+### Summary
+
+Adds a mandatory consent/warning banner modal to the login page. The banner
+is configurable via environment variables and displays sanitized HTML content
+loaded from an external file. Users must acknowledge the banner before
+accessing the login form.
+
+### What Changed
+
+- **Consent banner modal** -- a Bootstrap 5 modal displays on the login page
+  when enabled. Users must click "Proceed" to access the login form or
+  "Cancel" to be denied access.
+
+- **Environment variable configuration** -- `SPARC_BANNER_ENABLED` controls
+  whether the banner is shown (default: disabled). `SPARC_BANNER_MESSAGE`
+  specifies the path to an external HTML file containing the banner content.
+
+- **XSS-safe content loading** -- banner HTML is loaded from the configured
+  external file and sanitized before rendering to prevent cross-site
+  scripting attacks.
+
+### ENV Variables
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `SPARC_BANNER_ENABLED` | `false` | Enable the login consent banner |
+| `SPARC_BANNER_MESSAGE` | (none) | Path to external HTML file with banner content |
+
+### Verification
+
+- Banner displays when `SPARC_BANNER_ENABLED=true` and valid HTML file path provided
+- "Proceed" grants access to the login form
+- "Cancel" denies access
+- Banner content is sanitized against XSS
+- Banner does not appear when disabled
+
+---
+
 ## 2026-03-15 -- Homepage Card Layout Redesign (#200)
 
 **Branch:** `feature/200_homepage_horizontal_layout`

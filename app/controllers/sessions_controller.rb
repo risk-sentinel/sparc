@@ -11,6 +11,7 @@ class SessionsController < ApplicationController
 
   def new
     redirect_to root_path if signed_in?
+    load_consent_banner
   end
 
   def create
@@ -37,6 +38,35 @@ class SessionsController < ApplicationController
   end
 
   private
+
+  # ── Consent Banner ────────────────────────────────────────────────────
+
+  BANNER_ALLOWED_TAGS = %w[p br strong em ul ol li h1 h2 h3 h4 h5 h6 a span div].freeze
+  BANNER_ALLOWED_ATTRS = %w[href class style].freeze
+
+  def load_consent_banner
+    return unless SparcConfig.banner_enabled?
+
+    raw_path = SparcConfig.banner_message_path
+    if raw_path.blank?
+      Rails.logger.warn("[ConsentBanner] SPARC_BANNER_ENABLED=true but SPARC_BANNER_MESSAGE is not set")
+      return
+    end
+
+    # Resolve relative paths against Rails.root
+    path = Pathname.new(raw_path).absolute? ? raw_path : Rails.root.join(raw_path).to_s
+
+    unless File.exist?(path)
+      Rails.logger.warn("[ConsentBanner] Banner file not found: #{path}")
+      return
+    end
+
+    raw_content = File.read(path, encoding: "UTF-8")
+    @consent_banner_content = helpers.sanitize(raw_content, tags: BANNER_ALLOWED_TAGS, attributes: BANNER_ALLOWED_ATTRS)
+  rescue StandardError => e
+    Rails.logger.error("[ConsentBanner] Failed to read banner file: #{e.message}")
+    @consent_banner_content = nil
+  end
 
   # ── Local Login ───────────────────────────────────────────────────────
 
