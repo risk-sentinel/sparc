@@ -10,9 +10,9 @@ RSpec.describe "Unified publication lifecycle", type: :request do
   let(:party_uuid) { SecureRandom.uuid }
   let(:valid_metadata) do
     {
-      "roles" => [{ "id" => "prepared-by", "title" => "Prepared By" }],
-      "parties" => [{ "uuid" => party_uuid, "type" => "organization", "name" => "Test Org" }],
-      "responsible-parties" => [{ "role-id" => "prepared-by", "party-uuids" => [party_uuid] }]
+      "roles" => [ { "id" => "prepared-by", "title" => "Prepared By" } ],
+      "parties" => [ { "uuid" => party_uuid, "type" => "organization", "name" => "Test Org" } ],
+      "responsible-parties" => [ { "role-id" => "prepared-by", "party-uuids" => [ party_uuid ] } ]
     }
   end
 
@@ -70,9 +70,9 @@ RSpec.describe "Unified publication lifecycle", type: :request do
       profile.update!(metadata_extra: {})
       patch publish_profile_document_path(profile), params: {
         metadata_fixes: {
-          roles: [{ "id" => "prepared-by", "title" => "Prepared By" }].to_json,
-          parties: [{ "uuid" => party_uuid, "type" => "organization", "name" => "Fix Org" }].to_json,
-          responsible_parties: [{ "role-id" => "prepared-by", "party-uuids" => [party_uuid] }].to_json
+          roles: [ { "id" => "prepared-by", "title" => "Prepared By" } ].to_json,
+          parties: [ { "uuid" => party_uuid, "type" => "organization", "name" => "Fix Org" } ].to_json,
+          responsible_parties: [ { "role-id" => "prepared-by", "party-uuids" => [ party_uuid ] } ].to_json
         }
       }
       profile.reload
