@@ -78,7 +78,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 ### 4. OSCAL Entity Creation & Workflows
 
 - [x] #175 -- Build Published Profile creation from baseline -- **COMPLETED 2026-03-15**
-- [ ] #185 -- Automate extraction of SV/V to CCI mappings from DISA STIGs (XCCDF parser for CDEF validation)
+- [x] #185 -- Automate extraction of SV/V to CCI mappings from DISA STIGs (XCCDF parser for CDEF validation) -- **COMPLETED 2026-03-15**
 - [ ] #172 -- Component Definition (CDEF) creation & import (incl. from Profile, validated via STIG/CCI)
 - [ ] #173 -- System Security Plan (SSP) creation & import (incl. from Profile)
 - [ ] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP, uses CDEF validations)

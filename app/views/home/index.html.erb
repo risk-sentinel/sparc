@@ -105,19 +105,19 @@
 %>
 
 <% layer_groups.each do |group| %>
-  <div class="mb-3">
+  <div class="mb-2">
     <div class="d-flex align-items-center gap-2 mb-2">
       <span style="display: inline-block; width: 4px; height: 1.1rem; background: <%= group[:color] %>; border-radius: 2px;"></span>
       <h6 class="mb-0 fw-bold" style="font-size: 0.85rem; color: <%= group[:color] %>;"><%= group[:label] %></h6>
     </div>
-    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2">
       <% group[:cards].each do |s| %>
         <div class="col">
-          <div class="card sparc-section-card text-center h-100" style="border-color: <%= group[:color] %>; --sparc-card-accent: <%= group[:color] %>;">
-            <div class="card-body d-flex flex-column align-items-center" style="padding: 1rem;">
-              <div style="font-size: 2.5rem; margin-bottom: 0.5rem;"><%= s[:icon].html_safe %></div>
-              <h5 style="margin-bottom: 0.75rem; font-size: 0.95rem;"><%= s[:title] %></h5>
-              <div class="d-flex flex-column gap-1 w-100 mt-auto">
+          <div class="card sparc-section-card h-100" style="border-color: <%= group[:color] %>; --sparc-card-accent: <%= group[:color] %>;">
+            <div class="card-body d-flex flex-row align-items-center gap-3" style="padding: 0.35rem 0.85rem;">
+              <div style="font-size: 2.2rem; flex-shrink: 0;"><%= s[:icon].html_safe %></div>
+              <h5 class="mb-0 flex-grow-1" style="font-size: 0.88rem;"><%= s[:title] %></h5>
+              <div class="d-flex gap-1 flex-shrink-0">
                 <%= link_to "View", s[:path], class: "btn btn-primary btn-sm" %>
                 <%= link_to "New", s[:new_path], class: "btn btn-success btn-sm" %>
               </div>
