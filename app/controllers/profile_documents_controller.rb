@@ -314,7 +314,7 @@ class ProfileDocumentsController < ApplicationController
     readiness = service.publication_readiness
 
     # Add prioritization check for profiles
-    unprioritized = @profile_document.profile_controls.where(priority: [nil, ""]).count
+    unprioritized = @profile_document.profile_controls.where(priority: [ nil, "" ]).count
     prioritized = unprioritized == 0
     readiness[:checks][:controls_prioritized] = prioritized
 
@@ -339,7 +339,7 @@ class ProfileDocumentsController < ApplicationController
       return { error: "Cannot publish: no source catalog linked to this profile." }
     end
 
-    unprioritized = doc.profile_controls.where(priority: [nil, ""]).count
+    unprioritized = doc.profile_controls.where(priority: [ nil, "" ]).count
     if unprioritized > 0
       return { error: "Cannot publish: #{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3). Assign priorities before publishing." }
     end

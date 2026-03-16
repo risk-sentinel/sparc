@@ -79,11 +79,11 @@ module Publishable
     current = doc.send(column)
     new_version = if current.blank?
                     "1.0.0"
-                  elsif current.match?(/\A\d+\.\d+\.\d+\z/)
+    elsif current.match?(/\A\d+\.\d+\.\d+\z/)
                     parts = current.split(".")
                     parts[-1] = (parts[-1].to_i + 1).to_s
                     parts.join(".")
-                  end
+    end
 
     doc.update_column(column, new_version) if new_version
   end
