@@ -20,6 +20,91 @@ RSpec.describe "Sessions", type: :request do
       get login_path
       expect(response).to redirect_to(root_path)
     end
+
+    context "when consent banner is enabled with a valid file" do
+      let(:banner_file) { Tempfile.new([ "banner", ".html" ]) }
+
+      before do
+        banner_file.write("<p>You must accept this warning to continue.</p>")
+        banner_file.rewind
+        allow(SparcConfig).to receive(:banner_enabled?).and_return(true)
+        allow(SparcConfig).to receive(:banner_message_path).and_return(banner_file.path)
+      end
+
+      after { banner_file.unlink }
+
+      it "includes the consent banner modal" do
+        get login_path
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("consentBannerLabel")
+        expect(response.body).to include("You must accept this warning to continue.")
+      end
+
+      it "hides the login card initially" do
+        get login_path
+        expect(response.body).to include('d-none')
+        expect(response.body).to include('consent-banner-target="loginCard"')
+      end
+    end
+
+    context "when consent banner is enabled but file is missing" do
+      before do
+        allow(SparcConfig).to receive(:banner_enabled?).and_return(true)
+        allow(SparcConfig).to receive(:banner_message_path).and_return("/nonexistent/path.html")
+      end
+
+      it "renders the login page without banner" do
+        get login_path
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("consentBannerLabel")
+      end
+    end
+
+    context "when consent banner is enabled but path is not set" do
+      before do
+        allow(SparcConfig).to receive(:banner_enabled?).and_return(true)
+        allow(SparcConfig).to receive(:banner_message_path).and_return(nil)
+      end
+
+      it "renders the login page without banner" do
+        get login_path
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("consentBannerLabel")
+      end
+    end
+
+    context "when consent banner is disabled" do
+      before do
+        allow(SparcConfig).to receive(:banner_enabled?).and_return(false)
+      end
+
+      it "does not include the consent banner" do
+        get login_path
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("consentBannerLabel")
+      end
+    end
+
+    context "when consent banner file contains unsafe HTML" do
+      let(:banner_file) { Tempfile.new([ "banner", ".html" ]) }
+
+      before do
+        banner_file.write('<p>Safe content</p><script>alert("xss")</script>')
+        banner_file.rewind
+        allow(SparcConfig).to receive(:banner_enabled?).and_return(true)
+        allow(SparcConfig).to receive(:banner_message_path).and_return(banner_file.path)
+      end
+
+      after { banner_file.unlink }
+
+      it "strips script tags from the banner content" do
+        get login_path
+        # The banner area in the modal body should have the safe content
+        # but the <script> tag itself is stripped (text content may remain as inert text)
+        expect(response.body).to include("Safe content")
+        expect(response.body).not_to include("<script>alert")
+      end
+    end
   end
 
   describe "POST /login" do
