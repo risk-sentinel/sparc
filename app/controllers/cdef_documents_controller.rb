@@ -140,6 +140,30 @@ class CdefDocumentsController < ApplicationController
     redirect_to cdef_document_path(copy)
   end
 
+  def select_profile
+    @profiles = ProfileDocument.where(lifecycle_status: "published")
+                               .where.not(resolved_catalog_json: nil)
+                               .includes(:control_catalog)
+                               .order(updated_at: :desc)
+  end
+
+  def create_from_profile
+    profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
+
+    cdef = CdefFromProfileService.new(profile, name: params[:cdef_name]).create
+
+    audit_log("cdef_document_created_from_profile", subject: cdef,
+      metadata: { name: cdef.name, source_profile_id: profile.id, source_profile_name: profile.name })
+    flash[:success] = "Component Definition '#{cdef.name}' created from profile '#{profile.name}'."
+    redirect_to cdef_document_path(cdef)
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to select_profile_cdef_documents_path
+  rescue ActiveRecord::RecordNotFound
+    flash[:error] = "Published profile not found."
+    redirect_to select_profile_cdef_documents_path
+  end
+
   def status
     render json: {
       status: @cdef_document.status,

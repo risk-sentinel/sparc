@@ -1,0 +1,61 @@
+<div class="card">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Create Component Definition from Published Profile</h2>
+    <%= link_to "Back to Component Definitions", cdef_documents_path, class: "btn btn-secondary" %>
+  </div>
+
+  <p class="text-body-secondary mb-4">
+    Select a published profile to generate a Component Definition. Controls, parameters,
+    and guidance will be pre-populated from the profile's resolved catalog.
+    Implementation narratives and notes can be added after creation.
+  </p>
+
+  <% if @profiles.any? %>
+    <div class="row g-3">
+      <% @profiles.each do |profile| %>
+        <div class="col-12 col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title"><%= profile.name %></h5>
+              <div class="mb-2">
+                <% if profile.baseline_level.present? %>
+                  <span class="badge bg-info"><%= profile.baseline_level %></span>
+                <% end %>
+                <span class="badge bg-secondary"><%= profile.profile_controls.count %> controls</span>
+                <% if profile.profile_version.present? %>
+                  <span class="badge bg-dark">v<%= profile.profile_version %></span>
+                <% end %>
+              </div>
+              <% if profile.control_catalog.present? %>
+                <p class="card-text text-body-secondary small mb-1">
+                  Source: <%= profile.control_catalog.name %>
+                </p>
+              <% end %>
+              <% if profile.description.present? %>
+                <p class="card-text text-body-secondary small mb-2">
+                  <%= truncate(profile.description, length: 120) %>
+                </p>
+              <% end %>
+              <p class="card-text text-body-secondary small mb-3">
+                Published: <%= profile.published.present? ? Time.parse(profile.published).strftime("%b %d, %Y") : "N/A" %>
+              </p>
+
+              <%= form_with url: create_from_profile_cdef_documents_path, method: :post, local: true, class: "d-flex gap-2 align-items-end" do |f| %>
+                <%= f.hidden_field :source_profile_id, value: profile.slug %>
+                <div class="flex-grow-1">
+                  <%= f.text_field :cdef_name, class: "form-control form-control-sm",
+                        placeholder: "CDEF from #{profile.name}" %>
+                </div>
+                <%= f.submit "Create Component Definition", class: "btn btn-success btn-sm" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-center p-4 text-body-secondary">
+      No published profiles with resolved catalogs available. Publish a profile first to create a Component Definition from it.
+    </p>
+  <% end %>
+</div>
