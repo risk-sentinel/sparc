@@ -117,6 +117,70 @@ RSpec.describe "SspDocuments", type: :request do
     end
   end
 
+  describe "GET /ssp_documents/select_profile" do
+    it "returns a successful response" do
+      get select_profile_ssp_documents_path
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "shows only published profiles with resolved catalogs" do
+      published = create(:profile_document,
+        lifecycle_status: "published",
+        resolved_catalog_json: { "catalog" => { "groups" => [] } },
+        published: Time.current.iso8601)
+      unpublished = create(:profile_document, lifecycle_status: "in_progress")
+
+      get select_profile_ssp_documents_path
+      expect(response.body).to include(published.name)
+      expect(response.body).not_to include(unpublished.name)
+    end
+  end
+
+  describe "POST /ssp_documents/create_from_profile" do
+    let(:resolved_catalog_json) do
+      {
+        "catalog" => {
+          "uuid" => SecureRandom.uuid,
+          "metadata" => { "title" => "Test Catalog", "oscal-version" => "1.1.2" },
+          "groups" => [
+            {
+              "id" => "ac",
+              "controls" => [
+                { "id" => "ac-1", "title" => "Policy and Procedures", "parts" => [] }
+              ]
+            }
+          ]
+        }
+      }
+    end
+
+    let(:profile) do
+      create(:profile_document,
+        lifecycle_status: "published",
+        resolved_catalog_json: resolved_catalog_json,
+        published: Time.current.iso8601)
+    end
+
+    it "creates an SSP and redirects" do
+      expect {
+        post create_from_profile_ssp_documents_path, params: {
+          source_profile_id: profile.slug,
+          ssp_name: "Test SSP from Profile"
+        }
+      }.to change(SspDocument, :count).by(1)
+      expect(response).to have_http_status(:redirect)
+    end
+
+    it "redirects with error for nonexistent profile" do
+      post create_from_profile_ssp_documents_path, params: {
+        source_profile_id: "nonexistent-slug",
+        ssp_name: "Bad SSP"
+      }
+      expect(response).to redirect_to(select_profile_ssp_documents_path)
+      expect(flash[:error]).to include("not found")
+    end
+  end
+
   describe "POST /ssp_documents/create_from_wizard" do
     it "creates a document from wizard with profile" do
       profile = create(:profile_document)

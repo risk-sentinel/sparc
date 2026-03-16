@@ -80,7 +80,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 - [x] #175 -- Build Published Profile creation from baseline -- **COMPLETED 2026-03-15**
 - [x] #185 -- Automate extraction of SV/V to CCI mappings from DISA STIGs (XCCDF parser for CDEF validation) -- **COMPLETED 2026-03-15**
 - [x] #172 -- Component Definition (CDEF) creation & import (incl. from Profile, validated via STIG/CCI) -- **COMPLETED 2026-03-16**
-- [ ] #173 -- System Security Plan (SSP) creation & import (incl. from Profile)
+- [x] #173 -- System Security Plan (SSP) creation & import (incl. from Profile) -- **COMPLETED 2026-03-16**
 - [ ] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP, uses CDEF validations)
 - [ ] #125 -- End-to-end wizard for complete ATO Authorization Package
 

@@ -26,9 +26,9 @@ class SspDocument < ApplicationRecord
 
   validates :name, presence: true
   validates :file_type, inclusion: { in: %w[excel json xml yaml] }, allow_nil: true
-  validates :creation_method, inclusion: { in: %w[excel wizard oscal_import] }, allow_nil: true
+  validates :creation_method, inclusion: { in: %w[excel wizard oscal_import profile] }, allow_nil: true
 
-  CREATION_METHODS = %w[excel wizard oscal_import].freeze
+  CREATION_METHODS = %w[excel wizard oscal_import profile].freeze
   SYSTEM_STATUSES = %w[operational under-development under-major-modification disposition other].freeze
   SENSITIVITY_LEVELS = %w[fips-199-low fips-199-moderate fips-199-high].freeze
 
@@ -38,6 +38,10 @@ class SspDocument < ApplicationRecord
 
   def oscal_imported?
     creation_method == "oscal_import"
+  end
+
+  def profile_created?
+    creation_method == "profile"
   end
 
   def enriched?

@@ -108,6 +108,32 @@ class SspDocumentsController < ApplicationController
     redirect_to wizard_ssp_documents_path
   end
 
+  # ── Create from Published Profile ────────────────────────────────
+
+  def select_profile
+    @profiles = ProfileDocument.where(lifecycle_status: "published")
+                               .where.not(resolved_catalog_json: nil)
+                               .includes(:control_catalog)
+                               .order(updated_at: :desc)
+  end
+
+  def create_from_profile
+    profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
+
+    ssp = SspFromProfileService.new(profile, name: params[:ssp_name]).create
+
+    audit_log("ssp_document_created_from_profile", subject: ssp,
+      metadata: { name: ssp.name, source_profile_id: profile.id, source_profile_name: profile.name })
+    flash[:success] = "SSP '#{ssp.name}' created from profile '#{profile.name}'."
+    redirect_to ssp_document_path(ssp)
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to select_profile_ssp_documents_path
+  rescue ActiveRecord::RecordNotFound
+    flash[:error] = "Published profile not found."
+    redirect_to select_profile_ssp_documents_path
+  end
+
   # ── Enrichment (uplift legacy SSPs) ──────────────────────────────
 
   def enrich
