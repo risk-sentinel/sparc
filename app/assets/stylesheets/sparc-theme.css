@@ -1201,8 +1201,10 @@ a.link-purple { color: var(--sparc-purple); }
 /* ── Home page section cards ──────────────────────────────────── */
 
 .sparc-section-card {
-  border-width: 2px;
+  border-width: 1px;
+  border-left-width: 3px;
   border-style: solid;
+  padding: 0;
   transition: box-shadow 0.2s, transform 0.15s;
 }
 
