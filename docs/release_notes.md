@@ -4,6 +4,43 @@
 
 ---
 
+## 2026-03-15 -- Homepage Card Layout Redesign (#200)
+
+**Branch:** `feature/200_homepage_horizontal_layout`
+
+### Summary
+
+Redesigns the homepage navigation cards from a vertical 5-column grid to a
+horizontal 3-column layout. Cards now display icon, title, and action buttons
+in a single row for improved scannability and a more professional appearance.
+
+### What Changed
+
+- **3-column responsive grid** -- Cards display 3 per row on desktop, 2 on
+  tablet, and 1 on mobile (was 5/3/2).
+
+- **Horizontal card layout** -- Each card shows icon (left), title (center),
+  and View/New buttons (right) in a single row instead of vertically stacked.
+
+- **Left-accent border** -- Cards use a 3px left border with the OSCAL layer
+  color instead of the previous 2px full border for a cleaner visual accent.
+
+- **Compact spacing** -- Reduced card padding and layer group margins for a
+  tighter, more scannable layout.
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `app/views/home/index.html.erb` | Grid columns, card body layout, spacing |
+| `app/assets/stylesheets/sparc-theme.css` | Card border style (left-accent) |
+
+### Also Included
+
+- Marked #185 (STIG XCCDF parser) as completed in `docs/Implemenation_plan.md`
+
+---
+
 ## 2026-03-15 -- Unified Hybrid Security Scanning Pipeline (#186)
 
 **Branch:** `feature/186_hybrid_security_scanning`
