@@ -1,5 +1,6 @@
 class ProfileDocumentsController < ApplicationController
   include FileUploadable
+  include Publishable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
   before_action :set_profile_document, only: %i[
@@ -181,43 +182,6 @@ class ProfileDocumentsController < ApplicationController
     redirect_to profile_document_path(copy)
   end
 
-  def publish_check
-    service = PublicationValidationService.new(@profile_document, current_user: current_user)
-    render json: service.publication_readiness
-  end
-
-  def publish
-    unless @profile_document.control_catalog
-      flash[:error] = "Cannot publish: no source catalog linked to this profile."
-      redirect_to profile_document_path(@profile_document) and return
-    end
-
-    # Apply any inline metadata fixes from the publish modal
-    apply_profile_metadata_fixes!(@profile_document) if params[:metadata_fixes].present?
-
-    # Validate publication metadata
-    validation = PublicationValidationService.new(@profile_document, current_user: current_user)
-    result = validation.validate
-    unless result.valid?
-      flash[:error] = "Cannot publish: #{result.errors.join('; ')}"
-      redirect_to profile_document_path(@profile_document) and return
-    end
-
-    service = OscalResolvedProfileCatalogService.new(@profile_document)
-    resolved_json = service.export
-
-    @profile_document.update!(
-      published: Time.current.utc.iso8601,
-      lifecycle_status: "published",
-      resolved_catalog_json: JSON.parse(resolved_json)
-    )
-
-    audit_log("profile_document_published", subject: @profile_document,
-              metadata: { name: @profile_document.name, lifecycle_status: "published" })
-    flash[:success] = "Profile published. Resolved catalog is now available for download."
-    redirect_to profile_document_path(@profile_document)
-  end
-
   def download_resolved_catalog
     if @profile_document.resolved_catalog_json.blank?
       flash[:error] = "No resolved catalog available. Publish the profile first."
@@ -344,42 +308,46 @@ class ProfileDocumentsController < ApplicationController
     }
   end
 
+  # Override publish_check to include Profile-specific prioritization check.
+  def publish_check
+    service = PublicationValidationService.new(@profile_document, current_user: current_user)
+    readiness = service.publication_readiness
+
+    # Add prioritization check for profiles
+    unprioritized = @profile_document.profile_controls.where(priority: [ nil, "" ]).count
+    prioritized = unprioritized == 0
+    readiness[:checks][:controls_prioritized] = prioritized
+
+    unless prioritized
+      readiness[:ready] = false
+      readiness[:errors] << "#{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3)"
+    end
+
+    render json: readiness
+  end
+
   private
 
-  def apply_profile_metadata_fixes!(doc)
-    fixes = params[:metadata_fixes]
-    return if fixes.blank?
+  def publish_config
+    { document: @profile_document, audit_event: "profile_document_published",
+      redirect_path: profile_document_path(@profile_document), label: "Profile" }
+  end
 
-    extra = doc.metadata_extra || {}
-
-    if fixes[:roles].present?
-      new_roles = JSON.parse(fixes[:roles]) rescue []
-      existing = extra["roles"] || []
-      combined = {}
-      existing.each { |e| combined[e["id"]] = e }
-      new_roles.each { |e| combined[e["id"]] = e }
-      extra["roles"] = combined.values if combined.values.any?
+  # Profile-specific pre-publish logic: validate catalog link, prioritization, and generate resolved catalog.
+  def before_publish_lifecycle(doc)
+    unless doc.control_catalog
+      return { error: "Cannot publish: no source catalog linked to this profile." }
     end
 
-    if fixes[:parties].present?
-      new_parties = JSON.parse(fixes[:parties]) rescue []
-      existing = extra["parties"] || []
-      combined = {}
-      existing.each { |e| combined[e["uuid"]] = e }
-      new_parties.each { |e| combined[e["uuid"]] = e }
-      extra["parties"] = combined.values if combined.values.any?
+    unprioritized = doc.profile_controls.where(priority: [ nil, "" ]).count
+    if unprioritized > 0
+      return { error: "Cannot publish: #{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3). Assign priorities before publishing." }
     end
 
-    if fixes[:responsible_parties].present?
-      new_rps = JSON.parse(fixes[:responsible_parties]) rescue []
-      existing = extra["responsible-parties"] || []
-      combined = {}
-      existing.each { |e| combined[e["role-id"]] = e }
-      new_rps.each { |e| combined[e["role-id"]] = e }
-      extra["responsible-parties"] = combined.values if combined.values.any?
-    end
-
-    doc.update!(metadata_extra: extra) if extra != doc.metadata_extra
+    service = OscalResolvedProfileCatalogService.new(doc)
+    resolved_json = service.export
+    doc.update!(resolved_catalog_json: JSON.parse(resolved_json))
+    nil
   end
 
   def document_metadata_params
