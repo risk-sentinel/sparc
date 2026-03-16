@@ -5,6 +5,7 @@ FactoryBot.define do
     source { "OSCAL" }
     lifecycle_status { "published" }
     oscal_version { "1.1.2" }
+    oscal_uuid { SecureRandom.uuid }
     metadata_extra { {} }
 
     trait :with_metadata do

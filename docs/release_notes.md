@@ -4,6 +4,77 @@
 
 ---
 
+## 2026-03-15 -- Published Profile Creation from Baseline (#175)
+
+**Branch:** `feature/175_published_profile_from_baseline`
+
+### Summary
+
+Delivers the complete baseline-to-published-profile workflow, providing reliable
+published profiles with proper OSCAL references, auto-assigned priorities, and
+populated parameters for downstream consumption by CDEFs (#172) and SSPs (#173).
+
+### What Changed
+
+- **Auto-priority assignment** -- new `ProfilePriorityAssignmentService` assigns
+  P1/P2/P3 to controls when creating a profile from a catalog baseline. Uses
+  explicit catalog priority if available (P1/P2/P3), otherwise applies a
+  heuristic based on baseline breadth (3 levels→P1, 2→P2, 1 or 0→P3). Applied
+  on both initial creation and when adding controls later.
+
+- **Profile-from-Profile creation (tailoring)** -- new `select_profile` and
+  `create_from_profile` actions let users create a tailored profile from any
+  published profile. Uses `DocumentDuplicationService` to clone controls and
+  fields, sets `source_profile_id` for lineage tracking. "Create from Profile"
+  button added to the profile index page.
+
+- **Parameter completeness block on publish** -- `publish_check` now detects
+  parameters that still match their default catalog labels. When uncustomized
+  parameters exist, a blocking modal popup (matching the prioritization warning
+  pattern) prevents the publish modal from opening until all parameters are
+  reviewed.
+
+- **OSCAL back-matter source references** -- Profile OSCAL exports now include
+  the source catalog as a back-matter resource with proper `oscal_uuid` reference.
+  Import hrefs use `#<catalog-oscal-uuid>` instead of `"#"` placeholder. Resolved
+  profile catalogs include source profile and catalog resources in back-matter,
+  and the source-profile link uses the actual profile UUID.
+
+- **Migration** -- adds `source_profile_id` self-referencing FK on
+  `profile_documents` for profile lineage. Adds `oscal_uuid` column on
+  `control_catalogs` for reliable OSCAL cross-referencing (backfilled from
+  `metadata_extra["catalog_uuid"]`).
+
+- **Catalog import** -- `CatalogImportService` now sets the `oscal_uuid` column
+  from the imported catalog's UUID for all import formats.
+
+### Files Created (4)
+
+- `db/migrate/20260315200000_add_profile_lineage_and_catalog_oscal_uuid.rb`
+- `app/services/profile_priority_assignment_service.rb`
+- `spec/services/profile_priority_assignment_service_spec.rb`
+- `app/views/profile_documents/select_profile.html.erb`
+
+### Files Modified (10)
+
+- `app/controllers/profile_documents_controller.rb`
+- `app/models/profile_document.rb`
+- `config/routes.rb`
+- `app/views/profile_documents/index.html.erb`
+- `app/views/profile_documents/show.html.erb`
+- `app/javascript/controllers/publish_modal_controller.js`
+- `app/services/oscal_profile_export_service.rb`
+- `app/services/oscal_resolved_profile_catalog_service.rb`
+- `app/services/catalog_import_service.rb`
+- `spec/requests/unified_publication_spec.rb`
+
+### Verification
+
+- All RSpec tests pass
+- RuboCop clean (0 offenses)
+
+---
+
 ## 2026-03-15 -- Unified Publication Process for Profiles and CDEFs (#176)
 
 **Branch:** `feature/176_unified_publication_profiles_cdefs`

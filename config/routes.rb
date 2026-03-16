@@ -97,6 +97,8 @@ Rails.application.routes.draw do
     collection do
       get :select_catalog
       post :create_from_catalog
+      get :select_profile
+      post :create_from_profile
     end
     resources :profile_controls, only: [ :new, :create, :edit, :update, :destroy ]
   end

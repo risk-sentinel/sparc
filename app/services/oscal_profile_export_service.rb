@@ -73,7 +73,8 @@ class OscalProfileExportService
   end
 
   def build_imports
-    catalog_href = @document.import_metadata&.dig("catalog_href") || "#"
+    catalog_href = @document.import_metadata&.dig("catalog_href")
+    catalog_href ||= @document.control_catalog ? "##{@document.control_catalog.oscal_uuid}" : "#"
     controls = @document.profile_controls.order(:row_order)
 
     [ {
@@ -136,6 +137,31 @@ class OscalProfileExportService
   end
 
   def build_back_matter
-    @document.build_oscal_back_matter
+    base = @document.build_oscal_back_matter
+    resources = base["resources"] || []
+
+    # Add source catalog resource entry so the import href resolves
+    catalog = @document.control_catalog
+    if catalog
+      resources.unshift({
+        "uuid"        => catalog.oscal_uuid,
+        "title"       => catalog.name,
+        "description" => "Source catalog for this profile",
+        "rlinks"      => [ { "href" => "#{catalog.name.parameterize}.json", "media-type" => "application/json" } ]
+      })
+    end
+
+    # Add source profile resource entry if this is a tailored profile
+    source = @document.source_profile
+    if source
+      resources.unshift({
+        "uuid"        => source.uuid,
+        "title"       => source.name,
+        "description" => "Source profile this was tailored from",
+        "rlinks"      => [ { "href" => "#{source.name.parameterize}.json", "media-type" => "application/json" } ]
+      })
+    end
+
+    { "resources" => resources }
   end
 end
