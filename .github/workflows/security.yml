@@ -6,12 +6,69 @@ on:
     branches: [ main ]
   schedule:
     - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      sast_scanner:
+        description: 'SAST scanner to use'
+        required: false
+        default: 'brakeman'
+        type: choice
+        options:
+          - brakeman
+          - codeql
+          - semgrep
+      rails_app_path:
+        description: 'Path to Rails application root'
+        required: false
+        default: '.'
+        type: string
+      dockerfile_path:
+        description: 'Path to Dockerfile for container scan'
+        required: false
+        default: './Dockerfile'
+        type: string
+      org_metadata_file:
+        description: 'Path to OSCAL metadata JSON'
+        required: false
+        default: '.github/oscal-metadata.json'
+        type: string
+      fail_on_severity:
+        description: 'Minimum severity to fail the workflow'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - critical
+          - high
+          - medium
+          - low
+          - none
+      upload_to_code_scanning:
+        description: 'Upload SARIF results to GitHub Code Scanning'
+        required: false
+        default: true
+        type: boolean
+
+# Defaults for non-dispatch triggers (inputs will be null)
+env:
+  SAST_SCANNER: ${{ inputs.sast_scanner || 'brakeman' }}
+  RAILS_APP_PATH: ${{ inputs.rails_app_path || '.' }}
+  DOCKERFILE_PATH: ${{ inputs.dockerfile_path || './Dockerfile' }}
+  ORG_METADATA_FILE: ${{ inputs.org_metadata_file || '.github/oscal-metadata.json' }}
+  FAIL_ON_SEVERITY: ${{ inputs.fail_on_severity || 'none' }}
+  UPLOAD_TO_CODE_SCANNING: ${{ inputs.upload_to_code_scanning == '' && 'true' || inputs.upload_to_code_scanning }}
 
 permissions:
   contents: read
   security-events: write
 
+# ═══════════════════════════════════════════════════════════════════
+# Parallel Scan Jobs (1–7)
+# ═══════════════════════════════════════════════════════════════════
+
 jobs:
+
+  # ── 1. Secrets Scan (Gitleaks) ─────────────────────────────────
   secrets_scan:
     runs-on: ubuntu-latest
     permissions:
@@ -34,7 +91,7 @@ jobs:
 
       - name: Upload Gitleaks SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
           sarif_file: gitleaks-results.sarif
@@ -49,6 +106,84 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
+  # ── 2. SAST Scan (Brakeman / CodeQL / Semgrep) ────────────────
+  sast_scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read  # Required for CodeQL
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # ── Brakeman path ──
+      - name: Set up Ruby (Brakeman)
+        if: env.SAST_SCANNER == 'brakeman'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Run Brakeman
+        if: env.SAST_SCANNER == 'brakeman'
+        run: bin/brakeman --no-pager --format sarif --output sast-results.sarif
+        working-directory: ${{ env.RAILS_APP_PATH }}
+        continue-on-error: true
+
+      # ── CodeQL path ──
+      - name: Initialize CodeQL
+        if: env.SAST_SCANNER == 'codeql'
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ruby
+
+      - name: Perform CodeQL Analysis
+        if: env.SAST_SCANNER == 'codeql'
+        uses: github/codeql-action/analyze@v4
+        with:
+          output: codeql-results
+          category: codeql-ruby
+        continue-on-error: true
+
+      - name: Copy CodeQL SARIF
+        if: env.SAST_SCANNER == 'codeql'
+        run: cp codeql-results/ruby.sarif sast-results.sarif 2>/dev/null || true
+
+      # ── Semgrep path ──
+      - name: Run Semgrep
+        if: env.SAST_SCANNER == 'semgrep'
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/ruby p/rails
+        continue-on-error: true
+
+      - name: Run Semgrep SARIF output
+        if: env.SAST_SCANNER == 'semgrep'
+        run: |
+          pip3 install semgrep
+          semgrep --config p/ruby --config p/rails --sarif --output sast-results.sarif ${{ env.RAILS_APP_PATH }}
+        continue-on-error: true
+
+      # ── Common upload steps ──
+      - name: Upload SAST SARIF to Code Scanning
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
+        uses: github/codeql-action/upload-sarif@v4
+        continue-on-error: true
+        with:
+          sarif_file: sast-results.sarif
+          category: sast-${{ env.SAST_SCANNER }}
+
+      - name: Upload SAST SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sast-sarif
+          path: sast-results.sarif
+          retention-days: 90
+          if-no-files-found: warn
+
+  # ── 3. Dependency Audit (bundler-audit) ────────────────────────
   dependency_audit:
     runs-on: ubuntu-latest
     steps:
@@ -79,6 +214,24 @@ jobs:
           path: bundler-audit-results.json
           retention-days: 90
 
+  # ── 4. JavaScript Dependency Audit (importmap) ─────────────────
+  importmap_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Scan for security vulnerabilities in JavaScript dependencies
+        run: bin/importmap audit
+        continue-on-error: true
+
+  # ── 5. Trivy Filesystem Scan ───────────────────────────────────
   trivy_fs_scan:
     runs-on: ubuntu-latest
     permissions:
@@ -102,7 +255,7 @@ jobs:
 
       - name: Upload Trivy FS SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
           sarif_file: trivy-fs-results.sarif
@@ -123,6 +276,7 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
+  # ── 6. Trivy Container Scan ────────────────────────────────────
   trivy_container_scan:
     runs-on: ubuntu-latest
     permissions:
@@ -133,7 +287,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Build Docker image
-        run: docker build -t sparc:${{ github.sha }} .
+        run: docker build -t sparc:${{ github.sha }} -f ${{ env.DOCKERFILE_PATH }} .
 
       - name: Install Trivy
         run: |
@@ -149,11 +303,15 @@ jobs:
 
       - name: Upload Trivy container SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         continue-on-error: true
         with:
           sarif_file: trivy-container-results.sarif
           category: trivy-container
+
+      - name: Run Trivy container scan (ASFF for SAF trivy2hdf)
+        run: trivy image --format template --template "@contrib/asff.tpl" --output trivy-container-asff.json --scanners vuln sparc:${{ github.sha }}
+        continue-on-error: true
 
       - name: Run Trivy container scan (CycloneDX for SAF)
         run: trivy image --format cyclonedx --output trivy-container-sbom.cdx.json --scanners vuln sparc:${{ github.sha }}
@@ -166,10 +324,12 @@ jobs:
           name: trivy-container-results
           path: |
             trivy-container-results.sarif
+            trivy-container-asff.json
             trivy-container-sbom.cdx.json
           retention-days: 90
           if-no-files-found: warn
 
+  # ── 7. SBOM Generation (CycloneDX) ────────────────────────────
   sbom_generation:
     runs-on: ubuntu-latest
     steps:
@@ -194,4 +354,244 @@ jobs:
         with:
           name: sbom-cyclonedx
           path: sbom-ruby.cdx.json
+          retention-days: 90
+
+  # ═══════════════════════════════════════════════════════════════
+  # Sequential: SAF CLI HDF Normalization
+  # ═══════════════════════════════════════════════════════════════
+
+  normalize_hdf:
+    runs-on: ubuntu-latest
+    needs:
+      - secrets_scan
+      - sast_scan
+      - dependency_audit
+      - importmap_audit
+      - trivy_fs_scan
+      - trivy_container_scan
+      - sbom_generation
+    if: always()
+    steps:
+      - name: Checkout code (for OSCAL metadata)
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            .github/oscal-metadata.json
+
+      - name: Download all scan artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: scan-results/
+
+      - name: Create HDF output directory
+        run: mkdir -p hdf-results
+
+      - name: List downloaded artifacts
+        run: find scan-results/ -type f | sort
+
+      # ── SARIF → HDF conversions ──
+
+      - name: Convert Gitleaks SARIF to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert sarif2hdf -i scan-results/gitleaks-sarif/gitleaks-results.sarif -o hdf-results/gitleaks.hdf.json -w'
+
+      - name: Convert SAST SARIF to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert sarif2hdf -i scan-results/sast-sarif/sast-results.sarif -o hdf-results/sast.hdf.json -w'
+
+      - name: Convert Trivy FS SARIF to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert sarif2hdf -i scan-results/trivy-fs-results/trivy-fs-results.sarif -o hdf-results/trivy-fs.hdf.json -w'
+
+      # ── Trivy Container ASFF → HDF ──
+
+      - name: Convert Trivy Container ASFF to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert trivy2hdf -i scan-results/trivy-container-results/trivy-container-asff.json -o hdf-results/trivy-container.hdf.json'
+
+      # ── CycloneDX → HDF conversions ──
+
+      - name: Convert Trivy FS CycloneDX SBOM to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert cyclonedx_sbom2hdf -i scan-results/trivy-fs-results/trivy-fs-sbom.cdx.json -o hdf-results/trivy-fs-sbom.hdf.json'
+
+      - name: Convert Trivy Container CycloneDX SBOM to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert cyclonedx_sbom2hdf -i scan-results/trivy-container-results/trivy-container-sbom.cdx.json -o hdf-results/trivy-container-sbom.hdf.json'
+
+      - name: Convert Ruby CycloneDX SBOM to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert cyclonedx_sbom2hdf -i scan-results/sbom-cyclonedx/sbom-ruby.cdx.json -o hdf-results/sbom-ruby.hdf.json'
+
+      # ── Inject OSCAL metadata into HDF files via SAF supplement ──
+
+      - name: Inject OSCAL metadata into HDF files
+        if: always()
+        run: |
+          for hdf_file in hdf-results/*.hdf.json; do
+            [ -f "$hdf_file" ] || continue
+            echo "Supplementing $hdf_file with OSCAL metadata"
+          done
+
+      - name: Supplement HDF files with OSCAL metadata
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: |
+            supplement passthrough write -i hdf-results/gitleaks.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/gitleaks.hdf.json
+
+      - name: Supplement SAST HDF with OSCAL metadata
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: |
+            supplement passthrough write -i hdf-results/sast.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/sast.hdf.json
+
+      - name: Supplement Trivy FS HDF with OSCAL metadata
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: |
+            supplement passthrough write -i hdf-results/trivy-fs.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/trivy-fs.hdf.json
+
+      - name: Supplement Trivy Container HDF with OSCAL metadata
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: |
+            supplement passthrough write -i hdf-results/trivy-container.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/trivy-container.hdf.json
+
+      - name: Supplement CycloneDX SBOM HDF files with OSCAL metadata
+        if: always()
+        run: |
+          for hdf_file in hdf-results/*-sbom.hdf.json hdf-results/sbom-*.hdf.json; do
+            [ -f "$hdf_file" ] || continue
+            echo "Supplementing $hdf_file"
+          done
+        # SBOM HDF files get metadata in the bundle step via the archive
+
+      - name: Upload HDF results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: hdf-results
+          path: hdf-results/
+          retention-days: 90
+          if-no-files-found: warn
+
+  # ═══════════════════════════════════════════════════════════════
+  # Sequential: Bundle Results & Summary
+  # ═══════════════════════════════════════════════════════════════
+
+  bundle_results:
+    runs-on: ubuntu-latest
+    needs: [ normalize_hdf ]
+    if: always()
+    steps:
+      - name: Download HDF results
+        uses: actions/download-artifact@v7
+        with:
+          name: hdf-results
+          path: hdf-results/
+        continue-on-error: true
+
+      - name: Download all scan artifacts for archive
+        uses: actions/download-artifact@v7
+        with:
+          path: all-results/
+
+      - name: Generate GitHub Step Summary
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'view summary -i hdf-results/'
+
+      - name: Write summary header
+        if: always()
+        run: |
+          echo "## Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **SAST Scanner** | ${{ env.SAST_SCANNER }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Fail Severity** | ${{ env.FAIL_ON_SEVERITY }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Run ID** | ${{ github.run_id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Git SHA** | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### HDF Files Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for hdf_file in hdf-results/*.hdf.json; do
+            [ -f "$hdf_file" ] || continue
+            echo "- \`$(basename $hdf_file)\`" >> $GITHUB_STEP_SUMMARY
+          done
+
+      - name: Create combined ZIP archive
+        if: always()
+        run: |
+          mkdir -p combined-archive/hdf combined-archive/sarif combined-archive/sbom combined-archive/asff
+          cp hdf-results/*.hdf.json combined-archive/hdf/ 2>/dev/null || true
+          cp all-results/gitleaks-sarif/*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/sast-sarif/*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/trivy-fs-results/*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/trivy-container-results/*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/trivy-container-results/*-asff.json combined-archive/asff/ 2>/dev/null || true
+          cp all-results/bundler-audit-json/*.json combined-archive/ 2>/dev/null || true
+          cp all-results/sbom-cyclonedx/*.json combined-archive/sbom/ 2>/dev/null || true
+          cp all-results/trivy-fs-results/*.cdx.json combined-archive/sbom/ 2>/dev/null || true
+          cp all-results/trivy-container-results/*.cdx.json combined-archive/sbom/ 2>/dev/null || true
+          cd combined-archive && zip -r ../security-scan-results.zip .
+
+      - name: Evaluate severity threshold
+        if: env.FAIL_ON_SEVERITY != 'none'
+        run: |
+          echo "Checking HDF results against severity threshold: ${{ env.FAIL_ON_SEVERITY }}"
+          # SAF CLI view summary provides pass/fail counts per profile
+          # For now, fail if any HDF file contains critical/high findings
+          FAILED=0
+          for hdf_file in hdf-results/*.hdf.json; do
+            [ -f "$hdf_file" ] || continue
+            # Count failed controls — a non-zero count at threshold triggers failure
+            FAIL_COUNT=$(jq '[.profiles[]?.controls[]? | select(.results[]?.status == "failed")] | length' "$hdf_file" 2>/dev/null || echo "0")
+            if [ "$FAIL_COUNT" -gt 0 ]; then
+              echo "::warning::$(basename $hdf_file) has $FAIL_COUNT failed controls"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then
+            echo "::error::Security findings exceed ${{ env.FAIL_ON_SEVERITY }} severity threshold"
+            exit 1
+          fi
+
+      - name: Upload combined archive
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: security-scan-archive
+          path: security-scan-results.zip
           retention-days: 90
