@@ -175,6 +175,167 @@ RSpec.describe "Unified publication lifecycle", type: :request do
     end
   end
 
+  # ── Auto-Priority Assignment (#175) ──────────────────────────────────
+
+  describe "Auto-priority assignment on create_from_catalog" do
+    let(:catalog) { create(:control_catalog) }
+    let(:family) { create(:control_family, control_catalog: catalog) }
+
+    it "assigns P1 to controls with explicit P1 priority" do
+      cc = create(:catalog_control, control_family: family, control_id: "ac-1",
+                  priority: "P1", baseline_impact: "LOW")
+      post create_from_catalog_profile_documents_path, params: {
+        catalog_id: catalog.slug,
+        control_ids: [ cc.control_id ],
+        baseline_level: "LOW",
+        profile_name: "Test Auto-Priority"
+      }
+      profile = ProfileDocument.order(created_at: :desc).first
+      ctrl = profile.profile_controls.find_by(control_id: "ac-1")
+      expect(ctrl.priority).to eq("P1")
+    end
+
+    it "assigns priority based on baseline breadth when no explicit priority" do
+      cc = create(:catalog_control, control_family: family, control_id: "ac-2",
+                  priority: nil, baseline_impact: "LOW, MODERATE, HIGH")
+      post create_from_catalog_profile_documents_path, params: {
+        catalog_id: catalog.slug,
+        control_ids: [ cc.control_id ],
+        baseline_level: "LOW",
+        profile_name: "Test Breadth Priority"
+      }
+      profile = ProfileDocument.order(created_at: :desc).first
+      ctrl = profile.profile_controls.find_by(control_id: "ac-2")
+      expect(ctrl.priority).to eq("P1")
+    end
+  end
+
+  # ── Profile-from-Profile Creation (#175) ──────────────────────────────
+
+  describe "Profile-from-Profile creation" do
+    let(:catalog) { create(:control_catalog) }
+    let(:source_profile) do
+      create(:profile_document,
+             lifecycle_status: "published",
+             metadata_extra: valid_metadata,
+             control_catalog: catalog)
+    end
+
+    before do
+      source_profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
+    end
+
+    it "creates a tailored profile from a published profile" do
+      post create_from_profile_profile_documents_path, params: {
+        source_profile_id: source_profile.slug,
+        profile_name: "Tailored Profile"
+      }
+      copy = ProfileDocument.order(created_at: :desc).first
+      expect(copy.name).to eq("Tailored Profile")
+      expect(copy.source_profile).to eq(source_profile)
+      expect(copy.lifecycle_status).to eq("in_progress")
+      expect(copy.profile_controls.count).to eq(source_profile.profile_controls.count)
+    end
+
+    it "rejects creating from an unpublished profile" do
+      source_profile.update!(lifecycle_status: "in_progress")
+      post create_from_profile_profile_documents_path, params: {
+        source_profile_id: source_profile.slug,
+        profile_name: "Should Fail"
+      }
+      expect(flash[:error]).to include("published")
+    end
+
+    it "tracks source_profile lineage in derived profile" do
+      post create_from_profile_profile_documents_path, params: {
+        source_profile_id: source_profile.slug
+      }
+      copy = ProfileDocument.order(created_at: :desc).first
+      expect(copy.source_profile_id).to eq(source_profile.id)
+      expect(source_profile.derived_profiles).to include(copy)
+    end
+  end
+
+  # ── Parameter Completeness Check (#175) ──────────────────────────────
+
+  describe "Parameter completeness check in publish_check" do
+    let(:catalog) { create(:control_catalog) }
+    let(:profile) do
+      create(:profile_document,
+             lifecycle_status: "in_progress",
+             metadata_extra: valid_metadata,
+             control_catalog: catalog)
+    end
+
+    it "returns parameters_customized: true when no params exist" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
+      get publish_check_profile_document_path(profile)
+      json = JSON.parse(response.body)
+      expect(json["checks"]["parameters_customized"]).to be true
+    end
+
+    it "returns parameters_customized: false when params match defaults" do
+      ctrl = profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
+      ctrl.profile_control_fields.create!(field_name: "parameter:ac-1_prm_1", field_value: "default label")
+      ctrl.profile_control_fields.create!(field_name: "parameter_label:ac-1_prm_1", field_value: "default label")
+      get publish_check_profile_document_path(profile)
+      json = JSON.parse(response.body)
+      expect(json["checks"]["parameters_customized"]).to be false
+      expect(json["errors"]).to include(match(/default catalog values/))
+    end
+
+    it "returns parameters_customized: true when params are customized" do
+      ctrl = profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
+      ctrl.profile_control_fields.create!(field_name: "parameter:ac-1_prm_1", field_value: "custom value")
+      ctrl.profile_control_fields.create!(field_name: "parameter_label:ac-1_prm_1", field_value: "default label")
+      get publish_check_profile_document_path(profile)
+      json = JSON.parse(response.body)
+      expect(json["checks"]["parameters_customized"]).to be true
+    end
+  end
+
+  # ── OSCAL Back-Matter References (#175) ──────────────────────────────
+
+  describe "OSCAL export back-matter references" do
+    let(:catalog) { create(:control_catalog, oscal_uuid: SecureRandom.uuid) }
+    let(:profile) do
+      create(:profile_document,
+             lifecycle_status: "in_progress",
+             metadata_extra: valid_metadata,
+             control_catalog: catalog)
+    end
+
+    it "includes catalog oscal_uuid in profile export imports href" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
+      service = OscalProfileExportService.new(profile)
+      json = JSON.parse(service.export_unvalidated)
+      href = json.dig("profile", "imports", 0, "href")
+      expect(href).to eq("##{catalog.oscal_uuid}")
+    end
+
+    it "includes catalog resource in profile export back-matter" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
+      service = OscalProfileExportService.new(profile)
+      json = JSON.parse(service.export_unvalidated)
+      resources = json.dig("profile", "back-matter", "resources")
+      catalog_resource = resources.find { |r| r["uuid"] == catalog.oscal_uuid }
+      expect(catalog_resource).to be_present
+      expect(catalog_resource["title"]).to eq(catalog.name)
+    end
+
+    it "includes source profile and catalog in resolved catalog back-matter" do
+      family = create(:control_family, control_catalog: catalog)
+      create(:catalog_control, control_family: family, control_id: "ac-1", priority: "P1")
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
+
+      service = OscalResolvedProfileCatalogService.new(profile)
+      json = JSON.parse(service.export)
+      resources = json.dig("catalog", "back-matter", "resources")
+      expect(resources.find { |r| r["uuid"] == profile.uuid }).to be_present
+      expect(resources.find { |r| r["uuid"] == catalog.oscal_uuid }).to be_present
+    end
+  end
+
   # ── Copy → Republish Lifecycle ──────────────────────────────────────
 
   describe "Copy and republish lifecycle" do
