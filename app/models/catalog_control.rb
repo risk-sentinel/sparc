@@ -103,11 +103,26 @@ class CatalogControl < ApplicationRecord
   end
 
   # ── Baseline helpers ─────────────────────────────────────────────
-  # baseline_impact is a comma-separated string of levels (e.g. "LOW, MODERATE").
+  # baseline_impact can be stored in two formats:
+  #   - Full names, comma-separated: "LOW, MODERATE, HIGH"
+  #   - Abbreviated, space-separated: "L M H"
+  # Both are normalized to full uppercase names on read.
+
+  BASELINE_ABBREVIATIONS = { "L" => "LOW", "M" => "MODERATE", "H" => "HIGH" }.freeze
 
   # Returns an array of uppercase baseline levels, e.g. ["LOW", "MODERATE"].
   def baseline_levels
-    baseline_impact.to_s.split(/\s*,\s*/).map(&:strip).reject(&:blank?).map(&:upcase)
+    raw = baseline_impact.to_s.strip
+    return [] if raw.blank?
+
+    # Detect format: if it contains commas, split by comma; otherwise split by space
+    tokens = if raw.include?(",")
+      raw.split(/\s*,\s*/)
+    else
+      raw.split(/\s+/)
+    end
+
+    tokens.map(&:strip).reject(&:blank?).map { |t| BASELINE_ABBREVIATIONS[t.upcase] || t.upcase }
   end
 
   # Returns true when the control includes the given level.
