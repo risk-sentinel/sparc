@@ -13,8 +13,153 @@ class CdefXccdfParserService
     doc = Nokogiri::XML(xml_content) { |c| c.strict.noblanks }
     doc.remove_namespaces!
 
+    # Auto-detect OSCAL component-definition vs XCCDF Benchmark
+    if doc.at_xpath("//component-definition")
+      parse_oscal_xml(doc)
+    elsif doc.at_xpath("//Benchmark")
+      parse_xccdf(doc)
+    else
+      raise "Unrecognized XML format: expected <Benchmark> (XCCDF) or <component-definition> (OSCAL)"
+    end
+  end
+
+  private
+
+  # ── OSCAL Component Definition XML ─────────────────────────────
+
+  def parse_oscal_xml(doc)
+    json_hash = build_oscal_json_from_xml(doc)
+
+    temp_path = Rails.root.join("tmp", "cdef_oscal_#{SecureRandom.hex(8)}.json").to_s
+    File.write(temp_path, JSON.generate(json_hash))
+
+    begin
+      CdefJsonParserService.new(@document, temp_path).parse
+    ensure
+      FileUtils.rm_f(temp_path)
+    end
+  end
+
+  def build_oscal_json_from_xml(doc)
+    cdef_node = doc.at_xpath("//component-definition")
+    metadata_node = cdef_node.at_xpath("metadata")
+
+    metadata = {}
+    metadata["title"]         = metadata_node.at_xpath("title")&.text&.strip
+    metadata["last-modified"] = metadata_node.at_xpath("last-modified")&.text&.strip
+    metadata["version"]       = metadata_node.at_xpath("version")&.text&.strip
+    metadata["oscal-version"] = metadata_node.at_xpath("oscal-version")&.text&.strip
+
+    metadata["roles"] = metadata_node.xpath("role").map do |role|
+      { "id" => role["id"], "title" => role.at_xpath("title")&.text&.strip }.compact
+    end
+    metadata["roles"] = nil if metadata["roles"].empty?
+
+    metadata["parties"] = metadata_node.xpath("party").map do |party|
+      build_party_hash(party)
+    end
+    metadata["parties"] = nil if metadata["parties"].empty?
+
+    components = cdef_node.xpath("component").map { |c| build_component_hash(c) }
+
+    back_matter = build_back_matter(cdef_node.at_xpath("back-matter"))
+
+    {
+      "component-definition" => {
+        "uuid"     => cdef_node["uuid"],
+        "metadata" => metadata.compact,
+        "components" => components
+      }.tap { |h| h["back-matter"] = back_matter if back_matter }
+    }
+  end
+
+  def build_party_hash(party)
+    h = { "uuid" => party["uuid"], "type" => party["type"], "name" => party.at_xpath("name")&.text&.strip }
+    links = party.xpath("link").map { |l| { "href" => l["href"], "rel" => l["rel"] }.compact }
+    h["links"] = links unless links.empty?
+    h.compact
+  end
+
+  def build_component_hash(component)
+    h = {
+      "uuid"        => component["uuid"],
+      "type"        => component["type"],
+      "title"       => component.at_xpath("title")&.text&.strip,
+      "description" => extract_prose(component.at_xpath("description"))
+    }
+
+    cis = component.xpath("control-implementation").map { |ci| build_control_implementation_hash(ci) }
+    h["control-implementations"] = cis unless cis.empty?
+    h.compact
+  end
+
+  def build_control_implementation_hash(ci)
+    h = {
+      "uuid"        => ci["uuid"],
+      "source"      => ci["source"],
+      "description" => extract_prose(ci.at_xpath("description"))
+    }
+
+    reqs = ci.xpath("implemented-requirement").map { |ir| build_implemented_requirement_hash(ir) }
+    h["implemented-requirements"] = reqs unless reqs.empty?
+    h.compact
+  end
+
+  def build_implemented_requirement_hash(ir)
+    h = {
+      "uuid"        => ir["uuid"],
+      "control-id"  => ir["control-id"],
+      "description" => extract_prose(ir.at_xpath("description"))
+    }
+
+    params = ir.xpath("set-parameter").map do |sp|
+      { "param-id" => sp["param-id"], "values" => sp.xpath("value").map { |v| v.text.strip } }.compact
+    end
+    h["set-parameters"] = params unless params.empty?
+
+    statements = ir.xpath("statement").map do |stmt|
+      s = {
+        "statement-id" => stmt["statement-id"],
+        "uuid"         => stmt["uuid"],
+        "description"  => extract_prose(stmt.at_xpath("description"))
+      }
+      s.compact
+    end
+    h["statements"] = statements unless statements.empty?
+
+    h.compact
+  end
+
+  def extract_prose(node)
+    return nil unless node
+    # Collect text content from all child <p> elements, or use direct text
+    paragraphs = node.xpath("p")
+    if paragraphs.any?
+      paragraphs.map { |p| p.text.strip }.join("\n")
+    else
+      node.text.strip.presence
+    end
+  end
+
+  def build_back_matter(bm_node)
+    return nil unless bm_node
+
+    resources = bm_node.xpath("resource").map do |res|
+      r = { "uuid" => res["uuid"] }
+      desc = extract_prose(res.at_xpath("description"))
+      r["description"] = desc if desc
+      rlinks = res.xpath("rlink").map { |rl| { "href" => rl["href"], "media-type" => rl["media-type"] }.compact }
+      r["rlinks"] = rlinks unless rlinks.empty?
+      r.compact
+    end
+
+    { "resources" => resources } unless resources.empty?
+  end
+
+  # ── XCCDF Benchmark ────────────────────────────────────────────
+
+  def parse_xccdf(doc)
     benchmark = doc.at_xpath("//Benchmark")
-    raise "No <Benchmark> element found in XCCDF file" unless benchmark
 
     cdef_type = detect_cdef_type(benchmark)
     update_document_metadata(benchmark, cdef_type)
@@ -42,8 +187,6 @@ class CdefXccdfParserService
       field_entries: field_entries
     )
   end
-
-  private
 
   def detect_cdef_type(benchmark)
     bench_id    = benchmark["id"].to_s
