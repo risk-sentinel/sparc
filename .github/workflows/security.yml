@@ -8,15 +8,11 @@ on:
     - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
   workflow_dispatch:
     inputs:
-      sast_scanner:
-        description: 'SAST scanner to use'
+      run_semgrep:
+        description: 'Also run Semgrep SAST scan (Brakeman + CodeQL always run)'
         required: false
-        default: 'brakeman'
-        type: choice
-        options:
-          - brakeman
-          - codeql
-          - semgrep
+        default: false
+        type: boolean
       rails_app_path:
         description: 'Path to Rails application root'
         required: false
@@ -51,7 +47,7 @@ on:
 
 # Defaults for non-dispatch triggers (inputs will be null)
 env:
-  SAST_SCANNER: ${{ inputs.sast_scanner || 'brakeman' }}
+  RUN_SEMGREP: ${{ inputs.run_semgrep || 'false' }}
   RAILS_APP_PATH: ${{ inputs.rails_app_path || '.' }}
   DOCKERFILE_PATH: ${{ inputs.dockerfile_path || './Dockerfile' }}
   ORG_METADATA_FILE: ${{ inputs.org_metadata_file || '.github/oscal-metadata.json' }}
@@ -63,7 +59,7 @@ permissions:
   security-events: write
 
 # ═══════════════════════════════════════════════════════════════════
-# Parallel Scan Jobs (1–7)
+# Parallel Scan Jobs (1–9)
 # ═══════════════════════════════════════════════════════════════════
 
 jobs:
@@ -106,8 +102,46 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
-  # ── 2. SAST Scan (Brakeman / CodeQL / Semgrep) ────────────────
-  sast_scan:
+  # ── 2a. Brakeman SAST (always-on, Rails-specific) ─────────────
+  brakeman_scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Run Brakeman
+        run: bin/brakeman --no-pager --format sarif --output brakeman-results.sarif
+        working-directory: ${{ env.RAILS_APP_PATH }}
+        continue-on-error: true
+
+      - name: Upload Brakeman SARIF to Code Scanning
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
+        uses: github/codeql-action/upload-sarif@v4
+        continue-on-error: true
+        with:
+          sarif_file: brakeman-results.sarif
+          category: sast-brakeman
+
+      - name: Upload Brakeman SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: brakeman-sarif
+          path: brakeman-results.sarif
+          retention-days: 90
+          if-no-files-found: warn
+
+  # ── 2b. CodeQL SAST (always-on, deep semantic analysis) ──────
+  codeql_scan:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -117,69 +151,93 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      # ── Brakeman path ──
-      - name: Set up Ruby (Brakeman)
-        if: env.SAST_SCANNER == 'brakeman'
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-
-      - name: Run Brakeman
-        if: env.SAST_SCANNER == 'brakeman'
-        run: bin/brakeman --no-pager --format sarif --output sast-results.sarif
-        working-directory: ${{ env.RAILS_APP_PATH }}
-        continue-on-error: true
-
-      # ── CodeQL path ──
       - name: Initialize CodeQL
-        if: env.SAST_SCANNER == 'codeql'
         uses: github/codeql-action/init@v4
         with:
-          languages: ruby
+          languages: ruby, javascript-typescript
 
       - name: Perform CodeQL Analysis
-        if: env.SAST_SCANNER == 'codeql'
         uses: github/codeql-action/analyze@v4
         with:
           output: codeql-results
-          category: codeql-ruby
+          category: codeql-sast
+          upload: false  # We upload manually for artifact control
         continue-on-error: true
 
-      - name: Copy CodeQL SARIF
-        if: env.SAST_SCANNER == 'codeql'
-        run: cp codeql-results/ruby.sarif sast-results.sarif 2>/dev/null || true
+      - name: Merge CodeQL SARIF files
+        if: always()
+        run: |
+          # CodeQL produces one SARIF per language — merge into a single file
+          SARIF_FILES=$(find codeql-results/ -name '*.sarif' 2>/dev/null)
+          FILE_COUNT=$(echo "$SARIF_FILES" | grep -c '.' || true)
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "::warning::No CodeQL SARIF files found"
+          elif [ "$FILE_COUNT" -eq 1 ]; then
+            cp $SARIF_FILES codeql-results.sarif
+          else
+            # Merge multiple SARIF files by combining their runs arrays
+            echo '{"$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json","version":"2.1.0","runs":[]}' > codeql-results.sarif
+            for f in $SARIF_FILES; do
+              echo "Including SARIF from: $f"
+            done
+            # Use jq to merge runs from all files
+            jq -s '{ "$schema": .[0]["$schema"], version: .[0].version, runs: [.[].runs[]] }' $SARIF_FILES > codeql-results.sarif
+          fi
 
-      # ── Semgrep path ──
+      - name: Upload CodeQL SARIF to Code Scanning
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
+        uses: github/codeql-action/upload-sarif@v4
+        continue-on-error: true
+        with:
+          sarif_file: codeql-results.sarif
+          category: sast-codeql
+
+      - name: Upload CodeQL SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: codeql-sarif
+          path: codeql-results.sarif
+          retention-days: 90
+          if-no-files-found: warn
+
+  # ── 2c. Semgrep SAST (optional, via workflow_dispatch) ───────
+  semgrep_scan:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_semgrep == true }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
       - name: Run Semgrep
-        if: env.SAST_SCANNER == 'semgrep'
         uses: returntocorp/semgrep-action@v1
         with:
           config: p/ruby p/rails
         continue-on-error: true
 
       - name: Run Semgrep SARIF output
-        if: env.SAST_SCANNER == 'semgrep'
         run: |
           pip3 install semgrep
-          semgrep --config p/ruby --config p/rails --sarif --output sast-results.sarif ${{ env.RAILS_APP_PATH }}
+          semgrep --config p/ruby --config p/rails --sarif --output semgrep-results.sarif ${{ env.RAILS_APP_PATH }}
         continue-on-error: true
 
-      # ── Common upload steps ──
-      - name: Upload SAST SARIF to Code Scanning
+      - name: Upload Semgrep SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true'
         uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
-          sarif_file: sast-results.sarif
-          category: sast-${{ env.SAST_SCANNER }}
+          sarif_file: semgrep-results.sarif
+          category: sast-semgrep
 
-      - name: Upload SAST SARIF artifact
+      - name: Upload Semgrep SARIF artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: sast-sarif
-          path: sast-results.sarif
+          name: semgrep-sarif
+          path: semgrep-results.sarif
           retention-days: 90
           if-no-files-found: warn
 
@@ -364,7 +422,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - secrets_scan
-      - sast_scan
+      - brakeman_scan
+      - codeql_scan
+      - semgrep_scan
       - dependency_audit
       - importmap_audit
       - trivy_fs_scan
@@ -398,12 +458,26 @@ jobs:
         with:
           command_string: 'convert sarif2hdf -i scan-results/gitleaks-sarif/gitleaks-results.sarif -o hdf-results/gitleaks.hdf.json -w'
 
-      - name: Convert SAST SARIF to HDF
+      - name: Convert Brakeman SARIF to HDF
         if: always()
         uses: mitre/saf_action@v1
         continue-on-error: true
         with:
-          command_string: 'convert sarif2hdf -i scan-results/sast-sarif/sast-results.sarif -o hdf-results/sast.hdf.json -w'
+          command_string: 'convert sarif2hdf -i scan-results/brakeman-sarif/brakeman-results.sarif -o hdf-results/brakeman.hdf.json -w'
+
+      - name: Convert CodeQL SARIF to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert sarif2hdf -i scan-results/codeql-sarif/codeql-results.sarif -o hdf-results/codeql.hdf.json -w'
+
+      - name: Convert Semgrep SARIF to HDF
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: 'convert sarif2hdf -i scan-results/semgrep-sarif/semgrep-results.sarif -o hdf-results/semgrep.hdf.json -w'
 
       - name: Convert Trivy FS SARIF to HDF
         if: always()
@@ -462,13 +536,29 @@ jobs:
           command_string: |
             supplement passthrough write -i hdf-results/gitleaks.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/gitleaks.hdf.json
 
-      - name: Supplement SAST HDF with OSCAL metadata
+      - name: Supplement Brakeman HDF with OSCAL metadata
         if: always()
         uses: mitre/saf_action@v1
         continue-on-error: true
         with:
           command_string: |
-            supplement passthrough write -i hdf-results/sast.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/sast.hdf.json
+            supplement passthrough write -i hdf-results/brakeman.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/brakeman.hdf.json
+
+      - name: Supplement CodeQL HDF with OSCAL metadata
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: |
+            supplement passthrough write -i hdf-results/codeql.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/codeql.hdf.json
+
+      - name: Supplement Semgrep HDF with OSCAL metadata
+        if: always()
+        uses: mitre/saf_action@v1
+        continue-on-error: true
+        with:
+          command_string: |
+            supplement passthrough write -i hdf-results/semgrep.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/semgrep.hdf.json
 
       - name: Supplement Trivy FS HDF with OSCAL metadata
         if: always()
@@ -539,7 +629,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **SAST Scanner** | ${{ env.SAST_SCANNER }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **SAST Scanners** | Brakeman + CodeQL (always-on)${{ env.RUN_SEMGREP == 'true' && ' + Semgrep' || '' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Fail Severity** | ${{ env.FAIL_ON_SEVERITY }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Run ID** | ${{ github.run_id }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Git SHA** | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
@@ -557,7 +647,9 @@ jobs:
           mkdir -p combined-archive/hdf combined-archive/sarif combined-archive/sbom combined-archive/asff
           cp hdf-results/*.hdf.json combined-archive/hdf/ 2>/dev/null || true
           cp all-results/gitleaks-sarif/*.sarif combined-archive/sarif/ 2>/dev/null || true
-          cp all-results/sast-sarif/*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/brakeman-sarif/*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/codeql-sarif/*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/semgrep-sarif/*.sarif combined-archive/sarif/ 2>/dev/null || true
           cp all-results/trivy-fs-results/*.sarif combined-archive/sarif/ 2>/dev/null || true
           cp all-results/trivy-container-results/*.sarif combined-archive/sarif/ 2>/dev/null || true
           cp all-results/trivy-container-results/*-asff.json combined-archive/asff/ 2>/dev/null || true

@@ -15,7 +15,7 @@ SPARC uses a unified GitHub Actions workflow (`.github/workflows/security.yml`) 
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `sast_scanner` | `brakeman` | SAST tool: `brakeman`, `codeql`, or `semgrep` |
+| `run_semgrep` | `false` | Also run Semgrep SAST scan (Brakeman + CodeQL always run) |
 | `rails_app_path` | `.` | Path to Rails application root |
 | `dockerfile_path` | `./Dockerfile` | Dockerfile for container scanning |
 | `org_metadata_file` | `.github/oscal-metadata.json` | OSCAL metadata for HDF enrichment |
@@ -24,26 +24,45 @@ SPARC uses a unified GitHub Actions workflow (`.github/workflows/security.yml`) 
 
 ## Pipeline Architecture
 
-### Parallel Scan Jobs (1-7)
+### Parallel Scan Jobs (1-9)
 
 All scan jobs run concurrently:
 
-| Job | Tool | Output Formats | Purpose |
-|-----|------|---------------|---------|
-| `secrets_scan` | Gitleaks | SARIF | Detect exposed secrets in git history |
-| `sast_scan` | Brakeman/CodeQL/Semgrep | SARIF | Static application security testing |
-| `dependency_audit` | bundler-audit | JSON | Ruby dependency vulnerability check |
-| `importmap_audit` | importmap audit | stdout | JavaScript dependency check |
-| `trivy_fs_scan` | Trivy | SARIF + CycloneDX | Filesystem vulnerability/misconfig/secret scan |
-| `trivy_container_scan` | Trivy | SARIF + ASFF + CycloneDX | Container image vulnerability scan |
-| `sbom_generation` | cyclonedx-ruby | CycloneDX | Software Bill of Materials |
+| Job | Tool | Always On | Output Formats | Purpose |
+|-----|------|-----------|---------------|---------|
+| `secrets_scan` | Gitleaks | Yes | SARIF | Detect exposed secrets in git history |
+| `brakeman_scan` | Brakeman | Yes | SARIF | Rails-specific static application security testing |
+| `codeql_scan` | CodeQL | Yes | SARIF | Deep semantic code analysis (Ruby + JS/TS) |
+| `semgrep_scan` | Semgrep | No (opt-in) | SARIF | Pattern-based static analysis with custom rules |
+| `dependency_audit` | bundler-audit | Yes | JSON | Ruby dependency vulnerability check |
+| `importmap_audit` | importmap audit | Yes | stdout | JavaScript dependency check |
+| `trivy_fs_scan` | Trivy | Yes | SARIF + CycloneDX | Filesystem vulnerability/misconfig/secret scan |
+| `trivy_container_scan` | Trivy | Yes | SARIF + ASFF + CycloneDX | Container image vulnerability scan |
+| `sbom_generation` | cyclonedx-ruby | Yes | CycloneDX | Software Bill of Materials |
 
-### Sequential Jobs (8-9)
+### Sequential Jobs (10-11)
 
 | Job | Purpose |
 |-----|---------|
 | `normalize_hdf` | Convert all scan outputs to HDF via SAF CLI, inject OSCAL metadata |
 | `bundle_results` | Create ZIP archive, generate summary, evaluate severity threshold |
+
+## SAST Scanner Strategy
+
+SPARC runs **two always-on SAST scanners** for maximum depth and breadth:
+
+### Brakeman (always-on)
+Rails-specific static analysis. Fast, purpose-built for Rails security patterns. Detects SQL injection, XSS, mass assignment, and Rails-specific vulnerabilities. Runs on every PR and push.
+
+### CodeQL (always-on)
+GitHub's semantic code analysis engine. Multi-language support (Ruby + JavaScript/TypeScript). Performs deep data-flow and control-flow analysis to find complex vulnerabilities like taint propagation, authentication bypasses, and injection flaws. Produces SARIF per language, merged into a single artifact.
+
+### Semgrep (optional, via workflow_dispatch)
+Pattern-based static analysis with Ruby/Rails rulesets. Good for custom rules and organization-specific patterns. Enable via the `run_semgrep` input when triggered manually. Uses `returntocorp/semgrep-action`.
+
+All three produce SARIF output for consistent downstream HDF conversion.
+
+> **Note:** If GitHub's default CodeQL setup is enabled on your repository, it should be disabled to avoid duplicate scanning. The `codeql_scan` job in this workflow replaces it with broader language coverage and HDF integration.
 
 ## SAF CLI HDF Conversions
 
@@ -52,7 +71,9 @@ The `normalize_hdf` job uses [MITRE SAF CLI](https://saf-cli.mitre.org/) via the
 | Source | Format | SAF CLI Command | HDF Output |
 |--------|--------|-----------------|------------|
 | Gitleaks | SARIF | `convert sarif2hdf` | `gitleaks.hdf.json` |
-| SAST scanner | SARIF | `convert sarif2hdf` | `sast.hdf.json` |
+| Brakeman | SARIF | `convert sarif2hdf` | `brakeman.hdf.json` |
+| CodeQL | SARIF | `convert sarif2hdf` | `codeql.hdf.json` |
+| Semgrep | SARIF | `convert sarif2hdf` | `semgrep.hdf.json` |
 | Trivy FS | SARIF | `convert sarif2hdf` | `trivy-fs.hdf.json` |
 | Trivy Container | ASFF | `convert trivy2hdf` | `trivy-container.hdf.json` |
 | Trivy FS SBOM | CycloneDX | `convert cyclonedx_sbom2hdf` | `trivy-fs-sbom.hdf.json` |
@@ -69,25 +90,14 @@ After HDF conversion, each file is enriched with OSCAL-aligned metadata using `s
 - Scanner and preparer role definitions
 - Responsible party assignments
 
-## SAST Scanner Options
-
-### Brakeman (default)
-Rails-specific static analysis. Fast, no additional setup. Runs on every PR.
-
-### CodeQL
-GitHub's semantic code analysis. Deeper analysis, slower. Best for scheduled runs. Requires `actions: read` permission.
-
-### Semgrep
-Pattern-based static analysis with Ruby/Rails rulesets. Good for custom rules. Uses `returntocorp/semgrep-action`.
-
-All three produce SARIF output for consistent downstream processing.
-
 ## Artifacts
 
 | Artifact Name | Contents | Retention |
 |--------------|----------|-----------|
 | `gitleaks-sarif` | Gitleaks SARIF results | 90 days |
-| `sast-sarif` | SAST scanner SARIF results | 90 days |
+| `brakeman-sarif` | Brakeman SARIF results | 90 days |
+| `codeql-sarif` | CodeQL SARIF results (merged multi-language) | 90 days |
+| `semgrep-sarif` | Semgrep SARIF results (when enabled) | 90 days |
 | `bundler-audit-json` | bundler-audit JSON results | 90 days |
 | `trivy-fs-results` | Trivy FS SARIF + CycloneDX | 90 days |
 | `trivy-container-results` | Trivy container SARIF + ASFF + CycloneDX | 90 days |
@@ -100,7 +110,7 @@ All three produce SARIF output for consistent downstream processing.
 ```
 security-scan-results.zip
   hdf/              # HDF files (Heimdall-compatible)
-  sarif/            # Raw SARIF files
+  sarif/            # Raw SARIF files (Gitleaks, Brakeman, CodeQL, Semgrep, Trivy)
   sbom/             # CycloneDX SBOMs
   asff/             # Trivy ASFF output
   bundler-audit-results.json
