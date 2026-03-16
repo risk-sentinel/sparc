@@ -73,7 +73,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 - [x] #177 -- Extend Catalog import & management (locking, SHA digest, baseline impacts) -- **COMPLETED 2026-03-15**
 - [x] #148 -- OSCAL-compliant publication process for key document types -- **COMPLETED 2026-03-15**
 - [x] #149 -- Status tracking for Baselines/Profiles, Components, Documents -- **COMPLETED 2026-03-15**
-- [ ] #176 -- Unified publication process for Profiles and Component Definitions
+- [x] #176 -- Unified publication process for Profiles and Component Definitions -- **COMPLETED 2026-03-15**
 
 ### 4. OSCAL Entity Creation & Workflows
 
@@ -159,8 +159,8 @@ Dev D: #134 (HTTPS dev environment)
 | [x] | #163 | YAML + full XML enhancement support, round-trip tests -- **COMPLETED 2026-03-15** | **HIGH** | None |
 | [x] | #149 | Status enum + lifecycle rules across all document types -- **COMPLETED 2026-03-15** | **HIGH** | None |
 | [x] | #177 | Catalog locking, universal SHA digest, baseline impact multi-select -- **COMPLETED 2026-03-15** | **HIGH** | AFTER #163 merges |
-| [ ] | #148 | Standardized publication metadata + validation | MEDIUM | AFTER #149 merges |
-| [ ] | #176 | Unified publish/copy logic for Profiles & CDEFs | MEDIUM | AFTER #149 merges |
+| [x] | #148 | Standardized publication metadata + validation -- **COMPLETED 2026-03-15** | MEDIUM | AFTER #149 merges |
+| [x] | #176 | Unified publish/copy logic for Profiles & CDEFs -- **COMPLETED 2026-03-15** | MEDIUM | AFTER #149 merges |
 
 <!-- markdownlint-enable MD013 -->
 

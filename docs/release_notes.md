@@ -4,6 +4,48 @@
 
 ---
 
+## 2026-03-15 -- Unified Publication Process for Profiles and CDEFs (#176)
+
+**Branch:** `feature/176_unified_publication_profiles_cdefs`
+
+### Summary
+
+Unifies the Profile publication workflow into the shared Publishable concern,
+eliminating ~35 lines of duplicated metadata-fix and validation code. Adds a
+`before_publish_lifecycle` hook so Profile can run its unique resolved-catalog
+generation step within the shared publish flow. Adds version auto-management
+on publish for all document types and standardizes copy button UI.
+
+### What Changed
+
+- **Publishable concern** -- added `before_publish_lifecycle` hook (controllers
+  can override to run custom pre-publish logic; return `{ error: "..." }` to
+  abort). Added `auto_increment_version!` that sets blank versions to `"1.0.0"`
+  and increments semver patch on republish. Flash message now includes version.
+- **ProfileDocumentsController** -- refactored to `include Publishable` with
+  `publish_config` and `before_publish_lifecycle` override for resolved catalog
+  generation. Removed 3 duplicate methods: `publish`, `publish_check`,
+  `apply_profile_metadata_fixes!`.
+- **CDEF show page** -- copy button now shows "Create Editable Copy" for
+  published documents (matching Profile pattern).
+
+### Files Modified (3)
+
+- `app/controllers/concerns/publishable.rb`
+- `app/controllers/profile_documents_controller.rb`
+- `app/views/cdef_documents/show.html.erb`
+
+### Files Created (1)
+
+- `spec/requests/unified_publication_spec.rb`
+
+### Verification
+
+- 932 RSpec examples, 0 failures
+- Rubocop: no new offenses
+
+---
+
 ## 2026-03-15 -- OSCAL-Compliant Publication Process (#148)
 
 **Branch:** `feature/148_oscal_publication_process`
