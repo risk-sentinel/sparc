@@ -52,6 +52,7 @@ module Publishable
     end
 
     auto_increment_version!(doc)
+    doc.regenerate_oscal_uuid!
     doc.publish_lifecycle!
     version = doc.oscal_document_version
     audit_log(config[:audit_event], subject: doc,

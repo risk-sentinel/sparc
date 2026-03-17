@@ -59,6 +59,7 @@ class SapDocumentsController < ApplicationController
     )
 
     if control.update(permitted)
+      @sap_document.regenerate_oscal_uuid!
       flash[:success] = "Control #{control.control_id} updated"
     else
       flash[:error] = control.errors.full_messages.join(", ")
@@ -153,6 +154,7 @@ class SapDocumentsController < ApplicationController
 
   def update_metadata
     if @sap_document.update(document_metadata_params)
+      @sap_document.regenerate_oscal_uuid!
       audit_log("sap_document_updated", subject: @sap_document, metadata: { name: @sap_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else

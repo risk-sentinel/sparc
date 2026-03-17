@@ -92,6 +92,7 @@ class SarDocumentsController < ApplicationController
       field.save!
     end
 
+    @sar_document.regenerate_oscal_uuid!
     audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, control_id: params[:sar_control_id] })
 
     flash[:success] = "Assessment result updated successfully"
@@ -235,6 +236,7 @@ class SarDocumentsController < ApplicationController
       auto_generate_from_excel if params.dig(:sar_document, :auto_generate) == "1"
     end
 
+    @sar_document.regenerate_oscal_uuid!
     audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, enrichment: true })
 
     flash[:success] = "SAR enrichment data saved."
@@ -261,6 +263,7 @@ class SarDocumentsController < ApplicationController
 
   def update_metadata
     if @sar_document.update(document_metadata_params)
+      @sar_document.regenerate_oscal_uuid!
       audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else

@@ -102,7 +102,8 @@ module OscalMetadata
   # callback, which is designed to prevent accidental overwrites during
   # normal attribute assignment — not intentional regeneration.
   def regenerate_oscal_uuid!
-    update_column(:uuid, SecureRandom.uuid) if persisted?
+    return unless persisted? && self.class.column_names.include?("uuid")
+    update_column(:uuid, SecureRandom.uuid)
   end
 
   # Build an OSCAL-compliant back-matter resource identifying SPARC as the
