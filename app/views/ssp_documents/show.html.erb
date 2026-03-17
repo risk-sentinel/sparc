@@ -197,7 +197,26 @@
 
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
-  <% @controls.each do |control| %>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <label class="form-label fw-semibold mb-0"><%= total_controls %> controls</label>
+    <div class="d-flex gap-1">
+      <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAllFamilies(true)">Expand All</button>
+      <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAllFamilies(false)">Collapse All</button>
+    </div>
+  </div>
+
+  <% @sorted_families.each do |family_code| %>
+    <% family_controls = @controls_by_family[family_code] %>
+    <% next if family_controls.blank? %>
+
+    <details class="sparc-family-group" data-family-group="<%= family_code %>">
+      <summary>
+        <strong><%= family_code %></strong> &mdash; <%= @family_names[family_code] || @family_names[family_code.downcase] || family_code %>
+        <span class="badge bg-secondary"><%= family_controls.size %></span>
+      </summary>
+
+      <div class="mt-2">
+  <% family_controls.sort_by { |c| c.control_id.gsub(/\d+/) { |n| n.rjust(3, "0") } }.each do |control| %>
     <%
       field_map   = control.ssp_control_fields.index_by(&:field_name)
       status_val  = field_map["status"]&.field_value.presence || "(Unknown)"
@@ -465,6 +484,9 @@
       </details>
     </div><%# end .control-card %>
   <% end %>
+      </div><%# end family controls %>
+    </details><%# end sparc-family-group %>
+  <% end %>
 </div>
 
 <%= render "shared/oscal_metadata_section",
@@ -474,6 +496,12 @@
            version_field: :ssp_version %>
 
 <script>
+  function toggleAllFamilies(expand) {
+    document.querySelectorAll('#controlsContainer details.sparc-family-group').forEach(function(det) {
+      det.open = expand;
+    });
+  }
+
   function toggleEdit(controlId) {
     // Auto-expand card details if collapsed
     var details = document.getElementById('details-' + controlId);
