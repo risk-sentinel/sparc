@@ -92,6 +92,19 @@ module OscalMetadata
     update_column(:uuid, source_uuid) if persisted?
   end
 
+  # Regenerate the document UUID after a content change.
+  # Per OSCAL spec, every content modification must produce a new root UUID
+  # and an updated last-modified timestamp.  The last-modified is handled
+  # dynamically at export time (Time.current.iso8601), but the UUID is
+  # persisted and must be explicitly regenerated.
+  #
+  # Uses update_column to bypass the enforce_oscal_uuid_immutability
+  # callback, which is designed to prevent accidental overwrites during
+  # normal attribute assignment — not intentional regeneration.
+  def regenerate_oscal_uuid!
+    update_column(:uuid, SecureRandom.uuid) if persisted?
+  end
+
   # Build an OSCAL-compliant back-matter resource identifying SPARC as the
   # document manager. Appended to every export for auditor traceability.
   def sparc_back_matter_resource

@@ -62,7 +62,7 @@ class OscalSspExportService
   def build_ssp
     {
       "system-security-plan" => {
-        "uuid"                     => SecureRandom.uuid,
+        "uuid"                     => @document.uuid,
         "metadata"                 => build_metadata,
         "import-profile"           => build_import_profile,
         "system-characteristics"   => build_system_characteristics,
