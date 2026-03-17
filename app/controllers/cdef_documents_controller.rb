@@ -123,6 +123,7 @@ class CdefDocumentsController < ApplicationController
 
   def update_metadata
     if @cdef_document.update(document_metadata_params)
+      @cdef_document.regenerate_oscal_uuid!
       audit_log("cdef_document_updated", subject: @cdef_document, metadata: { name: @cdef_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else

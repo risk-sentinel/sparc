@@ -165,6 +165,7 @@ class ProfileDocumentsController < ApplicationController
 
   def update_metadata
     if @profile_document.update(document_metadata_params)
+      @profile_document.regenerate_oscal_uuid!
       audit_log("profile_document_updated", subject: @profile_document, metadata: { name: @profile_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
@@ -323,6 +324,7 @@ class ProfileDocumentsController < ApplicationController
       end
     end
 
+    @profile_document.regenerate_oscal_uuid!
     audit_log("profile_controls_bulk_updated", subject: @profile_document,
               metadata: { added: to_add.size, removed: to_remove.size })
     flash[:success] = "Controls updated: #{to_add.size} added, #{to_remove.size} removed"

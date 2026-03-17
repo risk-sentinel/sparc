@@ -78,6 +78,7 @@ class PoamDocumentsController < ApplicationController
       primary_risk&.update!(status: update_attrs["risk_status"])
     end
 
+    @poam_document.regenerate_oscal_uuid!
     flash[:success] = "POA&M item updated"
     redirect_to poam_document_path(@poam_document, filter_params)
   rescue StandardError => e
@@ -172,6 +173,7 @@ class PoamDocumentsController < ApplicationController
 
   def update_metadata
     if @poam_document.update(document_metadata_params)
+      @poam_document.regenerate_oscal_uuid!
       audit_log("poam_document_updated", subject: @poam_document, metadata: { name: @poam_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
