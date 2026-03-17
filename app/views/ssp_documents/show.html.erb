@@ -64,21 +64,13 @@
               publish_path: publish_ssp_document_path(@ssp_document),
               check_path: publish_check_ssp_document_path(@ssp_document) %>
       <% end %>
-      <div class="btn-group">
-        <button type="button" class="sparc-btn-oscal dropdown-toggle"
-                data-bs-toggle="dropdown" aria-expanded="false">
-          Export OSCAL
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li><h6 class="dropdown-header">Validated</h6></li>
-          <li><%= link_to "JSON", download_oscal_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
-          <li><%= link_to "YAML", download_yaml_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
-          <li><%= link_to "XML", download_xml_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><h6 class="dropdown-header">Unvalidated</h6></li>
-          <li><%= link_to "JSON", download_oscal_unvalidated_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
-        </ul>
-      </div>
+      <%= render "shared/oscal_export_dropdown",
+            validate_path: validate_oscal_export_ssp_document_path(@ssp_document),
+            download_json_path: download_oscal_validated_ssp_document_path(@ssp_document),
+            download_yaml_path: download_yaml_ssp_document_path(@ssp_document),
+            download_xml_path: download_xml_ssp_document_path(@ssp_document),
+            fallback_json_path: download_oscal_unvalidated_ssp_document_path(@ssp_document),
+            document_type: "SSP" %>
       <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
             class: "sparc-btn-enrich" %>
       <%= link_to "&#8592; Back".html_safe, ssp_documents_path,
@@ -130,7 +122,12 @@
 
     <%# System Characteristics %>
     <div style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 1rem;">
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color); margin-bottom: 0.5rem;">System Characteristics</div>
+      <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 0.5rem;">
+        <span style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color);">System Characteristics</span>
+        <% if signed_in? && @ssp_document.draft? %>
+          <%= link_to enrich_ssp_document_path(@ssp_document), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+        <% end %>
+      </div>
       <% if @ssp_document.description.present? %>
         <div style="font-size: 0.82rem; color: var(--bs-body-color); margin-bottom: 0.4rem;"><%= truncate(@ssp_document.description, length: 120) %></div>
       <% end %>
@@ -146,7 +143,12 @@
 
     <%# Components %>
     <div style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 1rem;">
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color); margin-bottom: 0.5rem;">Components (<%= @components.count %>)</div>
+      <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 0.5rem;">
+        <span style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color);">Components (<%= @components.count %>)</span>
+        <% if signed_in? && @ssp_document.draft? %>
+          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "components"), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+        <% end %>
+      </div>
       <% @components.first(5).each do |comp| %>
         <div class="d-flex align-items-center gap-1" style="margin-bottom: 0.25rem;">
           <span style="background: <%= comp.component_type == 'this-system' ? 'rgba(142,68,173,0.12)' : 'rgba(52,152,219,0.1)' %>; color: <%= comp.component_type == 'this-system' ? '#8e44ad' : '#2980b9' %>; padding: 0.08rem 0.35rem; border-radius: 3px; font-size: 0.68rem; font-weight: 600;"><%= comp.component_type %></span>
@@ -160,7 +162,12 @@
 
     <%# Users %>
     <div style="background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 1rem;">
-      <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color); margin-bottom: 0.5rem;">Users (<%= @users.count %>)</div>
+      <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 0.5rem;">
+        <span style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bs-tertiary-color);">Users (<%= @users.count %>)</span>
+        <% if signed_in? && @ssp_document.draft? %>
+          <%= link_to enrich_ssp_document_path(@ssp_document, anchor: "users"), style: "font-size: 0.72rem; color: var(--bs-tertiary-color); text-decoration: none;" do %>&#9998; Edit<% end %>
+        <% end %>
+      </div>
       <% @users.first(5).each do |user| %>
         <div style="font-size: 0.82rem; color: var(--bs-body-color); margin-bottom: 0.2rem;">
           <%= user.title.presence || "Unnamed User" %>

@@ -93,20 +93,17 @@
               publish_path: publish_sar_document_path(@sar_document),
               check_path: publish_check_sar_document_path(@sar_document) %>
       <% end %>
-      <div class="btn-group">
-        <button type="button" class="sparc-btn-oscal dropdown-toggle"
-                data-bs-toggle="dropdown" aria-expanded="false">
-          Export OSCAL
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
-          <li><%= link_to "JSON", download_oscal_sar_document_path(@sar_document), class: "dropdown-item" %></li>
-          <li><%= link_to "YAML", download_yaml_sar_document_path(@sar_document), class: "dropdown-item" %></li>
-          <li><%= link_to "XML", download_xml_sar_document_path(@sar_document), class: "dropdown-item" %></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><%= link_to "Excel", download_excel_sar_document_path(@sar_document), class: "dropdown-item" %></li>
-        </ul>
-      </div>
+      <% excel_item = capture do %>
+        <li><%= link_to "Excel", download_excel_sar_document_path(@sar_document), class: "dropdown-item" %></li>
+      <% end %>
+      <%= render "shared/oscal_export_dropdown",
+            validate_path: validate_oscal_export_sar_document_path(@sar_document),
+            download_json_path: download_oscal_validated_sar_document_path(@sar_document),
+            download_yaml_path: download_yaml_sar_document_path(@sar_document),
+            download_xml_path: download_xml_sar_document_path(@sar_document),
+            fallback_json_path: download_oscal_unvalidated_sar_document_path(@sar_document),
+            document_type: "SAR",
+            extra_items: excel_item %>
       <% unless @sar_document.enriched? %>
         <%= link_to "&#x2728; Enrich".html_safe, enrich_sar_document_path(@sar_document),
               class: "sparc-btn-enrich" %>

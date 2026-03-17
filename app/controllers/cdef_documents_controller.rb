@@ -1,9 +1,10 @@
 class CdefDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
+  include OscalExportable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml status update_metadata copy publish publish_check]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata copy publish publish_check]
   before_action :ensure_editable!, only: [ :update_metadata, :publish ]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
@@ -100,7 +101,8 @@ class CdefDocumentsController < ApplicationController
   end
 
   def download_yaml
-    json_string = OscalComponentDefinitionExportService.new(@cdef_document).export
+    service = OscalComponentDefinitionExportService.new(@cdef_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     yaml_data = OscalExportFormatService.to_yaml(json_string)
 
     audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "yaml" })
@@ -111,7 +113,8 @@ class CdefDocumentsController < ApplicationController
   end
 
   def download_xml
-    json_string = OscalComponentDefinitionExportService.new(@cdef_document).export
+    service = OscalComponentDefinitionExportService.new(@cdef_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     xml_data = OscalExportFormatService.to_xml(json_string, :component_definition)
 
     audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "xml" })
@@ -182,6 +185,11 @@ class CdefDocumentsController < ApplicationController
   def set_cdef_document
     @cdef_document = CdefDocument.find_by!(slug: params[:id])
   end
+
+  # OscalExportable hooks
+  def oscal_export_document = @cdef_document
+  def oscal_export_service(doc) = OscalComponentDefinitionExportService.new(doc)
+  def oscal_document_type_label = "Component Definition"
 
   def publish_config
     { document: @cdef_document, audit_event: "cdef_document_published",
