@@ -439,7 +439,7 @@ jobs:
             .github/oscal-metadata.json
 
       - name: Download all scan artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: scan-results/
 
@@ -604,14 +604,14 @@ jobs:
     if: always()
     steps:
       - name: Download HDF results
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: hdf-results
           path: hdf-results/
         continue-on-error: true
 
       - name: Download all scan artifacts for archive
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: all-results/
 
