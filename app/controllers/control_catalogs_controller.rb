@@ -1,11 +1,12 @@
 class ControlCatalogsController < ApplicationController
   include Publishable
+  include OscalExportable
   skip_before_action :require_authentication, only: [ :index, :show, :baseline_controls ]
 
   before_action :set_control_catalog, only: [
     :show, :edit, :update, :destroy, :update_metadata,
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
-    :download_yaml, :download_xml, :baseline_controls,
+    :download_yaml, :download_xml, :validate_oscal_export, :baseline_controls,
     :update_baseline, :bulk_update_baselines,
     :publish, :publish_check
   ]
@@ -174,7 +175,8 @@ class ControlCatalogsController < ApplicationController
   end
 
   def download_yaml
-    json_string = OscalCatalogExportService.new(@control_catalog).export
+    service = OscalCatalogExportService.new(@control_catalog)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     yaml_data = OscalExportFormatService.to_yaml(json_string)
 
     audit_log("control_catalog_exported", subject: @control_catalog, metadata: { name: @control_catalog.name, format: "yaml" })
@@ -185,7 +187,8 @@ class ControlCatalogsController < ApplicationController
   end
 
   def download_xml
-    json_string = OscalCatalogExportService.new(@control_catalog).export
+    service = OscalCatalogExportService.new(@control_catalog)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     xml_data = OscalExportFormatService.to_xml(json_string, :catalog)
 
     audit_log("control_catalog_exported", subject: @control_catalog, metadata: { name: @control_catalog.name, format: "xml" })
@@ -305,4 +308,9 @@ class ControlCatalogsController < ApplicationController
   def authorize_catalog_write!
     authorize_permission!("catalogs.write")
   end
+
+  # OscalExportable hooks
+  def oscal_export_document = @control_catalog
+  def oscal_export_service(doc) = OscalCatalogExportService.new(doc)
+  def oscal_document_type_label = "Catalog"
 end

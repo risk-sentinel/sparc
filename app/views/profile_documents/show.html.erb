@@ -102,23 +102,20 @@
           <% end %>
         <% end %>
       <% end %>
-      <div class="btn-group">
-        <button type="button" class="sparc-btn-oscal dropdown-toggle"
-                data-bs-toggle="dropdown" aria-expanded="false">
-          Export OSCAL
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li><h6 class="dropdown-header">OSCAL Profile</h6></li>
-          <li><%= link_to "JSON", download_oscal_profile_document_path(@profile_document), class: "dropdown-item" %></li>
-          <li><%= link_to "YAML", download_yaml_profile_document_path(@profile_document), class: "dropdown-item" %></li>
-          <li><%= link_to "XML", download_xml_profile_document_path(@profile_document), class: "dropdown-item" %></li>
-          <% if @profile_document.resolved_catalog_json.present? %>
-            <li><hr class="dropdown-divider"></li>
-            <li><h6 class="dropdown-header">Resolved Catalog</h6></li>
-            <li><%= link_to "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document), class: "dropdown-item" %></li>
-          <% end %>
-        </ul>
-      </div>
+      <% resolved_catalog_item = capture do %>
+        <% if @profile_document.resolved_catalog_json.present? %>
+          <li><h6 class="dropdown-header">Resolved Catalog</h6></li>
+          <li><%= link_to "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document), class: "dropdown-item" %></li>
+        <% end %>
+      <% end %>
+      <%= render "shared/oscal_export_dropdown",
+            validate_path: validate_oscal_export_profile_document_path(@profile_document),
+            download_json_path: download_oscal_validated_profile_document_path(@profile_document),
+            download_yaml_path: download_yaml_profile_document_path(@profile_document),
+            download_xml_path: download_xml_profile_document_path(@profile_document),
+            fallback_json_path: download_oscal_unvalidated_profile_document_path(@profile_document),
+            document_type: "Profile",
+            extra_items: resolved_catalog_item %>
       <%= link_to "&#8592; Back".html_safe, profile_documents_path,
             class: "sparc-btn-ghost-muted" %>
     </div>

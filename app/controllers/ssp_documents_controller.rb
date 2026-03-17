@@ -1,11 +1,12 @@
 class SspDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
+  include OscalExportable
 
   before_action :set_ssp_document, only: [
     :show, :edit, :update, :destroy,
     :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
-    :download_yaml, :download_xml,
+    :download_yaml, :download_xml, :validate_oscal_export,
     :status, :update_metadata, :enrich, :update_enrich,
     :publish, :publish_check
   ]
@@ -235,7 +236,8 @@ class SspDocumentsController < ApplicationController
   end
 
   def download_yaml
-    json_string = OscalSspExportService.new(@ssp_document).export
+    service = OscalSspExportService.new(@ssp_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     yaml_data = OscalExportFormatService.to_yaml(json_string)
 
     audit_log("ssp_document_exported", subject: @ssp_document,
@@ -248,7 +250,8 @@ class SspDocumentsController < ApplicationController
   end
 
   def download_xml
-    json_string = OscalSspExportService.new(@ssp_document).export
+    service = OscalSspExportService.new(@ssp_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     xml_data = OscalExportFormatService.to_xml(json_string, :ssp)
 
     audit_log("ssp_document_exported", subject: @ssp_document,
@@ -329,6 +332,11 @@ class SspDocumentsController < ApplicationController
   def set_ssp_document
     @ssp_document = SspDocument.find_by!(slug: params[:id])
   end
+
+  # OscalExportable hooks
+  def oscal_export_document = @ssp_document
+  def oscal_export_service(doc) = OscalSspExportService.new(doc)
+  def oscal_document_type_label = "SSP"
 
   def publish_config
     {
