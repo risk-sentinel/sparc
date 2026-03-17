@@ -166,6 +166,7 @@ class SspDocumentsController < ApplicationController
       sync_users
     end
 
+    @ssp_document.regenerate_oscal_uuid!
     audit_log("ssp_document_updated", subject: @ssp_document,
       metadata: { name: @ssp_document.name, enrichment: true })
     flash[:success] = "SSP enrichment data saved."
@@ -261,6 +262,7 @@ class SspDocumentsController < ApplicationController
 
   def update_metadata
     if @ssp_document.update(document_metadata_params)
+      @ssp_document.regenerate_oscal_uuid!
       audit_log("ssp_document_updated", subject: @ssp_document,
         metadata: { name: @ssp_document.name, metadata_update: true })
       flash[:success] = "Document updated"
