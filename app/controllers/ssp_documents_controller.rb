@@ -35,6 +35,22 @@ class SspDocumentsController < ApplicationController
     @info_types      = @ssp_document.ssp_information_types.order(:title)
     @leveraged_auths = @ssp_document.ssp_leveraged_authorizations.order(:title)
 
+    # Group controls by family for collapsible display
+    @controls_by_family = @controls.group_by { |c|
+      c.control_id.to_s.split("-").first.upcase
+    }
+    @sorted_families = @controls_by_family.keys.sort
+
+    # Build family name lookup from catalog (if available via profile)
+    @family_names = {}
+    if @ssp_document.profile_document&.control_catalog.present?
+      @ssp_document.profile_document.control_catalog.control_families.each { |f| @family_names[f.code] = f.name }
+    else
+      # Fallback: look up from any catalog
+      family_codes = @sorted_families.map(&:downcase)
+      ControlFamily.where(code: family_codes).each { |f| @family_names[f.code] = f.name }
+    end
+
     # Build a catalog-guidance lookup keyed by normalized control_id.
     # Normalisation (AC-1 -> AC-01) bridges documents that use unpadded IDs
     # against the catalog which stores zero-padded IDs.
