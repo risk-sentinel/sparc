@@ -374,7 +374,7 @@ class OscalSspExportService
       "component-uuid" => bc.ssp_component.uuid,
       "uuid"           => bc.uuid
     }
-    entry["description"] = bc.description if bc.description.present?
+    entry["description"] = bc.description.presence || "Implementation of this control by #{bc.ssp_component.title}."
 
     if bc.implementation_status.present?
       entry["implementation-status"] = { "state" => bc.implementation_status }
