@@ -70,10 +70,13 @@
           Export OSCAL
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
-          <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
+          <li><h6 class="dropdown-header">Validated</h6></li>
           <li><%= link_to "JSON", download_oscal_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
           <li><%= link_to "YAML", download_yaml_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
           <li><%= link_to "XML", download_xml_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><h6 class="dropdown-header">Unvalidated</h6></li>
+          <li><%= link_to "JSON", download_oscal_unvalidated_ssp_document_path(@ssp_document), class: "dropdown-item" %></li>
         </ul>
       </div>
       <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
