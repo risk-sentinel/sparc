@@ -158,9 +158,28 @@
      show_percentage: false,
      legend_items: [["Examine", "#3498db"], ["Interview", "#f39c12"], ["Test", "#e74c3c"], ["None", "#95a5a6"]] %>
 
-<%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
+<%# ── CONTROL CARDS (grouped by family) ─────────────────────────── %>
 <div id="controlsContainer">
-  <% @controls.each do |control| %>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <label class="form-label fw-semibold mb-0"><%= @total_controls %> controls</label>
+    <div class="d-flex gap-1">
+      <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAllFamilies(true)">Expand All</button>
+      <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAllFamilies(false)">Collapse All</button>
+    </div>
+  </div>
+
+  <% @sorted_families.each do |fam_code| %>
+    <% family_controls = @controls_by_family[fam_code] %>
+    <% next if family_controls.blank? %>
+
+    <details class="sparc-family-group" data-family-group="<%= fam_code %>">
+      <summary>
+        <strong><%= fam_code %></strong> &mdash; <%= @family_names[fam_code.downcase] || fam_code %>
+        <span class="badge bg-secondary"><%= family_controls.size %></span>
+      </summary>
+
+      <div class="mt-2">
+  <% family_controls.sort_by { |c| c.control_id.to_s.gsub(/\d+/) { |n| n.rjust(3, "0") } }.each do |control| %>
     <%
       field_map = control.sap_control_fields.index_by(&:field_name)
       method_val = control.assessment_method.presence || "(None)"
@@ -177,7 +196,6 @@
          data-status="<%= status_val %>"
          style="border-left: 4px solid <%= method_color %>;">
 
-
       <%# ── Card header ── %>
       <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
         <div style="min-width: 0; flex: 1;">
@@ -191,7 +209,6 @@
             <span class="sparc-tag-outline" style="background: <%= status_color %>22; color: <%= status_color %>; border: 1px solid <%= status_color %>44;">
               <%= status_val.titleize %>
             </span>
-            <span class="sparc-ctrl-family"><%= family_code %></span>
             <% if control.assessor_name.present? %>
               <span class="text-body-secondary" style="font-size: 0.68rem;">&#x1F464; <%= control.assessor_name %></span>
             <% end %>
@@ -250,7 +267,18 @@
 
     </div><%# end .control-card %>
   <% end %>
+      </div>
+    </details>
+  <% end %>
 </div>
+
+<script>
+  function toggleAllFamilies(open) {
+    document.querySelectorAll('#controlsContainer details.sparc-family-group').forEach(function(det) {
+      det.open = open;
+    });
+  }
+</script>
 
 <%# ── Edit control modal (inline) ── %>
 <% if @control = @sap_document.sap_controls.find_by(id: params[:control_id]) %>
