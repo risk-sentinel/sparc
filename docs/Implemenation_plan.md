@@ -81,7 +81,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 - [x] #185 -- Automate extraction of SV/V to CCI mappings from DISA STIGs (XCCDF parser for CDEF validation) -- **COMPLETED 2026-03-15**
 - [x] #172 -- Component Definition (CDEF) creation & import (incl. from Profile, validated via STIG/CCI) -- **COMPLETED 2026-03-16**
 - [x] #173 -- System Security Plan (SSP) creation & import (incl. from Profile) -- **COMPLETED 2026-03-18**
-- [ ] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP, uses CDEF validations)
+- [x] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP, uses CDEF validations) -- **COMPLETED 2026-03-18**
 - [ ] #125 -- End-to-end wizard for complete ATO Authorization Package
 
 ### 5. Advanced OSCAL & Compliance Extensions
@@ -199,7 +199,7 @@ validation + guided ATO package generation
 | [x] | #185 | STIG XCCDF parser: SV/V to CCI extraction for CDEF validation & evidence | **HIGH** | None (builds on Converters domain) |
 | [x] | #172 | CDEF creation/import from Profile, validated via STIG/CCI mappings -- **COMPLETED 2026-03-16** | **HIGH** | AFTER #175 merges; #185 for validation |
 | [x] | #173 | SSP creation/import from Profile -- **COMPLETED 2026-03-18** | **HIGH** | AFTER #175 merges |
-| [ ] | #174 | SAR creation/import from Profile or SSP (uses CDEF STIG validations) | MEDIUM | AFTER #173 and #185 merge |
+| [x] | #174 | SAR creation/import from Profile or SSP (uses CDEF STIG validations) -- **COMPLETED 2026-03-18** | MEDIUM | AFTER #173 and #185 merge |
 | [ ] | #125 | Multi-step ATO wizard (all OSCAL layers) | MEDIUM | AFTER #172, #173, #174 merge |
 
 <!-- markdownlint-enable MD013 -->

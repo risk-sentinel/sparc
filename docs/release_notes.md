@@ -4,6 +4,82 @@
 
 ---
 
+## 2026-03-18 -- SAR Creation from Profile/SSP, SAP Assessment Improvements (#174)
+
+**Branch:** `feature/174_sar_oscal_import`
+
+### Summary
+
+Adds "Create SAR from Published Profile" and "Create SAR from Existing SSP" workflows,
+completing the Phase 3 entity creation trilogy (CDEF #172, SSP #173, SAR #174). Also
+improves the SAP (Security Assessment Plan) control edit with auto-populated assessor
+name and assessment objectives from NIST catalog data, auto-populating baseline profile
+when SSP is selected in the wizard, and collapsible family grouping on the SAP show page.
+
+### What Changed
+
+- **SAR creation from Published Profile** -- new `SarFromProfileService` creates a SAR
+  from a published profile's resolved catalog with pre-populated assessment placeholder
+  fields (result, working_status, notes_weakness, recommended_fix, working_comments, date)
+  and default SarResult/SarFinding records per control.
+
+- **SAR creation from Existing SSP** -- new `SarFromSspService` copies SSP controls into
+  SAR controls with read-only context fields (stated_requirement, description, ssp_status)
+  and editable assessment fields. Inherits profile_document_id from SSP for traceability.
+
+- **Migration** -- adds `profile_document_id` and `ssp_document_id` FK columns to
+  `sar_documents` for source traceability.
+
+- **SAP control edit improvements** -- Assessor Name auto-populates from the logged-in
+  user. Assessment Objective auto-populates from catalog assessment data (Rev 5 objectives
+  preferred, then Rev 4/5 assessment methods, then statement/guidance fallback).
+
+- **SAP wizard SSP-Profile auto-link** -- selecting an SSP in the SAP creation wizard now
+  auto-populates the Baseline Profile dropdown with the profile the SSP was built from.
+
+- **OSCAL assessment data capture** -- `CatalogImportService` now extracts assessment
+  objectives (Rev 5 nested `assessment-objective` parts) and assessment methods (Rev 4
+  `assessment` / Rev 5 `assessment-method` parts with EXAMINE/INTERVIEW/TEST + objects)
+  into `guidance_data` during catalog import.
+
+- **SAP collapsible family grouping** -- SAP show page now groups controls by family in
+  collapsible sections with Expand All / Collapse All buttons, matching SSP and Profile.
+
+- **Updated SAR new page** -- "Create from Published Profile" and "Create from Existing
+  SSP" cards with OSCAL format reference table.
+
+- **Deletion dependency tracking** -- SSP and Profile deletion_dependencies now warn
+  about linked SAR documents.
+
+### Files Created (6)
+
+- `db/migrate/20260318000000_add_profile_and_ssp_to_sar_documents.rb`
+- `app/services/sar_from_profile_service.rb`
+- `app/services/sar_from_ssp_service.rb`
+- `app/views/sar_documents/select_profile.html.erb`
+- `app/views/sar_documents/select_ssp.html.erb`
+- `docs/regression_testing/regression_plan.md` (tracked)
+
+### Files Modified (10)
+
+- `app/models/sar_document.rb` (associations, creation_method expansion)
+- `app/models/ssp_document.rb` (has_many :sar_documents, deletion_dependencies)
+- `app/models/profile_document.rb` (deletion_dependencies for SAR)
+- `app/controllers/sar_documents_controller.rb` (4 new actions)
+- `app/controllers/sap_documents_controller.rb` (family grouping)
+- `app/services/catalog_import_service.rb` (assessment data extraction)
+- `app/views/sar_documents/new.html.erb` (creation cards, format table)
+- `app/views/sap_documents/new.html.erb` (SSP-Profile auto-link)
+- `app/views/sap_documents/show.html.erb` (family grouping, objective/assessor defaults)
+- `config/routes.rb` (4 new SAR collection routes)
+
+### Verification
+
+- 1073 RSpec examples, 0 failures
+- RuboCop clean
+
+---
+
 ## 2026-03-18 -- SSP OSCAL Import, Create from Profile & Unified Export Validation (#173)
 
 **Branch:** `feature/173_ssp_oscal_import`
