@@ -17,10 +17,49 @@
   <% end %>
 </div>
 
+<div class="row g-3 mb-3">
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Create from Published Profile</h5>
+        <p class="card-text text-body-secondary small">
+          Generate a SAR from a published profile's baseline controls. Controls are pre-populated
+          with editable fields for assessment findings, results, and remediation details.
+        </p>
+        <%= link_to "Select Profile", select_profile_sar_documents_path, class: "btn btn-outline-primary btn-sm" %>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Create from Existing SSP</h5>
+        <p class="card-text text-body-secondary small">
+          Generate a SAR from an SSP's implemented controls. Implementation details are
+          copied as read-only context for the assessor to evaluate against.
+        </p>
+        <%= link_to "Select SSP", select_ssp_sar_documents_path, class: "btn btn-outline-primary btn-sm" %>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card">
   <h3>Import Notes</h3>
   <div class="text-body-secondary" style="font-size: 0.9rem; line-height: 1.6;">
     <p class="mb-2"><strong>Excel (.xlsx, .xls)</strong> &mdash; Workbooks must follow the expected column mapping for successful import. Each worksheet tab is treated as a named section.</p>
     <p class="mb-0"><strong>OSCAL (JSON, XML, YAML)</strong> &mdash; OSCAL Assessment Results files are auto-detected and require no column mapping.</p>
   </div>
+</div>
+
+<div class="card">
+  <h3>Supported OSCAL Formats</h3>
+  <table class="table table-sm mb-0" style="font-size: 0.85rem;">
+    <thead><tr><th>Format</th><th>Extension</th><th>Root Key / Element</th></tr></thead>
+    <tbody>
+      <tr><td>OSCAL JSON</td><td><code>.json</code></td><td><code>assessment-results</code></td></tr>
+      <tr><td>OSCAL YAML</td><td><code>.yaml</code>, <code>.yml</code></td><td><code>assessment-results</code></td></tr>
+      <tr><td>OSCAL XML</td><td><code>.xml</code></td><td><code>&lt;assessment-results&gt;</code></td></tr>
+    </tbody>
+  </table>
 </div>

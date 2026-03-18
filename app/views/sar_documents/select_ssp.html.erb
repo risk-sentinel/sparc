@@ -1,0 +1,61 @@
+<div class="card">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Create SAR from Existing SSP</h2>
+    <%= link_to "Back to Assessment Results", sar_documents_path, class: "btn btn-secondary" %>
+  </div>
+
+  <p class="text-body-secondary mb-4">
+    Select a System Security Plan to generate a Security Assessment Report. Controls and their
+    implementation details will be copied as read-only context, with editable fields for assessment
+    findings, results, and remediation plans.
+  </p>
+
+  <% if @ssps.any? %>
+    <div class="row g-3">
+      <% @ssps.each do |ssp| %>
+        <div class="col-12 col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title"><%= ssp.name %></h5>
+              <div class="mb-2">
+                <span class="badge bg-secondary"><%= ssp.ssp_controls.count %> controls</span>
+                <% if ssp.ssp_version.present? %>
+                  <span class="badge bg-dark">v<%= ssp.ssp_version %></span>
+                <% end %>
+                <span class="badge <%= ssp.published_lifecycle? ? 'bg-success' : 'bg-info' %>">
+                  <%= ssp.lifecycle_label %>
+                </span>
+                <% if ssp.creation_method.present? %>
+                  <span class="badge bg-secondary">
+                    <%= { "excel" => "Excel", "wizard" => "Wizard", "oscal_import" => "OSCAL", "profile" => "Profile" }[ssp.creation_method] || ssp.creation_method %>
+                  </span>
+                <% end %>
+              </div>
+              <% if ssp.description.present? %>
+                <p class="card-text text-body-secondary small mb-2">
+                  <%= truncate(ssp.description, length: 120) %>
+                </p>
+              <% end %>
+              <p class="card-text text-body-secondary small mb-3">
+                Updated: <%= ssp.updated_at.strftime("%b %d, %Y") %>
+              </p>
+
+              <%= form_with url: create_from_ssp_sar_documents_path, method: :post, local: true, class: "d-flex gap-2 align-items-end" do |f| %>
+                <%= f.hidden_field :source_ssp_id, value: ssp.slug %>
+                <div class="flex-grow-1">
+                  <%= f.text_field :sar_name, class: "form-control form-control-sm",
+                        placeholder: "SAR from #{ssp.name}" %>
+                </div>
+                <%= f.submit "Create SAR", class: "btn btn-success btn-sm" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-center p-4 text-body-secondary">
+      No completed SSP documents available. Create and complete an SSP first.
+    </p>
+  <% end %>
+</div>

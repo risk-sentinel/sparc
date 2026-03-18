@@ -4,18 +4,97 @@
 
 ---
 
-## 2026-03-16 -- SSP OSCAL Import & Create from Published Profile (#173)
+## 2026-03-18 -- SAR Creation from Profile/SSP, SAP Assessment Improvements (#174)
+
+**Branch:** `feature/174_sar_oscal_import`
+
+### Summary
+
+Adds "Create SAR from Published Profile" and "Create SAR from Existing SSP" workflows,
+completing the Phase 3 entity creation trilogy (CDEF #172, SSP #173, SAR #174). Also
+improves the SAP (Security Assessment Plan) control edit with auto-populated assessor
+name and assessment objectives from NIST catalog data, auto-populating baseline profile
+when SSP is selected in the wizard, and collapsible family grouping on the SAP show page.
+
+### What Changed
+
+- **SAR creation from Published Profile** -- new `SarFromProfileService` creates a SAR
+  from a published profile's resolved catalog with pre-populated assessment placeholder
+  fields (result, working_status, notes_weakness, recommended_fix, working_comments, date)
+  and default SarResult/SarFinding records per control.
+
+- **SAR creation from Existing SSP** -- new `SarFromSspService` copies SSP controls into
+  SAR controls with read-only context fields (stated_requirement, description, ssp_status)
+  and editable assessment fields. Inherits profile_document_id from SSP for traceability.
+
+- **Migration** -- adds `profile_document_id` and `ssp_document_id` FK columns to
+  `sar_documents` for source traceability.
+
+- **SAP control edit improvements** -- Assessor Name auto-populates from the logged-in
+  user. Assessment Objective auto-populates from catalog assessment data (Rev 5 objectives
+  preferred, then Rev 4/5 assessment methods, then statement/guidance fallback).
+
+- **SAP wizard SSP-Profile auto-link** -- selecting an SSP in the SAP creation wizard now
+  auto-populates the Baseline Profile dropdown with the profile the SSP was built from.
+
+- **OSCAL assessment data capture** -- `CatalogImportService` now extracts assessment
+  objectives (Rev 5 nested `assessment-objective` parts) and assessment methods (Rev 4
+  `assessment` / Rev 5 `assessment-method` parts with EXAMINE/INTERVIEW/TEST + objects)
+  into `guidance_data` during catalog import.
+
+- **SAP collapsible family grouping** -- SAP show page now groups controls by family in
+  collapsible sections with Expand All / Collapse All buttons, matching SSP and Profile.
+
+- **Updated SAR new page** -- "Create from Published Profile" and "Create from Existing
+  SSP" cards with OSCAL format reference table.
+
+- **Deletion dependency tracking** -- SSP and Profile deletion_dependencies now warn
+  about linked SAR documents.
+
+### Files Created (6)
+
+- `db/migrate/20260318000000_add_profile_and_ssp_to_sar_documents.rb`
+- `app/services/sar_from_profile_service.rb`
+- `app/services/sar_from_ssp_service.rb`
+- `app/views/sar_documents/select_profile.html.erb`
+- `app/views/sar_documents/select_ssp.html.erb`
+- `docs/regression_testing/regression_plan.md` (tracked)
+
+### Files Modified (10)
+
+- `app/models/sar_document.rb` (associations, creation_method expansion)
+- `app/models/ssp_document.rb` (has_many :sar_documents, deletion_dependencies)
+- `app/models/profile_document.rb` (deletion_dependencies for SAR)
+- `app/controllers/sar_documents_controller.rb` (4 new actions)
+- `app/controllers/sap_documents_controller.rb` (family grouping)
+- `app/services/catalog_import_service.rb` (assessment data extraction)
+- `app/views/sar_documents/new.html.erb` (creation cards, format table)
+- `app/views/sap_documents/new.html.erb` (SSP-Profile auto-link)
+- `app/views/sap_documents/show.html.erb` (family grouping, objective/assessor defaults)
+- `config/routes.rb` (4 new SAR collection routes)
+
+### Verification
+
+- 1073 RSpec examples, 0 failures
+- RuboCop clean
+
+---
+
+## 2026-03-18 -- SSP OSCAL Import, Create from Profile & Unified Export Validation (#173)
 
 **Branch:** `feature/173_ssp_oscal_import`
 
 ### Summary
 
-Adds "Create SSP from Published Profile" workflow and polishes the OSCAL SSP import
-UI. Users can now generate a System Security Plan from any published profile's resolved
-catalog, with baseline controls pre-populated and editable placeholder fields for
-implementation details, status, and responsible entities.
+Adds SSP OSCAL import (JSON/YAML/XML), "Create SSP from Published Profile" workflow,
+OSCAL UUID regeneration on content change (per NIST spec), unified OSCAL export
+validation modal across all document types, and SSP enrichment card edit links.
 
 ### What Changed
+
+- **SSP OSCAL import** -- parse OSCAL SSP files in JSON, YAML, and XML formats into
+  the SspDocument model with controls and fields. Collapsible family grouping on the
+  show page for better navigation of large control sets.
 
 - **"Create from Published Profile" flow** -- new UI on the SSP creation page allows
   users to select a published profile and generate an SSP. Controls, statements, and
@@ -35,11 +114,63 @@ implementation details, status, and responsible entities.
   creation method distinct from `wizard` and `oscal_import`, with a `profile_created?`
   convenience method.
 
+- **OSCAL UUID regeneration on content change** -- per NIST OSCAL spec, the root UUID
+  and last-modified timestamp now regenerate when document content is saved (not on
+  export). `regenerate_oscal_uuid!` method added to OscalMetadata concern, called from
+  all content modification paths (update, update_metadata, update_enrich, update_controls,
+  publish) across all 6 document types. Uses `update_column` to bypass the immutability
+  guard. Includes column existence check for models without UUID column (e.g., ControlCatalog).
+
+- **Unified OSCAL export validation modal** -- replaces per-document validated/unvalidated
+  export dropdowns with a reusable pattern across all 7 document types:
+  - `OscalExportable` concern provides shared `validate_oscal_export` JSON endpoint
+  - `oscal_export_controller.js` Stimulus controller intercepts export clicks, validates
+    via fetch, and shows a Bootstrap modal if validation fails
+  - `_oscal_export_dropdown.html.erb` shared partial used by all show views
+  - Modal displays document type, first 5 validation errors, and Cancel/Continue buttons
+  - Continue downloads the unvalidated file; YAML/XML use `?skip_validation=true` param
+
+- **SSP enrichment card edit links** -- System Characteristics, Components, and Users
+  cards on the SSP show page now have edit links back to the enrich page (signed-in
+  users on draft documents only).
+
 - **Updated SSP new page** -- "Create from Published Profile" card and supported formats
   table added to the SSP upload page, matching the CDEF pattern.
 
-- **New specs** -- `SspFromProfileService`, `SspJsonParserService`, `SspXmlParserService`
-  service specs and request spec additions for `select_profile` and `create_from_profile`.
+### Files Created (3)
+
+- `app/controllers/concerns/oscal_exportable.rb`
+- `app/javascript/controllers/oscal_export_controller.js`
+- `app/views/shared/_oscal_export_dropdown.html.erb`
+
+### Files Modified (19)
+
+- `app/controllers/ssp_documents_controller.rb` (OscalExportable, UUID regen, edit links)
+- `app/controllers/sar_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/cdef_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/profile_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/sap_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/poam_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/control_catalogs_controller.rb` (OscalExportable, skip_validation)
+- `app/controllers/concerns/publishable.rb` (UUID regen before publish)
+- `app/models/concerns/oscal_metadata.rb` (regenerate_oscal_uuid! method)
+- `app/models/ssp_document.rb` (creation_method: "profile")
+- `app/services/oscal_ssp_export_service.rb` (use stored UUID, not random)
+- `app/services/ssp_update_service.rb` (UUID regen on control updates)
+- `app/views/ssp_documents/show.html.erb` (edit links, shared export dropdown)
+- `app/views/sar_documents/show.html.erb` (shared export dropdown)
+- `app/views/cdef_documents/show.html.erb` (shared export dropdown)
+- `app/views/profile_documents/show.html.erb` (shared export dropdown)
+- `app/views/sap_documents/show.html.erb` (shared export dropdown)
+- `app/views/poam_documents/show.html.erb` (shared export dropdown)
+- `app/views/control_catalogs/show.html.erb` (shared export dropdown)
+- `app/views/control_catalogs/index.html.erb` (shared export dropdown)
+- `config/routes.rb` (validate_oscal_export routes for all doc types)
+
+### New Specs
+
+- `SspFromProfileService`, `SspJsonParserService`, `SspXmlParserService` service specs
+- Request spec additions for `select_profile` and `create_from_profile`
 
 ### Verification
 

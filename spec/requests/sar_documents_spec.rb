@@ -108,4 +108,83 @@ RSpec.describe "SarDocuments", type: :request do
       expect(response).to have_http_status(:redirect)
     end
   end
+
+  describe "GET /sar_documents/select_profile" do
+    it "returns a successful response" do
+      get select_profile_sar_documents_path
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "POST /sar_documents/create_from_profile" do
+    let(:resolved_catalog_json) do
+      {
+        "catalog" => {
+          "uuid" => SecureRandom.uuid,
+          "metadata" => { "title" => "Test Catalog", "oscal-version" => "1.1.2" },
+          "groups" => [
+            {
+              "id" => "ac",
+              "class" => "family",
+              "title" => "Access Control",
+              "controls" => [
+                {
+                  "id" => "ac-1",
+                  "class" => "SP800-53",
+                  "title" => "Policy and Procedures",
+                  "parts" => [
+                    { "id" => "ac-1_smt", "name" => "statement", "prose" => "Develop access control policy." }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    end
+
+    let(:profile) do
+      create(:profile_document,
+        lifecycle_status: "published",
+        resolved_catalog_json: resolved_catalog_json,
+        published: Time.current.iso8601)
+    end
+
+    it "creates a SAR from a published profile and redirects" do
+      expect {
+        post create_from_profile_sar_documents_path, params: {
+          source_profile_id: profile.slug,
+          sar_name: "Test SAR from Profile"
+        }
+      }.to change(SarDocument, :count).by(1)
+      expect(response).to have_http_status(:redirect)
+    end
+  end
+
+  describe "GET /sar_documents/select_ssp" do
+    it "returns a successful response" do
+      get select_ssp_sar_documents_path
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "POST /sar_documents/create_from_ssp" do
+    let(:ssp) do
+      ssp_doc = create(:ssp_document, status: "completed")
+      ctrl = ssp_doc.ssp_controls.create!(control_id: "ac-1", title: "Policy and Procedures", row_order: 0)
+      ctrl.ssp_control_fields.create!(field_name: "stated_requirement", field_value: "Develop access control policy.")
+      ctrl.ssp_control_fields.create!(field_name: "status", field_value: "Implemented")
+      ssp_doc
+    end
+
+    it "creates a SAR from a completed SSP and redirects" do
+      expect {
+        post create_from_ssp_sar_documents_path, params: {
+          source_ssp_id: ssp.slug,
+          sar_name: "Test SAR from SSP"
+        }
+      }.to change(SarDocument, :count).by(1)
+      expect(response).to have_http_status(:redirect)
+    end
+  end
 end

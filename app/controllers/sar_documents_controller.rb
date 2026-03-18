@@ -132,6 +132,52 @@ class SarDocumentsController < ApplicationController
     redirect_to wizard_sar_documents_path
   end
 
+  def select_profile
+    @profiles = ProfileDocument.where(lifecycle_status: "published")
+                               .where.not(resolved_catalog_json: nil)
+                               .includes(:control_catalog)
+                               .order(updated_at: :desc)
+  end
+
+  def create_from_profile
+    profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
+    document = SarFromProfileService.new(profile, name: params[:sar_name]).create
+
+    audit_log("sar_document_created", subject: document,
+      metadata: { name: document.name, creation_method: "profile", source_profile_id: profile.id })
+
+    flash[:success] = "SAR '#{document.name}' created from profile '#{profile.name}'."
+    redirect_to sar_document_path(document)
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to select_profile_sar_documents_path
+  rescue ActiveRecord::RecordNotFound
+    flash[:error] = "Profile not found."
+    redirect_to select_profile_sar_documents_path
+  end
+
+  def select_ssp
+    @ssps = SspDocument.where(status: "completed")
+                       .order(updated_at: :desc)
+  end
+
+  def create_from_ssp
+    ssp = SspDocument.find_by!(slug: params[:source_ssp_id])
+    document = SarFromSspService.new(ssp, name: params[:sar_name]).create
+
+    audit_log("sar_document_created", subject: document,
+      metadata: { name: document.name, creation_method: "ssp", source_ssp_id: ssp.id })
+
+    flash[:success] = "SAR '#{document.name}' created from SSP '#{ssp.name}'."
+    redirect_to sar_document_path(document)
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to select_ssp_sar_documents_path
+  rescue ActiveRecord::RecordNotFound
+    flash[:error] = "SSP not found."
+    redirect_to select_ssp_sar_documents_path
+  end
+
   def download_json
     json_data = JsonExportService.export_sar(@sar_document)
 
