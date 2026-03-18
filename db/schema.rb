@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_15_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -796,18 +796,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_200000) do
     t.string "name"
     t.string "original_filename"
     t.string "oscal_version"
+    t.bigint "profile_document_id"
     t.jsonb "reviewed_controls_data", default: {}
     t.bigint "sap_document_id"
     t.string "sar_version"
     t.string "slug"
+    t.bigint "ssp_document_id"
     t.string "status"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sar_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
     t.index ["lifecycle_status"], name: "index_sar_documents_on_lifecycle_status"
+    t.index ["profile_document_id"], name: "index_sar_documents_on_profile_document_id"
     t.index ["sap_document_id"], name: "index_sar_documents_on_sap_document_id"
     t.index ["slug"], name: "index_sar_documents_on_slug", unique: true
+    t.index ["ssp_document_id"], name: "index_sar_documents_on_ssp_document_id"
     t.index ["status"], name: "index_sar_documents_on_status"
     t.index ["uuid"], name: "index_sar_documents_on_uuid", unique: true
   end
@@ -1215,7 +1219,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_200000) do
   add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
   add_foreign_key "sar_documents", "authorization_boundaries", on_delete: :nullify
+  add_foreign_key "sar_documents", "profile_documents"
   add_foreign_key "sar_documents", "sap_documents", on_delete: :nullify
+  add_foreign_key "sar_documents", "ssp_documents"
   add_foreign_key "sar_finding_observations", "sar_findings", on_delete: :cascade
   add_foreign_key "sar_finding_observations", "sar_observations", on_delete: :cascade
   add_foreign_key "sar_finding_risks", "sar_findings", on_delete: :cascade

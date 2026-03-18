@@ -34,6 +34,8 @@ class ProfileDocument < ApplicationRecord
     deps = []
     ssp_count = SspDocument.where(profile_document_id: id).count
     deps << "#{ssp_count} SSP(s)" if ssp_count > 0
+    sar_count = SarDocument.where(profile_document_id: id).count
+    deps << "#{sar_count} Assessment Result(s)" if sar_count > 0
     sap_count = SapDocument.where(profile_document_id: id).count
     deps << "#{sap_count} Assessment Plan(s)" if sap_count > 0
     derived_count = derived_profiles.count
