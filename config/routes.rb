@@ -41,6 +41,7 @@ Rails.application.routes.draw do
       get :download_oscal_unvalidated
       get :download_yaml
       get :download_xml
+      get :validate_oscal_export
       get :status
       get :enrich
       patch :update_enrich
@@ -49,6 +50,8 @@ Rails.application.routes.draw do
       post :import_json
       get :wizard
       post :create_from_wizard
+      get :select_profile
+      post :create_from_profile
     end
   end
 
@@ -64,6 +67,7 @@ Rails.application.routes.draw do
       get :download_oscal_unvalidated
       get :download_yaml
       get :download_xml
+      get :validate_oscal_export
       get :status
       get :editor
       get :enrich
@@ -86,6 +90,7 @@ Rails.application.routes.draw do
       get :download_oscal_unvalidated
       get :download_yaml
       get :download_xml
+      get :validate_oscal_export
       get :status
       post :copy
       patch :publish
@@ -114,6 +119,7 @@ Rails.application.routes.draw do
       get :download_oscal_unvalidated
       get :download_yaml
       get :download_xml
+      get :validate_oscal_export
       get :status
     end
     collection do
@@ -132,6 +138,7 @@ Rails.application.routes.draw do
       get :download_oscal_unvalidated
       get :download_yaml
       get :download_xml
+      get :validate_oscal_export
       get :status
     end
     resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
@@ -152,6 +159,7 @@ Rails.application.routes.draw do
       get :download_oscal_unvalidated
       get :download_yaml
       get :download_xml
+      get :validate_oscal_export
       get :status
       post :copy
     end
@@ -171,6 +179,7 @@ Rails.application.routes.draw do
       get :download_oscal_unvalidated
       get :download_yaml
       get :download_xml
+      get :validate_oscal_export
       get :baseline_controls
       patch :update_baseline
       patch :bulk_update_baselines

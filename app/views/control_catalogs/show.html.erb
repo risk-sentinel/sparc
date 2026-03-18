@@ -47,18 +47,13 @@
               check_path: publish_check_control_catalog_path(@control_catalog) %>
       <% end %>
       <% if signed_in? %>
-        <div class="btn-group">
-          <button type="button" class="btn btn-sparc-purple fw-semibold dropdown-toggle"
-                  data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.875rem;">
-            Export OSCAL
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
-            <li><%= link_to "JSON", download_oscal_control_catalog_path(@control_catalog), class: "dropdown-item" %></li>
-            <li><%= link_to "YAML", download_yaml_control_catalog_path(@control_catalog), class: "dropdown-item" %></li>
-            <li><%= link_to "XML", download_xml_control_catalog_path(@control_catalog), class: "dropdown-item" %></li>
-          </ul>
-        </div>
+        <%= render "shared/oscal_export_dropdown",
+              validate_path: validate_oscal_export_control_catalog_path(@control_catalog),
+              download_json_path: download_oscal_validated_control_catalog_path(@control_catalog),
+              download_yaml_path: download_yaml_control_catalog_path(@control_catalog),
+              download_xml_path: download_xml_control_catalog_path(@control_catalog),
+              fallback_json_path: download_oscal_unvalidated_control_catalog_path(@control_catalog),
+              document_type: "Catalog" %>
       <% end %>
       <%= link_to "← All Catalogs", control_catalogs_path, class: "btn btn-primary" %>
     </div>

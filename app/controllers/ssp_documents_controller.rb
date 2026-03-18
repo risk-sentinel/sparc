@@ -1,11 +1,12 @@
 class SspDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
+  include OscalExportable
 
   before_action :set_ssp_document, only: [
     :show, :edit, :update, :destroy,
     :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
-    :download_yaml, :download_xml,
+    :download_yaml, :download_xml, :validate_oscal_export,
     :status, :update_metadata, :enrich, :update_enrich,
     :publish, :publish_check
   ]
@@ -34,6 +35,22 @@ class SspDocumentsController < ApplicationController
     @users           = @ssp_document.ssp_users.order(:title)
     @info_types      = @ssp_document.ssp_information_types.order(:title)
     @leveraged_auths = @ssp_document.ssp_leveraged_authorizations.order(:title)
+
+    # Group controls by family for collapsible display
+    @controls_by_family = @controls.group_by { |c|
+      c.control_id.to_s.split("-").first.upcase
+    }
+    @sorted_families = @controls_by_family.keys.sort
+
+    # Build family name lookup from catalog (if available via profile)
+    @family_names = {}
+    if @ssp_document.profile_document&.control_catalog.present?
+      @ssp_document.profile_document.control_catalog.control_families.each { |f| @family_names[f.code] = f.name }
+    else
+      # Fallback: look up from any catalog
+      family_codes = @sorted_families.map(&:downcase)
+      ControlFamily.where(code: family_codes).each { |f| @family_names[f.code] = f.name }
+    end
 
     # Build a catalog-guidance lookup keyed by normalized control_id.
     # Normalisation (AC-1 -> AC-01) bridges documents that use unpadded IDs
@@ -108,6 +125,32 @@ class SspDocumentsController < ApplicationController
     redirect_to wizard_ssp_documents_path
   end
 
+  # ── Create from Published Profile ────────────────────────────────
+
+  def select_profile
+    @profiles = ProfileDocument.where(lifecycle_status: "published")
+                               .where.not(resolved_catalog_json: nil)
+                               .includes(:control_catalog)
+                               .order(updated_at: :desc)
+  end
+
+  def create_from_profile
+    profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
+
+    ssp = SspFromProfileService.new(profile, name: params[:ssp_name]).create
+
+    audit_log("ssp_document_created_from_profile", subject: ssp,
+      metadata: { name: ssp.name, source_profile_id: profile.id, source_profile_name: profile.name })
+    flash[:success] = "SSP '#{ssp.name}' created from profile '#{profile.name}'."
+    redirect_to ssp_document_path(ssp)
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to select_profile_ssp_documents_path
+  rescue ActiveRecord::RecordNotFound
+    flash[:error] = "Published profile not found."
+    redirect_to select_profile_ssp_documents_path
+  end
+
   # ── Enrichment (uplift legacy SSPs) ──────────────────────────────
 
   def enrich
@@ -124,6 +167,7 @@ class SspDocumentsController < ApplicationController
       sync_users
     end
 
+    @ssp_document.regenerate_oscal_uuid!
     audit_log("ssp_document_updated", subject: @ssp_document,
       metadata: { name: @ssp_document.name, enrichment: true })
     flash[:success] = "SSP enrichment data saved."
@@ -192,7 +236,8 @@ class SspDocumentsController < ApplicationController
   end
 
   def download_yaml
-    json_string = OscalSspExportService.new(@ssp_document).export
+    service = OscalSspExportService.new(@ssp_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     yaml_data = OscalExportFormatService.to_yaml(json_string)
 
     audit_log("ssp_document_exported", subject: @ssp_document,
@@ -205,7 +250,8 @@ class SspDocumentsController < ApplicationController
   end
 
   def download_xml
-    json_string = OscalSspExportService.new(@ssp_document).export
+    service = OscalSspExportService.new(@ssp_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     xml_data = OscalExportFormatService.to_xml(json_string, :ssp)
 
     audit_log("ssp_document_exported", subject: @ssp_document,
@@ -219,6 +265,7 @@ class SspDocumentsController < ApplicationController
 
   def update_metadata
     if @ssp_document.update(document_metadata_params)
+      @ssp_document.regenerate_oscal_uuid!
       audit_log("ssp_document_updated", subject: @ssp_document,
         metadata: { name: @ssp_document.name, metadata_update: true })
       flash[:success] = "Document updated"
@@ -285,6 +332,11 @@ class SspDocumentsController < ApplicationController
   def set_ssp_document
     @ssp_document = SspDocument.find_by!(slug: params[:id])
   end
+
+  # OscalExportable hooks
+  def oscal_export_document = @ssp_document
+  def oscal_export_service(doc) = OscalSspExportService.new(doc)
+  def oscal_document_type_label = "SSP"
 
   def publish_config
     {

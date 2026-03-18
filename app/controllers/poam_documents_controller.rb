@@ -1,11 +1,12 @@
 class PoamDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
+  include OscalExportable
 
   before_action :set_poam_document, only: %i[
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
-    download_yaml download_xml
+    download_yaml download_xml validate_oscal_export
     update_metadata status update publish publish_check
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
@@ -78,6 +79,7 @@ class PoamDocumentsController < ApplicationController
       primary_risk&.update!(status: update_attrs["risk_status"])
     end
 
+    @poam_document.regenerate_oscal_uuid!
     flash[:success] = "POA&M item updated"
     redirect_to poam_document_path(@poam_document, filter_params)
   rescue StandardError => e
@@ -149,7 +151,8 @@ class PoamDocumentsController < ApplicationController
   end
 
   def download_yaml
-    json_string = OscalPoamExportService.new(@poam_document).export
+    service = OscalPoamExportService.new(@poam_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     yaml_data = OscalExportFormatService.to_yaml(json_string)
 
     audit_log("poam_document_exported", subject: @poam_document, metadata: { name: @poam_document.name, format: "yaml" })
@@ -160,7 +163,8 @@ class PoamDocumentsController < ApplicationController
   end
 
   def download_xml
-    json_string = OscalPoamExportService.new(@poam_document).export
+    service = OscalPoamExportService.new(@poam_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     xml_data = OscalExportFormatService.to_xml(json_string, :poam)
 
     audit_log("poam_document_exported", subject: @poam_document, metadata: { name: @poam_document.name, format: "xml" })
@@ -172,6 +176,7 @@ class PoamDocumentsController < ApplicationController
 
   def update_metadata
     if @poam_document.update(document_metadata_params)
+      @poam_document.regenerate_oscal_uuid!
       audit_log("poam_document_updated", subject: @poam_document, metadata: { name: @poam_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
@@ -197,6 +202,11 @@ class PoamDocumentsController < ApplicationController
   def set_poam_document
     @poam_document = PoamDocument.find_by!(slug: params[:id])
   end
+
+  # OscalExportable hooks
+  def oscal_export_document = @poam_document
+  def oscal_export_service(doc) = OscalPoamExportService.new(doc)
+  def oscal_document_type_label = "POA&M"
 
   def ensure_editable!
     return unless @poam_document.published_lifecycle?

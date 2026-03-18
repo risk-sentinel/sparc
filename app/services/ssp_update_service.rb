@@ -4,6 +4,28 @@ class SspUpdateService
   end
 
   def update_control(control_id, field_updates)
+    control = apply_field_updates(control_id, field_updates)
+
+    # OSCAL spec: regenerate root UUID when content changes
+    @document.regenerate_oscal_uuid!
+
+    control
+  end
+
+  def bulk_update(updates)
+    ActiveRecord::Base.transaction do
+      updates.each do |control_id, field_updates|
+        apply_field_updates(control_id, field_updates)
+      end
+    end
+
+    # Regenerate once after all updates
+    @document.regenerate_oscal_uuid!
+  end
+
+  private
+
+  def apply_field_updates(control_id, field_updates)
     control = @document.ssp_controls.find_by!(control_id: control_id)
 
     field_updates.each do |field_name, new_value|
@@ -21,13 +43,5 @@ class SspUpdateService
     end
 
     control
-  end
-
-  def bulk_update(updates)
-    ActiveRecord::Base.transaction do
-      updates.each do |control_id, field_updates|
-        update_control(control_id, field_updates)
-      end
-    end
   end
 end

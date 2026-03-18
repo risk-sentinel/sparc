@@ -1,11 +1,12 @@
 class SapDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
+  include OscalExportable
 
   before_action :set_sap_document, only: %i[
     show edit update destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
-    download_yaml download_xml status
+    download_yaml download_xml validate_oscal_export status
     update_metadata publish publish_check
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
@@ -59,6 +60,7 @@ class SapDocumentsController < ApplicationController
     )
 
     if control.update(permitted)
+      @sap_document.regenerate_oscal_uuid!
       flash[:success] = "Control #{control.control_id} updated"
     else
       flash[:error] = control.errors.full_messages.join(", ")
@@ -130,7 +132,8 @@ class SapDocumentsController < ApplicationController
   end
 
   def download_yaml
-    json_string = OscalAssessmentPlanExportService.new(@sap_document).export
+    service = OscalAssessmentPlanExportService.new(@sap_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     yaml_data = OscalExportFormatService.to_yaml(json_string)
 
     audit_log("sap_document_exported", subject: @sap_document, metadata: { name: @sap_document.name, format: "yaml" })
@@ -141,7 +144,8 @@ class SapDocumentsController < ApplicationController
   end
 
   def download_xml
-    json_string = OscalAssessmentPlanExportService.new(@sap_document).export
+    service = OscalAssessmentPlanExportService.new(@sap_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     xml_data = OscalExportFormatService.to_xml(json_string, :assessment_plan)
 
     audit_log("sap_document_exported", subject: @sap_document, metadata: { name: @sap_document.name, format: "xml" })
@@ -153,6 +157,7 @@ class SapDocumentsController < ApplicationController
 
   def update_metadata
     if @sap_document.update(document_metadata_params)
+      @sap_document.regenerate_oscal_uuid!
       audit_log("sap_document_updated", subject: @sap_document, metadata: { name: @sap_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
@@ -179,6 +184,11 @@ class SapDocumentsController < ApplicationController
   def set_sap_document
     @sap_document = SapDocument.find_by!(slug: params[:id])
   end
+
+  # OscalExportable hooks
+  def oscal_export_document = @sap_document
+  def oscal_export_service(doc) = OscalAssessmentPlanExportService.new(doc)
+  def oscal_document_type_label = "Assessment Plan"
 
   def publish_config
     { document: @sap_document, audit_event: "sap_document_published",

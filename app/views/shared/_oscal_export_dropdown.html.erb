@@ -1,0 +1,55 @@
+<%# Shared OSCAL export dropdown with validation modal.
+    Locals:
+      validate_path:       — GET path returning JSON validation status
+      download_json_path:  — validated JSON download path
+      download_yaml_path:  — validated YAML download path
+      download_xml_path:   — validated XML download path
+      fallback_json_path:  — unvalidated JSON download path
+      document_type:       — label for modal (e.g., "SSP", "SAR")
+      extra_items:         — (optional) additional HTML for extra dropdown items (e.g., Excel, Resolved Catalog)
+%>
+<div class="btn-group" data-controller="oscal-export">
+  <button type="button" class="sparc-btn-oscal dropdown-toggle"
+          data-bs-toggle="dropdown" aria-expanded="false">
+    Export OSCAL
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li>
+      <%= link_to "JSON", "#", class: "dropdown-item",
+          data: {
+            action: "click->oscal-export#download",
+            oscal_export_validate_url_param: validate_path,
+            oscal_export_download_url_param: download_json_path,
+            oscal_export_fallback_url_param: fallback_json_path,
+            oscal_export_format_param: "JSON",
+            oscal_export_doc_type_param: document_type
+          } %>
+    </li>
+    <li>
+      <%= link_to "YAML", "#", class: "dropdown-item",
+          data: {
+            action: "click->oscal-export#download",
+            oscal_export_validate_url_param: validate_path,
+            oscal_export_download_url_param: download_yaml_path,
+            oscal_export_fallback_url_param: "#{download_yaml_path}?skip_validation=true",
+            oscal_export_format_param: "YAML",
+            oscal_export_doc_type_param: document_type
+          } %>
+    </li>
+    <li>
+      <%= link_to "XML", "#", class: "dropdown-item",
+          data: {
+            action: "click->oscal-export#download",
+            oscal_export_validate_url_param: validate_path,
+            oscal_export_download_url_param: download_xml_path,
+            oscal_export_fallback_url_param: "#{download_xml_path}?skip_validation=true",
+            oscal_export_format_param: "XML",
+            oscal_export_doc_type_param: document_type
+          } %>
+    </li>
+    <% if local_assigns[:extra_items].present? %>
+      <li><hr class="dropdown-divider"></li>
+      <%= extra_items %>
+    <% end %>
+  </ul>
+</div>
