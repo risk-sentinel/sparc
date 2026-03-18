@@ -254,6 +254,20 @@
 
 <%# ── Edit control modal (inline) ── %>
 <% if @control = @sap_document.sap_controls.find_by(id: params[:control_id]) %>
+  <%
+    # Pre-populate assessor name from current user if blank
+    default_assessor = @control.assessor_name.presence || current_user&.display_label
+
+    # Pre-populate objective from catalog if blank
+    default_objective = @control.objective.presence
+    if default_objective.blank? && @control.control_id.present?
+      cat_ctrl = CatalogControl.find_by(control_id: @control.control_id)
+      if cat_ctrl
+        guidance = cat_ctrl.guidance_data.is_a?(Hash) ? cat_ctrl.guidance_data : {}
+        default_objective = guidance["assessment_objective"] || guidance["description"] || cat_ctrl.description
+      end
+    end
+  %>
   <div id="editModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
     <div class="bg-body rounded-3" style="padding: 2rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
       <div class="d-flex justify-content-between align-items-center mb-4">
@@ -277,11 +291,11 @@
         </div>
         <div class="form-group">
           <label>Assessor Name</label>
-          <%= f.text_field :assessor_name, value: @control.assessor_name, class: "form-control", name: "sap_control[assessor_name]" %>
+          <%= f.text_field :assessor_name, value: default_assessor, class: "form-control", name: "sap_control[assessor_name]" %>
         </div>
         <div class="form-group">
           <label>Assessment Objective</label>
-          <%= f.text_area :objective, value: @control.objective, rows: 3, class: "form-control", name: "sap_control[objective]" %>
+          <%= f.text_area :objective, value: default_objective, rows: 3, class: "form-control", name: "sap_control[objective]" %>
         </div>
         <div class="form-group">
           <label>Test Case</label>
