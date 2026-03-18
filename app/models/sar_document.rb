@@ -12,14 +12,16 @@ class SarDocument < ApplicationRecord
   has_one_attached :file
 
   belongs_to :sap_document, optional: true
+  belongs_to :profile_document, optional: true
+  belongs_to :ssp_document, optional: true
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 
   validates :name, presence: true
   validates :file_type, inclusion: { in: %w[excel json xml yaml] }, allow_nil: true
-  validates :creation_method, inclusion: { in: %w[excel wizard oscal_import] }, allow_nil: true
+  validates :creation_method, inclusion: { in: %w[excel wizard oscal_import profile ssp] }, allow_nil: true
 
-  CREATION_METHODS = %w[excel wizard oscal_import].freeze
+  CREATION_METHODS = %w[excel wizard oscal_import profile ssp].freeze
 
   def wizard_created?
     creation_method == "wizard"
@@ -27,6 +29,14 @@ class SarDocument < ApplicationRecord
 
   def oscal_imported?
     creation_method == "oscal_import"
+  end
+
+  def profile_created?
+    creation_method == "profile"
+  end
+
+  def ssp_created?
+    creation_method == "ssp"
   end
 
   def enriched?

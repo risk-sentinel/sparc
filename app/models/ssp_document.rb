@@ -19,6 +19,7 @@ class SspDocument < ApplicationRecord
 
   # Source linkages
   belongs_to :profile_document, optional: true
+  has_many :sar_documents, dependent: :nullify
   has_many :ssp_document_cdef_documents, dependent: :delete_all
   has_many :cdef_documents, through: :ssp_document_cdef_documents
 
@@ -81,6 +82,8 @@ class SspDocument < ApplicationRecord
     deps = []
     sap_count = SapDocument.where(ssp_document_id: id).count
     deps << "#{sap_count} Assessment Plan(s)" if sap_count > 0
+    sar_count = SarDocument.where(ssp_document_id: id).count
+    deps << "#{sar_count} Assessment Result(s)" if sar_count > 0
     deps
   end
 end
