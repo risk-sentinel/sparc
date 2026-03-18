@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-03-15
+**Last updated:** 2026-03-18
 
 ---
 
@@ -109,7 +109,7 @@ Sprint 2b (weeks 3-6):
 | [x] | **#175** Profile from baseline -- **COMPLETED 2026-03-15** | Profile | `profile_documents_controller.rb`, `profile_document.rb`, profile views, `oscal_profile_export_service.rb`, `oscal_resolved_profile_catalog_service.rb`, `catalog_import_service.rb` | **NONE** with SSP/SAR/CDEF work |
 | [x] | **#185** STIG SV/V to CCI parser + drag-drop UX | Converters + Shared | New `StigConverterService`, `stig_parser_controller.js`, `dropzone_controller.js`, `_dropzone.html.erb`, `stig_parser.html.erb`, `converters_controller` (new actions), slug migration, `converter.rb` (slug + stig_to_nist type), all 9 upload views retrofitted | **NONE** with Profile/SSP/SAR -- different domain |
 | [x] | **#172** CDEF from Profile -- **COMPLETED 2026-03-16** | CDEF | `cdef_documents_controller.rb`, `cdef_document.rb`, new `CdefFromProfileService`, CDEF views | **NONE** with SSP/SAR work; uses #185 for validation |
-| [x] | **#173** SSP from Profile -- **COMPLETED 2026-03-16** | SSP | `ssp_documents_controller.rb`, `ssp_document.rb`, new `SspFromProfileService`, SSP views, `config/routes.rb` | **NONE** with CDEF/SAR work |
+| [x] | **#173** SSP from Profile -- **COMPLETED 2026-03-18** | SSP + Shared | `ssp_documents_controller.rb`, `ssp_document.rb`, new `SspFromProfileService`, SSP views, `config/routes.rb`, new `OscalExportable` concern, `oscal_export_controller.js`, `_oscal_export_dropdown.html.erb`, all 7 show views (export dropdown), all 7 controllers (UUID regen + export validation), `oscal_metadata.rb` (regenerate_oscal_uuid!), `publishable.rb` (UUID regen) | **NONE** remaining |
 | [ ] | **#174** SAR from Profile/SSP | SAR | `sar_documents_controller.rb`, `sar_document.rb`, `sar_wizard_service.rb`, SAR views | **NONE** with SSP/CDEF work; uses #185 CDEF validations |
 | [ ] | **#125** ATO Wizard | NEW domain | New `AtoWizardController`, new `AtoPackageService`, new views, new model | **LOW** -- mostly new files |
 
