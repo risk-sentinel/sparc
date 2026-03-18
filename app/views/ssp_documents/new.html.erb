@@ -17,9 +17,48 @@
 </div>
 
 <div class="card">
-  <h3>Import Notes</h3>
-  <div class="text-body-secondary" style="font-size: 0.9rem; line-height: 1.6;">
-    <p class="mb-2"><strong>Excel (.xlsx, .xls)</strong> &mdash; Workbooks must follow the expected column mapping for successful import.</p>
-    <p class="mb-0"><strong>OSCAL (JSON, XML, YAML)</strong> &mdash; OSCAL System Security Plan files are auto-detected and require no column mapping.</p>
-  </div>
+  <h2>Create from Published Profile</h2>
+  <p class="text-body-secondary mb-3">
+    Generate a System Security Plan from a published OSCAL Profile's resolved catalog.
+    Baseline controls, statements, and guidance will be pre-populated. Implementation
+    details, status, and responsible entities can be edited after creation.
+  </p>
+  <%= link_to "Select a Profile", select_profile_ssp_documents_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card">
+  <h3>Supported Formats</h3>
+  <p class="text-body-secondary mb-3">SPARC automatically detects the file format and parses OSCAL SSP content including system characteristics, components, users, and control implementations.</p>
+
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Format</th>
+        <th>Extension</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Excel</strong></td>
+        <td>.xlsx, .xls</td>
+        <td>Workbooks following the expected SSP column mapping</td>
+      </tr>
+      <tr>
+        <td><strong>OSCAL JSON</strong></td>
+        <td>.json</td>
+        <td>NIST OSCAL v1.1.2 System Security Plan documents</td>
+      </tr>
+      <tr>
+        <td><strong>OSCAL YAML</strong></td>
+        <td>.yaml, .yml</td>
+        <td>OSCAL SSP in YAML format (auto-converted to JSON for parsing)</td>
+      </tr>
+      <tr>
+        <td><strong>OSCAL XML</strong></td>
+        <td>.xml</td>
+        <td>OSCAL SSP in XML format (auto-converted to JSON for parsing)</td>
+      </tr>
+    </tbody>
+  </table>
 </div>

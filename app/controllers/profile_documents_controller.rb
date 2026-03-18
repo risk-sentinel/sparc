@@ -1,12 +1,13 @@
 class ProfileDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
+  include OscalExportable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
   before_action :set_profile_document, only: %i[
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
-    download_yaml download_xml status
+    download_yaml download_xml validate_oscal_export status
     update_metadata copy publish publish_check download_resolved_catalog
     manage_controls update_controls
   ]
@@ -142,7 +143,8 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def download_yaml
-    json_string = OscalProfileExportService.new(@profile_document).export
+    service = OscalProfileExportService.new(@profile_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     yaml_data = OscalExportFormatService.to_yaml(json_string)
 
     audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "yaml" })
@@ -153,7 +155,8 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def download_xml
-    json_string = OscalProfileExportService.new(@profile_document).export
+    service = OscalProfileExportService.new(@profile_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     xml_data = OscalExportFormatService.to_xml(json_string, :profile)
 
     audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "xml" })
@@ -165,6 +168,7 @@ class ProfileDocumentsController < ApplicationController
 
   def update_metadata
     if @profile_document.update(document_metadata_params)
+      @profile_document.regenerate_oscal_uuid!
       audit_log("profile_document_updated", subject: @profile_document, metadata: { name: @profile_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
@@ -323,6 +327,7 @@ class ProfileDocumentsController < ApplicationController
       end
     end
 
+    @profile_document.regenerate_oscal_uuid!
     audit_log("profile_controls_bulk_updated", subject: @profile_document,
               metadata: { added: to_add.size, removed: to_remove.size })
     flash[:success] = "Controls updated: #{to_add.size} added, #{to_remove.size} removed"
@@ -413,6 +418,11 @@ class ProfileDocumentsController < ApplicationController
   def set_profile_document
     @profile_document = ProfileDocument.find_by!(slug: params[:id])
   end
+
+  # OscalExportable hooks
+  def oscal_export_document = @profile_document
+  def oscal_export_service(doc) = OscalProfileExportService.new(doc)
+  def oscal_document_type_label = "Profile"
 
   def ensure_editable!
     return unless @profile_document.published_lifecycle?

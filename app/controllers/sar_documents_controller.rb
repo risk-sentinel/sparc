@@ -2,13 +2,14 @@ class SarDocumentsController < ApplicationController
   include FileUploadable
   include Pagy::Method
   include Publishable
+  include OscalExportable
 
   CONTROLS_PER_PAGE = 50
 
   before_action :set_sar_document, only: [
     :show, :update, :destroy, :download_json, :download_excel,
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
-    :download_yaml, :download_xml,
+    :download_yaml, :download_xml, :validate_oscal_export,
     :edit_control, :status, :update_metadata, :enrich, :update_enrich,
     :publish, :publish_check
   ]
@@ -92,6 +93,7 @@ class SarDocumentsController < ApplicationController
       field.save!
     end
 
+    @sar_document.regenerate_oscal_uuid!
     audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, control_id: params[:sar_control_id] })
 
     flash[:success] = "Assessment result updated successfully"
@@ -195,7 +197,8 @@ class SarDocumentsController < ApplicationController
   end
 
   def download_yaml
-    json_string = OscalSarExportService.new(@sar_document).export
+    service = OscalSarExportService.new(@sar_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     yaml_data = OscalExportFormatService.to_yaml(json_string)
 
     audit_log("sar_document_exported", subject: @sar_document, metadata: { name: @sar_document.name, format: "yaml" })
@@ -207,7 +210,8 @@ class SarDocumentsController < ApplicationController
   end
 
   def download_xml
-    json_string = OscalSarExportService.new(@sar_document).export
+    service = OscalSarExportService.new(@sar_document)
+    json_string = params[:skip_validation] ? service.export_unvalidated : service.export
     xml_data = OscalExportFormatService.to_xml(json_string, :assessment_results)
 
     audit_log("sar_document_exported", subject: @sar_document, metadata: { name: @sar_document.name, format: "xml" })
@@ -235,6 +239,7 @@ class SarDocumentsController < ApplicationController
       auto_generate_from_excel if params.dig(:sar_document, :auto_generate) == "1"
     end
 
+    @sar_document.regenerate_oscal_uuid!
     audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, enrichment: true })
 
     flash[:success] = "SAR enrichment data saved."
@@ -261,6 +266,7 @@ class SarDocumentsController < ApplicationController
 
   def update_metadata
     if @sar_document.update(document_metadata_params)
+      @sar_document.regenerate_oscal_uuid!
       audit_log("sar_document_updated", subject: @sar_document, metadata: { name: @sar_document.name, metadata_update: true })
       flash[:success] = "Document updated"
     else
@@ -493,6 +499,11 @@ class SarDocumentsController < ApplicationController
   def set_sar_document
     @sar_document = SarDocument.find_by!(slug: params[:id])
   end
+
+  # OscalExportable hooks
+  def oscal_export_document = @sar_document
+  def oscal_export_service(doc) = OscalSarExportService.new(doc)
+  def oscal_document_type_label = "SAR"
 
   def publish_config
     {
