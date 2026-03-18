@@ -56,6 +56,9 @@
         Controls will be pulled from the selected SSP. If no SSP is selected, controls will be pulled from the selected Profile/Baseline.
       </p>
 
+      <%# Build SSP-to-Profile mapping for auto-population %>
+      <% ssp_profile_map = @ssp_documents.each_with_object({}) { |s, h| h[s.id] = s.profile_document_id if s.profile_document_id } %>
+
       <div class="row row-cols-1 row-cols-md-2 g-3">
         <div class="col">
           <div class="form-group">
@@ -67,7 +70,8 @@
                   ),
                   { include_blank: "— Select SSP (optional) —" },
                   class: "form-control", id: "ssp-select",
-                  onchange: "loadControlsFromSSP(this.value)" %>
+                  data: { ssp_profile_map: ssp_profile_map.to_json },
+                  onchange: "autoPopulateProfile(this)" %>
           </div>
         </div>
         <div class="col">
@@ -79,10 +83,24 @@
                     nil
                   ),
                   { include_blank: "— Select Profile (optional) —" },
-                  class: "form-control" %>
+                  class: "form-control", id: "profile-select" %>
           </div>
         </div>
       </div>
+
+      <script>
+        function autoPopulateProfile(sspSelect) {
+          var profileSelect = document.getElementById("profile-select");
+          if (!profileSelect) return;
+
+          var map = JSON.parse(sspSelect.dataset.sspProfileMap || "{}");
+          var profileId = map[sspSelect.value];
+
+          if (profileId) {
+            profileSelect.value = profileId;
+          }
+        }
+      </script>
     </div>
 
     <%# ── Step 3: Assessment Methods ── %>
