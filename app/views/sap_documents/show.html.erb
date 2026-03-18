@@ -264,7 +264,11 @@
       cat_ctrl = CatalogControl.find_by(control_id: @control.control_id)
       if cat_ctrl
         guidance = cat_ctrl.guidance_data.is_a?(Hash) ? cat_ctrl.guidance_data : {}
-        default_objective = guidance["assessment_objective"] || guidance["description"] || cat_ctrl.description
+        default_objective = guidance["assessment_objective"] ||
+                            guidance["statement"] ||
+                            guidance["supplemental_guidance"] ||
+                            guidance["description"] ||
+                            cat_ctrl.description
       end
     end
   %>
