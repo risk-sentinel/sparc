@@ -4,18 +4,21 @@
 
 ---
 
-## 2026-03-16 -- SSP OSCAL Import & Create from Published Profile (#173)
+## 2026-03-18 -- SSP OSCAL Import, Create from Profile & Unified Export Validation (#173)
 
 **Branch:** `feature/173_ssp_oscal_import`
 
 ### Summary
 
-Adds "Create SSP from Published Profile" workflow and polishes the OSCAL SSP import
-UI. Users can now generate a System Security Plan from any published profile's resolved
-catalog, with baseline controls pre-populated and editable placeholder fields for
-implementation details, status, and responsible entities.
+Adds SSP OSCAL import (JSON/YAML/XML), "Create SSP from Published Profile" workflow,
+OSCAL UUID regeneration on content change (per NIST spec), unified OSCAL export
+validation modal across all document types, and SSP enrichment card edit links.
 
 ### What Changed
+
+- **SSP OSCAL import** -- parse OSCAL SSP files in JSON, YAML, and XML formats into
+  the SspDocument model with controls and fields. Collapsible family grouping on the
+  show page for better navigation of large control sets.
 
 - **"Create from Published Profile" flow** -- new UI on the SSP creation page allows
   users to select a published profile and generate an SSP. Controls, statements, and
@@ -35,11 +38,63 @@ implementation details, status, and responsible entities.
   creation method distinct from `wizard` and `oscal_import`, with a `profile_created?`
   convenience method.
 
+- **OSCAL UUID regeneration on content change** -- per NIST OSCAL spec, the root UUID
+  and last-modified timestamp now regenerate when document content is saved (not on
+  export). `regenerate_oscal_uuid!` method added to OscalMetadata concern, called from
+  all content modification paths (update, update_metadata, update_enrich, update_controls,
+  publish) across all 6 document types. Uses `update_column` to bypass the immutability
+  guard. Includes column existence check for models without UUID column (e.g., ControlCatalog).
+
+- **Unified OSCAL export validation modal** -- replaces per-document validated/unvalidated
+  export dropdowns with a reusable pattern across all 7 document types:
+  - `OscalExportable` concern provides shared `validate_oscal_export` JSON endpoint
+  - `oscal_export_controller.js` Stimulus controller intercepts export clicks, validates
+    via fetch, and shows a Bootstrap modal if validation fails
+  - `_oscal_export_dropdown.html.erb` shared partial used by all show views
+  - Modal displays document type, first 5 validation errors, and Cancel/Continue buttons
+  - Continue downloads the unvalidated file; YAML/XML use `?skip_validation=true` param
+
+- **SSP enrichment card edit links** -- System Characteristics, Components, and Users
+  cards on the SSP show page now have edit links back to the enrich page (signed-in
+  users on draft documents only).
+
 - **Updated SSP new page** -- "Create from Published Profile" card and supported formats
   table added to the SSP upload page, matching the CDEF pattern.
 
-- **New specs** -- `SspFromProfileService`, `SspJsonParserService`, `SspXmlParserService`
-  service specs and request spec additions for `select_profile` and `create_from_profile`.
+### Files Created (3)
+
+- `app/controllers/concerns/oscal_exportable.rb`
+- `app/javascript/controllers/oscal_export_controller.js`
+- `app/views/shared/_oscal_export_dropdown.html.erb`
+
+### Files Modified (19)
+
+- `app/controllers/ssp_documents_controller.rb` (OscalExportable, UUID regen, edit links)
+- `app/controllers/sar_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/cdef_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/profile_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/sap_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/poam_documents_controller.rb` (OscalExportable, UUID regen)
+- `app/controllers/control_catalogs_controller.rb` (OscalExportable, skip_validation)
+- `app/controllers/concerns/publishable.rb` (UUID regen before publish)
+- `app/models/concerns/oscal_metadata.rb` (regenerate_oscal_uuid! method)
+- `app/models/ssp_document.rb` (creation_method: "profile")
+- `app/services/oscal_ssp_export_service.rb` (use stored UUID, not random)
+- `app/services/ssp_update_service.rb` (UUID regen on control updates)
+- `app/views/ssp_documents/show.html.erb` (edit links, shared export dropdown)
+- `app/views/sar_documents/show.html.erb` (shared export dropdown)
+- `app/views/cdef_documents/show.html.erb` (shared export dropdown)
+- `app/views/profile_documents/show.html.erb` (shared export dropdown)
+- `app/views/sap_documents/show.html.erb` (shared export dropdown)
+- `app/views/poam_documents/show.html.erb` (shared export dropdown)
+- `app/views/control_catalogs/show.html.erb` (shared export dropdown)
+- `app/views/control_catalogs/index.html.erb` (shared export dropdown)
+- `config/routes.rb` (validate_oscal_export routes for all doc types)
+
+### New Specs
+
+- `SspFromProfileService`, `SspJsonParserService`, `SspXmlParserService` service specs
+- Request spec additions for `select_profile` and `create_from_profile`
 
 ### Verification
 
