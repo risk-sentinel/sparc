@@ -242,19 +242,26 @@ class CatalogImportService
               .compact
               .join(", ")
 
-    # Assessment parts (EXAMINE, INTERVIEW, TEST methods with objects prose)
-    assessment_parts = (ctrl["parts"] || []).select { |p| p["name"] == "assessment" }
+    # Assessment methods (EXAMINE, INTERVIEW, TEST with objects prose)
+    # Rev 4: parts name="assessment" → props method + child parts name="objects"
+    # Rev 5: parts name="assessment-method" → props method + child parts name="assessment-objects"
+    assessment_parts = (ctrl["parts"] || []).select { |p| %w[assessment assessment-method].include?(p["name"]) }
     assessment_data = assessment_parts.map do |ap|
       method = (ap["props"] || []).find { |pr| pr["name"] == "method" }&.dig("value")
-      objects = (ap["parts"] || []).find { |pp| pp["name"] == "objects" }&.dig("prose")
+      objects = (ap["parts"] || []).find { |pp| %w[objects assessment-objects].include?(pp["name"]) }&.dig("prose")
       { "method" => method, "objects" => objects }.compact
     end.reject(&:empty?)
 
+    # Assessment objectives (Rev 5: nested assessment-objective parts with labeled sub-items)
+    objective_part = (ctrl["parts"] || []).find { |p| p["name"] == "assessment-objective" }
+    assessment_objective = collect_assessment_objectives(objective_part) if objective_part
+
     guidance_data = {
-      "statement"             => statement,
-      "supplemental_guidance" => supplemental,
-      "related_controls"      => related.presence,
-      "assessment"            => assessment_data.presence
+      "statement"              => statement,
+      "supplemental_guidance"  => supplemental,
+      "related_controls"       => related.presence,
+      "assessment"             => assessment_data.presence,
+      "assessment_objective"   => assessment_objective.presence
     }.compact.reject { |_, v| v.blank? }
 
     # Parameter definitions (Assignment/Selection placeholders for profiles to resolve)
@@ -795,6 +802,27 @@ class CatalogImportService
 
   def oscal_prop_all(props, name)
     (props || []).select { |p| p["name"] == name }.map { |p| p["value"] }.compact
+  end
+
+  # Recursively collect assessment-objective prose with labels from Rev 5 catalogs.
+  # Returns a single string with labeled sub-objectives (e.g., "AC-01a.[01]: ...").
+  def collect_assessment_objectives(part, depth: 0)
+    return nil unless part.is_a?(Hash)
+    lines = []
+
+    label = (part["props"] || []).find { |p| p["name"] == "label" }&.dig("value")
+    prose = part["prose"]
+
+    lines << "#{label}: #{prose}" if label.present? && prose.present?
+    lines << prose if label.blank? && prose.present?
+
+    (part["parts"] || []).each do |child|
+      next unless child["name"] == "assessment-objective"
+      child_text = collect_assessment_objectives(child, depth: depth + 1)
+      lines << child_text if child_text.present?
+    end
+
+    lines.join("\n").strip.presence
   end
 
   # Recursively collect prose from parts matching given names, with label prefixes.

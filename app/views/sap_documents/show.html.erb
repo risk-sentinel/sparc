@@ -258,25 +258,30 @@
     # Pre-populate assessor name from current user if blank
     default_assessor = @control.assessor_name.presence || current_user&.display_label
 
-    # Pre-populate objective from catalog assessment parts if blank
+    # Pre-populate objective from catalog assessment data if blank
     default_objective = @control.objective.presence
     if default_objective.blank? && @control.control_id.present?
       cat_ctrl = CatalogControl.find_by(control_id: @control.control_id)
       if cat_ctrl
         guidance = cat_ctrl.guidance_data.is_a?(Hash) ? cat_ctrl.guidance_data : {}
 
-        # Prefer structured assessment data (method + objects) from NIST catalog
-        assessment = guidance["assessment"]
-        if assessment.is_a?(Array) && assessment.any?
-          lines = assessment.map do |a|
-            method = a["method"]&.upcase
-            objects = a["objects"]
-            method && objects ? "#{method}:\n#{objects}" : (objects || method)
-          end.compact
-          default_objective = lines.join("\n\n")
+        # 1. Prefer Rev 5 assessment objectives (labeled sub-items)
+        default_objective = guidance["assessment_objective"]
+
+        # 2. Fall back to assessment methods (EXAMINE/INTERVIEW/TEST with objects)
+        if default_objective.blank?
+          assessment = guidance["assessment"]
+          if assessment.is_a?(Array) && assessment.any?
+            lines = assessment.map do |a|
+              method = a["method"]&.upcase
+              objects = a["objects"]
+              method && objects ? "#{method}:\n#{objects}" : (objects || method)
+            end.compact
+            default_objective = lines.join("\n\n")
+          end
         end
 
-        # Fall back to statement or supplemental guidance
+        # 3. Fall back to statement or supplemental guidance
         default_objective = guidance["statement"] if default_objective.blank?
         default_objective = guidance["supplemental_guidance"] if default_objective.blank?
         default_objective = cat_ctrl.description if default_objective.blank?
