@@ -32,6 +32,17 @@ class SapDocumentsController < ApplicationController
     @heatmap_data, @heatmap_families, @heatmap_methods = build_method_heatmap(controls_scope)
 
     @controls = controls_scope.order(:row_order).includes(:sap_control_fields)
+
+    # Group controls by family for collapsible display
+    @controls_by_family = @controls.group_by { |c|
+      c.control_family.presence || c.control_id.to_s.split("-").first.upcase
+    }
+    @sorted_families = @controls_by_family.keys.sort
+
+    # Build family name lookup from catalog
+    @family_names = {}
+    family_codes = @sorted_families.map(&:downcase)
+    ControlFamily.where(code: family_codes).each { |f| @family_names[f.code] = f.name }
   end
 
   def new
