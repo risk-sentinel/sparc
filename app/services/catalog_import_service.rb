@@ -242,10 +242,19 @@ class CatalogImportService
               .compact
               .join(", ")
 
+    # Assessment parts (EXAMINE, INTERVIEW, TEST methods with objects prose)
+    assessment_parts = (ctrl["parts"] || []).select { |p| p["name"] == "assessment" }
+    assessment_data = assessment_parts.map do |ap|
+      method = (ap["props"] || []).find { |pr| pr["name"] == "method" }&.dig("value")
+      objects = (ap["parts"] || []).find { |pp| pp["name"] == "objects" }&.dig("prose")
+      { "method" => method, "objects" => objects }.compact
+    end.reject(&:empty?)
+
     guidance_data = {
       "statement"             => statement,
       "supplemental_guidance" => supplemental,
-      "related_controls"      => related.presence
+      "related_controls"      => related.presence,
+      "assessment"            => assessment_data.presence
     }.compact.reject { |_, v| v.blank? }
 
     # Parameter definitions (Assignment/Selection placeholders for profiles to resolve)
