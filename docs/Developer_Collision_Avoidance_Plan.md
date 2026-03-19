@@ -111,7 +111,7 @@ Sprint 2b (weeks 3-6):
 | [x] | **#172** CDEF from Profile -- **COMPLETED 2026-03-16** | CDEF | `cdef_documents_controller.rb`, `cdef_document.rb`, new `CdefFromProfileService`, CDEF views | **NONE** with SSP/SAR work; uses #185 for validation |
 | [x] | **#173** SSP from Profile -- **COMPLETED 2026-03-18** | SSP + Shared | `ssp_documents_controller.rb`, `ssp_document.rb`, new `SspFromProfileService`, SSP views, `config/routes.rb`, new `OscalExportable` concern, `oscal_export_controller.js`, `_oscal_export_dropdown.html.erb`, all 7 show views (export dropdown), all 7 controllers (UUID regen + export validation), `oscal_metadata.rb` (regenerate_oscal_uuid!), `publishable.rb` (UUID regen) | **NONE** remaining |
 | [x] | **#174** SAR from Profile/SSP -- **COMPLETED 2026-03-18** | SAR + SAP + Catalog | `sar_documents_controller.rb`, `sar_document.rb`, new `SarFromProfileService`, `SarFromSspService`, SAR views, `sap_documents_controller.rb`, SAP views (family grouping, edit defaults), `catalog_import_service.rb` (assessment data), `config/routes.rb`, migration | **NONE** remaining |
-| [ ] | **#125** ATO Wizard | NEW domain | New `AtoWizardController`, new `AtoPackageService`, new views, new model | **LOW** -- mostly new files |
+| [x] | **#125** ATO Wizard -- **COMPLETED 2026-03-19** | AuthBoundary + Shared | `authorization_boundaries_controller.rb` (3 new actions), new `AtoPackageService`, `AtoPackageExportService`, `ato_wizard.html.erb`, show page buttons, `config/routes.rb` | **NONE** remaining |
 
 <!-- markdownlint-enable MD013 -->
 

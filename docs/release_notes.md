@@ -4,6 +4,62 @@
 
 ---
 
+## 2026-03-19 -- End-to-End ATO Authorization Package Wizard (#125)
+
+**Branch:** `feature/125_ato_wizard`
+
+### Summary
+
+Adds an 8-step guided wizard for building a complete ATO Authorization Package from
+an Authorization Boundary. Users can create new documents or select existing ones at
+each step, then download the full package as a ZIP of OSCAL JSON files. This is the
+capstone of Phase 3, tying together all OSCAL document types (Profile, CDEFs, SSP,
+SAP, SAR, POA&M) into a single traceable package.
+
+### What Changed
+
+- **ATO Package Wizard** -- 8-step single-page form with collapsible sections accessible
+  from the Authorization Boundary show page via "Build ATO Package" button. Each step
+  offers Create New / Select Existing / Skip options for its document type.
+
+- **AtoPackageService** -- orchestrates document creation and linking in a single
+  transaction. Delegates to existing services (SspWizardService, SapGeneratorService,
+  SarWizardService) for new document creation. Links all documents to the authorization
+  boundary.
+
+- **AtoPackageExportService** -- generates a ZIP bundle containing OSCAL JSON exports
+  for all linked documents (ssp.json, sap.json, sar.json, poam-N.json, cdef-slug.json)
+  plus a manifest.json with document list and per-document validation status.
+
+- **Authorization Boundary show page** -- "Build ATO Package" and "Download ATO Package"
+  buttons added to the action bar. Download button conditionally shown when documents
+  are linked.
+
+- **Wizard steps**: (1) Confirm Boundary with role warnings, (2) Select Profile,
+  (3) Select CDEFs, (4) SSP, (5) SAP, (6) SAR, (7) POA&M, (8) Review & Submit.
+
+### Files Created (5)
+
+- `app/services/ato_package_service.rb`
+- `app/services/ato_package_export_service.rb`
+- `app/views/authorization_boundaries/ato_wizard.html.erb`
+- `spec/services/ato_package_service_spec.rb`
+- `spec/services/ato_package_export_service_spec.rb`
+
+### Files Modified (4)
+
+- `app/controllers/authorization_boundaries_controller.rb` (3 new actions)
+- `app/views/authorization_boundaries/show.html.erb` (buttons)
+- `config/routes.rb` (3 new member routes)
+- `spec/requests/authorization_boundaries_spec.rb` (new request specs)
+
+### Verification
+
+- 1110 RSpec examples, 0 failures
+- RuboCop clean
+
+---
+
 ## 2026-03-18 -- SAR Creation from Profile/SSP, SAP Assessment Improvements (#174)
 
 **Branch:** `feature/174_sar_oscal_import`
