@@ -19,11 +19,19 @@
 # ============================================================================
 class SquashMigrationsToCurrentSchema < ActiveRecord::Migration[8.1]
   def up
-    # Load the schema definition from db/schema.rb
-    # This is the safest approach — it uses the exact same schema
-    # that Rails generates and validates.
+    # Skip if tables already exist (running on an existing database)
+    return if table_exists?(:ssp_documents)
+
+    # Execute schema SQL directly — avoids schema.rb's define() which
+    # inserts into schema_migrations and conflicts with the running migration.
     schema_file = Rails.root.join("db", "schema.rb")
-    load(schema_file)
+    schema_content = File.read(schema_file)
+
+    # Extract the block contents from ActiveRecord::Schema[...].define do ... end
+    # and evaluate the create_table/add_index/add_foreign_key statements
+    if schema_content =~ /\.define\(.*?\) do\s*$(.*)\nend\s*\z/m
+      eval($1, binding, schema_file.to_s) # rubocop:disable Security/Eval
+    end
   end
 
   def down
