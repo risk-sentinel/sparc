@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-03-19 -- Interactive OSCAL Document Relationship Diagram (#171)
+
+**Branch:** `feature/171_oscal_relationship_diagram`
+
+### Summary
+
+Adds an interactive Mermaid.js-based OSCAL document relationship diagram to the
+application, accessible at `/oscal-overview` via the "OSCAL" nav link. The diagram
+visually maps all three OSCAL layers (Control, Implementation, Assessment) plus the
+Enterprise layer, showing import/traceability relationships between document types.
+
+### What Changed
+
+- **OSCAL Overview page** -- new `/oscal-overview` route with Mermaid flowchart showing
+  Catalog, Profile, CDEF, SSP, SAP, SAR, POA&M, Control Mapping, Organization, and
+  Authorization Boundary relationships with color-coded layer grouping
+- **Mermaid.js CDN** -- conditionally loaded only on pages that request it via
+  `content_for :mermaid` (no JS overhead on other pages)
+- **Layer description cards** -- three-column summary explaining Control, Implementation,
+  and Assessment layers
+- **Quick navigation** -- links to all document type index pages
+- **Nav link** -- "OSCAL" link added to top navigation bar (desktop only)
+
+### Verification
+
+- 1110 RSpec examples, 0 failures
+
+---
+
 ## 2026-03-19 -- OSCAL Data Mapping Documentation & Guidance (#133)
 
 **Branch:** `feature/133_oscal_data_mapping_docs`

@@ -94,7 +94,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 - [x] #190 -- Login consent/warning banner modal (configurable via ENV) -- **COMPLETED 2026-03-15**
 - [x] #167 -- Enterprise/Organization visibility & navigation for admins -- **COMPLETED 2026-03-19**
-- [ ] #171 -- Interactive OSCAL document relationship diagram (Mermaid)
+- [x] #171 -- Interactive OSCAL document relationship diagram (Mermaid) -- **COMPLETED 2026-03-19**
 
 ### 7. API & Backend Enhancements
 
@@ -239,7 +239,7 @@ Sprint 3b (weeks 3-6):
 | ------ | ----- | ----------- | -------- | ------------ |
 | [x] | #133 | OSCAL data mapping documentation & guidance -- **COMPLETED 2026-03-19** | MEDIUM | None |
 | [x] | #167 | Enterprise/Organization visibility & navigation -- **COMPLETED 2026-03-19** | MEDIUM | None |
-| [ ] | #171 | Mermaid OSCAL relationship diagram | MEDIUM | None |
+| [x] | #171 | Mermaid OSCAL relationship diagram -- **COMPLETED 2026-03-19** | MEDIUM | None |
 
 <!-- markdownlint-enable MD013 -->
 

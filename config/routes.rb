@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   root "home#index"
+  get "oscal-overview", to: "home#oscal_overview", as: :oscal_overview
 
   # ── Authentication ────────────────────────────────────────────────────
   get    "login",  to: "sessions#new",     as: :login
