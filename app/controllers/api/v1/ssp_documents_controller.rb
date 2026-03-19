@@ -1,7 +1,6 @@
 module Api
   module V1
-    class SspDocumentsController < ApplicationController
-      protect_from_forgery with: :null_session
+    class SspDocumentsController < ActionController::API
 
       def convert
         uploaded_file = params[:excel_file]
