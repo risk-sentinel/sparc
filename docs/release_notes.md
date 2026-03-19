@@ -1,6 +1,31 @@
-<!-- markdownlint-disable MD024 -->
+<!-- markdownlint-disable MD013 MD024 MD060 -->
 
 # SPARC Release Notes
+
+---
+
+## 2026-03-19 -- Enterprise/Organization Visibility and Navigation (#167)
+
+**Branch:** `feature/167_enterprise_org_visibility`
+
+### Summary
+
+Adds Organization visibility to the homepage and navigation. Renames "Environments"
+to "Enterprise" throughout the UI for better semantic clarity in multi-organization
+contexts.
+
+### What Changed
+
+- **Homepage stat tiles**: "ENVIRONMENTS" badge renamed to "ENTERPRISE"; Organizations
+  count tile added alongside Auth Boundaries
+- **Homepage nav grid**: Organizations card (with View/New links to admin org pages)
+  added to the left of Auth Boundaries in the Enterprise section
+- **Nav header**: "Auth Boundaries" dropdown renamed to "Enterprise" with Organizations
+  link (including count badge) and Auth Boundaries sub-section
+
+### Verification
+
+- 1110 RSpec examples, 0 failures
 
 ---
 
