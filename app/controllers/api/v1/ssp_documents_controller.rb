@@ -1,7 +1,6 @@
 module Api
   module V1
     class SspDocumentsController < ActionController::API
-
       def convert
         uploaded_file = params[:excel_file]
 
