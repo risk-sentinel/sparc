@@ -6,7 +6,7 @@ with it's Resolved Profile contains the updated Metadata and Backmatter.
 The Backmatter will contain the UUID of the source catalog with the available
 types (JSON, YAML, XML).
 
-```mermad
+```mermaid
 erDiagram
     PROFILE {
         string uuid PK
