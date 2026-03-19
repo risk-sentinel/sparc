@@ -145,7 +145,7 @@ Sprint 3b (weeks 3-6):
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
 | [ ] | **#133** Mapping docs | Documentation | `docs/` directory, minor service annotations | **NONE** -- documentation |
-| [ ] | **#167** Enterprise nav | UI/Navigation | `home/index.html.erb`, layout partials, `home_controller.rb` | **NONE** with other Phase 4 work |
+| [x] | **#167** Enterprise nav -- **COMPLETED 2026-03-19** | UI/Navigation | `home/index.html.erb`, `application.html.erb` (nav dropdown), `home_controller.rb` | **NONE** remaining |
 | [ ] | **#171** OSCAL diagram | UI (new page) | New view file, `config/routes.rb` (1 line), layout nav link | **NONE** -- new page |
 
 <!-- markdownlint-enable MD013 -->
