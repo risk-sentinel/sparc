@@ -89,10 +89,14 @@
 flowchart TB
     subgraph CL["Control Layer"]
         direction TB
-        ExtCatalog["External Catalog<br/><small>(e.g., ISO 27001, CIS)</small>"]
         Catalog["Control Catalog<br/><small>(e.g., NIST SP 800-53)</small>"]
-        ControlMapping["Control Mapping<br/><small>(equivalent, subset,<br/>superset, intersects)</small>"]
         Profile["Profile / Baseline<br/><small>(Tailored control selection<br/>+ parameter values)</small>"]
+    end
+
+    subgraph ML["Control Mapping (optional)"]
+        direction TB
+        Sources["Disparate Sources<br/><small>(Standards, regulations,<br/>frameworks, guidelines)</small>"]
+        ControlMapping["Control Mapping<br/><small>(Relationships: equivalent,<br/>subset, superset, intersects)</small>"]
     end
 
     subgraph IL["Implementation Layer"]
@@ -114,9 +118,10 @@ flowchart TB
         AB["Authorization Boundary<br/><small>(ATO Package root)</small>"]
     end
 
-    ExtCatalog -- "Mapped via<br/>Control Mapping" --> ControlMapping
-    ControlMapping -- "Integrates into" --> Catalog
     Catalog -- "Imported &amp;<br/>tailored by" --> Profile
+    Sources -. "Source &amp; target<br/>catalogs/profiles" .-> ControlMapping
+    ControlMapping -. "Maps relationships<br/>between controls" .-> Catalog
+    ControlMapping -. "Maps relationships<br/>between controls" .-> Profile
     Profile -- "Baseline controls<br/>imported by" --> SSP
     Profile -- "Controls feed into" --> CDEF
     Profile -- "Controls feed into" --> SAP
@@ -134,13 +139,15 @@ flowchart TB
     classDef impl fill:#1a3a2a,stroke:#27ae60,stroke-width:1px,color:#82e0aa
     classDef assess fill:#3a2510,stroke:#e67e22,stroke-width:1px,color:#f0b27a
     classDef enterprise fill:#2a1a3a,stroke:#8e44ad,stroke-width:1px,color:#bb8fce
-    classDef external fill:#2c3e50,stroke:#5d6d7e,stroke-width:1px,color:#aab7b8
+    classDef mapping fill:#2c3340,stroke:#f39c12,stroke-width:1px,color:#f9e79f
+    classDef sources fill:#2c3e50,stroke:#5d6d7e,stroke-width:1px,color:#aab7b8
 
-    class Catalog,Profile,ControlMapping control
+    class Catalog,Profile control
     class CDEF,SSP impl
     class SAP,SAR,POAM assess
     class Org,AB enterprise
-    class ExtCatalog external
+    class ControlMapping mapping
+    class Sources sources
     </div>
   </div>
 </div>
