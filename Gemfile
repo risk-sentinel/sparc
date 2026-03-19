@@ -23,7 +23,7 @@ gem "roo-xls", "~> 2.0.0"          # .xls support
 gem "rubyzip", "~> 3.2.2"          # ZIP file handling
 gem "activerecord-import"           # Bulk imports
 gem "caxlsx", "~> 4.1"             # Excel .xlsx generation
-gem "pagy", "~> 43.3"              # Pagination
+gem "pagy", "~> 43.4"              # Pagination
 gem "sidekiq"                       # Background jobs
 gem "redis", "~> 5.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
@@ -31,7 +31,7 @@ gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 gem "dotenv-rails", require: false, groups: [ :development, :test ]
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.22"
 
 # ── Authentication ──────────────────────────────────────────────────────────
 gem "omniauth", "~> 2.1"                       # OAuth/OIDC foundation
