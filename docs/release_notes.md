@@ -4,6 +4,48 @@
 
 ---
 
+## 2026-03-19 -- OSCAL Data Mapping Documentation & Guidance (#133)
+
+**Branch:** `feature/133_oscal_data_mapping_docs`
+
+### Summary
+
+Comprehensive documentation for OSCAL data mappings across all document types. Creates
+a master guide and per-document field mapping references for SSP, SAR, SAP, POA&M, and
+CDEF, covering the full import-to-export pipeline.
+
+### What Changed
+
+- **Master guide** (`docs/oscal-data-mapping.md`) -- central reference covering the
+  transformation pipeline, document type reference table, three-level model architecture,
+  data mapping config files, schema validation, developer guide for adding fields, and
+  common validation error troubleshooting
+- **SSP mapping** (`docs/data_mapping/ssp.md`) -- field-level mappings for
+  system-security-plan including system characteristics, components, users, controls
+- **SAR mapping** (`docs/data_mapping/sar.md`) -- enriched vs synthesized export paths,
+  results/observations/findings/risks model
+- **SAP mapping** (`docs/data_mapping/sap.md`) -- assessment-plan field mappings with
+  method assignment (examine/interview/test)
+- **POA&M mapping** (`docs/data_mapping/poam.md`) -- plan-of-action-and-milestones with
+  PoamItem model (risk status, milestones, remediation)
+- **CDEF mapping** (`docs/data_mapping/cdef.md`) -- component-definition with multiple
+  import formats (OSCAL, XCCDF/STIG, InSpec)
+
+### Files Created (6)
+
+- `docs/oscal-data-mapping.md`
+- `docs/data_mapping/ssp.md`
+- `docs/data_mapping/sar.md`
+- `docs/data_mapping/sap.md`
+- `docs/data_mapping/poam.md`
+- `docs/data_mapping/cdef.md`
+
+### Verification
+
+- Documentation only -- no code changes, no test regressions
+
+---
+
 ## 2026-03-19 -- Enterprise/Organization Visibility and Navigation (#167)
 
 **Branch:** `feature/167_enterprise_org_visibility`
