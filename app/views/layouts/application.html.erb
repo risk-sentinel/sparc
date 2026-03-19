@@ -30,7 +30,7 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
     <script>
       document.addEventListener("DOMContentLoaded", function() {
-        if (typeof mermaid !== "undefined") { mermaid.initialize({ startOnLoad: false, theme: "dark" }); mermaid.run(); }
+        if (typeof mermaid !== "undefined") { mermaid.initialize({ startOnLoad: false, theme: "base", themeVariables: { primaryColor: "#3498db", primaryTextColor: "#fff", primaryBorderColor: "#2980b9", lineColor: "#bdc3c7", secondaryColor: "#27ae60", tertiaryColor: "#e67e22", background: "#1e1e2e", mainBkg: "#2c3e50", nodeBorder: "#bdc3c7", clusterBkg: "rgba(255,255,255,0.05)", clusterBorder: "rgba(255,255,255,0.2)", titleColor: "#ecf0f1", edgeLabelBackground: "#2c3e50" } }); mermaid.run(); }
       });
       document.addEventListener("turbo:load", function() {
         if (typeof mermaid !== "undefined" && document.querySelector(".mermaid")) { mermaid.run(); }
