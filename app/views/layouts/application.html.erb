@@ -112,15 +112,21 @@
                 </ul>
               </li>
 
-              <%# ── Auth Boundaries (dropdown with user's boundaries) ── %>
+              <%# ── Enterprise (Auth Boundaries dropdown) ── %>
               <% if signed_in? %>
                 <% boundaries = nav_authorization_boundaries %>
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-boundaries" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Auth Boundaries
+                    Enterprise
                   </a>
                   <ul class="dropdown-menu sparc-dropdown-menu">
-                    <li class="sparc-dropdown-header sparc-dropdown-header-boundaries">Authorization Boundaries</li>
+                    <li class="sparc-dropdown-header sparc-dropdown-header-boundaries">Enterprise</li>
+                    <li><%= link_to admin_organizations_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+                      <span>&#127970;</span> Organizations
+                      <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;"><%= Organization.count %></span>
+                    <% end %></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="sparc-dropdown-header" style="font-size: 0.7rem; padding: 0.25rem 1rem; color: rgba(255,255,255,0.5);">Authorization Boundaries</li>
                     <% if boundaries.any? %>
                       <% boundaries.each do |ab| %>
                         <li><%= link_to authorization_boundary_path(ab), class: "dropdown-item d-flex align-items-center justify-content-between gap-2" do %>
@@ -136,7 +142,7 @@
                       <li><hr class="dropdown-divider"></li>
                     <% end %>
                     <li><%= link_to authorization_boundaries_path, class: "dropdown-item" do %>
-                      <span class="sparc-dropdown-icon">&#128203;</span> View All
+                      <span class="sparc-dropdown-icon">&#128203;</span> View All Boundaries
                     <% end %></li>
                   </ul>
                 </li>
