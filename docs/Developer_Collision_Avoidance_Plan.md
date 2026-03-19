@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-03-18
+**Last updated:** 2026-03-19
 
 ---
 
@@ -146,7 +146,7 @@ Sprint 3b (weeks 3-6):
 | ------ | ----- | ------ | -------------- | -------------- |
 | [x] | **#133** Mapping docs -- **COMPLETED 2026-03-19** | Documentation | `docs/oscal-data-mapping.md`, `docs/data_mapping/{ssp,sar,sap,poam,cdef}.md` | **NONE** remaining |
 | [x] | **#167** Enterprise nav -- **COMPLETED 2026-03-19** | UI/Navigation | `home/index.html.erb`, `application.html.erb` (nav dropdown), `home_controller.rb` | **NONE** remaining |
-| [ ] | **#171** OSCAL diagram | UI (new page) | New view file, `config/routes.rb` (1 line), layout nav link | **NONE** -- new page |
+| [x] | **#171** OSCAL diagram -- **COMPLETED 2026-03-19** | UI (new page) | `home/oscal_overview.html.erb`, `config/routes.rb`, `application.html.erb` (Mermaid CDN + nav link), `home_controller.rb` | **NONE** remaining |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -166,9 +166,9 @@ Dev C: #171 (OSCAL diagram)
 
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
-| [ ] | **#95** CRUD API | API | New `api/v1/users_controller.rb`, `api/v1/projects_controller.rb`, routes | **NONE** -- new files in API namespace |
+| [x] | **#95** CRUD API -- **COMPLETED 2026-03-19** | API | `api/v1/users_controller.rb`, `api/v1/authorization_boundaries_controller.rb`, `api/v1/base_controller.rb`, `api_authentication.rb`, `api_token.rb`, `admin/api_tokens_controller.rb`, `docs/API.md` | **NONE** remaining |
 | [x] | **#186** Hybrid security scanning -- **COMPLETED 2026-03-15** | CI/Infrastructure | `.github/workflows/security.yml`, `.github/oscal-metadata.json`, `docs/security-scanning.md` | **NONE** -- CI pipeline files only |
-| [ ] | **#183** Migration squash | Shared (DB) | `db/migrate/` (consolidate all existing into one), `db/schema.rb` | **MEDIUM** -- must coordinate timing; all in-flight migrations must merge first |
+| [x] | **#183** Migration squash -- **COMPLETED 2026-03-19** | Shared (DB) | 64 migrations archived to `db/migrate_archive/`, single squash migration in `db/migrate/` | **NONE** remaining |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -187,7 +187,47 @@ Dev C: #183 (migration squash) -- AFTER all migration PRs merge
 
 ---
 
-### Phase 6 -- FedRAMP 20x (final phase)
+### Phase 6 -- Security Remediation & Bug Fixes
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#210** Container CVE remediation | Infrastructure | `Dockerfile`, `Gemfile`, `.github/workflows/`, dependency updates | **NONE** -- infra only |
+| [ ] | **#203** Catalog count bug | Catalog | `control_catalogs_controller.rb`, `control_catalogs/index.html.erb` | **NONE** -- single view fix |
+| [ ] | **#205** Profile import flexibility | Profile | `profile_json_parser_service.rb`, publish validation | **NONE** -- parser domain |
+
+<!-- markdownlint-enable MD013 -->
+
+---
+
+### Phase 7 -- OSCAL Import Quality & Traceability
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#207** Import quality reporting | Catalog | `catalog_import_service.rb`, import views, validation UI | **NONE** with #213 |
+| [ ] | **#213** XCCDF ID mapping to NIST | CDEF/Converters | `cdef_xccdf_parser_service.rb`, converter logic | **NONE** with #207 |
+| [ ] | **#217** Rev 5 mapping docs | Documentation | `docs/` directory | **NONE** -- docs only |
+
+<!-- markdownlint-enable MD013 -->
+
+---
+
+### Phase 8 -- API Expansion
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#229** Full OSCAL API CRUD | API | New `api/v1/*_controller.rb` for each document type, routes | **NONE** -- API namespace isolated |
+
+<!-- markdownlint-enable MD013 -->
+
+---
+
+### Phase 9 -- FedRAMP 20x (final phase)
 
 <!-- markdownlint-disable MD013 -->
 
@@ -198,14 +238,14 @@ Dev C: #183 (migration squash) -- AFTER all migration PRs merge
 
 <!-- markdownlint-enable MD013 -->
 
-**Phase 6 Strategy:** #107 ships first (defines the FedRAMP schema
+**Phase 9 Strategy:** #107 ships first (defines the FedRAMP schema
 and models), then #108 follows (populates sample/seed data that
 depends on #107's schema). All core SPARC functionality from
-Phases 1-5 is complete before FedRAMP extensions begin.
+Phases 1-8 is complete before FedRAMP extensions begin.
 
 ```text
-Dev A: #107 (FedRAMP 20x)          -- Phase 6a
-Dev B: #108 (sample data)          -- Phase 6b, AFTER #107 merges
+Dev A: #107 (FedRAMP 20x)          -- Phase 9a
+Dev B: #108 (sample data)          -- Phase 9b, AFTER #107 merges
 ```
 
 > **Critical rule:** #107 must merge before #108 starts

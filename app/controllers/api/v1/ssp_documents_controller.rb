@@ -1,8 +1,6 @@
 module Api
   module V1
-    class SspDocumentsController < ApplicationController
-      skip_before_action :verify_authenticity_token
-
+    class SspDocumentsController < ActionController::API
       def convert
         uploaded_file = params[:excel_file]
 

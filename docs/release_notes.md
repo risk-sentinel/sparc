@@ -4,6 +4,98 @@
 
 ---
 
+## 2026-03-19 -- Squash Migrations to Single Consolidated File (#183)
+
+**Branch:** `feature/183_squash_migrations`
+
+### Summary
+
+Consolidates all 64 database migrations into a single squash migration file.
+Prior migrations archived to `db/migrate_archive/` for reference. New environments
+should use `bin/rails db:schema:load` (recommended) or `bin/rails db:migrate`.
+
+### What Changed
+
+- **Squash migration** (`20260319100000_squash_migrations_to_current_schema.rb`) --
+  loads the complete schema from `db/schema.rb` in a single migration
+- **64 archived migrations** moved to `db/migrate_archive/` (preserved for reference)
+- Fresh `db:drop db:create db:migrate` creates identical schema from one migration
+
+### Verification
+
+- 1138 RSpec examples, 0 failures (on fresh database from squash)
+
+---
+
+## 2026-03-19 -- Full CRUD API for Users and Authorization Boundaries (#95)
+
+**Branch:** `feature/95_crud_api`
+
+### Summary
+
+Adds REST API endpoints for Users and Authorization Boundaries under `/api/v1/`
+with Bearer token authentication, RBAC enforcement, and admin token management UI.
+
+### What Changed
+
+- **API Token Authentication** -- new `api_tokens` table with SHA-256 digest storage,
+  `ApiToken` model with secure generation/authentication, `ApiAuthentication` concern
+  for Bearer token extraction from Authorization header
+- **API Base Controller** -- shared auth, RBAC, JSON error handling, pagination via pagy
+- **Users API** (`/api/v1/users`) -- full CRUD with admin-or-self RBAC, paginated list
+  with email/name/status filters, detailed view with roles and sign-in history
+- **Authorization Boundaries API** (`/api/v1/authorization_boundaries`) -- full CRUD
+  with boundary-scoped permissions, non-admins see only assigned boundaries, detailed
+  view with artifact summary and environments
+- **Admin Token Management** -- generate/revoke API tokens on admin user show page,
+  plaintext shown once at creation, optional expiry (30/60/90 days)
+- **docs/API.md** -- comprehensive endpoint reference with curl examples
+
+### Files Created (7)
+
+- `db/migrate/20260319000000_create_api_tokens.rb`
+- `app/models/api_token.rb`
+- `app/controllers/concerns/api_authentication.rb`
+- `app/controllers/api/v1/base_controller.rb`
+- `app/controllers/api/v1/users_controller.rb`
+- `app/controllers/api/v1/authorization_boundaries_controller.rb`
+- `app/controllers/admin/api_tokens_controller.rb`
+
+### Verification
+
+- 1138 RSpec examples, 0 failures
+
+---
+
+## 2026-03-19 -- Interactive OSCAL Document Relationship Diagram (#171)
+
+**Branch:** `feature/171_oscal_relationship_diagram`
+
+### Summary
+
+Adds an interactive Mermaid.js-based OSCAL document relationship diagram to the
+application, accessible at `/oscal-overview` via the "OSCAL" nav link. The diagram
+visually maps all three OSCAL layers (Control, Implementation, Assessment) plus the
+Enterprise layer, showing import/traceability relationships between document types.
+
+### What Changed
+
+- **OSCAL Overview page** -- new `/oscal-overview` route with Mermaid flowchart showing
+  Catalog, Profile, CDEF, SSP, SAP, SAR, POA&M, Control Mapping, Organization, and
+  Authorization Boundary relationships with color-coded layer grouping
+- **Mermaid.js CDN** -- conditionally loaded only on pages that request it via
+  `content_for :mermaid` (no JS overhead on other pages)
+- **Layer description cards** -- three-column summary explaining Control, Implementation,
+  and Assessment layers
+- **Quick navigation** -- links to all document type index pages
+- **Nav link** -- "OSCAL" link added to top navigation bar (desktop only)
+
+### Verification
+
+- 1110 RSpec examples, 0 failures
+
+---
+
 ## 2026-03-19 -- OSCAL Data Mapping Documentation & Guidance (#133)
 
 **Branch:** `feature/133_oscal_data_mapping_docs`
