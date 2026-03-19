@@ -1,0 +1,138 @@
+<% content_for :mermaid, true %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>OSCAL Document Relationship Overview</h2>
+  <%= link_to "Back to Dashboard", root_path, class: "btn btn-outline-primary btn-sm" %>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <p class="text-body-secondary mb-3">
+      This diagram shows how OSCAL document types connect across the three main layers
+      (Control, Implementation, Assessment) and how external framework mappings integrate
+      into the control ecosystem. Arrows indicate import and traceability relationships.
+    </p>
+
+    <div class="mermaid">
+flowchart TB
+    subgraph CL["<b>Control Layer</b>"]
+        direction TB
+        ExtCatalog["External Catalog<br/><small>(e.g., ISO 27001, CIS)</small>"]
+        Catalog["<b>Control Catalog</b><br/><small>(e.g., NIST SP 800-53)</small>"]
+        ControlMapping["<b>Control Mapping</b><br/><small>(Relationships: equivalent,<br/>subset, superset, intersects)</small>"]
+        Profile["<b>Profile / Baseline</b><br/><small>(Tailored control selection<br/>+ parameter values)</small>"]
+    end
+
+    subgraph IL["<b>Implementation Layer</b>"]
+        direction TB
+        CDEF["<b>Component Definition</b><br/><small>(Reusable security<br/>implementations per component)</small>"]
+        SSP["<b>System Security Plan</b><br/><small>(System characteristics,<br/>control implementations,<br/>components, inventory)</small>"]
+    end
+
+    subgraph AL["<b>Assessment Layer</b>"]
+        direction TB
+        SAP["<b>Assessment Plan</b><br/><small>(Scope, methods, schedule,<br/>assessor assignments)</small>"]
+        SAR["<b>Assessment Results</b><br/><small>(Findings, observations,<br/>risks, evidence)</small>"]
+        POAM["<b>Plan of Action &amp; Milestones</b><br/><small>(Remediation tracking,<br/>risk status, milestones)</small>"]
+    end
+
+    subgraph EL["<b>Enterprise</b>"]
+        direction TB
+        Org["<b>Organization</b>"]
+        AB["<b>Authorization Boundary</b><br/><small>(ATO Package root)</small>"]
+    end
+
+    ExtCatalog -- "Mapped via<br/>Control Mapping Model" --> ControlMapping
+    ControlMapping -- "Integrates into" --> Catalog
+    Catalog -- "Imported &amp;<br/>tailored by" --> Profile
+    Profile -- "Baseline controls<br/>imported by" --> SSP
+    Profile -- "Controls feed into" --> CDEF
+    Profile -- "Controls feed into" --> SAP
+    CDEF -- "Component implementations<br/>auto-fill" --> SSP
+    SSP -- "Assessed by" --> SAP
+    SAP -- "Produces" --> SAR
+    SAR -- "Unsatisfied findings<br/>generate" --> POAM
+    Org -- "Contains" --> AB
+    AB -- "Links to" --> SSP
+    AB -- "Links to" --> SAP
+    AB -- "Links to" --> SAR
+    AB -- "Links to" --> POAM
+
+    classDef control fill:#3498db,stroke:#2980b9,color:#fff
+    classDef impl fill:#27ae60,stroke:#229954,color:#fff
+    classDef assess fill:#e67e22,stroke:#d35400,color:#fff
+    classDef enterprise fill:#9b59b6,stroke:#8e44ad,color:#fff
+    classDef external fill:#95a5a6,stroke:#7f8c8d,color:#fff
+
+    class Catalog,Profile,ControlMapping control
+    class CDEF,SSP impl
+    class SAP,SAR,POAM assess
+    class Org,AB enterprise
+    class ExtCatalog external
+    </div>
+  </div>
+</div>
+
+<%# ── Layer Descriptions ── %>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card h-100" style="border-left: 4px solid #3498db;">
+      <div class="card-body">
+        <h5 style="color: #3498db;">Control Layer</h5>
+        <p class="text-body-secondary small mb-0">
+          Defines the security controls available for selection. <strong>Catalogs</strong> contain
+          the full control library (e.g., NIST SP 800-53). <strong>Profiles</strong> tailor a catalog
+          into a baseline by selecting controls, setting parameters, and assigning priorities.
+          <strong>Control Mappings</strong> relate controls across different frameworks
+          (e.g., NIST to ISO 27001).
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100" style="border-left: 4px solid #27ae60;">
+      <div class="card-body">
+        <h5 style="color: #27ae60;">Implementation Layer</h5>
+        <p class="text-body-secondary small mb-0">
+          Describes how controls are implemented. <strong>Component Definitions</strong> document
+          reusable security capabilities of individual components. The <strong>System Security Plan</strong>
+          combines the baseline, components, system characteristics, and per-control implementation
+          statements into the authoritative system description.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100" style="border-left: 4px solid #e67e22;">
+      <div class="card-body">
+        <h5 style="color: #e67e22;">Assessment Layer</h5>
+        <p class="text-body-secondary small mb-0">
+          Evaluates whether controls are correctly implemented. The <strong>Assessment Plan</strong>
+          defines scope, methods, and schedule. <strong>Assessment Results</strong> capture findings,
+          observations, and risks. The <strong>POA&amp;M</strong> tracks remediation of
+          unsatisfied findings through milestones and status updates.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── Quick Navigation ── %>
+<div class="card">
+  <div class="card-body">
+    <h5 class="mb-3">Quick Navigation</h5>
+    <div class="d-flex flex-wrap gap-2">
+      <%= link_to "Catalogs", control_catalogs_path, class: "btn btn-outline-primary btn-sm" %>
+      <%= link_to "Profiles", profile_documents_path, class: "btn btn-outline-primary btn-sm" %>
+      <%= link_to "Mappings", control_mappings_path, class: "btn btn-outline-primary btn-sm" %>
+      <%= link_to "CDEFs", cdef_documents_path, class: "btn btn-outline-success btn-sm" %>
+      <%= link_to "SSPs", ssp_documents_path, class: "btn btn-outline-success btn-sm" %>
+      <%= link_to "SAPs", sap_documents_path, class: "btn btn-outline-warning btn-sm" %>
+      <%= link_to "SARs", sar_documents_path, class: "btn btn-outline-warning btn-sm" %>
+      <%= link_to "POA&Ms", poam_documents_path, class: "btn btn-outline-warning btn-sm" %>
+      <%= link_to "Evidence", evidences_path, class: "btn btn-outline-warning btn-sm" %>
+      <%= link_to "Organizations", admin_organizations_path, class: "btn btn-outline-secondary btn-sm" %>
+      <%= link_to "Auth Boundaries", authorization_boundaries_path, class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+  </div>
+</div>

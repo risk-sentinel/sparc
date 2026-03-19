@@ -146,7 +146,7 @@ Sprint 3b (weeks 3-6):
 | ------ | ----- | ------ | -------------- | -------------- |
 | [x] | **#133** Mapping docs -- **COMPLETED 2026-03-19** | Documentation | `docs/oscal-data-mapping.md`, `docs/data_mapping/{ssp,sar,sap,poam,cdef}.md` | **NONE** remaining |
 | [x] | **#167** Enterprise nav -- **COMPLETED 2026-03-19** | UI/Navigation | `home/index.html.erb`, `application.html.erb` (nav dropdown), `home_controller.rb` | **NONE** remaining |
-| [ ] | **#171** OSCAL diagram | UI (new page) | New view file, `config/routes.rb` (1 line), layout nav link | **NONE** -- new page |
+| [x] | **#171** OSCAL diagram -- **COMPLETED 2026-03-19** | UI (new page) | `home/oscal_overview.html.erb`, `config/routes.rb`, `application.html.erb` (Mermaid CDN + nav link), `home_controller.rb` | **NONE** remaining |
 
 <!-- markdownlint-enable MD013 -->
 

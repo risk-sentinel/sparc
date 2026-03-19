@@ -26,6 +26,12 @@
         across Turbo Drive navigations and is always available before turbo:load fires %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous" defer></script>
 
+    <%# Mermaid.js for OSCAL relationship diagrams %>
+    <% if content_for?(:mermaid) %>
+      <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+      <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+    <% end %>
+
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "sparc-theme", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
@@ -49,6 +55,12 @@
             <%# ── Home ── %>
             <li class="nav-item">
               <%= link_to "Home", root_path, class: "nav-link sparc-nav-btn" %>
+            </li>
+
+            <%# ── OSCAL Overview ── %>
+            <li class="nav-item d-none d-lg-block">
+              <%= link_to "OSCAL", oscal_overview_path, class: "nav-link sparc-nav-btn",
+                    title: "OSCAL Document Relationship Overview" %>
             </li>
 
             <%# ── Controls Layer (blue — always visible) ── %>
