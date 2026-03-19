@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-03-19 -- Squash Migrations to Single Consolidated File (#183)
+
+**Branch:** `feature/183_squash_migrations`
+
+### Summary
+
+Consolidates all 64 database migrations into a single squash migration file.
+Prior migrations archived to `db/migrate_archive/` for reference. New environments
+should use `bin/rails db:schema:load` (recommended) or `bin/rails db:migrate`.
+
+### What Changed
+
+- **Squash migration** (`20260319100000_squash_migrations_to_current_schema.rb`) --
+  loads the complete schema from `db/schema.rb` in a single migration
+- **64 archived migrations** moved to `db/migrate_archive/` (preserved for reference)
+- Fresh `db:drop db:create db:migrate` creates identical schema from one migration
+
+### Verification
+
+- 1138 RSpec examples, 0 failures (on fresh database from squash)
+
+---
+
 ## 2026-03-19 -- Full CRUD API for Users and Authorization Boundaries (#95)
 
 **Branch:** `feature/95_crud_api`
