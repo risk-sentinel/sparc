@@ -88,7 +88,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 - [ ] #107 -- Expand to support FedRAMP 20x framework
 - [ ] #108 -- Expand sample data for FedRAMP 20x + traditional NIST 800-53
-- [ ] #133 -- Documentation & guidance for building OSCAL data mapping files
+- [x] #133 -- Documentation & guidance for building OSCAL data mapping files -- **COMPLETED 2026-03-19**
 
 ### 6. UI/UX & Navigation Improvements
 
@@ -237,7 +237,7 @@ Sprint 3b (weeks 3-6):
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #133 | OSCAL data mapping documentation & guidance | MEDIUM | None |
+| [x] | #133 | OSCAL data mapping documentation & guidance -- **COMPLETED 2026-03-19** | MEDIUM | None |
 | [x] | #167 | Enterprise/Organization visibility & navigation -- **COMPLETED 2026-03-19** | MEDIUM | None |
 | [ ] | #171 | Mermaid OSCAL relationship diagram | MEDIUM | None |
 
