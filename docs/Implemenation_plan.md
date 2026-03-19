@@ -98,7 +98,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 7. API & Backend Enhancements
 
-- [ ] #95 -- Full CRUD API endpoints for Users and Projects (server mode only)
+- [x] #95 -- Full CRUD API endpoints for Users and Projects (server mode only) -- **COMPLETED 2026-03-19**
 
 ### 8. DISA STIG & Framework Mapping
 
@@ -264,7 +264,7 @@ Dev C: #171 (OSCAL diagram)
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #95 | Versioned REST API for Users/Projects with RBAC | MEDIUM | None |
+| [x] | #95 | Versioned REST API for Users/Projects with RBAC -- **COMPLETED 2026-03-19** | MEDIUM | None |
 | [x] | #186 | Hybrid security scanning CI (Trivy + SAST + SAF CLI + HDF output) -- **COMPLETED 2026-03-15** | MEDIUM | None |
 | [ ] | #183 | Squash all migrations into single consolidated file | LOW | AFTER all migration PRs merge |
 

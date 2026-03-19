@@ -62,7 +62,7 @@ class CatalogControlsController < ApplicationController
         line = line.strip
         next if line.blank?
 
-        control_id, title = line.split(/\s*[|,]\s*/, 2)
+        control_id, title = line.split(/[|,]/, 2).map(&:strip)
         control_id = control_id.to_s.strip
         title = title.to_s.strip.presence
 
