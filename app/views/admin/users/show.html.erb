@@ -130,6 +130,69 @@
     </div>
   </div>
 
+  <%# ── API Tokens ────────────────────────────────────────── %>
+  <div class="card mt-4">
+    <div class="card-header fw-semibold">API Tokens</div>
+    <div class="card-body">
+      <% if flash[:api_token].present? %>
+        <div class="alert alert-success" role="alert">
+          <strong>New API Token:</strong>
+          <code class="user-select-all"><%= flash[:api_token] %></code>
+          <br><small>Copy this token now — it will not be shown again.</small>
+        </div>
+      <% end %>
+
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Created</th>
+              <th>Last Used</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @user.api_tokens.order(created_at: :desc).each do |token| %>
+              <tr>
+                <td><%= token.name %></td>
+                <td class="small"><%= token.created_at.strftime("%Y-%m-%d %H:%M UTC") %></td>
+                <td class="small"><%= token.last_used_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></td>
+                <td>
+                  <%= button_to "Revoke", admin_user_api_token_path(@user, token),
+                        method: :delete,
+                        class: "btn btn-sm btn-outline-danger",
+                        data: { turbo_confirm: "Revoke token '#{token.name}'?" } %>
+                </td>
+              </tr>
+            <% end %>
+            <% if @user.api_tokens.empty? %>
+              <tr><td colspan="4" class="text-center text-body-secondary small py-3">No API tokens.</td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <hr>
+
+      <%= form_with url: admin_user_api_tokens_path(@user), method: :post, class: "row g-2 align-items-end" do |f| %>
+        <div class="col-auto">
+          <%= f.label :name, "Token Name", class: "form-label small" %>
+          <%= f.text_field :name, class: "form-control form-control-sm", placeholder: "e.g. CI Pipeline",
+                name: "api_token[name]" %>
+        </div>
+        <div class="col-auto">
+          <%= f.label :expires_in_days, "Expires", class: "form-label small" %>
+          <%= f.select :expires_in_days, [["30 days", 30], ["60 days", 60], ["90 days", 90], ["Never", 0]],
+                {}, { class: "form-select form-select-sm", name: "api_token[expires_in_days]" } %>
+        </div>
+        <div class="col-auto">
+          <%= f.submit "Generate Token", class: "btn btn-sm btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
   <%# ── Audit Events ──────────────────────────────────────── %>
   <div class="card mt-4">
     <div class="card-header fw-semibold">Recent Activity</div>
