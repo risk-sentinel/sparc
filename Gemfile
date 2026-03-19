@@ -31,7 +31,7 @@ gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 gem "dotenv-rails", require: false, groups: [ :development, :test ]
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.22"
 
 # ── Authentication ──────────────────────────────────────────────────────────
 gem "omniauth", "~> 2.1"                       # OAuth/OIDC foundation
