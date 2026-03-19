@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 MD060 -->
+
 # Catalog Data fields and relationship
 
 ```mermaid
