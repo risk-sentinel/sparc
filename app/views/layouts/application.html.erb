@@ -26,11 +26,16 @@
         across Turbo Drive navigations and is always available before turbo:load fires %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous" defer></script>
 
-    <%# Mermaid.js for OSCAL relationship diagrams %>
-    <% if content_for?(:mermaid) %>
-      <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-      <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
-    <% end %>
+    <%# Mermaid.js for OSCAL relationship diagrams (loaded on all pages, ~200KB gzipped, renders only .mermaid elements) %>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        if (typeof mermaid !== "undefined") { mermaid.initialize({ startOnLoad: false, theme: "dark" }); mermaid.run(); }
+      });
+      document.addEventListener("turbo:load", function() {
+        if (typeof mermaid !== "undefined" && document.querySelector(".mermaid")) { mermaid.run(); }
+      });
+    </script>
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "sparc-theme", "data-turbo-track": "reload" %>
