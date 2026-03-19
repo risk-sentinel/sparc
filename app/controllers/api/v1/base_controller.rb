@@ -1,15 +1,15 @@
 # Base controller for all API v1 endpoints.
 #
+# Inherits from ActionController::API (not ApplicationController) to
+# avoid CSRF, session, cookies, and other browser-specific middleware.
 # Provides Bearer token authentication, RBAC authorization,
 # JSON error handling, and pagination helpers.
 #
-class Api::V1::BaseController < ApplicationController
+class Api::V1::BaseController < ActionController::API
   include ApiAuthentication
   include Authorization
   include Pagy::Method
 
-  protect_from_forgery with: :null_session
-  skip_before_action :require_authentication
   before_action :authenticate_api_token!
 
   rescue_from ActiveRecord::RecordNotFound do |e|
@@ -37,5 +37,18 @@ class Api::V1::BaseController < ApplicationController
         items: pagy.limit
       }
     }
+  end
+
+  # Provide audit_log helper since we're not inheriting from ApplicationController
+  def audit_log(action, subject: nil, metadata: {})
+    AuditEvent.create(
+      action: action,
+      user: current_user,
+      subject: subject,
+      metadata: metadata,
+      ip_address: request.remote_ip
+    )
+  rescue => e
+    Rails.logger.warn("Audit log failed: #{e.message}")
   end
 end

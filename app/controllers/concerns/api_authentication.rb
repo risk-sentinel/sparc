@@ -47,11 +47,10 @@ module ApiAuthentication
   end
 
   def extract_bearer_token
-    header = request.headers["Authorization"]
-    return nil unless header.present?
+    header = request.headers["Authorization"].to_s
+    return nil unless header.downcase.start_with?("bearer ")
 
-    match = header.match(/\ABearer\s+(.+)\z/i)
-    match&.[](1)
+    header[7..].strip.presence
   end
 
   def current_user
