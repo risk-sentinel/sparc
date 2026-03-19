@@ -316,7 +316,7 @@ GEM
       validate_url
       webfinger (~> 2.0)
     ostruct (0.6.3)
-    pagy (43.3.3)
+    pagy (43.4.1)
       json
       uri
       yaml
@@ -602,7 +602,7 @@ DEPENDENCIES
   omniauth-gitlab (~> 4.0)
   omniauth-rails_csrf_protection (~> 2.0)
   omniauth_openid_connect (~> 0.8)
-  pagy (~> 43.3)
+  pagy (~> 43.4)
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
