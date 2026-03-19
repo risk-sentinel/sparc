@@ -188,7 +188,7 @@ GEM
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
     jmespath (1.6.2)
-    json (2.19.1)
+    json (2.19.2)
     json-jwt (1.17.0)
       activesupport (>= 4.2)
       aes_key_wrap
@@ -206,7 +206,7 @@ GEM
       simpleidn (~> 0.2)
     jwt (3.1.2)
       base64
-    kamal (2.10.1)
+    kamal (2.11.0)
       activesupport (>= 7.0)
       base64 (~> 0.2)
       bcrypt_pbkdf (~> 1.0)
@@ -258,7 +258,7 @@ GEM
       net-ssh (>= 5.0.0, < 8.0.0)
     net-smtp (0.5.1)
       net-protocol
-    net-ssh (7.3.0)
+    net-ssh (7.3.1)
     nio4r (2.7.5)
     nokogiri (1.19.1-aarch64-linux-gnu)
       racc (~> 1.4)
@@ -316,7 +316,7 @@ GEM
       validate_url
       webfinger (~> 2.0)
     ostruct (0.6.3)
-    pagy (43.3.3)
+    pagy (43.4.1)
       json
       uri
       yaml
@@ -602,7 +602,7 @@ DEPENDENCIES
   omniauth-gitlab (~> 4.0)
   omniauth-rails_csrf_protection (~> 2.0)
   omniauth_openid_connect (~> 0.8)
-  pagy (~> 43.3)
+  pagy (~> 43.4)
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
