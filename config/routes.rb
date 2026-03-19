@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   root "home#index"
+  get "oscal-overview", to: "home#oscal_overview", as: :oscal_overview
 
   # ── Authentication ────────────────────────────────────────────────────
   get    "login",  to: "sessions#new",     as: :login
@@ -238,6 +239,7 @@ Rails.application.routes.draw do
         patch :reactivate
         patch :deactivate
       end
+      resources :api_tokens, only: [ :create, :destroy ], controller: "api_tokens"
     end
     resources :roles
     resources :audit_logs, only: [ :index, :show ]
@@ -278,6 +280,10 @@ Rails.application.routes.draw do
           get :export
         end
       end
+
+      # CRUD API endpoints (#95)
+      resources :users, only: [ :index, :show, :create, :update, :destroy ]
+      resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ]
     end
   end
 end

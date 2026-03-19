@@ -22,4 +22,7 @@ class HomeController < ApplicationController
     @organization_count = Organization.count
     @authorization_boundary_count = AuthorizationBoundary.count
   end
+
+  def oscal_overview
+  end
 end
