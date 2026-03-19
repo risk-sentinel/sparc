@@ -110,7 +110,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 10. Database Maintenance
 
-- [ ] #183 -- Squash accumulated migrations into a single consolidated migration file
+- [x] #183 -- Squash accumulated migrations into a single consolidated migration file -- **COMPLETED 2026-03-19**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -266,7 +266,7 @@ Dev C: #171 (OSCAL diagram)
 | ------ | ----- | ----------- | -------- | ------------ |
 | [x] | #95 | Versioned REST API for Users/Projects with RBAC -- **COMPLETED 2026-03-19** | MEDIUM | None |
 | [x] | #186 | Hybrid security scanning CI (Trivy + SAST + SAF CLI + HDF output) -- **COMPLETED 2026-03-15** | MEDIUM | None |
-| [ ] | #183 | Squash all migrations into single consolidated file | LOW | AFTER all migration PRs merge |
+| [x] | #183 | Squash all migrations into single consolidated file -- **COMPLETED 2026-03-19** | LOW | AFTER all migration PRs merge |
 
 <!-- markdownlint-enable MD013 -->
 
