@@ -1,0 +1,153 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>OSCAL Document Relationship Overview</h2>
+  <%= link_to "Back to Dashboard", root_path, class: "btn btn-outline-primary btn-sm" %>
+</div>
+
+<%# ── Quick Navigation ── %>
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="mb-3">Quick Navigation</h5>
+    <div class="d-flex flex-wrap gap-2">
+      <%= link_to "Catalogs", control_catalogs_path, class: "btn btn-outline-primary btn-sm" %>
+      <%= link_to "Profiles", profile_documents_path, class: "btn btn-outline-primary btn-sm" %>
+      <%= link_to "Mappings", control_mappings_path, class: "btn btn-outline-primary btn-sm" %>
+      <%= link_to "CDEFs", cdef_documents_path, class: "btn btn-outline-success btn-sm" %>
+      <%= link_to "SSPs", ssp_documents_path, class: "btn btn-outline-success btn-sm" %>
+      <%= link_to "SAPs", sap_documents_path, class: "btn btn-outline-warning btn-sm" %>
+      <%= link_to "SARs", sar_documents_path, class: "btn btn-outline-warning btn-sm" %>
+      <%= link_to "POA&Ms", poam_documents_path, class: "btn btn-outline-warning btn-sm" %>
+      <%= link_to "Evidence", evidences_path, class: "btn btn-outline-warning btn-sm" %>
+      <%= link_to "Organizations", admin_organizations_path, class: "btn btn-outline-secondary btn-sm" %>
+      <%= link_to "Auth Boundaries", authorization_boundaries_path, class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+  </div>
+</div>
+
+<%# ── Layer Descriptions ── %>
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card h-100" style="border-left: 4px solid #3498db;">
+      <div class="card-body">
+        <h5 style="color: #3498db;">Control Layer</h5>
+        <p class="text-body-secondary small mb-0">
+          Defines the security controls available for selection. <strong>Catalogs</strong> contain
+          the full control library (e.g., NIST SP 800-53). <strong>Profiles</strong> tailor a catalog
+          into a baseline by selecting controls, setting parameters, and assigning priorities.
+          <strong>Control Mappings</strong> relate controls across different frameworks.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100" style="border-left: 4px solid #27ae60;">
+      <div class="card-body">
+        <h5 style="color: #27ae60;">Implementation Layer</h5>
+        <p class="text-body-secondary small mb-0">
+          Describes how controls are implemented. <strong>Component Definitions</strong> document
+          reusable security capabilities. The <strong>System Security Plan</strong> combines the
+          baseline, components, and per-control implementation statements into the authoritative
+          system description.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100" style="border-left: 4px solid #e67e22;">
+      <div class="card-body">
+        <h5 style="color: #e67e22;">Assessment Layer</h5>
+        <p class="text-body-secondary small mb-0">
+          Evaluates whether controls are correctly implemented. The <strong>Assessment Plan</strong>
+          defines scope and methods. <strong>Assessment Results</strong> capture findings and risks.
+          The <strong>POA&amp;M</strong> tracks remediation through milestones and status updates.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100" style="border-left: 4px solid #8e44ad;">
+      <div class="card-body">
+        <h5 style="color: #8e44ad;">Enterprise</h5>
+        <p class="text-body-secondary small mb-0">
+          <strong>Organizations</strong> represent the enterprise structure.
+          <strong>Authorization Boundaries</strong> define the ATO package scope and link all
+          OSCAL documents together for export as a complete authorization package.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── Mermaid Diagram ── %>
+<div class="card">
+  <div class="card-body">
+    <h5 class="mb-3">Document Relationship Map</h5>
+    <p class="text-body-secondary small mb-3">
+      Arrows indicate import and traceability relationships between OSCAL document types.
+    </p>
+
+    <div class="mermaid">
+flowchart TB
+    subgraph CL["Control Layer"]
+        direction TB
+        Catalog["Control Catalog<br/><small>(e.g., NIST SP 800-53)</small>"]
+        Profile["Profile / Baseline<br/><small>(Tailored control selection<br/>+ parameter values)</small>"]
+    end
+
+    subgraph ML["Control Mapping (optional)"]
+        direction TB
+        Sources["Disparate Sources<br/><small>(Standards, regulations,<br/>frameworks, guidelines)</small>"]
+        ControlMapping["Control Mapping<br/><small>(Relationships: equivalent,<br/>subset, superset, intersects)</small>"]
+    end
+
+    subgraph IL["Implementation Layer"]
+        direction TB
+        CDEF["Component Definition<br/><small>(Reusable security<br/>implementations)</small>"]
+        SSP["System Security Plan<br/><small>(System characteristics,<br/>control implementations)</small>"]
+    end
+
+    subgraph AL["Assessment Layer"]
+        direction TB
+        SAP["Assessment Plan<br/><small>(Scope, methods, schedule)</small>"]
+        SAR["Assessment Results<br/><small>(Findings, observations,<br/>risks, evidence)</small>"]
+        POAM["Plan of Action &amp; Milestones<br/><small>(Remediation tracking)</small>"]
+    end
+
+    subgraph EL["Enterprise"]
+        direction TB
+        Org["Organization"]
+        AB["Authorization Boundary<br/><small>(ATO Package root)</small>"]
+    end
+
+    Catalog -- "Imported &amp;<br/>tailored by" --> Profile
+    Sources -. "Source &amp; target<br/>catalogs/profiles" .-> ControlMapping
+    ControlMapping -. "Maps relationships<br/>between controls" .-> Catalog
+    ControlMapping -. "Maps relationships<br/>between controls" .-> Profile
+    Profile -- "Baseline controls<br/>imported by" --> SSP
+    Profile -- "Controls feed into" --> CDEF
+    Profile -- "Controls feed into" --> SAP
+    CDEF -- "Component implementations<br/>auto-fill" --> SSP
+    SSP -- "Assessed by" --> SAP
+    SAP -- "Produces" --> SAR
+    SAR -- "Unsatisfied findings<br/>generate" --> POAM
+    Org -- "Contains" --> AB
+    AB -- "Links to" --> SSP
+    AB -- "Links to" --> SAP
+    AB -- "Links to" --> SAR
+    AB -- "Links to" --> POAM
+
+    classDef control fill:#1a3348,stroke:#3498db,stroke-width:1px,color:#85c1e9
+    classDef impl fill:#1a3a2a,stroke:#27ae60,stroke-width:1px,color:#82e0aa
+    classDef assess fill:#3a2510,stroke:#e67e22,stroke-width:1px,color:#f0b27a
+    classDef enterprise fill:#2a1a3a,stroke:#8e44ad,stroke-width:1px,color:#bb8fce
+    classDef mapping fill:#2c3340,stroke:#f39c12,stroke-width:1px,color:#f9e79f
+    classDef sources fill:#2c3e50,stroke:#5d6d7e,stroke-width:1px,color:#aab7b8
+
+    class Catalog,Profile control
+    class CDEF,SSP impl
+    class SAP,SAR,POAM assess
+    class Org,AB enterprise
+    class ControlMapping mapping
+    class Sources sources
+    </div>
+  </div>
+</div>

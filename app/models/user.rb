@@ -22,6 +22,7 @@ class User < ApplicationRecord
   has_many :organization_memberships, dependent: :destroy
   has_many :organizations, through: :organization_memberships
   has_many :audit_events, dependent: :nullify
+  has_many :api_tokens, dependent: :destroy
 
   # ── Validations ─────────────────────────────────────────────────────────
   validates :email, presence: true,

@@ -18,7 +18,11 @@ class HomeController < ApplicationController
     @evidence_count = Evidence.count
     @poam_count     = PoamDocument.count
 
-    # Cross-cutting
+    # Enterprise
+    @organization_count = Organization.count
     @authorization_boundary_count = AuthorizationBoundary.count
+  end
+
+  def oscal_overview
   end
 end

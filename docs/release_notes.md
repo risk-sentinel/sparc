@@ -1,6 +1,221 @@
-<!-- markdownlint-disable MD024 -->
+<!-- markdownlint-disable MD013 MD024 MD060 -->
 
 # SPARC Release Notes
+
+---
+
+## 2026-03-19 -- Squash Migrations to Single Consolidated File (#183)
+
+**Branch:** `feature/183_squash_migrations`
+
+### Summary
+
+Consolidates all 64 database migrations into a single squash migration file.
+Prior migrations archived to `db/migrate_archive/` for reference. New environments
+should use `bin/rails db:schema:load` (recommended) or `bin/rails db:migrate`.
+
+### What Changed
+
+- **Squash migration** (`20260319100000_squash_migrations_to_current_schema.rb`) --
+  loads the complete schema from `db/schema.rb` in a single migration
+- **64 archived migrations** moved to `db/migrate_archive/` (preserved for reference)
+- Fresh `db:drop db:create db:migrate` creates identical schema from one migration
+
+### Verification
+
+- 1138 RSpec examples, 0 failures (on fresh database from squash)
+
+---
+
+## 2026-03-19 -- Full CRUD API for Users and Authorization Boundaries (#95)
+
+**Branch:** `feature/95_crud_api`
+
+### Summary
+
+Adds REST API endpoints for Users and Authorization Boundaries under `/api/v1/`
+with Bearer token authentication, RBAC enforcement, and admin token management UI.
+
+### What Changed
+
+- **API Token Authentication** -- new `api_tokens` table with SHA-256 digest storage,
+  `ApiToken` model with secure generation/authentication, `ApiAuthentication` concern
+  for Bearer token extraction from Authorization header
+- **API Base Controller** -- shared auth, RBAC, JSON error handling, pagination via pagy
+- **Users API** (`/api/v1/users`) -- full CRUD with admin-or-self RBAC, paginated list
+  with email/name/status filters, detailed view with roles and sign-in history
+- **Authorization Boundaries API** (`/api/v1/authorization_boundaries`) -- full CRUD
+  with boundary-scoped permissions, non-admins see only assigned boundaries, detailed
+  view with artifact summary and environments
+- **Admin Token Management** -- generate/revoke API tokens on admin user show page,
+  plaintext shown once at creation, optional expiry (30/60/90 days)
+- **docs/API.md** -- comprehensive endpoint reference with curl examples
+
+### Files Created (7)
+
+- `db/migrate/20260319000000_create_api_tokens.rb`
+- `app/models/api_token.rb`
+- `app/controllers/concerns/api_authentication.rb`
+- `app/controllers/api/v1/base_controller.rb`
+- `app/controllers/api/v1/users_controller.rb`
+- `app/controllers/api/v1/authorization_boundaries_controller.rb`
+- `app/controllers/admin/api_tokens_controller.rb`
+
+### Verification
+
+- 1138 RSpec examples, 0 failures
+
+---
+
+## 2026-03-19 -- Interactive OSCAL Document Relationship Diagram (#171)
+
+**Branch:** `feature/171_oscal_relationship_diagram`
+
+### Summary
+
+Adds an interactive Mermaid.js-based OSCAL document relationship diagram to the
+application, accessible at `/oscal-overview` via the "OSCAL" nav link. The diagram
+visually maps all three OSCAL layers (Control, Implementation, Assessment) plus the
+Enterprise layer, showing import/traceability relationships between document types.
+
+### What Changed
+
+- **OSCAL Overview page** -- new `/oscal-overview` route with Mermaid flowchart showing
+  Catalog, Profile, CDEF, SSP, SAP, SAR, POA&M, Control Mapping, Organization, and
+  Authorization Boundary relationships with color-coded layer grouping
+- **Mermaid.js CDN** -- conditionally loaded only on pages that request it via
+  `content_for :mermaid` (no JS overhead on other pages)
+- **Layer description cards** -- three-column summary explaining Control, Implementation,
+  and Assessment layers
+- **Quick navigation** -- links to all document type index pages
+- **Nav link** -- "OSCAL" link added to top navigation bar (desktop only)
+
+### Verification
+
+- 1110 RSpec examples, 0 failures
+
+---
+
+## 2026-03-19 -- OSCAL Data Mapping Documentation & Guidance (#133)
+
+**Branch:** `feature/133_oscal_data_mapping_docs`
+
+### Summary
+
+Comprehensive documentation for OSCAL data mappings across all document types. Creates
+a master guide and per-document field mapping references for SSP, SAR, SAP, POA&M, and
+CDEF, covering the full import-to-export pipeline.
+
+### What Changed
+
+- **Master guide** (`docs/oscal-data-mapping.md`) -- central reference covering the
+  transformation pipeline, document type reference table, three-level model architecture,
+  data mapping config files, schema validation, developer guide for adding fields, and
+  common validation error troubleshooting
+- **SSP mapping** (`docs/data_mapping/ssp.md`) -- field-level mappings for
+  system-security-plan including system characteristics, components, users, controls
+- **SAR mapping** (`docs/data_mapping/sar.md`) -- enriched vs synthesized export paths,
+  results/observations/findings/risks model
+- **SAP mapping** (`docs/data_mapping/sap.md`) -- assessment-plan field mappings with
+  method assignment (examine/interview/test)
+- **POA&M mapping** (`docs/data_mapping/poam.md`) -- plan-of-action-and-milestones with
+  PoamItem model (risk status, milestones, remediation)
+- **CDEF mapping** (`docs/data_mapping/cdef.md`) -- component-definition with multiple
+  import formats (OSCAL, XCCDF/STIG, InSpec)
+
+### Files Created (6)
+
+- `docs/oscal-data-mapping.md`
+- `docs/data_mapping/ssp.md`
+- `docs/data_mapping/sar.md`
+- `docs/data_mapping/sap.md`
+- `docs/data_mapping/poam.md`
+- `docs/data_mapping/cdef.md`
+
+### Verification
+
+- Documentation only -- no code changes, no test regressions
+
+---
+
+## 2026-03-19 -- Enterprise/Organization Visibility and Navigation (#167)
+
+**Branch:** `feature/167_enterprise_org_visibility`
+
+### Summary
+
+Adds Organization visibility to the homepage and navigation. Renames "Environments"
+to "Enterprise" throughout the UI for better semantic clarity in multi-organization
+contexts.
+
+### What Changed
+
+- **Homepage stat tiles**: "ENVIRONMENTS" badge renamed to "ENTERPRISE"; Organizations
+  count tile added alongside Auth Boundaries
+- **Homepage nav grid**: Organizations card (with View/New links to admin org pages)
+  added to the left of Auth Boundaries in the Enterprise section
+- **Nav header**: "Auth Boundaries" dropdown renamed to "Enterprise" with Organizations
+  link (including count badge) and Auth Boundaries sub-section
+
+### Verification
+
+- 1110 RSpec examples, 0 failures
+
+---
+
+## 2026-03-19 -- End-to-End ATO Authorization Package Wizard (#125)
+
+**Branch:** `feature/125_ato_wizard`
+
+### Summary
+
+Adds an 8-step guided wizard for building a complete ATO Authorization Package from
+an Authorization Boundary. Users can create new documents or select existing ones at
+each step, then download the full package as a ZIP of OSCAL JSON files. This is the
+capstone of Phase 3, tying together all OSCAL document types (Profile, CDEFs, SSP,
+SAP, SAR, POA&M) into a single traceable package.
+
+### What Changed
+
+- **ATO Package Wizard** -- 8-step single-page form with collapsible sections accessible
+  from the Authorization Boundary show page via "Build ATO Package" button. Each step
+  offers Create New / Select Existing / Skip options for its document type.
+
+- **AtoPackageService** -- orchestrates document creation and linking in a single
+  transaction. Delegates to existing services (SspWizardService, SapGeneratorService,
+  SarWizardService) for new document creation. Links all documents to the authorization
+  boundary.
+
+- **AtoPackageExportService** -- generates a ZIP bundle containing OSCAL JSON exports
+  for all linked documents (ssp.json, sap.json, sar.json, poam-N.json, cdef-slug.json)
+  plus a manifest.json with document list and per-document validation status.
+
+- **Authorization Boundary show page** -- "Build ATO Package" and "Download ATO Package"
+  buttons added to the action bar. Download button conditionally shown when documents
+  are linked.
+
+- **Wizard steps**: (1) Confirm Boundary with role warnings, (2) Select Profile,
+  (3) Select CDEFs, (4) SSP, (5) SAP, (6) SAR, (7) POA&M, (8) Review & Submit.
+
+### Files Created (5)
+
+- `app/services/ato_package_service.rb`
+- `app/services/ato_package_export_service.rb`
+- `app/views/authorization_boundaries/ato_wizard.html.erb`
+- `spec/services/ato_package_service_spec.rb`
+- `spec/services/ato_package_export_service_spec.rb`
+
+### Files Modified (4)
+
+- `app/controllers/authorization_boundaries_controller.rb` (3 new actions)
+- `app/views/authorization_boundaries/show.html.erb` (buttons)
+- `config/routes.rb` (3 new member routes)
+- `spec/requests/authorization_boundaries_spec.rb` (new request specs)
+
+### Verification
+
+- 1110 RSpec examples, 0 failures
+- RuboCop clean
 
 ---
 

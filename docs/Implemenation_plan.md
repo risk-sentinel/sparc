@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-03-18
+**Last updated:** 2026-03-19
 
 ---
 
@@ -82,23 +82,23 @@ Standard workflow for every issue in the SPARC phased roadmap:
 - [x] #172 -- Component Definition (CDEF) creation & import (incl. from Profile, validated via STIG/CCI) -- **COMPLETED 2026-03-16**
 - [x] #173 -- System Security Plan (SSP) creation & import (incl. from Profile) -- **COMPLETED 2026-03-18**
 - [x] #174 -- Security Assessment Report (SAR) creation & import (incl. from Profile/SSP, uses CDEF validations) -- **COMPLETED 2026-03-18**
-- [ ] #125 -- End-to-end wizard for complete ATO Authorization Package
+- [x] #125 -- End-to-end wizard for complete ATO Authorization Package -- **COMPLETED 2026-03-19**
 
 ### 5. Advanced OSCAL & Compliance Extensions
 
 - [ ] #107 -- Expand to support FedRAMP 20x framework
 - [ ] #108 -- Expand sample data for FedRAMP 20x + traditional NIST 800-53
-- [ ] #133 -- Documentation & guidance for building OSCAL data mapping files
+- [x] #133 -- Documentation & guidance for building OSCAL data mapping files -- **COMPLETED 2026-03-19**
 
 ### 6. UI/UX & Navigation Improvements
 
 - [x] #190 -- Login consent/warning banner modal (configurable via ENV) -- **COMPLETED 2026-03-15**
-- [ ] #167 -- Enterprise/Organization visibility & navigation for admins
-- [ ] #171 -- Interactive OSCAL document relationship diagram (Mermaid)
+- [x] #167 -- Enterprise/Organization visibility & navigation for admins -- **COMPLETED 2026-03-19**
+- [x] #171 -- Interactive OSCAL document relationship diagram (Mermaid) -- **COMPLETED 2026-03-19**
 
 ### 7. API & Backend Enhancements
 
-- [ ] #95 -- Full CRUD API endpoints for Users and Projects (server mode only)
+- [x] #95 -- Full CRUD API endpoints for Users and Projects (server mode only) -- **COMPLETED 2026-03-19**
 
 ### 8. DISA STIG & Framework Mapping
 
@@ -110,7 +110,23 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 10. Database Maintenance
 
-- [ ] #183 -- Squash accumulated migrations into a single consolidated migration file
+- [x] #183 -- Squash accumulated migrations into a single consolidated migration file -- **COMPLETED 2026-03-19**
+
+### 11. Security Remediation & Bug Fixes (New — discovered during Phases 1-5)
+
+- [ ] #210 -- Remediate container image security findings from hybrid scanning pipeline (339 CVEs, 1 suppressed SAST)
+- [ ] #203 -- Control Catalogs index: summary counts show totals instead of unique values (BUG)
+- [ ] #205 -- Accept fully resolved OSCAL profiles from NIST without prioritization requirement (BUG)
+
+### 12. OSCAL Import Quality & Traceability (New — discovered during Phases 3-4)
+
+- [ ] #207 -- Enhance Catalog/Baseline import to detect & report missing required data, priorities, and subparts
+- [ ] #213 -- Map XCCDF/InSpec SV/V IDs to NIST control IDs during CDEF import
+- [ ] #217 -- Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation details
+
+### 13. API Expansion (New — extends Phase 5 API work)
+
+- [ ] #229 -- Extend REST API for full CRUD on all OSCAL resources (Catalogs, Profiles, CDEF, Mappings, SSP, SAP, SAR, POA&M)
 
 <!-- markdownlint-enable MD013 -->
 
@@ -200,7 +216,7 @@ validation + guided ATO package generation
 | [x] | #172 | CDEF creation/import from Profile, validated via STIG/CCI mappings -- **COMPLETED 2026-03-16** | **HIGH** | AFTER #175 merges; #185 for validation |
 | [x] | #173 | SSP creation/import from Profile -- **COMPLETED 2026-03-18** | **HIGH** | AFTER #175 merges |
 | [x] | #174 | SAR creation/import from Profile or SSP (uses CDEF STIG validations) -- **COMPLETED 2026-03-18** | MEDIUM | AFTER #173 and #185 merge |
-| [ ] | #125 | Multi-step ATO wizard (all OSCAL layers) | MEDIUM | AFTER #172, #173, #174 merge |
+| [x] | #125 | Multi-step ATO wizard (all OSCAL layers) -- **COMPLETED 2026-03-19** | MEDIUM | AFTER #172, #173, #174 merge |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -237,9 +253,9 @@ Sprint 3b (weeks 3-6):
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #133 | OSCAL data mapping documentation & guidance | MEDIUM | None |
-| [ ] | #167 | Enterprise/Organization visibility & navigation | MEDIUM | None |
-| [ ] | #171 | Mermaid OSCAL relationship diagram | MEDIUM | None |
+| [x] | #133 | OSCAL data mapping documentation & guidance -- **COMPLETED 2026-03-19** | MEDIUM | None |
+| [x] | #167 | Enterprise/Organization visibility & navigation -- **COMPLETED 2026-03-19** | MEDIUM | None |
+| [x] | #171 | Mermaid OSCAL relationship diagram -- **COMPLETED 2026-03-19** | MEDIUM | None |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -264,9 +280,9 @@ Dev C: #171 (OSCAL diagram)
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #95 | Versioned REST API for Users/Projects with RBAC | MEDIUM | None |
+| [x] | #95 | Versioned REST API for Users/Projects with RBAC -- **COMPLETED 2026-03-19** | MEDIUM | None |
 | [x] | #186 | Hybrid security scanning CI (Trivy + SAST + SAF CLI + HDF output) -- **COMPLETED 2026-03-15** | MEDIUM | None |
-| [ ] | #183 | Squash all migrations into single consolidated file | LOW | AFTER all migration PRs merge |
+| [x] | #183 | Squash all migrations into single consolidated file -- **COMPLETED 2026-03-19** | LOW | AFTER all migration PRs merge |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -287,7 +303,82 @@ Dev C: #183 (migration squash)  -- AFTER all migration PRs merge
 
 ---
 
-### Phase 6: FedRAMP 20x (final phase -- 3-4 weeks)
+### Phase 6: Security Remediation & Bug Fixes (1-2 weeks)
+
+**Goal:** Address security findings and data integrity bugs before new features
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #210 | Remediate container image CVEs (339 findings from Trivy scan) | **HIGH** (security) | None |
+| [ ] | #203 | Catalog index summary counts show totals instead of unique values | **HIGH** (bug) | None |
+| [ ] | #205 | Accept fully resolved OSCAL profiles without prioritization requirement | **HIGH** (bug) | None |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Clean container image scan, accurate catalog counts, flexible profile import
+
+```text
+Dev A: #210 (container CVE remediation) -- Dockerfile/Gemfile, isolated
+Dev B: #203 (catalog count bug fix)     -- Single controller/view fix
+Dev C: #205 (profile import fix)        -- Profile parser/service
+```
+
+> **Rationale:** Security and bug fixes before new features.
+> #210 is security-critical. #203 and #205 are data integrity issues.
+
+---
+
+### Phase 7: OSCAL Import Quality & Traceability (2-3 weeks)
+
+**Goal:** Improve import quality, traceability, and documentation
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #207 | Catalog/Baseline import: detect & report missing data, priorities, subparts | MEDIUM | None |
+| [ ] | #213 | Map XCCDF/InSpec SV/V IDs to NIST control IDs during CDEF import | MEDIUM | None |
+| [ ] | #217 | Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation | MEDIUM | None |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Better import validation UX, correct STIG-to-NIST traceability, comprehensive mapping docs
+
+```text
+Dev A: #207 (import quality)     -- Catalog domain
+Dev B: #213 (XCCDF ID mapping)   -- CDEF/Converter domain
+Dev C: #217 (Rev 5 docs)         -- Documentation only
+```
+
+> All 3 can run in parallel (different domains).
+
+---
+
+### Phase 8: API Expansion (2-3 weeks)
+
+**Goal:** Full programmatic access to all OSCAL resources
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #229 | Extend REST API for Catalogs, Profiles, CDEF, Mappings, SSP, SAP, SAR, POA&M | MEDIUM | AFTER #95 (API foundation) |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Complete REST API covering all OSCAL document types
+
+```text
+Dev A: #229 (API expansion) -- API namespace, builds on #95 foundation
+```
+
+> Depends on #95 API token infrastructure already merged.
+
+---
+
+### Phase 9: FedRAMP 20x (final phase -- 3-4 weeks)
 
 **Goal:** FedRAMP 20x extensions + comprehensive sample data
 
@@ -295,7 +386,7 @@ Dev C: #183 (migration squash)  -- AFTER all migration PRs merge
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #107 | FedRAMP 20x extensions (KSIs, automation, new models) | **HIGH** | Phases 1-5 complete |
+| [ ] | #107 | FedRAMP 20x extensions (KSIs, automation, new models) | **HIGH** | Phases 1-8 complete |
 | [ ] | #108 | Dual sample sets + seed script flags (FedRAMP 20x + traditional NIST) | MEDIUM | AFTER #107 merges |
 
 <!-- markdownlint-enable MD013 -->
@@ -303,8 +394,8 @@ Dev C: #183 (migration squash)  -- AFTER all migration PRs merge
 **Deliverables:** FedRAMP 20x support, comprehensive sample/seed data
 
 ```text
-Dev A: #107 (FedRAMP 20x)          -- Phase 6a
-Dev B: #108 (sample data)          -- Phase 6b, AFTER #107 merges
+Dev A: #107 (FedRAMP 20x)          -- Phase 9a
+Dev B: #108 (sample data)          -- Phase 9b, AFTER #107 merges
 ```
 
 > **Critical rule:** #107 must merge before #108 starts
@@ -336,16 +427,21 @@ removed and are no longer tracked:
 
 <!-- markdownlint-disable MD013 -->
 
-| Phase | Duration | Key Focus | Issues | Parallelizable? |
-| ----- | -------- | --------- | ------ | --------------- |
-| 1 | 2-4 weeks | Bugs + Testing + Dev Env | #142, #178, #100, #134 | Yes (all 4) |
-| 2 | 4-6 weeks | OSCAL Core (Import/Export/Publication) | #163, #149, #177, #148, #176 | Staggered (2a/2b) |
-| 3 | 4-6 weeks | Entity Creation + STIG Parser + ATO Wizard | #175, #185, #172, #173, #174, #125 | Staggered (3a/3b) |
-| 4 | 3-4 weeks | Docs + UX Polish | #133, #167, #171 | Yes (all 3) |
-| 5 | 3-4 weeks | API + CI/CD + DB Cleanup | #95, #186, #183 | Yes (with #183 gate) |
-| 6 | 3-4 weeks | FedRAMP 20x | #107, #108 | Sequential |
+| Phase | Duration | Key Focus | Issues | Status |
+| ----- | -------- | --------- | ------ | ------ |
+| 1 | 2-4 weeks | Bugs + Testing + Dev Env | #142, #178, #100, #134 | **COMPLETE** |
+| 2 | 4-6 weeks | OSCAL Core (Import/Export/Publication) | #163, #149, #177, #148, #176 | **COMPLETE** |
+| 3 | 4-6 weeks | Entity Creation + STIG Parser + ATO Wizard | #175, #185, #172, #173, #174, #125 | **COMPLETE** |
+| 4 | 3-4 weeks | Docs + UX Polish | #133, #167, #171 | **COMPLETE** |
+| 5 | 3-4 weeks | API + CI/CD + DB Cleanup | #95, #186, #183 | **COMPLETE** |
+| 6 | 1-2 weeks | Security Remediation + Bug Fixes | #210, #203, #205 | Pending |
+| 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | Pending |
+| 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229 | Pending |
+| 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | Pending |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total open issues:** 23 (20 original + 3 new: #183, #185, #186)
-**Estimated duration:** 18-24 weeks with 4 developers working in parallel
+**Total issues tracked:** 30 (23 original + 7 new: #203, #205, #207, #210, #213, #217, #229)
+**Completed (Phases 1-5):** 23 issues
+**Remaining (Phases 6-9):** 10 issues (#210, #203, #205, #207, #213, #217, #229, #107, #108, #183)
+**Estimated remaining duration:** 8-12 weeks with 2-3 developers
