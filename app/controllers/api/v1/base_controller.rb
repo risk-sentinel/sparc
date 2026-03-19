@@ -8,7 +8,7 @@ class Api::V1::BaseController < ApplicationController
   include Authorization
   include Pagy::Method
 
-  skip_before_action :verify_authenticity_token
+  protect_from_forgery with: :null_session
   skip_before_action :require_authentication
   before_action :authenticate_api_token!
 
