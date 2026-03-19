@@ -24,6 +24,11 @@ Rails.application.routes.draw do
   get "auth/failure", to: "omniauth_callbacks#failure"
 
   resources :authorization_boundaries do
+    member do
+      get  :ato_wizard
+      post :create_ato_package
+      get  :download_ato_package
+    end
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
     resources :memberships,
       controller: "authorization_boundary_memberships",

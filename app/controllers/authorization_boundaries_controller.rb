@@ -1,5 +1,8 @@
 class AuthorizationBoundariesController < ApplicationController
-  before_action :set_authorization_boundary, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_authorization_boundary, only: [
+    :show, :edit, :update, :destroy,
+    :ato_wizard, :create_ato_package, :download_ato_package
+  ]
 
   def index
     @authorization_boundaries = AuthorizationBoundary.order(updated_at: :desc)
@@ -53,6 +56,53 @@ class AuthorizationBoundariesController < ApplicationController
     redirect_to authorization_boundaries_path
   end
 
+  # ── ATO Package Wizard ─────────────────────────────────────────
+
+  def ato_wizard
+    @memberships = @authorization_boundary.authorization_boundary_memberships.order(:role)
+    @profiles    = ProfileDocument.where(lifecycle_status: "published")
+                                  .where.not(resolved_catalog_json: nil)
+                                  .order(:name)
+    @cdefs       = CdefDocument.where(status: "completed").order(:name)
+    @ssps        = SspDocument.where(status: "completed").order(:name)
+    @saps        = SapDocument.where(status: "completed").order(:name)
+    @sars        = SarDocument.where(status: "completed").order(:name)
+    @poams       = PoamDocument.where(status: "completed").order(:name)
+
+    # Warn if required roles are missing
+    roles = @memberships.pluck(:role)
+    @missing_roles = []
+    @missing_roles << "System Owner" unless roles.include?("system_owner")
+    @missing_roles << "Authorizing Official" unless roles.include?("authorizing_official")
+  end
+
+  def create_ato_package
+    service = AtoPackageService.new(@authorization_boundary, ato_package_params)
+    service.create
+
+    audit_log("ato_package_created", subject: @authorization_boundary,
+      metadata: { name: @authorization_boundary.name })
+
+    flash[:success] = "ATO package built for '#{@authorization_boundary.name}'."
+    redirect_to authorization_boundary_path(@authorization_boundary)
+  rescue StandardError => e
+    flash[:error] = "Error building ATO package: #{e.message}"
+    redirect_to ato_wizard_authorization_boundary_path(@authorization_boundary)
+  end
+
+  def download_ato_package
+    service = AtoPackageExportService.new(@authorization_boundary)
+    zip_data = service.generate_zip
+
+    audit_log("ato_package_exported", subject: @authorization_boundary,
+      metadata: { name: @authorization_boundary.name })
+
+    send_data zip_data,
+              filename: "#{@authorization_boundary.name}_ato_package_#{Date.today}.zip",
+              type: "application/zip",
+              disposition: "attachment"
+  end
+
   private
 
   def set_authorization_boundary
@@ -61,5 +111,22 @@ class AuthorizationBoundariesController < ApplicationController
 
   def authorization_boundary_params
     params.require(:authorization_boundary).permit(:name, :description, :status, :authorization_boundary_description)
+  end
+
+  def ato_package_params
+    params.permit(
+      :profile_mode, :profile_document_id,
+      :cdef_mode,
+      :ssp_mode, :ssp_document_id, :ssp_name, :ssp_description,
+      :system_status, :security_sensitivity_level,
+      :security_objective_confidentiality, :security_objective_integrity,
+      :security_objective_availability, :authorization_boundary_description,
+      :sap_mode, :sap_document_id, :sap_name, :sap_description,
+      :assessment_type, :assessment_start, :assessment_end,
+      :sar_mode, :sar_document_id, :sar_name, :sar_description,
+      :sar_assessment_start, :sar_assessment_end,
+      :poam_mode, :poam_document_id, :poam_name, :poam_description,
+      cdef_document_ids: []
+    )
   end
 end
