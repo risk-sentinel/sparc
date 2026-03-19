@@ -166,7 +166,7 @@ Dev C: #171 (OSCAL diagram)
 
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
-| [ ] | **#95** CRUD API | API | New `api/v1/users_controller.rb`, `api/v1/projects_controller.rb`, routes | **NONE** -- new files in API namespace |
+| [x] | **#95** CRUD API -- **COMPLETED 2026-03-19** | API | `api/v1/users_controller.rb`, `api/v1/authorization_boundaries_controller.rb`, `api/v1/base_controller.rb`, `api_authentication.rb`, `api_token.rb`, `admin/api_tokens_controller.rb`, `docs/API.md` | **NONE** remaining |
 | [x] | **#186** Hybrid security scanning -- **COMPLETED 2026-03-15** | CI/Infrastructure | `.github/workflows/security.yml`, `.github/oscal-metadata.json`, `docs/security-scanning.md` | **NONE** -- CI pipeline files only |
 | [ ] | **#183** Migration squash | Shared (DB) | `db/migrate/` (consolidate all existing into one), `db/schema.rb` | **MEDIUM** -- must coordinate timing; all in-flight migrations must merge first |
 
