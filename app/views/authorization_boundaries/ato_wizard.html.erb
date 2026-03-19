@@ -1,0 +1,454 @@
+<div class="card">
+  <h2>ATO Package Wizard</h2>
+  <p class="text-body-secondary mb-4">
+    Build a complete Authority to Operate (ATO) package for this authorization boundary.
+    Select or create the required artifacts — SSP, SAP, SAR, and POA&M — then assemble them into a single package.
+  </p>
+
+  <%= form_with url: create_ato_package_authorization_boundary_path(@authorization_boundary), method: :post, local: true do |f| %>
+
+    <%# ── Step 1: Confirm Authorization Boundary ── %>
+    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+        <span style="background: #3498db; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
+        Confirm Authorization Boundary
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <div class="mb-2">
+          <strong>Name:</strong> <%= @authorization_boundary.name %>
+        </div>
+        <div class="mb-2">
+          <strong>Status:</strong> <%= @authorization_boundary.status %>
+        </div>
+        <div class="mb-2">
+          <strong>Description:</strong> <%= @authorization_boundary.description %>
+        </div>
+        <div class="mb-2">
+          <strong>Members:</strong> <%= @memberships.count %>
+        </div>
+        <% if @missing_roles.any? %>
+          <div class="alert alert-warning mt-3" style="font-size: 0.88rem;">
+            <strong>Missing Roles:</strong> The following roles have not been assigned:
+            <ul class="mb-0 mt-1">
+              <% @missing_roles.each do |role| %>
+                <li><%= role %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+      </div>
+    </details>
+
+    <%# ── Step 2: Select Baseline / Profile ── %>
+    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+        <span style="background: #27ae60; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
+        Select Baseline / Profile
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <%= hidden_field_tag :profile_mode, "skip", id: "profile_mode" %>
+
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="profile_radio" value="select_existing" onclick="toggleMode('profile')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing Profile</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="profile_radio" value="skip" checked onclick="toggleMode('profile')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          </label>
+        </div>
+
+        <div id="profile_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+          <% if @profiles.any? %>
+            <div class="form-group">
+              <label for="profile_document_id">Profile</label>
+              <%= select_tag :profile_document_id,
+                    options_for_select(@profiles.map { |p| ["#{p.name} (#{p.profile_controls.count} controls)", p.id] }),
+                    include_blank: "-- Select a Profile --",
+                    class: "form-control" %>
+            </div>
+          <% else %>
+            <p style="color: #e74c3c; font-size: 0.88rem;">
+              No completed profiles found. Please
+              <%= link_to "upload a Profile", new_profile_document_path %> first.
+            </p>
+          <% end %>
+          <small class="text-body-secondary d-block" style="margin-top: 0.3rem;">
+            Controls from this profile will feed into SSP, SAP, and SAR creation.
+          </small>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Step 3: Select Components (CDEFs) ── %>
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+        <span style="background: #e67e22; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
+        Select Components (CDEFs)
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <%= hidden_field_tag :cdef_mode, "skip", id: "cdef_mode" %>
+
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="cdef_radio" value="select" onclick="toggleMode('cdef')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Select Components</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="cdef_radio" value="skip" checked onclick="toggleMode('cdef')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          </label>
+        </div>
+
+        <div id="cdef_select_panel" style="display: none; margin-top: 0.75rem;">
+          <% if @cdefs.any? %>
+            <p class="text-body-secondary" style="font-size: 0.88rem; margin-bottom: 0.75rem;">
+              Select CDEFs to include as components in the ATO package.
+            </p>
+            <% @cdefs.each do |cdef| %>
+              <label class="d-flex align-items-center gap-2 border rounded-2 bg-body" style="padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer;">
+                <%= check_box_tag "cdef_document_ids[]", cdef.id, false, style: "width: 16px; height: 16px;" %>
+                <div>
+                  <div class="fw-semibold" style="font-size: 0.88rem;"><%= cdef.name %></div>
+                  <div class="text-body-secondary" style="font-size: 0.75rem;">
+                    <%= cdef.cdef_controls.count %> controls
+                    <% if cdef.description.present? %>
+                      &mdash; <%= truncate(cdef.description, length: 80) %>
+                    <% end %>
+                  </div>
+                </div>
+              </label>
+            <% end %>
+          <% else %>
+            <p class="text-body-secondary" style="font-size: 0.88rem;">
+              No completed CDEFs found. You can
+              <%= link_to "upload a CDEF", new_cdef_document_path %> first, or skip this step.
+            </p>
+          <% end %>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Step 4: System Security Plan (SSP) ── %>
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+        <span style="background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">4</span>
+        System Security Plan (SSP)
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <%= hidden_field_tag :ssp_mode, "skip", id: "ssp_mode" %>
+
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="ssp_radio" value="create_new" onclick="toggleMode('ssp')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Create New SSP</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="ssp_radio" value="select_existing" onclick="toggleMode('ssp')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SSP</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="ssp_radio" value="skip" checked onclick="toggleMode('ssp')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          </label>
+        </div>
+
+        <div id="ssp_create_new_panel" style="display: none; margin-top: 0.75rem;">
+          <div class="form-group">
+            <label for="ssp_name">SSP Name <span style="color: #e74c3c;">*</span></label>
+            <%= text_field_tag :ssp_name, nil, class: "form-control", placeholder: "e.g., My System SSP" %>
+          </div>
+          <div class="form-group">
+            <label for="ssp_description">Description</label>
+            <%= text_area_tag :ssp_description, nil, class: "form-control", rows: 3, placeholder: "Brief description of the system..." %>
+          </div>
+          <div class="row row-cols-1 row-cols-md-2 g-3">
+            <div class="form-group">
+              <label for="ssp_system_status">System Status</label>
+              <%= select_tag :ssp_system_status,
+                    options_for_select(SspDocument::SYSTEM_STATUSES.map { |s| [s.titleize, s] }),
+                    include_blank: "-- Select --",
+                    class: "form-control" %>
+            </div>
+            <div class="form-group">
+              <label for="ssp_security_sensitivity_level">Security Sensitivity Level</label>
+              <%= select_tag :ssp_security_sensitivity_level,
+                    options_for_select([["Low (FIPS 199)", "fips-199-low"], ["Moderate (FIPS 199)", "fips-199-moderate"], ["High (FIPS 199)", "fips-199-high"]]),
+                    include_blank: "-- Select --",
+                    class: "form-control" %>
+            </div>
+            <div class="form-group">
+              <label for="ssp_security_objective_confidentiality">Confidentiality Objective</label>
+              <%= select_tag :ssp_security_objective_confidentiality,
+                    options_for_select([["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]]),
+                    include_blank: "-- Select --",
+                    class: "form-control" %>
+            </div>
+            <div class="form-group">
+              <label for="ssp_security_objective_integrity">Integrity Objective</label>
+              <%= select_tag :ssp_security_objective_integrity,
+                    options_for_select([["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]]),
+                    include_blank: "-- Select --",
+                    class: "form-control" %>
+            </div>
+            <div class="form-group">
+              <label for="ssp_security_objective_availability">Availability Objective</label>
+              <%= select_tag :ssp_security_objective_availability,
+                    options_for_select([["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]]),
+                    include_blank: "-- Select --",
+                    class: "form-control" %>
+            </div>
+          </div>
+        </div>
+
+        <div id="ssp_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+          <div class="form-group">
+            <label for="ssp_document_id">Existing SSP</label>
+            <%= select_tag :ssp_document_id,
+                  options_for_select(@ssps.map { |s| [s.name, s.id] }),
+                  include_blank: "-- Select an SSP --",
+                  class: "form-control" %>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Step 5: Security Assessment Plan (SAP) ── %>
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+        <span style="background: #9b59b6; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">5</span>
+        Security Assessment Plan (SAP)
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <%= hidden_field_tag :sap_mode, "skip", id: "sap_mode" %>
+
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="sap_radio" value="create_new" onclick="toggleMode('sap')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Create New SAP</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="sap_radio" value="select_existing" onclick="toggleMode('sap')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SAP</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="sap_radio" value="skip" checked onclick="toggleMode('sap')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          </label>
+        </div>
+
+        <div id="sap_create_new_panel" style="display: none; margin-top: 0.75rem;">
+          <div class="form-group">
+            <label for="sap_name">SAP Name <span style="color: #e74c3c;">*</span></label>
+            <%= text_field_tag :sap_name, nil, class: "form-control", placeholder: "e.g., Annual Security Assessment Plan" %>
+          </div>
+          <div class="form-group">
+            <label for="sap_description">Description</label>
+            <%= text_area_tag :sap_description, nil, class: "form-control", rows: 3, placeholder: "Brief description of the assessment plan..." %>
+          </div>
+          <div class="row row-cols-1 row-cols-md-2 g-3">
+            <div class="form-group">
+              <label for="sap_assessment_type">Assessment Type</label>
+              <%= select_tag :sap_assessment_type,
+                    options_for_select([["Initial", "initial"], ["Annual", "annual"], ["Continuous", "continuous"], ["Ad-Hoc", "ad-hoc"]]),
+                    include_blank: "-- Select --",
+                    class: "form-control" %>
+            </div>
+            <div class="form-group">
+              <label for="sap_start_date">Start Date</label>
+              <%= date_field_tag :sap_start_date, nil, class: "form-control" %>
+            </div>
+            <div class="form-group">
+              <label for="sap_end_date">End Date</label>
+              <%= date_field_tag :sap_end_date, nil, class: "form-control" %>
+            </div>
+          </div>
+        </div>
+
+        <div id="sap_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+          <div class="form-group">
+            <label for="sap_document_id">Existing SAP</label>
+            <%= select_tag :sap_document_id,
+                  options_for_select(@saps.map { |s| [s.name, s.id] }),
+                  include_blank: "-- Select a SAP --",
+                  class: "form-control" %>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Step 6: Security Assessment Results (SAR) ── %>
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+        <span style="background: #1abc9c; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">6</span>
+        Security Assessment Results (SAR)
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <%= hidden_field_tag :sar_mode, "skip", id: "sar_mode" %>
+
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="sar_radio" value="create_new" onclick="toggleMode('sar')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Create New SAR</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="sar_radio" value="select_existing" onclick="toggleMode('sar')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SAR</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="sar_radio" value="skip" checked onclick="toggleMode('sar')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          </label>
+        </div>
+
+        <div id="sar_create_new_panel" style="display: none; margin-top: 0.75rem;">
+          <div class="form-group">
+            <label for="sar_name">SAR Name <span style="color: #e74c3c;">*</span></label>
+            <%= text_field_tag :sar_name, nil, class: "form-control", placeholder: "e.g., Annual Assessment Results" %>
+          </div>
+          <div class="form-group">
+            <label for="sar_description">Description</label>
+            <%= text_area_tag :sar_description, nil, class: "form-control", rows: 3, placeholder: "Brief description of the assessment results..." %>
+          </div>
+          <div class="row row-cols-1 row-cols-md-2 g-3">
+            <div class="form-group">
+              <label for="sar_start_date">Start Date</label>
+              <%= date_field_tag :sar_start_date, nil, class: "form-control" %>
+            </div>
+            <div class="form-group">
+              <label for="sar_end_date">End Date</label>
+              <%= date_field_tag :sar_end_date, nil, class: "form-control" %>
+            </div>
+          </div>
+        </div>
+
+        <div id="sar_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+          <div class="form-group">
+            <label for="sar_document_id">Existing SAR</label>
+            <%= select_tag :sar_document_id,
+                  options_for_select(@sars.map { |s| [s.name, s.id] }),
+                  include_blank: "-- Select a SAR --",
+                  class: "form-control" %>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Step 7: Plan of Action & Milestones (POA&M) ── %>
+    <details class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+        <span style="background: #34495e; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">7</span>
+        Plan of Action &amp; Milestones (POA&amp;M)
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <%= hidden_field_tag :poam_mode, "skip", id: "poam_mode" %>
+
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="poam_radio" value="create_new" onclick="toggleMode('poam')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Create New POA&amp;M</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="poam_radio" value="select_existing" onclick="toggleMode('poam')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing POA&amp;M</span>
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+            <input type="radio" name="poam_radio" value="skip" checked onclick="toggleMode('poam')" style="width: 16px; height: 16px;">
+            <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
+          </label>
+        </div>
+
+        <div id="poam_create_new_panel" style="display: none; margin-top: 0.75rem;">
+          <div class="form-group">
+            <label for="poam_name">POA&amp;M Name <span style="color: #e74c3c;">*</span></label>
+            <%= text_field_tag :poam_name, nil, class: "form-control", placeholder: "e.g., FY2026 Plan of Action & Milestones" %>
+          </div>
+          <div class="form-group">
+            <label for="poam_description">Description</label>
+            <%= text_area_tag :poam_description, nil, class: "form-control", rows: 3, placeholder: "Brief description of the POA&M..." %>
+          </div>
+        </div>
+
+        <div id="poam_select_existing_panel" style="display: none; margin-top: 0.75rem;">
+          <div class="form-group">
+            <label for="poam_document_id">Existing POA&amp;M</label>
+            <%= select_tag :poam_document_id,
+                  options_for_select(@poams.map { |p| [p.name, p.id] }),
+                  include_blank: "-- Select a POA&M --",
+                  class: "form-control" %>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <%# ── Step 8: Review & Submit ── %>
+    <details open class="mb-3 border rounded-3" style="overflow: hidden;">
+      <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
+        <span style="background: #8e44ad; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">8</span>
+        Review &amp; Submit
+      </summary>
+      <div style="padding: 1rem 1.25rem;">
+        <p class="text-body-secondary mb-3" style="font-size: 0.88rem;">
+          Review your selections above, then click "Build ATO Package" to assemble the Authority to Operate package.
+          Selected artifacts will be linked to this authorization boundary. New artifacts will be created with the
+          details you provided. You can edit individual artifacts after the package is built.
+        </p>
+        <div class="d-flex gap-3">
+          <%= f.submit "Build ATO Package", class: "btn btn-success" %>
+          <%= link_to "Cancel", authorization_boundary_path(@authorization_boundary), class: "btn btn-secondary" %>
+        </div>
+      </div>
+    </details>
+
+  <% end %>
+</div>
+
+<script>
+  function toggleMode(stepName) {
+    var radio = document.querySelector('input[name="' + stepName + '_radio"]:checked');
+    if (!radio) return;
+
+    var mode = radio.value;
+    var hiddenField = document.getElementById(stepName + '_mode');
+    if (hiddenField) hiddenField.value = mode;
+
+    // Hide all panels for this step
+    var createPanel = document.getElementById(stepName + '_create_new_panel');
+    var selectPanel = document.getElementById(stepName + '_select_existing_panel');
+    var genericSelectPanel = document.getElementById(stepName + '_select_panel');
+
+    if (createPanel) createPanel.style.display = 'none';
+    if (selectPanel) selectPanel.style.display = 'none';
+    if (genericSelectPanel) genericSelectPanel.style.display = 'none';
+
+    // Show the relevant panel
+    if (mode === 'create_new' && createPanel) {
+      createPanel.style.display = 'block';
+    } else if (mode === 'select_existing' && selectPanel) {
+      selectPanel.style.display = 'block';
+    } else if (mode === 'select' && genericSelectPanel) {
+      genericSelectPanel.style.display = 'block';
+    }
+  }
+</script>
