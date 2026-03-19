@@ -1,6 +1,20 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2><%= @authorization_boundary.name %></h2>
   <div class="d-flex gap-2">
+    <% if signed_in? %>
+      <%= link_to "Build ATO Package",
+            ato_wizard_authorization_boundary_path(@authorization_boundary),
+            class: "btn btn-success btn-sm" %>
+      <% has_documents = @authorization_boundary.ssp_document.present? ||
+                         @authorization_boundary.sap_document.present? ||
+                         @authorization_boundary.sar_document.present? ||
+                         @authorization_boundary.poam_documents.any? %>
+      <% if has_documents %>
+        <%= link_to "Download ATO Package",
+              download_ato_package_authorization_boundary_path(@authorization_boundary),
+              class: "btn btn-outline-success btn-sm" %>
+      <% end %>
+    <% end %>
     <%= link_to "Edit", edit_authorization_boundary_path(@authorization_boundary), class: "btn btn-secondary btn-sm" %>
     <%= link_to "All Authorization Boundaries", authorization_boundaries_path, class: "btn btn-outline-primary btn-sm" %>
   </div>
