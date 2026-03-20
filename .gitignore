@@ -54,3 +54,4 @@
 
 # Security scan HDF results (downloaded from CI artifacts for local analysis)
 /docs/hdf/
+saf-cli.log

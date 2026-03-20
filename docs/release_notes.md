@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-03-20 -- Enhance Catalog Import: Detect & Report Missing Data (#207)
+
+**Branch:** `feature/207_catalog_import_validation`
+
+### Summary
+
+Post-import quality checks now run automatically after catalog imports, detecting missing
+required data and displaying actionable warnings in a dismissible modal on the catalog
+show page.
+
+### What Changed
+
+- **New `CatalogImportValidationService`** -- Runs 6 quality checks after import:
+  - Missing priority designations (P1/P2/P3) on base controls
+  - Missing baseline impact levels (LOW/MODERATE/HIGH)
+  - Missing control statement text
+  - Missing assessment objectives (Rev 5+ catalogs only)
+  - Controls referencing parameters with none defined
+  - Empty control families (zero controls)
+- **Integrated into `CatalogImportJob`** -- Validation runs as a "validating" processing
+  stage after import, warnings stored in `metadata_extra["import_warnings"]`
+- **Import Quality Report modal** -- Bootstrap 5 modal auto-opens on catalog show page
+  after import with warnings. Accordion-grouped by category with severity badges and
+  expandable control ID lists. "Acknowledge & Dismiss" persists via PATCH request.
+- **New route** -- `PATCH /control_catalogs/:id/acknowledge_warnings`
+- **New Stimulus controller** -- `import_warnings_controller.js` for modal lifecycle
+- **Filed #237** for future persistent Data Quality card on catalog show page
+
+### Files Created/Modified
+
+- `app/services/catalog_import_validation_service.rb` -- NEW
+- `app/jobs/catalog_import_job.rb` -- Added validation call
+- `app/views/shared/_import_warnings_modal.html.erb` -- NEW
+- `app/javascript/controllers/import_warnings_controller.js` -- NEW
+- `app/controllers/control_catalogs_controller.rb` -- Added `acknowledge_warnings`
+- `config/routes.rb` -- Added route
+- `app/views/control_catalogs/show.html.erb` -- Render modal
+- `spec/services/catalog_import_validation_service_spec.rb` -- NEW (13 tests)
+
+### Verification
+
+- 1179 RSpec examples, 0 failures (13 new)
+- Rubocop clean
+- Re-import a catalog to see quality warnings modal
+- Existing import flow unaffected
+
+---
+
 ## 2026-03-19 -- Accept Fully Resolved OSCAL Profiles Without Prioritization (#205)
 
 **Branch:** `feature/205_resolved_profile_import`
