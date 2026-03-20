@@ -19,8 +19,9 @@ class ControlCatalogsController < ApplicationController
   def index
     @control_catalogs = ControlCatalog.includes(:control_families).order(:name)
     @total_count = @control_catalogs.size
-    @family_count = ControlFamily.count
-    @control_count = CatalogControl.count
+    @family_count = ControlFamily.distinct.count(:code)
+    @control_count = CatalogControl.distinct.count(:control_id)
+    @revision_count = ControlCatalog.where.not(version: [ nil, "" ]).select(:version).distinct.count
   end
 
   def show
