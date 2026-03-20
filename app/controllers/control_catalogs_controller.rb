@@ -151,11 +151,7 @@ class ControlCatalogsController < ApplicationController
 
     CatalogImportJob.perform_later(catalog.id, tmp_path.to_s, original_filename)
     audit_log("control_catalog_imported", subject: catalog, metadata: { name: catalog.name })
-
-    # Redirect to index rather than the shell record — the background job may
-    # resolve to a different catalog (by UUID), destroying the shell before
-    # the browser follows the redirect.
-    redirect_to control_catalogs_path, notice: "Catalog import started — processing in background."
+    redirect_to catalog
   end
 
   def update_metadata
@@ -320,6 +316,10 @@ class ControlCatalogsController < ApplicationController
 
   def set_control_catalog
     @control_catalog = ControlCatalog.find_by!(slug: params[:id])
+  rescue ActiveRecord::RecordNotFound
+    # Shell record may have been destroyed by the background job during
+    # a re-import (UUID conflict). Fall back to the catalog index.
+    redirect_to control_catalogs_path, alert: "Catalog not found — it may have been merged during re-import."
   end
 
   def ensure_editable!
