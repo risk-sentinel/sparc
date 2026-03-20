@@ -12,6 +12,11 @@ class ProfileJsonParserService
     content = File.read(@file_path).force_encoding("UTF-8")
     data    = JSON.parse(content)
 
+    # Detect resolved profile catalogs (NIST-published baselines with catalog root key)
+    if data["catalog"] && resolved_profile_catalog?(data["catalog"])
+      return parse_resolved_catalog(data["catalog"], data)
+    end
+
     profile = data["profile"] || raise("Invalid OSCAL Profile: missing 'profile' root key")
     metadata = profile["metadata"] || {}
     imports  = profile["imports"] || []
@@ -207,6 +212,175 @@ class ProfileJsonParserService
       end
     end
     nil
+  end
+
+  # ── Resolved Profile Catalog Support ─────────────────────────────────
+  #
+  # NIST publishes "resolved profile catalogs" — fully expanded baselines
+  # that have a "catalog" root key (not "profile"). They contain groups
+  # with controls already resolved from the source catalog + profile
+  # modifications. These should be accepted as-is, auto-published, and
+  # not require P1/P2/P3 prioritization.
+
+  # Detect whether a catalog-rooted document is a resolved profile.
+  # Heuristic: metadata contains a resolution-tool prop OR a source-profile link.
+  def resolved_profile_catalog?(catalog)
+    metadata = catalog["metadata"] || {}
+    props = metadata["props"] || []
+    links = metadata["links"] || []
+
+    props.any? { |p| p["name"] == "resolution-tool" } ||
+      links.any? { |l| l["rel"] == "source-profile" }
+  end
+
+  # Parse a resolved profile catalog — controls come from groups[], not imports[].
+  def parse_resolved_catalog(catalog, full_data)
+    metadata = catalog["metadata"] || {}
+    groups   = catalog["groups"] || []
+
+    update_resolved_metadata(metadata, catalog)
+    link_catalog_from_source_profile(metadata)
+
+    control_attrs = []
+    field_entries = []
+    row_order     = 0
+
+    groups.each do |group|
+      family = group["id"]&.upcase || group["title"]&.split(" ")&.first&.upcase
+
+      extract_controls_from_group(group, family, control_attrs, field_entries, row_order)
+      row_order = control_attrs.size
+    end
+
+    update_processing_stage!(:creating_records)
+    batch_insert_records(
+      control_class: ProfileControl,
+      field_class:   ProfileControlField,
+      document_fk:   :profile_document_id,
+      control_attrs: control_attrs,
+      field_entries: field_entries
+    )
+
+    # Store the entire resolved catalog JSON directly — it IS the resolved catalog
+    @document.update!(resolved_catalog_json: full_data)
+  end
+
+  def update_resolved_metadata(metadata, catalog)
+    title = metadata["title"] || ""
+    baseline = case title
+    when /LOW/i      then "LOW"
+    when /MODERATE/i then "MODERATE"
+    when /HIGH/i     then "HIGH"
+    end
+
+    source_profile_href = (metadata["links"] || [])
+      .find { |l| l["rel"] == "source-profile" }&.dig("href")
+
+    # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
+    metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
+    metadata_extra["auto_publish"] = true
+
+    @document.update!(
+      description:     title,
+      baseline_level:  baseline,
+      profile_version: metadata["version"],
+      oscal_version:   metadata["oscal-version"],
+      metadata_extra:  metadata_extra.presence || {},
+      import_metadata: {
+        "format"               => "oscal_resolved_profile",
+        "uuid"                 => catalog["uuid"],
+        "source_profile_href"  => source_profile_href,
+        "back_matter"          => (catalog.dig("back-matter", "resources") || [])
+      }.compact
+    )
+    @document.assign_oscal_uuid!(catalog["uuid"])
+  end
+
+  # Link to source catalog by matching the source-profile filename against catalog names.
+  # Resolved profiles reference their source profile (not catalog) in metadata links,
+  # but the filename pattern reveals the catalog revision (e.g., "rev5", "800-53").
+  def link_catalog_from_source_profile(metadata)
+    return if @document.control_catalog_id.present?
+
+    source_href = (metadata["links"] || [])
+      .find { |l| l["rel"] == "source-profile" }&.dig("href")
+    return unless source_href.present?
+
+    href_lower = source_href.downcase
+    catalogs = ControlCatalog.all
+    return if catalogs.none?
+
+    catalogs.each do |catalog|
+      catalog_name = catalog.name.downcase
+      href_rev = href_lower[/rev\.?\s*(\d+)/i, 1]
+      catalog_rev = catalog_name[/rev\.?\s*(\d+)/i, 1]
+
+      if href_lower.include?("800-53") && catalog_name.include?("800-53") &&
+          href_rev.present? && catalog_rev.present? && href_rev == catalog_rev
+        @document.update_column(:control_catalog_id, catalog.id)
+        return
+      end
+    end
+
+    # Fall back to back-matter matching
+    back_matter = @document.import_metadata&.dig("back_matter") || []
+    link_source_catalog(nil, back_matter) if back_matter.any?
+  end
+
+  # Recursively extract controls from a group (handles control enhancements as nested controls).
+  def extract_controls_from_group(group, family, control_attrs, field_entries, row_order)
+    (group["controls"] || []).each do |control|
+      row_order = add_resolved_control(control, family, control_attrs, field_entries, row_order)
+
+      # Control enhancements are nested controls
+      (control["controls"] || []).each do |enhancement|
+        row_order = add_resolved_control(enhancement, family, control_attrs, field_entries, row_order)
+      end
+    end
+  end
+
+  def add_resolved_control(control, family, control_attrs, field_entries, row_order)
+    control_id = control["id"]
+    priority = (control["props"] || []).find { |p| p["name"] == "priority" }&.dig("value")
+
+    attrs = {
+      control_id:     control_id,
+      title:          control["title"],
+      priority:       priority,
+      control_family: family || control_id&.split("-")&.first&.upcase,
+      row_order:      row_order
+    }
+
+    idx = control_attrs.size
+    control_attrs << attrs
+
+    # Store props as fields (skip priority — stored on control)
+    (control["props"] || []).each do |prop|
+      next if prop["name"] == "priority"
+      field_entries << [ idx, "prop:#{prop['name']}", prop["value"] ] if prop["value"].present?
+    end
+
+    # Store parameters as fields
+    (control["params"] || []).each do |param|
+      param_id = param["id"]
+      next unless param_id
+
+      label = param["label"]
+      field_entries << [ idx, "parameter_label:#{param_id}", label ] if label.present?
+
+      # Store select choices if present
+      if param["select"]
+        choices = Array(param.dig("select", "choice")).join(", ")
+        field_entries << [ idx, "parameter:#{param_id}", choices ] if choices.present?
+      end
+
+      # Store guidelines
+      (param["guidelines"] || []).each_with_index do |g, gi|
+        field_entries << [ idx, "parameter_guideline:#{param_id}:#{gi}", g["prose"] ] if g["prose"].present?
+      end
+    end
+
+    row_order + 1
   end
 
   # Populate profile control titles from the matched source catalog.

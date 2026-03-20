@@ -195,7 +195,7 @@ Dev C: #183 (migration squash) -- AFTER all migration PRs merge
 | ------ | ----- | ------ | -------------- | -------------- |
 | [x] | **#210** Container CVE remediation | Infrastructure | `Dockerfile`, `Gemfile`, `.trivyignore`, `scripts/trivy-scan.sh` | **NONE** -- infra only |
 | [x] | **#203** Catalog count bug | Catalog | `control_catalogs_controller.rb`, `control_catalogs/index.html.erb` | **NONE** -- single view fix -- **COMPLETED 2026-03-19** |
-| [ ] | **#205** Profile import flexibility | Profile | `profile_json_parser_service.rb`, publish validation | **NONE** -- parser domain |
+| [x] | **#205** Profile import flexibility | Profile | `profile_json_parser_service.rb`, `profile_xml_parser_service.rb`, `document_conversion_job.rb`, publish validation | **NONE** -- parser domain -- **COMPLETED 2026-03-19** |
 
 <!-- markdownlint-enable MD013 -->
 

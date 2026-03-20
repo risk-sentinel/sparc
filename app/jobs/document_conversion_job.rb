@@ -31,15 +31,27 @@ class DocumentConversionJob < ApplicationJob
 
       parser_class.new(document, file_path).parse
 
-      document.update!(
+      # Auto-publish resolved profile catalogs (NIST-published baselines)
+      auto_publish = document.metadata_extra&.dig("auto_publish")
+      lifecycle = auto_publish ? "published" : "in_progress"
+
+      attrs = {
         status: "completed",
-        lifecycle_status: "in_progress",
+        lifecycle_status: lifecycle,
         metadata_extra: (document.metadata_extra || {}).merge(
           "processing_stage"        => "complete",
-          "processing_message"      => "Processing complete",
+          "processing_message"      => auto_publish ? "Resolved profile imported and published" : "Processing complete",
           "processing_completed_at" => Time.current.iso8601
         )
-      )
+      }
+
+      # Set published timestamp for auto-published documents
+      if auto_publish
+        attrs[:published] = Time.current.iso8601
+        attrs[:profile_version] = document.profile_version.presence || "1.0.0" if document.respond_to?(:profile_version)
+      end
+
+      document.update!(**attrs)
     rescue StandardError => e
       failed_stage = document.reload.metadata_extra&.dig("processing_stage") || "unknown"
       document.update!(
