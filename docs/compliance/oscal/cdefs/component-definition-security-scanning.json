@@ -1,0 +1,83 @@
+{
+  "component-definition": {
+    "uuid": "0aa1b931-de70-4da9-8fe6-1938e21e8eae",
+    "metadata": {
+      "title": "SPARC Security Scanning and System Integrity",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "cee58020-bde2-4a0b-ae42-052d150911a2",
+          "type": "organization",
+          "name": "SPARC Development Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "8b84fbab-cd36-42ad-ab46-3e97f933c852",
+        "type": "software",
+        "title": "SPARC Application",
+        "description": "SPARC (Systemized Policy and Regulatory Controls) is a Rails application for managing NIST 800-53 compliance documentation. This component definition covers vulnerability scanning, flaw remediation, and system integrity controls.",
+        "control-implementations": [
+          {
+            "uuid": "1549f70b-f78e-439d-9dbf-5eaf50ea543f",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_HIGH-baseline-resolved-profile_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 HIGH Baseline",
+            "implemented-requirements": [
+              {
+                "uuid": "50be4f1d-7766-4c69-b1e2-f4a0cc638f33",
+                "control-id": "ra-5",
+                "description": "SPARC performs automated vulnerability scanning through multiple tools in the CI security workflow: Trivy filesystem and container image scanning for CVEs in dependencies and base images, CodeQL semantic analysis for code-level vulnerabilities, and bundler-audit for Ruby gem advisory checks. Scan results are uploaded as SARIF to GitHub Security for centralized tracking.",
+                "remarks": "Implemented in .github/workflows/security.yml (Trivy, CodeQL, bundler-audit). Results uploaded to GitHub Security tab."
+              },
+              {
+                "uuid": "79182407-620a-48ac-849c-b091fe46fe83",
+                "control-id": "si-2",
+                "description": "SPARC addresses flaw remediation through automated vulnerability detection and dependency update tooling. Trivy identifies CVEs in container images and filesystem dependencies. Bundler-audit checks Ruby gems against the Ruby Advisory Database. Dependabot automatically creates pull requests for vulnerable or outdated dependencies.",
+                "remarks": "Implemented in .github/workflows/security.yml and .github/dependabot.yml. Automated PR creation for vulnerable dependencies."
+              },
+              {
+                "uuid": "d4ef046e-aabd-45cd-a716-f8a79f0dbeb9",
+                "control-id": "si-3",
+                "description": "SPARC implements malicious code protection through Gitleaks secret scanning to detect accidentally committed credentials and secrets, and Trivy container scanning to identify known malware signatures and vulnerable packages in the deployment image. Both tools run automatically in the CI pipeline on every code change.",
+                "remarks": "Implemented in .github/workflows/security.yml (Gitleaks, Trivy container scan)."
+              },
+              {
+                "uuid": "762e7a8a-a907-4d4c-865d-37b3b20bbcb5",
+                "control-id": "si-4",
+                "description": "SPARC supports system monitoring through structured logging to STDOUT in the production environment, enabling integration with external log aggregation services such as AWS CloudWatch. Audit events provide application-level monitoring of security-relevant actions. The production configuration is optimized for centralized log collection and analysis.",
+                "remarks": "Implemented in config/environments/production.rb and app/models/audit_event.rb. Logs are CloudWatch-ready."
+              },
+              {
+                "uuid": "f118df7c-d9d7-4492-979d-6709957e232f",
+                "control-id": "si-5",
+                "description": "SPARC receives security alerts through multiple channels: Dependabot alerts for vulnerable Ruby gems and container base image updates, GitHub Security tab aggregation of SARIF-formatted scan results from Trivy and CodeQL, and bundler-audit advisories. These alerts provide timely notification of security-relevant changes affecting the application.",
+                "remarks": "Implemented in .github/workflows/security.yml (SARIF uploads) and .github/dependabot.yml."
+              },
+              {
+                "uuid": "c9c7d9e7-db82-42c2-a2df-0fe36a82bbda",
+                "control-id": "si-7",
+                "description": "SPARC verifies software integrity through CycloneDX SBOM generation that inventories all software components and their versions. Docker image builds produce digest-verified images, and the CI pipeline ensures that only tested and scanned artifacts are promoted to deployment. The SBOM provides a verifiable record of the software supply chain.",
+                "remarks": "Implemented in .github/workflows/security.yml (CycloneDX SBOM, Docker image digests)."
+              },
+              {
+                "uuid": "00ffe797-5c93-4b48-a7b8-bd391e4f6bcf",
+                "control-id": "si-10",
+                "description": "SPARC validates information inputs through multiple layers: Brakeman SAST scanning detects injection and cross-site scripting (XSS) vulnerabilities in the codebase, Rails strong parameters enforce allowlisting of permitted request parameters in all controllers, and ActiveRecord validations enforce data type and format constraints at the model level.",
+                "remarks": "Implemented in .github/workflows/security.yml (Brakeman), all controllers (strong params), and models (validations). Tested by spec/ and Brakeman scan."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

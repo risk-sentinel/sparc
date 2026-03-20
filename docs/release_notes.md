@@ -4,6 +4,115 @@
 
 ---
 
+## 2026-03-20 -- Document NIST SP 800-53 Rev 5 Controls Mapping (#217)
+
+**Branch:** `feature/217_nist_rev5_mapping_docs`
+
+### Summary
+
+Comprehensive NIST SP 800-53 Rev 5 HIGH baseline compliance documentation for the SPARC
+application. Central mapping document covers all 370 HIGH baseline controls across 20 families,
+five OSCAL v1.1.2 component-definition JSON files document application-level implementations,
+and inline compliance comments annotate 10 security-critical source files. Includes sparc-iac
+alignment via `system-id` in `.github/oscal-metadata.json` for cross-repo FedRAMP SSP assembly.
+
+### What Changed
+
+- **Central mapping document** (`docs/compliance/nist-sp800-53-rev5-mapping.md`) -- 370 controls
+  categorized by responsibility (Application, Infrastructure/sparc-iac, CSP Inherited,
+  Organizational Policy, Hybrid). Each control includes implementation summary, code/config
+  location, and status. Summary: 133 Implemented, 22 Partial, 59 Planned, 28 CSP Inherited, 5 N/A.
+- **5 OSCAL CDEFs** in `docs/compliance/oscal/cdefs/`:
+  - `component-definition-authentication.json` -- AC-2, AC-3, AC-5, AC-6, AC-7, AC-8, AC-11,
+    AC-12, AC-14, AC-17, IA-2, IA-4, IA-5, IA-8, IA-11, IA-12
+  - `component-definition-audit.json` -- AU-2, AU-3, AU-4, AU-5, AU-6, AU-8, AU-9, AU-11, AU-12
+  - `component-definition-config-mgmt.json` -- CM-2, CM-3, CM-5, CM-6, CM-7, CM-8, CM-11, SA-11, SA-15
+  - `component-definition-security-scanning.json` -- RA-5, SI-2, SI-3, SI-4, SI-5, SI-7, SI-10
+  - `component-definition-session-mgmt.json` -- SC-8, SC-12, SC-13, SC-23, SC-28
+- **Inline NIST control comments** added to 10 security-critical files:
+  `authentication.rb`, `authorization.rb`, `api_authentication.rb`, `user.rb`, `api_token.rb`,
+  `audit_event.rb`, `sparc_config.rb`, `ldap_auth_service.rb`, `omniauth_callbacks_controller.rb`,
+  `production.rb`
+- **Compliance README** (`docs/compliance/README.md`) -- Process guide for maintaining compliance
+  docs, sparc-iac integration model, security scanning evidence mapping, baseline rationale
+- **sparc-iac alignment** -- Added `"system-id": "sparc-application"` to `.github/oscal-metadata.json`
+  for cross-repo correlation in FedRAMP SSP assembly pipeline
+- **Cross-repo artifact publishing** -- New `publish_for_sparc_iac` job in
+  `.github/workflows/security.yml` bundles HDF scan results, OSCAL CDEFs, SBOMs, and metadata
+  into a `sparc-compliance-latest` artifact with a `manifest.json` for traceability. Sends a
+  `repository_dispatch` (`sparc-compliance-updated`) to `sparc-iac` with the run ID so it can
+  fetch artifacts via the GitHub REST API. Requires `SPARC_IAC_DISPATCH_TOKEN` secret.
+
+### Verification
+
+- Documentation and workflow changes only (no application logic changes) -- all existing tests pass
+- OSCAL CDEFs follow v1.1.2 component-definition schema with unique UUIDs and code references
+- Inline comments are Ruby comment blocks only -- zero functional impact
+
+---
+
+## 2026-03-20 -- Map XCCDF/InSpec SV/V IDs to NIST Control IDs (#213)
+
+**Branch:** `feature/213_xccdf_nist_control_mapping`
+
+### Summary
+
+CDEF imports from XCCDF (DISA STIGs), InSpec profiles, and STIG Viewer JSON now resolve
+source-specific identifiers (SV/V IDs) to NIST 800-53 control IDs using a two-tier lookup:
+Converter entries first, then CCI-to-NIST fallback. Original SV/V IDs are preserved in a
+new `stig_id` column. InSpec NIST tags are normalized to OSCAL dot notation. OSCAL export
+metadata no longer includes internal processing state keys.
+
+### What Changed
+
+- **New `CciNistResolvable` concern** -- Shared two-tier NIST resolution for all CDEF parsers:
+  - `resolve_nist_for_stig(sv_id, ccis)` -- Converter lookup first, CCI-to-NIST fallback
+  - `normalize_nist_tag(tag)` -- InSpec tag normalization (`"CM-6 b"` -> `"cm-6.b"`, `"AC-2 (1)"` -> `"ac-2.1"`)
+  - `nist_family_from_id(nist_id)` -- Extract NIST family prefix (e.g., `"CM"` from `"cm-6.b"`)
+  - `extract_sv_id(rule_id)` -- Strip revision suffix (`"SV-257777r925318_rule"` -> `"SV-257777"`)
+  - Caches Converter entries and CCI lookup data for batch performance
+- **XCCDF parser** (`CdefXccdfParserService`) -- Resolves SV->NIST via `extract_sv_id` +
+  `resolve_nist_for_stig`, sets `control_id` to NIST ID, preserves original in `stig_id`,
+  stores `nist_controls` field when resolution succeeds
+- **InSpec parser** (`CdefJsonParserService`) -- Resolves from `tags.nist` first via
+  `normalize_nist_tag`, falls back to Converter/CCI resolution
+- **STIG Viewer parser** (`CdefJsonParserService`) -- Resolves via `resolve_nist_for_stig`
+  using `vuln_num` and `cci_ref`
+- **`stig_id` column** -- New column on `cdef_controls` with composite index on
+  `(cdef_document_id, stig_id)`. Conditionally included in `to_hash` output
+- **CDEF show view** -- Purple `stig_id` badge displayed when different from `control_id`
+- **OSCAL CDEF export** -- `stig-id` added as a prop in `build_props`. Internal
+  `ProgressTrackable` keys (`processing_stage`, `processing_message`, etc.) stripped from
+  export metadata to fix schema validation errors
+- **Missing `api_tokens` migration** -- Recovered idempotent migration lost during PR #95
+  squash merge, resolving 26 pre-existing test failures
+
+### Files Created/Modified
+
+- `app/services/concerns/cci_nist_resolvable.rb` -- NEW
+- `app/services/cdef_xccdf_parser_service.rb` -- Modified `parse_rule` for NIST resolution
+- `app/services/cdef_json_parser_service.rb` -- Modified InSpec + STIG Viewer parsers
+- `app/models/cdef_control.rb` -- Added `stig_id` to `to_hash`
+- `app/services/oscal_component_definition_export_service.rb` -- Strip internal metadata keys, add `stig-id` prop
+- `app/views/cdef_documents/show.html.erb` -- Purple `stig_id` badge
+- `db/migrate/20260320140536_add_stig_id_to_cdef_controls.rb` -- NEW
+- `db/migrate/20260320163212_create_api_tokens.rb` -- NEW (recovered)
+- `spec/services/concerns/cci_nist_resolvable_spec.rb` -- NEW (17 tests)
+- `spec/services/cdef_xccdf_parser_service_spec.rb` -- 7 new tests
+- `spec/services/cdef_json_parser_service_spec.rb` -- 5 new tests
+- `spec/fixtures/files/components/test-stig-xccdf.xml` -- NEW fixture
+
+### Verification
+
+- 1207 RSpec examples, 0 failures (29 new + 26 previously failing now fixed)
+- Rubocop clean
+- OSCAL CDEF export validates against NIST schema
+- XCCDF STIG import resolves SV IDs to NIST control IDs
+- InSpec profile import normalizes NIST tags to OSCAL format
+- STIG Viewer JSON import resolves V IDs to NIST control IDs
+
+---
+
 ## 2026-03-20 -- Enhance Catalog Import: Detect & Report Missing Data (#207)
 
 **Branch:** `feature/207_catalog_import_validation`

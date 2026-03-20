@@ -7,6 +7,13 @@
 # in the documents we manage, we should have one ourselves.
 #
 # Immutable by design: no updated_at column, no update methods.
+#
+# NIST 800-53 Controls:
+#   AU-2 Event Logging (139 auditable event types)
+#   AU-3 Content of Audit Records (user, action, IP, timestamp, metadata)
+#   AU-9 Protection of Audit Information (append-only, immutable records)
+#   AU-12 Audit Record Generation (AuditEvent.log factory)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class AuditEvent < ApplicationRecord
   belongs_to :user, optional: true # nullable for failed logins
 

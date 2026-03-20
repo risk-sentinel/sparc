@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-03-19
+**Last updated:** 2026-03-20
 
 ---
 
@@ -208,8 +208,8 @@ Dev C: #183 (migration squash) -- AFTER all migration PRs merge
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
 | [x] | **#207** Import quality reporting | Catalog | `catalog_import_validation_service.rb`, `catalog_import_job.rb`, `control_catalogs_controller.rb`, `_import_warnings_modal.html.erb` | **NONE** with #213 -- **COMPLETED 2026-03-20** |
-| [ ] | **#213** XCCDF ID mapping to NIST | CDEF/Converters | `cdef_xccdf_parser_service.rb`, converter logic | **NONE** with #207 |
-| [ ] | **#217** Rev 5 mapping docs | Documentation | `docs/` directory | **NONE** -- docs only |
+| [x] | **#213** XCCDF ID mapping to NIST -- **COMPLETED 2026-03-20** | CDEF/Converters | `cdef_xccdf_parser_service.rb`, `cdef_json_parser_service.rb`, new `CciNistResolvable` concern, `cdef_control.rb`, `oscal_component_definition_export_service.rb`, migration | **NONE** with #207 |
+| [x] | **#217** Rev 5 mapping docs -- **COMPLETED 2026-03-20** | Documentation | `docs/compliance/README.md`, `docs/compliance/nist-sp800-53-rev5-mapping.md`, `docs/compliance/oscal/cdefs/*.json` (5 CDEFs), inline NIST comments in 10 source files, `.github/oscal-metadata.json`, `.github/workflows/security.yml` (new `publish_for_sparc_iac` job) | **NONE** -- docs + workflow only |
 
 <!-- markdownlint-enable MD013 -->
 

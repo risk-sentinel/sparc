@@ -3,6 +3,11 @@
 # Handles OAuth/OIDC callbacks from GitHub, GitLab, and generic OIDC
 # providers. Finds or creates a User by email, links an Identity, and
 # establishes a session.
+#
+# NIST 800-53 Controls:
+#   IA-2 Identification and Authentication (multi-provider SSO)
+#   IA-8 Identification and Authentication (Non-Organizational Users)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class OmniauthCallbacksController < ApplicationController
   skip_before_action :require_authentication, raise: false
   skip_before_action :check_password_reset, raise: false
