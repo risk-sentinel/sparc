@@ -729,8 +729,9 @@ class CatalogImportService
     if file_uuid.present?
       owner = ControlCatalog.find_by(oscal_uuid: file_uuid)
       if owner && owner.id != @existing_catalog.id
-        # The shell is a duplicate — remove it and switch to the real catalog
-        @existing_catalog.destroy if @existing_catalog.control_families.empty?
+        # The real catalog already owns this UUID — use it instead of the shell.
+        # Don't destroy the shell here (race condition with the redirect);
+        # the job cleans it up after the service completes.
         @document = owner  # Update ProgressTrackable reference
         return owner
       end

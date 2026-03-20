@@ -151,7 +151,11 @@ class ControlCatalogsController < ApplicationController
 
     CatalogImportJob.perform_later(catalog.id, tmp_path.to_s, original_filename)
     audit_log("control_catalog_imported", subject: catalog, metadata: { name: catalog.name })
-    redirect_to catalog
+
+    # Redirect to index rather than the shell record — the background job may
+    # resolve to a different catalog (by UUID), destroying the shell before
+    # the browser follows the redirect.
+    redirect_to control_catalogs_path, notice: "Catalog import started — processing in background."
   end
 
   def update_metadata

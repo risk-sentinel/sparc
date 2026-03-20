@@ -15,7 +15,8 @@
 
   <%# Upload form %>
   <%= form_with url: import_control_catalogs_path, method: :post,
-        html: { enctype: "multipart/form-data" }, local: true do |f| %>
+        html: { enctype: "multipart/form-data" },
+        data: { turbo: false } do |f| %>
 
     <div style="margin-bottom: 1.25rem;">
       <%= render "shared/dropzone",
