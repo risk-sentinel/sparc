@@ -121,10 +121,11 @@ class ControlCatalogsController < ApplicationController
     original_filename = file.original_filename
     sanitized_filename = File.basename(original_filename)
 
-    # Check for existing catalog with matching name to avoid duplicates.
-    # Re-importing the same file refreshes the existing catalog rather than creating a duplicate.
+    # Check for existing catalog to avoid duplicates.
+    # Try original_filename first (most reliable for re-imports), then inferred name.
     inferred_name = File.basename(original_filename, ".*").tr("_", " ")
-    catalog = ControlCatalog.find_by(name: inferred_name)
+    catalog = ControlCatalog.find_by(original_filename: original_filename) ||
+              ControlCatalog.find_by(name: inferred_name)
 
     if catalog
       # Reset for re-import — clear any previous warnings acknowledgement

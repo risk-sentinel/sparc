@@ -183,13 +183,14 @@ class CatalogImportService
     metadata_extra["back_matter_resources"] = back_matter_resources if back_matter_resources.present?
 
     catalog = if @existing_catalog
+      target = resolve_import_target(metadata_extra["catalog_uuid"])
       attrs = { name: catalog_name, version: version, source: "OSCAL" }
-      attrs[:oscal_version] = oscal_version.presence || @existing_catalog.oscal_version
-      attrs[:published] = published.presence || @existing_catalog.published
-      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      attrs[:oscal_version] = oscal_version.presence || target.oscal_version
+      attrs[:published] = published.presence || target.published
+      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : target.metadata_extra
       attrs[:oscal_uuid] = metadata_extra["catalog_uuid"] if metadata_extra["catalog_uuid"].present?
-      @existing_catalog.update!(attrs)
-      @existing_catalog
+      target.update!(attrs)
+      target
     else
       upsert_catalog(catalog_name, version, "OSCAL",
                      oscal_version: oscal_version, published: published,
@@ -369,13 +370,14 @@ class CatalogImportService
     end
 
     catalog = if @existing_catalog
+      target = resolve_import_target(metadata_extra["catalog_uuid"])
       attrs = { name: catalog_name, version: version, source: "OSCAL" }
-      attrs[:oscal_version] = oscal_version.presence || @existing_catalog.oscal_version
-      attrs[:published] = published.presence || @existing_catalog.published
-      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : @existing_catalog.metadata_extra
+      attrs[:oscal_version] = oscal_version.presence || target.oscal_version
+      attrs[:published] = published.presence || target.published
+      attrs[:metadata_extra] = metadata_extra.present? ? metadata_extra : target.metadata_extra
       attrs[:oscal_uuid] = metadata_extra["catalog_uuid"] if metadata_extra["catalog_uuid"].present?
-      @existing_catalog.update!(attrs)
-      @existing_catalog
+      target.update!(attrs)
+      target
     else
       upsert_catalog(catalog_name, version, "OSCAL",
                      oscal_version: oscal_version, published: published,
@@ -718,6 +720,23 @@ class CatalogImportService
   end
 
   # ── Shared DB upsert helpers ─────────────────────────────────────────────────
+
+  # Resolve which catalog record to update when re-importing.
+  # The controller creates a shell record (with an auto-generated oscal_uuid) for
+  # progress tracking, but the real catalog may already exist with the file's OSCAL UUID.
+  # When the file's UUID matches an existing catalog, use THAT record and discard the shell.
+  def resolve_import_target(file_uuid)
+    if file_uuid.present?
+      owner = ControlCatalog.find_by(oscal_uuid: file_uuid)
+      if owner && owner.id != @existing_catalog.id
+        # The shell is a duplicate — remove it and switch to the real catalog
+        @existing_catalog.destroy if @existing_catalog.control_families.empty?
+        @document = owner  # Update ProgressTrackable reference
+        return owner
+      end
+    end
+    @existing_catalog
+  end
 
   def upsert_catalog(name, version, source, oscal_version: nil, published: nil, metadata_extra: {})
     catalog = ControlCatalog.find_or_initialize_by(name: name)
