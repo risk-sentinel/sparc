@@ -55,7 +55,11 @@ class OscalComponentDefinitionExportService
       "last-modified" => Time.current.iso8601
     }
 
-    extra = @document.metadata_extra || {}
+    extra = (@document.metadata_extra || {}).except(
+      "processing_stage", "processing_message", "processing_started_at",
+      "processing_updated_at", "processing_completed_at",
+      "import_warnings", "import_warnings_summary", "import_warnings_acknowledged"
+    )
     if extra.any?
       base.merge(extra)
     else
