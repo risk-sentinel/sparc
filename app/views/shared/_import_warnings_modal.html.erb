@@ -1,0 +1,88 @@
+<%# Import Quality Report Modal
+  Locals:
+    document  — the ControlCatalog (or any model with metadata_extra["import_warnings"])
+    warnings  — array of warning hashes from CatalogImportValidationService
+    acknowledge_path — URL for PATCH to acknowledge warnings
+%>
+<% summary = document.metadata_extra&.dig("import_warnings_summary") || {} %>
+<% total = summary["total_warnings"] || warnings.size %>
+<% total_affected = summary["total_affected"] || 0 %>
+
+<div data-controller="import-warnings"
+     data-import-warnings-acknowledge-url-value="<%= acknowledge_path %>">
+  <div data-import-warnings-target="modal"
+       class="modal fade"
+       tabindex="-1"
+       aria-labelledby="importWarningsLabel"
+       aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-warning bg-opacity-10 border-warning">
+          <h5 class="modal-title" id="importWarningsLabel">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-exclamation-triangle-fill text-warning me-2" viewBox="0 0 16 16">
+              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+            </svg>
+            Import Quality Report
+          </h5>
+        </div>
+        <div class="modal-body">
+          <p class="mb-3">
+            <strong><%= total %> quality warning<%= 's' if total != 1 %></strong> detected
+            affecting <strong><%= total_affected %></strong> item<%= 's' if total_affected != 1 %>.
+            These are advisory — the import completed successfully.
+          </p>
+
+          <div class="accordion" id="warningsAccordion">
+            <% warnings.each_with_index do |warning, idx| %>
+              <% severity = warning["severity"] || "info" %>
+              <% badge_class = severity == "warning" ? "bg-warning text-dark" : "bg-info text-white" %>
+              <% category_label = warning["category"].to_s.tr("_", " ").titleize %>
+              <% control_ids = warning["control_ids"] || [] %>
+              <% count = warning["count"] || control_ids.size %>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#warning-<%= idx %>"
+                          aria-expanded="false"
+                          aria-controls="warning-<%= idx %>">
+                    <span class="badge <%= badge_class %> me-2"><%= severity.capitalize %></span>
+                    <span><%= category_label %></span>
+                    <span class="badge bg-secondary ms-2"><%= count %></span>
+                  </button>
+                </h2>
+                <div id="warning-<%= idx %>" class="accordion-collapse collapse"
+                     data-bs-parent="#warningsAccordion">
+                  <div class="accordion-body">
+                    <p><%= warning["message"] %></p>
+                    <% if control_ids.any? %>
+                      <div class="mt-2">
+                        <strong>Affected:</strong>
+                        <div class="mt-1" style="max-height: 150px; overflow-y: auto;">
+                          <% control_ids.each do |cid| %>
+                            <span class="badge bg-light text-dark border me-1 mb-1"><%= cid %></span>
+                          <% end %>
+                          <% if count > control_ids.size %>
+                            <span class="text-body-secondary small">... and <%= count - control_ids.size %> more</span>
+                          <% end %>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button"
+                  class="btn btn-sparc-purple"
+                  data-action="import-warnings#acknowledge">
+            Acknowledge &amp; Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

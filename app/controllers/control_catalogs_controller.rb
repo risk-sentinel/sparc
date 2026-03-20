@@ -8,7 +8,7 @@ class ControlCatalogsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export, :baseline_controls,
     :update_baseline, :bulk_update_baselines,
-    :publish, :publish_check
+    :publish, :publish_check, :acknowledge_warnings
   ]
   before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines, :publish ]
   before_action :authorize_catalog_write!, only: [
@@ -94,6 +94,17 @@ class ControlCatalogsController < ApplicationController
       flash[:error] = @control_catalog.errors.full_messages.join(", ")
       redirect_to control_catalog_path(@control_catalog)
     end
+  end
+
+  # PATCH /control_catalogs/:id/acknowledge_warnings
+  # Marks import warnings as acknowledged so the modal doesn't re-appear.
+  def acknowledge_warnings
+    @control_catalog.update!(
+      metadata_extra: (@control_catalog.metadata_extra || {}).merge(
+        "import_warnings_acknowledged" => true
+      )
+    )
+    render json: { acknowledged: true }
   end
 
   # GET  /control_catalogs/import

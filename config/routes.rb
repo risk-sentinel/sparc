@@ -193,6 +193,7 @@ Rails.application.routes.draw do
       get :baseline_controls
       patch :update_baseline
       patch :bulk_update_baselines
+      patch :acknowledge_warnings
     end
     collection do
       get  :import

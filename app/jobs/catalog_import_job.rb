@@ -24,9 +24,20 @@ class CatalogImportJob < ApplicationJob
       file = File.open(file_path)
       stats = CatalogImportService.call(file, original_filename, existing_catalog: catalog)
 
+      # Run post-import quality checks
+      catalog.reload
+      catalog.update!(
+        metadata_extra: (catalog.metadata_extra || {}).merge(
+          "processing_stage"   => "validating",
+          "processing_message" => "Checking catalog quality..."
+        )
+      )
+      validation_result = CatalogImportValidationService.new(catalog).validate
+
       catalog.update!(
         status: "completed",
         metadata_extra: (catalog.metadata_extra || {}).merge(
+          validation_result,
           "processing_stage"        => "complete",
           "processing_message"      => "Import complete",
           "processing_completed_at" => Time.current.iso8601
