@@ -28,6 +28,7 @@ gem "sidekiq"                       # Background jobs
 gem "redis", "~> 5.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
+gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS fix (overrides Ruby 3.4.4 bundled 0.6.0)
 gem "dotenv-rails", require: false, groups: [ :development, :test ]
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]

@@ -24,9 +24,13 @@ RUN rm -f /etc/apt/sources.list /etc/apt/sources.list.d/* && \
     echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://security.debian.org/debian-security bookworm-security main" >> /etc/apt/sources.list
 
 # Step 3: Now install runtime deps securely
+# NOTE: libvips was removed — it pulled in ImageMagick, libtiff, libhdf5,
+# poppler, OpenJPEG, OpenEXR, libaom and ~200+ CVEs. SPARC uses Active Storage
+# for document file storage only (no image transformations/variants).
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-      libjemalloc2 libvips postgresql-client && \
+      libjemalloc2 postgresql-client && \
+    apt-get upgrade -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 

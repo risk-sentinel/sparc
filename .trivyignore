@@ -1,3 +1,111 @@
 # Trivy vulnerability suppressions for SPARC
-# Add accepted-risk CVE IDs here (one per line) after reviewing scan results.
-# Example: CVE-2024-12345
+# ============================================================================
+# Each suppressed CVE includes classification, justification, mitigating
+# controls, and reference links. Review and re-evaluate on each major release.
+#
+# Classifications:
+#   DISPUTED    — Upstream maintainers or NVD dispute the vulnerability
+#   MITIGATED   — Real vulnerability but fully mitigated by SPARC's deployment
+#   FALSE POSITIVE — Not a vulnerability; expected behavior or wrong context
+# ============================================================================
+
+# CVE-2019-1010022 — glibc stack guard page bypass
+# Classification: DISPUTED (NVD, glibc maintainers)
+# Description: Theoretical stack guard page bypass in glibc. Requires local
+#   code execution to exploit, which already constitutes full compromise.
+# Mitigation: SPARC container runs as non-root user (UID 1000) with no
+#   setuid binaries. Container isolation (namespaces, seccomp) limits attack
+#   surface. No known exploit exists in the wild.
+# Reference: https://sourceware.org/bugzilla/show_bug.cgi?id=22850
+# Reviewed: 2026-03-19
+CVE-2019-1010022
+
+# CVE-2011-3389 — BEAST attack on SSL 3.0 / TLS 1.0 CBC ciphers
+# Classification: MITIGATED
+# Description: Browser Exploit Against SSL/TLS (BEAST) enables chosen-plaintext
+#   attack against CBC ciphers in SSL 3.0 and TLS 1.0.
+# Mitigation: SPARC enforces TLS 1.2+ via Rails force_ssl configuration and
+#   infrastructure-level TLS termination (nginx/ALB). TLS 1.0 and 1.1 are not
+#   offered or accepted. CBC cipher suites in TLS 1.0 are unreachable.
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2011-3389
+# Reviewed: 2026-03-19
+CVE-2011-3389
+
+# CVE-2005-2541 — tar does not warn on setuid/setgid file extraction
+# Classification: FALSE POSITIVE (expected behavior per GNU tar documentation)
+# Description: GNU tar extracts files with setuid/setgid bits without warning.
+#   This is documented expected behavior, not a security defect.
+# Mitigation: SPARC does not extract untrusted tar archives at runtime.
+#   Container builds use only official Debian package repositories with
+#   signed-by GPG verification. Production container runs as non-root (UID 1000)
+#   so extracted setuid bits would have no privilege escalation effect.
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2005-2541
+# Reviewed: 2026-03-19
+CVE-2005-2541
+
+# CVE-2025-24294 — resolv ReDoS vulnerability (Ruby stdlib)
+# Classification: FALSE POSITIVE (version mismatch in container scan)
+# Description: ReDoS in resolv gem < 0.6.1. Trivy flags the system Ruby
+#   bundled resolv 0.6.0, but SPARC's Gemfile pins resolv >= 0.7.0 (currently
+#   0.7.1 in Gemfile.lock). Bundler loads the patched version at runtime,
+#   not the system default.
+# Mitigation: Gemfile explicitly pins resolv >= 0.7.0. Verified resolv 0.7.1
+#   in Gemfile.lock. Bundler's load path takes precedence over system gems.
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2025-24294
+# Reviewed: 2026-03-19
+CVE-2025-24294
+
+# CVE-2025-61594 — uri vulnerability (Ruby stdlib)
+# Classification: FALSE POSITIVE (version mismatch in container scan)
+# Description: Vulnerability in uri gem < 1.0.4. Trivy flags the system Ruby
+#   bundled uri 1.0.3, but SPARC's Gemfile.lock resolves to uri 1.1.1 (latest).
+#   Bundler loads the patched version at runtime, not the system default.
+# Mitigation: Gemfile.lock pins uri 1.1.1 (patched). Bundler's load path
+#   takes precedence over system gems in BUNDLE_DEPLOYMENT mode.
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2025-61594
+# Reviewed: 2026-03-19
+CVE-2025-61594
+
+# CVE-2025-7458 — SQLite integer overflow
+# Classification: ACCEPTED RISK (no fix available in Debian Bookworm)
+# Description: Integer overflow in SQLite. No Debian Bookworm patch available.
+# Mitigation: SPARC uses PostgreSQL as its database, not SQLite. SQLite is
+#   installed as a transitive dependency of the base Ruby image. The SQLite
+#   library is not used by any SPARC code path. Application data is never
+#   processed through SQLite.
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2025-7458
+# Reviewed: 2026-03-19
+CVE-2025-7458
+
+# CVE-2023-45853 — zlib MiniZip integer overflow / heap overflow
+# Classification: ACCEPTED RISK (no fix available in Debian Bookworm)
+# Description: Integer overflow and resultant heap-based buffer overflow in
+#   zlib's minizip contrib code. No Debian Bookworm patch available.
+# Mitigation: SPARC does not use minizip functionality directly. The zlib
+#   library is used for HTTP compression (handled by Ruby/Rack middleware)
+#   which does not exercise the minizip code path. Container runs as non-root
+#   (UID 1000) limiting exploit impact.
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2023-45853
+# Reviewed: 2026-03-19
+CVE-2023-45853
+
+# CVE-2026-0861 — glibc vulnerability (libc-bin / libc6)
+# Classification: ACCEPTED RISK (no fix available in Debian Bookworm)
+# Description: Vulnerability in glibc 2.36. No Debian Bookworm patch available.
+# Mitigation: Container runs as non-root (UID 1000) in isolated Docker
+#   namespace with seccomp profiles. Will be resolved when base image upgrades
+#   to newer Debian release with patched glibc.
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2026-0861
+# Reviewed: 2026-03-19
+CVE-2026-0861
+
+# CVE-2023-2953 — OpenLDAP null pointer dereference
+# Classification: ACCEPTED RISK (no fix available in Debian Bookworm)
+# Description: Null pointer dereference in libldap. No Debian Bookworm patch.
+# Mitigation: SPARC uses the net-ldap Ruby gem for LDAP authentication, which
+#   is a pure-Ruby LDAP client and does not link against libldap-2.5-0.
+#   The system libldap is a transitive dependency not exercised by SPARC.
+#   LDAP authentication is optional and disabled by default.
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2023-2953
+# Reviewed: 2026-03-19
+CVE-2023-2953
