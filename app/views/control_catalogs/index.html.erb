@@ -1,7 +1,8 @@
 <%= render "shared/section_summary", tiles: [
   [@total_count, "Catalogs"],
-  [@family_count, "Families"],
-  [@control_count, "Controls"]
+  [@family_count, "Unique Families"],
+  [@control_count, "Unique Controls"],
+  [@revision_count, "Revisions"]
 ] %>
 
 <% if @control_catalogs.any? { |c| c.processing? || c.pending? } %>

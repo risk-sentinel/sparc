@@ -115,7 +115,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 ### 11. Security Remediation & Bug Fixes (New — discovered during Phases 1-5)
 
 - [x] #210 -- Remediate container image security findings from hybrid scanning pipeline (339 CVEs, 1 suppressed SAST)
-- [ ] #203 -- Control Catalogs index: summary counts show totals instead of unique values (BUG)
+- [x] #203 -- Control Catalogs index: summary counts show totals instead of unique values (BUG) -- **COMPLETED 2026-03-19**
 - [ ] #205 -- Accept fully resolved OSCAL profiles from NIST without prioritization requirement (BUG)
 
 ### 12. OSCAL Import Quality & Traceability (New — discovered during Phases 3-4)
@@ -312,7 +312,7 @@ Dev C: #183 (migration squash)  -- AFTER all migration PRs merge
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
 | [x] | #210 | Remediate container image CVEs (339 findings from Trivy scan) | **HIGH** (security) | None |
-| [ ] | #203 | Catalog index summary counts show totals instead of unique values | **HIGH** (bug) | None |
+| [x] | #203 | Catalog index summary counts show totals instead of unique values | **HIGH** (bug) | None |
 | [ ] | #205 | Accept fully resolved OSCAL profiles without prioritization requirement | **HIGH** (bug) | None |
 
 <!-- markdownlint-enable MD013 -->
@@ -321,7 +321,7 @@ Dev C: #183 (migration squash)  -- AFTER all migration PRs merge
 
 ```text
 Dev A: #210 (container CVE remediation) -- Dockerfile/Gemfile, isolated ✅ COMPLETE
-Dev B: #203 (catalog count bug fix)     -- Single controller/view fix
+Dev B: #203 (catalog count bug fix)     -- Single controller/view fix ✅ COMPLETE
 Dev C: #205 (profile import fix)        -- Profile parser/service
 ```
 
