@@ -121,12 +121,28 @@ class ControlCatalogsController < ApplicationController
     original_filename = file.original_filename
     sanitized_filename = File.basename(original_filename)
 
-    # Create a pending catalog record and stash the file for background processing
-    catalog = ControlCatalog.create!(
-      name: File.basename(original_filename, ".*").tr("_", " "),
-      status: "pending",
-      original_filename: original_filename
-    )
+    # Check for existing catalog with matching name to avoid duplicates.
+    # Re-importing the same file refreshes the existing catalog rather than creating a duplicate.
+    inferred_name = File.basename(original_filename, ".*").tr("_", " ")
+    catalog = ControlCatalog.find_by(name: inferred_name)
+
+    if catalog
+      # Reset for re-import — clear any previous warnings acknowledgement
+      catalog.update!(
+        status: "pending",
+        error_message: nil,
+        original_filename: original_filename,
+        metadata_extra: (catalog.metadata_extra || {}).except(
+          "import_warnings", "import_warnings_summary", "import_warnings_acknowledged"
+        )
+      )
+    else
+      catalog = ControlCatalog.create!(
+        name: inferred_name,
+        status: "pending",
+        original_filename: original_filename
+      )
+    end
 
     # Copy uploaded file to a temp path that persists past the request
     tmp_path = Rails.root.join("tmp", "catalog_import_#{catalog.id}_#{sanitized_filename}")
