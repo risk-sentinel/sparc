@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-03-19 -- Fix Control Catalog Index Summary Counts (#203)
+
+**Branch:** `feature/203_catalog_counts`
+
+### Summary
+
+Fixes misleading hero tile counts on the Control Catalogs index page. Families and Controls
+tiles now show unique values (distinct family codes and control IDs) instead of totals across
+all catalogs. Adds a new "Revisions" tile showing distinct catalog versions.
+
+### What Changed
+
+- **Unique family count** -- `ControlFamily.distinct.count(:code)` replaces `ControlFamily.count`
+- **Unique control count** -- `CatalogControl.distinct.count(:control_id)` replaces `CatalogControl.count`
+- **New "Revisions" tile** -- shows distinct version strings across all catalogs
+- **Updated tile labels** -- "Families" → "Unique Families", "Controls" → "Unique Controls"
+
+### Files Modified
+
+- `app/controllers/control_catalogs_controller.rb` -- unique counts + revision count
+- `app/views/control_catalogs/index.html.erb` -- updated tile labels + new Revisions tile
+
+---
+
 ## 2026-03-19 -- Container Image Security Remediation (#210)
 
 **Branch:** `feature/210_container_security`
