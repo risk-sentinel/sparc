@@ -24,25 +24,48 @@ class CatalogImportJob < ApplicationJob
       file = File.open(file_path)
       stats = CatalogImportService.call(file, original_filename, existing_catalog: catalog)
 
+      # The service may have resolved to a different catalog (by UUID match).
+      # If so, clean up the shell record and use the resolved catalog going forward.
+      resolved_catalog = stats[:catalog]
+      if resolved_catalog.id != catalog.id
+        catalog.destroy if catalog.control_families.empty?
+        catalog = resolved_catalog
+      end
+
+      # Run post-import quality checks
+      catalog.reload
+      catalog.update!(
+        metadata_extra: (catalog.metadata_extra || {}).merge(
+          "processing_stage"   => "validating",
+          "processing_message" => "Checking catalog quality..."
+        )
+      )
+      validation_result = CatalogImportValidationService.new(catalog).validate
+
       catalog.update!(
         status: "completed",
         metadata_extra: (catalog.metadata_extra || {}).merge(
+          validation_result,
           "processing_stage"        => "complete",
           "processing_message"      => "Import complete",
           "processing_completed_at" => Time.current.iso8601
         )
       )
     rescue StandardError => e
-      failed_stage = catalog.reload.metadata_extra&.dig("processing_stage") || "unknown"
-      catalog.update!(
-        status: "failed",
-        error_message: e.message,
-        metadata_extra: (catalog.metadata_extra || {}).merge(
-          "processing_stage"     => "failed",
-          "processing_message"   => "Failed during: #{failed_stage}",
-          "processing_failed_at" => Time.current.iso8601
+      # Reload catalog — it may have been swapped by the service
+      catalog = ControlCatalog.find_by(id: catalog_id) || ControlCatalog.find_by(id: stats&.dig(:catalog)&.id)
+      if catalog
+        failed_stage = catalog.reload.metadata_extra&.dig("processing_stage") || "unknown"
+        catalog.update!(
+          status: "failed",
+          error_message: e.message,
+          metadata_extra: (catalog.metadata_extra || {}).merge(
+            "processing_stage"     => "failed",
+            "processing_message"   => "Failed during: #{failed_stage}",
+            "processing_failed_at" => Time.current.iso8601
+          )
         )
-      )
+      end
       Rails.logger.error("Catalog import failed for catalog #{catalog_id}: #{e.message}")
     ensure
       FileUtils.rm_f(file_path)

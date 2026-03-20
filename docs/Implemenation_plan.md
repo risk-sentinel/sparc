@@ -120,7 +120,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 12. OSCAL Import Quality & Traceability (New — discovered during Phases 3-4)
 
-- [ ] #207 -- Enhance Catalog/Baseline import to detect & report missing required data, priorities, and subparts
+- [x] #207 -- Enhance Catalog/Baseline import to detect & report missing required data, priorities, and subparts -- **COMPLETED 2026-03-20**
 - [ ] #213 -- Map XCCDF/InSpec SV/V IDs to NIST control IDs during CDEF import
 - [ ] #217 -- Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation details
 
@@ -338,7 +338,7 @@ Dev C: #205 (profile import fix)        -- Profile parser/service ✅ COMPLETE
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #207 | Catalog/Baseline import: detect & report missing data, priorities, subparts | MEDIUM | None |
+| [x] | #207 | Catalog/Baseline import: detect & report missing data, priorities, subparts | MEDIUM | None |
 | [ ] | #213 | Map XCCDF/InSpec SV/V IDs to NIST control IDs during CDEF import | MEDIUM | None |
 | [ ] | #217 | Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation | MEDIUM | None |
 
@@ -347,7 +347,7 @@ Dev C: #205 (profile import fix)        -- Profile parser/service ✅ COMPLETE
 **Deliverables:** Better import validation UX, correct STIG-to-NIST traceability, comprehensive mapping docs
 
 ```text
-Dev A: #207 (import quality)     -- Catalog domain
+Dev A: #207 (import quality)     -- Catalog domain ✅ COMPLETE
 Dev B: #213 (XCCDF ID mapping)   -- CDEF/Converter domain
 Dev C: #217 (Rev 5 docs)         -- Documentation only
 ```

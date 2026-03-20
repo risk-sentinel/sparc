@@ -8,7 +8,7 @@ class ControlCatalogsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export, :baseline_controls,
     :update_baseline, :bulk_update_baselines,
-    :publish, :publish_check
+    :publish, :publish_check, :acknowledge_warnings
   ]
   before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines, :publish ]
   before_action :authorize_catalog_write!, only: [
@@ -96,6 +96,17 @@ class ControlCatalogsController < ApplicationController
     end
   end
 
+  # PATCH /control_catalogs/:id/acknowledge_warnings
+  # Marks import warnings as acknowledged so the modal doesn't re-appear.
+  def acknowledge_warnings
+    @control_catalog.update!(
+      metadata_extra: (@control_catalog.metadata_extra || {}).merge(
+        "import_warnings_acknowledged" => true
+      )
+    )
+    render json: { acknowledged: true }
+  end
+
   # GET  /control_catalogs/import
   # POST /control_catalogs/import
   def import
@@ -110,12 +121,29 @@ class ControlCatalogsController < ApplicationController
     original_filename = file.original_filename
     sanitized_filename = File.basename(original_filename)
 
-    # Create a pending catalog record and stash the file for background processing
-    catalog = ControlCatalog.create!(
-      name: File.basename(original_filename, ".*").tr("_", " "),
-      status: "pending",
-      original_filename: original_filename
-    )
+    # Check for existing catalog to avoid duplicates.
+    # Try original_filename first (most reliable for re-imports), then inferred name.
+    inferred_name = File.basename(original_filename, ".*").tr("_", " ")
+    catalog = ControlCatalog.find_by(original_filename: original_filename) ||
+              ControlCatalog.find_by(name: inferred_name)
+
+    if catalog
+      # Reset for re-import — clear any previous warnings acknowledgement
+      catalog.update!(
+        status: "pending",
+        error_message: nil,
+        original_filename: original_filename,
+        metadata_extra: (catalog.metadata_extra || {}).except(
+          "import_warnings", "import_warnings_summary", "import_warnings_acknowledged"
+        )
+      )
+    else
+      catalog = ControlCatalog.create!(
+        name: inferred_name,
+        status: "pending",
+        original_filename: original_filename
+      )
+    end
 
     # Copy uploaded file to a temp path that persists past the request
     tmp_path = Rails.root.join("tmp", "catalog_import_#{catalog.id}_#{sanitized_filename}")
@@ -288,6 +316,10 @@ class ControlCatalogsController < ApplicationController
 
   def set_control_catalog
     @control_catalog = ControlCatalog.find_by!(slug: params[:id])
+  rescue ActiveRecord::RecordNotFound
+    # Shell record may have been destroyed by the background job during
+    # a re-import (UUID conflict). Fall back to the catalog index.
+    redirect_to control_catalogs_path, alert: "Catalog not found — it may have been merged during re-import."
   end
 
   def ensure_editable!
