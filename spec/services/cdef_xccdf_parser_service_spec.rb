@@ -77,6 +77,88 @@ RSpec.describe CdefXccdfParserService do
     end
   end
 
+  describe "XCCDF STIG with NIST resolution" do
+    let(:fixture_path) { Rails.root.join("spec/fixtures/files/components/test-stig-xccdf.xml").to_s }
+    let(:document) { create(:cdef_document, file_type: "xccdf", status: "processing") }
+    let(:service) { described_class.new(document, fixture_path) }
+
+    it "parses XCCDF STIG and creates controls" do
+      service.parse
+      document.reload
+
+      expect(document.cdef_controls.count).to eq(2)
+    end
+
+    it "resolves NIST control IDs via CCI fallback" do
+      service.parse
+      document.reload
+
+      # CCI-000366 maps to a NIST control (cm-6 in cci_to_nist.json)
+      control = document.cdef_controls.find_by(stig_id: "SV-257777r925318_rule")
+      expect(control.control_id).not_to start_with("SV-")
+      expect(control.control_id).to match(/\A[a-z]{2}-\d+/)
+    end
+
+    it "preserves original rule_id as stig_id" do
+      service.parse
+      document.reload
+
+      control = document.cdef_controls.find_by(stig_id: "SV-257777r925318_rule")
+      expect(control.stig_id).to eq("SV-257777r925318_rule")
+      expect(control.rule_id).to eq("SV-257777r925318_rule")
+    end
+
+    it "derives control_family from resolved NIST ID" do
+      service.parse
+      document.reload
+
+      control = document.cdef_controls.find_by(stig_id: "SV-257777r925318_rule")
+      expect(control.control_family).to be_present
+      expect(control.control_family).to match(/\A[A-Z]{2}\z/)
+    end
+
+    it "stores nist_controls field when resolution succeeds" do
+      service.parse
+      document.reload
+
+      control = document.cdef_controls.find_by(stig_id: "SV-257777r925318_rule")
+      nist_field = control.cdef_control_fields.find_by(field_name: "nist_controls")
+      expect(nist_field).to be_present
+      expect(nist_field.field_value).to match(/\A[a-z]{2}-\d+/)
+    end
+
+    it "uses Converter entries when available" do
+      # Create a stig_to_nist Converter with a known mapping
+      converter = Converter.create!(
+        name: "Test STIG Converter",
+        converter_type: "stig_to_nist",
+        version: "1.0",
+        status: "complete",
+        source_framework: "DISA STIG XCCDF",
+        target_framework: "NIST SP 800-53"
+      )
+      ConverterEntry.create!(
+        converter: converter,
+        source_id: "SV-257777",
+        target_id: "cm-6",
+        relationship: "subset"
+      )
+
+      service.parse
+      document.reload
+
+      control = document.cdef_controls.find_by(stig_id: "SV-257777r925318_rule")
+      expect(control.control_id).to eq("cm-6")
+    end
+
+    it "sets cdef_type to disa_stig" do
+      service.parse
+      document.reload
+
+      expect(document.cdef_type).to eq("disa_stig")
+    end
+  end
+
   describe "unrecognized XML format" do
     it "raises a descriptive error" do
       xml_content = '<?xml version="1.0"?><unknown-root><child/></unknown-root>'

@@ -153,6 +153,7 @@ class OscalComponentDefinitionExportService
     props << { "name" => "severity", "value" => control.severity } if control.severity.present?
     props << { "name" => "rule-id",  "value" => control.rule_id }  if control.rule_id.present?
     props << { "name" => "group-id", "value" => control.group_id } if control.group_id.present?
+    props << { "name" => "stig-id",  "value" => control.stig_id }  if control.stig_id.present?
 
     if control.cci_references.present?
       control.cci_references.split(",").each do |cci|
