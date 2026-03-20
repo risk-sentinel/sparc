@@ -1,0 +1,95 @@
+{
+  "component-definition": {
+    "uuid": "7a632d4d-886a-4f0c-b2a9-ca0ee206b9c8",
+    "metadata": {
+      "title": "SPARC Audit and Accountability",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "aaf142ad-e788-4e05-a50a-0f205e10a7d9",
+          "type": "organization",
+          "name": "SPARC Development Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "6d353220-bff7-4ca3-b32d-646dddb2f308",
+        "type": "software",
+        "title": "SPARC Application",
+        "description": "SPARC (Systemized Policy and Regulatory Controls) is a Rails application for managing NIST 800-53 compliance documentation. This component definition covers audit and accountability implementations.",
+        "control-implementations": [
+          {
+            "uuid": "9b32900e-6bee-4e82-83a4-aa90bad93ef7",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_HIGH-baseline-resolved-profile_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 HIGH Baseline",
+            "implemented-requirements": [
+              {
+                "uuid": "3d8006d4-7f1b-4b92-8536-def3392fa306",
+                "control-id": "au-2",
+                "description": "SPARC defines 139 auditable event types organized across 16 categories in the AuditEvent model. Categories include authentication, authorization, document lifecycle, control modifications, user management, API access, export operations, and configuration changes. The event type taxonomy ensures comprehensive coverage of security-relevant actions.",
+                "remarks": "Implemented in app/models/audit_event.rb. Tested by spec/models/audit_event_spec.rb."
+              },
+              {
+                "uuid": "396ab6e7-914f-4dc6-972f-8412ad1f5fb4",
+                "control-id": "au-3",
+                "description": "SPARC audit records contain structured content including: acting user identity, action performed, ISO8601 timestamp, originating IP address, user agent string, JSON metadata with contextual details, and polymorphic subject reference linking to the affected resource. The AuditEvent.log factory method ensures consistent record structure.",
+                "remarks": "Implemented in app/models/audit_event.rb:log. Tested by spec/models/audit_event_spec.rb."
+              },
+              {
+                "uuid": "cde41c06-39b4-4d53-9477-250c43bf1eb1",
+                "control-id": "au-4",
+                "description": "SPARC stores audit records in PostgreSQL, leveraging the database engine's storage management capabilities. Audit storage capacity scales with the allocated database volume. Retention policies are configurable at the database level to manage storage consumption over time.",
+                "remarks": "Implemented via PostgreSQL audit_events table. Storage capacity managed by database infrastructure."
+              },
+              {
+                "uuid": "29784f4c-8998-4266-b356-e522c3e5290d",
+                "control-id": "au-5",
+                "description": "SPARC integrates audit event generation with the Rails logger for real-time streaming of audit data. Structured JSON output enables forwarding to centralized log aggregation services. When audit logging encounters errors, the Rails logger captures the failure for operational alerting.",
+                "remarks": "Implemented in app/models/audit_event.rb with structured JSON output via Rails.logger. Tested by spec/models/audit_event_spec.rb."
+              },
+              {
+                "uuid": "01e9dd87-4890-4d22-9c96-e4afaccb07cc",
+                "control-id": "au-6",
+                "description": "SPARC provides audit review and analysis capabilities through ActiveRecord scopes on the AuditEvent model: recent, for_user, by_category, by_subject_type, search (full-text), and in_date_range. These scopes enable administrators to filter, correlate, and investigate audit records across multiple dimensions.",
+                "remarks": "Implemented in app/models/audit_event.rb scopes. Tested by spec/models/audit_event_spec.rb."
+              },
+              {
+                "uuid": "cda6f5eb-e32c-4a2d-b3db-d6b9b57f8376",
+                "control-id": "au-8",
+                "description": "SPARC generates timestamps using Rails Time.current, which returns server-local time synchronized with the host system clock. Audit records store timestamps as database-native datetime columns. Structured log output formats timestamps in ISO8601 for interoperability with log aggregation systems.",
+                "remarks": "Implemented in app/models/audit_event.rb using Rails Time.current and ISO8601 formatting."
+              },
+              {
+                "uuid": "f0dbda8c-ef96-4a9f-ae66-e19faaee8275",
+                "control-id": "au-9",
+                "description": "SPARC protects audit information through an append-only design. The audit_events table has no updated_at column and the AuditEvent model exposes no update or destroy methods. Once written, audit records cannot be modified or deleted through the application layer. Database-level access controls further restrict direct table manipulation.",
+                "remarks": "Implemented in app/models/audit_event.rb (append-only design, no update methods). Tested by spec/models/audit_event_spec.rb."
+              },
+              {
+                "uuid": "e459aedd-afba-48eb-b57b-5f648eeaf6a8",
+                "control-id": "au-11",
+                "description": "SPARC retains audit records in PostgreSQL for the duration configured by database-level retention policies. The append-only audit_events table preserves all records until explicitly purged by database administrators according to the organization's retention schedule.",
+                "remarks": "Retention period managed at the database infrastructure level. Application does not delete audit records."
+              },
+              {
+                "uuid": "62af3d04-5942-41a3-96ce-00b400025227",
+                "control-id": "au-12",
+                "description": "SPARC generates audit records at the point of action through the AuditEvent.log() factory method. Controllers and model callbacks invoke this method to capture security-relevant events including authentication, authorization decisions, document operations, configuration changes, and API access across all 139 defined event types.",
+                "remarks": "Implemented in app/models/audit_event.rb:log, invoked from controllers and model callbacks. Tested by spec/models/audit_event_spec.rb."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

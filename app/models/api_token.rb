@@ -12,6 +12,10 @@
 #   api_token = ApiToken.authenticate("sparc_abc123...")
 #   api_token.user  # => User record
 #
+# NIST 800-53 Controls:
+#   IA-5 Authenticator Management (SHA-256 digest, no plaintext storage)
+#   SC-13 Cryptographic Protection (SecureRandom.hex, SHA-256)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class ApiToken < ApplicationRecord
   belongs_to :user
 

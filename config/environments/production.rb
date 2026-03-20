@@ -3,6 +3,12 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
   # See docs/ENVIRONMENT_VARIABLES.md for the full SPARC configuration reference.
+  #
+  # NIST 800-53 Controls:
+  #   SC-8  Transmission Confidentiality (FORCE_SSL + HSTS preload)
+  #   SC-13 Cryptographic Protection (TLS enforcement)
+  #   SC-28 Protection of Information at Rest (S3 SSE, SolidCache)
+  # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 
   # Code is not reloaded between requests.
   config.enable_reloading = false
