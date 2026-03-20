@@ -4,6 +4,53 @@
 
 ---
 
+## 2026-03-19 -- Accept Fully Resolved OSCAL Profiles Without Prioritization (#205)
+
+**Branch:** `feature/205_resolved_profile_import`
+
+### Summary
+
+NIST-published resolved profile catalogs (e.g., LOW/MODERATE/HIGH baselines) can now be
+uploaded directly as profiles. They are auto-detected, parsed from their catalog structure,
+and auto-published without requiring P1/P2/P3 prioritization. Supports JSON, YAML, and XML
+formats.
+
+### What Changed
+
+- **Resolved profile detection** -- `ProfileJsonParserService` detects catalog-rooted documents
+  with a `resolution-tool` prop or `source-profile` link in metadata and routes them to a
+  dedicated parsing path instead of raising "missing profile root key"
+- **Resolved catalog parsing** -- Walks `groups[].controls[]` (including nested enhancements)
+  to extract control IDs, titles, props, parameters, and guidelines. Stores the entire
+  resolved catalog JSON directly in `resolved_catalog_json` (no regeneration needed)
+- **Auto-publish** -- `DocumentConversionJob` checks for `auto_publish` flag in metadata_extra
+  and sets `lifecycle_status: "published"` with a published timestamp automatically
+- **Skip prioritization** -- `publish_check` and `before_publish_lifecycle` in the profile
+  controller skip P1/P2/P3 and parameter customization checks for resolved profiles
+- **Catalog auto-linking** -- Source catalog matched by revision pattern in the source-profile
+  href filename (e.g., "rev5" + "800-53")
+- **XML support** -- `ProfileXmlParserService` detects resolved catalog XML, converts to JSON
+  hash, and delegates to the JSON parser
+- **YAML support** -- Already delegates to JSON parser, gets resolved profile support for free
+
+### Files Created/Modified
+
+- `app/services/profile_json_parser_service.rb` -- resolved profile detection + parsing
+- `app/services/profile_xml_parser_service.rb` -- resolved catalog XML detection + conversion
+- `app/jobs/document_conversion_job.rb` -- auto-publish on `auto_publish` flag
+- `app/controllers/profile_documents_controller.rb` -- skip prioritization for resolved profiles
+- `spec/services/profile_resolved_catalog_parser_spec.rb` -- NEW (28 tests)
+- `spec/fixtures/files/profiles/small-resolved-profile-catalog.json` -- NEW test fixture
+
+### Verification
+
+- 1166 RSpec examples, 0 failures (28 new)
+- Rubocop clean
+- Resolved profiles auto-parse, auto-link catalog, auto-publish
+- Existing profile upload workflow unaffected
+
+---
+
 ## 2026-03-19 -- Fix Control Catalog Index Summary Counts (#203)
 
 **Branch:** `feature/203_catalog_counts`

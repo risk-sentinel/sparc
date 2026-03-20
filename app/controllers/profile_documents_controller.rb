@@ -342,27 +342,30 @@ class ProfileDocumentsController < ApplicationController
   end
 
   # Override publish_check to include Profile-specific prioritization check.
+  # Resolved profiles (externally sourced) skip prioritization and parameter checks.
   def publish_check
     service = PublicationValidationService.new(@profile_document, current_user: current_user)
     readiness = service.publication_readiness
 
-    # Add prioritization check for profiles
-    unprioritized = @profile_document.profile_controls.where(priority: [ nil, "" ]).count
-    prioritized = unprioritized == 0
-    readiness[:checks][:controls_prioritized] = prioritized
+    unless resolved_profile?
+      # Add prioritization check for user-created profiles
+      unprioritized = @profile_document.profile_controls.where(priority: [ nil, "" ]).count
+      prioritized = unprioritized == 0
+      readiness[:checks][:controls_prioritized] = prioritized
 
-    unless prioritized
-      readiness[:ready] = false
-      readiness[:errors] << "#{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3)"
-    end
+      unless prioritized
+        readiness[:ready] = false
+        readiness[:errors] << "#{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3)"
+      end
 
-    # Add parameter completeness check
-    uncustomized = count_uncustomized_parameters(@profile_document)
-    readiness[:checks][:parameters_customized] = uncustomized == 0
+      # Add parameter completeness check
+      uncustomized = count_uncustomized_parameters(@profile_document)
+      readiness[:checks][:parameters_customized] = uncustomized == 0
 
-    unless uncustomized == 0
-      readiness[:ready] = false
-      readiness[:errors] << "#{uncustomized} parameter#{'s' if uncustomized != 1} still have default catalog values"
+      unless uncustomized == 0
+        readiness[:ready] = false
+        readiness[:errors] << "#{uncustomized} parameter#{'s' if uncustomized != 1} still have default catalog values"
+      end
     end
 
     render json: readiness
@@ -376,20 +379,31 @@ class ProfileDocumentsController < ApplicationController
   end
 
   # Profile-specific pre-publish logic: validate catalog link, prioritization, and generate resolved catalog.
+  # Resolved profiles already have resolved_catalog_json populated from import — skip regeneration.
   def before_publish_lifecycle(doc)
-    unless doc.control_catalog
-      return { error: "Cannot publish: no source catalog linked to this profile." }
+    is_resolved = doc.import_metadata&.dig("format") == "oscal_resolved_profile"
+
+    unless is_resolved
+      unless doc.control_catalog
+        return { error: "Cannot publish: no source catalog linked to this profile." }
+      end
+
+      unprioritized = doc.profile_controls.where(priority: [ nil, "" ]).count
+      if unprioritized > 0
+        return { error: "Cannot publish: #{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3). Assign priorities before publishing." }
+      end
+
+      service = OscalResolvedProfileCatalogService.new(doc)
+      resolved_json = service.export
+      doc.update!(resolved_catalog_json: JSON.parse(resolved_json))
     end
 
-    unprioritized = doc.profile_controls.where(priority: [ nil, "" ]).count
-    if unprioritized > 0
-      return { error: "Cannot publish: #{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3). Assign priorities before publishing." }
-    end
-
-    service = OscalResolvedProfileCatalogService.new(doc)
-    resolved_json = service.export
-    doc.update!(resolved_catalog_json: JSON.parse(resolved_json))
     nil
+  end
+
+  # Check if the current profile is a resolved profile (externally sourced).
+  def resolved_profile?
+    @profile_document.import_metadata&.dig("format") == "oscal_resolved_profile"
   end
 
   # Count parameters where the value still matches the catalog label (unchanged).
