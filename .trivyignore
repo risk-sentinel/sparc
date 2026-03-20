@@ -44,24 +44,42 @@ CVE-2011-3389
 CVE-2005-2541
 
 # CVE-2025-24294 — resolv ReDoS vulnerability (Ruby stdlib)
-# Classification: FALSE POSITIVE (version mismatch in container scan)
-# Description: ReDoS in resolv gem < 0.6.1. Trivy flags the system Ruby
-#   bundled resolv 0.6.0, but SPARC's Gemfile pins resolv >= 0.7.0 (currently
-#   0.7.1 in Gemfile.lock). Bundler loads the patched version at runtime,
-#   not the system default.
+# Classification: FALSE POSITIVE (container scan vs operational runtime mismatch)
+# Description: ReDoS in resolv gem < 0.6.1. Trivy scans the system-level Ruby
+#   stdlib gems baked into the ruby:3.4.4-slim Docker base image and finds
+#   resolv 0.6.0. However, SPARC never uses this system copy at runtime.
+# Why Trivy scan differs from operational runtime:
+#   Trivy performs static filesystem analysis of /usr/local/lib/ruby/gems/ and
+#   finds the vulnerable system-bundled resolv 0.6.0. At runtime, Bundler's
+#   BUNDLE_DEPLOYMENT mode (set in Dockerfile ENV) ensures ALL gem loads come
+#   from BUNDLE_PATH (/usr/local/bundle), not the system default. SPARC's
+#   Gemfile pins resolv >= 0.7.0, and Gemfile.lock resolves to 0.7.1 (patched).
+#   The system copy is never loaded, never executed, and unreachable via any
+#   SPARC code path.
 # Mitigation: Gemfile explicitly pins resolv >= 0.7.0. Verified resolv 0.7.1
-#   in Gemfile.lock. Bundler's load path takes precedence over system gems.
+#   in Gemfile.lock. BUNDLE_DEPLOYMENT=1 enforces Bundler load path isolation.
+# Base image note: Tested ruby:3.4.5-slim and ruby:3.4.6-slim — resolv bumped
+#   to 0.6.2 but still flagged. No Ruby 3.4.x base fully resolves this.
 # Reference: https://nvd.nist.gov/vuln/detail/CVE-2025-24294
 # Reviewed: 2026-03-19
 CVE-2025-24294
 
 # CVE-2025-61594 — uri vulnerability (Ruby stdlib)
-# Classification: FALSE POSITIVE (version mismatch in container scan)
-# Description: Vulnerability in uri gem < 1.0.4. Trivy flags the system Ruby
-#   bundled uri 1.0.3, but SPARC's Gemfile.lock resolves to uri 1.1.1 (latest).
-#   Bundler loads the patched version at runtime, not the system default.
-# Mitigation: Gemfile.lock pins uri 1.1.1 (patched). Bundler's load path
-#   takes precedence over system gems in BUNDLE_DEPLOYMENT mode.
+# Classification: FALSE POSITIVE (container scan vs operational runtime mismatch)
+# Description: Vulnerability in uri gem < 1.0.4. Trivy scans the system-level
+#   Ruby stdlib and finds uri 1.0.3 baked into the ruby:3.4.4-slim base image.
+#   However, SPARC never uses this system copy at runtime.
+# Why Trivy scan differs from operational runtime:
+#   Trivy performs static filesystem analysis and finds the vulnerable
+#   system-bundled uri 1.0.3. At runtime, Bundler's BUNDLE_DEPLOYMENT mode
+#   (set in Dockerfile ENV) ensures ALL gem loads come from BUNDLE_PATH
+#   (/usr/local/bundle), not the system default. SPARC's Gemfile.lock resolves
+#   uri to 1.1.1 (patched, latest). The system copy is never loaded, never
+#   executed, and unreachable via any SPARC code path.
+# Mitigation: Gemfile.lock pins uri 1.1.1 (patched). BUNDLE_DEPLOYMENT=1
+#   enforces Bundler load path isolation. No Ruby 3.4.x base ships uri >= 1.0.4.
+# Base image note: Tested ruby:3.4.5-slim and ruby:3.4.6-slim — uri remains
+#   1.0.3 in all available Ruby 3.4.x base images. Fix expected in Ruby 3.5.x.
 # Reference: https://nvd.nist.gov/vuln/detail/CVE-2025-61594
 # Reviewed: 2026-03-19
 CVE-2025-61594
