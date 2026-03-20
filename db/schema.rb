@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_19_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -173,10 +173,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_19_100000) do
     t.integer "row_order", default: 0, null: false
     t.string "rule_id"
     t.string "severity"
+    t.string "stig_id"
     t.string "title"
     t.datetime "updated_at", null: false
     t.index ["cdef_document_id", "control_family"], name: "idx_cdef_controls_on_doc_family"
     t.index ["cdef_document_id", "row_order"], name: "idx_cdef_controls_on_doc_row"
+    t.index ["cdef_document_id", "stig_id"], name: "index_cdef_controls_on_document_and_stig_id"
     t.index ["cdef_document_id"], name: "index_cdef_controls_on_cdef_document_id"
   end
 
