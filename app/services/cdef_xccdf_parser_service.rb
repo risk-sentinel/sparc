@@ -1,6 +1,7 @@
 class CdefXccdfParserService
   include BatchInsertable
   include ProgressTrackable
+  include CciNistResolvable
 
   def initialize(cdef_document, file_path)
     @document  = cdef_document
@@ -236,17 +237,21 @@ class CdefXccdfParserService
                      .select { |r| r.start_with?("CCI-") }
     end
 
-    control_family = derive_control_family(cci_refs, rule_id)
+    # Resolve SV/V-ID → NIST control ID via Converter + CCI fallback
+    sv_id = extract_sv_id(rule_id)
+    nist_id = resolve_nist_for_stig(sv_id, cci_refs) if sv_id.present?
+    control_family = nist_id.present? ? nist_family_from_id(nist_id) : nil
 
     attrs = {
-      control_id:     rule_id,
+      control_id:     nist_id || rule_id,
       title:          title,
       severity:       severity,
       control_family: control_family,
       cci_references: cci_refs.join(","),
       row_order:      row_order,
       group_id:       group_id,
-      rule_id:        rule_id
+      rule_id:        rule_id,
+      stig_id:        rule_id
     }
 
     fields = {}
@@ -257,6 +262,7 @@ class CdefXccdfParserService
     fields["severity"]      = severity       if severity.present?
     fields["cci_refs"]      = cci_refs.join(", ") if cci_refs.any?
     fields["rationale"]     = rationale      if rationale.present?
+    fields["nist_controls"] = nist_id        if nist_id.present?
 
     [ attrs, fields ]
   end
@@ -278,12 +284,5 @@ class CdefXccdfParserService
     raw.presence
   end
 
-  def derive_control_family(_cci_refs, rule_id)
-    # Attempt to derive from rule_id prefix
-    if rule_id.to_s.match?(/\A[A-Z]{2}-/)
-      rule_id.split("-").first.upcase
-    else
-      nil
-    end
-  end
+  # derive_control_family is now handled via CciNistResolvable#nist_family_from_id
 end

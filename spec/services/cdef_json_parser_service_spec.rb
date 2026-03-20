@@ -110,14 +110,48 @@ RSpec.describe CdefJsonParserService do
       expect(document.cdef_controls.count).to be > 0
     end
 
+    it "resolves NIST control IDs from tags.nist" do
+      service.parse
+      document.reload
+
+      # SV-257777 has tags.nist: ["CM-6 b"] → normalized to "cm-6.b"
+      control = document.cdef_controls.find_by(stig_id: "SV-257777")
+      expect(control.control_id).to eq("cm-6.b")
+    end
+
+    it "preserves original SV-ID as stig_id" do
+      service.parse
+      document.reload
+
+      control = document.cdef_controls.find_by(stig_id: "SV-257777")
+      expect(control.stig_id).to eq("SV-257777")
+    end
+
+    it "derives control_family from NIST ID" do
+      service.parse
+      document.reload
+
+      control = document.cdef_controls.find_by(stig_id: "SV-257777")
+      expect(control.control_family).to eq("CM")
+    end
+
+    it "stores resolved nist_controls field" do
+      service.parse
+      document.reload
+
+      control = document.cdef_controls.find_by(stig_id: "SV-257777")
+      nist_field = control.cdef_control_fields.find_by(field_name: "nist_controls")
+      expect(nist_field.field_value).to eq("cm-6.b")
+    end
+
     it "maps impact to severity correctly" do
       service.parse
       document.reload
 
-      high_control = document.cdef_controls.find_by(control_id: "SV-257777")
+      high_control = document.cdef_controls.find_by(stig_id: "SV-257777")
       expect(high_control.severity).to eq("high")
 
-      medium_control = document.cdef_controls.find_by(control_id: "SV-257778")
+      medium_control = document.cdef_controls.find_by(stig_id: "SV-257778")
       expect(medium_control.severity).to eq("medium")
     end
 
@@ -125,7 +159,7 @@ RSpec.describe CdefJsonParserService do
       service.parse
       document.reload
 
-      control = document.cdef_controls.find_by(control_id: "SV-257777")
+      control = document.cdef_controls.find_by(stig_id: "SV-257777")
       desc_field = control.cdef_control_fields.find_by(field_name: "description")
       expect(desc_field.field_value).to include("vendor")
     end

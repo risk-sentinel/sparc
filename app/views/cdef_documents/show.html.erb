@@ -162,7 +162,12 @@
             <span class="sparc-status-pill" style="background: <%= sev_color %>; text-transform: capitalize;">
               <%= sev_val %>
             </span>
-            <% if control.group_id.present? && control.group_id != control.control_id %>
+            <% if control.stig_id.present? && control.stig_id != control.control_id %>
+              <span class="sparc-tag-outline fw-semibold text-body-secondary" style="background: rgba(155,89,182,0.08); border: 1px solid rgba(155,89,182,0.2);">
+                <%= control.stig_id %>
+              </span>
+            <% end %>
+            <% if control.group_id.present? && control.group_id != control.control_id && control.group_id != control.stig_id %>
               <span class="sparc-tag-outline bg-body-secondary border fw-semibold text-body-secondary">
                 <%= control.group_id %>
               </span>

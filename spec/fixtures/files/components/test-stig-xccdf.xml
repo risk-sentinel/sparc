@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Benchmark id="xccdf_mil.disa.stig_benchmark_RHEL_9_STIG" xmlns="http://checklists.nist.gov/xccdf/1.2">
+  <title>RHEL 9 STIG Test</title>
+  <description>Test STIG for unit testing</description>
+  <version>002.007</version>
+  <status>accepted</status>
+  <plain-text id="release-info">Release: 7 Benchmark Date: 05 Jul 2024</plain-text>
+  <Group id="V-257777">
+    <Rule id="SV-257777r925318_rule" severity="high">
+      <version>RHEL-09-211010</version>
+      <title>RHEL 9 must be a vendor-supported release.</title>
+      <description>&lt;VulnDiscussion&gt;An operating system release is considered supported if the vendor continues to provide patches.&lt;/VulnDiscussion&gt;</description>
+      <fixtext>Upgrade to a supported version of RHEL 9.</fixtext>
+      <check system="C-61518r925316_chk">
+        <check-content>Verify RHEL 9 version is supported.</check-content>
+      </check>
+      <ident system="http://cyber.mil/cci">CCI-000366</ident>
+    </Rule>
+  </Group>
+  <Group id="V-257778">
+    <Rule id="SV-257778r925321_rule" severity="medium">
+      <version>RHEL-09-211015</version>
+      <title>RHEL 9 security patches must be installed.</title>
+      <description>&lt;VulnDiscussion&gt;Installing updates mitigates known vulnerabilities.&lt;/VulnDiscussion&gt;</description>
+      <fixtext>Install security patches.</fixtext>
+      <check system="C-61519r925319_chk">
+        <check-content>Check patches are installed.</check-content>
+      </check>
+      <ident system="http://cyber.mil/cci">CCI-000366</ident>
+    </Rule>
+  </Group>
+</Benchmark>
