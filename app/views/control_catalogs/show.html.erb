@@ -8,6 +8,17 @@
        back_path:    control_catalogs_path %>
 
 <% else %>
+
+<%# ── IMPORT QUALITY WARNINGS MODAL ──────────────────────────────── %>
+<% import_warnings = @control_catalog.metadata_extra&.dig("import_warnings") %>
+<% warnings_acknowledged = @control_catalog.metadata_extra&.dig("import_warnings_acknowledged") %>
+<% if import_warnings.present? && !warnings_acknowledged %>
+  <%= render "shared/import_warnings_modal",
+       document: @control_catalog,
+       warnings: import_warnings,
+       acknowledge_path: acknowledge_warnings_control_catalog_path(@control_catalog) %>
+<% end %>
+
 <div class="card">
   <div class="card-body">
   <div class="d-flex justify-content-between align-items-center mb-4">

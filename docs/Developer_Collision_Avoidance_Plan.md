@@ -207,7 +207,7 @@ Dev C: #183 (migration squash) -- AFTER all migration PRs merge
 
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
-| [ ] | **#207** Import quality reporting | Catalog | `catalog_import_service.rb`, import views, validation UI | **NONE** with #213 |
+| [x] | **#207** Import quality reporting | Catalog | `catalog_import_validation_service.rb`, `catalog_import_job.rb`, `control_catalogs_controller.rb`, `_import_warnings_modal.html.erb` | **NONE** with #213 -- **COMPLETED 2026-03-20** |
 | [ ] | **#213** XCCDF ID mapping to NIST | CDEF/Converters | `cdef_xccdf_parser_service.rb`, converter logic | **NONE** with #207 |
 | [ ] | **#217** Rev 5 mapping docs | Documentation | `docs/` directory | **NONE** -- docs only |
 
