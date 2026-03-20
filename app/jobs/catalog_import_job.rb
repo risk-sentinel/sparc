@@ -24,6 +24,10 @@ class CatalogImportJob < ApplicationJob
       file = File.open(file_path)
       stats = CatalogImportService.call(file, original_filename, existing_catalog: catalog)
 
+      # The service may have resolved to a different catalog (by UUID match),
+      # destroying the shell record. Use the service's resolved catalog going forward.
+      catalog = stats[:catalog]
+
       # Run post-import quality checks
       catalog.reload
       catalog.update!(
@@ -44,16 +48,20 @@ class CatalogImportJob < ApplicationJob
         )
       )
     rescue StandardError => e
-      failed_stage = catalog.reload.metadata_extra&.dig("processing_stage") || "unknown"
-      catalog.update!(
-        status: "failed",
-        error_message: e.message,
-        metadata_extra: (catalog.metadata_extra || {}).merge(
-          "processing_stage"     => "failed",
-          "processing_message"   => "Failed during: #{failed_stage}",
-          "processing_failed_at" => Time.current.iso8601
+      # Reload catalog — it may have been swapped by the service
+      catalog = ControlCatalog.find_by(id: catalog_id) || ControlCatalog.find_by(id: stats&.dig(:catalog)&.id)
+      if catalog
+        failed_stage = catalog.reload.metadata_extra&.dig("processing_stage") || "unknown"
+        catalog.update!(
+          status: "failed",
+          error_message: e.message,
+          metadata_extra: (catalog.metadata_extra || {}).merge(
+            "processing_stage"     => "failed",
+            "processing_message"   => "Failed during: #{failed_stage}",
+            "processing_failed_at" => Time.current.iso8601
+          )
         )
-      )
+      end
       Rails.logger.error("Catalog import failed for catalog #{catalog_id}: #{e.message}")
     ensure
       FileUtils.rm_f(file_path)
