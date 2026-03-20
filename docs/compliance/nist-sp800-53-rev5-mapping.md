@@ -35,6 +35,13 @@ implementation within the SPARC ecosystem. Each control is assigned a
 | N/A | Not applicable to this system type |
 | CSP Inherited | Fully inherited from CSP |
 
+**⚠ Conditional coverage:** Some controls have implementation status that
+varies by deployment configuration. These are marked with **⚠ CONDITIONAL**
+in the Implementation Summary column. The most significant variable is the
+authentication mode — see [`docs/dev/issue_rules.md`](../dev/issue_rules.md)
+for the full auth mode coverage matrix. Key takeaway: **OIDC with
+`SPARC_OIDC_FORCE_MFA=true` is required for full IA-2/MFA coverage.**
+
 ---
 
 ## Table of Contents
@@ -277,9 +284,9 @@ injection for direct import into compliance dashboards.
 | Control ID | Title | Baseline | Responsibility | Implementation Summary | Code / Config Location | Status |
 |---|---|---|---|---|---|---|
 | IA-1 | Policy and Procedures | H | Organizational Policy | Organization defines I&A policy | Org policy docs | Planned |
-| IA-2 | Identification and Authentication (Organizational Users) | H | Application (SPARC) | Multi-provider authentication: local (bcrypt), OIDC, LDAP, GitHub OAuth, GitLab OAuth | `app/models/sparc_config.rb`, `app/controllers/concerns/authentication.rb` | Implemented |
-| IA-2(1) | Multi-Factor Authentication to Privileged Accounts | H | Hybrid | `SPARC_OIDC_FORCE_MFA` enforces MFA via OIDC provider; IdP-managed MFA for LDAP/OAuth | `app/models/sparc_config.rb` (`SPARC_OIDC_FORCE_MFA`) | Implemented |
-| IA-2(2) | Multi-Factor Authentication to Non-Privileged Accounts | H | Hybrid | MFA enforcement delegated to OIDC/LDAP identity provider configuration | `SPARC_OIDC_FORCE_MFA`, IdP configuration | Partial |
+| IA-2 | Identification and Authentication (Organizational Users) | H | Application (SPARC) | Multi-provider authentication: local (bcrypt), OIDC, LDAP, GitHub OAuth, GitLab OAuth. **⚠ CONDITIONAL:** Full coverage (incl. MFA) requires `SPARC_ENABLE_OIDC=true` + `SPARC_OIDC_FORCE_MFA=true`. Local-only login = single-factor only | `app/models/sparc_config.rb`, `app/controllers/concerns/authentication.rb` | Implemented |
+| IA-2(1) | Multi-Factor Authentication to Privileged Accounts | H | Hybrid | **⚠ CONDITIONAL:** Requires OIDC with `SPARC_OIDC_FORCE_MFA=true` — MFA enforced by IdP. **Not met** with local-only login. LDAP depends on directory config | `app/models/sparc_config.rb` (`SPARC_OIDC_FORCE_MFA`) | Implemented |
+| IA-2(2) | Multi-Factor Authentication to Non-Privileged Accounts | H | Hybrid | **⚠ CONDITIONAL:** Requires OIDC with `SPARC_OIDC_FORCE_MFA=true`. **Not met** with local-only login. LDAP depends on directory config | `SPARC_OIDC_FORCE_MFA`, IdP configuration | Partial |
 | IA-2(6) | Access to Accounts -- Separate Device | H | Hybrid | MFA device separation managed by identity provider | IdP configuration | Partial |
 | IA-2(8) | Access to Accounts -- Replay Resistant | H | Application (SPARC) | Session fixation prevention via `reset_session` before storing user_id; OAuth state/nonce verification | `app/controllers/concerns/authentication.rb` | Implemented |
 | IA-2(12) | Acceptance of PIV Credentials | H | Hybrid | OIDC integration supports PIV/CAC when configured at identity provider | `SPARC_OIDC_*` configuration | Partial |
@@ -292,12 +299,12 @@ injection for direct import into compliance dashboards.
 | IA-5(6) | Protection of Authenticators | H | Application (SPARC) | Passwords stored as bcrypt digests; API tokens stored as SHA-256 digests; OAuth credentials excluded from stored auth_data | `app/models/user.rb`, `app/controllers/omniauth_callbacks_controller.rb` | Implemented |
 | IA-6 | Authentication Feedback | H | Application (SPARC) | Generic error messages on login failure; no indication of valid/invalid usernames | `app/controllers/concerns/authentication.rb` | Implemented |
 | IA-7 | Cryptographic Module Authentication | H | Hybrid | Ruby OpenSSL for bcrypt and SHA-256; TLS at infrastructure layer | Ruby OpenSSL, sparc-iac | Implemented |
-| IA-8 | Identification and Authentication (Non-Organizational Users) | H | Application (SPARC) | Same authentication mechanisms apply; OIDC supports federated identity | `app/controllers/concerns/authentication.rb` | Implemented |
+| IA-8 | Identification and Authentication (Non-Organizational Users) | H | Application (SPARC) | **⚠ CONDITIONAL:** Requires OIDC or OAuth enabled for federation (Okta, Entra, GitHub, GitLab). **Not met** with local-only login (no external IdP). OmniAuth callbacks map federated identities to local accounts | `app/controllers/omniauth_callbacks_controller.rb`, `app/models/sparc_config.rb` | Implemented |
 | IA-8(1) | Acceptance of PIV Credentials from Other Agencies | H | Hybrid | OIDC federation supports cross-agency PIV when configured | `SPARC_OIDC_*` configuration | Partial |
 | IA-8(2) | Acceptance of External Authenticators | H | Application (SPARC) | GitHub, GitLab, and generic OIDC external authenticators supported | `app/controllers/omniauth_callbacks_controller.rb` | Implemented |
 | IA-8(4) | Use of Defined Profiles | H | Hybrid | OIDC scopes configurable; standard `openid profile email` defaults | `SPARC_OIDC_SCOPES` | Implemented |
 | IA-11 | Re-Authentication | H | Application (SPARC) | Session timeout forces re-authentication; password expiry forces credential refresh; `check_password_reset` before_action | `app/controllers/concerns/authentication.rb` | Implemented |
-| IA-12 | Identity Proofing | H | Organizational Policy | Organization defines identity proofing procedures for user registration | Org policy docs | Planned |
+| IA-12 | Identity Proofing | H | Hybrid | **⚠ CONDITIONAL:** With OIDC enabled, identity proofing delegated to IdP (Okta, Entra). **Not met** with local-only login (self-registration). Organization defines proofing procedures | `app/controllers/omniauth_callbacks_controller.rb`, Org policy docs | Partial |
 
 ---
 

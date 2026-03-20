@@ -93,3 +93,22 @@ Uses RSpec with FactoryBot and Faker. Specs live under `spec/` with `spec/models
 ## Linting
 
 Uses `rubocop-rails-omakase` (Rails default style guide) with no custom overrides.
+
+## Developer Docs
+
+Developer documentation lives in `docs/dev/`:
+
+- `docs/dev/issue_rules.md` — **mandatory** issue process workflow, hard guardrails, compliance artifact update requirements, authentication mode coverage matrix
+- `docs/dev/Implemenation_plan.md` — phased roadmap and issue tracking
+- `docs/dev/Developer_Collision_Avoidance_Plan.md` — domain ownership, hot files, migration coordination
+- `docs/dev/release_notes.md` — stacked release notes
+
+## Compliance Documentation
+
+NIST SP 800-53 Rev 5 compliance docs live in `docs/compliance/`:
+
+- `docs/compliance/README.md` — process guide, sparc-iac integration model
+- `docs/compliance/nist-sp800-53-rev5-mapping.md` — central control mapping (HIGH baseline, 370 controls)
+- `docs/compliance/oscal/cdefs/*.json` — OSCAL v1.1.2 component definitions (5 files, 46 controls)
+
+When touching security-critical code, update the relevant CDEFs and add inline NIST control comments. See `docs/dev/issue_rules.md` for the full process.

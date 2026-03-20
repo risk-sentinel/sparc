@@ -96,7 +96,7 @@
                 "uuid": "90cfcd2d-36ae-408b-8fcf-7c1d5c6341c8",
                 "control-id": "ia-2",
                 "description": "SPARC supports multi-factor identification and authentication through multiple configurable providers: local login with bcrypt password hashing, OIDC with SPARC_OIDC_FORCE_MFA enforcement, LDAP directory authentication, and OAuth (GitHub, GitLab) federation. The Authentication concern orchestrates provider selection and credential verification.",
-                "remarks": "Implemented in app/controllers/concerns/authentication.rb and app/controllers/omniauth_callbacks_controller.rb. Tested by spec/requests/sessions_spec.rb and spec/requests/omniauth_callbacks_spec.rb."
+                "remarks": "CONDITIONAL COVERAGE: Full IA-2 (including MFA enhancements IA-2(1) and IA-2(2)) requires SPARC_ENABLE_OIDC=true and SPARC_OIDC_FORCE_MFA=true, delegating MFA to the OIDC identity provider. Local-only login (SPARC_ENABLE_LOCAL_LOGIN=true without OIDC) satisfies identification and single-factor authentication but does NOT satisfy MFA requirements. LDAP coverage depends on the directory server's MFA configuration. Recommended production config: enable OIDC with force MFA, disable local login. Implemented in app/controllers/concerns/authentication.rb and app/controllers/omniauth_callbacks_controller.rb. Tested by spec/requests/sessions_spec.rb and spec/requests/omniauth_callbacks_spec.rb. See docs/dev/issue_rules.md for the full auth mode coverage matrix."
               },
               {
                 "uuid": "b1e0d87d-cc65-4f17-97c0-ec0f81519e4f",
@@ -108,13 +108,13 @@
                 "uuid": "31143bfd-b593-4817-8354-9121e2233873",
                 "control-id": "ia-5",
                 "description": "SPARC manages authenticator credentials through bcrypt password hashing with a minimum length of 12 characters. API tokens use SHA-256 digest storage. Password expiry is enforced via the SPARC_PASSWORD_EXPIRY_DAYS configuration (default 30 days), requiring periodic credential rotation.",
-                "remarks": "Implemented in app/models/user.rb and app/models/api_token.rb. Tested by spec/models/user_spec.rb and spec/models/api_token_spec.rb."
+                "remarks": "Full coverage for local login (bcrypt, min 12 chars, expiry). When OIDC is enabled, password management for federated users is delegated to the OIDC IdP. LDAP password management is delegated to the directory server. Implemented in app/models/user.rb and app/models/api_token.rb. Tested by spec/models/user_spec.rb and spec/models/api_token_spec.rb."
               },
               {
                 "uuid": "1bb849a8-5d9e-404f-a5eb-596cabe78075",
                 "control-id": "ia-8",
                 "description": "SPARC supports non-organizational user identification and authentication through OIDC federation with external identity providers including Okta, Microsoft Entra ID, GitHub, and GitLab. The OmniAuth callbacks controller handles federated identity assertions and maps external identities to local user accounts.",
-                "remarks": "Implemented in app/controllers/omniauth_callbacks_controller.rb and app/models/sparc_config.rb. Tested by spec/requests/omniauth_callbacks_spec.rb."
+                "remarks": "CONDITIONAL COVERAGE: Requires SPARC_ENABLE_OIDC=true or OAuth providers enabled. Not met with local-only login (no federation capability). Implemented in app/controllers/omniauth_callbacks_controller.rb and app/models/sparc_config.rb. Tested by spec/requests/omniauth_callbacks_spec.rb."
               },
               {
                 "uuid": "dc1f78cc-260c-4e71-b603-9c104d623f2d",
@@ -126,7 +126,7 @@
                 "uuid": "1472b740-33d1-4ce3-84e1-15da47d7a480",
                 "control-id": "ia-12",
                 "description": "SPARC delegates identity proofing to configured OIDC identity providers, which perform identity verification according to their own policies before issuing identity assertions. The application consumes verified identity claims from the provider's token response.",
-                "remarks": "Implemented in app/controllers/omniauth_callbacks_controller.rb. Identity proofing is handled by the external OIDC provider."
+                "remarks": "CONDITIONAL COVERAGE: Requires SPARC_ENABLE_OIDC=true. Not met with local-only login (self-registration with no identity proofing). Implemented in app/controllers/omniauth_callbacks_controller.rb. Identity proofing is handled by the external OIDC provider."
               }
             ]
           }

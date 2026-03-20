@@ -26,29 +26,9 @@ GitHub repository.
 
 ## Issue Process
 
-Standard workflow for every issue in the SPARC phased roadmap:
-
-1. Pull from Main unless otherwise noted
-2. Assign the issue to me
-3. Review the issue and updated notes
-4. Start a fresh branch `feature/` or `bug/` based on the issue
-   with the issue number in the branch name
-5. Create a plan
-6. Implement the approved plan
-7. Troubleshoot any issues
-8. Appropriately update:
-   - `docs/Implemenation_plan.md`
-   - `docs/Developer_Collision_Avoidance_Plan.md`
-   - Release notes so they are all stacked
-   - Regression testing
-9. Commit / push changes
-    - Reference the issue in any commit messages
-10. Wait for user testing
-    - Functional testing
-    - Review regression report(s)
-11. Create a PR
-    - Reference the Issue so it will close on merge
-    - Wait for the PR to be merged by the user before moving forward
+See **[`docs/dev/issue_rules.md`](issue_rules.md)** for the complete mandatory
+workflow, hard guardrails, compliance artifact update requirements, and
+authentication mode coverage matrix.
 
 ---
 
