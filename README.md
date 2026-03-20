@@ -113,6 +113,7 @@ The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all va
 
 | Topic | Link |
 |-------|------|
+| **User & Operations** | |
 | Authentication & Authorization | [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) |
 | Okta Developer Setup | [docs/OKTA_DEV_SETUP.md](docs/OKTA_DEV_SETUP.md) |
 | Environment Variables | [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) |
@@ -124,6 +125,15 @@ The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all va
 | Catalog Schema | [docs/catalog-schema.md](docs/catalog-schema.md) |
 | Local Dev with puma-dev | [docs/puma-dev.md](docs/puma-dev.md) |
 | Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
+| **Compliance (FedRAMP / NIST)** | |
+| Compliance Overview | [docs/compliance/README.md](docs/compliance/README.md) |
+| NIST 800-53 Rev 5 Control Mapping | [docs/compliance/nist-sp800-53-rev5-mapping.md](docs/compliance/nist-sp800-53-rev5-mapping.md) |
+| OSCAL CDEFs (Application Controls) | [docs/compliance/oscal/cdefs/](docs/compliance/oscal/cdefs/) |
+| **Developer** | |
+| Issue Process & Rules | [docs/dev/issue_rules.md](docs/dev/issue_rules.md) |
+| Implementation Plan & Roadmap | [docs/dev/Implemenation_plan.md](docs/dev/Implemenation_plan.md) |
+| Collision Avoidance Plan | [docs/dev/Developer_Collision_Avoidance_Plan.md](docs/dev/Developer_Collision_Avoidance_Plan.md) |
+| Release Notes | [docs/dev/release_notes.md](docs/dev/release_notes.md) |
 
 ---
 
