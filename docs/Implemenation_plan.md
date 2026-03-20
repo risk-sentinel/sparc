@@ -102,7 +102,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 8. DISA STIG & Framework Mapping
 
-- [ ] #185 -- (Moved to Theme 4 / Phase 3 -- prerequisite for CDEF validation and SAR evidence)
+- [x] #185 -- (Moved to Theme 4 / Phase 3 -- prerequisite for CDEF validation and SAR evidence) -- **COMPLETED 2026-03-15**
 
 ### 9. CI/CD & Security Scanning
 
@@ -114,7 +114,7 @@ Standard workflow for every issue in the SPARC phased roadmap:
 
 ### 11. Security Remediation & Bug Fixes (New — discovered during Phases 1-5)
 
-- [ ] #210 -- Remediate container image security findings from hybrid scanning pipeline (339 CVEs, 1 suppressed SAST)
+- [x] #210 -- Remediate container image security findings from hybrid scanning pipeline (339 CVEs, 1 suppressed SAST)
 - [ ] #203 -- Control Catalogs index: summary counts show totals instead of unique values (BUG)
 - [ ] #205 -- Accept fully resolved OSCAL profiles from NIST without prioritization requirement (BUG)
 
@@ -311,7 +311,7 @@ Dev C: #183 (migration squash)  -- AFTER all migration PRs merge
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #210 | Remediate container image CVEs (339 findings from Trivy scan) | **HIGH** (security) | None |
+| [x] | #210 | Remediate container image CVEs (339 findings from Trivy scan) | **HIGH** (security) | None |
 | [ ] | #203 | Catalog index summary counts show totals instead of unique values | **HIGH** (bug) | None |
 | [ ] | #205 | Accept fully resolved OSCAL profiles without prioritization requirement | **HIGH** (bug) | None |
 
@@ -320,7 +320,7 @@ Dev C: #183 (migration squash)  -- AFTER all migration PRs merge
 **Deliverables:** Clean container image scan, accurate catalog counts, flexible profile import
 
 ```text
-Dev A: #210 (container CVE remediation) -- Dockerfile/Gemfile, isolated
+Dev A: #210 (container CVE remediation) -- Dockerfile/Gemfile, isolated ✅ COMPLETE
 Dev B: #203 (catalog count bug fix)     -- Single controller/view fix
 Dev C: #205 (profile import fix)        -- Profile parser/service
 ```

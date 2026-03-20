@@ -4,6 +4,53 @@
 
 ---
 
+## 2026-03-19 -- Container Image Security Remediation (#210)
+
+**Branch:** `feature/210_container_security`
+
+### Summary
+
+Remediates 339 container image CVEs (21 critical, 133 high) identified by the Trivy
+security scanning pipeline. Eliminates ~200+ CVEs by removing unused `libvips` and its
+transitive dependency chain. Adds local Trivy scanning with HDF output for MITRE SAF
+Heimdall compatibility.
+
+### What Changed
+
+- **Removed `libvips` from Dockerfile** -- libvips pulled in ImageMagick, libtiff, libhdf5,
+  poppler, OpenJPEG, OpenEXR, libaom, and dozens more packages accounting for ~200+ CVEs.
+  The `image_processing` gem was commented out and no Active Storage variant/transformation
+  calls exist in the codebase. All file attachments store/serve files as-is.
+- **Added `apt-get upgrade -y`** -- picks up Debian security patches for remaining OS
+  packages (curl, OpenSSL, glibc, GnuTLS, NSS, expat, SQLite)
+- **Pinned `resolv` gem to >= 0.7.0** -- fixes CVE-2025-24294 (ReDoS vulnerability in
+  Ruby stdlib bundled 0.6.0)
+- **Documented CVE suppressions in `.trivyignore`** -- 3 disputed/false-positive CVEs
+  suppressed with inline classification, justification, mitigating controls, and references:
+  - CVE-2019-1010022 (DISPUTED -- glibc stack guard bypass, no exploit exists)
+  - CVE-2011-3389 (MITIGATED -- BEAST attack, TLS 1.2+ enforced)
+  - CVE-2005-2541 (FALSE POSITIVE -- tar setuid behavior, expected per GNU docs)
+- **New local Trivy scanning script** (`scripts/trivy-scan.sh`) -- builds Docker image,
+  runs Trivy with CI-matching flags, generates CycloneDX SBOM, converts to HDF via SAF
+  CLI for MITRE Heimdall viewing. Auto-installs Trivy via direct binary download (no
+  brew/apt required).
+
+### Files Created/Modified
+
+- `Dockerfile` -- removed `libvips`, added `apt-get upgrade`
+- `Gemfile` / `Gemfile.lock` -- added `resolv >= 0.7.0` pin
+- `.trivyignore` -- documented CVE suppressions
+- `scripts/trivy-scan.sh` -- NEW local scanning script with HDF output
+
+### Verification
+
+- Docker image builds successfully without libvips
+- Local Trivy scan: **0 CRITICAL/HIGH CVEs** (down from 154 critical+high, 339 total)
+- 1138 RSpec examples, 0 failures
+- File uploads (documents, avatars) unaffected -- no transformation needed
+
+---
+
 ## 2026-03-19 -- Squash Migrations to Single Consolidated File (#183)
 
 **Branch:** `feature/183_squash_migrations`
