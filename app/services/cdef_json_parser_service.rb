@@ -1,6 +1,7 @@
 class CdefJsonParserService
   include BatchInsertable
   include ProgressTrackable
+  include CciNistResolvable
 
   def initialize(cdef_document, file_path)
     @document  = cdef_document
@@ -106,15 +107,29 @@ class CdefJsonParserService
     row_order     = 0
 
     (profile["controls"] || data["controls"] || []).each do |ctrl|
+      # Resolve NIST control ID from tags.nist, Converter, or CCI fallback
+      nist_tags = Array(ctrl.dig("tags", "nist"))
+      cci_refs  = Array(ctrl.dig("tags", "cci"))
+      original_id = ctrl["id"]
+
+      nist_id = if nist_tags.any?
+        normalize_nist_tag(nist_tags.first)
+      else
+        sv_id = extract_sv_id(original_id)
+        sv_id.present? ? resolve_nist_for_stig(sv_id, cci_refs) : nil
+      end
+
       attrs = {
-        control_id:     ctrl["id"],
+        control_id:     nist_id || original_id,
         title:          ctrl["title"],
         severity:       impact_to_severity(ctrl["impact"]),
-        control_family: ctrl["id"].to_s.split("-").first.upcase.presence,
-        row_order:      row_order
+        control_family: nist_id.present? ? nist_family_from_id(nist_id) : original_id.to_s.split("-").first.upcase.presence,
+        row_order:      row_order,
+        stig_id:        original_id
       }
 
       fields = build_inspec_fields(ctrl)
+      fields["nist_controls"] = nist_id if nist_id.present?
       idx = control_attrs.size
       control_attrs << attrs
       fields.each { |fname, fval| field_entries << [ idx, fname, fval ] }
@@ -159,13 +174,20 @@ class CdefJsonParserService
     row_order     = 0
 
     (stig["findings"] || []).each do |finding|
+      # Resolve NIST control ID via Converter + CCI fallback
+      vuln_num = finding["vuln_num"]
+      cci_refs = Array(finding["cci_ref"]&.split(",")).map(&:strip).reject(&:blank?)
+      nist_id = resolve_nist_for_stig(vuln_num, cci_refs) if vuln_num.present?
+
       attrs = {
-        control_id: finding["vuln_num"],
-        title:      finding["rule_title"],
-        severity:   finding["severity"],
-        group_id:   finding["vuln_num"],
-        rule_id:    finding["rule_id"],
-        row_order:  row_order
+        control_id:     nist_id || vuln_num,
+        title:          finding["rule_title"],
+        severity:       finding["severity"],
+        control_family: nist_id.present? ? nist_family_from_id(nist_id) : nil,
+        group_id:       vuln_num,
+        rule_id:        finding["rule_id"],
+        row_order:      row_order,
+        stig_id:        vuln_num
       }
 
       fields = {}
@@ -174,6 +196,7 @@ class CdefJsonParserService
       fields["check_content"] = finding["check_content"] if finding["check_content"].present?
       fields["cci_refs"]      = finding["cci_ref"]       if finding["cci_ref"].present?
       fields["status"]        = finding["status"]        if finding["status"].present?
+      fields["nist_controls"] = nist_id                  if nist_id.present?
 
       idx = control_attrs.size
       control_attrs << attrs

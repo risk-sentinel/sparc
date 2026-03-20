@@ -55,7 +55,11 @@ class OscalComponentDefinitionExportService
       "last-modified" => Time.current.iso8601
     }
 
-    extra = @document.metadata_extra || {}
+    extra = (@document.metadata_extra || {}).except(
+      "processing_stage", "processing_message", "processing_started_at",
+      "processing_updated_at", "processing_completed_at",
+      "import_warnings", "import_warnings_summary", "import_warnings_acknowledged"
+    )
     if extra.any?
       base.merge(extra)
     else
@@ -153,6 +157,7 @@ class OscalComponentDefinitionExportService
     props << { "name" => "severity", "value" => control.severity } if control.severity.present?
     props << { "name" => "rule-id",  "value" => control.rule_id }  if control.rule_id.present?
     props << { "name" => "group-id", "value" => control.group_id } if control.group_id.present?
+    props << { "name" => "stig-id",  "value" => control.stig_id }  if control.stig_id.present?
 
     if control.cci_references.present?
       control.cci_references.split(",").each do |cci|

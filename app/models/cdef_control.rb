@@ -5,7 +5,7 @@ class CdefControl < ApplicationRecord
   before_save :compute_control_family
 
   def to_hash
-    {
+    h = {
       control_id: control_id,
       title: title,
       severity: severity,
@@ -22,6 +22,8 @@ class CdefControl < ApplicationRecord
         }
       end
     }
+    h[:stig_id] = stig_id if stig_id.present?
+    h
   end
 
   private
