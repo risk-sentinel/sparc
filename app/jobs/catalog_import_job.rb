@@ -24,9 +24,13 @@ class CatalogImportJob < ApplicationJob
       file = File.open(file_path)
       stats = CatalogImportService.call(file, original_filename, existing_catalog: catalog)
 
-      # The service may have resolved to a different catalog (by UUID match),
-      # destroying the shell record. Use the service's resolved catalog going forward.
-      catalog = stats[:catalog]
+      # The service may have resolved to a different catalog (by UUID match).
+      # If so, clean up the shell record and use the resolved catalog going forward.
+      resolved_catalog = stats[:catalog]
+      if resolved_catalog.id != catalog.id
+        catalog.destroy if catalog.control_families.empty?
+        catalog = resolved_catalog
+      end
 
       # Run post-import quality checks
       catalog.reload
