@@ -48,19 +48,28 @@ RSpec.describe ControlFamily, type: :model do
       expect(family).to be_valid
     end
 
-    it "requires code to be 2-5 uppercase letters" do
-      family = build(:control_family, code: "A")
+    it "requires code to start with uppercase letter and be 1-10 chars" do
+      family = build(:control_family, code: "1A")
       expect(family).not_to be_valid
 
-      family = build(:control_family, code: "ABCDEF")
+      family = build(:control_family, code: "ABCDEFGHIJK")
       expect(family).not_to be_valid
 
-      family = build(:control_family, code: "A1")
+      family = build(:control_family, code: "")
       expect(family).not_to be_valid
     end
 
-    it "accepts valid codes" do
+    it "accepts valid codes including digits and hyphens" do
       family = build(:control_family, code: "AC")
+      expect(family).to be_valid
+
+      family = build(:control_family, code: "A")
+      expect(family).to be_valid
+
+      family = build(:control_family, code: "A1")
+      expect(family).to be_valid
+
+      family = build(:control_family, code: "PT-1")
       expect(family).to be_valid
 
       family = build(:control_family, code: "PLNNG")
