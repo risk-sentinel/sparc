@@ -3,7 +3,7 @@ class ControlFamily < ApplicationRecord
   has_many :catalog_controls, dependent: :destroy
 
   validates :code, presence: true, uniqueness: { scope: :control_catalog_id },
-                   format: { with: /\A[A-Z]{2,5}\z/, message: "must be 2-5 uppercase letters (e.g. AC, AU, CM)" }
+                   format: { with: /\A[A-Z][A-Z0-9\-]{0,9}\z/, message: "must start with an uppercase letter, 1-10 characters (letters, digits, hyphens)" }
   validates :name, presence: true
 
   before_validation :normalize_code
