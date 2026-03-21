@@ -1,4 +1,4 @@
-# SPARC — Systemized Policy and Regulatory Controls
+# SPARC — Systematic Policy and Regulatory Controls
 
 ![Landing Page](docs/landing_page.png)
 

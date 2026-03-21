@@ -325,8 +325,8 @@
 }
 
 .sparc-dropdown-menu .dropdown-item {
-  padding: 0.5rem 0.85rem;
-  font-size: 0.85rem;
+  padding: 0.55rem 0.95rem;
+  font-size: 1rem;
   border-radius: 4px;
   margin: 0.1rem 0.35rem;
   color: var(--bs-body-color);
@@ -340,8 +340,8 @@
 
 /* Dropdown header with OSCAL layer accent */
 .sparc-dropdown-header {
-  padding: 0.4rem 0.85rem 0.25rem;
-  font-size: 0.65rem;
+  padding: 0.45rem 0.95rem 0.3rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -427,12 +427,14 @@
 
 /* Login page logo — larger for prominent branding */
 .sparc-login-logo {
-  height: 96px;
+  height: 160px;
   width: auto;
+  display: block;
+  margin: 0 auto 0.5rem;
 }
 @media (min-width: 576px) {
   .sparc-login-logo {
-    height: 120px;
+    height: 200px;
   }
 }
 
@@ -568,7 +570,7 @@ a.link-purple { color: var(--sparc-purple); }
 /* ── Dashboard header text elements ────────────────────────────── */
 
 .sparc-header-subtitle {
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.4);
@@ -577,7 +579,7 @@ a.link-purple { color: var(--sparc-purple); }
 
 .sparc-header-title {
   color: white;
-  font-size: 1.4rem;
+  font-size: 1.75rem;
   font-weight: 700;
   margin: 0;
 }
@@ -706,9 +708,9 @@ a.link-purple { color: var(--sparc-purple); }
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 0.35rem 0.65rem;
+  padding: 0.5rem 0.85rem;
   cursor: pointer;
-  min-width: 64px;
+  min-width: 80px;
   text-decoration: none;
   display: inline-block;
 }
@@ -716,7 +718,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-summary-chip.active { background: rgba(255, 255, 255, 0.15); }
 
 .sparc-chip-count {
-  font-size: 1.15rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: white;
   line-height: 1;
@@ -724,10 +726,10 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 .sparc-chip-label {
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.55);
   white-space: nowrap;
-  margin-top: 0.1rem;
+  margin-top: 0.15rem;
 }
 
 
@@ -1223,19 +1225,24 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-hero-tile {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 1rem;
   text-align: center;
 }
 
 .sparc-hero-tile-count {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
 }
 
 .sparc-hero-tile-label {
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: rgba(255, 255, 255, 0.75);
   margin-top: 0.25rem;
+}
+
+@media (max-width: 575.98px) {
+  .sparc-hero-tile-count { font-size: 2rem; }
+  .sparc-hero-tile-label { font-size: 0.85rem; }
 }
 
 .sparc-check-icon {
@@ -1643,4 +1650,28 @@ a.link-purple { color: var(--sparc-purple); }
   background-color: rgba(var(--bs-primary-rgb), 0.15);
   border-color: var(--sparc-primary);
   color: var(--sparc-primary);
+}
+
+/* ── Easter egg video overlay ─────────────────────────────────── */
+
+.sparc-video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sparc-video-overlay.d-none {
+  display: none !important;
+}
+
+.sparc-video-player {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: 8px;
+  cursor: default;
 }

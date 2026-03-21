@@ -4,6 +4,41 @@
 
 ---
 
+## 2026-03-21 -- fix: UI/UX Logo, Text Correction & Header Sizing (#253)
+
+**Branch:** `feature/253_ui_logo_text_fixes`
+
+### Summary
+
+UI/UX polish pass: corrected "Systemized" to "Systematic" across the entire codebase (10 files
+including CLAUDE.md, README, wiki, compliance docs, and 5 CDEFs), replaced the SPARC logo image
+(sparc.png to sparc_logo.jpg) in both layouts, increased hero tile and dashboard header sizing by
+~25%, added responsive mobile breakpoint for hero tiles, removed inline style overrides that
+constrained tile sizes, and added a hidden easter egg video player triggered by clicking the
+navbar logo.
+
+### What Changed
+
+- **Text correction** -- fixed "Systemized" to "Systematic" in CLAUDE.md, README.md, wiki page,
+  compliance docs, and 5 OSCAL CDEF JSON files (10 files total).
+- **Logo replacement** -- swapped `sparc.png` (1.2MB) for `sparc_logo.jpg` in both
+  `application.html.erb` and `login.html.erb` layouts. Removed old `sparc.png`.
+- **Hero tile sizing** -- increased count font from 2rem to 2.5rem, label from 0.8rem to 1rem,
+  padding from 0.75rem to 1rem in `sparc-theme.css`.
+- **Dashboard header sizing** -- increased title from 1.4rem to 1.75rem, subtitle from 0.65rem
+  to 0.8rem in `sparc-theme.css`.
+- **Removed inline style overrides** in `home/index.html.erb` that constrained tile sizes.
+- **Mobile breakpoint** -- added responsive CSS for hero tiles on smaller screens.
+- **Easter egg video player** -- new `video_easter_egg_controller.js` Stimulus controller and
+  overlay; click the navbar logo to play `sparc_intro.mp4`.
+
+### Stats
+
+- **Spec count:** 1398 total, 0 failures
+- **New files:** 3 (Stimulus controller, sparc_logo.jpg, sparc_intro.mp4)
+
+---
+
 ## 2026-03-21 -- feat: Expanded Sample Data (#108)
 
 **Branch:** `feature/108_expanded_sample_data`
