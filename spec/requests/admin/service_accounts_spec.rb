@@ -17,6 +17,7 @@ RSpec.describe "Admin::ServiceAccounts", type: :request do
     end
 
     it "requires admin" do
+      allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
       sign_in_as(create(:user))
       get admin_service_accounts_path
       expect(response).to redirect_to(root_path)
