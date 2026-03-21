@@ -427,12 +427,14 @@
 
 /* Login page logo — larger for prominent branding */
 .sparc-login-logo {
-  height: 96px;
+  height: 160px;
   width: auto;
+  display: block;
+  margin: 0 auto 0.5rem;
 }
 @media (min-width: 576px) {
   .sparc-login-logo {
-    height: 120px;
+    height: 200px;
   }
 }
 
