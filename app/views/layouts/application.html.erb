@@ -42,10 +42,10 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
+  <body data-controller="video-easter-egg">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
       <div class="container-fluid">
-        <div class="d-flex align-items-center gap-2" data-controller="video-easter-egg">
+        <div class="d-flex align-items-center gap-2">
           <a href="#" class="navbar-brand d-flex align-items-center" data-action="click->video-easter-egg#play">
             <%= image_tag "sparc_logo.jpg", alt: "SPARC", class: "sparc-navbar-logo" %>
           </a>
