@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-03-21 -- feat: FedRAMP 20x KSI Support (#107)
+
+**Branch:** `feature/107_fedramp_20x_ksi`
+
+### Summary
+
+FedRAMP 20x Key Security Indicator (KSI) support -- new `KsiValidation` model, KSI catalog seed
+data (56 indicators, 11 themes, 65 KSI-to-NIST mappings), `KsiExportService` (JSON/YAML/XML),
+and 2 API controllers (`KsiCatalog` read-only, `KsiValidations` CRUD scoped to authorization
+boundary).
+
+### What Changed
+
+- **KsiValidation model** (`app/models/ksi_validation.rb`) -- stores KSI validation state per
+  authorization boundary.
+- **KsiExportService** (`app/services/ksi_export_service.rb`) -- exports KSI data in JSON, YAML,
+  and XML formats.
+- **KsiCatalogController** (`app/controllers/api/v1/ksi_catalog_controller.rb`) -- read-only API
+  for browsing KSI indicators, themes, and NIST mappings.
+- **KsiValidationsController** (`app/controllers/api/v1/ksi_validations_controller.rb`) -- full
+  CRUD for KSI validations scoped to authorization boundary.
+- **Seed data** (`db/seeds/fedramp_20x_ksi.rb`) -- 56 indicators, 11 themes, 65 KSI-to-NIST
+  control mappings.
+- **56 new specs** covering model, service, and controller endpoints.
+
+### Stats
+
+- **Spec count:** 1382 total, 0 failures
+- **New files:** 5 (model, service, 2 controllers, seed file)
+
+---
+
 ## 2026-03-21 -- feat: Baseline Parameter and Enumeration Management API (#240)
 
 **Branch:** `feature/229_api_crud_expansion`

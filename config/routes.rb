@@ -297,9 +297,25 @@ Rails.application.routes.draw do
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ]
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]
 
+      # FedRAMP 20x KSI catalog (read-only, #107)
+      resource :ksi_catalog, only: [], controller: "ksi_catalog" do
+        get :themes, on: :collection
+        get :indicators, on: :collection
+        get "indicators/:id", action: :show_indicator, on: :collection, as: :indicator
+        get :mappings, on: :collection
+      end
+
       # CRUD API endpoints (#95)
       resources :users, only: [ :index, :show, :create, :update, :destroy ]
-      resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ]
+      resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
+        # KSI validation tracking (#107)
+        resources :ksi_validations, only: [ :index, :show, :create, :update, :destroy ] do
+          collection do
+            get :summary
+            get :export
+          end
+        end
+      end
     end
   end
 end
