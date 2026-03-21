@@ -7,6 +7,11 @@
 # Backward-compatible: skips authentication entirely when no auth
 # methods are enabled (SparcConfig.any_auth_enabled? == false).
 #
+# NIST 800-53 Controls:
+#   IA-2 Identification and Authentication (Organizational Users)
+#   IA-5 Authenticator Management (SHA-256 token digest, expiry)
+#   SC-13 Cryptographic Protection (secure token generation)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module ApiAuthentication
   extend ActiveSupport::Concern
 

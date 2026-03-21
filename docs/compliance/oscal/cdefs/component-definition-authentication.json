@@ -1,0 +1,137 @@
+{
+  "component-definition": {
+    "uuid": "4a4fa4a0-0b56-4507-b6d6-102ef3fab368",
+    "metadata": {
+      "title": "SPARC Authentication and Access Control",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "ae6ac7ff-fa56-4f23-8601-6d6e5c3d51de",
+          "type": "organization",
+          "name": "SPARC Development Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "67b91661-76f7-4fca-b8e9-ed9b5f114a9d",
+        "type": "software",
+        "title": "SPARC Application",
+        "description": "SPARC (Systemized Policy and Regulatory Controls) is a Rails application for managing NIST 800-53 compliance documentation. This component definition covers authentication and access control implementations.",
+        "control-implementations": [
+          {
+            "uuid": "ee1efacf-5163-4174-b2de-08eac1d688be",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_HIGH-baseline-resolved-profile_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 HIGH Baseline",
+            "implemented-requirements": [
+              {
+                "uuid": "a44cec50-62d5-418b-b260-7edbfa428a89",
+                "control-id": "ac-2",
+                "description": "SPARC implements account management through the User model with active, suspended, and deactivated status enumerations. Administrative users manage accounts via role assignments. The deactivate! and reactivate! methods enforce account lifecycle transitions. Account status changes are audited via AuditEvent logging.",
+                "remarks": "Implemented in app/models/user.rb and app/controllers/concerns/authorization.rb. Tested by spec/models/user_spec.rb."
+              },
+              {
+                "uuid": "78b00c59-83e1-47e7-8ada-c298021fcceb",
+                "control-id": "ac-3",
+                "description": "SPARC enforces access control through authorize_admin!, authorize_role!, and authorize_permission! controller concerns. The authorization framework supports 57 granular permission keys mapped to resource types and actions. Unauthorized access attempts are blocked and audited.",
+                "remarks": "Implemented in app/controllers/concerns/authorization.rb and app/models/role.rb. Tested by spec/controllers/ and spec/models/role_spec.rb."
+              },
+              {
+                "uuid": "31a778a0-8a1f-4342-bab4-3736f49ee29b",
+                "control-id": "ac-5",
+                "description": "SPARC enforces separation of duties through 29 seeded roles: 10 instance-scoped and 19 boundary-scoped. Each role defines a distinct set of permissions preventing any single user from accumulating conflicting privileges. Role assignments are managed by administrators and audited.",
+                "remarks": "Implemented in app/models/role.rb with role seeds in db/seeds/. Tested by spec/models/role_spec.rb."
+              },
+              {
+                "uuid": "42affe6a-4f33-4d94-add1-2757cce4a0c0",
+                "control-id": "ac-6",
+                "description": "SPARC implements least privilege through granular JSONB permission structures defined in Role::PERMISSION_GROUPS. Each role specifies read/write access per resource type (SSP, SAR, CDEF, catalogs, profiles, users). The authorize_permission! method enforces these constraints on every request.",
+                "remarks": "Implemented in app/models/role.rb (PERMISSION_GROUPS) and app/controllers/concerns/authorization.rb. Tested by spec/models/role_spec.rb."
+              },
+              {
+                "uuid": "60e45f2b-148d-423c-a371-e8c8c6237c37",
+                "control-id": "ac-7",
+                "description": "SPARC handles unsuccessful login attempts through session management in the Authentication concern. Failed authentication attempts are logged as audit events with the originating IP address and user agent for monitoring and response.",
+                "remarks": "Implemented in app/controllers/concerns/authentication.rb. Tested by spec/requests/sessions_spec.rb."
+              },
+              {
+                "uuid": "6b5c6a14-6c60-46c0-a293-83ce4afb74cd",
+                "control-id": "ac-8",
+                "description": "SPARC displays a configurable login consent banner controlled by the SPARC_BANNER_ENABLED and SPARC_BANNER_MESSAGE environment variables. When enabled, a Bootstrap 5 modal presents the banner content (loaded from file and sanitized for XSS) that users must acknowledge before proceeding to authentication.",
+                "remarks": "Implemented in app/views/sessions/ and app/models/sparc_config.rb. Tested by spec/requests/sessions_spec.rb and spec/system/login_banner_spec.rb."
+              },
+              {
+                "uuid": "a8580fa0-48c5-47e4-bec8-30abf7787eac",
+                "control-id": "ac-11",
+                "description": "SPARC implements session lock via configurable idle timeout controlled by the SPARC_SESSION_TIMEOUT_MINUTES environment variable (default 60 minutes). The check_session_timeout method in the Authentication concern evaluates session freshness on every request and forces re-authentication when the idle threshold is exceeded.",
+                "remarks": "Implemented in app/controllers/concerns/authentication.rb:check_session_timeout. Tested by spec/requests/sessions_spec.rb."
+              },
+              {
+                "uuid": "7b5233d7-efd3-4e1f-86e6-138a79dd8305",
+                "control-id": "ac-12",
+                "description": "SPARC provides explicit session termination through the logout action. The end_session method resets the Rails session, clears session cookies, and redirects the user to the login page. All session terminations are recorded as audit events.",
+                "remarks": "Implemented in app/controllers/concerns/authentication.rb:end_session. Tested by spec/requests/sessions_spec.rb."
+              },
+              {
+                "uuid": "97a3f83a-de6e-4380-8d94-b7837776f3e9",
+                "control-id": "ac-14",
+                "description": "SPARC controls permitted actions without identification through the SparcConfig.any_auth_enabled? gate. When no authentication providers are enabled, access is restricted to read-only operations. The configuration is enforced at the controller level before any authorization check.",
+                "remarks": "Implemented in app/models/sparc_config.rb and app/controllers/concerns/authentication.rb. Tested by spec/models/sparc_config_spec.rb."
+              },
+              {
+                "uuid": "f75d70d7-fecf-4cae-8db7-29fd6b3bc7bb",
+                "control-id": "ac-17",
+                "description": "SPARC enforces remote access protection through FORCE_SSL with HSTS enforcement (1 year max-age, includeSubDomains, preload) in the production environment. All remote connections are encrypted via TLS, and unencrypted HTTP requests are automatically redirected to HTTPS.",
+                "remarks": "Implemented in config/environments/production.rb. Tested by deployment verification."
+              },
+              {
+                "uuid": "90cfcd2d-36ae-408b-8fcf-7c1d5c6341c8",
+                "control-id": "ia-2",
+                "description": "SPARC supports multi-factor identification and authentication through multiple configurable providers: local login with bcrypt password hashing, OIDC with SPARC_OIDC_FORCE_MFA enforcement, LDAP directory authentication, and OAuth (GitHub, GitLab) federation. The Authentication concern orchestrates provider selection and credential verification.",
+                "remarks": "CONDITIONAL COVERAGE: Full IA-2 (including MFA enhancements IA-2(1) and IA-2(2)) requires SPARC_ENABLE_OIDC=true and SPARC_OIDC_FORCE_MFA=true, delegating MFA to the OIDC identity provider. Local-only login (SPARC_ENABLE_LOCAL_LOGIN=true without OIDC) satisfies identification and single-factor authentication but does NOT satisfy MFA requirements. LDAP coverage depends on the directory server's MFA configuration. Recommended production config: enable OIDC with force MFA, disable local login. Implemented in app/controllers/concerns/authentication.rb and app/controllers/omniauth_callbacks_controller.rb. Tested by spec/requests/sessions_spec.rb and spec/requests/omniauth_callbacks_spec.rb. See docs/dev/issue_rules.md for the full auth mode coverage matrix."
+              },
+              {
+                "uuid": "b1e0d87d-cc65-4f17-97c0-ec0f81519e4f",
+                "control-id": "ia-4",
+                "description": "SPARC uniquely identifies users via email address with case-insensitive uniqueness validation enforced at both the application and database levels. Each user record has a unique database ID and email, preventing duplicate identifiers across the system.",
+                "remarks": "Implemented in app/models/user.rb with database unique index. Tested by spec/models/user_spec.rb."
+              },
+              {
+                "uuid": "31143bfd-b593-4817-8354-9121e2233873",
+                "control-id": "ia-5",
+                "description": "SPARC manages authenticator credentials through bcrypt password hashing with a minimum length of 12 characters. API tokens use SHA-256 digest storage. Password expiry is enforced via the SPARC_PASSWORD_EXPIRY_DAYS configuration (default 30 days), requiring periodic credential rotation.",
+                "remarks": "Full coverage for local login (bcrypt, min 12 chars, expiry). When OIDC is enabled, password management for federated users is delegated to the OIDC IdP. LDAP password management is delegated to the directory server. Implemented in app/models/user.rb and app/models/api_token.rb. Tested by spec/models/user_spec.rb and spec/models/api_token_spec.rb."
+              },
+              {
+                "uuid": "1bb849a8-5d9e-404f-a5eb-596cabe78075",
+                "control-id": "ia-8",
+                "description": "SPARC supports non-organizational user identification and authentication through OIDC federation with external identity providers including Okta, Microsoft Entra ID, GitHub, and GitLab. The OmniAuth callbacks controller handles federated identity assertions and maps external identities to local user accounts.",
+                "remarks": "CONDITIONAL COVERAGE: Requires SPARC_ENABLE_OIDC=true or OAuth providers enabled. Not met with local-only login (no federation capability). Implemented in app/controllers/omniauth_callbacks_controller.rb and app/models/sparc_config.rb. Tested by spec/requests/omniauth_callbacks_spec.rb."
+              },
+              {
+                "uuid": "dc1f78cc-260c-4e71-b603-9c104d623f2d",
+                "control-id": "ia-11",
+                "description": "SPARC enforces re-authentication by terminating idle sessions after a configurable timeout period (SPARC_SESSION_TIMEOUT_MINUTES). When the idle threshold is exceeded, the user is redirected to the login page and must re-authenticate to regain access. The timeout is checked on every authenticated request.",
+                "remarks": "Implemented in app/controllers/concerns/authentication.rb:check_session_timeout. Tested by spec/requests/sessions_spec.rb."
+              },
+              {
+                "uuid": "1472b740-33d1-4ce3-84e1-15da47d7a480",
+                "control-id": "ia-12",
+                "description": "SPARC delegates identity proofing to configured OIDC identity providers, which perform identity verification according to their own policies before issuing identity assertions. The application consumes verified identity claims from the provider's token response.",
+                "remarks": "CONDITIONAL COVERAGE: Requires SPARC_ENABLE_OIDC=true. Not met with local-only login (self-registration with no identity proofing). Implemented in app/controllers/omniauth_callbacks_controller.rb. Identity proofing is handled by the external OIDC provider."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

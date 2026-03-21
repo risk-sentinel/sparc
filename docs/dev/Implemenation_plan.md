@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-03-19
+**Last updated:** 2026-03-20
 
 ---
 
@@ -26,29 +26,9 @@ GitHub repository.
 
 ## Issue Process
 
-Standard workflow for every issue in the SPARC phased roadmap:
-
-1. Pull from Main unless otherwise noted
-2. Assign the issue to me
-3. Review the issue and updated notes
-4. Start a fresh branch `feature/` or `bug/` based on the issue
-   with the issue number in the branch name
-5. Create a plan
-6. Implement the approved plan
-7. Troubleshoot any issues
-8. Appropriately update:
-   - `docs/Implemenation_plan.md`
-   - `docs/Developer_Collision_Avoidance_Plan.md`
-   - Release notes so they are all stacked
-   - Regression testing
-9. Commit / push changes
-    - Reference the issue in any commit messages
-10. Wait for user testing
-    - Functional testing
-    - Review regression report(s)
-11. Create a PR
-    - Reference the Issue so it will close on merge
-    - Wait for the PR to be merged by the user before moving forward
+See **[`docs/dev/issue_rules.md`](issue_rules.md)** for the complete mandatory
+workflow, hard guardrails, compliance artifact update requirements, and
+authentication mode coverage matrix.
 
 ---
 
@@ -121,8 +101,8 @@ Standard workflow for every issue in the SPARC phased roadmap:
 ### 12. OSCAL Import Quality & Traceability (New — discovered during Phases 3-4)
 
 - [x] #207 -- Enhance Catalog/Baseline import to detect & report missing required data, priorities, and subparts -- **COMPLETED 2026-03-20**
-- [ ] #213 -- Map XCCDF/InSpec SV/V IDs to NIST control IDs during CDEF import
-- [ ] #217 -- Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation details
+- [x] #213 -- Map XCCDF/InSpec SV/V IDs to NIST control IDs during CDEF import -- **COMPLETED 2026-03-20**
+- [x] #217 -- Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation details -- **COMPLETED 2026-03-20**
 
 ### 13. API Expansion (New — extends Phase 5 API work)
 
@@ -339,8 +319,8 @@ Dev C: #205 (profile import fix)        -- Profile parser/service ✅ COMPLETE
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
 | [x] | #207 | Catalog/Baseline import: detect & report missing data, priorities, subparts | MEDIUM | None |
-| [ ] | #213 | Map XCCDF/InSpec SV/V IDs to NIST control IDs during CDEF import | MEDIUM | None |
-| [ ] | #217 | Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation | MEDIUM | None |
+| [x] | #213 | Map XCCDF/InSpec SV/V IDs to NIST control IDs during CDEF import -- **COMPLETED 2026-03-20** | MEDIUM | None |
+| [x] | #217 | Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation -- **COMPLETED 2026-03-20** | MEDIUM | None |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -348,8 +328,8 @@ Dev C: #205 (profile import fix)        -- Profile parser/service ✅ COMPLETE
 
 ```text
 Dev A: #207 (import quality)     -- Catalog domain ✅ COMPLETE
-Dev B: #213 (XCCDF ID mapping)   -- CDEF/Converter domain
-Dev C: #217 (Rev 5 docs)         -- Documentation only
+Dev B: #213 (XCCDF ID mapping)   -- CDEF/Converter domain ✅ COMPLETE
+Dev C: #217 (Rev 5 docs)         -- Documentation only ✅ COMPLETE
 ```
 
 > All 3 can run in parallel (different domains).
@@ -434,14 +414,14 @@ removed and are no longer tracked:
 | 3 | 4-6 weeks | Entity Creation + STIG Parser + ATO Wizard | #175, #185, #172, #173, #174, #125 | **COMPLETE** |
 | 4 | 3-4 weeks | Docs + UX Polish | #133, #167, #171 | **COMPLETE** |
 | 5 | 3-4 weeks | API + CI/CD + DB Cleanup | #95, #186, #183 | **COMPLETE** |
-| 6 | 1-2 weeks | Security Remediation + Bug Fixes | #210, #203, #205 | Pending |
-| 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | Pending |
+| 6 | 1-2 weeks | Security Remediation + Bug Fixes | #210, #203, #205 | **COMPLETE** |
+| 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229 | Pending |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | Pending |
 
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 30 (23 original + 7 new: #203, #205, #207, #210, #213, #217, #229)
-**Completed (Phases 1-5):** 23 issues
-**Remaining (Phases 6-9):** 10 issues (#210, #203, #205, #207, #213, #217, #229, #107, #108, #183)
-**Estimated remaining duration:** 8-12 weeks with 2-3 developers
+**Completed (Phases 1-7):** 29 issues
+**Remaining (Phases 8-9):** 4 issues (#229, #107, #108)
+**Estimated remaining duration:** 6-10 weeks with 2-3 developers

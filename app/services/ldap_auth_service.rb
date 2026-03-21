@@ -11,6 +11,11 @@
 # Usage:
 #   result = LdapAuthService.authenticate("jdoe", "s3cret")
 #   result # => { dn: "uid=jdoe,...", email: "jdoe@example.com", ... } or nil
+#
+# NIST 800-53 Controls:
+#   IA-2 Identification and Authentication (LDAP bind-and-search)
+#   IA-5 Authenticator Management (directory-based credential validation)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class LdapAuthService
   class LdapError < StandardError; end
 
