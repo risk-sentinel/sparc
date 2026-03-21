@@ -126,6 +126,40 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
       <p>Use <code>?page=2</code> and <code>?per_page=25</code> query parameters for pagination.</p>
     </section>
 
+    <%# ── Discovery ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">API Discovery</h2>
+      <p>The discovery endpoint returns a list of all available API endpoints scoped to the caller's authorization. Use it to verify connectivity, discover capabilities, and detect permission changes.</p>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/available</code></td><td>Returns endpoint inventory scoped to caller permissions</td><td>Any authenticated user</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h5 class="fw-bold mt-3 mb-2">Response Example</h5>
+      <pre class="bg-dark text-light p-3 rounded"><code>{
+  "api_version": "v1",
+  "system_id": "sparc-application",
+  "authenticated_as": "sparc-iac Pipeline",
+  "auth_mode": "hybrid",
+  "endpoints": [
+    {
+      "path": "/api/v1/ssp_documents",
+      "methods": ["GET", "POST"],
+      "description": "System Security Plans"
+    },
+    {
+      "path": "/api/v1/ssp_documents/:slug",
+      "methods": ["GET"],
+      "description": "Single SSP document"
+    }
+  ]
+}</code></pre>
+      <p class="text-muted mt-2"><strong>Authorization scoping:</strong> Admins see all endpoints and methods. Non-admins see only the resources and HTTP methods their role permits. Read-only users see only GET methods. Endpoints with no permitted methods are omitted entirely.</p>
+    </section>
+
     <%# ── SSP Documents ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: #27ae60;">SSP Documents</h2>
