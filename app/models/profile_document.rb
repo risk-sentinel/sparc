@@ -3,6 +3,7 @@ class ProfileDocument < ApplicationRecord
   include SafeDestroyable
   include Sluggable
   include Lifecycle
+  include SoftDeletable
 
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true
