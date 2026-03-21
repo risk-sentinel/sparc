@@ -5,36 +5,93 @@
       <%= link_to "Back", root_path, class: "btn btn-sm btn-outline-secondary" %>
     </div>
 
-    <div class="card">
+    <div class="card" data-controller="avatar-crop" data-avatar-crop-max-size-value="2097152">
       <div class="card-body p-4">
         <h5 class="fw-bold mb-3">Avatar</h5>
 
-        <div class="d-flex align-items-center gap-3 mb-3">
-          <span class="sparc-avatar sparc-avatar-lg">
+        <%# Current avatar display %>
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <span class="sparc-avatar" style="width: 128px; height: 128px; font-size: 3rem;">
             <% if current_user.avatar.attached? %>
-              <%= image_tag current_user.avatar, alt: current_user.initials %>
+              <%= image_tag current_user.avatar, alt: current_user.initials, data: { avatar_crop_target: "currentAvatar" } %>
             <% else %>
               <%= current_user.initials %>
             <% end %>
           </span>
           <div>
-            <div class="fw-semibold"><%= current_user.display_label %></div>
-            <div class="text-body-secondary small"><%= current_user.email %></div>
+            <div class="fw-semibold fs-5"><%= current_user.display_label %></div>
+            <div class="text-body-secondary"><%= current_user.email %></div>
           </div>
         </div>
 
-        <%= form_with url: update_avatar_profile_path, method: :patch, multipart: true, class: "mb-3" do |f| %>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Upload new avatar</label>
-            <%= f.file_field :avatar, name: "user[avatar]", accept: "image/png,image/jpeg,image/gif,image/webp", class: "form-control" %>
-            <div class="form-text">PNG, JPG, GIF, or WebP. Max 2 MB.</div>
+        <%# Upload form with hidden input — submitted after crop %>
+        <%= form_with url: update_avatar_profile_path, method: :patch, multipart: true, class: "mb-3",
+                      data: { avatar_crop_target: "form" } do |f| %>
+
+          <%# Dropzone-style upload area %>
+          <div class="sparc-dropzone p-4 text-center rounded mb-3"
+               data-avatar-crop-target="dropzone"
+               data-action="dragover->avatar-crop#dragOver dragenter->avatar-crop#dragOver dragleave->avatar-crop#dragLeave drop->avatar-crop#drop click->avatar-crop#selectFile"
+               style="cursor: pointer;">
+            <div class="mb-2" style="font-size: 2.5rem;">📷</div>
+            <div class="fw-semibold mb-1">Click to browse or drag & drop an image</div>
+            <div class="text-body-secondary small">PNG, JPG, GIF, or WebP — max 2 MB</div>
+            <div data-error class="text-danger small mt-2 d-none"></div>
           </div>
-          <%= f.submit "Upload Avatar", class: "btn btn-primary btn-sm" %>
+
+          <%# Hidden file input %>
+          <%= f.file_field :avatar, name: "user[avatar]",
+              accept: "image/png,image/jpeg,image/gif,image/webp",
+              class: "d-none",
+              data: { avatar_crop_target: "input", action: "change->avatar-crop#fileSelected" } %>
         <% end %>
 
         <% if current_user.avatar.attached? %>
-          <%= button_to "Remove Avatar", remove_avatar_profile_path, method: :delete, class: "btn btn-outline-danger btn-sm", data: { turbo_confirm: "Remove your avatar?" } %>
+          <%= button_to "Remove Avatar", remove_avatar_profile_path, method: :delete,
+              class: "btn btn-outline-danger btn-sm",
+              data: { turbo_confirm: "Remove your avatar?" } %>
         <% end %>
+
+        <%# ── Crop Modal ── %>
+        <div class="modal fade" tabindex="-1" data-avatar-crop-target="modal" data-bs-backdrop="static">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title fw-bold">Crop Avatar</h5>
+                <button type="button" class="btn-close" data-action="click->avatar-crop#cancelCrop"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row">
+                  <%# Crop area %>
+                  <div class="col-md-8">
+                    <div class="avatar-crop-container">
+                      <img data-avatar-crop-target="cropImage" alt="Crop preview" style="max-width: 100%; display: block;">
+                    </div>
+                  </div>
+                  <%# Preview %>
+                  <div class="col-md-4 d-flex flex-column align-items-center justify-content-center">
+                    <div class="mb-2 text-body-secondary small fw-semibold">Preview</div>
+                    <img data-avatar-crop-target="preview"
+                         alt="Avatar preview"
+                         class="avatar-crop-preview mb-3"
+                         src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+                    <div class="mb-2 text-body-secondary small fw-semibold">Zoom</div>
+                    <input type="range" class="form-range" min="0" max="100" value="0"
+                           data-avatar-crop-target="slider"
+                           data-action="input->avatar-crop#zoom">
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-action="click->avatar-crop#cancelCrop">Cancel</button>
+                <button type="button" class="btn btn-primary" data-action="click->avatar-crop#saveCrop">
+                  <i class="bi bi-check-lg"></i> Save Avatar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

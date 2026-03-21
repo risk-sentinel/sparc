@@ -45,6 +45,18 @@ class User < ApplicationRecord
 
   validates :status, inclusion: { in: %w[active suspended deactivated] }
 
+  # SI-10: Avatar file validation — type and size constraints
+  validate :avatar_acceptable, if: -> { avatar.attached? }
+
+  def avatar_acceptable
+    unless avatar.blob.content_type.in?(%w[image/png image/jpeg image/gif image/webp])
+      errors.add(:avatar, "must be a PNG, JPG, GIF, or WebP image")
+    end
+    unless avatar.blob.byte_size <= 2.megabytes
+      errors.add(:avatar, "must be less than 2 MB")
+    end
+  end
+
   # ── Callbacks ───────────────────────────────────────────────────────────
   before_validation :normalize_email
   before_update :enforce_uuid_immutability

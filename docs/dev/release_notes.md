@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-03-21 -- feat: Avatar Upload Refactor with Crop/Scale/Center (#234)
+
+**Branch:** `feature/234_avatar_crop_upload`
+
+### Summary
+
+Refactored the avatar upload experience with Cropper.js integration for client-side crop, scale, and
+center controls with a live circular preview. Added a Bootstrap 5 modal with zoom slider and a
+dropzone-style upload area matching the existing document upload pattern. Server-side file type and
+size validation enforces SI-10 compliance (NIST input validation). Enabled the `image_processing` gem
+for ActiveStorage variants. Admin avatar seed image (`sparc_admin.jpg`) is now automatically attached
+during bootstrap seeding.
+
+### What Changed
+
+- **Cropper.js integration** (`config/importmap.rb`) -- added Cropper.js pin for client-side image
+  cropping via importmap (no Node build step).
+- **Avatar crop Stimulus controller** (`app/javascript/controllers/avatar_crop_controller.js`) -- NEW;
+  handles crop modal lifecycle, zoom slider, circular preview, and cropped image submission.
+- **Profile edit view** (`app/views/profiles/edit.html.erb`) -- added Bootstrap 5 crop modal with
+  zoom slider, circular preview, and dropzone-style upload area.
+- **Profiles controller** (`app/controllers/profiles_controller.rb`) -- updated to handle cropped
+  avatar uploads with server-side validation.
+- **User model** (`app/models/user.rb`) -- added file type and size validation for avatar attachments
+  (SI-10 compliance).
+- **Gemfile** -- enabled `image_processing` gem for ActiveStorage variants.
+- **Theme CSS** (`app/assets/stylesheets/sparc-theme.css`) -- added styles for crop modal, circular
+  preview, and dropzone upload area.
+- **Layout** (`app/views/layouts/application.html.erb`) -- updated for Cropper.js support.
+- **Seeds** (`db/seeds.rb`) -- admin user avatar seed with `sparc_admin.jpg` auto-attached on bootstrap.
+- **Admin avatar** (`app/assets/images/sparc_admin.jpg`) -- NEW; default admin profile image.
+
+### Stats
+
+- **Spec count:** 1430 total, 0 failures
+- **New specs:** 0 (UI-focused change -- Cropper.js modal and dropzone interaction)
+- **New files:** 2 (avatar_crop_controller.js, sparc_admin.jpg)
+
+### NIST Controls
+
+- **SI-10** (Information Input Validation) -- server-side file type and size validation on avatar uploads
+
+---
+
 ## 2026-03-21 -- feat: API Discovery Endpoint (#250)
 
 **Branch:** `feature/250_api_discovery`

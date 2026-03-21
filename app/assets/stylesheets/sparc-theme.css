@@ -419,6 +419,35 @@
   font-size: 1.3rem;
 }
 
+/* ── Avatar Crop Modal (#234) ──────────────────────────────── */
+
+.avatar-crop-container {
+  max-height: 400px;
+  overflow: hidden;
+  background: var(--bs-dark-bg-subtle, #1a1a2e);
+  border-radius: 0.5rem;
+}
+
+.avatar-crop-container img {
+  display: block;
+  max-width: 100%;
+}
+
+.avatar-crop-preview {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--sparc-primary);
+  background: var(--bs-dark-bg-subtle, #1a1a2e);
+}
+
+/* Cropper.js circular crop guide overlay */
+.cropper-view-box,
+.cropper-face {
+  border-radius: 50%;
+}
+
 /* Navbar logo — responsive sizing */
 .sparc-navbar-logo {
   height: 44px;
