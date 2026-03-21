@@ -102,6 +102,15 @@ module SparcConfig
   def smtp_starttls_auto = ENV.fetch("SPARC_SMTP_STARTTLS_AUTO", "true") == "true"
   def smtp_from_address  = ENV.fetch("SPARC_SMTP_FROM_ADDRESS", nil)
 
+  # ── API Authentication Mode ─────────────────────────────────────────────
+  # Controls which auth method the REST API accepts:
+  #   local  — SPARC-issued Bearer tokens only (default)
+  #   oidc   — OIDC/Okta JWT tokens only
+  #   hybrid — JWTs for humans + SPARC tokens for service accounts
+  def api_auth_mode = ENV.fetch("SPARC_API_AUTH", "local")
+
+  API_AUTH_MODES = %w[local oidc hybrid].freeze
+
   # ── Security ──────────────────────────────────────────────────────────────
 
   def force_ssl? = ENV.fetch("FORCE_SSL", "true") == "true"
