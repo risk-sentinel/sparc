@@ -1,0 +1,153 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h2><%= @service_account.display_label %></h2>
+      <p class="text-muted mb-0"><%= @service_account.email %></p>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to "Edit", edit_admin_service_account_path(@service_account), class: "btn btn-outline-primary" %>
+      <% if @service_account.disabled? %>
+        <%= button_to "Enable", enable_admin_service_account_path(@service_account), method: :patch, class: "btn btn-success" %>
+      <% else %>
+        <%= button_to "Disable", disable_admin_service_account_path(@service_account), method: :patch, class: "btn btn-warning", data: { turbo_confirm: "Disable this service account? It will no longer be able to authenticate." } %>
+      <% end %>
+      <%= button_to "Delete", admin_service_account_path(@service_account), method: :delete, class: "btn btn-danger", data: { turbo_confirm: "Permanently deactivate this service account?" } %>
+      <%= link_to "Back", admin_service_accounts_path, class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <%# Show-once token display %>
+  <% if flash[:api_token] %>
+    <div class="alert alert-warning">
+      <h5><i class="bi bi-key"></i> API Token (shown once)</h5>
+      <code class="user-select-all d-block p-2 bg-dark text-light rounded" style="word-break: break-all;"><%= flash[:api_token] %></code>
+      <small class="text-muted mt-2 d-block">Copy this token now. It will not be displayed again.</small>
+    </div>
+  <% end %>
+
+  <div class="row g-4">
+    <%# Account Details %>
+    <div class="col-md-6">
+      <div class="card bg-dark">
+        <div class="card-header"><h5 class="mb-0">Account Details</h5></div>
+        <div class="card-body">
+          <table class="table table-dark table-sm mb-0">
+            <tr><th>UUID</th><td><code><%= @service_account.uuid %></code></td></tr>
+            <tr><th>Status</th><td>
+              <% if @service_account.disabled? %>
+                <span class="badge bg-danger">Disabled</span>
+                <small class="text-muted ms-2">(<%= @service_account.disabled_reason %>)</small>
+              <% elsif @service_account.active? %>
+                <span class="badge bg-success">Active</span>
+              <% else %>
+                <span class="badge bg-warning"><%= @service_account.status.titleize %></span>
+              <% end %>
+            </td></tr>
+            <tr><th>Owner</th><td><%= @service_account.owner&.display_label || "—" %></td></tr>
+            <tr><th>Created</th><td><%= @service_account.created_at.strftime("%Y-%m-%d %H:%M UTC") %></td></tr>
+            <% if @service_account.disabled_at %>
+              <tr><th>Disabled At</th><td><%= @service_account.disabled_at.strftime("%Y-%m-%d %H:%M UTC") %></td></tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <%# API Tokens %>
+    <div class="col-md-6">
+      <div class="card bg-dark">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">API Tokens</h5>
+          <%= button_to "Regenerate Token", regenerate_token_admin_service_account_path(@service_account),
+                method: :post, class: "btn btn-sm btn-warning",
+                data: { turbo_confirm: "Regenerate token? The current token will be permanently revoked." } %>
+        </div>
+        <div class="card-body">
+          <% if @tokens.any? %>
+            <table class="table table-dark table-sm mb-0">
+              <thead>
+                <tr><th>Name</th><th>Status</th><th>Expires</th><th>Last Used</th></tr>
+              </thead>
+              <tbody>
+                <% @tokens.each do |token| %>
+                  <tr>
+                    <td><%= token.name %></td>
+                    <td>
+                      <% if token.expired? %>
+                        <span class="badge bg-danger">Expired</span>
+                      <% else %>
+                        <span class="badge bg-success">Active</span>
+                      <% end %>
+                    </td>
+                    <td><%= token.expires_at&.strftime("%Y-%m-%d") || "Never" %></td>
+                    <td>
+                      <% if token.last_used_at %>
+                        <%= time_ago_in_words(token.last_used_at) %> ago
+                        <% if token.last_used_ip %><br><small class="text-muted"><%= token.last_used_ip %></small><% end %>
+                      <% else %>
+                        Never
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+
+            <%# Endpoint restrictions %>
+            <% active_token = @tokens.select { |t| !t.expired? }.first %>
+            <% if active_token %>
+              <hr>
+              <h6>Allowed Endpoints</h6>
+              <% if active_token.allowed_endpoints.present? %>
+                <ul class="list-unstyled mb-0">
+                  <% active_token.allowed_endpoints.each do |ep| %>
+                    <li><code><%= ep %></code></li>
+                  <% end %>
+                </ul>
+              <% else %>
+                <span class="text-muted">All endpoints (unrestricted)</span>
+              <% end %>
+
+              <h6 class="mt-3">Allowed CIDRs</h6>
+              <% if active_token.allowed_cidrs.present? %>
+                <ul class="list-unstyled mb-0">
+                  <% active_token.allowed_cidrs.each do |cidr| %>
+                    <li><code><%= cidr %></code></li>
+                  <% end %>
+                </ul>
+              <% else %>
+                <span class="text-muted">All IPs (unrestricted)</span>
+              <% end %>
+            <% end %>
+          <% else %>
+            <p class="text-muted mb-0">No tokens generated.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Recent Audit Events %>
+  <div class="card bg-dark mt-4">
+    <div class="card-header"><h5 class="mb-0">Recent Activity</h5></div>
+    <div class="card-body">
+      <% if @audit_events.any? %>
+        <table class="table table-dark table-sm mb-0">
+          <thead><tr><th>Action</th><th>By</th><th>Details</th><th>When</th></tr></thead>
+          <tbody>
+            <% @audit_events.each do |event| %>
+              <tr>
+                <td><code><%= event.action %></code></td>
+                <td><%= event.user&.display_label || "System" %></td>
+                <td><small class="text-muted"><%= event.metadata&.to_json&.truncate(80) %></small></td>
+                <td><%= event.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-muted mb-0">No activity recorded.</p>
+      <% end %>
+    </div>
+  </div>
+</div>

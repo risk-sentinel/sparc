@@ -1,0 +1,76 @@
+<div class="container-fluid py-4" style="max-width: 700px;">
+  <h2>New Service Account</h2>
+  <p class="text-muted">Create an API-only account for pipelines, CI/CD, or integrations.</p>
+
+  <%= form_with(model: @service_account, url: admin_service_accounts_path, class: "mt-4") do |f| %>
+    <% if @service_account.errors.any? %>
+      <div class="alert alert-danger">
+        <h6>Please fix the following errors:</h6>
+        <ul class="mb-0">
+          <% @service_account.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="card bg-dark mb-4">
+      <div class="card-header"><h5 class="mb-0">Account Details</h5></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :display_name, "Name", class: "form-label" %>
+          <%= f.text_field :display_name, class: "form-control", placeholder: "e.g., sparc-iac-pipeline", required: true %>
+          <div class="form-text">Descriptive name for this service account.</div>
+        </div>
+
+        <div class="mb-3">
+          <%= f.label :email, class: "form-label" %>
+          <%= f.email_field :email, class: "form-control", placeholder: "e.g., sparc-iac@service.local", required: true %>
+          <div class="form-text">Unique email identifier. Use a service domain (e.g., @service.local).</div>
+        </div>
+
+        <div class="mb-3">
+          <%= f.label :owner_id, "Owner", class: "form-label" %>
+          <%= f.select :owner_id, @human_users.map { |u| [u.display_label, u.id] },
+              { prompt: "Select owner..." }, class: "form-select", required: true %>
+          <div class="form-text">Human user accountable for this service account.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-dark mb-4">
+      <div class="card-header"><h5 class="mb-0">Token Settings</h5></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label" for="expires_in_days">Token Expiry</label>
+          <select name="expires_in_days" id="expires_in_days" class="form-select">
+            <option value="30">30 days</option>
+            <option value="60">60 days</option>
+            <option value="90" selected>90 days (recommended for HIGH)</option>
+            <option value="180">180 days</option>
+            <option value="365">1 year</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="allowed_endpoints">Allowed Endpoints <small class="text-muted">(optional)</small></label>
+          <textarea name="allowed_endpoints" id="allowed_endpoints" class="form-control" rows="4"
+                    placeholder="/api/v1/ssp_documents&#10;/api/v1/sar_documents&#10;/api/v1/ksi_*"></textarea>
+          <div class="form-text">One path per line. Use * for wildcards. Leave empty for unrestricted access.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="allowed_cidrs">Allowed CIDRs <small class="text-muted">(optional)</small></label>
+          <textarea name="allowed_cidrs" id="allowed_cidrs" class="form-control" rows="3"
+                    placeholder="10.0.0.0/8&#10;192.168.1.0/24"></textarea>
+          <div class="form-text">One CIDR per line. Leave empty to allow any IP.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <%= f.submit "Create Service Account & Generate Token", class: "btn btn-success" %>
+      <%= link_to "Cancel", admin_service_accounts_path, class: "btn btn-outline-secondary" %>
+    </div>
+  <% end %>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_21_160538) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_21_211012) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,7 +43,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_160538) do
   end
 
   create_table "api_tokens", force: :cascade do |t|
+    t.jsonb "allowed_cidrs", default: []
+    t.jsonb "allowed_endpoints", default: []
     t.datetime "created_at", null: false
+    t.bigint "created_by_id"
     t.datetime "expires_at"
     t.datetime "last_used_at"
     t.string "last_used_ip"
@@ -52,6 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_160538) do
     t.string "token_digest", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["created_by_id"], name: "index_api_tokens_on_created_by_id"
     t.index ["token_digest"], name: "index_api_tokens_on_token_digest", unique: true
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
   end
@@ -1195,6 +1199,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_160538) do
     t.string "avatar_url"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.datetime "disabled_at"
+    t.string "disabled_reason"
     t.string "display_name"
     t.string "email", null: false
     t.string "first_name"
@@ -1203,6 +1209,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_160538) do
     t.datetime "last_sign_in_at"
     t.string "last_sign_in_ip"
     t.boolean "must_reset_password", default: false, null: false
+    t.bigint "owner_id"
     t.datetime "password_changed_at"
     t.string "password_digest"
     t.boolean "service_account", default: false, null: false
@@ -1212,6 +1219,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_160538) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["owner_id"], name: "index_users_on_owner_id"
     t.index ["service_account"], name: "index_users_on_service_account"
     t.index ["status"], name: "index_users_on_status"
     t.index ["uuid"], name: "index_users_on_uuid", unique: true
@@ -1220,6 +1228,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_160538) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "api_tokens", "users"
+  add_foreign_key "api_tokens", "users", column: "created_by_id"
   add_foreign_key "attestations", "evidences", on_delete: :cascade
   add_foreign_key "audit_events", "users", on_delete: :nullify
   add_foreign_key "authorization_boundaries", "organizations", on_delete: :nullify
@@ -1308,4 +1317,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_160538) do
   add_foreign_key "user_roles", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "user_roles", "roles", on_delete: :cascade
   add_foreign_key "user_roles", "users", on_delete: :cascade
+  add_foreign_key "users", "users", column: "owner_id"
 end

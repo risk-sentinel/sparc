@@ -14,10 +14,13 @@
 #
 # NIST 800-53 Controls:
 #   IA-5 Authenticator Management (SHA-256 digest, no plaintext storage)
+#   AC-3 Access Enforcement (endpoint scoping via allowed_endpoints)
+#   AC-17 Remote Access (CIDR allowlist via allowed_cidrs)
 #   SC-13 Cryptographic Protection (SecureRandom.hex, SHA-256)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class ApiToken < ApplicationRecord
   belongs_to :user
+  belongs_to :created_by, class_name: "User", optional: true
 
   validates :name, presence: true
   validates :token_digest, presence: true, uniqueness: true
@@ -30,14 +33,19 @@ class ApiToken < ApplicationRecord
 
   # Generate a new API token with a secure random value.
   # Returns the token record with `plaintext_token` set (available only now).
-  def self.generate!(user:, name:, expires_at: nil, scopes: {})
-    plaintext = "sparc_#{SecureRandom.hex(32)}"
+  # Service account tokens use `sparc_sa_` prefix for identification (IA-4).
+  def self.generate!(user:, name:, expires_at: nil, scopes: {}, created_by: nil, allowed_endpoints: [], allowed_cidrs: [])
+    prefix = user.service_account? ? "sparc_sa_" : "sparc_"
+    plaintext = "#{prefix}#{SecureRandom.hex(32)}"
     token = create!(
       user: user,
       name: name,
       token_digest: Digest::SHA256.hexdigest(plaintext),
       expires_at: expires_at,
-      scopes: scopes
+      scopes: scopes,
+      created_by: created_by,
+      allowed_endpoints: allowed_endpoints || [],
+      allowed_cidrs: allowed_cidrs || []
     )
     token.plaintext_token = plaintext
     token
@@ -59,5 +67,31 @@ class ApiToken < ApplicationRecord
 
   def expired?
     expires_at.present? && expires_at < Time.current
+  end
+
+  # AC-3: Check if the requested endpoint is allowed by this token.
+  # Empty allowed_endpoints means all endpoints are permitted.
+  def endpoint_allowed?(path)
+    return true if allowed_endpoints.blank?
+
+    allowed_endpoints.any? do |pattern|
+      if pattern.end_with?("*")
+        path.start_with?(pattern.chomp("*"))
+      else
+        path == pattern
+      end
+    end
+  end
+
+  # AC-17: Check if the request IP is within allowed CIDR ranges.
+  # Empty allowed_cidrs means all IPs are permitted.
+  def cidr_allowed?(ip)
+    return true if allowed_cidrs.blank?
+    return true if ip.blank?
+
+    request_ip = IPAddr.new(ip)
+    allowed_cidrs.any? { |cidr| IPAddr.new(cidr).include?(request_ip) }
+  rescue IPAddr::InvalidAddressError
+    false
   end
 end
