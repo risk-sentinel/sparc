@@ -36,10 +36,10 @@
     <%# ── Navbar (same as application layout) ── %>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
       <div class="container-fluid">
-        <div class="d-flex align-items-center gap-2">
-          <%= link_to login_path, class: "navbar-brand d-flex align-items-center" do %>
-            <%= image_tag "sparc.png", alt: "SPARC", class: "sparc-navbar-logo" %>
-          <% end %>
+        <div class="d-flex align-items-center gap-2" data-controller="video-easter-egg">
+          <a href="#" class="navbar-brand d-flex align-items-center" data-action="click->video-easter-egg#play">
+            <%= image_tag "sparc_logo.jpg", alt: "SPARC", class: "sparc-navbar-logo" %>
+          </a>
           <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,7 +94,7 @@
         <%# ── Left column (2/3): SPARC info + OSCAL overview ── %>
         <div class="col-lg-8 order-2 order-lg-1">
           <div class="text-center text-lg-start mb-3">
-            <%= image_tag "sparc.png", alt: SparcConfig.app_name, class: "sparc-login-logo" %>
+            <%= image_tag "sparc_logo.jpg", alt: SparcConfig.app_name, class: "sparc-login-logo" %>
             <h1 class="h3 fw-bold mt-3 mb-2"><%= SparcConfig.welcome_text %></h1>
             <p class="text-body-secondary">
               Centralize, track, and operationalize NIST 800-53 controls &mdash; from catalog management
@@ -258,5 +258,18 @@
         if (panel) panel.classList.add('active');
       }
     </script>
+
+    <%# Easter egg video overlay — triggered by navbar logo click %>
+    <div class="sparc-video-overlay d-none"
+         data-video-easter-egg-target="overlay"
+         data-action="click->video-easter-egg#overlayClick">
+      <video data-video-easter-egg-target="video"
+             data-action="ended->video-easter-egg#videoEnded"
+             class="sparc-video-player"
+             preload="none">
+        <source src="/videos/sparc_intro.mp4" type="video/mp4">
+      </video>
+    </div>
+
   </body>
 </html>

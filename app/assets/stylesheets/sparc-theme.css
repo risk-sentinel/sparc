@@ -568,7 +568,7 @@ a.link-purple { color: var(--sparc-purple); }
 /* ── Dashboard header text elements ────────────────────────────── */
 
 .sparc-header-subtitle {
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.4);
@@ -577,7 +577,7 @@ a.link-purple { color: var(--sparc-purple); }
 
 .sparc-header-title {
   color: white;
-  font-size: 1.4rem;
+  font-size: 1.75rem;
   font-weight: 700;
   margin: 0;
 }
@@ -1223,19 +1223,24 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-hero-tile {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 1rem;
   text-align: center;
 }
 
 .sparc-hero-tile-count {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
 }
 
 .sparc-hero-tile-label {
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: rgba(255, 255, 255, 0.75);
   margin-top: 0.25rem;
+}
+
+@media (max-width: 575.98px) {
+  .sparc-hero-tile-count { font-size: 2rem; }
+  .sparc-hero-tile-label { font-size: 0.85rem; }
 }
 
 .sparc-check-icon {
@@ -1643,4 +1648,28 @@ a.link-purple { color: var(--sparc-purple); }
   background-color: rgba(var(--bs-primary-rgb), 0.15);
   border-color: var(--sparc-primary);
   color: var(--sparc-primary);
+}
+
+/* ── Easter egg video overlay ─────────────────────────────────── */
+
+.sparc-video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sparc-video-overlay.d-none {
+  display: none !important;
+}
+
+.sparc-video-player {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: 8px;
+  cursor: default;
 }
