@@ -419,6 +419,26 @@
   font-size: 1.3rem;
 }
 
+/* ── Data Quality Card (#237) ─────────────────────────────── */
+
+.data-quality-card--warnings {
+  border-left: 4px solid var(--bs-warning, #ffc107);
+}
+
+.data-quality-card--clean {
+  border-left: 4px solid var(--bs-success, #198754);
+}
+
+.data-quality-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.data-quality-card .data-quality-arrow {
+  font-size: 0.75rem;
+  color: var(--bs-secondary);
+  transition: transform 0.15s;
+}
+
 /* ── Avatar Crop Modal (#234) ──────────────────────────────── */
 
 .avatar-crop-container {
