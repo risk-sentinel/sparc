@@ -412,7 +412,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | **HIGH** | None |
 | [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | MEDIUM | None |
 | [x] | #249 | Mutually exclusive API auth modes (local/oidc/hybrid) + service accounts -- **COMPLETED 2026-03-21** | **HIGH** (security) | None |
-| [ ] | #250 | API discovery endpoint (GET /api/v1/available) | LOW | None |
+| [x] | #250 | API discovery endpoint (GET /api/v1/available) -- **COMPLETED 2026-03-21** | LOW | None |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -426,7 +426,7 @@ Dev B: #244 (security gate)        -- CI/Infrastructure domain
 Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
 Dev D: #237 (data quality card)    -- Catalog UI domain
 Dev D: #234 (avatar upload)        -- User/UI domain
-Dev D: #250 (API discovery)        -- API domain
+Dev D: #250 (API discovery)        -- API domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security), then #246, #237, #250, #234.
@@ -473,6 +473,6 @@ removed and are no longer tracked:
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 42 (23 original + 19 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 37 issues
-**Remaining:** 5 issues (Phase 10: #234, #237, #244, #246, #250)
+**Completed (Phases 1-9 + ad-hoc):** 38 issues
+**Remaining:** 4 issues (Phase 10: #234, #237, #244, #246)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.
