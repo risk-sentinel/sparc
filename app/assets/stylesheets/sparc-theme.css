@@ -325,8 +325,8 @@
 }
 
 .sparc-dropdown-menu .dropdown-item {
-  padding: 0.5rem 0.85rem;
-  font-size: 0.85rem;
+  padding: 0.55rem 0.95rem;
+  font-size: 1rem;
   border-radius: 4px;
   margin: 0.1rem 0.35rem;
   color: var(--bs-body-color);
@@ -340,8 +340,8 @@
 
 /* Dropdown header with OSCAL layer accent */
 .sparc-dropdown-header {
-  padding: 0.4rem 0.85rem 0.25rem;
-  font-size: 0.65rem;
+  padding: 0.45rem 0.95rem 0.3rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -706,9 +706,9 @@ a.link-purple { color: var(--sparc-purple); }
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 0.35rem 0.65rem;
+  padding: 0.5rem 0.85rem;
   cursor: pointer;
-  min-width: 64px;
+  min-width: 80px;
   text-decoration: none;
   display: inline-block;
 }
@@ -716,7 +716,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-summary-chip.active { background: rgba(255, 255, 255, 0.15); }
 
 .sparc-chip-count {
-  font-size: 1.15rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: white;
   line-height: 1;
@@ -724,10 +724,10 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 .sparc-chip-label {
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.55);
   white-space: nowrap;
-  margin-top: 0.1rem;
+  margin-top: 0.15rem;
 }
 
 
