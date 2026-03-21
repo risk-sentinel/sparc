@@ -39,9 +39,10 @@ class Api::V1::BaseController < ActionController::API
     }
   end
 
-  # Provide audit_log helper since we're not inheriting from ApplicationController
+  # Provide audit_log helper since we're not inheriting from ApplicationController.
+  # Uses AuditEvent.log which handles polymorphic subject extraction.
   def audit_log(action, subject: nil, metadata: {})
-    AuditEvent.create(
+    AuditEvent.log(
       action: action,
       user: current_user,
       subject: subject,
