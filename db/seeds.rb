@@ -2365,3 +2365,6 @@ puts "  Created #{Evidence.count} evidence records"
 puts "  Created #{EvidenceControlLink.count} control links"
 puts "  Created #{Attestation.count} attestations"
 puts "Done! Evidence seeded."
+
+# ── FedRAMP 20x KSI Catalog ──────────────────────────────────────────
+load Rails.root.join("db/seeds/fedramp_20x_ksi.rb")
