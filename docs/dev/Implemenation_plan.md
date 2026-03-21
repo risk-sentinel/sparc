@@ -76,6 +76,7 @@ authentication mode coverage matrix.
 - [x] #167 -- Enterprise/Organization visibility & navigation for admins -- **COMPLETED 2026-03-19**
 - [x] #171 -- Interactive OSCAL document relationship diagram (Mermaid) -- **COMPLETED 2026-03-19**
 - [x] #253 -- Page header/tile sizing increase, SPARC logo replacement, "Systemized" text correction, easter egg -- **COMPLETED 2026-03-21**
+- [x] #248 -- About page with OSCAL, FedRAMP 20x & API documentation -- **COMPLETED 2026-03-21**
 
 ### 7. API & Backend Enhancements
 
@@ -110,6 +111,15 @@ authentication mode coverage matrix.
 - [x] #229 -- REST API Phase 1: Full CRUD for SSP, SAR, SAP, POA&M with Bearer token auth + Okta JWT -- **COMPLETED 2026-03-20**
 - [x] #240 -- Baseline Parameter and Enumeration Management API (GET/PUT/export under profile_documents) -- **COMPLETED 2026-03-21**
 - [x] #242 -- REST API Phase 2: Full CRUD for Catalogs, Profiles, CDEFs, Control Mappings -- **COMPLETED 2026-03-21**
+
+### 14. Platform Hardening & Polish (New — post-roadmap improvements)
+
+- [ ] #234 -- Refactor avatar upload with crop/scale/center controls
+- [ ] #237 -- Add persistent Data Quality card to catalog show page
+- [ ] #244 -- Add security gate with threshold-based merge/deploy blocking
+- [ ] #246 -- Repository cleanup & OSCAL schema validation overhaul
+- [ ] #249 -- Mutually exclusive API auth modes (SPARC_API_AUTH=local|oidc|hybrid)
+- [ ] #250 -- Add API discovery endpoint (GET /api/v1/available)
 
 <!-- markdownlint-enable MD013 -->
 
@@ -389,6 +399,40 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 
 ---
 
+### Phase 10: Platform Hardening & Polish (ongoing)
+
+**Goal:** Security hardening, UX refinements, developer experience, schema validation
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #234 | Refactor avatar upload with crop/scale/center controls | LOW | None |
+| [ ] | #237 | Persistent Data Quality card on catalog show page | MEDIUM | None |
+| [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | **HIGH** | None |
+| [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | MEDIUM | None |
+| [ ] | #249 | Mutually exclusive API auth modes (local/oidc/hybrid) + service accounts | **HIGH** (security) | None |
+| [ ] | #250 | API discovery endpoint (GET /api/v1/available) | LOW | None |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Hardened API auth, CI security gates, cleaner repo, improved UX
+
+**Parallelism: All 6 issues can run simultaneously (different domains).**
+
+```text
+Dev A: #249 (API auth modes)       -- API/Auth domain
+Dev B: #244 (security gate)        -- CI/Infrastructure domain
+Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
+Dev D: #237 (data quality card)    -- Catalog UI domain
+Dev D: #234 (avatar upload)        -- User/UI domain
+Dev D: #250 (API discovery)        -- API domain
+```
+
+> **Recommended order:** #249 and #244 first (security), then #246, #237, #250, #234.
+
+---
+
 ## Closed / Removed Issues
 
 The following issues from the original plan have been resolved or
@@ -424,10 +468,11 @@ removed and are no longer tracked:
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
+| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 33 (23 original + 10 ad-hoc: #203, #205, #207, #210, #213, #217, #229, #240, #242, #253)
-**Completed (Phases 1-9 + ad-hoc):** 35 issues
-**Remaining:** 0 issues
-**All phases complete.** Project roadmap finished 2026-03-21.
+**Total issues tracked:** 42 (23 original + 19 ad-hoc/new)
+**Completed (Phases 1-9 + ad-hoc):** 36 issues
+**Remaining:** 6 issues (Phase 10: #234, #237, #244, #246, #249, #250)
+**Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.

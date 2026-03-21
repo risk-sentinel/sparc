@@ -1,0 +1,241 @@
+<% content_for :title, "About SPARC" %>
+
+<div class="card mb-4">
+  <div class="card-body">
+
+    <%# ── Hero Section ── %>
+    <div class="text-center mb-4">
+      <%= image_tag "sparc_logo.jpg", alt: "SPARC", style: "height: 120px; width: auto;" %>
+      <h1 class="h2 fw-bold mt-3">About SPARC</h1>
+      <p class="text-body-secondary" style="max-width: 700px; margin: 0 auto;">
+        Systematic Policy and Regulatory Controls &mdash; a platform for authoring,
+        validating, and managing OSCAL-based compliance artifacts with automation.
+      </p>
+    </div>
+
+    <hr class="my-4">
+
+    <%# ── Section 1: What is SPARC? ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">What is SPARC?</h2>
+      <p>
+        SPARC helps organizations centralize, track, and operationalize NIST SP 800-53 security controls
+        across the full Risk Management Framework (RMF) lifecycle. It bridges the gap between manual
+        compliance workflows and full automation by providing a web interface and REST API for managing
+        catalogs, baselines, system security plans, assessments, and evidence &mdash; all in
+        machine-readable OSCAL format.
+      </p>
+      <p>
+        Whether you are preparing a FedRAMP authorization package, maintaining an ongoing ATO, or
+        tailoring baselines for a new environment, SPARC provides the tools to do it faster with
+        fewer errors and complete audit traceability.
+      </p>
+    </section>
+
+    <%# ── Section 2: OSCAL Framework Layers ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">OSCAL Framework Layers</h2>
+      <p>
+        The Open Security Controls Assessment Language (OSCAL) is a NIST-developed standard for
+        expressing security controls, assessment plans, and compliance results in machine-readable
+        formats. OSCAL organizes compliance artifacts into layers:
+      </p>
+
+      <div class="row g-3 my-3">
+        <div class="col-md-6">
+          <div class="card h-100" style="border-left: 4px solid #3498db;">
+            <div class="card-body">
+              <h5 class="fw-bold" style="color: #3498db;">Controls Layer</h5>
+              <p class="mb-1"><strong>Catalogs</strong> &mdash; complete sets of security controls (e.g., NIST SP 800-53 Rev 5)</p>
+              <p class="mb-1"><strong>Profiles</strong> &mdash; tailored baselines selecting specific controls (e.g., FedRAMP HIGH)</p>
+              <p class="mb-0"><strong>Mappings</strong> &mdash; cross-references between control frameworks</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100" style="border-left: 4px solid #27ae60;">
+            <div class="card-body">
+              <h5 class="fw-bold" style="color: #27ae60;">Implementation Layer</h5>
+              <p class="mb-1"><strong>System Security Plans (SSPs)</strong> &mdash; describe how controls are implemented in a system</p>
+              <p class="mb-0"><strong>Component Definitions (CDEFs)</strong> &mdash; reusable control implementations for specific technologies</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100" style="border-left: 4px solid #e67e22;">
+            <div class="card-body">
+              <h5 class="fw-bold" style="color: #e67e22;">Assessment Layer</h5>
+              <p class="mb-1"><strong>Assessment Plans (SAPs)</strong> &mdash; define how security controls will be tested</p>
+              <p class="mb-1"><strong>Assessment Results (SARs)</strong> &mdash; findings from control assessments</p>
+              <p class="mb-1"><strong>Evidence</strong> &mdash; artifacts supporting control assessment findings</p>
+              <p class="mb-0"><strong>Plans of Action &amp; Milestones (POA&amp;Ms)</strong> &mdash; track remediation of findings</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100" style="border-left: 4px solid #9b59b6;">
+            <div class="card-body">
+              <h5 class="fw-bold" style="color: #9b59b6;">Enterprise Layer</h5>
+              <p class="mb-1"><strong>Organizations</strong> &mdash; top-level organizational units</p>
+              <p class="mb-0"><strong>Authorization Boundaries</strong> &mdash; define the scope of systems under assessment</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p>
+        SPARC provides full support across all layers &mdash; from importing NIST catalogs and tailoring
+        baselines to generating SSPs, managing assessments, and exporting OSCAL-compliant artifacts in
+        JSON, YAML, and XML formats.
+      </p>
+    </section>
+
+    <%# ── Section 3: FedRAMP 20x and OSCAL ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">FedRAMP 20x and OSCAL</h2>
+      <p>
+        FedRAMP 20x is an initiative to modernize cloud security authorizations through automation
+        and machine-readable compliance. Instead of narrative-heavy documentation reviewed manually,
+        FedRAMP 20x emphasizes:
+      </p>
+      <ul>
+        <li><strong>Machine-readable artifacts</strong> &mdash; OSCAL-based SSPs, SARs, and POA&amp;Ms that can be validated automatically</li>
+        <li><strong>Key Security Indicators (KSIs)</strong> &mdash; measurable, outcome-focused security metrics for continuous monitoring</li>
+        <li><strong>Continuous assurance</strong> &mdash; ongoing validation replacing periodic point-in-time assessments</li>
+        <li><strong>Automated validation</strong> &mdash; targeting 80%+ of control checks via machine-readable evidence</li>
+      </ul>
+      <p>
+        SPARC supports both traditional NIST SP 800-53 authorization workflows and the emerging FedRAMP 20x
+        model, including a complete KSI catalog with 56 indicators across 11 security themes and validation
+        tracking per authorization boundary.
+      </p>
+    </section>
+
+    <%# ── Section 4: SPARC and the Authoritative Layer ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">The Authoritative Layer</h2>
+      <p>
+        In compliance workflows, the <strong>authoritative layer</strong> is the single source of truth
+        for security controls, implementations, and evidence. SPARC serves as this authoritative layer by:
+      </p>
+      <ul>
+        <li>Ingesting and validating OSCAL artifacts against NIST schemas</li>
+        <li>Generating and maintaining authoritative SSPs, component definitions, and profiles</li>
+        <li>Providing centralized storage and versioning of all compliance artifacts</li>
+        <li>Enforcing traceability from controls to implementations to assessment findings</li>
+        <li>Supporting audit-readiness with complete change tracking and export capabilities</li>
+      </ul>
+      <p>
+        Every artifact in SPARC is machine-enforceable &mdash; not a static document, but a living data
+        structure that can be validated, exported, and integrated into automated compliance pipelines.
+      </p>
+    </section>
+
+    <%# ── Section 5: Automated Validations with MITRE SAF ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Automated Validations with MITRE SAF</h2>
+      <p>
+        SPARC integrates with the
+        <a href="https://saf.mitre.org/" target="_blank" rel="noopener noreferrer" class="text-primary">MITRE Security Automation Framework (SAF)</a>
+        to provide automated compliance validation:
+      </p>
+      <ul>
+        <li><strong>Schema validation</strong> &mdash; verify OSCAL artifacts conform to NIST schemas (v1.1.2)</li>
+        <li><strong>Business-rule checking</strong> &mdash; enforce organizational constraints and FedRAMP requirements</li>
+        <li><strong>Control implementation verification</strong> &mdash; validate that implementations address required controls</li>
+        <li><strong>XCCDF and HDF support</strong> &mdash; natively import DISA STIGs (XCCDF) and InSpec/HDF results for automated evidence collection</li>
+      </ul>
+      <p>
+        Automated validations catch issues early, reduce remediation time, and provide confidence
+        that authorization packages meet requirements before submission.
+      </p>
+    </section>
+
+    <%# ── Section 6: Control Mappings and Converters ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Control Mappings and Converters</h2>
+      <p>
+        SPARC provides cross-framework control mapping using OSCAL's native mapping schema,
+        enabling organizations to maintain compliance across multiple standards simultaneously:
+      </p>
+      <div class="row g-3 my-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="fw-bold">Control Mappings</h5>
+              <p class="mb-1">Map controls between frameworks using OSCAL's mapping model</p>
+              <ul class="mb-0 small">
+                <li>NIST SP 800-53 Rev 5 to FedRAMP baselines</li>
+                <li>CIS Benchmarks to NIST 800-53</li>
+                <li>Custom framework mappings</li>
+                <li>KSI-to-NIST control cross-references</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="fw-bold">Automatic Converters</h5>
+              <p class="mb-1">Import from multiple source formats automatically</p>
+              <ul class="mb-0 small">
+                <li>DISA SV/V and CCI identifiers to NIST 800-53</li>
+                <li>CIS Benchmarks to NIST 800-53</li>
+                <li>XCCDF/SCAP/OVAL results to OSCAL</li>
+                <li>InSpec HDF profiles to component definitions</li>
+                <li>Excel SSP/SAR templates to OSCAL JSON</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%# ── Section 7: Get Started ── %>
+    <section>
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Get Started</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card h-100 text-center">
+            <div class="card-body">
+              <div style="font-size: 2.5rem;">&#128214;</div>
+              <h5 class="fw-bold mt-2">API Documentation</h5>
+              <p class="small text-body-secondary">REST API reference for integrating SPARC with your compliance pipeline.</p>
+              <%= link_to "View API Docs", about_api_path, class: "btn btn-primary btn-sm" %>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 text-center">
+            <div class="card-body">
+              <div style="font-size: 2.5rem;">&#128640;</div>
+              <h5 class="fw-bold mt-2">Quick-Start Guide</h5>
+              <p class="small text-body-secondary">Get up and running with SPARC in minutes &mdash; from installation to your first SSP.</p>
+              <%= link_to "Quick Start", about_quickstart_path, class: "btn btn-success btn-sm" %>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 text-center">
+            <div class="card-body">
+              <div style="font-size: 2.5rem;">&#128187;</div>
+              <h5 class="fw-bold mt-2">Source Code</h5>
+              <p class="small text-body-secondary">SPARC is open source. Explore the codebase, file issues, and contribute.</p>
+              <a href="https://github.com/Rebel-Raiders/sparc" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">GitHub Repo</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <% if SparcConfig.contact_email.present? %>
+        <div class="text-center mt-4">
+          <p class="text-body-secondary small">
+            Questions? Contact us at
+            <%= mail_to SparcConfig.contact_email, SparcConfig.contact_email, class: "text-primary text-decoration-none" %>
+          </p>
+        </div>
+      <% end %>
+    </section>
+
+  </div>
+</div>

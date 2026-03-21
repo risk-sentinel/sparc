@@ -1,0 +1,278 @@
+<% content_for :title, "API Documentation — SPARC" %>
+
+<div class="card mb-4">
+  <div class="card-body">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h2 fw-bold">API Documentation</h1>
+        <p class="text-body-secondary mb-0">SPARC REST API v1 &mdash; all endpoints require Bearer token authentication</p>
+      </div>
+      <%= link_to "&larr; About".html_safe, about_path, class: "btn btn-outline-primary btn-sm" %>
+    </div>
+
+    <hr>
+
+    <%# ── Authentication ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Authentication</h2>
+      <p>All API requests require a Bearer token in the <code>Authorization</code> header:</p>
+      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code>Authorization: Bearer sparc_your_token_here</code></pre>
+      <p>
+        Generate tokens via the Rails console:
+      </p>
+      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code>token = ApiToken.generate!(user: User.find_by(email: "admin@sparc.local"), name: "My API Token")
+puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code></pre>
+      <p class="small text-body-secondary">
+        Tokens are SHA-256 digested before storage. The plaintext is only available at creation time.
+        Responses use standard HTTP status codes: 200 (success), 201 (created), 401 (unauthorized),
+        403 (forbidden), 404 (not found), 422 (validation error).
+      </p>
+    </section>
+
+    <%# ── Response Format ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Response Format</h2>
+      <p>All list endpoints return paginated responses with this structure:</p>
+      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code>{
+  "data": [ ... ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 5,
+    "total_count": 48,
+    "per_page": 10
+  }
+}</code></pre>
+      <p>Use <code>?page=2</code> and <code>?per_page=25</code> query parameters for pagination.</p>
+    </section>
+
+    <%# ── SSP Documents ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #27ae60;">SSP Documents</h2>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ssp_documents</code></td><td>List SSPs (filterable by <code>authorization_boundary_id</code>)</td><td>ssp.read</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ssp_documents/:slug</code></td><td>Show SSP details</td><td>ssp.read</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/ssp_documents</code></td><td>Create SSP</td><td>ssp.write</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/ssp_documents/:slug</code></td><td>Update SSP</td><td>ssp.write</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/ssp_documents/:slug</code></td><td>Soft-delete SSP</td><td>ssp.write</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/ssp_documents/convert</code></td><td>Convert Excel to SSP</td><td>ssp.write</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PUT</span></td><td><code>/api/v1/ssp_documents/:slug/update_fields</code></td><td>Update individual control fields</td><td>ssp.write</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ssp_documents/:slug/export</code></td><td>Export as JSON</td><td>ssp.read</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── SAR Documents ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #27ae60;">SAR Documents</h2>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/sar_documents</code></td><td>List SARs</td><td>sar.read</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/sar_documents/:slug</code></td><td>Show SAR details</td><td>sar.read</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/sar_documents</code></td><td>Create SAR</td><td>sar.write</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/sar_documents/:slug</code></td><td>Update SAR</td><td>sar.write</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/sar_documents/:slug</code></td><td>Soft-delete SAR</td><td>sar.write</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/sar_documents/convert</code></td><td>Convert Excel to SAR</td><td>sar.write</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PUT</span></td><td><code>/api/v1/sar_documents/:slug/update_fields</code></td><td>Update individual control fields</td><td>sar.write</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/sar_documents/:slug/export</code></td><td>Export as JSON</td><td>sar.read</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── SAP Documents ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #e67e22;">SAP Documents</h2>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/sap_documents</code></td><td>List SAPs</td><td>sap.read</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/sap_documents/:slug</code></td><td>Show SAP details</td><td>sap.read</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/sap_documents</code></td><td>Create SAP</td><td>sap.write</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/sap_documents/:slug</code></td><td>Update SAP</td><td>sap.write</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/sap_documents/:slug</code></td><td>Soft-delete SAP</td><td>sap.write</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── POA&M Documents ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #e67e22;">POA&amp;M Documents</h2>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/poam_documents</code></td><td>List POA&amp;Ms</td><td>poam.read</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/poam_documents/:slug</code></td><td>Show POA&amp;M details</td><td>poam.read</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/poam_documents</code></td><td>Create POA&amp;M</td><td>poam.write</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/poam_documents/:slug</code></td><td>Update POA&amp;M</td><td>poam.write</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/poam_documents/:slug</code></td><td>Soft-delete POA&amp;M</td><td>poam.write</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── Control Catalogs ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #3498db;">Control Catalogs</h2>
+      <p class="small text-body-secondary">Create and delete require admin role.</p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/control_catalogs</code></td><td>List catalogs</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/control_catalogs/:id</code></td><td>Show catalog details</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/control_catalogs</code></td><td>Create catalog</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/control_catalogs/:id</code></td><td>Update catalog</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/control_catalogs/:id</code></td><td>Delete catalog (blocked if profiles/mappings exist)</td><td>Admin only</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── Profile Documents ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #3498db;">Profile Documents (Baselines)</h2>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/profile_documents</code></td><td>List profiles</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/profile_documents/:slug</code></td><td>Show profile details</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/profile_documents</code></td><td>Create profile</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/profile_documents/:slug</code></td><td>Update profile</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/profile_documents/:slug</code></td><td>Soft-delete profile</td><td>Authenticated</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h5 class="fw-bold mt-3">Baseline Parameters</h5>
+      <p class="small text-body-secondary">Nested under profile documents for parameter/enumeration management.</p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/profile_documents/:slug/parameters</code></td><td>Get parameter schema (filterable by <code>?family=ac</code>)</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PUT</span></td><td><code>/api/v1/profile_documents/:slug/parameters</code></td><td>Bulk update parameter values and selections</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/profile_documents/:slug/parameters/export</code></td><td>Export as JSON, YAML, or XML (<code>?format=yaml</code>)</td><td>Authenticated</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── CDEF Documents ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #27ae60;">CDEF Documents (Component Definitions)</h2>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/cdef_documents</code></td><td>List CDEFs</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/cdef_documents/:slug</code></td><td>Show CDEF details</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/cdef_documents</code></td><td>Create CDEF</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/cdef_documents/:slug</code></td><td>Update CDEF</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/cdef_documents/:slug</code></td><td>Soft-delete CDEF</td><td>Authenticated</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── Control Mappings ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #3498db;">Control Mappings</h2>
+      <p class="small text-body-secondary">Create and delete require admin role.</p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/control_mappings</code></td><td>List mappings</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/control_mappings/:id</code></td><td>Show mapping details</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/control_mappings</code></td><td>Create mapping</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/control_mappings/:id</code></td><td>Update mapping</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/control_mappings/:id</code></td><td>Delete mapping</td><td>Admin only</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── KSI Catalog ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #9b59b6;">KSI Catalog (FedRAMP 20x)</h2>
+      <p class="small text-body-secondary">Read-only endpoints for browsing Key Security Indicators.</p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/themes</code></td><td>List all KSI themes with indicator counts</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/indicators</code></td><td>List indicators (filterable by <code>?theme=AUTH</code>, <code>?impact_level=high</code>)</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/indicators/:id</code></td><td>Show indicator with mapped NIST controls</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/mappings</code></td><td>List KSI-to-NIST control mapping entries</td><td>Authenticated</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── KSI Validations ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #9b59b6;">KSI Validations</h2>
+      <p class="small text-body-secondary">Scoped to authorization boundaries. Tracks assessment status per KSI.</p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/authorization_boundaries/:id/ksi_validations</code></td><td>List validations for a boundary</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/authorization_boundaries/:id/ksi_validations/:id</code></td><td>Show validation details</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/authorization_boundaries/:id/ksi_validations</code></td><td>Create validation</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>.../ksi_validations/:id</code></td><td>Update validation</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>.../ksi_validations/:id</code></td><td>Delete validation</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>.../ksi_validations/summary</code></td><td>Dashboard summary (counts by status)</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>.../ksi_validations/export</code></td><td>Export compliance report (<code>?format=yaml</code>)</td><td>Authenticated</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── Users ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Users</h2>
+      <p class="small text-body-secondary">Admin-only endpoints for user management.</p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/users</code></td><td>List users</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/users/:id</code></td><td>Show user details</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/users</code></td><td>Create user</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/users/:id</code></td><td>Update user</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/users/:id</code></td><td>Delete user</td><td>Admin only</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <%# ── Authorization Boundaries ── %>
+    <section>
+      <h2 class="h4 fw-bold mb-3" style="color: #9b59b6;">Authorization Boundaries</h2>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/authorization_boundaries</code></td><td>List boundaries</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/authorization_boundaries/:id</code></td><td>Show boundary details</td><td>Authenticated</td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/authorization_boundaries</code></td><td>Create boundary</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/authorization_boundaries/:id</code></td><td>Update boundary</td><td>Admin only</td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/authorization_boundaries/:id</code></td><td>Delete boundary</td><td>Admin only</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
