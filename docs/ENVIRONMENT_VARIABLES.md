@@ -58,6 +58,29 @@ approach). Enable one or more to activate the login page at `/login`.
 
 <!-- markdownlint-enable MD013 MD034 -->
 
+### API Authentication Mode
+
+Controls which auth method the REST API accepts. Modes are mutually exclusive.
+
+<!-- markdownlint-disable MD013 MD034 -->
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_API_AUTH | API auth mode: `local`, `oidc`, or `hybrid` | local | `hybrid` | No |
+| SPARC_API_OIDC_AUDIENCE | Expected `aud` claim in OIDC JWTs | SPARC_OIDC_CLIENT_ID | `sparc-api` | No (only for oidc/hybrid) |
+
+<!-- markdownlint-enable MD013 MD034 -->
+
+**Mode behaviors:**
+
+| Mode | SPARC Tokens | OIDC JWTs | Pipeline Access | Requires |
+| --- | --- | --- | --- | --- |
+| `local` (default) | All users | Rejected | SPARC token in CI secret | Nothing extra |
+| `oidc` | Rejected | All users | Okta client credentials | `SPARC_OIDC_ISSUER_URL` |
+| `hybrid` | Service accounts only | All human users | SPARC token for pipelines | `SPARC_OIDC_ISSUER_URL` |
+
+> **Recommended for production:** `hybrid` — humans authenticate via Okta JWT (MFA enforced by IdP), CI/CD pipelines use SPARC tokens tied to service accounts.
+
 ### User Registration
 
 | Variable | Description | Default | Example | Required? |

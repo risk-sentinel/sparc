@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-03-21 -- feat: Mutually Exclusive API Auth Modes (#249)
+
+**Branch:** `feature/249_api_auth_modes`
+
+### Summary
+
+Refactored API authentication to support three mutually exclusive modes controlled by the
+`SPARC_API_AUTH` environment variable: `local` (Bearer token only), `oidc` (Okta/OIDC JWT only),
+or `hybrid` (both). Added service account support with a new `service_account` boolean column on
+the users table. Service accounts are blocked from web login via the SessionsController. Created a
+boot-time initializer (`config/initializers/api_auth.rb`) that validates the auth configuration on
+startup and fails fast on invalid settings. Moved JWKS key caching from thread-local storage to
+`Rails.cache` for consistency across workers.
+
+### What Changed
+
+- **ApiAuthentication concern** (`app/controllers/concerns/api_authentication.rb`) -- full rewrite
+  to support 3 mutually exclusive auth modes (local, oidc, hybrid) driven by `SPARC_API_AUTH` env var.
+- **SparcConfig model** (`app/models/sparc_config.rb`) -- updated to expose auth mode configuration.
+- **User model** (`app/models/user.rb`) -- added `service_account` boolean attribute.
+- **SessionsController** (`app/controllers/sessions_controller.rb`) -- blocks service accounts from
+  web login.
+- **Boot-time initializer** (`config/initializers/api_auth.rb`) -- NEW; validates `SPARC_API_AUTH`
+  value on application boot, fails fast with clear error on invalid configuration.
+- **Migration** -- adds `service_account` boolean to `users` table.
+- **JWKS caching** -- moved from thread-local (`Thread.current`) to `Rails.cache` for multi-worker
+  consistency.
+- **12 new request specs** (`spec/requests/api/v1/api_authentication_spec.rb`) covering all 3 auth
+  modes, service account blocking, and invalid configuration scenarios.
+
+### Stats
+
+- **Spec count:** 1417 total, 0 failures
+- **New specs:** 12
+- **New files:** 2 (initializer, migration)
+
+---
+
 ## 2026-03-21 -- feat: About Page with OSCAL, FedRAMP & API Documentation (#248)
 
 **Branch:** `feature/248_about_page`

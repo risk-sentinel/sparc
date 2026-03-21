@@ -52,6 +52,8 @@ class User < ApplicationRecord
   # ── Scopes ──────────────────────────────────────────────────────────────
   scope :active, -> { where(status: "active") }
   scope :admins, -> { where(admin: true) }
+  scope :service_accounts, -> { where(service_account: true) }
+  scope :human_users, -> { where(service_account: false) }
 
   # Users who have been active longer than `days` without signing in.
   # Includes users who have never signed in (uses created_at as fallback).

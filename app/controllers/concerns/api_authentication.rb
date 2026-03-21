@@ -1,10 +1,10 @@
 # Bearer token authentication for API endpoints.
 #
-# Supports two authentication methods:
+# Supports three mutually exclusive modes controlled by SPARC_API_AUTH:
 #
-# 1. SPARC API tokens (sparc_<hex>) — app-issued, SHA-256 digested
-# 2. OIDC JWT tokens (eyJhbG...) — validated against the OIDC provider's
-#    JWKS endpoint when SPARC_OIDC_ISSUER_URL is configured
+# 1. local (default) — SPARC API tokens (sparc_<hex>) only
+# 2. oidc            — OIDC JWT tokens only (validated via JWKS)
+# 3. hybrid          — JWTs for human users + SPARC tokens for service accounts
 #
 # Backward-compatible: skips authentication entirely when no auth
 # methods are enabled (SparcConfig.any_auth_enabled? == false).
@@ -19,15 +19,18 @@ module ApiAuthentication
   extend ActiveSupport::Concern
 
   included do
-    attr_reader :current_api_token
+    attr_reader :current_api_token, :current_auth_mode
   end
 
   private
+
+  # ── Main entry point ──────────────────────────────────────────────────────
 
   def authenticate_api_token!
     # Backward compat: if no auth is enabled, allow anonymous access
     unless SparcConfig.any_auth_enabled?
       @current_user = User.first
+      @current_auth_mode = "none"
       return
     end
 
@@ -38,15 +41,62 @@ module ApiAuthentication
       return
     end
 
-    # Try SPARC API token first (sparc_ prefix), then OIDC JWT
-    if token_string.start_with?("sparc_")
-      authenticate_sparc_token!(token_string)
-    elsif SparcConfig.enable_oidc? && token_string.match?(/\Aey[A-Za-z0-9]/)
-      authenticate_oidc_jwt!(token_string)
+    case SparcConfig.api_auth_mode
+    when "local"
+      authenticate_local_mode!(token_string)
+    when "oidc"
+      authenticate_oidc_mode!(token_string)
+    when "hybrid"
+      authenticate_hybrid_mode!(token_string)
     else
-      authenticate_sparc_token!(token_string)
+      render json: { error: "Invalid API authentication mode configured" }, status: :internal_server_error
     end
   end
+
+  # ── Mode dispatchers ──────────────────────────────────────────────────────
+
+  def authenticate_local_mode!(token_string)
+    if token_string.match?(/\Aey[A-Za-z0-9]/)
+      render json: { error: "OIDC authentication is not enabled. Set SPARC_API_AUTH=oidc or SPARC_API_AUTH=hybrid to use JWT tokens." },
+             status: :unauthorized
+      return
+    end
+
+    authenticate_sparc_token!(token_string)
+    @current_auth_mode = "local" if @current_user
+  end
+
+  def authenticate_oidc_mode!(token_string)
+    if token_string.start_with?("sparc_")
+      render json: { error: "Local token authentication is not enabled. Set SPARC_API_AUTH=local or SPARC_API_AUTH=hybrid to use SPARC tokens." },
+             status: :unauthorized
+      return
+    end
+
+    authenticate_oidc_jwt!(token_string)
+    @current_auth_mode = "oidc" if @current_user
+  end
+
+  def authenticate_hybrid_mode!(token_string)
+    if token_string.start_with?("sparc_")
+      authenticate_sparc_token!(token_string)
+      return unless @current_user
+
+      unless @current_user.service_account?
+        @current_user = nil
+        render json: { error: "Service account token required in hybrid mode. Only service accounts can use SPARC tokens when SPARC_API_AUTH=hybrid." },
+               status: :unauthorized
+        return
+      end
+
+      @current_auth_mode = "service_token"
+    else
+      authenticate_oidc_jwt!(token_string)
+      @current_auth_mode = "oidc" if @current_user
+    end
+  end
+
+  # ── SPARC token authentication ────────────────────────────────────────────
 
   def authenticate_sparc_token!(token_string)
     @current_api_token = ApiToken.authenticate(token_string)
@@ -64,6 +114,8 @@ module ApiAuthentication
 
     @current_api_token.touch_usage!(ip: request.remote_ip)
   end
+
+  # ── OIDC JWT authentication ──────────────────────────────────────────────
 
   def authenticate_oidc_jwt!(token_string)
     claims = decode_oidc_jwt(token_string)
@@ -115,31 +167,27 @@ module ApiAuthentication
   end
 
   def fetch_oidc_jwks(issuer_url)
-    # In-memory cache with 1-hour TTL to avoid per-request HTTP calls
     cache_key = "oidc_jwks_#{Digest::SHA256.hexdigest(issuer_url)}"
-    cached = Thread.current[cache_key]
 
-    if cached && cached[:fetched_at] > 1.hour.ago
-      return cached[:jwks]
+    # Use Rails.cache for multi-process safety (Puma workers, Sidekiq)
+    Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+      discovery_url = "#{issuer_url.chomp('/')}/.well-known/openid-configuration"
+      discovery_response = Net::HTTP.get(URI(discovery_url))
+      discovery = JSON.parse(discovery_response)
+      jwks_uri = discovery["jwks_uri"]
+
+      return nil if jwks_uri.blank?
+
+      jwks_response = Net::HTTP.get(URI(jwks_uri))
+      jwks_data = JSON.parse(jwks_response)
+      JWT::JWK::Set.new(jwks_data)
     end
-
-    discovery_url = "#{issuer_url.chomp('/')}/.well-known/openid-configuration"
-    discovery_response = Net::HTTP.get(URI(discovery_url))
-    discovery = JSON.parse(discovery_response)
-    jwks_uri = discovery["jwks_uri"]
-
-    return nil if jwks_uri.blank?
-
-    jwks_response = Net::HTTP.get(URI(jwks_uri))
-    jwks_data = JSON.parse(jwks_response)
-    jwks = JWT::JWK::Set.new(jwks_data)
-
-    Thread.current[cache_key] = { jwks: jwks, fetched_at: Time.current }
-    jwks
   rescue StandardError => e
     Rails.logger.warn("Failed to fetch OIDC JWKS: #{e.class} — #{e.message}")
     nil
   end
+
+  # ── Helpers ──────────────────────────────────────────────────────────────
 
   def extract_bearer_token
     header = request.headers["Authorization"].to_s
