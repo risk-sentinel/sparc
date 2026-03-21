@@ -8,11 +8,11 @@ class ControlCatalogsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export, :baseline_controls,
     :update_baseline, :bulk_update_baselines,
-    :publish, :publish_check, :acknowledge_warnings
+    :publish, :publish_check, :acknowledge_warnings, :revalidate
   ]
   before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines, :publish ]
   before_action :authorize_catalog_write!, only: [
-    :new, :create, :edit, :update, :destroy, :import, :update_metadata,
+    :new, :create, :edit, :update, :destroy, :import, :update_metadata, :revalidate,
     :update_baseline, :bulk_update_baselines, :publish
   ]
 
@@ -105,6 +105,22 @@ class ControlCatalogsController < ApplicationController
       )
     )
     render json: { acknowledged: true }
+  end
+
+  # PATCH /control_catalogs/:id/revalidate
+  # Re-runs CatalogImportValidationService and updates stored warnings.
+  def revalidate
+    result = CatalogImportValidationService.new(@control_catalog).validate
+    warnings = result["import_warnings"] || []
+    @control_catalog.update!(
+      metadata_extra: (@control_catalog.metadata_extra || {}).merge(
+        "import_warnings" => warnings,
+        "import_warnings_summary" => result["import_warnings_summary"] || {},
+        "last_validated_at" => Time.current.iso8601
+      )
+    )
+    redirect_to control_catalog_path(@control_catalog),
+                flash: { success: "Quality validation refreshed — #{warnings.size} issue#{'s' if warnings.size != 1} found." }
   end
 
   # GET  /control_catalogs/import
