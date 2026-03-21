@@ -270,6 +270,37 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 
 ---
 
+### Phase 10 -- Platform Hardening & Polish (ongoing)
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [ ] | **#234** Avatar upload crop/scale/center | User/UI | `app/models/user.rb`, `app/controllers/registrations_controller.rb`, `app/views/registrations/`, new Stimulus crop controller, `app/assets/stylesheets/` | **NONE** -- isolated to user profile |
+| [ ] | **#237** Data Quality card on catalog show | Catalog UI | `app/views/control_catalogs/show.html.erb`, `control_catalogs_controller.rb` (new helper), possibly new partial `_data_quality_card.html.erb` | **NONE** -- Catalog domain only |
+| [ ] | **#244** Security gate (threshold merge/deploy blocking) | CI/Infrastructure | `.github/workflows/security.yml` (new gate job), possibly new `.github/security-thresholds.yml` config | **NONE** -- CI files only |
+| [ ] | **#246** Repository cleanup & OSCAL schema validation overhaul | Shared/Validation | `app/services/oscal_schema_validation_service.rb`, schema fixtures in `spec/fixtures/`, `docs/` cleanup, stale file removal | **LOW** -- validation service shared |
+| [ ] | **#249** Mutually exclusive API auth modes (local/oidc/hybrid) | API/Auth | `app/controllers/concerns/api_authentication.rb` (REWRITE to strategy pattern), new `app/auth_strategies/`, `config/initializers/api_auth.rb` (NEW), `user.rb` (add `service_account` column), migration, spec files | **LOW** -- API auth is isolated |
+| [ ] | **#250** API discovery endpoint (GET /api/v1/available) | API | `app/controllers/api/v1/base_controller.rb` or new `api/v1/discovery_controller.rb`, `config/routes.rb` | **NONE** -- additive API endpoint |
+
+<!-- markdownlint-enable MD013 -->
+
+**Phase 10 Parallelism: All 6 issues can run simultaneously (different domains).**
+
+```text
+Dev A: #249 (API auth modes)       -- API/Auth domain
+Dev B: #244 (security gate)        -- CI/Infrastructure domain
+Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
+Dev D: #237 (data quality card)    -- Catalog UI domain
+      #234 (avatar upload)        -- User/UI domain
+      #250 (API discovery)        -- API domain (after #249)
+```
+
+> **Recommended order:** #249 and #244 first (security-critical),
+> then #246 (tech debt), #237, #250, #234 (UX improvements).
+
+---
+
 ## 3. Branching Strategy
 
 ### Branch Naming Convention
@@ -619,17 +650,16 @@ removed and are no longer tracked:
 
 ## Summary
 
-- **Total open issues:** 23 (20 from original plan + 3 new)
-- **New issues added:** #183 (migration squash), #185 (STIG SV/V
-  to CCI parser), #186 (hybrid security scanning)
+- **Total issues tracked:** 42 (23 original + 19 ad-hoc/new)
+- **Completed:** 36 issues (Phases 1-9 + ad-hoc)
+- **Remaining:** 6 issues (Phase 10: #234, #237, #244, #246, #249, #250)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
-- **Zero-conflict pairs:** 70% of issue combinations
-- **Highest-risk shared files:** `oscal_metadata.rb`,
-  `catalog_import_service.rb`, `routes.rb`, `db/migrate/`
-- **Key sequencing constraints:** #163 before #177,
-  #149 before #148/#176, #175 before #172/#173/#174,
-  all entity creation before #125, all migrations before #183,
-  all core features (Phases 1-5) before FedRAMP 20x (#107/#108)
-- **Estimated time savings from parallelism:** about 40%
-  (from 30 weeks sequential to 18-20 weeks with 4 devs)
+- **Zero-conflict pairs in Phase 10:** 100% (all different domains)
+- **Highest-priority Phase 10 issues:** #249 (API auth modes -- security),
+  #244 (security gate -- CI hardening)
+- **Key Phase 10 sequencing:** #250 (API discovery) recommended after
+  #249 (auth modes) since discovery should reflect the active auth mode.
+  All other Phase 10 issues are fully independent.
+- **Phases 1-9:** COMPLETE (2026-03-14 through 2026-03-21)
+- **Phase 10:** In progress (ongoing platform hardening and polish)
