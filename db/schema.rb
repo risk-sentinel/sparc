@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_21_013309) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -413,6 +413,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
   create_table "poam_documents", force: :cascade do |t|
     t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "description"
     t.text "error_message"
     t.string "file_type"
@@ -431,6 +432,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_poam_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_poam_documents_on_created_at"
+    t.index ["deleted_at"], name: "index_poam_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_poam_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_poam_documents_on_slug", unique: true
     t.index ["status"], name: "index_poam_documents_on_status"
@@ -737,6 +739,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
     t.jsonb "assessors", default: []
     t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "description"
     t.text "error_message"
     t.string "file_type"
@@ -755,6 +758,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sap_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sap_documents_on_created_at"
+    t.index ["deleted_at"], name: "index_sap_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_sap_documents_on_lifecycle_status"
     t.index ["profile_document_id"], name: "index_sap_documents_on_profile_document_id"
     t.index ["slug"], name: "index_sap_documents_on_slug", unique: true
@@ -800,6 +804,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
     t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
     t.string "creation_method", default: "excel"
+    t.datetime "deleted_at"
     t.text "description"
     t.text "error_message"
     t.jsonb "excel_metadata", default: {}
@@ -823,6 +828,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sar_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
+    t.index ["deleted_at"], name: "index_sar_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_sar_documents_on_lifecycle_status"
     t.index ["profile_document_id"], name: "index_sar_documents_on_profile_document_id"
     t.index ["sap_document_id"], name: "index_sar_documents_on_sap_document_id"
@@ -1042,6 +1048,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
     t.string "creation_method", default: "excel"
     t.text "data_flow_description"
     t.date "date_authorized"
+    t.datetime "deleted_at"
     t.text "description"
     t.text "error_message"
     t.string "file_type"
@@ -1067,6 +1074,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_163212) do
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_ssp_documents_on_authorization_boundary_id"
+    t.index ["deleted_at"], name: "index_ssp_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_ssp_documents_on_lifecycle_status"
     t.index ["profile_document_id"], name: "index_ssp_documents_on_profile_document_id"
     t.index ["slug"], name: "index_ssp_documents_on_slug", unique: true
