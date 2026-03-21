@@ -222,6 +222,7 @@ Dev C: #183 (migration squash) -- AFTER all migration PRs merge
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
 | [x] | **#229** REST API Phase 1: SSP, SAR, SAP, POA&M CRUD + Okta JWT | API | `api/v1/document_base_controller.rb` (NEW), `api/v1/ssp_documents_controller.rb` (REWRITE), `api/v1/sar_documents_controller.rb` (NEW), `api/v1/sap_documents_controller.rb` (NEW), `api/v1/poam_documents_controller.rb` (NEW), `concerns/api_authentication.rb` (MODIFY), `api/v1/base_controller.rb` (MODIFY), `models/concerns/soft_deletable.rb` (NEW), `config/routes.rb`, migration, 4 spec files | **NONE** -- API namespace isolated |
+| [x] | **#240** Baseline Parameter & Enumeration Management API -- **COMPLETED 2026-03-21** | API + Profile | `app/services/baseline_parameter_service.rb` (NEW), `api/v1/baseline_parameters_controller.rb` (NEW), `config/routes.rb`, 1 spec file | **NONE** -- API namespace isolated |
 | [x] | **#242** REST API Phase 2: Catalogs, Profiles, CDEFs, Mappings -- **COMPLETED 2026-03-21** | API | `api/v1/control_catalogs_controller.rb` (NEW), `api/v1/profile_documents_controller.rb` (NEW), `api/v1/cdef_documents_controller.rb` (NEW), `api/v1/control_mappings_controller.rb` (NEW), `models/concerns/soft_deletable.rb` (MODIFY -- added to ProfileDocument, CdefDocument), `config/routes.rb`, 4 spec files | **NONE** -- API namespace isolated |
 
 <!-- markdownlint-enable MD013 -->
