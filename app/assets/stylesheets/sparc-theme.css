@@ -126,6 +126,29 @@
   background-color: var(--sparc-surface);
 }
 
+/* Theme-aware card — uses SPARC palette for both light and dark modes */
+.sparc-card {
+  background-color: var(--sparc-surface) !important;
+  border-color: var(--sparc-border) !important;
+  color: var(--bs-body-color) !important;
+}
+
+.sparc-card .card-header {
+  background-color: var(--sparc-surface-alt) !important;
+  border-bottom-color: var(--sparc-border) !important;
+  color: var(--bs-body-color) !important;
+}
+
+.sparc-card .table {
+  color: var(--bs-body-color) !important;
+  --bs-table-bg: transparent;
+}
+
+.sparc-card .table th,
+.sparc-card .table td {
+  border-color: var(--sparc-border) !important;
+}
+
 .card .card-body {
   padding: 0;  /* card itself has 2rem, avoid double-padding */
   font-size: 1.05rem;

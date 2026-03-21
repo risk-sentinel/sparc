@@ -28,10 +28,10 @@
   <div class="row g-4">
     <%# Account Details %>
     <div class="col-md-6">
-      <div class="card bg-dark">
+      <div class="card sparc-card">
         <div class="card-header"><h5 class="mb-0">Account Details</h5></div>
         <div class="card-body">
-          <table class="table table-dark table-sm mb-0">
+          <table class="table table-smtable-sm mb-0">
             <tr><th>UUID</th><td><code><%= @service_account.uuid %></code></td></tr>
             <tr><th>Status</th><td>
               <% if @service_account.disabled? %>
@@ -55,7 +55,7 @@
 
     <%# API Tokens %>
     <div class="col-md-6">
-      <div class="card bg-dark">
+      <div class="card sparc-card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">API Tokens</h5>
           <%= button_to "Regenerate Token", regenerate_token_admin_service_account_path(@service_account),
@@ -64,7 +64,7 @@
         </div>
         <div class="card-body">
           <% if @tokens.any? %>
-            <table class="table table-dark table-sm mb-0">
+            <table class="table table-smtable-sm mb-0">
               <thead>
                 <tr><th>Name</th><th>Status</th><th>Expires</th><th>Last Used</th></tr>
               </thead>
@@ -128,11 +128,11 @@
   </div>
 
   <%# Recent Audit Events %>
-  <div class="card bg-dark mt-4">
+  <div class="card sparc-card mt-4">
     <div class="card-header"><h5 class="mb-0">Recent Activity</h5></div>
     <div class="card-body">
       <% if @audit_events.any? %>
-        <table class="table table-dark table-sm mb-0">
+        <table class="table table-smtable-sm mb-0">
           <thead><tr><th>Action</th><th>By</th><th>Details</th><th>When</th></tr></thead>
           <tbody>
             <% @audit_events.each do |event| %>
