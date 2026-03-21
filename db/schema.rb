@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_21_083520) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_21_104459) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -382,6 +382,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_083520) do
     t.bigint "user_id", null: false
     t.index ["provider", "uid"], name: "index_identities_on_provider_and_uid", unique: true
     t.index ["user_id"], name: "index_identities_on_user_id"
+  end
+
+  create_table "ksi_validations", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
+    t.bigint "catalog_control_id", null: false
+    t.datetime "created_at", null: false
+    t.string "evidence_format"
+    t.bigint "evidence_id"
+    t.datetime "last_validated_at"
+    t.datetime "next_validation_due"
+    t.text "notes"
+    t.string "status", default: "not_assessed", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.jsonb "validation_metadata", default: {}
+    t.string "validation_method"
+    t.index ["authorization_boundary_id", "catalog_control_id"], name: "idx_ksi_validations_boundary_control", unique: true
+    t.index ["authorization_boundary_id"], name: "index_ksi_validations_on_authorization_boundary_id"
+    t.index ["catalog_control_id"], name: "index_ksi_validations_on_catalog_control_id"
+    t.index ["evidence_id"], name: "index_ksi_validations_on_evidence_id"
+    t.index ["next_validation_due"], name: "index_ksi_validations_on_next_validation_due"
+    t.index ["status"], name: "index_ksi_validations_on_status"
+    t.index ["uuid"], name: "index_ksi_validations_on_uuid", unique: true
   end
 
   create_table "organization_memberships", force: :cascade do |t|
@@ -1214,6 +1237,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_083520) do
   add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
   add_foreign_key "evidences", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "identities", "users", on_delete: :cascade
+  add_foreign_key "ksi_validations", "authorization_boundaries"
+  add_foreign_key "ksi_validations", "catalog_controls"
+  add_foreign_key "ksi_validations", "evidences"
   add_foreign_key "organization_memberships", "organizations", on_delete: :cascade
   add_foreign_key "organization_memberships", "users", on_delete: :cascade
   add_foreign_key "poam_documents", "authorization_boundaries", on_delete: :nullify

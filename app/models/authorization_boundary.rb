@@ -12,6 +12,7 @@ class AuthorizationBoundary < ApplicationRecord
   has_one  :sar_document, dependent: :nullify
   has_many :poam_documents, dependent: :nullify
   has_many :evidences, dependent: :nullify
+  has_many :ksi_validations, dependent: :destroy
 
   enum :status, {
     draft: "draft",
