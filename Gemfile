@@ -41,6 +41,7 @@ gem "omniauth-github", "~> 2.0"                # GitHub OAuth
 gem "omniauth-gitlab", "~> 4.0"                # GitLab OAuth
 gem "omniauth_openid_connect", "~> 0.8"        # Generic OIDC (Okta, Keycloak, Entra ID)
 gem "net-ldap", "~> 0.19"                      # LDAP authentication
+gem "jwt", "~> 2.9"                            # JWT decoding for OIDC API token validation
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ mswin mingw jruby ]

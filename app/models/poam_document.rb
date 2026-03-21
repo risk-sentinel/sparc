@@ -3,6 +3,7 @@ class PoamDocument < ApplicationRecord
   include SafeDestroyable
   include Sluggable
   include Lifecycle
+  include SoftDeletable
 
   belongs_to :authorization_boundary, optional: true
 

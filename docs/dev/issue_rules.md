@@ -60,14 +60,14 @@ note which configuration is required for full coverage.
 
 ### Authentication Mode Deltas
 
-| Control | Local-Only Login | OIDC/SAML Enabled | LDAP Enabled |
-|---------|-----------------|-------------------|--------------|
-| **IA-2** Identification & Auth | **Partial** — password only, no MFA | **Full** — IdP enforces MFA when `SPARC_OIDC_FORCE_MFA=true` | **Partial** — depends on LDAP server MFA config |
-| **IA-2(1)** MFA to Privileged | **Not Met** — no MFA mechanism | **Full** — delegated to OIDC IdP | **Partial** — depends on LDAP server |
-| **IA-2(2)** MFA to Non-Privileged | **Not Met** — no MFA mechanism | **Full** — delegated to OIDC IdP | **Partial** — depends on LDAP server |
-| **IA-5(1)** Password-Based Auth | **Full** — bcrypt, 12-char min, expiry | **Full** — bcrypt for local + IdP for federated | **Partial** — LDAP manages passwords |
-| **IA-8** Non-Org User ID | **Not Met** — local accounts only | **Full** — Okta/Entra/GitHub/GitLab federation | **Partial** — directory scope |
-| **IA-12** Identity Proofing | **Not Met** — self-registration | **Full** — delegated to OIDC IdP | **Partial** — delegated to directory |
+| Control | Local-Only Login | OIDC/SAML Enabled | OIDC + JWT API Auth | LDAP Enabled |
+|---------|-----------------|-------------------|---------------------|--------------|
+| **IA-2** Identification & Auth | **Partial** — password only, no MFA | **Full** — IdP enforces MFA when `SPARC_OIDC_FORCE_MFA=true` | **Full** — Okta JWT validated via RS256; IdP MFA applies | **Partial** — depends on LDAP server MFA config |
+| **IA-2(1)** MFA to Privileged | **Not Met** — no MFA mechanism | **Full** — delegated to OIDC IdP | **Full** — JWT issued by IdP with MFA | **Partial** — depends on LDAP server |
+| **IA-2(2)** MFA to Non-Privileged | **Not Met** — no MFA mechanism | **Full** — delegated to OIDC IdP | **Full** — JWT issued by IdP with MFA | **Partial** — depends on LDAP server |
+| **IA-5(1)** Password-Based Auth | **Full** — bcrypt, 12-char min, expiry | **Full** — bcrypt for local + IdP for federated | **Full** — SHA-256 token digest + RS256 JWT sig | **Partial** — LDAP manages passwords |
+| **IA-8** Non-Org User ID | **Not Met** — local accounts only | **Full** — Okta/Entra/GitHub/GitLab federation | **Full** — JWT federation for API access | **Partial** — directory scope |
+| **IA-12** Identity Proofing | **Not Met** — self-registration | **Full** — delegated to OIDC IdP | **Full** — delegated to OIDC IdP | **Partial** — delegated to directory |
 
 ### Recommended Production Configuration
 
@@ -77,6 +77,10 @@ For maximum FedRAMP control coverage:
 # Enable OIDC with MFA enforcement (covers IA-2, IA-2(1), IA-2(2), IA-8, IA-12)
 SPARC_ENABLE_OIDC=true
 SPARC_OIDC_FORCE_MFA=true
+
+# Enable JWT API authentication for SSO-based API access
+# Audience defaults to SPARC_OIDC_CLIENT_ID if not set
+SPARC_API_OIDC_AUDIENCE=your-api-audience
 
 # Disable local login to eliminate non-MFA authentication path
 SPARC_ENABLE_LOCAL_LOGIN=false

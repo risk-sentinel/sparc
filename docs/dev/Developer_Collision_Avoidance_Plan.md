@@ -221,7 +221,8 @@ Dev C: #183 (migration squash) -- AFTER all migration PRs merge
 
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
-| [ ] | **#229** Full OSCAL API CRUD | API | New `api/v1/*_controller.rb` for each document type, routes | **NONE** -- API namespace isolated |
+| [x] | **#229** REST API Phase 1: SSP, SAR, SAP, POA&M CRUD + Okta JWT | API | `api/v1/document_base_controller.rb` (NEW), `api/v1/ssp_documents_controller.rb` (REWRITE), `api/v1/sar_documents_controller.rb` (NEW), `api/v1/sap_documents_controller.rb` (NEW), `api/v1/poam_documents_controller.rb` (NEW), `concerns/api_authentication.rb` (MODIFY), `api/v1/base_controller.rb` (MODIFY), `models/concerns/soft_deletable.rb` (NEW), `config/routes.rb`, migration, 4 spec files | **NONE** -- API namespace isolated |
+| [ ] | **#242** REST API Phase 2: Catalogs, Profiles, CDEFs, Mappings | API | New `api/v1/*_controller.rb` for remaining types, routes | **NONE** -- API namespace isolated |
 
 <!-- markdownlint-enable MD013 -->
 

@@ -4,6 +4,56 @@
 
 ---
 
+## 2026-03-20 -- REST API Phase 1: Full CRUD for SSP, SAR, SAP, POA&M (#229)
+
+**Branch:** `feature/229_api_crud_phase1`
+
+### Summary
+
+Full REST API CRUD endpoints for SSP, SAR, SAP, and POA&M documents with Bearer token
+authentication, boundary-scoped RBAC, soft-delete, audit logging, and Okta JWT introspection.
+Security fix: rewrote the existing unauthenticated SSP API controller to require Bearer auth.
+
+### What Changed
+
+- **DocumentBaseController** (`app/controllers/api/v1/document_base_controller.rb`) -- shared CRUD
+  base for all document API controllers. Provides boundary-scoped index, slug-based lookup, Pagy
+  pagination, filtering (status, name, boundary), and audit logging on all mutations.
+- **SSP controller rewrite** -- security fix: changed from inheriting `ActionController::API`
+  (no auth) to `DocumentBaseController` (requires Bearer token). All existing endpoints
+  (`convert`, `update_fields`, `export`) now require authentication. Added `index`, `show`,
+  `create`, `update`, `destroy` (soft-delete).
+- **SAR controller** (`app/controllers/api/v1/sar_documents_controller.rb`) -- new full CRUD
+  controller with legacy `convert`, `update_fields`, `export` actions, now with auth.
+- **SAP controller** (`app/controllers/api/v1/sap_documents_controller.rb`) -- new CRUD controller.
+- **POA&M controller** (`app/controllers/api/v1/poam_documents_controller.rb`) -- new CRUD controller.
+- **SoftDeletable concern** (`app/models/concerns/soft_deletable.rb`) -- `default_scope` excludes
+  deleted records; `with_deleted`/`only_deleted` scopes; `soft_delete!`/`restore!` methods.
+  Included in all 4 document models.
+- **Migration** -- adds `deleted_at` (datetime, indexed) to `ssp_documents`, `sar_documents`,
+  `sap_documents`, `poam_documents`.
+- **Okta JWT introspection** -- API now accepts two auth methods: SPARC tokens (`sparc_` prefix)
+  and Okta-issued JWTs (`eyJ` prefix). JWT validated via RS256 against OIDC provider JWKS
+  endpoint. JWKS keys cached in-memory with 1-hour TTL. New env var: `SPARC_API_OIDC_AUDIENCE`.
+- **Routes** -- expanded SSP/SAR routes to include full CRUD; added SAP and POA&M resource routes.
+- **63 request specs** -- comprehensive coverage for all 4 controllers: auth (401), admin CRUD,
+  boundary-scoped reads, permission-gated writes (403), soft-delete, audit events, legacy actions.
+
+### Breaking Change
+
+Existing SSP API endpoints (`convert`, `update_fields`, `export`) now require Bearer token
+authentication. Any integrations using unauthenticated access will break. This is intentional --
+closing a security gap.
+
+### Verification
+
+- `bundle exec rspec spec/requests/api/v1/` -- 63 examples, 0 failures
+- `bundle exec rspec` -- full suite passes
+- Boundary scoping: non-admin users see only their boundary's documents
+- Soft-delete: `DELETE` sets `deleted_at`, subsequent `GET` returns 404
+
+---
+
 ## 2026-03-20 -- Document NIST SP 800-53 Rev 5 Controls Mapping (#217)
 
 **Branch:** `feature/217_nist_rev5_mapping_docs`
