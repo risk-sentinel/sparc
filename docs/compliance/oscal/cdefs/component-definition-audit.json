@@ -35,14 +35,14 @@
               {
                 "uuid": "3d8006d4-7f1b-4b92-8536-def3392fa306",
                 "control-id": "au-2",
-                "description": "SPARC defines 139 auditable event types organized across 16 categories in the AuditEvent model. Categories include authentication, authorization, document lifecycle, control modifications, user management, API access, export operations, and configuration changes. The event type taxonomy ensures comprehensive coverage of security-relevant actions.",
-                "remarks": "Implemented in app/models/audit_event.rb. Tested by spec/models/audit_event_spec.rb."
+                "description": "SPARC defines 139 auditable event types organized across 16 categories in the AuditEvent model. Categories include authentication, authorization, document lifecycle, control modifications, user management, API access, export operations, and configuration changes. The event type taxonomy ensures comprehensive coverage of security-relevant actions. API CRUD operations on SSP, SAR, SAP, and POA&M documents are audited — all create, update, and delete mutations generate audit events via the audit_log() helper in Api::V1::BaseController.",
+                "remarks": "Implemented in app/models/audit_event.rb, app/controllers/api/v1/base_controller.rb, app/controllers/api/v1/document_base_controller.rb. Tested by spec/models/audit_event_spec.rb."
               },
               {
                 "uuid": "396ab6e7-914f-4dc6-972f-8412ad1f5fb4",
                 "control-id": "au-3",
-                "description": "SPARC audit records contain structured content including: acting user identity, action performed, ISO8601 timestamp, originating IP address, user agent string, JSON metadata with contextual details, and polymorphic subject reference linking to the affected resource. The AuditEvent.log factory method ensures consistent record structure.",
-                "remarks": "Implemented in app/models/audit_event.rb:log. Tested by spec/models/audit_event_spec.rb."
+                "description": "SPARC audit records contain structured content including: acting user identity, action performed, ISO8601 timestamp, originating IP address, user agent string, JSON metadata with contextual details, and polymorphic subject reference linking to the affected resource. The AuditEvent.log factory method ensures consistent record structure. API audit events include: action name, user ID, subject type/ID, metadata (document name), IP address, and timestamp, captured by the audit_log() helper in Api::V1::BaseController.",
+                "remarks": "Implemented in app/models/audit_event.rb:log, app/controllers/api/v1/base_controller.rb. Tested by spec/models/audit_event_spec.rb."
               },
               {
                 "uuid": "cde41c06-39b4-4d53-9477-250c43bf1eb1",
@@ -83,8 +83,8 @@
               {
                 "uuid": "62af3d04-5942-41a3-96ce-00b400025227",
                 "control-id": "au-12",
-                "description": "SPARC generates audit records at the point of action through the AuditEvent.log() factory method. Controllers and model callbacks invoke this method to capture security-relevant events including authentication, authorization decisions, document operations, configuration changes, and API access across all 139 defined event types.",
-                "remarks": "Implemented in app/models/audit_event.rb:log, invoked from controllers and model callbacks. Tested by spec/models/audit_event_spec.rb."
+                "description": "SPARC generates audit records at the point of action through the AuditEvent.log() factory method. Controllers and model callbacks invoke this method to capture security-relevant events including authentication, authorization decisions, document operations, configuration changes, and API access across all 139 defined event types. API document controllers generate audit records for all state-changing operations (create, update, soft-delete) through the DocumentBaseController base class.",
+                "remarks": "Implemented in app/models/audit_event.rb:log, app/controllers/api/v1/base_controller.rb, app/controllers/api/v1/document_base_controller.rb, invoked from controllers and model callbacks. Tested by spec/models/audit_event_spec.rb."
               }
             ]
           }

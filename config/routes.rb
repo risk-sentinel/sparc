@@ -262,7 +262,8 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :ssp_documents, only: [] do
+      # Document CRUD + legacy actions (#229)
+      resources :ssp_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
           post :convert
         end
@@ -272,7 +273,7 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :sar_documents, only: [] do
+      resources :sar_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
           post :convert
         end
@@ -281,6 +282,9 @@ Rails.application.routes.draw do
           get :export
         end
       end
+
+      resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ]
+      resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ]
 
       # CRUD API endpoints (#95)
       resources :users, only: [ :index, :show, :create, :update, :destroy ]

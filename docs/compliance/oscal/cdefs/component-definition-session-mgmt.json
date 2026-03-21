@@ -47,8 +47,8 @@
               {
                 "uuid": "d6f9a2b4-3c05-4e87-ad58-f59a7b0c13e9",
                 "control-id": "sc-13",
-                "description": "SPARC employs FIPS-validated cryptographic algorithms: bcrypt for password hashing with configurable cost factor, SHA-256 for API token digest storage, and TLS 1.2+ for transport encryption. The Rails framework handles cryptographic operations through OpenSSL bindings that support FIPS-compliant algorithm implementations.",
-                "remarks": "Implemented in app/models/user.rb (bcrypt), app/models/api_token.rb (SHA-256), and config/environments/production.rb (TLS). Tested by spec/models/user_spec.rb and spec/models/api_token_spec.rb."
+                "description": "SPARC employs FIPS-validated cryptographic algorithms: bcrypt for password hashing with configurable cost factor, SHA-256 for API token digest storage, RS256 (RSA with SHA-256) for JWT signature verification of Okta-issued tokens in API authentication, and TLS 1.2+ for transport encryption. The API validates JWTs using the RS256 algorithm with public keys fetched from the OIDC provider's JWKS endpoint. The Rails framework handles cryptographic operations through OpenSSL bindings that support FIPS-compliant algorithm implementations.",
+                "remarks": "Implemented in app/models/user.rb (bcrypt), app/models/api_token.rb (SHA-256), app/controllers/concerns/api_authentication.rb (JWT RS256 verification), and config/environments/production.rb (TLS). Tested by spec/models/user_spec.rb and spec/models/api_token_spec.rb."
               },
               {
                 "uuid": "e7a0b3c5-4d16-4f98-be69-a60a8b1d24f0",
