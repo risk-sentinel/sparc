@@ -113,6 +113,19 @@ module ApiAuthentication
     end
 
     @current_api_token.touch_usage!(ip: request.remote_ip)
+
+    # AC-3: Endpoint scoping enforcement
+    unless @current_api_token.endpoint_allowed?(request.path)
+      render json: { error: "Token is not authorized for this endpoint" }, status: :forbidden
+      @current_user = nil
+      return
+    end
+
+    # AC-17: CIDR allowlist enforcement
+    unless @current_api_token.cidr_allowed?(request.remote_ip)
+      render json: { error: "Request IP is not in the token's allowed CIDR range" }, status: :forbidden
+      @current_user = nil
+    end
   end
 
   # ── OIDC JWT authentication ──────────────────────────────────────────────

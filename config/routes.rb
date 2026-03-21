@@ -246,6 +246,13 @@ Rails.application.routes.draw do
       end
       resources :api_tokens, only: [ :create, :destroy ], controller: "api_tokens"
     end
+    resources :service_accounts do
+      member do
+        patch :disable
+        patch :enable
+        post :regenerate_token
+      end
+    end
     resources :roles
     resources :audit_logs, only: [ :index, :show ]
     resources :authorization_boundaries, except: :destroy do
