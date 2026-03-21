@@ -1,6 +1,6 @@
 # Core Functions & Features
 
-This page documents every major subsystem and feature in SPARC, the Systemized Policy and Regulatory Controls platform for NIST 800-53 compliance management.
+This page documents every major subsystem and feature in SPARC, the Systematic Policy and Regulatory Controls platform for NIST 800-53 compliance management.
 
 ---
 
