@@ -6,6 +6,7 @@ class Evidence < ApplicationRecord
   belongs_to :authorization_boundary, optional: true
   has_many :evidence_control_links, dependent: :destroy
   has_many :attestations, dependent: :destroy
+  has_many :ksi_validations
 
   validates :title, presence: true
   validates :evidence_type, presence: true
