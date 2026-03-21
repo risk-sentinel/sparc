@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-03-21 -- feat: Persistent Data Quality Card on Catalog Show Page (#237)
+
+**Branch:** `feature/237_data_quality_card`
+
+### Summary
+
+Added a persistent, reusable Data Quality card to the catalog show page that displays import validation
+warnings and informational messages after catalog import completes. The card features collapsible
+severity-based badges (warning/info), an expandable accordion per category showing affected control IDs,
+and a "Re-validate" button that re-runs CatalogImportValidationService and stores updated warnings plus
+a timestamp in `metadata_extra`. The card is always visible when a catalog is in completed status. Uses
+amber border styling for catalogs with warnings and green for clean catalogs.
+
+### What Changed
+
+- **Data quality card partial** (`app/views/control_catalogs/_data_quality_card.html.erb`) -- NEW;
+  reusable partial with severity badges, expandable accordion per category, affected control IDs, and
+  "Re-validate" button.
+- **Catalog show view** (`app/views/control_catalogs/show.html.erb`) -- renders the data quality card
+  after the families table when the catalog is completed.
+- **Controller** (`app/controllers/control_catalogs_controller.rb`) -- added `revalidate` action that
+  re-runs CatalogImportValidationService and stores updated warnings + timestamp in `metadata_extra`.
+- **Routes** (`config/routes.rb`) -- added `revalidate` member route on `control_catalogs`.
+- **Theme CSS** (`app/assets/stylesheets/sparc-theme.css`) -- added data-quality-card styles (amber
+  border for warnings, green for clean).
+- **5 new request specs** (`spec/requests/control_catalogs_revalidate_spec.rb`) -- NEW; covers auth,
+  permissions, and metadata update behavior for the revalidate action.
+
+### Stats
+
+- **Spec count:** 1435 total, 0 failures
+- **New specs:** 5
+- **New files:** 2 (_data_quality_card.html.erb, control_catalogs_revalidate_spec.rb)
+
+### NIST Controls
+
+- **SI-10** (Information Input Validation) -- validation warnings surface data quality issues at import time
+- **AU-6** (Audit Record Review, Analysis, and Reporting) -- re-validate action provides on-demand audit of catalog data quality
+
+---
+
 ## 2026-03-21 -- feat: Avatar Upload Refactor with Crop/Scale/Center (#234)
 
 **Branch:** `feature/234_avatar_crop_upload`

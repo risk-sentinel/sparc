@@ -277,7 +277,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
 | [x] | **#234** Avatar upload crop/scale/center -- **COMPLETED 2026-03-21** | User/UI | `app/models/user.rb`, `app/controllers/profiles_controller.rb`, `app/views/profiles/edit.html.erb`, `app/javascript/controllers/avatar_crop_controller.js` (NEW), `app/assets/stylesheets/sparc-theme.css`, `app/views/layouts/application.html.erb`, `config/importmap.rb`, `Gemfile`, `db/seeds.rb`, `app/assets/images/sparc_admin.jpg` (NEW) | **NONE** -- isolated to user profile |
-| [ ] | **#237** Data Quality card on catalog show | Catalog UI | `app/views/control_catalogs/show.html.erb`, `control_catalogs_controller.rb` (new helper), possibly new partial `_data_quality_card.html.erb` | **NONE** -- Catalog domain only |
+| [x] | **#237** Data Quality card on catalog show -- **COMPLETED 2026-03-21** | Catalog UI | `app/views/control_catalogs/_data_quality_card.html.erb` (NEW), `app/views/control_catalogs/show.html.erb`, `app/controllers/control_catalogs_controller.rb` (revalidate action), `config/routes.rb`, `app/assets/stylesheets/sparc-theme.css`, `spec/requests/control_catalogs_revalidate_spec.rb` (NEW) | **NONE** -- Catalog domain only |
 | [ ] | **#244** Security gate (threshold merge/deploy blocking) | CI/Infrastructure | `.github/workflows/security.yml` (new gate job), possibly new `.github/security-thresholds.yml` config | **NONE** -- CI files only |
 | [ ] | **#246** Repository cleanup & OSCAL schema validation overhaul | Shared/Validation | `app/services/oscal_schema_validation_service.rb`, schema fixtures in `spec/fixtures/`, `docs/` cleanup, stale file removal | **LOW** -- validation service shared |
 | [x] | **#249** Mutually exclusive API auth modes (local/oidc/hybrid) -- **COMPLETED 2026-03-21** | API/Auth | `app/controllers/concerns/api_authentication.rb` (REWRITE -- 3 mutually exclusive modes), `app/models/sparc_config.rb`, `app/models/user.rb` (service_account boolean), `app/controllers/sessions_controller.rb` (service account web login block), `config/initializers/api_auth.rb` (NEW -- boot-time validation), migration (add service_account to users), `spec/requests/api/v1/api_authentication_spec.rb` (12 new specs) | **NONE** -- completed |
@@ -291,7 +291,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 Dev A: #249 (API auth modes)       -- API/Auth domain ✅ COMPLETE
 Dev B: #244 (security gate)        -- CI/Infrastructure domain
 Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
-Dev D: #237 (data quality card)    -- Catalog UI domain
+Dev D: #237 (data quality card)    -- Catalog UI domain ✅ COMPLETE
       #234 (avatar upload)        -- User/UI domain ✅ COMPLETE
       #250 (API discovery)        -- API domain (after #249) ✅ COMPLETE
 ```
@@ -651,8 +651,8 @@ removed and are no longer tracked:
 ## Summary
 
 - **Total issues tracked:** 42 (23 original + 19 ad-hoc/new)
-- **Completed:** 39 issues (Phases 1-9 + ad-hoc + #234, #249, #250)
-- **Remaining:** 3 issues (Phase 10: #237, #244, #246)
+- **Completed:** 40 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250)
+- **Remaining:** 2 issues (Phase 10: #244, #246)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
 - **Zero-conflict pairs in Phase 10:** 100% (all different domains)
