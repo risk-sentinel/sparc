@@ -1,62 +1,62 @@
 <%# ── Stat tiles grouped by OSCAL layer ── %>
-<div class="card sparc-gradient-header mb-3" style="padding: 1rem 1.25rem; border-radius: 0.5rem;">
+<div class="card sparc-gradient-header mb-3" style="padding: 1.25rem 1.5rem; border-radius: 0.5rem;">
   <div class="d-flex flex-wrap justify-content-center gap-3">
 
     <%# ── Controls Layer ── %>
-    <div style="border: 1px solid rgba(52,152,219,0.45); border-top: 3px solid #3498db; border-radius: 0.375rem; padding: 0.35rem 0.5rem 0.5rem; background: rgba(52,152,219,0.06);">
-      <div class="text-center" style="margin-bottom: 0.3rem;">
-        <span class="badge" style="background: #3498db; font-size: 0.6rem; letter-spacing: 0.05rem; padding: 0.2rem 0.5rem;">CONTROLS</span>
+    <div style="border: 1px solid rgba(52,152,219,0.45); border-top: 3px solid #3498db; border-radius: 0.375rem; padding: 0.5rem 0.65rem 0.65rem; background: rgba(52,152,219,0.06);">
+      <div class="text-center" style="margin-bottom: 0.35rem;">
+        <span class="badge" style="background: #3498db; font-size: 0.75rem; letter-spacing: 0.05rem; padding: 0.25rem 0.6rem;">CONTROLS</span>
       </div>
       <div class="d-flex gap-2">
         <% [[@catalog_count, "Catalogs"], [@family_count, "Families"], [@control_count, "Controls"], [@profile_count, "Baselines"], [@mapping_count, "Mappings"]].each do |count, label| %>
-          <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
-            <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
-            <div class="sparc-hero-tile-label" style="font-size: 0.6rem;"><%= label %></div>
+          <div class="sparc-hero-tile text-center" style="min-width: 68px;">
+            <div class="sparc-hero-tile-count"><%= count %></div>
+            <div class="sparc-hero-tile-label"><%= label %></div>
           </div>
         <% end %>
       </div>
     </div>
 
     <%# ── Implementation Layer ── %>
-    <div style="border: 1px solid rgba(39,174,96,0.45); border-top: 3px solid #27ae60; border-radius: 0.375rem; padding: 0.35rem 0.5rem 0.5rem; background: rgba(39,174,96,0.06);">
-      <div class="text-center" style="margin-bottom: 0.3rem;">
-        <span class="badge" style="background: #27ae60; font-size: 0.6rem; letter-spacing: 0.05rem; padding: 0.2rem 0.5rem;">IMPLEMENTATION</span>
+    <div style="border: 1px solid rgba(39,174,96,0.45); border-top: 3px solid #27ae60; border-radius: 0.375rem; padding: 0.5rem 0.65rem 0.65rem; background: rgba(39,174,96,0.06);">
+      <div class="text-center" style="margin-bottom: 0.35rem;">
+        <span class="badge" style="background: #27ae60; font-size: 0.75rem; letter-spacing: 0.05rem; padding: 0.25rem 0.6rem;">IMPLEMENTATION</span>
       </div>
       <div class="d-flex gap-2">
         <% [[@ssp_count, "SSPs"], [@cdef_count, "CDEFs"], [@converter_count, "Converters"]].each do |count, label| %>
-          <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
-            <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
-            <div class="sparc-hero-tile-label" style="font-size: 0.6rem;"><%= label %></div>
+          <div class="sparc-hero-tile text-center" style="min-width: 68px;">
+            <div class="sparc-hero-tile-count"><%= count %></div>
+            <div class="sparc-hero-tile-label"><%= label %></div>
           </div>
         <% end %>
       </div>
     </div>
 
     <%# ── Assessment Layer ── %>
-    <div style="border: 1px solid rgba(230,126,34,0.45); border-top: 3px solid #e67e22; border-radius: 0.375rem; padding: 0.35rem 0.5rem 0.5rem; background: rgba(230,126,34,0.06);">
-      <div class="text-center" style="margin-bottom: 0.3rem;">
-        <span class="badge" style="background: #e67e22; font-size: 0.6rem; letter-spacing: 0.05rem; padding: 0.2rem 0.5rem;">ASSESSMENT</span>
+    <div style="border: 1px solid rgba(230,126,34,0.45); border-top: 3px solid #e67e22; border-radius: 0.375rem; padding: 0.5rem 0.65rem 0.65rem; background: rgba(230,126,34,0.06);">
+      <div class="text-center" style="margin-bottom: 0.35rem;">
+        <span class="badge" style="background: #e67e22; font-size: 0.75rem; letter-spacing: 0.05rem; padding: 0.25rem 0.6rem;">ASSESSMENT</span>
       </div>
       <div class="d-flex gap-2">
         <% [[@sap_count, "SAPs"], [@evidence_count, "Evidence"], [@sar_count, "SARs"], [@poam_count, "POA&Ms"]].each do |count, label| %>
-          <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
-            <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
-            <div class="sparc-hero-tile-label" style="font-size: 0.6rem;"><%= label %></div>
+          <div class="sparc-hero-tile text-center" style="min-width: 68px;">
+            <div class="sparc-hero-tile-count"><%= count %></div>
+            <div class="sparc-hero-tile-label"><%= label %></div>
           </div>
         <% end %>
       </div>
     </div>
 
     <%# ── Enterprise ── %>
-    <div style="border: 1px solid rgba(155,89,182,0.45); border-top: 3px solid #9b59b6; border-radius: 0.375rem; padding: 0.35rem 0.5rem 0.5rem; background: rgba(155,89,182,0.06);">
-      <div class="text-center" style="margin-bottom: 0.3rem;">
-        <span class="badge" style="background: #9b59b6; font-size: 0.6rem; letter-spacing: 0.05rem; padding: 0.2rem 0.5rem;">ENTERPRISE</span>
+    <div style="border: 1px solid rgba(155,89,182,0.45); border-top: 3px solid #9b59b6; border-radius: 0.375rem; padding: 0.5rem 0.65rem 0.65rem; background: rgba(155,89,182,0.06);">
+      <div class="text-center" style="margin-bottom: 0.35rem;">
+        <span class="badge" style="background: #9b59b6; font-size: 0.75rem; letter-spacing: 0.05rem; padding: 0.25rem 0.6rem;">ENTERPRISE</span>
       </div>
       <div class="d-flex gap-2">
         <% [[@organization_count, "Organizations"], [@authorization_boundary_count, "Auth Boundaries"]].each do |count, label| %>
-          <div class="sparc-hero-tile text-center" style="padding: 0.5rem 0.4rem; min-width: 60px;">
-            <div class="sparc-hero-tile-count" style="font-size: 1.25rem;"><%= count %></div>
-            <div class="sparc-hero-tile-label" style="font-size: 0.6rem;"><%= label %></div>
+          <div class="sparc-hero-tile text-center" style="min-width: 68px;">
+            <div class="sparc-hero-tile-count"><%= count %></div>
+            <div class="sparc-hero-tile-label"><%= label %></div>
           </div>
         <% end %>
       </div>

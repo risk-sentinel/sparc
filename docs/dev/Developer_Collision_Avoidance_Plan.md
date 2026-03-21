@@ -257,6 +257,18 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 
 ---
 
+### Ad-hoc -- UI/UX Polish (not on original roadmap)
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Domain | Files Modified | Collision Risk |
+| ------ | ----- | ------ | -------------- | -------------- |
+| [x] | **#253** Logo, text correction & header sizing -- **COMPLETED 2026-03-21** | Shared/UI | `app/assets/stylesheets/sparc-theme.css`, `app/views/home/index.html.erb`, `app/views/layouts/application.html.erb`, `app/views/layouts/login.html.erb`, `app/javascript/controllers/video_easter_egg_controller.js` (NEW), `app/assets/images/sparc_logo.jpg` (NEW), `public/videos/sparc_intro.mp4` (NEW), `CLAUDE.md`, `README.md`, wiki page, compliance docs, 5 OSCAL CDEF JSONs (10 files with text fix) | **NONE** -- all phases complete |
+
+<!-- markdownlint-enable MD013 -->
+
+---
+
 ## 3. Branching Strategy
 
 ### Branch Naming Convention

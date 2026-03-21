@@ -75,6 +75,7 @@ authentication mode coverage matrix.
 - [x] #190 -- Login consent/warning banner modal (configurable via ENV) -- **COMPLETED 2026-03-15**
 - [x] #167 -- Enterprise/Organization visibility & navigation for admins -- **COMPLETED 2026-03-19**
 - [x] #171 -- Interactive OSCAL document relationship diagram (Mermaid) -- **COMPLETED 2026-03-19**
+- [x] #253 -- Page header/tile sizing increase, SPARC logo replacement, "Systemized" text correction, easter egg -- **COMPLETED 2026-03-21**
 
 ### 7. API & Backend Enhancements
 
@@ -426,7 +427,7 @@ removed and are no longer tracked:
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 32 (23 original + 9 new: #203, #205, #207, #210, #213, #217, #229, #240, #242)
-**Completed (Phases 1-9):** 34 issues
+**Total issues tracked:** 33 (23 original + 10 ad-hoc: #203, #205, #207, #210, #213, #217, #229, #240, #242, #253)
+**Completed (Phases 1-9 + ad-hoc):** 35 issues
 **Remaining:** 0 issues
 **All phases complete.** Project roadmap finished 2026-03-21.

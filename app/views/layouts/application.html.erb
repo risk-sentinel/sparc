@@ -45,10 +45,10 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
       <div class="container-fluid">
-        <div class="d-flex align-items-center gap-2">
-          <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
-            <%= image_tag "sparc.png", alt: "SPARC", class: "sparc-navbar-logo" %>
-          <% end %>
+        <div class="d-flex align-items-center gap-2" data-controller="video-easter-egg">
+          <a href="#" class="navbar-brand d-flex align-items-center" data-action="click->video-easter-egg#play">
+            <%= image_tag "sparc_logo.jpg", alt: "SPARC", class: "sparc-navbar-logo" %>
+          </a>
           <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -267,6 +267,18 @@
 
     <div class="container">
       <%= yield %>
+    </div>
+
+    <%# Easter egg video overlay — triggered by navbar logo click %>
+    <div class="sparc-video-overlay d-none"
+         data-video-easter-egg-target="overlay"
+         data-action="click->video-easter-egg#overlayClick">
+      <video data-video-easter-egg-target="video"
+             data-action="ended->video-easter-egg#videoEnded"
+             class="sparc-video-player"
+             preload="none">
+        <source src="/videos/sparc_intro.mp4" type="video/mp4">
+      </video>
     </div>
 
   </body>
