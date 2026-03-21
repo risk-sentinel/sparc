@@ -107,6 +107,7 @@ authentication mode coverage matrix.
 ### 13. API Expansion (New — extends Phase 5 API work)
 
 - [x] #229 -- REST API Phase 1: Full CRUD for SSP, SAR, SAP, POA&M with Bearer token auth + Okta JWT -- **COMPLETED 2026-03-20**
+- [x] #240 -- Baseline Parameter and Enumeration Management API (GET/PUT/export under profile_documents) -- **COMPLETED 2026-03-21**
 - [x] #242 -- REST API Phase 2: Full CRUD for Catalogs, Profiles, CDEFs, Control Mappings -- **COMPLETED 2026-03-21**
 
 <!-- markdownlint-enable MD013 -->
@@ -346,6 +347,7 @@ Dev C: #217 (Rev 5 docs)         -- Documentation only ✅ COMPLETE
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
 | [x] | #229 | REST API Phase 1: Full CRUD for SSP, SAR, SAP, POA&M with Bearer token auth + Okta JWT -- **COMPLETED 2026-03-20** | MEDIUM | AFTER #95 (API foundation) |
+| [x] | #240 | Baseline Parameter and Enumeration Management API (GET/PUT/export) -- **COMPLETED 2026-03-21** | MEDIUM | AFTER #229 |
 | [x] | #242 | REST API Phase 2: Full CRUD for Catalogs, Profiles, CDEFs, Control Mappings -- **COMPLETED 2026-03-21** | MEDIUM | AFTER #229 |
 
 <!-- markdownlint-enable MD013 -->
@@ -418,12 +420,12 @@ removed and are no longer tracked:
 | 5 | 3-4 weeks | API + CI/CD + DB Cleanup | #95, #186, #183 | **COMPLETE** |
 | 6 | 1-2 weeks | Security Remediation + Bug Fixes | #210, #203, #205 | **COMPLETE** |
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
-| 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #242 | **COMPLETE** |
+| 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | Pending |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 31 (23 original + 8 new: #203, #205, #207, #210, #213, #217, #229, #242)
-**Completed (Phases 1-8):** 31 issues
+**Total issues tracked:** 32 (23 original + 9 new: #203, #205, #207, #210, #213, #217, #229, #240, #242)
+**Completed (Phases 1-8):** 32 issues
 **Remaining (Phase 9):** 3 issues (#107, #108)
 **Estimated remaining duration:** 3-4 weeks with 2-3 developers
