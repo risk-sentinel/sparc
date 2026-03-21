@@ -41,6 +41,7 @@ RSpec.describe "About pages", type: :request do
 
   describe "GET /about/api" do
     it "redirects to login without authentication" do
+      allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
       get about_api_path
       expect(response).to redirect_to(login_path)
     end
