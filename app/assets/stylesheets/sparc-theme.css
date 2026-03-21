@@ -21,6 +21,7 @@
   --bs-tertiary-bg: #ffffff;
 
   /* Text */
+  --bs-body-font-size: 1.05rem;
   --bs-body-color: #333333;
   --bs-secondary-color: #666666;
   --bs-tertiary-color: #999999;
@@ -67,6 +68,7 @@
   --bs-tertiary-bg: #252d3a;
 
   /* Text */
+  --bs-body-font-size: 1.05rem;
   --bs-body-color: #e2e8f0;
   --bs-secondary-color: #94a3b8;
   --bs-tertiary-color: #718096;
@@ -126,6 +128,7 @@
 
 .card .card-body {
   padding: 0;  /* card itself has 2rem, avoid double-padding */
+  font-size: 1.05rem;
 }
 
 /* Gradient overlays on cards — must override card background */
@@ -201,6 +204,7 @@
 .table th,
 .table td {
   padding: 0.75rem;
+  font-size: 1.05rem;
   border-bottom-color: var(--sparc-border);
   color: var(--bs-body-color);
 }
@@ -224,6 +228,7 @@
 .navbar-dark .nav-link,
 .navbar-dark .navbar-nav .nav-link {
   color: rgba(255, 255, 255, 0.7);
+  font-size: 1.05rem;
 }
 .navbar-dark .nav-link:hover,
 .navbar-dark .nav-link:focus,
