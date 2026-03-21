@@ -191,6 +191,12 @@ puts token.plaintext_token
 # Make your first API call
 curl -H "Authorization: Bearer sparc_your_token" \
      http://localhost:3000/api/v1/ssp_documents</code></pre>
+      <p class="small text-body-secondary">
+        By default, <code>SPARC_API_AUTH</code> is set to <code>local</code>, which accepts
+        locally-generated API tokens. For production deployments with Okta or another OIDC
+        provider, consider setting <code>SPARC_API_AUTH=hybrid</code> to accept both local
+        pipeline tokens and OIDC access tokens.
+      </p>
       <p>
         For the full API reference, see the
         <%= link_to "API Documentation", about_api_path, class: "text-primary" %>

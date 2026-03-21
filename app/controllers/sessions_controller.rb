@@ -78,6 +78,22 @@ class SessionsController < ApplicationController
 
     user = User.find_by("LOWER(email) = ?", params[:email].to_s.downcase.strip)
 
+    # Service accounts cannot log in via web UI — API tokens only
+    if user&.service_account?
+      AuditEvent.log(
+        user: user,
+        action: "login_failure",
+        provider: "local",
+        ip_address: request.remote_ip,
+        user_agent: request.user_agent,
+        metadata: { email: params[:email].to_s, reason: "service_account_web_login" }
+      )
+
+      flash.now[:error] = "Service accounts cannot log in via the web interface. Use API tokens instead."
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     # Show specific message for deactivated accounts (before generic auth check)
     if user&.deactivated?
       AuditEvent.log(

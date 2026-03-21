@@ -118,7 +118,7 @@ authentication mode coverage matrix.
 - [ ] #237 -- Add persistent Data Quality card to catalog show page
 - [ ] #244 -- Add security gate with threshold-based merge/deploy blocking
 - [ ] #246 -- Repository cleanup & OSCAL schema validation overhaul
-- [ ] #249 -- Mutually exclusive API auth modes (SPARC_API_AUTH=local|oidc|hybrid)
+- [x] #249 -- Mutually exclusive API auth modes (SPARC_API_AUTH=local|oidc|hybrid) -- **COMPLETED 2026-03-21**
 - [ ] #250 -- Add API discovery endpoint (GET /api/v1/available)
 
 <!-- markdownlint-enable MD013 -->
@@ -411,7 +411,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [ ] | #237 | Persistent Data Quality card on catalog show page | MEDIUM | None |
 | [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | **HIGH** | None |
 | [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | MEDIUM | None |
-| [ ] | #249 | Mutually exclusive API auth modes (local/oidc/hybrid) + service accounts | **HIGH** (security) | None |
+| [x] | #249 | Mutually exclusive API auth modes (local/oidc/hybrid) + service accounts -- **COMPLETED 2026-03-21** | **HIGH** (security) | None |
 | [ ] | #250 | API discovery endpoint (GET /api/v1/available) | LOW | None |
 
 <!-- markdownlint-enable MD013 -->
@@ -421,7 +421,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 **Parallelism: All 6 issues can run simultaneously (different domains).**
 
 ```text
-Dev A: #249 (API auth modes)       -- API/Auth domain
+Dev A: #249 (API auth modes)       -- API/Auth domain ✅ COMPLETE
 Dev B: #244 (security gate)        -- CI/Infrastructure domain
 Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
 Dev D: #237 (data quality card)    -- Catalog UI domain
@@ -473,6 +473,6 @@ removed and are no longer tracked:
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 42 (23 original + 19 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 36 issues
-**Remaining:** 6 issues (Phase 10: #234, #237, #244, #246, #249, #250)
+**Completed (Phases 1-9 + ad-hoc):** 37 issues
+**Remaining:** 5 issues (Phase 10: #234, #237, #244, #246, #250)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.
