@@ -1,0 +1,221 @@
+<% content_for :title, "Quick-Start Guide — SPARC" %>
+
+<div class="card mb-4">
+  <div class="card-body">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h2 fw-bold">Quick-Start Guide</h1>
+        <p class="text-body-secondary mb-0">Get up and running with SPARC in minutes</p>
+      </div>
+      <%= link_to "&larr; About".html_safe, about_path, class: "btn btn-outline-primary btn-sm" %>
+    </div>
+
+    <hr>
+
+    <%# ── Step 1: Installation ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">1</span>
+        Installation
+      </h2>
+      <p>SPARC runs on Ruby 3.4, Rails 8.1, and PostgreSQL. Choose your setup method:</p>
+
+      <h5 class="fw-bold mt-3">Option A: Docker Compose (recommended)</h5>
+      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code># Clone the repository
+git clone https://github.com/Rebel-Raiders/sparc.git
+cd sparc
+
+# Build and start all services (Rails, PostgreSQL, Redis, Sidekiq)
+docker compose up --build</code></pre>
+      <p class="small text-body-secondary">
+        Docker maps PostgreSQL to port 5433 and Redis to port 6380 to avoid conflicts with local services.
+      </p>
+
+      <h5 class="fw-bold mt-3">Option B: Local Development</h5>
+      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code># Install dependencies
+bundle install
+
+# Create database, run migrations, and seed NIST catalogs
+bin/rails db:create db:migrate db:seed
+
+# Start the server
+bin/rails server</code></pre>
+    </section>
+
+    <%# ── Step 2: Seed the Database ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">2</span>
+        Seed the Database
+      </h2>
+      <p>The default seed loads NIST SP 800-53 Rev 4 and Rev 5 control catalogs. For a full demo environment with sample documents:</p>
+      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code># Seed with NIST catalogs only (default)
+bin/rails db:seed
+
+# Seed with full demo data (SSP, SAP, SAR, POA&amp;M, CDEFs, Profiles, KSI validations)
+SPARC_SEED_MODE=full bin/rails db:seed
+
+# Seed only traditional RMF artifacts
+SPARC_SEED_MODE=traditional bin/rails db:seed
+
+# Seed only FedRAMP 20x artifacts (KSI validations)
+SPARC_SEED_MODE=20x bin/rails db:seed</code></pre>
+    </section>
+
+    <%# ── Step 3: First Login ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">3</span>
+        First Login
+      </h2>
+      <p>A default admin account is created during seeding:</p>
+      <div class="card" style="max-width: 400px;">
+        <div class="card-body">
+          <p class="mb-1"><strong>Email:</strong> <code>admin@sparc.local</code></p>
+          <p class="mb-0"><strong>Password:</strong> <code>Sp@rc2025!Admin</code></p>
+        </div>
+      </div>
+      <p class="mt-2 small text-body-secondary">
+        You will be prompted to change this password on first login. Navigate to
+        <a href="/login" class="text-primary"><code>/login</code></a> to get started.
+      </p>
+    </section>
+
+    <%# ── Step 4: Import a Catalog ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">4</span>
+        Import a Control Catalog
+      </h2>
+      <p>If you ran <code>db:seed</code>, NIST SP 800-53 Rev 4 and Rev 5 catalogs are already loaded. To import additional catalogs:</p>
+      <ol>
+        <li>Navigate to <strong>Controls &rarr; Control Catalogs</strong></li>
+        <li>Click <strong>Import from File</strong></li>
+        <li>Upload an OSCAL catalog file (JSON, YAML, or XML format)</li>
+        <li>SPARC parses all control families, controls, enhancements, and parameters automatically</li>
+      </ol>
+      <p class="small text-body-secondary">
+        SPARC supports NIST OSCAL v1.1.2 catalogs. You can also import XCCDF benchmarks (DISA STIGs) and InSpec profiles.
+      </p>
+    </section>
+
+    <%# ── Step 5: Create a Baseline Profile ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">5</span>
+        Create a Baseline Profile
+      </h2>
+      <ol>
+        <li>Navigate to <strong>Controls &rarr; Baselines / Profiles</strong></li>
+        <li>Click <strong>New Profile</strong></li>
+        <li>Select a source catalog (e.g., NIST SP 800-53 Rev 5)</li>
+        <li>Choose a baseline level (LOW, MODERATE, or HIGH) or select individual controls</li>
+        <li>Customize parameter values for your organization (e.g., account lockout threshold, session timeout)</li>
+        <li>Publish the profile to make it available for SSP generation</li>
+      </ol>
+    </section>
+
+    <%# ── Step 6: Create an SSP ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">6</span>
+        Create a System Security Plan
+      </h2>
+      <p>SPARC supports two ways to create SSPs:</p>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="fw-bold">Upload from Excel</h5>
+              <p class="small">Upload an existing SSP Excel workbook. SPARC parses controls, implementation narratives, and status fields automatically via background processing.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="fw-bold">Create from Scratch</h5>
+              <p class="small">Start a new SSP, select a baseline profile, and fill in implementation narratives per control. Use inline editing for rapid data entry.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%# ── Step 7: Run an Assessment ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">7</span>
+        Run an Assessment
+      </h2>
+      <ol>
+        <li>Navigate to <strong>Assessment &rarr; SAPs</strong> and create an Assessment Plan linked to your SSP</li>
+        <li>Define assessment methods per control: <em>examine</em>, <em>interview</em>, or <em>test</em></li>
+        <li>Execute the assessment and record findings in a new SAR (<strong>Assessment &rarr; SARs</strong>)</li>
+        <li>Upload Evidence artifacts to support your findings</li>
+        <li>Track remediation items in POA&amp;Ms with milestones and risk ratings</li>
+      </ol>
+    </section>
+
+    <%# ── Step 8: Export OSCAL ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">8</span>
+        Export OSCAL Artifacts
+      </h2>
+      <p>Every document in SPARC can be exported as OSCAL-compliant JSON, YAML, or XML:</p>
+      <ol>
+        <li>Open any document (SSP, SAR, CDEF, Profile, etc.)</li>
+        <li>Click <strong>Export OSCAL</strong> dropdown</li>
+        <li>Choose your format: JSON (primary), YAML, or XML</li>
+        <li>SPARC validates against NIST OSCAL v1.1.2 schemas before export</li>
+      </ol>
+      <p class="small text-body-secondary">
+        Exports include full OSCAL metadata (UUID, timestamps, parties, roles) and are ready for
+        submission to FedRAMP or integration with automated compliance pipelines.
+      </p>
+    </section>
+
+    <%# ── Step 9: API Access ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <span class="badge bg-primary rounded-circle me-2" style="width: 32px; height: 32px; line-height: 24px;">9</span>
+        API Access
+      </h2>
+      <p>Generate an API token and make your first call:</p>
+      <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code># In Rails console, generate a token
+token = ApiToken.generate!(user: User.first, name: "CLI Access")
+puts token.plaintext_token
+
+# Make your first API call
+curl -H "Authorization: Bearer sparc_your_token" \
+     http://localhost:3000/api/v1/ssp_documents</code></pre>
+      <p>
+        For the full API reference, see the
+        <%= link_to "API Documentation", about_api_path, class: "text-primary" %>
+        (requires login).
+      </p>
+    </section>
+
+    <%# ── Next Steps ── %>
+    <section>
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Next Steps</h2>
+      <ul>
+        <li>Explore the interactive <strong>control heat maps</strong> on SSP and SAR detail pages</li>
+        <li>Set up <strong>OIDC authentication</strong> with Okta or another provider for SSO</li>
+        <li>Import <strong>DISA STIGs</strong> (XCCDF) or <strong>InSpec profiles</strong> as component definitions</li>
+        <li>Configure <strong>FedRAMP 20x KSI tracking</strong> for continuous compliance monitoring</li>
+        <li>Integrate with <strong>sparc-iac</strong> for automated compliance pipeline validation</li>
+      </ul>
+
+      <% if SparcConfig.contact_email.present? %>
+        <p class="mt-3 text-body-secondary small">
+          Need help? Contact us at
+          <%= mail_to SparcConfig.contact_email, SparcConfig.contact_email, class: "text-primary text-decoration-none" %>
+        </p>
+      <% end %>
+    </section>
+
+  </div>
+</div>
