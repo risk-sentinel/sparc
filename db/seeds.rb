@@ -2196,6 +2196,17 @@ if SparcConfig.enable_local_login?
   else
     puts "Admin account already exists with a password set — skipping bootstrap."
   end
+
+  # Attach default admin avatar if not already set
+  admin_avatar_path = Rails.root.join("app/assets/images/sparc_admin.jpg")
+  if admin.persisted? && !admin.avatar.attached? && File.exist?(admin_avatar_path)
+    admin.avatar.attach(
+      io: File.open(admin_avatar_path),
+      filename: "sparc_admin.jpg",
+      content_type: "image/jpeg"
+    )
+    puts "  Admin avatar attached (sparc_admin.jpg)"
+  end
 else
   puts "Admin bootstrapping skipped (local login not enabled)."
 end
