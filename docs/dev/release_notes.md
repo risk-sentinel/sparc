@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-03-21 -- feat: API Discovery Endpoint (#250)
+
+**Branch:** `feature/250_api_discovery`
+
+### Summary
+
+Added a new API discovery endpoint at `GET /api/v1/available` that returns an authorization-scoped
+inventory of all registered API endpoints. The endpoint dynamically filters the 37 registered
+endpoints based on the authenticated user's permissions -- admins see the full inventory while
+non-admin users see only the resources and methods they are permitted to access. Added a
+`has_any_permission?` method to the User model for cross-boundary permission checks.
+
+### What Changed
+
+- **DiscoveryController** (`app/controllers/api/v1/discovery_controller.rb`) -- NEW; serves the
+  `GET /api/v1/available` endpoint with authorization-scoped endpoint inventory.
+- **User model** (`app/models/user.rb`) -- added `has_any_permission?` method for cross-boundary
+  permission checks used by the discovery endpoint.
+- **Routes** (`config/routes.rb`) -- added `GET /api/v1/available` route.
+- **API docs view** (`app/views/about/api_docs.html.erb`) -- updated to include the discovery
+  endpoint documentation.
+- **13 new request specs** (`spec/requests/api/v1/discovery_spec.rb`) covering admin vs non-admin
+  scoping, endpoint inventory accuracy, and permission filtering.
+
+### Stats
+
+- **Spec count:** 1430 total, 0 failures
+- **New specs:** 13
+- **New files:** 2 (discovery controller, request spec)
+
+---
+
 ## 2026-03-21 -- feat: Mutually Exclusive API Auth Modes (#249)
 
 **Branch:** `feature/249_api_auth_modes`

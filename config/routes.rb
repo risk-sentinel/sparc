@@ -265,6 +265,9 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      # API discovery (#250)
+      get "available", to: "discovery#available"
+
       # Document CRUD + legacy actions (#229)
       resources :ssp_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
