@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-03-21 -- feat: Baseline Parameter and Enumeration Management API (#240)
+
+**Branch:** `feature/229_api_crud_expansion`
+
+### Summary
+
+New `BaselineParameterService` and API controller for managing OSCAL parameters and enumerations
+from profile baselines. Endpoints are nested under `profile_documents` in the `/api/v1/` namespace.
+
+### What Changed
+
+- **BaselineParameterService** (`app/services/baseline_parameter_service.rb`) -- extracts OSCAL
+  parameters and enumerations from profile baseline resolved catalogs, supports reading, updating,
+  and exporting parameter data.
+- **BaselineParametersController** (`app/controllers/api/v1/baseline_parameters_controller.rb`) --
+  `GET .../parameters` (list parameters), `PUT .../parameters` (update parameters),
+  `GET .../parameters/export` (export as JSON/YAML/XML).
+- **25 new specs** covering service and controller endpoints.
+
+### Stats
+
+- **Spec count:** 1326 total, 0 failures
+- **New files:** 2 (service + controller)
+
+---
+
 ## 2026-03-21 -- REST API Phase 2: CRUD for Catalogs, Profiles, CDEFs, Control Mappings (#242)
 
 **Branch:** `feature/229_api_crud_expansion`

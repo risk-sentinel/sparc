@@ -288,7 +288,12 @@ Rails.application.routes.draw do
 
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ]
-      resources :profile_documents, only: [ :index, :show, :create, :update, :destroy ]
+      resources :profile_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        # Baseline parameter management (#240)
+        resource :parameters, only: [ :show, :update ], controller: "baseline_parameters" do
+          get :export, on: :member
+        end
+      end
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ]
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]
 
