@@ -1,0 +1,363 @@
+---
+system:
+  boundary_id: 1
+  boundary_name: Cloud Web Application ATO
+  boundary_slug: cloud-web-application-ato
+  boundary_status: active
+  organization: Default Organization
+ksi_catalog:
+  name: FedRAMP 20x Key Security Indicators
+  version: 1.0.0
+  source: FedRAMP 20x
+  themes_count: 11
+  indicators_count: 54
+export_timestamp: '2026-03-21T11:29:59Z'
+validations:
+- ksi_id: ksi-cm-01
+  ksi_title: Configuration Baseline
+  theme_code: CM
+  theme_name: Change Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-17T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: Infrastructure-as-code baselines in Terraform
+  evidence:
+  mapped_nist_controls:
+  - target: cm-2
+    relationship: superset
+  - target: cm-6
+    relationship: superset
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 1e1537adb174966a
+- ksi_id: ksi-cm-02
+  ksi_title: Version Control
+  theme_code: CM
+  theme_name: Change Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-20T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: All code in GitHub with branch protection
+  evidence:
+  mapped_nist_controls:
+  - target: cm-3
+    relationship: superset
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 934e702b4760e5b7
+- ksi_id: ksi-cm-04
+  ksi_title: Automated Testing
+  theme_code: CM
+  theme_name: Change Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-13T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: CI/CD pipeline runs automated tests on every PR
+  evidence:
+  mapped_nist_controls:
+  - target: sa-11
+    relationship: superset
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: b73d2c321e6ba6e0
+- ksi_id: ksi-edu-01
+  ksi_title: Security Awareness Training
+  theme_code: EDU
+  theme_name: Cybersecurity Education
+  status: not_assessed
+  validation_method:
+  evidence_format: manual_review
+  last_validated_at:
+  next_validation_due: '2026-06-19T11:28:51Z'
+  overdue: false
+  notes: Training records not yet reviewed
+  evidence:
+  mapped_nist_controls:
+  - target: at-2
+    relationship: superset
+  validation_metadata: {}
+- ksi_id: ksi-iam-01
+  ksi_title: Phishing-Resistant MFA
+  theme_code: IAM
+  theme_name: Identity and Access Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-16T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: Okta MFA enforced for all users via SPARC_OIDC_FORCE_MFA=true
+  evidence:
+  mapped_nist_controls:
+  - target: ia-2
+    relationship: superset
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 5358e4f2f9f2aa54
+- ksi_id: ksi-iam-02
+  ksi_title: Least Privilege Access
+  theme_code: IAM
+  theme_name: Identity and Access Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-11T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: RBAC with boundary-scoped permissions verified
+  evidence:
+  mapped_nist_controls:
+  - target: ac-6
+    relationship: superset
+  - target: ac-2
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 5ce342c73175e2e7
+- ksi_id: ksi-iam-03
+  ksi_title: Centralized Identity
+  theme_code: IAM
+  theme_name: Identity and Access Management
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-08T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: Okta SSO integrated via OIDC
+  evidence:
+  mapped_nist_controls:
+  - target: ia-2
+    relationship: intersects
+  - target: ia-8
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 4a420029250807ff
+- ksi_id: ksi-ir-01
+  ksi_title: Incident Response Plan
+  theme_code: IR
+  theme_name: Incident Response
+  status: partial
+  validation_method: manual
+  evidence_format: manual_review
+  last_validated_at: '2026-03-17T11:28:51Z'
+  next_validation_due: '2026-06-19T11:28:51Z'
+  overdue: false
+  notes: IR plan documented but not tested in 12 months
+  evidence:
+  mapped_nist_controls:
+  - target: ir-1
+    relationship: superset
+  - target: ir-8
+    relationship: superset
+  validation_metadata: {}
+- ksi_id: ksi-mla-01
+  ksi_title: Centralized Logging
+  theme_code: MLA
+  theme_name: Monitoring, Logging, and Auditing
+  status: partial
+  validation_method: hybrid
+  evidence_format: manual_review
+  last_validated_at: '2026-03-12T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: CloudWatch centralized, but legacy syslog not forwarded
+  evidence:
+  mapped_nist_controls:
+  - target: au-6
+    relationship: superset
+  - target: au-2
+    relationship: intersects
+  validation_metadata: {}
+- ksi_id: ksi-mla-03
+  ksi_title: Vulnerability Scanning
+  theme_code: MLA
+  theme_name: Monitoring, Logging, and Auditing
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-09T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: Trivy and CodeQL run weekly via GitHub Actions
+  evidence:
+  mapped_nist_controls:
+  - target: ra-5
+    relationship: superset
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 6df9d53d6d47b30d
+- ksi_id: ksi-pol-02
+  ksi_title: Asset Inventory
+  theme_code: POL
+  theme_name: Policy and Inventory
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-17T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: AWS Config asset inventory with weekly compliance checks
+  evidence:
+  mapped_nist_controls:
+  - target: cm-8
+    relationship: superset
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 709b19f858f69322
+- ksi_id: ksi-rec-01
+  ksi_title: Backup Strategy
+  theme_code: REC
+  theme_name: Recovery Planning
+  status: failed
+  validation_method: manual
+  evidence_format: manual_review
+  last_validated_at: '2026-03-10T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: Backup restore test failed — RTO exceeded by 2 hours
+  evidence:
+  mapped_nist_controls:
+  - target: cp-9
+    relationship: superset
+  validation_metadata: {}
+- ksi_id: ksi-svc-01
+  ksi_title: Encryption at Rest
+  theme_code: SVC
+  theme_name: Service Configuration
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-15T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: AES-256 encryption at rest via AWS KMS
+  evidence:
+  mapped_nist_controls:
+  - target: sc-28
+    relationship: superset
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: f31985d072120396
+- ksi_id: ksi-svc-02
+  ksi_title: Encryption in Transit
+  theme_code: SVC
+  theme_name: Service Configuration
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-14T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: TLS 1.2+ enforced on all endpoints
+  evidence:
+  mapped_nist_controls:
+  - target: sc-8
+    relationship: superset
+  - target: sc-13
+    relationship: intersects
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: b61826c14370acc2
+- ksi_id: ksi-scr-02
+  ksi_title: Software Bill of Materials
+  theme_code: SCR
+  theme_name: Supply Chain Risk
+  status: passed
+  validation_method: automated
+  evidence_format: json
+  last_validated_at: '2026-03-20T11:28:51Z'
+  next_validation_due: '2026-03-28T11:28:51Z'
+  overdue: false
+  notes: CycloneDX SBOM generated on every build
+  evidence:
+  mapped_nist_controls:
+  - target: sr-4
+    relationship: superset
+  validation_metadata:
+    tool: SPARC CI/CD
+    scan_id: 0fd91513fe840690
+summary:
+  total: 15
+  by_status:
+    not_assessed: 1
+    passed: 11
+    failed: 1
+    partial: 2
+    expired: 0
+  by_theme:
+    CM:
+      total: 3
+      passed: 3
+      failed: 0
+      partial: 0
+      expired: 0
+      not_assessed: 0
+    EDU:
+      total: 1
+      passed: 0
+      failed: 0
+      partial: 0
+      expired: 0
+      not_assessed: 1
+    IAM:
+      total: 3
+      passed: 3
+      failed: 0
+      partial: 0
+      expired: 0
+      not_assessed: 0
+    IR:
+      total: 1
+      passed: 0
+      failed: 0
+      partial: 1
+      expired: 0
+      not_assessed: 0
+    MLA:
+      total: 2
+      passed: 1
+      failed: 0
+      partial: 1
+      expired: 0
+      not_assessed: 0
+    POL:
+      total: 1
+      passed: 1
+      failed: 0
+      partial: 0
+      expired: 0
+      not_assessed: 0
+    REC:
+      total: 1
+      passed: 0
+      failed: 1
+      partial: 0
+      expired: 0
+      not_assessed: 0
+    SVC:
+      total: 2
+      passed: 2
+      failed: 0
+      partial: 0
+      expired: 0
+      not_assessed: 0
+    SCR:
+      total: 1
+      passed: 1
+      failed: 0
+      partial: 0
+      expired: 0
+      not_assessed: 0
+  overdue_count: 0
+  compliance_percentage: 73.3

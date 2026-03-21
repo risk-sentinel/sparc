@@ -2368,3 +2368,7 @@ puts "Done! Evidence seeded."
 
 # ── FedRAMP 20x KSI Catalog ──────────────────────────────────────────
 load Rails.root.join("db/seeds/fedramp_20x_ksi.rb")
+
+# ── Sample Artifacts (SAP, POA&M, CDEF, Profile, KSI Validations) ───
+# Set SPARC_SEED_MODE=traditional|20x|full to control what gets seeded
+load Rails.root.join("db/seeds/sample_artifacts.rb")

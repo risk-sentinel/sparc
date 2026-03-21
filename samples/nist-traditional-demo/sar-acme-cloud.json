@@ -1,0 +1,1492 @@
+{
+  "assessment-results": {
+    "uuid": "0f6dd49e-4068-4fe9-8ebb-df5c5ac8a973",
+    "metadata": {
+      "title": "ACME Cloud Platform — Annual Security Assessment (Rev 5)",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-21T11:29:58Z",
+      "roles": [
+        {
+          "id": "assessor",
+          "title": "Security Controls Assessor"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a63c27e4-a1ef-4733-b2f8-aef0e781dd5a",
+          "type": "organization",
+          "name": "SPARC Export"
+        }
+      ]
+    },
+    "import-ap": {
+      "href": "#"
+    },
+    "results": [
+      {
+        "uuid": "69a1561a-75ab-4991-b4a4-d2895e2c19c2",
+        "title": "Assessment Results for ACME Cloud Platform — Annual Security Assessment (Rev 5)",
+        "description": "Synthesized from Excel assessment data.",
+        "start": "2026-03-21T11:27:38Z",
+        "end": "2026-03-21T11:29:58Z",
+        "reviewed-controls": {
+          "control-selections": [
+            {
+              "include-all": {}
+            }
+          ]
+        },
+        "observations": [
+          {
+            "uuid": "fe22e55e-6d4d-4651-a9fa-d9354eb2f5d9",
+            "title": "Assessment of AC-01",
+            "description": "Control: AC-01\nResult: Pass\nNotes: Policy and procedure documentation reviewed; current versions on file dated September 2025.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "6a5097e7-1885-42ec-a56c-e01c8fceb8fd",
+            "title": "Assessment of AC-02",
+            "description": "Control: AC-02\nResult: Pass\nNotes: Account management procedures verified through HR termination records, access review logs, and identity management system audit trail.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "142b84fc-4482-4e58-9fed-c8cd115f75d6",
+            "title": "Assessment of AC-03",
+            "description": "Control: AC-03\nResult: Pass\nNotes: Tested 15 user roles; all access decisions enforced correctly. No unauthorized access paths discovered.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "059c1c7a-ef73-4def-a1a9-5f17cc48bd0e",
+            "title": "Assessment of AC-04",
+            "description": "Control: AC-04\nResult: Failed\nNotes: Network flow controls verified. Application-level DLP controls are incomplete; three data paths lack enforced classification labels.\nRecommendation: Complete application-level data classification labeling by Q1 2026. Track in POA&M item AC-4-001.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "b4659192-2420-4202-901a-7ac95790cfcf",
+            "title": "Assessment of AC-05",
+            "description": "Control: AC-05\nResult: Pass\nNotes: Role matrix reviewed; no violations of separation of duties found across all 342 active accounts.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "dfccaa12-7be2-410c-86ca-1c154d839d60",
+            "title": "Assessment of AC-06",
+            "description": "Control: AC-06\nResult: Failed\nNotes: OS and application privilege verified. Four service accounts with excessive privilege identified; remediation in progress.\nRecommendation: Reduce privilege on service accounts SA-DB-01, SA-APP-03, SA-NET-02, SA-MON-01 by December 2025.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "e0bb519a-45dd-4fb0-a0a7-775bfa910d6f",
+            "title": "Assessment of AC-07",
+            "description": "Control: AC-07\nResult: Pass\nNotes: Lockout behavior confirmed via manual testing; account locked at 5th failed attempt and released after 30 minutes.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "8ea5f0d8-58a6-4470-91fc-eaf0f3d2a135",
+            "title": "Assessment of AC-08",
+            "description": "Control: AC-08\nResult: Pass\nNotes: Banner text verified against legal-approved language. Acknowledgment flow confirmed for web, API, and CLI interfaces.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "0f49eed3-dd3a-43b0-be22-09db9ddabfe1",
+            "title": "Assessment of AC-11",
+            "description": "Control: AC-11\nResult: Pass\nNotes: Endpoint management policy verified on sample of 20 managed devices; all comply with 15-minute timeout.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "fefc6782-0fe1-4cb2-bf7b-05a34ab5d5ef",
+            "title": "Assessment of AC-14",
+            "description": "Control: AC-14\nResult: Not Applicable\nNotes: Not applicable — system requires authentication for all functions.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "d9bc48b0-7374-4060-b6dc-c68dee137509",
+            "title": "Assessment of AC-17",
+            "description": "Control: AC-17\nResult: Pass\nNotes: VPN configuration, MFA enforcement, and session logging verified. All remote sessions encrypted with TLS 1.3.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "651fe41b-af60-4f47-b5c0-298b1a5882ac",
+            "title": "Assessment of AC-18",
+            "description": "Control: AC-18\nResult: Not Applicable\nNotes: Not applicable — no wireless infrastructure in scope for this system.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "e57bf8e2-e785-4028-b44d-9888dd746c5e",
+            "title": "Assessment of AT-01",
+            "description": "Control: AT-01\nResult: Pass\nNotes: Policy and procedures documentation current; reviewed and approved November 2025.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "83c38336-b981-4d21-ae7a-d545ed649279",
+            "title": "Assessment of AT-02",
+            "description": "Control: AT-02\nResult: Pass\nNotes: LMS records reviewed; 97% completion rate for FY2025 security awareness training. Non-completions tracked via HR escalation process.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "62aa0316-5d39-446f-988a-302d3cbfccc8",
+            "title": "Assessment of AT-03",
+            "description": "Control: AT-03\nResult: Failed\nNotes: Training records reviewed for privileged roles. Data owner training curriculum not yet finalized; expected Q2 2026.\nRecommendation: Develop and deploy data owner role-based training by March 2026. Track in POA&M AT-3-001.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "eb3ee26f-2a48-4806-9a96-422f2e62bf6a",
+            "title": "Assessment of AT-04",
+            "description": "Control: AT-04\nResult: Pass\nNotes: LMS training records verified for completeness and retention period compliance.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "1126dce5-3407-4679-9438-5cf35acfae24",
+            "title": "Assessment of AT-05",
+            "description": "Control: AT-05\nResult: Not Applicable\nNotes: Not applicable at system level.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "19785927-657e-4d57-b58c-cf651b8323c1",
+            "title": "Assessment of AU-01",
+            "description": "Control: AU-01\nResult: Pass\nNotes: Policy documentation current and consistent with NIST guidance.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "1e3387c6-eb9b-4120-9949-244cb9a09ef0",
+            "title": "Assessment of AU-02",
+            "description": "Control: AU-02\nResult: Pass\nNotes: Audit event categories verified against policy. All 12 required event types confirmed active in SIEM.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "249d8218-a466-4683-b414-dffd46020ef0",
+            "title": "Assessment of AU-03",
+            "description": "Control: AU-03\nResult: Pass\nNotes: Sample of 50 audit records reviewed; all required fields present in 100% of records.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "174580d4-623d-42c6-8a2c-d028d60479b9",
+            "title": "Assessment of AU-04",
+            "description": "Control: AU-04\nResult: Pass\nNotes: Cloud storage auto-scaling confirmed active; no capacity alerts triggered in past 12 months. Retention validated.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "c31f770f-23cc-4ff2-953e-bcf91ff8dfb7",
+            "title": "Assessment of AU-05",
+            "description": "Control: AU-05\nResult: Failed\nNotes: Alert notification verified. Manual failover procedure exists but last tested 18 months ago; exceeds 12-month test cycle requirement.\nRecommendation: Conduct failover test by January 2026. Update PROC-AU-005 with test results.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "0cdb4df4-94d0-41d2-be1e-2848d45973b9",
+            "title": "Assessment of AU-06",
+            "description": "Control: AU-06\nResult: Not Specified\nNotes: Capability not yet implemented; scheduled for Q1 2026.\nRecommendation: Deploy automated audit review reporting by March 2026. Track in POA&M AU-6-001.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "24ea41f1-dbaf-4858-8634-dcd0a9ec48cf",
+            "title": "Assessment of AU-08",
+            "description": "Control: AU-08\nResult: Pass\nNotes: NTP synchronization verified across all system components. Time drift under 500ms.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "2ac37a47-69e2-4b02-bfbb-07b8395a7840",
+            "title": "Assessment of AU-09",
+            "description": "Control: AU-09\nResult: Pass\nNotes: Logging account permissions verified; access limited to 3 authorized security personnel. Hash integrity check active.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "1b4efb41-797e-4c25-8bf9-d14df87e28cb",
+            "title": "Assessment of AU-11",
+            "description": "Control: AU-11\nResult: Pass\nNotes: Storage configuration and retention rules verified. Spot-checked records from 13 months ago confirm availability.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "5378b81a-54ba-4d8b-ab96-f3a68a88a898",
+            "title": "Assessment of AU-12",
+            "description": "Control: AU-12\nResult: Pass\nNotes: Audit record generation verified on 100% of in-scope components. SIEM coverage confirmed.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "1bac9bb6-82e3-495d-bdca-1fabb7144b49",
+            "title": "Assessment of CA-01",
+            "description": "Control: CA-01\nResult: Pass\nNotes: Policy documentation current and approved by CISO August 2025.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "29d5b2d7-1432-4f7b-9458-c9411581a4af",
+            "title": "Assessment of CA-02",
+            "description": "Control: CA-02\nResult: Pass\nNotes: Assessment documentation reviewed; independent assessment conducted in August 2025 by third-party assessor.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "f110a686-0b0d-4d40-b7db-9b34da763372",
+            "title": "Assessment of CA-03",
+            "description": "Control: CA-03\nResult: Failed\nNotes: ISA inventory reviewed. ISA with Partner System B expired July 2025; renewal initiated but not complete.\nRecommendation: Renew ISA with Partner System B by November 2025. Track in POA&M CA-3-001.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "22dca896-7a71-416c-9a37-035d1b4df572",
+            "title": "Assessment of CA-05",
+            "description": "Control: CA-05\nResult: Pass\nNotes: POA&M reviewed; all open items have assigned owners and milestone dates. Monthly update cadence confirmed.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "fe0cfe1a-6b1c-4200-8906-b610b00c2fed",
+            "title": "Assessment of CA-06",
+            "description": "Control: CA-06\nResult: Pass\nNotes: ATO documentation verified; authorization valid and current.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "c36c0f19-b46b-43bd-8a3c-73e95ea9bc54",
+            "title": "Assessment of CA-07",
+            "description": "Control: CA-07\nResult: Not Specified\nNotes: Continuous monitoring program partially operational. Configuration drift detection not yet implemented.\nRecommendation: Deploy configuration drift detection tooling by June 2026. Track in POA&M CA-7-001.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "803f9e0b-83e0-4fe1-b6d9-9ce502808f2a",
+            "title": "Assessment of CM-01",
+            "description": "Control: CM-01\nResult: Pass\nNotes: CM policy and procedures documentation reviewed and current.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "60fa90b9-02b3-408b-803c-2cfb42391408",
+            "title": "Assessment of CM-02",
+            "description": "Control: CM-02\nResult: Pass\nNotes: Baseline configuration documentation verified for 100% of in-scope components. Last review completed October 2025.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "10b0aad4-de9e-4578-ba4a-f92a89a36674",
+            "title": "Assessment of CM-03",
+            "description": "Control: CM-03\nResult: Pass\nNotes: Sample of 20 change records reviewed; all required approvals present. No unauthorized changes detected.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "9e088540-9a1c-43d4-8265-34e6343146b6",
+            "title": "Assessment of CM-04",
+            "description": "Control: CM-04\nResult: Failed\nNotes: Major change impact analyses reviewed and found complete. Minor change impact analysis not consistently documented.\nRecommendation: Formalize minor change impact analysis process in PROC-CM-004 by January 2026.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "b4e97699-f122-42a2-bb8e-57e3f7409a82",
+            "title": "Assessment of CM-06",
+            "description": "Control: CM-06\nResult: Pass\nNotes: Configuration compliance scan results reviewed. 98.4% compliance rate; 3 open non-critical findings being tracked.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "abbad5d5-0645-4d96-9a35-c07224f506b7",
+            "title": "Assessment of CM-07",
+            "description": "Control: CM-07\nResult: Pass\nNotes: Port and service audit performed; no unauthorized services detected. Firewall rules reviewed and current.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "a2b126e5-20ff-41b2-84d0-2a438c3704f5",
+            "title": "Assessment of CM-08",
+            "description": "Control: CM-08\nResult: Failed\nNotes: Cloud asset inventory verified via automated discovery. On-prem inventory has 12 unreconciled entries dating to last manual update.\nRecommendation: Reconcile on-premises CMDB entries and establish monthly automated reconciliation by February 2026.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "2d3d04c9-783c-40fe-a7c1-2df4048ebc45",
+            "title": "Assessment of CP-01",
+            "description": "Control: CP-01\nResult: Pass\nNotes: Policy documentation reviewed and current as of July 2025.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "8314791d-30cd-422d-af65-bbda269ae08c",
+            "title": "Assessment of CP-02",
+            "description": "Control: CP-02\nResult: Pass\nNotes: Contingency plan documentation reviewed; current version dated June 2025. RTO/RPO objectives documented and achievable.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "6c0e7077-b2a2-4a3b-8b4a-07c2bdc8dea7",
+            "title": "Assessment of CP-04",
+            "description": "Control: CP-04\nResult: Not Specified\nNotes: Full failover test not yet conducted for current environment version; scheduled for Q2 2026.\nRecommendation: Conduct full failover test by June 2026. Track in POA&M CP-4-001.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "062631c7-1e3b-4132-b671-3ac2b298e6a1",
+            "title": "Assessment of CP-09",
+            "description": "Control: CP-09\nResult: Pass\nNotes: Backup job logs reviewed for past 90 days; 100% success rate. Restore test performed; RTO objective met.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "30e8427c-6c51-4c9a-9433-182435922543",
+            "title": "Assessment of IA-01",
+            "description": "Control: IA-01\nResult: Pass\nNotes: Policy documentation current and in compliance with NIST SP 800-63B requirements.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "dd8b7e04-d035-4219-baeb-8044b5362bc4",
+            "title": "Assessment of IA-02",
+            "description": "Control: IA-02\nResult: Pass\nNotes: MFA enforcement verified for all 342 active organizational accounts. No accounts with MFA bypass exceptions.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "e98d396b-a2c0-4677-8a0d-f88aa859f073",
+            "title": "Assessment of IA-03",
+            "description": "Control: IA-03\nResult: Failed\nNotes: Certificate-based auth verified for managed fleet. BYOD policy not finalized; 12 unmanaged devices detected accessing the network.\nRecommendation: Finalize BYOD policy and enforce device authentication by February 2026. Track in POA&M IA-3-001.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "72db3076-a8c0-4703-9201-e7515e9a1001",
+            "title": "Assessment of IA-04",
+            "description": "Control: IA-04\nResult: Pass\nNotes: Identifier management procedures verified. No reused identifiers found. Inactive account policy confirmed active.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "c250c476-1dd4-4161-8074-5ca9443603a7",
+            "title": "Assessment of IA-05",
+            "description": "Control: IA-05\nResult: Pass\nNotes: Password policy configuration verified. Breach detection API integration confirmed active and operational.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "9de20624-2d05-46bd-b3e9-3bda3def535f",
+            "title": "Assessment of IA-06",
+            "description": "Control: IA-06\nResult: Pass\nNotes: Authentication feedback behavior verified on login forms; passwords masked and error messages generic.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "7c29616f-ec66-4eb8-b00b-5b19a5625fa9",
+            "title": "Assessment of IR-01",
+            "description": "Control: IR-01\nResult: Pass\nNotes: IR policy and procedure documentation reviewed and current.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "ab2602ff-03ab-469c-a24c-0d249c4f0624",
+            "title": "Assessment of IR-02",
+            "description": "Control: IR-02\nResult: Pass\nNotes: Training completion records verified for all security team members. Tabletop exercise conducted September 2025.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "42142db0-0c5d-4442-a53f-38b96dba5405",
+            "title": "Assessment of IR-04",
+            "description": "Control: IR-04\nResult: Pass\nNotes: Incident handling procedures and 5 past incident records reviewed. Escalation paths followed correctly in all cases.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "e35495aa-b590-4215-a5bf-14777b718fa2",
+            "title": "Assessment of IR-05",
+            "description": "Control: IR-05\nResult: Failed\nNotes: SIEM monitoring confirmed active. Only 2 of 5 planned automated playbooks deployed; remaining 3 in development.\nRecommendation: Deploy remaining 3 automated incident response playbooks by January 2026.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          },
+          {
+            "uuid": "56c8605b-304e-4440-9e70-5ae32782049c",
+            "title": "Assessment of IR-06",
+            "description": "Control: IR-06\nResult: Pass\nNotes: Reporting procedures reviewed. One incident from past year required US-CERT notification; confirmed reported within 1 hour of detection.",
+            "methods": [
+              "TEST"
+            ],
+            "collected": "2026-03-21T11:27:38Z"
+          }
+        ],
+        "findings": [
+          {
+            "uuid": "92fb4a44-b793-4907-9be0-41141c3a39df",
+            "title": "Finding for AC-01",
+            "description": "Assessment finding for control AC-01: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-01",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "fe22e55e-6d4d-4651-a9fa-d9354eb2f5d9"
+              }
+            ]
+          },
+          {
+            "uuid": "43324001-79ae-450d-a6dd-951a93fed9ed",
+            "title": "Finding for AC-02",
+            "description": "Assessment finding for control AC-02: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-02",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "6a5097e7-1885-42ec-a56c-e01c8fceb8fd"
+              }
+            ]
+          },
+          {
+            "uuid": "03968ab2-bf76-4353-93eb-e7efb525aa22",
+            "title": "Finding for AC-03",
+            "description": "Assessment finding for control AC-03: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-03",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "142b84fc-4482-4e58-9fed-c8cd115f75d6"
+              }
+            ]
+          },
+          {
+            "uuid": "b1cf8527-6c21-40c0-a2f7-7c889f190209",
+            "title": "Finding for AC-04",
+            "description": "Assessment finding for control AC-04: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-04",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "059c1c7a-ef73-4def-a1a9-5f17cc48bd0e"
+              }
+            ]
+          },
+          {
+            "uuid": "5f619dd9-1169-48af-93f5-3d39e6a5de3a",
+            "title": "Finding for AC-05",
+            "description": "Assessment finding for control AC-05: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-05",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "b4659192-2420-4202-901a-7ac95790cfcf"
+              }
+            ]
+          },
+          {
+            "uuid": "4bde119e-aec6-4dcd-b7d9-4300bcd898b6",
+            "title": "Finding for AC-06",
+            "description": "Assessment finding for control AC-06: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-06",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "dfccaa12-7be2-410c-86ca-1c154d839d60"
+              }
+            ]
+          },
+          {
+            "uuid": "c8bfdd57-e85d-4586-9b44-89b2ffa821b9",
+            "title": "Finding for AC-07",
+            "description": "Assessment finding for control AC-07: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-07",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "e0bb519a-45dd-4fb0-a0a7-775bfa910d6f"
+              }
+            ]
+          },
+          {
+            "uuid": "0b7daa4c-b6bd-486c-860c-77eb2c30c168",
+            "title": "Finding for AC-08",
+            "description": "Assessment finding for control AC-08: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-08",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "8ea5f0d8-58a6-4470-91fc-eaf0f3d2a135"
+              }
+            ]
+          },
+          {
+            "uuid": "b109d5e9-35fa-43b8-8d0d-f8d88aa8715a",
+            "title": "Finding for AC-11",
+            "description": "Assessment finding for control AC-11: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-11",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "0f49eed3-dd3a-43b0-be22-09db9ddabfe1"
+              }
+            ]
+          },
+          {
+            "uuid": "a9b0f2eb-1ee4-451f-bd56-7c7dfc05d74b",
+            "title": "Finding for AC-14",
+            "description": "Assessment finding for control AC-14: Not Applicable",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-14",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "fefc6782-0fe1-4cb2-bf7b-05a34ab5d5ef"
+              }
+            ]
+          },
+          {
+            "uuid": "0108c8c5-82c3-4b17-995d-611c4b4be3f4",
+            "title": "Finding for AC-17",
+            "description": "Assessment finding for control AC-17: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-17",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "d9bc48b0-7374-4060-b6dc-c68dee137509"
+              }
+            ]
+          },
+          {
+            "uuid": "96bbb350-165c-40a4-8e7d-98987bdf4629",
+            "title": "Finding for AC-18",
+            "description": "Assessment finding for control AC-18: Not Applicable",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ac-18",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "651fe41b-af60-4f47-b5c0-298b1a5882ac"
+              }
+            ]
+          },
+          {
+            "uuid": "23a86148-2198-4737-a5ed-7af1bd07c788",
+            "title": "Finding for AT-01",
+            "description": "Assessment finding for control AT-01: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "at-01",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "e57bf8e2-e785-4028-b44d-9888dd746c5e"
+              }
+            ]
+          },
+          {
+            "uuid": "31a0b195-0f1a-4970-8263-d433abda6573",
+            "title": "Finding for AT-02",
+            "description": "Assessment finding for control AT-02: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "at-02",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "83c38336-b981-4d21-ae7a-d545ed649279"
+              }
+            ]
+          },
+          {
+            "uuid": "1f8a65cb-1ee4-45d2-bbdb-50a137654a68",
+            "title": "Finding for AT-03",
+            "description": "Assessment finding for control AT-03: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "at-03",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "62aa0316-5d39-446f-988a-302d3cbfccc8"
+              }
+            ]
+          },
+          {
+            "uuid": "d4d008d1-a7a6-4b0e-bb01-a247d3245140",
+            "title": "Finding for AT-04",
+            "description": "Assessment finding for control AT-04: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "at-04",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "eb3ee26f-2a48-4806-9a96-422f2e62bf6a"
+              }
+            ]
+          },
+          {
+            "uuid": "0d529ef9-9dec-4789-8aa9-a2fc94d03976",
+            "title": "Finding for AT-05",
+            "description": "Assessment finding for control AT-05: Not Applicable",
+            "target": {
+              "type": "objective-id",
+              "target-id": "at-05",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "1126dce5-3407-4679-9438-5cf35acfae24"
+              }
+            ]
+          },
+          {
+            "uuid": "44f8a0e8-8af1-4d57-a184-244483379eae",
+            "title": "Finding for AU-01",
+            "description": "Assessment finding for control AU-01: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-01",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "19785927-657e-4d57-b58c-cf651b8323c1"
+              }
+            ]
+          },
+          {
+            "uuid": "df082884-ee7c-424c-a742-0de6204c0d26",
+            "title": "Finding for AU-02",
+            "description": "Assessment finding for control AU-02: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-02",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "1e3387c6-eb9b-4120-9949-244cb9a09ef0"
+              }
+            ]
+          },
+          {
+            "uuid": "a4120499-7cf2-481d-a2a6-920c4f565fa1",
+            "title": "Finding for AU-03",
+            "description": "Assessment finding for control AU-03: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-03",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "249d8218-a466-4683-b414-dffd46020ef0"
+              }
+            ]
+          },
+          {
+            "uuid": "657341a4-cd5d-4c93-a0dc-4351040dccd7",
+            "title": "Finding for AU-04",
+            "description": "Assessment finding for control AU-04: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-04",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "174580d4-623d-42c6-8a2c-d028d60479b9"
+              }
+            ]
+          },
+          {
+            "uuid": "d6725eb5-6f43-4b92-a99e-0068b174bb87",
+            "title": "Finding for AU-05",
+            "description": "Assessment finding for control AU-05: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-05",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "c31f770f-23cc-4ff2-953e-bcf91ff8dfb7"
+              }
+            ]
+          },
+          {
+            "uuid": "624891a9-ffcc-44ff-9d94-06d57aaef501",
+            "title": "Finding for AU-06",
+            "description": "Assessment finding for control AU-06: Not Specified",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-06",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "0cdb4df4-94d0-41d2-be1e-2848d45973b9"
+              }
+            ]
+          },
+          {
+            "uuid": "954ba9e9-92c0-46fe-b920-f23853ba8aca",
+            "title": "Finding for AU-08",
+            "description": "Assessment finding for control AU-08: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-08",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "24ea41f1-dbaf-4858-8634-dcd0a9ec48cf"
+              }
+            ]
+          },
+          {
+            "uuid": "4473625a-bafe-4bd8-b75c-6247e69aa434",
+            "title": "Finding for AU-09",
+            "description": "Assessment finding for control AU-09: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-09",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "2ac37a47-69e2-4b02-bfbb-07b8395a7840"
+              }
+            ]
+          },
+          {
+            "uuid": "2570ce87-4a48-46b4-9cb9-13b25fa7979e",
+            "title": "Finding for AU-11",
+            "description": "Assessment finding for control AU-11: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-11",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "1b4efb41-797e-4c25-8bf9-d14df87e28cb"
+              }
+            ]
+          },
+          {
+            "uuid": "955ca3bf-88c2-46c3-a0f2-c321c7bf5246",
+            "title": "Finding for AU-12",
+            "description": "Assessment finding for control AU-12: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "au-12",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "5378b81a-54ba-4d8b-ab96-f3a68a88a898"
+              }
+            ]
+          },
+          {
+            "uuid": "a4701681-95e8-422c-aeac-5e1d70e44355",
+            "title": "Finding for CA-01",
+            "description": "Assessment finding for control CA-01: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ca-01",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "1bac9bb6-82e3-495d-bdca-1fabb7144b49"
+              }
+            ]
+          },
+          {
+            "uuid": "e8e42f91-6915-4882-a469-7b1d1139efbf",
+            "title": "Finding for CA-02",
+            "description": "Assessment finding for control CA-02: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ca-02",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "29d5b2d7-1432-4f7b-9458-c9411581a4af"
+              }
+            ]
+          },
+          {
+            "uuid": "d22641f6-d34b-4918-bbe7-30a8add58db3",
+            "title": "Finding for CA-03",
+            "description": "Assessment finding for control CA-03: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ca-03",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "f110a686-0b0d-4d40-b7db-9b34da763372"
+              }
+            ]
+          },
+          {
+            "uuid": "f998fb03-832a-4404-b41b-57e6cdc327b9",
+            "title": "Finding for CA-05",
+            "description": "Assessment finding for control CA-05: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ca-05",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "22dca896-7a71-416c-9a37-035d1b4df572"
+              }
+            ]
+          },
+          {
+            "uuid": "67297602-2190-4178-b538-f3cab91cb299",
+            "title": "Finding for CA-06",
+            "description": "Assessment finding for control CA-06: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ca-06",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "fe0cfe1a-6b1c-4200-8906-b610b00c2fed"
+              }
+            ]
+          },
+          {
+            "uuid": "25901ef4-0b3b-470b-9017-41f7b8d74972",
+            "title": "Finding for CA-07",
+            "description": "Assessment finding for control CA-07: Not Specified",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ca-07",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "c36c0f19-b46b-43bd-8a3c-73e95ea9bc54"
+              }
+            ]
+          },
+          {
+            "uuid": "992ce6f2-2527-4d2d-946d-3aba0587cb8b",
+            "title": "Finding for CM-01",
+            "description": "Assessment finding for control CM-01: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cm-01",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "803f9e0b-83e0-4fe1-b6d9-9ce502808f2a"
+              }
+            ]
+          },
+          {
+            "uuid": "03d4f7fd-6e35-4220-a0c3-c57c101173ec",
+            "title": "Finding for CM-02",
+            "description": "Assessment finding for control CM-02: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cm-02",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "60fa90b9-02b3-408b-803c-2cfb42391408"
+              }
+            ]
+          },
+          {
+            "uuid": "154a8996-a740-4ccc-98aa-b83d6c54134d",
+            "title": "Finding for CM-03",
+            "description": "Assessment finding for control CM-03: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cm-03",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "10b0aad4-de9e-4578-ba4a-f92a89a36674"
+              }
+            ]
+          },
+          {
+            "uuid": "e3f91e26-ecce-4a14-bfa3-d9d1e53bc237",
+            "title": "Finding for CM-04",
+            "description": "Assessment finding for control CM-04: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cm-04",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "9e088540-9a1c-43d4-8265-34e6343146b6"
+              }
+            ]
+          },
+          {
+            "uuid": "4943bbab-c250-4e28-9192-5d6200acec3d",
+            "title": "Finding for CM-06",
+            "description": "Assessment finding for control CM-06: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cm-06",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "b4e97699-f122-42a2-bb8e-57e3f7409a82"
+              }
+            ]
+          },
+          {
+            "uuid": "5ec1b2cd-d89c-4ac4-b46b-402574c532ee",
+            "title": "Finding for CM-07",
+            "description": "Assessment finding for control CM-07: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cm-07",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "abbad5d5-0645-4d96-9a35-c07224f506b7"
+              }
+            ]
+          },
+          {
+            "uuid": "ad347770-7309-4794-b9c6-4ff9360b9b66",
+            "title": "Finding for CM-08",
+            "description": "Assessment finding for control CM-08: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cm-08",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "a2b126e5-20ff-41b2-84d0-2a438c3704f5"
+              }
+            ]
+          },
+          {
+            "uuid": "a83749df-7f37-47e3-b07d-8ef6de7bbf75",
+            "title": "Finding for CP-01",
+            "description": "Assessment finding for control CP-01: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cp-01",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "2d3d04c9-783c-40fe-a7c1-2df4048ebc45"
+              }
+            ]
+          },
+          {
+            "uuid": "cea46126-81a9-43fa-9f65-8cabe32152b8",
+            "title": "Finding for CP-02",
+            "description": "Assessment finding for control CP-02: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cp-02",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "8314791d-30cd-422d-af65-bbda269ae08c"
+              }
+            ]
+          },
+          {
+            "uuid": "250f74a9-60f3-4ded-a030-e62f64f80c01",
+            "title": "Finding for CP-04",
+            "description": "Assessment finding for control CP-04: Not Specified",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cp-04",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "6c0e7077-b2a2-4a3b-8b4a-07c2bdc8dea7"
+              }
+            ]
+          },
+          {
+            "uuid": "861e0180-c349-4c2c-be2d-b4f90bf7832e",
+            "title": "Finding for CP-09",
+            "description": "Assessment finding for control CP-09: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "cp-09",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "062631c7-1e3b-4132-b671-3ac2b298e6a1"
+              }
+            ]
+          },
+          {
+            "uuid": "5aae0e91-4de2-4898-a943-e0f824f8a011",
+            "title": "Finding for IA-01",
+            "description": "Assessment finding for control IA-01: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ia-01",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "30e8427c-6c51-4c9a-9433-182435922543"
+              }
+            ]
+          },
+          {
+            "uuid": "27407664-246c-44cf-b571-ec432cb1801e",
+            "title": "Finding for IA-02",
+            "description": "Assessment finding for control IA-02: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ia-02",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "dd8b7e04-d035-4219-baeb-8044b5362bc4"
+              }
+            ]
+          },
+          {
+            "uuid": "378eef74-b909-4318-89bb-5d5c55461aea",
+            "title": "Finding for IA-03",
+            "description": "Assessment finding for control IA-03: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ia-03",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "e98d396b-a2c0-4677-8a0d-f88aa859f073"
+              }
+            ]
+          },
+          {
+            "uuid": "30233b30-26f0-44f2-8950-f67331a5f5bd",
+            "title": "Finding for IA-04",
+            "description": "Assessment finding for control IA-04: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ia-04",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "72db3076-a8c0-4703-9201-e7515e9a1001"
+              }
+            ]
+          },
+          {
+            "uuid": "78ba998c-4a8c-427b-b83f-5af4c482ecec",
+            "title": "Finding for IA-05",
+            "description": "Assessment finding for control IA-05: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ia-05",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "c250c476-1dd4-4161-8074-5ca9443603a7"
+              }
+            ]
+          },
+          {
+            "uuid": "886abe4b-125e-4187-88a1-51650235cef8",
+            "title": "Finding for IA-06",
+            "description": "Assessment finding for control IA-06: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ia-06",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "9de20624-2d05-46bd-b3e9-3bda3def535f"
+              }
+            ]
+          },
+          {
+            "uuid": "dff47d11-ab85-446f-a765-0ace4b740631",
+            "title": "Finding for IR-01",
+            "description": "Assessment finding for control IR-01: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ir-01",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "7c29616f-ec66-4eb8-b00b-5b19a5625fa9"
+              }
+            ]
+          },
+          {
+            "uuid": "113b0c7b-35e7-4c10-acf3-3583e76949f3",
+            "title": "Finding for IR-02",
+            "description": "Assessment finding for control IR-02: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ir-02",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "ab2602ff-03ab-469c-a24c-0d249c4f0624"
+              }
+            ]
+          },
+          {
+            "uuid": "046470b4-d475-40d8-9c9d-5e394af2ed60",
+            "title": "Finding for IR-04",
+            "description": "Assessment finding for control IR-04: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ir-04",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "42142db0-0c5d-4442-a53f-38b96dba5405"
+              }
+            ]
+          },
+          {
+            "uuid": "0e651c0f-7df6-4e71-b7db-efff3295e14f",
+            "title": "Finding for IR-05",
+            "description": "Assessment finding for control IR-05: Failed",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ir-05",
+              "status": {
+                "state": "not-satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "e35495aa-b590-4215-a5bf-14777b718fa2"
+              }
+            ]
+          },
+          {
+            "uuid": "187db474-a756-4570-898e-cee971af3329",
+            "title": "Finding for IR-06",
+            "description": "Assessment finding for control IR-06: Pass",
+            "target": {
+              "type": "objective-id",
+              "target-id": "ir-06",
+              "status": {
+                "state": "satisfied"
+              }
+            },
+            "related-observations": [
+              {
+                "observation-uuid": "56c8605b-304e-4440-9e70-5ae32782049c"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "e5c7c857-39e2-4f62-bed9-6b66a7655a08",
+          "title": "SPARC Document Source",
+          "description": "Managed by SPARC",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000",
+              "media-type": "text/html"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

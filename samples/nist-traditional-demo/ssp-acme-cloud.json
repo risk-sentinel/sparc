@@ -1,0 +1,2162 @@
+{
+  "system-security-plan": {
+    "uuid": "5e228689-c365-4cf4-ad47-e0eaa75f9a95",
+    "metadata": {
+      "title": "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-21T11:29:58Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        },
+        {
+          "id": "system-owner",
+          "title": "System Owner"
+        },
+        {
+          "id": "authorizing-official",
+          "title": "Authorizing Official"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "1d86bbcc-9527-47f3-8046-7e3ec20fbc3e",
+          "type": "organization",
+          "name": "SPARC Export"
+        }
+      ]
+    },
+    "import-profile": {
+      "href": "#"
+    },
+    "system-characteristics": {
+      "system-ids": [
+        {
+          "id": "16"
+        }
+      ],
+      "system-name": "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+      "description": "System Security Plan exported from SPARC for ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+      "system-information": {
+        "information-types": [
+          {
+            "uuid": "53a21ba3-2d1a-474d-8658-226f4544ed2b",
+            "title": "System Information",
+            "description": "Information processed, stored, or transmitted by ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)."
+          }
+        ]
+      },
+      "status": {
+        "state": "operational"
+      },
+      "authorization-boundary": {
+        "description": "Authorization boundary for ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate). Update this description to reflect the actual boundary."
+      }
+    },
+    "system-implementation": {
+      "users": [
+        {
+          "uuid": "498a9f72-b853-4b43-896a-b14dc9daa234",
+          "title": "General User",
+          "role-ids": [
+            "system-owner"
+          ]
+        }
+      ],
+      "components": [
+        {
+          "uuid": "a5485fa5-8cbd-455e-965c-a3c4f77bd201",
+          "type": "this-system",
+          "title": "ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+          "description": "The system described by this SSP.",
+          "status": {
+            "state": "operational"
+          }
+        }
+      ]
+    },
+    "control-implementation": {
+      "description": "Control implementation for ACME Cloud Platform — SSP (NIST SP 800-53 Rev 5, Moderate)",
+      "implemented-requirements": [
+        {
+          "uuid": "c2ae9619-518c-4306-a045-b845a2d06862",
+          "control-id": "ac-01",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-01_priv",
+              "uuid": "2b89b4a3-dc45-4daa-b0ba-b81e4b6b98a9",
+              "remarks": "Access Control Policy (POL-AC-001) is maintained, approved by the CISO, and reviewed annually. Procedures are documented in PROC-AC-001."
+            }
+          ],
+          "remarks": "Stated Requirement: The organization shall develop, document, and disseminate to designated personnel an access control policy and procedures that addresses purpose, scope, roles, responsibilities, and compliance."
+        },
+        {
+          "uuid": "780dbdd3-66ce-4ff2-93b7-38b19be10ed0",
+          "control-id": "ac-02",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "System Administrator"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-02_priv",
+              "uuid": "f5f6b790-1547-468b-83be-dbd993766e79",
+              "remarks": "Account provisioning and de-provisioning workflows are enforced via the identity management platform. Quarterly access reviews are conducted."
+            }
+          ],
+          "remarks": "Stated Requirement: The organization shall manage information system accounts, including establishing, activating, modifying, reviewing, disabling, and removing accounts."
+        },
+        {
+          "uuid": "f9848398-4ea8-4fe8-a389-e3d1b8ecaac3",
+          "control-id": "ac-03",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-03_priv",
+              "uuid": "1a854491-fc78-41c9-a781-323e54c459e7",
+              "remarks": "Role-based access control (RBAC) is implemented at the application and database layer. Access decisions are enforced by the authorization service."
+            }
+          ],
+          "remarks": "Stated Requirement: The information system enforces approved authorizations for logical access to information and system resources in accordance with applicable access control policies."
+        },
+        {
+          "uuid": "41f9656d-edbe-47bb-b5e5-56848072991e",
+          "control-id": "ac-04",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "Hybrid"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "Hybrid"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-04_priv",
+              "uuid": "e8b93532-6e39-4fa5-ad7b-a3472e49cc57",
+              "remarks": "Network-level information flow controls are in place via firewall rules. Application-level data flow labeling is in progress."
+            },
+            {
+              "statement-id": "ac-04_inherited_1",
+              "uuid": "e6e11700-0840-4298-b9e0-3092f2278d1d",
+              "remarks": "AWS VPC Security Groups and Network ACLs enforce boundary-level information flow controls. Managed by cloud provider and verified via AWS Config rules."
+            }
+          ],
+          "remarks": "Stated Requirement: The information system enforces approved authorizations for controlling the flow of information within the system and between interconnected systems."
+        },
+        {
+          "uuid": "0db3e978-e3da-4d40-83c6-652ca9fe7ea7",
+          "control-id": "ac-05",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-05_priv",
+              "uuid": "4790e426-4bd2-4879-91d4-4959773ffe5d",
+              "remarks": "Conflicting roles are separated in the IAM system. Automated controls prevent users from holding incompatible role combinations."
+            }
+          ]
+        },
+        {
+          "uuid": "7eb84df8-a1ed-439e-9f0a-c70fa70aeb1c",
+          "control-id": "ac-06",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "System Administrator"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-06_priv",
+              "uuid": "69ca79f1-5555-4b63-9027-bca3a2388ccd",
+              "remarks": "Least privilege is enforced at the OS and application layer. Admin account review is scheduled quarterly; last review identified 4 accounts requiring privilege reduction."
+            }
+          ]
+        },
+        {
+          "uuid": "63840f4e-d881-4eb6-ad19-2c8dcdf101e0",
+          "control-id": "ac-07",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-07_priv",
+              "uuid": "38fdeea2-4c1e-40d3-8e9a-534a2a94a80e",
+              "remarks": "Account lockout after 5 consecutive failed login attempts is enforced by the identity provider. Lockout duration is 30 minutes."
+            }
+          ],
+          "remarks": "Stated Requirement: The information system shall enforce a limit of consecutive invalid logon attempts by a user during a specified time period."
+        },
+        {
+          "uuid": "dc583a66-c267-444a-bce8-d1a5f25be841",
+          "control-id": "ac-08",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "System Owner"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-08_priv",
+              "uuid": "8ec89321-62da-4c89-8046-e0d49799a3c5",
+              "remarks": "A system use notification banner is displayed at login referencing the acceptable use policy (AUP-001). Users must acknowledge before accessing the system."
+            }
+          ]
+        },
+        {
+          "uuid": "8e7c25f0-be9c-4d23-af0a-d8d3169cea54",
+          "control-id": "ac-11",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-11_priv",
+              "uuid": "1d47477d-c7a2-48a5-b80f-dfafff5f45ac",
+              "remarks": "Session timeout (15 minutes inactivity) and screen lock are enforced via endpoint management policy. Policy applies to all managed workstations."
+            }
+          ]
+        },
+        {
+          "uuid": "fc8852a3-fda8-4358-91b7-a12952ebab1d",
+          "control-id": "ac-14",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "not-applicable"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-14_priv",
+              "uuid": "baa7dc31-0011-4fa6-b254-0db7cc75da65",
+              "remarks": "All system functions require authentication. No permitted actions exist without identification and authentication."
+            }
+          ]
+        },
+        {
+          "uuid": "31b3b84e-be1c-4475-bdc4-34d033f37e41",
+          "control-id": "ac-17",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-17_priv",
+              "uuid": "1ffa3915-0191-4950-b5a2-94aa38af1046",
+              "remarks": "Remote access is permitted only via encrypted VPN with MFA. Remote access sessions are logged and monitored. Policy documented in POL-AC-017."
+            }
+          ]
+        },
+        {
+          "uuid": "223274bc-f911-4492-8e2d-cda7fe6f6aff",
+          "control-id": "ac-18",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "not-applicable"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ac-18_priv",
+              "uuid": "b586a2c2-2311-4e13-8cb3-32488f230198",
+              "remarks": "System is cloud-hosted; no wireless access points are used in scope. All access is over wired or VPN connections."
+            }
+          ]
+        },
+        {
+          "uuid": "8a179e91-9d4a-4a03-a065-953cc3d1fdfa",
+          "control-id": "at-01",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "at-01_priv",
+              "uuid": "cf6421cc-5e09-4926-86cb-3a18fbdc997e",
+              "remarks": "Security Awareness and Training Policy (POL-AT-001) is maintained and reviewed annually. Training schedule is documented in PROC-AT-001."
+            }
+          ]
+        },
+        {
+          "uuid": "378c0641-562a-4945-9e62-5876161f226b",
+          "control-id": "at-02",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Human Resources"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "at-02_priv",
+              "uuid": "eb707957-8c08-4f3f-a8c8-fc09e9479b2e",
+              "remarks": "Annual security awareness training is mandatory for all staff. Completion is tracked in the LMS. Current cycle shows 97% completion."
+            }
+          ]
+        },
+        {
+          "uuid": "bf2bc6dc-7e3a-47e8-a034-6ec0a7100ad0",
+          "control-id": "at-03",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Training Manager"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "at-03_priv",
+              "uuid": "9903edd7-1395-45c2-9606-91d313b0b554",
+              "remarks": "Role-based training is available for system administrators, security engineers, and developers. Training for data owners is under development."
+            }
+          ]
+        },
+        {
+          "uuid": "23c06929-6459-4930-917b-da1c09eb72b4",
+          "control-id": "at-04",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Human Resources"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "at-04_priv",
+              "uuid": "3e0fac7c-9412-41a6-b31d-8946dac2f8cb",
+              "remarks": "Training completion records are maintained in the LMS for a minimum of 3 years. Records are accessible to authorized security personnel."
+            }
+          ]
+        },
+        {
+          "uuid": "1963afa2-2e16-48e8-a97b-73540f93e4f4",
+          "control-id": "at-05",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "not-applicable"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "at-05_priv",
+              "uuid": "5eef3445-49f6-4608-a3bd-dfe27c2a5955",
+              "remarks": "N/A for this system boundary; handled at the organizational level."
+            }
+          ]
+        },
+        {
+          "uuid": "eefbe4eb-45b3-4243-a26c-a4ca92c18017",
+          "control-id": "au-01",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-01_priv",
+              "uuid": "fa9587c2-0d1d-488a-a395-28183faf4942",
+              "remarks": "Audit and Accountability Policy (POL-AU-001) defines logging requirements, retention, and review procedures. Reviewed annually."
+            }
+          ]
+        },
+        {
+          "uuid": "220bace4-52d1-439d-9c45-1b3d610cd35c",
+          "control-id": "au-02",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-02_priv",
+              "uuid": "f8c730aa-0cfe-4fa6-aaed-19877135a4b6",
+              "remarks": "Audit-relevant events are defined in the security plan and enabled across all system components. SIEM ingests logs in real time."
+            }
+          ],
+          "remarks": "Stated Requirement: The organization shall determine that the information system is capable of auditing events, coordinate the security audit function with other organizations, and provide a rationale for the auditable events."
+        },
+        {
+          "uuid": "d254412e-a8e7-4563-b606-db4b1f65ee82",
+          "control-id": "au-03",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-03_priv",
+              "uuid": "8f253462-f36d-4582-9f92-cca2dd08a014",
+              "remarks": "Audit records include timestamp, source, event type, outcome, and user identity as required by NIST AU-3 requirements."
+            }
+          ],
+          "remarks": "Stated Requirement: The information system shall produce audit records that contain sufficient information to establish the type of event, when the event occurred, where the event occurred, the source of the event, and the outcome of the event."
+        },
+        {
+          "uuid": "6268fcf9-8fa5-4d85-b7a8-39ebfc0cce54",
+          "control-id": "au-04",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-04_priv",
+              "uuid": "7fb46161-599f-41ab-8478-7caf2ee68896",
+              "remarks": "Audit log storage is managed on the cloud provider platform with auto-scaling enabled. Retention is set to 13 months per policy."
+            },
+            {
+              "statement-id": "au-04_inherited_1",
+              "uuid": "2d73f2c9-25b7-492f-8c0c-1ca73f2925a0",
+              "remarks": "Audit log storage capacity is managed through AWS CloudWatch Logs with auto-scaling enabled. Retention policies are configured at the organization level."
+            }
+          ]
+        },
+        {
+          "uuid": "bb86881b-14c2-4413-8223-a4069204544c",
+          "control-id": "au-05",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-05_priv",
+              "uuid": "df821517-9c45-4613-a6c9-556efc491e4a",
+              "remarks": "Automated alerts are configured for SIEM pipeline failures. Manual failover to local logging is documented but not fully tested."
+            }
+          ]
+        },
+        {
+          "uuid": "81a51242-f5b8-42c2-9af2-8a11c7b85913",
+          "control-id": "au-06",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "ISSO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-06_priv",
+              "uuid": "74640c45-b8b0-49f9-ab3f-0a8095923fa2",
+              "remarks": "SIEM-driven alert triage is operational. Automated weekly audit review reports are under development; target deployment Q1 2026."
+            }
+          ]
+        },
+        {
+          "uuid": "0b9a2d15-d788-4982-9ad8-4fea3bf86e79",
+          "control-id": "au-08",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-08_priv",
+              "uuid": "7b40040e-7700-4efc-a5b2-7af952f5699a",
+              "remarks": "System time is synchronized to authoritative NTP sources provided by the cloud provider. All components use UTC."
+            }
+          ]
+        },
+        {
+          "uuid": "af40a8b6-5dd0-4520-ac2e-9b603fa50390",
+          "control-id": "au-09",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-09_priv",
+              "uuid": "fdec9630-1fd6-4b7a-9c7c-c044eae85bae",
+              "remarks": "Audit logs are write-protected and stored in a separate logging account with access restricted to the security team. Integrity hash verification is enabled."
+            }
+          ]
+        },
+        {
+          "uuid": "0374ee04-210a-4902-895c-8977696289a6",
+          "control-id": "au-11",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-11_priv",
+              "uuid": "00e1c186-81c7-48ae-b959-cb95c3c60dad",
+              "remarks": "Audit records are retained for 13 months in hot storage and 6 years in cold archive per data retention policy."
+            }
+          ]
+        },
+        {
+          "uuid": "07cc2012-54d7-48dd-9403-74620ea98c2f",
+          "control-id": "au-12",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "au-12_priv",
+              "uuid": "8e0710c7-60de-4666-9119-12ef23f9f837",
+              "remarks": "All system components are configured to generate audit records. SIEM agent deployment is tracked and managed via configuration management."
+            }
+          ]
+        },
+        {
+          "uuid": "68e65758-30f0-415a-99d1-3095ac082524",
+          "control-id": "ca-01",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-01_priv",
+              "uuid": "f0b8a74c-5352-4f08-9367-8db88ac56c32",
+              "remarks": "Assessment, Authorization, and Monitoring Policy (POL-CA-001) is current and approved. Reviewed every 3 years per policy."
+            }
+          ]
+        },
+        {
+          "uuid": "2c4f2a00-8910-4c22-8e66-de5ce6817432",
+          "control-id": "ca-02",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "ISSO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-02_priv",
+              "uuid": "f19b0311-8ed8-4bad-bc40-71fd94c8030c",
+              "remarks": "Annual security control assessments are conducted by an independent assessor. Assessment results are documented in the SAR."
+            }
+          ]
+        },
+        {
+          "uuid": "0d5e0d54-86f5-463b-90a6-c8af54c0eb9a",
+          "control-id": "ca-03",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "System Owner"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-03_priv",
+              "uuid": "a74b4892-b5c8-4144-b343-0fff62e43653",
+              "remarks": "ISAs are established with external systems. Annual review process is defined but one ISA (with Partner System B) is overdue for renewal."
+            }
+          ]
+        },
+        {
+          "uuid": "0d4eba35-37a5-4197-a7bd-73cfeaef3b5a",
+          "control-id": "ca-05",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "ISSO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-05_priv",
+              "uuid": "c4150995-6919-4440-8dce-5f412a9f2cf1",
+              "remarks": "POA&M is maintained in the GRC tool and updated monthly. All open findings from the last assessment are tracked with milestones."
+            }
+          ]
+        },
+        {
+          "uuid": "2aa134f5-2e7e-4e30-829e-419bed80b832",
+          "control-id": "ca-06",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Authorizing Official"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-06_priv",
+              "uuid": "9f5b0fa3-4010-4475-9a1c-b16cd4cc034e",
+              "remarks": "System holds a current ATO valid through December 2027. ATO package on file including SSP, SAR, and POA&M."
+            }
+          ]
+        },
+        {
+          "uuid": "659f6deb-68ce-4860-b823-2424bcee4320",
+          "control-id": "ca-07",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "ISSO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ca-07_priv",
+              "uuid": "7fe24e62-3469-4258-8bd0-fe88826fb665",
+              "remarks": "Continuous monitoring strategy is documented. Automated vulnerability scanning is operational; configuration drift detection is planned for Q2 2026."
+            }
+          ],
+          "remarks": "Stated Requirement: The organization shall develop a continuous monitoring strategy and implement a continuous monitoring program that includes the establishment of metrics, monitoring frequencies, assessment of security controls, and reporting."
+        },
+        {
+          "uuid": "b8c74683-962d-4dc1-bed6-1325b1e46886",
+          "control-id": "cm-01",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-01_priv",
+              "uuid": "11113810-32b8-43a0-bc07-60dc86eb3f2e",
+              "remarks": "Configuration Management Policy (POL-CM-001) is current. CM procedures are documented in PROC-CM-001 and enforced via change control board."
+            }
+          ]
+        },
+        {
+          "uuid": "b6052205-f036-461e-9865-a3726258804f",
+          "control-id": "cm-02",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-02_priv",
+              "uuid": "36f8cc0b-6d23-4f8c-8a0f-aa2864118611",
+              "remarks": "Baseline configurations for all system components are documented and stored in the configuration management tool. Baselines are reviewed quarterly."
+            }
+          ]
+        },
+        {
+          "uuid": "12912183-a2d7-44eb-824a-039af04ebeb6",
+          "control-id": "cm-03",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Change Manager"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-03_priv",
+              "uuid": "c70b9086-3ac3-4d14-a61b-b240e1772d9e",
+              "remarks": "All configuration changes are reviewed by the Change Control Board (CCB) before implementation. Change records are maintained in the ITSM system."
+            }
+          ]
+        },
+        {
+          "uuid": "519972d2-b4af-46bd-a79a-aa9b43dddb40",
+          "control-id": "cm-04",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-04_priv",
+              "uuid": "adce7ef3-f3db-4ddd-9b22-547b4dd74d86",
+              "remarks": "Security impact analysis is required for all major changes. Minor change impact analysis process is not yet formalized."
+            }
+          ]
+        },
+        {
+          "uuid": "338ed56c-83cb-4b8f-96a8-fced0b9933a1",
+          "control-id": "cm-06",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "System Administrator"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-06_priv",
+              "uuid": "574bce7f-eb72-4ab0-b7b0-9b4d9cfcfa19",
+              "remarks": "DISA STIGs and CIS Benchmarks are applied to all components. Compliance is monitored continuously via automated scanning."
+            }
+          ]
+        },
+        {
+          "uuid": "01645082-59ec-46a8-b458-83cdf0aa4fc2",
+          "control-id": "cm-07",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "System Administrator"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-07_priv",
+              "uuid": "4097abe7-7377-4cdd-a340-df6116c234df",
+              "remarks": "Unnecessary services, ports, and protocols are disabled on all system components per the approved configuration baseline."
+            }
+          ]
+        },
+        {
+          "uuid": "8b6bb278-a9ca-4261-8409-ef8ed7557ee7",
+          "control-id": "cm-08",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cm-08_priv",
+              "uuid": "ea3b382b-b8d2-4935-b504-9ebc5611efd8",
+              "remarks": "System inventory is maintained in the CMDB. Cloud assets are auto-discovered. On-premises components require manual updates; last update 6 months ago."
+            }
+          ]
+        },
+        {
+          "uuid": "11598811-5074-4445-a7f3-8db28840b4da",
+          "control-id": "cp-01",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cp-01_priv",
+              "uuid": "4a033b46-e750-4fb9-8150-3357f1379935",
+              "remarks": "Contingency Planning Policy (POL-CP-001) is current and approved. BCP/DR procedures are documented and distributed to key personnel."
+            }
+          ]
+        },
+        {
+          "uuid": "567c56f8-d916-45aa-b550-db85cbb0e3ad",
+          "control-id": "cp-02",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Business Continuity Manager"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cp-02_priv",
+              "uuid": "3e3521d6-544d-4d06-854e-ae994bcb60af",
+              "remarks": "The Contingency Plan (CP-001) documents recovery objectives, roles, and procedures. RTO: 4 hours, RPO: 1 hour. Reviewed and updated annually."
+            }
+          ]
+        },
+        {
+          "uuid": "d95203f0-23e9-4402-a770-b0f224558a20",
+          "control-id": "cp-04",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Business Continuity Manager"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cp-04_priv",
+              "uuid": "8d7e97bd-d50a-4b5d-b664-36a377c72e17",
+              "remarks": "Annual tabletop exercises are conducted. Full failover test is scheduled for Q2 2026 following environment migration."
+            }
+          ]
+        },
+        {
+          "uuid": "b7b2e9ce-9983-4374-9363-7655c82729e2",
+          "control-id": "cp-09",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "IT Operations"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "cp-09_priv",
+              "uuid": "a5e17831-44c7-45b6-8a7d-87285d07e61d",
+              "remarks": "System backups are performed daily (incremental) and weekly (full). Backups are encrypted and replicated to a geographically separate region."
+            }
+          ]
+        },
+        {
+          "uuid": "76c1a875-178e-4f9c-8155-eedc861e6d4a",
+          "control-id": "ia-01",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ia-01_priv",
+              "uuid": "97f2f670-1642-426c-8db0-3119233e07d3",
+              "remarks": "I&A Policy (POL-IA-001) defines authentication requirements and is reviewed annually. Password standards are enforced via IAM platform."
+            }
+          ]
+        },
+        {
+          "uuid": "3464580e-f71a-4f33-8d10-a5b9a6235f81",
+          "control-id": "ia-02",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ia-02_priv",
+              "uuid": "7c83800b-5574-4718-819c-3989c792f241",
+              "remarks": "Multi-factor authentication is enforced for all organizational users via the SSO platform. FIDO2 and TOTP are supported."
+            }
+          ],
+          "remarks": "Stated Requirement: The information system uniquely identifies and authenticates organizational users (or processes acting on behalf of organizational users)."
+        },
+        {
+          "uuid": "03c303b7-e248-4194-b7db-d573ef1cb41f",
+          "control-id": "ia-03",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "System Administrator"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ia-03_priv",
+              "uuid": "a2c8ee84-325a-47a6-9821-c5f930b3d7eb",
+              "remarks": "Managed devices use certificate-based authentication. BYOD device authentication policy is under review."
+            }
+          ]
+        },
+        {
+          "uuid": "910310be-5b5c-46cf-bdbf-32b77440d6c2",
+          "control-id": "ia-04",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "System Administrator"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ia-04_priv",
+              "uuid": "a58bb659-a325-4b8e-8889-0b5975b4ee20",
+              "remarks": "User identifiers are managed via the IAM platform. Reuse of identifiers is prevented. Inactive accounts are disabled after 90 days."
+            }
+          ]
+        },
+        {
+          "uuid": "40ae8455-ffc9-4022-bc7f-8fb3a3aafd27",
+          "control-id": "ia-05",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ia-05_priv",
+              "uuid": "b433e95d-79aa-421a-af51-49e50e688139",
+              "remarks": "Passwords meet NIST SP 800-63B requirements (12+ chars, no expiration unless breached). Compromised credentials are checked against HaveIBeenPwned API."
+            },
+            {
+              "statement-id": "ia-05_inherited_1",
+              "uuid": "0fcb44ba-3bf6-4069-9744-9fb605abf912",
+              "remarks": "Okta manages the full authenticator lifecycle including provisioning, MFA enforcement, and compromised credential monitoring via HaveIBeenPwned integration."
+            }
+          ],
+          "remarks": "Stated Requirement: The organization manages information system authenticators by verifying identity prior to distribution, establishing initial authenticator content, ensuring procedures for replacing lost or compromised authenticators, and changing/refreshing authenticators."
+        },
+        {
+          "uuid": "80169582-6246-4faf-8a5b-4f7848ad4b8f",
+          "control-id": "ia-06",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "Inherited"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ia-06_priv",
+              "uuid": "7b53cad0-ab61-4fde-8f34-b1b77398f4cd",
+              "remarks": "Authentication feedback (password masking, generic error messages) is enforced by the IdP platform. Inherited from cloud identity provider."
+            }
+          ]
+        },
+        {
+          "uuid": "09188b0d-1359-441d-93d6-5174ef59ec5f",
+          "control-id": "ir-01",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "CISO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ir-01_priv",
+              "uuid": "d23aea7c-c200-40f1-9423-1a5041405bae",
+              "remarks": "Incident Response Policy (POL-IR-001) and procedures (PROC-IR-001) are current. Incident classification levels and escalation paths are defined."
+            }
+          ]
+        },
+        {
+          "uuid": "ec0f932d-5ab0-4427-8fd8-5eaa23216859",
+          "control-id": "ir-02",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "Security Engineer"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ir-02_priv",
+              "uuid": "ce2bc536-6648-4b21-b036-0523939000d8",
+              "remarks": "Annual IR training is conducted for the security team and system owners. Tabletop exercises are held semi-annually."
+            }
+          ]
+        },
+        {
+          "uuid": "fd5d6781-302f-40d6-b7a7-f634852280f8",
+          "control-id": "ir-04",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "ISSO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ir-04_priv",
+              "uuid": "1c4b509f-60d8-4a54-a763-7224b4486db3",
+              "remarks": "Incidents are tracked in the ITSM system with defined severity levels, escalation paths, and communication templates. Average MTTR under 4 hours for P1."
+            }
+          ],
+          "remarks": "Stated Requirement: The organization shall implement an incident handling capability for security incidents including preparation, detection and analysis, containment, eradication, and recovery."
+        },
+        {
+          "uuid": "6ca251c4-7edb-4ba1-9636-452bf8349590",
+          "control-id": "ir-05",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "deferred"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Documented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "ISSO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ir-05_priv",
+              "uuid": "fa588b65-60af-47b3-83d5-bb9fc9ac8af2",
+              "remarks": "SIEM-based incident detection is operational. Automated response playbooks are in development for the top 5 incident types."
+            }
+          ]
+        },
+        {
+          "uuid": "e9a76c1d-9581-4fae-b571-720bdd6793af",
+          "control-id": "ir-06",
+          "props": [
+            {
+              "name": "implementation-status",
+              "value": "implemented"
+            },
+            {
+              "name": "control-type",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "provided-as",
+              "ns": "https://sparc.local/ns",
+              "value": "Implemented"
+            },
+            {
+              "name": "control-origination",
+              "ns": "https://sparc.local/ns",
+              "value": "System Specific"
+            },
+            {
+              "name": "responsible-entities",
+              "ns": "https://sparc.local/ns",
+              "value": "ISSO"
+            }
+          ],
+          "statements": [
+            {
+              "statement-id": "ir-06_priv",
+              "uuid": "298a270f-3c84-4a26-86f9-af5ae03d3501",
+              "remarks": "Incident reporting procedures include internal reporting chains and external reporting to US-CERT within required timeframes."
+            }
+          ]
+        }
+      ]
+    },
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "4af2a774-6ac0-42c9-9df5-002c8b451330",
+          "title": "SPARC Document Source",
+          "description": "Managed by SPARC",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000",
+              "media-type": "text/html"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
