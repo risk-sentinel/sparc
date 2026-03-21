@@ -4,6 +4,53 @@
 
 ---
 
+## 2026-03-21 -- feat: Service Account Management for API Access (#257)
+
+**Branch:** `feature/257_service_accounts`
+
+### Summary
+
+Added full service account lifecycle management for API access. Admins can create, disable, enable,
+regenerate tokens, and delete service accounts through a dedicated admin interface. Service accounts
+are non-interactive User records with an owner association, restricted from admin privileges and web
+login. API tokens for service accounts use a `sparc_sa_` prefix and support endpoint scoping via
+pattern matching (`allowed_endpoints`) and CIDR-based IP restriction (`allowed_cidrs`). The
+ApiAuthentication concern enforces endpoint and CIDR constraints after token validation. Navigation
+is available under the Enterprise dropdown for admin users only.
+
+### What Changed
+
+- **ServiceAccount admin controller** (`app/controllers/admin/service_accounts_controller.rb`) -- NEW;
+  full CRUD lifecycle with create, disable, enable, regenerate_token, and delete actions.
+- **Admin views** (`app/views/admin/service_accounts/`) -- NEW; index, show, new, edit views for
+  service account management.
+- **User model** (`app/models/user.rb`) -- added owner association (`belongs_to :owner`),
+  service_account validations (cannot be admin, requires owner), `disable!` and `enable!` methods.
+- **ApiToken model** (`app/models/api_token.rb`) -- `sparc_sa_` prefix for service account tokens,
+  `endpoint_allowed?` (pattern matching against allowed_endpoints), `cidr_allowed?` (IPAddr range
+  check), `created_by` tracking.
+- **ApiAuthentication concern** (`app/controllers/concerns/api_authentication.rb`) -- endpoint
+  scoping and CIDR enforcement after token validation.
+- **Migration** -- adds `owner_id`, `disabled_at`, `disabled_reason` to `users`; adds
+  `allowed_endpoints`, `allowed_cidrs`, `created_by_id` to `api_tokens`.
+- **Navigation** (`app/views/layouts/application.html.erb`) -- service accounts link under
+  Enterprise dropdown (admin only).
+
+### Stats
+
+- **Spec count:** 1453 total, 0 failures
+- **New specs:** 18
+- **New files:** 6 (controller, 4 views, spec)
+
+### NIST Controls
+
+- **AC-2** (Account Management) -- full lifecycle management for non-interactive service accounts
+- **AC-6** (Least Privilege) -- endpoint scoping and CIDR restrictions enforce least-privilege API access
+- **IA-4** (Identifier Management) -- distinct `sparc_sa_` token prefix identifies service account credentials
+- **SC-7** (Boundary Protection) -- CIDR-based IP allowlisting restricts API access by network origin
+
+---
+
 ## 2026-03-21 -- feat: Persistent Data Quality Card on Catalog Show Page (#237)
 
 **Branch:** `feature/237_data_quality_card`

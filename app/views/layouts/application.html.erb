@@ -150,6 +150,11 @@
                       <span>&#127970;</span> Organizations
                       <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;"><%= Organization.count %></span>
                     <% end %></li>
+                    <% if current_user&.admin? %>
+                      <li><%= link_to admin_service_accounts_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+                        <span>&#128272;</span> Service Accounts
+                      <% end %></li>
+                    <% end %>
                     <li><hr class="dropdown-divider"></li>
                     <li class="sparc-dropdown-header" style="font-size: 0.7rem; padding: 0.25rem 1rem; color: rgba(255,255,255,0.5);">Authorization Boundaries</li>
                     <% if boundaries.any? %>

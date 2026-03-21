@@ -11,9 +11,10 @@
 # (e.g., jane.doe@aol.com == Jane.Doe@AOL.com).
 #
 # NIST 800-53 Controls:
-#   AC-2 Account Management (status lifecycle, deactivate!/reactivate!)
-#   IA-4 Identifier Management (unique email, case-insensitive)
+#   AC-2 Account Management (status lifecycle, deactivate!/reactivate!, service account ownership)
+#   IA-4 Identifier Management (unique email, case-insensitive, sparc_sa_ prefix)
 #   IA-5 Authenticator Management (bcrypt, 12-char min, password expiry)
+#   AC-6 Least Privilege (service accounts cannot be admin)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class User < ApplicationRecord
   # Allow password_digest to be null for OIDC-only users
@@ -30,6 +31,10 @@ class User < ApplicationRecord
   has_many :audit_events, dependent: :nullify
   has_many :api_tokens, dependent: :destroy
 
+  # Service account ownership — every service account has a human owner
+  belongs_to :owner, class_name: "User", optional: true
+  has_many :owned_service_accounts, class_name: "User", foreign_key: :owner_id, dependent: :nullify, inverse_of: :owner
+
   # ── Validations ─────────────────────────────────────────────────────────
   validates :email, presence: true,
                     uniqueness: { case_sensitive: false },
@@ -44,6 +49,11 @@ class User < ApplicationRecord
                                     if: -> { password.present? }
 
   validates :status, inclusion: { in: %w[active suspended deactivated] }
+
+  # AC-6: Service accounts cannot be instance admins
+  validate :service_account_cannot_be_admin
+  # AC-2: Service accounts must have a human owner
+  validates :owner_id, presence: { message: "is required for service accounts" }, if: :service_account?
 
   # SI-10: Avatar file validation — type and size constraints
   validate :avatar_acceptable, if: -> { avatar.attached? }
@@ -93,6 +103,22 @@ class User < ApplicationRecord
     attrs = { status: "active", deleted_at: nil, inactive_reason: nil }
     attrs[:must_reset_password] = true if force_password_reset
     update!(attrs)
+  end
+
+  # ── Service account lifecycle ─────────────────────────────────────────────
+
+  # Disable a service account with a reason (AC-2)
+  def disable!(reason: "admin_action")
+    update!(disabled_at: Time.current, disabled_reason: reason, status: "suspended")
+  end
+
+  # Re-enable a disabled service account (AC-2)
+  def enable!
+    update!(disabled_at: nil, disabled_reason: nil, status: "active")
+  end
+
+  def disabled?
+    disabled_at.present?
   end
 
   # ── Password expiry ──────────────────────────────────────────────────────
@@ -185,6 +211,12 @@ class User < ApplicationRecord
   end
 
   private
+
+  def service_account_cannot_be_admin
+    if service_account? && admin?
+      errors.add(:admin, "cannot be true for service accounts")
+    end
+  end
 
   def normalize_email
     self.email = email.to_s.downcase.strip if email.present?
