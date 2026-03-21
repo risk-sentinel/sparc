@@ -18,6 +18,52 @@
       <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Authentication</h2>
       <p>All API requests require a Bearer token in the <code>Authorization</code> header:</p>
       <pre class="p-3 rounded" style="background: var(--sparc-surface-alt); overflow-x: auto;"><code>Authorization: Bearer sparc_your_token_here</code></pre>
+
+      <h5 class="fw-bold mt-4 mb-3">Authentication Modes</h5>
+      <p>
+        SPARC supports three API authentication modes, controlled by the
+        <code>SPARC_API_AUTH</code> environment variable:
+      </p>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered">
+          <thead>
+            <tr>
+              <th>Mode</th>
+              <th><code>SPARC_API_AUTH</code></th>
+              <th>Token Source</th>
+              <th>Best For</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Local</strong></td>
+              <td><code>local</code> (default)</td>
+              <td>API tokens generated via Rails console or service accounts</td>
+              <td>Development, standalone deployments</td>
+            </tr>
+            <tr>
+              <td><strong>OIDC</strong></td>
+              <td><code>oidc</code></td>
+              <td>OIDC access tokens issued by an identity provider (e.g., Okta)</td>
+              <td>SSO-only environments with centralized identity</td>
+            </tr>
+            <tr>
+              <td><strong>Hybrid</strong></td>
+              <td><code>hybrid</code></td>
+              <td>Both local API tokens and OIDC tokens accepted</td>
+              <td>Production deployments needing both pipeline tokens and SSO</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h5 class="fw-bold mt-4 mb-3">Service Accounts &amp; Pipeline Tokens</h5>
+      <p>
+        For CI/CD pipelines and automated integrations, create <strong>service accounts</strong>
+        with scoped API tokens. Service account tokens work in <code>local</code> and
+        <code>hybrid</code> modes and are ideal for non-interactive workflows where OIDC
+        tokens are not practical.
+      </p>
       <p>
         Generate tokens via the Rails console:
       </p>
@@ -25,6 +71,10 @@
 puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code></pre>
       <p class="small text-body-secondary">
         Tokens are SHA-256 digested before storage. The plaintext is only available at creation time.
+        In <code>oidc</code> mode, local tokens are rejected &mdash; use OIDC access tokens instead.
+        In <code>hybrid</code> mode, SPARC tries local token lookup first, then falls back to OIDC validation.
+      </p>
+      <p class="small text-body-secondary">
         Responses use standard HTTP status codes: 200 (success), 201 (created), 401 (unauthorized),
         403 (forbidden), 404 (not found), 422 (validation error).
       </p>
