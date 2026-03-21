@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe "API Auth Modes", type: :request do
   let(:admin) { create(:user, :admin) }
-  let(:service_user) { create(:user, :admin, service_account: true, email: "pipeline@service.local") }
+  let(:service_user) { create(:user, service_account: true, owner: admin, email: "pipeline@service.local") }
   let(:sparc_token) { ApiToken.generate!(user: admin, name: "Test Token") }
   let(:service_token) { ApiToken.generate!(user: service_user, name: "Pipeline Token") }
   let(:sparc_headers) { { "Authorization" => "Bearer #{sparc_token.plaintext_token}" } }
