@@ -5,7 +5,7 @@
       "title": "SPARC Security Scanning and System Integrity",
       "version": "1.0.0",
       "oscal-version": "1.1.2",
-      "last-modified": "2026-03-20T00:00:00Z",
+      "last-modified": "2026-03-21T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",
@@ -71,8 +71,8 @@
               {
                 "uuid": "00ffe797-5c93-4b48-a7b8-bd391e4f6bcf",
                 "control-id": "si-10",
-                "description": "SPARC validates information inputs through multiple layers: Brakeman SAST scanning detects injection and cross-site scripting (XSS) vulnerabilities in the codebase, Rails strong parameters enforce allowlisting of permitted request parameters in all controllers, and ActiveRecord validations enforce data type and format constraints at the model level.",
-                "remarks": "Implemented in .github/workflows/security.yml (Brakeman), all controllers (strong params), and models (validations). Tested by spec/ and Brakeman scan."
+                "description": "SPARC validates information inputs through multiple layers: Brakeman SAST scanning detects injection and cross-site scripting (XSS) vulnerabilities in the codebase, Rails strong parameters enforce allowlisting of permitted request parameters in all controllers, and ActiveRecord validations enforce data type and format constraints at the model level. Avatar upload validates content type against an allowlist (PNG, JPG, GIF, WebP) and enforces a 2 MB file size limit at both client-side (Stimulus controller) and server-side (ProfilesController strong params and User model ActiveStorage validations). Client-side Cropper.js constrains canvas output to 256x256 pixels before upload.",
+                "remarks": "Implemented in .github/workflows/security.yml (Brakeman), all controllers (strong params), and models (validations). Avatar input validation in app/controllers/profiles_controller.rb, app/models/user.rb, and app/javascript/controllers/avatar_crop_controller.js. Tested by spec/ and Brakeman scan."
               }
             ]
           }

@@ -114,7 +114,7 @@ authentication mode coverage matrix.
 
 ### 14. Platform Hardening & Polish (New — post-roadmap improvements)
 
-- [ ] #234 -- Refactor avatar upload with crop/scale/center controls
+- [x] #234 -- Refactor avatar upload with crop/scale/center controls -- **COMPLETED 2026-03-21**
 - [ ] #237 -- Add persistent Data Quality card to catalog show page
 - [ ] #244 -- Add security gate with threshold-based merge/deploy blocking
 - [ ] #246 -- Repository cleanup & OSCAL schema validation overhaul
@@ -407,7 +407,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #234 | Refactor avatar upload with crop/scale/center controls | LOW | None |
+| [x] | #234 | Refactor avatar upload with crop/scale/center controls -- **COMPLETED 2026-03-21** | LOW | None |
 | [ ] | #237 | Persistent Data Quality card on catalog show page | MEDIUM | None |
 | [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | **HIGH** | None |
 | [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | MEDIUM | None |
@@ -425,7 +425,7 @@ Dev A: #249 (API auth modes)       -- API/Auth domain ✅ COMPLETE
 Dev B: #244 (security gate)        -- CI/Infrastructure domain
 Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
 Dev D: #237 (data quality card)    -- Catalog UI domain
-Dev D: #234 (avatar upload)        -- User/UI domain
+Dev D: #234 (avatar upload)        -- User/UI domain ✅ COMPLETE
 Dev D: #250 (API discovery)        -- API domain ✅ COMPLETE
 ```
 
@@ -473,6 +473,6 @@ removed and are no longer tracked:
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 42 (23 original + 19 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 38 issues
-**Remaining:** 4 issues (Phase 10: #234, #237, #244, #246)
+**Completed (Phases 1-9 + ad-hoc):** 39 issues
+**Remaining:** 3 issues (Phase 10: #237, #244, #246)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.
