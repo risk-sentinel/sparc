@@ -1,0 +1,63 @@
+{
+  "fedramp-20x-evidence": {
+    "version": "1.0.0",
+    "remarks": "DEMO/SAMPLE — Fictional machine-readable evidence schema for testing purposes only.",
+    "evidence-items": [
+      {
+        "ksi-id": "ksi-mla-03",
+        "title": "Vulnerability Scan Results",
+        "evidence-type": "scan_result",
+        "format": "json",
+        "collection-method": "automated",
+        "source": "Trivy container scanner via GitHub Actions",
+        "collected-at": "2026-03-21T11:29:59Z",
+        "data": {
+          "total-vulnerabilities": 12,
+          "critical": 0,
+          "high": 2,
+          "medium": 7,
+          "low": 3,
+          "scan-target": "acme-cloud-app:latest",
+          "scan-tool": "trivy",
+          "scan-tool-version": "0.52.0"
+        }
+      },
+      {
+        "ksi-id": "ksi-svc-02",
+        "title": "TLS Configuration Compliance",
+        "evidence-type": "config_export",
+        "format": "json",
+        "collection-method": "automated",
+        "source": "AWS Config rule: acm-certificate-expiration-check",
+        "collected-at": "2026-03-21T11:29:59Z",
+        "data": {
+          "tls-minimum-version": "TLSv1.2",
+          "cipher-suites": [
+            "TLS_AES_256_GCM_SHA384",
+            "TLS_CHACHA20_POLY1305_SHA256"
+          ],
+          "certificate-valid": true,
+          "certificate-expiry": "2026-09-17T11:29:59Z",
+          "hsts-enabled": true
+        }
+      },
+      {
+        "ksi-id": "ksi-scr-02",
+        "title": "Software Bill of Materials",
+        "evidence-type": "artifact",
+        "format": "cyclonedx-json",
+        "collection-method": "automated",
+        "source": "CycloneDX generator in CI/CD pipeline",
+        "collected-at": "2026-03-21T11:29:59Z",
+        "data": {
+          "sbom-format": "CycloneDX 1.5",
+          "total-components": 247,
+          "direct-dependencies": 42,
+          "transitive-dependencies": 205,
+          "licenses-identified": 238,
+          "licenses-unknown": 9
+        }
+      }
+    ]
+  }
+}
