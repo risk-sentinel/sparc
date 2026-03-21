@@ -9,6 +9,12 @@
 # Email normalization: all emails are downcased and stripped before
 # validation to prevent case-sensitivity issues across auth providers
 # (e.g., jane.doe@aol.com == Jane.Doe@AOL.com).
+#
+# NIST 800-53 Controls:
+#   AC-2 Account Management (status lifecycle, deactivate!/reactivate!)
+#   IA-4 Identifier Management (unique email, case-insensitive)
+#   IA-5 Authenticator Management (bcrypt, 12-char min, password expiry)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class User < ApplicationRecord
   # Allow password_digest to be null for OIDC-only users
   has_secure_password validations: false

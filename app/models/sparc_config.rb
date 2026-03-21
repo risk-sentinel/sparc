@@ -10,6 +10,14 @@
 #   SparcConfig.any_auth_enabled? # => true if any login method is enabled
 #
 # See docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
+#
+# NIST 800-53 Controls:
+#   CM-6 Configuration Settings (25+ SPARC_* env vars)
+#   CM-7 Least Functionality (auth toggles default to disabled)
+#   AC-7 Unsuccessful Logon Attempts (login failure handling)
+#   AC-11 Device Lock (SPARC_SESSION_TIMEOUT_MINUTES)
+#   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
   VERSION = "3.4.8"
 

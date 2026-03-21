@@ -1,0 +1,95 @@
+{
+  "component-definition": {
+    "uuid": "e59515dd-bc17-4e65-bc04-54592aa9e3bc",
+    "metadata": {
+      "title": "SPARC Configuration Management and Development Assurance",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "83296553-e77c-49b3-8806-f40ad8fd7915",
+          "type": "organization",
+          "name": "SPARC Development Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "2df86966-3fe0-43ef-992a-0ebfef65b875",
+        "type": "software",
+        "title": "SPARC Application",
+        "description": "SPARC (Systemized Policy and Regulatory Controls) is a Rails application for managing NIST 800-53 compliance documentation. This component definition covers configuration management, development assurance, and supply chain controls.",
+        "control-implementations": [
+          {
+            "uuid": "21e099cc-600d-4590-99f6-3ecf7a10695c",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_HIGH-baseline-resolved-profile_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 HIGH Baseline",
+            "implemented-requirements": [
+              {
+                "uuid": "e6b40d69-99f8-4c3e-905e-cf0613f91f37",
+                "control-id": "cm-2",
+                "description": "SPARC maintains baseline configuration through the SparcConfig model, which centralizes all environment-driven configuration settings. The docker-compose.yaml defines the complete runtime environment including service dependencies, port mappings, and volume mounts. Infrastructure-as-code ensures reproducible baseline deployments.",
+                "remarks": "Implemented in app/models/sparc_config.rb and docker-compose.yaml. Tested by spec/models/sparc_config_spec.rb."
+              },
+              {
+                "uuid": "55e8da69-76a6-4285-b2df-482797bb6626",
+                "control-id": "cm-3",
+                "description": "SPARC enforces configuration change control through Git version control with mandatory pull request reviews. All code and configuration changes are tracked with full commit history. The CI pipeline (.github/workflows/) validates changes through automated testing, linting, and security scanning before merge.",
+                "remarks": "Implemented via Git workflow, .github/workflows/, and branch protection rules."
+              },
+              {
+                "uuid": "0e0bfa4d-5074-4172-bbf0-bc65855e38f6",
+                "control-id": "cm-5",
+                "description": "SPARC restricts access to configuration changes through GitHub branch protection rules requiring pull request approvals before merging to protected branches. Role-based access controls in the deployment pipeline ensure only authorized personnel can deploy configuration changes to production environments.",
+                "remarks": "Implemented via GitHub branch protection and deployment access controls."
+              },
+              {
+                "uuid": "be09fe3f-cbc6-494e-ae51-1cdd20cf2903",
+                "control-id": "cm-6",
+                "description": "SPARC manages configuration settings through 25+ SPARC_* environment variables that control security posture including authentication providers, session timeouts, banner display, SSL enforcement, and feature flags. The SparcConfig model provides typed accessors with secure defaults for all configuration parameters.",
+                "remarks": "Implemented in app/models/sparc_config.rb. Tested by spec/models/sparc_config_spec.rb."
+              },
+              {
+                "uuid": "5df500af-426f-4f53-a804-205bdcc32c49",
+                "control-id": "cm-7",
+                "description": "SPARC implements least functionality through feature flags that default to disabled. Authentication providers (local, OIDC, LDAP, OAuth) must be explicitly enabled via environment variables. The SparcConfig model ensures all toggleable features are off by default, requiring deliberate activation of each capability.",
+                "remarks": "Implemented in app/models/sparc_config.rb with default-false feature flags. Tested by spec/models/sparc_config_spec.rb."
+              },
+              {
+                "uuid": "10d0b191-9c04-4b28-9887-236aae97123e",
+                "control-id": "cm-8",
+                "description": "SPARC generates a system component inventory through CycloneDX Software Bill of Materials (SBOM) creation in the CI security workflow. The SBOM enumerates all Ruby gems, system packages, and container image layers, providing a comprehensive inventory of software components in the deployed system.",
+                "remarks": "Implemented in .github/workflows/security.yml using CycloneDX SBOM generation."
+              },
+              {
+                "uuid": "e8a357f3-8391-46f3-81f7-17183c8e9607",
+                "control-id": "cm-11",
+                "description": "SPARC restricts user-installed software through containerized deployment. The Docker container image is built from a controlled base image with a defined set of system packages and Ruby gems. The container's read-only filesystem and non-root user execution prevent runtime modification of the application environment.",
+                "remarks": "Implemented via Dockerfile and docker-compose.yaml container configuration."
+              },
+              {
+                "uuid": "3be2b736-b1d1-4e3e-a32e-ae41c3a26e48",
+                "control-id": "sa-11",
+                "description": "SPARC implements developer testing and evaluation through a comprehensive test suite of 1207+ RSpec examples covering models, services, controllers, and request specs. Brakeman performs static application security testing (SAST) for Rails-specific vulnerabilities. CodeQL provides additional semantic code analysis. All tests run in CI on every pull request.",
+                "remarks": "Implemented in spec/ (RSpec), .github/workflows/ (Brakeman, CodeQL). Tested by bundle exec rspec and CI pipeline."
+              },
+              {
+                "uuid": "5144e329-53d7-4e3b-aaa9-ba482ba87d09",
+                "control-id": "sa-15",
+                "description": "SPARC enforces development process standards through Rubocop linting (rubocop-rails-omakase style guide), mandatory pull request reviews, and a multi-stage CI pipeline. The pipeline gates include automated tests, security scans, and code quality checks that must pass before changes can be merged.",
+                "remarks": "Implemented via .rubocop.yml, .github/workflows/, and GitHub branch protection rules."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

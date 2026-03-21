@@ -1,0 +1,71 @@
+{
+  "component-definition": {
+    "uuid": "e521153c-6465-4350-9744-541bd79bb2e1",
+    "metadata": {
+      "title": "SPARC Session Management and Cryptographic Protection",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "4edd641b-c437-4f0a-a62d-f993fcbefb83",
+          "type": "organization",
+          "name": "SPARC Development Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "56daaf97-19b8-4682-8ae2-aad70cf88240",
+        "type": "software",
+        "title": "SPARC Application",
+        "description": "SPARC (Systemized Policy and Regulatory Controls) is a Rails application for managing NIST 800-53 compliance documentation. This component definition covers session management, transmission security, and cryptographic protection controls.",
+        "control-implementations": [
+          {
+            "uuid": "a8f3c2e1-7d94-4b56-9e38-f21c8a047b63",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_HIGH-baseline-resolved-profile_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 HIGH Baseline",
+            "implemented-requirements": [
+              {
+                "uuid": "b4d7e9f2-1a83-4c65-8b29-d36f5e8a91c7",
+                "control-id": "sc-8",
+                "description": "SPARC enforces transmission confidentiality and integrity through FORCE_SSL in the production environment with HTTP Strict Transport Security (HSTS) configured for a 1-year max-age, includeSubDomains, and preload directives. All HTTP requests are automatically redirected to HTTPS, ensuring TLS 1.2+ encryption for all data in transit.",
+                "remarks": "Implemented in config/environments/production.rb (config.force_ssl = true with HSTS options). Tested by deployment verification."
+              },
+              {
+                "uuid": "c5e8f1a3-2b94-4d76-9c47-e48a6f9b02d8",
+                "control-id": "sc-12",
+                "description": "SPARC manages cryptographic key establishment through Rails encrypted credentials, which store secrets encrypted with a master key. In production deployments, integration with AWS Key Management Service (KMS) provides hardware-backed key storage and lifecycle management for encryption keys.",
+                "remarks": "Implemented in config/credentials/ (Rails encrypted credentials). KMS integration for production key management."
+              },
+              {
+                "uuid": "d6f9a2b4-3c05-4e87-ad58-f59a7b0c13e9",
+                "control-id": "sc-13",
+                "description": "SPARC employs FIPS-validated cryptographic algorithms: bcrypt for password hashing with configurable cost factor, SHA-256 for API token digest storage, and TLS 1.2+ for transport encryption. The Rails framework handles cryptographic operations through OpenSSL bindings that support FIPS-compliant algorithm implementations.",
+                "remarks": "Implemented in app/models/user.rb (bcrypt), app/models/api_token.rb (SHA-256), and config/environments/production.rb (TLS). Tested by spec/models/user_spec.rb and spec/models/api_token_spec.rb."
+              },
+              {
+                "uuid": "e7a0b3c5-4d16-4f98-be69-a60a8b1d24f0",
+                "control-id": "sc-23",
+                "description": "SPARC ensures session authenticity through session fixation prevention. The start_session method in the Authentication concern resets the Rails session before establishing a new authenticated session, generating a fresh session identifier. This prevents attackers from pre-setting session tokens to hijack authenticated sessions.",
+                "remarks": "Implemented in app/controllers/concerns/authentication.rb:start_session (session reset before authentication). Tested by spec/requests/sessions_spec.rb."
+              },
+              {
+                "uuid": "f8b1c4d6-5e27-4a09-cf70-b71a9c2e35a1",
+                "control-id": "sc-28",
+                "description": "SPARC protects information at rest through PostgreSQL native encryption capabilities for database storage and AWS S3 Server-Side Encryption with KMS (SSE-KMS) for Active Storage file attachments. The production environment configures the Amazon S3 storage service for all uploaded documents, ensuring encryption at the storage layer.",
+                "remarks": "Implemented in config/environments/production.rb (config.active_storage.service = :amazon with SSE-KMS). Database encryption managed by PostgreSQL infrastructure."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

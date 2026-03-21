@@ -10,6 +10,13 @@
 #
 # Session fixation prevention: reset_session is called before
 # storing user_id after successful authentication.
+#
+# NIST 800-53 Controls:
+#   IA-2  Identification and Authentication (Organizational Users)
+#   AC-11 Device Lock / Session Lock (via check_session_timeout)
+#   AC-12 Session Termination (via end_session)
+#   IA-11 Re-authentication (session timeout forces re-auth)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module Authentication
   extend ActiveSupport::Concern
 

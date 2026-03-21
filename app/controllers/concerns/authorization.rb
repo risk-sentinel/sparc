@@ -4,6 +4,13 @@
 #
 # Provides role-checking helpers and an admin gate. When auth is not
 # enabled, all authorization checks pass (backward compatible).
+#
+# NIST 800-53 Controls:
+#   AC-2 Account Management (role assignment enforcement)
+#   AC-3 Access Enforcement (authorize_permission! gates)
+#   AC-5 Separation of Duties (29 distinct roles)
+#   AC-6 Least Privilege (granular JSONB permission keys)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module Authorization
   extend ActiveSupport::Concern
 
