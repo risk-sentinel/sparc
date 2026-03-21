@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-03-21 -- feat: Expanded Sample Data (#108)
+
+**Branch:** `feature/108_expanded_sample_data`
+
+### Summary
+
+Expanded sample data for traditional NIST 800-53 and FedRAMP 20x workflows. New seed file creates
+SAP, POA&M, CDEF, and Profile documents plus KSI validations for the ACME authorization boundary.
+Rake task generates OSCAL JSON/YAML sample files. `SPARC_SEED_MODE` env var supports
+traditional/20x/full modes.
+
+### What Changed
+
+- **Sample artifacts seed** (`db/seeds/sample_artifacts.rb`) -- creates SAP, POA&M, CDEF, Profile
+  documents and KSI validations for the ACME demo boundary. Supports `SPARC_SEED_MODE` env var
+  with traditional, 20x, and full modes.
+- **Samples rake task** (`lib/tasks/samples.rake`) -- generates OSCAL JSON/YAML sample files for
+  both traditional NIST 800-53 and FedRAMP 20x demo workflows.
+- **Traditional NIST demo samples** (`samples/nist-traditional-demo/*.json`) -- pre-built OSCAL
+  artifacts for traditional compliance workflows.
+- **FedRAMP 20x demo samples** (`samples/fedramp-20x-demo/*.json`) -- pre-built OSCAL artifacts
+  for FedRAMP 20x KSI-based workflows.
+- **Samples README** (`samples/README.md`) -- documentation for sample data usage and generation.
+- **16 new specs** covering seed logic and rake task outputs.
+
+### Stats
+
+- **Spec count:** 1398 total, 0 failures
+- **New files:** 5+ (seed file, rake task, README, demo JSON files)
+
+---
+
 ## 2026-03-21 -- feat: FedRAMP 20x KSI Support (#107)
 
 **Branch:** `feature/107_fedramp_20x_ksi`
