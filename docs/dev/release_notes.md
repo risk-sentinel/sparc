@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-03-21 -- feat: About Page with OSCAL, FedRAMP & API Documentation (#248)
+
+**Branch:** `feature/248_about_page`
+
+### Summary
+
+New About page for SPARC with comprehensive OSCAL, FedRAMP 20x, and compliance layer information.
+Includes a public About landing page (8 sections covering OSCAL layers, FedRAMP 20x, MITRE SAF,
+control mappings), a full API documentation page covering all 14 API resource groups with endpoint
+tables (requires login), and a complete quickstart guide with 9 numbered steps from installation to
+API access. Added "About" nav link to both application and login layouts.
+
+### What Changed
+
+- **AboutController** (`app/controllers/about_controller.rb`) -- new controller with 3 actions:
+  `index` (public), `quickstart` (public), `api_docs` (requires login).
+- **About landing page** (`app/views/about/index.html.erb`) -- 8 sections: What is SPARC, OSCAL
+  layers, FedRAMP 20x, Authoritative Layer, MITRE SAF, Control Mappings, Get Started.
+- **API documentation page** (`app/views/about/api_docs.html.erb`) -- endpoint tables for all 14
+  API resource groups.
+- **Quickstart guide** (`app/views/about/quickstart.html.erb`) -- 9 numbered steps from
+  installation to API access.
+- **Routes** (`config/routes.rb`) -- 3 new routes: `/about`, `/about/api`, `/about/quickstart`.
+- **Navigation** -- added "About" link to both `application.html.erb` and `login.html.erb` layouts.
+- **7 new request specs** (`spec/requests/about_spec.rb`).
+
+### Stats
+
+- **Spec count:** 1405 total, 0 failures
+- **New files:** 5 (controller, 3 views, request spec)
+
+---
+
 ## 2026-03-21 -- fix: UI/UX Logo, Text Correction & Header Sizing (#253)
 
 **Branch:** `feature/253_ui_logo_text_fixes`
