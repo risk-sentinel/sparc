@@ -5,7 +5,7 @@
       "title": "SPARC Authentication and Access Control",
       "version": "1.0.0",
       "oscal-version": "1.1.2",
-      "last-modified": "2026-03-20T00:00:00Z",
+      "last-modified": "2026-03-21T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",
@@ -41,8 +41,8 @@
               {
                 "uuid": "78b00c59-83e1-47e7-8ada-c298021fcceb",
                 "control-id": "ac-3",
-                "description": "SPARC enforces access control through authorize_admin!, authorize_role!, and authorize_permission! controller concerns. The authorization framework supports 57 granular permission keys mapped to resource types and actions. Unauthorized access attempts are blocked and audited.",
-                "remarks": "Implemented in app/controllers/concerns/authorization.rb and app/models/role.rb. Tested by spec/controllers/ and spec/models/role_spec.rb."
+                "description": "SPARC enforces access control through authorize_admin!, authorize_role!, and authorize_permission! controller concerns. The authorization framework supports 57 granular permission keys mapped to resource types and actions. Unauthorized access attempts are blocked and audited. Phase 2 API controllers (control_catalogs, profile_documents, cdef_documents, control_mappings) enforce Bearer token authentication on all endpoints, with admin-only gates on catalog and mapping write operations.",
+                "remarks": "Implemented in app/controllers/concerns/authorization.rb, app/models/role.rb, app/controllers/api/v1/control_catalogs_controller.rb, app/controllers/api/v1/profile_documents_controller.rb, app/controllers/api/v1/cdef_documents_controller.rb, and app/controllers/api/v1/control_mappings_controller.rb. Tested by spec/controllers/ and spec/models/role_spec.rb."
               },
               {
                 "uuid": "31a778a0-8a1f-4342-bab4-3736f49ee29b",
@@ -53,8 +53,8 @@
               {
                 "uuid": "42affe6a-4f33-4d94-add1-2757cce4a0c0",
                 "control-id": "ac-6",
-                "description": "SPARC implements least privilege through granular JSONB permission structures defined in Role::PERMISSION_GROUPS. Each role specifies read/write access per resource type (SSP, SAR, CDEF, catalogs, profiles, users). The authorize_permission! method enforces these constraints on every request.",
-                "remarks": "Implemented in app/models/role.rb (PERMISSION_GROUPS) and app/controllers/concerns/authorization.rb. Tested by spec/models/role_spec.rb."
+                "description": "SPARC implements least privilege through granular JSONB permission structures defined in Role::PERMISSION_GROUPS. Each role specifies read/write access per resource type (SSP, SAR, CDEF, catalogs, profiles, users). The authorize_permission! method enforces these constraints on every request. Phase 2 API endpoints enforce admin-only gates for catalog and mapping write operations, while profile and CDEF endpoints are accessible to all authenticated users.",
+                "remarks": "Implemented in app/models/role.rb (PERMISSION_GROUPS) and app/controllers/concerns/authorization.rb. Phase 2 controllers: app/controllers/api/v1/control_catalogs_controller.rb, app/controllers/api/v1/profile_documents_controller.rb, app/controllers/api/v1/cdef_documents_controller.rb, app/controllers/api/v1/control_mappings_controller.rb. Tested by spec/models/role_spec.rb."
               },
               {
                 "uuid": "60e45f2b-148d-423c-a371-e8c8c6237c37",

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_21_013309) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_21_083520) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -187,6 +187,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_013309) do
     t.string "cdef_type"
     t.string "cdef_version"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "description"
     t.text "error_message"
     t.string "file_type"
@@ -202,6 +203,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_013309) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
+    t.index ["deleted_at"], name: "index_cdef_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_cdef_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_cdef_documents_on_slug", unique: true
     t.index ["status"], name: "index_cdef_documents_on_status"
@@ -663,6 +665,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_013309) do
     t.string "baseline_level"
     t.bigint "control_catalog_id"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.text "description"
     t.text "error_message"
     t.string "file_type"
@@ -682,6 +685,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_21_013309) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
     t.index ["created_at"], name: "index_profile_documents_on_created_at"
+    t.index ["deleted_at"], name: "index_profile_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_profile_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_profile_documents_on_slug", unique: true
     t.index ["source_profile_id"], name: "index_profile_documents_on_source_profile_id"

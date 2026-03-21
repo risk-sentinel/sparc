@@ -3,6 +3,7 @@ class CdefDocument < ApplicationRecord
   include SafeDestroyable
   include Sluggable
   include Lifecycle
+  include SoftDeletable
 
   has_many :cdef_controls, dependent: :delete_all
   has_one_attached :file

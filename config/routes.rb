@@ -286,6 +286,12 @@ Rails.application.routes.draw do
       resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ]
       resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ]
 
+      # Catalog, Profile, CDEF, and Mapping CRUD (#242)
+      resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ]
+      resources :profile_documents, only: [ :index, :show, :create, :update, :destroy ]
+      resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ]
+      resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]
+
       # CRUD API endpoints (#95)
       resources :users, only: [ :index, :show, :create, :update, :destroy ]
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ]
