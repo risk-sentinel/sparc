@@ -264,6 +264,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | Status | Issue | Domain | Files Modified | Collision Risk |
 | ------ | ----- | ------ | -------------- | -------------- |
 | [x] | **#253** Logo, text correction & header sizing -- **COMPLETED 2026-03-21** | Shared/UI | `app/assets/stylesheets/sparc-theme.css`, `app/views/home/index.html.erb`, `app/views/layouts/application.html.erb`, `app/views/layouts/login.html.erb`, `app/javascript/controllers/video_easter_egg_controller.js` (NEW), `app/assets/images/sparc_logo.jpg` (NEW), `public/videos/sparc_intro.mp4` (NEW), `CLAUDE.md`, `README.md`, wiki page, compliance docs, 5 OSCAL CDEF JSONs (10 files with text fix) | **NONE** -- all phases complete |
+| [x] | **#248** About page with OSCAL, FedRAMP & API docs -- **COMPLETED 2026-03-21** | UI/Documentation | `app/controllers/about_controller.rb` (NEW), `app/views/about/index.html.erb` (NEW), `app/views/about/api_docs.html.erb` (NEW), `app/views/about/quickstart.html.erb` (NEW), `config/routes.rb`, `app/views/layouts/application.html.erb`, `app/views/layouts/login.html.erb`, `spec/requests/about_spec.rb` (NEW) | **NONE** -- all phases complete |
 
 <!-- markdownlint-enable MD013 -->
 

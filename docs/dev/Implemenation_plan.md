@@ -76,6 +76,7 @@ authentication mode coverage matrix.
 - [x] #167 -- Enterprise/Organization visibility & navigation for admins -- **COMPLETED 2026-03-19**
 - [x] #171 -- Interactive OSCAL document relationship diagram (Mermaid) -- **COMPLETED 2026-03-19**
 - [x] #253 -- Page header/tile sizing increase, SPARC logo replacement, "Systemized" text correction, easter egg -- **COMPLETED 2026-03-21**
+- [x] #248 -- About page with OSCAL, FedRAMP 20x & API documentation -- **COMPLETED 2026-03-21**
 
 ### 7. API & Backend Enhancements
 
@@ -427,7 +428,7 @@ removed and are no longer tracked:
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 33 (23 original + 10 ad-hoc: #203, #205, #207, #210, #213, #217, #229, #240, #242, #253)
-**Completed (Phases 1-9 + ad-hoc):** 35 issues
+**Total issues tracked:** 34 (23 original + 11 ad-hoc: #203, #205, #207, #210, #213, #217, #229, #240, #242, #248, #253)
+**Completed (Phases 1-9 + ad-hoc):** 36 issues
 **Remaining:** 0 issues
 **All phases complete.** Project roadmap finished 2026-03-21.
