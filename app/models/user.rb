@@ -137,6 +137,16 @@ class User < ApplicationRecord
     role_scope.where("roles.permissions @> ?", { permission_key => true }.to_json).exists?
   end
 
+  # Check if the user has a permission in ANY boundary (or instance-level).
+  # Used by the discovery endpoint to determine general capability.
+  def has_any_permission?(permission_key)
+    return true if admin?
+
+    user_roles.joins(:role)
+              .where("roles.permissions @> ?", { permission_key => true }.to_json)
+              .exists?
+  end
+
   # ── Display ─────────────────────────────────────────────────────────────
 
   def display_label

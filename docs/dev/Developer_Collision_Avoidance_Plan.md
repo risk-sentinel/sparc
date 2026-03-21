@@ -281,7 +281,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [ ] | **#244** Security gate (threshold merge/deploy blocking) | CI/Infrastructure | `.github/workflows/security.yml` (new gate job), possibly new `.github/security-thresholds.yml` config | **NONE** -- CI files only |
 | [ ] | **#246** Repository cleanup & OSCAL schema validation overhaul | Shared/Validation | `app/services/oscal_schema_validation_service.rb`, schema fixtures in `spec/fixtures/`, `docs/` cleanup, stale file removal | **LOW** -- validation service shared |
 | [x] | **#249** Mutually exclusive API auth modes (local/oidc/hybrid) -- **COMPLETED 2026-03-21** | API/Auth | `app/controllers/concerns/api_authentication.rb` (REWRITE -- 3 mutually exclusive modes), `app/models/sparc_config.rb`, `app/models/user.rb` (service_account boolean), `app/controllers/sessions_controller.rb` (service account web login block), `config/initializers/api_auth.rb` (NEW -- boot-time validation), migration (add service_account to users), `spec/requests/api/v1/api_authentication_spec.rb` (12 new specs) | **NONE** -- completed |
-| [ ] | **#250** API discovery endpoint (GET /api/v1/available) | API | `app/controllers/api/v1/base_controller.rb` or new `api/v1/discovery_controller.rb`, `config/routes.rb` | **NONE** -- additive API endpoint |
+| [x] | **#250** API discovery endpoint (GET /api/v1/available) -- **COMPLETED 2026-03-21** | API | `app/controllers/api/v1/discovery_controller.rb` (NEW), `app/models/user.rb` (has_any_permission?), `config/routes.rb`, `app/views/about/api_docs.html.erb`, `spec/requests/api/v1/discovery_spec.rb` (NEW -- 13 specs) | **NONE** -- completed |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -293,7 +293,7 @@ Dev B: #244 (security gate)        -- CI/Infrastructure domain
 Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
 Dev D: #237 (data quality card)    -- Catalog UI domain
       #234 (avatar upload)        -- User/UI domain
-      #250 (API discovery)        -- API domain (after #249)
+      #250 (API discovery)        -- API domain (after #249) ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security-critical),
@@ -651,8 +651,8 @@ removed and are no longer tracked:
 ## Summary
 
 - **Total issues tracked:** 42 (23 original + 19 ad-hoc/new)
-- **Completed:** 37 issues (Phases 1-9 + ad-hoc + #249)
-- **Remaining:** 5 issues (Phase 10: #234, #237, #244, #246, #250)
+- **Completed:** 38 issues (Phases 1-9 + ad-hoc + #249, #250)
+- **Remaining:** 4 issues (Phase 10: #234, #237, #244, #246)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
 - **Zero-conflict pairs in Phase 10:** 100% (all different domains)
