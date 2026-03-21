@@ -1,0 +1,326 @@
+{
+  "assessment-plan": {
+    "uuid": "9824f12c-ded3-4449-bbd5-9d891daeaf21",
+    "metadata": {
+      "title": "ACME Cloud Platform — Annual Assessment Plan (Rev 5)",
+      "version": "1.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-03-21T11:29:58Z",
+      "roles": [
+        {
+          "id": "assessor",
+          "title": "Assessor"
+        },
+        {
+          "id": "assessment-lead",
+          "title": "Assessment Lead"
+        },
+        {
+          "id": "system-owner",
+          "title": "System Owner"
+        },
+        {
+          "id": "csp-operations",
+          "title": "CSP Operations"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a4b47024-2542-4dd5-98c8-97d99e6e0244",
+          "type": "organization",
+          "name": "Assessment Organization (SPARC Export)"
+        }
+      ],
+      "props": [
+        {
+          "name": "assessment-type",
+          "ns": "https://sparc.local/ns",
+          "value": "annual"
+        }
+      ]
+    },
+    "import-ssp": {
+      "href": "#ssp-16"
+    },
+    "local-definitions": {
+      "activities": [
+        {
+          "uuid": "3c4d1a80-e165-4b0b-bf9c-1a2a5eec7795",
+          "title": "Examine Assessment Activities",
+          "description": "Assessment activities using the examine method.",
+          "props": [
+            {
+              "name": "method",
+              "value": "EXAMINE"
+            }
+          ],
+          "steps": [
+            {
+              "uuid": "c4e50142-68e7-4abb-8e2d-0be6ab620491",
+              "title": "Assess ac-2",
+              "description": "Assess ac-2 using examine method."
+            },
+            {
+              "uuid": "f237bdfe-900f-444f-9934-a442ab9298d9",
+              "title": "Assess au-2",
+              "description": "Assess au-2 using examine method."
+            },
+            {
+              "uuid": "7c7012e5-a4a8-448b-9ea8-4e08bc77b9ec",
+              "title": "Assess au-6",
+              "description": "Assess au-6 using examine method."
+            },
+            {
+              "uuid": "d51ea750-bd91-49d9-8204-b7b06ccd81fe",
+              "title": "Assess ia-5",
+              "description": "Assess ia-5 using examine method."
+            },
+            {
+              "uuid": "18ddd630-3789-4d14-81bb-8dc5edcf9f75",
+              "title": "Assess cm-6",
+              "description": "Assess cm-6 using examine method."
+            }
+          ],
+          "related-controls": {
+            "control-selections": [
+              {
+                "include-controls": [
+                  {
+                    "control-id": "ac-2"
+                  },
+                  {
+                    "control-id": "au-2"
+                  },
+                  {
+                    "control-id": "au-6"
+                  },
+                  {
+                    "control-id": "ia-5"
+                  },
+                  {
+                    "control-id": "cm-6"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "uuid": "ffba4a58-c766-4534-bc6e-416a4b61f5cb",
+          "title": "Interview Assessment Activities",
+          "description": "Assessment activities using the interview method.",
+          "props": [
+            {
+              "name": "method",
+              "value": "INTERVIEW"
+            }
+          ],
+          "steps": [
+            {
+              "uuid": "750f975a-b427-44b2-81ea-cd9ed85503da",
+              "title": "Assess ac-6",
+              "description": "Assess ac-6 using interview method."
+            },
+            {
+              "uuid": "89665be0-a730-4635-be5e-0beb285863f0",
+              "title": "Assess ca-2",
+              "description": "Assess ca-2 using interview method."
+            },
+            {
+              "uuid": "0c055ec6-cca3-421c-afac-2bbade7ce43c",
+              "title": "Assess ir-4",
+              "description": "Assess ir-4 using interview method."
+            }
+          ],
+          "related-controls": {
+            "control-selections": [
+              {
+                "include-controls": [
+                  {
+                    "control-id": "ac-6"
+                  },
+                  {
+                    "control-id": "ca-2"
+                  },
+                  {
+                    "control-id": "ir-4"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "uuid": "2ea47994-c0a4-4252-b9d0-320d452ab314",
+          "title": "Test Assessment Activities",
+          "description": "Assessment activities using the test method.",
+          "props": [
+            {
+              "name": "method",
+              "value": "TEST"
+            }
+          ],
+          "steps": [
+            {
+              "uuid": "43656b82-a43c-4037-97a1-ba52c865e369",
+              "title": "Assess ac-3",
+              "description": "Assess ac-3 using test method."
+            },
+            {
+              "uuid": "d48b2751-4135-4ae4-895c-3b6bfe71a99c",
+              "title": "Assess ca-7",
+              "description": "Assess ca-7 using test method."
+            },
+            {
+              "uuid": "c563af62-8480-422c-8685-3aa363d08f46",
+              "title": "Assess ia-2",
+              "description": "Assess ia-2 using test method."
+            },
+            {
+              "uuid": "565927d5-8caa-47dc-9859-55fd2bb00243",
+              "title": "Assess sc-8",
+              "description": "Assess sc-8 using test method."
+            },
+            {
+              "uuid": "7e01913c-a898-4310-87d8-b2f773889689",
+              "title": "Assess sc-13",
+              "description": "Assess sc-13 using test method."
+            },
+            {
+              "uuid": "75e6c675-0885-4d3f-ac91-7a7b1bc0c177",
+              "title": "Assess ra-5",
+              "description": "Assess ra-5 using test method."
+            }
+          ],
+          "related-controls": {
+            "control-selections": [
+              {
+                "include-controls": [
+                  {
+                    "control-id": "ac-3"
+                  },
+                  {
+                    "control-id": "ca-7"
+                  },
+                  {
+                    "control-id": "ia-2"
+                  },
+                  {
+                    "control-id": "sc-8"
+                  },
+                  {
+                    "control-id": "sc-13"
+                  },
+                  {
+                    "control-id": "ra-5"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "terms-and-conditions": {
+      "parts": [
+        {
+          "name": "assessment-schedule",
+          "title": "Assessment Schedule",
+          "prose": "Start: 2026-01-15 | End: 2026-03-15"
+        },
+        {
+          "name": "assessment-scope",
+          "title": "Assessment Scope",
+          "prose": "DEMO/SAMPLE — Fictional annual security assessment plan for testing purposes only."
+        }
+      ]
+    },
+    "reviewed-controls": {
+      "control-selections": [
+        {
+          "include-controls": [
+            {
+              "control-id": "ac-2"
+            },
+            {
+              "control-id": "ac-3"
+            },
+            {
+              "control-id": "ac-6"
+            },
+            {
+              "control-id": "au-2"
+            },
+            {
+              "control-id": "au-6"
+            },
+            {
+              "control-id": "ca-2"
+            },
+            {
+              "control-id": "ca-7"
+            },
+            {
+              "control-id": "ia-2"
+            },
+            {
+              "control-id": "ia-5"
+            },
+            {
+              "control-id": "sc-8"
+            },
+            {
+              "control-id": "sc-13"
+            },
+            {
+              "control-id": "cm-6"
+            },
+            {
+              "control-id": "ir-4"
+            },
+            {
+              "control-id": "ra-5"
+            }
+          ]
+        }
+      ]
+    },
+    "assessment-subjects": [
+      {
+        "type": "component",
+        "description": "System components included in this assessment.",
+        "include-all": {}
+      }
+    ],
+    "assessment-assets": {
+      "assessment-platforms": [
+        {
+          "uuid": "d5f50992-36fe-4af3-ac1c-701395bea1a5",
+          "title": "Assessment Platform",
+          "props": [
+            {
+              "name": "type",
+              "ns": "https://sparc.local/ns",
+              "value": "manual"
+            }
+          ]
+        }
+      ]
+    },
+    "back-matter": {
+      "resources": [
+        {
+          "uuid": "b085e9a8-e384-4387-951b-416b495f0978",
+          "title": "SPARC Document Source",
+          "description": "Managed by SPARC",
+          "rlinks": [
+            {
+              "href": "http://localhost:3000",
+              "media-type": "text/html"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
