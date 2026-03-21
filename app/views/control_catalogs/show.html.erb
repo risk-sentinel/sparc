@@ -119,6 +119,13 @@
   </div>
 </div>
 
+<%# ── DATA QUALITY CARD (#237) ──────────────────────────────── %>
+<%= render "shared/data_quality_card",
+           warnings: @control_catalog.metadata_extra&.dig("import_warnings") || [],
+           summary: @control_catalog.metadata_extra&.dig("import_warnings_summary") || {},
+           revalidate_path: revalidate_control_catalog_path(@control_catalog),
+           catalog: @control_catalog %>
+
 <%= render "shared/oscal_metadata_section",
            document: @control_catalog,
            update_path: update_metadata_control_catalog_path(@control_catalog),
