@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-03-21 -- REST API Phase 2: CRUD for Catalogs, Profiles, CDEFs, Control Mappings (#242)
+
+**Branch:** `feature/229_api_crud_expansion`
+
+### Summary
+
+REST API Phase 2 extends the `/api/v1/` namespace with full CRUD for the remaining OSCAL resource
+types: Control Catalogs, Profile Documents, Component Definitions (CDEFs), and Control Mappings.
+Bearer token authentication (SPARC tokens + Okta JWT). Admin-only write access on catalogs and
+control mappings; all-authenticated access on profiles and CDEFs. Soft-delete support added for
+ProfileDocument and CdefDocument.
+
+### What Changed
+
+- **Control Catalogs controller** (`app/controllers/api/v1/control_catalogs_controller.rb`) -- full
+  CRUD for catalogs. Admin-only gates on create, update, and destroy. Read-only access for all
+  authenticated users.
+- **Profile Documents controller** (`app/controllers/api/v1/profile_documents_controller.rb`) -- full
+  CRUD with soft-delete. All authenticated users can read and write profiles scoped to their boundary.
+- **CDEF Documents controller** (`app/controllers/api/v1/cdef_documents_controller.rb`) -- full CRUD
+  with soft-delete. All authenticated users can read and write CDEFs scoped to their boundary.
+- **Control Mappings controller** (`app/controllers/api/v1/control_mappings_controller.rb`) -- full
+  CRUD for control mappings. Admin-only gates on create, update, and destroy.
+- **Soft-delete** -- `SoftDeletable` concern now included in `ProfileDocument` and `CdefDocument`
+  models. `deleted_at` column added via migration.
+- **Routes** -- added API resource routes for `control_catalogs`, `profile_documents`,
+  `cdef_documents`, and `control_mappings` under `/api/v1/`.
+- **50 new request specs** -- comprehensive coverage for all 4 controllers: auth (401), admin gates
+  (403), boundary-scoped reads, soft-delete, CRUD operations.
+
+### Verification
+
+- `bundle exec rspec spec/requests/api/v1/` -- all API specs pass
+- `bundle exec rspec` -- 1301 examples, 0 failures
+- Admin-only gates: non-admin users get 403 on catalog/mapping mutations
+- Soft-delete: `DELETE` sets `deleted_at` on profiles/CDEFs, subsequent `GET` returns 404
+
+---
+
 ## 2026-03-20 -- REST API Phase 1: Full CRUD for SSP, SAR, SAP, POA&M (#229)
 
 **Branch:** `feature/229_api_crud_phase1`
