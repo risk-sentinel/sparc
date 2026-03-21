@@ -214,8 +214,28 @@
 .form-select {
   padding: 0.75rem;
   border-radius: 4px;
-  background-color: var(--sparc-surface);
-  border-color: var(--sparc-border);
+  background-color: var(--sparc-surface) !important;
+  border-color: var(--sparc-border) !important;
+  color: var(--bs-body-color) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--sparc-surface-alt) !important;
+  border-color: var(--sparc-accent, #3b82f6) !important;
+  color: var(--bs-body-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.form-control::placeholder {
+  color: rgba(var(--bs-body-color-rgb, 108, 117, 125), 0.5);
+}
+
+.form-text {
+  color: rgba(var(--bs-body-color-rgb, 108, 117, 125), 0.65) !important;
+}
+
+.form-label {
   color: var(--bs-body-color);
 }
 
