@@ -92,7 +92,7 @@ RSpec.describe "ControlFamilies", type: :request do
     it "rejects invalid code format" do
       expect {
         post control_catalog_control_families_path(catalog), params: {
-          control_family: { code: "A1", name: "Bad Code" }
+          control_family: { code: "1BAD", name: "Bad Code" }
         }
       }.not_to change(ControlFamily, :count)
 
