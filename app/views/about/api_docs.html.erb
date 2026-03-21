@@ -13,6 +13,36 @@
 
     <hr>
 
+    <%# ── Slug / ID Lookup ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Resource Identifiers: <code>:slug</code> vs <code>:id</code></h2>
+      <p>
+        SPARC uses two types of resource identifiers in API paths:
+      </p>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead><tr><th style="width: 20%;">Identifier</th><th style="width: 35%;">Format</th><th>Used By</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>:slug</code></td>
+              <td>URL-friendly string, e.g. <code>acme-cloud-ssp-rev5</code></td>
+              <td>SSP, SAR, SAP, POA&amp;M, Profile, and CDEF documents</td>
+            </tr>
+            <tr>
+              <td><code>:id</code></td>
+              <td>Numeric database ID, e.g. <code>42</code></td>
+              <td>Control Catalogs, Control Mappings, Users, Authorization Boundaries, KSI resources</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-body-secondary">
+        Slugs are auto-generated from the document title when created. You can find a resource's slug in the
+        <code>slug</code> field returned by any list or show endpoint. Use the slug (not the numeric ID) when
+        calling document endpoints.
+      </p>
+    </section>
+
     <%# ── Authentication ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Authentication</h2>
@@ -25,7 +55,7 @@
         <code>SPARC_API_AUTH</code> environment variable:
       </p>
       <div class="table-responsive">
-        <table class="table table-sm table-bordered">
+        <table class="table table-bordered">
           <thead>
             <tr>
               <th>Mode</th>
@@ -100,7 +130,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: #27ae60;">SSP Documents</h2>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ssp_documents</code></td><td>List SSPs (filterable by <code>authorization_boundary_id</code>)</td><td>ssp.read</td></tr>
@@ -120,7 +150,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: #27ae60;">SAR Documents</h2>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/sar_documents</code></td><td>List SARs</td><td>sar.read</td></tr>
@@ -140,7 +170,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: #e67e22;">SAP Documents</h2>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/sap_documents</code></td><td>List SAPs</td><td>sap.read</td></tr>
@@ -157,7 +187,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: #e67e22;">POA&amp;M Documents</h2>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/poam_documents</code></td><td>List POA&amp;Ms</td><td>poam.read</td></tr>
@@ -175,7 +205,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
       <h2 class="h4 fw-bold mb-3" style="color: #3498db;">Control Catalogs</h2>
       <p class="small text-body-secondary">Create and delete require admin role.</p>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/control_catalogs</code></td><td>List catalogs</td><td>Authenticated</td></tr>
@@ -192,7 +222,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: #3498db;">Profile Documents (Baselines)</h2>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/profile_documents</code></td><td>List profiles</td><td>Authenticated</td></tr>
@@ -206,7 +236,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
       <h5 class="fw-bold mt-3">Baseline Parameters</h5>
       <p class="small text-body-secondary">Nested under profile documents for parameter/enumeration management.</p>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/profile_documents/:slug/parameters</code></td><td>Get parameter schema (filterable by <code>?family=ac</code>)</td><td>Authenticated</td></tr>
@@ -221,7 +251,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: #27ae60;">CDEF Documents (Component Definitions)</h2>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/cdef_documents</code></td><td>List CDEFs</td><td>Authenticated</td></tr>
@@ -239,7 +269,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
       <h2 class="h4 fw-bold mb-3" style="color: #3498db;">Control Mappings</h2>
       <p class="small text-body-secondary">Create and delete require admin role.</p>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/control_mappings</code></td><td>List mappings</td><td>Authenticated</td></tr>
@@ -257,7 +287,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
       <h2 class="h4 fw-bold mb-3" style="color: #9b59b6;">KSI Catalog (FedRAMP 20x)</h2>
       <p class="small text-body-secondary">Read-only endpoints for browsing Key Security Indicators.</p>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/ksi_catalog/themes</code></td><td>List all KSI themes with indicator counts</td><td>Authenticated</td></tr>
@@ -274,7 +304,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
       <h2 class="h4 fw-bold mb-3" style="color: #9b59b6;">KSI Validations</h2>
       <p class="small text-body-secondary">Scoped to authorization boundaries. Tracks assessment status per KSI.</p>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/authorization_boundaries/:id/ksi_validations</code></td><td>List validations for a boundary</td><td>Authenticated</td></tr>
@@ -294,7 +324,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
       <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Users</h2>
       <p class="small text-body-secondary">Admin-only endpoints for user management.</p>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/users</code></td><td>List users</td><td>Admin only</td></tr>
@@ -311,7 +341,7 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
     <section>
       <h2 class="h4 fw-bold mb-3" style="color: #9b59b6;">Authorization Boundaries</h2>
       <div class="table-responsive">
-        <table class="table table-sm">
+        <table class="table table-bordered">
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
           <tbody>
             <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/authorization_boundaries</code></td><td>List boundaries</td><td>Authenticated</td></tr>
