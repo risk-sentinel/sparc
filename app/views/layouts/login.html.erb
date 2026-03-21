@@ -32,11 +32,11 @@
   </head>
 
   <body class="d-flex flex-column min-vh-100"
-        <% if @consent_banner_content.present? %>data-controller="consent-banner"<% end %>>
+        data-controller="video-easter-egg<% if @consent_banner_content.present? %> consent-banner<% end %>">
     <%# ── Navbar (same as application layout) ── %>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
       <div class="container-fluid">
-        <div class="d-flex align-items-center gap-2" data-controller="video-easter-egg">
+        <div class="d-flex align-items-center gap-2">
           <a href="#" class="navbar-brand d-flex align-items-center" data-action="click->video-easter-egg#play">
             <%= image_tag "sparc_logo.jpg", alt: "SPARC", class: "sparc-navbar-logo" %>
           </a>
