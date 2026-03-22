@@ -1,27 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Manages sidebar offcanvas state persistence across page navigations.
-// Stores open/closed state and expanded sections in localStorage.
+// Persists sidebar collapse section state (expanded/collapsed) across page navigations.
 export default class extends Controller {
-  static STORAGE_KEY = "sparc_sidebar_open"
   static SECTIONS_KEY = "sparc_sidebar_sections"
 
   connect() {
-    // Restore sidebar open state
-    if (localStorage.getItem(this.constructor.STORAGE_KEY) === "true") {
-      const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(this.element)
-      offcanvas.show()
-    }
-
-    // Track show/hide events for persistence
-    this.element.addEventListener("shown.bs.offcanvas", () => {
-      localStorage.setItem(this.constructor.STORAGE_KEY, "true")
-    })
-    this.element.addEventListener("hidden.bs.offcanvas", () => {
-      localStorage.setItem(this.constructor.STORAGE_KEY, "false")
-    })
-
-    // Restore expanded collapse sections
     this.restoreSections()
 
     // Track collapse section changes
@@ -45,7 +28,6 @@ export default class extends Controller {
         }
       })
     } catch (e) {
-      // Invalid JSON — clear and start fresh
       localStorage.removeItem(this.constructor.SECTIONS_KEY)
     }
   }
