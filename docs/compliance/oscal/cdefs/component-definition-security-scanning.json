@@ -47,8 +47,8 @@
               {
                 "uuid": "d4ef046e-aabd-45cd-a716-f8a79f0dbeb9",
                 "control-id": "si-3",
-                "description": "SPARC implements malicious code protection through Gitleaks secret scanning to detect accidentally committed credentials and secrets, and Trivy container scanning to identify known malware signatures and vulnerable packages in the deployment image. Both tools run automatically in the CI pipeline on every code change.",
-                "remarks": "Implemented in .github/workflows/security.yml (Gitleaks, Trivy container scan)."
+                "description": "SPARC implements malicious code protection through Gitleaks secret scanning to detect accidentally committed credentials and secrets, and Trivy container scanning to identify known malware signatures and vulnerable packages in the deployment image. Both tools run automatically in the CI pipeline on every code change. Gitleaks CI scanning includes custom regex rules in .gitleaks.toml that detect leaked SPARC API tokens (sparc_ prefix) and service account tokens (sparc_sa_ prefix), preventing application-specific secrets from reaching the repository.",
+                "remarks": "Implemented in .github/workflows/security.yml (Gitleaks, Trivy container scan). Custom Gitleaks rules defined in .gitleaks.toml (sparc-api-token and sparc-service-account-token patterns)."
               },
               {
                 "uuid": "762e7a8a-a907-4d4c-865d-37b3b20bbcb5",
