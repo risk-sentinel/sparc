@@ -58,26 +58,18 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+          <%# ── About (left-aligned, next to logo) ── %>
+          <ul class="navbar-nav me-auto align-items-center gap-1 ms-3">
+            <li class="nav-item d-none d-lg-block">
+              <%= link_to "About", about_path, class: "nav-link sparc-nav-btn" %>
+            </li>
+          </ul>
+
           <ul class="navbar-nav ms-auto align-items-center gap-1">
 
             <%# ── Home ── %>
             <li class="nav-item">
               <%= link_to "Home", root_path, class: "nav-link sparc-nav-btn" %>
-            </li>
-
-            <%# ── OSCAL Overview ── %>
-            <li class="nav-item d-none d-lg-block">
-              <%= link_to "OSCAL", oscal_overview_path, class: "nav-link sparc-nav-btn",
-                    title: "OSCAL Document Relationship Overview" %>
-            </li>
-
-            <%# ── About ── %>
-            <li class="nav-item d-none d-lg-block">
-              <%= link_to "About", about_path, class: "nav-link sparc-nav-btn" %>
-            </li>
-            <%# ── Resources ── %>
-            <li class="nav-item d-none d-lg-block">
-              <%= link_to "Resources", about_resources_path, class: "nav-link sparc-nav-btn" %>
             </li>
 
             <%# ── Controls Layer (blue — always visible) ── %>
@@ -186,6 +178,17 @@
                 </li>
               <% end %>
             <% end %>
+
+            <%# ── Resources ── %>
+            <li class="nav-item d-none d-lg-block">
+              <%= link_to "Resources", about_resources_path, class: "nav-link sparc-nav-btn" %>
+            </li>
+
+            <%# ── OSCAL Overview ── %>
+            <li class="nav-item d-none d-lg-block">
+              <%= link_to "OSCAL", oscal_overview_path, class: "nav-link sparc-nav-btn",
+                    title: "OSCAL Document Relationship Overview" %>
+            </li>
 
             <%# ── Separator ── %>
             <li class="nav-item d-none d-lg-block">
