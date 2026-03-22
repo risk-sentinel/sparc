@@ -41,12 +41,16 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
      `docs/compliance/README.md` for the comment block format)
    - `.github/oscal-metadata.json` — update if system metadata changes
    - **Goal:** maximize documented application-layer control coverage
-10. **Commit / push changes**
+10. **Run full test suite before commit** — `bundle exec rspec` (full suite,
+    not targeted specs). Targeted specs during development are fine, but the
+    full suite **must pass** before pushing. Also run `bundle exec rubocop`
+    on modified files.
+11. **Commit / push changes**
     - Reference the issue in all commit messages
-11. **Wait for user testing**
+12. **Wait for user testing**
     - Functional testing
     - Review regression report(s)
-12. **Create a PR**
+13. **Create a PR**
     - Reference the issue so it will auto-close on merge
     - Wait for the PR to be merged by the owner before moving forward
 
