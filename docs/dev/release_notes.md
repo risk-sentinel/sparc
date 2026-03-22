@@ -4,6 +4,51 @@
 
 ---
 
+## 2026-03-22 -- feat: Configurable Resources Page + Support Email Links (#269)
+
+**Branch:** `feature/269_resources_support_email`
+
+### Summary
+
+Added a public Resources page with a configurable card grid of external links (FedRAMP 20x,
+NIST OSCAL, MITRE SAF by default) and standardized support email links across all layouts.
+Resources are JSON-configurable via `SPARC_RESOURCES` environment variable through
+`SparcConfig.resources`. The About page gains a Resources section after Get Started, and both
+the main and login layouts include a Resources nav link. Support email mailto links on the
+home, login, and about pages now display "Support" text instead of the raw email address.
+
+### What Changed
+
+- **SparcConfig** (`app/models/sparc_config.rb`) -- added `support_email` alias, `resources`
+  method (JSON-configurable via `SPARC_RESOURCES`), and `default_resources` class method
+  returning FedRAMP 20x, NIST OSCAL, and MITRE SAF links.
+- **Routes** (`config/routes.rb`) -- added `GET /about/resources` (public, no auth required).
+- **AboutController** (`app/controllers/about_controller.rb`) -- added `resources` action
+  (public, no authentication required).
+- **Resources page** (`app/views/about/resources.html.erb`) -- NEW; card grid of external
+  resource links with descriptions and outbound link icons.
+- **About page** (`app/views/about/index.html.erb`) -- added Resources section after Get
+  Started with link cards.
+- **Layouts** (`app/views/layouts/application.html.erb`, `app/views/layouts/login.html.erb`)
+  -- added Resources nav link after About.
+- **Home page** (`app/views/home/index.html.erb`) -- support email mailto link at bottom
+  (outside layer loop), displays "Support" text.
+- **Login/About pages** -- mailto text changed to "Support" instead of showing raw email.
+- **Environment config** (`.env.example`, `.env.production.example`,
+  `docs/ENVIRONMENT_VARIABLES.md`) -- documented `SPARC_RESOURCES` variable.
+
+### Stats
+
+- **Spec count:** 1500 total, 0 failures
+- **New specs:** 4 (request specs)
+
+### NIST Controls
+
+- **SA-5** (System Documentation) -- public resource links for compliance frameworks
+- **CM-6** (Configuration Settings) -- JSON-configurable resource cards via environment variable
+
+---
+
 ## 2026-03-22 -- feat: Service Account Token Expiry Email Notifications (#262)
 
 **Branch:** `feature/262_sa_expiry_notifications`

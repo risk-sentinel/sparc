@@ -131,3 +131,10 @@
     </div>
   </div>
 <% end %>
+
+<% if SparcConfig.support_email.present? %>
+  <div class="text-center mt-4 small text-body-tertiary">
+    Need help?
+    <%= mail_to SparcConfig.support_email, "Support", class: "text-primary text-decoration-none fw-semibold" %>
+  </div>
+<% end %>

@@ -67,4 +67,40 @@ RSpec.describe "About pages", type: :request do
       end
     end
   end
+
+  describe "GET /about/resources" do
+    it "returns 200 without authentication" do
+      get about_resources_path
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "contains default resource links" do
+      get about_resources_path
+      body = response.body
+      expect(body).to include("Resources")
+      expect(body).to include("FedRAMP 20x")
+      expect(body).to include("NIST OSCAL")
+      expect(body).to include("MITRE Security Automation Framework")
+    end
+
+    it "renders custom resources from SPARC_RESOURCES env var" do
+      custom = [ { "display_text" => "Custom Link", "href" => "https://custom.example.com" } ].to_json
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("SPARC_RESOURCES").and_return(custom)
+
+      get about_resources_path
+      body = response.body
+      expect(body).to include("Custom Link")
+      expect(body).to include("https://custom.example.com")
+    end
+  end
+
+  describe "About page Resources section" do
+    it "includes Resources section with default links" do
+      get about_path
+      body = response.body
+      expect(body).to include("Resources")
+      expect(body).to include("View All Resources")
+    end
+  end
 end
