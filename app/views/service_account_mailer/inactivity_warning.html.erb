@@ -1,0 +1,13 @@
+<h2>Service Account Inactivity Warning</h2>
+
+<p>Service account <strong><%= @service_account.first_name %></strong> has been inactive for <strong><%= @inactive_days %> days</strong>.</p>
+
+<p><strong>Account:</strong> <%= @service_account.email %><br>
+<strong>Owner:</strong> <%= @owner&.email || "unassigned" %><br>
+<strong>Inactivity threshold:</strong> <%= @threshold %> days</p>
+
+<p>If the account remains inactive, it will be <strong>automatically disabled</strong> when the threshold is reached.</p>
+
+<p>If this account is still needed, make an API call to reset the inactivity timer. If it is no longer needed, disable it via the admin panel.</p>
+
+<p><%= link_to "Manage Service Accounts", @admin_url %></p>

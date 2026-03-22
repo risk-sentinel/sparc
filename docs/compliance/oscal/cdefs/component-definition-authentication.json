@@ -5,7 +5,7 @@
       "title": "SPARC Authentication and Access Control",
       "version": "1.0.0",
       "oscal-version": "1.1.2",
-      "last-modified": "2026-03-21T00:00:00Z",
+      "last-modified": "2026-03-22T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",
@@ -35,8 +35,8 @@
               {
                 "uuid": "a44cec50-62d5-418b-b260-7edbfa428a89",
                 "control-id": "ac-2",
-                "description": "SPARC implements account management through the User model with active, suspended, and deactivated status enumerations. Administrative users manage accounts via role assignments. The deactivate! and reactivate! methods enforce account lifecycle transitions. Account status changes are audited via AuditEvent logging. Service accounts are managed through a dedicated admin interface with full lifecycle support: create, disable, enable, transfer ownership, and soft-delete. Service account management is restricted to admin users only. Each service account has a designated owner for accountability, and ownership can be transferred between users. Automated service account lifecycle management is provided by ServiceAccountMaintenanceJob, a daily Solid Queue job that auto-disables service accounts with all-expired tokens (reason: token_expired) or exceeding the configurable SPARC_SA_INACTIVITY_DAYS inactivity threshold (default 90 days, reason: inactivity).",
-                "remarks": "Implemented in app/models/user.rb, app/controllers/concerns/authorization.rb, app/controllers/admin/service_accounts_controller.rb, and app/jobs/service_account_maintenance_job.rb. Tested by spec/models/user_spec.rb."
+                "description": "SPARC implements account management through the User model with active, suspended, and deactivated status enumerations. Administrative users manage accounts via role assignments. The deactivate! and reactivate! methods enforce account lifecycle transitions. Account status changes are audited via AuditEvent logging. Service accounts are managed through a dedicated admin interface with full lifecycle support: create, disable, enable, transfer ownership, and soft-delete. Service account management is restricted to admin users only. Each service account has a designated owner for accountability, and ownership can be transferred between users. Automated service account lifecycle management is provided by ServiceAccountMaintenanceJob, a daily Solid Queue job that auto-disables service accounts with all-expired tokens (reason: token_expired) or exceeding the configurable SPARC_SA_INACTIVITY_DAYS inactivity threshold (default 90 days, reason: inactivity). Proactive email notifications are sent by ServiceAccountNotificationJob, a daily job that detects service accounts approaching token expiry (14-day and 7-day warnings), expired tokens, and approaching inactivity auto-disable thresholds. Notifications are delivered via ServiceAccountMailer to service account owners and all admin users, gated on SparcConfig.enable_smtp? to skip when SMTP is not configured.",
+                "remarks": "Implemented in app/models/user.rb, app/controllers/concerns/authorization.rb, app/controllers/admin/service_accounts_controller.rb, app/jobs/service_account_maintenance_job.rb, app/jobs/service_account_notification_job.rb, and app/mailers/service_account_mailer.rb. Tested by spec/models/user_spec.rb."
               },
               {
                 "uuid": "78b00c59-83e1-47e7-8ada-c298021fcceb",
