@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   get "about",          to: "about#index",         as: :about
   get "about/api",      to: "about#api_docs",      as: :about_api
   get "about/quickstart", to: "about#quickstart",  as: :about_quickstart
+  get "about/resources", to: "about#resources",   as: :about_resources
 
   # ── Authentication ────────────────────────────────────────────────────
   get    "login",  to: "sessions#new",     as: :login

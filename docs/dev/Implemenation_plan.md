@@ -125,6 +125,7 @@ authentication mode coverage matrix.
 - [x] #264 -- Gitleaks pattern for SPARC service account tokens (`.gitleaks.toml`) -- **COMPLETED 2026-03-21**
 - [x] #263 -- Auto-disable service accounts on token expiry and inactivity -- **COMPLETED 2026-03-21**
 - [x] #262 -- Service account token expiry email notifications -- **COMPLETED 2026-03-22**
+- [x] #269 -- Configurable Resources page + support email links -- **COMPLETED 2026-03-22**
 
 <!-- markdownlint-enable MD013 -->
 
