@@ -1,4 +1,4 @@
-# SPARC — Systematic Policy and Regulatory Controls
+# SPARC — Systematic and Regulatory Compliance
 
 Welcome to the official SPARC wiki. SPARC is a Rails application for managing NIST 800-53 compliance documentation — System Security Plans (SSPs), Security Assessment Results (SARs), Component Definitions (CDEFs), Security Assessment Plans (SAPs), Plans of Action & Milestones (POA&Ms), and control catalogs. It replaces spreadsheet-based workflows with a web UI and REST API, with full OSCAL export support.
 
