@@ -1,5 +1,23 @@
 title = "SPARC Gitleaks Configuration"
 
+# ── Custom Rules ──────────────────────────────────────────────────────────
+# Detect SPARC-issued tokens that may have been accidentally committed.
+# NIST 800-53: IA-5 (Authenticator Management)
+
+[[rules]]
+  id = "sparc-api-token"
+  description = "SPARC API Token (human user)"
+  regex = '''sparc_[A-Za-z0-9]{32,}'''
+  tags = ["token", "sparc", "api"]
+
+[[rules]]
+  id = "sparc-service-account-token"
+  description = "SPARC Service Account API Token"
+  regex = '''sparc_sa_[A-Za-z0-9]{32,}'''
+  tags = ["token", "sparc", "service-account"]
+
+# ── Global Allowlist ──────────────────────────────────────────────────────
+
 [allowlist]
   description = "Global allowlist"
   paths = [
