@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-03-21 -- feat: Auto-Disable Service Accounts on Token Expiry and Inactivity (#263)
+
+**Branch:** `feature/263_auto_disable_service_accounts`
+
+### Summary
+
+Added a daily `ServiceAccountMaintenanceJob` that automatically disables service accounts with
+all-expired tokens or exceeding the configurable inactivity threshold. The job runs via Solid Queue
+at 3 AM in production (configured in `recurring.yml`). Inactivity threshold defaults to 90 days
+and is configurable via `SPARC_SA_INACTIVITY_DAYS` through `SparcConfig.sa_inactivity_days`.
+Seven new audit event action types track auto-disable, manual enable/disable, and maintenance
+lifecycle events. The job logs all actions to the audit trail for compliance traceability.
+
+### What Changed
+
+- **ServiceAccountMaintenanceJob** (`app/jobs/service_account_maintenance_job.rb`) -- NEW; daily
+  Solid Queue job that scans all active service accounts and auto-disables those with all-expired
+  tokens or exceeding the inactivity threshold. Logs each action to AuditEvent.
+- **SparcConfig inactivity setting** (`app/models/sparc_config.rb`) -- added
+  `SparcConfig.sa_inactivity_days` (default 90 days, configurable via `SPARC_SA_INACTIVITY_DAYS`
+  environment variable).
+- **AuditEvent actions** (`app/models/audit_event.rb`) -- 7 new action types added to
+  `AuditEvent::ACTIONS` for service account maintenance lifecycle tracking.
+- **Solid Queue schedule** (`config/recurring.yml`) -- added daily 3 AM production schedule for
+  `ServiceAccountMaintenanceJob`.
+
+### Stats
+
+- **Spec count:** 1478 total (estimated), 0 failures
+- **New specs:** 12 (job specs)
+- **New files:** 1 (job) + schedule update
+
+### NIST Controls
+
+- **AC-2** (Account Management) -- automated disablement of inactive and expired service accounts
+- **AC-2(3)** (Disable Accounts) -- auto-disable after inactivity threshold
+- **AU-2** (Audit Events) -- 7 new auditable events for service account lifecycle
+- **IA-5** (Authenticator Management) -- expired token detection triggers account disablement
+
+---
+
 ## 2026-03-21 -- feat: Gitleaks Pattern for SPARC Service Account Tokens (#264)
 
 **Branch:** `feature/264_gitleaks_sparc_sa_pattern`
