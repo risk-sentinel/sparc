@@ -242,6 +242,19 @@ The `ServiceAccountMaintenanceJob` runs daily (3 AM, production) and auto-disabl
 
 ---
 
+## Docker / Seed Control
+
+| Variable | Description | Default | Example | Required |
+|----------|-------------|---------|---------|----------|
+| SPARC_RUN_SEEDS | Explicitly run `db:seed` on container start (for non-web containers) | false | `true` | No |
+| SPARC_SEED_MODE | Controls which sample data is seeded | full | `traditional`, `20x`, `full` | No |
+
+The web container automatically runs `db:prepare` (which includes seeding) on startup. Use `SPARC_RUN_SEEDS=true` for Sidekiq or one-shot ECS tasks that need seed data without running the Rails server.
+
+Converter mappings (DISA CCI, CIS, SCAP/OVAL) are seeded from `lib/data_mappings/*.json` fixtures.
+
+---
+
 ## AWS Secrets Manager (ECS/EC2 Deployments)
 
 Two-secret strategy aligned with [sparc-iac #22](https://github.com/Rebel-Raiders/sparc-iac/issues/22):

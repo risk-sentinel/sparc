@@ -24,6 +24,12 @@ if [[ "$1" == "./bin/rails" && "$2" == "server" ]] || [[ "$1" == "rails" && "$2"
     bundle exec rails db:prepare
 fi
 
+# Explicit seed trigger for non-web containers or re-seeding
+if [ "${SPARC_RUN_SEEDS:-false}" = "true" ]; then
+    echo "SPARC_RUN_SEEDS=true — running database seeds..."
+    bundle exec rails db:seed
+fi
+
 # Hand over to the actual command
 echo "Starting: $@"
 exec "$@"
