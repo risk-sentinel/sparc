@@ -231,6 +231,16 @@ See `docs/development-https.md` for full setup guide.
 
 ---
 
+## Service Account Lifecycle
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_SA_INACTIVITY_DAYS | Days of inactivity before a service account is auto-disabled by the daily maintenance job | `90` | `30` | No |
+
+The `ServiceAccountMaintenanceJob` runs daily (3 AM, production) and auto-disables service accounts with all-expired tokens or exceeding the inactivity threshold. Disabled accounts can be re-enabled by an admin.
+
+---
+
 ## AWS Secrets Manager (ECS/EC2 Deployments)
 
 Two-secret strategy aligned with [sparc-iac #22](https://github.com/Rebel-Raiders/sparc-iac/issues/22):

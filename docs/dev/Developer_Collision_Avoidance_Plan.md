@@ -285,6 +285,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#257** Service Account Management for API Access -- **COMPLETED 2026-03-21** | API/Auth | `app/controllers/admin/service_accounts_controller.rb` (NEW), `app/views/admin/service_accounts/` (NEW -- index, show, new, edit), `app/models/user.rb` (owner association, service_account validations, disable!/enable!), `app/models/api_token.rb` (sparc_sa_ prefix, endpoint_allowed?, cidr_allowed?, created_by), `app/controllers/concerns/api_authentication.rb` (endpoint scoping + CIDR enforcement), `app/views/layouts/application.html.erb` (nav link), migration (owner_id/disabled_at/disabled_reason on users; allowed_endpoints/allowed_cidrs/created_by_id on api_tokens), 18 new specs | **NONE** -- completed |
 | [x] | **#259** AWS Secrets Manager integration for ECS deployments -- **COMPLETED 2026-03-21** | Infrastructure/Auth | `config/initializers/00_aws_secrets.rb` (NEW -- boot-time JSON blob unpacker from Secrets Manager), `config/initializers/aws_db_auth.rb` (NEW -- IAM database auth with 15-min auto-rotating tokens), `app/models/sparc_config.rb` (5 new AWS methods), `Gemfile` (aws-sdk-secretsmanager, aws-sdk-rds), `.env` files, `docs/ENVIRONMENT_VARIABLES.md`, 13 new specs | **NONE** -- completed |
 | [x] | **#264** Gitleaks pattern for SPARC service account tokens -- **COMPLETED 2026-03-21** | CI/Infrastructure | `.gitleaks.toml` (NEW -- two custom rules: `sparc-api-token` and `sparc-service-account-token` detecting `sparc_`/`sparc_sa_` prefixed tokens, tagged with NIST IA-5) | **NONE** -- config-only, no app code |
+| [x] | **#263** Auto-disable service accounts on token expiry and inactivity -- **COMPLETED 2026-03-21** | API/Auth | `app/jobs/service_account_maintenance_job.rb` (NEW), `app/models/sparc_config.rb` (sa_inactivity_days), `app/models/audit_event.rb` (7 new actions), `config/recurring.yml` (daily 3 AM schedule), `spec/jobs/service_account_maintenance_job_spec.rb` (NEW -- 12 specs) | **NONE** -- completed |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -300,6 +301,7 @@ Dev D: #237 (data quality card)    -- Catalog UI domain ✅ COMPLETE
 Dev A: #257 (service accounts)     -- API/Auth domain ✅ COMPLETE
 Dev A: #259 (AWS secrets)          -- Infrastructure/Auth domain ✅ COMPLETE
 Dev A: #264 (gitleaks patterns)    -- CI/Infrastructure domain ✅ COMPLETE
+Dev A: #263 (SA auto-disable)     -- API/Auth domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security-critical),
@@ -656,8 +658,8 @@ removed and are no longer tracked:
 
 ## Summary
 
-- **Total issues tracked:** 45 (23 original + 22 ad-hoc/new)
-- **Completed:** 43 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257, #259, #264)
+- **Total issues tracked:** 46 (23 original + 23 ad-hoc/new)
+- **Completed:** 44 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257, #259, #263, #264)
 - **Remaining:** 2 issues (Phase 10: #244, #246)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
