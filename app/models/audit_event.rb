@@ -207,7 +207,10 @@ class AuditEvent < ApplicationRecord
                                      authorization_boundary_deleted project_created project_updated
                                      project_deleted boundary_created boundary_updated boundary_deleted],
     "Organizations" => %w[organization_created organization_updated organization_deactivated
-                          organization_reactivated organization_member_added organization_member_removed]
+                          organization_reactivated organization_member_added organization_member_removed],
+    "Service Accounts" => %w[service_account_created service_account_updated service_account_disabled
+                             service_account_enabled service_account_deleted
+                             service_account_token_regenerated service_account_auto_disabled]
   }.freeze
 
   # ── Scopes ─────────────────────────────────────────────────────────────
