@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "3.4.8"
+  VERSION = "1.0.0"
 
   module_function
 
