@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-03-22 -- feat: Bundle converter mapping data as seed fixtures for Docker deployments (#276)
+
+**Branch:** `feature/276_converter_seed_fixtures`
+
+### Summary
+
+Bundled the three converter mapping JSON files (CCI-to-NIST, CIS-to-NIST, SCAP/OVAL-to-NIST) as
+seed fixtures so Docker deployments can bootstrap Converter and ConverterEntry records without
+manual import. Added SPARC_RUN_SEEDS flag to bin/docker-entrypoint for explicit seed execution
+control.
+
+### What Changed
+
+- **Converter seed file** (`db/seeds/converters.rb`) -- NEW; reads `lib/data_mappings/` JSON files
+  (`cci_to_nist.json`, `cis_to_nist.json`, `scap_oval_to_nist.json`) and creates Converter +
+  ConverterEntry records via `insert_all`. Idempotent (skips if entries already exist).
+- **Seeds entrypoint** (`db/seeds.rb`) -- added load line for `converters.rb`.
+- **Docker entrypoint** (`bin/docker-entrypoint`) -- added `SPARC_RUN_SEEDS` flag for explicit
+  seed execution during container startup.
+- **Environment examples** (`.env.example`, `.env.production.example`) -- documented
+  `SPARC_RUN_SEEDS` and `SPARC_SEED_MODE` variables.
+- **Environment docs** (`docs/ENVIRONMENT_VARIABLES.md`) -- new Docker / Seed Control section.
+
+### Seed Data
+
+- **DISA CCI** -- ~4,500 entries mapping CCI identifiers to NIST 800-53 controls
+- **CIS Controls** -- ~350 entries mapping CIS benchmarks to NIST controls
+- **SCAP/OVAL** -- ~150 entries mapping SCAP/OVAL identifiers to NIST controls
+
+### Stats
+
+- **Spec count:** 1500 total, 0 failures
+- **New specs:** 0
+
+### NIST Controls
+
+- **SA-10** (Developer Configuration Management) -- seed data ensures consistent deployments
+- **CM-6** (Configuration Settings) -- Docker environment variable controls for seed behavior
+
+---
+
 ## 2026-03-22 -- feat: Collapsible left sidebar navigation (#272)
 
 **Branch:** `feature/272_left_sidebar_nav`
