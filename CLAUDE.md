@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SPARC (Systematic Policy and Regulatory Controls) is a Rails 8.1 application for managing NIST 800-53 compliance documentation — System Security Plans (SSPs), Security Assessment Results (SARs), Component Definitions (CDEFs), and control catalogs. It replaces spreadsheet-based workflows with a web UI and REST API, with OSCAL export support.
+SPARC (Systematic and Regulatory Compliance) is a Rails 8.1 application for managing NIST 800-53 compliance documentation — System Security Plans (SSPs), Security Assessment Results (SARs), Component Definitions (CDEFs), and control catalogs. It replaces spreadsheet-based workflows with a web UI and REST API, with OSCAL export support.
 
 ## Tech Stack
 
