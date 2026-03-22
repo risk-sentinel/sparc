@@ -129,6 +129,7 @@ authentication mode coverage matrix.
 - [x] #274 -- Rebrand SPARC acronym to "Systematic and Regulatory Compliance" -- **COMPLETED 2026-03-22**
 - [x] #272 -- Collapsible left sidebar navigation for Organizations, Boundaries, and Resources -- **COMPLETED 2026-03-22**
 - [x] #276 -- Bundle converter mapping data as seed fixtures for Docker deployments -- **COMPLETED 2026-03-22**
+- [x] #271 -- Consolidate all releases into v1.0.0 (first public release) -- **COMPLETED 2026-03-22**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -427,6 +428,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | #264 | Gitleaks pattern for SPARC service account tokens -- **COMPLETED 2026-03-21** | MEDIUM (security) | AFTER #257 |
 | [x] | #263 | Auto-disable service accounts on token expiry and inactivity -- **COMPLETED 2026-03-21** | **HIGH** (security) | AFTER #257 |
 | [x] | #262 | Service account token expiry email notifications -- **COMPLETED 2026-03-22** | **HIGH** (security) | AFTER #257 |
+| [x] | #271 | Consolidate all releases into v1.0.0 (first public release) -- **COMPLETED 2026-03-22** | **HIGH** | All phases complete |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -446,6 +448,7 @@ Dev A: #259 (AWS secrets)          -- Infrastructure/Auth domain ✅ COMPLETE
 Dev A: #264 (gitleaks patterns)    -- CI/Infrastructure domain ✅ COMPLETE
 Dev A: #263 (SA auto-disable)     -- API/Auth domain ✅ COMPLETE
 Dev A: #262 (SA expiry emails)    -- API/Auth domain ✅ COMPLETE
+Dev A: #271 (v1.0.0 release)     -- Version/Config domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security), then #246, #237, #250, #234.
@@ -487,11 +490,12 @@ removed and are no longer tracked:
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
-| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264, #272 | In Progress |
+| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264, #271, #272 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 48 (23 original + 25 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 46 issues
+**Total issues tracked:** 49 (23 original + 26 ad-hoc/new)
+**Completed (Phases 1-9 + ad-hoc):** 47 issues
 **Remaining:** 2 issues (Phase 10: #244, #246)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.
+**First public release: v1.0.0** (#271) -- consolidates all prior internal releases.
