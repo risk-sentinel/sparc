@@ -290,6 +290,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#269** Configurable Resources page + support email links -- **COMPLETED 2026-03-22** | UI/Documentation | `app/models/sparc_config.rb` (support_email alias, resources method, default_resources), `app/controllers/about_controller.rb` (resources action), `app/views/about/resources.html.erb` (NEW), `app/views/about/index.html.erb` (Resources section), `app/views/home/index.html.erb` (support mailto), `app/views/layouts/application.html.erb` (Resources nav), `app/views/layouts/login.html.erb` (Resources nav + mailto), `config/routes.rb`, `.env.example`, `.env.production.example`, `docs/ENVIRONMENT_VARIABLES.md`, `spec/requests/about_spec.rb` (4 new specs) | **NONE** -- completed |
 | [x] | **#274** Rebrand SPARC acronym -- **COMPLETED 2026-03-22** | Documentation/UI | `CLAUDE.md`, `README.md`, `wiki/Home.md`, `wiki/Core-Functions.md`, `docs/compliance/nist-sp800-53-rev5-mapping.md`, `docs/compliance/oscal/cdefs/*.json` (5 CDEF files), `app/views/about/index.html.erb` | **NONE** -- text-only, no code logic |
 | [x] | **#272** Collapsible left sidebar navigation -- **COMPLETED 2026-03-22** | Shared/UI | `app/views/shared/_sidebar.html.erb` (NEW), `app/javascript/controllers/sidebar_controller.js` (NEW), `app/views/layouts/application.html.erb`, `app/assets/stylesheets/sparc-theme.css`, `app/helpers/application_helper.rb` | **NONE** -- completed |
+| [x] | **#276** Converter seed fixtures for Docker -- **COMPLETED 2026-03-22** | Converters/Infrastructure | `db/seeds/converters.rb` (NEW), `db/seeds.rb`, `bin/docker-entrypoint`, `.env.example`, `.env.production.example`, `docs/ENVIRONMENT_VARIABLES.md`, `lib/data_mappings/cci_to_nist.json`, `lib/data_mappings/cis_to_nist.json`, `lib/data_mappings/scap_oval_to_nist.json` | **NONE** -- completed |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -310,6 +311,7 @@ Dev A: #262 (SA expiry emails)    -- API/Auth domain ✅ COMPLETE
 Dev A: #269 (resources + support) -- UI/Documentation domain ✅ COMPLETE
 Dev A: #274 (SPARC rebrand)      -- Documentation/UI domain ✅ COMPLETE
 Dev A: #272 (left sidebar nav)   -- Shared/UI domain ✅ COMPLETE
+Dev A: #276 (converter seeds)   -- Converters/Infrastructure domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security-critical),
