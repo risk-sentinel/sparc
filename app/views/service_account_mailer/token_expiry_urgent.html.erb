@@ -1,0 +1,10 @@
+<h2 style="color: #dc3545;">URGENT: Service Account Token Expiring</h2>
+
+<p>The API token for service account <strong><%= @service_account.first_name %></strong> will expire in <strong><%= @days_remaining %> days</strong>.</p>
+
+<p><strong>Account:</strong> <%= @service_account.email %><br>
+<strong>Owner:</strong> <%= @owner&.email || "unassigned" %></p>
+
+<p>If the token is not regenerated, the account will be <strong>automatically disabled</strong> when the token expires.</p>
+
+<p><%= link_to "Manage Service Accounts", @admin_url %></p>

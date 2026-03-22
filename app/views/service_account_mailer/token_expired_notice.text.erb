@@ -1,0 +1,14 @@
+Service Account Disabled — Token Expired
+
+Service account "<%= @service_account.first_name %>" has been AUTOMATICALLY DISABLED because all API tokens have expired.
+
+Account: <%= @service_account.email %>
+Owner: <%= @owner&.email || "unassigned" %>
+
+To restore access:
+1. Navigate to the Service Accounts admin page
+2. Re-enable the account
+3. Regenerate the API token
+4. Update the token in any CI/CD secrets or integrations
+
+Manage Service Accounts: <%= @admin_url %>
