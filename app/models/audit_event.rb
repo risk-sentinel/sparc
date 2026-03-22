@@ -143,6 +143,13 @@ class AuditEvent < ApplicationRecord
     poam_document_published
     profile_document_published
     control_catalog_published
+    service_account_created
+    service_account_updated
+    service_account_disabled
+    service_account_enabled
+    service_account_deleted
+    service_account_token_regenerated
+    service_account_auto_disabled
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }

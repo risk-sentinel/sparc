@@ -149,6 +149,10 @@ module SparcConfig
     ENV.fetch("SPARC_CCI_REVS", "4,5").split(",").map(&:strip)
   end
 
+  # ── Service Account Lifecycle ────────────────────────────────────────────
+
+  def sa_inactivity_days = ENV.fetch("SPARC_SA_INACTIVITY_DAYS", "90").to_i
+
   # ── AWS Secrets Manager ──────────────────────────────────────────────────
   # Two-secret strategy aligned with sparc-iac #22:
   #   Secret 1: admin-credentials (break-glass, MFA-gated)
