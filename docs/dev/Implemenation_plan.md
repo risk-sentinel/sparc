@@ -128,6 +128,7 @@ authentication mode coverage matrix.
 - [x] #269 -- Configurable Resources page + support email links -- **COMPLETED 2026-03-22**
 - [x] #274 -- Rebrand SPARC acronym to "Systematic and Regulatory Compliance" -- **COMPLETED 2026-03-22**
 - [x] #272 -- Collapsible left sidebar navigation for Organizations, Boundaries, and Resources -- **COMPLETED 2026-03-22**
+- [x] #276 -- Bundle converter mapping data as seed fixtures for Docker deployments -- **COMPLETED 2026-03-22**
 
 <!-- markdownlint-enable MD013 -->
 
