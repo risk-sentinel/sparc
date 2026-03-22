@@ -121,6 +121,7 @@ authentication mode coverage matrix.
 - [x] #249 -- Mutually exclusive API auth modes (SPARC_API_AUTH=local|oidc|hybrid) -- **COMPLETED 2026-03-21**
 - [ ] #250 -- Add API discovery endpoint (GET /api/v1/available)
 - [x] #257 -- Service Account Management for API Access -- **COMPLETED 2026-03-21**
+- [x] #259 -- AWS Secrets Manager integration for ECS deployments -- **COMPLETED 2026-03-21**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -415,12 +416,13 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | #249 | Mutually exclusive API auth modes (local/oidc/hybrid) + service accounts -- **COMPLETED 2026-03-21** | **HIGH** (security) | None |
 | [x] | #250 | API discovery endpoint (GET /api/v1/available) -- **COMPLETED 2026-03-21** | LOW | None |
 | [x] | #257 | Service Account Management for API Access -- **COMPLETED 2026-03-21** | **HIGH** (security) | AFTER #249 |
+| [x] | #259 | AWS Secrets Manager integration for ECS deployments -- **COMPLETED 2026-03-21** | **HIGH** (security) | None |
 
 <!-- markdownlint-enable MD013 -->
 
 **Deliverables:** Hardened API auth, CI security gates, cleaner repo, improved UX
 
-**Parallelism: All 7 issues can run simultaneously (different domains).**
+**Parallelism: All 8 issues can run simultaneously (different domains).**
 
 ```text
 Dev A: #249 (API auth modes)       -- API/Auth domain ✅ COMPLETE
@@ -430,6 +432,7 @@ Dev D: #237 (data quality card)    -- Catalog UI domain ✅ COMPLETE
 Dev D: #234 (avatar upload)        -- User/UI domain ✅ COMPLETE
 Dev D: #250 (API discovery)        -- API domain ✅ COMPLETE
 Dev A: #257 (service accounts)     -- API/Auth domain ✅ COMPLETE
+Dev A: #259 (AWS secrets)          -- Infrastructure/Auth domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security), then #246, #237, #250, #234.
@@ -471,11 +474,11 @@ removed and are no longer tracked:
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
-| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257 | In Progress |
+| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 43 (23 original + 20 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 41 issues
+**Total issues tracked:** 44 (23 original + 21 ad-hoc/new)
+**Completed (Phases 1-9 + ad-hoc):** 42 issues
 **Remaining:** 2 issues (Phase 10: #244, #246)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.

@@ -228,3 +228,51 @@ See `docs/development-https.md` for full setup guide.
 | REDIS_URL | Redis connection URL for Sidekiq | `redis://localhost:6379/0` | `redis://redis:6379/0` | Yes |
 | SOLID_QUEUE_IN_PUMA | Run Solid Queue in-process with Puma (single-server deploys) | (unset) | `true` | No |
 | JOB_CONCURRENCY | Number of Solid Queue worker processes | 1 | `3` | No |
+
+---
+
+## AWS Secrets Manager (ECS/EC2 Deployments)
+
+Two-secret strategy aligned with [sparc-iac #22](https://github.com/Rebel-Raiders/sparc-iac/issues/22):
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_AWS_SECRETS_ENABLED | Enable Secrets Manager JSON blob injection at boot | `false` | `true` | No |
+| SPARC_APP_CONFIG_SECRET_ARN | ARN of the app-config JSON secret (all non-admin config) | (unset) | `arn:aws:secretsmanager:us-east-1:123:secret:sparc-prod/app-config` | When secrets enabled |
+| SPARC_ADMIN_CREDENTIALS_SECRET_ARN | ARN of admin-credentials secret (documentation only — app does not read this) | (unset) | `arn:aws:secretsmanager:us-east-1:123:secret:sparc-prod/admin-credentials` | No |
+
+### How It Works
+
+When `SPARC_AWS_SECRETS_ENABLED=true`, the `00_aws_secrets.rb` initializer:
+1. Reads the JSON blob from `SPARC_APP_CONFIG_SECRET_ARN`
+2. Parses each key-value pair and injects into `ENV`
+3. **Never overwrites** existing ENV vars (manual ENV takes precedence)
+4. Fails fast with a clear error if the ARN is invalid or inaccessible
+
+### Secret JSON Format
+
+```json
+{
+  "SECRET_KEY_BASE": "a1b2c3...",
+  "SPARC_OIDC_CLIENT_SECRET": "okta-secret",
+  "SPARC_SMTP_PASSWORD": "ses-password",
+  "REDIS_URL": "redis://redis.internal:6379/0"
+}
+```
+
+---
+
+## AWS IAM Database Authentication
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_AWS_IAM_DB_AUTH | Use IAM auth tokens instead of static DB passwords | `false` | `true` | No |
+| SPARC_AWS_REGION | AWS region for IAM auth and Secrets Manager | `AWS_REGION` or `us-east-1` | `us-gov-west-1` | When IAM DB auth enabled |
+
+### Prerequisites
+
+- RDS instance with `iam_database_authentication_enabled = true`
+- ECS task role with `rds-db:connect` permission
+- DB user created with `GRANT rds_iam TO sparc;`
+
+IAM auth tokens are 15-minute auto-rotating credentials — no static DB password needed.

@@ -149,6 +149,17 @@ module SparcConfig
     ENV.fetch("SPARC_CCI_REVS", "4,5").split(",").map(&:strip)
   end
 
+  # ── AWS Secrets Manager ──────────────────────────────────────────────────
+  # Two-secret strategy aligned with sparc-iac #22:
+  #   Secret 1: admin-credentials (break-glass, MFA-gated)
+  #   Secret 2: app-config (JSON blob, ECS task role reads at boot)
+
+  def aws_secrets_enabled?          = ENV.fetch("SPARC_AWS_SECRETS_ENABLED", "false") == "true"
+  def aws_iam_db_auth_enabled?      = ENV.fetch("SPARC_AWS_IAM_DB_AUTH", "false") == "true"
+  def app_config_secret_arn         = ENV.fetch("SPARC_APP_CONFIG_SECRET_ARN", nil)
+  def admin_credentials_secret_arn  = ENV.fetch("SPARC_ADMIN_CREDENTIALS_SECRET_ARN", nil)
+  def aws_region                    = ENV.fetch("SPARC_AWS_REGION", ENV.fetch("AWS_REGION", "us-east-1"))
+
   # ── Convenience ───────────────────────────────────────────────────────────
 
   def any_auth_enabled?
