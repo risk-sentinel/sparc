@@ -126,6 +126,7 @@ authentication mode coverage matrix.
 - [x] #263 -- Auto-disable service accounts on token expiry and inactivity -- **COMPLETED 2026-03-21**
 - [x] #262 -- Service account token expiry email notifications -- **COMPLETED 2026-03-22**
 - [x] #269 -- Configurable Resources page + support email links -- **COMPLETED 2026-03-22**
+- [x] #274 -- Rebrand SPARC acronym to "Systematic and Regulatory Compliance" -- **COMPLETED 2026-03-22**
 
 <!-- markdownlint-enable MD013 -->
 

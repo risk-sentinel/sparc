@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-03-22 -- chore: Rebrand SPARC acronym (#274)
+
+**Branch:** `feature/274_rebrand_sparc`
+
+### Summary
+
+Text-only rebrand of the SPARC acronym from "Systematic Policy and Regulatory Controls" to
+"Systematic and Regulatory Compliance" across all public-facing documentation, compliance
+artifacts, and the About page. Zero code logic changes.
+
+### What Changed
+
+- **CLAUDE.md** -- updated project overview acronym expansion.
+- **README.md** -- updated header and description with new acronym expansion.
+- **wiki/Home.md** -- updated wiki landing page acronym.
+- **wiki/Core-Functions.md** -- updated core functions page acronym.
+- **docs/compliance/nist-sp800-53-rev5-mapping.md** -- updated compliance mapping header.
+- **5 OSCAL CDEF JSON files** (`docs/compliance/oscal/cdefs/*.json`) -- updated component
+  description metadata with new acronym expansion.
+- **About page** (`app/views/about/index.html.erb`) -- updated rendered acronym text.
+
+### Stats
+
+- **Spec count:** 1500 total, 0 failures
+- **New specs:** 0
+
+### NIST Controls
+
+- **SA-5** (System Documentation) -- consistent naming across all project documentation
+
+---
+
 ## 2026-03-22 -- feat: Configurable Resources Page + Support Email Links (#269)
 
 **Branch:** `feature/269_resources_support_email`

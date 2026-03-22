@@ -1,6 +1,6 @@
 # NIST SP 800-53 Rev 5 HIGH Baseline Control Mapping
 
-**System:** SPARC (Systematic Policy and Regulatory Controls)
+**System:** SPARC (Systematic and Regulatory Compliance)
 **Baseline:** NIST SP 800-53 Revision 5 -- HIGH Impact
 **Last Reviewed:** 2026-03-21
 **Version:** 1.0
