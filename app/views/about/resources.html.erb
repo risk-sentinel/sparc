@@ -1,0 +1,52 @@
+<div class="container py-4">
+  <div class="sparc-card p-4 p-md-5">
+
+    <!-- Header -->
+    <div class="text-center mb-5">
+      <h1 class="fw-bold">Resources</h1>
+      <p class="text-body-secondary">
+        External references, standards documentation, and community links for SPARC and the OSCAL ecosystem.
+      </p>
+      <div class="mt-3">
+        <%= link_to "← About", about_path, class: "btn btn-outline-secondary btn-sm" %>
+      </div>
+    </div>
+
+    <hr class="my-4">
+
+    <!-- Resource Links -->
+    <section class="mb-5">
+      <h2 class="text-primary mb-4">Standards &amp; Frameworks</h2>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <% SparcConfig.resources.each do |resource| %>
+          <div class="col">
+            <div class="card h-100 sparc-card border-start border-3 border-primary">
+              <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <h5 class="card-title mb-1"><%= resource["display_text"] %></h5>
+                  <small class="text-body-secondary"><%= resource["href"] %></small>
+                </div>
+                <a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-outline-primary btn-sm ms-3" title="Open <%= resource["display_text"] %>">
+                  &#8599; Open
+                </a>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <% if SparcConfig.support_email.present? %>
+      <hr class="my-4">
+      <section class="text-center">
+        <h4 class="text-body-secondary">Need Help?</h4>
+        <p>
+          Contact the SPARC support team:
+          <%= mail_to SparcConfig.support_email, "Support", class: "text-primary text-decoration-none fw-semibold" %>
+        </p>
+      </section>
+    <% end %>
+
+  </div>
+</div>
