@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-03-22 -- feat: Service Account Token Expiry Email Notifications (#262)
+
+**Branch:** `feature/262_sa_expiry_notifications`
+
+### Summary
+
+Added proactive email notifications for service account token lifecycle events. A daily
+`ServiceAccountNotificationJob` runs via Solid Queue at 2:30 AM to scan for tokens nearing
+expiry, already expired, and inactive service accounts — then sends appropriate notification
+emails to service account owners and admins. Four email types cover the full lifecycle:
+30-day warning, 7-day urgent warning, post-expiry notice, and 90-day inactivity warning.
+Updated `ApplicationMailer` from address to use `SparcConfig` for consistency.
+
+### What Changed
+
+- **ServiceAccountMailer** (`app/mailers/service_account_mailer.rb`) -- NEW; 4 email methods:
+  `token_expiry_warning` (30-day), `token_expiry_urgent` (7-day), `token_expired_notice`
+  (post-expiry), and `inactivity_warning` (90-day inactive).
+- **Email templates** (`app/views/service_account_mailer/`) -- NEW; 8 templates (HTML + text
+  for each of the 4 email types).
+- **ServiceAccountNotificationJob** (`app/jobs/service_account_notification_job.rb`) -- NEW;
+  daily Solid Queue job at 2:30 AM that scans active service accounts and dispatches
+  appropriate notification emails based on token expiry and inactivity status.
+- **ApplicationMailer** (`app/mailers/application_mailer.rb`) -- updated default from address
+  to use `SparcConfig` for centralized configuration.
+- **Solid Queue schedule** (`config/recurring.yml`) -- added daily 2:30 AM production schedule
+  for `ServiceAccountNotificationJob`.
+
+### Stats
+
+- **Spec count:** 1496 total, 0 failures
+- **New specs:** 18 (8 mailer + 10 job specs)
+- **New files:** 1 mailer + 1 job + 8 view templates + 2 spec files
+
+### NIST Controls
+
+- **AC-2(1)** (Automated Account Management) -- automated notifications for token lifecycle events
+- **AC-2(3)** (Disable Accounts) -- proactive warnings before auto-disable thresholds
+
+---
+
 ## 2026-03-21 -- feat: Auto-Disable Service Accounts on Token Expiry and Inactivity (#263)
 
 **Branch:** `feature/263_auto_disable_service_accounts`

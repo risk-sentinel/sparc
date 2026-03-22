@@ -1,0 +1,10 @@
+URGENT: Service Account Token Expiring
+
+The API token for service account "<%= @service_account.first_name %>" will expire in <%= @days_remaining %> days.
+
+Account: <%= @service_account.email %>
+Owner: <%= @owner&.email || "unassigned" %>
+
+If the token is not regenerated, the account will be AUTOMATICALLY DISABLED when the token expires.
+
+Manage Service Accounts: <%= @admin_url %>

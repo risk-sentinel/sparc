@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-03-21
+**Last updated:** 2026-03-22
 
 ---
 
@@ -286,10 +286,11 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#259** AWS Secrets Manager integration for ECS deployments -- **COMPLETED 2026-03-21** | Infrastructure/Auth | `config/initializers/00_aws_secrets.rb` (NEW -- boot-time JSON blob unpacker from Secrets Manager), `config/initializers/aws_db_auth.rb` (NEW -- IAM database auth with 15-min auto-rotating tokens), `app/models/sparc_config.rb` (5 new AWS methods), `Gemfile` (aws-sdk-secretsmanager, aws-sdk-rds), `.env` files, `docs/ENVIRONMENT_VARIABLES.md`, 13 new specs | **NONE** -- completed |
 | [x] | **#264** Gitleaks pattern for SPARC service account tokens -- **COMPLETED 2026-03-21** | CI/Infrastructure | `.gitleaks.toml` (NEW -- two custom rules: `sparc-api-token` and `sparc-service-account-token` detecting `sparc_`/`sparc_sa_` prefixed tokens, tagged with NIST IA-5) | **NONE** -- config-only, no app code |
 | [x] | **#263** Auto-disable service accounts on token expiry and inactivity -- **COMPLETED 2026-03-21** | API/Auth | `app/jobs/service_account_maintenance_job.rb` (NEW), `app/models/sparc_config.rb` (sa_inactivity_days), `app/models/audit_event.rb` (7 new actions), `config/recurring.yml` (daily 3 AM schedule), `spec/jobs/service_account_maintenance_job_spec.rb` (NEW -- 12 specs) | **NONE** -- completed |
+| [x] | **#262** Service account token expiry email notifications -- **COMPLETED 2026-03-22** | API/Auth | `app/mailers/service_account_mailer.rb` (NEW), `app/jobs/service_account_notification_job.rb` (NEW), `app/mailers/application_mailer.rb` (updated from address), `config/recurring.yml` (daily 2:30 AM schedule), `app/views/service_account_mailer/` (NEW -- 8 templates: token_expiry_warning, token_expiry_urgent, token_expired_notice, inactivity_warning in HTML + text), `spec/mailers/service_account_mailer_spec.rb` (NEW -- 8 specs), `spec/jobs/service_account_notification_job_spec.rb` (NEW -- 10 specs) | **NONE** -- completed |
 
 <!-- markdownlint-enable MD013 -->
 
-**Phase 10 Parallelism: All 9 issues can run simultaneously (different domains).**
+**Phase 10 Parallelism: All 10 issues can run simultaneously (different domains).**
 
 ```text
 Dev A: #249 (API auth modes)       -- API/Auth domain ✅ COMPLETE
@@ -302,6 +303,7 @@ Dev A: #257 (service accounts)     -- API/Auth domain ✅ COMPLETE
 Dev A: #259 (AWS secrets)          -- Infrastructure/Auth domain ✅ COMPLETE
 Dev A: #264 (gitleaks patterns)    -- CI/Infrastructure domain ✅ COMPLETE
 Dev A: #263 (SA auto-disable)     -- API/Auth domain ✅ COMPLETE
+Dev A: #262 (SA expiry emails)    -- API/Auth domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security-critical),
