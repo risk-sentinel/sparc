@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-03-22 -- feat: Collapsible left sidebar navigation (#272)
+
+**Branch:** `feature/272_left_sidebar_nav`
+
+### Summary
+
+Added a collapsible left sidebar navigation panel for authenticated users using Bootstrap 5.3
+offcanvas. The sidebar provides a tree-structured view of Organizations, Authorization
+Boundaries, and Documents (Profile, CDEFs, SSP, SAP, SAR, POA&Ms) plus a Resources section.
+Sidebar open/closed state and expanded sections persist via localStorage through a new Stimulus
+controller.
+
+### What Changed
+
+- **Sidebar partial** (`app/views/shared/_sidebar.html.erb`) -- NEW; Bootstrap 5.3
+  offcanvas-start panel with tree structure for Organizations, Boundaries, Documents, and
+  Resources.
+- **Stimulus controller** (`app/javascript/controllers/sidebar_controller.js`) -- NEW;
+  manages sidebar toggle, localStorage persistence for open/closed state and expanded sections.
+- **Application layout** (`app/views/layouts/application.html.erb`) -- added sidebar toggle
+  button in navbar and renders sidebar partial for authenticated users.
+- **Theme styles** (`app/assets/stylesheets/sparc-theme.css`) -- 130+ lines of sidebar styles
+  for light/dark mode support.
+- **Application helper** (`app/helpers/application_helper.rb`) -- added `sidebar_organizations`
+  helper method for sidebar data.
+
+### Stats
+
+- **Spec count:** 1500 total, 0 failures
+- **New specs:** 0 (UI-only change)
+
+### NIST Controls
+
+- **SA-5** (System Documentation) -- navigational structure for compliance document types
+- **AC-2** (Account Management) -- sidebar only rendered for authenticated users
+
+---
+
 ## 2026-03-22 -- chore: Rebrand SPARC acronym (#274)
 
 **Branch:** `feature/274_rebrand_sparc`

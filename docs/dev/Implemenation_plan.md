@@ -127,6 +127,7 @@ authentication mode coverage matrix.
 - [x] #262 -- Service account token expiry email notifications -- **COMPLETED 2026-03-22**
 - [x] #269 -- Configurable Resources page + support email links -- **COMPLETED 2026-03-22**
 - [x] #274 -- Rebrand SPARC acronym to "Systematic and Regulatory Compliance" -- **COMPLETED 2026-03-22**
+- [x] #272 -- Collapsible left sidebar navigation for Organizations, Boundaries, and Resources -- **COMPLETED 2026-03-22**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -485,11 +486,11 @@ removed and are no longer tracked:
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
-| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264 | In Progress |
+| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264, #272 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 47 (23 original + 24 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 45 issues
+**Total issues tracked:** 48 (23 original + 25 ad-hoc/new)
+**Completed (Phases 1-9 + ad-hoc):** 46 issues
 **Remaining:** 2 issues (Phase 10: #244, #246)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.

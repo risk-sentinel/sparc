@@ -92,4 +92,16 @@ module ApplicationHelper
   def ab_status_color(status)
     AB_STATUS_COLORS[status.to_s] || "#7f8c8d"
   end
+
+  # Sidebar: organizations with authorization boundaries for current user
+  def sidebar_organizations
+    return [] unless defined?(current_user) && current_user
+
+    orgs = if current_user.admin?
+      Organization.where(status: :active).includes(:authorization_boundaries).order(:name)
+    else
+      current_user.organizations.where(status: :active).includes(:authorization_boundaries).order(:name)
+    end
+    orgs || []
+  end
 end

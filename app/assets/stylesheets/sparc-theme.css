@@ -1772,3 +1772,126 @@ a.link-purple { color: var(--sparc-purple); }
   border-radius: 8px;
   cursor: default;
 }
+
+/* ─── Sidebar Navigation ────────────────────────────────────────────── */
+.sparc-sidebar {
+  width: 220px;
+  min-width: 220px;
+  min-height: calc(100vh - 56px);
+  background: var(--sparc-bg);
+  border-right: 1px solid var(--sparc-border);
+  color: var(--sparc-text);
+  font-size: 1.05rem;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sparc-sidebar-header {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--sparc-border);
+}
+
+.sparc-sidebar-body {
+  padding: 0;
+}
+
+.sparc-main-content {
+  min-width: 0;
+}
+
+@media (max-width: 991.98px) {
+  .sparc-sidebar {
+    display: none;
+  }
+}
+
+.sparc-sidebar-section {
+  padding: 0.25rem 0;
+}
+
+.sparc-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--sparc-text);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sparc-sidebar-toggle:hover {
+  background: var(--sparc-hover-bg, rgba(255,255,255,0.08));
+}
+
+[data-bs-theme="light"] .sparc-sidebar-toggle:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.sparc-sidebar-toggle::before {
+  content: "\25B6";
+  font-size: 0.55rem;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.sparc-sidebar-toggle[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+.sparc-sidebar-indent-1 {
+  padding-left: 1.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.sparc-sidebar-indent-2 {
+  padding-left: 2.25rem;
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.sparc-sidebar-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.sparc-sidebar-leaves {
+  list-style: none;
+  margin: 0;
+  padding: 0.15rem 0 0.35rem 0;
+}
+
+.sparc-sidebar-leaf {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 1rem 0.3rem 3.25rem;
+  color: var(--sparc-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.sparc-sidebar-leaf:hover {
+  background: var(--sparc-hover-bg, rgba(255,255,255,0.08));
+  color: var(--sparc-primary);
+  text-decoration: none;
+}
+
+[data-bs-theme="light"] .sparc-sidebar-leaf:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.sparc-sidebar-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
