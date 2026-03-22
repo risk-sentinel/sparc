@@ -285,9 +285,20 @@
       </div>
     <% end %>
 
-    <div class="container">
-      <%= yield %>
-    </div>
+    <% if signed_in? %>
+      <div class="d-flex">
+        <%= render "shared/sidebar" %>
+        <div class="sparc-main-content flex-grow-1">
+          <div class="container">
+            <%= yield %>
+          </div>
+        </div>
+      </div>
+    <% else %>
+      <div class="container">
+        <%= yield %>
+      </div>
+    <% end %>
 
     <%# Easter egg video overlay — triggered by navbar logo click %>
     <div class="sparc-video-overlay d-none"
