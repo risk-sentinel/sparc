@@ -1,0 +1,16 @@
+<h2 style="color: #dc3545;">Service Account Disabled — Token Expired</h2>
+
+<p>Service account <strong><%= @service_account.first_name %></strong> has been <strong>automatically disabled</strong> because all API tokens have expired.</p>
+
+<p><strong>Account:</strong> <%= @service_account.email %><br>
+<strong>Owner:</strong> <%= @owner&.email || "unassigned" %></p>
+
+<p>To restore access:</p>
+<ol>
+  <li>Navigate to the Service Accounts admin page</li>
+  <li>Re-enable the account</li>
+  <li>Regenerate the API token</li>
+  <li>Update the token in any CI/CD secrets or integrations</li>
+</ol>
+
+<p><%= link_to "Manage Service Accounts", @admin_url %></p>
