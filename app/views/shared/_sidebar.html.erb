@@ -1,0 +1,104 @@
+<%# Collapsible left sidebar — visible on authenticated pages only %>
+<div class="offcanvas offcanvas-start sparc-sidebar" tabindex="-1" id="sparcSidebar"
+     data-controller="sidebar" data-bs-backdrop="false" data-bs-scroll="true">
+  <div class="offcanvas-header border-bottom border-secondary">
+    <h6 class="offcanvas-title fw-bold text-body-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08rem;">
+      Navigation
+    </h6>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+
+  <div class="offcanvas-body p-0" style="overflow-y: auto;">
+
+    <%# ── Organizations ── %>
+    <div class="sparc-sidebar-section">
+      <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarOrgs" aria-expanded="true">
+        <span class="sparc-sidebar-icon">&#127970;</span> Organizations
+      </button>
+      <div class="collapse show" id="sidebarOrgs">
+        <% sidebar_organizations.each do |org| %>
+          <div class="sparc-sidebar-org">
+            <button class="sparc-sidebar-toggle sparc-sidebar-indent-1"
+                    data-bs-toggle="collapse" data-bs-target="#sidebarOrg<%= org.id %>" aria-expanded="false">
+              <span class="sparc-sidebar-icon">&#128205;</span> <%= org.name %>
+            </button>
+            <div class="collapse" id="sidebarOrg<%= org.id %>">
+              <% org.authorization_boundaries.order(:name).each do |ab| %>
+                <div class="sparc-sidebar-boundary">
+                  <button class="sparc-sidebar-toggle sparc-sidebar-indent-2"
+                          data-bs-toggle="collapse" data-bs-target="#sidebarAb<%= ab.id %>" aria-expanded="false">
+                    <span class="badge rounded-pill" style="background: <%= ab_status_color(ab.status) %>; font-size: 0.55rem; vertical-align: middle;">
+                      <%= ab.status&.upcase %>
+                    </span>
+                    <%= ab.name %>
+                  </button>
+                  <div class="collapse" id="sidebarAb<%= ab.id %>">
+                    <ul class="sparc-sidebar-leaves">
+                      <li>
+                        <%= link_to profile_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-controls" do %>
+                          <span class="sparc-sidebar-dot" style="background: #3498db;"></span> Profiles
+                        <% end %>
+                      </li>
+                      <li>
+                        <%= link_to cdef_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-impl" do %>
+                          <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> CDEFs
+                        <% end %>
+                      </li>
+                      <li>
+                        <%= link_to ssp_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-impl" do %>
+                          <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> SSP
+                        <% end %>
+                      </li>
+                      <li>
+                        <%= link_to sap_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-assess" do %>
+                          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAP
+                        <% end %>
+                      </li>
+                      <li>
+                        <%= link_to sar_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-assess" do %>
+                          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAR
+                        <% end %>
+                      </li>
+                      <li>
+                        <%= link_to poam_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-assess" do %>
+                          <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> POA&Ms
+                        <% end %>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              <% end %>
+              <% if org.authorization_boundaries.empty? %>
+                <div class="sparc-sidebar-indent-2 text-body-tertiary small py-1 ps-4">No boundaries</div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+        <% if sidebar_organizations.empty? %>
+          <div class="sparc-sidebar-indent-1 text-body-tertiary small py-2 ps-3">No organizations</div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Resources ── %>
+    <div class="sparc-sidebar-section border-top border-secondary">
+      <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarResources" aria-expanded="false">
+        <span class="sparc-sidebar-icon">&#128279;</span> Resources
+      </button>
+      <div class="collapse" id="sidebarResources">
+        <ul class="sparc-sidebar-leaves">
+          <% SparcConfig.resources.each do |resource| %>
+            <li>
+              <a href="<%= resource["href"] %>" target="_blank" rel="noopener noreferrer"
+                 class="sparc-sidebar-leaf">
+                <span class="sparc-sidebar-dot" style="background: #9b59b6;"></span>
+                <%= resource["display_text"] %> <span style="font-size: 0.65rem;">&#8599;</span>
+              </a>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
