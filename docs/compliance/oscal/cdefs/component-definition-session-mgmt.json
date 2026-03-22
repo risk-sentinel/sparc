@@ -5,7 +5,7 @@
       "title": "SPARC Session Management and Cryptographic Protection",
       "version": "1.0.0",
       "oscal-version": "1.1.2",
-      "last-modified": "2026-03-20T00:00:00Z",
+      "last-modified": "2026-03-21T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",
@@ -41,8 +41,8 @@
               {
                 "uuid": "c5e8f1a3-2b94-4d76-9c47-e48a6f9b02d8",
                 "control-id": "sc-12",
-                "description": "SPARC manages cryptographic key establishment through Rails encrypted credentials, which store secrets encrypted with a master key. In production deployments, integration with AWS Key Management Service (KMS) provides hardware-backed key storage and lifecycle management for encryption keys.",
-                "remarks": "Implemented in config/credentials/ (Rails encrypted credentials). KMS integration for production key management."
+                "description": "SPARC manages cryptographic key establishment through Rails encrypted credentials, which store secrets encrypted with a master key. In production deployments, integration with AWS Key Management Service (KMS) provides hardware-backed key storage and lifecycle management for encryption keys. When SPARC_AWS_SECRETS_ENABLED is true, SECRET_KEY_BASE is managed via AWS Secrets Manager with KMS encryption and injected at boot. When SPARC_AWS_IAM_DB_AUTH is true, IAM database authentication uses IAM-signed tokens (SHA-256) for PostgreSQL connections instead of static passwords.",
+                "remarks": "Implemented in config/credentials/ (Rails encrypted credentials), config/initializers/00_aws_secrets.rb, and config/initializers/aws_db_auth.rb. KMS integration for production key management."
               },
               {
                 "uuid": "d6f9a2b4-3c05-4e87-ad58-f59a7b0c13e9",
@@ -59,8 +59,8 @@
               {
                 "uuid": "f8b1c4d6-5e27-4a09-cf70-b71a9c2e35a1",
                 "control-id": "sc-28",
-                "description": "SPARC protects information at rest through PostgreSQL native encryption capabilities for database storage and AWS S3 Server-Side Encryption with KMS (SSE-KMS) for Active Storage file attachments. The production environment configures the Amazon S3 storage service for all uploaded documents, ensuring encryption at the storage layer.",
-                "remarks": "Implemented in config/environments/production.rb (config.active_storage.service = :amazon with SSE-KMS). Database encryption managed by PostgreSQL infrastructure."
+                "description": "SPARC protects information at rest through PostgreSQL native encryption capabilities for database storage and AWS S3 Server-Side Encryption with KMS (SSE-KMS) for Active Storage file attachments. The production environment configures the Amazon S3 storage service for all uploaded documents, ensuring encryption at the storage layer. Application secrets (SECRET_KEY_BASE, database credentials) are KMS-encrypted in AWS Secrets Manager and injected at boot time — never stored on disk. Feature-gated by SPARC_AWS_SECRETS_ENABLED.",
+                "remarks": "Implemented in config/environments/production.rb (config.active_storage.service = :amazon with SSE-KMS) and config/initializers/00_aws_secrets.rb. Database encryption managed by PostgreSQL infrastructure."
               }
             ]
           }

@@ -283,10 +283,11 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#249** Mutually exclusive API auth modes (local/oidc/hybrid) -- **COMPLETED 2026-03-21** | API/Auth | `app/controllers/concerns/api_authentication.rb` (REWRITE -- 3 mutually exclusive modes), `app/models/sparc_config.rb`, `app/models/user.rb` (service_account boolean), `app/controllers/sessions_controller.rb` (service account web login block), `config/initializers/api_auth.rb` (NEW -- boot-time validation), migration (add service_account to users), `spec/requests/api/v1/api_authentication_spec.rb` (12 new specs) | **NONE** -- completed |
 | [x] | **#250** API discovery endpoint (GET /api/v1/available) -- **COMPLETED 2026-03-21** | API | `app/controllers/api/v1/discovery_controller.rb` (NEW), `app/models/user.rb` (has_any_permission?), `config/routes.rb`, `app/views/about/api_docs.html.erb`, `spec/requests/api/v1/discovery_spec.rb` (NEW -- 13 specs) | **NONE** -- completed |
 | [x] | **#257** Service Account Management for API Access -- **COMPLETED 2026-03-21** | API/Auth | `app/controllers/admin/service_accounts_controller.rb` (NEW), `app/views/admin/service_accounts/` (NEW -- index, show, new, edit), `app/models/user.rb` (owner association, service_account validations, disable!/enable!), `app/models/api_token.rb` (sparc_sa_ prefix, endpoint_allowed?, cidr_allowed?, created_by), `app/controllers/concerns/api_authentication.rb` (endpoint scoping + CIDR enforcement), `app/views/layouts/application.html.erb` (nav link), migration (owner_id/disabled_at/disabled_reason on users; allowed_endpoints/allowed_cidrs/created_by_id on api_tokens), 18 new specs | **NONE** -- completed |
+| [x] | **#259** AWS Secrets Manager integration for ECS deployments -- **COMPLETED 2026-03-21** | Infrastructure/Auth | `config/initializers/00_aws_secrets.rb` (NEW -- boot-time JSON blob unpacker from Secrets Manager), `config/initializers/aws_db_auth.rb` (NEW -- IAM database auth with 15-min auto-rotating tokens), `app/models/sparc_config.rb` (5 new AWS methods), `Gemfile` (aws-sdk-secretsmanager, aws-sdk-rds), `.env` files, `docs/ENVIRONMENT_VARIABLES.md`, 13 new specs | **NONE** -- completed |
 
 <!-- markdownlint-enable MD013 -->
 
-**Phase 10 Parallelism: All 7 issues can run simultaneously (different domains).**
+**Phase 10 Parallelism: All 8 issues can run simultaneously (different domains).**
 
 ```text
 Dev A: #249 (API auth modes)       -- API/Auth domain ✅ COMPLETE
@@ -296,6 +297,7 @@ Dev D: #237 (data quality card)    -- Catalog UI domain ✅ COMPLETE
       #234 (avatar upload)        -- User/UI domain ✅ COMPLETE
       #250 (API discovery)        -- API domain (after #249) ✅ COMPLETE
 Dev A: #257 (service accounts)     -- API/Auth domain ✅ COMPLETE
+Dev A: #259 (AWS secrets)          -- Infrastructure/Auth domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security-critical),
@@ -652,8 +654,8 @@ removed and are no longer tracked:
 
 ## Summary
 
-- **Total issues tracked:** 43 (23 original + 20 ad-hoc/new)
-- **Completed:** 41 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257)
+- **Total issues tracked:** 44 (23 original + 21 ad-hoc/new)
+- **Completed:** 42 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257, #259)
 - **Remaining:** 2 issues (Phase 10: #244, #246)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases

@@ -4,6 +4,49 @@
 
 ---
 
+## 2026-03-21 -- feat: AWS Secrets Manager Integration for ECS Deployments (#259)
+
+**Branch:** `feature/259_aws_secrets_integration`
+
+### Summary
+
+Added AWS Secrets Manager integration for secure credential management in ECS/Fargate deployments.
+A boot-time initializer (`00_aws_secrets.rb`) unpacks JSON blobs from Secrets Manager into Rails
+configuration, replacing the need for plaintext environment variables in container environments.
+A companion initializer (`aws_db_auth.rb`) provides IAM database authentication with 15-minute
+auto-rotating tokens for RDS connections. Five new SparcConfig AWS helper methods centralize
+secret retrieval and IAM token generation. Updated `.env` files and `ENVIRONMENT_VARIABLES.md`
+document the new AWS-related configuration variables.
+
+### What Changed
+
+- **Boot-time secrets initializer** (`config/initializers/00_aws_secrets.rb`) -- NEW; fetches
+  and unpacks JSON secret blobs from AWS Secrets Manager at Rails boot, populating ENV-based
+  configuration for database credentials, API keys, and other secrets.
+- **IAM database auth initializer** (`config/initializers/aws_db_auth.rb`) -- NEW; generates
+  IAM authentication tokens for RDS connections with 15-minute auto-rotation, eliminating
+  static database passwords in ECS deployments.
+- **SparcConfig AWS methods** (`app/models/sparc_config.rb`) -- 5 new methods for AWS secret
+  retrieval and IAM token generation.
+- **Gems** (`Gemfile`) -- added `aws-sdk-secretsmanager` and `aws-sdk-rds` for Secrets Manager
+  and RDS IAM auth support.
+- **Environment variables** -- updated `.env` files and `docs/ENVIRONMENT_VARIABLES.md` with
+  new AWS configuration variables (secret ARN, region, IAM auth toggle, etc.).
+
+### Stats
+
+- **Spec count:** 1466 total, 0 failures
+- **New specs:** 13
+- **New files:** 2 (initializers) + gem additions
+
+### NIST Controls
+
+- **SC-28** (Protection of Information at Rest) -- secrets stored in AWS Secrets Manager rather than plaintext ENV vars
+- **IA-5** (Authenticator Management) -- IAM database tokens auto-rotate every 15 minutes
+- **SC-12** (Cryptographic Key Establishment and Management) -- AWS KMS-backed secret encryption
+
+---
+
 ## 2026-03-21 -- feat: Service Account Management for API Access (#257)
 
 **Branch:** `feature/257_service_accounts`
