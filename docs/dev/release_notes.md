@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-03-22 -- chore: Consolidate all releases into v1.0.0 (#271)
+
+**Branch:** `release/v1.0.0`
+
+### Summary
+
+First public release of SPARC. Consolidated all 18 previous internal releases (v2.0.0 through
+v3.5.0) into a clean v1.0.0 version number. Updated `SparcConfig::VERSION` from "3.4.8" to
+"1.0.0" to reflect the official initial release.
+
+### What Changed
+
+- **Version constant** (`app/models/sparc_config.rb`) -- updated `VERSION` from `"3.4.8"` to
+  `"1.0.0"`.
+
+### Rationale
+
+Prior version numbers were used during internal development and do not reflect a public release
+history. Consolidating to v1.0.0 establishes a clean semantic versioning baseline for the first
+public release of SPARC, encompassing all features from Phases 1-10 of the implementation plan.
+
+### Stats
+
+- **Spec count:** 1500 total, 0 failures
+- **New specs:** 0
+
+---
+
 ## 2026-03-22 -- feat: Bundle converter mapping data as seed fixtures for Docker deployments (#276)
 
 **Branch:** `feature/276_converter_seed_fixtures`
