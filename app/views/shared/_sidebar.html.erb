@@ -1,19 +1,17 @@
-<%# Collapsible left sidebar — visible on authenticated pages only %>
-<div class="offcanvas offcanvas-start sparc-sidebar" tabindex="-1" id="sparcSidebar"
-     data-controller="sidebar" data-bs-backdrop="false" data-bs-scroll="true">
-  <div class="offcanvas-header border-bottom border-secondary">
-    <h6 class="offcanvas-title fw-bold text-body-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08rem;">
+<%# Persistent left sidebar — visible on all authenticated pages %>
+<nav class="sparc-sidebar" data-controller="sidebar">
+  <div class="sparc-sidebar-header">
+    <span class="fw-bold text-body-secondary text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08rem;">
       Navigation
-    </h6>
-    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </span>
   </div>
 
-  <div class="offcanvas-body p-0" style="overflow-y: auto;">
+  <div class="sparc-sidebar-body">
 
     <%# ── Organizations ── %>
     <div class="sparc-sidebar-section">
       <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarOrgs" aria-expanded="true">
-        <span class="sparc-sidebar-icon">&#127970;</span> Organizations
+        <span class="sparc-sidebar-icon">&#128193;</span> Organizations
       </button>
       <div class="collapse show" id="sidebarOrgs">
         <% sidebar_organizations.each do |org| %>
@@ -35,32 +33,32 @@
                   <div class="collapse" id="sidebarAb<%= ab.id %>">
                     <ul class="sparc-sidebar-leaves">
                       <li>
-                        <%= link_to profile_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-controls" do %>
+                        <%= link_to profile_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
                           <span class="sparc-sidebar-dot" style="background: #3498db;"></span> Profiles
                         <% end %>
                       </li>
                       <li>
-                        <%= link_to cdef_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-impl" do %>
+                        <%= link_to cdef_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
                           <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> CDEFs
                         <% end %>
                       </li>
                       <li>
-                        <%= link_to ssp_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-impl" do %>
+                        <%= link_to ssp_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
                           <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> SSP
                         <% end %>
                       </li>
                       <li>
-                        <%= link_to sap_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-assess" do %>
+                        <%= link_to sap_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
                           <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAP
                         <% end %>
                       </li>
                       <li>
-                        <%= link_to sar_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-assess" do %>
+                        <%= link_to sar_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
                           <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAR
                         <% end %>
                       </li>
                       <li>
-                        <%= link_to poam_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf sparc-sidebar-leaf-assess" do %>
+                        <%= link_to poam_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
                           <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> POA&Ms
                         <% end %>
                       </li>
@@ -101,4 +99,4 @@
     </div>
 
   </div>
-</div>
+</nav>

@@ -1775,26 +1775,34 @@ a.link-purple { color: var(--sparc-purple); }
 
 /* ─── Sidebar Navigation ────────────────────────────────────────────── */
 .sparc-sidebar {
-  width: 280px !important;
-  background: var(--sparc-surface) !important;
-  border-right: 1px solid var(--sparc-border) !important;
-  color: var(--sparc-text) !important;
-  font-size: 0.85rem;
+  width: 220px;
+  min-width: 220px;
+  min-height: calc(100vh - 56px);
+  background: var(--sparc-bg);
+  border-right: 1px solid var(--sparc-border);
+  color: var(--sparc-text);
+  font-size: 1.05rem;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
-.sparc-sidebar .offcanvas-header {
-  padding: 0.75rem 1rem;
-  background: var(--sparc-surface);
+.sparc-sidebar-header {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--sparc-border);
 }
 
-.sparc-sidebar .btn-close-white {
-  filter: var(--sparc-btn-close-filter, none);
+.sparc-sidebar-body {
+  padding: 0;
 }
 
-[data-bs-theme="light"] .sparc-sidebar .btn-close-white {
-  filter: none;
-  --bs-btn-close-color: #000;
-  --bs-btn-close-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e");
+.sparc-main-content {
+  min-width: 0;
+}
+
+@media (max-width: 991.98px) {
+  .sparc-sidebar {
+    display: none;
+  }
 }
 
 .sparc-sidebar-section {
@@ -1810,7 +1818,7 @@ a.link-purple { color: var(--sparc-purple); }
   border: none;
   background: transparent;
   color: var(--sparc-text);
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -1839,13 +1847,13 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-sidebar-indent-1 {
   padding-left: 1.5rem;
   font-weight: 500;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
 }
 
 .sparc-sidebar-indent-2 {
   padding-left: 2.25rem;
   font-weight: 400;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .sparc-sidebar-icon {
@@ -1866,7 +1874,7 @@ a.link-purple { color: var(--sparc-purple); }
   padding: 0.3rem 1rem 0.3rem 3.25rem;
   color: var(--sparc-text);
   text-decoration: none;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   transition: background 0.15s;
 }
 
