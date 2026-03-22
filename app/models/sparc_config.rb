@@ -41,7 +41,27 @@ module SparcConfig
   def app_url       = ENV.fetch("SPARC_APP_URL", "http://localhost:3000")
   def app_name      = ENV.fetch("SPARC_APP_NAME", "SPARC")
   def contact_email = ENV.fetch("SPARC_CONTACT_EMAIL", nil)
+  def support_email = contact_email
   def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
+
+  # Configurable resources list — JSON array of {display_text, href} objects.
+  # Falls back to default FedRAMP/OSCAL/MITRE links when not set.
+  def resources
+    raw = ENV["SPARC_RESOURCES"]
+    if raw.present?
+      JSON.parse(raw) rescue default_resources
+    else
+      default_resources
+    end
+  end
+
+  def default_resources
+    [
+      { "display_text" => "FedRAMP 20x", "href" => "https://www.fedramp.gov/20x" },
+      { "display_text" => "NIST OSCAL", "href" => "https://pages.nist.gov/OSCAL/" },
+      { "display_text" => "MITRE Security Automation Framework", "href" => "https://saf.mitre.org/" }
+    ]
+  end
 
   # ── Organization ─────────────────────────────────────────────────────────
 

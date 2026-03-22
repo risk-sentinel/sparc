@@ -169,6 +169,7 @@ scheduler (e.g., `rails runner "InactivityCheckJob.perform_now"`).
 | SPARC_APP_NAME | Human-readable name of the platform | SPARC | `SPARC Compliance Platform` | No |
 | SPARC_WELCOME_TEXT | Message displayed on the login page | Welcome to SPARC | `Welcome to ACME Compliance` | No |
 | SPARC_CONTACT_EMAIL | Support/admin email shown in UI and login page | (none) | `compliance-team@yourorg.com` | No |
+| SPARC_RESOURCES | JSON array of external resource links for Resources page | FedRAMP 20x, NIST OSCAL, MITRE SAF defaults | `'[{"display_text":"Custom","href":"https://example.com"}]'` | No |
 | SPARC_LOG_TO_STDOUT | Send logs to stdout (recommended for containers) | false | `true` | No |
 | SPARC_STRUCTURED_LOGGING | Output logs in JSON format (CloudWatch, ELK, Splunk friendly) | false | `true` | No |
 | SPARC_LOG_LEVEL | Logging verbosity (debug, info, warn, error) | info | `debug` | No |

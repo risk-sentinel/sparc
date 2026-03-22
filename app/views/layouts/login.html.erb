@@ -71,6 +71,10 @@
             <li class="nav-item d-none d-lg-block">
               <%= link_to "About", about_path, class: "nav-link sparc-nav-btn" %>
             </li>
+            <%# ── Resources ── %>
+            <li class="nav-item d-none d-lg-block">
+              <%= link_to "Resources", about_resources_path, class: "nav-link sparc-nav-btn" %>
+            </li>
 
             <%# ── Separator ── %>
             <li class="nav-item d-none d-lg-block">
@@ -111,7 +115,7 @@
 
           <% if SparcConfig.contact_email.present? %>
             <div class="text-center text-lg-start mt-3 small text-body-tertiary">
-              <%= mail_to SparcConfig.contact_email, "Contact Support", class: "text-primary text-decoration-none" %>
+              <%= mail_to SparcConfig.contact_email, "Support", class: "text-primary text-decoration-none fw-semibold" %>
             </div>
           <% end %>
         </div>
