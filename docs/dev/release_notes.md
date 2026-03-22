@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-03-21 -- feat: Gitleaks Pattern for SPARC Service Account Tokens (#264)
+
+**Branch:** `feature/264_gitleaks_sparc_sa_pattern`
+
+### Summary
+
+Added two custom Gitleaks rules to detect SPARC API tokens and service account tokens in source
+code and commit history. The `sparc-api-token` rule detects tokens with the `sparc_` prefix, and
+the `sparc-service-account-token` rule detects tokens with the `sparc_sa_` prefix. Both rules use
+regex patterns matching 32+ character base62 tokens. Rules are tagged with NIST IA-5
+(Authenticator Management) for compliance traceability.
+
+### What Changed
+
+- **Gitleaks configuration** (`.gitleaks.toml`) -- NEW; two custom rules:
+  - `sparc-api-token` -- detects `sparc_` prefixed tokens (32+ base62 characters)
+  - `sparc-service-account-token` -- detects `sparc_sa_` prefixed tokens (32+ base62 characters)
+- Both rules tagged with `nist-ia-5` for NIST SP 800-53 IA-5 (Authenticator Management) traceability
+
+### Stats
+
+- **Spec count:** 1466 total, 0 failures
+- **New specs:** 0 (config-only change, no new specs needed)
+- **New files:** 1 (`.gitleaks.toml`)
+
+### NIST Controls
+
+- **IA-5** (Authenticator Management) -- prevents accidental commit of SPARC API and service account tokens
+
+---
+
 ## 2026-03-21 -- feat: AWS Secrets Manager Integration for ECS Deployments (#259)
 
 **Branch:** `feature/259_aws_secrets_integration`
