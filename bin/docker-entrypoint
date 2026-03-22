@@ -10,8 +10,11 @@ if [ -z "${LD_PRELOAD+x}" ]; then
 fi
 
 # Wait for PostgreSQL (safe for all services)
-echo "Waiting for PostgreSQL..."
-until pg_isready -h db -p 5432 -U postgres -t 1 >/dev/null 2>&1; do
+# Parse DATABASE_URL for host/port if available, fallback to docker-compose defaults
+DB_HOST=$(echo "${DATABASE_URL:-}" | sed 's|.*@\(.*\):.*|\1|')
+DB_PORT=$(echo "${DATABASE_URL:-}" | sed 's|.*:\([0-9]*\)/.*|\1|')
+echo "Waiting for PostgreSQL at ${DB_HOST:-db}:${DB_PORT:-5432}..."
+until pg_isready -h "${DB_HOST:-db}" -p "${DB_PORT:-5432}" -t 1 >/dev/null 2>&1; do
     echo "Postgres is not ready yet - sleeping..."
     sleep 2
 done
