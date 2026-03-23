@@ -56,6 +56,71 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
 
 ---
 
+## Migration Safety Rules
+
+All database migrations **must** be deployment-safe. A migration that fails
+on a production database with existing data is a deployment blocker.
+
+### Required Patterns
+
+1. **All migrations must be idempotent** — use `if_not_exists: true`,
+   `column_exists?`, `table_exists?`, and `index_exists?` guards so
+   migrations can be safely re-run after partial failures.
+
+2. **Never add a NOT NULL column without a default** on a table with
+   existing rows. PostgreSQL will reject the migration because existing
+   rows cannot satisfy the constraint. Use this 3-step pattern instead:
+
+   ```ruby
+   # Step 1: Add column as nullable
+   add_column :users, :department, :string
+
+   # Step 2: Backfill existing rows
+   User.where(department: nil).update_all(department: "Unassigned")
+
+   # Step 3: Enforce NOT NULL after backfill
+   change_column_null :users, :department, false
+   ```
+
+   Or, if a default value is acceptable for all existing rows:
+
+   ```ruby
+   add_column :users, :active, :boolean, default: true, null: false
+   ```
+
+3. **All `create_table` calls must use `if_not_exists: true`** to handle
+   partial migration recovery.
+
+4. **All `add_index` calls must check `index_exists?`** first or use
+   `if_not_exists: true` (Rails 8.1+).
+
+5. **All `add_column` calls must check `column_exists?`** first to
+   prevent "column already exists" errors on re-run.
+
+6. **Foreign keys on existing tables** must use `null: true` unless
+   a backfill strategy is included in the same migration.
+
+7. **Squash migrations** must include column-level checks for existing
+   databases — not just `table_exists?` — to handle databases that
+   partially applied individual migrations before the squash.
+
+### What NOT to Do
+
+```ruby
+# BAD — will fail on tables with existing rows
+add_column :users, :role, :string, null: false
+
+# BAD — will fail if column already exists from partial run
+add_column :users, :status, :string
+
+# BAD — will fail if table exists from partial run
+create_table :ksi_validations do |t|
+  ...
+end
+```
+
+---
+
 ## Conditional Coverage
 
 SPARC's control coverage varies based on deployment configuration.

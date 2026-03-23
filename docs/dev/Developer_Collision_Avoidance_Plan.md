@@ -388,6 +388,7 @@ multi-developer Rails projects.
 | #125 | Possibly new `ato_packages` table | New table |
 | #107 | Possibly new `ksi_indicators` table | New table |
 | #183 | Squash all existing migrations into single consolidated file | All tables (schema-only, no data change) |
+| #283 | Pre-release squash: consolidate 9 post-v1.0.0 migrations into `20260323120000_squash_to_v110.rb` | All tables (schema-only, no data change) -- **COMPLETED 2026-03-23** |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -438,7 +439,7 @@ These files are touched by multiple issues. Extra care required.
 | `app/services/document_duplication_service.rb` | #176, #172, #173, #174 | Each document type adds its own `dup_*` method. Low conflict if well-separated. |
 | `.github/workflows/` | #100 (CI test), #186 (security scanning) | Different workflow files. #100 adds test runner; #186 adds security pipeline. **LOW** risk. |
 | `db/seeds.rb` | #108 (dual mode), #107 (FedRAMP seeds) | Both in Phase 6 (sequential: #107 then #108). Use separate seed files: `db/seeds/nist_traditional.rb`, `db/seeds/fedramp_20x.rb`. Main `seeds.rb` just dispatches. |
-| `db/migrate/` | All migration issues + #183 (squash) | **HIGH RISK for #183.** Squash must be the last migration-related PR to merge. See Section 4 rule 6. |
+| `db/migrate/` | All migration issues + #183 (squash) + #283 (v1.1.0 squash) | **HIGH RISK for squash PRs.** Squash must be the last migration-related PR to merge. See Section 4 rule 6. |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -674,8 +675,8 @@ removed and are no longer tracked:
 
 ## Summary
 
-- **Total issues tracked:** 50 (23 original + 27 ad-hoc/new)
-- **Completed:** 48 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257, #259, #262, #263, #264, #269, #272, #274, #276, #282)
+- **Total issues tracked:** 51 (23 original + 28 ad-hoc/new)
+- **Completed:** 49 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257, #259, #262, #263, #264, #269, #272, #274, #276, #282, #283)
 - **Remaining:** 2 issues (Phase 10: #244, #246)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
