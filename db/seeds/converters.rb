@@ -202,7 +202,7 @@ if scap_file.exist?
       (mapping["nist_controls"] || []).each do |nist|
         entries << {
           converter_id: converter.id,
-          source_id: mapping["family"],
+          source_id: mapping["oval_family"],
           target_id: nist,
           relationship: normalize_relationship(mapping["relationship"]),
           category: "oval_family",
@@ -215,12 +215,12 @@ if scap_file.exist?
       end
     end
 
-    # XCCDF keyword mappings
-    (data["xccdf_keyword_mappings"] || []).each do |mapping|
+    # XCCDF category mappings
+    (data["xccdf_category_mappings"] || []).each do |mapping|
       (mapping["nist_controls"] || []).each do |nist|
         entries << {
           converter_id: converter.id,
-          source_id: mapping["keyword"],
+          source_id: mapping["category"],
           target_id: nist,
           relationship: normalize_relationship(mapping["relationship"]),
           category: "xccdf_keyword",
@@ -233,8 +233,13 @@ if scap_file.exist?
       end
     end
 
-    ConverterEntry.insert_all(entries) if entries.any?
-    puts "  Loaded #{entries.length} SCAP/OVAL entries"
+    # Filter out entries with nil source_id (prevents NOT NULL violation)
+    valid_entries = entries.select { |e| e[:source_id].present? }
+    if valid_entries.length < entries.length
+      puts "  WARNING: Skipped #{entries.length - valid_entries.length} entries with nil source_id"
+    end
+    ConverterEntry.insert_all(valid_entries) if valid_entries.any?
+    puts "  Loaded #{valid_entries.length} SCAP/OVAL entries"
   else
     puts "  SCAP/OVAL entries already exist (#{converter.converter_entries.count}), skipping"
   end
