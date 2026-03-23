@@ -22,7 +22,8 @@ echo "PostgreSQL is ready!"
 
 # Only run db:prepare when starting the Rails server (web container)
 # This prevents concurrent migration errors from sidekiq/console/etc.
-if [[ "$1" == "./bin/rails" && "$2" == "server" ]] || [[ "$1" == "rails" && "$2" == "server" ]]; then
+# CMD may be: ["./bin/rails", "server"] or ["./bin/thrust", "./bin/rails", "server"]
+if [[ "$*" == *"rails"*"server"* ]]; then
     echo "Running database preparation (create/migrate/seed if needed)..."
     bundle exec rails db:prepare
 fi
