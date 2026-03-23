@@ -31,6 +31,7 @@ def normalize_relationship(rel)
 end
 
 # ── 1. DISA CCI → NIST SP 800-53 ──────────────────────────────────────
+begin
 cci_file = MAPPINGS_DIR.join("cci_to_nist.json")
 if cci_file.exist?
   puts "Seeding DISA CCI → NIST converter..."
@@ -70,8 +71,13 @@ if cci_file.exist?
     puts "  CCI entries already exist (#{converter.converter_entries.count}), skipping"
   end
 end
+rescue => e
+  puts "  ERROR loading DISA CCI converter: #{e.class} — #{e.message}"
+  Rails.logger.error("[Seed:Converters] DISA CCI failed: #{e.class} — #{e.message}")
+end
 
 # ── 2. CIS Controls → NIST SP 800-53 ──────────────────────────────────
+begin
 cis_file = MAPPINGS_DIR.join("cis_to_nist.json")
 if cis_file.exist?
   puts "Seeding CIS Controls → NIST converter..."
@@ -130,8 +136,13 @@ if cis_file.exist?
     puts "  CIS entries already exist (#{converter.converter_entries.count}), skipping"
   end
 end
+rescue => e
+  puts "  ERROR loading CIS Controls converter: #{e.class} — #{e.message}"
+  Rails.logger.error("[Seed:Converters] CIS Controls failed: #{e.class} — #{e.message}")
+end
 
 # ── 3. SCAP/OVAL → NIST SP 800-53 ─────────────────────────────────────
+begin
 scap_file = MAPPINGS_DIR.join("scap_oval_to_nist.json")
 if scap_file.exist?
   puts "Seeding SCAP/OVAL → NIST converter..."
@@ -228,5 +239,18 @@ if scap_file.exist?
     puts "  SCAP/OVAL entries already exist (#{converter.converter_entries.count}), skipping"
   end
 end
+rescue => e
+  puts "  ERROR loading SCAP/OVAL converter: #{e.class} — #{e.message}"
+  Rails.logger.error("[Seed:Converters] SCAP/OVAL failed: #{e.class} — #{e.message}")
+end
 
-puts "Converter seeding complete: #{Converter.count} converters, #{ConverterEntry.count} total entries"
+# ── Post-load verification ─────────────────────────────────────────────
+expected = %w[cci_to_nist cis_to_nist scap_oval_to_nist]
+loaded = Converter.where(converter_type: expected).pluck(:converter_type)
+missing = expected - loaded
+if missing.any?
+  puts "  ⚠ WARNING: Missing converters: #{missing.join(', ')}"
+  puts "  Re-run: bundle exec rails db:seed"
+else
+  puts "Converter seeding complete: #{Converter.count} converters, #{ConverterEntry.count} total entries"
+end
