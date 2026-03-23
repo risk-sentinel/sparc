@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-03-23 -- chore: Update Login Page Features List + Version Bump to v1.1.0 (#281)
+
+**Branch:** `feature/281_login_features_v110`
+
+### Summary
+
+Replaced 13 outdated login page feature bullets with 9 new ones reflecting current SPARC capabilities
+(FedRAMP 20x, OSCAL import/export, HDF/XCCDF converters, REST API, ATO wizard). Removed the legacy
+"Convert Excel workbooks to JSON" reference. Bumped `SparcConfig::VERSION` from `1.0.0` to `1.1.0`.
+Feature titles now use bold text with em-dash descriptions for visual consistency.
+
+### What Changed
+
+- **Login feature list** (`app/views/layouts/login.html.erb`) -- replaced 13 outdated bullets with 9
+  current-capability bullets covering FedRAMP 20x, OSCAL, HDF, XCCDF, converters, and REST API.
+- **Version constant** (`app/models/sparc_config.rb`) -- bumped `VERSION` from `"1.0.0"` to `"1.1.0"`.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0
+
+---
+
 ## 2026-03-23 -- fix: Fix Incomplete Data Seeding on Startup -- Missing Converters + Sample Data (#282)
 
 **Branch:** `bug/282_incomplete_seed_data`

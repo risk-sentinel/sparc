@@ -293,6 +293,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#276** Converter seed fixtures for Docker -- **COMPLETED 2026-03-22** | Converters/Infrastructure | `db/seeds/converters.rb` (NEW), `db/seeds.rb`, `bin/docker-entrypoint`, `.env.example`, `.env.production.example`, `docs/ENVIRONMENT_VARIABLES.md`, `lib/data_mappings/cci_to_nist.json`, `lib/data_mappings/cis_to_nist.json`, `lib/data_mappings/scap_oval_to_nist.json` | **NONE** -- completed |
 | [x] | **#271** Consolidate all releases into v1.0.0 -- **COMPLETED 2026-03-22** | Version/Config | `app/models/sparc_config.rb` (VERSION constant) | **NONE** -- completed |
 | [x] | **#282** Fix incomplete data seeding on startup -- **COMPLETED 2026-03-23** | Seeds/Infrastructure | `app/models/seed_runner.rb` (NEW), `app/models/seed_section.rb` (NEW), `db/seeds.rb` (REFACTORED), `db/seeds/converters.rb` (FIXED), `db/seeds/sample_artifacts.rb` (FIXED), `bin/docker-entrypoint` (UPDATED), `lib/data/catalogs/` (MOVED), migration (create_seed_sections), `spec/models/seed_runner_spec.rb` (NEW -- 8 specs) | **NONE** -- completed |
+| [x] | **#281** Login features list + v1.1.0 version bump -- **COMPLETED 2026-03-23** | Shared/UI + Version | `app/views/layouts/login.html.erb` (13 bullets replaced with 9), `app/models/sparc_config.rb` (VERSION 1.0.0 -> 1.1.0) | **NONE** -- completed |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -316,6 +317,7 @@ Dev A: #272 (left sidebar nav)   -- Shared/UI domain ✅ COMPLETE
 Dev A: #276 (converter seeds)   -- Converters/Infrastructure domain ✅ COMPLETE
 Dev A: #271 (v1.0.0 release)   -- Version/Config domain ✅ COMPLETE
 Dev A: #282 (seed runner fix)  -- Seeds/Infrastructure domain ✅ COMPLETE
+Dev A: #281 (login features + v1.1.0) -- Shared/UI + Version domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security-critical),

@@ -131,6 +131,7 @@ authentication mode coverage matrix.
 - [x] #276 -- Bundle converter mapping data as seed fixtures for Docker deployments -- **COMPLETED 2026-03-22**
 - [x] #271 -- Consolidate all releases into v1.0.0 (first public release) -- **COMPLETED 2026-03-22**
 - [x] #282 -- Fix incomplete data seeding on startup (SeedRunner, version-tracked sections, demo gate) -- **COMPLETED 2026-03-23**
+- [x] #281 -- Update login page features list + version bump to v1.1.0 -- **COMPLETED 2026-03-23**
 
 <!-- markdownlint-enable MD013 -->
 
