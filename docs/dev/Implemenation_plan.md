@@ -133,6 +133,7 @@ authentication mode coverage matrix.
 - [x] #282 -- Fix incomplete data seeding on startup (SeedRunner, version-tracked sections, demo gate) -- **COMPLETED 2026-03-23**
 - [x] #281 -- Update login page features list + version bump to v1.1.0 -- **COMPLETED 2026-03-23**
 - [x] #283 -- Pre-release squash all pending migrations (9 files into single squash, 73 archived) -- **COMPLETED 2026-03-23**
+- [x] #291 -- Create Postman collection and environment for SPARC API (59 endpoints, 12 folders, prod + local envs) -- **COMPLETED 2026-03-23**
 
 <!-- markdownlint-enable MD013 -->
 
