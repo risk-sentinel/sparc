@@ -1,9 +1,8 @@
 class AddDeletedAtToProfileAndCdefDocuments < ActiveRecord::Migration[8.1]
   def change
-    add_column :profile_documents, :deleted_at, :datetime
-    add_column :cdef_documents, :deleted_at, :datetime
-
-    add_index :profile_documents, :deleted_at
-    add_index :cdef_documents, :deleted_at
+    %i[profile_documents cdef_documents].each do |table|
+      add_column table, :deleted_at, :datetime unless column_exists?(table, :deleted_at)
+      add_index table, :deleted_at unless index_exists?(table, :deleted_at)
+    end
   end
 end
