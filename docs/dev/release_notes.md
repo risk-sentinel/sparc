@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-03-23 -- chore: Pre-Release Squash All Pending Migrations (#283)
+
+**Branch:** `chore/283_squash_migrations`
+
+### Summary
+
+Consolidated 9 migration files (1 original squash + 8 post-squash) into a single new squash migration
+(`20260323120000_squash_to_v110.rb`). All 9 old migrations archived to `db/migrate_archive/` (73 total
+archived). The new squash uses a `table_exists?` guard -- no-op on existing databases, evaluates
+`schema.rb` on fresh databases. Updated `schema.rb` version to `2026_03_23_120000`. Seeds (SeedRunner)
+are completely independent of migrations with no cross-dependencies.
+
+### What Changed
+
+- **New squash migration** (`db/migrate/20260323120000_squash_to_v110.rb`) -- single consolidated
+  migration with `table_exists?` guard for idempotent behavior.
+- **Archived migrations** -- 9 old migration files moved to `db/migrate_archive/` (73 total archived).
+- **Schema version** (`db/schema.rb`) -- updated version to `2026_03_23_120000`.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0
+
+---
+
 ## 2026-03-23 -- chore: Update Login Page Features List + Version Bump to v1.1.0 (#281)
 
 **Branch:** `feature/281_login_features_v110`
