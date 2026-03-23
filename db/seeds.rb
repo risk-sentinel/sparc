@@ -2186,75 +2186,12 @@ end # SeedRunner roles
 # ══════════════════════════════════════════════════════════════════════
 # REQUIRED: Admin User Bootstrap
 # ══════════════════════════════════════════════════════════════════════
+# Admin bootstrap is handled by the standalone rake task (sparc:bootstrap_admin)
+# which runs in the entrypoint BEFORE db:seed. This ensures admin exists
+# even when SPARC_RUN_SEEDS=false. The seed section here delegates to
+# the same rake task for backward compatibility with `rails db:seed`.
 SeedRunner.run_section("admin_user") do
-
-# ── Admin User Bootstrapping ──────────────────────────────────────────────
-# Creates or resets the admin account when local login is enabled.
-# Uses find_or_initialize_by so re-running seeds handles the case where
-# local login was enabled after the initial setup.
-if SparcConfig.enable_local_login?
-  email = ENV.fetch("SPARC_ADMIN_EMAIL", "admin@sparc.local")
-  admin = User.find_or_initialize_by(email: email.downcase.strip)
-
-  if admin.new_record? || !admin.password_digest.present?
-    password = SecureRandom.alphanumeric(20)
-    admin.assign_attributes(
-      password: password,
-      password_confirmation: password,
-      display_name: admin.display_name.presence || "SPARC Admin",
-      admin: true,
-      status: "active",
-      must_reset_password: true,
-      password_changed_at: nil
-    )
-
-    if admin.save
-      AuditEvent.log(
-        user: admin,
-        action: "admin_bootstrap",
-        provider: "local",
-        metadata: { email: admin.email }
-      )
-
-      puts ""
-      puts "=" * 60
-      puts "  SPARC Admin Account #{admin.previously_new_record? ? 'Created' : 'Reset'}"
-      puts "=" * 60
-      puts "  Email:    #{admin.email}"
-      if Rails.env.production?
-        puts "  Password: [REDACTED]"
-      else
-        puts "  Password: #{password}"
-      end
-      puts ""
-      puts "  *** You will be required to change this password on first login. ***"
-      puts "=" * 60
-      puts ""
-    else
-      puts "ERROR: Could not bootstrap admin: #{admin.errors.full_messages.join(', ')}"
-    end
-  else
-    # Ensure existing admin user has admin flag set (fixes deployments where it was missed)
-    unless admin.admin?
-      admin.update!(admin: true)
-      puts "  Fixed: admin flag set to true for #{admin.email}"
-    end
-    puts "Admin account already exists with a password set — skipping bootstrap."
-  end
-
-  # Attach default admin avatar if not already set
-  admin_avatar_path = Rails.root.join("app/assets/images/sparc_admin.jpg")
-  if admin.persisted? && !admin.avatar.attached? && File.exist?(admin_avatar_path)
-    admin.avatar.attach(
-      io: File.open(admin_avatar_path),
-      filename: "sparc_admin.jpg",
-      content_type: "image/jpeg"
-    )
-    puts "  Admin avatar attached (sparc_admin.jpg)"
-  end
-else
-  puts "Admin bootstrapping skipped (local login not enabled)."
-end
+  Rake::Task["sparc:bootstrap_admin"].invoke
 end # SeedRunner admin_user
 
 # ══════════════════════════════════════════════════════════════════════
