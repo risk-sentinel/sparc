@@ -17,7 +17,6 @@ puts SEED_DEMO ? "\n[SPARC] Seeding with DEMO data enabled.\n" : "\n[SPARC] Seed
 # REQUIRED: NIST SP 800-53 Rev 5 Catalog (full 1,189 controls via OSCAL fixture)
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("nist_rev5_catalog") do
-
 puts "Seeding NIST SP 800-53 Rev 5 catalog from OSCAL fixture..."
 
 oscal_rev5_path = Rails.root.join("lib/data/catalogs/NIST_SP-800-53_rev5_catalog.json")
@@ -485,7 +484,6 @@ puts "Done! NIST SP 800-53 Rev 5 catalog is ready."
 # REQUIRED: NIST SP 800-53 Rev 4 Catalog (from OSCAL fixture)
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("nist_rev4_catalog") do
-
 puts "\nSeeding NIST SP 800-53 Rev 4 catalog from OSCAL fixture..."
 
 oscal_rev4_path = Rails.root.join("lib/data/catalogs/NIST_SP-800-53_rev4_catalog.json")
@@ -880,7 +878,6 @@ end
 # ══════════════════════════════════════════════════════════════════════
 if SEED_DEMO
 SeedRunner.run_section("demo_ssp_sar") do
-
 puts "\nSeeding demo SSP and SAR documents..."
 
 def seed_ssp_control(doc, ctrl_id, title, fields, inherited_rows: [])
@@ -1935,7 +1932,6 @@ end # if SEED_DEMO (ssp/sar)
 # REQUIRED: Roles
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("roles") do
-
 # ── Role Seeding ──────────────────────────────────────────────────────────
 # Roles from docs/groups_users/groups_users.md
 puts "\nSeeding roles..."
@@ -2226,7 +2222,6 @@ end # SeedRunner admin_user
 # ══════════════════════════════════════════════════════════════════════
 if SEED_DEMO
 SeedRunner.run_section("demo_organization") do
-
 # ── Default Organization ──────────────────────────────────────────────────
 puts "\nSeeding default Organization..."
 
@@ -2314,7 +2309,6 @@ puts "Done! Sample authorization boundary seeded."
 end # SeedRunner demo_organization (includes org + boundary)
 
 SeedRunner.run_section("demo_evidence") do
-
 # ── Evidence & Attestations ─────────────────────────────────────────────────
 puts ""
 puts "Seeding sample evidence records..."
@@ -2402,7 +2396,6 @@ end # if SEED_DEMO (org/boundary/evidence)
 # REQUIRED: FedRAMP 20x KSI Catalog
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("fedramp_20x_ksi") do
-
 # ── FedRAMP 20x KSI Catalog ──────────────────────────────────────────
 load Rails.root.join("db/seeds/fedramp_20x_ksi.rb")
 end # SeedRunner fedramp_20x_ksi
