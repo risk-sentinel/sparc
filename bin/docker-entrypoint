@@ -27,6 +27,11 @@ if [[ "$*" == *"rails"*"server"* ]]; then
     echo "Running database preparation (create/migrate)..."
     bundle exec rails db:prepare
 
+    # Admin bootstrap runs independently of seeds — always ensures admin exists.
+    # Idempotent: creates if missing, fixes admin flag if unset, never resets passwords.
+    echo "Bootstrapping admin account..."
+    bundle exec rails sparc:bootstrap_admin || echo "WARNING: Admin bootstrap failed (non-fatal)"
+
     # Always run seeds — SeedRunner tracks completion and skips already-done sections.
     # Failed sections from previous deploys will automatically retry.
     echo "Running seed completeness check..."
