@@ -12,11 +12,7 @@
         <%# Current avatar display %>
         <div class="d-flex align-items-center gap-3 mb-4">
           <span class="sparc-avatar" style="width: 128px; height: 128px; font-size: 3rem;">
-            <% if current_user.avatar.attached? %>
-              <%= image_tag current_user.avatar, alt: current_user.initials, data: { avatar_crop_target: "currentAvatar" } %>
-            <% else %>
-              <%= current_user.initials %>
-            <% end %>
+            <%= safe_avatar_tag(current_user, alt: current_user.initials, data: { avatar_crop_target: "currentAvatar" }) %>
           </span>
           <div>
             <div class="fw-semibold fs-5"><%= current_user.display_label %></div>
