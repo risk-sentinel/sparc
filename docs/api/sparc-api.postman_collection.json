@@ -1,0 +1,1463 @@
+{
+  "info": {
+    "_postman_id": "sparc-api-v1-collection",
+    "name": "SPARC API v1",
+    "description": "Complete API collection for SPARC (Systematic and Regulatory Compliance). 54 endpoints covering OSCAL document lifecycle, FedRAMP 20x KSI management, and platform administration.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ssp_slug",
+      "value": "acme-cloud-platform-ssp",
+      "type": "string"
+    },
+    {
+      "key": "sar_slug",
+      "value": "acme-cloud-platform-sar",
+      "type": "string"
+    },
+    {
+      "key": "sap_slug",
+      "value": "acme-cloud-platform-sap",
+      "type": "string"
+    },
+    {
+      "key": "poam_slug",
+      "value": "acme-cloud-platform-poam",
+      "type": "string"
+    },
+    {
+      "key": "profile_slug",
+      "value": "fedramp-moderate-rev5",
+      "type": "string"
+    },
+    {
+      "key": "cdef_slug",
+      "value": "mongodb-component-definition",
+      "type": "string"
+    },
+    {
+      "key": "catalog_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "mapping_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "boundary_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "validation_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "indicator_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Discovery",
+      "description": "API discovery endpoint for authorization-scoped endpoint enumeration.",
+      "item": [
+        {
+          "name": "List Available Endpoints",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/available",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "available"]
+            },
+            "description": "Returns authorization-scoped list of all API endpoints the caller can access. The response includes endpoint paths, HTTP methods, and brief descriptions filtered by the caller's role and permissions.\n\nResponse format:\n```json\n{\n  \"endpoints\": [\n    {\n      \"path\": \"/api/v1/ssp_documents\",\n      \"method\": \"GET\",\n      \"description\": \"List SSP documents\"\n    }\n  ]\n}\n```"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SSP Documents",
+      "description": "System Security Plan (SSP) document lifecycle management. Supports CRUD operations, Excel file conversion, and JSON export.",
+      "item": [
+        {
+          "name": "List SSP Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents?authorization_boundary_id=1&page=1&items=25",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ssp_documents"],
+              "query": [
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "1",
+                  "description": "Filter by authorization boundary",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination",
+                  "disabled": true
+                },
+                {
+                  "key": "items",
+                  "value": "25",
+                  "description": "Number of items per page",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns a paginated list of SSP documents scoped to the caller's authorization boundaries. Supports optional filtering by authorization_boundary_id and pagination via page/items query parameters.\n\nResponse format:\n```json\n{\n  \"ssp_documents\": [...],\n  \"meta\": { \"total\": 10, \"page\": 1, \"items\": 25 }\n}\n```"
+          }
+        },
+        {
+          "name": "Create SSP Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ssp_document\": {\n    \"name\": \"ACME Cloud Platform SSP\",\n    \"description\": \"System Security Plan for FedRAMP Moderate authorization of ACME Cloud Platform\",\n    \"authorization_boundary_id\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ssp_documents"]
+            },
+            "description": "Creates a new SSP document. The document is associated with an authorization boundary and will be initialized with empty control fields ready for population.\n\nResponse: 201 Created with the new SSP document JSON including its generated slug."
+          }
+        },
+        {
+          "name": "Show SSP Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ssp_documents", "{{ssp_slug}}"]
+            },
+            "description": "Returns a single SSP document by slug, including all associated controls and control fields.\n\nResponse format:\n```json\n{\n  \"ssp_document\": {\n    \"id\": 1,\n    \"slug\": \"acme-cloud-platform-ssp\",\n    \"name\": \"ACME Cloud Platform SSP\",\n    \"controls\": [...]\n  }\n}\n```"
+          }
+        },
+        {
+          "name": "Update SSP Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ssp_document\": {\n    \"name\": \"ACME Cloud Platform SSP (Updated)\",\n    \"description\": \"Updated System Security Plan for FedRAMP High authorization\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ssp_documents", "{{ssp_slug}}"]
+            },
+            "description": "Updates an existing SSP document's metadata (name, description). Does not modify controls or control fields directly.\n\nResponse: 200 OK with the updated SSP document JSON."
+          }
+        },
+        {
+          "name": "Delete SSP Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ssp_documents", "{{ssp_slug}}"]
+            },
+            "description": "Soft-deletes an SSP document. The document is marked as deleted but retained in the database for audit purposes. Can be restored by an administrator.\n\nResponse: 200 OK with confirmation message."
+          }
+        },
+        {
+          "name": "Convert SSP Excel File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Excel file (.xlsx) containing SSP data"
+                },
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "1",
+                  "type": "text",
+                  "description": "Authorization boundary to associate the parsed document with"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/convert",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ssp_documents", "convert"]
+            },
+            "description": "Uploads an Excel (.xlsx) file for asynchronous parsing into an SSP document with controls and control fields. The file is processed by a background Sidekiq job. Returns a conversion job ID for status polling.\n\nResponse: 202 Accepted with conversion job details:\n```json\n{\n  \"conversion_job\": {\n    \"id\": 1,\n    \"status\": \"pending\"\n  }\n}\n```"
+          }
+        },
+        {
+          "name": "Export SSP Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}/export",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ssp_documents", "{{ssp_slug}}", "export"]
+            },
+            "description": "Exports an SSP document as a downloadable JSON file. The export includes the full document hierarchy: document metadata, controls, and all control fields.\n\nResponse: 200 OK with Content-Disposition header for file download."
+          }
+        }
+      ]
+    },
+    {
+      "name": "SAR Documents",
+      "description": "Security Assessment Report (SAR) document lifecycle management. Supports CRUD operations, Excel file conversion, and JSON export.",
+      "item": [
+        {
+          "name": "List SAR Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sar_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sar_documents"]
+            },
+            "description": "Returns a paginated list of SAR documents scoped to the caller's authorization boundaries.\n\nResponse format:\n```json\n{\n  \"sar_documents\": [...],\n  \"meta\": { \"total\": 5, \"page\": 1, \"items\": 25 }\n}\n```"
+          }
+        },
+        {
+          "name": "Create SAR Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sar_document\": {\n    \"name\": \"ACME Cloud Platform SAR - Annual Assessment\",\n    \"description\": \"Security Assessment Report for FedRAMP annual assessment cycle\",\n    \"authorization_boundary_id\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sar_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sar_documents"]
+            },
+            "description": "Creates a new SAR document associated with an authorization boundary.\n\nResponse: 201 Created with the new SAR document JSON including its generated slug."
+          }
+        },
+        {
+          "name": "Show SAR Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sar_documents", "{{sar_slug}}"]
+            },
+            "description": "Returns a single SAR document by slug, including all associated controls, control fields, and assessment findings.\n\nResponse: 200 OK with full SAR document JSON."
+          }
+        },
+        {
+          "name": "Update SAR Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sar_document\": {\n    \"name\": \"ACME Cloud Platform SAR - Annual Assessment (Revised)\",\n    \"description\": \"Revised Security Assessment Report with updated findings\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sar_documents", "{{sar_slug}}"]
+            },
+            "description": "Updates an existing SAR document's metadata.\n\nResponse: 200 OK with the updated SAR document JSON."
+          }
+        },
+        {
+          "name": "Delete SAR Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sar_documents", "{{sar_slug}}"]
+            },
+            "description": "Soft-deletes a SAR document. The document is retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
+          }
+        },
+        {
+          "name": "Convert SAR Excel File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Excel file (.xlsx) containing SAR assessment data"
+                },
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "1",
+                  "type": "text",
+                  "description": "Authorization boundary to associate the parsed document with"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sar_documents/convert",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sar_documents", "convert"]
+            },
+            "description": "Uploads an Excel (.xlsx) file for asynchronous parsing into a SAR document. Processed by a background Sidekiq job.\n\nResponse: 202 Accepted with conversion job details."
+          }
+        },
+        {
+          "name": "Export SAR Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}/export",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sar_documents", "{{sar_slug}}", "export"]
+            },
+            "description": "Exports a SAR document as a downloadable JSON file including all assessment findings and control results.\n\nResponse: 200 OK with Content-Disposition header for file download."
+          }
+        }
+      ]
+    },
+    {
+      "name": "SAP Documents",
+      "description": "Security Assessment Plan (SAP) document lifecycle management. CRUD operations for assessment planning documents.",
+      "item": [
+        {
+          "name": "List SAP Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sap_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sap_documents"]
+            },
+            "description": "Returns a paginated list of SAP documents scoped to the caller's authorization boundaries.\n\nResponse format:\n```json\n{\n  \"sap_documents\": [...],\n  \"meta\": { \"total\": 3, \"page\": 1, \"items\": 25 }\n}\n```"
+          }
+        },
+        {
+          "name": "Create SAP Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sap_document\": {\n    \"name\": \"ACME Cloud Platform SAP - FY2026\",\n    \"description\": \"Security Assessment Plan for FY2026 annual assessment of ACME Cloud Platform\",\n    \"authorization_boundary_id\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sap_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sap_documents"]
+            },
+            "description": "Creates a new SAP document defining the scope, methodology, and schedule for a security assessment.\n\nResponse: 201 Created with the new SAP document JSON."
+          }
+        },
+        {
+          "name": "Show SAP Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sap_documents/{{sap_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sap_documents", "{{sap_slug}}"]
+            },
+            "description": "Returns a single SAP document by slug with full assessment plan details.\n\nResponse: 200 OK with SAP document JSON."
+          }
+        },
+        {
+          "name": "Update SAP Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sap_document\": {\n    \"name\": \"ACME Cloud Platform SAP - FY2026 (Revised)\",\n    \"description\": \"Revised assessment plan with updated scope and timeline\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sap_documents/{{sap_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sap_documents", "{{sap_slug}}"]
+            },
+            "description": "Updates an existing SAP document's metadata.\n\nResponse: 200 OK with the updated SAP document JSON."
+          }
+        },
+        {
+          "name": "Delete SAP Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sap_documents/{{sap_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sap_documents", "{{sap_slug}}"]
+            },
+            "description": "Soft-deletes a SAP document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
+          }
+        }
+      ]
+    },
+    {
+      "name": "POA&M Documents",
+      "description": "Plan of Action and Milestones (POA&M) document lifecycle management. Tracks remediation plans for identified security weaknesses.",
+      "item": [
+        {
+          "name": "List POA&M Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/poam_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "poam_documents"]
+            },
+            "description": "Returns a paginated list of POA&M documents scoped to the caller's authorization boundaries.\n\nResponse format:\n```json\n{\n  \"poam_documents\": [...],\n  \"meta\": { \"total\": 2, \"page\": 1, \"items\": 25 }\n}\n```"
+          }
+        },
+        {
+          "name": "Create POA&M Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poam_document\": {\n    \"name\": \"ACME Cloud Platform POA&M - Q1 2026\",\n    \"description\": \"Plan of Action and Milestones tracking remediation of Q1 2026 assessment findings\",\n    \"authorization_boundary_id\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/poam_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "poam_documents"]
+            },
+            "description": "Creates a new POA&M document for tracking remediation milestones and scheduled completion dates for identified weaknesses.\n\nResponse: 201 Created with the new POA&M document JSON."
+          }
+        },
+        {
+          "name": "Show POA&M Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/poam_documents/{{poam_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "poam_documents", "{{poam_slug}}"]
+            },
+            "description": "Returns a single POA&M document by slug with all remediation items and milestone tracking details.\n\nResponse: 200 OK with POA&M document JSON."
+          }
+        },
+        {
+          "name": "Update POA&M Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poam_document\": {\n    \"name\": \"ACME Cloud Platform POA&M - Q1 2026 (Updated)\",\n    \"description\": \"Updated remediation milestones with revised completion dates\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/poam_documents/{{poam_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "poam_documents", "{{poam_slug}}"]
+            },
+            "description": "Updates an existing POA&M document's metadata.\n\nResponse: 200 OK with the updated POA&M document JSON."
+          }
+        },
+        {
+          "name": "Delete POA&M Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/poam_documents/{{poam_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "poam_documents", "{{poam_slug}}"]
+            },
+            "description": "Soft-deletes a POA&M document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Control Catalogs",
+      "description": "NIST SP 800-53 control catalog management. Admin-only for create, update, and delete operations.",
+      "item": [
+        {
+          "name": "List Control Catalogs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_catalogs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_catalogs"]
+            },
+            "description": "Returns all available control catalogs (e.g., NIST SP 800-53 Rev 4, Rev 5). Includes catalog metadata and control family counts.\n\nResponse format:\n```json\n{\n  \"control_catalogs\": [\n    {\n      \"id\": 1,\n      \"name\": \"NIST SP 800-53 Rev 5\",\n      \"version\": \"5.0\",\n      \"families_count\": 20,\n      \"controls_count\": 1189\n    }\n  ]\n}\n```"
+          }
+        },
+        {
+          "name": "Create Control Catalog",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"control_catalog\": {\n    \"name\": \"NIST SP 800-53 Rev 5\",\n    \"version\": \"5.0\",\n    \"description\": \"Security and Privacy Controls for Information Systems and Organizations\",\n    \"source_url\": \"https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_catalogs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_catalogs"]
+            },
+            "description": "Creates a new control catalog. Admin-only endpoint. Catalogs serve as the reference framework for control implementations across all document types.\n\nResponse: 201 Created with the new catalog JSON."
+          }
+        },
+        {
+          "name": "Show Control Catalog",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_catalogs", "{{catalog_id}}"]
+            },
+            "description": "Returns a single control catalog by ID, including all control families and their controls.\n\nResponse: 200 OK with full catalog JSON including nested families and controls."
+          }
+        },
+        {
+          "name": "Update Control Catalog",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"control_catalog\": {\n    \"description\": \"Updated description for NIST SP 800-53 Rev 5 catalog\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_catalogs", "{{catalog_id}}"]
+            },
+            "description": "Updates a control catalog's metadata. Admin-only endpoint.\n\nResponse: 200 OK with the updated catalog JSON."
+          }
+        },
+        {
+          "name": "Delete Control Catalog",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_catalogs", "{{catalog_id}}"]
+            },
+            "description": "Deletes a control catalog. Admin-only endpoint. Will fail if any documents reference controls from this catalog.\n\nResponse: 200 OK with confirmation message."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile Documents",
+      "description": "Security profile document management. Profiles define baseline selections and parameter settings for control catalogs (e.g., FedRAMP Moderate baseline).",
+      "item": [
+        {
+          "name": "List Profile Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile_documents"]
+            },
+            "description": "Returns a list of all profile documents. Profiles define baseline control selections and parameter assignments.\n\nResponse format:\n```json\n{\n  \"profile_documents\": [\n    {\n      \"slug\": \"fedramp-moderate-rev5\",\n      \"name\": \"FedRAMP Moderate Rev 5\",\n      \"status\": \"published\"\n    }\n  ]\n}\n```"
+          }
+        },
+        {
+          "name": "Create Profile Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile_document\": {\n    \"name\": \"FedRAMP Moderate Rev 5\",\n    \"description\": \"FedRAMP Moderate baseline profile for NIST SP 800-53 Rev 5\",\n    \"control_catalog_id\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile_documents"]
+            },
+            "description": "Creates a new profile document linked to a control catalog. The profile can then have baseline parameters configured.\n\nResponse: 201 Created with the new profile document JSON."
+          }
+        },
+        {
+          "name": "Show Profile Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile_documents", "{{profile_slug}}"]
+            },
+            "description": "Returns a single profile document by slug with baseline selections and parameter settings.\n\nResponse: 200 OK with full profile document JSON."
+          }
+        },
+        {
+          "name": "Update Profile Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile_document\": {\n    \"name\": \"FedRAMP Moderate Rev 5 (Updated)\",\n    \"description\": \"Updated FedRAMP Moderate baseline with agency-specific tailoring\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile_documents", "{{profile_slug}}"]
+            },
+            "description": "Updates a profile document's metadata.\n\nResponse: 200 OK with the updated profile document JSON."
+          }
+        },
+        {
+          "name": "Delete Profile Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile_documents", "{{profile_slug}}"]
+            },
+            "description": "Soft-deletes a profile document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Baseline Parameters",
+      "description": "Profile baseline parameter management. Get, update, and export parameter assignments for profile-selected controls.",
+      "item": [
+        {
+          "name": "Get Parameter Schema",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/parameters?family=ac",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile_documents", "{{profile_slug}}", "parameters"],
+              "query": [
+                {
+                  "key": "family",
+                  "value": "ac",
+                  "description": "Filter parameters by NIST control family abbreviation (e.g., ac, au, cm)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns the parameter schema for a profile document, listing all configurable parameters with their current values, constraints, and guidance. Optionally filter by control family.\n\nResponse format:\n```json\n{\n  \"parameters\": [\n    {\n      \"id\": \"ac-1_prm_1\",\n      \"control_id\": \"ac-1\",\n      \"label\": \"organization-defined frequency\",\n      \"value\": \"annually\",\n      \"guidelines\": \"FedRAMP requires at least annually\"\n    }\n  ]\n}\n```"
+          }
+        },
+        {
+          "name": "Bulk Update Parameters",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parameters\": [\n    {\n      \"id\": \"ac-1_prm_1\",\n      \"value\": \"annually and upon significant changes\"\n    },\n    {\n      \"id\": \"ac-1_prm_2\",\n      \"value\": \"all organizational personnel\"\n    },\n    {\n      \"id\": \"ac-2_prm_1\",\n      \"value\": \"information system account types defined in SSP\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/parameters",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile_documents", "{{profile_slug}}", "parameters"]
+            },
+            "description": "Bulk updates parameter values for a profile document. Accepts an array of parameter ID/value pairs. All parameters are validated against their defined constraints.\n\nResponse: 200 OK with the updated parameter list and any validation warnings."
+          }
+        },
+        {
+          "name": "Export Parameters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/parameters/export?format=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile_documents", "{{profile_slug}}", "parameters", "export"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json",
+                  "description": "Export format: json (default), yaml, or xml"
+                }
+              ]
+            },
+            "description": "Exports profile baseline parameters in the specified format. Supports JSON, YAML, and XML output formats for integration with external tools and OSCAL workflows.\n\nResponse: 200 OK with Content-Disposition header. Format controlled by ?format= query parameter (json|yaml|xml)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "CDEF Documents",
+      "description": "Component Definition (CDEF) document lifecycle management. CDEFs describe how a component implements specific security controls.",
+      "item": [
+        {
+          "name": "List CDEF Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "cdef_documents"]
+            },
+            "description": "Returns a list of all Component Definition documents. CDEFs describe how individual system components implement security controls.\n\nResponse format:\n```json\n{\n  \"cdef_documents\": [\n    {\n      \"slug\": \"mongodb-component-definition\",\n      \"name\": \"MongoDB Component Definition\",\n      \"controls_count\": 23\n    }\n  ]\n}\n```"
+          }
+        },
+        {
+          "name": "Create CDEF Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cdef_document\": {\n    \"name\": \"MongoDB Enterprise CDEF\",\n    \"description\": \"Component Definition for MongoDB Enterprise Server 7.0 security control implementations\",\n    \"authorization_boundary_id\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "cdef_documents"]
+            },
+            "description": "Creates a new Component Definition document. Can also be created via OSCAL JSON/YAML/XML import or from a published profile.\n\nResponse: 201 Created with the new CDEF document JSON."
+          }
+        },
+        {
+          "name": "Show CDEF Document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "cdef_documents", "{{cdef_slug}}"]
+            },
+            "description": "Returns a single CDEF document by slug with all component controls and implementation details.\n\nResponse: 200 OK with full CDEF document JSON."
+          }
+        },
+        {
+          "name": "Update CDEF Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cdef_document\": {\n    \"name\": \"MongoDB Enterprise CDEF (Updated)\",\n    \"description\": \"Updated component definition with additional STIG control mappings\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "cdef_documents", "{{cdef_slug}}"]
+            },
+            "description": "Updates a CDEF document's metadata.\n\nResponse: 200 OK with the updated CDEF document JSON."
+          }
+        },
+        {
+          "name": "Delete CDEF Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "cdef_documents", "{{cdef_slug}}"]
+            },
+            "description": "Soft-deletes a CDEF document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Control Mappings",
+      "description": "Cross-framework control mapping management. Maps controls between different frameworks (e.g., NIST to ISO 27001). Admin-only for mutations.",
+      "item": [
+        {
+          "name": "List Control Mappings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_mappings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_mappings"]
+            },
+            "description": "Returns all control mappings that define relationships between controls across different frameworks and catalogs.\n\nResponse format:\n```json\n{\n  \"control_mappings\": [\n    {\n      \"id\": 1,\n      \"source_control_id\": \"ac-1\",\n      \"target_control_id\": \"A.5.1\",\n      \"source_framework\": \"NIST SP 800-53 Rev 5\",\n      \"target_framework\": \"ISO 27001:2022\",\n      \"relationship\": \"equivalent\"\n    }\n  ]\n}\n```"
+          }
+        },
+        {
+          "name": "Create Control Mapping",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"control_mapping\": {\n    \"source_catalog_id\": 1,\n    \"target_catalog_id\": 2,\n    \"source_control_identifier\": \"ac-1\",\n    \"target_control_identifier\": \"A.5.1\",\n    \"relationship\": \"equivalent\",\n    \"notes\": \"Both controls address access control policy and procedures\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_mappings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_mappings"]
+            },
+            "description": "Creates a new control mapping between two controls from different catalogs/frameworks. Admin-only endpoint. Relationship types: equivalent, partial, superset, subset.\n\nResponse: 201 Created with the new mapping JSON."
+          }
+        },
+        {
+          "name": "Show Control Mapping",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_mappings/{{mapping_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_mappings", "{{mapping_id}}"]
+            },
+            "description": "Returns a single control mapping by ID with full source and target control details.\n\nResponse: 200 OK with control mapping JSON."
+          }
+        },
+        {
+          "name": "Update Control Mapping",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"control_mapping\": {\n    \"relationship\": \"partial\",\n    \"notes\": \"Updated: AC-1 partially maps to A.5.1 — scope differs in organizational applicability\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_mappings/{{mapping_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_mappings", "{{mapping_id}}"]
+            },
+            "description": "Updates an existing control mapping. Admin-only endpoint.\n\nResponse: 200 OK with the updated mapping JSON."
+          }
+        },
+        {
+          "name": "Delete Control Mapping",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_mappings/{{mapping_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "control_mappings", "{{mapping_id}}"]
+            },
+            "description": "Deletes a control mapping. Admin-only endpoint.\n\nResponse: 200 OK with confirmation message."
+          }
+        }
+      ]
+    },
+    {
+      "name": "KSI Catalog",
+      "description": "FedRAMP 20x Key Security Indicator (KSI) catalog. Read-only reference data for KSI themes, indicators, and NIST control mappings.",
+      "item": [
+        {
+          "name": "List KSI Themes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ksi_catalog/themes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ksi_catalog", "themes"]
+            },
+            "description": "Returns all FedRAMP 20x KSI themes. Themes group related Key Security Indicators by security domain (e.g., AUTH for Authentication, VULN for Vulnerability Management).\n\nResponse format:\n```json\n{\n  \"themes\": [\n    {\n      \"code\": \"AUTH\",\n      \"name\": \"Authentication\",\n      \"description\": \"Identity and authentication controls\",\n      \"indicators_count\": 5\n    }\n  ]\n}\n```"
+          }
+        },
+        {
+          "name": "List KSI Indicators",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ksi_catalog/indicators?theme=AUTH&impact_level=high",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ksi_catalog", "indicators"],
+              "query": [
+                {
+                  "key": "theme",
+                  "value": "AUTH",
+                  "description": "Filter by KSI theme code (e.g., AUTH, VULN, CONFIG)",
+                  "disabled": true
+                },
+                {
+                  "key": "impact_level",
+                  "value": "high",
+                  "description": "Filter by FedRAMP impact level: low, moderate, high",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns KSI indicators with optional filtering by theme and impact level. Indicators define specific measurable security outcomes required by FedRAMP 20x.\n\nResponse format:\n```json\n{\n  \"indicators\": [\n    {\n      \"id\": 1,\n      \"theme\": \"AUTH\",\n      \"code\": \"AUTH-01\",\n      \"name\": \"Multi-Factor Authentication\",\n      \"impact_levels\": [\"low\", \"moderate\", \"high\"],\n      \"nist_mappings_count\": 3\n    }\n  ]\n}\n```"
+          }
+        },
+        {
+          "name": "Show KSI Indicator",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ksi_catalog/indicators/{{indicator_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ksi_catalog", "indicators", "{{indicator_id}}"]
+            },
+            "description": "Returns a single KSI indicator by ID with full details including all NIST SP 800-53 control mappings. Shows which NIST controls satisfy this indicator.\n\nResponse format:\n```json\n{\n  \"indicator\": {\n    \"id\": 1,\n    \"theme\": \"AUTH\",\n    \"code\": \"AUTH-01\",\n    \"name\": \"Multi-Factor Authentication\",\n    \"description\": \"System enforces MFA for all privileged and non-privileged users\",\n    \"nist_mappings\": [\n      { \"control_id\": \"ia-2\", \"relationship\": \"primary\" },\n      { \"control_id\": \"ia-2(1)\", \"relationship\": \"supporting\" }\n    ]\n  }\n}\n```"
+          }
+        },
+        {
+          "name": "List KSI-to-NIST Mappings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ksi_catalog/mappings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ksi_catalog", "mappings"]
+            },
+            "description": "Returns the complete mapping table between FedRAMP 20x KSI indicators and NIST SP 800-53 controls. Useful for understanding which NIST controls contribute to each KSI.\n\nResponse format:\n```json\n{\n  \"mappings\": [\n    {\n      \"indicator_code\": \"AUTH-01\",\n      \"nist_control_id\": \"ia-2\",\n      \"relationship\": \"primary\"\n    }\n  ]\n}\n```"
+          }
+        }
+      ]
+    },
+    {
+      "name": "KSI Validations",
+      "description": "FedRAMP 20x KSI validation management per authorization boundary. Track validation status, evidence, and generate compliance reports.",
+      "item": [
+        {
+          "name": "List KSI Validations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations"]
+            },
+            "description": "Returns all KSI validations for an authorization boundary. Each validation records the assessment status of a specific KSI indicator.\n\nResponse format:\n```json\n{\n  \"ksi_validations\": [\n    {\n      \"id\": 1,\n      \"indicator_code\": \"AUTH-01\",\n      \"status\": \"passed\",\n      \"validation_method\": \"automated\",\n      \"validated_at\": \"2026-03-15T10:30:00Z\"\n    }\n  ]\n}\n```"
+          }
+        },
+        {
+          "name": "Create KSI Validation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ksi_validation\": {\n    \"catalog_control_id\": 1,\n    \"status\": \"passed\",\n    \"validation_method\": \"automated\",\n    \"notes\": \"Automated scan passed — MFA enforced for all user accounts via Azure AD Conditional Access\",\n    \"evidence_url\": \"https://evidence.example.com/scan-results/auth-01-2026-03\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations"]
+            },
+            "description": "Creates a new KSI validation record for an authorization boundary. Records the assessment result for a specific control/indicator combination.\n\nStatus values: passed, failed, partial, not_assessed\nValidation methods: automated, manual, hybrid\n\nResponse: 201 Created with the new validation JSON."
+          }
+        },
+        {
+          "name": "Show KSI Validation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/{{validation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "{{validation_id}}"]
+            },
+            "description": "Returns a single KSI validation by ID with full details including associated control information, evidence, and audit history.\n\nResponse: 200 OK with validation JSON."
+          }
+        },
+        {
+          "name": "Update KSI Validation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ksi_validation\": {\n    \"status\": \"failed\",\n    \"notes\": \"Re-assessment found MFA bypass for service accounts — remediation required\",\n    \"evidence_url\": \"https://evidence.example.com/scan-results/auth-01-2026-03-retest\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/{{validation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "{{validation_id}}"]
+            },
+            "description": "Updates an existing KSI validation record. Commonly used to update status after re-assessment or to add evidence links.\n\nResponse: 200 OK with the updated validation JSON."
+          }
+        },
+        {
+          "name": "Delete KSI Validation",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/{{validation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "{{validation_id}}"]
+            },
+            "description": "Deletes a KSI validation record. Use with caution as this removes the audit trail for this validation.\n\nResponse: 200 OK with confirmation message."
+          }
+        },
+        {
+          "name": "KSI Validation Summary Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "summary"]
+            },
+            "description": "Returns an aggregated dashboard summary of KSI validation status for an authorization boundary. Includes counts by status, theme-level rollups, and overall compliance posture.\n\nResponse format:\n```json\n{\n  \"summary\": {\n    \"total\": 45,\n    \"passed\": 38,\n    \"failed\": 3,\n    \"partial\": 2,\n    \"not_assessed\": 2,\n    \"compliance_percentage\": 84.4,\n    \"by_theme\": {\n      \"AUTH\": { \"passed\": 4, \"failed\": 1, \"total\": 5 },\n      \"VULN\": { \"passed\": 6, \"failed\": 0, \"total\": 6 }\n    }\n  }\n}\n```"
+          }
+        },
+        {
+          "name": "Export KSI Validation Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/export?format=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "export"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json",
+                  "description": "Export format: json (default), yaml, or xml"
+                }
+              ]
+            },
+            "description": "Exports a comprehensive KSI validation report for an authorization boundary. Includes all validations with evidence, timestamps, and NIST control mappings. Supports JSON, YAML, and XML formats.\n\nResponse: 200 OK with Content-Disposition header for file download. Format controlled by ?format= query parameter (json|yaml|xml)."
+          }
+        }
+      ]
+    }
+  ]
+}
