@@ -15,7 +15,7 @@ module SeedRunner
     "roles"                => "1.0.0",
     "admin_user"           => "1.1.0",
     "fedramp_20x_ksi"      => "1.0.0",
-    "converters"           => "1.1.0",
+    "converters"           => "1.2.0",
     "demo_organization"    => "1.0.0",
     "demo_auth_boundary"   => "1.0.0",
     "demo_ssp_sar"         => "1.0.0",
