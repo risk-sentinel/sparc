@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-03-23 -- docs: Create Postman Collection and Environment for SPARC API (#291)
+
+**Branch:** `feature/291_postman_collection`
+
+### Summary
+
+Created a complete Postman collection and environment files for the SPARC REST API v1. The collection
+covers all 59 endpoints organized into 12 folders with example request/response bodies, auth headers,
+and descriptions. Includes production and local environment files plus a README with import instructions,
+auth mode guide, collection structure, and environment variables reference.
+
+### What Changed
+
+- **Postman collection** (`docs/api/SPARC_API_v1.postman_collection.json`) -- NEW; 59 endpoints across
+  12 folders covering all SPARC API v1 resources.
+- **Production environment** (`docs/api/SPARC_Production.postman_environment.json`) -- NEW; environment
+  variables for sparc.risk-sentinel-sparc.org.
+- **Local environment** (`docs/api/SPARC_Local.postman_environment.json`) -- NEW; environment variables
+  for localhost:3000 development.
+- **API README** (`docs/api/README.md`) -- NEW; import instructions, auth mode guide (local/oidc/hybrid),
+  collection structure overview, and environment variables reference.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (documentation only -- no code changes)
+
+---
+
 ## 2026-03-23 -- chore: Pre-Release Squash All Pending Migrations (#283)
 
 **Branch:** `chore/283_squash_migrations`
