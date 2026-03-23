@@ -41,6 +41,8 @@
             <%= image_tag "sparc_logo.jpg", alt: "SPARC", class: "sparc-navbar-logo" %>
           </a>
           <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
+          <%# ── About (left side, next to logo) ── %>
+          <%= link_to "About", about_path, class: "nav-link sparc-nav-btn text-light d-none d-lg-inline ms-2" %>
         </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -67,10 +69,6 @@
               </ul>
             </li>
 
-            <%# ── About ── %>
-            <li class="nav-item d-none d-lg-block">
-              <%= link_to "About", about_path, class: "nav-link sparc-nav-btn" %>
-            </li>
             <%# ── Resources ── %>
             <li class="nav-item d-none d-lg-block">
               <%= link_to "Resources", about_resources_path, class: "nav-link sparc-nav-btn" %>
