@@ -92,7 +92,7 @@ if cis_file.exist?
 
     # Controls mappings (safeguard → NIST)
     (data["controls_mappings"] || {}).each do |safeguard_id, nist_mappings|
-      nist_mappings.each do |mapping|
+      Array(nist_mappings).each do |mapping|
         entries << {
           converter_id: converter.id,
           source_id: safeguard_id,
@@ -109,7 +109,7 @@ if cis_file.exist?
 
     # Benchmark mappings (section → NIST)
     (data["benchmark_mappings"] || {}).each do |section_id, nist_mappings|
-      nist_mappings.each do |mapping|
+      Array(nist_mappings).each do |mapping|
         entries << {
           converter_id: converter.id,
           source_id: section_id,
