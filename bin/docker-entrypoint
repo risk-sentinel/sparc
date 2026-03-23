@@ -20,12 +20,22 @@ until pg_isready -h "${DB_HOST:-db}" -p "${DB_PORT:-5432}" -t 1 >/dev/null 2>&1;
 done
 echo "PostgreSQL is ready!"
 
-# Only run db:prepare when starting the Rails server (web container)
+# Only run db:prepare + seeds when starting the Rails server (web container)
 # This prevents concurrent migration errors from sidekiq/console/etc.
 # CMD may be: ["./bin/rails", "server"] or ["./bin/thrust", "./bin/rails", "server"]
 if [[ "$*" == *"rails"*"server"* ]]; then
-    echo "Running database preparation (create/migrate/seed if needed)..."
+    echo "Running database preparation (create/migrate)..."
     bundle exec rails db:prepare
+
+    # Admin bootstrap runs independently of seeds — always ensures admin exists.
+    # Idempotent: creates if missing, fixes admin flag if unset, never resets passwords.
+    echo "Bootstrapping admin account..."
+    bundle exec rails sparc:bootstrap_admin || echo "WARNING: Admin bootstrap failed (non-fatal)"
+
+    # Always run seeds — SeedRunner tracks completion and skips already-done sections.
+    # Failed sections from previous deploys will automatically retry.
+    echo "Running seed completeness check..."
+    bundle exec rails db:seed
 fi
 
 # Explicit seed trigger for non-web containers or re-seeding

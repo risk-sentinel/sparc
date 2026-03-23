@@ -8,10 +8,10 @@ test:
 
 amazon:
   service: S3
-  access_key_id: <%= ENV['AWS_ACCESS_KEY_ID'] %>
-  secret_access_key: <%= ENV['AWS_SECRET_ACCESS_KEY'] %>
   region: <%= ENV['AWS_REGION'] %>
   bucket: <%= ENV['AWS_BUCKET'] %>
+  # No access_key_id/secret_access_key — AWS SDK uses IAM task role on ECS,
+  # instance profile on EC2, or ~/.aws/credentials for local dev.
 
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:

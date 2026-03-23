@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-03-22
+**Last updated:** 2026-03-23
 
 ---
 
@@ -292,6 +292,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#272** Collapsible left sidebar navigation -- **COMPLETED 2026-03-22** | Shared/UI | `app/views/shared/_sidebar.html.erb` (NEW), `app/javascript/controllers/sidebar_controller.js` (NEW), `app/views/layouts/application.html.erb`, `app/assets/stylesheets/sparc-theme.css`, `app/helpers/application_helper.rb` | **NONE** -- completed |
 | [x] | **#276** Converter seed fixtures for Docker -- **COMPLETED 2026-03-22** | Converters/Infrastructure | `db/seeds/converters.rb` (NEW), `db/seeds.rb`, `bin/docker-entrypoint`, `.env.example`, `.env.production.example`, `docs/ENVIRONMENT_VARIABLES.md`, `lib/data_mappings/cci_to_nist.json`, `lib/data_mappings/cis_to_nist.json`, `lib/data_mappings/scap_oval_to_nist.json` | **NONE** -- completed |
 | [x] | **#271** Consolidate all releases into v1.0.0 -- **COMPLETED 2026-03-22** | Version/Config | `app/models/sparc_config.rb` (VERSION constant) | **NONE** -- completed |
+| [x] | **#282** Fix incomplete data seeding on startup -- **COMPLETED 2026-03-23** | Seeds/Infrastructure | `app/models/seed_runner.rb` (NEW), `app/models/seed_section.rb` (NEW), `db/seeds.rb` (REFACTORED), `db/seeds/converters.rb` (FIXED), `db/seeds/sample_artifacts.rb` (FIXED), `bin/docker-entrypoint` (UPDATED), `lib/data/catalogs/` (MOVED), migration (create_seed_sections), `spec/models/seed_runner_spec.rb` (NEW -- 8 specs) | **NONE** -- completed |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -314,6 +315,7 @@ Dev A: #274 (SPARC rebrand)      -- Documentation/UI domain ✅ COMPLETE
 Dev A: #272 (left sidebar nav)   -- Shared/UI domain ✅ COMPLETE
 Dev A: #276 (converter seeds)   -- Converters/Infrastructure domain ✅ COMPLETE
 Dev A: #271 (v1.0.0 release)   -- Version/Config domain ✅ COMPLETE
+Dev A: #282 (seed runner fix)  -- Seeds/Infrastructure domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security-critical),
@@ -670,8 +672,8 @@ removed and are no longer tracked:
 
 ## Summary
 
-- **Total issues tracked:** 48 (23 original + 25 ad-hoc/new)
-- **Completed:** 46 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257, #259, #262, #263, #264, #269, #272, #274)
+- **Total issues tracked:** 50 (23 original + 27 ad-hoc/new)
+- **Completed:** 48 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257, #259, #262, #263, #264, #269, #272, #274, #276, #282)
 - **Remaining:** 2 issues (Phase 10: #244, #246)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases

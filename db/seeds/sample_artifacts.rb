@@ -14,8 +14,8 @@ puts "\nSeeding sample artifacts (mode: #{mode})..."
 
 auth_boundary = AuthorizationBoundary.find_by(name: "Cloud Web Application ATO")
 unless auth_boundary
-  puts "  Skipping — no authorization boundary found. Run full seed first."
-  return
+  puts "  WARNING: No authorization boundary found. Some artifacts will be skipped."
+  puts "  Set SPARC_SEED_DEMO=true and re-run seeds to create demo data."
 end
 
 nist_catalog = ControlCatalog.find_by(name: "NIST SP 800-53 Rev 5")
