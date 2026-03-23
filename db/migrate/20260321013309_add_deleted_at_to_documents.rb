@@ -1,13 +1,8 @@
 class AddDeletedAtToDocuments < ActiveRecord::Migration[8.1]
   def change
-    add_column :ssp_documents, :deleted_at, :datetime
-    add_column :sar_documents, :deleted_at, :datetime
-    add_column :sap_documents, :deleted_at, :datetime
-    add_column :poam_documents, :deleted_at, :datetime
-
-    add_index :ssp_documents, :deleted_at
-    add_index :sar_documents, :deleted_at
-    add_index :sap_documents, :deleted_at
-    add_index :poam_documents, :deleted_at
+    %i[ssp_documents sar_documents sap_documents poam_documents].each do |table|
+      add_column table, :deleted_at, :datetime unless column_exists?(table, :deleted_at)
+      add_index table, :deleted_at unless index_exists?(table, :deleted_at)
+    end
   end
 end
