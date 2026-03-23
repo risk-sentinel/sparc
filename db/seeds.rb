@@ -18,16 +18,43 @@ puts SEED_DEMO ? "\n[SPARC] Seeding with DEMO data enabled.\n" : "\n[SPARC] Seed
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("nist_rev5_catalog") do
 
-puts "Seeding NIST SP 800-53 Rev 5 catalog..."
+puts "Seeding NIST SP 800-53 Rev 5 catalog from OSCAL fixture..."
 
-catalog = ControlCatalog.find_or_create_by!(name: "NIST SP 800-53 Rev 5") do |c|
-  c.version     = "5.1.1"
-  c.source      = "NIST"
-  c.description = "Security and Privacy Controls for Information Systems and Organizations. " \
-                  "Published by the National Institute of Standards and Technology."
+oscal_rev5_path = Rails.root.join("lib/data/catalogs/NIST_SP-800-53_rev5_catalog.json")
+if File.exist?(oscal_rev5_path)
+  # Check if the full OSCAL catalog is already imported (2,000+ controls)
+  existing = ControlCatalog.where("name LIKE ?", "%800-53%Rev%5%").where("name LIKE ?", "%OSCAL%").first
+  existing ||= ControlCatalog.where("name LIKE ?", "%800-53%5.2%").first
+
+  if existing && existing.catalog_controls.count > 1000
+    puts "  Rev 5 OSCAL catalog already seeded (#{existing.catalog_controls.count} controls) — skipping import."
+  else
+    # Import the full OSCAL catalog via CatalogImportService
+    file_io = File.open(oscal_rev5_path)
+    result = CatalogImportService.call(file_io, File.basename(oscal_rev5_path))
+    file_io.close
+    catalog = result[:catalog]
+    puts "  Imported #{result[:families]} families, #{catalog.catalog_controls.count} controls"
+  end
+else
+  puts "  ⚠ OSCAL fixture not found at #{oscal_rev5_path}"
+  # Fallback: create a minimal catalog record
+  catalog = ControlCatalog.find_or_create_by!(name: "NIST SP 800-53 Rev 5") do |c|
+    c.version     = "5.1.1"
+    c.source      = "NIST"
+    c.description = "Security and Privacy Controls for Information Systems and Organizations."
+  end
 end
 
-NIST_FAMILIES = [
+puts "Done! NIST SP 800-53 Rev 5 catalog is ready."
+end # SeedRunner nist_rev5_catalog
+
+# ── Legacy inline Rev 5 data (replaced by OSCAL fixture import above) ──
+# The following ~400 lines of inline NIST_FAMILIES and NIST_CONTROLS data
+# have been superseded by the OSCAL fixture at lib/data/catalogs/.
+# Kept commented out for reference.
+=begin
+NIST_FAMILIES_LEGACY = [
   { code: "AC", name: "Access Control",                              sort_order: 1 },
   { code: "AT", name: "Awareness and Training",                      sort_order: 2 },
   { code: "AU", name: "Audit and Accountability",                    sort_order: 3 },
@@ -449,10 +476,10 @@ NIST_FAMILIES.each do |family_attrs|
   end
 end
 
-puts "  Created/updated #{total_families} control families"
-puts "  Created/updated #{total_controls} catalog controls"
+puts "  Created/updated total_families control families"
+puts "  Created/updated total_controls catalog controls"
 puts "Done! NIST SP 800-53 Rev 5 catalog is ready."
-end # SeedRunner nist_rev5_catalog
+=end
 
 # ══════════════════════════════════════════════════════════════════════
 # REQUIRED: NIST SP 800-53 Rev 4 Catalog (from OSCAL fixture)
