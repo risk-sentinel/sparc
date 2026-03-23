@@ -1,5 +1,22 @@
-# Idempotent seed for NIST SP 800-53 Rev 5 Control Catalog
+# SPARC Seed Orchestrator — resilient, version-tracked, demo-gated.
+#
+# Required data (always seeded): catalogs, roles, admin, converters, KSI catalog
+# Demo data (opt-in only):       organizations, boundaries, SSPs, SARs, evidence, sample artifacts
+#
+# Set SPARC_SEED_DEMO=true to include demo data (local dev).
+# Production deployments should leave it unset or false.
+#
 # Run with: bin/rails db:seed
+
+require_relative "../lib/seed_runner"
+
+SEED_DEMO = ENV.fetch("SPARC_SEED_DEMO", "false").downcase == "true"
+puts SEED_DEMO ? "\n[SPARC] Seeding with DEMO data enabled.\n" : "\n[SPARC] Seeding required data only (set SPARC_SEED_DEMO=true for demo data).\n"
+
+# ══════════════════════════════════════════════════════════════════════
+# REQUIRED: NIST SP 800-53 Rev 5 Catalog (full 1,189 controls via OSCAL fixture)
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("nist_rev5_catalog") do
 
 puts "Seeding NIST SP 800-53 Rev 5 catalog..."
 
@@ -435,13 +452,16 @@ end
 puts "  Created/updated #{total_families} control families"
 puts "  Created/updated #{total_controls} catalog controls"
 puts "Done! NIST SP 800-53 Rev 5 catalog is ready."
+end # SeedRunner nist_rev5_catalog
 
-# ---------------------------------------------------------------------------
-# NIST SP 800-53 Rev 4 — imported from OSCAL JSON fixture
-# ---------------------------------------------------------------------------
+# ══════════════════════════════════════════════════════════════════════
+# REQUIRED: NIST SP 800-53 Rev 4 Catalog (from OSCAL fixture)
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("nist_rev4_catalog") do
+
 puts "\nSeeding NIST SP 800-53 Rev 4 catalog from OSCAL fixture..."
 
-oscal_rev4_path = Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev4_catalog.json")
+oscal_rev4_path = Rails.root.join("lib/data/catalogs/NIST_SP-800-53_rev4_catalog.json")
 if File.exist?(oscal_rev4_path)
   # Find existing catalog by UUID first, then by name
   catalog_r4 = ControlCatalog.find_by("metadata_extra->>'catalog_uuid' = ?", "b954d3b7-d2c7-453b-8eb2-459e8d3b8462")
@@ -468,6 +488,7 @@ else
   end
 end
 puts "Done! NIST SP 800-53 Rev 4 catalog is ready."
+end # SeedRunner nist_rev4_catalog
 
 # The inline Rev 4 control data below has been replaced by the OSCAL fixture import above.
 # Keeping the constant definitions commented out for reference in case the fixture is unavailable.
@@ -826,6 +847,12 @@ end
 # Generates two demo SSPs and two demo SARs that reference the
 # NIST SP 800-53 Rev 5 and Rev 4 catalogs above.  Idempotent.
 # ============================================================
+
+# ══════════════════════════════════════════════════════════════════════
+# DEMO: SSP, SAR documents + catalog guidance (opt-in)
+# ══════════════════════════════════════════════════════════════════════
+if SEED_DEMO
+SeedRunner.run_section("demo_ssp_sar") do
 
 puts "\nSeeding demo SSP and SAR documents..."
 
@@ -1874,6 +1901,13 @@ OSCAL_PARAM_SOURCES.each do |source|
 end
 
 puts "Done! Demo SSP and SAR documents seeded."
+end # SeedRunner demo_ssp_sar
+end # if SEED_DEMO (ssp/sar)
+
+# ══════════════════════════════════════════════════════════════════════
+# REQUIRED: Roles
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("roles") do
 
 # ── Role Seeding ──────────────────────────────────────────────────────────
 # Roles from docs/groups_users/groups_users.md
@@ -2147,6 +2181,12 @@ SPARC_ROLES.each do |attrs|
   role.save!
 end
 puts "  #{SPARC_ROLES.size} roles seeded."
+end # SeedRunner roles
+
+# ══════════════════════════════════════════════════════════════════════
+# REQUIRED: Admin User Bootstrap
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("admin_user") do
 
 # ── Admin User Bootstrapping ──────────────────────────────────────────────
 # Creates or resets the admin account when local login is enabled.
@@ -2194,6 +2234,11 @@ if SparcConfig.enable_local_login?
       puts "ERROR: Could not bootstrap admin: #{admin.errors.full_messages.join(', ')}"
     end
   else
+    # Ensure existing admin user has admin flag set (fixes deployments where it was missed)
+    unless admin.admin?
+      admin.update!(admin: true)
+      puts "  Fixed: admin flag set to true for #{admin.email}"
+    end
     puts "Admin account already exists with a password set — skipping bootstrap."
   end
 
@@ -2210,6 +2255,13 @@ if SparcConfig.enable_local_login?
 else
   puts "Admin bootstrapping skipped (local login not enabled)."
 end
+end # SeedRunner admin_user
+
+# ══════════════════════════════════════════════════════════════════════
+# DEMO: Organization, Auth Boundary, Evidence (opt-in)
+# ══════════════════════════════════════════════════════════════════════
+if SEED_DEMO
+SeedRunner.run_section("demo_organization") do
 
 # ── Default Organization ──────────────────────────────────────────────────
 puts "\nSeeding default Organization..."
@@ -2295,6 +2347,9 @@ end
 puts "  Created #{auth_boundary.authorization_boundary_memberships.count} authorization boundary memberships"
 
 puts "Done! Sample authorization boundary seeded."
+end # SeedRunner demo_organization (includes org + boundary)
+
+SeedRunner.run_section("demo_evidence") do
 
 # ── Evidence & Attestations ─────────────────────────────────────────────────
 puts ""
@@ -2376,13 +2431,36 @@ puts "  Created #{Evidence.count} evidence records"
 puts "  Created #{EvidenceControlLink.count} control links"
 puts "  Created #{Attestation.count} attestations"
 puts "Done! Evidence seeded."
+end # SeedRunner demo_evidence
+end # if SEED_DEMO (org/boundary/evidence)
+
+# ══════════════════════════════════════════════════════════════════════
+# REQUIRED: FedRAMP 20x KSI Catalog
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("fedramp_20x_ksi") do
 
 # ── FedRAMP 20x KSI Catalog ──────────────────────────────────────────
 load Rails.root.join("db/seeds/fedramp_20x_ksi.rb")
+end # SeedRunner fedramp_20x_ksi
 
-# ── Converter Mapping Fixtures (CCI, CIS, SCAP/OVAL) ─────────────────
+# ══════════════════════════════════════════════════════════════════════
+# REQUIRED: Converter Mapping Fixtures
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("converters") do
 load Rails.root.join("db/seeds/converters.rb")
+end # SeedRunner converters
 
-# ── Sample Artifacts (SAP, POA&M, CDEF, Profile, KSI Validations) ───
-# Set SPARC_SEED_MODE=traditional|20x|full to control what gets seeded
+# ══════════════════════════════════════════════════════════════════════
+# DEMO: Sample Artifacts (SAP, POA&M, CDEF, Profile, KSI Validations)
+# ══════════════════════════════════════════════════════════════════════
+if SEED_DEMO
+SeedRunner.run_section("demo_sample_artifacts") do
 load Rails.root.join("db/seeds/sample_artifacts.rb")
+end # SeedRunner demo_sample_artifacts
+end # if SEED_DEMO (sample artifacts)
+
+# ══════════════════════════════════════════════════════════════════════
+# SEED SUMMARY + COMPLETENESS CHECK
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.summary
+SeedRunner.verify_completeness

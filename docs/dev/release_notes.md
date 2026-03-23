@@ -4,6 +4,53 @@
 
 ---
 
+## 2026-03-23 -- fix: Fix Incomplete Data Seeding on Startup -- Missing Converters + Sample Data (#282)
+
+**Branch:** `bug/282_incomplete_seed_data`
+
+### Summary
+
+Overhauled the seed pipeline with a new SeedRunner module that wraps every seed section in
+error-isolated, version-tracked blocks. On re-runs, completed sections are skipped automatically
+(via the new `seed_sections` table), making `db:seed` safe to call on every container boot. Demo
+data (SSPs, SARs, orgs, evidence) is now gated behind `SPARC_SEED_DEMO=true` (default: false).
+Fixed several bugs in converters, sample artifacts, and admin bootstrap that caused incomplete
+seeding on first or subsequent runs.
+
+### What Changed
+
+- **SeedRunner module** (`app/models/seed_runner.rb`) -- NEW; provides `run_section` blocks with
+  per-section error isolation, version tracking, and skip-if-already-complete logic.
+- **SeedSection model + migration** -- NEW; tracks seed completeness per named section with version
+  and status columns.
+- **Seeds entrypoint** (`db/seeds.rb`) -- REFACTORED; wraps all 12 seed sections in
+  `SeedRunner.run_section` blocks. Demo data gated behind `SPARC_SEED_DEMO=true`.
+- **Converter seeds** (`db/seeds/converters.rb`) -- FIXED; per-converter rescue blocks so one
+  converter failure does not abort the rest.
+- **Sample artifact seeds** (`db/seeds/sample_artifacts.rb`) -- FIXED; removed hard `return` that
+  aborted on first error; replaced with per-artifact soft guards.
+- **Admin bootstrap** -- FIXED; ensures `admin: true` is set on re-runs (was skipped if user
+  already existed).
+- **NIST catalog fixtures** -- MOVED to `lib/data/catalogs/` with full 1,189 Rev 5 controls.
+- **Docker entrypoint** (`bin/docker-entrypoint`) -- UPDATED; always runs `db:seed` (SeedRunner
+  skip logic makes it fast on subsequent boots).
+- **Verify completeness** -- SeedRunner checks all sections at end of seed process and reports
+  any failures.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 8 (SeedRunner module)
+
+### NIST Controls
+
+- **SA-10** (Developer Configuration Management) -- seed pipeline ensures consistent deployments
+- **CM-6** (Configuration Settings) -- `SPARC_SEED_DEMO` environment variable controls demo data
+- **SI-7** (Software, Firmware, and Information Integrity) -- version-tracked seed sections detect
+  drift
+
+---
+
 ## 2026-03-22 -- chore: Consolidate all releases into v1.0.0 (#271)
 
 **Branch:** `release/v1.0.0`

@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-03-22
+**Last updated:** 2026-03-23
 
 ---
 
@@ -130,6 +130,7 @@ authentication mode coverage matrix.
 - [x] #272 -- Collapsible left sidebar navigation for Organizations, Boundaries, and Resources -- **COMPLETED 2026-03-22**
 - [x] #276 -- Bundle converter mapping data as seed fixtures for Docker deployments -- **COMPLETED 2026-03-22**
 - [x] #271 -- Consolidate all releases into v1.0.0 (first public release) -- **COMPLETED 2026-03-22**
+- [x] #282 -- Fix incomplete data seeding on startup (SeedRunner, version-tracked sections, demo gate) -- **COMPLETED 2026-03-23**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -494,8 +495,8 @@ removed and are no longer tracked:
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 49 (23 original + 26 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 47 issues
+**Total issues tracked:** 50 (23 original + 27 ad-hoc/new)
+**Completed (Phases 1-9 + ad-hoc):** 48 issues
 **Remaining:** 2 issues (Phase 10: #244, #246)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.
 **First public release: v1.0.0** (#271) -- consolidates all prior internal releases.
