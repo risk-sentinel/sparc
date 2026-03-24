@@ -24,8 +24,12 @@ echo "PostgreSQL is ready!"
 # This prevents concurrent migration errors from sidekiq/console/etc.
 # CMD may be: ["./bin/rails", "server"] or ["./bin/thrust", "./bin/rails", "server"]
 if [[ "$*" == *"rails"*"server"* ]]; then
-    echo "Running database preparation (create/migrate)..."
+    echo "Running database preparation (create/migrate all databases)..."
     bundle exec rails db:prepare
+    bundle exec rails db:prepare:all 2>/dev/null || true
+
+    # Enable Solid Queue in Puma for single-container deployments (ECS)
+    export SOLID_QUEUE_IN_PUMA="${SOLID_QUEUE_IN_PUMA:-true}"
 
     # Admin bootstrap runs independently of seeds — always ensures admin exists.
     # Idempotent: creates if missing, fixes admin flag if unset, never resets passwords.
