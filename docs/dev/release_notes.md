@@ -4,6 +4,85 @@
 
 ---
 
+## 2026-03-23 -- docs: Create Postman Collection and Environment for SPARC API (#291)
+
+**Branch:** `feature/291_postman_collection`
+
+### Summary
+
+Created a complete Postman collection and environment files for the SPARC REST API v1. The collection
+covers all 59 endpoints organized into 12 folders with example request/response bodies, auth headers,
+and descriptions. Includes production and local environment files plus a README with import instructions,
+auth mode guide, collection structure, and environment variables reference.
+
+### What Changed
+
+- **Postman collection** (`docs/api/SPARC_API_v1.postman_collection.json`) -- NEW; 59 endpoints across
+  12 folders covering all SPARC API v1 resources.
+- **Production environment** (`docs/api/SPARC_Production.postman_environment.json`) -- NEW; environment
+  variables for sparc.risk-sentinel-sparc.org.
+- **Local environment** (`docs/api/SPARC_Local.postman_environment.json`) -- NEW; environment variables
+  for localhost:3000 development.
+- **API README** (`docs/api/README.md`) -- NEW; import instructions, auth mode guide (local/oidc/hybrid),
+  collection structure overview, and environment variables reference.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (documentation only -- no code changes)
+
+---
+
+## 2026-03-23 -- chore: Pre-Release Squash All Pending Migrations (#283)
+
+**Branch:** `chore/283_squash_migrations`
+
+### Summary
+
+Consolidated 9 migration files (1 original squash + 8 post-squash) into a single new squash migration
+(`20260323120000_squash_to_v110.rb`). All 9 old migrations archived to `db/migrate_archive/` (73 total
+archived). The new squash uses a `table_exists?` guard -- no-op on existing databases, evaluates
+`schema.rb` on fresh databases. Updated `schema.rb` version to `2026_03_23_120000`. Seeds (SeedRunner)
+are completely independent of migrations with no cross-dependencies.
+
+### What Changed
+
+- **New squash migration** (`db/migrate/20260323120000_squash_to_v110.rb`) -- single consolidated
+  migration with `table_exists?` guard for idempotent behavior.
+- **Archived migrations** -- 9 old migration files moved to `db/migrate_archive/` (73 total archived).
+- **Schema version** (`db/schema.rb`) -- updated version to `2026_03_23_120000`.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0
+
+---
+
+## 2026-03-23 -- chore: Update Login Page Features List + Version Bump to v1.1.0 (#281)
+
+**Branch:** `feature/281_login_features_v110`
+
+### Summary
+
+Replaced 13 outdated login page feature bullets with 9 new ones reflecting current SPARC capabilities
+(FedRAMP 20x, OSCAL import/export, HDF/XCCDF converters, REST API, ATO wizard). Removed the legacy
+"Convert Excel workbooks to JSON" reference. Bumped `SparcConfig::VERSION` from `1.0.0` to `1.1.0`.
+Feature titles now use bold text with em-dash descriptions for visual consistency.
+
+### What Changed
+
+- **Login feature list** (`app/views/layouts/login.html.erb`) -- replaced 13 outdated bullets with 9
+  current-capability bullets covering FedRAMP 20x, OSCAL, HDF, XCCDF, converters, and REST API.
+- **Version constant** (`app/models/sparc_config.rb`) -- bumped `VERSION` from `"1.0.0"` to `"1.1.0"`.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0
+
+---
+
 ## 2026-03-23 -- fix: Fix Incomplete Data Seeding on Startup -- Missing Converters + Sample Data (#282)
 
 **Branch:** `bug/282_incomplete_seed_data`
