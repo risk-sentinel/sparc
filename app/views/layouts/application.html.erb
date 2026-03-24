@@ -209,11 +209,7 @@
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 sparc-nav-user" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="sparc-avatar">
-                      <% if current_user.avatar.attached? %>
-                        <%= image_tag current_user.avatar, alt: current_user.initials %>
-                      <% else %>
-                        <%= current_user.initials %>
-                      <% end %>
+                      <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
                     </span>
                     <span class="d-none d-xl-inline"><%= current_user.display_label %></span>
                   </a>
@@ -221,11 +217,7 @@
                     <li class="px-3 py-2">
                       <div class="d-flex align-items-center gap-2">
                         <span class="sparc-avatar sparc-avatar-md">
-                          <% if current_user.avatar.attached? %>
-                            <%= image_tag current_user.avatar, alt: current_user.initials %>
-                          <% else %>
-                            <%= current_user.initials %>
-                          <% end %>
+                          <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
                         </span>
                         <div>
                           <div class="fw-semibold small"><%= current_user.display_label %></div>

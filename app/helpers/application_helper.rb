@@ -93,6 +93,19 @@ module ApplicationHelper
     AB_STATUS_COLORS[status.to_s] || "#7f8c8d"
   end
 
+  # Safe avatar image tag — falls back to initials if blob is missing from storage
+  def safe_avatar_tag(user, **options)
+    if user.avatar.attached? && user.avatar.blob&.persisted?
+      begin
+        image_tag user.avatar, **options
+      rescue StandardError
+        content_tag(:span, user.initials)
+      end
+    else
+      content_tag(:span, user.initials)
+    end
+  end
+
   # Sidebar: organizations with authorization boundaries for current user
   def sidebar_organizations
     return [] unless defined?(current_user) && current_user
