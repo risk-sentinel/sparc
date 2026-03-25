@@ -28,7 +28,7 @@ gem "sidekiq"                       # Background jobs
 gem "redis", "~> 5.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
 gem "aws-sdk-secretsmanager", "~> 1.0"  # Secrets Manager (ECS deployments)
-gem "aws-sdk-rds", "~> 1.0"             # IAM DB auth token generation
+gem "aws-sdk-rds", "~> 1.310"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS fix (overrides Ruby 3.4.4 bundled 0.6.0)
 gem "dotenv-rails", require: false, groups: [ :development, :test ]
