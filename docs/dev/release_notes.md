@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-03-25 -- style: Downsize Hero Card Size by ~20% (#296)
+
+**Branch:** `feature/296_downsize_hero_card`
+
+### Summary
+
+Reduced the homepage hero summary cards (document counts) by approximately 20% to improve visual balance
+and reduce vertical space consumption. Pure CSS and inline style changes -- no code logic or structural
+markup changes.
+
+### What Changed
+
+- **Hero tile CSS** (`app/assets/stylesheets/sparc-theme.css`) -- reduced tile padding from 1rem to
+  0.65rem, count font from 2.5rem to 2rem, label font from 1rem to 0.85rem, label margin from 0.25rem
+  to 0.15rem. Mobile breakpoint: count 2rem to 1.6rem, label 0.85rem to 0.75rem.
+- **Section summary partial** (`app/views/shared/_section_summary.html.erb`) -- container padding reduced
+  from `1rem 1.25rem` to `0.75rem 1rem`.
+- **Home index** (`app/views/home/index.html.erb`) -- container padding reduced from `1.25rem 1.5rem` to
+  `0.85rem 1rem`; layer padding reduced from `0.5rem 0.65rem 0.65rem` to `0.35rem 0.5rem 0.5rem`.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (CSS-only changes -- no new logic)
+
+---
+
 ## 2026-03-23 -- docs: Create Postman Collection and Environment for SPARC API (#291)
 
 **Branch:** `feature/291_postman_collection`

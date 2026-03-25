@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-03-23
+**Last updated:** 2026-03-25
 
 ---
 
@@ -134,6 +134,7 @@ authentication mode coverage matrix.
 - [x] #281 -- Update login page features list + version bump to v1.1.0 -- **COMPLETED 2026-03-23**
 - [x] #283 -- Pre-release squash all pending migrations (9 files into single squash, 73 archived) -- **COMPLETED 2026-03-23**
 - [x] #291 -- Create Postman collection and environment for SPARC API (59 endpoints, 12 folders, prod + local envs) -- **COMPLETED 2026-03-23**
+- [x] #296 -- Downsize hero card size by ~20% (CSS padding, font sizes, mobile breakpoints) -- **COMPLETED 2026-03-25**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -494,12 +495,12 @@ removed and are no longer tracked:
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
-| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264, #271, #272, #283 | In Progress |
+| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264, #271, #272, #283, #296 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 51 (23 original + 28 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 49 issues
+**Total issues tracked:** 52 (23 original + 29 ad-hoc/new)
+**Completed (Phases 1-9 + ad-hoc):** 50 issues
 **Remaining:** 2 issues (Phase 10: #244, #246)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.
 **First public release: v1.0.0** (#271) -- consolidates all prior internal releases.
