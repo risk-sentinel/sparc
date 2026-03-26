@@ -737,18 +737,30 @@ jobs:
           path: sbom/
         continue-on-error: true
 
+      - name: Download SARIF results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: '*-results'
+          path: sarif-results/
+          merge-multiple: true
+        continue-on-error: true
+
       - name: Bundle compliance artifacts for sparc-iac
         run: |
-          mkdir -p sparc-compliance/hdf sparc-compliance/cdefs sparc-compliance/sbom
+          mkdir -p sparc-compliance/hdf sparc-compliance/cdefs sparc-compliance/sbom sparc-compliance/sarif
 
-          # HDF scan results (normalized by SAF CLI)
+          # HDF scan results (normalized by SAF CLI — includes SBOM-to-HDF conversions)
           cp hdf-results/*.hdf.json sparc-compliance/hdf/ 2>/dev/null || true
 
           # OSCAL component definitions (application-level controls)
           cp docs/compliance/oscal/cdefs/*.json sparc-compliance/cdefs/ 2>/dev/null || true
 
-          # SBOM for supply chain evidence
+          # SBOMs for supply chain evidence (CycloneDX format)
           cp sbom/*.json sparc-compliance/sbom/ 2>/dev/null || true
+
+          # Raw SARIF scan results for audit trail
+          find sarif-results/ -name '*.sarif' -exec cp {} sparc-compliance/sarif/ \; 2>/dev/null || true
+          find sarif-results/ -name '*.sarif.json' -exec cp {} sparc-compliance/sarif/ \; 2>/dev/null || true
 
           # OSCAL metadata with system-id for cross-repo correlation
           cp .github/oscal-metadata.json sparc-compliance/
@@ -757,6 +769,7 @@ jobs:
           HDF_FILES=$(ls sparc-compliance/hdf/*.hdf.json 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           CDEF_FILES=$(ls sparc-compliance/cdefs/*.json 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           SBOM_FILES=$(ls sparc-compliance/sbom/*.json 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
+          SARIF_FILES=$(ls sparc-compliance/sarif/*.sarif* 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           jq -n \
             --arg sid "sparc-application" \
             --arg repo "Rebel-Raiders/sparc" \
@@ -767,6 +780,7 @@ jobs:
             --argjson hdf "$HDF_FILES" \
             --argjson cdefs "$CDEF_FILES" \
             --argjson sbom "$SBOM_FILES" \
+            --argjson sarif "${SARIF_FILES:-[]}" \
             '{
               "system-id": $sid,
               "source-repo": $repo,
@@ -774,7 +788,7 @@ jobs:
               "git-sha": $sha,
               "git-ref": $ref,
               "generated-at": $ts,
-              "artifacts": { "hdf": $hdf, "cdefs": $cdefs, "sbom": $sbom }
+              "artifacts": { "hdf": $hdf, "cdefs": $cdefs, "sbom": $sbom, "sarif": $sarif }
             }' > sparc-compliance/manifest.json
 
           echo "## Compliance Bundle Contents" >> $GITHUB_STEP_SUMMARY
