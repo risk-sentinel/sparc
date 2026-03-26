@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-03-25
+**Last updated:** 2026-03-26
 
 ---
 
@@ -296,6 +296,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#281** Login features list + v1.1.0 version bump -- **COMPLETED 2026-03-23** | Shared/UI + Version | `app/views/layouts/login.html.erb` (13 bullets replaced with 9), `app/models/sparc_config.rb` (VERSION 1.0.0 -> 1.1.0) | **NONE** -- completed |
 | [x] | **#291** Postman collection + environments for SPARC API -- **COMPLETED 2026-03-23** | Documentation | `docs/api/SPARC_API_v1.postman_collection.json` (NEW), `docs/api/SPARC_Production.postman_environment.json` (NEW), `docs/api/SPARC_Local.postman_environment.json` (NEW), `docs/api/README.md` (NEW) | **NONE** -- docs only, no code changes |
 | [x] | **#296** Downsize hero card size by ~20% -- **COMPLETED 2026-03-25** | Shared/UI | `app/assets/stylesheets/sparc-theme.css`, `app/views/shared/_section_summary.html.erb`, `app/views/home/index.html.erb` | **NONE** -- CSS-only, no code logic |
+| [x] | **#300** Compliance artifact pipeline with S3 upload on PRs -- **COMPLETED 2026-03-25** | CI/Infrastructure | `.github/workflows/security.yml` (OIDC + S3 upload in `publish_for_sparc_iac`, `s3_prefix` in dispatch payload), `.github/workflows/compliance.yml` (NEW -- PR-triggered CDEF JSON validation + completeness check), `docs/compliance/README.md` (CI/CD pipeline docs, OIDC trust policy, secrets/variables) | **NONE** -- CI workflow + docs only |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -320,6 +321,7 @@ Dev A: #276 (converter seeds)   -- Converters/Infrastructure domain ✅ COMPLETE
 Dev A: #271 (v1.0.0 release)   -- Version/Config domain ✅ COMPLETE
 Dev A: #282 (seed runner fix)  -- Seeds/Infrastructure domain ✅ COMPLETE
 Dev A: #281 (login features + v1.1.0) -- Shared/UI + Version domain ✅ COMPLETE
+Dev E: #300 (compliance artifact pipeline) -- CI/Infrastructure domain ✅ COMPLETE
 ```
 
 > **Recommended order:** #249 and #244 first (security-critical),

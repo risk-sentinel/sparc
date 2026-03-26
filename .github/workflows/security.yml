@@ -789,6 +789,30 @@ jobs:
           path: sparc-compliance/
           retention-days: 90
 
+      # ── S3 Upload ─────────────────────────────────────────────────
+      - name: Configure AWS credentials via OIDC
+        if: env.HAS_DISPATCH_TOKEN == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Upload compliance artifacts to S3
+        if: env.HAS_DISPATCH_TOKEN == 'true'
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          SHA=${GITHUB_SHA::7}
+          PREFIX="${DATE}/${SHA}/app"
+          BUCKET="${{ vars.COMPLIANCE_S3_BUCKET }}"
+          if [ -z "$BUCKET" ]; then
+            echo "::warning::COMPLIANCE_S3_BUCKET not set — skipping S3 upload"
+            exit 0
+          fi
+          aws s3 sync sparc-compliance/ "s3://${BUCKET}/${PREFIX}/" --no-progress
+          echo "## S3 Upload" >> $GITHUB_STEP_SUMMARY
+          echo "Uploaded to \`s3://${BUCKET}/${PREFIX}/\`" >> $GITHUB_STEP_SUMMARY
+          echo "S3_PREFIX=${PREFIX}" >> $GITHUB_ENV
+
       - name: Notify sparc-iac via repository_dispatch
         if: env.HAS_DISPATCH_TOKEN == 'true'
         uses: peter-evans/repository-dispatch@v4
@@ -802,5 +826,6 @@ jobs:
               "source_repo": "Rebel-Raiders/sparc",
               "run_id": "${{ github.run_id }}",
               "git_sha": "${{ github.sha }}",
-              "artifact_name": "sparc-compliance-latest"
+              "artifact_name": "sparc-compliance-latest",
+              "s3_prefix": "${{ env.S3_PREFIX }}"
             }

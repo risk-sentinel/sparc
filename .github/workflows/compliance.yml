@@ -1,0 +1,69 @@
+# Compliance Check — validates OSCAL CDEFs and metadata on PRs
+# Runs only when compliance-relevant files change
+name: Compliance Check
+
+on:
+  pull_request:
+    paths:
+      - 'docs/compliance/**'
+      - '.github/oscal-metadata.json'
+      - 'app/controllers/concerns/**'
+      - 'app/models/concerns/**'
+      - 'config/initializers/**'
+
+jobs:
+  validate_compliance_artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Validate OSCAL metadata
+        run: |
+          echo "Validating .github/oscal-metadata.json..."
+          python3 -c "import json; json.load(open('.github/oscal-metadata.json'))"
+          echo "✓ oscal-metadata.json is valid JSON"
+
+      - name: Validate CDEF JSON files
+        run: |
+          ERRORS=0
+          for f in docs/compliance/oscal/cdefs/*.json; do
+            echo "Validating $(basename $f)..."
+            if python3 -c "import json; json.load(open('$f'))"; then
+              echo "  ✓ valid"
+            else
+              echo "  ✗ INVALID"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          echo ""
+          TOTAL=$(ls docs/compliance/oscal/cdefs/*.json | wc -l)
+          echo "## Compliance Artifact Validation" >> $GITHUB_STEP_SUMMARY
+          echo "- **${TOTAL} CDEFs validated**, ${ERRORS} errors" >> $GITHUB_STEP_SUMMARY
+          if [ $ERRORS -gt 0 ]; then
+            echo "::error::${ERRORS} CDEF file(s) contain invalid JSON"
+            exit 1
+          fi
+
+      - name: Check CDEF completeness
+        run: |
+          EXPECTED_FILES="component-definition-audit.json component-definition-authentication.json component-definition-config-mgmt.json component-definition-security-scanning.json component-definition-session-mgmt.json"
+          MISSING=0
+          for f in $EXPECTED_FILES; do
+            if [ ! -f "docs/compliance/oscal/cdefs/$f" ]; then
+              echo "::error::Missing expected CDEF: $f"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          if [ $MISSING -gt 0 ]; then
+            echo "::error::${MISSING} expected CDEF file(s) missing"
+            exit 1
+          fi
+          echo "All 5 expected CDEFs present."
+
+      - name: Upload CDEFs as preview artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: compliance-cdefs-preview
+          path: docs/compliance/oscal/cdefs/
+          retention-days: 30
