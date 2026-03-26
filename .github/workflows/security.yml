@@ -369,7 +369,10 @@ jobs:
           category: trivy-container
 
       - name: Run Trivy container scan (ASFF for SAF trivy2hdf)
-        run: trivy image --format asff --output trivy-container-asff.json --scanners vuln sparc:${{ github.sha }}
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID || '000000000000' }}
+        run: trivy image --format template --template "@contrib/asff.tpl" --output trivy-container-asff.json --scanners vuln sparc:${{ github.sha }}
         continue-on-error: true
 
       - name: Run Trivy container scan (CycloneDX for SAF)
