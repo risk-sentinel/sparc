@@ -306,7 +306,7 @@ jobs:
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
-          sudo apt-get install -y trivy
+          sudo apt-get install -y trivy=0.69.3
 
       - name: Run Trivy filesystem scan (SARIF)
         run: trivy fs --format sarif --output trivy-fs-results.sarif --severity CRITICAL,HIGH,MEDIUM --scanners vuln,misconfig,secret .
@@ -354,7 +354,7 @@ jobs:
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
-          sudo apt-get install -y trivy
+          sudo apt-get install -y trivy=0.69.3
 
       - name: Run Trivy container scan (SARIF)
         run: trivy image --format sarif --output trivy-container-results.sarif --severity CRITICAL,HIGH --scanners vuln sparc:${{ github.sha }}
