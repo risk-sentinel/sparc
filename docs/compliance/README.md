@@ -150,6 +150,60 @@ The resolved profile catalog is maintained at:
 
 ---
 
+## CI/CD Compliance Pipeline
+
+### PR Checks (`compliance.yml`)
+
+When PRs touch compliance-relevant files (`docs/compliance/**`, `.github/oscal-metadata.json`,
+security-critical controllers/concerns/initializers), the `Compliance Check` workflow:
+
+1. Validates all 5 CDEF JSON files parse correctly
+2. Checks completeness (all expected CDEFs present)
+3. Uploads CDEFs as a PR artifact for review
+
+### Main Branch (`security.yml → publish_for_sparc_iac`)
+
+On merge to main, the `publish_for_sparc_iac` job:
+
+1. Bundles CDEFs + HDF scan results + SBOMs + OSCAL metadata + manifest
+2. Uploads as `sparc-compliance-latest` GitHub artifact (90-day retention)
+3. Syncs to S3: `s3://<security-artifacts-bucket>/{date}/{sha}/app/`
+4. Fires `repository_dispatch: sparc-compliance-updated` to sparc-iac
+
+### AWS OIDC Trust Policy
+
+The S3 upload uses GitHub Actions OIDC federation. The IAM role
+(`sparc-iac-github-actions`) trust policy must allow the SPARC repo:
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
+  },
+  "Action": "sts:AssumeRoleWithWebIdentity",
+  "Condition": {
+    "StringLike": {
+      "token.actions.githubusercontent.com:sub": [
+        "repo:Rebel-Raiders/sparc-iac:*",
+        "repo:Rebel-Raiders/sparc:ref:refs/heads/main"
+      ]
+    }
+  }
+}
+```
+
+### Required GitHub Secrets/Variables
+
+| Name | Type | Purpose |
+|------|------|---------|
+| `AWS_ROLE_ARN` | Secret | IAM role ARN for OIDC assumption |
+| `AWS_REGION` | Variable | AWS region (default: us-east-1) |
+| `COMPLIANCE_S3_BUCKET` | Variable | S3 bucket for artifact storage |
+| `SPARC_IAC_DISPATCH_TOKEN` | Secret | PAT for cross-repo dispatch to sparc-iac |
+
+---
+
 ## References
 
 - [NIST SP 800-53 Rev 5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final)

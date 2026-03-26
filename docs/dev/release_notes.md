@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-03-25 -- ci: Add Compliance Artifact Pipeline with S3 Upload on PRs (#300)
+
+**Branch:** `feature/300_compliance_artifact_pipeline`
+
+### Summary
+
+Added a CI/CD pipeline for automated compliance artifact validation and S3 upload. PRs now trigger CDEF JSON
+validation and completeness checks via a new compliance workflow. The existing `publish_for_sparc_iac` job in
+the security workflow gains AWS OIDC credential assumption and S3 upload steps, pushing artifacts to
+`<security-artifacts-bucket>` with an `{ISO-date}/{short-sha}/app/` prefix matching sparc-iac conventions.
+
+### What Changed
+
+- **Security workflow** (`.github/workflows/security.yml`) -- added AWS OIDC credential assumption and S3
+  upload steps to `publish_for_sparc_iac` job; added `s3_prefix` to `repository_dispatch` payload for
+  sparc-iac.
+- **Compliance workflow** (`.github/workflows/compliance.yml`) -- NEW; PR-triggered CDEF JSON validation
+  and completeness check.
+- **Compliance README** (`docs/compliance/README.md`) -- updated with CI/CD pipeline documentation, AWS
+  OIDC trust policy, and required secrets/variables.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (workflow + docs only -- no code changes)
+
+---
+
 ## 2026-03-25 -- style: Downsize Hero Card Size by ~20% (#296)
 
 **Branch:** `feature/296_downsize_hero_card`
