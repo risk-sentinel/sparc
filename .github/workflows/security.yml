@@ -368,7 +368,15 @@ jobs:
           sarif_file: trivy-container-results.sarif
           category: trivy-container
 
+      - name: Download Trivy ASFF template
+        run: |
+          mkdir -p contrib
+          curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/asff.tpl -o contrib/asff.tpl
+
       - name: Run Trivy container scan (ASFF for SAF trivy2hdf)
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: trivy image --format template --template "@contrib/asff.tpl" --output trivy-container-asff.json --scanners vuln sparc:${{ github.sha }}
         continue-on-error: true
 
@@ -529,62 +537,19 @@ jobs:
             echo "Supplementing $hdf_file with OSCAL metadata"
           done
 
-      - name: Supplement HDF files with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/gitleaks.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/gitleaks.hdf.json
-
-      - name: Supplement Brakeman HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/brakeman.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/brakeman.hdf.json
-
-      - name: Supplement CodeQL HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/codeql.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/codeql.hdf.json
-
-      - name: Supplement Semgrep HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/semgrep.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/semgrep.hdf.json
-
-      - name: Supplement Trivy FS HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/trivy-fs.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/trivy-fs.hdf.json
-
-      - name: Supplement Trivy Container HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/trivy-container.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/trivy-container.hdf.json
-
-      - name: Supplement CycloneDX SBOM HDF files with OSCAL metadata
+      - name: Supplement all HDF files with OSCAL metadata
         if: always()
         run: |
-          for hdf_file in hdf-results/*-sbom.hdf.json hdf-results/sbom-*.hdf.json; do
+          echo "Supplementing HDF files with OSCAL metadata from ${{ env.ORG_METADATA_FILE }}..."
+          for hdf_file in hdf-results/*.hdf.json; do
             [ -f "$hdf_file" ] || continue
-            echo "Supplementing $hdf_file"
+            echo "  Supplementing $(basename $hdf_file)..."
+            npx --yes @mitre/saf supplement passthrough write \
+              -i "$hdf_file" \
+              -f "${{ env.ORG_METADATA_FILE }}" \
+              -o "$hdf_file" 2>&1 || echo "  Warning: supplement failed for $(basename $hdf_file)"
           done
-        # SBOM HDF files get metadata in the bundle step via the archive
+          echo "  Done. $(ls hdf-results/*.hdf.json 2>/dev/null | wc -l) HDF files processed."
 
       - name: Upload HDF results
         if: always()
@@ -737,18 +702,30 @@ jobs:
           path: sbom/
         continue-on-error: true
 
+      - name: Download SARIF results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: '*-results'
+          path: sarif-results/
+          merge-multiple: true
+        continue-on-error: true
+
       - name: Bundle compliance artifacts for sparc-iac
         run: |
-          mkdir -p sparc-compliance/hdf sparc-compliance/cdefs sparc-compliance/sbom
+          mkdir -p sparc-compliance/hdf sparc-compliance/cdefs sparc-compliance/sbom sparc-compliance/sarif
 
-          # HDF scan results (normalized by SAF CLI)
+          # HDF scan results (normalized by SAF CLI — includes SBOM-to-HDF conversions)
           cp hdf-results/*.hdf.json sparc-compliance/hdf/ 2>/dev/null || true
 
           # OSCAL component definitions (application-level controls)
           cp docs/compliance/oscal/cdefs/*.json sparc-compliance/cdefs/ 2>/dev/null || true
 
-          # SBOM for supply chain evidence
+          # SBOMs for supply chain evidence (CycloneDX format)
           cp sbom/*.json sparc-compliance/sbom/ 2>/dev/null || true
+
+          # Raw SARIF scan results for audit trail
+          find sarif-results/ -name '*.sarif' -exec cp {} sparc-compliance/sarif/ \; 2>/dev/null || true
+          find sarif-results/ -name '*.sarif.json' -exec cp {} sparc-compliance/sarif/ \; 2>/dev/null || true
 
           # OSCAL metadata with system-id for cross-repo correlation
           cp .github/oscal-metadata.json sparc-compliance/
@@ -757,6 +734,7 @@ jobs:
           HDF_FILES=$(ls sparc-compliance/hdf/*.hdf.json 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           CDEF_FILES=$(ls sparc-compliance/cdefs/*.json 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           SBOM_FILES=$(ls sparc-compliance/sbom/*.json 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
+          SARIF_FILES=$(ls sparc-compliance/sarif/*.sarif* 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           jq -n \
             --arg sid "sparc-application" \
             --arg repo "Rebel-Raiders/sparc" \
@@ -767,6 +745,7 @@ jobs:
             --argjson hdf "$HDF_FILES" \
             --argjson cdefs "$CDEF_FILES" \
             --argjson sbom "$SBOM_FILES" \
+            --argjson sarif "${SARIF_FILES:-[]}" \
             '{
               "system-id": $sid,
               "source-repo": $repo,
@@ -774,7 +753,7 @@ jobs:
               "git-sha": $sha,
               "git-ref": $ref,
               "generated-at": $ts,
-              "artifacts": { "hdf": $hdf, "cdefs": $cdefs, "sbom": $sbom }
+              "artifacts": { "hdf": $hdf, "cdefs": $cdefs, "sbom": $sbom, "sarif": $sarif }
             }' > sparc-compliance/manifest.json
 
           echo "## Compliance Bundle Contents" >> $GITHUB_STEP_SUMMARY
@@ -789,6 +768,30 @@ jobs:
           path: sparc-compliance/
           retention-days: 90
 
+      # ── S3 Upload ─────────────────────────────────────────────────
+      - name: Configure AWS credentials via OIDC
+        if: env.HAS_DISPATCH_TOKEN == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Upload compliance artifacts to S3
+        if: env.HAS_DISPATCH_TOKEN == 'true'
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          SHA=${GITHUB_SHA::7}
+          PREFIX="${DATE}/${SHA}/app"
+          BUCKET="${{ vars.COMPLIANCE_S3_BUCKET }}"
+          if [ -z "$BUCKET" ]; then
+            echo "::warning::COMPLIANCE_S3_BUCKET not set — skipping S3 upload"
+            exit 0
+          fi
+          aws s3 sync sparc-compliance/ "s3://${BUCKET}/${PREFIX}/" --no-progress
+          echo "## S3 Upload" >> $GITHUB_STEP_SUMMARY
+          echo "Uploaded to \`s3://${BUCKET}/${PREFIX}/\`" >> $GITHUB_STEP_SUMMARY
+          echo "S3_PREFIX=${PREFIX}" >> $GITHUB_ENV
+
       - name: Notify sparc-iac via repository_dispatch
         if: env.HAS_DISPATCH_TOKEN == 'true'
         uses: peter-evans/repository-dispatch@v4
@@ -802,5 +805,6 @@ jobs:
               "source_repo": "Rebel-Raiders/sparc",
               "run_id": "${{ github.run_id }}",
               "git_sha": "${{ github.sha }}",
-              "artifact_name": "sparc-compliance-latest"
+              "artifact_name": "sparc-compliance-latest",
+              "s3_prefix": "${{ env.S3_PREFIX }}"
             }
