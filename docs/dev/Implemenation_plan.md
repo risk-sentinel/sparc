@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-03-25
+**Last updated:** 2026-03-26
 
 ---
 
@@ -135,6 +135,7 @@ authentication mode coverage matrix.
 - [x] #283 -- Pre-release squash all pending migrations (9 files into single squash, 73 archived) -- **COMPLETED 2026-03-23**
 - [x] #291 -- Create Postman collection and environment for SPARC API (59 endpoints, 12 folders, prod + local envs) -- **COMPLETED 2026-03-23**
 - [x] #296 -- Downsize hero card size by ~20% (CSS padding, font sizes, mobile breakpoints) -- **COMPLETED 2026-03-25**
+- [x] #300 -- Add compliance artifact pipeline with S3 upload on PRs (OIDC + S3 + CDEF validation workflow) -- **COMPLETED 2026-03-25**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -434,6 +435,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | #263 | Auto-disable service accounts on token expiry and inactivity -- **COMPLETED 2026-03-21** | **HIGH** (security) | AFTER #257 |
 | [x] | #262 | Service account token expiry email notifications -- **COMPLETED 2026-03-22** | **HIGH** (security) | AFTER #257 |
 | [x] | #271 | Consolidate all releases into v1.0.0 (first public release) -- **COMPLETED 2026-03-22** | **HIGH** | All phases complete |
+| [x] | #300 | Compliance artifact pipeline with S3 upload on PRs (OIDC + CDEF validation) -- **COMPLETED 2026-03-25** | **HIGH** (security) | None |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -495,12 +497,12 @@ removed and are no longer tracked:
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
-| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264, #271, #272, #283, #296 | In Progress |
+| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264, #271, #272, #283, #296, #300 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 52 (23 original + 29 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 50 issues
+**Total issues tracked:** 53 (23 original + 30 ad-hoc/new)
+**Completed (Phases 1-9 + ad-hoc):** 51 issues
 **Remaining:** 2 issues (Phase 10: #244, #246)
 **Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.
 **First public release: v1.0.0** (#271) -- consolidates all prior internal releases.
