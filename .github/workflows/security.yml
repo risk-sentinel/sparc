@@ -368,6 +368,11 @@ jobs:
           sarif_file: trivy-container-results.sarif
           category: trivy-container
 
+      - name: Download Trivy ASFF template
+        run: |
+          mkdir -p contrib
+          curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/asff.tpl -o contrib/asff.tpl
+
       - name: Run Trivy container scan (ASFF for SAF trivy2hdf)
         env:
           AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
