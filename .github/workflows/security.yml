@@ -369,7 +369,7 @@ jobs:
           category: trivy-container
 
       - name: Run Trivy container scan (ASFF for SAF trivy2hdf)
-        run: trivy image --format template --template "@contrib/asff.tpl" --output trivy-container-asff.json --scanners vuln sparc:${{ github.sha }}
+        run: trivy image --format asff --output trivy-container-asff.json --scanners vuln sparc:${{ github.sha }}
         continue-on-error: true
 
       - name: Run Trivy container scan (CycloneDX for SAF)
@@ -529,62 +529,19 @@ jobs:
             echo "Supplementing $hdf_file with OSCAL metadata"
           done
 
-      - name: Supplement HDF files with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/gitleaks.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/gitleaks.hdf.json
-
-      - name: Supplement Brakeman HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/brakeman.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/brakeman.hdf.json
-
-      - name: Supplement CodeQL HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/codeql.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/codeql.hdf.json
-
-      - name: Supplement Semgrep HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/semgrep.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/semgrep.hdf.json
-
-      - name: Supplement Trivy FS HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/trivy-fs.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/trivy-fs.hdf.json
-
-      - name: Supplement Trivy Container HDF with OSCAL metadata
-        if: always()
-        uses: mitre/saf_action@v1
-        continue-on-error: true
-        with:
-          command_string: |
-            supplement passthrough write -i hdf-results/trivy-container.hdf.json -f ${{ env.ORG_METADATA_FILE }} -o hdf-results/trivy-container.hdf.json
-
-      - name: Supplement CycloneDX SBOM HDF files with OSCAL metadata
+      - name: Supplement all HDF files with OSCAL metadata
         if: always()
         run: |
-          for hdf_file in hdf-results/*-sbom.hdf.json hdf-results/sbom-*.hdf.json; do
+          echo "Supplementing HDF files with OSCAL metadata from ${{ env.ORG_METADATA_FILE }}..."
+          for hdf_file in hdf-results/*.hdf.json; do
             [ -f "$hdf_file" ] || continue
-            echo "Supplementing $hdf_file"
+            echo "  Supplementing $(basename $hdf_file)..."
+            npx --yes @mitre/saf supplement passthrough write \
+              -i "$hdf_file" \
+              -f "${{ env.ORG_METADATA_FILE }}" \
+              -o "$hdf_file" 2>&1 || echo "  Warning: supplement failed for $(basename $hdf_file)"
           done
-        # SBOM HDF files get metadata in the bundle step via the archive
+          echo "  Done. $(ls hdf-results/*.hdf.json 2>/dev/null | wc -l) HDF files processed."
 
       - name: Upload HDF results
         if: always()
