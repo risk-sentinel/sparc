@@ -1322,24 +1322,24 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-hero-tile {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 0.5rem;
-  padding: 1rem;
+  padding: 0.65rem;
   text-align: center;
 }
 
 .sparc-hero-tile-count {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
 }
 
 .sparc-hero-tile-label {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.75);
-  margin-top: 0.25rem;
+  margin-top: 0.15rem;
 }
 
 @media (max-width: 575.98px) {
-  .sparc-hero-tile-count { font-size: 2rem; }
-  .sparc-hero-tile-label { font-size: 0.85rem; }
+  .sparc-hero-tile-count { font-size: 1.6rem; }
+  .sparc-hero-tile-label { font-size: 0.75rem; }
 }
 
 .sparc-check-icon {
