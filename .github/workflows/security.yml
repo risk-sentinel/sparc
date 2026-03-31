@@ -492,8 +492,9 @@ jobs:
           sparse-checkout: |
             .github/oscal-metadata.json
 
-      - name: Download all scan artifacts
+      - name: Download scan artifacts
         uses: actions/download-artifact@v8
+        continue-on-error: true
         with:
           path: scan-results/
 
@@ -616,6 +617,7 @@ jobs:
 
       - name: Download all scan artifacts for archive
         uses: actions/download-artifact@v8
+        continue-on-error: true
         with:
           path: all-results/
 
