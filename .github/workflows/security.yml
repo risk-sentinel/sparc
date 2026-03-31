@@ -492,11 +492,29 @@ jobs:
           sparse-checkout: |
             .github/oscal-metadata.json
 
-      - name: Download scan artifacts
+      - name: Download SARIF scan artifacts
         uses: actions/download-artifact@v8
-        continue-on-error: true
         with:
           path: scan-results/
+          pattern: '*-sarif'
+
+      - name: Download Trivy scan artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: scan-results/
+          pattern: 'trivy-*-results'
+
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@v8
+        with:
+          path: scan-results/
+          name: sbom-cyclonedx
+
+      - name: Download bundler-audit artifact
+        uses: actions/download-artifact@v8
+        with:
+          path: scan-results/
+          name: bundler-audit-json
 
       - name: Create HDF output directory
         run: mkdir -p hdf-results
@@ -615,11 +633,35 @@ jobs:
           path: hdf-results/
         continue-on-error: true
 
-      - name: Download all scan artifacts for archive
+      - name: Download SARIF artifacts for archive
         uses: actions/download-artifact@v8
-        continue-on-error: true
         with:
           path: all-results/
+          pattern: '*-sarif'
+
+      - name: Download Trivy artifacts for archive
+        uses: actions/download-artifact@v8
+        with:
+          path: all-results/
+          pattern: 'trivy-*-results'
+
+      - name: Download SBOM artifact for archive
+        uses: actions/download-artifact@v8
+        with:
+          path: all-results/
+          name: sbom-cyclonedx
+
+      - name: Download bundler-audit artifact for archive
+        uses: actions/download-artifact@v8
+        with:
+          path: all-results/
+          name: bundler-audit-json
+
+      - name: Download HDF results for archive
+        uses: actions/download-artifact@v8
+        with:
+          path: all-results/
+          name: hdf-results
 
       - name: Generate GitHub Step Summary
         if: always()
