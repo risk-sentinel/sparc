@@ -905,6 +905,7 @@ jobs:
     if: always()
     permissions:
       contents: write
+      actions: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
