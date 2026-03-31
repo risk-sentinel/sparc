@@ -1,6 +1,6 @@
 # SPARC — Systematic and Regulatory Compliance
 
-![Landing Page](docs/landing_page.png)
+![Home Page](docs/images/sparc_home.jpg)
 
 **SPARC** is an open-source compliance documentation platform that transforms how organizations manage NIST 800-53 security controls. It replaces fragmented spreadsheets and siloed documents with a **coordinated, web-based, real-time source of truth** — empowering security teams, assessors, system owners, and program managers to document, assess, and prove compliance across the full RMF lifecycle.
 
