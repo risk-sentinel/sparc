@@ -512,6 +512,7 @@ jobs:
 
       - name: Convert all scan results to HDF (parallel)
         if: always()
+        continue-on-error: true
         run: |
           echo "Starting parallel HDF conversions..."
 
@@ -523,54 +524,55 @@ jobs:
           fi
           echo "SAF CLI: $SAF_BIN"
 
+          mkdir -p hdf-results
           PIDS=()
 
+          # Helper: run conversion in background only if input file exists
+          run_convert() {
+            local input="$1"; shift
+            if [ -f "$input" ]; then
+              "$SAF_BIN" "$@" 2>&1 &
+              PIDS+=($!)
+            fi
+          }
+
           # SARIF → HDF
-          [ -f scan-results/gitleaks-sarif/gitleaks-results.sarif ] && \
-            "$SAF_BIN" convert sarif2hdf -i scan-results/gitleaks-sarif/gitleaks-results.sarif -o hdf-results/gitleaks.hdf.json -w 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/gitleaks-sarif/gitleaks-results.sarif \
+            convert sarif2hdf -i scan-results/gitleaks-sarif/gitleaks-results.sarif -o hdf-results/gitleaks.hdf.json -w
 
-          [ -f scan-results/brakeman-sarif/brakeman-results.sarif ] && \
-            "$SAF_BIN" convert sarif2hdf -i scan-results/brakeman-sarif/brakeman-results.sarif -o hdf-results/brakeman.hdf.json -w 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/brakeman-sarif/brakeman-results.sarif \
+            convert sarif2hdf -i scan-results/brakeman-sarif/brakeman-results.sarif -o hdf-results/brakeman.hdf.json -w
 
-          [ -f scan-results/codeql-sarif/codeql-results.sarif ] && \
-            "$SAF_BIN" convert sarif2hdf -i scan-results/codeql-sarif/codeql-results.sarif -o hdf-results/codeql.hdf.json -w 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/codeql-sarif/codeql-results.sarif \
+            convert sarif2hdf -i scan-results/codeql-sarif/codeql-results.sarif -o hdf-results/codeql.hdf.json -w
 
-          [ -f scan-results/semgrep-sarif/semgrep-results.sarif ] && \
-            "$SAF_BIN" convert sarif2hdf -i scan-results/semgrep-sarif/semgrep-results.sarif -o hdf-results/semgrep.hdf.json -w 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/semgrep-sarif/semgrep-results.sarif \
+            convert sarif2hdf -i scan-results/semgrep-sarif/semgrep-results.sarif -o hdf-results/semgrep.hdf.json -w
 
-          [ -f scan-results/trivy-fs-results/trivy-fs-results.sarif ] && \
-            "$SAF_BIN" convert sarif2hdf -i scan-results/trivy-fs-results/trivy-fs-results.sarif -o hdf-results/trivy-fs.hdf.json -w 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/trivy-fs-results/trivy-fs-results.sarif \
+            convert sarif2hdf -i scan-results/trivy-fs-results/trivy-fs-results.sarif -o hdf-results/trivy-fs.hdf.json -w
 
           # Trivy Container ASFF → HDF
-          [ -f scan-results/trivy-container-results/trivy-container-asff.json ] && \
-            "$SAF_BIN" convert trivy2hdf -i scan-results/trivy-container-results/trivy-container-asff.json -o hdf-results/trivy-container.hdf.json 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/trivy-container-results/trivy-container-asff.json \
+            convert trivy2hdf -i scan-results/trivy-container-results/trivy-container-asff.json -o hdf-results/trivy-container.hdf.json
 
           # CycloneDX SBOM → HDF
-          [ -f scan-results/trivy-fs-results/trivy-fs-sbom.cdx.json ] && \
-            "$SAF_BIN" convert cyclonedx_sbom2hdf -i scan-results/trivy-fs-results/trivy-fs-sbom.cdx.json -o hdf-results/trivy-fs-sbom.hdf.json 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/trivy-fs-results/trivy-fs-sbom.cdx.json \
+            convert cyclonedx_sbom2hdf -i scan-results/trivy-fs-results/trivy-fs-sbom.cdx.json -o hdf-results/trivy-fs-sbom.hdf.json
 
-          [ -f scan-results/trivy-container-results/trivy-container-sbom.cdx.json ] && \
-            "$SAF_BIN" convert cyclonedx_sbom2hdf -i scan-results/trivy-container-results/trivy-container-sbom.cdx.json -o hdf-results/trivy-container-sbom.hdf.json 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/trivy-container-results/trivy-container-sbom.cdx.json \
+            convert cyclonedx_sbom2hdf -i scan-results/trivy-container-results/trivy-container-sbom.cdx.json -o hdf-results/trivy-container-sbom.hdf.json
 
-          [ -f scan-results/sbom-cyclonedx/sbom-ruby.cdx.json ] && \
-            "$SAF_BIN" convert cyclonedx_sbom2hdf -i scan-results/sbom-cyclonedx/sbom-ruby.cdx.json -o hdf-results/sbom-ruby.hdf.json 2>&1 &
-          PIDS+=($!)
+          run_convert scan-results/sbom-cyclonedx/sbom-ruby.cdx.json \
+            convert cyclonedx_sbom2hdf -i scan-results/sbom-cyclonedx/sbom-ruby.cdx.json -o hdf-results/sbom-ruby.hdf.json
 
           # Wait for all conversions to complete
           FAILED=0
           for pid in "${PIDS[@]}"; do
-            wait "$pid" 2>/dev/null || ((FAILED++))
+            wait "$pid" 2>/dev/null || FAILED=$((FAILED + 1))
           done
 
-          HDF_COUNT=$(ls hdf-results/*.hdf.json 2>/dev/null | wc -l)
+          HDF_COUNT=$(find hdf-results -name '*.hdf.json' 2>/dev/null | wc -l)
           echo "Conversions complete: $HDF_COUNT HDF files generated ($FAILED warnings)"
 
       - name: Supplement HDF files with OSCAL metadata
