@@ -906,7 +906,6 @@ jobs:
     permissions:
       contents: write
       actions: read
-      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -971,28 +970,13 @@ jobs:
             docs/ci/pipeline-metrics.csv
             docs/ci/pipeline-performance.png
 
-      - name: Commit and open metrics PR
+      - name: Commit performance chart to repo
         if: github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          # Check if there are changes to commit
-          if git diff --quiet docs/ci/pipeline-metrics.csv docs/ci/pipeline-performance.png 2>/dev/null; then
-            echo "No metrics changes to commit"
-            exit 0
-          fi
-
-          BRANCH="ci/pipeline-metrics-$(date -u +%Y%m%d-%H%M%S)"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
           git add docs/ci/pipeline-metrics.csv docs/ci/pipeline-performance.png
-          git commit -m "ci: Update pipeline metrics [skip ci]"
-          git push origin "$BRANCH"
-
-          # Create PR with auto-merge label
-          gh pr create \
-            --title "ci: Update pipeline metrics" \
-            --body "Automated pipeline metrics update — CSV data and XmR control chart PNG." \
-            --base main \
-            --head "$BRANCH"
+          git diff --cached --quiet && echo "No chart changes" || {
+            git commit -m "ci: update pipeline metrics [skip ci]"
+            git push
+          }
