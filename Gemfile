@@ -85,6 +85,8 @@ group :development, :test do
   gem "rspec-rails", "~> 8.0.4"
   gem "factory_bot_rails"
   gem "faker"
+  gem "bundler-audit", require: false
+  gem "cyclonedx-ruby", require: false
 end
 
 group :test do

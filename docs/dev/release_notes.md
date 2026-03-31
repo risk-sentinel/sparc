@@ -4,6 +4,40 @@
 
 ---
 
+## 2026-03-26 -- ci: Optimize CI Pipeline with Dependency Caching and Scan Deduplication (#314)
+
+**Branch:** `feature/314_ci_pipeline_optimization`
+
+### Summary
+
+Optimized the GitHub Actions CI pipeline with aggressive dependency caching, parallel scan execution, and
+Docker layer caching. Added a pipeline_metrics job that collects wall-clock durations via the GitHub API,
+appends results to a CSV, generates a matplotlib control chart (PNG), and auto-commits to the repo. Expected
+savings of ~2-3 minutes per pipeline run.
+
+### What Changed
+
+- **Dependency caching** -- added `actions/cache` for Trivy binary (2 jobs), Gitleaks binary, bundler-audit
+  advisory DB, and Trivy ASFF template. Moved `bundler-audit` and `cyclonedx-ruby` from `gem install` to
+  Gemfile (dev group) for bundler cache benefit.
+- **Parallel scan execution** -- replaced 10 sequential `mitre/saf_action` steps with parallel shell commands
+  using background processes + `wait`.
+- **Docker layer caching** -- added Docker Buildx with GitHub Actions layer caching (`type=gha`) for
+  `trivy_container_scan` job.
+- **Pipeline metrics** -- new `pipeline_metrics` job collects wall-clock durations from ALL customer-facing
+  workflows (CI, Security Scanning, CodeQL, Compliance Check, PR Checklist) per commit, appends to CSV,
+  generates matplotlib XmR (Individuals and Moving Range) control chart (PNG) with pre/post optimization
+  comparison and per-workflow before/after bar chart, and auto-commits to repo. Seeded with 100 historical
+  runs.
+- **New files** -- `scripts/ci/generate_pipeline_chart.py`, `docs/ci/pipeline-metrics.csv`.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (CI workflow optimization -- no app code changes)
+
+---
+
 ## 2026-03-25 -- ci: Add Compliance Artifact Pipeline with S3 Upload on PRs (#300)
 
 **Branch:** `feature/300_compliance_artifact_pipeline`

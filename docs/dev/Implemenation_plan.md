@@ -136,6 +136,7 @@ authentication mode coverage matrix.
 - [x] #291 -- Create Postman collection and environment for SPARC API (59 endpoints, 12 folders, prod + local envs) -- **COMPLETED 2026-03-23**
 - [x] #296 -- Downsize hero card size by ~20% (CSS padding, font sizes, mobile breakpoints) -- **COMPLETED 2026-03-25**
 - [x] #300 -- Add compliance artifact pipeline with S3 upload on PRs (OIDC + S3 + CDEF validation workflow) -- **COMPLETED 2026-03-25**
+- [x] #314 -- Optimize CI pipeline: dependency caching, parallel scans, Docker layer caching, pipeline metrics job -- **COMPLETED 2026-03-26**
 
 <!-- markdownlint-enable MD013 -->
 
