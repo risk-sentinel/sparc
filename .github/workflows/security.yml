@@ -864,35 +864,44 @@ jobs:
       - name: Install matplotlib
         run: pip install matplotlib
 
-      - name: Collect job durations from this workflow run
+      - name: Collect durations from all workflows for this commit
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p docs/ci
-          RUN_ID="${{ github.run_id }}"
           DATE=$(date -u +%Y-%m-%d)
           SHA="${{ github.sha }}"
           SHORT_SHA=${SHA::7}
 
-          # Fetch job durations via GitHub API
-          JOBS=$(gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}/jobs" --paginate --jq '.jobs[] | "\(.name),\(.started_at),\(.completed_at)"')
+          # Find all completed workflow runs for this commit SHA
+          RUNS=$(gh api "repos/${{ github.repository }}/actions/runs?head_sha=${SHA}&status=completed&per_page=100" \
+            --jq '.workflow_runs[] | "\(.id),\(.name),\(.run_started_at),\(.updated_at)"')
 
-          TOTAL=0
-          while IFS=',' read -r name started completed; do
-            [ -z "$started" ] || [ -z "$completed" ] || [ "$completed" = "null" ] && continue
-            START_EPOCH=$(date -d "$started" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$started" +%s 2>/dev/null || echo 0)
-            END_EPOCH=$(date -d "$completed" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$completed" +%s 2>/dev/null || echo 0)
+          MAX_TOTAL=0
+          while IFS=',' read -r run_id wf_name started updated; do
+            [ -z "$run_id" ] || [ -z "$started" ] || [ -z "$updated" ] && continue
+
+            START_EPOCH=$(date -d "$started" +%s 2>/dev/null || echo 0)
+            END_EPOCH=$(date -d "$updated" +%s 2>/dev/null || echo 0)
             DURATION=$((END_EPOCH - START_EPOCH))
             [ "$DURATION" -lt 0 ] && DURATION=0
-            TOTAL=$((TOTAL > DURATION ? TOTAL : DURATION))
-            CACHE_HIT="unknown"
-            echo "${RUN_ID},${DATE},${SHORT_SHA},${name},${DURATION},0,${CACHE_HIT}" >> docs/ci/pipeline-metrics.csv
-          done <<< "$JOBS"
+            [ "$DURATION" -gt "$MAX_TOTAL" ] && MAX_TOTAL=$DURATION
 
-          # Update total duration on all rows for this run
-          sed -i "s/^${RUN_ID},\(.*\),0,/&/" docs/ci/pipeline-metrics.csv || true
+            # Normalize workflow name: lowercase, spaces to underscores
+            NORM_NAME=$(echo "$wf_name" | tr '[:upper:]' '[:lower:]' | tr ' ' '_')
 
-          echo "Recorded $RUN_ID: max job duration ${TOTAL}s"
+            # Skip if already recorded (idempotent)
+            if ! grep -q "^${run_id}," docs/ci/pipeline-metrics.csv 2>/dev/null; then
+              echo "${run_id},${DATE},${SHORT_SHA},${NORM_NAME},${DURATION},0,unknown" >> docs/ci/pipeline-metrics.csv
+            fi
+          done <<< "$RUNS"
+
+          # Update total_duration column (6th field) for all rows with this SHA
+          if [ "$MAX_TOTAL" -gt 0 ]; then
+            sed -i "s/^\([^,]*,${DATE},${SHORT_SHA},[^,]*,[^,]*,\)0,/\1${MAX_TOTAL},/" docs/ci/pipeline-metrics.csv || true
+          fi
+
+          echo "Recorded SHA ${SHORT_SHA}: ${MAX_TOTAL}s total across all workflows"
 
       - name: Generate pipeline performance chart
         run: python scripts/ci/generate_pipeline_chart.py

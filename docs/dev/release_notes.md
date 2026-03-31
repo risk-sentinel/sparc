@@ -24,9 +24,11 @@ savings of ~2-3 minutes per pipeline run.
   using background processes + `wait`.
 - **Docker layer caching** -- added Docker Buildx with GitHub Actions layer caching (`type=gha`) for
   `trivy_container_scan` job.
-- **Pipeline metrics** -- new `pipeline_metrics` job collects wall-clock durations, appends to CSV, generates
-  matplotlib XmR (Individuals and Moving Range) control chart (PNG) with pre/post optimization comparison
-  and per-job before/after bar chart, and auto-commits to repo.
+- **Pipeline metrics** -- new `pipeline_metrics` job collects wall-clock durations from ALL customer-facing
+  workflows (CI, Security Scanning, CodeQL, Compliance Check, PR Checklist) per commit, appends to CSV,
+  generates matplotlib XmR (Individuals and Moving Range) control chart (PNG) with pre/post optimization
+  comparison and per-workflow before/after bar chart, and auto-commits to repo. Seeded with 100 historical
+  runs.
 - **New files** -- `scripts/ci/generate_pipeline_chart.py`, `docs/ci/pipeline-metrics.csv`.
 
 ### Stats

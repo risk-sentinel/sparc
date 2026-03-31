@@ -4,10 +4,13 @@
 Reads pipeline metrics from docs/ci/pipeline-metrics.csv and produces a
 three-panel XmR control chart PNG at docs/ci/pipeline-performance.png.
 
+Tracks ALL customer-facing workflows (CI, Security Scanning, CodeQL,
+Compliance Check, PR Checklist) to reflect the full developer wait time.
+
 Panel layout (matches sparc-iac reference):
-  1. Individuals (X) chart — run durations with mean, UCL, LCL
+  1. Individuals (X) chart — total pipeline durations with mean, UCL, LCL
   2. Moving Range (mR) chart — consecutive differences with UCL, mean
-  3. Before/After bar chart — per-job duration comparison pre/post optimization
+  3. Before/After bar chart — per-workflow duration comparison pre/post optimization
 """
 
 import csv
@@ -39,28 +42,29 @@ UCL_COLOR = "#e74c3c"
 OPT_LINE_COLOR = "#3498db"  # blue dashed — optimization deployed marker
 
 TRACKED_JOBS = [
-    "trivy_container_scan",
-    "trivy_fs_scan",
-    "codeql_scan",
-    "brakeman_scan",
-    "secrets_scan",
-    "dependency_audit",
-    "normalize_hdf",
-    "bundle_results",
-    "sbom_generation",
+    "security_scanning",
+    "ci",
+    "codeql",
+    "compliance_check",
+    "pr_checklist",
 ]
 
 
 # --- Helpers ------------------------------------------------------------------
 
 def read_metrics(path: Path):
-    """Parse the CSV and return structured data.
+    """Parse the CSV and return structured data grouped by commit SHA.
+
+    Each commit triggers multiple workflows (CI, Security Scanning, etc.).
+    We group by (sha, date) so each entry represents a single commit's full
+    pipeline experience — total = longest workflow (the bottleneck).
 
     Returns:
-        runs: list of dicts with keys: run_id, date, sha, jobs (dict of
-              job_name -> duration), total_duration
+        runs: list of dicts with keys: date, datetime, sha, jobs (dict of
+              workflow_name -> duration), total (max workflow duration)
     """
-    raw = {}  # run_id -> {date, sha, jobs: {name: dur}, total}
+    # Group by (sha, date) since each commit spawns multiple workflow run_ids
+    sha_data = {}  # (sha, date) -> {jobs: {name: dur}, min_run_id}
     try:
         with open(path, newline="") as fh:
             reader = csv.DictReader(fh)
@@ -74,43 +78,43 @@ def read_metrics(path: Path):
                 except (ValueError, KeyError, TypeError):
                     continue
 
-                try:
-                    total_dur = float(row.get("total_duration", 0))
-                except (ValueError, TypeError):
-                    total_dur = 0.0
-
-                if run_id not in raw:
-                    raw[run_id] = {
+                key = (sha, date_str)
+                if key not in sha_data:
+                    sha_data[key] = {
                         "date": date_str,
                         "sha": sha,
                         "jobs": {},
-                        "total": total_dur,
+                        "min_run_id": run_id,
                     }
-                raw[run_id]["jobs"][job_name] = duration
-                # Use the CSV total_duration (true wall-clock) if available
-                if total_dur > 0:
-                    raw[run_id]["total"] = total_dur
+                # Each workflow name maps to its duration; if duplicates, keep max
+                prev = sha_data[key]["jobs"].get(job_name, 0)
+                sha_data[key]["jobs"][job_name] = max(prev, duration)
+                sha_data[key]["min_run_id"] = min(sha_data[key]["min_run_id"], run_id)
     except FileNotFoundError:
         return []
 
-    if not raw:
+    if not sha_data:
         return []
 
-    sorted_ids = sorted(raw.keys())[-100:]
+    # Sort by min_run_id (chronological), take last 100 commits
+    sorted_keys = sorted(sha_data.keys(), key=lambda k: sha_data[k]["min_run_id"])
+    last_100 = sorted_keys[-100:]
+
     runs = []
-    for rid in sorted_ids:
-        entry = raw[rid]
+    for key in last_100:
+        entry = sha_data[key]
         try:
             dt = datetime.strptime(entry["date"], "%Y-%m-%d")
         except (ValueError, TypeError):
             dt = None
+        # Total = max across all workflows (the bottleneck the dev waits on)
+        total = max(entry["jobs"].values()) if entry["jobs"] else 0
         runs.append({
-            "run_id": rid,
             "date": entry["date"],
             "datetime": dt,
             "sha": entry["sha"],
             "jobs": entry["jobs"],
-            "total": entry["total"],
+            "total": total,
         })
     return runs
 
@@ -162,7 +166,7 @@ def generate_placeholder(output_path: Path):
     """Generate a placeholder chart when insufficient data is available."""
     fig, axes = plt.subplots(3, 1, figsize=(14, 10), gridspec_kw={"height_ratios": [3, 2, 2]})
     fig.suptitle(
-        "Pipeline Performance XmR Control Chart\nSPARC Security Scanning \u2014 Total Workflow Duration (wall-clock)",
+        "Pipeline Performance XmR Control Chart\nSPARC CI Pipeline \u2014 Total Workflow Duration (wall-clock)",
         fontsize=14, fontweight="bold",
     )
     for ax in axes:
@@ -202,7 +206,7 @@ def generate_chart(output_path: Path, runs):
     )
     fig.suptitle(
         "Pipeline Performance XmR Control Chart\n"
-        "SPARC Security Scanning \u2014 Total Workflow Duration (wall-clock)",
+        "SPARC CI Pipeline \u2014 Total Workflow Duration (wall-clock)",
         fontsize=13, fontweight="bold",
     )
 
