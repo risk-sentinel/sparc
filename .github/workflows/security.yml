@@ -507,6 +507,7 @@ jobs:
       # All conversions run in parallel via background processes for ~3x speedup
 
       - name: Install SAF CLI
+        if: always()
         run: npm install -g @mitre/saf
 
       - name: Convert all scan results to HDF (parallel)
@@ -515,7 +516,11 @@ jobs:
           echo "Starting parallel HDF conversions..."
 
           # Resolve full path — npm global bin may not be on PATH in subshells
-          SAF_BIN=$(which saf)
+          SAF_BIN=$(which saf 2>/dev/null || echo "$(npm config get prefix)/bin/saf")
+          if [ ! -x "$SAF_BIN" ]; then
+            echo "::warning::SAF CLI not found — skipping HDF conversions"
+            exit 0
+          fi
           echo "SAF CLI: $SAF_BIN"
 
           PIDS=()
