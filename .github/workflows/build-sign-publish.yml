@@ -15,8 +15,6 @@ on:
         required: true
       DOCKERHUB_TOKEN:
         required: true
-      AWS_ROLE_ARN:
-        required: true
     outputs:
       digest:
         description: 'Multi-platform image manifest digest'
@@ -45,7 +43,7 @@ concurrency:
   cancel-in-progress: false   # Never cancel release builds
 
 env:
-  VERSION: ${{ github.ref_name || inputs.version }}
+  VERSION: ${{ inputs.version || github.ref_name }}
 
 # ═══════════════════════════════════════════════════════════════
 # Jobs
@@ -138,7 +136,7 @@ jobs:
         if: needs.prepare.outputs.dry_run != 'true'
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
@@ -189,6 +187,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true
@@ -217,7 +216,7 @@ jobs:
 
           echo ""
           echo "── Rails version check ──"
-          docker run --rm sparc:dry-run bin/rails --version
+          docker run --rm --entrypoint "" sparc:dry-run bin/rails --version
 
           echo ""
           echo "── Would have pushed these tags ──"
@@ -245,7 +244,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
