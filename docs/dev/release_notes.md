@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-03-31 -- ci: Add Signed Docker Image Build Pipeline with Docker Hub + ECR Publishing (#316)
+
+**Branch:** `feature/316_docker_build_sign_publish`
+
+### Summary
+
+New reusable GitHub Actions workflow that builds multi-platform Docker images (amd64 + arm64), pushes to
+Docker Hub and Amazon ECR, signs with Sigstore Cosign (keyless OIDC), verifies signatures, and attests a
+CycloneDX SBOM. Supports direct tag push (`v*`), `workflow_call` from other workflows, and `workflow_dispatch`
+with dry-run mode for testing.
+
+### What Changed
+
+- **New workflow** -- `.github/workflows/build-sign-publish.yml` with 3 jobs: prepare, build-and-push,
+  sign-verify-attest.
+- **Multi-platform builds** -- linux/amd64 + linux/arm64 via QEMU emulation and Docker Buildx.
+- **Dual registry push** -- Docker Hub (`rebelraiders/sparc`) and ECR (`sparc-prod`) with semver tags +
+  `:latest` for stable releases.
+- **Keyless image signing** -- Sigstore Cosign with GitHub Actions OIDC. No static keys to manage.
+- **SBOM attestation** -- CycloneDX SBOM generated via Syft, attached to images via `cosign attest`.
+- **Dry-run mode** -- `workflow_dispatch` with `dry_run: true` builds locally without pushing or signing.
+- **OCI labels** -- version, source, revision, created, vendor, licenses on every image.
+
+### NIST Controls
+
+- **SA-10** (Developer Configuration Management) -- signed images provide supply chain integrity
+- **SI-7** (Software/Firmware Integrity) -- cryptographic verification of image provenance
+- **SA-12** (Supply Chain Protection) -- SBOM attestation documents dependencies
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (CI workflow -- no app code changes)
+
+---
+
 ## 2026-03-26 -- ci: Optimize CI Pipeline with Dependency Caching and Scan Deduplication (#314)
 
 **Branch:** `feature/314_ci_pipeline_optimization`

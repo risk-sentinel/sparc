@@ -293,6 +293,7 @@ Dev C: #171 (OSCAL diagram)
 | [x] | #95 | Versioned REST API for Users/Projects with RBAC -- **COMPLETED 2026-03-19** | MEDIUM | None |
 | [x] | #186 | Hybrid security scanning CI (Trivy + SAST + SAF CLI + HDF output) -- **COMPLETED 2026-03-15** | MEDIUM | None |
 | [x] | #183 | Squash all migrations into single consolidated file -- **COMPLETED 2026-03-19** | LOW | AFTER all migration PRs merge |
+| [x] | #316 | Signed Docker image build pipeline with Docker Hub + ECR publishing -- **COMPLETED 2026-03-31** | MEDIUM | None |
 
 <!-- markdownlint-enable MD013 -->
 
