@@ -57,7 +57,8 @@ env:
 permissions:
   contents: read
   security-events: write
-  actions: read  # Required for cross-repo artifact access
+  actions: read      # Required for cross-repo artifact access
+  id-token: write    # OIDC for AWS credential assumption (S3 upload, ECR)
 
 # ═══════════════════════════════════════════════════════════════════
 # Parallel Scan Jobs (1–9)
