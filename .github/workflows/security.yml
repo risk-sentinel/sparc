@@ -79,7 +79,7 @@ jobs:
 
       - name: Cache Gitleaks binary
         id: gitleaks-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /usr/local/bin/gitleaks
           key: gitleaks-${{ runner.os }}-8.24.0
@@ -264,7 +264,7 @@ jobs:
           bundler-cache: true
 
       - name: Cache bundler-audit advisory DB
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.local/share/ruby-advisory-db
           key: bundler-audit-db-${{ runner.os }}-${{ github.run_id }}
@@ -314,7 +314,7 @@ jobs:
 
       - name: Cache Trivy binary
         id: trivy-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /usr/local/bin/trivy
           key: trivy-${{ runner.os }}-0.69.3
@@ -381,7 +381,7 @@ jobs:
 
       - name: Cache Trivy binary
         id: trivy-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /usr/local/bin/trivy
           key: trivy-${{ runner.os }}-0.69.3
@@ -410,7 +410,7 @@ jobs:
 
       - name: Cache Trivy ASFF template
         id: asff-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: contrib/asff.tpl
           key: trivy-asff-tpl-v1
