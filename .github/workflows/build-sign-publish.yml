@@ -179,7 +179,7 @@ jobs:
       - name: Build and push multi-platform image
         if: needs.prepare.outputs.dry_run != 'true'
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -197,7 +197,7 @@ jobs:
       - name: Build image (dry run)
         if: needs.prepare.outputs.dry_run == 'true'
         id: build-dry
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
