@@ -15,8 +15,6 @@ on:
         required: true
       DOCKERHUB_TOKEN:
         required: true
-      AWS_ROLE_ARN:
-        required: true
     outputs:
       digest:
         description: 'Multi-platform image manifest digest'
@@ -138,7 +136,7 @@ jobs:
         if: needs.prepare.outputs.dry_run != 'true'
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
@@ -245,7 +243,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
