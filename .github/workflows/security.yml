@@ -904,8 +904,9 @@ jobs:
     needs: [ bundle_results ]
     if: always()
     permissions:
-      contents: write
+      contents: read
       actions: read
+      id-token: write   # OIDC for AWS credentials
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -970,11 +971,26 @@ jobs:
             docs/ci/pipeline-metrics.csv
             docs/ci/pipeline-performance.png
 
-      - name: Commit metrics and chart
+      - name: Configure AWS Credentials
         if: github.ref == 'refs/heads/main'
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
-          commit_message: "ci: Update pipeline metrics [skip ci]"
-          file_pattern: "docs/ci/pipeline-metrics.csv docs/ci/pipeline-performance.png"
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Upload performance chart to S3
+        if: github.ref == 'refs/heads/main'
+        run: |
+          BUCKET="<security-artifacts-bucket>"
+          aws s3 cp docs/ci/pipeline-performance.png \
+            "s3://${BUCKET}/latest/pipeline-performance.png" \
+            --region ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws s3 cp docs/ci/pipeline-metrics.csv \
+            "s3://${BUCKET}/latest/pipeline-metrics.csv" \
+            --region ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Performance Summary
+        run: |
+          echo "## Pipeline Performance" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "![Pipeline Performance XmR Chart](docs/ci/pipeline-performance.png)" >> "$GITHUB_STEP_SUMMARY"
