@@ -215,7 +215,7 @@ jobs:
 
           echo ""
           echo "── Rails version check ──"
-          docker run --rm sparc:dry-run bin/rails --version
+          docker run --rm --entrypoint "" sparc:dry-run bin/rails --version
 
           echo ""
           echo "── Would have pushed these tags ──"
