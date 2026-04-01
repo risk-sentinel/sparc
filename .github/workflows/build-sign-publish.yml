@@ -43,7 +43,7 @@ concurrency:
   cancel-in-progress: false   # Never cancel release builds
 
 env:
-  VERSION: ${{ github.ref_name || inputs.version }}
+  VERSION: ${{ inputs.version || github.ref_name }}
 
 # ═══════════════════════════════════════════════════════════════
 # Jobs
