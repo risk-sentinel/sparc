@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-04-02 -- ci: Add Paths Filters to CI Workflows (#335)
+
+**Branch:** `feature/335_ci_paths_filters`
+
+### Summary
+
+Added path-based conditional execution to CI and Security Scanning workflows using `dorny/paths-filter@v3`.
+Dependabot PRs that only change GitHub Action versions (workflow YAML) now skip expensive scan jobs, saving
+~6-7 minutes of CI time per PR. Gemfile and app code changes still trigger the full pipeline.
+
+### What Changed
+
+- **ci.yml** -- added `changes` job with `dorny/paths-filter@v3`. `lint` and `test` jobs skip on PRs that
+  only change workflow files. Push to main and scheduled triggers always run all jobs.
+- **security.yml** -- same pattern applied to all 8 scan jobs (`secrets_scan`, `brakeman_scan`, `codeql_scan`,
+  `dependency_audit`, `importmap_audit`, `trivy_fs_scan`, `trivy_container_scan`, `sbom_generation`) and all
+  4 downstream jobs (`normalize_hdf`, `bundle_results`, `publish_for_sparc_iac`, `pipeline_metrics`).
+- **Branch protection compatible** -- skipped jobs report as "Success", satisfying required status checks.
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (CI workflow optimization -- no app code changes)
+
+---
+
 ## 2026-03-31 -- ci: Add Signed Docker Image Build Pipeline with Docker Hub + ECR Publishing (#316)
 
 **Branch:** `feature/316_docker_build_sign_publish`

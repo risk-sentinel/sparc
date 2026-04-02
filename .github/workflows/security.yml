@@ -66,9 +66,44 @@ permissions:
 
 jobs:
 
+  # ── Path filter: skip expensive scans on workflow-only PRs ─────
+  # On PRs, detect whether app code changed. If only workflow YAML
+  # or docs changed, scan jobs skip but still report status (as
+  # skipped) so branch protection required checks pass.
+  # On push/schedule/dispatch, scans always run (app_code not evaluated).
+  changes:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      app_code: ${{ steps.filter.outputs.app_code }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Check changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            app_code:
+              - '**.rb'
+              - 'Gemfile*'
+              - 'Dockerfile'
+              - 'docker-compose*.yml'
+              - '.github/workflows/security.yml'
+              - '.github/oscal-metadata.json'
+              - 'config/**'
+              - 'app/**'
+              - 'lib/**'
+              - 'db/**'
+              - 'spec/**'
+              - 'bin/**'
+
   # ── 1. Secrets Scan (Gitleaks) ─────────────────────────────────
   secrets_scan:
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     permissions:
       contents: read
       security-events: write
@@ -115,6 +150,8 @@ jobs:
   # ── 2a. Brakeman SAST (always-on, Rails-specific) ─────────────
   brakeman_scan:
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     permissions:
       contents: read
       security-events: write
@@ -153,6 +190,8 @@ jobs:
   # ── 2b. CodeQL SAST (always-on, deep semantic analysis) ──────
   codeql_scan:
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     permissions:
       contents: read
       security-events: write
@@ -254,6 +293,8 @@ jobs:
   # ── 3. Dependency Audit (bundler-audit) ────────────────────────
   dependency_audit:
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -289,6 +330,8 @@ jobs:
   # ── 4. JavaScript Dependency Audit (importmap) ─────────────────
   importmap_audit:
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -306,6 +349,8 @@ jobs:
   # ── 5. Trivy Filesystem Scan ───────────────────────────────────
   trivy_fs_scan:
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     permissions:
       contents: read
       security-events: write
@@ -360,6 +405,8 @@ jobs:
   # ── 6. Trivy Container Scan ────────────────────────────────────
   trivy_container_scan:
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     permissions:
       contents: read
       security-events: write
@@ -448,6 +495,8 @@ jobs:
   # ── 7. SBOM Generation (CycloneDX) ────────────────────────────
   sbom_generation:
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -476,6 +525,7 @@ jobs:
   normalize_hdf:
     runs-on: ubuntu-latest
     needs:
+      - changes
       - secrets_scan
       - brakeman_scan
       - codeql_scan
@@ -485,7 +535,7 @@ jobs:
       - trivy_fs_scan
       - trivy_container_scan
       - sbom_generation
-    if: always()
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Checkout code (for OSCAL metadata)
         uses: actions/checkout@v6
@@ -624,8 +674,8 @@ jobs:
 
   bundle_results:
     runs-on: ubuntu-latest
-    needs: [ normalize_hdf ]
-    if: always()
+    needs: [ changes, normalize_hdf ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Download HDF results
         uses: actions/download-artifact@v8
@@ -759,8 +809,8 @@ jobs:
 
   publish_for_sparc_iac:
     runs-on: ubuntu-latest
-    needs: [ bundle_results ]
-    if: always() && github.ref == 'refs/heads/main'
+    needs: [ changes, bundle_results ]
+    if: always() && github.ref == 'refs/heads/main' && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     env:
       HAS_DISPATCH_TOKEN: ${{ secrets.SPARC_IAC_DISPATCH_TOKEN != '' }}
     steps:
@@ -902,8 +952,8 @@ jobs:
 
   pipeline_metrics:
     runs-on: ubuntu-latest
-    needs: [ bundle_results ]
-    if: always()
+    needs: [ changes, bundle_results ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     permissions:
       contents: read
       actions: read
