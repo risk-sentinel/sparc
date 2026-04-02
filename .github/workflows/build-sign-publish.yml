@@ -222,6 +222,25 @@ jobs:
           echo "── Would have pushed these tags ──"
           echo "${{ steps.meta.outputs.tags }}"
 
+      - name: Install Syft
+        if: needs.prepare.outputs.dry_run == 'true'
+        uses: anchore/sbom-action/download-syft@v0
+
+      - name: Generate SBOM (dry run)
+        if: needs.prepare.outputs.dry_run == 'true'
+        run: |
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
+          syft sparc:dry-run -o cyclonedx-json=sparc-sbom-${VERSION}.cdx.json
+          echo "SBOM generated: sparc-sbom-${VERSION}.cdx.json"
+
+      - name: Upload SBOM artifact
+        if: needs.prepare.outputs.dry_run == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: sparc-sbom-${{ needs.prepare.outputs.version_stripped }}
+          path: sparc-sbom-${{ needs.prepare.outputs.version_stripped }}.cdx.json
+          retention-days: 90
+
   # ── Sign, Verify, and Attest ────────────────────────────────
 
   sign-verify-attest:
@@ -288,29 +307,32 @@ jobs:
 
       - name: Generate CycloneDX SBOM
         run: |
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
           syft rebelraiders/sparc@${{ needs.build-and-push.outputs.digest }} \
-            -o cyclonedx-json=sparc-sbom.cdx.json
+            -o cyclonedx-json=sparc-sbom-${VERSION}.cdx.json
 
       - name: Attest SBOM to Docker Hub
         run: |
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
           cosign attest --yes \
-            --predicate sparc-sbom.cdx.json \
+            --predicate sparc-sbom-${VERSION}.cdx.json \
             --type cyclonedx \
             rebelraiders/sparc@${{ needs.build-and-push.outputs.digest }}
 
       - name: Attest SBOM to ECR
         if: vars.ECR_REGISTRY != ''
         run: |
+          VERSION="${{ needs.prepare.outputs.version_stripped }}"
           cosign attest --yes \
-            --predicate sparc-sbom.cdx.json \
+            --predicate sparc-sbom-${VERSION}.cdx.json \
             --type cyclonedx \
             ${{ vars.ECR_REGISTRY }}/sparc-prod@${{ needs.build-and-push.outputs.digest }}
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v7
         with:
-          name: sparc-sbom
-          path: sparc-sbom.cdx.json
+          name: sparc-sbom-${{ needs.prepare.outputs.version_stripped }}
+          path: sparc-sbom-${{ needs.prepare.outputs.version_stripped }}.cdx.json
           retention-days: 90
 
       # ── Summary ──
