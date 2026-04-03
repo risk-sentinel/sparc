@@ -74,6 +74,9 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       app_code: ${{ steps.filter.outputs.app_code }}
     steps:
