@@ -75,8 +75,8 @@ findings:
     installed_version: "252.39-1~deb12u1"
     fixed_version: "none"
     severity: HIGH
-    disposition: accepted
-    rationale: "systemd library vulnerability. Container does not run systemd -- library is a transitive dependency of the base image. No systemd IPC, D-Bus, or unit management in the container."
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. CVE requires systemd running as PID 1 receiving IPC API calls with spurious data. SPARC container runs Rails server as PID 1 (docker-entrypoint -> bin/rails server), not systemd. No D-Bus socket exists in the container, no systemd IPC calls in the codebase, no sd_bus/sd_notify/systemctl usage. libsystemd0 is a transitive dependency of the base image, never invoked. Attack vector is unreachable."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-04-03"
