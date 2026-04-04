@@ -1,0 +1,963 @@
+# sparc-findings.yml -- SPARC container image CVE disposition tracking
+#
+# Tracks all Trivy container scan findings against the production Docker
+# image (ruby:3.4.4-slim / Debian Bookworm 12.13). Each finding is triaged,
+# dispositioned, and documented for the FedRAMP authorization package.
+#
+# Disposition workflow: discovered -> triaged -> accepted/deferred/remediated
+#
+# Risk context: SPARC is a Rails application deployed as a containerized
+# workload on ECS Fargate, EC2, and Azure. The container:
+#   - Runs as non-root user (UID 1000, rails:rails)
+#   - Multi-stage build -- no build tools in final image
+#   - No interactive terminal, no SSH access
+#   - Behind reverse proxy (ALB/nginx) with TLS termination
+#   - Network whitelisting -- egress limited to PostgreSQL, Redis, S3
+#   - Seccomp and namespace isolation (ECS Fargate/Docker default)
+#   - Automated Trivy scanning on every build in CI/CD
+#   - 30-day review cycle for all accepted findings
+#
+# Mitigating controls (deployment-agnostic, apply to all findings):
+#   - AC-4: Network segmentation via security groups / NSGs
+#   - CM-6: Hardened container configuration (non-root, read-only where possible)
+#   - SC-7: Reverse proxy boundary protection with TLS
+#   - SC-8: TLS 1.2+ for all data in transit
+#   - SI-2: Continuous vulnerability monitoring with Trivy
+#   - SI-3: Container image scanning for malware/vulnerabilities
+#
+# New HIGH or CRITICAL CVEs not in this baseline should block the build
+# once issue #244 (security gate threshold) is implemented.
+
+findings:
+
+  # ==========================================================================
+  # HIGH -- 4 unique CVEs
+  # ==========================================================================
+
+  - cve_id: CVE-2026-4046
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-69720
+    package: libncursesw6
+    installed_version: "6.4-4"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ncurses vulnerability. Container has no interactive terminal -- ncurses installed as a transitive dependency. No TUI or terminal rendering in the SPARC application."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-27135
+    package: libnghttp2-14
+    installed_version: "1.52.0-1+deb12u2"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: accepted
+    rationale: "HTTP/2 library vulnerability. SPARC container is an HTTP server behind a reverse proxy (ALB/nginx) that terminates TLS and HTTP/2. The container itself communicates via HTTP/1.1 internally."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-29111
+    package: libsystemd0
+    installed_version: "252.39-1~deb12u1"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: accepted
+    rationale: "systemd library vulnerability. Container does not run systemd -- library is a transitive dependency of the base image. No systemd IPC, D-Bus, or unit management in the container."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  # ==========================================================================
+  # MEDIUM -- 17 unique CVEs
+  # ==========================================================================
+
+  - cve_id: CVE-2025-10148
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-1965
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-3783
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-3784
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-30258
+    package: dirmngr
+    installed_version: "2.2.40-1.1+deb12u2"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "GnuPG directory manager vulnerability. GnuPG installed for APT package signature verification during image build only. Not invoked at runtime. No key server operations."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-68972
+    package: dirmngr
+    installed_version: "2.2.40-1.1+deb12u2"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "GnuPG directory manager vulnerability. GnuPG installed for APT package signature verification during image build only. Not invoked at runtime. No key server operations."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-15281
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-0915
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-4437
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-4438
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2023-50495
+    package: libncursesw6
+    installed_version: "6.4-4"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "ncurses vulnerability. Container has no interactive terminal -- ncurses installed as a transitive dependency. No TUI or terminal rendering in the SPARC application."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2024-10041
+    package: libpam-modules
+    installed_version: "1.5.2-6+deb12u2"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "PAM vulnerability. Container authentication is handled at the application layer (Devise/OIDC), not via PAM. PAM modules are base image dependencies not used by SPARC."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-7709
+    package: libsqlite3-0
+    installed_version: "3.40.1-2+deb12u2"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "SQLite vulnerability. SPARC uses PostgreSQL exclusively -- SQLite is a transitive dependency of the base image, not used by the application."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-4105
+    package: libsystemd0
+    installed_version: "252.39-1~deb12u1"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "systemd library vulnerability. Container does not run systemd -- library is a transitive dependency of the base image. No systemd IPC, D-Bus, or unit management in the container."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-13151
+    package: libtasn1-6
+    installed_version: "4.19.0-2+deb12u1"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "ASN.1 parsing vulnerability. libtasn1 is a transitive dependency used by GnuTLS. SPARC does not parse untrusted ASN.1 data."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-58767
+    package: rexml
+    installed_version: "3.4.4"
+    fixed_version: ">= 3.4.2"
+    severity: MEDIUM
+    disposition: remediated
+    rationale: "XML parsing vulnerability in rexml gem. Remediated -- current version 3.4.4 exceeds fix threshold (>= 3.4.2). SPARC uses rexml for OSCAL XML parsing -- input is from trusted admin uploads only."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-27171
+    package: zlib1g
+    installed_version: "1:1.2.13.dfsg-1"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "zlib compression vulnerability. System-level zlib used by various packages. SPARC does not decompress untrusted data via zlib directly."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  # ==========================================================================
+  # LOW -- 51 unique CVEs
+  # ==========================================================================
+
+  - cve_id: CVE-2011-3374
+    package: apt
+    installed_version: "2.6.1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "APT package manager vulnerability. APT is not invoked at runtime -- only used during image build. Final image has no APT cache or sources."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: TEMP-0841856-B18BAF
+    package: bash
+    installed_version: "5.2.15-2+b10"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Bash privilege escalation. Container runs as non-root (UID 1000). No setuid binaries, no privilege escalation path within the container namespace."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2022-0563
+    package: bsdutils
+    installed_version: "1:2.38.1-5+deb12u3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "util-linux vulnerability. Base image utility. Container does not perform mount operations or use affected util-linux features."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-14104
+    package: bsdutils
+    installed_version: "1:2.38.1-5+deb12u3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "util-linux vulnerability. Base image utility. Container does not perform mount operations or use affected util-linux features."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-3184
+    package: bsdutils
+    installed_version: "1:2.38.1-5+deb12u3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "util-linux vulnerability. Base image utility. Container does not perform mount operations or use affected util-linux features."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2016-2781
+    package: coreutils
+    installed_version: "9.1-1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Coreutils vulnerability. Core utilities are base image components. SPARC application invokes Rails commands only, not coreutils directly in security-sensitive contexts."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2017-18018
+    package: coreutils
+    installed_version: "9.1-1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Coreutils vulnerability. Core utilities are base image components. SPARC application invokes Rails commands only, not coreutils directly in security-sensitive contexts."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-5278
+    package: coreutils
+    installed_version: "9.1-1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Coreutils vulnerability. Core utilities are base image components. SPARC application invokes Rails commands only, not coreutils directly in security-sensitive contexts."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2024-2379
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-0725
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-10966
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-14017
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-14524
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-14819
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-15079
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-15224
+    package: curl
+    installed_version: "7.88.1-10+deb12u14"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2022-3219
+    package: dirmngr
+    installed_version: "2.2.40-1.1+deb12u2"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "GnuPG directory manager vulnerability. GnuPG installed for APT package signature verification during image build only. Not invoked at runtime. No key server operations."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-6297
+    package: dpkg
+    installed_version: "1.21.22"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "dpkg vulnerability. Package manager not invoked at runtime -- only used during image build."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2022-27943
+    package: gcc-12-base
+    installed_version: "12.2.0-14+deb12u1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "GCC runtime library vulnerability. Transitive dependency of the base image. Not a compiler -- only runtime libraries linked by other packages."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2010-4756
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2018-20796
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2019-1010023
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2019-1010024
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2019-1010025
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2019-9192
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2018-6829
+    package: libgcrypt20
+    installed_version: "1.10.1-3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "libgcrypt vulnerability. Cryptographic library used by GnuPG during build. Not directly invoked by the SPARC application at runtime."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2024-2236
+    package: libgcrypt20
+    installed_version: "1.10.1-3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "libgcrypt vulnerability. Cryptographic library used by GnuPG during build. Not directly invoked by the SPARC application at runtime."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2018-5709
+    package: libgssapi-krb5-2
+    installed_version: "1.20.1-2+deb12u4"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Kerberos library vulnerability. SPARC does not use Kerberos authentication. Library is a transitive dependency of the base image."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2024-26458
+    package: libgssapi-krb5-2
+    installed_version: "1.20.1-2+deb12u4"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Kerberos library vulnerability. SPARC does not use Kerberos authentication. Library is a transitive dependency of the base image."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2024-26461
+    package: libgssapi-krb5-2
+    installed_version: "1.20.1-2+deb12u4"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Kerberos library vulnerability. SPARC does not use Kerberos authentication. Library is a transitive dependency of the base image."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2015-3276
+    package: libldap-2.5-0
+    installed_version: "2.5.13+dfsg-5"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "OpenLDAP library vulnerability. SPARC does not use LDAP in default deployment. Library is a transitive dependency via other Debian packages."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2017-14159
+    package: libldap-2.5-0
+    installed_version: "2.5.13+dfsg-5"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "OpenLDAP library vulnerability. SPARC does not use LDAP in default deployment. Library is a transitive dependency via other Debian packages."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2017-17740
+    package: libldap-2.5-0
+    installed_version: "2.5.13+dfsg-5"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "OpenLDAP library vulnerability. SPARC does not use LDAP in default deployment. Library is a transitive dependency via other Debian packages."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2020-15719
+    package: libldap-2.5-0
+    installed_version: "2.5.13+dfsg-5"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "OpenLDAP library vulnerability. SPARC does not use LDAP in default deployment. Library is a transitive dependency via other Debian packages."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-22185
+    package: libldap-2.5-0
+    installed_version: "2.5.13+dfsg-5"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "OpenLDAP library vulnerability. SPARC does not use LDAP in default deployment. Library is a transitive dependency via other Debian packages."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-6141
+    package: libncursesw6
+    installed_version: "6.4-4"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "ncurses vulnerability. Container has no interactive terminal -- ncurses installed as a transitive dependency. No TUI or terminal rendering in the SPARC application."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2011-4116
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Perl vulnerability. Perl installed as a build dependency -- not invoked by the SPARC application at runtime."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2023-31486
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Perl vulnerability. Perl installed as a build dependency -- not invoked by the SPARC application at runtime."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2021-45346
+    package: libsqlite3-0
+    installed_version: "3.40.1-2+deb12u2"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "SQLite vulnerability. SPARC uses PostgreSQL exclusively -- SQLite is a transitive dependency of the base image, not used by the application."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-29088
+    package: libsqlite3-0
+    installed_version: "3.40.1-2+deb12u2"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "SQLite vulnerability. SPARC uses PostgreSQL exclusively -- SQLite is a transitive dependency of the base image, not used by the application."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-70873
+    package: libsqlite3-0
+    installed_version: "3.40.1-2+deb12u2"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "SQLite vulnerability. SPARC uses PostgreSQL exclusively -- SQLite is a transitive dependency of the base image, not used by the application."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2025-27587
+    package: libssl3
+    installed_version: "3.0.18-1~deb12u2"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "OpenSSL/libssl vulnerability. TLS termination occurs at the reverse proxy (ALB/nginx), not in the container. Internal connections to PostgreSQL use libpq TLS with certificate validation."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2013-4392
+    package: libsystemd0
+    installed_version: "252.39-1~deb12u1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "systemd library vulnerability. Container does not run systemd -- library is a transitive dependency of the base image. No systemd IPC, D-Bus, or unit management in the container."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2023-31437
+    package: libsystemd0
+    installed_version: "252.39-1~deb12u1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "systemd library vulnerability. Container does not run systemd -- library is a transitive dependency of the base image. No systemd IPC, D-Bus, or unit management in the container."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2023-31438
+    package: libsystemd0
+    installed_version: "252.39-1~deb12u1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "systemd library vulnerability. Container does not run systemd -- library is a transitive dependency of the base image. No systemd IPC, D-Bus, or unit management in the container."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2023-31439
+    package: libsystemd0
+    installed_version: "252.39-1~deb12u1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "systemd library vulnerability. Container does not run systemd -- library is a transitive dependency of the base image. No systemd IPC, D-Bus, or unit management in the container."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2007-5686
+    package: login
+    installed_version: "1:4.13+dfsg1-1+deb12u2"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Shadow utilities vulnerability. Container runs as non-root (UID 1000) with no login shell. No interactive access, no password-based container login."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2024-56433
+    package: login
+    installed_version: "1:4.13+dfsg1-1+deb12u2"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Shadow utilities vulnerability. Container runs as non-root (UID 1000) with no login shell. No interactive access, no password-based container login."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: TEMP-0628843-DBAD28
+    package: login
+    installed_version: "1:4.13+dfsg1-1+deb12u2"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "Shadow utilities vulnerability. Container runs as non-root (UID 1000) with no login shell. No interactive access, no password-based container login."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: TEMP-0517018-A83CE6
+    package: sysvinit-utils
+    installed_version: "3.06-4"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "sysvinit vulnerability. Container does not use SysV init -- runs a single Rails process via entrypoint script."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: TEMP-0290435-0B57B5
+    package: tar
+    installed_version: "1.34+dfsg-1.2+deb12u1"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "tar vulnerability. SPARC does not extract untrusted archives at runtime. tar is a base image utility not invoked by the application."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  # ==========================================================================
+  # INFORMATIONAL -- 4 unique CVEs
+  # ==========================================================================
+
+  - cve_id: CVE-2026-27456
+    package: bsdutils
+    installed_version: "1:2.38.1-5+deb12u3"
+    fixed_version: "none"
+    severity: INFORMATIONAL
+    disposition: accepted
+    rationale: "util-linux vulnerability. Base image utility. Container does not perform mount operations or use affected util-linux features."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-2219
+    package: dpkg
+    installed_version: "1.21.22"
+    fixed_version: "none"
+    severity: INFORMATIONAL
+    disposition: accepted
+    rationale: "dpkg vulnerability. Package manager not invoked at runtime -- only used during image build."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-34743
+    package: liblzma5
+    installed_version: "5.4.1-1"
+    fixed_version: "none"
+    severity: INFORMATIONAL
+    disposition: accepted
+    rationale: "LZMA compression library vulnerability. Transitive dependency -- SPARC does not decompress untrusted LZMA/XZ data."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+  - cve_id: CVE-2026-27820
+    package: zlib
+    installed_version: "3.2.1"
+    fixed_version: "~> 3.0.1, ~> 3.1.2, >= 3.2.3"
+    severity: INFORMATIONAL
+    disposition: deferred
+    rationale: "zlib gem vulnerability. Fix available (~> 3.0.1, ~> 3.1.2, >= 3.2.3). Remediation: update Gemfile pin."
+    nist_control: ra-5
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-04-03"
+    next_review_date: "2026-05-03"
+
+# POA&M reference: Accepted findings are included in the FedRAMP package
+# via Trivy HDF -> OSCAL SAR -> POA&M. The sparc-iac compliance workflow
+# consumes this baseline for gating and evidence collection.

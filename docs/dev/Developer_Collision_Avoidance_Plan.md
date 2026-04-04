@@ -300,6 +300,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#314** CI pipeline optimization: caching + parallel scans -- **COMPLETED 2026-03-26** | CI/Infrastructure | `.github/workflows/security.yml` (actions/cache for Trivy/Gitleaks/bundler-audit/ASFF template, parallel SAF CLI steps, Docker Buildx with gha layer cache, new pipeline_metrics job), `Gemfile` (bundler-audit + cyclonedx-ruby moved to dev group), `scripts/ci/generate_pipeline_chart.py` (NEW), `docs/ci/pipeline-metrics.csv` (NEW) | **NONE** -- CI workflow + tooling only |
 | [x] | **#316** Signed Docker image build pipeline -- **COMPLETED 2026-03-31** | CI/Infrastructure | `.github/workflows/build-sign-publish.yml` (NEW -- reusable workflow: multi-platform build, Docker Hub + ECR push, Cosign keyless signing, SBOM attestation) | **NONE** -- new workflow file only |
 | [x] | **#335** Paths filters on CI workflows -- **COMPLETED 2026-04-02** | CI/Infrastructure | `.github/workflows/ci.yml` (dorny/paths-filter conditional), `.github/workflows/security.yml` (dorny/paths-filter conditional on all scan + downstream jobs) | **NONE** -- CI workflow changes only |
+| [x] | **#340** Container vulnerability baseline -- **COMPLETED 2026-04-04** | Compliance | `docs/compliance/sparc-findings.yml` (NEW -- 76 CVE dispositions), `docs/compliance/nist-sp800-53-rev5-mapping.md` (RA-5, SI-2, CM-6 updates), `docs/compliance/oscal/cdefs/component-definition-security-scanning.json` (container baseline evidence) | **NONE** -- compliance docs only |
 
 <!-- markdownlint-enable MD013 -->
 

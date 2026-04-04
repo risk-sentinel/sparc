@@ -35,14 +35,14 @@
               {
                 "uuid": "50be4f1d-7766-4c69-b1e2-f4a0cc638f33",
                 "control-id": "ra-5",
-                "description": "SPARC performs automated vulnerability scanning through multiple tools in the CI security workflow: Trivy filesystem and container image scanning for CVEs in dependencies and base images, CodeQL semantic analysis for code-level vulnerabilities, and bundler-audit for Ruby gem advisory checks. Scan results are uploaded as SARIF to GitHub Security for centralized tracking.",
-                "remarks": "Implemented in .github/workflows/security.yml (Trivy, CodeQL, bundler-audit). Results uploaded to GitHub Security tab."
+                "description": "SPARC performs automated vulnerability scanning through multiple tools in the CI security workflow: Trivy filesystem and container image scanning for CVEs in dependencies and base images, CodeQL semantic analysis for code-level vulnerabilities, and bundler-audit for Ruby gem advisory checks. Scan results are uploaded as SARIF to GitHub Security for centralized tracking. All container image CVE findings are triaged and dispositioned in docs/compliance/sparc-findings.yml with severity classification, deployment-specific rationale, NIST control mapping, and 30-day review cycles.",
+                "remarks": "Implemented in .github/workflows/security.yml (Trivy, CodeQL, bundler-audit). Results uploaded to GitHub Security tab. Container vulnerability baseline: docs/compliance/sparc-findings.yml (76 CVEs triaged, 4 HIGH accepted with mitigating controls, 1 MEDIUM remediated)."
               },
               {
                 "uuid": "79182407-620a-48ac-849c-b091fe46fe83",
                 "control-id": "si-2",
-                "description": "SPARC addresses flaw remediation through automated vulnerability detection and dependency update tooling. Trivy identifies CVEs in container images and filesystem dependencies. Bundler-audit checks Ruby gems against the Ruby Advisory Database. Dependabot automatically creates pull requests for vulnerable or outdated dependencies.",
-                "remarks": "Implemented in .github/workflows/security.yml and .github/dependabot.yml. Automated PR creation for vulnerable dependencies."
+                "description": "SPARC addresses flaw remediation through automated vulnerability detection and dependency update tooling. Trivy identifies CVEs in container images and filesystem dependencies. Bundler-audit checks Ruby gems against the Ruby Advisory Database. Dependabot automatically creates pull requests for vulnerable or outdated dependencies. Accepted container findings are documented in docs/compliance/sparc-findings.yml with deployment-agnostic mitigating controls (non-root container, reverse proxy, TLS, network whitelisting, seccomp isolation) and 30-day review cycles for re-evaluation.",
+                "remarks": "Implemented in .github/workflows/security.yml and .github/dependabot.yml. Automated PR creation for vulnerable dependencies. Container baseline: docs/compliance/sparc-findings.yml tracks remediation status per CVE."
               },
               {
                 "uuid": "d4ef046e-aabd-45cd-a716-f8a79f0dbeb9",
