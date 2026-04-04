@@ -63,8 +63,8 @@ findings:
     installed_version: "1.52.0-1+deb12u2"
     fixed_version: "none"
     severity: HIGH
-    disposition: accepted
-    rationale: "HTTP/2 library vulnerability. SPARC container is an HTTP server behind a reverse proxy (ALB/nginx) that terminates TLS and HTTP/2. The container itself communicates via HTTP/1.1 internally."
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. CVE requires receiving malformed HTTP/2 frames that trigger an assertion in the nghttp2 C library. SPARC does not use HTTP/2 anywhere -- Puma serves HTTP/1.1, Ruby Net::HTTP client is pure Ruby HTTP/1.1, no curl invoked at runtime. libnghttp2-14 is a transitive Debian dependency (curl build-time linkage), never loaded by the application. HTTP/2 termination occurs at the reverse proxy (ALB/nginx) boundary -- container only receives HTTP/1.1 traffic. Attack vector unreachable."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-04-03"
