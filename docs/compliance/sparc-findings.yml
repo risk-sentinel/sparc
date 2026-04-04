@@ -91,8 +91,8 @@ findings:
     installed_version: "7.88.1-10+deb12u14"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: accepted
-    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. curl is present in the image for APT bootstrap (keyring download) but never invoked at runtime. SPARC uses Ruby Net::HTTP for outbound HTTP (2 OIDC discovery calls only). libcurl is not linked by any Ruby gem or application binary. No system('curl'), no shell-out to curl anywhere in the codebase. Candidate for removal from final image via Dockerfile optimization."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-04-03"
@@ -103,8 +103,8 @@ findings:
     installed_version: "7.88.1-10+deb12u14"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: accepted
-    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. curl is present in the image for APT bootstrap (keyring download) but never invoked at runtime. SPARC uses Ruby Net::HTTP for outbound HTTP (2 OIDC discovery calls only). libcurl is not linked by any Ruby gem or application binary. No system('curl'), no shell-out to curl anywhere in the codebase. Candidate for removal from final image via Dockerfile optimization."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-04-03"
@@ -115,8 +115,8 @@ findings:
     installed_version: "7.88.1-10+deb12u14"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: accepted
-    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. curl is present in the image for APT bootstrap (keyring download) but never invoked at runtime. SPARC uses Ruby Net::HTTP for outbound HTTP (2 OIDC discovery calls only). libcurl is not linked by any Ruby gem or application binary. No system('curl'), no shell-out to curl anywhere in the codebase. Candidate for removal from final image via Dockerfile optimization."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-04-03"
@@ -127,8 +127,8 @@ findings:
     installed_version: "7.88.1-10+deb12u14"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: accepted
-    rationale: "curl library vulnerability. SPARC container does not invoke curl at runtime -- installed as build dependency only. No user-controlled HTTP client calls via curl. Container runs behind reverse proxy with TLS."
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. curl is present in the image for APT bootstrap (keyring download) but never invoked at runtime. SPARC uses Ruby Net::HTTP for outbound HTTP (2 OIDC discovery calls only). libcurl is not linked by any Ruby gem or application binary. No system('curl'), no shell-out to curl anywhere in the codebase. Candidate for removal from final image via Dockerfile optimization."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-04-03"
