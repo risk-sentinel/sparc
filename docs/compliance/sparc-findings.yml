@@ -39,8 +39,8 @@ findings:
     installed_version: "2.36-9+deb12u13"
     fixed_version: "none"
     severity: HIGH
-    disposition: accepted
-    rationale: "glibc vulnerability in Debian base image. No upstream fix available. Container runs as non-root (UID 1000), isolated namespace with seccomp. SPARC does not perform operations that exercise the vulnerable code path."
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. glibc iconv vulnerability triggered only by IBM1390/IBM1399 character set conversions. SPARC exclusively uses UTF-8 encoding -- all file parser services enforce force_encoding('UTF-8'). No iconv calls, no IBM EBCDIC character set operations, no character set conversion in the application. Debian slim base image does not ship IBM charset locale data. Vulnerable code path is unreachable."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-04-03"
