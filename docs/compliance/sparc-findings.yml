@@ -52,7 +52,7 @@ findings:
     fixed_version: "none"
     severity: HIGH
     disposition: accepted
-    rationale: "ncurses vulnerability. Container has no interactive terminal -- ncurses installed as a transitive dependency. No TUI or terminal rendering in the SPARC application."
+    rationale: "ACCEPTED RISK. ncurses buffer overflow requires terminal control sequence input via an interactive terminal. ncurses is a transitive dependency (Ruby readline -> libreadline -> libncursesw6) loaded for IRB/rails console, not for HTTP request processing. No user input flows to terminal rendering. Mitigating controls: (1) No TTY/STDIN attached in production -- Puma serves HTTP only; (2) ECS Exec disabled by sparc-iac infrastructure policy -- no interactive container access; (3) Container runs as non-root UID 1000; (4) Ruby is memory-managed -- ncurses buffer overflow requires direct C library invocation, not reachable through Ruby readline bindings; (5) Network whitelisting -- deployments should restrict ingress to internal networks; (6) Reverse proxy with TLS terminates all external connections before reaching container; (7) CloudTrail audit logging on all container access attempts."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-04-03"
