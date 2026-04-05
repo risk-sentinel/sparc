@@ -4,6 +4,49 @@
 
 ---
 
+## v1.1.2 -- 2026-04-05 -- security: Harden Dockerfile -- Remove Unused Packages (#342)
+
+**Branch:** `feature/342_dockerfile_hardening`
+
+### Summary
+
+Hardened the production Docker image by isolating APT bootstrap tools (curl, gnupg, perl) into a
+dedicated build stage. These packages and their entire transitive dependency trees no longer exist in
+the production container, eliminating ~33 CVEs at the source and reducing image size.
+
+### What Changed
+
+- **Dockerfile** -- added `bootstrap` stage for APT keyring setup. Only the keyring, APT sources, and
+  CA certificates are copied to the `base` stage. curl, gnupg, perl, libldap, libgssapi-krb5,
+  libnghttp2, libtasn1, libgcrypt, libsqlite3, and all transitive dependencies are excluded from the
+  production image.
+- **Version bump** -- 1.1.1 to 1.1.2 (patch release).
+- **sparc-findings.yml** -- 33 CVE dispositions updated from accepted/false_positive to `remediated`.
+- **.trivyignore** -- updated entries for packages removed from image.
+
+### Disposition Summary (post-hardening)
+
+| Disposition | Count |
+|------------|-------|
+| remediated | 34 |
+| accepted | 39 |
+| false_positive | 2 |
+| deferred | 1 |
+| **Total** | **76** |
+
+### NIST Controls
+
+- **CM-7** (Least Functionality) -- unnecessary packages removed from production image
+- **SI-2** (Flaw Remediation) -- 33 CVEs eliminated at source
+- **SA-12** (Supply Chain Protection) -- reduced dependency chain
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (Dockerfile + compliance docs -- no app code changes)
+
+---
+
 ## 2026-04-04 -- security: Container Vulnerability Baseline for ATO Readiness (#340)
 
 **Branch:** `feature/340_container_vulnerability_baseline`
