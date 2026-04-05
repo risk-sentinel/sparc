@@ -85,14 +85,10 @@ CVE-2025-24294
 CVE-2025-61594
 
 # CVE-2025-7458 — SQLite integer overflow
-# Classification: ACCEPTED RISK (no fix available in Debian Bookworm)
-# Description: Integer overflow in SQLite. No Debian Bookworm patch available.
-# Mitigation: SPARC uses PostgreSQL as its database, not SQLite. SQLite is
-#   installed as a transitive dependency of the base Ruby image. The SQLite
-#   library is not used by any SPARC code path. Application data is never
-#   processed through SQLite.
-# Reference: https://nvd.nist.gov/vuln/detail/CVE-2025-7458
-# Reviewed: 2026-03-19
+# Classification: REMEDIATED (package removed from image in #342)
+# Description: Integer overflow in SQLite. Removed from production image —
+#   libsqlite3-0 was a transitive dependency never used by SPARC (PostgreSQL only).
+# Reviewed: 2026-04-05
 CVE-2025-7458
 
 # CVE-2023-45853 — zlib MiniZip integer overflow / heap overflow
@@ -118,12 +114,8 @@ CVE-2023-45853
 CVE-2026-0861
 
 # CVE-2023-2953 — OpenLDAP null pointer dereference
-# Classification: ACCEPTED RISK (no fix available in Debian Bookworm)
-# Description: Null pointer dereference in libldap. No Debian Bookworm patch.
-# Mitigation: SPARC uses the net-ldap Ruby gem for LDAP authentication, which
-#   is a pure-Ruby LDAP client and does not link against libldap-2.5-0.
-#   The system libldap is a transitive dependency not exercised by SPARC.
-#   LDAP authentication is optional and disabled by default.
-# Reference: https://nvd.nist.gov/vuln/detail/CVE-2023-2953
-# Reviewed: 2026-03-19
+# Classification: REMEDIATED (package removed from image in #342)
+# Description: Null pointer dereference in libldap. Removed from production
+#   image — libldap-2.5-0 was a transitive dependency of curl, never used by SPARC.
+# Reviewed: 2026-04-05
 CVE-2023-2953

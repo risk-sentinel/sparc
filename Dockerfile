@@ -4,26 +4,40 @@
 ARG RUBY_VERSION=3.4.4
 
 # ────────────────────────────────────────
-# Base image
-FROM docker.io/library/ruby:${RUBY_VERSION}-slim AS base
+# Bootstrap stage: APT keyring + sources setup
+# This stage is discarded — only the keyring, sources list,
+# and CA certificates are copied to the base stage.
+# curl, gnupg, perl, and all transitive dependencies
+# (libnghttp2, libldap, libgssapi-krb5, libtasn1, libgcrypt, etc.)
+# never enter the production image.
+# See issue #342 for the full package analysis.
+FROM docker.io/library/ruby:${RUBY_VERSION}-slim AS bootstrap
 
-WORKDIR /rails
-
-# Step 1: Bootstrap – install keyring + essentials, clean cache in same layer
 RUN apt-get update -qq --allow-releaseinfo-change --allow-insecure-repositories && \
     apt-get install --no-install-recommends -y \
       debian-archive-keyring ca-certificates curl gnupg && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Step 2: Switch to secure signed-by sources using the just-installed keyring
+# Configure secure signed-by APT sources
 RUN rm -f /etc/apt/sources.list /etc/apt/sources.list.d/* && \
     echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian bookworm main" > /etc/apt/sources.list && \
     echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian bookworm-updates main" >> /etc/apt/sources.list && \
     echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://security.debian.org/debian-security bookworm-security main" >> /etc/apt/sources.list
 
-# Step 3: Now install runtime deps securely
+# ────────────────────────────────────────
+# Base image — runtime only, minimal attack surface
+FROM docker.io/library/ruby:${RUBY_VERSION}-slim AS base
+
+WORKDIR /rails
+
+# Copy only APT config and certificates from bootstrap — no curl, gnupg, or perl
+COPY --from=bootstrap /etc/apt/sources.list /etc/apt/sources.list
+COPY --from=bootstrap /usr/share/keyrings/debian-archive-keyring.gpg /usr/share/keyrings/debian-archive-keyring.gpg
+COPY --from=bootstrap /etc/ssl/certs/ /etc/ssl/certs/
+COPY --from=bootstrap /usr/share/ca-certificates/ /usr/share/ca-certificates/
+
+# Install runtime deps only — no build tools, no unused packages
 # NOTE: libvips was removed — it pulled in ImageMagick, libtiff, libhdf5,
 # poppler, OpenJPEG, OpenEXR, libaom and ~200+ CVEs. SPARC uses Active Storage
 # for document file storage only (no image transformations/variants).
@@ -34,7 +48,7 @@ RUN apt-get update -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Production env (unchanged)
+# Production env
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
@@ -42,7 +56,7 @@ ENV RAILS_ENV="production" \
     BUNDLE_IGNORE_CONFIGURED_GROUPS_WITHOUT=true
 
 # ────────────────────────────────────────
-# Build stage (unchanged from your last working version)
+# Build stage
 FROM base AS build
 
 RUN apt-get update -qq && \
@@ -61,7 +75,8 @@ COPY . .
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 RUN bundle exec bootsnap precompile app/ lib/
 
-# Final stage (unchanged)
+# ────────────────────────────────────────
+# Final stage — production image
 FROM base
 
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"

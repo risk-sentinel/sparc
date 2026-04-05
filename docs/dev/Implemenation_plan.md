@@ -296,6 +296,7 @@ Dev C: #171 (OSCAL diagram)
 | [x] | #316 | Signed Docker image build pipeline with Docker Hub + ECR publishing -- **COMPLETED 2026-03-31** | MEDIUM | None |
 | [x] | #335 | Paths filters on CI workflows -- reduce unnecessary dependabot runs -- **COMPLETED 2026-04-02** | LOW | None |
 | [x] | #340 | Container vulnerability baseline for ATO readiness -- **COMPLETED 2026-04-04** | HIGH | None |
+| [x] | #342 | Harden Dockerfile -- remove unused packages, reduce image size -- **COMPLETED 2026-04-05** | MEDIUM | #340 |
 
 <!-- markdownlint-enable MD013 -->
 
