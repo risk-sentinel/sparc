@@ -301,7 +301,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#316** Signed Docker image build pipeline -- **COMPLETED 2026-03-31** | CI/Infrastructure | `.github/workflows/build-sign-publish.yml` (NEW -- reusable workflow: multi-platform build, Docker Hub + ECR push, Cosign keyless signing, SBOM attestation) | **NONE** -- new workflow file only |
 | [x] | **#335** Paths filters on CI workflows -- **COMPLETED 2026-04-02** | CI/Infrastructure | `.github/workflows/ci.yml` (dorny/paths-filter conditional), `.github/workflows/security.yml` (dorny/paths-filter conditional on all scan + downstream jobs) | **NONE** -- CI workflow changes only |
 | [x] | **#340** Container vulnerability baseline -- **COMPLETED 2026-04-04** | Compliance | `docs/compliance/sparc-findings.yml` (NEW -- 76 CVE dispositions), `docs/compliance/nist-sp800-53-rev5-mapping.md` (RA-5, SI-2, CM-6 updates), `docs/compliance/oscal/cdefs/component-definition-security-scanning.json` (container baseline evidence) | **NONE** -- compliance docs only |
-| [x] | **#342** Harden Dockerfile -- **COMPLETED 2026-04-05** | CI/Infrastructure | `Dockerfile` (bootstrap stage, removed curl/gnupg/perl/transitive deps), `app/models/sparc_config.rb` (v1.1.1), `docs/compliance/sparc-findings.yml` (33 CVEs remediated), `.trivyignore` (updated for removed pkgs) | **NONE** -- Dockerfile + compliance docs |
+| [x] | **#342** Harden Dockerfile -- **COMPLETED 2026-04-05** | CI/Infrastructure | `Dockerfile` (bootstrap stage, removed curl/gnupg/perl/transitive deps), `app/models/sparc_config.rb` (v1.1.2), `docs/compliance/sparc-findings.yml` (33 CVEs remediated), `.trivyignore` (updated for removed pkgs) | **NONE** -- Dockerfile + compliance docs |
 
 <!-- markdownlint-enable MD013 -->
 

@@ -4,7 +4,7 @@
 
 ---
 
-## v1.1.1 -- 2026-04-05 -- security: Harden Dockerfile -- Remove Unused Packages (#342)
+## v1.1.2 -- 2026-04-05 -- security: Harden Dockerfile -- Remove Unused Packages (#342)
 
 **Branch:** `feature/342_dockerfile_hardening`
 
@@ -20,7 +20,7 @@ the production container, eliminating ~33 CVEs at the source and reducing image 
   CA certificates are copied to the `base` stage. curl, gnupg, perl, libldap, libgssapi-krb5,
   libnghttp2, libtasn1, libgcrypt, libsqlite3, and all transitive dependencies are excluded from the
   production image.
-- **Version bump** -- 1.1.0 to 1.1.1 (patch release).
+- **Version bump** -- 1.1.1 to 1.1.2 (patch release).
 - **sparc-findings.yml** -- 33 CVE dispositions updated from accepted/false_positive to `remediated`.
 - **.trivyignore** -- updated entries for packages removed from image.
 
