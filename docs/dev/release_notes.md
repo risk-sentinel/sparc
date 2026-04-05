@@ -4,6 +4,40 @@
 
 ---
 
+## 2026-04-04 -- security: Container Vulnerability Baseline for ATO Readiness (#340)
+
+**Branch:** `feature/340_container_vulnerability_baseline`
+
+### Summary
+
+Established container vulnerability baseline for the SPARC production Docker image (ruby:3.4.4-slim /
+Debian Bookworm 12.13). All 76 Trivy container scan findings triaged, dispositioned, and documented in
+`docs/compliance/sparc-findings.yml` following the sparc-iac `container-baseline.yml` pattern. Updated
+NIST SP 800-53 control mapping and OSCAL CDEFs for RA-5, SI-2, and CM-6.
+
+### What Changed
+
+- **New file** -- `docs/compliance/sparc-findings.yml` with 76 CVE dispositions (4 HIGH accepted, 1 MEDIUM
+  remediated, 16 MEDIUM accepted, 51 LOW accepted, 1 INFORMATIONAL deferred, 3 INFORMATIONAL accepted).
+- **Deployment-agnostic mitigating controls** documented: non-root container, multi-stage build, reverse proxy
+  with TLS, network whitelisting, seccomp isolation, automated CI scanning, 30-day review cycle.
+- **Remediated** -- rexml gem already at 3.4.4 (exceeds CVE-2025-58767 fix threshold of >= 3.4.2).
+- **NIST mapping** -- updated RA-5, SI-2, CM-6 rows with sparc-findings.yml references.
+- **OSCAL CDEF** -- updated component-definition-security-scanning.json with container baseline evidence.
+
+### NIST Controls
+
+- **RA-5** (Vulnerability Monitoring and Scanning) -- baseline tracks all container CVEs
+- **SI-2** (Flaw Remediation) -- accepted findings documented with review cycles
+- **CM-6** (Configuration Settings) -- container image baseline documented
+
+### Stats
+
+- **Spec count:** 1508 total, 0 failures
+- **New specs:** 0 (compliance documentation -- no app code changes)
+
+---
+
 ## 2026-04-02 -- ci: Add Paths Filters to CI Workflows (#335)
 
 **Branch:** `feature/335_ci_paths_filters`
