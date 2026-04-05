@@ -95,12 +95,14 @@ jobs:
               - 'docker-compose*.yml'
               - '.github/workflows/security.yml'
               - '.github/oscal-metadata.json'
+              - '.trivyignore'
               - 'config/**'
               - 'app/**'
               - 'lib/**'
               - 'db/**'
               - 'spec/**'
               - 'bin/**'
+              - 'docs/compliance/**'
 
   # ── 1. Secrets Scan (Gitleaks) ─────────────────────────────────
   secrets_scan:
