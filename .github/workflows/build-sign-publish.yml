@@ -149,7 +149,7 @@ jobs:
         run: |
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
           DOCKERHUB="risksentinel/sparc"
-          ECR="${{ vars.ECR_REGISTRY || 'ECR_NOT_CONFIGURED' }}/sparc-prod"
+          ECR="${{ vars.ECR_REGISTRY || 'ECR_NOT_CONFIGURED' }}"
 
           echo "dockerhub_image=${DOCKERHUB}" >> "$GITHUB_OUTPUT"
           echo "ecr_image=${ECR}" >> "$GITHUB_OUTPUT"
@@ -160,7 +160,7 @@ jobs:
         with:
           images: |
             risksentinel/sparc
-            ${{ vars.ECR_REGISTRY && format('{0}/sparc-prod', vars.ECR_REGISTRY) || '' }}
+            ${{ vars.ECR_REGISTRY || '' }}
           tags: |
             type=semver,pattern=v{{version}},value=${{ needs.prepare.outputs.version }}
             type=semver,pattern=v{{major}}.{{minor}},value=${{ needs.prepare.outputs.version }}
@@ -350,7 +350,7 @@ jobs:
           | Registry | Image | Tag |
           |----------|-------|-----|
           | Docker Hub | \`risksentinel/sparc\` | \`${VERSION}\` |
-          | ECR | \`${{ vars.ECR_REGISTRY }}/sparc-prod\` | \`${VERSION}\` |
+          | ECR | \`${{ vars.ECR_REGISTRY }}\` | \`${VERSION}\` |
 
           ### Signing & Attestation
 
