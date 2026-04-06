@@ -282,7 +282,7 @@ jobs:
         if: vars.ECR_REGISTRY != ''
         run: |
           cosign sign --yes \
-            ${{ vars.ECR_REGISTRY }}/sparc-prod@${{ needs.build-and-push.outputs.digest }}
+            ${{ vars.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
         env:
           COSIGN_EXPERIMENTAL: "1"
 
@@ -301,7 +301,7 @@ jobs:
           cosign verify \
             --certificate-identity-regexp="https://github.com/Rebel-Raiders/sparc/" \
             --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-            ${{ vars.ECR_REGISTRY }}/sparc-prod@${{ needs.build-and-push.outputs.digest }}
+            ${{ vars.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
 
       # ── SBOM generation and attestation ──
 
@@ -326,7 +326,7 @@ jobs:
           cosign attest --yes \
             --predicate sparc-sbom-${VERSION}.cdx.json \
             --type cyclonedx \
-            ${{ vars.ECR_REGISTRY }}/sparc-prod@${{ needs.build-and-push.outputs.digest }}
+            ${{ vars.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v7
