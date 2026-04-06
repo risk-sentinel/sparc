@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-04-06 -- feat: OSCAL Schema Database with Version-Aware Validation (#349)
+
+**Branch:** `feature/349_oscal_schema_database`
+
+### Summary
+
+Store all NIST OSCAL JSON schemas in the database for version-aware validation and export. SPARC now
+validates documents against the correct schema for their specific OSCAL version (1.1.1–1.2.1) instead
+of hardcoded 1.1.2. Export services read the document's oscal_version and produce output validated
+against the matching schema. Cross-cutting compliance audit ensures all exports follow OSCAL spec
+rules for UUIDs, hrefs, back-matter, and metadata.
+
+### What Changed
+
+- **Phase 1: OscalSchema model** -- new `oscal_schemas` table storing raw + preprocessed NIST schemas
+  with SHA256 checksums for audit provenance. Rake task downloads 37 schemas (5 versions x 8 doc types)
+  from NIST GitHub with disk fallback.
+- **Phase 2: Version-aware validation** -- `OscalSchemaValidationService` loads schemas from DB with
+  version matching. Accepts `version:` parameter. Fallback: DB -> disk. Backward compatible.
+- **Phase 3: Versioned exports** -- all 9 export services read `document.oscal_version` and validate
+  against the matching schema. `OSCAL_VERSION` renamed to `DEFAULT_OSCAL_VERSION` with backward compat.
+- **Phase 4: Compliance audit** -- 45 cross-cutting specs verify UUID format (RFC 4122), metadata
+  completeness, back-matter integrity, version consistency, and UUID stability across re-exports.
+
+### NIST Controls
+
+- **SA-10** (Developer Configuration Management) -- schema provenance via checksums
+- **SA-11** (Developer Testing) -- compliance audit test suite
+
+### Stats
+
+- **Spec count:** 1577 total, 0 failures
+- **New specs:** 69 (24 model + 45 compliance audit)
+
+---
+
 ## v1.1.2 -- 2026-04-05 -- security: Harden Dockerfile -- Remove Unused Packages (#342)
 
 **Branch:** `feature/342_dockerfile_hardening`

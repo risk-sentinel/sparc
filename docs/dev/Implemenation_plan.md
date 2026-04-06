@@ -297,6 +297,7 @@ Dev C: #171 (OSCAL diagram)
 | [x] | #335 | Paths filters on CI workflows -- reduce unnecessary dependabot runs -- **COMPLETED 2026-04-02** | LOW | None |
 | [x] | #340 | Container vulnerability baseline for ATO readiness -- **COMPLETED 2026-04-04** | HIGH | None |
 | [x] | #342 | Harden Dockerfile -- remove unused packages, reduce image size -- **COMPLETED 2026-04-05** | MEDIUM | #340 |
+| [x] | #349 | OSCAL schema database with version-aware validation -- **COMPLETED 2026-04-06** | HIGH | None |
 
 <!-- markdownlint-enable MD013 -->
 

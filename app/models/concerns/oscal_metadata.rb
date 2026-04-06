@@ -5,7 +5,8 @@ module OscalMetadata
     before_update :enforce_oscal_uuid_immutability
   end
 
-  OSCAL_VERSION = "1.1.2"
+  DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
+  OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
   METADATA_EXTRA_KEYS = %w[
     roles parties responsible-parties revisions props links document-ids
@@ -42,7 +43,7 @@ module OscalMetadata
     base = {
       "title"         => name,
       "version"       => oscal_document_version || "1.0.0",
-      "oscal-version" => oscal_version || OSCAL_VERSION,
+      "oscal-version" => oscal_version || DEFAULT_OSCAL_VERSION,
       "last-modified" => Time.current.iso8601
     }
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_23_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_06_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -437,6 +437,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_23_120000) do
     t.index ["slug"], name: "index_organizations_on_slug", unique: true
     t.index ["status"], name: "index_organizations_on_status"
     t.index ["uuid"], name: "index_organizations_on_uuid", unique: true
+  end
+
+  create_table "oscal_schemas", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.string "document_type", null: false
+    t.string "oscal_version", null: false
+    t.jsonb "preprocessed_schema"
+    t.jsonb "raw_schema", null: false
+    t.string "root_key"
+    t.string "schema_format", default: "json", null: false
+    t.string "source_url"
+    t.datetime "updated_at", null: false
+    t.index ["oscal_version", "document_type", "schema_format"], name: "idx_oscal_schemas_version_type_format", unique: true
   end
 
   create_table "poam_documents", force: :cascade do |t|

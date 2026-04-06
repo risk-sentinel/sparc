@@ -9,7 +9,8 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalPoamExportService
-  OSCAL_VERSION = "1.1.2"
+  DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
+  OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
   def initialize(poam_document)
     @document = poam_document
@@ -18,7 +19,7 @@ class OscalPoamExportService
 
   def export
     data = build_poam
-    OscalSchemaValidationService.validate!(:poam, data)
+    OscalSchemaValidationService.validate!(:poam, data, version: effective_oscal_version)
     JSON.pretty_generate(data)
   end
 
@@ -29,6 +30,11 @@ class OscalPoamExportService
   def validation_result
     data = build_poam
     OscalSchemaValidationService.validate(:poam, data)
+  end
+
+
+  def effective_oscal_version
+    @document.oscal_version.presence || DEFAULT_OSCAL_VERSION
   end
 
   private
@@ -69,7 +75,7 @@ class OscalPoamExportService
     base = {
       "title"         => @document.name,
       "version"       => @document.poam_version || "1.0.0",
-      "oscal-version" => OSCAL_VERSION,
+      "oscal-version" => effective_oscal_version,
       "last-modified" => Time.current.iso8601
     }
 
