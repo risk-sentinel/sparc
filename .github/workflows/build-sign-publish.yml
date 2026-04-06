@@ -68,7 +68,7 @@ jobs:
         run: |
           VERSION="${{ env.VERSION }}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "version_stripped=${VERSION#v}" >> "$GITHUB_OUTPUT"
+          echo "version_stripped=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           echo "git_sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
@@ -148,7 +148,7 @@ jobs:
         id: tags
         run: |
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
-          DOCKERHUB="rebelraiders/sparc"
+          DOCKERHUB="risksentinel/sparc"
           ECR="${{ vars.ECR_REGISTRY || 'ECR_NOT_CONFIGURED' }}/sparc-prod"
 
           echo "dockerhub_image=${DOCKERHUB}" >> "$GITHUB_OUTPUT"
@@ -159,11 +159,11 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            rebelraiders/sparc
+            risksentinel/sparc
             ${{ vars.ECR_REGISTRY && format('{0}/sparc-prod', vars.ECR_REGISTRY) || '' }}
           tags: |
-            type=semver,pattern={{version}},value=${{ needs.prepare.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }}
+            type=semver,pattern=v{{version}},value=${{ needs.prepare.outputs.version }}
+            type=semver,pattern=v{{major}}.{{minor}},value=${{ needs.prepare.outputs.version }}
             type=raw,value=latest,enable=${{ needs.prepare.outputs.is_prerelease != 'true' }}
           labels: |
             org.opencontainers.image.title=SPARC
@@ -274,7 +274,7 @@ jobs:
       - name: Sign Docker Hub image
         run: |
           cosign sign --yes \
-            rebelraiders/sparc@${{ needs.build-and-push.outputs.digest }}
+            risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
         env:
           COSIGN_EXPERIMENTAL: "1"
 
@@ -293,7 +293,7 @@ jobs:
           cosign verify \
             --certificate-identity-regexp="https://github.com/Rebel-Raiders/sparc/" \
             --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-            rebelraiders/sparc@${{ needs.build-and-push.outputs.digest }}
+            risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
 
       - name: Verify ECR signature
         if: vars.ECR_REGISTRY != ''
@@ -308,7 +308,7 @@ jobs:
       - name: Generate CycloneDX SBOM
         run: |
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
-          syft rebelraiders/sparc@${{ needs.build-and-push.outputs.digest }} \
+          syft risksentinel/sparc@${{ needs.build-and-push.outputs.digest }} \
             -o cyclonedx-json=sparc-sbom-${VERSION}.cdx.json
 
       - name: Attest SBOM to Docker Hub
@@ -317,7 +317,7 @@ jobs:
           cosign attest --yes \
             --predicate sparc-sbom-${VERSION}.cdx.json \
             --type cyclonedx \
-            rebelraiders/sparc@${{ needs.build-and-push.outputs.digest }}
+            risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
 
       - name: Attest SBOM to ECR
         if: vars.ECR_REGISTRY != ''
@@ -349,8 +349,8 @@ jobs:
 
           | Registry | Image | Tag |
           |----------|-------|-----|
-          | Docker Hub | \`rebelraiders/sparc\` | \`${VERSION#v}\` |
-          | ECR | \`${{ vars.ECR_REGISTRY }}/sparc-prod\` | \`${VERSION#v}\` |
+          | Docker Hub | \`risksentinel/sparc\` | \`${VERSION}\` |
+          | ECR | \`${{ vars.ECR_REGISTRY }}/sparc-prod\` | \`${VERSION}\` |
 
           ### Signing & Attestation
 
@@ -372,6 +372,6 @@ jobs:
           cosign verify \\
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\
             --certificate-identity-regexp="github.com/Rebel-Raiders/sparc" \\
-            rebelraiders/sparc:${VERSION#v}
+            risksentinel/sparc:${VERSION}
           \`\`\`
           EOF
