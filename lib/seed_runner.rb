@@ -21,7 +21,8 @@ module SeedRunner
     "demo_ssp_sar"         => "1.0.0",
     "demo_catalog_guidance" => "1.0.0",
     "demo_evidence"        => "1.0.0",
-    "demo_sample_artifacts" => "1.0.0"
+    "demo_sample_artifacts" => "1.0.0",
+    "oscal_schemas"         => "1.0.0"
   }.freeze
 
   # Ensure the seed_sections table exists (handles first-ever run before migrations).

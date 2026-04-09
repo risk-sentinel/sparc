@@ -14,7 +14,8 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalAssessmentPlanExportService
-  OSCAL_VERSION = "1.1.2"
+  DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
+  OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
   def initialize(sap_document)
     @document = sap_document
@@ -22,7 +23,7 @@ class OscalAssessmentPlanExportService
 
   def export
     data = build_assessment_plan
-    OscalSchemaValidationService.validate!(:assessment_plan, data)
+    OscalSchemaValidationService.validate!(:assessment_plan, data, version: effective_oscal_version)
     JSON.pretty_generate(data)
   end
 
@@ -33,6 +34,11 @@ class OscalAssessmentPlanExportService
   def validation_result
     data = build_assessment_plan
     OscalSchemaValidationService.validate(:assessment_plan, data)
+  end
+
+
+  def effective_oscal_version
+    @document.oscal_version.presence || DEFAULT_OSCAL_VERSION
   end
 
   private
@@ -59,7 +65,7 @@ class OscalAssessmentPlanExportService
     base = {
       "title"         => @document.name,
       "version"       => @document.sap_version.presence || "1.0.0",
-      "oscal-version" => @document.oscal_version || OSCAL_VERSION,
+      "oscal-version" => @document.oscal_version || effective_oscal_version,
       "last-modified" => Time.current.iso8601
     }
 

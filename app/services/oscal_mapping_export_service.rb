@@ -10,16 +10,21 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalMappingExportService
-  OSCAL_VERSION = "1.2.1"
+  DEFAULT_OSCAL_VERSION = "1.2.1"
+  OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
   def initialize(control_mapping)
     @mapping = control_mapping
     @entries = control_mapping.control_mapping_entries.to_a
   end
 
+  def effective_oscal_version
+    @mapping.oscal_version.presence || DEFAULT_OSCAL_VERSION
+  end
+
   def export
     data = build_mapping_collection
-    OscalSchemaValidationService.validate!(:mapping, data)
+    OscalSchemaValidationService.validate!(:mapping, data, version: effective_oscal_version)
     JSON.pretty_generate(data)
   end
 
@@ -50,7 +55,7 @@ class OscalMappingExportService
     base = {
       "title"         => @mapping.name,
       "version"       => @mapping.mapping_version || "1.0.0",
-      "oscal-version" => @mapping.oscal_version || OSCAL_VERSION,
+      "oscal-version" => @mapping.oscal_version || effective_oscal_version,
       "last-modified" => @mapping.updated_at.iso8601
     }
 

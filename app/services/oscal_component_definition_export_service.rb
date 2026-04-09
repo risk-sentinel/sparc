@@ -9,7 +9,8 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalComponentDefinitionExportService
-  OSCAL_VERSION = "1.1.2"
+  DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
+  OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
   def initialize(cdef_document)
     @document = cdef_document
@@ -19,7 +20,7 @@ class OscalComponentDefinitionExportService
   # Raises OscalValidationError if the output fails schema validation.
   def export
     data = build_component_definition
-    OscalSchemaValidationService.validate!(:component_definition, data)
+    OscalSchemaValidationService.validate!(:component_definition, data, version: effective_oscal_version)
     JSON.pretty_generate(data)
   end
 
@@ -32,6 +33,11 @@ class OscalComponentDefinitionExportService
   def validation_result
     data = build_component_definition
     OscalSchemaValidationService.validate(:component_definition, data)
+  end
+
+
+  def effective_oscal_version
+    @document.oscal_version.presence || DEFAULT_OSCAL_VERSION
   end
 
   private
@@ -51,7 +57,7 @@ class OscalComponentDefinitionExportService
     base = {
       "title"         => @document.name,
       "version"       => @document.cdef_version || "1.0.0",
-      "oscal-version" => @document.oscal_version || OSCAL_VERSION,
+      "oscal-version" => @document.oscal_version || effective_oscal_version,
       "last-modified" => Time.current.iso8601
     }
 

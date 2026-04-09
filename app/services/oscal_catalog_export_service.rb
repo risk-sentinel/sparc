@@ -9,7 +9,8 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalCatalogExportService
-  OSCAL_VERSION = "1.1.2"
+  DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
+  OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
   def initialize(control_catalog)
     @catalog = control_catalog
@@ -17,7 +18,7 @@ class OscalCatalogExportService
 
   def export
     data = build_catalog
-    OscalSchemaValidationService.validate!(:catalog, data)
+    OscalSchemaValidationService.validate!(:catalog, data, version: effective_oscal_version)
     JSON.pretty_generate(data)
   end
 
@@ -28,6 +29,11 @@ class OscalCatalogExportService
   def validation_result
     data = build_catalog
     OscalSchemaValidationService.validate(:catalog, data)
+  end
+
+
+  def effective_oscal_version
+    @catalog.oscal_version.presence || DEFAULT_OSCAL_VERSION
   end
 
   private
@@ -46,7 +52,7 @@ class OscalCatalogExportService
     base = {
       "title"         => @catalog.name,
       "version"       => @catalog.oscal_document_version || "1.0.0",
-      "oscal-version" => @catalog.oscal_version || OSCAL_VERSION,
+      "oscal-version" => @catalog.oscal_version || effective_oscal_version,
       "last-modified" => Time.current.iso8601
     }
 

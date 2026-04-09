@@ -15,7 +15,8 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalSspExportService
-  OSCAL_VERSION = "1.1.2"
+  DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
+  OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
   def initialize(ssp_document)
     @document = ssp_document
@@ -25,7 +26,7 @@ class OscalSspExportService
   # Build, validate, and return pretty-printed OSCAL SSP JSON.
   def export
     data = build_ssp
-    OscalSchemaValidationService.validate!(:ssp, data)
+    OscalSchemaValidationService.validate!(:ssp, data, version: effective_oscal_version)
     JSON.pretty_generate(data)
   end
 
@@ -38,6 +39,11 @@ class OscalSspExportService
   def validation_result
     data = build_ssp
     OscalSchemaValidationService.validate(:ssp, data)
+  end
+
+
+  def effective_oscal_version
+    @document.oscal_version.presence || DEFAULT_OSCAL_VERSION
   end
 
   private
@@ -79,7 +85,7 @@ class OscalSspExportService
     base = {
       "title"         => @document.name,
       "version"       => @document.ssp_version || "1.0.0",
-      "oscal-version" => @document.oscal_version || OSCAL_VERSION,
+      "oscal-version" => @document.oscal_version || effective_oscal_version,
       "last-modified" => Time.current.iso8601
     }
 

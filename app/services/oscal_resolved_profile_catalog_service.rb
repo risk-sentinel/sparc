@@ -9,7 +9,8 @@
 #   json_string = service.export
 #
 class OscalResolvedProfileCatalogService
-  OSCAL_VERSION = "1.1.2"
+  DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
+  OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
   def initialize(profile_document)
     @profile = profile_document
@@ -19,6 +20,10 @@ class OscalResolvedProfileCatalogService
 
   def export
     JSON.pretty_generate(build_catalog)
+  end
+
+  def effective_oscal_version
+    @profile.oscal_version.presence || DEFAULT_OSCAL_VERSION
   end
 
   private
@@ -38,7 +43,7 @@ class OscalResolvedProfileCatalogService
     {
       "title"         => @profile.name,
       "version"       => @profile.profile_version || "1.0.0",
-      "oscal-version" => @profile.oscal_version || OSCAL_VERSION,
+      "oscal-version" => @profile.oscal_version || effective_oscal_version,
       "last-modified" => Time.current.iso8601,
       "published"     => @profile.published,
       "props"         => [ { "name" => "resolution-tool", "value" => "SPARC" } ],

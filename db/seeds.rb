@@ -2417,6 +2417,13 @@ end # SeedRunner demo_sample_artifacts
 end # if SEED_DEMO (sample artifacts)
 
 # ══════════════════════════════════════════════════════════════════════
+# OSCAL Schemas — seed NIST JSON schemas for version-aware validation
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("oscal_schemas") do
+  Rake::Task["oscal:seed_schemas"].invoke
+end # SeedRunner oscal_schemas
+
+# ══════════════════════════════════════════════════════════════════════
 # SEED SUMMARY + COMPLETENESS CHECK
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.summary
