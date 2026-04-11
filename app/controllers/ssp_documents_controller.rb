@@ -74,7 +74,7 @@ class SspDocumentsController < ApplicationController
   end
 
   def create
-    handle_file_upload(:ssp, param_key: :ssp_document)
+    handle_multi_file_upload(:ssp, param_key: :ssp_document)
   end
 
   def edit

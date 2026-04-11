@@ -54,7 +54,7 @@ class PoamDocumentsController < ApplicationController
   end
 
   def create
-    handle_file_upload(:poam, param_key: :poam_document)
+    handle_multi_file_upload(:poam, param_key: :poam_document)
   end
 
   def update

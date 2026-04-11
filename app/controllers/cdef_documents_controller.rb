@@ -34,7 +34,7 @@ class CdefDocumentsController < ApplicationController
   end
 
   def create
-    handle_file_upload(:cdef, param_key: :cdef_document)
+    handle_multi_file_upload(:cdef, param_key: :cdef_document)
   end
 
   def destroy

@@ -111,7 +111,7 @@ class SarDocumentsController < ApplicationController
   end
 
   def create
-    handle_file_upload(:sar, param_key: :sar_document)
+    handle_multi_file_upload(:sar, param_key: :sar_document)
   end
 
   def wizard

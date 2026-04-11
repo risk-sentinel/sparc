@@ -53,7 +53,7 @@ class SapDocumentsController < ApplicationController
 
   def create
     if params[:sap_document]&.key?(:file) && params[:sap_document][:file].present?
-      handle_file_upload(:sap, param_key: :sap_document)
+      handle_multi_file_upload(:sap, param_key: :sap_document)
     else
       create_from_wizard
     end

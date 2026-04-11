@@ -1,4 +1,4 @@
-# SPARC — Systematic and Regulatory Compliance
+# SPARC — Systematic Policy and Regulatory Compliance
 
 ![Home Page](docs/images/sparc_home.jpg)
 

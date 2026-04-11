@@ -167,7 +167,7 @@ jobs:
             type=raw,value=latest,enable=${{ needs.prepare.outputs.is_prerelease != 'true' }}
           labels: |
             org.opencontainers.image.title=SPARC
-            org.opencontainers.image.description=Systematic and Regulatory Compliance
+            org.opencontainers.image.description=Systematic Policy and Regulatory Compliance
             org.opencontainers.image.version=${{ needs.prepare.outputs.version_stripped }}
             org.opencontainers.image.source=https://github.com/Rebel-Raiders/sparc
             org.opencontainers.image.revision=${{ github.sha }}
