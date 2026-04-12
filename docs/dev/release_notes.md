@@ -4,7 +4,7 @@
 
 ---
 
-## 2026-04-08 -- feat: Multi-File Upload + SPARC Branding Update (#355)
+## v1.2.0 -- 2026-04-08 -- feat: Multi-File Upload + SPARC Branding Update (#355)
 
 **Branch:** `feature/355_multi_file_upload`
 
