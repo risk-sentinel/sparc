@@ -4,8 +4,8 @@ class CdefDocumentsController < ApplicationController
   include OscalExportable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata copy publish publish_check]
-  before_action :ensure_editable!, only: [ :update_metadata, :publish ]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check]
+  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish ]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -27,6 +27,13 @@ class CdefDocumentsController < ApplicationController
     @heatmap_data, @heatmap_families, @heatmap_severities = build_severity_heatmap(controls_scope)
 
     @controls = controls_scope.order(:row_order).includes(:cdef_control_fields)
+
+    # Baseline gap analysis (when CDEF was created from a profile)
+    if @cdef_document.profile_document.present?
+      gap_service = CdefBaselineGapService.new(@cdef_document)
+      @gap_analysis = gap_service.analyze
+      @missing_controls = gap_service.missing_control_details if @gap_analysis&.dig(:missing)&.any?
+    end
   end
 
   def new
@@ -122,6 +129,34 @@ class CdefDocumentsController < ApplicationController
               filename:    "#{@cdef_document.name}_oscal_cdef_#{Date.today}.xml",
               type:        "application/xml",
               disposition: "attachment"
+  end
+
+  def update_field
+    control_id = params[:control_id]
+    field_name = params[:field_name]
+    field_value = params[:field_value]
+
+    service = CdefUpdateService.new(@cdef_document)
+    service.update_field(control_id, field_name, field_value)
+
+    audit_log("cdef_control_updated", subject: @cdef_document,
+      metadata: { control_id: control_id, field_name: field_name })
+
+    respond_to do |format|
+      format.json { render json: { success: true, control_id: control_id, field_name: field_name, field_value: field_value } }
+      format.html do
+        flash[:success] = "#{field_name.titleize} updated for #{control_id}"
+        redirect_to cdef_document_path(@cdef_document, anchor: "control-#{control_id}")
+      end
+    end
+  rescue ArgumentError, ActiveRecord::RecordNotFound => e
+    respond_to do |format|
+      format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
+      format.html do
+        flash[:error] = e.message
+        redirect_to cdef_document_path(@cdef_document)
+      end
+    end
   end
 
   def update_metadata

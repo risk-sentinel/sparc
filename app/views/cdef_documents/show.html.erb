@@ -135,6 +135,50 @@
      show_percentage: false,
      legend_items: [["High", "#e74c3c"], ["Medium", "#f39c12"], ["Low", "#3498db"], ["Info", "#95a5a6"]] %>
 
+<%# ── BASELINE COVERAGE (if linked to profile) ──────────────────── %>
+<% if @gap_analysis.present? %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="fw-bold mb-3">Baseline Coverage</h5>
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <div class="progress flex-grow-1" style="height: 1.2rem;">
+          <div class="progress-bar <%= @gap_analysis[:coverage_pct] == 100.0 ? 'bg-success' : @gap_analysis[:coverage_pct] >= 80 ? 'bg-warning' : 'bg-danger' %>"
+               style="width: <%= @gap_analysis[:coverage_pct] %>%"
+               role="progressbar">
+            <%= @gap_analysis[:coverage_pct] %>%
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-4" style="font-size: 0.85rem;">
+        <span class="text-success fw-semibold"><%= @gap_analysis[:covered].size %> covered</span>
+        <% if @gap_analysis[:missing].any? %>
+          <span class="text-danger fw-semibold"><%= @gap_analysis[:missing].size %> missing</span>
+        <% end %>
+        <% if @gap_analysis[:extra].any? %>
+          <span class="text-body-secondary"><%= @gap_analysis[:extra].size %> extra (beyond baseline)</span>
+        <% end %>
+        <span class="text-body-secondary">Baseline: <%= @gap_analysis[:total_baseline] %> controls</span>
+      </div>
+
+      <% if @missing_controls&.any? %>
+        <details class="mt-2">
+          <summary class="text-danger" style="font-size: 0.85rem; cursor: pointer;">
+            Show <%= @missing_controls.size %> missing control(s)
+          </summary>
+          <div class="mt-2" style="font-size: 0.82rem;">
+            <% @missing_controls.each do |mc| %>
+              <div class="d-flex align-items-center gap-2 py-1 border-bottom">
+                <code class="fw-bold"><%= mc[:id] %></code>
+                <span class="text-body-secondary"><%= mc[:title] %></span>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
   <% @controls.each do |control| %>
@@ -213,24 +257,53 @@
           <% if display_fields.any? %>
             <table class="sparc-field-table">
               <% display_fields.each do |field| %>
-                <% next if field.field_value.blank? %>
+                <% next if field.field_value.blank? && !field.editable %>
                 <% next if field.field_name == "description" %>
-                <tr>
+                <tr class="<%= 'sparc-field-editable' if field.editable %>">
                   <td class="sparc-field-label">
                     <%= field.field_name.tr("_", " ") %>
-                    <% if field.editable %><span class="sparc-editable-indicator">&#x270E;</span><% end %>
+                    <% if field.editable %>
+                      <span class="sparc-editable-indicator" onclick="toggleFieldEdit('<%= control.control_id %>', '<%= field.field_name %>')" title="Click to edit">&#x270E;</span>
+                    <% end %>
                   </td>
                   <td class="sparc-field-value">
-                    <% if field.field_name == "severity" %>
-                      <span class="sparc-status-pill" style="background: <%= sev_colors_map[field.field_value] || '#7f8c8d' %>; font-size: 0.75rem; font-weight: 600; text-transform: capitalize;"><%= field.field_value %></span>
-                    <% elsif field.field_name == "cci_refs" %>
-                      <div class="d-flex flex-wrap" style="gap: 0.3rem;">
-                        <% field.field_value.split(",").map(&:strip).each do |cci| %>
-                          <span class="rounded fw-semibold" style="background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.25); color: #27ae60; padding: 0.1rem 0.45rem; font-size: 0.72rem; font-family: monospace;"><%= cci %></span>
+                    <%# Display mode %>
+                    <div id="field-display-<%= control.control_id %>-<%= field.field_name %>">
+                      <% if field.field_name == "severity" %>
+                        <span class="sparc-status-pill" style="background: <%= sev_colors_map[field.field_value] || '#7f8c8d' %>; font-size: 0.75rem; font-weight: 600; text-transform: capitalize;"><%= field.field_value %></span>
+                      <% elsif field.field_name == "cci_refs" %>
+                        <div class="d-flex flex-wrap" style="gap: 0.3rem;">
+                          <% field.field_value.to_s.split(",").map(&:strip).each do |cci| %>
+                            <span class="rounded fw-semibold" style="background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.25); color: #27ae60; padding: 0.1rem 0.45rem; font-size: 0.72rem; font-family: monospace;"><%= cci %></span>
+                          <% end %>
+                        </div>
+                      <% elsif field.field_value.present? %>
+                        <div style="white-space: pre-wrap;"><%= field.field_value %></div>
+                      <% else %>
+                        <span class="text-body-tertiary fst-italic" style="font-size: 0.82rem;">Click &#x270E; to add</span>
+                      <% end %>
+                    </div>
+
+                    <%# Edit mode (hidden by default) %>
+                    <% if field.editable && !@cdef_document.published_lifecycle? %>
+                      <div id="field-edit-<%= control.control_id %>-<%= field.field_name %>" style="display: none;">
+                        <% if field.select_field? %>
+                          <select id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-select form-select-sm" style="font-size: 0.82rem;">
+                            <option value="">-- Select --</option>
+                            <% field.select_options&.each do |label, value| %>
+                              <option value="<%= value %>" <%= 'selected' if field.field_value == value %>><%= label %></option>
+                            <% end %>
+                          </select>
+                        <% elsif %w[implementation_narrative notes].include?(field.field_name) %>
+                          <textarea id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm" rows="3" style="font-size: 0.82rem;"><%= field.field_value %></textarea>
+                        <% else %>
+                          <input type="text" id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm" value="<%= field.field_value %>" style="font-size: 0.82rem;">
                         <% end %>
+                        <div class="mt-1 d-flex gap-1">
+                          <button type="button" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" onclick="saveField('<%= control.control_id %>', '<%= field.field_name %>')">Save</button>
+                          <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" onclick="toggleFieldEdit('<%= control.control_id %>', '<%= field.field_name %>')">Cancel</button>
+                        </div>
                       </div>
-                    <% else %>
-                      <div style="white-space: pre-wrap;"><%= field.field_value %></div>
                     <% end %>
                   </td>
                 </tr>
@@ -267,6 +340,56 @@
       });
     });
   });
+
+  // ── Inline field editing ──────────────────────────────────────
+  function toggleFieldEdit(controlId, fieldName) {
+    var display = document.getElementById('field-display-' + controlId + '-' + fieldName);
+    var edit = document.getElementById('field-edit-' + controlId + '-' + fieldName);
+    if (!edit) return;
+    var isEditing = edit.style.display !== 'none';
+    display.style.display = isEditing ? '' : 'none';
+    edit.style.display = isEditing ? 'none' : '';
+    if (!isEditing) {
+      var input = document.getElementById('field-input-' + controlId + '-' + fieldName);
+      if (input) input.focus();
+    }
+  }
+
+  function saveField(controlId, fieldName) {
+    var input = document.getElementById('field-input-' + controlId + '-' + fieldName);
+    if (!input) return;
+    var value = input.value;
+    var url = '<%= update_field_cdef_document_path(@cdef_document) %>';
+    var token = document.querySelector('meta[name="csrf-token"]').content;
+
+    fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': token,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ control_id: controlId, field_name: fieldName, field_value: value })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+      if (data.success) {
+        var display = document.getElementById('field-display-' + controlId + '-' + fieldName);
+        display.innerHTML = value ? '<div style="white-space: pre-wrap;">' + escapeHtml(value) + '</div>'
+                                  : '<span class="text-body-tertiary fst-italic" style="font-size: 0.82rem;">Click &#x270E; to add</span>';
+        toggleFieldEdit(controlId, fieldName);
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    })
+    .catch(function(err) { alert('Save failed: ' + err.message); });
+  }
+
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
 </script>
 
 <% end %><%# end unless completed %>

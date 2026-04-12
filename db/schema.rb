@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_06_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_12_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -201,6 +201,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_06_130000) do
     t.string "name", null: false
     t.string "original_filename"
     t.string "oscal_version"
+    t.bigint "profile_document_id"
     t.string "slug"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
@@ -209,6 +210,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_06_130000) do
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
     t.index ["deleted_at"], name: "index_cdef_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_cdef_documents_on_lifecycle_status"
+    t.index ["profile_document_id"], name: "index_cdef_documents_on_profile_document_id"
     t.index ["slug"], name: "index_cdef_documents_on_slug", unique: true
     t.index ["status"], name: "index_cdef_documents_on_status"
     t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
@@ -1267,6 +1269,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_06_130000) do
   add_foreign_key "catalog_controls", "control_families"
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
+  add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify
   add_foreign_key "control_families", "control_catalogs"
   add_foreign_key "control_mapping_entries", "control_mappings"
   add_foreign_key "control_mappings", "control_catalogs", column: "source_catalog_id"

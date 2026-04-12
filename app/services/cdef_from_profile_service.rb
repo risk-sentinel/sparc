@@ -29,12 +29,13 @@ class CdefFromProfileService
     metadata = catalog.dig("catalog", "metadata") || {}
 
     @document = CdefDocument.create!(
-      name:            @name,
-      cdef_type:       "custom",
-      status:          "completed",
-      lifecycle_status: "started",
-      oscal_version:   metadata["oscal-version"] || "1.1.2",
-      description:     metadata["title"],
+      name:                @name,
+      cdef_type:           "custom",
+      status:              "completed",
+      lifecycle_status:    "started",
+      oscal_version:       metadata["oscal-version"] || "1.1.2",
+      description:         metadata["title"],
+      profile_document_id: @profile.id,
       import_metadata: {
         "source_type"         => "profile",
         "source_profile_id"   => @profile.id,
@@ -86,10 +87,18 @@ class CdefFromProfileService
         field_entries << [ idx, "guidance", guidance ]      if guidance.present?
         field_entries << [ idx, "parameters", params ]      if params.present?
 
+        # Preserve baseline priority as read-only field
+        priority = extract_priority(control["props"])
+        field_entries << [ idx, "baseline_priority", priority ] if priority.present?
+
         # Editable placeholder fields
         field_entries << [ idx, "implementation_narrative", "" ]
         field_entries << [ idx, "notes", "" ]
         field_entries << [ idx, "status_override", "" ]
+        field_entries << [ idx, "implementation_status", "" ]
+        field_entries << [ idx, "control_origin", "" ]
+        field_entries << [ idx, "responsible_roles", "" ]
+        field_entries << [ idx, "set_parameters", "" ]
 
         row_order += 1
       end
@@ -109,6 +118,12 @@ class CdefFromProfileService
 
     priority = props.find { |p| p["name"] == "priority" }&.dig("value")
     PRIORITY_TO_SEVERITY[priority]
+  end
+
+  def extract_priority(props)
+    return nil unless props.is_a?(Array)
+
+    props.find { |p| p["name"] == "priority" }&.dig("value")
   end
 
   def extract_part_prose(control, part_name)
