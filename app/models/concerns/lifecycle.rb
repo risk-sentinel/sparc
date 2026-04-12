@@ -48,7 +48,7 @@ module Lifecycle
   def lifecycle_label
     case lifecycle_status
     when "started"     then "Started"
-    when "in_progress" then "In Progress"
+    when "in_progress" then "Draft"
     when "published"   then "Published"
     else lifecycle_status&.titleize
     end
