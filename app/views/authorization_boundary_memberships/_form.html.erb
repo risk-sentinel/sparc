@@ -1,4 +1,7 @@
-<%= form_with(model: [ @authorization_boundary, membership ], class: "mb-4") do |f| %>
+<%= form_with(model: membership,
+             url: membership.persisted? ? authorization_boundary_membership_path(@authorization_boundary, membership) : authorization_boundary_memberships_path(@authorization_boundary),
+             method: membership.persisted? ? :patch : :post,
+             class: "mb-4") do |f| %>
   <div class="mb-3">
     <%= f.label :user_name, "Name", class: "form-label fw-semibold" %>
     <%= f.text_field :user_name, class: "form-control", required: true %>
