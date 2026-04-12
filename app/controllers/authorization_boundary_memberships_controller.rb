@@ -43,7 +43,7 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
   private
 
   def set_authorization_boundary
-    @authorization_boundary = AuthorizationBoundary.find(params[:authorization_boundary_id])
+    @authorization_boundary = AuthorizationBoundary.find_by!(slug: params[:authorization_boundary_id])
   end
 
   def set_membership
