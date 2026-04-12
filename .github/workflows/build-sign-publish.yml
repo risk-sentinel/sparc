@@ -158,9 +158,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: |
-            risksentinel/sparc
-            ${{ vars.ECR_REGISTRY || '' }}
+          # Docker Hub only — ECR uses explicit version tags (no latest, immutable tags)
+          images: risksentinel/sparc
           tags: |
             type=semver,pattern=v{{version}},value=${{ needs.prepare.outputs.version }}
             type=semver,pattern=v{{major}}.{{minor}},value=${{ needs.prepare.outputs.version }}
@@ -175,6 +174,15 @@ jobs:
             org.opencontainers.image.vendor=Rebel-Raiders
             org.opencontainers.image.licenses=MIT
 
+      - name: Compute ECR tags
+        id: ecr-tags
+        if: vars.ECR_REGISTRY != '' && needs.prepare.outputs.dry_run != 'true'
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          ECR="${{ vars.ECR_REGISTRY }}"
+          # Version tag only — no latest (ECR uses immutable tags)
+          echo "tags=${ECR}:${VERSION}" >> "$GITHUB_OUTPUT"
+
       # ── Production build: multi-platform, push to registries ──
       - name: Build and push multi-platform image
         if: needs.prepare.outputs.dry_run != 'true'
@@ -185,7 +193,9 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.ecr-tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
