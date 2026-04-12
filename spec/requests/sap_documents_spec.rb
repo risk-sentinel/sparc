@@ -89,8 +89,9 @@ RSpec.describe "SapDocuments", type: :request do
       patch update_metadata_sap_document_path(sap), params: {
         sap_document: { name: "New SAP" }
       }
+      sap.reload
       expect(response).to redirect_to(sap_document_path(sap))
-      expect(sap.reload.name).to eq("New SAP")
+      expect(sap.name).to eq("New SAP")
     end
   end
 

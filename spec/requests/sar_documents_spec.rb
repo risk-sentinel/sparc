@@ -77,8 +77,9 @@ RSpec.describe "SarDocuments", type: :request do
       patch update_metadata_sar_document_path(sar), params: {
         sar_document: { name: "New SAR" }
       }
+      sar.reload
       expect(response).to redirect_to(sar_document_path(sar))
-      expect(sar.reload.name).to eq("New SAR")
+      expect(sar.name).to eq("New SAR")
     end
   end
 

@@ -97,8 +97,9 @@ RSpec.describe "SspDocuments", type: :request do
       patch update_metadata_ssp_document_path(ssp), params: {
         ssp_document: { name: "New Name" }
       }
+      ssp.reload
       expect(response).to redirect_to(ssp_document_path(ssp))
-      expect(ssp.reload.name).to eq("New Name")
+      expect(ssp.name).to eq("New Name")
     end
   end
 

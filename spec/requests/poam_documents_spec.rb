@@ -79,8 +79,9 @@ RSpec.describe "PoamDocuments", type: :request do
       patch update_metadata_poam_document_path(poam), params: {
         poam_document: { name: "New POAM" }
       }
+      poam.reload
       expect(response).to redirect_to(poam_document_path(poam))
-      expect(poam.reload.name).to eq("New POAM")
+      expect(poam.name).to eq("New POAM")
     end
   end
 

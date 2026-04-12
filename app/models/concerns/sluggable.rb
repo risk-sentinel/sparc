@@ -11,6 +11,7 @@
 #
 # The concern:
 # - Generates a slug from the source field on create (before_validation)
+# - Regenerates the slug when the source field changes (before_validation)
 # - Appends a numeric suffix if the slug already exists
 # - Overrides `to_param` so Rails URL helpers use slugs
 # - Validates slug presence and uniqueness
@@ -27,6 +28,7 @@ module Sluggable
     # Declare which attribute to parameterize for the slug.
     # Defaults to :name if not specified.
     def sluggable_source(field = :name)
+      define_method(:_sluggable_source_field) { field }
       define_method(:_sluggable_source_value) do
         public_send(field)
       end
@@ -40,10 +42,14 @@ module Sluggable
   private
 
   def generate_slug
-    return if slug.present?
-
     source = respond_to?(:_sluggable_source_value) ? _sluggable_source_value : try(:name)
     return unless source.present?
+
+    # Skip if slug already set and source field hasn't changed
+    if slug.present?
+      field = respond_to?(:_sluggable_source_field) ? _sluggable_source_field : :name
+      return unless respond_to?("#{field}_changed?") && public_send("#{field}_changed?")
+    end
 
     base = source.parameterize
     candidate = base

@@ -108,8 +108,9 @@ RSpec.describe "CdefDocuments", type: :request do
       patch update_metadata_cdef_document_path(cdef), params: {
         cdef_document: { name: "New CDEF" }
       }
+      cdef.reload
       expect(response).to redirect_to(cdef_document_path(cdef))
-      expect(cdef.reload.name).to eq("New CDEF")
+      expect(cdef.name).to eq("New CDEF")
     end
   end
 
