@@ -76,7 +76,7 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def create
-    handle_file_upload(:profile, param_key: :profile_document)
+    handle_multi_file_upload(:profile, param_key: :profile_document)
   end
 
   def destroy

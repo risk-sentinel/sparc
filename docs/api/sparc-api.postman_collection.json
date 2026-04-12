@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic and Regulatory Compliance). 54 endpoints covering OSCAL document lifecycle, FedRAMP 20x KSI management, and platform administration.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 54 endpoints covering OSCAL document lifecycle, FedRAMP 20x KSI management, and platform administration.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {

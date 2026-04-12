@@ -126,7 +126,7 @@ authentication mode coverage matrix.
 - [x] #263 -- Auto-disable service accounts on token expiry and inactivity -- **COMPLETED 2026-03-21**
 - [x] #262 -- Service account token expiry email notifications -- **COMPLETED 2026-03-22**
 - [x] #269 -- Configurable Resources page + support email links -- **COMPLETED 2026-03-22**
-- [x] #274 -- Rebrand SPARC acronym to "Systematic and Regulatory Compliance" -- **COMPLETED 2026-03-22**
+- [x] #274 -- Rebrand SPARC acronym to "Systematic Policy and Regulatory Compliance" -- **COMPLETED 2026-03-22**
 - [x] #272 -- Collapsible left sidebar navigation for Organizations, Boundaries, and Resources -- **COMPLETED 2026-03-22**
 - [x] #276 -- Bundle converter mapping data as seed fixtures for Docker deployments -- **COMPLETED 2026-03-22**
 - [x] #271 -- Consolidate all releases into v1.0.0 (first public release) -- **COMPLETED 2026-03-22**
@@ -298,6 +298,7 @@ Dev C: #171 (OSCAL diagram)
 | [x] | #340 | Container vulnerability baseline for ATO readiness -- **COMPLETED 2026-04-04** | HIGH | None |
 | [x] | #342 | Harden Dockerfile -- remove unused packages, reduce image size -- **COMPLETED 2026-04-05** | MEDIUM | #340 |
 | [x] | #349 | OSCAL schema database with version-aware validation -- **COMPLETED 2026-04-06** | HIGH | None |
+| [x] | #355 | Multi-file drag/drop upload + SPARC branding update -- **COMPLETED 2026-04-08** | MEDIUM | None |
 
 <!-- markdownlint-enable MD013 -->
 

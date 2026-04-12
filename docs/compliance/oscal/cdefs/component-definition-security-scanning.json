@@ -25,7 +25,7 @@
         "uuid": "8b84fbab-cd36-42ad-ab46-3e97f933c852",
         "type": "software",
         "title": "SPARC Application",
-        "description": "SPARC (Systematic and Regulatory Compliance) is a Rails application for managing NIST 800-53 compliance documentation. This component definition covers vulnerability scanning, flaw remediation, and system integrity controls.",
+        "description": "SPARC (Systematic Policy and Regulatory Compliance) is a Rails application for managing NIST 800-53 compliance documentation. This component definition covers vulnerability scanning, flaw remediation, and system integrity controls.",
         "control-implementations": [
           {
             "uuid": "1549f70b-f78e-439d-9dbf-5eaf50ea543f",

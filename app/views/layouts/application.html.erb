@@ -3,6 +3,7 @@
   <head>
     <title>SPARC</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="turbo-cache-control" content="no-cache">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -50,7 +51,7 @@
       <div class="container-fluid">
         <div class="d-flex align-items-center gap-2">
           <a href="#" class="navbar-brand d-flex align-items-center" data-action="click->video-easter-egg#play">
-            <%= image_tag "sparc_logo.jpg", alt: "SPARC", class: "sparc-navbar-logo" %>
+            <%= image_tag "sparc_logo.png", alt: "SPARC", class: "sparc-navbar-logo" %>
           </a>
           <span class="badge text-bg-secondary opacity-75" style="font-size: 0.65rem;">v<%= SparcConfig::VERSION %></span>
         </div>

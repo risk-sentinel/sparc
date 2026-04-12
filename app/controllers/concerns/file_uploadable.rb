@@ -93,6 +93,65 @@ module FileUploadable
     end
   end
 
+  # Handle multi-file upload — creates one document per file, enqueues one job each.
+  # Falls back to single-file upload if only one file is provided.
+  def handle_multi_file_upload(type_key, param_key:)
+    uploaded_files = params.dig(param_key, :files)
+
+    # Normalize: if single file, wrap in array; if nil, fall back to single-file handler
+    if uploaded_files.nil? || uploaded_files.empty?
+      # Try single-file param as fallback
+      return handle_file_upload(type_key, param_key: param_key)
+    end
+
+    # Filter out blank entries (browsers may include empty slots)
+    uploaded_files = Array(uploaded_files).reject(&:blank?)
+    return handle_file_upload(type_key, param_key: param_key) if uploaded_files.size == 1
+
+    registry       = DocumentTypeRegistry.for(type_key)
+    document_class = registry.document_class
+    created = []
+    errors  = []
+
+    uploaded_files.each do |uploaded_file|
+      begin
+        file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
+
+        safe_prefix  = SAFE_PREFIXES.fetch(type_key, "doc")
+        safe_ext     = SAFE_EXTENSIONS.fetch(file_type, ".dat")
+        persist_path = Rails.root.join("tmp", "#{safe_prefix}_#{SecureRandom.hex(8)}#{safe_ext}")
+        File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
+
+        document = document_class.create!(
+          name:              File.basename(uploaded_file.original_filename, ".*"),
+          file_type:         file_type,
+          original_filename: uploaded_file.original_filename,
+          status:            "pending"
+        )
+        document.file.attach(uploaded_file)
+
+        DocumentConversionJob.perform_later(type_key.to_s, document.id, persist_path.to_s)
+
+        audit_log("#{type_key}_document_created", subject: document,
+          metadata: { name: document.name, file_type: file_type,
+                      original_filename: uploaded_file.original_filename })
+
+        created << document
+      rescue StandardError => e
+        errors << "#{uploaded_file.original_filename}: #{e.message}"
+      end
+    end
+
+    if created.any?
+      flash[:success] = "#{created.size} document(s) queued for processing"
+    end
+    if errors.any?
+      flash[:error] = "#{errors.size} file(s) failed: #{errors.join('; ')}"
+    end
+
+    redirect_to polymorphic_path(document_class)
+  end
+
   # Set the conventional instance variable (e.g. @ssp_document, @sar_document)
   def set_document_ivar(type_key, document)
     instance_variable_set(:"@#{type_key}_document", document)

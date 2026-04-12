@@ -6,7 +6,7 @@ import "controllers"
 // ── Custom Turbo confirmation modal (Bootstrap 5) ──
 // Replaces browser-native window.confirm() with a styled Bootstrap modal
 // for all turbo_confirm dialogs app-wide.
-Turbo.setConfirmMethod((message, element) => {
+Turbo.config.forms.confirm = (message, element) => {
   return new Promise((resolve) => {
     const modalId = "sparc-confirm-modal"
     let existing = document.getElementById(modalId)
@@ -58,7 +58,7 @@ Turbo.setConfirmMethod((message, element) => {
 
     bsModal.show()
   })
-})
+}
 
 // ── Bootstrap component re-initialization after Turbo Drive navigation ──
 //

@@ -1,9 +1,11 @@
 <%# Drag-and-drop file upload component (dropzone_controller.js). %>
+<%# Supports single-file (default) and multi-file upload modes. %>
 <%
   field    ||= :file
   accept   ||= ""
   hint     ||= nil
   label    ||= nil
+  multiple = true unless defined?(multiple) && multiple == false
   required = true unless defined?(required) && required == false
 %>
 
@@ -12,7 +14,8 @@
 <% end %>
 
 <div data-controller="dropzone"
-     data-dropzone-accept-value="<%= accept %>">
+     data-dropzone-accept-value="<%= accept %>"
+     data-dropzone-multiple-value="<%= multiple %>">
 
   <div class="sparc-dropzone"
        data-dropzone-target="zone"
@@ -25,9 +28,10 @@
     <span class="sparc-dropzone__icon" data-dropzone-target="icon">&#128194;</span>
 
     <p class="sparc-dropzone__prompt" data-dropzone-target="prompt">
-      <strong>Click to browse</strong> or drag &amp; drop a file here
+      <strong>Click to browse</strong> or drag &amp; drop file<%= "s" if multiple %> here
     </p>
 
+    <div class="sparc-dropzone__file-list" data-dropzone-target="fileList" style="display: none;"></div>
     <p class="sparc-dropzone__filename" data-dropzone-target="filename"></p>
     <p class="sparc-dropzone__filesize" data-dropzone-target="filesize"></p>
     <p class="sparc-dropzone__error" data-dropzone-target="error"></p>
@@ -39,9 +43,10 @@
     <% end %>
   </div>
 
-  <%= form.file_field field,
+  <%= form.file_field (multiple ? :files : field),
         accept: accept,
         required: required,
+        multiple: multiple,
         class: "d-none",
         data: {
           dropzone_target: "input",

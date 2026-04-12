@@ -87,7 +87,7 @@ RSpec.describe Lifecycle do
 
   describe "#lifecycle_label" do
     it "returns human-readable labels" do
-      { "started" => "Started", "in_progress" => "In Progress", "published" => "Published" }.each do |status, label|
+      { "started" => "Started", "in_progress" => "Draft", "published" => "Published" }.each do |status, label|
         document.lifecycle_status = status
         expect(document.lifecycle_label).to eq(label)
       end

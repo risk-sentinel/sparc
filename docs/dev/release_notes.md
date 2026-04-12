@@ -4,6 +4,36 @@
 
 ---
 
+## v1.2.0 -- 2026-04-08 -- feat: Multi-File Upload + SPARC Branding Update (#355)
+
+**Branch:** `feature/355_multi_file_upload`
+
+### Summary
+
+Multi-file drag-and-drop upload for all document types. Users can now drag multiple files onto any
+upload page and they'll be queued, validated individually, and processed as separate documents. Also
+updates the SPARC branding from "Systematic and Regulatory Compliance" to "Systematic Policy and
+Regulatory Compliance" across all views, docs, CDEFs, and OCI labels. Updated SPARC logo included.
+
+### What Changed
+
+- **Multi-file dropzone** -- shared dropzone partial and Stimulus controller support multiple file
+  selection via drag-and-drop or click-to-browse. File queue shows names, sizes, and remove buttons.
+  Per-file extension and size validation. Invalid files rejected with clear message.
+- **Backend batch upload** -- `handle_multi_file_upload` in FileUploadable concern creates one document
+  per file, enqueues one DocumentConversionJob per file. Falls back to single-file for one file.
+  All 6 document controllers updated to use multi-file handler.
+- **SPARC branding** -- "Systematic Policy and Regulatory Compliance" in login page, about page, README,
+  NIST mapping, demo banner, 5 OSCAL CDEFs, Postman collection, OCI image labels.
+- **Updated logo** -- `app/assets/images/sparc_logo.jpg`
+
+### Stats
+
+- **Spec count:** TBD
+- **New specs:** TBD
+
+---
+
 ## 2026-04-06 -- feat: OSCAL Schema Database with Version-Aware Validation (#349)
 
 **Branch:** `feature/349_oscal_schema_database`
