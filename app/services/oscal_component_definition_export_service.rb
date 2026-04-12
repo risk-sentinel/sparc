@@ -128,6 +128,44 @@ class OscalComponentDefinitionExportService
       } ]
     end
 
+    # OSCAL-compliant enhanced fields
+    impl_status = field_map["implementation_status"]&.field_value
+    if impl_status.present?
+      result["props"] ||= []
+      result["props"] << { "name" => "implementation-status", "value" => impl_status }
+    end
+
+    control_origin = field_map["control_origin"]&.field_value
+    if control_origin.present?
+      result["props"] ||= []
+      result["props"] << { "name" => "control-origin", "value" => control_origin }
+    end
+
+    baseline_priority = field_map["baseline_priority"]&.field_value
+    if baseline_priority.present?
+      result["props"] ||= []
+      result["props"] << { "name" => "baseline-priority", "value" => baseline_priority }
+    end
+
+    roles = field_map["responsible_roles"]&.field_value
+    if roles.present?
+      result["responsible-roles"] = roles.split(",").map(&:strip).reject(&:blank?).map do |role|
+        { "role-id" => role }
+      end
+    end
+
+    params = field_map["set_parameters"]&.field_value
+    if params.present?
+      begin
+        parsed = JSON.parse(params)
+        result["set-parameters"] = parsed.map do |param|
+          { "param-id" => param["id"] || param["param-id"], "values" => Array(param["value"] || param["values"]) }
+        end
+      rescue JSON::ParserError
+        # Skip malformed set_parameters
+      end
+    end
+
     result
   end
 

@@ -6,6 +6,7 @@ class CdefDocument < ApplicationRecord
   include SoftDeletable
 
   has_many :cdef_controls, dependent: :delete_all
+  belongs_to :profile_document, optional: true
   has_one_attached :file
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }

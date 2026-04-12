@@ -165,6 +165,7 @@ Rails.application.routes.draw do
   resources :cdef_documents do
     member do
       patch :update_metadata
+      patch :update_field
       patch :publish
       get :publish_check
       get :download_json

@@ -993,6 +993,15 @@ a.link-purple { color: var(--sparc-purple); }
   font-size: 0.65rem;
   text-transform: none;
   letter-spacing: 0;
+  cursor: pointer;
+}
+
+.sparc-editable-indicator:hover {
+  color: #2ecc71;
+}
+
+.sparc-field-editable:hover {
+  background: var(--bs-tertiary-bg);
 }
 
 

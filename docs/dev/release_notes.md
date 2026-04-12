@@ -4,6 +4,43 @@
 
 ---
 
+## 2026-04-12 -- feat: Baseline-Driven CDEF Prioritization and Enhanced Editable Fields (#356)
+
+**Branch:** `feature/356_cdef_prioritization`
+
+### Summary
+
+CDEF controls now have 7 editable fields (up from 3), inline editing UI, adjustable severity, baseline
+gap analysis, and OSCAL-compliant export of all new fields. Users can customize CDEFs for their specific
+baseline, add implementation details, and see coverage gaps against their profile.
+
+### What Changed
+
+- **Enhanced editable fields** -- added implementation_status, control_origin, responsible_roles,
+  set_parameters to CdefControlField::EDITABLE_FIELDS (7 total, up from 3).
+- **Inline editing UI** -- click pencil icon to edit fields in-place. Select dropdowns for
+  implementation_status and control_origin. Textarea for narratives. Fetch-based save without page reload.
+- **CdefUpdateService** -- new service for field updates, severity changes, and bulk updates. Mirrors
+  SspUpdateService pattern with UUID regeneration per OSCAL spec.
+- **Baseline gap analysis** -- when CDEF is linked to a profile, shows coverage progress bar,
+  covered/missing/extra control counts, and collapsible list of missing controls with titles.
+- **OSCAL export** -- new fields exported as OSCAL props (implementation-status, control-origin,
+  baseline-priority), responsible-roles array, and set-parameters array.
+- **Migration** -- added profile_document_id FK to cdef_documents with backfill from import_metadata.
+
+### NIST Controls
+
+- **CM-2** (Baseline Configuration) -- baseline-driven control requirements
+- **SA-10** (Developer Configuration Management) -- component definition accuracy
+- **CA-2** (Control Assessments) -- implementation status for assessment readiness
+
+### Stats
+
+- **Spec count:** 1591 total, 0 failures
+- **New specs:** 14 (CdefUpdateService + CdefBaselineGapService)
+
+---
+
 ## v1.2.0 -- 2026-04-08 -- feat: Multi-File Upload + SPARC Branding Update (#355)
 
 **Branch:** `feature/355_multi_file_upload`
