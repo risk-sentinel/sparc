@@ -117,8 +117,9 @@ RSpec.describe "ProfileDocuments", type: :request do
       patch update_metadata_profile_document_path(profile), params: {
         profile_document: { name: "New Profile" }
       }
+      profile.reload
       expect(response).to redirect_to(profile_document_path(profile))
-      expect(profile.reload.name).to eq("New Profile")
+      expect(profile.name).to eq("New Profile")
     end
   end
 
