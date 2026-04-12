@@ -5,7 +5,7 @@
   accept   ||= ""
   hint     ||= nil
   label    ||= nil
-  multiple = true unless defined?(multiple) && multiple == false
+  multiple = false unless defined?(multiple) && multiple == true
   required = true unless defined?(required) && required == false
 %>
 
