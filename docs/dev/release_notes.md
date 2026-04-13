@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-04-13 -- feat: Dynamic Configurable Roles + Production Hotfixes (#368)
+
+**Branch:** `feature/368_dynamic_roles`
+
+### Summary
+
+Organization and authorization boundary role lists are now configurable via environment variables.
+Deployments can customize which roles appear in membership dropdowns without code changes. Also
+includes production hotfixes for file uploads, membership form routing, slug regeneration, and
+dropzone backward compatibility.
+
+### What Changed
+
+- **Dynamic roles** -- `SPARC_ORGANIZATION_ROLES` and `SPARC_AUTH_BOUNDARY_ROLES` env vars control
+  which roles appear in membership dropdowns. Defaults to current hardcoded roles. `org_admin` is a
+  fixed system role that cannot be removed.
+- **Membership form fix** -- `form_with(model:)` auto-generated wrong path helper for nested
+  `memberships` resource. Explicit URL now handles new + edit correctly.
+- **Slug regeneration** -- slugs now update when document/boundary names change, keeping URLs in sync.
+- **Slug lookup fix** -- memberships controller used `find(id)` instead of `find_by!(slug:)`.
+- **Dropzone default** -- reverted to single-file by default. Multi-file must be opted in explicitly.
+- **Tmp directory** -- `mkdir -p tmp` ensures writable temp directory in production container.
+- **Lifecycle label** -- renamed 'In Progress' to 'Draft' to avoid confusion with processing status.
+- **Turbo fixes** -- cache control prevents stale pages; deprecated `setConfirmMethod` replaced.
+
+### Stats
+
+- **Spec count:** 1592 total, 0 failures
+
+---
+
 ## 2026-04-12 -- feat: Baseline-Driven CDEF Prioritization and Enhanced Editable Fields (#356)
 
 **Branch:** `feature/356_cdef_prioritization`
