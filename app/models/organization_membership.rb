@@ -43,9 +43,11 @@ class OrganizationMembership < ApplicationRecord
   validates :user_id, uniqueness: { scope: :organization_id, message: "is already a member of this organization" }
   validates :role, inclusion: { in: ->(record) { record.class.available_roles } }
 
-  # Returns the full list of available roles (system + configured)
+  # Returns the full list of available roles (system + configured).
+  # Roles from env vars are used as-is (display names accepted).
   def self.available_roles
-    SYSTEM_ROLES + SparcConfig.organization_roles
+    configured = SparcConfig.organization_roles
+    (SYSTEM_ROLES + configured).uniq
   end
 
   # Returns role options for select dropdowns: [[label, value], ...]
