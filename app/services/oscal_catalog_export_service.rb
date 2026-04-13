@@ -167,5 +167,4 @@ class OscalCatalogExportService
     # Base controls have no enhancement suffix: "ac-1", "ac-2" but not "ac-2.1"
     control_id.match?(/\A[a-z]+-\d+\z/i)
   end
-
 end
