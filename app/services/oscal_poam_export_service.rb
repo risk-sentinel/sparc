@@ -72,16 +72,15 @@ class OscalPoamExportService
   end
 
   def build_metadata
-    base = {
-      "title"         => @document.name,
-      "version"       => @document.poam_version || "1.0.0",
-      "oscal-version" => effective_oscal_version,
-      "last-modified" => Time.current.iso8601
-    }
-
-    # Merge preserved metadata fields (revisions, roles, parties, etc.)
-    extra = @document.metadata_extra || {}
-    base.merge(extra)
+    @document.build_oscal_metadata(
+      default_version: @document.poam_version || "1.0.0",
+      default_roles: [
+        { "id" => "prepared-by", "title" => "Prepared By" }
+      ],
+      default_parties: [
+        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+      ]
+    )
   end
 
   def build_system_id

@@ -52,30 +52,15 @@ class OscalMappingExportService
   end
 
   def build_metadata
-    base = {
-      "title"         => @mapping.name,
-      "version"       => @mapping.mapping_version || "1.0.0",
-      "oscal-version" => @mapping.oscal_version || effective_oscal_version,
-      "last-modified" => @mapping.updated_at.iso8601
-    }
-
-    extra = @mapping.metadata_extra || {}
-    if extra.any?
-      base.merge(extra)
-    else
-      base.merge(default_metadata_extras)
-    end
-  end
-
-  def default_metadata_extras
-    {
-      "roles"   => [ { "id" => "creator", "title" => "Document Creator" } ],
-      "parties" => [ {
-        "uuid" => SecureRandom.uuid,
-        "type" => "organization",
-        "name" => "SPARC Export"
-      } ]
-    }
+    @mapping.build_oscal_metadata(
+      default_version: @mapping.mapping_version || "1.0.0",
+      default_roles: [
+        { "id" => "creator", "title" => "Document Creator" }
+      ],
+      default_parties: [
+        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+      ]
+    )
   end
 
   def build_provenance

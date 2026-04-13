@@ -4,7 +4,7 @@ FactoryBot.define do
   factory :organization_membership do
     organization
     user
-    role { "member" }
+    role { OrganizationMembership.available_roles.last }
 
     trait :org_admin do
       role { "org_admin" }

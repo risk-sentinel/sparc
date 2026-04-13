@@ -300,6 +300,7 @@ Dev C: #171 (OSCAL diagram)
 | [x] | #349 | OSCAL schema database with version-aware validation -- **COMPLETED 2026-04-06** | HIGH | None |
 | [x] | #355 | Multi-file drag/drop upload + SPARC branding update -- **COMPLETED 2026-04-08** | MEDIUM | None |
 | [x] | #356 | Baseline-driven CDEF prioritization and enhanced editable fields -- **COMPLETED 2026-04-12** | HIGH | None |
+| [x] | #370 | OSCAL metadata compliance -- all spec fields in exports -- **COMPLETED 2026-04-13** | HIGH | #349 |
 
 <!-- markdownlint-enable MD013 -->
 

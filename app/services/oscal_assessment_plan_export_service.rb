@@ -62,27 +62,13 @@ class OscalAssessmentPlanExportService
   # ── Metadata ───────────────────────────────────────────────────────
 
   def build_metadata
-    base = {
-      "title"         => @document.name,
-      "version"       => @document.sap_version.presence || "1.0.0",
-      "oscal-version" => @document.oscal_version || effective_oscal_version,
-      "last-modified" => Time.current.iso8601
-    }
-
-    extra = @document.metadata_extra || {}
-    if extra.any?
-      # Merge preserved metadata, but ensure assessment-type prop is included
-      meta = base.merge(extra)
-      append_assessment_type_prop(meta)
-      meta
-    else
-      meta = base.merge(
-        "roles"   => build_roles,
-        "parties" => build_parties
-      )
-      append_assessment_type_prop(meta)
-      meta
-    end
+    meta = @document.build_oscal_metadata(
+      default_version: @document.sap_version || "1.0.0",
+      default_roles: build_roles,
+      default_parties: build_parties
+    )
+    append_assessment_type_prop(meta)
+    meta
   end
 
   def append_assessment_type_prop(meta)
