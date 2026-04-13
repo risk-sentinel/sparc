@@ -85,6 +85,21 @@ module SparcConfig
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
 
+  # ── Dynamic Roles ────────────────────────────────────────────────────────
+  # Configurable role lists for organizations and authorization boundaries.
+  # Comma-separated lists via environment variables. Defaults to the
+  # hardcoded role sets if not specified.
+
+  def organization_roles
+    roles = ENV.fetch("SPARC_ORGANIZATION_ROLES", "").split(",").map(&:strip).reject(&:blank?)
+    roles.presence || OrganizationMembership::DEFAULT_ROLES
+  end
+
+  def auth_boundary_roles
+    roles = ENV.fetch("SPARC_AUTH_BOUNDARY_ROLES", "").split(",").map(&:strip).reject(&:blank?)
+    roles.presence || AuthorizationBoundaryMembership::DEFAULT_ROLES
+  end
+
   # ── OIDC / OAuth2 ────────────────────────────────────────────────────────
 
   def oidc_issuer_url    = ENV.fetch("SPARC_OIDC_ISSUER_URL", nil)
