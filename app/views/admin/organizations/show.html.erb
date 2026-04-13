@@ -126,8 +126,8 @@
         <div class="col-md-4">
           <label for="role" class="form-label fw-semibold small">Role</label>
           <select name="role" id="role" class="form-select" required>
-            <% OrganizationMembership::ROLES.each do |role| %>
-              <option value="<%= role %>"><%= OrganizationMembership::ROLE_LABELS[role] %></option>
+            <% OrganizationMembership.available_roles.each do |role| %>
+              <option value="<%= role %>"><%= OrganizationMembership.role_label_for(role) %></option>
             <% end %>
           </select>
         </div>

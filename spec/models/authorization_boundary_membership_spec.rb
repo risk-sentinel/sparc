@@ -38,12 +38,16 @@ RSpec.describe AuthorizationBoundaryMembership, type: :model do
     end
   end
 
-  describe "ROLES constant" do
-    it "lists all 7 authorization-boundary-level RMF roles" do
-      expect(AuthorizationBoundaryMembership::ROLES).to contain_exactly(
+  describe "roles" do
+    it "has 7 default authorization-boundary-level RMF roles" do
+      expect(AuthorizationBoundaryMembership::DEFAULT_ROLES).to contain_exactly(
         "authorizing_official", "system_owner", "ciso", "isso",
         "project_member", "assessor", "view_only"
       )
+    end
+
+    it "returns available roles from SparcConfig" do
+      expect(AuthorizationBoundaryMembership.available_roles).to include("authorizing_official")
     end
   end
 end

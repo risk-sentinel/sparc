@@ -53,7 +53,7 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
   def membership_params
     permitted = params.require(:authorization_boundary_membership).permit(:user_name, :user_email)
     role = params.dig(:authorization_boundary_membership, :role)
-    permitted[:role] = role if role.present? && AuthorizationBoundaryMembership::ROLES.include?(role)
+    permitted[:role] = role if role.present? && AuthorizationBoundaryMembership.available_roles.include?(role)
     permitted
   end
 end
