@@ -71,34 +71,15 @@ class OscalSarExportService
   # ── Metadata ─────────────────────────────────────────────────────
 
   def build_metadata
-    base = {
-      "title"         => @document.name,
-      "version"       => @document.sar_version || "1.0.0",
-      "oscal-version" => @document.oscal_version || effective_oscal_version,
-      "last-modified" => Time.current.iso8601
-    }
-
-    extra = @document.metadata_extra || {}
-    if extra.any?
-      base.merge(extra)
-    else
-      base.merge(default_metadata_extras)
-    end
-  end
-
-  def default_metadata_extras
-    {
-      "roles" => [
+    @document.build_oscal_metadata(
+      default_version: @document.sar_version || "1.0.0",
+      default_roles: [
         { "id" => "assessor", "title" => "Security Controls Assessor" }
       ],
-      "parties" => [
-        {
-          "uuid" => SecureRandom.uuid,
-          "type" => "organization",
-          "name" => "SPARC Export"
-        }
+      default_parties: [
+        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
       ]
-    }
+    )
   end
 
   # ── Import AP ────────────────────────────────────────────────────

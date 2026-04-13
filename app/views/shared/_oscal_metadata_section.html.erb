@@ -14,6 +14,8 @@
 <% links = metadata["links"] || [] %>
 <% revisions = metadata["revisions"] || [] %>
 <% document_ids = metadata["document-ids"] || [] %>
+<% locations = metadata["locations"] || [] %>
+<% remarks = metadata["remarks"] || "" %>
 
 <div class="card mt-4">
   <div class="card-header d-flex justify-content-between align-items-center"
@@ -90,9 +92,9 @@
     </div>
 
     <%# ── Responsible Parties ─────────────────────────────────── %>
-    <% if responsible_parties.any? %>
-      <div class="mb-4">
-        <h6 class="fw-semibold">Responsible Parties <span class="badge bg-secondary"><%= responsible_parties.size %></span></h6>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Responsible Parties <span class="badge bg-secondary"><%= responsible_parties.size %></span></h6>
+      <% if responsible_parties.any? %>
         <table class="table table-sm table-hover">
           <thead><tr><th>Role ID</th><th>Party UUIDs</th></tr></thead>
           <tbody>
@@ -108,13 +110,15 @@
             <% end %>
           </tbody>
         </table>
-      </div>
-    <% end %>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No responsible parties defined</p>
+      <% end %>
+    </div>
 
     <%# ── Properties ──────────────────────────────────────────── %>
-    <% if props.any? %>
-      <div class="mb-4">
-        <h6 class="fw-semibold">Properties <span class="badge bg-secondary"><%= props.size %></span></h6>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Properties <span class="badge bg-secondary"><%= props.size %></span></h6>
+      <% if props.any? %>
         <table class="table table-sm table-hover">
           <thead><tr><th>Name</th><th>Value</th><th>Namespace</th></tr></thead>
           <tbody>
@@ -127,13 +131,15 @@
             <% end %>
           </tbody>
         </table>
-      </div>
-    <% end %>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No properties defined</p>
+      <% end %>
+    </div>
 
     <%# ── Links ───────────────────────────────────────────────── %>
-    <% if links.any? %>
-      <div class="mb-4">
-        <h6 class="fw-semibold">Links <span class="badge bg-secondary"><%= links.size %></span></h6>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Links <span class="badge bg-secondary"><%= links.size %></span></h6>
+      <% if links.any? %>
         <table class="table table-sm table-hover">
           <thead><tr><th>Relation</th><th>Href</th><th>Media Type</th></tr></thead>
           <tbody>
@@ -146,13 +152,15 @@
             <% end %>
           </tbody>
         </table>
-      </div>
-    <% end %>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No links defined</p>
+      <% end %>
+    </div>
 
     <%# ── Document IDs ────────────────────────────────────────── %>
-    <% if document_ids.any? %>
-      <div class="mb-4">
-        <h6 class="fw-semibold">Document IDs <span class="badge bg-secondary"><%= document_ids.size %></span></h6>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Document IDs <span class="badge bg-secondary"><%= document_ids.size %></span></h6>
+      <% if document_ids.any? %>
         <table class="table table-sm table-hover">
           <thead><tr><th>Scheme</th><th>Identifier</th></tr></thead>
           <tbody>
@@ -164,8 +172,40 @@
             <% end %>
           </tbody>
         </table>
-      </div>
-    <% end %>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No document IDs defined</p>
+      <% end %>
+    </div>
+
+    <%# ── Locations ───────────────────────────────────────────── %>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Locations <span class="badge bg-secondary"><%= locations.size %></span></h6>
+      <% if locations.any? %>
+        <table class="table table-sm table-hover">
+          <thead><tr><th>Title</th><th>Address</th></tr></thead>
+          <tbody>
+            <% locations.each do |loc| %>
+              <tr>
+                <td><%= loc["title"] %></td>
+                <td class="small"><%= (loc.dig("address", "addr-lines") || []).join(", ") %> <%= loc.dig("address", "city") %> <%= loc.dig("address", "state") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No locations defined</p>
+      <% end %>
+    </div>
+
+    <%# ── Remarks ─────────────────────────────────────────────── %>
+    <div class="mb-4">
+      <h6 class="fw-semibold">Remarks</h6>
+      <% if remarks.present? %>
+        <div style="white-space: pre-wrap;" class="small"><%= remarks %></div>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No remarks</p>
+      <% end %>
+    </div>
 
     <%# ── Revisions ───────────────────────────────────────────── %>
     <% if revisions.any? %>
@@ -305,16 +345,35 @@
           <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addRevisionRow()">+ Add Revision</button>
         </div>
 
-        <%# ── Advanced: Raw JSON for remaining fields ── %>
-        <details class="mb-3">
-          <summary class="form-label small fw-semibold" style="cursor: pointer;">Advanced: Edit Raw JSON (responsible-parties, props, links, document-ids)</summary>
+        <%# ── Remarks Editor ── %>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Remarks</label>
+          <textarea id="remarks-editor" class="form-control form-control-sm" rows="3"
+                    placeholder="Notes for human readers of the content"><%= remarks %></textarea>
+        </div>
+
+        <%# ── Advanced: Raw JSON for structured fields ── %>
+        <details class="mb-3" open>
+          <summary class="form-label small fw-semibold" style="cursor: pointer;">Advanced: Responsible Parties, Properties, Links, Document IDs, Locations</summary>
+          <% advanced_data = metadata.slice("responsible-parties", "props", "links", "document-ids", "locations")
+             # Pre-populate with template structure for empty fields
+             advanced_template = {
+               "responsible-parties" => responsible_parties.presence || [{ "role-id" => nil, "party-uuids" => [] }],
+               "props" => props.presence || [{ "name" => nil, "value" => nil, "ns" => nil }],
+               "links" => links.presence || [{ "rel" => nil, "href" => nil, "media-type" => nil }],
+               "document-ids" => document_ids.presence || [{ "scheme" => nil, "identifier" => nil }],
+               "locations" => locations.presence || [{ "uuid" => nil, "title" => nil, "address" => { "addr-lines" => [], "city" => nil, "state" => nil, "postal-code" => nil, "country" => nil } }]
+             }
+          %>
           <textarea id="metadata-extra-json"
                     name="<%= param_key %>[metadata_extra_json]"
                     class="form-control form-control-sm font-monospace mt-2"
-                    rows="6"
-                    placeholder='{"props": [{"name": "keywords", "value": "security"}]}'
-          ><%= JSON.pretty_generate(metadata.slice("responsible-parties", "props", "links", "document-ids")) if metadata.any? %></textarea>
-          <div class="form-text">Edit additional OSCAL metadata JSON. Structured editors above for roles, parties, and revisions are merged automatically.</div>
+                    rows="12"
+          ><%= JSON.pretty_generate(advanced_template) %></textarea>
+          <div class="form-text">
+            Edit OSCAL metadata fields as JSON. Fields with <code>null</code> values are excluded from export.
+            Structured editors above for roles, parties, revisions, and remarks are merged automatically.
+          </div>
         </details>
 
         <%# Hidden field that holds the merged metadata_extra JSON (roles + parties + revisions + advanced) %>
@@ -358,11 +417,29 @@
     });
     var revisions = collectRows('revisions-editor', ['version', 'title', 'published', 'last-modified']);
 
-    // Parse advanced JSON
+    // Collect remarks
+    var remarksEl = document.getElementById('remarks-editor');
+    var remarksVal = remarksEl ? remarksEl.value.trim() : '';
+
+    // Parse advanced JSON and validate
     var advanced = {};
     var advEl = document.getElementById('metadata-extra-json');
     if (advEl && advEl.value.trim()) {
-      try { advanced = JSON.parse(advEl.value); } catch(e) { /* ignore parse errors */ }
+      try {
+        advanced = JSON.parse(advEl.value);
+        // Strip null values from arrays (template placeholders)
+        Object.keys(advanced).forEach(function(key) {
+          if (Array.isArray(advanced[key])) {
+            advanced[key] = advanced[key].filter(function(item) {
+              return Object.values(item).some(function(v) { return v !== null && v !== ''; });
+            });
+            if (advanced[key].length === 0) delete advanced[key];
+          }
+        });
+      } catch(e) {
+        alert('Invalid JSON in advanced metadata editor. Please fix the JSON syntax before saving.');
+        return false;
+      }
     }
 
     // Merge structured + advanced
@@ -370,6 +447,7 @@
     if (roles.length > 0) merged['roles'] = roles;
     if (parties.length > 0) merged['parties'] = parties;
     if (revisions.length > 0) merged['revisions'] = revisions;
+    if (remarksVal) merged['remarks'] = remarksVal;
 
     document.getElementById('merged-metadata-extra').value = JSON.stringify(merged);
     // Clear the textarea name so only the hidden field submits

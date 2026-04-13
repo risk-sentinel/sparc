@@ -49,32 +49,15 @@ class OscalCatalogExportService
   end
 
   def build_metadata
-    base = {
-      "title"         => @catalog.name,
-      "version"       => @catalog.oscal_document_version || "1.0.0",
-      "oscal-version" => @catalog.oscal_version || effective_oscal_version,
-      "last-modified" => Time.current.iso8601
-    }
-
-    base["published"] = @catalog.published if @catalog.published.present?
-
-    extra = oscal_metadata_extras
-    if extra.any?
-      base.merge(extra)
-    else
-      base.merge(default_metadata_extras)
-    end
-  end
-
-  def default_metadata_extras
-    {
-      "roles"   => [ { "id" => "creator", "title" => "Document Creator" } ],
-      "parties" => [ {
-        "uuid" => SecureRandom.uuid,
-        "type" => "organization",
-        "name" => "SPARC Export"
-      } ]
-    }
+    @catalog.build_oscal_metadata(
+      default_version: @catalog.oscal_document_version || "1.0.0",
+      default_roles: [
+        { "id" => "creator", "title" => "Document Creator" }
+      ],
+      default_parties: [
+        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+      ]
+    )
   end
 
   def build_groups
@@ -183,18 +166,5 @@ class OscalCatalogExportService
   def base_control?(control_id)
     # Base controls have no enhancement suffix: "ac-1", "ac-2" but not "ac-2.1"
     control_id.match?(/\A[a-z]+-\d+\z/i)
-  end
-
-  # Keys from metadata_extra that are valid OSCAL metadata properties.
-  # Internal/SPARC-specific keys (catalog_uuid, back_matter_resources,
-  # import_format, etc.) are excluded to pass schema validation.
-  OSCAL_METADATA_KEYS = %w[
-    roles parties responsible-parties revisions remarks
-    links props locations
-  ].freeze
-
-  def oscal_metadata_extras
-    raw = @catalog.metadata_extra || {}
-    raw.slice(*OSCAL_METADATA_KEYS)
   end
 end

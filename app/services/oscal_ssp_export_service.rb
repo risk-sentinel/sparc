@@ -82,37 +82,17 @@ class OscalSspExportService
   # ── Metadata ───────────────────────────────────────────────────────
 
   def build_metadata
-    base = {
-      "title"         => @document.name,
-      "version"       => @document.ssp_version || "1.0.0",
-      "oscal-version" => @document.oscal_version || effective_oscal_version,
-      "last-modified" => Time.current.iso8601
-    }
-
-    # Merge preserved metadata fields (roles, parties, revisions, etc.)
-    extra = @document.metadata_extra || {}
-    if extra.any?
-      base.merge(extra)
-    else
-      base.merge(default_metadata_extras)
-    end
-  end
-
-  def default_metadata_extras
-    {
-      "roles" => [
+    @document.build_oscal_metadata(
+      default_version: @document.ssp_version || "1.0.0",
+      default_roles: [
         { "id" => "prepared-by",     "title" => "Prepared By" },
         { "id" => "system-owner",    "title" => "System Owner" },
         { "id" => "authorizing-official", "title" => "Authorizing Official" }
       ],
-      "parties" => [
-        {
-          "uuid" => SecureRandom.uuid,
-          "type" => "organization",
-          "name" => "SPARC Export"
-        }
+      default_parties: [
+        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
       ]
-    }
+    )
   end
 
   # ── Import Profile ─────────────────────────────────────────────────

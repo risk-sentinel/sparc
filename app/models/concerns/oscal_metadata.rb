@@ -10,6 +10,7 @@ module OscalMetadata
 
   METADATA_EXTRA_KEYS = %w[
     roles parties responsible-parties revisions props links document-ids
+    locations remarks
   ].freeze
 
   # Read helpers for metadata_extra sub-fields
@@ -38,21 +39,40 @@ module OscalMetadata
     respond_to?(:profile_version) ? profile_version : nil
   end
 
-  # Build the OSCAL metadata hash for export
-  def build_oscal_metadata
+  # Build the OSCAL metadata hash for export.
+  # Includes all required fields (title, version, oscal-version, last-modified)
+  # plus all optional fields stored in metadata_extra (revisions, document-ids,
+  # responsible-parties, props, links, locations, remarks).
+  #
+  # Options:
+  #   default_version: fallback version string (default: "1.0.0")
+  #   default_roles: array of default role hashes
+  #   default_parties: array of default party hashes
+  def build_oscal_metadata(default_version: "1.0.0", default_roles: nil, default_parties: nil)
     base = {
       "title"         => name,
-      "version"       => oscal_document_version || "1.0.0",
+      "version"       => oscal_document_version || default_version,
       "oscal-version" => oscal_version || DEFAULT_OSCAL_VERSION,
-      "last-modified" => Time.current.iso8601
+      "last-modified" => updated_at&.iso8601 || Time.current.iso8601
     }
 
+    # Include published timestamp if available
+    if respond_to?(:published) && published.present?
+      base["published"] = published.is_a?(String) ? published : published.iso8601
+    end
+
+    # Merge all stored metadata_extra fields
     extra = metadata_extra || {}
     if extra.any?
-      base.merge(extra)
+      merged = base.merge(extra)
     else
-      base.merge(default_oscal_metadata_extras)
+      defaults = default_oscal_metadata_extras
+      defaults["roles"] = default_roles if default_roles.present?
+      defaults["parties"] = default_parties if default_parties.present?
+      merged = base.merge(defaults)
     end
+
+    merged
   end
 
   # Merge metadata from a parent/source document (inheritance)

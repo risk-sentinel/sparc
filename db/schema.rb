@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_12_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_13_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -202,6 +202,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_12_180000) do
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
+    t.string "published"
     t.string "slug"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
@@ -471,6 +472,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_12_180000) do
     t.string "original_filename"
     t.string "oscal_version"
     t.string "poam_version"
+    t.string "published"
     t.string "slug"
     t.string "status", default: "pending"
     t.string "system_id"
@@ -798,6 +800,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_12_180000) do
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
+    t.string "published"
     t.string "sap_version"
     t.string "slug"
     t.bigint "ssp_document_id"
@@ -866,6 +869,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_12_180000) do
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
+    t.string "published"
     t.jsonb "reviewed_controls_data", default: {}
     t.bigint "sap_document_id"
     t.string "sar_version"
@@ -1121,6 +1125,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_12_180000) do
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
+    t.string "published"
     t.string "security_objective_availability"
     t.string "security_objective_confidentiality"
     t.string "security_objective_integrity"

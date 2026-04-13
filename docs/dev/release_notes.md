@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-04-13 -- feat: OSCAL Metadata Compliance — All Spec Fields in Exports (#370)
+
+**Branch:** `feature/370_oscal_metadata_fields`
+
+### Summary
+
+Updated all OSCAL document exports to include the complete metadata section per the OSCAL specification.
+Previously, stored fields (revisions, document-ids, responsible-parties, props, links) were in the
+database but never exported. The `last-modified` timestamp now uses the actual document `updated_at`
+instead of always using the current time. Published timestamp is set automatically on lifecycle publish
+and included in exports. All 8 export services now use a unified metadata builder from the OscalMetadata
+concern instead of duplicated logic.
+
+### What Changed
+
+- **Unified metadata builder** -- `build_oscal_metadata` in OscalMetadata concern accepts default_version,
+  default_roles, default_parties. All 8 export services delegate to it instead of duplicating.
+- **All metadata_extra fields exported** -- revisions, document-ids, responsible-parties, props, links
+  now appear in OSCAL exports when present in the database.
+- **`last-modified` fixed** -- uses `updated_at.iso8601` instead of `Time.current.iso8601`.
+- **`published` field** -- added to SSP, SAR, CDEF, SAP, POA&M (Profile + Catalog already had it).
+  Set automatically by `publish_lifecycle!`. Included in export metadata.
+- **New metadata_extra keys** -- `locations` and `remarks` added to METADATA_EXTRA_KEYS for storage
+  and editing.
+
+### Stats
+
+- **Spec count:** 1592 total, 0 failures
+
+---
+
 ## 2026-04-13 -- feat: Dynamic Configurable Roles + Production Hotfixes (#368)
 
 **Branch:** `feature/368_dynamic_roles`
