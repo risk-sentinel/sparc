@@ -92,7 +92,7 @@ RSpec.describe ProfileJsonParserService, "resolved profile catalog parsing" do
     end
 
     it "assigns the OSCAL UUID from the catalog" do
-      expect(document.uuid).to eq("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+      expect(document.uuid).to eq("c7e4f8a2-3b91-4d5e-9a6c-8f2d1e0b7c34")
     end
   end
 

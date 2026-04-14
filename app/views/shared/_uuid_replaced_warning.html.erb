@@ -1,0 +1,29 @@
+<%# Displays a warning when a document's UUID was replaced during import.
+    Locals:
+      document — the document record (any type with import_metadata)
+%>
+<% if document.respond_to?(:import_metadata) && document.import_metadata&.dig("uuid_replaced") %>
+  <div class="alert alert-warning d-flex align-items-start gap-2 mt-3" role="alert">
+    <strong>UUID Replaced</strong>
+    <div>
+      <% reason = document.import_metadata["uuid_replace_reason"] %>
+      <% original = document.import_metadata["original_uuid"] %>
+      <% if reason == "collision" %>
+        This document's source UUID (<code><%= original %></code>) matched an existing document
+        (ID: <%= document.import_metadata["uuid_collision_with"] %>).
+        A new UUID was auto-assigned to prevent conflicts.
+      <% elsif reason == "non_rfc4122_placeholder" %>
+        This document contained a non-RFC 4122 v4 UUID (<code><%= original %></code>)
+        which does not meet OSCAL compliance requirements.
+        A valid UUID was auto-assigned.
+      <% else %>
+        This document's UUID was replaced during import.
+        Original: <code><%= original %></code>.
+      <% end %>
+      <span class="text-body-secondary small d-block mt-1">
+        The original UUID is preserved in import metadata for audit trail.
+        Current UUID: <code><%= document.try(:uuid) || document.try(:oscal_uuid) %></code>
+      </span>
+    </div>
+  </div>
+<% end %>

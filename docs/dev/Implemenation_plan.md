@@ -485,7 +485,7 @@ Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
 | [ ] | #344 | Upgrade Docker base image to Debian Trixie -- remediate OS-level CVEs | **HIGH** (security) | None |
 | [ ] | #346 | Optimize CodeQL scan -- scope to Ruby, reduce analysis time | LOW | None |
 | [ ] | #358 | Configure Dependabot grouping -- batch low-risk updates | LOW | None |
-| [ ] | #361 | UUID collision handling on OSCAL import + replace placeholder UUIDs | **HIGH** (compliance) | #371 |
+| [x] | #361 | UUID collision handling on OSCAL import + replace placeholder UUIDs -- **COMPLETED 2026-04-14** | **HIGH** (compliance) | #371 |
 | [ ] | #367 | Code coverage threshold and tracking -- SimpleCov integration | MEDIUM | None |
 | [ ] | #372 | Import Authoritative Sources for Global and Organizational Use | **HIGH** (enterprise) | #375 |
 
@@ -536,7 +536,7 @@ removed and are no longer tracked:
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-**Completed (Phases 1-10 + ad-hoc):** 54 issues
-**Remaining:** 9 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #361, #367, #372)
+**Completed (Phases 1-10 + ad-hoc):** 55 issues
+**Remaining:** 8 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #367, #372)
 **Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 planned.
-**First public release: v1.0.0** (#271). **Current version: v1.2.3**.
+**First public release: v1.0.0** (#271). **Current version: v1.2.4**.

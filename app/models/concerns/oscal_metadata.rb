@@ -106,12 +106,54 @@ module OscalMetadata
     self.metadata_extra = merged.compact
   end
 
-  # Assign the OSCAL UUID from an imported document. If the source document
-  # had a UUID, use it; otherwise keep the Postgres-generated default.
+  # Assign the OSCAL UUID from an imported document. Validates the UUID
+  # format (RFC 4122 v4) and checks for collisions with existing documents
+  # before assignment. On collision or invalid format, keeps the auto-generated
+  # UUID and preserves the original in import_metadata for audit trail.
+  #
+  # NIST SI-10: Information Input Validation
+  # NIST AU-10: Non-repudiation (UUID lineage)
   def assign_oscal_uuid!(source_uuid)
     return if source_uuid.blank?
+    return unless persisted?
 
-    update_column(:uuid, source_uuid) if persisted?
+    uuid_col = self.class.column_names.include?("oscal_uuid") ? :oscal_uuid : :uuid
+
+    # Check for collision with existing document of same type
+    existing = self.class.where(uuid_col => source_uuid).where.not(id: id).first
+    if existing
+      store_replaced_uuid(source_uuid, collision_with: existing.id)
+      Rails.logger.warn("[OSCAL UUID] Collision detected: #{source_uuid} already belongs to #{self.class.name}##{existing.id}. Assigned fresh UUID to #{self.class.name}##{id}.")
+      return
+    end
+
+    # Validate RFC 4122 v4 format
+    unless source_uuid.match?(BackMatterResource::UUID_V4_REGEX)
+      store_replaced_uuid(source_uuid, reason: "non_rfc4122_format")
+      Rails.logger.warn("[OSCAL UUID] Non-RFC 4122 v4 UUID detected: #{source_uuid}. Assigned fresh UUID to #{self.class.name}##{id}.")
+      return
+    end
+
+    # Detect obvious placeholder/sequential UUIDs (e.g., a1b2c3d4-1111-4000-a000-000000000008)
+    # These are technically valid v4 format but clearly not random.
+    if placeholder_uuid?(source_uuid)
+      store_replaced_uuid(source_uuid, reason: "placeholder_pattern")
+      Rails.logger.warn("[OSCAL UUID] Placeholder UUID detected: #{source_uuid}. Assigned fresh UUID to #{self.class.name}##{id}.")
+      return
+    end
+
+    update_column(uuid_col, source_uuid)
+  end
+
+  # Record that a source UUID was replaced during import, preserving
+  # the original for audit trail and traceability.
+  def store_replaced_uuid(original_uuid, collision_with: nil, reason: nil)
+    meta = (import_metadata || {}).dup
+    meta["original_uuid"] = original_uuid
+    meta["uuid_replaced"] = true
+    meta["uuid_collision_with"] = collision_with if collision_with
+    meta["uuid_replace_reason"] = reason || "collision"
+    update_column(:import_metadata, meta)
   end
 
   # Regenerate the document UUID after a content change.
@@ -158,6 +200,21 @@ module OscalMetadata
   end
 
   private
+
+  # Detect placeholder/sequential UUIDs that are technically valid v4
+  # format but clearly not randomly generated. These patterns indicate
+  # developer placeholders (e.g., a1b2c3d4-1111-4000-a000-000000000008).
+  PLACEHOLDER_PATTERNS = [
+    /\A(.)\1{7}-/,                          # First 8 chars all the same (00000000-, aaaaaaaa-)
+    /0{6,}/,                                # 6+ consecutive zeros
+    /\Aa1b2c3d4-/i,                         # Known sparc-iac placeholder prefix
+    /\A12345678-/,                           # Sequential digits
+    /\A(.)(.)\1\2\1\2\1\2-/                 # Repeating 2-char pattern (abababab-)
+  ].freeze
+
+  def placeholder_uuid?(uuid)
+    PLACEHOLDER_PATTERNS.any? { |pattern| uuid.match?(pattern) }
+  end
 
   def enforce_oscal_uuid_immutability
     return unless respond_to?(:uuid) && respond_to?(:uuid_changed?)

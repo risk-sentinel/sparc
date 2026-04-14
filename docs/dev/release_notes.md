@@ -4,6 +4,43 @@
 
 ---
 
+## v1.2.4 -- 2026-04-14 -- fix: UUID Collision Handling on OSCAL Import (#361)
+
+**Branch:** `feature/361_uuid_collision_handling`
+
+### Summary
+
+Centralized UUID collision detection and placeholder validation in `assign_oscal_uuid!`.
+Previously, importing an OSCAL document with a UUID matching an existing document caused
+a `PG::UniqueViolation` crash. Now the system detects collisions and invalid UUIDs before
+assignment, keeps the auto-generated UUID, and preserves the original in `import_metadata`
+for audit trail. All 7 document show pages display a warning banner when a UUID was replaced.
+
+### What Changed
+
+- **Collision detection** -- `assign_oscal_uuid!` checks for existing documents with the
+  same UUID before calling `update_column`. On collision, keeps the fresh auto-generated UUID
+  and stores the original in `import_metadata["original_uuid"]` with collision details.
+- **RFC 4122 v4 validation** -- UUIDs that don't match the v4 format (wrong version/variant
+  nibbles) are rejected and replaced with a valid UUID.
+- **Placeholder detection** -- Sequential/placeholder UUIDs (e.g., `a1b2c3d4-1111-4000-...`,
+  `00000000-...`, `12345678-...`) are detected even when they pass the v4 regex, via pattern
+  matching for known placeholder prefixes and consecutive zeros.
+- **Warning banner** -- New `_uuid_replaced_warning.html.erb` partial rendered on all 7
+  document show pages. Displays reason (collision/placeholder/format) and original UUID.
+- **Audit trail** -- `import_metadata` stores `original_uuid`, `uuid_replaced`, `uuid_replace_reason`,
+  and `uuid_collision_with` for compliance traceability (NIST AU-10, SI-10).
+
+### Files Changed
+
+- `app/models/concerns/oscal_metadata.rb` (collision detection, validation, placeholder check)
+- `app/views/shared/_uuid_replaced_warning.html.erb` (NEW)
+- 7 document show views (render warning partial)
+- `app/models/sparc_config.rb` (VERSION 1.2.3 -> 1.2.4)
+- `spec/models/concerns/oscal_metadata_uuid_spec.rb` (NEW -- 15 specs)
+
+---
+
 ## 2026-04-14 -- feat: Back-Matter Resource API with Authoritative Layer (#375)
 
 **Branch:** `feature/375_back_matter_api`

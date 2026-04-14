@@ -368,6 +368,8 @@
   <% end %>
 </div>
 
+<%= render "shared/uuid_replaced_warning", document: @cdef_document %>
+
 <%= render "shared/oscal_metadata_section",
            document: @cdef_document,
            update_path: update_metadata_cdef_document_path(@cdef_document),

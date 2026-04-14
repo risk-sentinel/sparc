@@ -126,6 +126,8 @@
            revalidate_path: revalidate_control_catalog_path(@control_catalog),
            catalog: @control_catalog %>
 
+<%= render "shared/uuid_replaced_warning", document: @control_catalog %>
+
 <%= render "shared/oscal_metadata_section",
            document: @control_catalog,
            update_path: update_metadata_control_catalog_path(@control_catalog),

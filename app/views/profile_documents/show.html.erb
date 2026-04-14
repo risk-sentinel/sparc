@@ -326,6 +326,8 @@
   <% end %>
 </div>
 
+<%= render "shared/uuid_replaced_warning", document: @profile_document %>
+
 <%= render "shared/oscal_metadata_section",
            document: @profile_document,
            update_path: update_metadata_profile_document_path(@profile_document),
