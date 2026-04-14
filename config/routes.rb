@@ -331,6 +331,14 @@ Rails.application.routes.draw do
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ]
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]
 
+      # Back-matter resource management (#375)
+      resources :back_matter_resources, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :link
+          delete :unlink
+        end
+      end
+
       # FedRAMP 20x KSI catalog (read-only, #107)
       resource :ksi_catalog, only: [], controller: "ksi_catalog" do
         get :themes, on: :collection

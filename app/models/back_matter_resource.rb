@@ -55,7 +55,7 @@ class BackMatterResource < ApplicationRecord
   validates :title, presence: true
   validates :uuid, presence: true, uniqueness: true,
             format: { with: UUID_V4_REGEX, message: "must be a valid RFC 4122 v4 UUID" }
-  validates :source, inclusion: { in: %w[managed imported sparc] }
+  validates :source, inclusion: { in: %w[managed imported sparc authoritative] }
   validates :rel, inclusion: { in: REL_VALUES, message: "must be a valid OSCAL link relationship" },
             allow_blank: true
 

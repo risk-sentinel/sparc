@@ -56,6 +56,6 @@ class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
       data[:profile_document_id] = doc.profile_document_id
     end
 
-    data
+    append_oscal_fields(data, doc, detailed: detailed)
   end
 end

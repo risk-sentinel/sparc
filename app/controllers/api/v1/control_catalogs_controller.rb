@@ -102,6 +102,6 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
       data[:short_digest] = catalog.short_digest
     end
 
-    data
+    append_oscal_fields(data, catalog, detailed: detailed)
   end
 end

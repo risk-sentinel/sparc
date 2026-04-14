@@ -99,6 +99,6 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
       data[:controls_count] = profile.profile_controls.count
     end
 
-    data
+    append_oscal_fields(data, profile, detailed: detailed)
   end
 end
