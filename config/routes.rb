@@ -55,6 +55,9 @@ Rails.application.routes.draw do
       get :status
       get :enrich
       patch :update_enrich
+      post :create_control_resource
+      post :link_control_resource
+      delete :unlink_control_resource
     end
     collection do
       post :import_json
@@ -63,6 +66,7 @@ Rails.application.routes.draw do
       get :select_profile
       post :create_from_profile
     end
+    resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
   resources :sar_documents do
@@ -93,6 +97,7 @@ Rails.application.routes.draw do
       get :select_ssp
       post :create_from_ssp
     end
+    resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
   resources :profile_documents do
@@ -119,7 +124,11 @@ Rails.application.routes.draw do
       get :select_profile
       post :create_from_profile
     end
-    resources :profile_controls, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :profile_controls, only: [ :new, :create, :edit, :update, :destroy ] do
+      resources :control_back_matter_links, only: [ :create, :destroy ]
+      post :link_resource, on: :member, controller: "control_back_matter_links", action: "link"
+    end
+    resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
   resources :sap_documents do
@@ -139,6 +148,7 @@ Rails.application.routes.draw do
     collection do
       post :import_json
     end
+    resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
   resources :poam_documents do
@@ -156,6 +166,7 @@ Rails.application.routes.draw do
       get :status
     end
     resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
   resources :evidences do
@@ -177,11 +188,15 @@ Rails.application.routes.draw do
       get :validate_oscal_export
       get :status
       post :copy
+      post :create_control_resource
+      post :link_control_resource
+      delete :unlink_control_resource
     end
     collection do
       get :select_profile
       post :create_from_profile
     end
+    resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
   resources :control_catalogs do
@@ -211,8 +226,11 @@ Rails.application.routes.draw do
           get :batch_new
           post :batch_create
         end
+        resources :control_back_matter_links, only: [ :create, :destroy ]
+        post :link_resource, on: :member, controller: "control_back_matter_links", action: "link"
       end
     end
+    resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
   resources :converters do

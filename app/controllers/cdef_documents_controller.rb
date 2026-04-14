@@ -4,8 +4,8 @@ class CdefDocumentsController < ApplicationController
   include OscalExportable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check]
-  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish ]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource]
+  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource ]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -210,7 +210,55 @@ class CdefDocumentsController < ApplicationController
     }
   end
 
+  # ── Control-level resource linking (AJAX) ───────────────────────────
+
+  def create_control_resource
+    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    resource = BackMatterResource.new(control_resource_params)
+    resource.uuid = SecureRandom.uuid
+    resource.source = "managed"
+    resource.resourceable = @cdef_document
+    resource.organization = current_user.organizations.first if current_user.organizations.any?
+    resource.globally_available = params.dig(:back_matter_resource, :globally_available) == "1"
+
+    if resource.save
+      control.control_back_matter_links.create!(back_matter_resource: resource)
+      audit_log("control_resource_created", subject: resource,
+                metadata: { control_id: params[:control_id], title: resource.title })
+      render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title, href: resource.href } }
+    else
+      render json: { success: false, error: resource.errors.full_messages.join(", ") }, status: :unprocessable_entity
+    end
+  end
+
+  def link_control_resource
+    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    resource = BackMatterResource.find(params[:back_matter_resource_id])
+    link = control.control_back_matter_links.build(back_matter_resource: resource)
+
+    if link.save
+      audit_log("control_resource_linked", subject: resource,
+                metadata: { control_id: params[:control_id], resource_uuid: resource.uuid })
+      render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title } }
+    else
+      render json: { success: false, error: link.errors.full_messages.join(", ") }, status: :unprocessable_entity
+    end
+  end
+
+  def unlink_control_resource
+    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    link = control.control_back_matter_links.find(params[:link_id])
+    audit_log("control_resource_unlinked", subject: link.back_matter_resource,
+              metadata: { control_id: params[:control_id] })
+    link.destroy
+    render json: { success: true }
+  end
+
   private
+
+  def control_resource_params
+    params.require(:back_matter_resource).permit(:title, :description, :href, :media_type, :rel)
+  end
 
   def document_metadata_params
     permitted = params.require(:cdef_document).permit(:name, :cdef_version, :oscal_version, :description)

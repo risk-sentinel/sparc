@@ -1,6 +1,8 @@
 class ProfileControl < ApplicationRecord
   belongs_to :profile_document
   has_many :profile_control_fields, dependent: :delete_all
+  has_many :control_back_matter_links, as: :linkable, dependent: :destroy
+  has_many :back_matter_resources, through: :control_back_matter_links
 
   validates :control_id, presence: true,
                          uniqueness: { scope: :profile_document_id, message: "already exists in this profile" }

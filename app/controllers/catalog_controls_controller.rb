@@ -21,6 +21,7 @@ class CatalogControlsController < ApplicationController
 
   def edit
     @control_family = @catalog_control.control_family
+    load_available_resources
   end
 
   def update
@@ -121,6 +122,20 @@ class CatalogControlsController < ApplicationController
     return if labels.blank?
 
     @catalog_control.params_data = @catalog_control.merge_params_labels(labels.to_h)
+  end
+
+  def load_available_resources
+    @linked_resources = @catalog_control.back_matter_resources.order(:title)
+    org = current_user.organizations.first
+    @available_resources = if org
+      BackMatterResource.org_available(org.id)
+                         .where.not(id: @linked_resources.select(:id))
+                         .order(:title)
+    else
+      BackMatterResource.globally_available
+                         .where.not(id: @linked_resources.select(:id))
+                         .order(:title)
+    end
   end
 
   def authorize_catalog_write!

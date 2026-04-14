@@ -1,6 +1,8 @@
 class CdefControl < ApplicationRecord
   belongs_to :cdef_document
   has_many :cdef_control_fields, dependent: :delete_all
+  has_many :control_back_matter_links, as: :linkable, dependent: :destroy
+  has_many :back_matter_resources, through: :control_back_matter_links
 
   before_save :compute_control_family
 

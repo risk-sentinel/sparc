@@ -8,9 +8,10 @@ class SspDocumentsController < ApplicationController
     :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export,
     :status, :update_metadata, :enrich, :update_enrich,
-    :publish, :publish_check
+    :publish, :publish_check,
+    :create_control_resource, :link_control_resource, :unlink_control_resource
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -296,7 +297,55 @@ class SspDocumentsController < ApplicationController
     end
   end
 
+  # ── Control-level resource linking (AJAX) ───────────────────────────
+
+  def create_control_resource
+    control = @ssp_document.ssp_controls.find_by!(control_id: params[:control_id])
+    resource = BackMatterResource.new(ssp_control_resource_params)
+    resource.uuid = SecureRandom.uuid
+    resource.source = "managed"
+    resource.resourceable = @ssp_document
+    resource.organization = current_user.organizations.first if current_user.organizations.any?
+    resource.globally_available = params.dig(:back_matter_resource, :globally_available) == "1"
+
+    if resource.save
+      control.control_back_matter_links.create!(back_matter_resource: resource)
+      audit_log("control_resource_created", subject: resource,
+                metadata: { control_id: params[:control_id], title: resource.title })
+      render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title, href: resource.href } }
+    else
+      render json: { success: false, error: resource.errors.full_messages.join(", ") }, status: :unprocessable_entity
+    end
+  end
+
+  def link_control_resource
+    control = @ssp_document.ssp_controls.find_by!(control_id: params[:control_id])
+    resource = BackMatterResource.find(params[:back_matter_resource_id])
+    link = control.control_back_matter_links.build(back_matter_resource: resource)
+
+    if link.save
+      audit_log("control_resource_linked", subject: resource,
+                metadata: { control_id: params[:control_id], resource_uuid: resource.uuid })
+      render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title } }
+    else
+      render json: { success: false, error: link.errors.full_messages.join(", ") }, status: :unprocessable_entity
+    end
+  end
+
+  def unlink_control_resource
+    control = @ssp_document.ssp_controls.find_by!(control_id: params[:control_id])
+    link = control.control_back_matter_links.find(params[:link_id])
+    audit_log("control_resource_unlinked", subject: link.back_matter_resource,
+              metadata: { control_id: params[:control_id] })
+    link.destroy
+    render json: { success: true }
+  end
+
   private
+
+  def ssp_control_resource_params
+    params.require(:back_matter_resource).permit(:title, :description, :href, :media_type, :rel)
+  end
 
   def document_metadata_params
     permitted = params.require(:ssp_document).permit(:name, :ssp_version, :oscal_version, :description)

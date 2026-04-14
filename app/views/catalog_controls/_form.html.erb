@@ -166,3 +166,75 @@
     <%= link_to "Cancel", control_family, class: "btn btn-secondary" %>
   </div>
 <% end %>
+
+<%# ── Back-Matter References (outside parent form to avoid nested forms) ── %>
+<% if !catalog_control.new_record? %>
+  <% linked = defined?(@linked_resources) ? @linked_resources : catalog_control.back_matter_resources.order(:title) %>
+  <% available = defined?(@available_resources) ? @available_resources : [] %>
+  <details class="border rounded mt-4" style="padding: 0;" <%= "open" if linked.any? %>>
+    <summary class="fw-semibold small bg-body-secondary rounded d-flex align-items-center gap-2" style="padding: 0.65rem 1rem; cursor: pointer; list-style: none;">
+      <span>&#9656;</span> Back-Matter References
+      <span class="badge rounded-pill text-bg-info" style="font-size: 0.7rem; font-weight: 500;">
+        <%= linked.size %>
+      </span>
+    </summary>
+    <div class="p-3">
+      <p class="text-body-tertiary" style="font-size: 0.78rem; margin-bottom: 0.75rem;">
+        Link back-matter resources (policies, evidence, external references) to this control.
+        Linked resources appear as <code>href="#uuid"</code> references in OSCAL exports.
+      </p>
+
+      <%# ── Currently linked ── %>
+      <% if linked.any? %>
+        <table class="table table-sm mb-3" style="font-size: 0.82rem;">
+          <thead>
+            <tr><th>Title</th><th>UUID</th><th>Href</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% linked.each do |resource| %>
+              <tr>
+                <td><%= resource.title %></td>
+                <td><code class="small"><%= resource.uuid.truncate(20) %></code></td>
+                <td class="text-break small"><%= resource.href %></td>
+                <td>
+                  <% link_record = catalog_control.control_back_matter_links.find_by(back_matter_resource: resource) %>
+                  <% if link_record %>
+                    <%= button_to "Unlink",
+                          catalog_control_control_back_matter_link_path(catalog_control, link_record),
+                          method: :delete,
+                          class: "btn btn-sm btn-outline-danger",
+                          data: { turbo_confirm: "Unlink \"#{resource.title}\"?" } %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <%# ── Link existing resource ── %>
+      <% if available.any? %>
+        <div class="mb-3">
+          <h6 class="fw-semibold small">Link Existing Resource</h6>
+          <%= form_with url: link_resource_catalog_control_path(catalog_control), method: :post, local: true, class: "d-flex gap-2 align-items-end" do %>
+            <div class="flex-grow-1">
+              <select name="back_matter_resource_id" class="form-select form-select-sm">
+                <option value="">Select a resource...</option>
+                <% available.each do |r| %>
+                  <option value="<%= r.id %>"><%= r.title %> (<%= r.uuid.truncate(12) %>)</option>
+                <% end %>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Link</button>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# ── Create new resource ── %>
+      <h6 class="fw-semibold small">Create New Resource</h6>
+      <%= form_with url: catalog_control_control_back_matter_links_path(catalog_control), method: :post, local: true do %>
+        <%= render "shared/resource_form_fields" %>
+      <% end %>
+    </div>
+  </details>
+<% end %>

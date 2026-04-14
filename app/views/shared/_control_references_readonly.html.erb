@@ -1,0 +1,25 @@
+<%# Read-only display of back-matter resources linked to a control.
+    Locals:
+      control — any control model with :back_matter_resources association
+%>
+<% ctrl_refs = control.respond_to?(:back_matter_resources) ? control.back_matter_resources.order(:title) : [] %>
+<% if ctrl_refs.any? %>
+  <div class="mt-2">
+    <span class="fw-semibold small text-body-secondary">
+      References
+      <span class="badge bg-secondary" style="font-size: 0.6rem;"><%= ctrl_refs.size %></span>
+    </span>
+    <div class="d-flex flex-wrap gap-2 mt-1">
+      <% ctrl_refs.each do |resource| %>
+        <span class="badge bg-body-secondary text-body d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; font-weight: 500;">
+          <% if resource.href.present? %>
+            <a href="<%= resource.href %>" target="_blank" class="text-decoration-none"><%= resource.title %></a>
+          <% else %>
+            <%= resource.title %>
+          <% end %>
+          <code class="small text-body-tertiary ms-1">#<%= resource.uuid.truncate(12) %></code>
+        </span>
+      <% end %>
+    </div>
+  </div>
+<% end %>

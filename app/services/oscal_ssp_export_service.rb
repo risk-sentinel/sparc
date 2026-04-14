@@ -352,6 +352,13 @@ class OscalSspExportService
     remarks = build_remarks(control, field_map)
     result["remarks"] = remarks if remarks.present?
 
+    # Back-matter resource links (href="#uuid" references)
+    if control.respond_to?(:back_matter_resources) && control.back_matter_resources.any?
+      result["links"] = control.back_matter_resources.map do |resource|
+        { "href" => "##{resource.uuid}", "rel" => resource.rel.presence || "reference" }
+      end
+    end
+
     result
   end
 
