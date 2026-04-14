@@ -374,6 +374,8 @@
 
 <% end %>
 
+<%= render "shared/uuid_replaced_warning", document: @poam_document %>
+
 <%= render "shared/oscal_metadata_section",
            document: @poam_document,
            update_path: update_metadata_poam_document_path(@poam_document),

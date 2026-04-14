@@ -690,8 +690,8 @@ removed and are no longer tracked:
 ## Summary
 
 - **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-- **Completed:** 54 issues (Phases 1-10)
-- **Remaining:** 9 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #361, #367, #372)
+- **Completed:** 55 issues (Phases 1-10 + #361)
+- **Remaining:** 8 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #367, #372)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
 - **Phases 1-9:** COMPLETE (2026-03-14 through 2026-03-21)

@@ -469,6 +469,8 @@
 </div>
 <% end %>
 
+<%= render "shared/uuid_replaced_warning", document: @sar_document %>
+
 <%= render "shared/oscal_metadata_section",
            document: @sar_document,
            update_path: update_metadata_sar_document_path(@sar_document),

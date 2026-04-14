@@ -548,6 +548,8 @@
   <% end %>
 </div>
 
+<%= render "shared/uuid_replaced_warning", document: @ssp_document %>
+
 <%= render "shared/oscal_metadata_section",
            document: @ssp_document,
            update_path: update_metadata_ssp_document_path(@ssp_document),
