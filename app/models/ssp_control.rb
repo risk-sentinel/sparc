@@ -5,6 +5,8 @@ class SspControl < ApplicationRecord
            dependent: :destroy, inverse_of: :parent
   has_many :ssp_control_fields, dependent: :destroy
   has_many :ssp_by_components, dependent: :delete_all
+  has_many :control_back_matter_links, as: :linkable, dependent: :destroy
+  has_many :back_matter_resources, through: :control_back_matter_links
 
   # Paragraph/ReqID is null for provider statement rows — allow it
   validates :control_id, uniqueness: { scope: :ssp_document_id, allow_nil: true }

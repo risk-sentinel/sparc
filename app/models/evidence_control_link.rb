@@ -6,8 +6,47 @@ class EvidenceControlLink < ApplicationRecord
 
   DOCUMENT_TYPES = %w[SspDocument SarDocument SapDocument CdefDocument PoamDocument].freeze
 
+  after_create :sync_back_matter_resource
+  after_destroy :cleanup_back_matter_resource
+
   def document
     return nil unless document_type.present? && document_id.present?
     document_type.constantize.find_by(id: document_id)
+  end
+
+  private
+
+  # Ensure a BackMatterResource exists for this evidence on the linked document
+  def sync_back_matter_resource
+    doc = document
+    return unless doc && evidence&.uuid.present?
+
+    BackMatterResource.find_or_create_by!(
+      resourceable: doc,
+      evidence: evidence,
+      uuid: evidence.uuid
+    ) do |r|
+      r.title = evidence.title || "Evidence: #{evidence.evidence_type}"
+      r.description = "#{evidence.evidence_type&.titleize} evidence linked to #{control_id}"
+      r.media_type = evidence.file&.content_type if evidence.file&.attached?
+      r.href = evidence.original_filename
+      r.source = "managed"
+    end
+  end
+
+  # Remove back-matter resource if no more links exist for this evidence on this document
+  def cleanup_back_matter_resource
+    doc = document
+    return unless doc && evidence
+
+    remaining = EvidenceControlLink.where(
+      evidence: evidence,
+      document_type: document_type,
+      document_id: document_id
+    ).where.not(id: id).exists?
+
+    unless remaining
+      BackMatterResource.where(resourceable: doc, evidence: evidence).destroy_all
+    end
   end
 end

@@ -265,6 +265,7 @@
         </details>
       <% end %>
 
+      <%= render "shared/control_references_readonly", control: control %>
     </div><%# end .control-card %>
   <% end %>
       </div>
@@ -363,6 +364,10 @@
            update_path: update_metadata_sap_document_path(@sap_document),
            param_key: :sap_document,
            version_field: :sap_version %>
+
+<%= render "shared/oscal_back_matter_section",
+           document: @sap_document,
+           resources_path: sap_document_back_matter_resources_path(@sap_document) %>
 
 <script>
   function toggleDocMeta() {

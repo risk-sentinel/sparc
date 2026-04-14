@@ -1,0 +1,239 @@
+<%# OSCAL Back-Matter Section — shared across all document show pages.
+    Locals:
+      document      — the document record (SspDocument, SarDocument, etc.)
+      resources_path — the collection path for creating back-matter resources
+                       (e.g., ssp_document_back_matter_resources_path(@ssp_document))
+%>
+
+<% managed_resources = document.back_matter_resources.order(:title) %>
+<% imported_resources = document.respond_to?(:import_metadata) ? (document.import_metadata&.dig("back_matter") || []) : [] %>
+<% is_draft = document.respond_to?(:draft?) ? document.draft? : true %>
+
+<div class="card mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="cursor: pointer;"
+       onclick="document.getElementById('oscal-back-matter-body').classList.toggle('d-none');
+                this.querySelector('.toggle-icon').textContent =
+                  document.getElementById('oscal-back-matter-body').classList.contains('d-none') ? '+' : '-';">
+    <h5 class="mb-0 fw-semibold">OSCAL Back Matter</h5>
+    <span class="toggle-icon fw-bold">+</span>
+  </div>
+
+  <div id="oscal-back-matter-body" class="card-body d-none">
+
+    <%# ── Managed Resources ──────────────────────────────────────── %>
+    <div class="mb-4">
+      <h6 class="fw-semibold">
+        Managed Resources
+        <span class="badge bg-secondary"><%= managed_resources.size %></span>
+      </h6>
+
+      <% if managed_resources.any? %>
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>UUID</th>
+              <th>Description</th>
+              <th>Media Type</th>
+              <th>Href</th>
+              <th>Source</th>
+              <% if is_draft && signed_in? %><th>Actions</th><% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% managed_resources.each do |resource| %>
+              <tr id="resource-<%= resource.id %>">
+                <td><%= resource.title %></td>
+                <td><code class="small"><%= resource.uuid %></code></td>
+                <td class="text-body-secondary small"><%= truncate(resource.description, length: 80) %></td>
+                <td class="small"><%= resource.media_type %></td>
+                <td class="text-break small"><%= resource.href %></td>
+                <td>
+                  <span class="badge bg-<%= resource.source == 'managed' ? 'primary' : 'secondary' %>">
+                    <%= resource.source %>
+                  </span>
+                  <% if resource.evidence_id.present? %>
+                    <span class="badge bg-info">evidence</span>
+                  <% end %>
+                  <% if resource.globally_available? %>
+                    <span class="badge bg-success">global</span>
+                  <% end %>
+                  <% if resource.organization.present? %>
+                    <span class="badge bg-body-secondary text-body" title="Organization"><%= resource.organization.name %></span>
+                  <% end %>
+                </td>
+                <% if is_draft && signed_in? %>
+                  <td class="text-nowrap">
+                    <button class="btn btn-sm btn-outline-primary"
+                            type="button"
+                            onclick="toggleEditResource(<%= resource.id %>)"
+                            title="Edit resource">
+                      Edit
+                    </button>
+                    <%= button_to "Delete",
+                          [document, resource],
+                          method: :delete,
+                          class: "btn btn-sm btn-outline-danger",
+                          data: { turbo_confirm: "Remove back-matter resource \"#{resource.title}\"?" } %>
+                  </td>
+                <% end %>
+              </tr>
+              <% if is_draft && signed_in? %>
+                <tr id="edit-resource-<%= resource.id %>" class="d-none">
+                  <td colspan="7">
+                    <%= form_with(model: resource, url: [document, resource], method: :patch, class: "row g-2 align-items-end") do |f| %>
+                      <div class="col-md-2">
+                        <label class="form-label small">Title</label>
+                        <%= f.text_field :title, class: "form-control form-control-sm" %>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label small">Description</label>
+                        <%= f.text_field :description, class: "form-control form-control-sm" %>
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label small">Href</label>
+                        <%= f.text_field :href, class: "form-control form-control-sm", placeholder: "https://..." %>
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label small">Media Type</label>
+                        <%= f.text_field :media_type, class: "form-control form-control-sm", placeholder: "application/pdf" %>
+                      </div>
+                      <div class="col-md-3">
+                        <%= f.submit "Save", class: "btn btn-sm btn-primary" %>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="toggleEditResource(<%= resource.id %>)">
+                          Cancel
+                        </button>
+                      </div>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-body-tertiary small fst-italic">No managed resources</p>
+      <% end %>
+    </div>
+
+    <%# ── Imported Resources (read-only) ─────────────────────────── %>
+    <% if imported_resources.any? %>
+      <div class="mb-4">
+        <h6 class="fw-semibold">
+          Imported Resources
+          <span class="badge bg-secondary"><%= imported_resources.size %></span>
+        </h6>
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>UUID</th>
+              <th>Description</th>
+              <th>Rlinks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% imported_resources.each do |resource| %>
+              <tr>
+                <td><%= resource["title"] %></td>
+                <td><code class="small"><%= resource["uuid"] %></code></td>
+                <td class="text-body-secondary small"><%= truncate(resource["description"].to_s, length: 80) %></td>
+                <td class="small">
+                  <% (resource["rlinks"] || []).each do |rlink| %>
+                    <code class="text-break"><%= rlink["href"] %></code>
+                    <% if rlink["media-type"] %>
+                      (<%= rlink["media-type"] %>)
+                    <% end %>
+                    <br>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p class="text-body-tertiary small fst-italic">
+          Imported resources are preserved from the original OSCAL document and are read-only.
+          Create a managed resource with the same UUID to override an imported resource.
+        </p>
+      </div>
+    <% end %>
+
+    <%# ── Add New Resource Form (draft only) ─────────────────────── %>
+    <% if is_draft && signed_in? %>
+      <hr>
+      <%
+        # Build control list for "Associate to Control" dropdown
+        doc_controls = []
+        if document.respond_to?(:ssp_controls)
+          doc_controls = document.ssp_controls.where.not(control_id: nil).order(:control_id).pluck(:control_id, :id).map { |cid, id| ["#{cid.upcase}", "SspControl:#{id}"] }
+        elsif document.respond_to?(:cdef_controls)
+          doc_controls = document.cdef_controls.order(:control_id).pluck(:control_id, :id).map { |cid, id| [cid, "CdefControl:#{id}"] }
+        elsif document.respond_to?(:profile_controls)
+          doc_controls = document.profile_controls.order(:control_id).pluck(:control_id, :id).map { |cid, id| ["#{cid.upcase}", "ProfileControl:#{id}"] }
+        elsif document.respond_to?(:catalog_controls)
+          doc_controls = document.catalog_controls.order(:control_id).pluck(:control_id, :id).map { |cid, id| ["#{cid.upcase}", "CatalogControl:#{id}"] }
+        end
+      %>
+      <div id="add-resource-section">
+        <h6 class="fw-semibold mb-3">Add Resource</h6>
+        <%= form_with(model: BackMatterResource.new, url: resources_path, method: :post) do |f| %>
+          <div class="d-flex gap-2 align-items-end flex-wrap">
+            <div style="flex: 2; min-width: 140px;">
+              <label class="form-label small mb-1">Title <span class="text-danger">*</span></label>
+              <%= f.text_field :title, class: "form-control form-control-sm", required: true, placeholder: "Security Policy" %>
+            </div>
+            <div style="flex: 2; min-width: 140px;">
+              <label class="form-label small mb-1">Description</label>
+              <%= f.text_field :description, class: "form-control form-control-sm", placeholder: "Brief description..." %>
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+              <label class="form-label small mb-1">Relationship</label>
+              <%= f.select :rel, BackMatterResource::REL_VALUES.map { |v| [v, v] },
+                    { selected: "reference" }, class: "form-select form-select-sm" %>
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label class="form-label small mb-1">Media Type</label>
+              <%= f.select :media_type, BackMatterResource::MEDIA_TYPE_OPTIONS,
+                    { include_blank: "— select —" }, class: "form-select form-select-sm" %>
+            </div>
+            <div style="flex: 3; min-width: 180px;">
+              <label class="form-label small mb-1">Href</label>
+              <%= f.text_field :href, class: "form-control form-control-sm", placeholder: "https://..." %>
+            </div>
+            <% if doc_controls.any? %>
+              <div style="flex: 1; min-width: 120px;">
+                <label class="form-label small mb-1">Control</label>
+                <select name="link_to_control" class="form-select form-select-sm">
+                  <option value="">— none —</option>
+                  <% doc_controls.each do |label, value| %>
+                    <option value="<%= value %>"><%= label %></option>
+                  <% end %>
+                </select>
+              </div>
+            <% end %>
+            <div style="min-width: 60px;">
+              <label class="form-check-label small d-block mb-1">
+                <%= f.check_box :globally_available, class: "form-check-input" %> Global
+              </label>
+            </div>
+            <div>
+              <%= f.submit "Add Resource", class: "btn btn-sm btn-success" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+  </div><%# end card-body %>
+</div><%# end card %>
+
+<script>
+  function toggleEditResource(resourceId) {
+    var editRow = document.getElementById('edit-resource-' + resourceId);
+    if (editRow) {
+      editRow.classList.toggle('d-none');
+    }
+  }
+</script>

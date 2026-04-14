@@ -1,6 +1,8 @@
 class SarControl < ApplicationRecord
   belongs_to :sar_document
   has_many :sar_control_fields, dependent: :delete_all
+  has_many :control_back_matter_links, as: :linkable, dependent: :destroy
+  has_many :back_matter_resources, through: :control_back_matter_links
 
   # Multiple test rows can share the same Paragraph (control_id)
   # and a row may have no Paragraph — no uniqueness or presence enforced

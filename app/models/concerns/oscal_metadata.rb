@@ -3,6 +3,7 @@ module OscalMetadata
 
   included do
     before_update :enforce_oscal_uuid_immutability
+    has_many :back_matter_resources, as: :resourceable, dependent: :destroy
   end
 
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
@@ -128,10 +129,20 @@ module OscalMetadata
   end
 
   # Build an OSCAL-compliant back-matter resource identifying SPARC as the
-  # document manager. Appended to every export for auditor traceability.
+  # document manager. Uses a persistent UUID stored in import_metadata so
+  # the same UUID is used across exports (traceability).
   def sparc_back_matter_resource
+    uuid = import_metadata&.dig("sparc_resource_uuid")
+    unless uuid
+      uuid = SecureRandom.uuid
+      if persisted?
+        update_column(:import_metadata,
+          (import_metadata || {}).merge("sparc_resource_uuid" => uuid))
+      end
+    end
+
     {
-      "uuid"        => SecureRandom.uuid,
+      "uuid"        => uuid,
       "title"       => "SPARC Document Source",
       "description" => "Managed by #{SparcConfig.app_name}",
       "rlinks"      => [
@@ -140,12 +151,10 @@ module OscalMetadata
     }
   end
 
-  # Build the OSCAL back-matter hash for export. Merges preserved resources
-  # from import_metadata with the SPARC-identifying resource.
+  # Build the OSCAL back-matter hash for export. Merges managed resources,
+  # imported resources (deduplicated), and the SPARC identifier resource.
   def build_oscal_back_matter
-    preserved = import_metadata&.dig("back_matter") || []
-    resources = preserved + [ sparc_back_matter_resource ]
-    { "resources" => resources }
+    BackMatterBuilder.new(self).build
   end
 
   private

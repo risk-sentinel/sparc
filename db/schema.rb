@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_13_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_14_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -118,6 +118,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_180000) do
     t.index ["user_id"], name: "index_authorization_boundary_memberships_on_user_id"
   end
 
+  create_table "back_matter_resources", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "evidence_id"
+    t.boolean "globally_available", default: false, null: false
+    t.string "href"
+    t.string "media_type"
+    t.bigint "organization_id"
+    t.string "rel", default: "reference", null: false
+    t.jsonb "resource_data", default: {}, null: false
+    t.bigint "resourceable_id", null: false
+    t.string "resourceable_type", null: false
+    t.string "source", default: "managed", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["evidence_id"], name: "index_back_matter_resources_on_evidence_id"
+    t.index ["globally_available"], name: "idx_back_matter_resources_global", where: "(globally_available = true)"
+    t.index ["organization_id"], name: "index_back_matter_resources_on_organization_id"
+    t.index ["resourceable_type", "resourceable_id"], name: "idx_back_matter_resources_on_resourceable"
+    t.index ["uuid"], name: "index_back_matter_resources_on_uuid", unique: true
+  end
+
   create_table "boundaries", force: :cascade do |t|
     t.bigint "authorization_boundary_id", null: false
     t.datetime "created_at", null: false
@@ -215,6 +238,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_180000) do
     t.index ["slug"], name: "index_cdef_documents_on_slug", unique: true
     t.index ["status"], name: "index_cdef_documents_on_status"
     t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
+  end
+
+  create_table "control_back_matter_links", force: :cascade do |t|
+    t.bigint "back_matter_resource_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "linkable_id", null: false
+    t.string "linkable_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["back_matter_resource_id"], name: "index_control_back_matter_links_on_back_matter_resource_id"
+    t.index ["linkable_type", "linkable_id", "back_matter_resource_id"], name: "idx_control_back_matter_links_unique", unique: true
+    t.index ["linkable_type", "linkable_id"], name: "idx_control_back_matter_links_linkable"
   end
 
   create_table "control_catalogs", force: :cascade do |t|
@@ -370,11 +404,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_180000) do
     t.string "status", default: "draft", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_evidences_on_authorization_boundary_id"
     t.index ["collected_at"], name: "index_evidences_on_collected_at"
     t.index ["evidence_type"], name: "index_evidences_on_evidence_type"
     t.index ["slug"], name: "index_evidences_on_slug", unique: true
     t.index ["status"], name: "index_evidences_on_status"
+    t.index ["uuid"], name: "index_evidences_on_uuid", unique: true
   end
 
   create_table "identities", force: :cascade do |t|
@@ -1268,6 +1304,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_180000) do
   add_foreign_key "authorization_boundaries", "organizations", on_delete: :nullify
   add_foreign_key "authorization_boundary_memberships", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "authorization_boundary_memberships", "users", on_delete: :nullify
+  add_foreign_key "back_matter_resources", "evidences", on_delete: :nullify
+  add_foreign_key "back_matter_resources", "organizations"
   add_foreign_key "boundaries", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "boundaries", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "cdef_documents", on_delete: :cascade
@@ -1275,6 +1313,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_180000) do
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify
+  add_foreign_key "control_back_matter_links", "back_matter_resources"
   add_foreign_key "control_families", "control_catalogs"
   add_foreign_key "control_mapping_entries", "control_mappings"
   add_foreign_key "control_mappings", "control_catalogs", column: "source_catalog_id"

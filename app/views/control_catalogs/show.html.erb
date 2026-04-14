@@ -131,4 +131,8 @@
            update_path: update_metadata_control_catalog_path(@control_catalog),
            param_key: :control_catalog,
            version_field: :version %>
+
+<%= render "shared/oscal_back_matter_section",
+           document: @control_catalog,
+           resources_path: control_catalog_back_matter_resources_path(@control_catalog) %>
 <% end %>

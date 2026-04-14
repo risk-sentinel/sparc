@@ -454,6 +454,7 @@
         </div>
       </details>
 
+      <%= render "shared/control_references_readonly", control: control %>
     </div><%# end .control-card %>
   <% end %>
 </div>
@@ -473,6 +474,10 @@
            update_path: update_metadata_sar_document_path(@sar_document),
            param_key: :sar_document,
            version_field: :sar_version %>
+
+<%= render "shared/oscal_back_matter_section",
+           document: @sar_document,
+           resources_path: sar_document_back_matter_resources_path(@sar_document) %>
 
 <script>
   function toggleEdit(id) {

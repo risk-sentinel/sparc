@@ -21,7 +21,9 @@ class ProfileControlsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    load_available_resources
+  end
 
   def update
     if @profile_control.update(profile_control_params)
@@ -74,6 +76,20 @@ class ProfileControlsController < ApplicationController
       )
       field.field_value = value.to_s.strip
       field.save!
+    end
+  end
+
+  def load_available_resources
+    @linked_resources = @profile_control.back_matter_resources.order(:title)
+    org = current_user.organizations.first
+    @available_resources = if org
+      BackMatterResource.org_available(org.id)
+                         .where.not(id: @linked_resources.select(:id))
+                         .order(:title)
+    else
+      BackMatterResource.globally_available
+                         .where.not(id: @linked_resources.select(:id))
+                         .order(:title)
     end
   end
 end

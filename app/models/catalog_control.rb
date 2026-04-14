@@ -1,6 +1,8 @@
 class CatalogControl < ApplicationRecord
   belongs_to :control_family
   has_many :ksi_validations, dependent: :destroy
+  has_many :control_back_matter_links, as: :linkable, dependent: :destroy
+  has_many :back_matter_resources, through: :control_back_matter_links
 
   # Structured guidance fields stored in the guidance_data JSONB column.
   # These come from the providing catalog (e.g. r5.json / r4_final.json) and
