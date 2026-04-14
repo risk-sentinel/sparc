@@ -53,6 +53,6 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
       data[:observations_count] = doc.poam_observations.count
     end
 
-    data
+    append_oscal_fields(data, doc, detailed: detailed)
   end
 end

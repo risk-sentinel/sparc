@@ -39,6 +39,54 @@ class Api::V1::BaseController < ActionController::API
     }
   end
 
+  # Shared OSCAL metadata and back-matter serialization for document APIs.
+  # Call from serialize_document to append published, metadata_extra, and
+  # back_matter_resources to any document response hash.
+  def append_oscal_fields(data, doc, detailed: false)
+    data[:published] = doc.try(:published)
+    data[:back_matter_resources_count] = doc.respond_to?(:back_matter_resources) ? doc.back_matter_resources.count : 0
+
+    if detailed
+      data[:oscal_metadata] = doc.try(:metadata_extra) || {}
+      if doc.respond_to?(:back_matter_resources)
+        data[:back_matter_resources] = doc.back_matter_resources.order(:title).map do |r|
+          serialize_back_matter_resource(r)
+        end
+      end
+    end
+
+    data
+  end
+
+  def serialize_back_matter_resource(resource, detailed: false)
+    data = {
+      id: resource.id,
+      uuid: resource.uuid,
+      title: resource.title,
+      rel: resource.rel,
+      media_type: resource.media_type,
+      href: resource.href,
+      source: resource.source,
+      globally_available: resource.globally_available,
+      organization_id: resource.organization_id,
+      created_at: resource.created_at.iso8601,
+      updated_at: resource.updated_at.iso8601
+    }
+
+    if detailed
+      data[:description] = resource.description
+      data[:resource_data] = resource.resource_data
+      data[:evidence_id] = resource.evidence_id
+      data[:resourceable_type] = resource.resourceable_type
+      data[:resourceable_id] = resource.resourceable_id
+      data[:linked_controls] = resource.control_back_matter_links.map do |link|
+        { type: link.linkable_type, id: link.linkable_id }
+      end
+    end
+
+    data
+  end
+
   # Provide audit_log helper since we're not inheriting from ApplicationController.
   # Uses AuditEvent.log which handles polymorphic subject extraction.
   def audit_log(action, subject: nil, metadata: {})

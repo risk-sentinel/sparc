@@ -353,6 +353,26 @@ puts token.plaintext_token  # Save this &mdash; cannot be retrieved again</code>
       </div>
     </section>
 
+    <%# ── Back-Matter Resources ── %>
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3" style="color: #27ae60;">Back-Matter Resources</h2>
+      <p class="small text-body-secondary">OSCAL back-matter resource management with control linking, organization scoping, and authoritative layer. Requires <code>back_matter.read</code> / <code>back_matter.write</code> permissions.</p>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Permission</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/back_matter_resources</code></td><td>List resources (filterable by org, rel, source, control)</td><td><code>back_matter.read</code></td></tr>
+            <tr><td><span class="badge bg-primary">GET</span></td><td><code>/api/v1/back_matter_resources/:id</code></td><td>Show resource with linked controls</td><td><code>back_matter.read</code></td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/back_matter_resources</code></td><td>Create resource (OSCAL-validated rel + media-type)</td><td><code>back_matter.write</code></td></tr>
+            <tr><td><span class="badge bg-warning text-dark">PATCH</span></td><td><code>/api/v1/back_matter_resources/:id</code></td><td>Update resource</td><td><code>back_matter.write</code></td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/back_matter_resources/:id</code></td><td>Delete resource + all control links</td><td><code>back_matter.write</code></td></tr>
+            <tr><td><span class="badge bg-success">POST</span></td><td><code>/api/v1/back_matter_resources/:id/link</code></td><td>Link resource to a control (<code>linkable_type</code> + <code>linkable_id</code>)</td><td><code>back_matter.write</code></td></tr>
+            <tr><td><span class="badge bg-danger">DELETE</span></td><td><code>/api/v1/back_matter_resources/:id/unlink</code></td><td>Unlink from control (<code>link_id</code> param)</td><td><code>back_matter.write</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <%# ── Users ── %>
     <section class="mb-5">
       <h2 class="h4 fw-bold mb-3" style="color: var(--sparc-primary);">Users</h2>

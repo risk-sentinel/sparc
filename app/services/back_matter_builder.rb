@@ -18,20 +18,36 @@ class BackMatterBuilder
   end
 
   def build
-    resources = managed_resources + deduplicated_imports + [ sparc_resource ]
+    resources = authoritative_resources + managed_resources + deduplicated_imports + [ sparc_resource ]
     { "resources" => resources }
   end
 
   private
 
+  # Instance-level authoritative resources (provider-published, highest priority).
+  # Included in all document exports. Cannot be overridden by managed resources.
+  def authoritative_resources
+    @authoritative_resources ||= BackMatterResource.where(source: "authoritative")
+                                                    .map(&:to_oscal_resource)
+  end
+
+  def authoritative_uuids
+    @authoritative_uuids ||= BackMatterResource.where(source: "authoritative")
+                                                .pluck(:uuid).to_set
+  end
+
   def managed_resources
-    doc_resources = @document.back_matter_resources.map(&:to_oscal_resource)
+    doc_resources = @document.back_matter_resources.where.not(source: "authoritative")
+                             .map(&:to_oscal_resource)
     ctrl_resources = control_linked_resources.map(&:to_oscal_resource)
+    # Exclude UUIDs already claimed by authoritative resources
     (doc_resources + ctrl_resources).uniq { |r| r["uuid"] }
+                                    .reject { |r| authoritative_uuids.include?(r["uuid"]) }
   end
 
   def managed_uuids
     @managed_uuids ||= (
+      authoritative_uuids.to_a +
       @document.back_matter_resources.pluck(:uuid) +
       control_linked_resources.pluck(:uuid)
     ).to_set

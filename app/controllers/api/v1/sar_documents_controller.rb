@@ -137,6 +137,6 @@ class Api::V1::SarDocumentsController < Api::V1::DocumentBaseController
       data[:ssp_document_id] = doc.ssp_document_id
     end
 
-    data
+    append_oscal_fields(data, doc, detailed: detailed)
   end
 end

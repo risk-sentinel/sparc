@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-03-26
+**Last updated:** 2026-04-14
 
 ---
 
@@ -445,29 +445,53 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | #262 | Service account token expiry email notifications -- **COMPLETED 2026-03-22** | **HIGH** (security) | AFTER #257 |
 | [x] | #271 | Consolidate all releases into v1.0.0 (first public release) -- **COMPLETED 2026-03-22** | **HIGH** | All phases complete |
 | [x] | #300 | Compliance artifact pipeline with S3 upload on PRs (OIDC + CDEF validation) -- **COMPLETED 2026-03-25** | **HIGH** (security) | None |
+| [x] | #316 | Signed Docker image build pipeline -- **COMPLETED 2026-03-31** | MEDIUM | None |
+| [x] | #335 | Paths filters on CI workflows -- **COMPLETED 2026-04-02** | LOW | None |
+| [x] | #340 | Container vulnerability baseline -- **COMPLETED 2026-04-04** | HIGH | None |
+| [x] | #342 | Harden Dockerfile -- **COMPLETED 2026-04-05** | MEDIUM | #340 |
+| [x] | #349 | OSCAL schema database with version-aware validation -- **COMPLETED 2026-04-06** | **HIGH** | None |
+| [x] | #355 | Multi-file drag/drop upload + branding -- **COMPLETED 2026-04-08** | MEDIUM | None |
+| [x] | #356 | CDEF prioritization and enhanced editable fields -- **COMPLETED 2026-04-12** | **HIGH** | None |
+| [x] | #370 | OSCAL metadata compliance -- all spec fields in exports -- **COMPLETED 2026-04-13** | **HIGH** | #349 |
+| [x] | #371 | Back-matter resource management with control-level linking -- **COMPLETED 2026-04-14** | **HIGH** | #370 |
+| [x] | #375 | Back-matter resource API with authoritative layer -- **COMPLETED 2026-04-14** | **HIGH** (enterprise) | #371 |
 
 <!-- markdownlint-enable MD013 -->
 
-**Deliverables:** Hardened API auth, CI security gates, cleaner repo, improved UX
+**Deliverables:** Hardened API auth, CI security gates, cleaner repo, OSCAL-compliant back-matter, enterprise API
 
-**Parallelism: All 9 issues can run simultaneously (different domains).**
+**Parallelism: Remaining issues (#244, #246) can run simultaneously.**
 
 ```text
-Dev A: #249 (API auth modes)       -- API/Auth domain ✅ COMPLETE
 Dev B: #244 (security gate)        -- CI/Infrastructure domain
 Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
-Dev D: #237 (data quality card)    -- Catalog UI domain ✅ COMPLETE
-Dev D: #234 (avatar upload)        -- User/UI domain ✅ COMPLETE
-Dev D: #250 (API discovery)        -- API domain ✅ COMPLETE
-Dev A: #257 (service accounts)     -- API/Auth domain ✅ COMPLETE
-Dev A: #259 (AWS secrets)          -- Infrastructure/Auth domain ✅ COMPLETE
-Dev A: #264 (gitleaks patterns)    -- CI/Infrastructure domain ✅ COMPLETE
-Dev A: #263 (SA auto-disable)     -- API/Auth domain ✅ COMPLETE
-Dev A: #262 (SA expiry emails)    -- API/Auth domain ✅ COMPLETE
-Dev A: #271 (v1.0.0 release)     -- Version/Config domain ✅ COMPLETE
 ```
 
-> **Recommended order:** #249 and #244 first (security), then #246, #237, #250, #234.
+> All Phase 10 issues except #244 and #246 are complete.
+
+---
+
+### Phase 11: OSCAL Integrity, Enterprise API & Infrastructure (upcoming)
+
+**Goal:** UUID integrity, authoritative resource API, import quality, CI optimization, container hardening
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Description | Priority | Dependencies |
+| ------ | ----- | ----------- | -------- | ------------ |
+| [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | **HIGH** (security) | None |
+| [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | MEDIUM | None |
+| [ ] | #341 | Add XML document type fingerprinting for upload validation | MEDIUM | None |
+| [ ] | #344 | Upgrade Docker base image to Debian Trixie -- remediate OS-level CVEs | **HIGH** (security) | None |
+| [ ] | #346 | Optimize CodeQL scan -- scope to Ruby, reduce analysis time | LOW | None |
+| [ ] | #358 | Configure Dependabot grouping -- batch low-risk updates | LOW | None |
+| [ ] | #361 | UUID collision handling on OSCAL import + replace placeholder UUIDs | **HIGH** (compliance) | #371 |
+| [ ] | #367 | Code coverage threshold and tracking -- SimpleCov integration | MEDIUM | None |
+| [ ] | #372 | Import Authoritative Sources for Global and Organizational Use | **HIGH** (enterprise) | #375 |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** UUID integrity, optimized CI/CD, hardened container images, authoritative source import
 
 ---
 
@@ -506,12 +530,13 @@ removed and are no longer tracked:
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
-| 10 | Ongoing | Platform Hardening & Polish | #234, #237, #244, #246, #249, #250, #257, #259, #262, #263, #264, #271, #272, #283, #296, #300 | In Progress |
+| 10 | Ongoing | Platform Hardening & Polish | #234-#375 (25 issues) | In Progress |
+| 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #244, #246, #341, #344, #346, #358, #361, #367, #372 | Not Started |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 53 (23 original + 30 ad-hoc/new)
-**Completed (Phases 1-9 + ad-hoc):** 51 issues
-**Remaining:** 2 issues (Phase 10: #244, #246)
-**Phases 1-9 complete.** Phase 10 (hardening/polish) in progress.
-**First public release: v1.0.0** (#271) -- consolidates all prior internal releases.
+**Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
+**Completed (Phases 1-10 + ad-hoc):** 54 issues
+**Remaining:** 9 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #361, #367, #372)
+**Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 planned.
+**First public release: v1.0.0** (#271). **Current version: v1.2.3**.

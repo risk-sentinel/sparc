@@ -97,6 +97,6 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:controls_count] = cdef.cdef_controls.count
     end
 
-    data
+    append_oscal_fields(data, cdef, detailed: detailed)
   end
 end

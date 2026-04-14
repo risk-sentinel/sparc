@@ -24,7 +24,7 @@ Complete Postman collection and environment files for the SPARC REST API (v1).
 
 | File | Description |
 |------|-------------|
-| `sparc-api.postman_collection.json` | 54 endpoints across 12 folders |
+| `sparc-api.postman_collection.json` | 61 endpoints across 13 folders |
 | `sparc-prod.postman_environment.json` | Production (sparc.risk-sentinel-sparc.org) |
 | `sparc-local.postman_environment.json` | Local development (localhost:3000) |
 
@@ -100,6 +100,13 @@ SPARC supports three API authentication modes (controlled by `SPARC_API_AUTH` en
 ### 12. KSI Validations (7 endpoints)
 - Nested under authorization boundaries
 - CRUD + summary dashboard + compliance report export
+
+### 13. Back-Matter Resources (7 endpoints)
+- CRUD + link/unlink control associations
+- Filterable by organization, globally_available, rel, source, document, control
+- OSCAL-validated `rel` (12 values) and `media_type` (IANA types)
+- Supports `authoritative` source for enterprise provider publishing
+- Uses numeric `:id`
 
 ## Response Format
 

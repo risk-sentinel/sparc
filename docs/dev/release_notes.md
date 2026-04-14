@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-04-14 -- feat: Back-Matter Resource API with Authoritative Layer (#375)
+
+**Branch:** `feature/375_back_matter_api`
+
+### Summary
+
+REST API for OSCAL back-matter resource management under `/api/v1/back_matter_resources` with
+7 endpoints (CRUD + link/unlink), organization scoping, global availability, and the new
+authoritative source type for enterprise provider publishing. All existing document APIs updated
+to include OSCAL metadata and back-matter fields in responses.
+
+### What Changed
+
+- **New API controller** -- `Api::V1::BackMatterResourcesController` with index (paginated,
+  filterable by org/global/rel/source/document/control), show (with linked controls), create
+  (OSCAL-validated), update, destroy, link (to any control type), unlink.
+- **Authoritative source type** -- New `"authoritative"` source for instance-level provider
+  resources. Admin/service-account-only creation. Highest priority in BackMatterBuilder
+  (authoritative > managed > imported). Included in all document OSCAL exports automatically.
+- **All 7 document API serializers updated** -- SSP, SAR, SAP, POA&M, CDEF, Profile, Catalog
+  API responses now include `published`, `back_matter_resources_count` (list), `oscal_metadata`
+  and `back_matter_resources[]` (show). Shared `append_oscal_fields` helper in BaseController.
+- **API documentation** -- New `docs/api/endpoints/back-matter-resources.md` with full endpoint
+  docs, cURL examples, filtering params, OSCAL rel/media-type reference. Updated in-app API
+  docs page and `docs/api/README.md` (61 endpoints, 13 folders).
+- **OSCAL compliance** -- `back_matter.read` / `back_matter.write` permission keys. All
+  mutations audit-logged per AU-12.
+
+### Files Changed
+
+- `app/controllers/api/v1/back_matter_resources_controller.rb` (NEW)
+- `app/controllers/api/v1/base_controller.rb` (shared OSCAL serialization helpers)
+- `app/controllers/api/v1/ssp_documents_controller.rb` (serializer update)
+- `app/controllers/api/v1/sar_documents_controller.rb` (serializer update)
+- `app/controllers/api/v1/sap_documents_controller.rb` (serializer update)
+- `app/controllers/api/v1/poam_documents_controller.rb` (serializer update)
+- `app/controllers/api/v1/cdef_documents_controller.rb` (serializer update)
+- `app/controllers/api/v1/profile_documents_controller.rb` (serializer update)
+- `app/controllers/api/v1/control_catalogs_controller.rb` (serializer update)
+- `app/models/back_matter_resource.rb` (authoritative source)
+- `app/services/back_matter_builder.rb` (authoritative priority)
+- `config/routes.rb` (API routes)
+- `app/views/about/api_docs.html.erb` (endpoint table)
+- `docs/api/endpoints/back-matter-resources.md` (NEW)
+- `docs/api/README.md` (collection update)
+
+---
+
 ## 2026-04-13 -- feat: OSCAL Metadata Compliance — All Spec Fields in Exports (#370)
 
 **Branch:** `feature/370_oscal_metadata_fields`

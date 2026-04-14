@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-03-26
+**Last updated:** 2026-04-14
 
 ---
 
@@ -306,13 +306,14 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | [x] | **#355** Multi-file upload + branding -- **COMPLETED 2026-04-08** | UI/Frontend | `app/views/shared/_dropzone.html.erb` (multi-file), `app/javascript/controllers/dropzone_controller.js` (multi-file), `app/controllers/concerns/file_uploadable.rb` (batch handler), 6 document controllers, `app/assets/stylesheets/sparc-theme.css` (file list CSS), branding text in views/docs/CDEFs | **MEDIUM** -- UI + upload flow |
 | [x] | **#356** CDEF prioritization + editable fields -- **COMPLETED 2026-04-12** | Core/CDEF | `db/migrate/*_add_profile_document_id_to_cdef_documents.rb` (NEW), `app/services/cdef_update_service.rb` (NEW), `app/services/cdef_baseline_gap_service.rb` (NEW), `app/models/cdef_control_field.rb` (expanded fields), `app/controllers/cdef_documents_controller.rb` (update_field + gap), `app/views/cdef_documents/show.html.erb` (inline editing + gap UI), `app/services/oscal_component_definition_export_service.rb` (new OSCAL fields) | **HIGH** -- model + UI + export |
 | [x] | **#370** OSCAL metadata compliance -- **COMPLETED 2026-04-13** | Core/OSCAL | `app/models/concerns/oscal_metadata.rb` (unified builder, locations/remarks), `db/migrate/*_add_published_to_documents.rb` (NEW), `app/services/oscal_*_export_service.rb` (8 services, unified metadata), `app/models/concerns/lifecycle.rb` (published timestamp) | **HIGH** -- touches all exports |
+| [x] | **#371** Back-matter resource management with control-level linking -- **COMPLETED 2026-04-14** | BackMatter + Shared | `back_matter_resource.rb` (NEW), `control_back_matter_link.rb` (NEW), controllers, partials, all 6 control models, all 7 show views, export services, 5 migrations | **HIGH** -- cross-cutting |
+| [x] | **#375** Back-matter resource API with authoritative layer -- **COMPLETED 2026-04-14** | API + BackMatter | `api/v1/back_matter_resources_controller.rb` (NEW), all 7 document API serializers (OSCAL fields), `back_matter_builder.rb` (authoritative priority), `config/routes.rb`, docs/api/ | **MEDIUM** -- API namespace + serializers |
 
 <!-- markdownlint-enable MD013 -->
 
-**Phase 10 Parallelism: All 10 issues can run simultaneously (different domains).**
+**Phase 10 Parallelism: Remaining issues (#244, #246) can run simultaneously.**
 
 ```text
-Dev A: #249 (API auth modes)       -- API/Auth domain ✅ COMPLETE
 Dev B: #244 (security gate)        -- CI/Infrastructure domain
 Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
 Dev D: #237 (data quality card)    -- Catalog UI domain ✅ COMPLETE
@@ -688,16 +689,11 @@ removed and are no longer tracked:
 
 ## Summary
 
-- **Total issues tracked:** 52 (23 original + 29 ad-hoc/new)
-- **Completed:** 50 issues (Phases 1-9 + ad-hoc + #234, #237, #249, #250, #257, #259, #262, #263, #264, #269, #272, #274, #276, #282, #283, #296)
-- **Remaining:** 2 issues (Phase 10: #244, #246)
+- **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
+- **Completed:** 54 issues (Phases 1-10)
+- **Remaining:** 9 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #361, #367, #372)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
-- **Zero-conflict pairs in Phase 10:** 100% (all different domains)
-- **Highest-priority Phase 10 issues:** #249 (API auth modes -- security),
-  #244 (security gate -- CI hardening)
-- **Key Phase 10 sequencing:** #250 (API discovery) recommended after
-  #249 (auth modes) since discovery should reflect the active auth mode.
-  All other Phase 10 issues are fully independent.
 - **Phases 1-9:** COMPLETE (2026-03-14 through 2026-03-21)
-- **Phase 10:** In progress (ongoing platform hardening and polish)
+- **Phase 10:** Nearly complete (2 remaining: #244, #246)
+- **Phase 11:** Planned -- OSCAL integrity, enterprise features, infrastructure
