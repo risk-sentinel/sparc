@@ -193,6 +193,10 @@ jobs:
           if-no-files-found: warn
 
   # ── 2b. CodeQL SAST (always-on, deep semantic analysis) ──────
+  # Scoped to Ruby only — SPARC uses importmap with minimal Stimulus
+  # controllers (no Node build step). JS/TS analysis doubled scan time
+  # with negligible security value. Brakeman covers Ruby SAST.
+  # See issue #346 for analysis.
   codeql_scan:
     runs-on: ubuntu-latest
     needs: [ changes ]
@@ -208,7 +212,17 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: ruby, javascript-typescript
+          languages: ruby
+          config: |
+            paths:
+              - app
+              - lib
+              - config
+            paths-ignore:
+              - spec
+              - docs
+              - vendor
+              - node_modules
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
@@ -218,24 +232,15 @@ jobs:
           upload: false  # We upload manually for artifact control
         continue-on-error: true
 
-      - name: Merge CodeQL SARIF files
+      - name: Prepare CodeQL SARIF
         if: always()
         run: |
-          # CodeQL produces one SARIF per language — merge into a single file
-          SARIF_FILES=$(find codeql-results/ -name '*.sarif' 2>/dev/null)
-          FILE_COUNT=$(echo "$SARIF_FILES" | grep -c '.' || true)
-          if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "::warning::No CodeQL SARIF files found"
-          elif [ "$FILE_COUNT" -eq 1 ]; then
-            cp $SARIF_FILES codeql-results.sarif
+          # Single language (Ruby) produces one SARIF — no merge needed
+          SARIF_FILE=$(find codeql-results/ -name '*.sarif' -print -quit 2>/dev/null)
+          if [ -n "$SARIF_FILE" ]; then
+            cp "$SARIF_FILE" codeql-results.sarif
           else
-            # Merge multiple SARIF files by combining their runs arrays
-            echo '{"$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json","version":"2.1.0","runs":[]}' > codeql-results.sarif
-            for f in $SARIF_FILES; do
-              echo "Including SARIF from: $f"
-            done
-            # Use jq to merge runs from all files
-            jq -s '{ "$schema": .[0]["$schema"], version: .[0].version, runs: [.[].runs[]] }' $SARIF_FILES > codeql-results.sarif
+            echo "::warning::No CodeQL SARIF file found"
           fi
 
       - name: Upload CodeQL SARIF to Code Scanning

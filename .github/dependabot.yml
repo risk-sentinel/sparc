@@ -1,12 +1,30 @@
 version: 2
 updates:
-- package-ecosystem: bundler
-  directory: "/"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-- package-ecosystem: github-actions
-  directory: "/"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
+  - package-ecosystem: bundler
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      # Patch bumps batched into one PR — low risk, minimal review
+      patch-updates:
+        update-types:
+          - "patch"
+      # Minor bumps batched into one PR — moderate review
+      minor-updates:
+        update-types:
+          - "minor"
+      # Major bumps remain individual PRs (higher review needed)
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      # Action version bumps batched (mostly Node runtime upgrades)
+      actions-updates:
+        patterns:
+          - "*"
