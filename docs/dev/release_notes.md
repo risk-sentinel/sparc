@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-04-15 -- chore: Dependabot grouping + CodeQL optimization (#358, #346)
+
+**Branch:** `feature/358_346_ci_optimization`
+
+### Summary
+
+Reduced CI noise and scan time with two pipeline optimizations. No application code changes.
+
+### What Changed
+
+- **Dependabot grouping** (#358) -- Patch and minor bumps batched into single PRs (weekly on
+  Mondays). Major bumps remain individual for focused review. GitHub Actions updates batched
+  into one PR. Reduces 5-10 individual PRs to 2-3 grouped PRs per week.
+- **CodeQL Ruby-only** (#346) -- Dropped `javascript-typescript` language (SPARC uses importmap,
+  ~15 Stimulus controllers, no Node build). Scoped analysis to `app/`, `lib/`, `config/` only
+  (excludes spec, docs, vendor). Simplified SARIF step (single language = no merge needed).
+  Expected ~50-70% reduction in CodeQL job time.
+
+---
+
 ## v1.2.5 -- 2026-04-14 -- fix: jemalloc LD_PRELOAD + MALLOC_ARENA_MAX for memory stability (#380)
 
 **Branch:** `bug/380_jemalloc_memory_leak`
