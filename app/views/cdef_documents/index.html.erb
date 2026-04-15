@@ -12,7 +12,10 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Component Definitions</h2>
     <% if signed_in? %>
-      <%= link_to "Upload New", new_cdef_document_path, class: "btn btn-success" %>
+      <div class="d-flex gap-2">
+        <%= link_to "Create New", select_profile_cdef_documents_path, class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
+        <%= link_to "Upload File", new_cdef_document_path, class: "btn btn-success" %>
+      </div>
     <% end %>
   </div>
 
