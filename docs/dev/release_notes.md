@@ -4,6 +4,33 @@
 
 ---
 
+## v1.2.5 -- 2026-04-14 -- fix: jemalloc LD_PRELOAD + MALLOC_ARENA_MAX for memory stability (#380)
+
+**Branch:** `bug/380_jemalloc_memory_leak`
+
+### Summary
+
+Fixed jemalloc not being active for all processes in the Docker container. Previously, `LD_PRELOAD`
+was only set dynamically in the entrypoint bash script, meaning `db:prepare`, `db:seed`, and other
+startup commands ran with glibc malloc (causing ~0.5%/hour RSS growth from fragmentation). Now
+jemalloc is set at the Dockerfile ENV level so ALL processes use it from container start.
+
+### What Changed
+
+- **Dockerfile** -- Added architecture-agnostic jemalloc symlink (`/usr/lib/libjemalloc.so.2`).
+  Set `LD_PRELOAD` and `MALLOC_ARENA_MAX=2` in the ENV block so jemalloc is active for all
+  processes, not just the final exec.
+- **bin/docker-entrypoint** -- Removed dynamic jemalloc detection (now handled by Dockerfile).
+  Added verification log line confirming jemalloc is active at startup.
+
+### Expected Impact
+
+- **30-40% lower peak RSS** vs glibc malloc
+- **Near-flat memory growth** (jemalloc returns freed pages to the OS)
+- **Eliminates ~0.5%/hour RSS creep** that was pushing containers toward the 1024 MB limit
+
+---
+
 ## v1.2.4 -- 2026-04-14 -- fix: UUID Collision Handling on OSCAL Import (#361)
 
 **Branch:** `feature/361_uuid_collision_handling`

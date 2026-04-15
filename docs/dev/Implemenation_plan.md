@@ -539,4 +539,4 @@ removed and are no longer tracked:
 **Completed (Phases 1-10 + ad-hoc):** 55 issues
 **Remaining:** 8 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #367, #372)
 **Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 planned.
-**First public release: v1.0.0** (#271). **Current version: v1.2.4**.
+**First public release: v1.0.0** (#271). **Current version: v1.2.5**.
