@@ -46,14 +46,20 @@ RUN apt-get update -qq && \
       libjemalloc2 postgresql-client && \
     apt-get upgrade -y && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
+    ln -sf $(find /usr/lib -name libjemalloc.so.2 -print -quit) /usr/lib/libjemalloc.so.2
 
 # Production env
+# LD_PRELOAD: jemalloc replaces glibc malloc — eliminates memory fragmentation
+#   that causes ~0.5%/hour RSS growth in Ruby processes. See issue #380.
+# MALLOC_ARENA_MAX: limits glibc to 2 arenas (fallback if LD_PRELOAD is overridden).
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development test" \
-    BUNDLE_IGNORE_CONFIGURED_GROUPS_WITHOUT=true
+    BUNDLE_IGNORE_CONFIGURED_GROUPS_WITHOUT=true \
+    LD_PRELOAD="/usr/lib/libjemalloc.so.2" \
+    MALLOC_ARENA_MAX="2"
 
 # ────────────────────────────────────────
 # Build stage

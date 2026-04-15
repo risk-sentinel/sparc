@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Enable jemalloc for better memory performance
-if [ -z "${LD_PRELOAD+x}" ]; then
-    jemalloc_path=$(find /usr/lib -name libjemalloc.so.2 -print -quit 2>/dev/null || true)
-    if [ -n "$jemalloc_path" ]; then
-        export LD_PRELOAD="$jemalloc_path"
-    fi
+# Verify jemalloc is active (set via Dockerfile ENV, see issue #380)
+if [ -n "${LD_PRELOAD:-}" ]; then
+    echo "jemalloc: active (LD_PRELOAD=$LD_PRELOAD)"
+else
+    echo "WARNING: jemalloc not active — memory fragmentation may occur"
 fi
 
 # Wait for PostgreSQL (safe for all services)
