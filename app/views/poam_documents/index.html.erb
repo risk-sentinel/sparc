@@ -11,7 +11,10 @@
 <div class="card" style="overflow-x: auto;">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Plan of Action &amp; Milestones</h2>
-    <%= link_to "Upload New", new_poam_document_path, class: "btn btn-success" %>
+    <div class="d-flex gap-2">
+      <%= link_to "Create New", new_poam_document_path, class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
+      <%= link_to "Upload File", new_poam_document_path(anchor: "upload-poam"), class: "btn btn-success" %>
+    </div>
   </div>
 
   <% if @poam_documents.any? %>
