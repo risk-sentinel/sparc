@@ -11,7 +11,10 @@
 <div class="card" style="overflow-x: auto;">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Assessment Plans (SAP)</h2>
-    <%= link_to "Create New", new_sap_document_path, class: "btn btn-success" %>
+    <div class="d-flex gap-2">
+      <%= link_to "Create New", new_sap_document_path, class: "btn btn-success" %>
+      <%= link_to "Upload", new_sap_document_path(anchor: "upload-sap"), class: "btn btn-outline-primary" %>
+    </div>
   </div>
 
   <% if @sap_documents.any? %>

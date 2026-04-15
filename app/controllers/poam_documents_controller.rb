@@ -54,7 +54,24 @@ class PoamDocumentsController < ApplicationController
   end
 
   def create
-    handle_multi_file_upload(:poam, param_key: :poam_document)
+    # Wizard create (no file) vs file upload
+    if params.dig(:poam_document, :file).blank? && params.dig(:poam_document, :files).blank?
+      @poam_document = PoamDocument.new(wizard_params)
+      @poam_document.status = "completed"
+      @poam_document.creation_method = "wizard"
+
+      if @poam_document.save
+        audit_log("poam_document_created", subject: @poam_document,
+                  metadata: { name: @poam_document.name, method: "wizard" })
+        flash[:success] = "POA&M '#{@poam_document.name}' created. Add items to get started."
+        redirect_to poam_document_path(@poam_document)
+      else
+        flash.now[:error] = @poam_document.errors.full_messages.join(", ")
+        render :new, status: :unprocessable_entity
+      end
+    else
+      handle_multi_file_upload(:poam, param_key: :poam_document)
+    end
   end
 
   def update
@@ -201,6 +218,10 @@ class PoamDocumentsController < ApplicationController
 
   def set_poam_document
     @poam_document = PoamDocument.find_by!(slug: params[:id])
+  end
+
+  def wizard_params
+    params.require(:poam_document).permit(:name, :description, :system_id, :authorization_boundary_id)
   end
 
   # OscalExportable hooks

@@ -145,7 +145,7 @@
 </div>
 
 <%# ── OR: Upload existing SAP file ── %>
-<div class="card">
+<div class="card" id="upload-sap">
   <h3>Or Upload Existing SAP</h3>
   <p class="text-body-secondary mb-3">
     Already have an OSCAL Assessment Plan? Upload the JSON file directly.
@@ -156,6 +156,7 @@
       form: f,
       field: :file,
       accept: ".json,.xml,.yaml,.yml",
+      multiple: true,
       hint: "Upload an OSCAL Assessment Plan in JSON, XML, or YAML format." %>
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-primary" %>
