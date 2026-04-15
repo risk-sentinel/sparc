@@ -98,15 +98,16 @@ module FileUploadable
   def handle_multi_file_upload(type_key, param_key:)
     uploaded_files = params.dig(param_key, :files)
 
-    # Normalize: if single file, wrap in array; if nil, fall back to single-file handler
-    if uploaded_files.nil? || uploaded_files.empty?
-      # Try single-file param as fallback
+    # Normalize: if no files under :files key, try :file (single-file forms)
+    if uploaded_files.nil? || (uploaded_files.respond_to?(:empty?) && uploaded_files.empty?)
       return handle_file_upload(type_key, param_key: param_key)
     end
 
     # Filter out blank entries (browsers may include empty slots)
     uploaded_files = Array(uploaded_files).reject(&:blank?)
-    return handle_file_upload(type_key, param_key: param_key) if uploaded_files.size == 1
+    if uploaded_files.empty?
+      return handle_file_upload(type_key, param_key: param_key)
+    end
 
     registry       = DocumentTypeRegistry.for(type_key)
     document_class = registry.document_class
