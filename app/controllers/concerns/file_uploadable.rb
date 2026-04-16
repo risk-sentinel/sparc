@@ -62,13 +62,17 @@ module FileUploadable
     uploaded_file.rewind  # Reset IO position for Active Storage attach
 
     begin
-      document = document_class.create!(
+      attrs = {
         name:              File.basename(uploaded_file.original_filename, ".*"),
         file_type:         file_type,
         original_filename: uploaded_file.original_filename,
-        status:            "pending",
-        creation_method:   file_type == "excel" ? nil : "oscal_import"
-      )
+        status:            "pending"
+      }
+      # Only set creation_method on models that have the column (SSP, SAR)
+      if document_class.column_names.include?("creation_method") && file_type != "excel"
+        attrs[:creation_method] = "oscal_import"
+      end
+      document = document_class.create!(**attrs)
       document.file.attach(uploaded_file)
 
       DocumentConversionJob.perform_later(type_key.to_s, document.id, persist_path.to_s)
@@ -126,13 +130,17 @@ module FileUploadable
         File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
         uploaded_file.rewind  # Reset IO position for Active Storage attach
 
-        document = document_class.create!(
+        attrs = {
           name:              File.basename(uploaded_file.original_filename, ".*"),
           file_type:         file_type,
           original_filename: uploaded_file.original_filename,
-          status:            "pending",
-          creation_method:   file_type == "excel" ? nil : "oscal_import"
-        )
+          status:            "pending"
+        }
+        # Only set creation_method on models that have the column (SSP, SAR)
+        if document_class.column_names.include?("creation_method") && file_type != "excel"
+          attrs[:creation_method] = "oscal_import"
+        end
+        document = document_class.create!(**attrs)
         document.file.attach(uploaded_file)
 
         DocumentConversionJob.perform_later(type_key.to_s, document.id, persist_path.to_s)
