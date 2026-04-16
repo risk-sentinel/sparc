@@ -90,24 +90,49 @@ class SapJsonParserService
   end
 
   # Copy back-matter resources from an auto-matched source profile/SSP
-  # to this SAP. Skips UUIDs already present.
+  # to this SAP. Reads from BOTH back_matter_resources records (managed)
+  # AND import_metadata["back_matter"] (imported from OSCAL JSON).
+  # Skips UUIDs already present.
   def copy_back_matter_from(source)
-    return unless source.respond_to?(:back_matter_resources)
     existing_uuids = @document.back_matter_resources.pluck(:uuid).to_set
 
-    source.back_matter_resources.each do |src_bm|
-      next if existing_uuids.include?(src_bm.uuid)
+    # 1. Copy managed BackMatterResource records
+    if source.respond_to?(:back_matter_resources)
+      source.back_matter_resources.each do |src_bm|
+        next if existing_uuids.include?(src_bm.uuid)
+        @document.back_matter_resources.create!(
+          uuid:          src_bm.uuid,
+          title:         src_bm.title,
+          description:   src_bm.description,
+          rel:           src_bm.rel,
+          media_type:    src_bm.media_type,
+          href:          src_bm.href,
+          source:        "imported",
+          resource_data: src_bm.resource_data
+        )
+        existing_uuids << src_bm.uuid
+      end
+    end
+
+    # 2. Copy imported back-matter from import_metadata (OSCAL JSON hashes)
+    imported = source.respond_to?(:import_metadata) ? (source.import_metadata&.dig("back_matter") || []) : []
+    imported.each do |bm_hash|
+      uuid = bm_hash["uuid"]
+      next if uuid.blank? || existing_uuids.include?(uuid)
+      rlink = (bm_hash["rlinks"] || []).first || {}
       @document.back_matter_resources.create!(
-        uuid:          src_bm.uuid,
-        title:         src_bm.title,
-        description:   src_bm.description,
-        rel:           src_bm.rel,
-        media_type:    src_bm.media_type,
-        href:          src_bm.href,
+        uuid:          uuid,
+        title:         bm_hash["title"] || "Imported Resource",
+        description:   bm_hash["description"],
+        rel:           "reference",
+        media_type:    rlink["media-type"],
+        href:          rlink["href"],
         source:        "imported",
-        resource_data: src_bm.resource_data
+        resource_data: bm_hash.except("uuid", "title", "description", "rlinks")
       )
-      existing_uuids << src_bm.uuid
+      existing_uuids << uuid
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.warn("Skipping invalid imported back-matter resource #{uuid}: #{e.message}")
     end
   end
 
