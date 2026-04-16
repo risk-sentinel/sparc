@@ -99,31 +99,54 @@ class SapJsonParserService
 
       # include-all: resolve from linked profile or catalog
       if sel["include-all"].present? && ids.empty?
-        ids = resolve_all_controls_from_profile
+        ids = resolve_all_controls(plan, sel)
       end
     end
     ids.uniq
   end
 
-  # When the SAP uses include-all, resolve control IDs from the
-  # linked profile or catalog baseline.
-  def resolve_all_controls_from_profile
+  # When the SAP uses include-all, resolve control IDs by trying:
+  # 1. Linked profile (sap.profile_document_id)
+  # 2. Linked SSP's profile or SSP controls (sap.ssp_document_id)
+  # 3. Baseline hint from the selection description (LOW/MODERATE/HIGH)
+  # 4. Most recent published profile (any baseline)
+  def resolve_all_controls(plan, selection = {})
     # Try linked profile first
     if @document.profile_document_id.present?
       profile = ProfileDocument.find_by(id: @document.profile_document_id)
-      return profile.profile_controls.pluck(:control_id) if profile
+      return profile.profile_controls.pluck(:control_id) if profile&.profile_controls&.any?
     end
 
-    # Try linked SSP's profile
+    # Try linked SSP's profile or controls
     if @document.ssp_document_id.present?
       ssp = SspDocument.find_by(id: @document.ssp_document_id)
       if ssp&.profile_document_id.present?
         profile = ProfileDocument.find_by(id: ssp.profile_document_id)
-        return profile.profile_controls.pluck(:control_id) if profile
+        return profile.profile_controls.pluck(:control_id) if profile&.profile_controls&.any?
       end
-      # Fall back to SSP controls
-      return ssp.ssp_controls.where.not(control_id: nil).pluck(:control_id).uniq if ssp
+      ctrl_ids = ssp&.ssp_controls&.where&.not(control_id: nil)&.pluck(:control_id)&.uniq
+      return ctrl_ids if ctrl_ids&.any?
     end
+
+    # Baseline hint from selection description (e.g., "NIST SP 800-53 Rev 5 HIGH baseline")
+    description = selection["description"].to_s.downcase
+    baseline_hint = case description
+    when /high\s+baseline|high\s+impact/ then "high"
+    when /moderate\s+baseline|moderate\s+impact/ then "moderate"
+    when /low\s+baseline|low\s+impact/ then "low"
+    end
+
+    if baseline_hint
+      profile = ProfileDocument.where(lifecycle_status: "published")
+                               .where("LOWER(baseline_level) = ?", baseline_hint)
+                               .order(updated_at: :desc).first
+      return profile.profile_controls.pluck(:control_id) if profile&.profile_controls&.any?
+    end
+
+    # Last resort: most recent published profile
+    profile = ProfileDocument.where(lifecycle_status: "published")
+                             .order(updated_at: :desc).first
+    return profile.profile_controls.pluck(:control_id) if profile&.profile_controls&.any?
 
     []
   end
