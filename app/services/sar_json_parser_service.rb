@@ -236,14 +236,30 @@ class SarJsonParserService
     findings_to_link = []
 
     @document.sar_results.each do |result|
-      result.sar_findings.each do |finding|
+      # Build obs_lookup so a finding can pull data from its related
+      # observation (Checkov emits remarks like "Resource: aws.default"
+      # that we want to surface on the SAR control card).
+      obs_lookup = result.sar_observations.index_by(&:uuid)
+
+      result.sar_findings.includes(:sar_observations).each do |finding|
         target = finding.target_data || {}
         target_id = target["target-id"]
         next if target_id.blank?
 
         ctrl_id, objective_id = split_objective_target(target_id)
         status = target.dig("status", "state") || "other"
-        control_data[ctrl_id] ||= { status: status, title: finding.title }
+        # parse_findings created SarFindingObservation join records from
+        # the OSCAL related-observations[]; the first joined observation
+        # carries the resource-level remarks Checkov emits.
+        primary_obs = finding.sar_observations.first
+        control_data[ctrl_id] ||= {
+          status:               status,
+          title:                finding.title,
+          finding_description:  finding.description,
+          observation_remarks:  primary_obs&.remarks,
+          observation_methods:  primary_obs&.methods_data,
+          collected:            primary_obs&.collected
+        }
 
         if objective_id.present?
           objectives_by_control[ctrl_id] << objective_id
@@ -251,14 +267,21 @@ class SarJsonParserService
         end
       end
 
-      # Extract from observations (Checkov results use title "PASS: CKV_xxx" / "FAIL: CKV_xxx")
+      # Also enrich directly from observations (when a finding didn't cover
+      # them) -- Checkov results use title "PASS: CKV_xxx" / "FAIL: CKV_xxx"
+      # and carry the NIST control ID in props_data.
       result.sar_observations.each do |obs|
         (obs.props_data || []).each do |prop|
-          if prop["name"] == "control-id" || prop["name"] == "nist-control"
-            ctrl_id = prop["value"]
-            status = obs.title&.start_with?("PASS") ? "pass" : "fail"
-            control_data[ctrl_id] ||= { status: status, title: obs.description }
-          end
+          next unless prop["name"] == "control-id" || prop["name"] == "nist-control"
+          ctrl_id = prop["value"]
+          status = obs.title&.start_with?("PASS") ? "pass" : "fail"
+          control_data[ctrl_id] ||= {
+            status:               status,
+            title:                obs.description,
+            observation_remarks:  obs.remarks,
+            observation_methods:  obs.methods_data,
+            collected:            obs.collected
+          }
         end
       end
 
@@ -280,17 +303,143 @@ class SarJsonParserService
     sar_controls_by_id = {}
     control_data.each_with_index do |(ctrl_id, info), idx|
       ctrl = @document.sar_controls.create!(
-        control_id: ctrl_id,
-        title: info[:title],
-        section: "assessment-results",
-        row_order: idx
+        control_id:    ctrl_id,
+        title:         info[:title],
+        section:       "assessment-results",
+        subject_asset: extract_subject_asset(info[:observation_remarks]),
+        row_order:     idx
       )
-      ctrl.sar_control_fields.create!(field_name: "result", field_value: info[:status])
+      populate_enrichment_fields(ctrl, info)
       sar_controls_by_id[ctrl_id] = ctrl
     end
 
+    populate_catalog_text_fields(sar_controls_by_id)
     create_objective_records(sar_controls_by_id, objectives_by_control)
     link_findings_to_objectives(sar_controls_by_id, findings_to_link)
+    enrich_from_linked_sap_or_ssp(sar_controls_by_id)
+  end
+
+  # "Resource: aws.default" -> "aws.default". Checkov's standard format.
+  # Also strips common prefixes like "Subject:", "Component:", "Target:".
+  def extract_subject_asset(remarks)
+    return nil if remarks.blank?
+    remarks.to_s.sub(/\A(resource|subject|component|target)\s*:\s*/i, "").strip.presence
+  end
+
+  def populate_enrichment_fields(ctrl, info)
+    # result stays the canonical OSCAL-state value (satisfied/not-satisfied/etc)
+    ctrl.sar_control_fields.create!(field_name: "result", field_value: info[:status])
+
+    # control_status is the human-readable mapping used by the Assessment
+    # Context panel. Keeps existing Excel-parser vocabulary aligned.
+    status_label = oscal_state_to_control_status(info[:status])
+    ctrl.sar_control_fields.create!(field_name: "control_status", field_value: status_label) if status_label
+
+    if info[:collected].present?
+      ctrl.sar_control_fields.create!(
+        field_name: "date",
+        field_value: info[:collected].respond_to?(:iso8601) ? info[:collected].iso8601 : info[:collected].to_s
+      )
+    end
+
+    methods = Array(info[:observation_methods]).compact.uniq
+    if methods.any?
+      ctrl.sar_control_fields.create!(
+        field_name:  "test_text",
+        field_value: methods.map { |m| m.to_s.upcase }.join(", ")
+      )
+    end
+
+    # notes_weakness is the assessor-facing "what failed" column. For
+    # failed/not-satisfied findings, the finding description is the
+    # clearest summary; for others, the observation remarks add context.
+    weakness = if %w[fail failed not-satisfied].include?(info[:status].to_s.downcase)
+      info[:finding_description].presence || info[:observation_remarks]
+    else
+      info[:observation_remarks].presence
+    end
+    if weakness.present?
+      ctrl.sar_control_fields.create!(field_name: "notes_weakness", field_value: weakness)
+    end
+  end
+
+  def oscal_state_to_control_status(state)
+    case state.to_s.downcase
+    when "satisfied", "pass" then "Implemented"
+    when "not-satisfied", "fail" then "Not Implemented"
+    when "partial" then "Partially Implemented"
+    when "reviewed" then "Reviewed"
+    end
+  end
+
+  # Pull control statement prose from the local catalog so the Assessment
+  # Context panel has a "Control Text" row even when the SAR isn't linked
+  # to an SSP yet.
+  def populate_catalog_text_fields(sar_controls_by_id)
+    return if sar_controls_by_id.empty?
+
+    normalized = sar_controls_by_id.keys.compact.map { |id| normalize_catalog_id(id) }.uniq
+    catalog_controls = CatalogControl.where(control_id: normalized).index_by(&:control_id)
+
+    sar_controls_by_id.each do |ctrl_id, ctrl|
+      cat = catalog_controls[normalize_catalog_id(ctrl_id)]
+      next unless cat
+      stmt = (cat.guidance_data || {}).dig("statement") || cat.description
+      next if stmt.blank?
+      ctrl.sar_control_fields.create!(field_name: "control_text", field_value: stmt)
+    end
+  rescue StandardError => e
+    Rails.logger.warn("[SarJsonParserService] catalog lookup failed: #{e.message}")
+  end
+
+  def normalize_catalog_id(id)
+    id.to_s.strip.downcase
+  end
+
+  # When the SAR is linked to a SAP (sap_document_id set), chain through to
+  # pull responsibility + implementation + impact statement fields from the
+  # SAP's linked SSP. SAR -> SAP -> SSP gives the full traceability users
+  # expect. No-op if no SAP or no SSP is linked.
+  def enrich_from_linked_sap_or_ssp(sar_controls_by_id)
+    ssp = resolve_linked_ssp
+    return if ssp.nil?
+
+    ssp_controls = ssp.ssp_controls.includes(:ssp_control_fields)
+                                   .index_by { |c| c.control_id.to_s.strip.downcase }
+
+    sar_controls_by_id.each do |ctrl_id, sar_ctrl|
+      ssp_ctrl = ssp_controls[ctrl_id.to_s.strip.downcase]
+      next unless ssp_ctrl
+      fields = ssp_ctrl.ssp_control_fields.index_by(&:field_name)
+
+      responsibility = fields["responsible_entities"]&.field_value
+      if responsibility.present? && !sar_ctrl.sar_control_fields.exists?(field_name: "responsibility")
+        sar_ctrl.sar_control_fields.create!(field_name: "responsibility", field_value: responsibility)
+      end
+
+      implementation = fields["implementation_statement"]&.field_value.presence ||
+                       fields["implementation_summary"]&.field_value.presence
+      if implementation.present? && !sar_ctrl.sar_control_fields.exists?(field_name: "implementation")
+        sar_ctrl.sar_control_fields.create!(field_name: "implementation", field_value: implementation)
+      end
+
+      notes = fields["notes"]&.field_value
+      if notes.present? && !sar_ctrl.sar_control_fields.exists?(field_name: "impact_statement")
+        sar_ctrl.sar_control_fields.create!(field_name: "impact_statement", field_value: notes)
+      end
+    end
+  end
+
+  # Resolves the SSP to pull enrichment data from, in priority order:
+  # directly linked SSP -> SAP's linked SSP. Returns nil if no chain.
+  def resolve_linked_ssp
+    return SspDocument.find_by(id: @document.ssp_document_id) if @document.ssp_document_id.present?
+
+    sap_id = @document.sap_document_id
+    return nil if sap_id.blank?
+    sap = SapDocument.find_by(id: sap_id)
+    return nil if sap.nil? || sap.ssp_document_id.blank?
+    SspDocument.find_by(id: sap.ssp_document_id)
   end
 
   # OSCAL SAR finding targets use IDs like "ac-1" (control-level) or

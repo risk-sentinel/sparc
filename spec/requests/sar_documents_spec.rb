@@ -189,6 +189,48 @@ RSpec.describe "SarDocuments", type: :request do
     end
   end
 
+  describe "PATCH /sar_documents/:id/associate_source" do
+    let(:sar) { create(:sar_document) }
+    let(:ssp) do
+      ssp = create(:ssp_document)
+      ssp_ctrl = ssp.ssp_controls.create!(control_id: "cm-2", title: "Baseline", row_order: 0)
+      ssp_ctrl.ssp_control_fields.create!(field_name: "responsible_entities", field_value: "Platform")
+      ssp
+    end
+    let(:sap) { create(:sap_document, ssp_document: ssp) }
+
+    before do
+      sar.sar_controls.create!(control_id: "cm-2", title: "Baseline", row_order: 0)
+    end
+
+    it "links the SAR to the SAP and back-fills responsibility from the SSP chain" do
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+
+      sar.reload
+      expect(sar.sap_document_id).to eq(sap.id)
+      ctrl = sar.sar_controls.find_by(control_id: "cm-2")
+      field = ctrl.sar_control_fields.find_by(field_name: "responsibility")
+      expect(field&.field_value).to eq("Platform")
+      expect(response).to redirect_to(sar_document_path(sar))
+    end
+
+    it "doesn't duplicate fields on re-association" do
+      ctrl = sar.sar_controls.first
+      ctrl.sar_control_fields.create!(field_name: "responsibility", field_value: "Manually Set")
+
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+
+      counts = ctrl.sar_control_fields.where(field_name: "responsibility").count
+      expect(counts).to eq(1)
+      expect(ctrl.sar_control_fields.find_by(field_name: "responsibility").field_value)
+        .to eq("Manually Set")
+    end
+  end
+
   describe "PATCH /sar_documents/:id/update_objective" do
     let(:sar) { create(:sar_document) }
     let(:control) { create(:sar_control, sar_document: sar) }

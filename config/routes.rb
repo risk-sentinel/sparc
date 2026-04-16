@@ -87,6 +87,7 @@ Rails.application.routes.draw do
       get :enrich
       patch :update_enrich
       patch :update_objective
+      patch :associate_source
       get "edit_control/:sar_control_id", action: :edit_control, as: :edit_control
     end
     collection do

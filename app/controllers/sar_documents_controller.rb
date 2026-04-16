@@ -11,9 +11,9 @@ class SarDocumentsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export,
     :edit_control, :status, :update_metadata, :enrich, :update_enrich,
-    :publish, :publish_check, :update_objective
+    :publish, :publish_check, :update_objective, :associate_source
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective, :associate_source ]
 
   helper_method :filter_params
 
@@ -342,6 +342,46 @@ class SarDocumentsController < ApplicationController
     }
   end
 
+  # PATCH /sar_documents/:id/associate_source
+  # Body: sar_document[sap_document_id], sar_document[ssp_document_id],
+  #       sar_document[profile_document_id]. After saving the link, re-runs
+  #       the enrichment pipeline so SAR controls get responsibility,
+  #       implementation, and impact_statement fields from the linked SSP
+  #       (directly or via SAP -> SSP).
+  def associate_source
+    sap_id     = params.dig(:sar_document, :sap_document_id)
+    ssp_id     = params.dig(:sar_document, :ssp_document_id)
+    profile_id = params.dig(:sar_document, :profile_document_id)
+
+    @sar_document.update!(
+      sap_document_id:     sap_id.presence,
+      ssp_document_id:     ssp_id.presence,
+      profile_document_id: profile_id.presence
+    )
+
+    # Re-run objective backfill so per-objective records pick up prose/labels
+    # from the linked profile catalog now that we have a source.
+    objective_count = ApplicationRecord.transaction(requires_new: true) do
+      ControlObjectiveExtractorService.new(@sar_document).backfill!
+    end
+
+    # Re-enrich SAR controls from the linked SAP -> SSP chain (or direct SSP).
+    field_count = enrich_existing_controls_from_sap_or_ssp_chain
+
+    audit_log("sar_document_reprocessed", subject: @sar_document,
+              metadata: { sap_id: sap_id, ssp_id: ssp_id, profile_id: profile_id,
+                          objectives_assigned: objective_count, fields_added: field_count })
+
+    msg = "Source associated."
+    msg += " #{field_count} context fields populated." if field_count > 0
+    msg += " #{objective_count} objectives populated." if objective_count > 0
+    flash[:success] = msg
+    redirect_to sar_document_path(@sar_document)
+  rescue StandardError => e
+    flash[:error] = "Failed to associate: #{e.message}"
+    redirect_to sar_document_path(@sar_document)
+  end
+
   # PATCH /sar_documents/:id/update_objective
   def update_objective
     objective = SarControlObjective.joins(sar_control: :sar_document)
@@ -578,6 +618,48 @@ class SarDocumentsController < ApplicationController
       # Link finding to observation
       SarFindingObservation.create!(sar_finding: finding, sar_observation: obs)
     end
+  end
+
+  # After associate_source links the SAR to a SAP/SSP, walk every existing
+  # SarControl and copy responsibility / implementation / impact_statement
+  # fields from the SSP if they're missing. SAR -> SAP -> SSP chain (or
+  # SAR -> SSP directly). Returns the count of fields added.
+  def enrich_existing_controls_from_sap_or_ssp_chain
+    ssp = resolve_linked_ssp_for_sar(@sar_document)
+    return 0 if ssp.nil?
+
+    ssp_controls = ssp.ssp_controls.includes(:ssp_control_fields)
+                                   .index_by { |c| c.control_id.to_s.strip.downcase }
+
+    count = 0
+    @sar_document.sar_controls.includes(:sar_control_fields).find_each do |sar_ctrl|
+      ssp_ctrl = ssp_controls[sar_ctrl.control_id.to_s.strip.downcase]
+      next unless ssp_ctrl
+      ssp_fields = ssp_ctrl.ssp_control_fields.index_by(&:field_name)
+      existing = sar_ctrl.sar_control_fields.pluck(:field_name).to_set
+
+      mappings = {
+        "responsibility"   => ssp_fields["responsible_entities"]&.field_value,
+        "implementation"   => ssp_fields["implementation_statement"]&.field_value.presence ||
+                              ssp_fields["implementation_summary"]&.field_value,
+        "impact_statement" => ssp_fields["notes"]&.field_value
+      }
+
+      mappings.each do |fname, fvalue|
+        next if fvalue.blank? || existing.include?(fname)
+        sar_ctrl.sar_control_fields.create!(field_name: fname, field_value: fvalue)
+        count += 1
+      end
+    end
+    count
+  end
+
+  def resolve_linked_ssp_for_sar(sar)
+    return SspDocument.find_by(id: sar.ssp_document_id) if sar.ssp_document_id.present?
+    return nil if sar.sap_document_id.blank?
+    sap = SapDocument.find_by(id: sar.sap_document_id)
+    return nil if sap.nil? || sap.ssp_document_id.blank?
+    SspDocument.find_by(id: sap.ssp_document_id)
   end
 
   def set_sar_document

@@ -256,6 +256,66 @@
   </div>
 <% end %>
 
+<%# ── ASSOCIATE SOURCE (when no SSP/SAP/profile linkage) ─────── %>
+<% no_chain = @sar_document.sap_document_id.blank? && @sar_document.ssp_document_id.blank? && @sar_document.profile_document_id.blank? %>
+<% if no_chain && @sar_document.draft? %>
+  <div class="card mt-3" style="border-left: 4px solid #f39c12;">
+    <h3 style="color: #f39c12;">Associate Source for Full Context</h3>
+    <p class="text-body-secondary">
+      OSCAL Assessment Results don't carry implementation details, responsibility
+      assignments, or impact statements -- those come from the linked SAP / SSP.
+      Associate this SAR below to populate the missing context fields.
+    </p>
+
+    <%= form_with url: associate_source_sar_document_path(@sar_document), method: :patch, local: true do |f| %>
+      <div class="row row-cols-1 row-cols-md-3 g-3">
+        <div class="col">
+          <div class="form-group">
+            <label for="sar_document_sap_document_id">Security Assessment Plan (SAP)</label>
+            <%= f.select "sar_document[sap_document_id]",
+                  options_for_select(
+                    SapDocument.order(:name).map { |s| [ "#{s.name} (#{s.sap_controls.count} controls)", s.id ] },
+                    @sar_document.sap_document_id
+                  ),
+                  { include_blank: "— Select SAP —" }, class: "form-control" %>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-group">
+            <label for="sar_document_ssp_document_id">System Security Plan (SSP)</label>
+            <%= f.select "sar_document[ssp_document_id]",
+                  options_for_select(
+                    SspDocument.order(:name).map { |s| [ "#{s.name} (#{s.ssp_controls.count} controls)", s.id ] },
+                    @sar_document.ssp_document_id
+                  ),
+                  { include_blank: "— Select SSP —" }, class: "form-control" %>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-group">
+            <label for="sar_document_profile_document_id">Baseline Profile</label>
+            <%= f.select "sar_document[profile_document_id]",
+                  options_for_select(
+                    ProfileDocument.where(lifecycle_status: "published").order(:name)
+                                   .map { |p| [ "#{p.name} (#{p.baseline_level || 'Custom'})", p.id ] },
+                    @sar_document.profile_document_id
+                  ),
+                  { include_blank: "— Select profile —" }, class: "form-control" %>
+          </div>
+        </div>
+      </div>
+      <p class="text-body-tertiary small mt-2">
+        Linking a SAP that has its own SSP link gives the richest enrichment
+        (SAR → SAP → SSP). Linking just an SSP works too. Profile linkage
+        populates per-objective records and assessment-method metadata.
+      </p>
+      <div class="d-flex gap-2 mt-3">
+        <%= f.submit "Associate & Re-process", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <%# ── CONTROL CARDS (paginated) ─────────────────────────────────── %>
 <div id="controlsContainer">
   <% @controls.each do |control| %>
