@@ -184,11 +184,22 @@ class SarJsonParserService
     findings.each do |finding|
       next unless finding["uuid"].present?
 
+      target = finding["target"] || {}
+      # When the OSCAL target points at an objective (target.type ==
+      # "objective-id"), tag the finding so synthesize_controls_from_results
+      # can later link it to the SarControlObjective record. We can't link
+      # here because the SarControl record for the objective's parent
+      # control may not exist yet.
+      target_data = target.dup
+      if target["type"].to_s.downcase == "objective-id" && target["target-id"].present?
+        target_data["needs_objective_link"] = true
+      end
+
       record = sar_result.sar_findings.create!(
         uuid:                          finding["uuid"],
         title:                         finding["title"],
         description:                   extract_text(finding["description"]),
-        target_data:                   finding["target"] || {},
+        target_data:                   target_data,
         implementation_statement_uuid: finding["implementation-statement-uuid"],
         origins_data:                  finding["origins"] || [],
         props_data:                    finding["props"] || [],
@@ -217,21 +228,31 @@ class SarJsonParserService
 
   def synthesize_controls_from_results
     control_data = {}
+    # objectives_by_control[control_id] = Set<objective_id> -- collected so
+    # we can create SarControlObjective records after the parent SarControls
+    # exist. findings_to_link is [[finding, objective_id], ...] -- links are
+    # set in a final pass once all objective records are in place.
+    objectives_by_control = Hash.new { |h, k| h[k] = Set.new }
+    findings_to_link = []
 
     @document.sar_results.each do |result|
-      # Extract from findings target-id
       result.sar_findings.each do |finding|
         target = finding.target_data || {}
-        ctrl_id = target["target-id"]
-        if ctrl_id.present?
-          status = target.dig("status", "state") || "other"
-          control_data[ctrl_id] ||= { status: status, title: finding.title }
+        target_id = target["target-id"]
+        next if target_id.blank?
+
+        ctrl_id, objective_id = split_objective_target(target_id)
+        status = target.dig("status", "state") || "other"
+        control_data[ctrl_id] ||= { status: status, title: finding.title }
+
+        if objective_id.present?
+          objectives_by_control[ctrl_id] << objective_id
+          findings_to_link << [ finding, ctrl_id, objective_id ]
         end
       end
 
       # Extract from observations (Checkov results use title "PASS: CKV_xxx" / "FAIL: CKV_xxx")
       result.sar_observations.each do |obs|
-        # Try to extract from props (some OSCAL SARs tag observations with control IDs)
         (obs.props_data || []).each do |prop|
           if prop["name"] == "control-id" || prop["name"] == "nist-control"
             ctrl_id = prop["value"]
@@ -241,17 +262,22 @@ class SarJsonParserService
         end
       end
 
-      # Extract from reviewed-controls in the result
+      # Extract from reviewed-controls in the result. include-controls may
+      # carry statement-ids that name specific objectives we should track.
       reviewed = result.reviewed_controls_data || {}
       (reviewed["control-selections"] || []).each do |sel|
         (sel["include-controls"] || []).each do |ic|
           ctrl_id = ic["control-id"]
-          control_data[ctrl_id] ||= { status: "reviewed", title: nil } if ctrl_id.present?
+          next if ctrl_id.blank?
+          control_data[ctrl_id] ||= { status: "reviewed", title: nil }
+          (ic["statement-ids"] || []).each { |sid| objectives_by_control[ctrl_id] << sid }
         end
       end
     end
 
-    # Create SarControl records
+    # Create SarControl records and remember each by control_id for the
+    # objective + finding link passes below.
+    sar_controls_by_id = {}
     control_data.each_with_index do |(ctrl_id, info), idx|
       ctrl = @document.sar_controls.create!(
         control_id: ctrl_id,
@@ -259,11 +285,87 @@ class SarJsonParserService
         section: "assessment-results",
         row_order: idx
       )
-      ctrl.sar_control_fields.create!(
-        field_name: "result",
-        field_value: info[:status]
-      )
+      ctrl.sar_control_fields.create!(field_name: "result", field_value: info[:status])
+      sar_controls_by_id[ctrl_id] = ctrl
     end
+
+    create_objective_records(sar_controls_by_id, objectives_by_control)
+    link_findings_to_objectives(sar_controls_by_id, findings_to_link)
+  end
+
+  # OSCAL SAR finding targets use IDs like "ac-1" (control-level) or
+  # "ac-1_obj.a-1" (objective-level). Split into [control_id, objective_id]
+  # where objective_id is nil for control-level targets.
+  def split_objective_target(target_id)
+    if target_id.to_s.include?("_obj")
+      ctrl_id = target_id.split("_obj", 2).first
+      [ ctrl_id, target_id ]
+    else
+      [ target_id, nil ]
+    end
+  end
+
+  def create_objective_records(sar_controls_by_id, objectives_by_control)
+    return if objectives_by_control.empty?
+
+    catalog = profile_catalog_json
+    now = Time.current
+    rows = []
+
+    objectives_by_control.each do |ctrl_id, oids|
+      ctrl = sar_controls_by_id[ctrl_id]
+      next unless ctrl
+
+      # Prefer catalog-derived objective records (with prose/label); fall
+      # back to skeletal records when no catalog is available so the FK
+      # from sar_findings is satisfiable.
+      catalog_objectives = if catalog.present?
+        ControlObjectiveExtractorService.objectives_for_control(catalog, ctrl_id)
+      else
+        []
+      end
+      by_id = catalog_objectives.index_by { |o| o[:objective_id] }
+
+      oids.each_with_index do |oid, idx|
+        meta = by_id[oid] || {}
+        rows << {
+          sar_control_id:      ctrl.id,
+          uuid:                SecureRandom.uuid,
+          objective_id:        oid,
+          label:               meta[:label],
+          parent_objective_id: meta[:parent_objective_id],
+          prose:               meta[:prose],
+          status:              "pending",
+          row_order:           meta[:row_order] || idx,
+          created_at:          now,
+          updated_at:          now
+        }
+      end
+    end
+
+    SarControlObjective.insert_all(rows) if rows.any?
+  end
+
+  def link_findings_to_objectives(sar_controls_by_id, findings_to_link)
+    return if findings_to_link.empty?
+
+    findings_to_link.each do |finding, ctrl_id, objective_id|
+      ctrl = sar_controls_by_id[ctrl_id]
+      next unless ctrl
+      objective = ctrl.sar_control_objectives.find_by(objective_id: objective_id)
+      next unless objective
+      finding.update_columns(sar_control_objective_id: objective.id)
+      # Strip the needs_objective_link flag now that linkage is satisfied.
+      td = finding.target_data || {}
+      if td["needs_objective_link"]
+        finding.update_columns(target_data: td.except("needs_objective_link"))
+      end
+    end
+  end
+
+  def profile_catalog_json
+    return nil if @document.profile_document_id.blank?
+    ProfileDocument.find_by(id: @document.profile_document_id)&.resolved_catalog_json
   end
 
   # ── Helpers ────────────────────────────────────────────────────

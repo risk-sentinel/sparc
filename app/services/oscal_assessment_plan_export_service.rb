@@ -137,7 +137,9 @@ class OscalAssessmentPlanExportService
     # (assessment_method like "examine,interview") appear in each
     # method's bucket so the OSCAL output reflects all methods.
     method_buckets = Hash.new { |h, k| h[k] = [] }
-    @document.sap_controls.where.not(assessment_method: [ nil, "" ]).each do |ctrl|
+    @document.sap_controls
+             .includes(:sap_control_objectives)
+             .where.not(assessment_method: [ nil, "" ]).each do |ctrl|
       ctrl.assessment_methods.each { |m| method_buckets[m] << ctrl }
     end
 
@@ -153,7 +155,8 @@ class OscalAssessmentPlanExportService
           step = {
             "uuid"        => SecureRandom.uuid,
             "title"       => "Assess #{ctrl.control_id}",
-            "description" => ctrl.objective.presence || "Assess #{ctrl.control_id} using #{method} method."
+            "description" => ctrl.aggregate_objective_text.presence ||
+                             "Assess #{ctrl.control_id} using #{method} method."
           }
           if ctrl.test_case.present?
             step["remarks"] = ctrl.test_case
@@ -163,9 +166,7 @@ class OscalAssessmentPlanExportService
         "related-controls" => {
           "control-selections" => [
             {
-              "include-controls" => controls_for_method.map do |ctrl|
-                { "control-id" => normalize_control_id(ctrl.control_id) }
-              end
+              "include-controls" => controls_for_method.map { |ctrl| build_include_control(ctrl) }
             }
           ]
         }
@@ -174,6 +175,19 @@ class OscalAssessmentPlanExportService
 
     return nil if activities.empty?
     { "activities" => activities }
+  end
+
+  # Builds an OSCAL include-controls[] entry. When the SapControl has
+  # discrete objective records, emits statement-ids so consumers can scope
+  # the assessment to specific objectives rather than the whole control.
+  # Objective IDs are passed through as-is (they already use the OSCAL
+  # canonical form like "ac-1_obj.a-1"); normalize_control_id is lossy and
+  # would corrupt them.
+  def build_include_control(ctrl)
+    entry = { "control-id" => normalize_control_id(ctrl.control_id) }
+    objective_ids = ctrl.sap_control_objectives.order(:row_order).pluck(:objective_id)
+    entry["statement-ids"] = objective_ids if objective_ids.any?
+    entry
   end
 
   # ── Terms and Conditions ───────────────────────────────────────────

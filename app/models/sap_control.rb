@@ -1,6 +1,7 @@
 class SapControl < ApplicationRecord
   belongs_to :sap_document
   has_many :sap_control_fields, dependent: :delete_all
+  has_many :sap_control_objectives, dependent: :delete_all
   has_many :control_back_matter_links, as: :linkable, dependent: :destroy
   has_many :back_matter_resources, through: :control_back_matter_links
 
@@ -21,6 +22,43 @@ class SapControl < ApplicationRecord
 
   def multiple_methods?
     assessment_methods.size > 1
+  end
+
+  # Computed status derived from this control's objectives. Returns one of
+  # the new objective vocabulary values (pending/in-progress/passing/failed/
+  # not_assessed). This is independent of `assessment_status` (legacy
+  # planned/in-progress/completed) so chip filters and historical data keep
+  # working until a separate cleanup PR migrates the column entirely.
+  #
+  # Precedence: failed beats in-progress -- a failed objective is a finding
+  # regardless of other objectives in flight. not_applicable doesn't block
+  # passing.
+  def objective_status_rollup(statuses = sap_control_objectives.pluck(:status))
+    return "not_assessed" if statuses.empty? || statuses.all?(&:nil?)
+    return "failed"       if statuses.include?("failed")
+    return "in-progress"  if statuses.include?("in-progress")
+    return "pending"      if statuses.any? { |s| %w[pending planned].include?(s) }
+    return "passing"      if statuses.all? { |s| %w[passing not_applicable].include?(s) }
+    "in-progress"
+  end
+
+  def objectives_count
+    sap_control_objectives.size
+  end
+
+  def objectives_passing_count
+    sap_control_objectives.passing.count
+  end
+
+  # Returns joined objective prose if discrete objective records exist;
+  # otherwise the legacy `objective` text column. Lets the show view and
+  # exporters use one accessor regardless of which storage form a SAP uses.
+  def aggregate_objective_text
+    return objective if sap_control_objectives.empty?
+    sap_control_objectives.order(:row_order).map do |obj|
+      label = obj.label.presence || obj.objective_id
+      "[#{label}] #{obj.prose}".strip
+    end.join("\n\n")
   end
 
   def to_hash

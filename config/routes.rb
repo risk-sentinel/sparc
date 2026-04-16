@@ -86,6 +86,7 @@ Rails.application.routes.draw do
       get :editor
       get :enrich
       patch :update_enrich
+      patch :update_objective
       get "edit_control/:sar_control_id", action: :edit_control, as: :edit_control
     end
     collection do
@@ -145,6 +146,7 @@ Rails.application.routes.draw do
       get :validate_oscal_export
       get :status
       patch :associate_source
+      patch :update_objective
     end
     collection do
       post :import_json

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -798,6 +798,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_010000) do
     t.index ["sap_control_id"], name: "index_sap_control_fields_on_sap_control_id"
   end
 
+  create_table "sap_control_objectives", force: :cascade do |t|
+    t.datetime "assessed_at"
+    t.string "assessor_name"
+    t.text "assessor_notes"
+    t.datetime "created_at", null: false
+    t.string "label"
+    t.string "objective_id", null: false
+    t.string "parent_objective_id"
+    t.text "prose"
+    t.integer "row_order", default: 0, null: false
+    t.bigint "sap_control_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["sap_control_id", "objective_id"], name: "idx_sap_obj_on_ctrl_oid", unique: true
+    t.index ["sap_control_id", "status"], name: "idx_sap_obj_on_ctrl_status"
+    t.index ["sap_control_id"], name: "index_sap_control_objectives_on_sap_control_id"
+    t.index ["uuid"], name: "index_sap_control_objectives_on_uuid", unique: true
+  end
+
   create_table "sap_controls", force: :cascade do |t|
     t.string "assessment_method"
     t.string "assessment_status", default: "planned"
@@ -863,6 +883,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_010000) do
     t.datetime "updated_at", null: false
     t.index ["sar_control_id", "field_name"], name: "index_tpr_control_fields_on_control_id_and_field_name"
     t.index ["sar_control_id"], name: "index_sar_control_fields_on_sar_control_id"
+  end
+
+  create_table "sar_control_objectives", force: :cascade do |t|
+    t.datetime "assessed_at"
+    t.string "assessor_name"
+    t.text "assessor_notes"
+    t.datetime "created_at", null: false
+    t.string "label"
+    t.string "objective_id", null: false
+    t.string "parent_objective_id"
+    t.text "prose"
+    t.integer "row_order", default: 0, null: false
+    t.bigint "sar_control_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["sar_control_id", "objective_id"], name: "idx_sar_obj_on_ctrl_oid", unique: true
+    t.index ["sar_control_id", "status"], name: "idx_sar_obj_on_ctrl_status"
+    t.index ["sar_control_id"], name: "index_sar_control_objectives_on_sar_control_id"
+    t.index ["uuid"], name: "index_sar_control_objectives_on_uuid", unique: true
   end
 
   create_table "sar_controls", force: :cascade do |t|
@@ -950,11 +990,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_010000) do
     t.jsonb "origins_data", default: []
     t.jsonb "props_data", default: []
     t.text "remarks"
+    t.bigint "sar_control_objective_id"
     t.bigint "sar_result_id", null: false
     t.jsonb "target_data", default: {}
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", null: false
+    t.index ["sar_control_objective_id"], name: "index_sar_findings_on_sar_control_objective_id"
     t.index ["sar_result_id", "uuid"], name: "idx_sar_findings_result_uuid", unique: true
     t.index ["sar_result_id"], name: "index_sar_findings_on_sar_result_id"
   end
@@ -1352,11 +1394,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_010000) do
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
   add_foreign_key "profile_documents", "profile_documents", column: "source_profile_id"
   add_foreign_key "sap_control_fields", "sap_controls", on_delete: :cascade
+  add_foreign_key "sap_control_objectives", "sap_controls", on_delete: :cascade
   add_foreign_key "sap_controls", "sap_documents", on_delete: :cascade
   add_foreign_key "sap_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "sap_documents", "profile_documents", on_delete: :nullify
   add_foreign_key "sap_documents", "ssp_documents", on_delete: :nullify
   add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
+  add_foreign_key "sar_control_objectives", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
   add_foreign_key "sar_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "sar_documents", "profile_documents"
@@ -1366,6 +1410,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_010000) do
   add_foreign_key "sar_finding_observations", "sar_observations", on_delete: :cascade
   add_foreign_key "sar_finding_risks", "sar_findings", on_delete: :cascade
   add_foreign_key "sar_finding_risks", "sar_risks", on_delete: :cascade
+  add_foreign_key "sar_findings", "sar_control_objectives", on_delete: :nullify
   add_foreign_key "sar_findings", "sar_results", on_delete: :cascade
   add_foreign_key "sar_local_components", "sar_documents", on_delete: :cascade
   add_foreign_key "sar_observations", "sar_results", on_delete: :cascade

@@ -7,9 +7,9 @@ class SapDocumentsController < ApplicationController
     show edit update destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml validate_oscal_export status
-    update_metadata publish publish_check associate_source
+    update_metadata publish publish_check associate_source update_objective
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective ]
 
   METHOD_ORDER = %w[examine interview test].freeze
 
@@ -31,7 +31,15 @@ class SapDocumentsController < ApplicationController
 
     @heatmap_data, @heatmap_families, @heatmap_methods = build_method_heatmap(controls_scope)
 
-    @controls = controls_scope.order(:row_order).includes(:sap_control_fields)
+    # N+1 guard: include objectives so the view can render the nested table
+    # and roll up per-control status without firing extra queries per card.
+    @controls = controls_scope.order(:row_order)
+                              .includes(:sap_control_fields, :sap_control_objectives)
+
+    # Status (objective rollup) heatmap by family. Independent of the methods
+    # heatmap so users can see assessment progress separately from coverage.
+    @status_heatmap_data, @status_heatmap_families, @status_heatmap_statuses =
+      build_objective_status_heatmap(@controls)
 
     # Group controls by family for collapsible display
     @controls_by_family = @controls.group_by { |c|
@@ -43,6 +51,14 @@ class SapDocumentsController < ApplicationController
     @family_names = {}
     family_codes = @sorted_families.map(&:downcase)
     ControlFamily.where(code: family_codes).each { |f| @family_names[f.code] = f.name }
+
+    # Allow ?objective_id=N to deep-link to an objective edit modal.
+    @editing_objective = SapControlObjective.joins(sap_control: :sap_document)
+                                            .find_by(id: params[:objective_id],
+                                                     sap_documents: { id: @sap_document.id })
+    @needs_reassociation = @sap_document.import_metadata&.dig(
+      ControlObjectiveExtractorService::REASSOCIATION_FLAG
+    ) == ControlObjectiveExtractorService::REASSOCIATION_VALUE
   end
 
   def new
@@ -219,40 +235,68 @@ class SapDocumentsController < ApplicationController
       redirect_to sap_document_path(@sap_document) and return
     end
 
-    # Build assessment data map from the linked profile's resolved catalog.
-    # Each control's parts include both assessment-method (which method to use)
-    # and assessment-objective (the prose describing what to assess).
-    assessment_map = build_assessment_data_map(profile_id, ssp_id)
+    # Build per-control assessment-method map (comma-separated). Objectives
+    # come from ControlObjectiveExtractorService below.
+    method_map = build_assessment_method_map(profile_id, ssp_id)
 
-    # Replace existing controls with controls from linked source
-    @sap_document.sap_controls.delete_all
-    control_ids.each_with_index do |control_id, idx|
-      denormalized_id = control_id.to_s.upcase.gsub(".", " (").then { |s| s.include?("(") ? "#{s})" : s }
-      data = assessment_map[control_id.to_s.downcase] || {}
-      methods = (data[:methods] || []).map(&:downcase).uniq
-      objectives = data[:objectives] || []
-      @sap_document.sap_controls.create!(
-        control_id: denormalized_id,
-        assessment_method: methods.join(","),  # comma-separated for multi-method controls
-        objective: objectives.any? ? objectives.join("\n\n") : nil,
-        assessment_status: "planned",
-        row_order: idx
-      )
+    # Replace existing controls + objectives. Wrap in a transaction so a
+    # mid-rebuild failure can't leave the document in a half-rebuilt state.
+    objective_count = 0
+    ApplicationRecord.transaction do
+      @sap_document.sap_controls.delete_all  # cascades to objectives
+      control_ids.each_with_index do |control_id, idx|
+        denormalized_id = control_id.to_s.upcase.gsub(".", " (").then { |s| s.include?("(") ? "#{s})" : s }
+        methods = (method_map[control_id.to_s.downcase] || []).map(&:downcase).uniq
+        @sap_document.sap_controls.create!(
+          control_id: denormalized_id,
+          assessment_method: methods.join(","),
+          assessment_status: "planned",
+          row_order: idx
+        )
+      end
+      objective_count = ControlObjectiveExtractorService.new(@sap_document).backfill!
     end
 
-    # Copy back-matter resources from the linked source(s)
     bm_count = copy_back_matter_from_source(profile_id, ssp_id)
 
     audit_log("sap_document_reprocessed", subject: @sap_document,
               metadata: { profile_id: profile_id, ssp_id: ssp_id,
-                          controls_assigned: control_ids.size, back_matter_copied: bm_count })
+                          controls_assigned: control_ids.size,
+                          objectives_assigned: objective_count,
+                          back_matter_copied: bm_count })
     msg = "Source associated. #{control_ids.size} controls assigned."
+    msg += " #{objective_count} objectives populated." if objective_count > 0
     msg += " #{bm_count} back-matter resources copied." if bm_count > 0
     flash[:success] = msg
     redirect_to sap_document_path(@sap_document)
   rescue StandardError => e
     flash[:error] = "Failed to associate: #{e.message}"
     redirect_to sap_document_path(@sap_document)
+  end
+
+  # PATCH /sap_documents/:id/update_objective
+  # Body: { objective_id, sap_control_objective: { status, assessor_name, assessor_notes } }
+  def update_objective
+    objective = SapControlObjective.joins(sap_control: :sap_document)
+                                   .find_by!(id: params[:objective_id],
+                                             sap_documents: { id: @sap_document.id })
+
+    permitted = params.require(:sap_control_objective)
+                      .permit(:status, :assessor_name, :assessor_notes)
+
+    if permitted[:status] == "passing" || permitted[:status] == "failed"
+      permitted[:assessed_at] = Time.current
+    end
+
+    if objective.update(permitted)
+      @sap_document.regenerate_oscal_uuid!
+      audit_log("sap_objective_updated", subject: @sap_document,
+                metadata: { objective_id: objective.objective_id, status: objective.status })
+      flash[:success] = "Objective #{objective.label.presence || objective.objective_id} updated."
+    else
+      flash[:error] = objective.errors.full_messages.join(", ")
+    end
+    redirect_to sap_document_path(@sap_document, anchor: "obj-#{objective.id}")
   end
 
   def status
@@ -274,13 +318,11 @@ class SapDocumentsController < ApplicationController
     @sap_document = SapDocument.find_by!(slug: params[:id])
   end
 
-  # Build a map of control_id => { methods: [...], objectives: [...] } from
-  # the linked profile's resolved catalog JSON. Each control's parts include:
-  #   - name="assessment-method" with props[name="method", value="EXAMINE|INTERVIEW|TEST"]
-  #   - name="assessment-objective" with prose text and an optional label prop
-  #     (e.g. "AC-01a.[01]") describing exactly what to assess.
-  # Returns lowercase control IDs (matches the pluck format).
-  def build_assessment_data_map(profile_id, ssp_id)
+  # Build a map of control_id => [methods] from the linked profile/SSP
+  # resolved catalog JSON. Objectives are no longer extracted here -- they
+  # are populated by ControlObjectiveExtractorService into discrete
+  # SapControlObjective records.
+  def build_assessment_method_map(profile_id, ssp_id)
     catalog_json = nil
     if profile_id.present?
       profile = ProfileDocument.find_by(id: profile_id)
@@ -293,57 +335,38 @@ class SapDocumentsController < ApplicationController
     end
     return {} if catalog_json.blank?
 
-    data_map = {}
+    methods_map = {}
     catalog = catalog_json.is_a?(Hash) ? (catalog_json["catalog"] || catalog_json) : {}
-    extract_data_from_groups(catalog["groups"] || [], data_map)
-    extract_data_from_controls(catalog["controls"] || [], data_map)
-    data_map
+    extract_methods_from_groups(catalog["groups"] || [], methods_map)
+    extract_methods_from_controls(catalog["controls"] || [], methods_map)
+    methods_map
   end
 
-  def extract_data_from_groups(groups, data_map)
+  def extract_methods_from_groups(groups, methods_map)
     groups.each do |group|
-      extract_data_from_controls(group["controls"] || [], data_map)
-      extract_data_from_groups(group["groups"] || [], data_map)
+      extract_methods_from_controls(group["controls"] || [], methods_map)
+      extract_methods_from_groups(group["groups"] || [], methods_map)
     end
   end
 
-  def extract_data_from_controls(controls, data_map)
+  def extract_methods_from_controls(controls, methods_map)
     controls.each do |ctrl|
       methods = []
-      objectives = []
-      walk_assessment_parts(ctrl["parts"] || [], methods, objectives)
-
-      if (methods.any? || objectives.any?) && ctrl["id"].present?
-        data_map[ctrl["id"].to_s.downcase] = { methods: methods.uniq, objectives: objectives }
+      walk_method_parts(ctrl["parts"] || [], methods)
+      if methods.any? && ctrl["id"].present?
+        methods_map[ctrl["id"].to_s.downcase] = methods.uniq
       end
-
-      # Recurse into nested controls (e.g. ac-2.1)
-      extract_data_from_controls(ctrl["controls"] || [], data_map)
+      extract_methods_from_controls(ctrl["controls"] || [], methods_map)
     end
   end
 
-  # Recursively walk a control's parts collecting assessment methods and
-  # objectives. NIST catalogs nest assessment-objective parts deeply
-  # (e.g. sr-1_obj → sr-1_obj.a → sr-1_obj.a-1) where only the leaf has
-  # the actual prose. We must recurse into ALL part subtrees regardless of
-  # whether the current node had usable content.
-  def walk_assessment_parts(parts, methods, objectives)
+  def walk_method_parts(parts, methods)
     parts.each do |part|
-      case part["name"]
-      when "assessment-method"
+      if part["name"] == "assessment-method"
         method_prop = (part["props"] || []).find { |p| p["name"] == "method" }
         methods << method_prop["value"] if method_prop && method_prop["value"].present?
-      when "assessment-objective"
-        prose = part["prose"].to_s.strip
-        if prose.present?
-          label_prop = (part["props"] || []).find { |p| p["name"] == "label" }
-          prefix = label_prop && label_prop["value"].present? ? "[#{label_prop['value']}] " : ""
-          objectives << "#{prefix}#{prose}"
-        end
       end
-      # Always recurse — child parts may carry the prose even when the parent
-      # part is just a structural wrapper.
-      walk_assessment_parts(part["parts"] || [], methods, objectives)
+      walk_method_parts(part["parts"] || [], methods)
     end
   end
 
@@ -503,6 +526,28 @@ class SapDocumentsController < ApplicationController
     ordered = METHOD_ORDER.select { |m| all_methods.include?(m) }
     ordered << "multiple" if all_methods.include?("multiple")
     ordered += (all_methods - METHOD_ORDER - [ "multiple" ]).sort
+
+    [ data, families, ordered ]
+  end
+
+  # Aggregates objective_status_rollup per control_family. Counts each
+  # control once under its rolled-up status. Controls without objectives
+  # land in the "not_assessed" bucket.
+  STATUS_ORDER = %w[failed in-progress pending passing not_applicable not_assessed].freeze
+
+  def build_objective_status_heatmap(controls)
+    data = {}
+    controls.each do |ctrl|
+      family = ctrl.control_family.presence || ctrl.control_id.to_s.split("-").first.upcase
+      next if family.blank?
+      data[family] ||= Hash.new(0)
+      data[family][ctrl.objective_status_rollup] += 1
+    end
+
+    families = data.keys.sort
+    all_statuses = data.values.flat_map(&:keys).uniq
+    ordered = STATUS_ORDER.select { |s| all_statuses.include?(s) }
+    ordered += (all_statuses - STATUS_ORDER).sort
 
     [ data, families, ordered ]
   end

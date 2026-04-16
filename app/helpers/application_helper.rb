@@ -62,6 +62,23 @@ module ApplicationHelper
     SAP_METHOD_COLORS[m] || "#7f8c8d"
   end
 
+  # Objective rollup colors -- used by both SAP and SAR show pages for the
+  # secondary "Status by Control Family" heatmap. Mirrors the per-row pill
+  # colors in _objectives_table partials so legend and cells match.
+  SAP_OBJECTIVE_STATUS_COLORS = {
+    "failed"         => "#e74c3c",
+    "in-progress"    => "#f39c12",
+    "pending"        => "#95a5a6",
+    "passing"        => "#27ae60",
+    "not_applicable" => "#7f8c8d",
+    "not_assessed"   => "#bdc3c7"
+  }.freeze
+
+  def sap_objective_status_color(status)
+    SAP_OBJECTIVE_STATUS_COLORS[status.to_s] || "#7f8c8d"
+  end
+  alias_method :sar_objective_status_color, :sap_objective_status_color
+
   PROFILE_PRIORITY_COLORS = {
     "P1"     => "#e74c3c",
     "P2"     => "#f39c12",

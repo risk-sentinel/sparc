@@ -11,9 +11,9 @@ class SarDocumentsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export,
     :edit_control, :status, :update_metadata, :enrich, :update_enrich,
-    :publish, :publish_check
+    :publish, :publish_check, :update_objective
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective ]
 
   helper_method :filter_params
 
@@ -69,9 +69,11 @@ class SarDocumentsController < ApplicationController
     end
 
     # Paginate (explicit order since default_scope was removed for query performance)
+    # N+1 guard: include objectives so the per-control table renders without
+    # firing a query per row.
     @pagy, @controls = pagy(
       :offset,
-      filtered.order(:row_order).includes(:sar_control_fields),
+      filtered.order(:row_order).includes(:sar_control_fields, :sar_control_objectives),
       limit: CONTROLS_PER_PAGE
     )
 
@@ -79,9 +81,21 @@ class SarDocumentsController < ApplicationController
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
 
+    # Objective rollup heatmap -- built from full base_filtered scope, not
+    # the paginated subset, so the family aggregates are correct.
+    @status_heatmap_data, @status_heatmap_families, @status_heatmap_statuses =
+      build_objective_status_heatmap(base_filtered)
+
     # Totals for display
     @total_controls = controls_scope.count
     @filtered_count = filtered.count
+
+    @editing_objective = SarControlObjective.joins(sar_control: :sar_document)
+                                            .find_by(id: params[:objective_id],
+                                                     sar_documents: { id: @sar_document.id })
+    @needs_reassociation = @sar_document.import_metadata&.dig(
+      ControlObjectiveExtractorService::REASSOCIATION_FLAG
+    ) == ControlObjectiveExtractorService::REASSOCIATION_VALUE
   end
 
   def update
@@ -326,6 +340,30 @@ class SarDocumentsController < ApplicationController
       status: @sar_document.status,
       error_message: @sar_document.error_message
     }
+  end
+
+  # PATCH /sar_documents/:id/update_objective
+  def update_objective
+    objective = SarControlObjective.joins(sar_control: :sar_document)
+                                   .find_by!(id: params[:objective_id],
+                                             sar_documents: { id: @sar_document.id })
+
+    permitted = params.require(:sar_control_objective)
+                      .permit(:status, :assessor_name, :assessor_notes)
+
+    if permitted[:status] == "passing" || permitted[:status] == "failed"
+      permitted[:assessed_at] = Time.current
+    end
+
+    if objective.update(permitted)
+      @sar_document.regenerate_oscal_uuid!
+      audit_log("sar_objective_updated", subject: @sar_document,
+                metadata: { objective_id: objective.objective_id, status: objective.status })
+      flash[:success] = "Objective #{objective.label.presence || objective.objective_id} updated."
+    else
+      flash[:error] = objective.errors.full_messages.join(", ")
+    end
+    redirect_to sar_document_path(@sar_document, anchor: "obj-#{objective.id}")
   end
 
   def destroy
@@ -611,6 +649,30 @@ class SarDocumentsController < ApplicationController
     all_statuses = data.values.flat_map(&:keys).uniq
     ordered      = SAR_STATUS_ORDER.select { |s| all_statuses.include?(s) }
     ordered     += (all_statuses - SAR_STATUS_ORDER).sort
+
+    [ data, families, ordered ]
+  end
+
+  OBJECTIVE_STATUS_ORDER = %w[failed in-progress pending passing not_applicable not_assessed].freeze
+
+  # Builds an objective rollup heatmap for SAR. Counts each control once
+  # under its rolled-up objective status (failed > in-progress > pending >
+  # passing > not_assessed). Independent of cached_result so users can see
+  # both the OSCAL-level result and the per-objective progress at a glance.
+  def build_objective_status_heatmap(scope)
+    data = {}
+    scope.where.not(control_id: [ nil, "" ])
+         .includes(:sar_control_objectives).find_each(batch_size: 500) do |ctrl|
+      family = ctrl.control_family.presence || ctrl.control_id.to_s.split("-").first.upcase
+      next if family.blank?
+      data[family] ||= Hash.new(0)
+      data[family][ctrl.objective_status_rollup] += 1
+    end
+
+    families = data.keys.sort
+    all_statuses = data.values.flat_map(&:keys).uniq
+    ordered = OBJECTIVE_STATUS_ORDER.select { |s| all_statuses.include?(s) }
+    ordered += (all_statuses - OBJECTIVE_STATUS_ORDER).sort
 
     [ data, families, ordered ]
   end

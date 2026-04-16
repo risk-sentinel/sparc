@@ -6,6 +6,27 @@ RSpec.describe SarControl, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:sar_document) }
     it { is_expected.to have_many(:sar_control_fields).dependent(:delete_all) }
+    it { is_expected.to have_many(:sar_control_objectives).dependent(:delete_all) }
+  end
+
+  describe "#objective_status_rollup" do
+    let(:control) { create(:sar_control) }
+
+    it "returns not_assessed when no objectives exist" do
+      expect(control.objective_status_rollup).to eq("not_assessed")
+    end
+
+    it "returns failed when any objective is failed" do
+      create(:sar_control_objective, sar_control: control, status: "passing")
+      create(:sar_control_objective, sar_control: control, status: "failed")
+      expect(control.reload.objective_status_rollup).to eq("failed")
+    end
+
+    it "returns passing when all objectives are passing or not_applicable" do
+      create(:sar_control_objective, sar_control: control, status: "passing")
+      create(:sar_control_objective, sar_control: control, status: "not_applicable")
+      expect(control.reload.objective_status_rollup).to eq("passing")
+    end
   end
 
   describe "scopes" do

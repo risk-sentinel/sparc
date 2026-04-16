@@ -69,6 +69,32 @@ RSpec.describe OscalAssessmentPlanExportService do
     end
   end
 
+  describe "include-controls statement-ids" do
+    it "emits statement-ids for controls with sap_control_objectives" do
+      ctrl = sap.sap_controls.find_by(control_id: "AC-1")
+      create(:sap_control_objective, sap_control: ctrl, objective_id: "ac-1_obj.a-1", row_order: 0)
+      create(:sap_control_objective, sap_control: ctrl, objective_id: "ac-1_obj.a-2", row_order: 1)
+
+      data = JSON.parse(subject.export_unvalidated)
+      activity = data["assessment-plan"]["local-definitions"]["activities"]
+                   .find { |a| a["props"].any? { |p| p["value"] == "EXAMINE" } }
+      include_entry = activity["related-controls"]["control-selections"]
+                              .first["include-controls"]
+                              .find { |c| c["control-id"] == "ac-1" }
+
+      expect(include_entry["statement-ids"]).to eq([ "ac-1_obj.a-1", "ac-1_obj.a-2" ])
+    end
+
+    it "omits statement-ids for controls without objectives" do
+      data = JSON.parse(subject.export_unvalidated)
+      ac2_activity = data["assessment-plan"]["local-definitions"]["activities"]
+                       .find { |a| a["props"].any? { |p| p["value"] == "TEST" } }
+      include_entry = ac2_activity["related-controls"]["control-selections"]
+                                   .first["include-controls"].first
+      expect(include_entry).not_to have_key("statement-ids")
+    end
+  end
+
   describe "#validation_result" do
     it "returns a result struct" do
       result = subject.validation_result

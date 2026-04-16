@@ -188,4 +188,40 @@ RSpec.describe "SarDocuments", type: :request do
       expect(response).to have_http_status(:redirect)
     end
   end
+
+  describe "PATCH /sar_documents/:id/update_objective" do
+    let(:sar) { create(:sar_document) }
+    let(:control) { create(:sar_control, sar_document: sar) }
+    let(:objective) { create(:sar_control_objective, sar_control: control, status: "pending") }
+
+    it "updates the objective and stamps assessed_at on terminal status" do
+      patch update_objective_sar_document_path(sar), params: {
+        objective_id: objective.id,
+        sar_control_objective: {
+          status: "failed",
+          assessor_name: "Bob",
+          assessor_notes: "Evidence missing."
+        }
+      }
+
+      objective.reload
+      expect(objective.status).to eq("failed")
+      expect(objective.assessor_name).to eq("Bob")
+      expect(objective.assessed_at).to be_within(5.seconds).of(Time.current)
+    end
+
+    it "does not update an objective belonging to a different SAR" do
+      other_sar = create(:sar_document)
+      other_objective = create(:sar_control_objective,
+                               sar_control: create(:sar_control, sar_document: other_sar),
+                               status: "pending")
+
+      patch update_objective_sar_document_path(sar), params: {
+        objective_id: other_objective.id,
+        sar_control_objective: { status: "passing" }
+      }
+
+      expect(other_objective.reload.status).to eq("pending")
+    end
+  end
 end

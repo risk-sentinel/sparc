@@ -228,6 +228,34 @@
      },
      legend_items: [["Passed", "#27ae60"], ["Failed", "#e74c3c"], ["Not Satisfied", "#f39c12"], ["Not Specified", "#95a5a6"]] %>
 
+<%# ── ASSESSMENT STATUS (OBJECTIVE ROLLUP) HEATMAP ─────────────── %>
+<% if @status_heatmap_data.present? && @status_heatmap_families.any? %>
+  <%= render "shared/heatmap",
+       heatmap_data: @status_heatmap_data,
+       heatmap_families: @status_heatmap_families,
+       heatmap_statuses: @status_heatmap_statuses,
+       title: "Assessment Status by Control Family (Objective Rollup)",
+       color_helper: :sar_objective_status_color,
+       filter_key: "objective-status",
+       show_percentage: false,
+       legend_items: [
+         ["Failed", "#e74c3c"], ["In Progress", "#f39c12"],
+         ["Pending", "#95a5a6"], ["Passing", "#27ae60"],
+         ["N/A", "#7f8c8d"], ["Not Assessed", "#bdc3c7"]
+       ] %>
+<% end %>
+
+<%# ── NEEDS RE-ASSOCIATION BANNER ──────────────────────────────── %>
+<% if @needs_reassociation %>
+  <div class="card mt-3 mb-3" style="border-left: 4px solid #f39c12;">
+    <strong style="color: #f39c12;">Per-objective tracking unavailable.</strong>
+    <span class="text-body-secondary">
+      This SAR isn't linked to a profile, so individual NIST 800-53A determination
+      statements (assessment objectives) can't be populated for findings traceability.
+    </span>
+  </div>
+<% end %>
+
 <%# ── CONTROL CARDS (paginated) ─────────────────────────────────── %>
 <div id="controlsContainer">
   <% @controls.each do |control| %>
@@ -367,6 +395,8 @@
               <% end %>
             </table>
           <% end %>
+
+          <%= render "sar_documents/objectives_table", control: control, sar_document: @sar_document %>
         </div>
 
         <%# ── Edit form (toggled via JS) ── %>
@@ -467,6 +497,53 @@
     Showing <%= @pagy.from %>-<%= @pagy.to %> of <%= @pagy.count %> controls
   </div>
 </div>
+<% end %>
+
+<%# ── Edit objective modal (inline) ── %>
+<% if @editing_objective %>
+  <% obj = @editing_objective %>
+  <% obj_default_assessor = obj.assessor_name.presence || current_user&.display_label %>
+  <div id="editObjectiveModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+    <div class="bg-body rounded-3" style="padding: 2rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <div class="text-body-tertiary" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;">Assessment Objective</div>
+          <h3 style="margin: 0;"><%= obj.label.presence || obj.objective_id %></h3>
+        </div>
+        <%= link_to "&times;".html_safe, sar_document_path(@sar_document),
+              class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
+      </div>
+
+      <% if obj.prose.present? %>
+        <div class="bg-body-secondary rounded p-2 mb-3" style="font-size: 0.85rem;">
+          <%= obj.prose %>
+        </div>
+      <% end %>
+
+      <%= form_with url: update_objective_sar_document_path(@sar_document), method: :patch, local: true do |f| %>
+        <%= hidden_field_tag :objective_id, obj.id %>
+        <div class="form-group mb-3">
+          <label>Status</label>
+          <%= select_tag "sar_control_objective[status]",
+                options_for_select(SarControlObjective::OBJECTIVE_STATUSES.map { |s| [s.humanize, s] }, obj.status),
+                class: "form-control" %>
+        </div>
+        <div class="form-group mb-3">
+          <label>Assessor Name</label>
+          <%= text_field_tag "sar_control_objective[assessor_name]", obj_default_assessor, class: "form-control" %>
+        </div>
+        <div class="form-group mb-3">
+          <label>Assessor Notes</label>
+          <%= text_area_tag "sar_control_objective[assessor_notes]", obj.assessor_notes, rows: 4, class: "form-control",
+                placeholder: "Findings, evidence references, or notes for this objective" %>
+        </div>
+        <div class="d-flex gap-2">
+          <%= f.submit "Save Objective", class: "btn btn-success" %>
+          <%= link_to "Cancel", sar_document_path(@sar_document), class: "btn btn-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
 <% end %>
 
 <%= render "shared/uuid_replaced_warning", document: @sar_document %>
