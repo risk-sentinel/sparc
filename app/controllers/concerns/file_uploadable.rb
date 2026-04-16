@@ -59,13 +59,15 @@ module FileUploadable
     safe_ext     = SAFE_EXTENSIONS.fetch(file_type, ".dat")
     persist_path = Rails.root.join("tmp", "#{safe_prefix}_#{SecureRandom.hex(8)}#{safe_ext}")
     File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
+    uploaded_file.rewind  # Reset IO position for Active Storage attach
 
     begin
       document = document_class.create!(
         name:              File.basename(uploaded_file.original_filename, ".*"),
         file_type:         file_type,
         original_filename: uploaded_file.original_filename,
-        status:            "pending"
+        status:            "pending",
+        creation_method:   file_type == "excel" ? nil : "oscal_import"
       )
       document.file.attach(uploaded_file)
 
@@ -122,12 +124,14 @@ module FileUploadable
         safe_ext     = SAFE_EXTENSIONS.fetch(file_type, ".dat")
         persist_path = Rails.root.join("tmp", "#{safe_prefix}_#{SecureRandom.hex(8)}#{safe_ext}")
         File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
+        uploaded_file.rewind  # Reset IO position for Active Storage attach
 
         document = document_class.create!(
           name:              File.basename(uploaded_file.original_filename, ".*"),
           file_type:         file_type,
           original_filename: uploaded_file.original_filename,
-          status:            "pending"
+          status:            "pending",
+          creation_method:   file_type == "excel" ? nil : "oscal_import"
         )
         document.file.attach(uploaded_file)
 
