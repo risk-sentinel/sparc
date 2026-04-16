@@ -368,13 +368,23 @@ class SarDocumentsController < ApplicationController
     # Re-enrich SAR controls from the linked SAP -> SSP chain (or direct SSP).
     field_count = enrich_existing_controls_from_sap_or_ssp_chain
 
+    # Copy back-matter resources from each linked source. Mirrors the SAP
+    # pattern -- without this, a SAR import with no native back-matter
+    # would never show resources even when the upstream SSP/profile has
+    # them. Reads from BOTH BackMatterResource records (managed) AND
+    # import_metadata["back_matter"] (imported OSCAL hashes).
+    bm_count = copy_back_matter_into_sar(sap_id, ssp_id, profile_id)
+
     audit_log("sar_document_reprocessed", subject: @sar_document,
               metadata: { sap_id: sap_id, ssp_id: ssp_id, profile_id: profile_id,
-                          objectives_assigned: objective_count, fields_added: field_count })
+                          objectives_assigned: objective_count,
+                          fields_added: field_count,
+                          back_matter_copied: bm_count })
 
     msg = "Source associated."
     msg += " #{field_count} context fields populated." if field_count > 0
     msg += " #{objective_count} objectives populated." if objective_count > 0
+    msg += " #{bm_count} back-matter resources copied." if bm_count > 0
     flash[:success] = msg
     redirect_to sar_document_path(@sar_document)
   rescue StandardError => e
@@ -660,6 +670,87 @@ class SarDocumentsController < ApplicationController
     sap = SapDocument.find_by(id: sar.sap_document_id)
     return nil if sap.nil? || sap.ssp_document_id.blank?
     SspDocument.find_by(id: sap.ssp_document_id)
+  end
+
+  # Copy back-matter resources from each linked source (SAP + its chained
+  # SSP/profile, the directly linked SSP, the directly linked profile)
+  # into this SAR. Reads from BOTH BackMatterResource records (managed)
+  # AND import_metadata["back_matter"] (imported from OSCAL).
+  # Idempotent on UUID -- existing entries are skipped. Returns count of
+  # newly-created records.
+  def copy_back_matter_into_sar(sap_id, ssp_id, profile_id)
+    sources = []
+    if sap_id.present?
+      sap = SapDocument.find_by(id: sap_id)
+      if sap
+        sources << sap
+        sources << SspDocument.find_by(id: sap.ssp_document_id)         if sap.ssp_document_id.present?
+        sources << ProfileDocument.find_by(id: sap.profile_document_id) if sap.profile_document_id.present?
+      end
+    end
+    sources << SspDocument.find_by(id: ssp_id)         if ssp_id.present?
+    sources << ProfileDocument.find_by(id: profile_id) if profile_id.present?
+    sources.compact!
+    sources.uniq!
+
+    existing_uuids = @sar_document.back_matter_resources.pluck(:uuid).to_set
+    # source_uuids tracks which upstream UUIDs we've already copied so a
+    # second associate_source call doesn't produce duplicates.
+    existing_source_uuids = @sar_document.back_matter_resources
+                                         .pluck(:uuid, :resource_data)
+                                         .map { |u, d| (d || {})["source_uuid"] || u }
+                                         .to_set
+    copied = 0
+
+    sources.each do |source|
+      # 1. Managed BackMatterResource records. UUID is globally unique
+      # at the DB level, so we generate a new UUID for the SAR's copy and
+      # stash the original in resource_data["source_uuid"] for traceability.
+      if source.respond_to?(:back_matter_resources)
+        source.back_matter_resources.each do |src_bm|
+          next if existing_source_uuids.include?(src_bm.uuid)
+          new_uuid = SecureRandom.uuid
+          merged_data = (src_bm.resource_data || {}).merge("source_uuid" => src_bm.uuid)
+          @sar_document.back_matter_resources.create!(
+            uuid:          new_uuid,
+            title:         src_bm.title,
+            description:   src_bm.description,
+            rel:           src_bm.rel,
+            media_type:    src_bm.media_type,
+            href:          src_bm.href,
+            source:        "imported",
+            resource_data: merged_data
+          )
+          existing_uuids << new_uuid
+          existing_source_uuids << src_bm.uuid
+          copied += 1
+        end
+      end
+
+      # 2. Imported back-matter (OSCAL JSON hashes preserved on import)
+      imported = source.respond_to?(:import_metadata) ? (source.import_metadata&.dig("back_matter") || []) : []
+      imported.each do |bm_hash|
+        uuid = bm_hash["uuid"]
+        next if uuid.blank? || existing_uuids.include?(uuid)
+        rlink = (bm_hash["rlinks"] || []).first || {}
+        @sar_document.back_matter_resources.create!(
+          uuid:          uuid,
+          title:         bm_hash["title"] || "Imported Resource",
+          description:   bm_hash["description"],
+          rel:           "reference",
+          media_type:    rlink["media-type"],
+          href:          rlink["href"],
+          source:        "imported",
+          resource_data: bm_hash.except("uuid", "title", "description", "rlinks")
+        )
+        existing_uuids << uuid
+        copied += 1
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.warn("[SarDocumentsController] skipping invalid back-matter #{uuid}: #{e.message}")
+      end
+    end
+
+    copied
   end
 
   def set_sar_document

@@ -229,6 +229,71 @@ RSpec.describe "SarDocuments", type: :request do
       expect(ctrl.sar_control_fields.find_by(field_name: "responsibility").field_value)
         .to eq("Manually Set")
     end
+
+    it "copies back-matter resources from the linked SAP into the SAR" do
+      source_uuid = SecureRandom.uuid
+      sap.back_matter_resources.create!(
+        uuid: source_uuid,
+        title: "Security Policy v3",
+        description: "Org-wide info security policy",
+        rel: "reference",
+        href: "https://example.com/policy.pdf",
+        source: "managed"
+      )
+
+      expect {
+        patch associate_source_sar_document_path(sar), params: {
+          sar_document: { sap_document_id: sap.id }
+        }
+      }.to change { sar.reload.back_matter_resources.count }.by(1)
+
+      copied = sar.back_matter_resources.find_by(title: "Security Policy v3")
+      expect(copied).to be_present
+      expect(copied.source).to eq("imported")
+      # SAR's copy gets a new UUID (the column is globally unique) and
+      # remembers the upstream UUID in resource_data for traceability.
+      expect(copied.uuid).not_to eq(source_uuid)
+      expect(copied.resource_data["source_uuid"]).to eq(source_uuid)
+    end
+
+    it "copies imported back-matter from import_metadata of the linked SSP" do
+      ssp.update!(import_metadata: {
+        "back_matter" => [
+          { "uuid" => "11111111-aaaa-4000-8000-000000000001",
+            "title" => "Imported Policy",
+            "description" => "From OSCAL SSP import",
+            "rlinks" => [ { "href" => "https://example.com/imported.pdf",
+                            "media-type" => "application/pdf" } ] }
+        ]
+      })
+
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { ssp_document_id: ssp.id }
+      }
+
+      copied = sar.reload.back_matter_resources.find_by(uuid: "11111111-aaaa-4000-8000-000000000001")
+      expect(copied).to be_present
+      expect(copied.title).to eq("Imported Policy")
+      expect(copied.href).to eq("https://example.com/imported.pdf")
+    end
+
+    it "skips back-matter already copied from the same source (idempotent re-association)" do
+      source_uuid = SecureRandom.uuid
+      sap.back_matter_resources.create!(uuid: source_uuid, title: "Doc",
+                                        rel: "reference", source: "managed")
+
+      # First call -- creates the copy
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+      first_count = sar.reload.back_matter_resources.count
+
+      # Second call -- source_uuid match prevents a duplicate
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+      expect(sar.reload.back_matter_resources.count).to eq(first_count)
+    end
   end
 
   describe "PATCH /sar_documents/:id/update_objective" do
