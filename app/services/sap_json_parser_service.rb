@@ -294,13 +294,15 @@ class SapJsonParserService
     end
   end
 
+  # Build map of control_id => comma-separated methods (e.g. "examine,interview")
+  # so multi-method controls are preserved on import.
   def build_method_map(activities)
-    map = {}
+    accumulator = Hash.new { |h, k| h[k] = [] }
     activities.each do |activity|
-      (activity[:control_ids] || []).each do |cid|
-        map[cid] ||= activity[:method]
-      end
+      m = activity[:method].to_s.downcase.strip
+      next if m.blank?
+      (activity[:control_ids] || []).each { |cid| accumulator[cid] << m }
     end
-    map
+    accumulator.transform_values { |methods| methods.uniq.join(",") }
   end
 end

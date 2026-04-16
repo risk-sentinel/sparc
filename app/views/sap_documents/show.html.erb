@@ -12,6 +12,7 @@
   interview_count = @method_counts["interview"].to_i
   test_count = @method_counts["test"].to_i
   none_count = @method_counts[nil].to_i
+  multiple_count = @multiple_count.to_i
 
   planned_count = @status_counts["planned"].to_i
   in_progress_count = @status_counts["in-progress"].to_i
@@ -104,9 +105,9 @@
 
     <div class="sparc-divider-v"></div>
 
-    <%# ── Method breakdown ── %>
+    <%# ── Method breakdown (counts each method individually; "Multiple" tracks controls with 2+ methods) ── %>
     <div class="d-flex flex-wrap" style="gap: 0.45rem;">
-      <% [["Examine", examine_count, "#3498db", "examine"], ["Interview", interview_count, "#f39c12", "interview"], ["Test", test_count, "#e74c3c", "test"], ["Unset", none_count, "#95a5a6", "(none)"]].each do |label, count, color, filter_val| %>
+      <% [["Examine", examine_count, "#3498db", "examine"], ["Interview", interview_count, "#f39c12", "interview"], ["Test", test_count, "#e74c3c", "test"], ["Multiple", multiple_count, "#9b59b6", "multiple"], ["Unset", none_count, "#95a5a6", "(none)"]].each do |label, count, color, filter_val| %>
         <% next if count == 0 %>
         <div class="sparc-summary-chip summary-chip"
              data-filter-value="<%= filter_val %>"
@@ -135,7 +136,7 @@
     </div>
   </div>
 
-  <%# ── Progress bar by method ── %>
+  <%# ── Progress bar by method (each method counted individually; total may exceed control count) ── %>
   <div class="mt-3">
     <div class="sparc-progress-bar">
       <% total = [examine_count + interview_count + test_count + none_count, 1].max %>
@@ -156,7 +157,7 @@
      color_helper: :sap_method_color,
      filter_key: "method",
      show_percentage: false,
-     legend_items: [["Examine", "#3498db"], ["Interview", "#f39c12"], ["Test", "#e74c3c"], ["None", "#95a5a6"]] %>
+     legend_items: [["Examine", "#3498db"], ["Interview", "#f39c12"], ["Test", "#e74c3c"], ["Multiple", "#9b59b6"], ["None", "#95a5a6"]] %>
 
 <%# ── ASSOCIATE SOURCE (when 0 controls and SAP uses include-all) ── %>
 <% if @total_controls == 0 && @sap_document.draft? %>
@@ -231,19 +232,29 @@
   <% family_controls.sort_by { |c| c.control_id.to_s.gsub(/\d+/) { |n| n.rjust(3, "0") } }.each do |control| %>
     <%
       field_map = control.sap_control_fields.index_by(&:field_name)
-      method_val = control.assessment_method.presence || "(None)"
+      methods = control.assessment_methods
+      is_multiple = methods.size > 1
       method_colors_map = { "examine" => "#3498db", "interview" => "#f39c12", "test" => "#e74c3c" }
-      method_color = method_colors_map[method_val] || "#95a5a6"
+      # Border color: purple if multi-method, otherwise the single method's color (gray if none)
+      border_color = is_multiple ? "#9b59b6" : (method_colors_map[methods.first] || "#95a5a6")
+      # data-method drives client-side filtering: "multiple" if 2+ methods so the
+      # heatmap "Multiple" filter highlights the same controls
+      method_filter_val = if methods.empty? then "(None)"
+                          elsif is_multiple then "multiple"
+                          else methods.first end
       status_val = control.assessment_status.presence || "planned"
       status_colors_map = { "planned" => "#95a5a6", "in-progress" => "#f39c12", "completed" => "#27ae60" }
       status_color = status_colors_map[status_val] || "#95a5a6"
       family_code = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
     %>
+    <%# data-methods drives chip filtering: a multi-method control matches each of its
+        method chips AND the synthetic "multiple" chip (see heatmap_controller.js) %>
     <div class="control-card rounded-3"
          data-family="<%= family_code %>"
-         data-method="<%= method_val %>"
+         data-method="<%= method_filter_val %>"
+         data-methods="<%= methods.join(',') %>"
          data-status="<%= status_val %>"
-         style="border-left: 4px solid <%= method_color %>;">
+         style="border-left: 4px solid <%= border_color %>;">
 
       <%# ── Card header ── %>
       <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
@@ -252,9 +263,20 @@
             <span class="sparc-ctrl-id">
               <%= control.control_id.presence || "&mdash;".html_safe %>
             </span>
-            <span class="sparc-status-pill" style="background: <%= method_color %>;">
-              <%= method_val.titleize %>
-            </span>
+            <% if methods.empty? %>
+              <span class="sparc-status-pill" style="background: #95a5a6;">None</span>
+            <% else %>
+              <% methods.each do |m| %>
+                <span class="sparc-status-pill" style="background: <%= method_colors_map[m] || '#95a5a6' %>;">
+                  <%= m.titleize %>
+                </span>
+              <% end %>
+              <% if is_multiple %>
+                <span class="sparc-tag-outline" title="This control has multiple assessment methods" style="background: #9b59b633; color: #9b59b6; border: 1px solid #9b59b666; font-weight: 600;">
+                  Multiple
+                </span>
+              <% end %>
+            <% end %>
             <span class="sparc-tag-outline" style="background: <%= status_color %>22; color: <%= status_color %>; border: 1px solid <%= status_color %>44;">
               <%= status_val.titleize %>
             </span>
@@ -376,10 +398,18 @@
 
       <%= form_with url: sap_document_path(@sap_document, control_id: @control.id), method: :patch, local: true do |f| %>
         <div class="form-group">
-          <label>Assessment Method</label>
-          <%= f.select :assessment_method,
-                options_for_select(SapControl::ASSESSMENT_METHODS.map { |m| [m.titleize, m] }, @control.assessment_method),
-                { include_blank: "— Select —" }, class: "form-control", name: "sap_control[assessment_method]" %>
+          <label>Assessment Method(s)</label>
+          <% selected_methods = @control.assessment_methods %>
+          <div class="d-flex gap-3 flex-wrap" style="padding: 0.4rem 0;">
+            <% SapControl::ASSESSMENT_METHODS.each do |m| %>
+              <div class="form-check">
+                <%= check_box_tag "sap_control[assessment_methods][]", m, selected_methods.include?(m),
+                      id: "method_#{m}", class: "form-check-input" %>
+                <label class="form-check-label" for="method_<%= m %>"><%= m.titleize %></label>
+              </div>
+            <% end %>
+          </div>
+          <small class="text-body-secondary">Select all methods used to assess this control. Multiple methods are common (e.g., Examine + Interview, or all three).</small>
         </div>
         <div class="form-group">
           <label>Assessment Status</label>

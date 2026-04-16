@@ -133,15 +133,16 @@ class OscalAssessmentPlanExportService
   # ── Local Definitions ──────────────────────────────────────────────
 
   def build_local_definitions
-    activities = []
+    # Bucket controls by individual method. Multi-method controls
+    # (assessment_method like "examine,interview") appear in each
+    # method's bucket so the OSCAL output reflects all methods.
+    method_buckets = Hash.new { |h, k| h[k] = [] }
+    @document.sap_controls.where.not(assessment_method: [ nil, "" ]).each do |ctrl|
+      ctrl.assessment_methods.each { |m| method_buckets[m] << ctrl }
+    end
 
-    methods_used = @document.sap_controls.where.not(assessment_method: [ nil, "" ])
-                            .distinct.pluck(:assessment_method)
-
-    methods_used.each do |method|
-      controls_for_method = @document.sap_controls.where(assessment_method: method)
-
-      activities << {
+    activities = method_buckets.map do |method, controls_for_method|
+      {
         "uuid"        => SecureRandom.uuid,
         "title"       => "#{method.titleize} Assessment Activities",
         "description" => "Assessment activities using the #{method} method.",

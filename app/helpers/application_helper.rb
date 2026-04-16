@@ -52,11 +52,14 @@ module ApplicationHelper
     "examine"   => "#3498db",
     "interview" => "#f39c12",
     "test"      => "#e74c3c",
+    "multiple"  => "#9b59b6",
     "(None)"    => "#95a5a6"
   }.freeze
 
   def sap_method_color(method)
-    SAP_METHOD_COLORS[method.to_s] || "#7f8c8d"
+    m = method.to_s
+    return SAP_METHOD_COLORS["multiple"] if m.include?(",")
+    SAP_METHOD_COLORS[m] || "#7f8c8d"
   end
 
   PROFILE_PRIORITY_COLORS = {

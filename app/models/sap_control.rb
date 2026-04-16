@@ -11,6 +11,18 @@ class SapControl < ApplicationRecord
   ASSESSMENT_METHODS = %w[examine interview test].freeze
   ASSESSMENT_STATUSES = %w[planned in-progress completed].freeze
 
+  # Returns assessment methods as an array. Stored comma-separated in
+  # the assessment_method column (e.g. "examine,interview" for controls
+  # that require multiple assessment methods).
+  def assessment_methods
+    return [] if assessment_method.blank?
+    assessment_method.to_s.split(",").map { |m| m.strip.downcase }.reject(&:blank?).uniq
+  end
+
+  def multiple_methods?
+    assessment_methods.size > 1
+  end
+
   def to_hash
     {
       control_id: control_id,
