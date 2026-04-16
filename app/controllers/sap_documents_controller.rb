@@ -211,12 +211,20 @@ class SapDocumentsController < ApplicationController
       redirect_to sap_document_path(@sap_document) and return
     end
 
+    # Build assessment method map from the linked profile's resolved catalog
+    # (each control has parts with name="assessment-method" containing
+    # props with name="method" value="EXAMINE|INTERVIEW|TEST")
+    method_map = build_assessment_method_map(profile_id, ssp_id)
+
     # Replace existing controls with controls from linked source
     @sap_document.sap_controls.delete_all
     control_ids.each_with_index do |control_id, idx|
       denormalized_id = control_id.to_s.upcase.gsub(".", " (").then { |s| s.include?("(") ? "#{s})" : s }
+      methods = method_map[control_id.to_s.downcase] || []
       @sap_document.sap_controls.create!(
         control_id: denormalized_id,
+        assessment_method: methods.first&.downcase,  # primary method
+        objective: methods.size > 1 ? "Methods: #{methods.join(', ')}" : nil,
         assessment_status: "planned",
         row_order: idx
       )
@@ -254,6 +262,52 @@ class SapDocumentsController < ApplicationController
 
   def set_sap_document
     @sap_document = SapDocument.find_by!(slug: params[:id])
+  end
+
+  # Build a map of control_id => [methods] from the linked profile's
+  # resolved catalog JSON. Each control has parts with name="assessment-method"
+  # and props with name="method" value="EXAMINE|INTERVIEW|TEST".
+  # Returns lowercase control IDs (matches the pluck format).
+  def build_assessment_method_map(profile_id, ssp_id)
+    catalog_json = nil
+    if profile_id.present?
+      profile = ProfileDocument.find_by(id: profile_id)
+      catalog_json = profile&.resolved_catalog_json
+    end
+    if catalog_json.blank? && ssp_id.present?
+      ssp = SspDocument.find_by(id: ssp_id)
+      profile = ProfileDocument.find_by(id: ssp.profile_document_id) if ssp&.profile_document_id.present?
+      catalog_json = profile&.resolved_catalog_json
+    end
+    return {} if catalog_json.blank?
+
+    method_map = {}
+    catalog = catalog_json.is_a?(Hash) ? (catalog_json["catalog"] || catalog_json) : {}
+    extract_methods_from_groups(catalog["groups"] || [], method_map)
+    extract_methods_from_controls(catalog["controls"] || [], method_map)
+    method_map
+  end
+
+  def extract_methods_from_groups(groups, method_map)
+    groups.each do |group|
+      extract_methods_from_controls(group["controls"] || [], method_map)
+      extract_methods_from_groups(group["groups"] || [], method_map)
+    end
+  end
+
+  def extract_methods_from_controls(controls, method_map)
+    controls.each do |ctrl|
+      methods = []
+      (ctrl["parts"] || []).each do |part|
+        next unless part["name"] == "assessment-method"
+        method_prop = (part["props"] || []).find { |p| p["name"] == "method" }
+        methods << method_prop["value"] if method_prop && method_prop["value"].present?
+      end
+      method_map[ctrl["id"].to_s.downcase] = methods.uniq if methods.any? && ctrl["id"].present?
+
+      # Recurse into nested controls (e.g. ac-2.1)
+      extract_methods_from_controls(ctrl["controls"] || [], method_map)
+    end
   end
 
   # Copy back-matter resources from the linked profile and/or SSP to this SAP.
