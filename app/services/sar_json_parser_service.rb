@@ -29,6 +29,7 @@ class SarJsonParserService
       @document.assign_oscal_uuid!(ar["uuid"])
       parse_local_definitions(ar["local-definitions"])
       parse_results(ar["results"] || [])
+      synthesize_controls_from_results
     end
   end
 
@@ -204,6 +205,64 @@ class SarJsonParserService
         risk_record = risk_map[rr["risk-uuid"]]
         SarFindingRisk.create!(sar_finding: record, sar_risk: risk_record) if risk_record
       end
+    end
+  end
+
+  # ── Control synthesis ──────────────────────────────────────────
+  #
+  # OSCAL Assessment Results don't have a flat "controls" structure —
+  # control references live in findings (target.target-id), observation
+  # props, and reviewed-controls. This method extracts unique control IDs
+  # and creates SarControl records so the UI shows a meaningful count.
+
+  def synthesize_controls_from_results
+    control_data = {}
+
+    @document.sar_results.each do |result|
+      # Extract from findings target-id
+      result.sar_findings.each do |finding|
+        target = finding.target_data || {}
+        ctrl_id = target["target-id"]
+        if ctrl_id.present?
+          status = target.dig("status", "state") || "other"
+          control_data[ctrl_id] ||= { status: status, title: finding.title }
+        end
+      end
+
+      # Extract from observations (Checkov results use title "PASS: CKV_xxx" / "FAIL: CKV_xxx")
+      result.sar_observations.each do |obs|
+        # Try to extract from props (some OSCAL SARs tag observations with control IDs)
+        (obs.props_data || []).each do |prop|
+          if prop["name"] == "control-id" || prop["name"] == "nist-control"
+            ctrl_id = prop["value"]
+            status = obs.title&.start_with?("PASS") ? "pass" : "fail"
+            control_data[ctrl_id] ||= { status: status, title: obs.description }
+          end
+        end
+      end
+
+      # Extract from reviewed-controls in the result
+      reviewed = result.reviewed_controls_data || {}
+      (reviewed["control-selections"] || []).each do |sel|
+        (sel["include-controls"] || []).each do |ic|
+          ctrl_id = ic["control-id"]
+          control_data[ctrl_id] ||= { status: "reviewed", title: nil } if ctrl_id.present?
+        end
+      end
+    end
+
+    # Create SarControl records
+    control_data.each_with_index do |(ctrl_id, info), idx|
+      ctrl = @document.sar_controls.create!(
+        control_id: ctrl_id,
+        title: info[:title],
+        section: "assessment-results",
+        row_order: idx
+      )
+      ctrl.sar_control_fields.create!(
+        field_name: "result",
+        field_value: info[:status]
+      )
     end
   end
 

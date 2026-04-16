@@ -92,11 +92,40 @@ class SapJsonParserService
 
     ids = []
     selections.each do |sel|
+      # Explicit control list
       (sel["include-controls"] || []).each do |ic|
         ids << ic["control-id"] if ic["control-id"].present?
       end
+
+      # include-all: resolve from linked profile or catalog
+      if sel["include-all"].present? && ids.empty?
+        ids = resolve_all_controls_from_profile
+      end
     end
     ids.uniq
+  end
+
+  # When the SAP uses include-all, resolve control IDs from the
+  # linked profile or catalog baseline.
+  def resolve_all_controls_from_profile
+    # Try linked profile first
+    if @document.profile_document_id.present?
+      profile = ProfileDocument.find_by(id: @document.profile_document_id)
+      return profile.profile_controls.pluck(:control_id) if profile
+    end
+
+    # Try linked SSP's profile
+    if @document.ssp_document_id.present?
+      ssp = SspDocument.find_by(id: @document.ssp_document_id)
+      if ssp&.profile_document_id.present?
+        profile = ProfileDocument.find_by(id: ssp.profile_document_id)
+        return profile.profile_controls.pluck(:control_id) if profile
+      end
+      # Fall back to SSP controls
+      return ssp.ssp_controls.where.not(control_id: nil).pluck(:control_id).uniq if ssp
+    end
+
+    []
   end
 
   def extract_activities(plan)
