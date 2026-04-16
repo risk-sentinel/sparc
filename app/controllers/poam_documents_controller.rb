@@ -58,7 +58,6 @@ class PoamDocumentsController < ApplicationController
     if params.dig(:poam_document, :file).blank? && params.dig(:poam_document, :files).blank?
       @poam_document = PoamDocument.new(wizard_params)
       @poam_document.status = "completed"
-      @poam_document.creation_method = "wizard"
 
       if @poam_document.save
         audit_log("poam_document_created", subject: @poam_document,

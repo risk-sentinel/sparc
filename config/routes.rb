@@ -144,6 +144,7 @@ Rails.application.routes.draw do
       get :download_xml
       get :validate_oscal_export
       get :status
+      patch :associate_source
     end
     collection do
       post :import_json

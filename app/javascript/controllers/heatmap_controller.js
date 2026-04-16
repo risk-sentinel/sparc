@@ -186,8 +186,7 @@ export default class extends Controller {
     if (container) {
       container.querySelectorAll(".control-card").forEach(card => {
         const familyMatch = !this.activeFamily || card.dataset.family === this.activeFamily
-        const filterAttr = card.dataset[this.filterKeyValue]
-        const filterMatch = !this.activeFilter || filterAttr === this.activeFilter
+        const filterMatch = !this.activeFilter || this.cardMatchesFilter(card, this.activeFilter)
         const show = familyMatch && filterMatch
         card.style.display = show ? "" : "none"
         if (show) visible++
@@ -231,6 +230,22 @@ export default class extends Controller {
 
     this.updateAriaStates()
     this.syncUrl()
+  }
+
+  // Returns true if the card matches the active filter value.
+  // For SAP cards, data-methods (plural) holds the full comma-separated list of
+  // methods, so a multi-method control matches each of its individual methods
+  // AND the synthetic "multiple" filter. Cards without data-methods fall back
+  // to strict equality on data-{filterKey} (existing behavior for POAM/SAR/SSP).
+  cardMatchesFilter(card, filter) {
+    const methodsAttr = card.dataset.methods
+    if (typeof methodsAttr === "string") {
+      const methods = methodsAttr.split(",").map(s => s.trim()).filter(Boolean)
+      if (filter === "multiple") return methods.length > 1
+      if (filter === "(none)" || filter === "(None)") return methods.length === 0
+      return methods.includes(filter)
+    }
+    return card.dataset[this.filterKeyValue] === filter
   }
 
   updateAriaStates() {

@@ -187,8 +187,10 @@ class PoamJsonParserService
         PoamFindingObservation.create!(poam_finding: record, poam_observation: obs_record) if obs_record
       end
 
-      # Related risks
-      (finding["related-risks"] || []).each do |rr|
+      # Related risks (accept both "related-risks" JSON and "associated-risks"
+      # alias emitted by some XML→JSON converters).
+      finding_risks = finding["related-risks"].presence || finding["associated-risks"] || []
+      finding_risks.each do |rr|
         risk_record = risk_map[rr["risk-uuid"]]
         PoamFindingRisk.create!(poam_finding: record, poam_risk: risk_record) if risk_record
       end
@@ -230,8 +232,21 @@ class PoamJsonParserService
 
   def parse_poam_items(items, risk_map, obs_map, finding_map)
     items.each_with_index do |item, idx|
-      # Determine primary risk for denormalization
-      primary_risk_uuid = item.dig("related-risks", 0, "risk-uuid")
+      # OSCAL JSON spec calls this "related-risks" but the XML element is
+      # <associated-risk>, so XML→JSON converters and some tools (e.g. the
+      # Checkov→OSCAL pipeline) emit "associated-risks" in JSON. Accept both.
+      item_risks = item["related-risks"].presence || item["associated-risks"] || []
+      item_observations = item["related-observations"] || []
+
+      # Synthesize PoamRisk/PoamObservation records for inline references
+      # whose UUIDs don't appear in the top-level risks/observations arrays.
+      # Tools like Checkov often embed status/description directly in the
+      # item-level reference instead of populating top-level risks[].
+      item_risks.each { |rr| synthesize_risk_if_missing(rr, risk_map) }
+      item_observations.each { |ro| synthesize_observation_if_missing(ro, obs_map) }
+
+      # Determine primary risk for denormalization (now includes synthesized risks)
+      primary_risk_uuid = item_risks.dig(0, "risk-uuid")
       primary_risk = risk_map[primary_risk_uuid]
 
       record = @document.poam_items.create!(
@@ -251,13 +266,13 @@ class PoamJsonParserService
       )
 
       # Join: item ↔ risks
-      (item["related-risks"] || []).each do |rr|
+      item_risks.each do |rr|
         risk_record = risk_map[rr["risk-uuid"]]
         PoamItemRisk.create!(poam_item: record, poam_risk: risk_record) if risk_record
       end
 
       # Join: item ↔ observations
-      (item["related-observations"] || []).each do |ro|
+      item_observations.each do |ro|
         obs_record = obs_map[ro["observation-uuid"]]
         PoamItemObservation.create!(poam_item: record, poam_observation: obs_record) if obs_record
       end
@@ -268,6 +283,35 @@ class PoamJsonParserService
         PoamItemFinding.create!(poam_item: record, poam_finding: finding_record) if finding_record
       end
     end
+  end
+
+  # Create a PoamRisk from inline reference data when the top-level risks
+  # array doesn't contain a matching entry. Mutates risk_map in place.
+  def synthesize_risk_if_missing(ref, risk_map)
+    uuid = ref["risk-uuid"]
+    return if uuid.blank? || risk_map.key?(uuid)
+    return unless ref["status"].present? || ref["description"].present? || ref["title"].present?
+
+    risk_map[uuid] = @document.poam_risks.create!(
+      uuid:        uuid,
+      title:       ref["title"].presence || "Risk #{uuid.first(8)}",
+      description: extract_text(ref["description"]),
+      status:      ref["status"]
+    )
+  end
+
+  # Create a PoamObservation from inline reference data when the top-level
+  # observations array doesn't contain a matching entry.
+  def synthesize_observation_if_missing(ref, obs_map)
+    uuid = ref["observation-uuid"]
+    return if uuid.blank? || obs_map.key?(uuid)
+    return unless ref["description"].present? || ref["title"].present?
+
+    obs_map[uuid] = @document.poam_observations.create!(
+      uuid:        uuid,
+      title:       ref["title"].presence || "Observation #{uuid.first(8)}",
+      description: extract_text(ref["description"])
+    )
   end
 
   # ── Helpers ──────────────────────────────────────────────────────
