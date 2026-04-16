@@ -158,6 +158,55 @@
      show_percentage: false,
      legend_items: [["Examine", "#3498db"], ["Interview", "#f39c12"], ["Test", "#e74c3c"], ["None", "#95a5a6"]] %>
 
+<%# ── ASSOCIATE SOURCE (when 0 controls and SAP uses include-all) ── %>
+<% if @total_controls == 0 && @sap_document.draft? %>
+  <div class="card mt-3" style="border-left: 4px solid #f39c12;">
+    <h3 style="color: #f39c12;">No Controls Assigned</h3>
+    <p class="text-body-secondary">
+      This SAP uses <code>reviewed-controls.include-all</code> but no source profile or SSP
+      could be matched automatically. Associate it with an existing profile or SSP below to
+      populate the assessed controls list.
+    </p>
+
+    <%= form_with url: associate_source_sap_document_path(@sap_document), method: :patch, local: true do |f| %>
+      <div class="row row-cols-1 row-cols-md-2 g-3">
+        <div class="col">
+          <div class="form-group">
+            <label for="sap_document_profile_document_id">Baseline Profile</label>
+            <%= f.select "sap_document[profile_document_id]",
+                  options_for_select(
+                    ProfileDocument.where(lifecycle_status: "published")
+                                   .order(:name)
+                                   .map { |p| ["#{p.name} (#{p.baseline_level || 'Custom'}, #{p.profile_controls.count} controls)", p.id] },
+                    @sap_document.profile_document_id
+                  ),
+                  { include_blank: "— Select profile —" },
+                  class: "form-control" %>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-group">
+            <label for="sap_document_ssp_document_id">System Security Plan</label>
+            <%= f.select "sap_document[ssp_document_id]",
+                  options_for_select(
+                    SspDocument.order(:name).map { |s| ["#{s.name} (#{s.ssp_controls.count} controls)", s.id] },
+                    @sap_document.ssp_document_id
+                  ),
+                  { include_blank: "— Select SSP —" },
+                  class: "form-control" %>
+          </div>
+        </div>
+      </div>
+      <p class="text-body-tertiary small mt-2">
+        Selecting either or both will re-process the SAP file and assign controls from the matching source.
+      </p>
+      <div class="d-flex gap-2 mt-3">
+        <%= f.submit "Associate & Reprocess", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <%# ── CONTROL CARDS (grouped by family) ─────────────────────────── %>
 <div id="controlsContainer">
   <div class="d-flex justify-content-between align-items-center mb-3">

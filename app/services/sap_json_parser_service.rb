@@ -97,8 +97,9 @@ class SapJsonParserService
         ids << ic["control-id"] if ic["control-id"].present?
       end
 
-      # include-all: resolve from linked profile or catalog
-      if sel["include-all"].present? && ids.empty?
+      # include-all: empty hash {} means "all controls" per OSCAL spec.
+      # Use key? not .present? because Rails treats empty hash as blank.
+      if sel.key?("include-all") && ids.empty?
         ids = resolve_all_controls(plan, sel)
       end
     end
@@ -108,13 +109,16 @@ class SapJsonParserService
   # When the SAP uses include-all, resolve control IDs by trying:
   # 1. Linked profile (sap.profile_document_id)
   # 2. Linked SSP's profile or SSP controls (sap.ssp_document_id)
-  # 3. Baseline hint from the selection description (LOW/MODERATE/HIGH)
+  # 3. Baseline hint from selection description, SAP metadata title, or
+  #    terms-and-conditions prose (LOW/MODERATE/HIGH)
   # 4. Most recent published profile (any baseline)
+  # 5. Most recent control catalog
   def resolve_all_controls(plan, selection = {})
     # Try linked profile first
     if @document.profile_document_id.present?
       profile = ProfileDocument.find_by(id: @document.profile_document_id)
-      return profile.profile_controls.pluck(:control_id) if profile&.profile_controls&.any?
+      ids = profile_control_ids(profile)
+      return ids if ids.any?
     end
 
     # Try linked SSP's profile or controls
@@ -122,33 +126,71 @@ class SapJsonParserService
       ssp = SspDocument.find_by(id: @document.ssp_document_id)
       if ssp&.profile_document_id.present?
         profile = ProfileDocument.find_by(id: ssp.profile_document_id)
-        return profile.profile_controls.pluck(:control_id) if profile&.profile_controls&.any?
+        ids = profile_control_ids(profile)
+        return ids if ids.any?
       end
       ctrl_ids = ssp&.ssp_controls&.where&.not(control_id: nil)&.pluck(:control_id)&.uniq
       return ctrl_ids if ctrl_ids&.any?
     end
 
-    # Baseline hint from selection description (e.g., "NIST SP 800-53 Rev 5 HIGH baseline")
-    description = selection["description"].to_s.downcase
-    baseline_hint = case description
-    when /high\s+baseline|high\s+impact/ then "high"
-    when /moderate\s+baseline|moderate\s+impact/ then "moderate"
-    when /low\s+baseline|low\s+impact/ then "low"
-    end
-
+    # Baseline hint from multiple sources (selection description, SAP title, terms-and-conditions)
+    baseline_hint = detect_baseline_hint(plan, selection)
     if baseline_hint
       profile = ProfileDocument.where(lifecycle_status: "published")
                                .where("LOWER(baseline_level) = ?", baseline_hint)
                                .order(updated_at: :desc).first
-      return profile.profile_controls.pluck(:control_id) if profile&.profile_controls&.any?
+      ids = profile_control_ids(profile)
+      return ids if ids.any?
+
+      # Try draft profiles too
+      profile = ProfileDocument.where("LOWER(baseline_level) = ?", baseline_hint)
+                               .order(updated_at: :desc).first
+      ids = profile_control_ids(profile)
+      return ids if ids.any?
     end
 
-    # Last resort: most recent published profile
+    # Most recent published profile (any baseline)
     profile = ProfileDocument.where(lifecycle_status: "published")
                              .order(updated_at: :desc).first
-    return profile.profile_controls.pluck(:control_id) if profile&.profile_controls&.any?
+    ids = profile_control_ids(profile)
+    return ids if ids.any?
+
+    # Any profile (draft or published)
+    profile = ProfileDocument.order(updated_at: :desc).first
+    ids = profile_control_ids(profile)
+    return ids if ids.any?
+
+    # Last resort: most recent control catalog (NIST 800-53 etc.)
+    catalog = ControlCatalog.order(updated_at: :desc).first
+    if catalog && catalog.catalog_controls.any?
+      return catalog.catalog_controls.pluck(:control_id)
+    end
 
     []
+  end
+
+  def profile_control_ids(profile)
+    return [] unless profile
+    profile.profile_controls.pluck(:control_id)
+  end
+
+  # Detect baseline hint from multiple OSCAL sources in priority order:
+  # 1. control-selection description ("HIGH baseline")
+  # 2. SAP metadata title ("HIGH Impact Assessment Plan")
+  # 3. terms-and-conditions prose ("NIST SP 800-53 Rev 5 HIGH Impact Baseline")
+  def detect_baseline_hint(plan, selection)
+    sources = []
+    sources << selection["description"].to_s
+    sources << plan.dig("metadata", "title").to_s
+    (plan.dig("terms-and-conditions", "parts") || []).each do |part|
+      sources << part["prose"].to_s
+    end
+
+    text = sources.compact.join(" ").downcase
+    return "high"     if text =~ /high\s+(baseline|impact)/
+    return "moderate" if text =~ /moderate\s+(baseline|impact)/
+    return "low"      if text =~ /low\s+(baseline|impact)/
+    nil
   end
 
   def extract_activities(plan)

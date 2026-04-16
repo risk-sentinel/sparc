@@ -7,7 +7,7 @@ class SapDocumentsController < ApplicationController
     show edit update destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml validate_oscal_export status
-    update_metadata publish publish_check
+    update_metadata publish publish_check associate_source
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
 
@@ -177,6 +177,32 @@ class SapDocumentsController < ApplicationController
     redirect_to sap_document_path(@sap_document)
   end
 
+  # Associate SAP with a profile and/or SSP, then re-resolve controls.
+  # Used when initial import found 0 controls (no linked source available).
+  def associate_source
+    profile_id = params.dig(:sap_document, :profile_document_id)
+    ssp_id = params.dig(:sap_document, :ssp_document_id)
+
+    @sap_document.update!(
+      profile_document_id: profile_id.presence,
+      ssp_document_id: ssp_id.presence
+    )
+
+    if @sap_document.file.attached?
+      reprocess_controls_from_attached_file
+      audit_log("sap_document_reprocessed", subject: @sap_document,
+                metadata: { profile_id: profile_id, ssp_id: ssp_id })
+      flash[:success] = "Source associated. #{@sap_document.sap_controls.count} controls assigned."
+    else
+      flash[:warning] = "Source associated, but original file not available for reprocessing. Re-upload to assign controls."
+    end
+
+    redirect_to sap_document_path(@sap_document)
+  rescue StandardError => e
+    flash[:error] = "Failed to reprocess: #{e.message}"
+    redirect_to sap_document_path(@sap_document)
+  end
+
   def status
     render json: {
       status: @sap_document.status,
@@ -194,6 +220,15 @@ class SapDocumentsController < ApplicationController
 
   def set_sap_document
     @sap_document = SapDocument.find_by!(slug: params[:id])
+  end
+
+  # Re-run the JSON parser using the attached Active Storage file.
+  # Used by associate_source to reprocess controls after linking a profile/SSP.
+  def reprocess_controls_from_attached_file
+    @sap_document.sap_controls.delete_all
+    @sap_document.file.open do |file|
+      SapJsonParserService.new(@sap_document, file.path).parse
+    end
   end
 
   # OscalExportable hooks
