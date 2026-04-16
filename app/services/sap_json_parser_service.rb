@@ -84,6 +84,31 @@ class SapJsonParserService
         )
       end
     end
+
+    # If we auto-matched a source via include-all fallback, copy its back-matter
+    copy_back_matter_from(@matched_source) if @matched_source
+  end
+
+  # Copy back-matter resources from an auto-matched source profile/SSP
+  # to this SAP. Skips UUIDs already present.
+  def copy_back_matter_from(source)
+    return unless source.respond_to?(:back_matter_resources)
+    existing_uuids = @document.back_matter_resources.pluck(:uuid).to_set
+
+    source.back_matter_resources.each do |src_bm|
+      next if existing_uuids.include?(src_bm.uuid)
+      @document.back_matter_resources.create!(
+        uuid:          src_bm.uuid,
+        title:         src_bm.title,
+        description:   src_bm.description,
+        rel:           src_bm.rel,
+        media_type:    src_bm.media_type,
+        href:          src_bm.href,
+        source:        "imported",
+        resource_data: src_bm.resource_data
+      )
+      existing_uuids << src_bm.uuid
+    end
   end
 
   def extract_control_ids(plan)
@@ -118,7 +143,10 @@ class SapJsonParserService
     if @document.profile_document_id.present?
       profile = ProfileDocument.find_by(id: @document.profile_document_id)
       ids = profile_control_ids(profile)
-      return ids if ids.any?
+      if ids.any?
+        @matched_source = profile
+        return ids
+      end
     end
 
     # Try linked SSP's profile or controls
@@ -127,10 +155,16 @@ class SapJsonParserService
       if ssp&.profile_document_id.present?
         profile = ProfileDocument.find_by(id: ssp.profile_document_id)
         ids = profile_control_ids(profile)
-        return ids if ids.any?
+        if ids.any?
+          @matched_source = profile
+          return ids
+        end
       end
       ctrl_ids = ssp&.ssp_controls&.where&.not(control_id: nil)&.pluck(:control_id)&.uniq
-      return ctrl_ids if ctrl_ids&.any?
+      if ctrl_ids&.any?
+        @matched_source = ssp
+        return ctrl_ids
+      end
     end
 
     # Baseline hint from multiple sources (selection description, SAP title, terms-and-conditions)
@@ -140,29 +174,42 @@ class SapJsonParserService
                                .where("LOWER(baseline_level) = ?", baseline_hint)
                                .order(updated_at: :desc).first
       ids = profile_control_ids(profile)
-      return ids if ids.any?
+      if ids.any?
+        @matched_source = profile
+        return ids
+      end
 
       # Try draft profiles too
       profile = ProfileDocument.where("LOWER(baseline_level) = ?", baseline_hint)
                                .order(updated_at: :desc).first
       ids = profile_control_ids(profile)
-      return ids if ids.any?
+      if ids.any?
+        @matched_source = profile
+        return ids
+      end
     end
 
     # Most recent published profile (any baseline)
     profile = ProfileDocument.where(lifecycle_status: "published")
                              .order(updated_at: :desc).first
     ids = profile_control_ids(profile)
-    return ids if ids.any?
+    if ids.any?
+      @matched_source = profile
+      return ids
+    end
 
     # Any profile (draft or published)
     profile = ProfileDocument.order(updated_at: :desc).first
     ids = profile_control_ids(profile)
-    return ids if ids.any?
+    if ids.any?
+      @matched_source = profile
+      return ids
+    end
 
     # Last resort: most recent control catalog (NIST 800-53 etc.)
     catalog = ControlCatalog.order(updated_at: :desc).first
     if catalog && catalog.catalog_controls.any?
+      @matched_source = catalog
       return catalog.catalog_controls.pluck(:control_id)
     end
 

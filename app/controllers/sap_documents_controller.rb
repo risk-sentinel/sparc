@@ -177,8 +177,9 @@ class SapDocumentsController < ApplicationController
     redirect_to sap_document_path(@sap_document)
   end
 
-  # Associate SAP with a profile and/or SSP, then re-resolve controls.
-  # Used when initial import found 0 controls (no linked source available).
+  # Associate SAP with a profile and/or SSP, then build controls directly
+  # from the linked source. Does NOT require the original OSCAL file to
+  # be attached (which may have been cleaned up after async processing).
   def associate_source
     profile_id = params.dig(:sap_document, :profile_document_id)
     ssp_id = params.dig(:sap_document, :ssp_document_id)
@@ -188,18 +189,51 @@ class SapDocumentsController < ApplicationController
       ssp_document_id: ssp_id.presence
     )
 
-    if @sap_document.file.attached?
-      reprocess_controls_from_attached_file
-      audit_log("sap_document_reprocessed", subject: @sap_document,
-                metadata: { profile_id: profile_id, ssp_id: ssp_id })
-      flash[:success] = "Source associated. #{@sap_document.sap_controls.count} controls assigned."
-    else
-      flash[:warning] = "Source associated, but original file not available for reprocessing. Re-upload to assign controls."
+    # Resolve control IDs from the linked source (priority: profile > SSP profile > SSP controls)
+    control_ids = []
+    if profile_id.present?
+      profile = ProfileDocument.find_by(id: profile_id)
+      control_ids = profile.profile_controls.pluck(:control_id) if profile
+    end
+    if control_ids.empty? && ssp_id.present?
+      ssp = SspDocument.find_by(id: ssp_id)
+      if ssp&.profile_document_id.present?
+        profile = ProfileDocument.find_by(id: ssp.profile_document_id)
+        control_ids = profile.profile_controls.pluck(:control_id) if profile
+      end
+      if control_ids.empty? && ssp
+        control_ids = ssp.ssp_controls.where.not(control_id: nil).pluck(:control_id).uniq
+      end
     end
 
+    if control_ids.empty?
+      flash[:error] = "Source associated but no controls found in linked profile/SSP."
+      redirect_to sap_document_path(@sap_document) and return
+    end
+
+    # Replace existing controls with controls from linked source
+    @sap_document.sap_controls.delete_all
+    control_ids.each_with_index do |control_id, idx|
+      denormalized_id = control_id.to_s.upcase.gsub(".", " (").then { |s| s.include?("(") ? "#{s})" : s }
+      @sap_document.sap_controls.create!(
+        control_id: denormalized_id,
+        assessment_status: "planned",
+        row_order: idx
+      )
+    end
+
+    # Copy back-matter resources from the linked source(s)
+    bm_count = copy_back_matter_from_source(profile_id, ssp_id)
+
+    audit_log("sap_document_reprocessed", subject: @sap_document,
+              metadata: { profile_id: profile_id, ssp_id: ssp_id,
+                          controls_assigned: control_ids.size, back_matter_copied: bm_count })
+    msg = "Source associated. #{control_ids.size} controls assigned."
+    msg += " #{bm_count} back-matter resources copied." if bm_count > 0
+    flash[:success] = msg
     redirect_to sap_document_path(@sap_document)
   rescue StandardError => e
-    flash[:error] = "Failed to reprocess: #{e.message}"
+    flash[:error] = "Failed to associate: #{e.message}"
     redirect_to sap_document_path(@sap_document)
   end
 
@@ -222,13 +256,41 @@ class SapDocumentsController < ApplicationController
     @sap_document = SapDocument.find_by!(slug: params[:id])
   end
 
-  # Re-run the JSON parser using the attached Active Storage file.
-  # Used by associate_source to reprocess controls after linking a profile/SSP.
-  def reprocess_controls_from_attached_file
-    @sap_document.sap_controls.delete_all
-    @sap_document.file.open do |file|
-      SapJsonParserService.new(@sap_document, file.path).parse
+  # Copy back-matter resources from the linked profile and/or SSP to this SAP.
+  # Skips resources whose UUIDs are already present (idempotent re-runs).
+  # Returns the count of new resources copied.
+  def copy_back_matter_from_source(profile_id, ssp_id)
+    sources = []
+    sources << ProfileDocument.find_by(id: profile_id) if profile_id.present?
+    if ssp_id.present?
+      ssp = SspDocument.find_by(id: ssp_id)
+      sources << ssp if ssp
+      sources << ProfileDocument.find_by(id: ssp.profile_document_id) if ssp&.profile_document_id.present?
     end
+    sources.compact!
+
+    existing_uuids = @sap_document.back_matter_resources.pluck(:uuid).to_set
+    copied = 0
+
+    sources.each do |source|
+      source.back_matter_resources.each do |src_bm|
+        next if existing_uuids.include?(src_bm.uuid)
+        @sap_document.back_matter_resources.create!(
+          uuid:        src_bm.uuid,
+          title:       src_bm.title,
+          description: src_bm.description,
+          rel:         src_bm.rel,
+          media_type:  src_bm.media_type,
+          href:        src_bm.href,
+          source:      "imported",
+          resource_data: src_bm.resource_data
+        )
+        existing_uuids << src_bm.uuid
+        copied += 1
+      end
+    end
+
+    copied
   end
 
   # OscalExportable hooks
