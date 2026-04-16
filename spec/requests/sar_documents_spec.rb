@@ -188,4 +188,147 @@ RSpec.describe "SarDocuments", type: :request do
       expect(response).to have_http_status(:redirect)
     end
   end
+
+  describe "PATCH /sar_documents/:id/associate_source" do
+    let(:sar) { create(:sar_document) }
+    let(:ssp) do
+      ssp = create(:ssp_document)
+      ssp_ctrl = ssp.ssp_controls.create!(control_id: "cm-2", title: "Baseline", row_order: 0)
+      ssp_ctrl.ssp_control_fields.create!(field_name: "responsible_entities", field_value: "Platform")
+      ssp
+    end
+    let(:sap) { create(:sap_document, ssp_document: ssp) }
+
+    before do
+      sar.sar_controls.create!(control_id: "cm-2", title: "Baseline", row_order: 0)
+    end
+
+    it "links the SAR to the SAP and back-fills responsibility from the SSP chain" do
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+
+      sar.reload
+      expect(sar.sap_document_id).to eq(sap.id)
+      ctrl = sar.sar_controls.find_by(control_id: "cm-2")
+      field = ctrl.sar_control_fields.find_by(field_name: "responsibility")
+      expect(field&.field_value).to eq("Platform")
+      expect(response).to redirect_to(sar_document_path(sar))
+    end
+
+    it "doesn't duplicate fields on re-association" do
+      ctrl = sar.sar_controls.first
+      ctrl.sar_control_fields.create!(field_name: "responsibility", field_value: "Manually Set")
+
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+
+      counts = ctrl.sar_control_fields.where(field_name: "responsibility").count
+      expect(counts).to eq(1)
+      expect(ctrl.sar_control_fields.find_by(field_name: "responsibility").field_value)
+        .to eq("Manually Set")
+    end
+
+    it "copies back-matter resources from the linked SAP into the SAR" do
+      source_uuid = SecureRandom.uuid
+      sap.back_matter_resources.create!(
+        uuid: source_uuid,
+        title: "Security Policy v3",
+        description: "Org-wide info security policy",
+        rel: "reference",
+        href: "https://example.com/policy.pdf",
+        source: "managed"
+      )
+
+      expect {
+        patch associate_source_sar_document_path(sar), params: {
+          sar_document: { sap_document_id: sap.id }
+        }
+      }.to change { sar.reload.back_matter_resources.count }.by(1)
+
+      copied = sar.back_matter_resources.find_by(title: "Security Policy v3")
+      expect(copied).to be_present
+      expect(copied.source).to eq("imported")
+      # SAR's copy gets a new UUID (the column is globally unique) and
+      # remembers the upstream UUID in resource_data for traceability.
+      expect(copied.uuid).not_to eq(source_uuid)
+      expect(copied.resource_data["source_uuid"]).to eq(source_uuid)
+    end
+
+    it "copies imported back-matter from import_metadata of the linked SSP" do
+      ssp.update!(import_metadata: {
+        "back_matter" => [
+          { "uuid" => "11111111-aaaa-4000-8000-000000000001",
+            "title" => "Imported Policy",
+            "description" => "From OSCAL SSP import",
+            "rlinks" => [ { "href" => "https://example.com/imported.pdf",
+                            "media-type" => "application/pdf" } ] }
+        ]
+      })
+
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { ssp_document_id: ssp.id }
+      }
+
+      copied = sar.reload.back_matter_resources.find_by(uuid: "11111111-aaaa-4000-8000-000000000001")
+      expect(copied).to be_present
+      expect(copied.title).to eq("Imported Policy")
+      expect(copied.href).to eq("https://example.com/imported.pdf")
+    end
+
+    it "skips back-matter already copied from the same source (idempotent re-association)" do
+      source_uuid = SecureRandom.uuid
+      sap.back_matter_resources.create!(uuid: source_uuid, title: "Doc",
+                                        rel: "reference", source: "managed")
+
+      # First call -- creates the copy
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+      first_count = sar.reload.back_matter_resources.count
+
+      # Second call -- source_uuid match prevents a duplicate
+      patch associate_source_sar_document_path(sar), params: {
+        sar_document: { sap_document_id: sap.id }
+      }
+      expect(sar.reload.back_matter_resources.count).to eq(first_count)
+    end
+  end
+
+  describe "PATCH /sar_documents/:id/update_objective" do
+    let(:sar) { create(:sar_document) }
+    let(:control) { create(:sar_control, sar_document: sar) }
+    let(:objective) { create(:sar_control_objective, sar_control: control, status: "pending") }
+
+    it "updates the objective and stamps assessed_at on terminal status" do
+      patch update_objective_sar_document_path(sar), params: {
+        objective_id: objective.id,
+        sar_control_objective: {
+          status: "failed",
+          assessor_name: "Bob",
+          assessor_notes: "Evidence missing."
+        }
+      }
+
+      objective.reload
+      expect(objective.status).to eq("failed")
+      expect(objective.assessor_name).to eq("Bob")
+      expect(objective.assessed_at).to be_within(5.seconds).of(Time.current)
+    end
+
+    it "does not update an objective belonging to a different SAR" do
+      other_sar = create(:sar_document)
+      other_objective = create(:sar_control_objective,
+                               sar_control: create(:sar_control, sar_document: other_sar),
+                               status: "pending")
+
+      patch update_objective_sar_document_path(sar), params: {
+        objective_id: other_objective.id,
+        sar_control_objective: { status: "passing" }
+      }
+
+      expect(other_objective.reload.status).to eq("pending")
+    end
+  end
 end

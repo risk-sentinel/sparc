@@ -102,4 +102,61 @@ RSpec.describe "SapDocuments", type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
+
+  describe "PATCH /sap_documents/:id/update_objective" do
+    let(:sap) { create(:sap_document) }
+    let(:control) { create(:sap_control, sap_document: sap) }
+    let(:objective) { create(:sap_control_objective, sap_control: control, status: "pending") }
+
+    it "updates the objective status and assessor fields" do
+      patch update_objective_sap_document_path(sap), params: {
+        objective_id: objective.id,
+        sap_control_objective: {
+          status: "passing",
+          assessor_name: "Alice",
+          assessor_notes: "Reviewed evidence; satisfied."
+        }
+      }
+
+      objective.reload
+      expect(objective.status).to eq("passing")
+      expect(objective.assessor_name).to eq("Alice")
+      expect(objective.assessor_notes).to eq("Reviewed evidence; satisfied.")
+      expect(objective.assessed_at).to be_within(5.seconds).of(Time.current)
+      expect(response).to redirect_to(sap_document_path(sap, anchor: "obj-#{objective.id}"))
+    end
+
+    it "rejects invalid status values" do
+      patch update_objective_sap_document_path(sap), params: {
+        objective_id: objective.id,
+        sap_control_objective: { status: "bogus" }
+      }
+
+      expect(objective.reload.status).to eq("pending")
+      expect(flash[:error]).to be_present
+    end
+
+    it "does not update an objective belonging to a different document" do
+      other_sap = create(:sap_document)
+      other_objective = create(:sap_control_objective,
+                               sap_control: create(:sap_control, sap_document: other_sap),
+                               status: "pending")
+
+      patch update_objective_sap_document_path(sap), params: {
+        objective_id: other_objective.id,
+        sap_control_objective: { status: "passing" }
+      }
+
+      expect(other_objective.reload.status).to eq("pending")
+    end
+
+    it "blocks updates on published SAPs" do
+      sap.update!(lifecycle_status: "published")
+      patch update_objective_sap_document_path(sap), params: {
+        objective_id: objective.id,
+        sap_control_objective: { status: "passing" }
+      }
+      expect(objective.reload.status).to eq("pending")
+    end
+  end
 end

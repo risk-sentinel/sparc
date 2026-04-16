@@ -64,6 +64,8 @@ class SapJsonParserService
     control_ids = extract_control_ids(plan)
     activities = extract_activities(plan)
     method_map = build_method_map(activities)
+    statement_id_map = build_statement_id_map(activities)
+    catalog_json = matched_catalog
 
     control_ids.each_with_index do |control_id, idx|
       denormalized_id = control_id.upcase.gsub(".", " (").then { |s| s.include?("(") ? "#{s})" : s }
@@ -83,10 +85,76 @@ class SapJsonParserService
           test_case: activity[:test_case]
         )
       end
+
+      build_objectives_for(sap_control, control_id, statement_id_map, catalog_json)
     end
 
     # If we auto-matched a source via include-all fallback, copy its back-matter
     copy_back_matter_from(@matched_source) if @matched_source
+  end
+
+  # Create SapControlObjective records for the given control. Two sources:
+  #
+  # 1. statement-ids found in the SAP's local-definitions activities --
+  #    explicit objective-level scoping in the OSCAL document itself.
+  # 2. The linked profile's resolved_catalog_json -- when the SAP doesn't
+  #    name objectives explicitly, we still want all of the catalog's
+  #    determination statements available so an assessor can edit them.
+  #
+  # When both sources exist, the catalog walk wins because it has prose
+  # and labels; statement-ids without a catalog hit get sparse records
+  # (objective_id only, no prose/label) flagged for later enrichment.
+  def build_objectives_for(sap_control, control_id, statement_id_map, catalog_json)
+    catalog_objectives = if catalog_json.present?
+      ControlObjectiveExtractorService.objectives_for_control(catalog_json, control_id)
+    else
+      []
+    end
+
+    statement_ids = statement_id_map[control_id] || []
+    by_id = catalog_objectives.index_by { |o| o[:objective_id] }
+
+    rows = if catalog_objectives.any?
+      catalog_objectives
+    elsif statement_ids.any?
+      # No catalog -- create skeletal records for the IDs we saw
+      statement_ids.each_with_index.map do |sid, idx|
+        { objective_id: sid, label: nil, prose: nil, parent_objective_id: nil, row_order: idx }
+      end
+    else
+      []
+    end
+
+    return if rows.empty?
+
+    now = Time.current
+    sap_control.sap_control_objectives.insert_all(
+      rows.map do |obj|
+        {
+          sap_control_id:      sap_control.id,
+          uuid:                SecureRandom.uuid,
+          objective_id:        obj[:objective_id],
+          label:               obj[:label] || by_id.dig(obj[:objective_id], :label),
+          parent_objective_id: obj[:parent_objective_id],
+          prose:               obj[:prose] || by_id.dig(obj[:objective_id], :prose),
+          status:              "pending",
+          row_order:           obj[:row_order],
+          created_at:          now,
+          updated_at:          now
+        }
+      end
+    )
+  end
+
+  # Catalog hash from the matched profile/SSP, if any. Used by build_objectives_for
+  # to enrich objective records with prose/label.
+  def matched_catalog
+    return nil if @matched_source.blank?
+    if @matched_source.respond_to?(:resolved_catalog_json)
+      @matched_source.resolved_catalog_json
+    elsif @matched_source.respond_to?(:profile_document_id) && @matched_source.profile_document_id.present?
+      ProfileDocument.find_by(id: @matched_source.profile_document_id)&.resolved_catalog_json
+    end
   end
 
   # Copy back-matter resources from an auto-matched source profile/SSP
@@ -276,9 +344,15 @@ class SapJsonParserService
 
       related = activity["related-controls"] || {}
       control_ids = []
+      # statement_ids is a hash control_id => [objective_id, ...] so we
+      # can later attribute objectives to the right control even when an
+      # activity targets multiple controls.
+      statement_ids = Hash.new { |h, k| h[k] = [] }
       (related["control-selections"] || []).each do |sel|
         (sel["include-controls"] || []).each do |ic|
-          control_ids << ic["control-id"]
+          cid = ic["control-id"]
+          control_ids << cid
+          (ic["statement-ids"] || []).each { |sid| statement_ids[cid] << sid }
         end
       end
 
@@ -289,9 +363,22 @@ class SapJsonParserService
         method: method,
         description: activity["description"],
         control_ids: control_ids,
+        statement_ids: statement_ids,
         test_case: test_case
       }
     end
+  end
+
+  # Aggregate statement-ids from all activities into a single per-control
+  # map: { "ac-1" => ["ac-1_obj.a-1", "ac-1_obj.a-2", ...], ... }
+  def build_statement_id_map(activities)
+    accumulator = Hash.new { |h, k| h[k] = [] }
+    activities.each do |activity|
+      (activity[:statement_ids] || {}).each do |cid, sids|
+        accumulator[cid].concat(sids)
+      end
+    end
+    accumulator.transform_values(&:uniq)
   end
 
   # Build map of control_id => comma-separated methods (e.g. "examine,interview")

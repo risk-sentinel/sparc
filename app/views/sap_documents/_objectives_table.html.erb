@@ -1,0 +1,85 @@
+<%# Per-control objectives table for SAP show page.
+    Locals:
+      control      - SapControl instance (must have sap_control_objectives loaded)
+      sap_document - SapDocument instance (for routing)
+%>
+<%
+  objectives = control.sap_control_objectives.sort_by { |o| o.row_order || 0 }
+  return "" if objectives.empty?
+
+  status_colors = {
+    "pending"        => "#95a5a6",
+    "in-progress"    => "#f39c12",
+    "passing"        => "#27ae60",
+    "failed"         => "#e74c3c",
+    "not_applicable" => "#7f8c8d"
+  }
+%>
+
+<div class="sparc-statement-block" style="background: rgba(52,152,219,0.04); border-color: rgba(52,152,219,0.18); border-left: 3px solid #3498db;">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2" style="margin-bottom: 0.4rem;">
+    <div class="sparc-statement-label" style="color: #3498db;">
+      Assessment Objectives
+      <span class="text-body-secondary" style="font-weight: 400; font-size: 0.7rem;">
+        (<%= pluralize(objectives.size, "objective") %>)
+      </span>
+    </div>
+    <span class="text-body-tertiary" style="font-size: 0.7rem;">
+      Rollup:
+      <span style="color: <%= status_colors[control.objective_status_rollup] || '#7f8c8d' %>; font-weight: 600;">
+        <%= control.objective_status_rollup.to_s.humanize %>
+      </span>
+    </span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover" style="font-size: 0.82rem; margin-bottom: 0;">
+      <thead>
+        <tr style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color);">
+          <th style="width: 11%;">Label</th>
+          <th>Determination Statement</th>
+          <th style="width: 10%;">Status</th>
+          <th style="width: 14%;">Assessor</th>
+          <th style="width: 6%;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% objectives.each do |obj| %>
+          <%
+            depth = obj.parent_objective_id.present? ? 1 : 0
+            color = status_colors[obj.status] || "#95a5a6"
+          %>
+          <tr id="obj-<%= obj.id %>" data-status="<%= obj.status %>" data-objective-id="<%= obj.objective_id %>">
+            <td>
+              <code style="font-size: 0.78rem; padding-left: <%= depth * 0.75 %>rem;">
+                <%= obj.label.presence || obj.objective_id %>
+              </code>
+            </td>
+            <td style="padding-left: <%= depth * 0.75 %>rem;">
+              <%= obj.prose.presence || content_tag(:span, "(no prose)", class: "text-body-tertiary fst-italic") %>
+              <% if obj.assessor_notes.present? %>
+                <div class="text-body-secondary" style="font-size: 0.75rem; margin-top: 0.2rem; padding-left: 0.4rem; border-left: 2px solid var(--bs-border-color);">
+                  <%= obj.assessor_notes %>
+                </div>
+              <% end %>
+            </td>
+            <td>
+              <span class="sparc-status-pill" style="background: <%= color %>; font-size: 0.68rem;">
+                <%= obj.status.humanize %>
+              </span>
+            </td>
+            <td class="text-body-secondary" style="font-size: 0.78rem;">
+              <%= obj.assessor_name.presence || "—" %>
+            </td>
+            <td>
+              <%= link_to "Edit",
+                          sap_document_path(sap_document, objective_id: obj.id, anchor: "obj-#{obj.id}"),
+                          class: "btn btn-outline-primary btn-sm",
+                          style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

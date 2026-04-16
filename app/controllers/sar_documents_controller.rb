@@ -11,9 +11,9 @@ class SarDocumentsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export,
     :edit_control, :status, :update_metadata, :enrich, :update_enrich,
-    :publish, :publish_check
+    :publish, :publish_check, :update_objective, :associate_source
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective, :associate_source ]
 
   helper_method :filter_params
 
@@ -69,9 +69,11 @@ class SarDocumentsController < ApplicationController
     end
 
     # Paginate (explicit order since default_scope was removed for query performance)
+    # N+1 guard: include objectives so the per-control table renders without
+    # firing a query per row.
     @pagy, @controls = pagy(
       :offset,
-      filtered.order(:row_order).includes(:sar_control_fields),
+      filtered.order(:row_order).includes(:sar_control_fields, :sar_control_objectives),
       limit: CONTROLS_PER_PAGE
     )
 
@@ -79,9 +81,21 @@ class SarDocumentsController < ApplicationController
     normalized_ids = @controls.map { normalize_ctrl_id(_1.control_id) }.compact.uniq
     @catalog_guidance = CatalogControl.where(control_id: normalized_ids).index_by(&:control_id)
 
+    # Objective rollup heatmap -- built from full base_filtered scope, not
+    # the paginated subset, so the family aggregates are correct.
+    @status_heatmap_data, @status_heatmap_families, @status_heatmap_statuses =
+      build_objective_status_heatmap(base_filtered)
+
     # Totals for display
     @total_controls = controls_scope.count
     @filtered_count = filtered.count
+
+    @editing_objective = SarControlObjective.joins(sar_control: :sar_document)
+                                            .find_by(id: params[:objective_id],
+                                                     sar_documents: { id: @sar_document.id })
+    @needs_reassociation = @sar_document.import_metadata&.dig(
+      ControlObjectiveExtractorService::REASSOCIATION_FLAG
+    ) == ControlObjectiveExtractorService::REASSOCIATION_VALUE
   end
 
   def update
@@ -328,6 +342,80 @@ class SarDocumentsController < ApplicationController
     }
   end
 
+  # PATCH /sar_documents/:id/associate_source
+  # Body: sar_document[sap_document_id], sar_document[ssp_document_id],
+  #       sar_document[profile_document_id]. After saving the link, re-runs
+  #       the enrichment pipeline so SAR controls get responsibility,
+  #       implementation, and impact_statement fields from the linked SSP
+  #       (directly or via SAP -> SSP).
+  def associate_source
+    sap_id     = params.dig(:sar_document, :sap_document_id)
+    ssp_id     = params.dig(:sar_document, :ssp_document_id)
+    profile_id = params.dig(:sar_document, :profile_document_id)
+
+    @sar_document.update!(
+      sap_document_id:     sap_id.presence,
+      ssp_document_id:     ssp_id.presence,
+      profile_document_id: profile_id.presence
+    )
+
+    # Re-run objective backfill so per-objective records pick up prose/labels
+    # from the linked profile catalog now that we have a source.
+    objective_count = ApplicationRecord.transaction(requires_new: true) do
+      ControlObjectiveExtractorService.new(@sar_document).backfill!
+    end
+
+    # Re-enrich SAR controls from the linked SAP -> SSP chain (or direct SSP).
+    field_count = enrich_existing_controls_from_sap_or_ssp_chain
+
+    # Copy back-matter resources from each linked source. Mirrors the SAP
+    # pattern -- without this, a SAR import with no native back-matter
+    # would never show resources even when the upstream SSP/profile has
+    # them. Reads from BOTH BackMatterResource records (managed) AND
+    # import_metadata["back_matter"] (imported OSCAL hashes).
+    bm_count = copy_back_matter_into_sar(sap_id, ssp_id, profile_id)
+
+    audit_log("sar_document_reprocessed", subject: @sar_document,
+              metadata: { sap_id: sap_id, ssp_id: ssp_id, profile_id: profile_id,
+                          objectives_assigned: objective_count,
+                          fields_added: field_count,
+                          back_matter_copied: bm_count })
+
+    msg = "Source associated."
+    msg += " #{field_count} context fields populated." if field_count > 0
+    msg += " #{objective_count} objectives populated." if objective_count > 0
+    msg += " #{bm_count} back-matter resources copied." if bm_count > 0
+    flash[:success] = msg
+    redirect_to sar_document_path(@sar_document)
+  rescue StandardError => e
+    flash[:error] = "Failed to associate: #{e.message}"
+    redirect_to sar_document_path(@sar_document)
+  end
+
+  # PATCH /sar_documents/:id/update_objective
+  def update_objective
+    objective = SarControlObjective.joins(sar_control: :sar_document)
+                                   .find_by!(id: params[:objective_id],
+                                             sar_documents: { id: @sar_document.id })
+
+    permitted = params.require(:sar_control_objective)
+                      .permit(:status, :assessor_name, :assessor_notes)
+
+    if permitted[:status] == "passing" || permitted[:status] == "failed"
+      permitted[:assessed_at] = Time.current
+    end
+
+    if objective.update(permitted)
+      @sar_document.regenerate_oscal_uuid!
+      audit_log("sar_objective_updated", subject: @sar_document,
+                metadata: { objective_id: objective.objective_id, status: objective.status })
+      flash[:success] = "Objective #{objective.label.presence || objective.objective_id} updated."
+    else
+      flash[:error] = objective.errors.full_messages.join(", ")
+    end
+    redirect_to sar_document_path(@sar_document, anchor: "obj-#{objective.id}")
+  end
+
   def destroy
     name = @sar_document.name
     if @sar_document.destroy
@@ -542,6 +630,129 @@ class SarDocumentsController < ApplicationController
     end
   end
 
+  # After associate_source links the SAR to a SAP/SSP, walk every existing
+  # SarControl and copy responsibility / implementation / impact_statement
+  # fields from the SSP if they're missing. SAR -> SAP -> SSP chain (or
+  # SAR -> SSP directly). Returns the count of fields added.
+  def enrich_existing_controls_from_sap_or_ssp_chain
+    ssp = resolve_linked_ssp_for_sar(@sar_document)
+    return 0 if ssp.nil?
+
+    ssp_controls = ssp.ssp_controls.includes(:ssp_control_fields)
+                                   .index_by { |c| c.control_id.to_s.strip.downcase }
+
+    count = 0
+    @sar_document.sar_controls.includes(:sar_control_fields).find_each do |sar_ctrl|
+      ssp_ctrl = ssp_controls[sar_ctrl.control_id.to_s.strip.downcase]
+      next unless ssp_ctrl
+      ssp_fields = ssp_ctrl.ssp_control_fields.index_by(&:field_name)
+      existing = sar_ctrl.sar_control_fields.pluck(:field_name).to_set
+
+      mappings = {
+        "responsibility"   => ssp_fields["responsible_entities"]&.field_value,
+        "implementation"   => ssp_fields["implementation_statement"]&.field_value.presence ||
+                              ssp_fields["implementation_summary"]&.field_value,
+        "impact_statement" => ssp_fields["notes"]&.field_value
+      }
+
+      mappings.each do |fname, fvalue|
+        next if fvalue.blank? || existing.include?(fname)
+        sar_ctrl.sar_control_fields.create!(field_name: fname, field_value: fvalue)
+        count += 1
+      end
+    end
+    count
+  end
+
+  def resolve_linked_ssp_for_sar(sar)
+    return SspDocument.find_by(id: sar.ssp_document_id) if sar.ssp_document_id.present?
+    return nil if sar.sap_document_id.blank?
+    sap = SapDocument.find_by(id: sar.sap_document_id)
+    return nil if sap.nil? || sap.ssp_document_id.blank?
+    SspDocument.find_by(id: sap.ssp_document_id)
+  end
+
+  # Copy back-matter resources from each linked source (SAP + its chained
+  # SSP/profile, the directly linked SSP, the directly linked profile)
+  # into this SAR. Reads from BOTH BackMatterResource records (managed)
+  # AND import_metadata["back_matter"] (imported from OSCAL).
+  # Idempotent on UUID -- existing entries are skipped. Returns count of
+  # newly-created records.
+  def copy_back_matter_into_sar(sap_id, ssp_id, profile_id)
+    sources = []
+    if sap_id.present?
+      sap = SapDocument.find_by(id: sap_id)
+      if sap
+        sources << sap
+        sources << SspDocument.find_by(id: sap.ssp_document_id)         if sap.ssp_document_id.present?
+        sources << ProfileDocument.find_by(id: sap.profile_document_id) if sap.profile_document_id.present?
+      end
+    end
+    sources << SspDocument.find_by(id: ssp_id)         if ssp_id.present?
+    sources << ProfileDocument.find_by(id: profile_id) if profile_id.present?
+    sources.compact!
+    sources.uniq!
+
+    existing_uuids = @sar_document.back_matter_resources.pluck(:uuid).to_set
+    # source_uuids tracks which upstream UUIDs we've already copied so a
+    # second associate_source call doesn't produce duplicates.
+    existing_source_uuids = @sar_document.back_matter_resources
+                                         .pluck(:uuid, :resource_data)
+                                         .map { |u, d| (d || {})["source_uuid"] || u }
+                                         .to_set
+    copied = 0
+
+    sources.each do |source|
+      # 1. Managed BackMatterResource records. UUID is globally unique
+      # at the DB level, so we generate a new UUID for the SAR's copy and
+      # stash the original in resource_data["source_uuid"] for traceability.
+      if source.respond_to?(:back_matter_resources)
+        source.back_matter_resources.each do |src_bm|
+          next if existing_source_uuids.include?(src_bm.uuid)
+          new_uuid = SecureRandom.uuid
+          merged_data = (src_bm.resource_data || {}).merge("source_uuid" => src_bm.uuid)
+          @sar_document.back_matter_resources.create!(
+            uuid:          new_uuid,
+            title:         src_bm.title,
+            description:   src_bm.description,
+            rel:           src_bm.rel,
+            media_type:    src_bm.media_type,
+            href:          src_bm.href,
+            source:        "imported",
+            resource_data: merged_data
+          )
+          existing_uuids << new_uuid
+          existing_source_uuids << src_bm.uuid
+          copied += 1
+        end
+      end
+
+      # 2. Imported back-matter (OSCAL JSON hashes preserved on import)
+      imported = source.respond_to?(:import_metadata) ? (source.import_metadata&.dig("back_matter") || []) : []
+      imported.each do |bm_hash|
+        uuid = bm_hash["uuid"]
+        next if uuid.blank? || existing_uuids.include?(uuid)
+        rlink = (bm_hash["rlinks"] || []).first || {}
+        @sar_document.back_matter_resources.create!(
+          uuid:          uuid,
+          title:         bm_hash["title"] || "Imported Resource",
+          description:   bm_hash["description"],
+          rel:           "reference",
+          media_type:    rlink["media-type"],
+          href:          rlink["href"],
+          source:        "imported",
+          resource_data: bm_hash.except("uuid", "title", "description", "rlinks")
+        )
+        existing_uuids << uuid
+        copied += 1
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.warn("[SarDocumentsController] skipping invalid back-matter #{uuid}: #{e.message}")
+      end
+    end
+
+    copied
+  end
+
   def set_sar_document
     @sar_document = SarDocument.find_by!(slug: params[:id])
   end
@@ -611,6 +822,30 @@ class SarDocumentsController < ApplicationController
     all_statuses = data.values.flat_map(&:keys).uniq
     ordered      = SAR_STATUS_ORDER.select { |s| all_statuses.include?(s) }
     ordered     += (all_statuses - SAR_STATUS_ORDER).sort
+
+    [ data, families, ordered ]
+  end
+
+  OBJECTIVE_STATUS_ORDER = %w[failed in-progress pending passing not_applicable not_assessed].freeze
+
+  # Builds an objective rollup heatmap for SAR. Counts each control once
+  # under its rolled-up objective status (failed > in-progress > pending >
+  # passing > not_assessed). Independent of cached_result so users can see
+  # both the OSCAL-level result and the per-objective progress at a glance.
+  def build_objective_status_heatmap(scope)
+    data = {}
+    scope.where.not(control_id: [ nil, "" ])
+         .includes(:sar_control_objectives).find_each(batch_size: 500) do |ctrl|
+      family = ctrl.control_family.presence || ctrl.control_id.to_s.split("-").first.upcase
+      next if family.blank?
+      data[family] ||= Hash.new(0)
+      data[family][ctrl.objective_status_rollup] += 1
+    end
+
+    families = data.keys.sort
+    all_statuses = data.values.flat_map(&:keys).uniq
+    ordered = OBJECTIVE_STATUS_ORDER.select { |s| all_statuses.include?(s) }
+    ordered += (all_statuses - OBJECTIVE_STATUS_ORDER).sort
 
     [ data, families, ordered ]
   end
