@@ -90,7 +90,8 @@ class OscalSspExportService
         { "id" => "authorizing-official", "title" => "Authorizing Official" }
       ],
       default_parties: [
-        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+        { "uuid" => OscalUuidService.org_party_uuid_for(@document),
+          "type" => "organization", "name" => "SPARC Export" }
       ]
     )
   end
@@ -141,7 +142,7 @@ class OscalSspExportService
       {
         "information-types" => [
           {
-            "uuid"        => SecureRandom.uuid,
+            "uuid"        => OscalUuidService.derived(@document.uuid, "ssp-default-info-type"),
             "title"       => "System Information",
             "description" => "Information processed, stored, or transmitted by #{@document.name}."
           }
@@ -229,7 +230,7 @@ class OscalSspExportService
     else
       [
         {
-          "uuid"     => SecureRandom.uuid,
+          "uuid"     => OscalUuidService.derived(@document.uuid, "ssp-default-user"),
           "title"    => "General User",
           "role-ids" => [ "system-owner" ]
         }
@@ -254,7 +255,7 @@ class OscalSspExportService
     if @components.any?
       @components.map { |c| build_component(c) }
     else
-      this_uuid = SecureRandom.uuid
+      this_uuid = OscalUuidService.derived(@document.uuid, "ssp-this-system-component")
       @default_component_uuid = this_uuid
       [
         {
@@ -331,7 +332,7 @@ class OscalSspExportService
     by_comps  = control.ssp_by_components.to_a
 
     result = {
-      "uuid"       => SecureRandom.uuid,
+      "uuid"       => OscalUuidService.derived(@document.uuid, "ssp-ir", control.uuid),
       "control-id" => normalize_control_id(control.control_id)
     }
 
@@ -433,12 +434,16 @@ class OscalSspExportService
     statements = []
     control_id = normalize_control_id(control.control_id)
 
-    # Private implementation as a statement
+    # Private implementation as a statement.
+    # NOTE FOR #393: when ssp_control_statements gains a stored uuid column,
+    # backfill via OscalUuidService.derived(control.uuid, "ssp-statement",
+    # statement_id) so existing OSCAL exports keep the same statement UUIDs.
     priv = field_map["implementation_statement"]&.field_value
     if priv.present?
+      stmt_id = "#{control_id}_priv"
       statements << {
-        "statement-id" => "#{control_id}_priv",
-        "uuid"         => SecureRandom.uuid,
+        "statement-id" => stmt_id,
+        "uuid"         => OscalUuidService.derived(control.uuid, "ssp-statement", stmt_id),
         "remarks"      => priv
       }
     end
@@ -446,9 +451,10 @@ class OscalSspExportService
     # Public implementation as a statement
     pub = field_map["implementation_summary"]&.field_value
     if pub.present?
+      stmt_id = "#{control_id}_pub"
       statements << {
-        "statement-id" => "#{control_id}_pub",
-        "uuid"         => SecureRandom.uuid,
+        "statement-id" => stmt_id,
+        "uuid"         => OscalUuidService.derived(control.uuid, "ssp-statement", stmt_id),
         "remarks"      => pub
       }
     end
@@ -461,9 +467,10 @@ class OscalSspExportService
       narrative = [ priv_impl, pub_impl ].compact.join("\n\n")
       next if narrative.blank?
 
+      stmt_id = "#{control_id}_inherited_#{i + 1}"
       statements << {
-        "statement-id" => "#{control_id}_inherited_#{i + 1}",
-        "uuid"         => SecureRandom.uuid,
+        "statement-id" => stmt_id,
+        "uuid"         => OscalUuidService.derived(control.uuid, "ssp-statement", stmt_id),
         "remarks"      => narrative
       }
     end

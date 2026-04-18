@@ -100,7 +100,7 @@ class OscalAssessmentPlanExportService
   def build_parties
     parties = [
       {
-        "uuid" => SecureRandom.uuid,
+        "uuid" => OscalUuidService.org_party_uuid_for(@document),
         "type" => "organization",
         "name" => "Assessment Organization (SPARC Export)"
       }
@@ -110,7 +110,7 @@ class OscalAssessmentPlanExportService
                               .distinct.pluck(:assessor_name)
     assessor_names.each do |name|
       parties << {
-        "uuid" => SecureRandom.uuid,
+        "uuid" => OscalUuidService.derived(@document.uuid, "sap-assessor-party", name),
         "type" => "person",
         "name" => name
       }
@@ -145,7 +145,7 @@ class OscalAssessmentPlanExportService
 
     activities = method_buckets.map do |method, controls_for_method|
       {
-        "uuid"        => SecureRandom.uuid,
+        "uuid"        => OscalUuidService.derived(@document.uuid, "sap-activity", method),
         "title"       => "#{method.titleize} Assessment Activities",
         "description" => "Assessment activities using the #{method} method.",
         "props" => [
@@ -153,7 +153,7 @@ class OscalAssessmentPlanExportService
         ],
         "steps" => controls_for_method.map do |ctrl|
           step = {
-            "uuid"        => SecureRandom.uuid,
+            "uuid"        => OscalUuidService.derived(@document.uuid, "sap-step", method, ctrl.uuid),
             "title"       => "Assess #{ctrl.control_id}",
             "description" => ctrl.aggregate_objective_text.presence ||
                              "Assess #{ctrl.control_id} using #{method} method."
@@ -256,7 +256,7 @@ class OscalAssessmentPlanExportService
   def build_assessment_assets
     assessment_platforms = [
       {
-        "uuid"  => SecureRandom.uuid,
+        "uuid"  => OscalUuidService.derived(@document.uuid, "sap-assessment-platform"),
         "title" => "Assessment Platform",
         "props" => [
           { "name" => "type", "ns" => "https://sparc.local/ns", "value" => "manual" }

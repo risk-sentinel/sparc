@@ -41,7 +41,7 @@ class OscalCatalogExportService
   def build_catalog
     {
       "catalog" => {
-        "uuid"     => SecureRandom.uuid,
+        "uuid"     => @catalog.oscal_uuid.presence || OscalUuidService.derived(@catalog.id.to_s, "catalog-root"),
         "metadata" => build_metadata,
         "groups"   => build_groups
       }.compact
@@ -55,7 +55,8 @@ class OscalCatalogExportService
         { "id" => "creator", "title" => "Document Creator" }
       ],
       default_parties: [
-        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+        { "uuid" => OscalUuidService.derived(@catalog.oscal_uuid.to_s, "catalog-default-party"),
+          "type" => "organization", "name" => "SPARC Export" }
       ]
     )
   end

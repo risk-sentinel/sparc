@@ -78,7 +78,8 @@ class OscalPoamExportService
         { "id" => "prepared-by", "title" => "Prepared By" }
       ],
       default_parties: [
-        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+        { "uuid" => OscalUuidService.org_party_uuid_for(@document),
+          "type" => "organization", "name" => "SPARC Export" }
       ]
     )
   end
@@ -254,7 +255,7 @@ class OscalPoamExportService
   def build_poam_items
     @items.map do |item|
       entry = {
-        "uuid"        => item.poam_item_uuid || SecureRandom.uuid,
+        "uuid"        => item.uuid,
         "title"       => item.title,
         "description" => item.description,
         "origins"     => item.origins_data.presence,

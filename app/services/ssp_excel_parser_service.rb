@@ -102,7 +102,7 @@ class SspExcelParserService
       parent_attrs  = parents.map { |p| p[:attrs] }
 
       parent_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
-        records = batch.map { |a| SspControl.new(ssp_document_id: @document.id, **a.compact) }
+        records = batch.map { |a| SspControl.new(ssp_document_id: @document.id, uuid: SecureRandom.uuid, **a.compact) }
         result  = SspControl.import(records, validate: false, returning: :id)
 
         batch_offset = parent_db_ids.size
@@ -119,7 +119,7 @@ class SspExcelParserService
       end
 
       child_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
-        records = batch.map { |a| SspControl.new(ssp_document_id: @document.id, **a.compact) }
+        records = batch.map { |a| SspControl.new(ssp_document_id: @document.id, uuid: SecureRandom.uuid, **a.compact) }
         result  = SspControl.import(records, validate: false, returning: :id)
 
         batch_offset = child_db_ids.size

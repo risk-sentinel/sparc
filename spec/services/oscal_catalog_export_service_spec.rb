@@ -9,7 +9,7 @@ RSpec.describe OscalCatalogExportService do
            published: "2024-01-15T00:00:00Z",
            metadata_extra: {
              "roles" => [ { "id" => "creator", "title" => "Document Creator" } ],
-             "parties" => [ { "uuid" => "test-uuid", "type" => "organization", "name" => "NIST" } ]
+             "parties" => [ { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "NIST" } ]
            })
   end
 
@@ -34,6 +34,8 @@ RSpec.describe OscalCatalogExportService do
   end
 
   subject { described_class.new(catalog) }
+
+  it_behaves_like "produces stable UUIDs across exports"
 
   describe "#export_unvalidated" do
     it "produces valid JSON with catalog root key" do

@@ -37,6 +37,8 @@ RSpec.describe OscalMappingExportService do
 
   subject { described_class.new(mapping) }
 
+  it_behaves_like "produces stable UUIDs across exports"
+
   describe "#export_unvalidated" do
     it "produces valid JSON with mapping-collection root key" do
       json = subject.export_unvalidated

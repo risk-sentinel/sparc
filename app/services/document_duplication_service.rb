@@ -4,7 +4,9 @@ class DocumentDuplicationService
     "CdefDocument" => { controls: :cdef_controls, fields: :cdef_control_fields, version_attr: :cdef_version }
   }.freeze
 
-  SKIP_ATTRIBUTES = %w[id created_at updated_at slug].freeze
+  # uuid is excluded so the duplicate gets its own gen_random_uuid() default
+  # rather than colliding with the source's uuid (globally unique per #397).
+  SKIP_ATTRIBUTES = %w[id created_at updated_at slug uuid].freeze
 
   def initialize(source_document)
     @source = source_document
