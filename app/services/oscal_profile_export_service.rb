@@ -58,7 +58,8 @@ class OscalProfileExportService
         { "id" => "creator", "title" => "Document Creator" }
       ],
       default_parties: [
-        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+        { "uuid" => OscalUuidService.org_party_uuid_for(@document),
+          "type" => "organization", "name" => "SPARC Export" }
       ]
     )
   end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_16_175601) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -174,9 +174,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
     t.string "sort_id"
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["control_family_id", "control_id"], name: "index_catalog_controls_on_control_family_id_and_control_id", unique: true
     t.index ["control_family_id"], name: "index_catalog_controls_on_control_family_id"
     t.index ["control_id"], name: "index_catalog_controls_on_control_id"
+    t.index ["uuid"], name: "index_catalog_controls_on_uuid", unique: true
   end
 
   create_table "cdef_control_fields", force: :cascade do |t|
@@ -203,10 +205,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
     t.string "stig_id"
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["cdef_document_id", "control_family"], name: "idx_cdef_controls_on_doc_family"
     t.index ["cdef_document_id", "row_order"], name: "idx_cdef_controls_on_doc_row"
     t.index ["cdef_document_id", "stig_id"], name: "index_cdef_controls_on_document_and_stig_id"
     t.index ["cdef_document_id"], name: "index_cdef_controls_on_cdef_document_id"
+    t.index ["uuid"], name: "index_cdef_controls_on_uuid", unique: true
   end
 
   create_table "cdef_documents", force: :cascade do |t|
@@ -599,9 +603,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
     t.integer "row_order", default: 0, null: false
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["poam_document_id", "risk_status"], name: "index_poam_items_on_poam_document_id_and_risk_status"
     t.index ["poam_document_id", "row_order"], name: "index_poam_items_on_poam_document_id_and_row_order"
     t.index ["poam_document_id"], name: "index_poam_items_on_poam_document_id"
+    t.index ["uuid"], name: "index_poam_items_on_uuid", unique: true
   end
 
   create_table "poam_local_components", force: :cascade do |t|
@@ -737,10 +743,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
     t.integer "row_order", default: 0, null: false
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["profile_document_id", "control_family"], name: "idx_profile_controls_on_doc_family"
     t.index ["profile_document_id", "control_id"], name: "idx_profile_controls_on_doc_ctrl", unique: true
     t.index ["profile_document_id", "row_order"], name: "idx_profile_controls_on_doc_row"
     t.index ["profile_document_id"], name: "index_profile_controls_on_profile_document_id"
+    t.index ["uuid"], name: "index_profile_controls_on_uuid", unique: true
   end
 
   create_table "profile_documents", force: :cascade do |t|
@@ -831,10 +839,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
     t.text "test_case"
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["sap_document_id", "assessment_method"], name: "idx_sap_controls_on_doc_method"
     t.index ["sap_document_id", "control_family"], name: "idx_sap_controls_on_doc_family"
     t.index ["sap_document_id", "row_order"], name: "idx_sap_controls_on_doc_row"
     t.index ["sap_document_id"], name: "index_sap_controls_on_sap_document_id"
+    t.index ["uuid"], name: "index_sap_controls_on_uuid", unique: true
   end
 
   create_table "sap_documents", force: :cascade do |t|
@@ -917,11 +927,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
     t.string "subject_environment"
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["sar_document_id", "cached_result"], name: "index_sar_controls_on_sar_document_id_and_cached_result"
     t.index ["sar_document_id", "control_family"], name: "index_sar_controls_on_sar_document_id_and_control_family"
     t.index ["sar_document_id", "row_order"], name: "index_sar_controls_on_sar_document_id_and_row_order"
     t.index ["sar_document_id"], name: "index_sar_controls_on_sar_document_id"
     t.index ["section"], name: "index_sar_controls_on_section"
+    t.index ["uuid"], name: "index_sar_controls_on_uuid", unique: true
   end
 
   create_table "sar_documents", force: :cascade do |t|
@@ -1170,9 +1182,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_112523) do
     t.bigint "ssp_document_id", null: false
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["parent_id"], name: "index_ssp_controls_on_parent_id"
     t.index ["ssp_document_id", "row_order"], name: "index_ssp_controls_on_ssp_document_id_and_row_order"
     t.index ["ssp_document_id"], name: "index_ssp_controls_on_ssp_document_id"
+    t.index ["uuid"], name: "index_ssp_controls_on_uuid", unique: true
   end
 
   create_table "ssp_document_cdef_documents", force: :cascade do |t|

@@ -58,7 +58,8 @@ class OscalMappingExportService
         { "id" => "creator", "title" => "Document Creator" }
       ],
       default_parties: [
-        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+        { "uuid" => OscalUuidService.derived(@mapping.id.to_s, "mapping-default-party"),
+          "type" => "organization", "name" => "SPARC Export" }
       ]
     )
   end
@@ -78,7 +79,7 @@ class OscalMappingExportService
     target_uuid = target_resource_uuid
 
     [ {
-      "uuid"            => SecureRandom.uuid,
+      "uuid"            => OscalUuidService.derived(@mapping.id.to_s, "mapping-set"),
       "source-resource" => { "type" => "catalog", "href" => "##{source_uuid}" },
       "target-resource" => { "type" => "catalog", "href" => "##{target_uuid}" },
       "maps"            => build_maps
@@ -117,11 +118,11 @@ class OscalMappingExportService
   end
 
   def source_resource_uuid
-    @source_resource_uuid ||= SecureRandom.uuid
+    @source_resource_uuid ||= OscalUuidService.derived(@mapping.id.to_s, "mapping-source-resource")
   end
 
   def target_resource_uuid
-    @target_resource_uuid ||= SecureRandom.uuid
+    @target_resource_uuid ||= OscalUuidService.derived(@mapping.id.to_s, "mapping-target-resource")
   end
 
   def normalize_control_id(id)

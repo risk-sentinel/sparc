@@ -561,6 +561,19 @@ Assuming 4 developers (A, B, C, D) across all 6 phases:
 | C | overflow / integration testing |
 | D | overflow / integration testing |
 
+### Phase 12 (Upcoming Release) -- OSCAL Foundations & Boundary Sync
+
+Stacked into a single release per dependency order. See § 12 below for full
+collision-risk analysis and per-issue file lists.
+
+| Dev | Issues | Lane |
+| --- | ------ | ---- |
+| A | #397 OSCAL UUID stability (foundational, lightweight) | All export services |
+| C | #395 Phase 1 boundary picker + FK inheritance (after #397 merges) | SAP/SAR/SSP/POAM/CDEF/Profile upload paths + boundary model |
+| B | #393 sub-part hierarchy tables (after #395 Phase 1; unblocks #396 + #398) | Catalogs / Profiles / SSPs / CDEFs |
+| E | #392 Active Storage read for parsers (independent infra fix; can land any time) | DocumentConversionJob + FileUploadable |
+| C/B | #395 Phase 2-3 metadata sync + #396 leveraged auth + #398 CDEF→SSP (parallel after #397+#395 P1+#393 land) | Cross-domain |
+
 ---
 
 ## 8. File Lock Conventions
@@ -665,6 +678,85 @@ Phase 6 (FedRAMP 20x -- final):
 | #167 + #171 | YES | None | Different views, 1-line route max |
 
 <!-- markdownlint-enable MD013 -->
+
+---
+
+## 12. Phase 12 -- Upcoming Release: OSCAL Foundations & Boundary Sync
+
+Stacked release covering the architectural rework discovered while testing #390 in production. Issues #397, #395, #393, #392, #396, #398 ship together because each builds on the foundations that the previous one establishes -- splitting them across multiple releases would force repeated reworking of the same files.
+
+### Dependency order (the stack)
+
+```text
+                       #397 (UUID stability)
+                              |
+                              v
+                    #395 Phase 1 (boundary picker + FK inheritance)
+                              |
+                              v
+                       #393 (sub-part hierarchy tables)
+                              |
+                +-------------+-------------+
+                v             v             v
+   #395 Phase 2-3   #396 (leveraged auth)  #398 (CDEF -> SSP)
+   (metadata sync)
+```
+
+`#392` (Active Storage read for parsers) is an independent infrastructure fix. It can land at any point in the stack; recommend pairing with `#395 Phase 1` since both touch `FileUploadable`.
+
+### Per-issue collision-risk matrix
+
+<!-- markdownlint-disable MD013 -->
+
+| Order | Issue | Primary Owner | Touched Files | Collision Risk | Notes |
+| ----- | ----- | ------------- | ------------- | -------------- | ----- |
+| 1 | **#397** OSCAL UUID stability | Dev A (or whoever owns export services) | All 7 `oscal_*_export_service.rb`, `app/models/sap_control.rb`, `sar_*` models, `ssp_control.rb`, `cdef_control.rb`, `profile_control.rb`, schema migration adding `uuid` columns + backfill, round-trip specs | **HIGH** -- touches every export service, but the change is purely "replace `SecureRandom.uuid` with `record.uuid`". Mechanical. | Ship first because every downstream issue depends on stable UUIDs for cross-document linkage |
+| 2 | **#395 Phase 1** Boundary picker + FK inheritance | Dev C (SAP/SAR/SSP/POAM owner) | `app/controllers/concerns/file_uploadable.rb`, all 6 document upload views (boundary picker), `app/models/authorization_boundary.rb` (helper methods), all 6 document models (`before_validation :inherit_boundary_links`) | **HIGH** -- cross-cutting. Same files as #355 (multi-file upload) -- coordinate review. | Smallest #395 phase; biggest immediate UX win (replaces most manual `associate_source` use) |
+| 3 | **#393** Sub-part hierarchy tables | Dev B (Profile/CDEF) for Catalog+Profile side, Dev C for SSP side | New `db/migrate/*_create_*_control_statements.rb` (3-4 tables), new models, all 6 OSCAL parsers (statement extraction), all 6 OSCAL exporters (statement emission), all 6 show views (nested statement display) | **VERY HIGH** -- mirrors the scope of #390 (objectives) but for SSP/CDEF/Profile. Unblocks #396 + #398. | Apply the proven `_objectives_table` pattern from #390/#394 |
+| 4 | **#392** Active Storage read for parsers | Dev E (Infrastructure) | `app/jobs/document_conversion_job.rb`, `app/controllers/concerns/file_uploadable.rb`, all 6 parser specs (stub `attached?` instead of `file_path`) | **MEDIUM** -- single-line change in the job, but parser specs need updating | Independent infra fix; eliminates ECS web/Sidekiq race condition (root cause of "worked the second time" failures) |
+| 5 | **#395 Phase 2-3** Boundary metadata sync + UI | Dev C | New `boundary_metadata_sync_service`, all 6 document models (read boundary-derived metadata), `app/views/authorization_boundaries/show.html.erb` (sync indicators), `lib/tasks/boundary.rake` | **HIGH** -- cross-domain | Depends on Phase 1 |
+| 6 | **#396** Leveraged Authorizations | Dev C + Dev B (cross-cutting) | New `leveraged_authorization.rb`, `ssp_control_statement_inheritance.rb` (link via UUID), `oscal_ssp_export_service` (emit `leveraged-authorization` assembly), SSP show + boundary show views, CRM upload UI | **HIGH** -- multi-boundary; depends on #393's statement-level UUIDs | NIST deck slides 14-21; FedRAMP-typical scenario |
+| 7 | **#398** CDEF -> SSP auto-population | Dev B (CDEF) + Dev C (SSP) | `cdef_documents_controller` (component picker on SSP side), `ssp_documents_controller` (statement pre-population), new `ssp_control_statement_inheritance` reuses table from #396, OSCAL parser/exporter changes | **MEDIUM-HIGH** -- depends on #393 + #397 | NIST deck slide 13 |
+
+<!-- markdownlint-enable MD013 -->
+
+### Sequencing rules
+
+1. **#397 must merge before any other Phase 12 issue.** Every downstream issue depends on stable UUIDs -- if they don't merge first, downstream work has to be reworked when UUID-touching exporter code changes.
+2. **#395 Phase 1 must merge before #395 Phase 2-3, #396, #398.** Boundary FK inheritance is the foundation for boundary-driven metadata sync and leveraged-authorization linking.
+3. **#393 must merge before #396 + #398.** Both depend on statement-level granularity that #393 introduces.
+4. **#392 can ship at any time.** No upstream or downstream dependency in this stack.
+5. **#394 (current PR for #390) must merge before #393.** #393 generalizes the pattern that #394 establishes.
+
+### Hot files for Phase 12 (lock conventions apply)
+
+| File | Touched by |
+| ---- | ---------- |
+| `app/controllers/concerns/file_uploadable.rb` | #392, #395 P1 |
+| `app/models/authorization_boundary.rb` | #395 P1, #395 P2-3, #396 |
+| All 7 `oscal_*_export_service.rb` | #397, #393, #396 (SSP), #398 (SSP+CDEF) |
+| All 6 OSCAL parser services | #393 |
+| All 6 document show views (control card structure) | #393, #395 P2-3 |
+| `app/jobs/document_conversion_job.rb` | #392 |
+
+Devs working on multiple Phase 12 issues should rebase frequently and use `gh pr comment` to coordinate hot-file edits per § 8.
+
+### Cross-cutting concerns
+
+- **OSCAL schema validation**: All Phase 12 issues add new emitted fields (`statement-ids`, `leveraged-authorization`, `link[rel="implements"]`, statement-level UUIDs). Each PR's test plan must include `OscalSchemaValidationService.validate(...)` round-trip checks.
+- **Migration safety**: Each issue ships ≥ 1 migration. Per `docs/dev/issue_rules.md` Migration Safety Rules: idempotent guards (`if_not_exists`, `column_exists?`), nullable FKs on existing tables, batched backfills with per-row rescue.
+- **Compliance artifacts**: None of these issues are security-critical (data-model + UI). Per `docs/dev/issue_rules.md` step 9, no CDEF or `nist-sp800-53-rev5-mapping.md` updates required.
+- **Release notes**: Each issue's GitHub release notes (per `feedback_release_pattern.md`) should call out the OSCAL-spec compliance milestone -- this stack moves SPARC from "OSCAL-import-aware" to "OSCAL-spec-native."
+
+### Reference
+
+NIST OSCAL Catalog, Profile, and Implementation Layers deck (`Day1.2-Dave-OSCAL_Control-inplementation.pdf`) drove most of the Phase 12 issue scoping. Specifically:
+
+- Slide 3: Inheritance chain (Catalog → Profile → CDEF → SSP → SAP → SAR → POA&M) -- justifies #395 boundary-driven FK inheritance
+- Slide 4: Common metadata across all 7 models -- justifies #395 Phase 2-3 metadata sync
+- Slide 13: CDEF → SSP statement population -- #398
+- Slides 14-21: Leveraged authorizations -- #396
+- Slide 19: UUID linkage between leveraging/leveraged statements -- #397 prerequisite
 
 ---
 

@@ -60,7 +60,8 @@ class OscalComponentDefinitionExportService
         { "id" => "prepared-by", "title" => "Prepared By" }
       ],
       default_parties: [
-        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+        { "uuid" => OscalUuidService.org_party_uuid_for(@document),
+          "type" => "organization", "name" => "SPARC Export" }
       ]
     )
   end
@@ -71,7 +72,7 @@ class OscalComponentDefinitionExportService
                         .includes(:cdef_control_fields)
 
     {
-      "uuid"        => SecureRandom.uuid,
+      "uuid"        => OscalUuidService.derived(@document.uuid, "cdef-component"),
       "type"        => "software",
       "title"       => @document.name,
       "description" => @document.description || "Imported component definition",
@@ -81,7 +82,7 @@ class OscalComponentDefinitionExportService
 
   def build_control_implementation(controls)
     {
-      "uuid"        => SecureRandom.uuid,
+      "uuid"        => OscalUuidService.derived(@document.uuid, "cdef-control-implementation"),
       "source"      => determine_source,
       "description" => "Controls from #{@document.cdef_type || 'imported'} component definition: #{@document.name}",
       "implemented-requirements" => controls.map { |ctrl| build_implemented_requirement(ctrl) }
@@ -92,7 +93,7 @@ class OscalComponentDefinitionExportService
     field_map = control.cdef_control_fields.index_by(&:field_name)
 
     result = {
-      "uuid"        => SecureRandom.uuid,
+      "uuid"        => OscalUuidService.derived(control.uuid, "cdef-ir"),
       "control-id"  => normalize_control_id(control, field_map),
       "description" => build_description(control, field_map)
     }
@@ -104,7 +105,7 @@ class OscalComponentDefinitionExportService
     if narrative.present?
       result["statements"] = [ {
         "statement-id" => "#{result['control-id']}_stmt",
-        "uuid"         => SecureRandom.uuid,
+        "uuid"         => OscalUuidService.derived(control.uuid, "cdef-statement", "default"),
         "description"  => narrative
       } ]
     end

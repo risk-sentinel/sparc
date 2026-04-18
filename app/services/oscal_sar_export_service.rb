@@ -77,7 +77,8 @@ class OscalSarExportService
         { "id" => "assessor", "title" => "Security Controls Assessor" }
       ],
       default_parties: [
-        { "uuid" => SecureRandom.uuid, "type" => "organization", "name" => "SPARC Export" }
+        { "uuid" => OscalUuidService.org_party_uuid_for(@document),
+          "type" => "organization", "name" => "SPARC Export" }
       ]
     )
   end
@@ -289,7 +290,7 @@ class OscalSarExportService
       control_id = normalize_control_id(control.control_id)
 
       # Synthesize an observation per control
-      obs_uuid = SecureRandom.uuid
+      obs_uuid = OscalUuidService.derived(@document.uuid, "synthesized-observation", control.uuid)
       observations << {
         "uuid"        => obs_uuid,
         "title"       => "Assessment of #{control.control_id}",
@@ -303,7 +304,7 @@ class OscalSarExportService
       # Synthesize a finding per control
       status_state = result_to_oscal_status(result_val)
       findings << {
-        "uuid"                 => SecureRandom.uuid,
+        "uuid"                 => OscalUuidService.derived(@document.uuid, "synthesized-finding", control.uuid),
         "title"                => "Finding for #{control.control_id}",
         "description"          => "Assessment finding for control #{control.control_id}: #{result_val}",
         "target"               => {
@@ -316,7 +317,7 @@ class OscalSarExportService
     end
 
     {
-      "uuid"               => SecureRandom.uuid,
+      "uuid"               => OscalUuidService.derived(@document.uuid, "synthesized-result"),
       "title"              => "Assessment Results for #{@document.name}",
       "description"        => "Synthesized from Excel assessment data.",
       "start"              => (@document.assessment_start || @document.created_at || Time.current).iso8601,

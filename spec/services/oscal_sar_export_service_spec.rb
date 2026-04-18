@@ -12,6 +12,8 @@ RSpec.describe OscalSarExportService do
 
   subject { described_class.new(document) }
 
+  it_behaves_like "produces stable UUIDs across exports"
+
   describe "#export_unvalidated -- finding target with linked objective" do
     it "emits target.type='objective-id' when finding has sar_control_objective" do
       finding = create(:sar_finding, sar_result: result,

@@ -26,6 +26,10 @@ RSpec.describe OscalAssessmentPlanExportService do
            test_case: "Check user account provisioning workflow")
   end
 
+  subject { described_class.new(sap) }
+
+  it_behaves_like "produces stable UUIDs across exports"
+
   describe "#export_unvalidated" do
     it "produces valid JSON with assessment-plan root key" do
       json = subject.export_unvalidated
