@@ -158,6 +158,7 @@
       accept: ".json,.xml,.yaml,.yml",
       multiple: true,
       hint: "Upload an OSCAL Assessment Plan in JSON, XML, or YAML format." %>
+    <%= render "shared/boundary_picker", param_key: :sap_document %>
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-primary" %>
     </div>

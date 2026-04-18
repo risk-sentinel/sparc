@@ -1,0 +1,84 @@
+<%# CDEF scope picker (#395 P1).
+    Two mutually exclusive choices:
+      - Boundary-specific: attached to the picked AuthorizationBoundary's
+        sub-Boundary records via boundary_cdef_documents.
+      - Globally available: usable by any boundary's SSP composition flow
+        within the current user's organization.
+
+    Required local: param_key (e.g. :cdef_document).
+%>
+<%
+  param_key = local_assigns.fetch(:param_key, :cdef_document)
+  boundaries = if current_user
+    AuthorizationBoundary
+      .joins(:authorization_boundary_memberships)
+      .where(authorization_boundary_memberships: { user_id: current_user.id })
+      .distinct.order(:name)
+  else
+    AuthorizationBoundary.none
+  end
+%>
+
+<div class="form-group mb-3">
+  <label class="fw-semibold d-block mb-2">CDEF Scope</label>
+
+  <div class="form-check">
+    <%= radio_button_tag "#{param_key}[scope]", "boundary", true,
+          class: "form-check-input",
+          id:    "#{param_key}_scope_boundary",
+          data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "boundaryRadio" } %>
+    <label class="form-check-label" for="<%= param_key %>_scope_boundary">
+      <strong>Boundary-specific</strong> — attach this CDEF to a specific
+      authorization boundary's environments.
+    </label>
+  </div>
+
+  <div class="form-check">
+    <%= radio_button_tag "#{param_key}[scope]", "global", false,
+          class: "form-check-input",
+          id:    "#{param_key}_scope_global",
+          data:  { action: "change->cdef-scope#toggle", cdef_scope_target: "globalRadio" } %>
+    <label class="form-check-label" for="<%= param_key %>_scope_global">
+      <strong>Globally available within organization</strong> — any boundary's
+      SSP can compose this CDEF.
+    </label>
+  </div>
+</div>
+
+<%# Boundary picker (only relevant when scope = boundary). The TODO below
+    tracks the org-admin permission check for global publishing per #395 P2. %>
+<% if boundaries.any? %>
+  <div class="form-group mb-3" id="<%= param_key %>_boundary_picker_wrapper">
+    <label for="<%= param_key %>_authorization_boundary_id" class="fw-semibold">
+      Authorization Boundary
+    </label>
+    <%= select_tag "#{param_key}[authorization_boundary_id]",
+          options_for_select([ [ "— Select a boundary —", "" ] ] +
+                             boundaries.map { |b| [ b.name, b.id ] }),
+          class: "form-control",
+          id:    "#{param_key}_authorization_boundary_id" %>
+    <small class="text-body-secondary d-block mt-1">
+      Required when scope is "Boundary-specific". Ignored when "Globally available" is selected.
+    </small>
+  </div>
+<% end %>
+
+<%# Lightweight inline JS to disable the boundary picker when Global is chosen.
+    Avoids introducing a Stimulus controller for one toggle. %>
+<script>
+  (function () {
+    var boundaryRadio = document.getElementById("<%= param_key %>_scope_boundary");
+    var globalRadio   = document.getElementById("<%= param_key %>_scope_global");
+    var wrapper       = document.getElementById("<%= param_key %>_boundary_picker_wrapper");
+    if (!boundaryRadio || !globalRadio || !wrapper) return;
+    var picker = wrapper.querySelector("select");
+    function sync() {
+      var disabled = globalRadio.checked;
+      if (picker) picker.disabled = disabled;
+      wrapper.style.opacity = disabled ? "0.5" : "1";
+    }
+    boundaryRadio.addEventListener("change", sync);
+    globalRadio.addEventListener("change", sync);
+    sync();
+  })();
+</script>

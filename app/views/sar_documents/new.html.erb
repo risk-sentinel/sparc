@@ -9,6 +9,8 @@
       multiple: true,
       hint: "Upload an Excel workbook, OSCAL Assessment Results JSON, XML, or YAML file. Excel workbooks with multiple tabs will each be imported as a separate section." %>
 
+    <%= render "shared/boundary_picker", param_key: :sar_document %>
+
     <div class="d-flex gap-3 align-items-center">
       <%= f.submit "Upload and Convert", class: "btn btn-success" %>
       <%= link_to "or Create from Wizard", wizard_sar_documents_path,

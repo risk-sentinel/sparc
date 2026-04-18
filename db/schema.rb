@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_16_175601) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -222,10 +222,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_175601) do
     t.text "description"
     t.text "error_message"
     t.string "file_type"
+    t.boolean "globally_available", default: false, null: false
     t.jsonb "import_metadata", default: {}
     t.string "lifecycle_status", default: "in_progress"
     t.jsonb "metadata_extra", default: {}, null: false
     t.string "name", null: false
+    t.bigint "organization_id"
     t.string "original_filename"
     t.string "oscal_version"
     t.bigint "profile_document_id"
@@ -237,7 +239,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_175601) do
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
     t.index ["deleted_at"], name: "index_cdef_documents_on_deleted_at"
+    t.index ["globally_available"], name: "idx_cdef_documents_global", where: "(globally_available = true)"
     t.index ["lifecycle_status"], name: "index_cdef_documents_on_lifecycle_status"
+    t.index ["organization_id"], name: "index_cdef_documents_on_organization_id"
     t.index ["profile_document_id"], name: "index_cdef_documents_on_profile_document_id"
     t.index ["slug"], name: "index_cdef_documents_on_slug", unique: true
     t.index ["status"], name: "index_cdef_documents_on_status"
@@ -1368,6 +1372,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_16_175601) do
   add_foreign_key "catalog_controls", "control_families"
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
+  add_foreign_key "cdef_documents", "organizations", on_delete: :nullify
   add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify
   add_foreign_key "control_back_matter_links", "back_matter_resources"
   add_foreign_key "control_families", "control_catalogs"
