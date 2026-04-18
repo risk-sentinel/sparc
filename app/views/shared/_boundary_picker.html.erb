@@ -1,0 +1,37 @@
+<%# Authorization Boundary picker for upload forms (#395 P1).
+    Optional dropdown filtered to boundaries the current user is a member
+    of. When picked, the BoundaryLinkInheritance concern auto-fills
+    cross-document FKs on the created document.
+
+    Required local: param_key (e.g. :sap_document, :ssp_document) -- the
+    name the form submits under.
+    Optional local: label (default "Authorization Boundary (optional)").
+%>
+<%
+  param_key = local_assigns.fetch(:param_key)
+  label_text = local_assigns.fetch(:label, "Authorization Boundary (optional)")
+  boundaries = if current_user
+    AuthorizationBoundary
+      .joins(:authorization_boundary_memberships)
+      .where(authorization_boundary_memberships: { user_id: current_user.id })
+      .distinct.order(:name)
+  else
+    AuthorizationBoundary.none
+  end
+%>
+<% if boundaries.any? %>
+  <div class="form-group mb-3">
+    <label for="<%= param_key %>_authorization_boundary_id" class="fw-semibold">
+      <%= label_text %>
+    </label>
+    <%= select_tag "#{param_key}[authorization_boundary_id]",
+          options_for_select([ [ "— None (link later) —", "" ] ] +
+                             boundaries.map { |b| [ b.name, b.id ] }),
+          class: "form-control",
+          id:    "#{param_key}_authorization_boundary_id" %>
+    <small class="text-body-secondary d-block mt-1">
+      Linking to a boundary auto-fills cross-document references (SSP, SAP, profile)
+      from the boundary's other documents.
+    </small>
+  </div>
+<% end %>

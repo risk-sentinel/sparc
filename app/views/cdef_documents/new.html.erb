@@ -9,6 +9,8 @@
       multiple: true,
       hint: "Upload an XCCDF XML, OSCAL XML/JSON/YAML, InSpec JSON, or STIG Viewer export file." %>
 
+    <%= render "cdef_documents/scope_picker", param_key: :cdef_document %>
+
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-success" %>
       <%= link_to "Cancel", cdef_documents_path, class: "btn btn-secondary" %>

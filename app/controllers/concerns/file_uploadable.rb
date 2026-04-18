@@ -72,8 +72,15 @@ module FileUploadable
       if document_class.column_names.include?("creation_method") && file_type != "excel"
         attrs[:creation_method] = "oscal_import"
       end
+      # Boundary picker (#395 P1): when set, the BoundaryLinkInheritance
+      # before_validation callback on each document model auto-fills
+      # cross-document FKs (ssp_document_id, sap_document_id, profile_document_id)
+      # from the boundary's siblings.
+      apply_boundary_picker_attrs!(attrs, document_class, param_key)
+
       document = document_class.create!(**attrs)
       document.file.attach(uploaded_file)
+      apply_post_create_scope!(document, param_key)
 
       DocumentConversionJob.perform_later(type_key.to_s, document.id, persist_path.to_s)
 
@@ -89,6 +96,51 @@ module FileUploadable
       set_document_ivar(type_key, document_class.new)
       render :new
     end
+  end
+
+  # Pull the boundary FK and (for CDEF) the CDEF scope params off the form
+  # and merge into the create! attrs hash. Called by both single-file and
+  # multi-file upload paths so the boundary picker works uniformly.
+  def apply_boundary_picker_attrs!(attrs, document_class, param_key)
+    boundary_id = params.dig(param_key, :authorization_boundary_id).presence
+    if boundary_id && document_class.column_names.include?("authorization_boundary_id")
+      attrs[:authorization_boundary_id] = boundary_id
+    end
+
+    # CDEF scope picker: "global" sets globally_available + organization_id;
+    # "boundary" leaves them unset (boundary_cdef_documents rows are
+    # created in apply_post_create_scope!).
+    if document_class.column_names.include?("globally_available")
+      scope = params.dig(param_key, :scope).presence
+      if scope == "global"
+        attrs[:globally_available] = true
+        attrs[:organization_id]    = current_user.try(:organization_id)
+        attrs.delete(:authorization_boundary_id) if attrs.key?(:authorization_boundary_id)
+      end
+    end
+  end
+
+  # Post-create work: for boundary-scoped CDEFs, attach to all sub-Boundary
+  # records of the picked AuthorizationBoundary via boundary_cdef_documents.
+  def apply_post_create_scope!(document, param_key)
+    return unless document.is_a?(CdefDocument)
+    return if document.globally_available
+    return if document.respond_to?(:authorization_boundary_id) &&
+              document.authorization_boundary_id.blank?
+
+    ab_id = params.dig(param_key, :authorization_boundary_id).presence
+    return if ab_id.blank?
+
+    sub_boundary_ids = Boundary.where(authorization_boundary_id: ab_id).pluck(:id)
+    sub_boundary_ids.each do |sb_id|
+      BoundaryCdefDocument.find_or_create_by!(
+        boundary_id: sb_id, cdef_document_id: document.id
+      )
+    end
+    # Also stash the AB id in import_metadata so the show page can display
+    # the linked boundary even though there's no direct FK on the CDEF.
+    md = (document.import_metadata || {}).merge("authorization_boundary_id" => ab_id.to_i)
+    document.update_column(:import_metadata, md)
   end
 
   def detect_file_type_from_registry(filename, registry)
@@ -140,8 +192,12 @@ module FileUploadable
         if document_class.column_names.include?("creation_method") && file_type != "excel"
           attrs[:creation_method] = "oscal_import"
         end
+        # Boundary picker (#395 P1): see handle_file_upload for details.
+        apply_boundary_picker_attrs!(attrs, document_class, param_key)
+
         document = document_class.create!(**attrs)
         document.file.attach(uploaded_file)
+        apply_post_create_scope!(document, param_key)
 
         DocumentConversionJob.perform_later(type_key.to_s, document.id, persist_path.to_s)
 

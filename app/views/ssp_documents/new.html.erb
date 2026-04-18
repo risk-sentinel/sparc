@@ -9,6 +9,8 @@
       multiple: true,
       hint: "Upload an Excel workbook, OSCAL SSP JSON, OSCAL SSP XML, or OSCAL SSP YAML file." %>
 
+    <%= render "shared/boundary_picker", param_key: :ssp_document %>
+
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Convert", class: "btn btn-success" %>
       <%= link_to "or Create from Wizard", wizard_ssp_documents_path, class: "text-body-secondary", style: "align-self: center; font-size: 0.88rem;" %>

@@ -64,6 +64,8 @@
       multiple: true,
       hint: "Upload an OSCAL Plan of Action and Milestones (POA&M) in JSON, XML, or YAML format." %>
 
+    <%= render "shared/boundary_picker", param_key: :poam_document %>
+
     <div class="d-flex gap-3">
       <%= f.submit "Upload and Process", class: "btn btn-primary" %>
     </div>

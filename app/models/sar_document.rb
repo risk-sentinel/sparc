@@ -4,6 +4,7 @@ class SarDocument < ApplicationRecord
   include Sluggable
   include Lifecycle
   include SoftDeletable
+  include BoundaryLinkInheritance
 
   belongs_to :authorization_boundary, optional: true
 
@@ -15,6 +16,14 @@ class SarDocument < ApplicationRecord
   belongs_to :sap_document, optional: true
   belongs_to :profile_document, optional: true
   belongs_to :ssp_document, optional: true
+
+  # Inherit cross-document FKs from the boundary's existing siblings on save
+  # (#395 P1). User-supplied values take precedence; we only fill nil columns.
+  inherits_from_boundary(
+    sap_document_id:     ->(b) { b.sap_document&.id },
+    ssp_document_id:     ->(b) { b.ssp_document&.id },
+    profile_document_id: ->(b) { b.ssp_document&.profile_document_id }
+  )
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 
