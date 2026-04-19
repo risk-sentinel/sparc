@@ -82,6 +82,15 @@ class CatalogImportService
     digest = Digest::SHA256.hexdigest(@content)
     catalog.update!(catalog_content_digest: digest, lifecycle_status: "published")
 
+    # #393: populate catalog_control_parts from the freshly imported
+    # guidance_data["parts"]. Best-effort -- failures don't block import
+    # since the migration backfill can re-run later.
+    begin
+      CatalogPartExtractorService.backfill_catalog_parts!(catalog)
+    rescue StandardError => e
+      Rails.logger.warn("[CatalogImportService] catalog parts backfill skipped for ##{catalog.id}: #{e.message}")
+    end
+
     stats
   end
 

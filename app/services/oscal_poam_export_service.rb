@@ -254,13 +254,26 @@ class OscalPoamExportService
 
   def build_poam_items
     @items.map do |item|
+      # #393: when item is linked to an SSP implementation statement,
+      # add a `link[rel="related"]` pointing at the statement UUID so
+      # consumers can resolve the implementation context.
+      links = Array(item.links_data)
+      if item.ssp_control_statement_id.present? && (stmt = item.ssp_control_statement)
+        links += [ {
+          "href"      => "##{stmt.uuid}",
+          "rel"       => "related",
+          "media-type" => "application/oscal+json",
+          "text"      => "Implementation statement #{stmt.statement_id}"
+        } ]
+      end
+
       entry = {
         "uuid"        => item.uuid,
         "title"       => item.title,
         "description" => item.description,
         "origins"     => item.origins_data.presence,
         "props"       => item.props_data.presence,
-        "links"       => item.links_data.presence,
+        "links"       => links.presence,
         "remarks"     => item.remarks
       }
 

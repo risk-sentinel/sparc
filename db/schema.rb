@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_18_155235) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -161,6 +161,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
     t.index ["cdef_document_id"], name: "index_boundary_cdef_documents_on_cdef_document_id"
   end
 
+  create_table "catalog_control_parts", force: :cascade do |t|
+    t.bigint "catalog_control_id", null: false
+    t.datetime "created_at", null: false
+    t.string "label"
+    t.string "parent_part_id"
+    t.string "part_id", null: false
+    t.string "part_name", null: false
+    t.jsonb "props_data", default: []
+    t.text "prose"
+    t.integer "row_order", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["catalog_control_id", "part_id"], name: "idx_cat_parts_on_ctrl_pid", unique: true
+    t.index ["catalog_control_id", "part_name"], name: "idx_cat_parts_on_ctrl_name"
+    t.index ["catalog_control_id"], name: "index_catalog_control_parts_on_catalog_control_id"
+  end
+
   create_table "catalog_controls", force: :cascade do |t|
     t.string "baseline_impact"
     t.bigint "control_family_id", null: false
@@ -190,6 +207,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
     t.datetime "updated_at", null: false
     t.index ["cdef_control_id", "field_name"], name: "idx_cdef_fields_on_ctrl_name"
     t.index ["cdef_control_id"], name: "index_cdef_control_fields_on_cdef_control_id"
+  end
+
+  create_table "cdef_control_statements", force: :cascade do |t|
+    t.bigint "cdef_control_id", null: false
+    t.datetime "created_at", null: false
+    t.text "implementation_prose"
+    t.string "label"
+    t.string "parent_statement_id"
+    t.text "remarks"
+    t.integer "row_order", default: 0, null: false
+    t.jsonb "set_parameters_data", default: []
+    t.string "statement_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["cdef_control_id", "statement_id"], name: "idx_cdef_stmt_on_ctrl_sid", unique: true
+    t.index ["cdef_control_id"], name: "index_cdef_control_statements_on_cdef_control_id"
+    t.index ["uuid"], name: "idx_cdef_stmt_on_uuid", unique: true
   end
 
   create_table "cdef_controls", force: :cascade do |t|
@@ -605,12 +639,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
     t.string "risk_level"
     t.string "risk_status"
     t.integer "row_order", default: 0, null: false
+    t.bigint "ssp_control_statement_id"
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["poam_document_id", "risk_status"], name: "index_poam_items_on_poam_document_id_and_risk_status"
     t.index ["poam_document_id", "row_order"], name: "index_poam_items_on_poam_document_id_and_row_order"
     t.index ["poam_document_id"], name: "index_poam_items_on_poam_document_id"
+    t.index ["ssp_control_statement_id"], name: "index_poam_items_on_ssp_control_statement_id"
     t.index ["uuid"], name: "index_poam_items_on_uuid", unique: true
   end
 
@@ -1008,6 +1044,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
     t.text "remarks"
     t.bigint "sar_control_objective_id"
     t.bigint "sar_result_id", null: false
+    t.bigint "ssp_control_statement_id"
     t.jsonb "target_data", default: {}
     t.string "title"
     t.datetime "updated_at", null: false
@@ -1015,6 +1052,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
     t.index ["sar_control_objective_id"], name: "index_sar_findings_on_sar_control_objective_id"
     t.index ["sar_result_id", "uuid"], name: "idx_sar_findings_result_uuid", unique: true
     t.index ["sar_result_id"], name: "index_sar_findings_on_sar_result_id"
+    t.index ["ssp_control_statement_id"], name: "index_sar_findings_on_ssp_control_statement_id"
   end
 
   create_table "sar_local_components", force: :cascade do |t|
@@ -1176,6 +1214,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
     t.bigint "ssp_control_id", null: false
     t.datetime "updated_at", null: false
     t.index ["ssp_control_id"], name: "index_ssp_control_fields_on_ssp_control_id"
+  end
+
+  create_table "ssp_control_statements", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "implementation_prose"
+    t.string "label"
+    t.string "parent_statement_id"
+    t.text "remarks"
+    t.jsonb "responsible_roles_data", default: []
+    t.integer "row_order", default: 0, null: false
+    t.jsonb "set_parameters_data", default: []
+    t.bigint "ssp_control_id", null: false
+    t.string "statement_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["ssp_control_id", "statement_id"], name: "idx_ssp_stmt_on_ctrl_sid", unique: true
+    t.index ["ssp_control_id"], name: "index_ssp_control_statements_on_ssp_control_id"
+    t.index ["uuid"], name: "idx_ssp_stmt_on_uuid", unique: true
   end
 
   create_table "ssp_controls", force: :cascade do |t|
@@ -1369,8 +1425,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
   add_foreign_key "boundaries", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "boundaries", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "cdef_documents", on_delete: :cascade
+  add_foreign_key "catalog_control_parts", "catalog_controls", on_delete: :cascade
   add_foreign_key "catalog_controls", "control_families"
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
+  add_foreign_key "cdef_control_statements", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
   add_foreign_key "cdef_documents", "organizations", on_delete: :nullify
   add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify
@@ -1401,6 +1459,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
   add_foreign_key "poam_item_risks", "poam_items", on_delete: :cascade
   add_foreign_key "poam_item_risks", "poam_risks", on_delete: :cascade
   add_foreign_key "poam_items", "poam_documents", on_delete: :cascade
+  add_foreign_key "poam_items", "ssp_control_statements", on_delete: :nullify
   add_foreign_key "poam_local_components", "poam_documents", on_delete: :cascade
   add_foreign_key "poam_milestones", "poam_remediations", on_delete: :cascade
   add_foreign_key "poam_observations", "poam_documents", on_delete: :cascade
@@ -1431,6 +1490,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
   add_foreign_key "sar_finding_risks", "sar_risks", on_delete: :cascade
   add_foreign_key "sar_findings", "sar_control_objectives", on_delete: :nullify
   add_foreign_key "sar_findings", "sar_results", on_delete: :cascade
+  add_foreign_key "sar_findings", "ssp_control_statements", on_delete: :nullify
   add_foreign_key "sar_local_components", "sar_documents", on_delete: :cascade
   add_foreign_key "sar_observations", "sar_results", on_delete: :cascade
   add_foreign_key "sar_results", "sar_documents", on_delete: :cascade
@@ -1442,6 +1502,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_085606) do
   add_foreign_key "ssp_components", "cdef_documents", on_delete: :nullify
   add_foreign_key "ssp_components", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_control_fields", "ssp_controls"
+  add_foreign_key "ssp_control_statements", "ssp_controls", on_delete: :cascade
   add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"
   add_foreign_key "ssp_document_cdef_documents", "cdef_documents", on_delete: :cascade

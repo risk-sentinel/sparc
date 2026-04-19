@@ -101,13 +101,28 @@ class OscalComponentDefinitionExportService
     props = build_props(control)
     result["props"] = props if props.any?
 
-    narrative = field_map["implementation_narrative"]&.field_value
-    if narrative.present?
-      result["statements"] = [ {
-        "statement-id" => "#{result['control-id']}_stmt",
-        "uuid"         => OscalUuidService.derived(control.uuid, "cdef-statement", "default"),
-        "description"  => narrative
-      } ]
+    # #393: table-driven statements when records exist (backfilled or
+    # imported); falls back to single field-synthesized statement for
+    # un-backfilled CDEFs (no linked profile) so existing exports work.
+    if control.cdef_control_statements.any?
+      result["statements"] = control.cdef_control_statements.order(:row_order).map do |stmt|
+        entry = {
+          "statement-id" => stmt.statement_id,
+          "uuid"         => stmt.uuid,
+          "description"  => stmt.implementation_prose.presence || stmt.remarks
+        }
+        entry["set-parameters"] = stmt.set_parameters_data if stmt.set_parameters_data.present?
+        entry.compact
+      end
+    else
+      narrative = field_map["implementation_narrative"]&.field_value
+      if narrative.present?
+        result["statements"] = [ {
+          "statement-id" => "#{result['control-id']}_stmt",
+          "uuid"         => OscalUuidService.derived(control.uuid, "cdef-statement", "default"),
+          "description"  => narrative
+        } ]
+      end
     end
 
     # OSCAL-compliant enhanced fields

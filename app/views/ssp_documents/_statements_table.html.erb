@@ -1,0 +1,67 @@
+<%# Per-control implementation statements table for SSP show page (#393).
+    Mirrors the SAP _objectives_table pattern from #390/#394.
+    Locals:
+      control      - SspControl instance (must have ssp_control_statements loaded)
+      ssp_document - SspDocument instance (for routing)
+%>
+<%
+  statements = control.ssp_control_statements.sort_by { |s| s.row_order || 0 }
+%>
+
+<% if statements.any? %>
+  <div class="sparc-statement-block" style="background: rgba(52,152,219,0.04); border-color: rgba(52,152,219,0.18); border-left: 3px solid #3498db; margin-top: 0.75rem;">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2" style="margin-bottom: 0.4rem;">
+      <div class="sparc-statement-label" style="color: #3498db;">
+        Implementation Statements
+        <span class="text-body-secondary" style="font-weight: 400; font-size: 0.7rem;">
+          (<%= pluralize(statements.size, "statement") %>)
+        </span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-hover" style="font-size: 0.82rem; margin-bottom: 0;">
+        <thead>
+          <tr style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color);">
+            <th style="width: 12%;">Statement</th>
+            <th>Implementation</th>
+            <th style="width: 14%;">Responsible Roles</th>
+            <th style="width: 6%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% statements.each do |stmt| %>
+            <% depth = stmt.parent_statement_id.present? ? 1 : 0 %>
+            <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>">
+              <td>
+                <code style="font-size: 0.78rem; padding-left: <%= depth * 0.75 %>rem;">
+                  <%= stmt.label.presence || stmt.statement_id %>
+                </code>
+              </td>
+              <td style="padding-left: <%= depth * 0.75 %>rem;">
+                <%= stmt.implementation_prose.presence ||
+                    content_tag(:span, "(unset \u2014 click Edit to add implementation)",
+                                class: "text-body-tertiary fst-italic") %>
+                <% if stmt.remarks.present? %>
+                  <div class="text-body-secondary" style="font-size: 0.75rem; margin-top: 0.2rem; padding-left: 0.4rem; border-left: 2px solid var(--bs-border-color);">
+                    <%= stmt.remarks %>
+                  </div>
+                <% end %>
+              </td>
+              <td class="text-body-secondary" style="font-size: 0.78rem;">
+                <% role_ids = Array(stmt.responsible_roles_data).flat_map { |r| Array(r.is_a?(Hash) ? r["role-id"] : r) } %>
+                <%= role_ids.any? ? role_ids.join(", ") : "\u2014" %>
+              </td>
+              <td>
+                <%= link_to "Edit",
+                            ssp_document_path(ssp_document, statement_id: stmt.id, anchor: "stmt-#{stmt.id}"),
+                            class: "btn btn-outline-primary btn-sm",
+                            style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

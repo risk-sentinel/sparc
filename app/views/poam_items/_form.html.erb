@@ -65,6 +65,34 @@
 
   <hr class="border-top" style="border: none; margin: 1.5rem 0;">
 
+  <%# ── Linked SSP Implementation Statement (#393) ── %>
+  <% if defined?(@available_ssp_statements) && @available_ssp_statements.any? %>
+    <div class="form-group">
+      <%= f.label :ssp_control_statement_id, "Linked SSP Statement", class: "fw-semibold" %>
+      <%= f.select :ssp_control_statement_id,
+            options_for_select(
+              @available_ssp_statements.map { |s|
+                ctrl_label = s.ssp_control.control_id.presence || "ctrl-#{s.ssp_control_id}"
+                stmt_label = s.label.presence || s.statement_id
+                ["#{ctrl_label} — #{stmt_label}", s.id]
+              },
+              poam_item.ssp_control_statement_id
+            ),
+            { include_blank: "— None —" },
+            class: "form-control" %>
+      <small class="text-body-secondary">
+        Optional. Links this POA&amp;M item to the specific SSP implementation statement it remediates.
+      </small>
+    </div>
+  <% elsif @poam_document.authorization_boundary&.ssp_document.present? %>
+    <div class="form-group">
+      <label class="fw-semibold">Linked SSP Statement</label>
+      <div class="text-body-secondary fst-italic" style="font-size: 0.85rem;">
+        The boundary's SSP has no implementation statements yet. Backfill statements on the SSP to enable linking.
+      </div>
+    </div>
+  <% end %>
+
   <%# ── Associated Entities ── %>
   <% if defined?(@available_risks) && @available_risks&.any? %>
     <div class="form-group">

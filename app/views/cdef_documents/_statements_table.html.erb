@@ -1,0 +1,54 @@
+<%# Per-control component implementation statements for CDEF show (#393).
+    Mirror of ssp_documents/_statements_table.
+    Locals:
+      control       - CdefControl instance
+      cdef_document - CdefDocument instance
+%>
+<%
+  statements = control.cdef_control_statements.sort_by { |s| s.row_order || 0 }
+%>
+
+<% if statements.any? %>
+  <div class="sparc-statement-block" style="background: rgba(155,89,182,0.04); border-color: rgba(155,89,182,0.18); border-left: 3px solid #9b59b6; margin-top: 0.75rem;">
+    <div class="sparc-statement-label" style="color: #9b59b6;">
+      Component Implementation Statements
+      <span class="text-body-secondary" style="font-weight: 400; font-size: 0.7rem;">
+        (<%= pluralize(statements.size, "statement") %>)
+      </span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-hover" style="font-size: 0.82rem; margin-bottom: 0;">
+        <thead>
+          <tr style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color);">
+            <th style="width: 14%;">Statement</th>
+            <th>Component Implementation</th>
+            <th style="width: 6%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% statements.each do |stmt| %>
+            <% depth = stmt.parent_statement_id.present? ? 1 : 0 %>
+            <tr id="stmt-<%= stmt.id %>" data-statement-id="<%= stmt.statement_id %>">
+              <td>
+                <code style="font-size: 0.78rem; padding-left: <%= depth * 0.75 %>rem;">
+                  <%= stmt.label.presence || stmt.statement_id %>
+                </code>
+              </td>
+              <td style="padding-left: <%= depth * 0.75 %>rem;">
+                <%= stmt.implementation_prose.presence ||
+                    content_tag(:span, "(unset)", class: "text-body-tertiary fst-italic") %>
+              </td>
+              <td>
+                <%= link_to "Edit",
+                            cdef_document_path(cdef_document, statement_id: stmt.id, anchor: "stmt-#{stmt.id}"),
+                            class: "btn btn-outline-primary btn-sm",
+                            style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

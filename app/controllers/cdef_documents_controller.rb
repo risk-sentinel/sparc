@@ -4,8 +4,8 @@ class CdefDocumentsController < ApplicationController
   include OscalExportable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource]
-  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource ]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement]
+  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement ]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -26,7 +26,12 @@ class CdefDocumentsController < ApplicationController
 
     @heatmap_data, @heatmap_families, @heatmap_severities = build_severity_heatmap(controls_scope)
 
-    @controls = controls_scope.order(:row_order).includes(:cdef_control_fields)
+    @controls = controls_scope.order(:row_order).includes(:cdef_control_fields, :cdef_control_statements)
+
+    # #393: deep-link statement editing via ?statement_id=N
+    @editing_statement = CdefControlStatement.joins(cdef_control: :cdef_document)
+                                             .find_by(id: params[:statement_id],
+                                                      cdef_documents: { id: @cdef_document.id })
 
     # Baseline gap analysis (when CDEF was created from a profile)
     if @cdef_document.profile_document.present?
@@ -208,6 +213,29 @@ class CdefDocumentsController < ApplicationController
       status: @cdef_document.status,
       error_message: @cdef_document.error_message
     }
+  end
+
+  # PATCH /cdef_documents/:id/update_statement
+  # Permits ONLY editable attributes -- statement_id/label/parent_statement_id
+  # are read-only references to the catalog (#393).
+  def update_statement
+    statement = CdefControlStatement.joins(cdef_control: :cdef_document)
+                                    .find_by!(id: params[:statement_id],
+                                              cdef_documents: { id: @cdef_document.id })
+
+    permitted = params.require(:cdef_control_statement)
+                      .permit(*CdefControlStatement::EDITABLE_ATTRIBUTES,
+                              set_parameters_data: [])
+
+    if statement.update(permitted)
+      @cdef_document.regenerate_oscal_uuid!
+      audit_log("cdef_statement_updated", subject: @cdef_document,
+                metadata: { statement_id: statement.statement_id })
+      flash[:success] = "Statement #{statement.label.presence || statement.statement_id} updated."
+    else
+      flash[:error] = statement.errors.full_messages.join(", ")
+    end
+    redirect_to cdef_document_path(@cdef_document, anchor: "stmt-#{statement.id}")
   end
 
   # ── Control-level resource linking (AJAX) ───────────────────────────

@@ -430,14 +430,37 @@ class OscalSspExportService
     props
   end
 
+  # #393: when ssp_control_statements records exist for this control
+  # (backfilled or imported), they are the source of truth. Falls back to
+  # the legacy field-synthesized statements (implementation_statement,
+  # implementation_summary) for un-backfilled SSPs (no linked profile).
   def build_statements(control, field_map)
+    if control.ssp_control_statements.any?
+      return build_statements_from_table(control)
+    end
+    build_statements_from_fields(control, field_map)
+  end
+
+  def build_statements_from_table(control)
+    control.ssp_control_statements.order(:row_order).map do |stmt|
+      entry = {
+        "statement-id" => stmt.statement_id,
+        "uuid"         => stmt.uuid,
+        "remarks"      => stmt.implementation_prose.presence || stmt.remarks
+      }
+      entry["responsible-roles"] = stmt.responsible_roles_data if stmt.responsible_roles_data.present?
+      entry["set-parameters"]    = stmt.set_parameters_data    if stmt.set_parameters_data.present?
+      entry.compact
+    end
+  end
+
+  # Legacy field-synthesized statements. UUIDs use the same formula the
+  # backfill writes into ssp_control_statements -- so an SSP that gets
+  # backfilled mid-lifecycle round-trips with byte-identical UUIDs.
+  def build_statements_from_fields(control, field_map)
     statements = []
     control_id = normalize_control_id(control.control_id)
 
-    # Private implementation as a statement.
-    # NOTE FOR #393: when ssp_control_statements gains a stored uuid column,
-    # backfill via OscalUuidService.derived(control.uuid, "ssp-statement",
-    # statement_id) so existing OSCAL exports keep the same statement UUIDs.
     priv = field_map["implementation_statement"]&.field_value
     if priv.present?
       stmt_id = "#{control_id}_priv"
@@ -448,7 +471,6 @@ class OscalSspExportService
       }
     end
 
-    # Public implementation as a statement
     pub = field_map["implementation_summary"]&.field_value
     if pub.present?
       stmt_id = "#{control_id}_pub"
@@ -459,7 +481,6 @@ class OscalSspExportService
       }
     end
 
-    # Provider / inherited statements (legacy Excel structure)
     control.provider_statements.each_with_index do |stmt, i|
       stmt_fields = stmt.ssp_control_fields.index_by(&:field_name)
       priv_impl = stmt_fields["implementation_statement"]&.field_value
