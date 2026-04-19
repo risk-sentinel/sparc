@@ -1,6 +1,7 @@
 class CatalogControl < ApplicationRecord
   belongs_to :control_family
   has_many :ksi_validations, dependent: :destroy
+  has_many :catalog_control_parts, dependent: :delete_all
   has_many :control_back_matter_links, as: :linkable, dependent: :destroy
   has_many :back_matter_resources, through: :control_back_matter_links
 

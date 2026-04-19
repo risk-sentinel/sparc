@@ -60,6 +60,10 @@ class CdefJsonParserService
     field_entries = []
     row_order = 0
 
+    # ir_statements parallel-tracks (idx -> ir["statements"]) so we can
+    # populate cdef_control_statements after batch insert (#393).
+    ir_statements_by_idx = {}
+
     components.each do |component|
       (component["control-implementations"] || []).each do |ci|
         (ci["implemented-requirements"] || []).each do |ir|
@@ -75,18 +79,58 @@ class CdefJsonParserService
           field_entries << [ idx, "description", ir["description"] ] if ir["description"].present?
           field_entries << [ idx, "component", component["title"] ] if component["title"].present?
           field_entries << [ idx, "remarks", ir["remarks"] ] if ir["remarks"].present?
+          ir_statements_by_idx[idx] = ir["statements"] if ir["statements"].present?
           row_order += 1
         end
       end
     end
 
-    batch_insert_records(
+    imported_ids = batch_insert_records(
       control_class: CdefControl,
       field_class:   CdefControlField,
       document_fk:   :cdef_document_id,
       control_attrs: control_attrs,
       field_entries: field_entries
     )
+
+    populate_cdef_statements(imported_ids, ir_statements_by_idx)
+  end
+
+  # #393: iterate ir["statements"][] and create cdef_control_statements.
+  # Uses each batch-inserted CdefControl's UUID + the OscalUuidService
+  # derivation formula so re-exports stay UUID-stable for backfilled rows;
+  # the OSCAL-supplied statement UUID wins when present.
+  def populate_cdef_statements(imported_ids, ir_statements_by_idx)
+    return if ir_statements_by_idx.empty?
+
+    rows = []
+    now = Time.current
+    cdef_controls_by_id = CdefControl.where(id: imported_ids).index_by(&:id)
+
+    ir_statements_by_idx.each do |idx, statements|
+      cdef_control_id = imported_ids[idx]
+      cdef_control = cdef_controls_by_id[cdef_control_id]
+      next unless cdef_control
+
+      Array(statements).each_with_index do |stmt, stmt_idx|
+        stmt_id = stmt["statement-id"]
+        next if stmt_id.blank?
+
+        rows << {
+          cdef_control_id:        cdef_control_id,
+          uuid:                   stmt["uuid"].presence ||
+                                  OscalUuidService.derived(cdef_control.uuid, "cdef-statement", stmt_id),
+          statement_id:           stmt_id,
+          implementation_prose:   stmt["description"].presence || stmt["remarks"].presence,
+          remarks:                stmt["remarks"],
+          set_parameters_data:    stmt["set-parameters"] || [],
+          row_order:              stmt_idx
+        }.compact
+      end
+    end
+
+    return if rows.empty?
+    CdefControlStatement.insert_all(rows.map { |r| r.merge(created_at: Time.current, updated_at: Time.current) })
   end
 
   # ── InSpec Profile JSON ──────────────────────────────────────────

@@ -4,6 +4,7 @@ class SspControl < ApplicationRecord
   has_many :provider_statements, class_name: "SspControl", foreign_key: :parent_id,
            dependent: :destroy, inverse_of: :parent
   has_many :ssp_control_fields, dependent: :destroy
+  has_many :ssp_control_statements, dependent: :delete_all
   has_many :ssp_by_components, dependent: :delete_all
   has_many :control_back_matter_links, as: :linkable, dependent: :destroy
   has_many :back_matter_resources, through: :control_back_matter_links
@@ -36,5 +37,30 @@ class SspControl < ApplicationRecord
       end,
       provider_statements: provider_statements.map(&:to_hash)
     }
+  end
+
+  # Statement helpers (#393).
+
+  def statements_count
+    ssp_control_statements.size
+  end
+
+  def parent_statements
+    ssp_control_statements.where(parent_statement_id: nil).order(:row_order)
+  end
+
+  def child_statements_for(parent_id)
+    ssp_control_statements.where(parent_statement_id: parent_id).order(:row_order)
+  end
+
+  # Joined implementation prose across all statements -- mirrors the SAP
+  # `aggregate_objective_text` pattern. Used by exporters as a fallback
+  # when no per-statement records exist.
+  def aggregate_implementation_text
+    return nil if ssp_control_statements.empty?
+    ssp_control_statements.order(:row_order).map do |s|
+      label = s.label.presence || s.statement_id
+      "[#{label}] #{s.implementation_prose}".strip
+    end.reject(&:blank?).join("\n\n").presence
   end
 end

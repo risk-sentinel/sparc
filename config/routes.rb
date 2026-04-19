@@ -43,6 +43,7 @@ Rails.application.routes.draw do
   resources :ssp_documents do
     member do
       patch :update_metadata
+      patch :update_statement
       patch :publish
       get :publish_check
       get :download_json
@@ -181,6 +182,7 @@ Rails.application.routes.draw do
     member do
       patch :update_metadata
       patch :update_field
+      patch :update_statement
       patch :publish
       get :publish_check
       get :download_json

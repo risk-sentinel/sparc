@@ -317,6 +317,7 @@ class SarJsonParserService
     create_objective_records(sar_controls_by_id, objectives_by_control)
     link_findings_to_objectives(sar_controls_by_id, findings_to_link)
     enrich_from_linked_sap_or_ssp(sar_controls_by_id)
+    link_findings_to_ssp_statements
   end
 
   # "Resource: aws.default" -> "aws.default". Checkov's standard format.
@@ -508,6 +509,32 @@ class SarJsonParserService
       td = finding.target_data || {}
       if td["needs_objective_link"]
         finding.update_columns(target_data: td.except("needs_objective_link"))
+      end
+    end
+  end
+
+  # #393: best-effort SAR finding -> SSP statement linkage. Runs after
+  # findings are created. When the SAR has a linked SSP and the finding's
+  # target.target-id matches a known statement_id on that SSP's controls,
+  # set ssp_control_statement_id on the finding.
+  def link_findings_to_ssp_statements
+    ssp_id = @document.ssp_document_id
+    return if ssp_id.blank?
+
+    statements_by_id = SspControlStatement
+      .joins(:ssp_control)
+      .where(ssp_controls: { ssp_document_id: ssp_id })
+      .pluck(:statement_id, :id)
+      .to_h
+
+    return if statements_by_id.empty?
+
+    @document.sar_results.each do |result|
+      result.sar_findings.where(ssp_control_statement_id: nil).find_each do |finding|
+        target_id = finding.target_data&.dig("target-id")
+        next if target_id.blank?
+        match_id = statements_by_id[target_id]
+        finding.update_columns(ssp_control_statement_id: match_id) if match_id
       end
     end
   end

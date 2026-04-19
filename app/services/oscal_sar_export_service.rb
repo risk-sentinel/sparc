@@ -46,7 +46,7 @@ class OscalSarExportService
   def eager_load_associations
     @results = @document.sar_results.order(:position).includes(
       sar_observations: [ :sar_finding_observations, :sar_risk_observations ],
-      sar_findings: [ :sar_finding_observations, :sar_finding_risks, :sar_control_objective ],
+      sar_findings: [ :sar_finding_observations, :sar_finding_risks, :sar_control_objective, :ssp_control_statement ],
       sar_risks: [ :sar_risk_observations ]
     ).to_a
     @components = @document.sar_local_components.to_a
@@ -250,14 +250,18 @@ class OscalSarExportService
     end
   end
 
-  # When the finding is linked to a SarControlObjective via FK, emit the
-  # objective's OSCAL ID as target. Otherwise fall back to whatever
-  # target_data was preserved on import. The needs_objective_link flag is
-  # an internal marker -- never export it.
+  # Target precedence (most specific first):
+  #   1. SspControlStatement (#393) -- type: "statement-id", id: statement_id
+  #   2. SarControlObjective (#390) -- type: "objective-id", id: objective_id
+  #   3. Pre-existing target_data preserved on import
+  # The needs_objective_link flag is an internal marker -- never export it.
   def build_finding_target(finding)
     base = (finding.target_data || {}).except("needs_objective_link")
-    if finding.sar_control_objective_id.present? && finding.sar_control_objective
-      base["type"] = "objective-id"
+    if finding.ssp_control_statement_id.present? && finding.ssp_control_statement
+      base["type"]      = "statement-id"
+      base["target-id"] = finding.ssp_control_statement.statement_id
+    elsif finding.sar_control_objective_id.present? && finding.sar_control_objective
+      base["type"]      = "objective-id"
       base["target-id"] = finding.sar_control_objective.objective_id
     end
     base.presence

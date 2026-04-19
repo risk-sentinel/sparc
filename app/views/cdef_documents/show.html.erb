@@ -311,6 +311,9 @@
             </table>
           <% end %>
 
+          <%# ── #393: Component implementation statements ── %>
+          <%= render "cdef_documents/statements_table", control: control, cdef_document: @cdef_document %>
+
           <%# ── Back-Matter References ── %>
           <% ctrl_resources = control.back_matter_resources.order(:title) %>
           <div class="mt-3" id="control-refs-<%= control.control_id %>">
@@ -367,6 +370,47 @@
     </div><%# end .control-card %>
   <% end %>
 </div>
+
+<%# ── #393: CDEF statement edit modal (deep-linked via ?statement_id=N) ── %>
+<% if @editing_statement %>
+  <% stmt = @editing_statement %>
+  <div id="editStatementModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+    <div class="bg-body rounded-3" style="padding: 2rem; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <div class="text-body-tertiary" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;">
+            Component Implementation Statement (read-only references from catalog)
+          </div>
+          <h3 style="margin: 0;"><%= stmt.label.presence || stmt.statement_id %></h3>
+          <code class="text-body-secondary" style="font-size: 0.78rem;"><%= stmt.statement_id %></code>
+        </div>
+        <%= link_to "&times;".html_safe, cdef_document_path(@cdef_document),
+              class: "text-body-secondary", style: "font-size: 1.5rem; text-decoration: none; line-height: 1;" %>
+      </div>
+
+      <%= form_with url: update_statement_cdef_document_path(@cdef_document), method: :patch, local: true do |f| %>
+        <%= hidden_field_tag :statement_id, stmt.id %>
+
+        <div class="form-group mb-3">
+          <label class="fw-semibold">Implementation Prose</label>
+          <%= text_area_tag "cdef_control_statement[implementation_prose]",
+                stmt.implementation_prose, rows: 6, class: "form-control",
+                placeholder: "Describe how this component implements the catalog statement..." %>
+        </div>
+
+        <div class="form-group mb-3">
+          <label class="fw-semibold">Remarks</label>
+          <%= text_area_tag "cdef_control_statement[remarks]", stmt.remarks, rows: 2, class: "form-control" %>
+        </div>
+
+        <div class="d-flex gap-2">
+          <%= f.submit "Save Statement", class: "btn btn-success" %>
+          <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "btn btn-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
 
 <%= render "shared/uuid_replaced_warning", document: @cdef_document %>
 

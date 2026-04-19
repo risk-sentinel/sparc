@@ -1,5 +1,9 @@
 class PoamItem < ApplicationRecord
   belongs_to :poam_document
+  # #393: optional link to the SSP implementation statement this POA&M item
+  # is remediating. Set on item edit form (statement picker) or on import
+  # when the item description references a known statement.
+  belongs_to :ssp_control_statement, optional: true
 
   has_many :poam_item_risks, dependent: :delete_all
   has_many :poam_risks, through: :poam_item_risks

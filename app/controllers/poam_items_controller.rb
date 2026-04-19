@@ -61,7 +61,8 @@ class PoamItemsController < ApplicationController
     params.require(:poam_item).permit(
       :title, :description, :risk_status, :risk_level,
       :likelihood, :impact, :deadline,
-      :internal_notes, :closure_evidence, :remarks
+      :internal_notes, :closure_evidence, :remarks,
+      :ssp_control_statement_id   # #393: link POA&M item to a specific SSP statement
     )
   end
 
@@ -69,6 +70,18 @@ class PoamItemsController < ApplicationController
     @available_risks        = @poam_document.poam_risks.order(:title)
     @available_observations = @poam_document.poam_observations.order(:title)
     @available_findings     = @poam_document.poam_findings.order(:title)
+
+    # #393: SSP statement picker — scope to the boundary's SSP if linked.
+    ssp = @poam_document.authorization_boundary&.ssp_document
+    @available_ssp_statements = if ssp
+      SspControlStatement
+        .joins(:ssp_control)
+        .where(ssp_controls: { ssp_document_id: ssp.id })
+        .order("ssp_controls.row_order ASC, ssp_control_statements.row_order ASC")
+        .includes(:ssp_control)
+    else
+      SspControlStatement.none
+    end
   end
 
   def sync_associations

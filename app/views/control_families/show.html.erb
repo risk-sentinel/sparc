@@ -181,6 +181,9 @@
                   <span class="text-body-tertiary" style="font-size: 0.85rem; font-style: italic;"><%= control.title.presence || "No statement" %></span>
                 <% end %>
               <% end %>
+
+              <%# #393: Read-only catalog parts (statement / guidance / etc.) %>
+              <%= render "control_catalogs/parts_tree", control: control %>
             </td>
 
             <%# ── Priority column ── %>

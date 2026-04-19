@@ -231,15 +231,30 @@ class SspJsonParserService
     end
   end
 
+  # #393: statements are now first-class records on ssp_control_statements.
+  # Preserve the OSCAL statement UUID when supplied; fall back to the
+  # deterministic OscalUuidService.derived value (matches what the
+  # exporter emits for backfilled rows so re-export is UUID-stable).
   def parse_statements_as_fields(ctrl, ir)
-    (ir["statements"] || []).each do |stmt|
-      narrative = stmt["remarks"] || stmt.dig("by-components", 0, "description") || ""
-      next if narrative.blank?
+    (ir["statements"] || []).each_with_index do |stmt, idx|
+      stmt_id = stmt["statement-id"]
+      next if stmt_id.blank?
 
-      ctrl.ssp_control_fields.create!(
-        field_name:  "statement_#{stmt['statement-id']}",
-        field_value: narrative
+      narrative = stmt["remarks"] || stmt.dig("by-components", 0, "description")
+      uuid = stmt["uuid"].presence ||
+             OscalUuidService.derived(ctrl.uuid, "ssp-statement", stmt_id)
+
+      ctrl.ssp_control_statements.create!(
+        uuid:                   uuid,
+        statement_id:           stmt_id,
+        implementation_prose:   narrative,
+        remarks:                stmt["remarks"],
+        responsible_roles_data: stmt["responsible-roles"] || [],
+        set_parameters_data:    stmt["set-parameters"] || [],
+        row_order:              idx
       )
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
+      Rails.logger.warn("[SspJsonParser] skipping statement #{stmt_id}: #{e.message}")
     end
   end
 

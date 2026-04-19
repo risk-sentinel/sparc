@@ -9,9 +9,10 @@ class SspDocumentsController < ApplicationController
     :download_yaml, :download_xml, :validate_oscal_export,
     :status, :update_metadata, :enrich, :update_enrich,
     :publish, :publish_check,
-    :create_control_resource, :link_control_resource, :unlink_control_resource
+    :create_control_resource, :link_control_resource, :unlink_control_resource,
+    :update_statement
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -28,8 +29,17 @@ class SspDocumentsController < ApplicationController
     @controls = @ssp_document.ssp_controls
                               .roots
                               .includes(:ssp_control_fields,
+                                        :ssp_control_statements,
                                         ssp_by_components: :ssp_component,
                                         provider_statements: :ssp_control_fields)
+
+    # #393: deep-link statement editing via ?statement_id=N
+    @editing_statement = SspControlStatement.joins(ssp_control: :ssp_document)
+                                            .find_by(id: params[:statement_id],
+                                                     ssp_documents: { id: @ssp_document.id })
+    @needs_statements_reassociation = @ssp_document.import_metadata&.dig(
+      CatalogPartExtractorService::REASSOCIATION_FLAG
+    ) == CatalogPartExtractorService::REASSOCIATION_VALUE
 
     # OSCAL entity panels (always load regardless of creation_method)
     @components      = @ssp_document.ssp_components.order(:title)
@@ -281,6 +291,31 @@ class SspDocumentsController < ApplicationController
       status: @ssp_document.status,
       error_message: @ssp_document.error_message
     }
+  end
+
+  # PATCH /ssp_documents/:id/update_statement
+  # Body: { statement_id: N, ssp_control_statement: { implementation_prose, ... } }
+  # Permits ONLY editable attributes -- statement_id/label/parent_statement_id
+  # are read-only references to the catalog.
+  def update_statement
+    statement = SspControlStatement.joins(ssp_control: :ssp_document)
+                                   .find_by!(id: params[:statement_id],
+                                             ssp_documents: { id: @ssp_document.id })
+
+    permitted = params.require(:ssp_control_statement)
+                      .permit(*SspControlStatement::EDITABLE_ATTRIBUTES,
+                              responsible_roles_data: [],
+                              set_parameters_data:    [])
+
+    if statement.update(permitted)
+      @ssp_document.regenerate_oscal_uuid!
+      audit_log("ssp_statement_updated", subject: @ssp_document,
+                metadata: { statement_id: statement.statement_id })
+      flash[:success] = "Statement #{statement.label.presence || statement.statement_id} updated."
+    else
+      flash[:error] = statement.errors.full_messages.join(", ")
+    end
+    redirect_to ssp_document_path(@ssp_document, anchor: "stmt-#{statement.id}")
   end
 
   def destroy

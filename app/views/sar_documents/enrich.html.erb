@@ -129,6 +129,14 @@
           <div class="finding-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <input type="hidden" name="sar_document[findings][][id]" value="<%= finding.id %>">
             <input type="hidden" name="sar_document[findings][][sar_result_id]" value="<%= finding.sar_result_id %>">
+            <% if finding.ssp_control_statement_id.present? %>
+              <% linked_stmt = finding.ssp_control_statement %>
+              <div style="font-size: 0.7rem; margin-bottom: 0.35rem;">
+                <span class="badge" style="background: rgba(52,152,219,0.15); color: #2980b9; border: 1px solid rgba(52,152,219,0.3); font-weight: 500;">
+                  Linked SSP Statement: <code style="background: transparent; color: inherit;"><%= linked_stmt.label.presence || linked_stmt.statement_id %></code>
+                </span>
+              </div>
+            <% end %>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
                 <label style="font-size: 0.75rem;">Title</label>

@@ -1,0 +1,40 @@
+<%# Read-only display of CatalogControlPart records for a CatalogControl (#393).
+    Catalog parts are the policy language itself (e.g. ac-1_smt.a) authored
+    by the catalog publisher. Downstream consumers (SSP/CDEF) reference
+    these statement_ids — no edit affordance here.
+
+    Locals:
+      control - CatalogControl instance
+%>
+<%
+  parts = control.catalog_control_parts.order(:row_order, :part_id)
+  parents = parts.select { |p| p.parent_part_id.blank? }
+  by_parent = parts.group_by(&:parent_part_id)
+%>
+
+<% if parts.any? %>
+  <details style="margin-top: 0.35rem;">
+    <summary class="text-body-secondary" style="cursor: pointer; font-size: 0.78rem;">
+      Catalog Parts (<%= pluralize(parts.size, "part") %>) — read-only
+    </summary>
+    <div class="mt-2" style="border-left: 2px solid rgba(127,140,141,0.25); padding-left: 0.6rem;">
+      <% render_part = ->(part, depth) {
+        children = by_parent[part.part_id] || []
+      %>
+        <div style="margin-bottom: 0.4rem; padding-left: <%= depth * 0.75 %>rem;">
+          <div style="font-size: 0.74rem;">
+            <span class="badge bg-body-secondary" style="font-weight: 500;"><%= part.part_name %></span>
+            <code style="font-size: 0.74rem;"><%= part.label.presence || part.part_id %></code>
+          </div>
+          <% if part.prose.present? %>
+            <div class="text-body-secondary" style="font-size: 0.78rem; margin-top: 0.15rem;">
+              <%= part.prose %>
+            </div>
+          <% end %>
+          <% children.each { |child| render_part.call(child, depth + 1) } %>
+        </div>
+      <% } %>
+      <% parents.each { |p| render_part.call(p, 0) } %>
+    </div>
+  </details>
+<% end %>
