@@ -197,14 +197,16 @@ end
 RSpec.describe DocumentConversionJob, "auto-publish for resolved profiles" do
   let(:fixture_path) { Rails.root.join("spec/fixtures/files/profiles/small-resolved-profile-catalog.json") }
 
+  # #392: persist the blob so post-perform assertions can still inspect it
+  # if needed; the production default purges after success.
+  before { ENV["SPARC_PERSIST_S3_BLOB"] = "true" }
+  after  { ENV.delete("SPARC_PERSIST_S3_BLOB") }
+
   it "auto-publishes resolved profiles with auto_publish flag" do
     document = create(:profile_document, file_type: "json", status: "pending")
+    document.file.attach(io: File.open(fixture_path), filename: "small-resolved-profile-catalog.json", content_type: "application/json")
 
-    # Copy fixture to tmp (job deletes the file)
-    tmp_path = Rails.root.join("tmp", "test_resolved_#{SecureRandom.hex(4)}.json")
-    FileUtils.cp(fixture_path, tmp_path)
-
-    DocumentConversionJob.new.perform(:profile, document.id, tmp_path.to_s)
+    DocumentConversionJob.new.perform(:profile, document.id)
     document.reload
 
     expect(document.status).to eq("completed")
@@ -215,11 +217,9 @@ RSpec.describe DocumentConversionJob, "auto-publish for resolved profiles" do
   it "does not auto-publish regular profiles" do
     fixture = Rails.root.join("spec/fixtures/files/profiles/NIST_SP-800-53_rev5_LOW-baseline_profile.json")
     document = create(:profile_document, file_type: "json", status: "pending")
+    document.file.attach(io: File.open(fixture), filename: "NIST_SP-800-53_rev5_LOW-baseline_profile.json", content_type: "application/json")
 
-    tmp_path = Rails.root.join("tmp", "test_regular_#{SecureRandom.hex(4)}.json")
-    FileUtils.cp(fixture, tmp_path)
-
-    DocumentConversionJob.new.perform(:profile, document.id, tmp_path.to_s)
+    DocumentConversionJob.new.perform(:profile, document.id)
     document.reload
 
     expect(document.status).to eq("completed")
