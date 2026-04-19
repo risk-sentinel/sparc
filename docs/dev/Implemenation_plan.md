@@ -107,6 +107,7 @@ authentication mode coverage matrix.
 - [x] #217 -- Document NIST SP 800-53 Rev. 5 controls mapping and SPARC implementation details -- **COMPLETED 2026-03-20**
 - [x] #390 -- SAP/SAR objective-level assessment tracking (NIST 800-53A determination statements + SAR finding→objective FK) -- **COMPLETED 2026-04-16**
 - [x] #393 -- Catalogs/Profiles/SSPs/CDEFs: surface enhancement/sub-part hierarchy (apply #390 pattern) -- **COMPLETED 2026-04-18**
+- [x] #392 -- Parsers read from local tmp; multi-task ECS race fix (Active Storage source of bytes + SPARC_PERSIST_S3_BLOB) -- **COMPLETED 2026-04-19**
 - [x] #397 -- OSCAL UUID stability across exports (foundational for #393/#396/#398 cross-document linkage) -- **COMPLETED 2026-04-18**
 - [ ] #395 -- Boundary as canonical association + metadata sync (Phase 1 of 3 **COMPLETED 2026-04-18**: boundary picker on upload, `BoundaryLinkInheritance` callback, CDEF scope picker. Phases 2-3 remain open.)
 

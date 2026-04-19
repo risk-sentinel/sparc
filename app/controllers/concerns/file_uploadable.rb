@@ -3,9 +3,14 @@
 # Extracts the duplicated create-action pattern:
 #   1. Validate file presence
 #   2. Detect file_type from extension via registry
-#   3. Write to a persistent path (Brakeman-safe — no user-derived data)
-#   4. Create document record + attach file + enqueue DocumentConversionJob
-#   5. Handle errors with cleanup
+#   3. Create document record + attach file to Active Storage
+#   4. Enqueue DocumentConversionJob (which reads from Active Storage)
+#   5. Handle errors with redirect-to-form
+#
+# #392: this concern previously also wrote a Rails.root/tmp file and passed
+# that path to the conversion job. That broke in multi-task ECS where the
+# Sidekiq worker couldn't see the web container's tmpdir. Active Storage
+# is now the single source of bytes for the parser.
 #
 # Usage in a controller:
 #   include FileUploadable
@@ -16,26 +21,6 @@
 #
 module FileUploadable
   extend ActiveSupport::Concern
-
-  # Hardcoded file path components. Only these literal strings can appear in
-  # file paths. This satisfies Brakeman's taint analysis — no user-derived
-  # or registry-derived data flows into File.open / FileUtils.rm_f.
-  SAFE_EXTENSIONS = {
-    "excel" => ".xlsx",
-    "xccdf" => ".xml",
-    "json"  => ".json",
-    "xml"   => ".xml",
-    "yaml"  => ".yaml"
-  }.freeze
-
-  SAFE_PREFIXES = {
-    ssp:     "ssp",
-    sar:     "sar",
-    cdef:    "cdef",
-    profile: "profile",
-    sap:     "sap",
-    poam:    "poam"
-  }.freeze
 
   private
 
@@ -51,15 +36,6 @@ module FileUploadable
     end
 
     file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
-
-    # Build persistent file path. Both prefix and extension come from frozen
-    # constants in this module — no user-derived or registry-derived data
-    # flows into the file path (satisfies Brakeman).
-    safe_prefix  = SAFE_PREFIXES.fetch(type_key, "doc")
-    safe_ext     = SAFE_EXTENSIONS.fetch(file_type, ".dat")
-    persist_path = Rails.root.join("tmp", "#{safe_prefix}_#{SecureRandom.hex(8)}#{safe_ext}")
-    File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
-    uploaded_file.rewind  # Reset IO position for Active Storage attach
 
     begin
       attrs = {
@@ -82,7 +58,7 @@ module FileUploadable
       document.file.attach(uploaded_file)
       apply_post_create_scope!(document, param_key)
 
-      DocumentConversionJob.perform_later(type_key.to_s, document.id, persist_path.to_s)
+      DocumentConversionJob.perform_later(type_key.to_s, document.id)
 
       audit_log("#{type_key}_document_created", subject: document,
         metadata: { name: document.name, file_type: file_type,
@@ -91,7 +67,6 @@ module FileUploadable
       flash[:success] = registry.success_message
       redirect_to document
     rescue StandardError => e
-      FileUtils.rm_f(persist_path)
       flash[:error] = "Error uploading file: #{e.message}"
       set_document_ivar(type_key, document_class.new)
       render :new
@@ -176,12 +151,6 @@ module FileUploadable
       begin
         file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
 
-        safe_prefix  = SAFE_PREFIXES.fetch(type_key, "doc")
-        safe_ext     = SAFE_EXTENSIONS.fetch(file_type, ".dat")
-        persist_path = Rails.root.join("tmp", "#{safe_prefix}_#{SecureRandom.hex(8)}#{safe_ext}")
-        File.open(persist_path, "wb") { |f| f.write(uploaded_file.read) }
-        uploaded_file.rewind  # Reset IO position for Active Storage attach
-
         attrs = {
           name:              File.basename(uploaded_file.original_filename, ".*"),
           file_type:         file_type,
@@ -199,7 +168,7 @@ module FileUploadable
         document.file.attach(uploaded_file)
         apply_post_create_scope!(document, param_key)
 
-        DocumentConversionJob.perform_later(type_key.to_s, document.id, persist_path.to_s)
+        DocumentConversionJob.perform_later(type_key.to_s, document.id)
 
         audit_log("#{type_key}_document_created", subject: document,
           metadata: { name: document.name, file_type: file_type,

@@ -5,16 +5,37 @@
 # Lifecycle: pending → processing → completed / failed
 # Progress:  Writes processing stages to document.metadata_extra["processing_*"]
 #            so the show page can display live stage messages via auto-refresh.
-# Cleanup:   ensure FileUtils.rm_f(file_path)
+#
+# #392: source bytes come from Active Storage instead of a local tmp path.
+# `document.file.open` downloads the blob into the Sidekiq container's
+# tmpdir and yields a path; the parser API is unchanged. The previous
+# local-tmp-path approach broke in multi-task ECS deployments where the
+# Sidekiq container couldn't see the file the web container wrote.
+#
+# Retention: by default the original blob is purged after a successful parse
+# (parsed OSCAL data lives in RDS — the blob is redundant). Set
+# SPARC_PERSIST_S3_BLOB=true to keep originals for audit / re-parse /
+# OSCAL byte-for-byte round-trip diffs. Failed parses ALWAYS retain the
+# blob so the user can retry / inspect.
 #
 class DocumentConversionJob < ApplicationJob
   queue_as :default
 
-  def perform(document_type_key, document_id, file_path)
+  # #392: transient S3 / network errors get auto-retried with backoff.
+  # Permanent errors (parser failures, missing attachment) still flip the
+  # document to "failed" via the rescue below.
+  retry_on Aws::Errors::ServiceError,
+           wait: :polynomially_longer, attempts: 5
+  retry_on Net::OpenTimeout, Net::ReadTimeout,
+           wait: :polynomially_longer, attempts: 5
+
+  # The third positional arg is retained for one release cycle so jobs
+  # enqueued before the deploy (which still pass a tmp file_path) can drain
+  # without ArgumentError. It is intentionally ignored.
+  def perform(document_type_key, document_id, _legacy_file_path = nil)
     registry = DocumentTypeRegistry.for(document_type_key)
     document = registry.document_class.find(document_id)
 
-    # Record start time and set processing status
     document.update!(
       status: "processing",
       metadata_extra: (document.metadata_extra || {}).merge(
@@ -25,11 +46,20 @@ class DocumentConversionJob < ApplicationJob
     )
 
     begin
+      unless document.file.attached?
+        raise "Document #{document_id} has no attached file (cannot parse)"
+      end
+
       parser_class = registry.parser_map.fetch(document.file_type) do
         raise "Unsupported file type: #{document.file_type}"
       end
 
-      parser_class.new(document, file_path).parse
+      # Pull bytes from Active Storage into a local tempfile, hand the
+      # path to the parser. The block-form `open` auto-deletes the
+      # tempfile when the block exits.
+      document.file.open do |tempfile|
+        parser_class.new(document, tempfile.path).parse
+      end
 
       # Auto-publish resolved profile catalogs (NIST-published baselines)
       auto_publish = document.metadata_extra&.dig("auto_publish")
@@ -52,6 +82,13 @@ class DocumentConversionJob < ApplicationJob
       end
 
       document.update!(**attrs)
+
+      # #392: drop the redundant S3 blob unless the operator opted in to
+      # persistence. Failures don't reach this line — the blob is retained
+      # on failure so the user can retry / inspect.
+      unless ENV["SPARC_PERSIST_S3_BLOB"].to_s.downcase == "true"
+        document.file.purge_later
+      end
     rescue StandardError => e
       failed_stage = document.reload.metadata_extra&.dig("processing_stage") || "unknown"
       document.update!(
@@ -64,8 +101,6 @@ class DocumentConversionJob < ApplicationJob
         )
       )
       Rails.logger.error("#{document_type_key} conversion failed for document #{document_id}: #{e.message}")
-    ensure
-      FileUtils.rm_f(file_path)
     end
   end
 end
