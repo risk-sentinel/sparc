@@ -86,7 +86,13 @@ class OscalSarExportService
   # ── Import AP ────────────────────────────────────────────────────
 
   def build_import_ap
-    { "href" => @document.import_ap_href.presence || "#" }
+    # #395 P2: prefer `uuid:<sap.uuid>` from the linked SapDocument FK.
+    # Fall back to the raw `import_ap_href` round-trip column when no FK
+    # is set, then "#" as the schema-required last resort.
+    href = OscalMetadata.import_href_for(@document.sap_document) ||
+           @document.import_ap_href.presence ||
+           "#"
+    { "href" => href }
   end
 
   # ── Local Definitions ────────────────────────────────────────────

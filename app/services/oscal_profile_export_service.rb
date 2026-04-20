@@ -65,8 +65,15 @@ class OscalProfileExportService
   end
 
   def build_imports
-    catalog_href = @document.import_metadata&.dig("catalog_href")
-    catalog_href ||= @document.control_catalog ? "##{@document.control_catalog.oscal_uuid}" : "#"
+    # #395 P2: prefer `uuid:<catalog.oscal_uuid>` so the catalog reference
+    # is round-trip-stable. Fall back to the round-trip
+    # `import_metadata["catalog_href"]`, then to the legacy `#anchor`
+    # form, then to "#" as the schema-required last resort.
+    catalog = @document.control_catalog
+    catalog_href =
+      (catalog&.oscal_uuid.presence && "uuid:#{catalog.oscal_uuid}") ||
+      @document.import_metadata&.dig("catalog_href") ||
+      (catalog ? "##{catalog.oscal_uuid}" : "#")
     controls = @document.profile_controls.order(:row_order)
 
     [ {

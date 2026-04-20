@@ -43,7 +43,13 @@ class PoamJsonParserService
     # Preserve extra metadata fields for round-trip fidelity
     metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
 
-    @document.update!(
+    # #395 P2: when import-ssp.href is `uuid:<...>`, resolve to an
+    # SspDocument and persist the FK alongside the raw import_metadata
+    # round-trip data.
+    ssp_id = OscalMetadata
+      .resolve_import_href(import_ssp.is_a?(Hash) ? import_ssp["href"] : nil, SspDocument)&.id
+
+    attrs = {
       poam_version:            metadata["version"],
       oscal_version:           metadata["oscal-version"],
       system_id:               system_id.is_a?(Hash) ? system_id["id"] : system_id&.to_s,
@@ -54,7 +60,10 @@ class PoamJsonParserService
         "import_ssp"  => import_ssp,
         "back_matter" => back_matter
       }.compact
-    )
+    }
+    attrs[:ssp_document_id] = ssp_id if ssp_id
+
+    @document.update!(**attrs)
   end
 
   # ── Observations ─────────────────────────────────────────────────

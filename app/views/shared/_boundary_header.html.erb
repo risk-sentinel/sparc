@@ -1,0 +1,33 @@
+<%# Shared header partial rendered on every document show page (#395 P3).
+    Surfaces the boundary-level context (boundary name + system title) and
+    offers a "link to a boundary" affordance when the document is orphaned.
+
+    Locals:
+      document - the document being shown (SSP/SAP/SAR/POAM/Profile/CDEF)
+%>
+<% ab = document.try(:authorization_boundary) %>
+<% if ab %>
+  <div class="sparc-card" style="margin-bottom: 1rem; padding: 0.65rem 1rem; background: rgba(52,152,219,0.04); border-left: 3px solid rgba(52,152,219,0.4);">
+    <div style="font-size: 0.78rem; color: var(--bs-secondary-color);">Boundary</div>
+    <div style="font-size: 0.95rem; font-weight: 500;">
+      <%= link_to ab.name, authorization_boundary_path(ab), class: "text-decoration-none" %>
+      <% if (title = ab.system_title).present? %>
+        <span class="text-body-secondary" style="font-weight: 400; font-size: 0.85rem;">&middot; System: <%= title %></span>
+      <% end %>
+      <% if (impact = ab.impact_level).present? %>
+        <span class="badge bg-secondary" style="font-weight: 500; font-size: 0.7rem; margin-left: 0.5rem;"><%= impact %></span>
+      <% end %>
+    </div>
+  </div>
+<% elsif document.respond_to?(:authorization_boundary_id) %>
+  <div class="sparc-card" style="margin-bottom: 1rem; padding: 0.65rem 1rem; background: rgba(243,156,18,0.06); border-left: 3px solid rgba(243,156,18,0.5);">
+    <div style="font-size: 0.88rem;">
+      <strong style="color: #c97a00;">No boundary linked.</strong>
+      <span class="text-body-secondary">
+        This document isn't associated with an AuthorizationBoundary &mdash;
+        cross-document metadata and sibling FK auto-resolution won't apply
+        until you link it.
+      </span>
+    </div>
+  </div>
+<% end %>

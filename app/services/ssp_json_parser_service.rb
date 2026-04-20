@@ -39,17 +39,26 @@ class SspJsonParserService
 
   def update_document_metadata(ssp)
     metadata = ssp["metadata"] || {}
-    @document.update!(
+    profile_href = ssp.dig("import-profile", "href")
+
+    # #395 P2: resolve `uuid:<...>` import-profile.href to a ProfileDocument
+    # and persist the FK (raw href column is still preserved for round-trip).
+    profile_id = OscalMetadata.resolve_import_href(profile_href, ProfileDocument)&.id
+
+    attrs = {
       creation_method:    "oscal_import",
       oscal_version:      metadata["oscal-version"],
       ssp_version:        metadata["version"],
-      import_profile_href: ssp.dig("import-profile", "href"),
+      import_profile_href: profile_href,
       metadata_extra:     metadata.except("title", "version", "oscal-version", "last-modified"),
       import_metadata:    {
         "uuid"        => ssp["uuid"],
         "back_matter" => ssp.dig("back-matter", "resources")
       }.compact
-    )
+    }
+    attrs[:profile_document_id] = profile_id if profile_id
+
+    @document.update!(**attrs)
     @document.update!(name: metadata["title"]) if metadata["title"].present?
   end
 
