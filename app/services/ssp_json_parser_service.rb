@@ -30,6 +30,7 @@ class SspJsonParserService
       parse_system_characteristics(ssp["system-characteristics"])
       @component_map = parse_system_implementation(ssp["system-implementation"])
       parse_control_implementation(ssp["control-implementation"], @component_map)
+      link_inheritances!
     end
   end
 
@@ -162,6 +163,9 @@ class SspJsonParserService
 
   def parse_leveraged_authorizations(auths)
     auths.each do |auth|
+      # Legacy: keep the per-SSP record so anything reading from
+      # `ssp_leveraged_authorizations` still works. The new #396 flow
+      # layers a boundary-level `LeveragedAuthorization` on top.
       @document.ssp_leveraged_authorizations.create!(
         uuid:            auth["uuid"] || SecureRandom.uuid,
         title:           auth["title"],
@@ -171,7 +175,62 @@ class SspJsonParserService
         links_data:      auth["links"] || [],
         remarks:         auth["remarks"]
       )
+
+      upsert_leveraged_authorization_record(auth)
     end
+  end
+
+  # #396: create/find a LeveragedAuthorization on the leveraging boundary.
+  # Attempts to resolve the leveraged boundary via `link[rel="leveraged-system"]`
+  # href (uuid:<boundary.uuid> or uuid:<ssp.uuid>). Falls back to a
+  # Scenario-2/3 record when the leveraged system isn't in SPARC.
+  def upsert_leveraged_authorization_record(auth)
+    leveraging_boundary = @document.authorization_boundary
+    return unless leveraging_boundary
+
+    leveraged_boundary = resolve_leveraged_boundary(auth["links"] || [])
+    crm_type = leveraged_boundary ? "oscal_with_access" : "oscal_no_access"
+
+    la = LeveragedAuthorization.find_or_initialize_by(
+      leveraging_boundary_id: leveraging_boundary.id,
+      leveraged_boundary_id: leveraged_boundary&.id
+    )
+    la.uuid            ||= auth["uuid"] || SecureRandom.uuid
+    la.name              = auth["title"] || la.name.presence || "Leveraged System"
+    la.crm_type          = la.crm_type.presence || crm_type
+    la.date_authorized ||= parse_date(auth["date-authorized"])
+    la.description     ||= extract_text(auth["remarks"])
+    la.metadata        = (la.metadata || {}).merge(
+      "party_uuid" => auth["party-uuid"],
+      "raw_links"  => auth["links"] || [],
+      "raw_props"  => auth["props"] || []
+    )
+    la.save!
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.warn("[SspJsonParser] leveraged_authorization upsert failed: #{e.message}")
+  end
+
+  def resolve_leveraged_boundary(links)
+    links.each do |link|
+      next unless link.is_a?(Hash)
+      href = link["href"]
+      next if href.blank?
+
+      if (ssp = OscalMetadata.resolve_import_href(href, SspDocument))
+        return ssp.authorization_boundary
+      end
+      if (b = OscalMetadata.resolve_import_href(href, AuthorizationBoundary))
+        return b
+      end
+    end
+    nil
+  end
+
+  def parse_date(value)
+    return nil if value.blank?
+    Date.iso8601(value.to_s)
+  rescue ArgumentError
+    nil
   end
 
   def parse_inventory_items(items)
@@ -253,18 +312,93 @@ class SspJsonParserService
       uuid = stmt["uuid"].presence ||
              OscalUuidService.derived(ctrl.uuid, "ssp-statement", stmt_id)
 
-      ctrl.ssp_control_statements.create!(
+      # #396: annotate the statement as a `provided`/`responsibility`
+      # marker when by-components[].satisfied[] or .responsibilities[]
+      # are present. The tag lets LeveragedAuthorization#inheritable_statements
+      # query-match on set_parameters_data.
+      set_params = Array(stmt["set-parameters"]).dup
+      (stmt["by-components"] || []).each do |bc|
+        if Array(bc["satisfied"]).any?
+          set_params << { "tag" => "provided" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "provided" }
+        end
+        if Array(bc["responsibilities"]).any?
+          set_params << { "tag" => "responsibility" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "responsibility" }
+        end
+      end
+
+      record = ctrl.ssp_control_statements.create!(
         uuid:                   uuid,
         statement_id:           stmt_id,
         implementation_prose:   narrative,
         remarks:                stmt["remarks"],
         responsible_roles_data: stmt["responsible-roles"] || [],
-        set_parameters_data:    stmt["set-parameters"] || [],
+        set_parameters_data:    set_params,
         row_order:              idx
       )
+
+      # #396 + #398: resolve inheritance links from statements[].links[]
+      # with rel="implements" (CDEF source) or rel="inherited" (leveraged
+      # SSP source). The href carries the source UUID; we defer actual
+      # source-record resolution to a second pass in `link_inheritances!`
+      # because the source may be imported later in the same run.
+      @pending_inheritance_links ||= []
+      Array(stmt["links"]).each do |link|
+        next unless link.is_a?(Hash)
+        rel = link["rel"]
+        next unless %w[implements inherited].include?(rel)
+        href = link["href"].to_s
+        source_uuid = extract_uuid(href)
+        next if source_uuid.blank?
+
+        @pending_inheritance_links << {
+          target_id: record.id,
+          source_uuid: source_uuid,
+          rel: rel
+        }
+      end
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
       Rails.logger.warn("[SspJsonParser] skipping statement #{stmt_id}: #{e.message}")
     end
+  end
+
+  # Second-pass resolution of pending inheritance links. Called at the end
+  # of parse_control_implementation so all statements exist before we try
+  # to link them.
+  def link_inheritances!
+    return unless @pending_inheritance_links
+
+    @pending_inheritance_links.each do |entry|
+      source, source_type = resolve_inheritance_source(entry[:source_uuid], entry[:rel])
+      next unless source
+
+      SspControlStatementInheritance.find_or_create_by!(
+        ssp_control_statement_id: entry[:target_id],
+        source_type: source_type,
+        source_id: source.id
+      ) do |link|
+        link.source_uuid = entry[:source_uuid]
+      end
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
+      Rails.logger.warn("[SspJsonParser] inheritance link skipped: #{e.message}")
+    end
+  ensure
+    @pending_inheritance_links = nil
+  end
+
+  def resolve_inheritance_source(source_uuid, rel)
+    if rel == "implements"
+      stmt = CdefControlStatement.find_by(uuid: source_uuid)
+      [ stmt, "CdefControlStatement" ] if stmt
+    else
+      stmt = SspControlStatement.find_by(uuid: source_uuid)
+      [ stmt, "SspControlStatement" ] if stmt
+    end
+  end
+
+  def extract_uuid(href)
+    return nil if href.blank?
+    # Accept "uuid:<uuid>", "#<uuid>", or bare "<uuid>".
+    href.to_s.sub(/\A(uuid:|#)/, "")
   end
 
   def parse_remarks_as_field(ctrl, ir)

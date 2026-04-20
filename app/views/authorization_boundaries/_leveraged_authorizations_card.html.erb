@@ -1,0 +1,83 @@
+<%# #396: Leveraged Authorizations card — shows both the systems this
+    boundary leverages (outgoing) and the systems that leverage this one
+    (incoming, informational only). %>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Leveraged Authorizations</h4>
+      <%= link_to "Add Leveraged Authorization",
+            new_authorization_boundary_leveraged_authorization_path(boundary),
+            class: "btn btn-success btn-sm" %>
+    </div>
+
+    <% outgoing = boundary.leveraging_relationships.includes(:leveraged_boundary).to_a %>
+    <% incoming = boundary.leveraged_relationships.includes(:leveraging_boundary).to_a %>
+
+    <h6 class="text-uppercase text-body-secondary mb-2" style="font-size: 0.75rem;">
+      Systems this boundary leverages
+    </h6>
+    <% if outgoing.any? %>
+      <table class="table table-sm mb-3">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Scenario</th>
+            <th>Leveraged System</th>
+            <th>Authorized</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% outgoing.each do |la| %>
+            <% scenario = la.scenario %>
+            <% scenario_class = scenario == 1 ? "bg-success" : scenario == 2 ? "bg-warning text-dark" : "bg-secondary" %>
+            <% scenario_label = { 1 => "OSCAL + Access", 2 => "OSCAL CRM", 3 => "Legacy CRM" }[scenario] || la.crm_type %>
+            <tr>
+              <td><strong><%= la.name %></strong></td>
+              <td><span class="badge <%= scenario_class %>"><%= scenario_label %></span></td>
+              <td>
+                <% if la.leveraged_boundary %>
+                  <%= link_to la.leveraged_boundary.name, authorization_boundary_path(la.leveraged_boundary) %>
+                <% else %>
+                  <span class="text-body-secondary">External / CRM-only</span>
+                <% end %>
+              </td>
+              <td class="text-body-secondary"><%= la.date_authorized&.iso8601 || "—" %></td>
+              <td class="text-end">
+                <% if scenario == 1 %>
+                  <%= button_to "Resync",
+                        populate_authorization_boundary_leveraged_authorization_path(boundary, la),
+                        method: :post,
+                        class: "btn btn-outline-primary btn-sm",
+                        form: { style: "display: inline;" } %>
+                <% end %>
+                <%= button_to "Remove",
+                      authorization_boundary_leveraged_authorization_path(boundary, la),
+                      method: :delete,
+                      class: "btn btn-outline-danger btn-sm",
+                      form: { data: { turbo_confirm: "Remove this leveraged authorization?" },
+                              style: "display: inline;" } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-body-secondary">This boundary doesn't leverage any external systems yet.</p>
+    <% end %>
+
+    <% if incoming.any? %>
+      <h6 class="text-uppercase text-body-secondary mb-2 mt-4" style="font-size: 0.75rem;">
+        Systems that leverage this boundary
+      </h6>
+      <ul class="list-unstyled mb-0">
+        <% incoming.each do |la| %>
+          <li class="mb-1">
+            <%= link_to la.leveraging_boundary.name, authorization_boundary_path(la.leveraging_boundary) %>
+            <span class="text-body-secondary">— <%= la.name %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,81 @@
+<%# #396: Leveraged Authorization wizard. Picks scenario (1/2/3) and
+    either an in-SPARC leveraged boundary or a CRM upload placeholder.
+    CRM upload itself is a post-create follow-up via the back-matter UI
+    on the returned LA's show page. %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>New Leveraged Authorization</h2>
+  <%= link_to "Back to #{@leveraging_boundary.name}",
+        authorization_boundary_path(@leveraging_boundary),
+        class: "btn btn-outline-secondary btn-sm" %>
+</div>
+
+<p class="text-body-secondary mb-4">
+  Document a system this boundary inherits controls from. Per NIST OSCAL,
+  there are three scenarios depending on whether the leveraged system's
+  SSP is accessible to this organization.
+</p>
+
+<%= form_with model: @leveraged_authorization,
+              url: authorization_boundary_leveraged_authorizations_path(@leveraging_boundary),
+              local: true do |f| %>
+  <% if @leveraged_authorization.errors.any? %>
+    <div class="alert alert-danger">
+      <strong>Could not create leveraged authorization:</strong>
+      <ul class="mb-0">
+        <% @leveraged_authorization.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="mb-3">
+        <%= f.label :name, "Leveraged system name", class: "form-label" %>
+        <%= f.text_field :name, class: "form-control", required: true,
+                         placeholder: "e.g. Example IaaS Platform" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :crm_type, "Scenario", class: "form-label" %>
+        <%= f.select :crm_type,
+              [
+                [ "1 — OSCAL SSP in SPARC (with access)", "oscal_with_access" ],
+                [ "2 — OSCAL SSP not accessible (upload CRM)", "oscal_no_access" ],
+                [ "3 — Legacy non-OSCAL SSP (upload legacy CRM)", "legacy" ]
+              ],
+              {},
+              class: "form-select", required: true %>
+        <div class="form-text">
+          Scenario 1 auto-populates inheritance from the leveraged SSP.
+          Scenarios 2 and 3 require a CRM/SSRM upload after creation.
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :leveraged_boundary_id, "Leveraged boundary (Scenario 1 only)", class: "form-label" %>
+        <%= f.select :leveraged_boundary_id,
+              @candidate_boundaries.map { |b| [ b.name, b.id ] },
+              { include_blank: "— None —" },
+              class: "form-select" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :date_authorized, "Date authorized", class: "form-label" %>
+        <%= f.date_field :date_authorized, class: "form-control" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :description, "Description / remarks", class: "form-label" %>
+        <%= f.text_area :description, rows: 3, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit "Create Leveraged Authorization", class: "btn btn-success" %>
+    <%= link_to "Cancel", authorization_boundary_path(@leveraging_boundary),
+                class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>
