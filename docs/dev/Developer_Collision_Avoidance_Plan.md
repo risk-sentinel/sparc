@@ -574,6 +574,49 @@ collision-risk analysis and per-issue file lists.
 | E | #392 Active Storage read for parsers (independent infra fix; can land any time) | DocumentConversionJob + FileUploadable |
 | C/B | #395 Phase 2-3 metadata sync + #396 leveraged auth + #398 CDEF→SSP (parallel after #397+#395 P1+#393 land) | Cross-domain |
 
+**STATUS: Phase 12 closed 2026-04-20** (v1.3.0 milestone fully closed: 5/5
+issues shipped). Final PR was #408 bundling #396 + #398. The next phase
+is gated on local functional testing of the cumulative refactor —
+boundary metadata sync, statement-level OSCAL UUIDs, leveraged
+authorizations, and CDEF→SSP inheritance all touch the same code paths
+and want a real-data shakedown before more product work layers on.
+
+### Post-Phase 12 backlog (no milestone yet)
+
+Pulled from open GitHub issues (9 total, as of 2026-04-20). Grouped by
+collision lane so the next batch can be parallelized once functional
+testing of #408's bundle clears.
+
+| Lane | Issues | Notes |
+| ---- | ------ | ----- |
+| **CI / infra (CI-approval-gated)** | #386 SAF CLI EISDIR, #367 SimpleCov threshold, #244 Security gate | All touch `.github/workflows/*` — require explicit user approval. #386 is shipping standalone (small, unblocks security.yml). #367 + #244 should bundle (the gate consumes the threshold). |
+| **POAM product surface** | #389 POAM wizard missing OSCAL fields | Pure product. POAM wizard view + form + a couple of model defaults + export validation spec. No collision with shipped Phase 12 work. |
+| **Upload pipeline hardening** | #341 XML document type fingerprinting | Defensive, post-#392. Touches `FileUploadable` and parser entry-points; coordinate with anything else editing those concerns. |
+| **Admin / infra** | #402 + #403 AWS Secrets Manager admin credential rotation pair | Bundle them — same domain (admin auth + AWS), need the same migration story. |
+| **OSCAL feature** | #372 Import Authoritative Sources for global/org OSCAL docs | Needs design before implementation; has 1 comment thread to absorb. Likely depends on the back-matter / global resource work in #375. |
+| **Repo cleanup** | #246 Repository Cleanup | Scope-define needed. Best treated as a background lane while a main feature ships. |
+
+#### Sequencing principles for the next phase
+
+1. **Test the merged Phase 12 bundle first.** #395 (boundary metadata
+   sync), #393 (statement hierarchy), #396 (leveraged auth), #398
+   (CDEF→SSP), and #408 (the joint #396+#398 PR) all manipulate the
+   same models/services. A functional shakedown on real data unblocks
+   any product work that touches SSP statements, CDEFs, or boundary
+   relationships — i.e. nearly everything in the backlog above except
+   the CI/infra items.
+2. **CI items (#386, #367, #244)** can ship in parallel with functional
+   testing because they don't touch product code paths. **They require
+   explicit per-PR user approval per project policy.**
+3. **#389 POAM wizard** is the safest first product PR after testing
+   clears because POAM doesn't share files with the leveraged-auth /
+   CDEF inheritance work that just landed.
+4. **#341 XML fingerprinting** lands cleanly only after we know the
+   #392 Active Storage path is stable in production — defer until
+   testing confirms parser changes hold up.
+5. **Admin pair (#402 + #403)** is independent of the product domain
+   and can run in a separate lane any time.
+
 ---
 
 ## 8. File Lock Conventions
