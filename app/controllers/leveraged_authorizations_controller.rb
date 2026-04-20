@@ -50,7 +50,8 @@ class LeveragedAuthorizationsController < ApplicationController
   private
 
   def set_leveraging_boundary
-    @leveraging_boundary = AuthorizationBoundary.find(params[:authorization_boundary_id])
+    # AuthorizationBoundary uses Sluggable, so the URL param is the slug.
+    @leveraging_boundary = AuthorizationBoundary.find_by!(slug: params[:authorization_boundary_id])
   end
 
   def set_leveraged_authorization
