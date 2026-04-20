@@ -40,9 +40,9 @@ on:
           - low
           - none
       upload_to_code_scanning:
-        description: 'Upload SARIF results to GitHub Code Scanning'
+        description: 'Upload SARIF results to GitHub Code Scanning (requires GHAS for private repos)'
         required: false
-        default: true
+        default: false
         type: boolean
 
 # Defaults for non-dispatch triggers (inputs will be null)
@@ -52,7 +52,12 @@ env:
   DOCKERFILE_PATH: ${{ inputs.dockerfile_path || './Dockerfile' }}
   ORG_METADATA_FILE: ${{ inputs.org_metadata_file || '.github/oscal-metadata.json' }}
   FAIL_ON_SEVERITY: ${{ inputs.fail_on_severity || 'none' }}
-  UPLOAD_TO_CODE_SCANNING: ${{ inputs.upload_to_code_scanning == '' && 'true' || inputs.upload_to_code_scanning }}
+  # Default OFF: Code Scanning SARIF upload requires GitHub Advanced
+  # Security on private repos (paid feature). SARIF files are still
+  # preserved as workflow artifacts and uploaded to S3 by the archive
+  # job, so nothing is lost. Flip to true (or enable GHAS) once the
+  # repo is public or GHAS is licensed.
+  UPLOAD_TO_CODE_SCANNING: ${{ inputs.upload_to_code_scanning == '' && 'false' || inputs.upload_to_code_scanning }}
 
 permissions:
   contents: read
