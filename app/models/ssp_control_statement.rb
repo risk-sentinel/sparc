@@ -20,6 +20,13 @@ class SspControlStatement < ApplicationRecord
   has_many :sar_findings, dependent: :nullify
   has_many :poam_items, dependent: :nullify
 
+  # #396 + #398: inheritance links from a CDEF statement (auto-populated
+  # implementation prose) or from an upstream SSP (leveraged authorization).
+  has_many :inheritance_links,
+           class_name: "SspControlStatementInheritance",
+           foreign_key: :ssp_control_statement_id,
+           dependent: :destroy
+
   validates :uuid, presence: true,
                    format: { with: BackMatterResource::UUID_V4_REGEX }
   validates :statement_id, presence: true,
@@ -28,4 +35,24 @@ class SspControlStatement < ApplicationRecord
   # Attributes the controller is allowed to update via the edit modal.
   EDITABLE_ATTRIBUTES = %i[implementation_prose remarks
                            responsible_roles_data set_parameters_data].freeze
+
+  # Classify where this statement's prose came from. Drives the UI badges
+  # on `_statements_table.html.erb` and determines whether the "Reset to
+  # source" action is available.
+  #
+  # :authored           — no inheritance link; user wrote this themselves
+  # :cdef               — populated from a CDEF component
+  # :leveraged          — inherited via a leveraged authorization
+  # :overridden_cdef    — started as CDEF but the user has edited
+  # :overridden_leveraged — started as leveraged but the user has edited
+  def source_kind
+    link = inheritance_links.first
+    return :authored unless link
+    base = link.source_type == "CdefControlStatement" ? :cdef : :leveraged
+    link.overridden? ? :"overridden_#{base}" : base
+  end
+
+  def inherited?
+    inheritance_links.exists?
+  end
 end

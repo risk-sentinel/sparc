@@ -15,6 +15,14 @@ class AuthorizationBoundary < ApplicationRecord
   has_many :evidences, dependent: :nullify
   has_many :ksi_validations, dependent: :destroy
 
+  # #396: boundary-level leveraged-authorization graph. `leveraging_relationships`
+  # = this boundary leverages other systems. `leveraged_relationships` = other
+  # boundaries leverage this one (downstream consumers).
+  has_many :leveraging_relationships, class_name: "LeveragedAuthorization",
+           foreign_key: :leveraging_boundary_id, dependent: :destroy
+  has_many :leveraged_relationships, class_name: "LeveragedAuthorization",
+           foreign_key: :leveraged_boundary_id, dependent: :nullify
+
   enum :status, {
     draft: "draft",
     active: "active",
@@ -52,6 +60,16 @@ class AuthorizationBoundary < ApplicationRecord
 
   def linked_documents
     [ ssp_document, sap_document, sar_document, profile_document, *poam_documents ].compact
+  end
+
+  # Other boundaries this boundary inherits from (upstream systems).
+  def leveraged_boundaries
+    leveraging_relationships.includes(:leveraged_boundary).filter_map(&:leveraged_boundary)
+  end
+
+  # Boundaries that inherit from this boundary (downstream consumers).
+  def leveraging_boundaries
+    leveraged_relationships.includes(:leveraging_boundary).filter_map(&:leveraging_boundary)
   end
 
   def metadata_drift_for(document)

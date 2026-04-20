@@ -58,9 +58,14 @@ class OscalSspExportService
                               .roots
                               .includes(
                                 :ssp_control_fields,
+                                ssp_control_statements: :inheritance_links,
                                 ssp_by_components: :ssp_component,
                                 provider_statements: :ssp_control_fields
                               ).to_a
+    # #396: boundary-level leveraged authorizations, plus the components
+    # each one exposes. Empty when no boundary or no LAs are configured.
+    boundary = @document.authorization_boundary
+    @boundary_leveraged_auths = boundary ? boundary.leveraging_relationships.includes(:leveraged_authorization_components).to_a : []
   end
 
   # ── Top-level SSP envelope ─────────────────────────────────────────
@@ -219,9 +224,8 @@ class OscalSspExportService
     impl["users"] = build_users
     impl["components"] = build_components
 
-    if @leveraged.any?
-      impl["leveraged-authorizations"] = @leveraged.map { |la| build_leveraged_authorization(la) }
-    end
+    leveraged_assemblies = build_leveraged_authorizations_list
+    impl["leveraged-authorizations"] = leveraged_assemblies if leveraged_assemblies.any?
 
     if @inventory.any?
       impl["inventory-items"] = @inventory.map { |ii| build_inventory_item(ii) }
@@ -308,6 +312,45 @@ class OscalSspExportService
     entry["props"]   = la.props_data if la.props_data.present?
     entry["links"]   = la.links_data if la.links_data.present?
     entry["remarks"] = la.remarks if la.remarks.present?
+    entry.compact
+  end
+
+  # #396: merge the new boundary-level LeveragedAuthorization assemblies
+  # with any legacy SspLeveragedAuthorization rows, de-duplicating on UUID
+  # so an SSP parsed from OSCAL (which writes both) doesn't emit twice.
+  def build_leveraged_authorizations_list
+    legacy = @leveraged.map { |la| build_leveraged_authorization(la) }
+    modern = @boundary_leveraged_auths.map { |la| build_boundary_leveraged_authorization(la) }
+
+    seen_uuids = Set.new
+    (modern + legacy).each_with_object([]) do |entry, acc|
+      uuid = entry["uuid"]
+      next if uuid.blank?
+      next if seen_uuids.include?(uuid)
+      seen_uuids << uuid
+      acc << entry
+    end
+  end
+
+  def build_boundary_leveraged_authorization(la)
+    entry = {
+      "uuid"  => la.uuid,
+      "title" => la.name
+    }
+    entry["date-authorized"] = la.date_authorized.iso8601 if la.date_authorized
+    entry["remarks"] = la.description if la.description.present?
+
+    leveraged_ssp = la.leveraged_boundary&.ssp_document
+    links = []
+    if leveraged_ssp
+      href = OscalMetadata.import_href_for(leveraged_ssp)
+      links << { "href" => href, "rel" => "leveraged-system" } if href
+    end
+    entry["links"] = links if links.any?
+
+    party_uuid = la.metadata && la.metadata["party_uuid"]
+    entry["party-uuid"] = party_uuid if party_uuid.present?
+
     entry.compact
   end
 
@@ -456,7 +499,20 @@ class OscalSspExportService
       }
       entry["responsible-roles"] = stmt.responsible_roles_data if stmt.responsible_roles_data.present?
       entry["set-parameters"]    = stmt.set_parameters_data    if stmt.set_parameters_data.present?
+
+      # #396 + #398: emit inheritance links so the source of the prose
+      # round-trips through OSCAL. `implements` for CDEF source,
+      # `inherited` for a leveraged SSP source.
+      inh_links = build_statement_inheritance_links(stmt)
+      entry["links"] = inh_links if inh_links.any?
       entry.compact
+    end
+  end
+
+  def build_statement_inheritance_links(stmt)
+    stmt.inheritance_links.map do |link|
+      rel = link.source_type == "CdefControlStatement" ? "implements" : "inherited"
+      { "href" => "uuid:#{link.source_uuid}", "rel" => rel }
     end
   end
 

@@ -10,9 +10,10 @@ class SspDocumentsController < ApplicationController
     :status, :update_metadata, :enrich, :update_enrich,
     :publish, :publish_check,
     :create_control_resource, :link_control_resource, :unlink_control_resource,
-    :update_statement
+    :update_statement,
+    :refresh_inherited_statements, :reset_inherited_statement
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement ]
 
   def index
     @ssp_documents = SspDocument.order(created_at: :desc)
@@ -307,7 +308,17 @@ class SspDocumentsController < ApplicationController
                               responsible_roles_data: [],
                               set_parameters_data:    [])
 
+    old_prose = statement.implementation_prose
     if statement.update(permitted)
+      # #396 + #398: if prose changed and the statement was inherited,
+      # flip the link to overridden so the next CDEF/leveraged refresh
+      # leaves the user's edit alone.
+      if permitted[:implementation_prose] &&
+         permitted[:implementation_prose] != old_prose
+        statement.inheritance_links.where(overridden: false).find_each do |link|
+          link.update!(overridden: true, overridden_prose: permitted[:implementation_prose])
+        end
+      end
       @ssp_document.regenerate_oscal_uuid!
       audit_log("ssp_statement_updated", subject: @ssp_document,
                 metadata: { statement_id: statement.statement_id })
@@ -315,6 +326,41 @@ class SspDocumentsController < ApplicationController
     else
       flash[:error] = statement.errors.full_messages.join(", ")
     end
+    redirect_to ssp_document_path(@ssp_document, anchor: "stmt-#{statement.id}")
+  end
+
+  # POST /ssp_documents/:id/refresh_inherited_statements
+  # #398: bulk-resync implementation prose from all linked CDEFs.
+  # Overridden links are skipped.
+  def refresh_inherited_statements
+    updated = 0
+    @ssp_document.ssp_components
+                 .where.not(cdef_document_id: nil)
+                 .distinct.pluck(:cdef_document_id).each do |cdef_id|
+      cdef = CdefDocument.find_by(id: cdef_id)
+      next unless cdef
+      updated += CdefToSspInheritanceService.refresh_from_cdef!(@ssp_document, cdef)
+    end
+
+    audit_log("ssp_inherited_refreshed", subject: @ssp_document,
+              metadata: { updated_count: updated })
+    flash[:success] = "Refreshed #{updated} inherited statement(s) from linked CDEFs."
+    redirect_to ssp_document_path(@ssp_document)
+  end
+
+  # POST /ssp_documents/:id/reset_inherited_statement
+  # Body: { statement_id: N }
+  # #396 + #398: drop the override on a single inherited statement and
+  # resync to the live source prose.
+  def reset_inherited_statement
+    statement = SspControlStatement.joins(ssp_control: :ssp_document)
+                                   .find_by!(id: params[:statement_id],
+                                             ssp_documents: { id: @ssp_document.id })
+
+    statement.inheritance_links.where(overridden: true).each(&:reset_to_source!)
+    audit_log("ssp_statement_reset_to_source", subject: @ssp_document,
+              metadata: { statement_id: statement.statement_id })
+    flash[:success] = "Statement reset to source."
     redirect_to ssp_document_path(@ssp_document, anchor: "stmt-#{statement.id}")
   end
 

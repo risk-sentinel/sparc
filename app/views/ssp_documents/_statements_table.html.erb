@@ -37,6 +37,15 @@
                 <code style="font-size: 0.78rem; padding-left: <%= depth * 0.75 %>rem;">
                   <%= stmt.label.presence || stmt.statement_id %>
                 </code>
+                <%# #396 + #398: inheritance source badge %>
+                <% case stmt.source_kind
+                   when :cdef %>
+                  <span class="badge bg-info text-dark" style="font-size: 0.65rem;" title="Implementation inherited from a CDEF">CDEF</span>
+                <% when :leveraged %>
+                  <span class="badge bg-primary" style="font-size: 0.65rem;" title="Inherited via a leveraged authorization">Leveraged</span>
+                <% when :overridden_cdef, :overridden_leveraged %>
+                  <span class="badge bg-warning text-dark" style="font-size: 0.65rem;" title="Inherited but edited locally">Overridden</span>
+                <% end %>
               </td>
               <td style="padding-left: <%= depth * 0.75 %>rem;">
                 <%= stmt.implementation_prose.presence ||
@@ -57,6 +66,15 @@
                             ssp_document_path(ssp_document, statement_id: stmt.id, anchor: "stmt-#{stmt.id}"),
                             class: "btn btn-outline-primary btn-sm",
                             style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;" %>
+                <% if %i[overridden_cdef overridden_leveraged].include?(stmt.source_kind) %>
+                  <%= button_to "Reset",
+                        reset_inherited_statement_ssp_document_path(ssp_document, statement_id: stmt.id),
+                        method: :post,
+                        class: "btn btn-outline-warning btn-sm",
+                        style: "font-size: 0.7rem; padding: 0.15rem 0.45rem;",
+                        form: { data: { turbo_confirm: "Discard your override and reset to the source prose?" },
+                                style: "display: inline;" } %>
+                <% end %>
               </td>
             </tr>
           <% end %>

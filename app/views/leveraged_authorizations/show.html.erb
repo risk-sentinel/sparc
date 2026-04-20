@@ -1,0 +1,47 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2><%= @leveraged_authorization.name %></h2>
+  <%= link_to "Back to #{@leveraging_boundary.name}",
+        authorization_boundary_path(@leveraging_boundary),
+        class: "btn btn-outline-secondary btn-sm" %>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-md-3">Scenario</dt>
+      <dd class="col-md-9">
+        <%= { 1 => "OSCAL + Access", 2 => "OSCAL CRM", 3 => "Legacy CRM" }[@leveraged_authorization.scenario] %>
+        (<code><%= @leveraged_authorization.crm_type %></code>)
+      </dd>
+
+      <dt class="col-md-3">Leveraged boundary</dt>
+      <dd class="col-md-9">
+        <% if @leveraged_authorization.leveraged_boundary %>
+          <%= link_to @leveraged_authorization.leveraged_boundary.name,
+                      authorization_boundary_path(@leveraged_authorization.leveraged_boundary) %>
+        <% else %>
+          <span class="text-body-secondary">External / CRM-only</span>
+        <% end %>
+      </dd>
+
+      <dt class="col-md-3">Date authorized</dt>
+      <dd class="col-md-9"><%= @leveraged_authorization.date_authorized&.iso8601 || "—" %></dd>
+
+      <dt class="col-md-3">UUID</dt>
+      <dd class="col-md-9"><code><%= @leveraged_authorization.uuid %></code></dd>
+
+      <dt class="col-md-3">Description</dt>
+      <dd class="col-md-9"><%= @leveraged_authorization.description.presence || "—" %></dd>
+    </dl>
+  </div>
+</div>
+
+<% if @leveraged_authorization.scenario == 1 && @leveraging_boundary.ssp_document %>
+  <% gaps = LeveragedAuthorizationService.responsibility_gaps(@leveraged_authorization) %>
+  <% if gaps.any? %>
+    <div class="alert alert-warning">
+      <strong>Responsibility gaps:</strong>
+      <%= gaps.size %> leveraged-side responsibility statement(s) are not yet addressed on the leveraging SSP.
+    </div>
+  <% end %>
+<% end %>

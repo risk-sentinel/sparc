@@ -38,6 +38,12 @@ Rails.application.routes.draw do
     resources :memberships,
       controller: "authorization_boundary_memberships",
       only: [ :new, :create, :edit, :update, :destroy ]
+    # #396: leveraged authorizations are created on the leveraging boundary
+    resources :leveraged_authorizations, only: [ :new, :create, :show, :destroy ] do
+      member do
+        post :populate
+      end
+    end
   end
 
   resources :ssp_documents do
@@ -59,6 +65,9 @@ Rails.application.routes.draw do
       post :create_control_resource
       post :link_control_resource
       delete :unlink_control_resource
+      # #398: bulk refresh inherited statements from all linked CDEFs
+      post :refresh_inherited_statements
+      post :reset_inherited_statement
     end
     collection do
       post :import_json

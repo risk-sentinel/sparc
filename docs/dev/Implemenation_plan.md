@@ -110,6 +110,8 @@ authentication mode coverage matrix.
 - [x] #392 -- Parsers read from local tmp; multi-task ECS race fix (Active Storage source of bytes + SPARC_PERSIST_S3_BLOB) -- **COMPLETED 2026-04-19**
 - [x] #397 -- OSCAL UUID stability across exports (foundational for #393/#396/#398 cross-document linkage) -- **COMPLETED 2026-04-18**
 - [x] #395 -- Boundary as canonical association + metadata sync -- **COMPLETED 2026-04-20** (P1 PR #400, P2-3 close out OSCAL `import-*.href` `uuid:<...>` resolution + boundary metadata source-of-truth + sync service + rake task)
+- [x] #396 -- Leveraged Authorizations: boundary-to-boundary inheritance graph + OSCAL `leveraged-authorizations[]` assembly + CRM/SSRM back-matter (Phases 1-3; Phase 4 legacy CRM deferred until NIST 1.x publishes CRM model) -- **COMPLETED 2026-04-20**
+- [x] #398 -- CDEF → SSP control statement auto-population (component-driven SSP authoring) via polymorphic `SspControlStatementInheritance` shared with #396 -- **COMPLETED 2026-04-20**
 
 ### 13. API Expansion (New — extends Phase 5 API work)
 

@@ -76,6 +76,14 @@
             document_type: "SSP" %>
       <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
             class: "sparc-btn-enrich" %>
+      <%# #398: bulk refresh inherited statements from linked CDEFs %>
+      <% if signed_in? && @ssp_document.ssp_components.where.not(cdef_document_id: nil).exists? %>
+        <%= button_to "Refresh Inherited",
+              refresh_inherited_statements_ssp_document_path(@ssp_document),
+              method: :post,
+              class: "sparc-btn-enrich",
+              form: { style: "display: inline;" } %>
+      <% end %>
       <%= link_to "&#8592; Back".html_safe, ssp_documents_path,
             class: "sparc-btn-ghost-muted" %>
     </div>
