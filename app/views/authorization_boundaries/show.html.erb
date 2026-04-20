@@ -180,3 +180,6 @@
     <% end %>
   </div>
 </div>
+
+<%# #395 P3: per-document metadata sync status (green / yellow / red dots) %>
+<%= render "metadata_sync_status", boundary: @authorization_boundary %>

@@ -99,7 +99,13 @@ class OscalSspExportService
   # ── Import Profile ─────────────────────────────────────────────────
 
   def build_import_profile
-    { "href" => @document.import_profile_href.presence || "#" }
+    # #395 P2: prefer `uuid:<profile.uuid>` from the linked ProfileDocument
+    # FK. Fall back to the raw `import_profile_href` round-trip column,
+    # then "#" as the schema-required last resort.
+    href = OscalMetadata.import_href_for(@document.profile_document) ||
+           @document.import_profile_href.presence ||
+           "#"
+    { "href" => href }
   end
 
   # ── System Characteristics ─────────────────────────────────────────

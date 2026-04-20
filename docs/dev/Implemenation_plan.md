@@ -109,7 +109,7 @@ authentication mode coverage matrix.
 - [x] #393 -- Catalogs/Profiles/SSPs/CDEFs: surface enhancement/sub-part hierarchy (apply #390 pattern) -- **COMPLETED 2026-04-18**
 - [x] #392 -- Parsers read from local tmp; multi-task ECS race fix (Active Storage source of bytes + SPARC_PERSIST_S3_BLOB) -- **COMPLETED 2026-04-19**
 - [x] #397 -- OSCAL UUID stability across exports (foundational for #393/#396/#398 cross-document linkage) -- **COMPLETED 2026-04-18**
-- [ ] #395 -- Boundary as canonical association + metadata sync (Phase 1 of 3 **COMPLETED 2026-04-18**: boundary picker on upload, `BoundaryLinkInheritance` callback, CDEF scope picker. Phases 2-3 remain open.)
+- [x] #395 -- Boundary as canonical association + metadata sync -- **COMPLETED 2026-04-20** (P1 PR #400, P2-3 close out OSCAL `import-*.href` `uuid:<...>` resolution + boundary metadata source-of-truth + sync service + rake task)
 
 ### 13. API Expansion (New — extends Phase 5 API work)
 

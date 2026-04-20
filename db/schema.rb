@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_18_155235) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_152450) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -93,16 +93,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_155235) do
 
   create_table "authorization_boundaries", force: :cascade do |t|
     t.text "authorization_boundary_description"
+    t.jsonb "boundary_metadata", default: {}, null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
     t.bigint "organization_id"
+    t.bigint "profile_document_id"
     t.string "slug"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["organization_id"], name: "index_authorization_boundaries_on_organization_id"
+    t.index ["profile_document_id"], name: "index_authorization_boundaries_on_profile_document_id"
     t.index ["slug"], name: "index_authorization_boundaries_on_slug", unique: true
     t.index ["status"], name: "index_authorization_boundaries_on_status"
+    t.index ["uuid"], name: "idx_auth_boundaries_on_uuid", unique: true
   end
 
   create_table "authorization_boundary_memberships", force: :cascade do |t|
@@ -552,6 +557,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_155235) do
     t.string "poam_version"
     t.string "published"
     t.string "slug"
+    t.bigint "ssp_document_id"
     t.string "status", default: "pending"
     t.string "system_id"
     t.datetime "updated_at", null: false
@@ -561,6 +567,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_155235) do
     t.index ["deleted_at"], name: "index_poam_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_poam_documents_on_lifecycle_status"
     t.index ["slug"], name: "index_poam_documents_on_slug", unique: true
+    t.index ["ssp_document_id"], name: "index_poam_documents_on_ssp_document_id"
     t.index ["status"], name: "index_poam_documents_on_status"
     t.index ["uuid"], name: "index_poam_documents_on_uuid", unique: true
   end
@@ -1418,6 +1425,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_155235) do
   add_foreign_key "attestations", "evidences", on_delete: :cascade
   add_foreign_key "audit_events", "users", on_delete: :nullify
   add_foreign_key "authorization_boundaries", "organizations", on_delete: :nullify
+  add_foreign_key "authorization_boundaries", "profile_documents", on_delete: :nullify
   add_foreign_key "authorization_boundary_memberships", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "authorization_boundary_memberships", "users", on_delete: :nullify
   add_foreign_key "back_matter_resources", "evidences", on_delete: :nullify
@@ -1447,6 +1455,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_155235) do
   add_foreign_key "organization_memberships", "organizations", on_delete: :cascade
   add_foreign_key "organization_memberships", "users", on_delete: :cascade
   add_foreign_key "poam_documents", "authorization_boundaries", on_delete: :nullify
+  add_foreign_key "poam_documents", "ssp_documents", on_delete: :nullify
   add_foreign_key "poam_finding_observations", "poam_findings", on_delete: :cascade
   add_foreign_key "poam_finding_observations", "poam_observations", on_delete: :cascade
   add_foreign_key "poam_finding_risks", "poam_findings", on_delete: :cascade

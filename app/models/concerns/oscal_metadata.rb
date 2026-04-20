@@ -9,6 +9,25 @@ module OscalMetadata
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
+  # #395 P2: resolve an OSCAL `import-*.href` value to a SPARC document.
+  # Only handles the `uuid:<...>` scheme — anchor placeholders (`#system-...`)
+  # return nil so callers can fall back to boundary-sibling lookup (which
+  # the BoundaryLinkInheritance concern already wires up).
+  def self.resolve_import_href(href, target_class)
+    return nil if href.blank?
+    return nil unless href.to_s.start_with?("uuid:")
+    target_class.find_by(uuid: href.to_s.delete_prefix("uuid:"))
+  end
+
+  # #395 P2: build the export-side `import-*.href` for a sibling document.
+  # Returns nil when sibling is nil so callers can fall back to "#" (NIST
+  # schema requires the field to be present even when unresolved).
+  def self.import_href_for(sibling)
+    return nil unless sibling.respond_to?(:uuid)
+    sib_uuid = sibling.uuid
+    sib_uuid.present? ? "uuid:#{sib_uuid}" : nil
+  end
+
   METADATA_EXTRA_KEYS = %w[
     roles parties responsible-parties revisions props links document-ids
     locations remarks

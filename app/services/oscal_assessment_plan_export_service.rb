@@ -122,11 +122,10 @@ class OscalAssessmentPlanExportService
   # ── Import SSP ─────────────────────────────────────────────────────
 
   def build_import_ssp
-    href = if @document.ssp_document.present?
-             "#ssp-#{@document.ssp_document.id}"
-    else
-             "#"
-    end
+    # #395 P2: emit `uuid:<sibling.uuid>` so a re-imported document can
+    # round-trip back to the same SspDocument. Falls back to "#" only
+    # when the SSP isn't linked (NIST schema requires the field).
+    href = OscalMetadata.import_href_for(@document.ssp_document) || "#"
     { "href" => href }
   end
 

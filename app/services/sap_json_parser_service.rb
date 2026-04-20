@@ -56,6 +56,14 @@ class SapJsonParserService
       "back_matter" => plan.dig("back-matter", "resources")
     }.compact
 
+    # #395 P2: SAP supports `import-ssp.href`. When the href is `uuid:<...>`,
+    # resolve to an SspDocument and persist the FK so the SAP isn't orphaned
+    # from its source SSP after a round-trip import.
+    if (import_ssp = plan["import-ssp"]).is_a?(Hash)
+      ssp_id = OscalMetadata.resolve_import_href(import_ssp["href"], SspDocument)&.id
+      attrs[:ssp_document_id] = ssp_id if ssp_id
+    end
+
     @document.update!(attrs.compact)
     @document.assign_oscal_uuid!(plan["uuid"])
   end

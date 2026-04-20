@@ -310,7 +310,9 @@ RSpec.describe "Unified publication lifecycle", type: :request do
       service = OscalProfileExportService.new(profile)
       json = JSON.parse(service.export_unvalidated)
       href = json.dig("profile", "imports", 0, "href")
-      expect(href).to eq("##{catalog.oscal_uuid}")
+      # #395 P2: profile imports now emit `uuid:<...>` for round-trip
+      # stability. The legacy `#<uuid>` anchor form is the fallback.
+      expect(href).to eq("uuid:#{catalog.oscal_uuid}")
     end
 
     it "includes catalog resource in profile export back-matter" do

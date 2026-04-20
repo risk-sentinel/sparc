@@ -44,7 +44,12 @@ class SarJsonParserService
 
     metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
 
-    @document.update!(
+    # #395 P2: when import-ap.href is `uuid:<...>`, resolve to a SapDocument
+    # and persist the FK alongside the raw href column (kept for round-trip).
+    sap_id = OscalMetadata
+      .resolve_import_href(import_ap["href"], SapDocument)&.id
+
+    attrs = {
       creation_method:    "oscal_import",
       oscal_version:      metadata["oscal-version"],
       sar_version:        metadata["version"],
@@ -54,7 +59,10 @@ class SarJsonParserService
         "uuid"        => ar["uuid"],
         "back_matter" => back_matter
       }.compact
-    )
+    }
+    attrs[:sap_document_id] = sap_id if sap_id
+
+    @document.update!(**attrs)
     @document.update!(name: metadata["title"]) if metadata["title"].present?
   end
 

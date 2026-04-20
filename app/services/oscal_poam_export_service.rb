@@ -59,7 +59,7 @@ class OscalPoamExportService
       "plan-of-action-and-milestones" => {
         "uuid"              => @document.uuid,
         "metadata"          => build_metadata,
-        "import-ssp"        => @document.import_metadata&.dig("import_ssp"),
+        "import-ssp"        => build_import_ssp,
         "system-id"         => build_system_id,
         "local-definitions" => build_local_definitions,
         "observations"      => build_observations,
@@ -69,6 +69,16 @@ class OscalPoamExportService
         "back-matter"       => build_back_matter
       }.compact
     }
+  end
+
+  # #395 P2: prefer the linked SspDocument FK, fall back to the round-trip
+  # `import_metadata["import_ssp"]` payload, then synthesize a minimal
+  # `{href:"#"}` placeholder so the field is always present.
+  def build_import_ssp
+    if (href = OscalMetadata.import_href_for(@document.ssp_document))
+      return { "href" => href }
+    end
+    @document.import_metadata&.dig("import_ssp") || { "href" => "#" }
   end
 
   def build_metadata

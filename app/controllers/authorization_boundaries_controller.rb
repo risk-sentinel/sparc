@@ -38,8 +38,15 @@ class AuthorizationBoundariesController < ApplicationController
   end
 
   def update
+    metadata_or_profile_changed =
+      authorization_boundary_params.key?(:boundary_metadata) ||
+      authorization_boundary_params.key?(:profile_document_id)
+
     if @authorization_boundary.update(authorization_boundary_params)
       audit_log("authorization_boundary_updated", subject: @authorization_boundary, metadata: { name: @authorization_boundary.name })
+      # #395 P3: when boundary-level metadata changes, propagate to all
+      # linked documents in the background.
+      BoundaryMetadataSyncJob.perform_later(@authorization_boundary.id) if metadata_or_profile_changed
       flash[:success] = "Authorization boundary updated."
       redirect_to @authorization_boundary
     else
@@ -110,7 +117,11 @@ class AuthorizationBoundariesController < ApplicationController
   end
 
   def authorization_boundary_params
-    params.require(:authorization_boundary).permit(:name, :description, :status, :authorization_boundary_description)
+    params.require(:authorization_boundary).permit(
+      :name, :description, :status, :authorization_boundary_description,
+      :profile_document_id,                                       # #395 P3
+      boundary_metadata: AuthorizationBoundary::BOUNDARY_METADATA_KEYS  # #395 P3
+    )
   end
 
   def ato_package_params

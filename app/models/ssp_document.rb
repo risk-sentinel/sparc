@@ -4,8 +4,15 @@ class SspDocument < ApplicationRecord
   include Sluggable
   include Lifecycle
   include SoftDeletable
+  include BoundaryLinkInheritance
 
   belongs_to :authorization_boundary, optional: true
+
+  # #395 P2: inherit profile_document_id from the boundary's profile when
+  # not user-provided. Runs before_validation; nil-result is a no-op.
+  inherits_from_boundary(
+    profile_document_id: ->(b) { b.profile_document_id }
+  )
 
   has_many :ssp_controls, dependent: :destroy
   has_one_attached :file

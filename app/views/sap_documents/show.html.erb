@@ -1,3 +1,6 @@
+<%# #395 P3: boundary context header %>
+<%= render "shared/boundary_header", document: @sap_document %>
+
 <%# ── PROCESSING STATE BANNER ─────────────────────────────────────── %>
 <% unless @sap_document.completed? %>
   <%= render "shared/processing_banner",
