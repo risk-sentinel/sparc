@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_152450) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -125,6 +125,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_152450) do
 
   create_table "back_matter_resources", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "crm_type"
     t.text "description"
     t.bigint "evidence_id"
     t.boolean "globally_available", default: false, null: false
@@ -139,6 +140,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_152450) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["crm_type"], name: "index_back_matter_resources_on_crm_type"
     t.index ["evidence_id"], name: "index_back_matter_resources_on_evidence_id"
     t.index ["globally_available"], name: "idx_back_matter_resources_global", where: "(globally_available = true)"
     t.index ["organization_id"], name: "index_back_matter_resources_on_organization_id"
@@ -506,6 +508,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_152450) do
     t.index ["organization_id", "user_id"], name: "index_organization_memberships_on_organization_id_and_user_id", unique: true
     t.index ["organization_id"], name: "index_organization_memberships_on_organization_id"
     t.index ["user_id"], name: "index_organization_memberships_on_user_id"
+  end
+
+  create_table "leveraged_authorization_components", force: :cascade do |t|
+    t.string "component_type", default: "this-system", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "leveraged_authorization_id", null: false
+    t.jsonb "props_data", default: []
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["leveraged_authorization_id"], name: "index_leveraged_authorization_components_on_leveraged_auth_id"
+    t.index ["uuid"], name: "index_leveraged_authorization_components_on_uuid", unique: true
+  end
+
+  create_table "leveraged_authorizations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "crm_type", default: "oscal_with_access", null: false
+    t.date "date_authorized"
+    t.text "description"
+    t.bigint "leveraged_boundary_id"
+    t.bigint "leveraging_boundary_id", null: false
+    t.jsonb "metadata", default: {}
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["leveraged_boundary_id"], name: "index_leveraged_authorizations_on_leveraged_boundary_id"
+    t.index ["leveraging_boundary_id", "leveraged_boundary_id"], name: "idx_la_unique_pair"
+    t.index ["leveraging_boundary_id"], name: "index_leveraged_authorizations_on_leveraging_boundary_id"
+    t.index ["uuid"], name: "index_leveraged_authorizations_on_uuid", unique: true
   end
 
   create_table "organizations", force: :cascade do |t|
@@ -1223,6 +1255,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_152450) do
     t.index ["ssp_control_id"], name: "index_ssp_control_fields_on_ssp_control_id"
   end
 
+  create_table "ssp_control_statement_inheritances", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "overridden", default: false, null: false
+    t.text "overridden_prose"
+    t.bigint "source_id", null: false
+    t.string "source_type", null: false
+    t.string "source_uuid", null: false
+    t.bigint "ssp_control_statement_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_type", "source_id"], name: "idx_inh_on_source"
+    t.index ["source_uuid"], name: "idx_inh_on_source_uuid"
+    t.index ["ssp_control_statement_id", "source_type", "source_id"], name: "idx_inh_unique_target_source", unique: true
+    t.index ["ssp_control_statement_id"], name: "idx_inh_on_target_stmt"
+  end
+
   create_table "ssp_control_statements", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "implementation_prose"
@@ -1452,6 +1499,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_152450) do
   add_foreign_key "ksi_validations", "authorization_boundaries"
   add_foreign_key "ksi_validations", "catalog_controls"
   add_foreign_key "ksi_validations", "evidences"
+  add_foreign_key "leveraged_authorization_components", "leveraged_authorizations", on_delete: :cascade
+  add_foreign_key "leveraged_authorizations", "authorization_boundaries", column: "leveraged_boundary_id", on_delete: :nullify
+  add_foreign_key "leveraged_authorizations", "authorization_boundaries", column: "leveraging_boundary_id", on_delete: :cascade
   add_foreign_key "organization_memberships", "organizations", on_delete: :cascade
   add_foreign_key "organization_memberships", "users", on_delete: :cascade
   add_foreign_key "poam_documents", "authorization_boundaries", on_delete: :nullify
@@ -1518,6 +1568,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_152450) do
   add_foreign_key "ssp_document_cdef_documents", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "ssp_documents", "profile_documents", on_delete: :nullify
+  add_foreign_key "ssp_control_statement_inheritances", "ssp_control_statements", on_delete: :cascade
   add_foreign_key "ssp_information_types", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_inventory_items", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_leveraged_authorizations", "ssp_documents", on_delete: :cascade
