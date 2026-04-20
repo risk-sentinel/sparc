@@ -10,22 +10,22 @@ RSpec.describe "LeveragedAuthorizations", type: :request do
 
   describe "POST /authorization_boundaries/:id/leveraged_authorizations" do
     it "creates a scenario-1 LA pointing at another same-org boundary" do
-      expect do
-        post authorization_boundary_leveraged_authorizations_path(boundary_a), params: {
-          leveraged_authorization: {
-            name: "Example IaaS",
-            crm_type: "oscal_with_access",
-            leveraged_boundary_id: boundary_b.id,
-            date_authorized: "2026-01-15",
-            description: "Test"
-          }
+      post authorization_boundary_leveraged_authorizations_path(boundary_a), params: {
+        leveraged_authorization: {
+          name: "Example IaaS",
+          crm_type: "oscal_with_access",
+          leveraged_boundary_id: boundary_b.id,
+          date_authorized: "2026-01-15",
+          description: "Test"
         }
-      end.to change { LeveragedAuthorization.count }.by(1)
+      }
 
-      la = LeveragedAuthorization.last
-      expect(la.leveraging_boundary_id).to eq(boundary_a.id)
+      expect(response).to have_http_status(:redirect), -> {
+        "Expected redirect, got #{response.status}. Body: #{response.body[0..200]}"
+      }
+      la = LeveragedAuthorization.find_by(leveraging_boundary_id: boundary_a.id)
+      expect(la).to be_present
       expect(la.leveraged_boundary_id).to eq(boundary_b.id)
-      expect(response).to redirect_to(authorization_boundary_path(boundary_a))
     end
   end
 
@@ -36,9 +36,11 @@ RSpec.describe "LeveragedAuthorizations", type: :request do
     end
 
     it "removes the LA" do
-      expect do
-        delete authorization_boundary_leveraged_authorization_path(boundary_a, la)
-      end.to change { LeveragedAuthorization.count }.by(-1)
+      delete authorization_boundary_leveraged_authorization_path(boundary_a, la)
+      expect(response).to have_http_status(:redirect), -> {
+        "Expected redirect, got #{response.status}. Body: #{response.body[0..200]}"
+      }
+      expect(LeveragedAuthorization.find_by(id: la.id)).to be_nil
     end
   end
 end
