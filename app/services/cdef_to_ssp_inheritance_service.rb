@@ -35,12 +35,14 @@ class CdefToSspInheritanceService
                         .where(cdef_controls: { cdef_document_id: cdef_document.id })
                         .pluck(:id)
 
+      # `preload` instead of `includes` avoids EagerLoadPolymorphicError
+      # on the polymorphic `source` association.
       SspControlStatementInheritance
         .from_cdef.active
         .where(source_id: cdef_stmt_ids)
         .joins(:ssp_control_statement)
         .where(ssp_control_statements: { ssp_control_id: ssp_document.ssp_controls.select(:id) })
-        .includes(:ssp_control_statement, :source)
+        .preload(:ssp_control_statement, :source)
         .find_each do |link|
           next if link.source.nil?
           if link.ssp_control_statement.update(implementation_prose: link.source.implementation_prose)

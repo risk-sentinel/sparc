@@ -12,8 +12,12 @@ RSpec.describe SspControlStatementInheritance, type: :model do
     it { is_expected.to validate_presence_of(:source_uuid) }
 
     it "accepts only known source types" do
-      link.source_type = "FakeType"
+      # Use a real class that isn't in SOURCE_TYPES so the polymorphic
+      # association can resolve the constant before our custom validation
+      # runs. The validation then rejects the disallowed source type.
+      link.source_type = "User"
       expect(link).not_to be_valid
+      expect(link.errors[:source_type]).to be_present
     end
 
     it "rejects non-v4 source UUIDs" do

@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe "LeveragedAuthorizations", type: :request do
   let(:org) { create(:organization) }
-  let(:user) { create(:user, role: :admin) }
+  let(:user) { create(:user, :admin) }
   let(:boundary_a) { create(:authorization_boundary, organization: org, name: "Alpha") }
   let(:boundary_b) { create(:authorization_boundary, organization: org, name: "Beta") }
 

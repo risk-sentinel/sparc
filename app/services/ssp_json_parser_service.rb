@@ -197,7 +197,10 @@ class SspJsonParserService
     )
     la.uuid            ||= auth["uuid"] || SecureRandom.uuid
     la.name              = auth["title"] || la.name.presence || "Leveraged System"
-    la.crm_type          = la.crm_type.presence || crm_type
+    # For new records, the DB default ("oscal_with_access") means
+    # `crm_type.presence` is never nil — explicitly pick based on href
+    # resolution. For existing records, keep whatever the user configured.
+    la.crm_type          = crm_type if la.new_record?
     la.date_authorized ||= parse_date(auth["date-authorized"])
     la.description     ||= extract_text(auth["remarks"])
     la.metadata        = (la.metadata || {}).merge(
