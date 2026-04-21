@@ -40,9 +40,9 @@ on:
           - low
           - none
       upload_to_code_scanning:
-        description: 'Upload SARIF results to GitHub Code Scanning'
+        description: 'Upload SARIF results to GitHub Code Scanning (requires GHAS for private repos)'
         required: false
-        default: true
+        default: false
         type: boolean
 
 # Defaults for non-dispatch triggers (inputs will be null)
@@ -52,7 +52,12 @@ env:
   DOCKERFILE_PATH: ${{ inputs.dockerfile_path || './Dockerfile' }}
   ORG_METADATA_FILE: ${{ inputs.org_metadata_file || '.github/oscal-metadata.json' }}
   FAIL_ON_SEVERITY: ${{ inputs.fail_on_severity || 'none' }}
-  UPLOAD_TO_CODE_SCANNING: ${{ inputs.upload_to_code_scanning == '' && 'true' || inputs.upload_to_code_scanning }}
+  # Default OFF: Code Scanning SARIF upload requires GitHub Advanced
+  # Security on private repos (paid feature). SARIF files are still
+  # preserved as workflow artifacts and uploaded to S3 by the archive
+  # job, so nothing is lost. Flip to true (or enable GHAS) once the
+  # repo is public or GHAS is licensed.
+  UPLOAD_TO_CODE_SCANNING: ${{ inputs.upload_to_code_scanning == '' && 'false' || inputs.upload_to_code_scanning }}
 
 permissions:
   contents: read
@@ -724,12 +729,30 @@ jobs:
           path: all-results/
           name: hdf-results
 
-      - name: Generate GitHub Step Summary
+      # #386: SAF CLI `view summary` does not accept a directory for -i.
+      # Build an explicit `-i <file>` list from the downloaded HDF results.
+      - name: Build SAF view summary args
         if: always()
+        id: saf_args
+        run: |
+          files=()
+          for f in hdf-results/*.hdf.json; do
+            [ -f "$f" ] || continue
+            files+=("-i" "$f")
+          done
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "args=" >> $GITHUB_OUTPUT
+            echo "::warning::No HDF files found in hdf-results/ — skipping SAF view summary"
+          else
+            echo "args=${files[*]}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate GitHub Step Summary
+        if: always() && steps.saf_args.outputs.args != ''
         uses: mitre/saf_action@v1
         continue-on-error: true
         with:
-          command_string: 'view summary -i hdf-results/'
+          command_string: 'view summary ${{ steps.saf_args.outputs.args }}'
 
       - name: Write summary header
         if: always()
