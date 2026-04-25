@@ -346,11 +346,17 @@ Rails.application.routes.draw do
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ]
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]
 
-      # Back-matter resource management (#375)
+      # Back-matter resource management (#375) + authoritative workflow (#372)
       resources :back_matter_resources, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           post :link
           delete :unlink
+          post :promote
+          post :approve_promotion
+          post :reject_promotion
+        end
+        collection do
+          get :promotion_queue
         end
       end
 

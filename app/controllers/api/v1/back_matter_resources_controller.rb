@@ -5,24 +5,33 @@
 # Supports the authoritative layer for enterprise provider publishing.
 #
 # Endpoints:
-#   GET    /api/v1/back_matter_resources          — list (paginated, filterable)
-#   GET    /api/v1/back_matter_resources/:id      — show with linked controls
-#   POST   /api/v1/back_matter_resources          — create with OSCAL validations
-#   PATCH  /api/v1/back_matter_resources/:id      — update
-#   DELETE /api/v1/back_matter_resources/:id      — delete + unlink all controls
-#   POST   /api/v1/back_matter_resources/:id/link   — link to a control
-#   DELETE /api/v1/back_matter_resources/:id/unlink — unlink from a control
+#   GET    /api/v1/back_matter_resources                       — list (paginated, filterable)
+#   GET    /api/v1/back_matter_resources/promotion_queue       — pending promotions caller can approve (#372)
+#   GET    /api/v1/back_matter_resources/:id                   — show with linked controls
+#   POST   /api/v1/back_matter_resources                       — create with OSCAL validations
+#   PATCH  /api/v1/back_matter_resources/:id                   — update
+#   DELETE /api/v1/back_matter_resources/:id                   — delete + unlink all controls
+#   POST   /api/v1/back_matter_resources/:id/link              — link to a control
+#   DELETE /api/v1/back_matter_resources/:id/unlink            — unlink from a control
+#   POST   /api/v1/back_matter_resources/:id/promote           — request promotion to authoritative (#372)
+#   POST   /api/v1/back_matter_resources/:id/approve_promotion — approve a pending promotion (#372)
+#   POST   /api/v1/back_matter_resources/:id/reject_promotion  — reject with reason (#372)
 #
 # NIST 800-53 Controls:
 #   IA-2 Identification and Authentication (Bearer token required)
-#   AC-3 Access Enforcement (permission-based RBAC)
-#   AU-12 Audit Record Generation (all mutations logged)
+#   AC-3 Access Enforcement (permission-based RBAC + approver authority)
+#   AC-6 Least Privilege (promotion approver tiers)
+#   AU-12 Audit Record Generation (all mutations + transitions logged)
 #   SA-10 Developer Configuration Management (back-matter traceability)
 #
 class Api::V1::BackMatterResourcesController < Api::V1::BaseController
-  before_action :set_resource, only: %i[show update destroy link unlink]
+  before_action :set_resource, only: %i[show update destroy link unlink promote approve_promotion reject_promotion]
   before_action :authorize_read!, only: %i[index show]
   before_action :authorize_write!, only: %i[create update destroy link unlink]
+  before_action :authorize_promote!, only: :promote
+  before_action :authorize_approve_promotion!, only: %i[approve_promotion reject_promotion]
+  # promotion_queue is self-filtering: it only returns rows the caller can
+  # approve. Authentication alone is sufficient — no separate permission gate.
 
   # GET /api/v1/back_matter_resources
   def index
@@ -115,6 +124,57 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     render json: { data: serialize_back_matter_resource(@resource, detailed: true) }
   end
 
+  # POST /api/v1/back_matter_resources/:id/promote (#372)
+  def promote
+    result = BackMatterResourcePromotionService.new(resource: @resource, actor: current_user)
+                                               .request_promotion!
+    if result.success?
+      audit_log("back_matter_resource_promotion_requested", subject: @resource,
+                metadata: { title: @resource.title })
+      render json: { data: serialize_back_matter_resource(@resource, detailed: true) }
+    else
+      render json: { error: result.error }, status: result.status_code
+    end
+  end
+
+  # POST /api/v1/back_matter_resources/:id/approve_promotion (#372)
+  def approve_promotion
+    result = BackMatterResourcePromotionService.new(resource: @resource, actor: current_user)
+                                               .approve!
+    if result.success?
+      audit_log("back_matter_resource_promotion_approved", subject: @resource,
+                metadata: { title: @resource.title, approver_id: current_user.id })
+      render json: { data: serialize_back_matter_resource(@resource, detailed: true) }
+    else
+      render json: { error: result.error }, status: result.status_code
+    end
+  end
+
+  # POST /api/v1/back_matter_resources/:id/reject_promotion (#372)
+  def reject_promotion
+    reason = params[:reason] || params.dig(:back_matter_resource, :rejection_reason)
+    result = BackMatterResourcePromotionService.new(resource: @resource, actor: current_user)
+                                               .reject!(reason: reason)
+    if result.success?
+      audit_log("back_matter_resource_promotion_rejected", subject: @resource,
+                metadata: { title: @resource.title, approver_id: current_user.id })
+      render json: { data: serialize_back_matter_resource(@resource, detailed: true) }
+    else
+      render json: { error: result.error }, status: result.status_code
+    end
+  end
+
+  # GET /api/v1/back_matter_resources/promotion_queue (#372)
+  # Lists pending promotions the caller is authorized to approve.
+  def promotion_queue
+    pending = BackMatterResource.pending_promotion.order(updated_at: :desc)
+    approvable = pending.select do |r|
+      BackMatterResourcePromotionService.new(resource: r, actor: current_user).can_approve?
+    end
+    render json: { data: approvable.map { |r| serialize_back_matter_resource(r, detailed: true) },
+                   meta: { count: approvable.size } }
+  end
+
   private
 
   def set_resource
@@ -159,5 +219,22 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     return if current_user.has_permission?("back_matter.write")
 
     raise NotAuthorizedError, "Not authorized to manage back-matter resources"
+  end
+
+  def authorize_promote!
+    return if current_user.admin?
+    return if current_user.has_permission?("back_matter.promote")
+    return if current_user.has_permission?("back_matter.write")
+
+    raise NotAuthorizedError, "Not authorized to request promotion"
+  end
+
+  def authorize_approve_promotion!
+    return if current_user.has_permission?("back_matter.approve_promotion")
+
+    service = BackMatterResourcePromotionService.new(resource: @resource, actor: current_user)
+    return if service.can_approve?
+
+    raise NotAuthorizedError, "Not authorized to approve or reject promotion for this resource"
   end
 end
