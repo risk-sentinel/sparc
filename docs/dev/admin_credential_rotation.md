@@ -1,7 +1,12 @@
-# Admin Credential Rotation Runbook
+# Admin Credential Rotation Runbook (Developer Reference)
 
 How the SPARC instance admin password stays in sync between AWS Secrets
 Manager, the running ECS task, and the database — and how to rotate it.
+
+> **Looking for setup, testing, and troubleshooting?** See the user-facing
+> guide at [`docs/ADMIN_CREDENTIAL_ROTATION.md`](../ADMIN_CREDENTIAL_ROTATION.md).
+> This document is the developer-focused architecture reference (NIST control
+> mapping, code locations, rationale).
 
 ## Architecture
 

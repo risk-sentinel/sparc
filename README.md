@@ -115,6 +115,7 @@ The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all va
 |-------|------|
 | **User & Operations** | |
 | Authentication & Authorization | [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) |
+| Admin Credential Rotation | [docs/ADMIN_CREDENTIAL_ROTATION.md](docs/ADMIN_CREDENTIAL_ROTATION.md) |
 | Okta Developer Setup | [docs/OKTA_DEV_SETUP.md](docs/OKTA_DEV_SETUP.md) |
 | Environment Variables | [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) |
 | Docker Deployment | [docs/DOCKER.md](docs/DOCKER.md) |
