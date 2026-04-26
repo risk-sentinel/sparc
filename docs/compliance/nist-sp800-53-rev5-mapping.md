@@ -571,6 +571,30 @@ injection for direct import into compliance dashboards.
 
 ---
 
+## Admin Credential Rotation (#402, #403)
+
+The admin credential rotation workflow propagates rotations performed in AWS Secrets Manager into the running SPARC task and provides two SPARC-initiated paths (rake + API) to push rotations back to SM.
+
+| Control | Contribution | CDEF | Code Location |
+|---|---|---|---|
+| AC-2 | Account lifecycle: rotation events emit AuditEvent rows (`admin_credential_synced_from_env`, `admin_credential_rotated`, `admin_password_reset`) tagged with source/actor/version_id | authentication, audit | `app/services/admin_credential_rotation_service.rb`, `lib/tasks/admin.rake`, `app/models/audit_event.rb` |
+| AC-3 | API endpoint gated by new `admin.rotate_credentials` permission key (Role::PERMISSION_KEYS) plus existing service-account endpoint scoping (#257) | authentication | `app/controllers/api/v1/admin/credentials_controller.rb`, `app/models/role.rb` |
+| AC-17 | Lambda's service-account token can be CIDR-allowlisted to its egress NAT IPs via existing #257 capability — restricts rotation invocations to a known network origin | authentication | `app/models/api_token.rb#cidr_allowed?` |
+| AU-2 | Three new audit actions registered in `AuditEvent::ACTIONS` (User Management category): `admin_password_reset` (closes a latent silent-failure bug from existing rake), `admin_credential_synced_from_env`, `admin_credential_rotated` | audit | `app/models/audit_event.rb` |
+| AU-3 | Rotation audit rows capture: source (rake/api), actor user/token id, secret version_id (when SM was touched), outcome (rotated/unchanged); never the password material | audit | `app/services/admin_credential_rotation_service.rb`, `app/controllers/api/v1/admin/credentials_controller.rb` |
+| IA-4 | Admin user identifier (email) preserved across rotations; only the authenticator material changes | authentication | `lib/tasks/admin.rake` |
+| IA-5 | Three coordinated rotation paths: (1) bootstrap reconciliation from `SPARC_ADMIN_PASSWORD` env on container start, (2) `sparc:rotate_admin_credentials` rake (DB + SM PutSecretValue), (3) `POST /api/v1/admin/refresh_credentials` (Lambda → SPARC → DB; Lambda owns SM AWSCURRENT promotion) | authentication | `lib/tasks/admin.rake`, `app/services/admin_credential_rotation_service.rb`, `app/controllers/api/v1/admin/credentials_controller.rb` |
+| SC-13 | Bcrypt at rest for the password digest; TLS in transit for the API path; SPARC's task role holds `PutSecretValue` write-only access on admin-credentials — not `GetSecretValue`, preserving MFA-gated break-glass retrieval | authentication, session-mgmt | `app/services/admin_credential_rotation_service.rb`, sparc-iac IAM policy (#197) |
+| SI-10 | Password-length validation (min 8 chars), presence check, idempotency check (`admin.authenticate(plaintext)` before mutating); failures return structured 4xx without partial DB mutation | authentication | `app/services/admin_credential_rotation_service.rb`, `app/controllers/api/v1/admin/credentials_controller.rb` |
+
+**Configuration dependencies:**
+- ECS task definition injects `SPARC_ADMIN_PASSWORD` from the `admin-credentials` SM secret (sparc-iac change — see Rebel-Raiders/sparc-iac#197)
+- SPARC ECS task role has `secretsmanager:PutSecretValue` + `UpdateSecretVersionStage` on `admin-credentials` (write-only — sparc-iac IAM delta)
+- `SPARC_ADMIN_REFRESH_ENABLED=true` to enable the API endpoint (off by default — fail closed)
+- A SPARC service account holds the `admin.rotate_credentials` permission and its `sparc_sa_*` token is provisioned to the rotation Lambda via a separate SM secret
+
+---
+
 ## Authoritative Sources & Federation (#372)
 
 The authoritative back-matter workflow added in #372 contributes to the following Rev 5 controls beyond what is captured in the per-family tables above. Detailed control-by-control narratives live in the OSCAL CDEF JSON files cross-referenced below.
