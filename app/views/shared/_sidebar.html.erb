@@ -79,6 +79,34 @@
     </div>
 
     <%# ── Resources ── %>
+    <%# ── Compliance Library (#372) ── %>
+    <div class="sparc-sidebar-section border-top border-secondary">
+      <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarLibrary" aria-expanded="false">
+        <span class="sparc-sidebar-icon">&#128218;</span> Compliance Library
+      </button>
+      <div class="collapse" id="sidebarLibrary">
+        <ul class="sparc-sidebar-leaves">
+          <li>
+            <%= link_to authoritative_sources_path, class: "sparc-sidebar-leaf" do %>
+              <span class="sparc-sidebar-dot" style="background: #16a085;"></span> Authoritative Sources
+            <% end %>
+          </li>
+          <li>
+            <%= link_to promotion_queue_index_path, class: "sparc-sidebar-leaf" do %>
+              <span class="sparc-sidebar-dot" style="background: #f39c12;"></span> Promotion Queue
+            <% end %>
+          </li>
+          <% if current_user&.admin? %>
+            <li>
+              <%= link_to federation_peers_path, class: "sparc-sidebar-leaf" do %>
+                <span class="sparc-sidebar-dot" style="background: #2980b9;"></span> Federation Peers
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+
     <div class="sparc-sidebar-section border-top border-secondary">
       <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarResources" aria-expanded="false">
         <span class="sparc-sidebar-icon">&#128279;</span> Resources

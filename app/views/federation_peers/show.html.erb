@@ -1,0 +1,68 @@
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h2 class="mb-1"><%= @peer.name %></h2>
+        <div class="small text-body-secondary"><code><%= @peer.base_url %></code></div>
+      </div>
+      <div class="d-flex gap-2">
+        <%= button_to "Pull now", sync_federation_peer_path(@peer), method: :post,
+                      class: "btn btn-primary",
+                      form: { style: "display:inline-block;" } %>
+        <%= link_to "Edit", edit_federation_peer_path(@peer), class: "btn btn-outline-secondary" %>
+        <%= button_to "Delete", federation_peer_path(@peer), method: :delete,
+                      class: "btn btn-outline-danger",
+                      form: { style: "display:inline-block;",
+                              data: { turbo_confirm: "Remove peer #{@peer.name}? Imported resources are kept." } } %>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-3"><strong>Status:</strong>
+        <% if @peer.enabled? %>
+          <span class="badge text-bg-success">enabled</span>
+        <% else %>
+          <span class="badge text-bg-secondary">disabled</span>
+        <% end %>
+      </div>
+      <div class="col-md-3"><strong>Last sync:</strong>
+        <%= @peer.last_synced_at&.iso8601 || "never" %>
+      </div>
+      <div class="col-md-6"><strong>Last status:</strong>
+        <code><%= @peer.last_sync_status || "—" %></code>
+      </div>
+      <div class="col-md-3"><strong>Service token:</strong>
+        <%= @peer.encrypted_service_token.present? ? "configured" : "not set" %>
+      </div>
+      <div class="col-md-3"><strong>Signing secret:</strong>
+        <%= @peer.encrypted_signing_secret.present? ? "configured" : "not set" %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="mb-3">Recent Imported Resources</h5>
+    <% if @recent_imports.empty? %>
+      <p class="text-body-secondary mb-0">No federated imports from this peer yet.</p>
+    <% else %>
+      <table class="table table-sm">
+        <thead>
+          <tr><th>Title</th><th>Federated at</th><th>Bundle</th></tr>
+        </thead>
+        <tbody>
+          <% @recent_imports.each do |r| %>
+            <tr>
+              <td>
+                <%= link_to r.title, authoritative_source_path(r) %>
+              </td>
+              <td class="small"><%= r.federated_at&.iso8601 %></td>
+              <td class="small"><code><%= r.federated_bundle_uuid&.first(8) %>…</code></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</div>

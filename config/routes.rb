@@ -306,6 +306,22 @@ Rails.application.routes.draw do
     end
   end
 
+  # ── Authoritative back-matter library (#372) ───────────────────────────
+  resources :authoritative_sources, only: %i[index show]
+
+  resources :promotion_queue, only: %i[index] do
+    member do
+      post :approve
+      post :reject
+    end
+  end
+
+  resources :federation_peers do
+    member do
+      post :sync
+    end
+  end
+
   namespace :api do
     namespace :v1 do
       # API discovery (#250)

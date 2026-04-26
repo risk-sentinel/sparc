@@ -1,0 +1,61 @@
+<div class="card">
+  <div class="card-body">
+    <h2 class="mb-1">Promotion Queue</h2>
+    <p class="text-body-secondary">Pending requests to promote a back-matter resource into the
+      authoritative tier. Only items you are authorized to approve appear here.</p>
+
+    <% if @resources.empty? %>
+      <div class="alert alert-info mb-0">No pending promotions. 🎉</div>
+    <% else %>
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Origin</th>
+            <th>Requested</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @resources.each do |r| %>
+            <tr>
+              <td>
+                <strong><%= r.title %></strong>
+                <div class="small text-body-secondary">
+                  <%= r.description.to_s.truncate(140) %>
+                </div>
+              </td>
+              <td>
+                <% if r.organization %>
+                  Org: <%= r.organization.name %>
+                <% elsif r.resourceable %>
+                  Doc: <%= r.resourceable_type %>#<%= r.resourceable_id %>
+                <% else %>
+                  Library
+                <% end %>
+              </td>
+              <td class="small"><%= r.updated_at.to_date %></td>
+              <td class="text-end">
+                <%= button_to "Approve", approve_promotion_queue_path(r),
+                              method: :post, class: "btn btn-sm btn-success",
+                              form: { style: "display:inline-block; margin-right: 0.5rem;" } %>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        data-bs-toggle="collapse" data-bs-target="#reject-<%= r.id %>">
+                  Reject…
+                </button>
+                <div class="collapse mt-2" id="reject-<%= r.id %>">
+                  <%= form_with url: reject_promotion_queue_path(r), method: :post, local: true,
+                                class: "d-flex gap-2" do |f| %>
+                    <%= f.text_field :reason, class: "form-control form-control-sm",
+                                     placeholder: "Reason for rejection (required)" %>
+                    <%= f.submit "Reject", class: "btn btn-sm btn-danger" %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</div>
