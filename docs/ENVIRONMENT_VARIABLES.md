@@ -58,6 +58,21 @@ approach). Enable one or more to activate the login page at `/login`.
 
 <!-- markdownlint-enable MD013 MD034 -->
 
+### Admin Credential Rotation (#402, #403)
+
+For ECS Fargate deployments using AWS Secrets Manager. See **[Admin Credential Rotation](ADMIN_CREDENTIAL_ROTATION.md)** for the full setup, testing, and troubleshooting guide.
+
+<!-- markdownlint-disable MD013 MD034 -->
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_ADMIN_PASSWORD | Plaintext admin password injected by ECS from the `admin-credentials` Secrets Manager secret. `bootstrap_admin` reconciles the DB to match on every container start. Never set this manually in development; it's ECS-managed. | (unset) | _(injected by ECS)_ | When using rotation |
+| SPARC_ADMIN_REFRESH_ENABLED | Enables `POST /api/v1/admin/refresh_credentials` for Lambda-driven rotation. Defaults to fail-closed (returns 503). Set to `true` only after the rotation Lambda + service-account token are provisioned per [sparc-iac#197](https://github.com/Rebel-Raiders/sparc-iac/issues/197). | `false` | `true` | No |
+| SPARC_ALLOW_CRED_ROTATION | Outside production, the `sparc:rotate_admin_credentials` rake task refuses to run unless this is `1`. Production has no gate. | (unset) | `1` | No |
+| SPARC_PRINT_ROTATED_PASSWORD | Break-glass only — when `1`, the rotate-credentials rake task prints the plaintext password to stdout. Be mindful of log retention. Default behavior (unset) tells the operator to retrieve the password from the AWS Console. | (unset) | `1` | No |
+
+<!-- markdownlint-enable MD013 MD034 -->
+
 ### API Authentication Mode
 
 Controls which auth method the REST API accepts. Modes are mutually exclusive.
@@ -264,7 +279,7 @@ Two-secret strategy aligned with [sparc-iac #22](https://github.com/Rebel-Raider
 | --- | --- | --- | --- | --- |
 | SPARC_AWS_SECRETS_ENABLED | Enable Secrets Manager JSON blob injection at boot | `false` | `true` | No |
 | SPARC_APP_CONFIG_SECRET_ARN | ARN of the app-config JSON secret (all non-admin config) | (unset) | `arn:aws:secretsmanager:us-east-1:123:secret:sparc-prod/app-config` | When secrets enabled |
-| SPARC_ADMIN_CREDENTIALS_SECRET_ARN | ARN of admin-credentials secret (documentation only — app does not read this) | (unset) | `arn:aws:secretsmanager:us-east-1:123:secret:sparc-prod/admin-credentials` | No |
+| SPARC_ADMIN_CREDENTIALS_SECRET_ARN | ARN of admin-credentials secret. ECS injects the `password` field as `SPARC_ADMIN_PASSWORD` at task start; the `sparc:rotate_admin_credentials` rake task writes back via `PutSecretValue`. SPARC's task role does NOT have `GetSecretValue` on this secret — ECS does the read on SPARC's behalf, preserving MFA-gated Console retrieval for break-glass. | (unset) | `arn:aws:secretsmanager:us-east-1:123:secret:sparc-prod/admin-credentials` | When using rotation |
 
 ### How It Works
 
