@@ -360,6 +360,20 @@ Rails.application.routes.draw do
         end
       end
 
+      # Federation: signed bundle export/import for cross-instance
+      # authoritative source sharing (#372). The peer is identified by name
+      # via the `peer` query/body param.
+      resource :authoritative_sources, only: [], controller: "authoritative_sources" do
+        get  :export,  on: :collection
+        post :import,  on: :collection
+      end
+
+      resources :federation_peers, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :sync
+        end
+      end
+
       # FedRAMP 20x KSI catalog (read-only, #107)
       resource :ksi_catalog, only: [], controller: "ksi_catalog" do
         get :themes, on: :collection

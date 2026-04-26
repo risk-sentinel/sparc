@@ -1,19 +1,24 @@
 # A configured remote SPARC instance from which this instance pulls
-# authoritative back-matter resources. Trust model reuses the existing
-# OSCAL artifact signing key infrastructure: bundles arrive signed by the
-# peer and are verified against its registered public key (delivered
-# out-of-band when the peer is configured).
+# authoritative back-matter resources, or to which this instance exports
+# bundles for consumption.
 #
-# Service tokens are encrypted at rest using a per-instance key derived
-# from `Rails.application.secret_key_base` via `ActiveSupport::KeyGenerator`.
-# Plaintext is only available in-process during outbound requests.
+# Trust model:
+#   - Outbound calls authenticate to the peer with `service_token` (Bearer)
+#   - Inbound bundles are HMAC-signed using `signing_secret`; the same
+#     secret verifies our outbound bundles on the peer side. The shared
+#     `signing_secret` is exchanged out of band when the peer is configured.
 #
-# NIST AC-4 / SC-8 / SC-12: cross-instance information flow over signed,
-#                           verified channels with encrypted credentials.
-# NIST IA-5: token storage uses authenticated encryption (encrypt-then-MAC
-#            via ActiveSupport::MessageEncryptor).
+# All stored credentials are encrypted at rest via
+# `ActiveSupport::MessageEncryptor`, keyed by SparcKeyDerivation. The
+# master secret (SPARC_HASH) is provisioned by sparc-iac into the
+# instance's secrets pipeline; locally we fall back to secret_key_base.
+#
+# NIST AC-4 / SC-8 / SC-12 / SC-13: cross-instance flow over signed,
+#                                   verified channels with encrypted creds.
+# NIST IA-5: encrypt-then-MAC token + secret storage.
 class FederationPeer < ApplicationRecord
-  TOKEN_KEY_PURPOSE = "federation_peer_service_token"
+  TOKEN_KEY_PURPOSE  = "federation_peer_service_token"
+  SECRET_KEY_PURPOSE = "federation_peer_signing_secret"
 
   validates :name, presence: true, uniqueness: true
   validates :base_url, presence: true,
@@ -24,25 +29,52 @@ class FederationPeer < ApplicationRecord
   scope :disabled, -> { where(enabled: false) }
 
   def service_token
-    return nil if encrypted_service_token.blank?
+    decrypt(encrypted_service_token, self.class.token_encryptor)
+  end
 
-    self.class.token_encryptor.decrypt_and_verify(encrypted_service_token)
+  def service_token=(value)
+    self.encrypted_service_token = encrypt(value, self.class.token_encryptor)
+  end
+
+  def signing_secret
+    decrypt(encrypted_signing_secret, self.class.secret_encryptor)
+  end
+
+  def signing_secret=(value)
+    self.encrypted_signing_secret = encrypt(value, self.class.secret_encryptor)
+  end
+
+  def self.token_encryptor
+    @token_encryptor ||= build_encryptor(TOKEN_KEY_PURPOSE)
+  end
+
+  def self.secret_encryptor
+    @secret_encryptor ||= build_encryptor(SECRET_KEY_PURPOSE)
+  end
+
+  def self.reset_encryptors!
+    @token_encryptor = nil
+    @secret_encryptor = nil
+  end
+
+  def self.build_encryptor(purpose)
+    key = SparcKeyDerivation.derive(purpose,
+                                    length: ActiveSupport::MessageEncryptor.key_len)
+    ActiveSupport::MessageEncryptor.new(key)
+  end
+
+  private
+
+  def decrypt(ciphertext, encryptor)
+    return nil if ciphertext.blank?
+
+    encryptor.decrypt_and_verify(ciphertext)
   rescue ActiveSupport::MessageEncryptor::InvalidMessage,
          ActiveSupport::MessageVerifier::InvalidSignature
     nil
   end
 
-  def service_token=(value)
-    self.encrypted_service_token =
-      value.present? ? self.class.token_encryptor.encrypt_and_sign(value.to_s) : nil
-  end
-
-  def self.token_encryptor
-    @token_encryptor ||= begin
-      key = ActiveSupport::KeyGenerator
-              .new(Rails.application.secret_key_base, hash_digest_class: OpenSSL::Digest::SHA256)
-              .generate_key(TOKEN_KEY_PURPOSE, ActiveSupport::MessageEncryptor.key_len)
-      ActiveSupport::MessageEncryptor.new(key)
-    end
+  def encrypt(value, encryptor)
+    value.present? ? encryptor.encrypt_and_sign(value.to_s) : nil
   end
 end
