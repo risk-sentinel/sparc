@@ -593,7 +593,7 @@ testing of #408's bundle clears.
 | **POAM product surface** | #389 POAM wizard missing OSCAL fields | Pure product. POAM wizard view + form + a couple of model defaults + export validation spec. No collision with shipped Phase 12 work. |
 | **Upload pipeline hardening** | #341 XML document type fingerprinting | Defensive, post-#392. Touches `FileUploadable` and parser entry-points; coordinate with anything else editing those concerns. |
 | **Admin / infra** | #402 + #403 AWS Secrets Manager admin credential rotation pair | Bundle them — same domain (admin auth + AWS), need the same migration story. |
-| **OSCAL feature** | #372 Import Authoritative Sources for global/org OSCAL docs | Needs design before implementation; has 1 comment thread to absorb. Likely depends on the back-matter / global resource work in #375. |
+| **OSCAL feature** | ~~#372 Import Authoritative Sources for global/org OSCAL docs~~ — **COMPLETED 2026-04-26** | Shipped on `feature/372_authoritative_sources_import` (8 commits): schema + models + RBAC, promotion workflow + API, federation export/import (HMAC-signed bundles + SPARC_HASH master KDF), bulk import + URL fetch, archive/changelog, NC/LC UI for library + queue + peers, CDEF + Rev 5 mapping updates. Adds: `app/models/back_matter_resource_change.rb`, `app/models/federation_peer.rb`, `app/lib/sparc_key_derivation.rb`, `app/services/{back_matter_resource_promotion,federation_bundle_signing,authoritative_source_federation,back_matter_bulk_import,authoritative_source_fetch}_service.rb`, `app/controllers/{authoritative_sources,promotion_queue,federation_peers}_controller.rb` (UI) + matching `Api::V1::*` API controllers + views. Touches `BackMatterResource` model + `BackMatterBuilder` (now scoped through `.active`) + `Role::PERMISSION_KEYS` (7 new keys, including a backfill of `back_matter.read`/`.write` that #375 was checking but had not registered). New env vars: `SPARC_HASH` (provisioning tracked by sparc-iac issue #195), `SPARC_AUTHORITATIVE_FETCH_ENABLED` (off by default). |
 | **Repo cleanup** | #246 Repository Cleanup | Scope-define needed. Best treated as a background lane while a main feature ships. |
 
 #### Sequencing principles for the next phase
@@ -825,8 +825,8 @@ removed and are no longer tracked:
 ## Summary
 
 - **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-- **Completed:** 55 issues (Phases 1-10 + #361)
-- **Remaining:** 8 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #367, #372)
+- **Completed:** 56 issues (Phases 1-10 + #361 + #372)
+- **Remaining:** 7 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #367)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
 - **Phases 1-9:** COMPLETE (2026-03-14 through 2026-03-21)

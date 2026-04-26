@@ -494,7 +494,7 @@ Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
 | [x] | #358 | Configure Dependabot grouping -- batch low-risk updates -- **COMPLETED 2026-04-15** | LOW | None |
 | [x] | #361 | UUID collision handling on OSCAL import + replace placeholder UUIDs -- **COMPLETED 2026-04-14** | **HIGH** (compliance) | #371 |
 | [ ] | #367 | Code coverage threshold and tracking -- SimpleCov integration | MEDIUM | None |
-| [ ] | #372 | Import Authoritative Sources for Global and Organizational Use | **HIGH** (enterprise) | #375 |
+| [x] | #372 | Import Authoritative Sources for Global and Organizational Use -- **COMPLETED 2026-04-26** | **HIGH** (enterprise) | #375 |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -538,12 +538,12 @@ removed and are no longer tracked:
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
 | 10 | Ongoing | Platform Hardening & Polish | #234-#375 (25 issues) | In Progress |
-| 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #244, #246, #341, #344, #346, #358, #361, #367, #372 | Not Started |
+| 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #244, #246, #341, #344, #346, #358, #361, #367, #372 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-**Completed (Phases 1-10 + ad-hoc):** 57 issues
-**Remaining:** 6 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367, #372)
-**Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 planned.
+**Completed (Phases 1-10 + ad-hoc):** 58 issues
+**Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367)
+**Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 in progress.
 **First public release: v1.0.0** (#271). **Current version: v1.2.5**.
