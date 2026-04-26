@@ -61,6 +61,7 @@ class Role < ApplicationRecord
     back_matter.archive
     back_matter.bulk_import
     back_matter.federate
+    admin.rotate_credentials
   ].freeze
 
   # Group permission keys by resource for UI rendering
@@ -79,7 +80,8 @@ class Role < ApplicationRecord
     "evidence" => "Evidence",
     "mappings" => "Control Mappings",
     "converters" => "Converters",
-    "back_matter" => "Back-Matter Resources"
+    "back_matter" => "Back-Matter Resources",
+    "admin" => "Instance Administration"
   }.freeze
 
   # Check if this role has a specific permission
