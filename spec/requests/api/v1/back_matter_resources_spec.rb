@@ -114,6 +114,68 @@ RSpec.describe "Api::V1::BackMatterResources", type: :request do
     end
   end
 
+  # ── #372 archive / restore / changes endpoints ─────────────────────────
+
+  describe "POST /api/v1/back_matter_resources/:id/archive" do
+    it "archives an active resource and writes a change row" do
+      post archive_api_v1_back_matter_resource_path(resource), headers: admin_headers
+      expect(response).to have_http_status(:ok)
+      resource.reload
+      expect(resource.archived?).to eq(true)
+      expect(resource.changes_log.where(change_type: "archive").count).to eq(1)
+    end
+
+    it "returns 409 if already archived" do
+      resource.update!(archived_at: 1.day.ago)
+      post archive_api_v1_back_matter_resource_path(resource), headers: admin_headers
+      expect(response).to have_http_status(:conflict)
+    end
+
+    it "denies users without permission" do
+      bystander = create(:user)
+      post archive_api_v1_back_matter_resource_path(resource), headers: headers_for(bystander)
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  describe "POST /api/v1/back_matter_resources/:id/restore" do
+    before { resource.update!(archived_at: 1.day.ago) }
+
+    it "clears archived_at and writes a change row" do
+      post restore_api_v1_back_matter_resource_path(resource), headers: admin_headers
+      expect(response).to have_http_status(:ok)
+      resource.reload
+      expect(resource.archived?).to eq(false)
+      expect(resource.changes_log.where(change_type: "restore").count).to eq(1)
+    end
+
+    it "returns 409 if not archived" do
+      resource.update!(archived_at: nil)
+      post restore_api_v1_back_matter_resource_path(resource), headers: admin_headers
+      expect(response).to have_http_status(:conflict)
+    end
+  end
+
+  describe "GET /api/v1/back_matter_resources/:id/changes" do
+    it "returns the changelog in reverse chronological order" do
+      BackMatterResourceChange.create!(back_matter_resource: resource,
+                                       changed_by_user: admin,
+                                       change_type: "create", changed_at: 2.days.ago)
+      BackMatterResourceChange.create!(back_matter_resource: resource,
+                                       changed_by_user: admin,
+                                       change_type: "update", field: "title",
+                                       from_value: "old", to_value: "new",
+                                       changed_at: 1.day.ago)
+
+      get changes_api_v1_back_matter_resource_path(resource), headers: admin_headers
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)["data"]
+      expect(data.size).to eq(2)
+      expect(data.first["change_type"]).to eq("update")
+      expect(data.first["changed_by"]["email"]).to eq(admin.email)
+    end
+  end
+
   # ── #372 promotion endpoints ───────────────────────────────────────────
 
   describe "POST /api/v1/back_matter_resources/:id/promote" do

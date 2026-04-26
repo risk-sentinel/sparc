@@ -354,6 +354,9 @@ Rails.application.routes.draw do
           post :promote
           post :approve_promotion
           post :reject_promotion
+          post :archive
+          post :restore
+          get  :changes
         end
         collection do
           get  :promotion_queue

@@ -25,12 +25,15 @@
 #   SA-10 Developer Configuration Management (back-matter traceability)
 #
 class Api::V1::BackMatterResourcesController < Api::V1::BaseController
-  before_action :set_resource, only: %i[show update destroy link unlink promote approve_promotion reject_promotion]
-  before_action :authorize_read!, only: %i[index show]
+  before_action :set_resource, only: %i[show update destroy link unlink promote
+                                         approve_promotion reject_promotion
+                                         archive restore changes]
+  before_action :authorize_read!, only: %i[index show changes]
   before_action :authorize_write!, only: %i[create update destroy link unlink]
   before_action :authorize_promote!, only: :promote
   before_action :authorize_approve_promotion!, only: %i[approve_promotion reject_promotion]
   before_action :authorize_bulk_import!, only: :bulk
+  before_action :authorize_archive!, only: %i[archive restore]
   # promotion_queue is self-filtering: it only returns rows the caller can
   # approve. Authentication alone is sufficient — no separate permission gate.
 
@@ -166,6 +169,59 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     end
   end
 
+  # POST /api/v1/back_matter_resources/:id/archive (#372)
+  def archive
+    if @resource.archived?
+      render json: { error: "Already archived" }, status: :conflict
+      return
+    end
+
+    BackMatterResource.transaction do
+      @resource.update!(archived_at: Time.current)
+      record_change(@resource, "archive", "archived_at", nil, @resource.archived_at.iso8601)
+    end
+    audit_log("back_matter_resource_archived", subject: @resource,
+              metadata: { title: @resource.title })
+    render json: { data: serialize_back_matter_resource(@resource, detailed: true) }
+  end
+
+  # POST /api/v1/back_matter_resources/:id/restore (#372)
+  def restore
+    unless @resource.archived?
+      render json: { error: "Not archived" }, status: :conflict
+      return
+    end
+
+    BackMatterResource.transaction do
+      previous = @resource.archived_at
+      @resource.update!(archived_at: nil)
+      record_change(@resource, "restore", "archived_at", previous&.iso8601, nil)
+    end
+    audit_log("back_matter_resource_restored", subject: @resource,
+              metadata: { title: @resource.title })
+    render json: { data: serialize_back_matter_resource(@resource, detailed: true) }
+  end
+
+  # GET /api/v1/back_matter_resources/:id/changes (#372)
+  def changes
+    rows = @resource.changes_log.reverse_chronological.includes(:changed_by_user)
+    render json: {
+      data: rows.map do |c|
+        {
+          id:           c.id,
+          change_type:  c.change_type,
+          field:        c.field,
+          from_value:   c.from_value,
+          to_value:     c.to_value,
+          batch_uuid:   c.batch_uuid,
+          changed_at:   c.changed_at.iso8601,
+          changed_by:   c.changed_by_user&.then { |u| { id: u.id, email: u.email } }
+        }
+      end,
+      meta: { count: rows.size }
+    }
+  end
+
   # POST /api/v1/back_matter_resources/bulk (#372)
   def bulk
     entries = params[:entries] || params.dig(:back_matter_resources)
@@ -278,5 +334,26 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
                     .cast(params.dig(:back_matter_resource, :auto_fetch))
 
     AuthoritativeSourceFetchService.call(resource: resource, actor: current_user)
+  end
+
+  def authorize_archive!
+    return if current_user.admin?
+    return if current_user.has_permission?("back_matter.archive")
+    return if current_user.has_permission?("back_matter.write")
+
+    raise NotAuthorizedError, "Not authorized to archive or restore back-matter resources"
+  end
+
+  def record_change(resource, change_type, field, from_value, to_value)
+    BackMatterResourceChange.create!(
+      back_matter_resource: resource,
+      changed_by_user:      current_user,
+      change_type:          change_type,
+      field:                field,
+      from_value:           from_value.to_s,
+      to_value:             to_value.to_s,
+      batch_uuid:           SecureRandom.uuid,
+      changed_at:           Time.current
+    )
   end
 end
