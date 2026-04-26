@@ -87,6 +87,33 @@ RSpec.describe "Api::V1::BackMatterResources", type: :request do
     end
   end
 
+  # ── #372 bulk endpoint ─────────────────────────────────────────────────
+
+  describe "POST /api/v1/back_matter_resources/bulk" do
+    it "creates multiple resources and returns per-row results" do
+      post bulk_api_v1_back_matter_resources_path, headers: admin_headers, as: :json,
+           params: { entries: [
+             { title: "B1", href: "https://x.gov/b1.pdf" },
+             { title: "B2", href: "https://x.gov/b2.pdf" },
+             { title: "" } # error row
+           ] }
+
+      expect(response).to have_http_status(:created)
+      data = JSON.parse(response.body)["data"]
+      expect(data["imported"].size).to eq(2)
+      expect(data["errors"].size).to eq(1)
+      expect(data["batch_uuid"]).to be_present
+    end
+
+    it "denies callers without bulk_import or write" do
+      bystander = create(:user)
+      post bulk_api_v1_back_matter_resources_path,
+           headers: headers_for(bystander), as: :json,
+           params: { entries: [ { title: "x" } ] }
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
   # ── #372 promotion endpoints ───────────────────────────────────────────
 
   describe "POST /api/v1/back_matter_resources/:id/promote" do

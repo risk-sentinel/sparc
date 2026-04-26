@@ -30,6 +30,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
   before_action :authorize_write!, only: %i[create update destroy link unlink]
   before_action :authorize_promote!, only: :promote
   before_action :authorize_approve_promotion!, only: %i[approve_promotion reject_promotion]
+  before_action :authorize_bulk_import!, only: :bulk
   # promotion_queue is self-filtering: it only returns rows the caller can
   # approve. Authentication alone is sufficient — no separate permission gate.
 
@@ -63,6 +64,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     if @resource.save
       audit_log("back_matter_resource_created", subject: @resource,
                 metadata: { title: @resource.title, source: @resource.source })
+      maybe_auto_fetch(@resource)
       render json: { data: serialize_back_matter_resource(@resource, detailed: true) }, status: :created
     else
       render json: { error: "Validation failed", details: @resource.errors.full_messages },
@@ -164,6 +166,29 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     end
   end
 
+  # POST /api/v1/back_matter_resources/bulk (#372)
+  def bulk
+    entries = params[:entries] || params.dig(:back_matter_resources)
+    org     = current_user.organizations.first
+    result  = BackMatterBulkImportService.new(entries: entries, actor: current_user,
+                                              organization: org).call
+    if result.success?
+      audit_log("back_matter_resources_bulk_imported",
+                metadata: { batch_uuid: result.batch_uuid, imported: result.imported.size,
+                            skipped: result.skipped.size, errors: result.errors.size })
+      render json: {
+        data: {
+          batch_uuid: result.batch_uuid,
+          imported:   result.imported.map { |r| serialize_back_matter_resource(r) },
+          skipped:    result.skipped,
+          errors:     result.errors
+        }
+      }, status: :created
+    else
+      render json: { error: result.error }, status: result.status_code
+    end
+  end
+
   # GET /api/v1/back_matter_resources/promotion_queue (#372)
   # Lists pending promotions the caller is authorized to approve.
   def promotion_queue
@@ -236,5 +261,22 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
     return if service.can_approve?
 
     raise NotAuthorizedError, "Not authorized to approve or reject promotion for this resource"
+  end
+
+  def authorize_bulk_import!
+    return if current_user.admin?
+    return if current_user.has_permission?("back_matter.bulk_import")
+    return if current_user.has_permission?("back_matter.write")
+
+    raise NotAuthorizedError, "Not authorized to bulk-import back-matter resources"
+  end
+
+  # Optional auto-fetch on create — gated by SPARC_AUTHORITATIVE_FETCH_ENABLED.
+  # Failures are surfaced in the response metadata but never block creation.
+  def maybe_auto_fetch(resource)
+    return unless ActiveModel::Type::Boolean.new
+                    .cast(params.dig(:back_matter_resource, :auto_fetch))
+
+    AuthoritativeSourceFetchService.call(resource: resource, actor: current_user)
   end
 end

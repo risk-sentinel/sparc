@@ -356,7 +356,8 @@ Rails.application.routes.draw do
           post :reject_promotion
         end
         collection do
-          get :promotion_queue
+          get  :promotion_queue
+          post :bulk
         end
       end
 
