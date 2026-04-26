@@ -27,17 +27,18 @@ class BackMatterBuilder
   # Instance-level authoritative resources (provider-published, highest priority).
   # Included in all document exports. Cannot be overridden by managed resources.
   def authoritative_resources
-    @authoritative_resources ||= BackMatterResource.where(source: "authoritative")
+    @authoritative_resources ||= BackMatterResource.active.where(source: "authoritative")
                                                     .map(&:to_oscal_resource)
   end
 
   def authoritative_uuids
-    @authoritative_uuids ||= BackMatterResource.where(source: "authoritative")
+    @authoritative_uuids ||= BackMatterResource.active.where(source: "authoritative")
                                                 .pluck(:uuid).to_set
   end
 
   def managed_resources
-    doc_resources = @document.back_matter_resources.where.not(source: "authoritative")
+    doc_resources = @document.back_matter_resources.active
+                             .where.not(source: "authoritative")
                              .map(&:to_oscal_resource)
     ctrl_resources = control_linked_resources.map(&:to_oscal_resource)
     # Exclude UUIDs already claimed by authoritative resources
@@ -48,7 +49,7 @@ class BackMatterBuilder
   def managed_uuids
     @managed_uuids ||= (
       authoritative_uuids.to_a +
-      @document.back_matter_resources.pluck(:uuid) +
+      @document.back_matter_resources.active.pluck(:uuid) +
       control_linked_resources.pluck(:uuid)
     ).to_set
   end
@@ -77,7 +78,7 @@ class BackMatterBuilder
       end
 
       resource_ids = conditions.reduce { |acc, c| acc.or(c) }&.select(:back_matter_resource_id)
-      resource_ids ? BackMatterResource.where(id: resource_ids) : BackMatterResource.none
+      resource_ids ? BackMatterResource.active.where(id: resource_ids) : BackMatterResource.none
     end
   end
 

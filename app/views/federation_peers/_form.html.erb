@@ -1,0 +1,55 @@
+<%= form_with model: @peer, url: peer.persisted? ? federation_peer_path(peer) : federation_peers_path,
+              method: peer.persisted? ? :patch : :post, local: true do |f| %>
+  <% if peer.errors.any? %>
+    <div class="alert alert-danger">
+      <%= peer.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :name, class: "form-label" %>
+    <%= f.text_field :name, class: "form-control",
+                     readonly: peer.persisted?,
+                     placeholder: "e.g. SPARC-AgencyB-Prod" %>
+    <div class="form-text">Used as the OSCAL bundle <code>key_id</code> for audit identification.</div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :base_url, class: "form-label" %>
+    <%= f.text_field :base_url, class: "form-control",
+                     placeholder: "https://peer.example.gov" %>
+    <div class="form-text">Must be HTTPS in production.</div>
+  </div>
+
+  <div class="mb-3 form-check">
+    <%= f.check_box :enabled, class: "form-check-input" %>
+    <%= f.label :enabled, class: "form-check-label" %>
+  </div>
+
+  <hr>
+  <h6 class="text-uppercase text-body-secondary" style="font-size: 0.75rem; letter-spacing: 0.06rem;">
+    Credentials (write-only)
+  </h6>
+
+  <div class="mb-3">
+    <%= f.label :service_token, "Bearer service token", class: "form-label" %>
+    <%= f.password_field :service_token, class: "form-control",
+                         autocomplete: "new-password",
+                         placeholder: peer.encrypted_service_token.present? ? "(set — leave blank to keep)" : "Bearer token used for outbound requests to this peer" %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :signing_secret, "HMAC signing secret", class: "form-label" %>
+    <%= f.password_field :signing_secret, class: "form-control",
+                         autocomplete: "new-password",
+                         placeholder: peer.encrypted_signing_secret.present? ? "(set — leave blank to keep)" : "Shared HMAC secret (≥32 random bytes recommended)" %>
+    <div class="form-text">Used to sign outbound bundles and verify inbound bundles.
+      Both peers must hold the same value, exchanged out of band.</div>
+  </div>
+
+  <div class="d-flex justify-content-between mt-4">
+    <%= link_to "Cancel", peer.persisted? ? federation_peer_path(peer) : federation_peers_path,
+                class: "btn btn-outline-secondary" %>
+    <%= f.submit (peer.persisted? ? "Save" : "Create Peer"), class: "btn btn-primary" %>
+  </div>
+<% end %>

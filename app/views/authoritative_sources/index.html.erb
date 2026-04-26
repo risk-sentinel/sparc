@@ -1,0 +1,97 @@
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h2>Authoritative Sources</h2>
+        <p class="text-body-secondary mb-0">
+          Browse the curated library of authoritative back-matter resources.
+          Use these references when building Catalogs, Profiles, CDEFs, SSPs,
+          and other OSCAL artifacts.
+        </p>
+      </div>
+      <span class="badge text-bg-secondary"><%= @total %> total</span>
+    </div>
+
+    <%= form_with url: authoritative_sources_path, method: :get,
+                  local: true, class: "row g-2 mb-3" do |f| %>
+      <div class="col-md-4">
+        <%= f.text_field :q, value: params[:q], class: "form-control",
+                         placeholder: "Search title or description" %>
+      </div>
+      <div class="col-md-3">
+        <%= f.select :scope,
+                     options_for_select([
+                       [ "All visible", "" ],
+                       [ "Authoritative only", "authoritative" ],
+                       [ "Globally available", "global" ]
+                     ], params[:scope]),
+                     {}, class: "form-select" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.select :rel,
+                     options_for_select([ [ "Any rel", "" ] ] +
+                                        BackMatterResource::REL_VALUES.map { |r| [ r, r ] },
+                                        params[:rel]),
+                     {}, class: "form-select" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.submit "Filter", class: "btn btn-primary w-100" %>
+      </div>
+      <div class="col-md-1">
+        <%= link_to "Clear", authoritative_sources_path, class: "btn btn-outline-secondary w-100" %>
+      </div>
+    <% end %>
+
+    <% if @resources.empty? %>
+      <div class="alert alert-info mb-0">No matching resources.</div>
+    <% else %>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Source</th>
+              <th>Rel</th>
+              <th>Scope</th>
+              <th>Updated</th>
+              <th class="text-end">&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @resources.each do |r| %>
+              <tr>
+                <td><strong><%= r.title %></strong>
+                  <% if r.description.present? %>
+                    <div class="small text-body-secondary"><%= truncate(r.description, length: 120) %></div>
+                  <% end %>
+                </td>
+                <td>
+                  <span class="badge text-bg-<%= r.authoritative? ? "success" : "secondary" %>">
+                    <%= r.source %>
+                  </span>
+                  <% if r.federated? %>
+                    <span class="badge text-bg-info" title="<%= r.federated_from_instance %>">federated</span>
+                  <% end %>
+                </td>
+                <td><code><%= r.rel %></code></td>
+                <td>
+                  <% if r.globally_available %>
+                    <span class="badge text-bg-warning">Global</span>
+                  <% elsif r.organization_id %>
+                    <span class="badge text-bg-light">Org-scoped</span>
+                  <% else %>
+                    <span class="badge text-bg-light">Doc-scoped</span>
+                  <% end %>
+                </td>
+                <td><span class="small"><%= r.updated_at.to_date %></span></td>
+                <td class="text-end">
+                  <%= link_to "View", authoritative_source_path(r), class: "btn btn-sm btn-outline-primary" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+</div>

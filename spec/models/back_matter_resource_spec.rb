@@ -80,5 +80,81 @@ RSpec.describe BackMatterResource, type: :model do
       expect(described_class.imported.count).to eq(1)
       expect(described_class.imported.first.title).to eq("Imported")
     end
+
+    it "filters authoritative resources" do
+      described_class.create!(resourceable: nil, title: "Auth",
+                              uuid: SecureRandom.uuid, source: "authoritative",
+                              globally_available: true)
+      expect(described_class.authoritative.pluck(:title)).to eq([ "Auth" ])
+    end
+
+    it "filters pending_promotion" do
+      described_class.create!(resourceable: ssp, title: "Pending",
+                              uuid: SecureRandom.uuid, source: "managed",
+                              promotion_status: "pending_review")
+      expect(described_class.pending_promotion.pluck(:title)).to eq([ "Pending" ])
+    end
+
+    it "separates active from archived" do
+      described_class.create!(resourceable: ssp, title: "Old",
+                              uuid: SecureRandom.uuid, source: "managed",
+                              archived_at: 1.day.ago)
+      expect(described_class.active.pluck(:title)).to match_array([ "Managed", "Imported" ])
+      expect(described_class.archived.pluck(:title)).to eq([ "Old" ])
+    end
+
+    it "filters federated" do
+      described_class.create!(resourceable: nil, title: "Fed",
+                              uuid: SecureRandom.uuid, source: "authoritative",
+                              federated_from_instance: "https://peer.example.gov",
+                              original_uuid: SecureRandom.uuid,
+                              federated_at: Time.current)
+      expect(described_class.federated.pluck(:title)).to eq([ "Fed" ])
+    end
+  end
+
+  describe "promotion_status validation" do
+    it "accepts the four canonical states" do
+      BackMatterResource::PROMOTION_STATES.each do |state|
+        r = described_class.new(resourceable: ssp, title: "T", uuid: SecureRandom.uuid,
+                                promotion_status: state)
+        expect(r).to be_valid, "expected #{state.inspect} to be a valid promotion_status"
+      end
+    end
+
+    it "rejects unknown states" do
+      r = described_class.new(resourceable: ssp, title: "T", uuid: SecureRandom.uuid,
+                              promotion_status: "approved_with_caveats")
+      expect(r).not_to be_valid
+      expect(r.errors[:promotion_status]).to be_present
+    end
+  end
+
+  describe "state helpers" do
+    let(:resource) do
+      described_class.create!(resourceable: ssp, title: "T", uuid: SecureRandom.uuid)
+    end
+
+    it "#archived? reflects archived_at" do
+      expect(resource.archived?).to eq(false)
+      resource.update!(archived_at: Time.current)
+      expect(resource.archived?).to eq(true)
+    end
+
+    it "#federated? reflects federated_from_instance presence" do
+      expect(resource.federated?).to eq(false)
+      resource.update!(federated_from_instance: "https://peer.example.gov")
+      expect(resource.federated?).to eq(true)
+    end
+
+    it "#federation_dedup_uuid prefers original_uuid" do
+      original = SecureRandom.uuid
+      resource.update!(original_uuid: original)
+      expect(resource.federation_dedup_uuid).to eq(original)
+    end
+
+    it "#federation_dedup_uuid falls back to uuid when no original_uuid" do
+      expect(resource.federation_dedup_uuid).to eq(resource.uuid)
+    end
   end
 end

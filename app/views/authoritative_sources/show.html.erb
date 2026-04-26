@@ -1,0 +1,75 @@
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h2 class="mb-1"><%= @resource.title %></h2>
+        <div class="small text-body-secondary"><code><%= @resource.uuid %></code></div>
+      </div>
+      <%= link_to "← Back", authoritative_sources_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-3"><strong>Source:</strong> <%= @resource.source %></div>
+      <div class="col-md-3"><strong>Rel:</strong> <code><%= @resource.rel %></code></div>
+      <div class="col-md-3"><strong>Media type:</strong> <%= @resource.media_type || "—" %></div>
+      <div class="col-md-3"><strong>Promotion:</strong> <%= @resource.promotion_status %></div>
+    </div>
+
+    <% if @resource.href.present? %>
+      <p><strong>Reference URL:</strong>
+        <a href="<%= @resource.href %>" target="_blank" rel="noopener noreferrer">
+          <%= @resource.href %>
+        </a>
+      </p>
+    <% end %>
+
+    <% if @resource.description.present? %>
+      <p><strong>Description</strong></p>
+      <p><%= simple_format(@resource.description) %></p>
+    <% end %>
+
+    <% if @resource.federated? %>
+      <div class="alert alert-info">
+        <strong>Federated:</strong> imported from
+        <code><%= @resource.federated_from_instance %></code>
+        on <%= @resource.federated_at&.to_date %>.
+        Original UUID: <code><%= @resource.original_uuid %></code>
+      </div>
+    <% end %>
+
+    <% if @resource.archived? %>
+      <div class="alert alert-warning">
+        <strong>Archived</strong> on <%= @resource.archived_at&.to_date %> —
+        excluded from new OSCAL exports.
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="mb-3">Recent Changes</h5>
+    <% changes = @resource.changes_log.reverse_chronological.limit(20).includes(:changed_by_user) %>
+    <% if changes.empty? %>
+      <p class="text-body-secondary mb-0">No changes recorded.</p>
+    <% else %>
+      <table class="table table-sm">
+        <thead>
+          <tr><th>When</th><th>Type</th><th>Field</th><th>From → To</th><th>By</th></tr>
+        </thead>
+        <tbody>
+          <% changes.each do |c| %>
+            <tr>
+              <td class="small"><%= c.changed_at.iso8601 %></td>
+              <td><span class="badge text-bg-secondary"><%= c.change_type %></span></td>
+              <td><code><%= c.field %></code></td>
+              <td class="small"><%= truncate(c.from_value.to_s, length: 30) %> →
+                <%= truncate(c.to_value.to_s, length: 30) %></td>
+              <td class="small"><%= c.changed_by_user&.email || "system" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</div>

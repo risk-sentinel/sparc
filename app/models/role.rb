@@ -54,6 +54,13 @@ class Role < ApplicationRecord
     mappings.write
     converters.read
     converters.write
+    back_matter.read
+    back_matter.write
+    back_matter.promote
+    back_matter.approve_promotion
+    back_matter.archive
+    back_matter.bulk_import
+    back_matter.federate
   ].freeze
 
   # Group permission keys by resource for UI rendering
@@ -71,7 +78,8 @@ class Role < ApplicationRecord
     "cdef"     => "Component Definitions",
     "evidence" => "Evidence",
     "mappings" => "Control Mappings",
-    "converters" => "Converters"
+    "converters" => "Converters",
+    "back_matter" => "Back-Matter Resources"
   }.freeze
 
   # Check if this role has a specific permission

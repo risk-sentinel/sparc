@@ -306,6 +306,22 @@ Rails.application.routes.draw do
     end
   end
 
+  # ── Authoritative back-matter library (#372) ───────────────────────────
+  resources :authoritative_sources, only: %i[index show]
+
+  resources :promotion_queue, only: %i[index] do
+    member do
+      post :approve
+      post :reject
+    end
+  end
+
+  resources :federation_peers do
+    member do
+      post :sync
+    end
+  end
+
   namespace :api do
     namespace :v1 do
       # API discovery (#250)
@@ -346,11 +362,35 @@ Rails.application.routes.draw do
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ]
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]
 
-      # Back-matter resource management (#375)
+      # Back-matter resource management (#375) + authoritative workflow (#372)
       resources :back_matter_resources, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           post :link
           delete :unlink
+          post :promote
+          post :approve_promotion
+          post :reject_promotion
+          post :archive
+          post :restore
+          get  :changes
+        end
+        collection do
+          get  :promotion_queue
+          post :bulk
+        end
+      end
+
+      # Federation: signed bundle export/import for cross-instance
+      # authoritative source sharing (#372). The peer is identified by name
+      # via the `peer` query/body param.
+      resource :authoritative_sources, only: [], controller: "authoritative_sources" do
+        get  :export,  on: :collection
+        post :import,  on: :collection
+      end
+
+      resources :federation_peers, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :sync
         end
       end
 

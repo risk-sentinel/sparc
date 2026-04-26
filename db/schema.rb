@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_26_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -123,28 +123,64 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
     t.index ["user_id"], name: "index_authorization_boundary_memberships_on_user_id"
   end
 
+  create_table "back_matter_resource_changes", force: :cascade do |t|
+    t.bigint "back_matter_resource_id", null: false
+    t.string "batch_uuid"
+    t.string "change_type", null: false
+    t.datetime "changed_at", null: false
+    t.bigint "changed_by_user_id"
+    t.datetime "created_at", null: false
+    t.string "field"
+    t.text "from_value"
+    t.text "to_value"
+    t.datetime "updated_at", null: false
+    t.index ["back_matter_resource_id", "changed_at"], name: "idx_bmr_changes_resource_chronological"
+    t.index ["back_matter_resource_id"], name: "index_back_matter_resource_changes_on_back_matter_resource_id"
+    t.index ["batch_uuid"], name: "index_back_matter_resource_changes_on_batch_uuid"
+    t.index ["changed_by_user_id"], name: "index_back_matter_resource_changes_on_changed_by_user_id"
+  end
+
   create_table "back_matter_resources", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.bigint "approved_by_user_id"
+    t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.string "crm_type"
     t.text "description"
     t.bigint "evidence_id"
+    t.datetime "federated_at"
+    t.string "federated_bundle_uuid"
+    t.string "federated_from_instance"
     t.boolean "globally_available", default: false, null: false
     t.string "href"
     t.string "media_type"
     t.bigint "organization_id"
+    t.string "original_uuid"
+    t.bigint "promoted_from_authorization_boundary_id"
+    t.bigint "promoted_from_organization_id"
+    t.string "promotion_status", default: "none", null: false
+    t.text "rejection_reason"
     t.string "rel", default: "reference", null: false
     t.jsonb "resource_data", default: {}, null: false
-    t.bigint "resourceable_id", null: false
-    t.string "resourceable_type", null: false
+    t.bigint "resourceable_id"
+    t.string "resourceable_type"
     t.string "source", default: "managed", null: false
+    t.bigint "superseded_by_id"
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["approved_by_user_id"], name: "index_back_matter_resources_on_approved_by_user_id"
+    t.index ["archived_at"], name: "idx_back_matter_resources_active", where: "(archived_at IS NULL)"
     t.index ["crm_type"], name: "index_back_matter_resources_on_crm_type"
     t.index ["evidence_id"], name: "index_back_matter_resources_on_evidence_id"
+    t.index ["federated_from_instance", "original_uuid"], name: "idx_back_matter_resources_federation_dedup"
     t.index ["globally_available"], name: "idx_back_matter_resources_global", where: "(globally_available = true)"
     t.index ["organization_id"], name: "index_back_matter_resources_on_organization_id"
+    t.index ["promoted_from_authorization_boundary_id"], name: "idx_on_promoted_from_authorization_boundary_id_fac9ec5fb5"
+    t.index ["promoted_from_organization_id"], name: "index_back_matter_resources_on_promoted_from_organization_id"
+    t.index ["promotion_status"], name: "idx_back_matter_resources_pending_review", where: "((promotion_status)::text = 'pending_review'::text)"
     t.index ["resourceable_type", "resourceable_id"], name: "idx_back_matter_resources_on_resourceable"
+    t.index ["superseded_by_id"], name: "index_back_matter_resources_on_superseded_by_id"
     t.index ["uuid"], name: "index_back_matter_resources_on_uuid", unique: true
   end
 
@@ -462,6 +498,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
     t.index ["uuid"], name: "index_evidences_on_uuid", unique: true
   end
 
+  create_table "federation_peers", force: :cascade do |t|
+    t.string "base_url", null: false
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.text "encrypted_service_token"
+    t.text "encrypted_signing_secret"
+    t.text "last_sync_status"
+    t.datetime "last_synced_at"
+    t.string "name", null: false
+    t.jsonb "public_metadata", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_federation_peers_on_name", unique: true
+  end
+
   create_table "identities", force: :cascade do |t|
     t.jsonb "auth_data", default: {}, null: false
     t.datetime "created_at", null: false
@@ -499,17 +549,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
     t.index ["uuid"], name: "index_ksi_validations_on_uuid", unique: true
   end
 
-  create_table "organization_memberships", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "organization_id", null: false
-    t.string "role", default: "member", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["organization_id", "user_id"], name: "index_organization_memberships_on_organization_id_and_user_id", unique: true
-    t.index ["organization_id"], name: "index_organization_memberships_on_organization_id"
-    t.index ["user_id"], name: "index_organization_memberships_on_user_id"
-  end
-
   create_table "leveraged_authorization_components", force: :cascade do |t|
     t.string "component_type", default: "this-system", null: false
     t.datetime "created_at", null: false
@@ -519,7 +558,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
-    t.index ["leveraged_authorization_id"], name: "index_leveraged_authorization_components_on_leveraged_auth_id"
+    t.index ["leveraged_authorization_id"], name: "idx_on_leveraged_authorization_id_d2df0e99ba"
     t.index ["uuid"], name: "index_leveraged_authorization_components_on_uuid", unique: true
   end
 
@@ -538,6 +577,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
     t.index ["leveraging_boundary_id", "leveraged_boundary_id"], name: "idx_la_unique_pair"
     t.index ["leveraging_boundary_id"], name: "index_leveraged_authorizations_on_leveraging_boundary_id"
     t.index ["uuid"], name: "index_leveraged_authorizations_on_uuid", unique: true
+  end
+
+  create_table "organization_memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "organization_id", null: false
+    t.string "role", default: "member", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["organization_id", "user_id"], name: "index_organization_memberships_on_organization_id_and_user_id", unique: true
+    t.index ["organization_id"], name: "index_organization_memberships_on_organization_id"
+    t.index ["user_id"], name: "index_organization_memberships_on_user_id"
   end
 
   create_table "organizations", force: :cascade do |t|
@@ -1475,8 +1525,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
   add_foreign_key "authorization_boundaries", "profile_documents", on_delete: :nullify
   add_foreign_key "authorization_boundary_memberships", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "authorization_boundary_memberships", "users", on_delete: :nullify
+  add_foreign_key "back_matter_resource_changes", "back_matter_resources"
+  add_foreign_key "back_matter_resource_changes", "users", column: "changed_by_user_id"
+  add_foreign_key "back_matter_resources", "authorization_boundaries", column: "promoted_from_authorization_boundary_id"
+  add_foreign_key "back_matter_resources", "back_matter_resources", column: "superseded_by_id", on_delete: :nullify
   add_foreign_key "back_matter_resources", "evidences", on_delete: :nullify
   add_foreign_key "back_matter_resources", "organizations"
+  add_foreign_key "back_matter_resources", "organizations", column: "promoted_from_organization_id"
+  add_foreign_key "back_matter_resources", "users", column: "approved_by_user_id"
   add_foreign_key "boundaries", "authorization_boundaries", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "boundaries", on_delete: :cascade
   add_foreign_key "boundary_cdef_documents", "cdef_documents", on_delete: :cascade
@@ -1561,6 +1617,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
   add_foreign_key "ssp_components", "cdef_documents", on_delete: :nullify
   add_foreign_key "ssp_components", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_control_fields", "ssp_controls"
+  add_foreign_key "ssp_control_statement_inheritances", "ssp_control_statements", on_delete: :cascade
   add_foreign_key "ssp_control_statements", "ssp_controls", on_delete: :cascade
   add_foreign_key "ssp_controls", "ssp_controls", column: "parent_id"
   add_foreign_key "ssp_controls", "ssp_documents"
@@ -1568,7 +1625,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_180000) do
   add_foreign_key "ssp_document_cdef_documents", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "ssp_documents", "profile_documents", on_delete: :nullify
-  add_foreign_key "ssp_control_statement_inheritances", "ssp_control_statements", on_delete: :cascade
   add_foreign_key "ssp_information_types", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_inventory_items", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_leveraged_authorizations", "ssp_documents", on_delete: :cascade

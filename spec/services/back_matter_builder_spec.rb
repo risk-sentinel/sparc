@@ -79,5 +79,33 @@ RSpec.describe BackMatterBuilder, type: :service do
 
       expect(uuid1).to eq(uuid2)
     end
+
+    it "skips archived resources from the assembled back-matter (#372)" do
+      BackMatterResource.create!(resourceable: ssp, title: "Kept",
+                                 uuid: SecureRandom.uuid, source: "managed")
+      gone = BackMatterResource.create!(resourceable: ssp, title: "Archived",
+                                        uuid: SecureRandom.uuid, source: "managed")
+      gone.update!(archived_at: 1.day.ago)
+
+      titles = described_class.new(ssp.reload).build["resources"].map { |r| r["title"] }
+      expect(titles).to include("Kept")
+      expect(titles).not_to include("Archived")
+    end
+
+    it "skips archived authoritative resources too (#372)" do
+      BackMatterResource.create!(resourceable: nil, title: "AuthKept",
+                                 uuid: SecureRandom.uuid, source: "authoritative",
+                                 globally_available: true,
+                                 promotion_status: "approved")
+      BackMatterResource.create!(resourceable: nil, title: "AuthArchived",
+                                 uuid: SecureRandom.uuid, source: "authoritative",
+                                 globally_available: true,
+                                 promotion_status: "approved",
+                                 archived_at: 1.hour.ago)
+
+      titles = described_class.new(ssp.reload).build["resources"].map { |r| r["title"] }
+      expect(titles).to include("AuthKept")
+      expect(titles).not_to include("AuthArchived")
+    end
   end
 end
