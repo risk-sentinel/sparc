@@ -37,6 +37,14 @@ bin/rails sparc:bootstrap_admin
 
 This resets the password and prints new credentials.
 
+### Rotating the Admin Password (Production / ECS)
+
+For ECS deployments with AWS Secrets Manager, SPARC supports automated rotation
+through three paths: a scheduled Lambda, an inside-container rake task, and
+boot-time reconciliation when the SM secret is edited out of band. See
+**[Admin Credential Rotation](ADMIN_CREDENTIAL_ROTATION.md)** for setup,
+testing, and troubleshooting.
+
 ---
 
 ## Admin Bootstrap

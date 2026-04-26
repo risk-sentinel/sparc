@@ -413,6 +413,12 @@ Rails.application.routes.draw do
           end
         end
       end
+
+      # Admin credential rotation (#403) — receives a new admin password
+      # from the sparc-iac rotation Lambda. See sparc-iac#197.
+      namespace :admin do
+        post "refresh_credentials", to: "credentials#refresh"
+      end
     end
   end
 end

@@ -543,7 +543,7 @@ removed and are no longer tracked:
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-**Completed (Phases 1-10 + ad-hoc):** 58 issues
+**Completed (Phases 1-10 + ad-hoc):** 60 issues (incl. #402 + #403, admin credential rotation paired with sparc-iac#197 — completed 2026-04-26)
 **Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367)
 **Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 in progress.
 **First public release: v1.0.0** (#271). **Current version: v1.2.5**.

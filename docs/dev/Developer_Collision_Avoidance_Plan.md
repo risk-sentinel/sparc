@@ -592,7 +592,7 @@ testing of #408's bundle clears.
 | **CI / infra (CI-approval-gated)** | #386 SAF CLI EISDIR, #367 SimpleCov threshold, #244 Security gate | All touch `.github/workflows/*` — require explicit user approval. #386 is shipping standalone (small, unblocks security.yml). #367 + #244 should bundle (the gate consumes the threshold). |
 | **POAM product surface** | #389 POAM wizard missing OSCAL fields | Pure product. POAM wizard view + form + a couple of model defaults + export validation spec. No collision with shipped Phase 12 work. |
 | **Upload pipeline hardening** | #341 XML document type fingerprinting | Defensive, post-#392. Touches `FileUploadable` and parser entry-points; coordinate with anything else editing those concerns. |
-| **Admin / infra** | #402 + #403 AWS Secrets Manager admin credential rotation pair | Bundle them — same domain (admin auth + AWS), need the same migration story. |
+| **Admin / infra** | ~~#402 + #403 AWS Secrets Manager admin credential rotation pair~~ — **COMPLETED 2026-04-26** | Shipped as paired commits on `feature/402_403_admin_credential_rotation`. Adds: `app/services/admin_credential_rotation_service.rb`, `app/controllers/api/v1/admin/credentials_controller.rb`, three new `AuditEvent::ACTIONS` (incl. fix for latent silent-failure of `admin_password_reset`), one new `Role::PERMISSION_KEYS` (`admin.rotate_credentials`), `bootstrap_admin` reconciliation against `SPARC_ADMIN_PASSWORD` env. New env vars: `SPARC_ADMIN_PASSWORD` (ECS-injected), `SPARC_ADMIN_REFRESH_ENABLED` (off by default), `SPARC_ALLOW_CRED_ROTATION` (non-prod gate), `SPARC_PRINT_ROTATED_PASSWORD` (break-glass only). Sparc-iac counterpart: Rebel-Raiders/sparc-iac#197 (task-def secrets injection + IAM `PutSecretValue` + rotation Lambda). Runbook: `docs/dev/admin_credential_rotation.md`. |
 | **OSCAL feature** | ~~#372 Import Authoritative Sources for global/org OSCAL docs~~ — **COMPLETED 2026-04-26** | Shipped on `feature/372_authoritative_sources_import` (8 commits): schema + models + RBAC, promotion workflow + API, federation export/import (HMAC-signed bundles + SPARC_HASH master KDF), bulk import + URL fetch, archive/changelog, NC/LC UI for library + queue + peers, CDEF + Rev 5 mapping updates. Adds: `app/models/back_matter_resource_change.rb`, `app/models/federation_peer.rb`, `app/lib/sparc_key_derivation.rb`, `app/services/{back_matter_resource_promotion,federation_bundle_signing,authoritative_source_federation,back_matter_bulk_import,authoritative_source_fetch}_service.rb`, `app/controllers/{authoritative_sources,promotion_queue,federation_peers}_controller.rb` (UI) + matching `Api::V1::*` API controllers + views. Touches `BackMatterResource` model + `BackMatterBuilder` (now scoped through `.active`) + `Role::PERMISSION_KEYS` (7 new keys, including a backfill of `back_matter.read`/`.write` that #375 was checking but had not registered). New env vars: `SPARC_HASH` (provisioning tracked by sparc-iac issue #195), `SPARC_AUTHORITATIVE_FETCH_ENABLED` (off by default). |
 | **Repo cleanup** | #246 Repository Cleanup | Scope-define needed. Best treated as a background lane while a main feature ships. |
 
@@ -825,8 +825,8 @@ removed and are no longer tracked:
 ## Summary
 
 - **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-- **Completed:** 56 issues (Phases 1-10 + #361 + #372)
-- **Remaining:** 7 issues (Phase 10: #244, #246; Phase 11: #341, #344, #346, #358, #367)
+- **Completed:** 58 issues (Phases 1-10 + #361 + #372 + #402 + #403)
+- **Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367)
 - **Removed issues:** #109, #110, #111 (Terraform infra -- deleted)
 - **Maximum parallel developers:** 4-5 in most phases
 - **Phases 1-9:** COMPLETE (2026-03-14 through 2026-03-21)
