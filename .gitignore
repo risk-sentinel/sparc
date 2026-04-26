@@ -55,3 +55,19 @@
 # Security scan HDF results (downloaded from CI artifacts for local analysis)
 /docs/hdf/
 saf-cli.log
+
+# Local-only draft assets (logo experiments, intro videos, draft release notes)
+# kept on the maintainer's working tree but never committed.
+RELEASE_NOTES_v1.0.1.md
+/app/assets/images/sparc_logo-temp.jpg
+/docs/SPARC_Video_Script.md
+/docs/images/sparc-transparent.jpg
+/docs/images/sparc_demo.html
+/docs/images/sparc_intro.mp4
+/docs/images/sparc_intro_extended_cut.mp4
+/docs/images/sparc_intro_long.mp4
+/docs/images/sparc_logo copy.jpg
+/docs/images/sparc_logo-clean.jpg
+/docs/images/sparc_logo_backup.jpg
+/docs/images/sparc_logo_clean.jpg
+/docs/images/sparc_logo_clear.png
