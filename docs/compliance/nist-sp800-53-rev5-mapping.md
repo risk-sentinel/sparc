@@ -571,6 +571,32 @@ injection for direct import into compliance dashboards.
 
 ---
 
+## Authoritative Sources & Federation (#372)
+
+The authoritative back-matter workflow added in #372 contributes to the following Rev 5 controls beyond what is captured in the per-family tables above. Detailed control-by-control narratives live in the OSCAL CDEF JSON files cross-referenced below.
+
+| Control | Contribution | CDEF | Code Location |
+|---|---|---|---|
+| AC-3 | Approver-authority predicate gates promotion approve/reject (admin OR `policy_manager` OR `ao`/`agency_ao`/`so_iso` scoped to the resource boundary) | authentication | `app/services/back_matter_resource_promotion_service.rb#can_approve?` |
+| AC-4 | Federation peer trust model: signed bundles + peer allow-list, no implicit cross-instance trust | session-mgmt | `app/services/authoritative_source_federation_service.rb`, `app/models/federation_peer.rb` |
+| AC-6 | New permission keys `back_matter.{promote,approve_promotion,archive,bulk_import,federate}` with role-tier defaults; least-privileged surface for each new endpoint | authentication | `app/models/role.rb` (PERMISSION_KEYS), `app/controllers/api/v1/back_matter_resources_controller.rb` (before_actions) |
+| AC-20 | FederationPeer model registers external SPARC instances under explicit admin control; secrets exchanged out of band | session-mgmt | `app/models/federation_peer.rb` |
+| AU-2 | Per-resource `BackMatterResourceChange` rows on every promotion, archive, restore, and federation event; shared `batch_uuid` groups related rows | audit | `app/models/back_matter_resource_change.rb`, `app/services/back_matter_resource_promotion_service.rb` |
+| AU-3 | Change rows capture changed_by_user, change_type, field, from_value, to_value, batch_uuid, changed_at; federation rows additionally capture federated_from_instance and federated_bundle_uuid | audit | `app/models/back_matter_resource_change.rb`, `app/services/authoritative_source_federation_service.rb` |
+| AU-10 | HMAC-SHA256 signature over canonical-JSON bundle payload provides non-repudiation tying each bundle to a specific peer's signing secret | session-mgmt | `app/services/federation_bundle_signing_service.rb` |
+| IA-5 | Federation peer service tokens and signing secrets stored encrypted at rest using AES-GCM via `ActiveSupport::MessageEncryptor`, keyed via `SparcKeyDerivation` from SPARC_HASH | session-mgmt | `app/models/federation_peer.rb`, `app/lib/sparc_key_derivation.rb` |
+| SC-7 | `AuthoritativeSourceFetchService` rejects non-HTTPS hrefs and is gated by `SPARC_AUTHORITATIVE_FETCH_ENABLED` (off by default); air-gapped deployments disable outbound URL fetching entirely | session-mgmt | `app/services/authoritative_source_fetch_service.rb` |
+| SC-8 | Federation bundles signed with HMAC-SHA256 — application-layer integrity that survives TLS termination at intermediate proxies | session-mgmt | `app/services/federation_bundle_signing_service.rb` |
+| SC-12 | New per-instance master secret `SPARC_HASH` introduced; `SparcKeyDerivation` derives purpose-specific keys via HKDF (`ActiveSupport::KeyGenerator` with SHA-256). SPARC_HASH provisioning tracked by sparc-iac issue #195. | session-mgmt | `app/lib/sparc_key_derivation.rb`, `.env.production.example` |
+| SC-13 | HMAC-SHA256 (FIPS 198-1) for bundle signing; AES-GCM authenticated encryption (via `ActiveSupport::MessageEncryptor`) for stored peer credentials | session-mgmt | `app/services/federation_bundle_signing_service.rb`, `app/models/federation_peer.rb` |
+| SI-10 | `AuthoritativeSourceFetchService` enforces 25 MB body cap, 30s read timeout, content-type-derived filename validation; `BackMatterBulkImportService` validates each row independently with per-row error reporting; signed bundle verification rejects unknown algorithms and tampered payloads | session-mgmt, audit | `app/services/authoritative_source_fetch_service.rb`, `app/services/back_matter_bulk_import_service.rb`, `app/services/federation_bundle_signing_service.rb` |
+
+**Configuration dependencies:**
+- `SPARC_HASH` ≥32 bytes (provisioned by sparc-iac into AWS Secrets Manager — issue Rebel-Raiders/sparc-iac#195). Falls back to Rails `secret_key_base` in dev/test with a logged warning in production.
+- `SPARC_AUTHORITATIVE_FETCH_ENABLED=true` to allow URL auto-fetch on resource creation. Off by default.
+
+---
+
 ## Summary Statistics
 
 ### By Responsibility
