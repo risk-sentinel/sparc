@@ -1,0 +1,80 @@
+<%= form_with model: [ poam_document, poam_risk ], local: true do |f| %>
+  <% if poam_risk.errors.any? %>
+    <div class="alert alert-danger small">
+      <%= poam_risk.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :title, class: "fw-semibold" %>
+    <%= f.text_field :title, class: "form-control", required: true,
+                     placeholder: "e.g., Hard-coded credentials in admin panel" %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :description, class: "fw-semibold" %>
+    <%= f.text_area :description, class: "form-control", rows: 3,
+                    placeholder: "What the risk is and why it matters" %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :statement, "Risk statement", class: "fw-semibold" %>
+    <%= f.text_area :statement, class: "form-control", rows: 2,
+                    placeholder: "Formal risk statement (asset, threat, vulnerability, impact)" %>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-3 g-3 mt-1">
+    <div class="col">
+      <%= f.label :status, class: "fw-semibold" %>
+      <%= f.select :status,
+            options_for_select([
+              [ "Open", "open" ], [ "Investigating", "investigating" ],
+              [ "Deviation Requested", "deviation-requested" ],
+              [ "Deviation Approved", "deviation-approved" ],
+              [ "Closed", "closed" ]
+            ], poam_risk.status),
+            { include_blank: "— Select —" }, class: "form-control" %>
+    </div>
+    <div class="col">
+      <%= f.label :impact, class: "fw-semibold" %>
+      <%= f.select :impact,
+            options_for_select([ [ "High", "high" ], [ "Medium", "medium" ], [ "Low", "low" ] ],
+                               poam_risk.impact),
+            { include_blank: "— Select —" }, class: "form-control" %>
+    </div>
+    <div class="col">
+      <%= f.label :likelihood, class: "fw-semibold" %>
+      <%= f.select :likelihood,
+            options_for_select([ [ "High", "high" ], [ "Medium", "medium" ], [ "Low", "low" ] ],
+                               poam_risk.likelihood),
+            { include_blank: "— Select —" }, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :deadline, class: "fw-semibold" %>
+    <%= f.date_field :deadline, class: "form-control" %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :remarks, class: "fw-semibold" %>
+    <%= f.text_area :remarks, class: "form-control", rows: 2,
+                    placeholder: "Additional context, links to assessments, etc." %>
+  </div>
+
+  <%# OSCAL extensibility arrays — shared partials (slice 0). %>
+  <hr class="border-top" style="border: none; margin: 1.5rem 0;">
+
+  <%= render "shared/oscal_props_array",
+             param_key: "poam_risk", record: poam_risk %>
+  <%= render "shared/oscal_links_array",
+             param_key: "poam_risk", record: poam_risk %>
+  <%= render "shared/oscal_origins_array",
+             param_key: "poam_risk", record: poam_risk,
+             parties: poam_document.oscal_parties %>
+
+  <div class="d-flex gap-3 mt-3">
+    <%= f.submit poam_risk.persisted? ? "Update Risk" : "Add Risk", class: "btn btn-success" %>
+    <%= link_to "Cancel", poam_document_path(poam_document), class: "btn btn-secondary" %>
+  </div>
+<% end %>
