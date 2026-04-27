@@ -142,6 +142,9 @@ class AuditEvent < ApplicationRecord
     poam_observation_created
     poam_observation_updated
     poam_observation_deleted
+    poam_finding_created
+    poam_finding_updated
+    poam_finding_deleted
     profile_control_created
     profile_control_updated
     profile_control_deleted
@@ -205,6 +208,7 @@ class AuditEvent < ApplicationRecord
                            poam_remediation_created poam_remediation_updated poam_remediation_deleted
                            poam_milestone_created poam_milestone_updated poam_milestone_deleted
                            poam_observation_created poam_observation_updated poam_observation_deleted
+                           poam_finding_created poam_finding_updated poam_finding_deleted
                            poam_document_published],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
                      profile_document_delete_blocked

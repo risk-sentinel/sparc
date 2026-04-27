@@ -186,6 +186,7 @@ Rails.application.routes.draw do
       resources :poam_milestones, only: [ :new, :create, :edit, :update, :destroy ]
     end
     resources :poam_observations, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :poam_findings, only: [ :new, :create, :edit, :update, :destroy ]
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
