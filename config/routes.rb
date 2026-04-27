@@ -191,6 +191,9 @@ Rails.application.routes.draw do
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 
+  # Leveraging-side read-only view of leveraged-system POA&Ms (#415 Scenario A)
+  resources :leveraged_poam_documents, only: %i[index show]
+
   resources :evidences do
     resources :attestations, only: [ :new, :create, :destroy ]
   end

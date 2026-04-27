@@ -96,6 +96,11 @@
               <span class="sparc-sidebar-dot" style="background: #f39c12;"></span> Promotion Queue
             <% end %>
           </li>
+          <li>
+            <%= link_to leveraged_poam_documents_path, class: "sparc-sidebar-leaf" do %>
+              <span class="sparc-sidebar-dot" style="background: #8e44ad;"></span> Leveraged POA&amp;Ms
+            <% end %>
+          </li>
           <% if current_user&.admin? %>
             <li>
               <%= link_to federation_peers_path, class: "sparc-sidebar-leaf" do %>

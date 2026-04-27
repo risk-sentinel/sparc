@@ -148,6 +148,7 @@ class AuditEvent < ApplicationRecord
     poam_local_component_created
     poam_local_component_updated
     poam_local_component_deleted
+    poam_document_viewed_by_leveraging_user
     profile_control_created
     profile_control_updated
     profile_control_deleted
@@ -213,6 +214,7 @@ class AuditEvent < ApplicationRecord
                            poam_observation_created poam_observation_updated poam_observation_deleted
                            poam_finding_created poam_finding_updated poam_finding_deleted
                            poam_local_component_created poam_local_component_updated poam_local_component_deleted
+                           poam_document_viewed_by_leveraging_user
                            poam_document_published],
     "Profiles" => %w[profile_document_created profile_document_updated profile_document_deleted
                      profile_document_delete_blocked
