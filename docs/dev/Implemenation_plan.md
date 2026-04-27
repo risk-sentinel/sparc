@@ -543,7 +543,7 @@ removed and are no longer tracked:
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-**Completed (Phases 1-10 + ad-hoc):** 64 issues (incl. #415 Scenario A + #416 + #423 POAM completion — completed 2026-04-27)
-**Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367); follow-ups filed: #419 (SPARC_HASH master-key rotation rake), #422 (POAM Scenario B cross-instance federated visibility), #424 (POAM observation/finding schema-required nested structures)
+**Completed (Phases 1-10 + ad-hoc):** 65 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27)
+**Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367); follow-ups filed: #419 (SPARC_HASH master-key rotation rake), #422 (POAM Scenario B cross-instance federated visibility)
 **Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 in progress.
-**First public release: v1.0.0** (#271). **Current version: v1.3.0** (released 2026-04-27).
+**First public release: v1.0.0** (#271). **Current version: v1.4.0** (releasing on PR #425 merge).
