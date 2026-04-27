@@ -62,10 +62,17 @@ class PoamObservationsController < ApplicationController
   def poam_observation_params
     permitted = params.require(:poam_observation).permit(
       :title, :description, :remarks, :collected, :expires,
+      methods_data: [],
       props_data:   [ :name, :value, :class, :ns, :uuid, :remarks ],
       links_data:   [ :href, :rel, :media_type, :text ],
       origins_data: [ :actor_type, :actor_uuid, :role_id ]
     )
+    if permitted.key?(:methods_data)
+      # Drop blank entries (form may submit a hidden empty value alongside
+      # the checked boxes) and constrain to OSCAL-allowed values.
+      allowed = %w[EXAMINE INTERVIEW TEST UNKNOWN]
+      permitted[:methods_data] = Array(permitted[:methods_data]).reject(&:blank?) & allowed
+    end
     permitted[:props_data]   = compact_props(permitted[:props_data])     if permitted.key?(:props_data)
     permitted[:links_data]   = compact_links(permitted[:links_data])     if permitted.key?(:links_data)
     permitted[:origins_data] = compact_origins(permitted[:origins_data]) if permitted.key?(:origins_data)

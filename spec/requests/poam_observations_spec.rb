@@ -45,6 +45,30 @@ RSpec.describe "PoamObservations", type: :request do
     end
   end
 
+  describe "POST with methods_data (#424)" do
+    it "stores OSCAL-allowed methods in the JSONB column" do
+      post poam_document_poam_observations_path(poam), params: {
+        poam_observation: { title: "Methods Test",
+                            description: "—",
+                            methods_data: [ "EXAMINE", "TEST" ] }
+      }
+
+      obs = poam.poam_observations.find_by(title: "Methods Test")
+      expect(obs.methods_data).to eq([ "EXAMINE", "TEST" ])
+    end
+
+    it "rejects unknown method values silently" do
+      post poam_document_poam_observations_path(poam), params: {
+        poam_observation: { title: "Methods Filter Test",
+                            description: "—",
+                            methods_data: [ "EXAMINE", "DARK_MAGIC", "" ] }
+      }
+
+      obs = poam.poam_observations.find_by(title: "Methods Filter Test")
+      expect(obs.methods_data).to eq([ "EXAMINE" ])
+    end
+  end
+
   describe "DELETE /poam_documents/:poam_document_id/poam_observations/:id" do
     let!(:obs) { poam.poam_observations.create!(uuid: SecureRandom.uuid, title: "Doomed") }
 

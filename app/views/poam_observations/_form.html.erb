@@ -29,6 +29,28 @@
   </div>
 
   <div class="form-group mt-3">
+    <%= f.label :methods_data, "Methods", class: "fw-semibold" %>
+    <p class="text-body-secondary small mb-2">
+      Required by OSCAL — at least one must be selected for the observation
+      to export as schema-valid.
+    </p>
+    <%# Hidden empty value ensures the param is submitted even when no
+        boxes are checked, so the controller can clear an existing list. %>
+    <%= hidden_field_tag "poam_observation[methods_data][]", "" %>
+    <% selected_methods = Array(poam_observation.methods_data) %>
+    <div class="d-flex gap-3 flex-wrap">
+      <% %w[EXAMINE INTERVIEW TEST UNKNOWN].each do |method| %>
+        <label class="form-check form-check-inline">
+          <%= check_box_tag "poam_observation[methods_data][]", method,
+                            selected_methods.include?(method),
+                            class: "form-check-input" %>
+          <span class="form-check-label"><%= method %></span>
+        </label>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="form-group mt-3">
     <%= f.label :remarks, class: "fw-semibold" %>
     <%= f.text_area :remarks, class: "form-control", rows: 2 %>
   </div>
