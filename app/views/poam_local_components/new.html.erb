@@ -1,0 +1,10 @@
+<div class="card">
+  <div class="card-body">
+    <h2>Add Component to <%= @poam_document.name %></h2>
+    <p class="text-body-secondary mb-3">
+      Describes a system/service this POA&amp;M scopes against. Most often these are
+      populated automatically from CDEF imports — this UI lets you author one in-place.
+    </p>
+    <%= render "form", poam_document: @poam_document, poam_local_component: @poam_local_component %>
+  </div>
+</div>

@@ -187,6 +187,7 @@ Rails.application.routes.draw do
     end
     resources :poam_observations, only: [ :new, :create, :edit, :update, :destroy ]
     resources :poam_findings, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :poam_local_components, only: [ :new, :create, :edit, :update, :destroy ]
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 

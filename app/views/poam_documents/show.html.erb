@@ -68,6 +68,7 @@
       <%= link_to "+ Add Remediation", new_poam_document_poam_remediation_path(@poam_document), class: "sparc-btn-oscal" %>
       <%= link_to "+ Add Observation", new_poam_document_poam_observation_path(@poam_document), class: "sparc-btn-oscal" %>
       <%= link_to "+ Add Finding", new_poam_document_poam_finding_path(@poam_document), class: "sparc-btn-oscal" %>
+      <%= link_to "+ Add Component", new_poam_document_poam_local_component_path(@poam_document), class: "sparc-btn-oscal" %>
       <% if signed_in? && @poam_document.draft? %>
         <%= render "shared/publish_button", document: @poam_document,
               publish_path: publish_poam_document_path(@poam_document),
