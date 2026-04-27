@@ -1,0 +1,46 @@
+<%= form_with model: [ poam_document, poam_observation ], local: true do |f| %>
+  <% if poam_observation.errors.any? %>
+    <div class="alert alert-danger small">
+      <%= poam_observation.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :title, class: "fw-semibold" %>
+    <%= f.text_field :title, class: "form-control", required: true,
+                     placeholder: "e.g., Outdated TLS configuration on edge nodes" %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :description, class: "fw-semibold" %>
+    <%= f.text_area :description, class: "form-control", rows: 3,
+                    placeholder: "What was observed and where" %>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-2 g-3 mt-1">
+    <div class="col">
+      <%= f.label :collected, "Collected at", class: "fw-semibold" %>
+      <%= f.datetime_field :collected, class: "form-control" %>
+    </div>
+    <div class="col">
+      <%= f.label :expires, "Expires at", class: "fw-semibold" %>
+      <%= f.datetime_field :expires, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :remarks, class: "fw-semibold" %>
+    <%= f.text_area :remarks, class: "form-control", rows: 2 %>
+  </div>
+
+  <hr class="border-top" style="border: none; margin: 1.5rem 0;">
+  <%= render "shared/oscal_props_array",   param_key: "poam_observation", record: poam_observation %>
+  <%= render "shared/oscal_links_array",   param_key: "poam_observation", record: poam_observation %>
+  <%= render "shared/oscal_origins_array", param_key: "poam_observation", record: poam_observation,
+             parties: poam_document.oscal_parties %>
+
+  <div class="d-flex gap-3 mt-3">
+    <%= f.submit poam_observation.persisted? ? "Update Observation" : "Add Observation", class: "btn btn-success" %>
+    <%= link_to "Cancel", poam_document_path(poam_document), class: "btn btn-secondary" %>
+  </div>
+<% end %>
