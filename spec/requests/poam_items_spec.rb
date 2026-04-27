@@ -77,6 +77,43 @@ RSpec.describe "PoamItems", type: :request do
       expect(item.props_data).to eq([])
       expect(item.links_data).to eq([])
     end
+
+    # ── #416 — origins UI ─────────────────────────────────────────────────
+
+    it "creates an item with origins_data wrapped in OSCAL actor shape" do
+      post poam_document_poam_items_path(poam), params: {
+        poam_item: base_attrs.merge(
+          title: "Item With Origins",
+          origins_data: [
+            { actor_type: "party", actor_uuid: "party-uuid-1", role_id: "assessor" },
+            { actor_type: "tool",  actor_uuid: "tool-uuid-1" }
+          ]
+        )
+      }
+
+      item = poam.poam_items.find_by(title: "Item With Origins")
+      expect(item.origins_data).to eq([
+        { "actors" => [ { "type" => "party", "actor-uuid" => "party-uuid-1", "role-id" => "assessor" } ] },
+        { "actors" => [ { "type" => "tool",  "actor-uuid" => "tool-uuid-1" } ] }
+      ])
+    end
+
+    it "drops origins rows missing actor_uuid" do
+      post poam_document_poam_items_path(poam), params: {
+        poam_item: base_attrs.merge(
+          title: "Drops Empty Origins",
+          origins_data: [
+            { actor_type: "party", actor_uuid: "kept-uuid" },
+            { actor_type: "party", actor_uuid: "" },
+            { actor_type: "tool",  actor_uuid: "" }
+          ]
+        )
+      }
+
+      item = poam.poam_items.find_by(title: "Drops Empty Origins")
+      expect(item.origins_data.size).to eq(1)
+      expect(item.origins_data.first.dig("actors", 0, "actor-uuid")).to eq("kept-uuid")
+    end
   end
 
   describe "PATCH /poam_documents/:poam_document_id/poam_items/:id (#389)" do

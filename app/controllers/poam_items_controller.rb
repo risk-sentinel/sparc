@@ -1,4 +1,6 @@
 class PoamItemsController < ApplicationController
+  include OscalExtensibilityParams
+
   before_action :set_poam_document
   before_action :set_poam_item, only: %i[edit update destroy]
 
@@ -63,41 +65,16 @@ class PoamItemsController < ApplicationController
       :likelihood, :impact, :deadline,
       :internal_notes, :closure_evidence, :remarks,
       :ssp_control_statement_id,   # #393: link POA&M item to a specific SSP statement
-      props_data: [ :name, :value, :class, :ns, :uuid, :remarks ],
-      links_data: [ :href, :rel, :media_type, :text ]
+      props_data:   [ :name, :value, :class, :ns, :uuid, :remarks ],
+      links_data:   [ :href, :rel, :media_type, :text ],
+      origins_data: [ :actor_type, :actor_uuid, :role_id ]
     )
 
-    # Normalize OSCAL extensibility arrays (#389):
-    #   - Drop empty rows users left blank (no required field populated)
-    #   - Convert form-friendly underscore keys to OSCAL hyphen keys
-    #     (`media_type` → `media-type`) so JSONB storage matches the
-    #     parser's round-trip shape and OSCAL exports stay schema-valid.
-    permitted[:props_data] = compact_props(permitted[:props_data]) if permitted.key?(:props_data)
-    permitted[:links_data] = compact_links(permitted[:links_data]) if permitted.key?(:links_data)
+    # OscalExtensibilityParams concern handles drop-empty + key normalization.
+    permitted[:props_data]   = compact_props(permitted[:props_data])     if permitted.key?(:props_data)
+    permitted[:links_data]   = compact_links(permitted[:links_data])     if permitted.key?(:links_data)
+    permitted[:origins_data] = compact_origins(permitted[:origins_data]) if permitted.key?(:origins_data)
     permitted
-  end
-
-  def compact_props(rows)
-    Array(rows).filter_map do |row|
-      h = (row.respond_to?(:to_unsafe_h) ? row.to_unsafe_h : row.to_h)
-            .transform_keys(&:to_s)
-            .reject { |_, v| v.to_s.strip.empty? }
-      next if h["name"].to_s.empty? || h["value"].to_s.empty?
-
-      h
-    end
-  end
-
-  def compact_links(rows)
-    Array(rows).filter_map do |row|
-      h = (row.respond_to?(:to_unsafe_h) ? row.to_unsafe_h : row.to_h)
-            .transform_keys(&:to_s)
-            .reject { |_, v| v.to_s.strip.empty? }
-      next if h["href"].to_s.empty?
-
-      h["media-type"] = h.delete("media_type") if h.key?("media_type")
-      h
-    end
   end
 
   def load_association_options

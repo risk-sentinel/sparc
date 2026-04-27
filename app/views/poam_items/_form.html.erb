@@ -143,125 +143,16 @@
     <%= f.text_area :closure_evidence, class: "form-control", rows: 2, placeholder: "Evidence or documentation for closure..." %>
   </div>
 
-  <%# ── OSCAL extensibility arrays (#389): props + links ───────────────
-       Stored in JSONB columns; round-trip with OSCAL parsers/exporters.
-       Origins UI deferred — needs a parties/actors picker. %>
-
+  <%# OSCAL extensibility arrays (#389/#416/#423) — shared partials. %>
   <hr class="border-top" style="border: none; margin: 1.5rem 0;">
-  <details class="mb-3">
-    <summary class="fw-semibold" style="font-size: 1rem; cursor: pointer;">
-      Properties <span class="text-body-secondary">(OSCAL <code>props</code>)</span>
-    </summary>
-    <p class="text-body-secondary small mt-2 mb-2">
-      Extensible name-value pairs. Use to attach custom metadata that doesn't fit standard fields.
-    </p>
 
-    <div data-controller="oscal-repeater">
-      <template data-oscal-repeater-target="template">
-        <div class="repeater-row d-flex gap-2 mb-2">
-          <input type="text" name="poam_item[props_data][][name]"
-                 placeholder="name (e.g., severity)" class="form-control form-control-sm" />
-          <input type="text" name="poam_item[props_data][][value]"
-                 placeholder="value" class="form-control form-control-sm" />
-          <input type="text" name="poam_item[props_data][][class]"
-                 placeholder="class (optional)" class="form-control form-control-sm" />
-          <button type="button" data-action="click->oscal-repeater#remove"
-                  class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
-        </div>
-      </template>
-
-      <div data-oscal-repeater-target="rows">
-        <% Array(poam_item.props_data).each do |prop| %>
-          <div class="repeater-row d-flex gap-2 mb-2">
-            <input type="text" name="poam_item[props_data][][name]"
-                   value="<%= prop["name"] %>"
-                   placeholder="name" class="form-control form-control-sm" />
-            <input type="text" name="poam_item[props_data][][value]"
-                   value="<%= prop["value"] %>"
-                   placeholder="value" class="form-control form-control-sm" />
-            <input type="text" name="poam_item[props_data][][class]"
-                   value="<%= prop["class"] %>"
-                   placeholder="class (optional)" class="form-control form-control-sm" />
-            <button type="button" data-action="click->oscal-repeater#remove"
-                    class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
-          </div>
-        <% end %>
-      </div>
-
-      <button type="button" data-action="click->oscal-repeater#add"
-              class="btn btn-sm btn-outline-primary mt-1">+ Add property</button>
-    </div>
-  </details>
-
-  <details class="mb-3">
-    <summary class="fw-semibold" style="font-size: 1rem; cursor: pointer;">
-      Links <span class="text-body-secondary">(OSCAL <code>links</code>)</span>
-    </summary>
-    <p class="text-body-secondary small mt-2 mb-2">
-      Cross-references to other artifacts (URLs, internal docs, related findings).
-      <code>media-type</code> uses an underscore here and is converted on save.
-    </p>
-
-    <div data-controller="oscal-repeater">
-      <template data-oscal-repeater-target="template">
-        <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
-          <input type="url" name="poam_item[links_data][][href]"
-                 placeholder="https://… or #fragment-uuid"
-                 class="form-control form-control-sm" style="flex: 2 1 250px;" />
-          <input type="text" name="poam_item[links_data][][rel]"
-                 list="oscal-link-rels"
-                 placeholder="rel (e.g., reference)"
-                 class="form-control form-control-sm" style="flex: 1 1 140px;" />
-          <input type="text" name="poam_item[links_data][][media_type]"
-                 placeholder="media-type (e.g., text/html)"
-                 class="form-control form-control-sm" style="flex: 1 1 160px;" />
-          <input type="text" name="poam_item[links_data][][text]"
-                 placeholder="display text (optional)"
-                 class="form-control form-control-sm" style="flex: 1 1 160px;" />
-          <button type="button" data-action="click->oscal-repeater#remove"
-                  class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
-        </div>
-      </template>
-
-      <div data-oscal-repeater-target="rows">
-        <% Array(poam_item.links_data).each do |link| %>
-          <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
-            <input type="url" name="poam_item[links_data][][href]"
-                   value="<%= link["href"] %>"
-                   placeholder="https://… or #fragment-uuid"
-                   class="form-control form-control-sm" style="flex: 2 1 250px;" />
-            <input type="text" name="poam_item[links_data][][rel]"
-                   value="<%= link["rel"] %>"
-                   list="oscal-link-rels"
-                   placeholder="rel"
-                   class="form-control form-control-sm" style="flex: 1 1 140px;" />
-            <input type="text" name="poam_item[links_data][][media_type]"
-                   value="<%= link["media-type"] %>"
-                   placeholder="media-type"
-                   class="form-control form-control-sm" style="flex: 1 1 160px;" />
-            <input type="text" name="poam_item[links_data][][text]"
-                   value="<%= link["text"] %>"
-                   placeholder="display text"
-                   class="form-control form-control-sm" style="flex: 1 1 160px;" />
-            <button type="button" data-action="click->oscal-repeater#remove"
-                    class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
-          </div>
-        <% end %>
-      </div>
-
-      <button type="button" data-action="click->oscal-repeater#add"
-              class="btn btn-sm btn-outline-primary mt-1">+ Add link</button>
-    </div>
-
-    <datalist id="oscal-link-rels">
-      <option value="reference"></option>
-      <option value="related-observation"></option>
-      <option value="closes-finding"></option>
-      <option value="depends-on"></option>
-      <option value="provided-by"></option>
-      <option value="used-by"></option>
-    </datalist>
-  </details>
+  <%= render "shared/oscal_props_array",
+             param_key: "poam_item", record: poam_item %>
+  <%= render "shared/oscal_links_array",
+             param_key: "poam_item", record: poam_item %>
+  <%= render "shared/oscal_origins_array",
+             param_key: "poam_item", record: poam_item,
+             parties: poam_document.oscal_parties %>
 
   <div class="d-flex gap-3 mt-3">
     <%= f.submit poam_item.persisted? ? "Update Item" : "Add Item", class: "btn btn-success" %>
