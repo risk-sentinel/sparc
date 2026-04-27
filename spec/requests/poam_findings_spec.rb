@@ -32,10 +32,10 @@ RSpec.describe "PoamFindings", type: :request do
     it "stores the OSCAL finding-target with status.state in JSONB" do
       post poam_document_poam_findings_path(poam), params: {
         poam_finding: { title: "Target Test", description: "—",
-                        target_data: { type: "statement-id",
-                                       :"target-id" => "ac-2_smt.a",
-                                       status: { state: "not-satisfied",
-                                                 remarks: "Missing audit hooks" } } }
+                        target_data: { "type" => "statement-id",
+                                       "target-id" => "ac-2_smt.a",
+                                       "status" => { "state" => "not-satisfied",
+                                                     "remarks" => "Missing audit hooks" } } }
       }
 
       finding = poam.poam_findings.find_by(title: "Target Test")
@@ -49,9 +49,9 @@ RSpec.describe "PoamFindings", type: :request do
     it "drops the status sub-hash when state is blank" do
       post poam_document_poam_findings_path(poam), params: {
         poam_finding: { title: "No Status Test", description: "—",
-                        target_data: { type: "objective-id",
-                                       :"target-id" => "ac-2_obj",
-                                       status: { state: "", remarks: "" } } }
+                        target_data: { "type" => "objective-id",
+                                       "target-id" => "ac-2_obj",
+                                       "status" => { "state" => "", "remarks" => "" } } }
       }
 
       finding = poam.poam_findings.find_by(title: "No Status Test")
