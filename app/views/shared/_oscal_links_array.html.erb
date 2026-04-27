@@ -1,0 +1,77 @@
+<%# OSCAL `links[]` extensibility-array editor (#389/#423).
+    Required locals:
+      param_key: form param namespace (e.g. "poam_item", "poam_risk")
+      record:    the model instance with .links_data
+%>
+<details class="mb-3">
+  <summary class="fw-semibold" style="font-size: 1rem; cursor: pointer;">
+    Links <span class="text-body-secondary">(OSCAL <code>links</code>)</span>
+  </summary>
+  <p class="text-body-secondary small mt-2 mb-2">
+    Cross-references to other artifacts (URLs, internal docs, related findings).
+    <code>media-type</code> uses an underscore here and is converted on save.
+  </p>
+
+  <div data-controller="oscal-repeater">
+    <template data-oscal-repeater-target="template">
+      <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
+        <input type="url" name="<%= param_key %>[links_data][][href]"
+               placeholder="https://… or #fragment-uuid"
+               class="form-control form-control-sm" style="flex: 2 1 250px;" />
+        <input type="text" name="<%= param_key %>[links_data][][rel]"
+               list="oscal-link-rels"
+               placeholder="rel (e.g., reference)"
+               class="form-control form-control-sm" style="flex: 1 1 140px;" />
+        <input type="text" name="<%= param_key %>[links_data][][media_type]"
+               placeholder="media-type (e.g., text/html)"
+               class="form-control form-control-sm" style="flex: 1 1 160px;" />
+        <input type="text" name="<%= param_key %>[links_data][][text]"
+               placeholder="display text (optional)"
+               class="form-control form-control-sm" style="flex: 1 1 160px;" />
+        <button type="button" data-action="click->oscal-repeater#remove"
+                class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
+      </div>
+    </template>
+
+    <div data-oscal-repeater-target="rows">
+      <% Array(record.links_data).each do |link| %>
+        <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
+          <input type="url" name="<%= param_key %>[links_data][][href]"
+                 value="<%= link["href"] %>"
+                 placeholder="https://… or #fragment-uuid"
+                 class="form-control form-control-sm" style="flex: 2 1 250px;" />
+          <input type="text" name="<%= param_key %>[links_data][][rel]"
+                 value="<%= link["rel"] %>"
+                 list="oscal-link-rels"
+                 placeholder="rel"
+                 class="form-control form-control-sm" style="flex: 1 1 140px;" />
+          <input type="text" name="<%= param_key %>[links_data][][media_type]"
+                 value="<%= link["media-type"] %>"
+                 placeholder="media-type"
+                 class="form-control form-control-sm" style="flex: 1 1 160px;" />
+          <input type="text" name="<%= param_key %>[links_data][][text]"
+                 value="<%= link["text"] %>"
+                 placeholder="display text"
+                 class="form-control form-control-sm" style="flex: 1 1 160px;" />
+          <button type="button" data-action="click->oscal-repeater#remove"
+                  class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
+        </div>
+      <% end %>
+    </div>
+
+    <button type="button" data-action="click->oscal-repeater#add"
+            class="btn btn-sm btn-outline-primary mt-1">+ Add link</button>
+  </div>
+
+  <%# datalist is rendered once per page; multiple partials share the same id %>
+  <% unless local_assigns[:datalist_rendered] %>
+    <datalist id="oscal-link-rels">
+      <option value="reference"></option>
+      <option value="related-observation"></option>
+      <option value="closes-finding"></option>
+      <option value="depends-on"></option>
+      <option value="provided-by"></option>
+      <option value="used-by"></option>
+    </datalist>
+  <% end %>
+</details>
