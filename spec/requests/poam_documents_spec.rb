@@ -92,4 +92,83 @@ RSpec.describe "PoamDocuments", type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
+
+  # ── Wizard create (#389) ──────────────────────────────────────────────
+
+  describe "POST /poam_documents (wizard, #389)" do
+    let(:boundary) { create(:authorization_boundary) }
+    let!(:ssp)     { create(:ssp_document, name: "Linked SSP", authorization_boundary: boundary) }
+
+    it "creates a POAM with explicit version + ssp_document_id" do
+      post poam_documents_path, params: {
+        poam_document: {
+          name: "Wizard POAM Explicit",
+          description: "Created via wizard",
+          system_id: "SYS-001",
+          authorization_boundary_id: boundary.id,
+          poam_version: "2.5.0",
+          oscal_version: "1.1.2",
+          ssp_document_id: ssp.id
+        }
+      }
+      poam = PoamDocument.find_by(name: "Wizard POAM Explicit")
+      expect(poam).to be_present
+      expect(poam.poam_version).to eq("2.5.0")
+      expect(poam.oscal_version).to eq("1.1.2")
+      expect(poam.ssp_document_id).to eq(ssp.id)
+      expect(response).to redirect_to(poam_document_path(poam))
+    end
+
+    it "applies defaults when version fields are blank" do
+      post poam_documents_path, params: {
+        poam_document: {
+          name: "Wizard POAM Defaults",
+          description: "Defaulted versions",
+          poam_version: "",
+          oscal_version: ""
+        }
+      }
+      poam = PoamDocument.find_by(name: "Wizard POAM Defaults")
+      expect(poam.poam_version).to eq("1.0.0")
+      expect(poam.oscal_version).to eq("1.1.2")
+    end
+
+    it "renders wizard with SSP options grouped by boundary" do
+      ssp_other_boundary = create(:authorization_boundary)
+      create(:ssp_document, name: "Other Boundary SSP",
+             authorization_boundary: ssp_other_boundary)
+
+      get new_poam_document_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Source SSP")
+      expect(response.body).to include("Linked SSP")
+      expect(response.body).to include("Other Boundary SSP")
+      # optgroup labels carry the boundary names
+      expect(response.body).to include(boundary.name)
+      expect(response.body).to include(ssp_other_boundary.name)
+    end
+  end
+
+  # ── Empty-items publish-readiness warning (#389) ──────────────────────
+
+  describe "GET /poam_documents/:id show (#389 warning banner)" do
+    it "shows the warning banner when no items and not yet published" do
+      poam = create(:poam_document, name: "No Items Yet", lifecycle_status: "in_progress")
+      get poam_document_path(poam)
+      expect(response.body).to include("Add at least one POA&amp;M item before publishing")
+    end
+
+    it "hides the warning when items are present" do
+      poam = create(:poam_document, name: "Has Items", lifecycle_status: "in_progress")
+      create(:poam_item, poam_document: poam)
+      get poam_document_path(poam)
+      expect(response.body).not_to include("Add at least one POA&amp;M item before publishing")
+    end
+
+    it "hides the warning once the document is published" do
+      poam = create(:poam_document, name: "Published Empty", lifecycle_status: "published")
+      get poam_document_path(poam)
+      expect(response.body).not_to include("Add at least one POA&amp;M item before publishing")
+    end
+  end
 end

@@ -51,12 +51,16 @@ class PoamDocumentsController < ApplicationController
 
   def new
     @poam_document = PoamDocument.new
+    load_ssp_options_grouped
   end
 
   def create
     # Wizard create (no file) vs file upload
     if params.dig(:poam_document, :file).blank? && params.dig(:poam_document, :files).blank?
-      @poam_document = PoamDocument.new(wizard_params)
+      attrs = wizard_params.to_h
+      attrs[:poam_version]  = attrs[:poam_version].presence  || "1.0.0"
+      attrs[:oscal_version] = attrs[:oscal_version].presence || "1.1.2"
+      @poam_document = PoamDocument.new(attrs)
       @poam_document.status = "completed"
 
       if @poam_document.save
@@ -66,6 +70,7 @@ class PoamDocumentsController < ApplicationController
         redirect_to poam_document_path(@poam_document)
       else
         flash.now[:error] = @poam_document.errors.full_messages.join(", ")
+        load_ssp_options_grouped
         render :new, status: :unprocessable_entity
       end
     else
@@ -220,7 +225,24 @@ class PoamDocumentsController < ApplicationController
   end
 
   def wizard_params
-    params.require(:poam_document).permit(:name, :description, :system_id, :authorization_boundary_id)
+    params.require(:poam_document).permit(:name, :description, :system_id,
+                                          :authorization_boundary_id,
+                                          :poam_version, :oscal_version,
+                                          :ssp_document_id)
+  end
+
+  # Load SSPs grouped by authorization boundary for the wizard's "Source SSP"
+  # dropdown (#389). Each group is the boundary's name; options are SSPs
+  # belonging to that boundary, plus a top-level "(unscoped)" group for SSPs
+  # without a boundary association. Rendered as <optgroup> in the form.
+  def load_ssp_options_grouped
+    ssps = SspDocument.where(deleted_at: nil)
+                      .order(:authorization_boundary_id, :name)
+                      .includes(:authorization_boundary)
+
+    @ssp_options_by_boundary = ssps.group_by do |s|
+      s.authorization_boundary&.name || "(unscoped)"
+    end
   end
 
   # OscalExportable hooks

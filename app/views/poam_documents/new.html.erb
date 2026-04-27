@@ -40,6 +40,57 @@
       </div>
     </div>
 
+    <%# ── OSCAL Metadata (#389) ── %>
+    <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #2980b9; padding: 1.25rem;">
+      <h3 class="mb-3" style="font-size: 1rem; color: #2980b9;">OSCAL Metadata</h3>
+      <p class="text-body-secondary small mb-3">
+        Required for valid OSCAL exports. Defaults are pre-filled — edit only if you have a specific reason.
+      </p>
+
+      <div class="row row-cols-1 row-cols-md-2 g-3">
+        <div class="col">
+          <div class="form-group">
+            <label for="poam_document_poam_version">POA&amp;M Version</label>
+            <%= f.text_field :poam_version,
+                  value: (f.object.poam_version.presence || "1.0.0"),
+                  class: "form-control",
+                  required: true %>
+            <small class="form-text text-body-secondary">
+              Maps to OSCAL <code>metadata.version</code>.
+            </small>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-group">
+            <label for="poam_document_oscal_version">OSCAL Version</label>
+            <%= f.text_field :oscal_version,
+                  value: (f.object.oscal_version.presence || "1.1.2"),
+                  class: "form-control",
+                  required: true %>
+            <small class="form-text text-body-secondary">
+              SPARC supports <code>1.1.2</code>; change only when migrating to a newer OSCAL release.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group mt-3">
+        <label for="poam_document_ssp_document_id">Source SSP <span class="text-body-secondary">(optional)</span></label>
+        <%= f.select :ssp_document_id,
+              grouped_options_for_select(
+                (@ssp_options_by_boundary || {}).map { |group, ssps|
+                  [ group, ssps.map { |s| [s.name, s.id] } ]
+                },
+                f.object.ssp_document_id
+              ),
+              { include_blank: "— No source SSP —" },
+              class: "form-control" %>
+        <small class="form-text text-body-secondary">
+          Links this POA&amp;M to its source SSP via OSCAL <code>import-ssp.href</code>. SSPs are grouped by their authorization boundary.
+        </small>
+      </div>
+    </div>
+
     <%= f.hidden_field :status, value: "completed" %>
 
     <div class="d-flex gap-3">

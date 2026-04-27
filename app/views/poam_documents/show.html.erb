@@ -155,6 +155,26 @@
 </div>
 <% end %>
 
+<%# ── PUBLISH-READINESS WARNING (#389) ─────────────────────────────
+     Surfaces an actionable warning when an in-progress POA&M has no items.
+     OscalPoamExportService.validate! already enforces this at publish time
+     (OSCAL schema requires poam-items to contain ≥1 entry); this banner
+     prompts the user before they hit that error. %>
+<% if @total_items.to_i.zero? && !@poam_document.published_lifecycle? %>
+  <div class="card d-flex align-items-center gap-3" style="border-left: 4px solid #f39c12; padding: 1rem 1.25rem;">
+    <span style="font-size: 1.5rem;">&#9888;</span>
+    <div class="flex-grow-1">
+      <div class="fw-semibold" style="font-size: 0.95rem; color: #f39c12;">Add at least one POA&amp;M item before publishing</div>
+      <div class="text-body-secondary" style="font-size: 0.85rem;">
+        OSCAL schema requires the <code>poam-items</code> array to contain at least one entry.
+        Publishing now will fail schema validation.
+      </div>
+    </div>
+    <%= link_to "+ Add First Item", new_poam_document_poam_item_path(@poam_document),
+                class: "btn btn-warning btn-sm" %>
+  </div>
+<% end %>
+
 <%# ── ACTIVE FILTERS ─────────────────────────────────────────────── %>
 <% if has_filters %>
   <div class="card d-flex align-items-center gap-3 flex-wrap" style="padding: 0.75rem 1.25rem;">
