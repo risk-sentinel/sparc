@@ -13,13 +13,65 @@
 
   <div class="form-group mt-3">
     <%= f.label :description, class: "fw-semibold" %>
-    <%= f.text_area :description, class: "form-control", rows: 3 %>
+    <%= f.text_area :description, class: "form-control", rows: 3, required: true %>
   </div>
 
   <div class="form-group mt-3">
     <%= f.label :implementation_statement_uuid, "Implementation statement UUID", class: "fw-semibold" %>
     <%= f.text_field :implementation_statement_uuid, class: "form-control",
                      placeholder: "UUID of the SSP statement this finding targets (optional)" %>
+  </div>
+
+  <%# OSCAL Finding Target (#424) — required by schema for valid export.
+       The target identifies which control statement / objective this
+       finding is against, plus the assessor's status determination. %>
+  <div class="bg-body-secondary rounded-3 mt-3 p-3" style="border-left: 4px solid #2980b9;">
+    <h5 style="font-size: 0.95rem; color: #2980b9;">Finding Target</h5>
+    <p class="text-body-secondary small mb-3">
+      Required by OSCAL — without these the finding fails schema validation on export.
+    </p>
+
+    <% target = (poam_finding.target_data || {}) %>
+    <% target_status = (target["status"] || {}) %>
+
+    <div class="row row-cols-1 row-cols-md-2 g-3">
+      <div class="col">
+        <label class="fw-semibold" for="poam_finding_target_type">Target type</label>
+        <select name="poam_finding[target_data][type]" id="poam_finding_target_type"
+                class="form-control" required>
+          <option value="">— Select —</option>
+          <% %w[statement-id objective-id].each do |t| %>
+            <option value="<%= t %>" <%= "selected" if target["type"] == t %>><%= t %></option>
+          <% end %>
+        </select>
+      </div>
+      <div class="col">
+        <label class="fw-semibold" for="poam_finding_target_target_id">Target ID</label>
+        <input type="text" name="poam_finding[target_data][target-id]"
+               id="poam_finding_target_target_id"
+               value="<%= target["target-id"] %>" class="form-control" required
+               placeholder="e.g., ac-2_smt.a or ac-2_obj" />
+      </div>
+    </div>
+
+    <div class="form-group mt-3">
+      <label class="fw-semibold" for="poam_finding_target_status_state">Objective status</label>
+      <select name="poam_finding[target_data][status][state]"
+              id="poam_finding_target_status_state"
+              class="form-control" required>
+        <option value="">— Select —</option>
+        <% %w[satisfied not-satisfied other].each do |s| %>
+          <option value="<%= s %>" <%= "selected" if target_status["state"] == s %>><%= s %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <div class="form-group mt-3">
+      <label class="fw-semibold" for="poam_finding_target_status_remarks">Status remarks <span class="text-body-secondary">(optional)</span></label>
+      <textarea name="poam_finding[target_data][status][remarks]"
+                id="poam_finding_target_status_remarks" class="form-control" rows="2"
+                placeholder="Assessor's notes on why this status was determined"><%= target_status["remarks"] %></textarea>
+    </div>
   </div>
 
   <div class="form-group mt-3">

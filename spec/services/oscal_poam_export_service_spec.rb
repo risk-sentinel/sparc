@@ -154,16 +154,23 @@ RSpec.describe OscalPoamExportService do
       remediation.poam_milestones.create!(uuid: SecureRandom.uuid, title: "Full Milestone",
                                            milestone_type: "task", due_date: Date.parse("2026-09-01"))
 
-      # Observations + findings deliberately omitted from this round-trip:
-      # OSCAL schema requires `observation.methods[]` and
-      # `finding.target.status` which the slice 4/5 admin forms do not yet
-      # expose. The admin UI ships in v1; the schema-required nested
-      # structures are tracked as a follow-up enhancement so authored-from-
-      # scratch observations/findings export schema-valid.
+      # Observations + findings: schema-required nested structures
+      # (observation.methods[], finding.target.status) are exposed in the
+      # admin forms via slices 10/11 (#424), so authored-from-scratch
+      # records of these types now round-trip cleanly. Setting them here
+      # mirrors the form output.
+      poam.poam_observations.create!(uuid: SecureRandom.uuid, title: "Full Observation",
+                                     description: "Observed via scan",
+                                     methods_data: [ "EXAMINE" ],
+                                     collected: Time.parse("2026-04-01T12:00:00Z"),
+                                     props_data: [ { "name" => "scanner", "value" => "trivy" } ])
 
-      poam.poam_local_components.create!(uuid: SecureRandom.uuid, title: "Full Component",
-                                          component_type: "service", description: "API surface",
-                                          status_state: "operational")
+      poam.poam_findings.create!(uuid: SecureRandom.uuid, title: "Full Finding",
+                                  description: "Documented compliance gap",
+                                  target_data: { "type" => "statement-id",
+                                                 "target-id" => "ac-2_smt.a",
+                                                 "status" => { "state" => "not-satisfied" } },
+                                  links_data: [ { "href" => "https://finding.gov" } ])
 
       poam.poam_local_components.create!(uuid: SecureRandom.uuid, title: "Full Component",
                                           component_type: "service", description: "API surface",
@@ -190,6 +197,8 @@ RSpec.describe OscalPoamExportService do
 
       expect(target.poam_items.find_by(title: "Full Item")).to be_present
       expect(target.poam_risks.find_by(title: "Full Risk")).to be_present
+      expect(target.poam_observations.find_by(title: "Full Observation")).to be_present
+      expect(target.poam_findings.find_by(title: "Full Finding")).to be_present
 
       reparsed_item = target.poam_items.find_by(title: "Full Item")
       expect(reparsed_item.props_data).to include(

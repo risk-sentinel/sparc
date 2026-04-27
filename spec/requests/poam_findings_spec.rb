@@ -28,6 +28,41 @@ RSpec.describe "PoamFindings", type: :request do
     end
   end
 
+  describe "POST with target_data (#424)" do
+    it "stores the OSCAL finding-target with status.state in JSONB" do
+      post poam_document_poam_findings_path(poam), params: {
+        poam_finding: { title: "Target Test", description: "—",
+                        target_data: { type: "statement-id",
+                                       :"target-id" => "ac-2_smt.a",
+                                       status: { state: "not-satisfied",
+                                                 remarks: "Missing audit hooks" } } }
+      }
+
+      finding = poam.poam_findings.find_by(title: "Target Test")
+      expect(finding.target_data).to eq({
+        "type" => "statement-id",
+        "target-id" => "ac-2_smt.a",
+        "status" => { "state" => "not-satisfied", "remarks" => "Missing audit hooks" }
+      })
+    end
+
+    it "drops the status sub-hash when state is blank" do
+      post poam_document_poam_findings_path(poam), params: {
+        poam_finding: { title: "No Status Test", description: "—",
+                        target_data: { type: "objective-id",
+                                       :"target-id" => "ac-2_obj",
+                                       status: { state: "", remarks: "" } } }
+      }
+
+      finding = poam.poam_findings.find_by(title: "No Status Test")
+      expect(finding.target_data).to eq({
+        "type" => "objective-id",
+        "target-id" => "ac-2_obj"
+      })
+      expect(finding.target_data).not_to have_key("status")
+    end
+  end
+
   describe "DELETE /poam_documents/:poam_document_id/poam_findings/:id" do
     let!(:finding) { poam.poam_findings.create!(uuid: SecureRandom.uuid, title: "Doomed") }
 

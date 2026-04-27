@@ -13,14 +13,14 @@
 
   <div class="form-group mt-3">
     <%= f.label :description, class: "fw-semibold" %>
-    <%= f.text_area :description, class: "form-control", rows: 3,
+    <%= f.text_area :description, class: "form-control", rows: 3, required: true,
                     placeholder: "What was observed and where" %>
   </div>
 
   <div class="row row-cols-1 row-cols-md-2 g-3 mt-1">
     <div class="col">
       <%= f.label :collected, "Collected at", class: "fw-semibold" %>
-      <%= f.datetime_field :collected, class: "form-control" %>
+      <%= f.datetime_field :collected, class: "form-control", required: true %>
     </div>
     <div class="col">
       <%= f.label :expires, "Expires at", class: "fw-semibold" %>
