@@ -182,6 +182,9 @@ Rails.application.routes.draw do
     resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
     # POAM child entities (#423) — full admin UI for OSCAL extensibility
     resources :poam_risks, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :poam_remediations, only: [ :new, :create, :edit, :update, :destroy ] do
+      resources :poam_milestones, only: [ :new, :create, :edit, :update, :destroy ]
+    end
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
 

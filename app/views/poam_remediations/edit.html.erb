@@ -1,0 +1,7 @@
+<div class="card">
+  <div class="card-body">
+    <h2>Edit Remediation — <%= @poam_remediation.title.presence || "Untitled" %></h2>
+    <%= render "form", poam_document: @poam_document, poam_remediation: @poam_remediation,
+                       available_risks: @available_risks %>
+  </div>
+</div>

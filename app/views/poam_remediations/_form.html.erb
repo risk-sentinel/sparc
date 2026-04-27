@@ -1,0 +1,58 @@
+<%= form_with model: poam_remediation,
+              url: poam_remediation.persisted? ? poam_document_poam_remediation_path(poam_document, poam_remediation) : poam_document_poam_remediations_path(poam_document),
+              method: poam_remediation.persisted? ? :patch : :post,
+              local: true do |f| %>
+  <% if poam_remediation.errors.any? %>
+    <div class="alert alert-danger small">
+      <%= poam_remediation.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :poam_risk_id, "Parent risk", class: "fw-semibold" %>
+    <%= f.select :poam_risk_id,
+          options_for_select(available_risks.map { |r| [ r.title.presence || "(untitled)", r.id ] },
+                             poam_remediation.poam_risk_id),
+          { include_blank: "— Select risk —" },
+          class: "form-control", required: true %>
+    <small class="form-text text-body-secondary">Remediations belong to a specific risk.</small>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :title, class: "fw-semibold" %>
+    <%= f.text_field :title, class: "form-control", required: true,
+                     placeholder: "e.g., Migrate to managed identity service" %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :description, class: "fw-semibold" %>
+    <%= f.text_area :description, class: "form-control", rows: 3 %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :lifecycle, class: "fw-semibold" %>
+    <%= f.select :lifecycle,
+          options_for_select([
+            [ "Recommendation", "recommendation" ],
+            [ "Planned", "planned" ],
+            [ "Completed", "completed" ]
+          ], poam_remediation.lifecycle),
+          { include_blank: "— Select —" }, class: "form-control" %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :remarks, class: "fw-semibold" %>
+    <%= f.text_area :remarks, class: "form-control", rows: 2 %>
+  </div>
+
+  <hr class="border-top" style="border: none; margin: 1.5rem 0;">
+  <%= render "shared/oscal_props_array",   param_key: "poam_remediation", record: poam_remediation %>
+  <%= render "shared/oscal_links_array",   param_key: "poam_remediation", record: poam_remediation %>
+  <%= render "shared/oscal_origins_array", param_key: "poam_remediation", record: poam_remediation,
+             parties: poam_document.oscal_parties %>
+
+  <div class="d-flex gap-3 mt-3">
+    <%= f.submit poam_remediation.persisted? ? "Update Remediation" : "Add Remediation", class: "btn btn-success" %>
+    <%= link_to "Cancel", poam_document_path(poam_document), class: "btn btn-secondary" %>
+  </div>
+<% end %>

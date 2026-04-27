@@ -1,0 +1,8 @@
+<div class="card">
+  <div class="card-body">
+    <h2>Add Remediation to <%= @poam_document.name %></h2>
+    <p class="text-body-secondary mb-3">A planned response to one of this POA&amp;M's risks.</p>
+    <%= render "form", poam_document: @poam_document, poam_remediation: @poam_remediation,
+                       available_risks: @available_risks %>
+  </div>
+</div>

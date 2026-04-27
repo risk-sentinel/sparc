@@ -1,0 +1,7 @@
+<div class="card">
+  <div class="card-body">
+    <h2>Edit Milestone — <%= @poam_milestone.title.presence || "Untitled" %></h2>
+    <%= render "form", poam_document: @poam_document, poam_remediation: @poam_remediation,
+                       poam_milestone: @poam_milestone %>
+  </div>
+</div>

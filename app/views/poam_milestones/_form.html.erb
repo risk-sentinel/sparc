@@ -1,0 +1,49 @@
+<%= form_with model: poam_milestone,
+              url: poam_milestone.persisted? ? poam_document_poam_remediation_poam_milestone_path(poam_document, poam_remediation, poam_milestone) : poam_document_poam_remediation_poam_milestones_path(poam_document, poam_remediation),
+              method: poam_milestone.persisted? ? :patch : :post,
+              local: true do |f| %>
+  <% if poam_milestone.errors.any? %>
+    <div class="alert alert-danger small">
+      <%= poam_milestone.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :title, class: "fw-semibold" %>
+    <%= f.text_field :title, class: "form-control", required: true,
+                     placeholder: "e.g., Patch deployed to staging" %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :description, class: "fw-semibold" %>
+    <%= f.text_area :description, class: "form-control", rows: 3 %>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-2 g-3 mt-1">
+    <div class="col">
+      <%= f.label :due_date, class: "fw-semibold" %>
+      <%= f.date_field :due_date, class: "form-control" %>
+    </div>
+    <div class="col">
+      <%= f.label :milestone_type, class: "fw-semibold" %>
+      <%= f.select :milestone_type,
+            options_for_select([ [ "Milestone", "milestone" ], [ "Task", "task" ], [ "Goal", "goal" ] ],
+                               poam_milestone.milestone_type),
+            {}, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :remarks, class: "fw-semibold" %>
+    <%= f.text_area :remarks, class: "form-control", rows: 2 %>
+  </div>
+
+  <hr class="border-top" style="border: none; margin: 1.5rem 0;">
+  <%= render "shared/oscal_props_array", param_key: "poam_milestone", record: poam_milestone %>
+  <%= render "shared/oscal_links_array", param_key: "poam_milestone", record: poam_milestone %>
+
+  <div class="d-flex gap-3 mt-3">
+    <%= f.submit poam_milestone.persisted? ? "Update Milestone" : "Add Milestone", class: "btn btn-success" %>
+    <%= link_to "Cancel", poam_document_path(poam_document), class: "btn btn-secondary" %>
+  </div>
+<% end %>
