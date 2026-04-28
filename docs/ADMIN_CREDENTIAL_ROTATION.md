@@ -495,6 +495,7 @@ If none of the SM versions match a working password, you've lost the admin crede
 ## Related documentation
 
 - **[`dev/admin_credential_rotation.md`](dev/admin_credential_rotation.md)** — developer-focused architecture and NIST control mapping
+- **[`SPARC_HASH_ROTATION.md`](SPARC_HASH_ROTATION.md)** — sibling runbook for rotating the `SPARC_HASH` master secret that protects encrypted federation peer credentials
 - **[`AUTHENTICATION.md`](AUTHENTICATION.md)** — overall SPARC authentication model (local login, OIDC, LDAP)
 - **[`API.md`](API.md)** — full SPARC API reference
 - **[`ENVIRONMENT_VARIABLES.md`](ENVIRONMENT_VARIABLES.md)** — every SPARC env var
