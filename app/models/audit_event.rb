@@ -46,6 +46,7 @@ class AuditEvent < ApplicationRecord
     admin_password_reset
     admin_credential_synced_from_env
     admin_credential_rotated
+    sparc_hash_rotated
     ssp_document_created
     ssp_document_updated
     ssp_document_deleted
@@ -183,7 +184,7 @@ class AuditEvent < ApplicationRecord
     "User Management" => %w[user_suspended user_reactivated user_deactivated
                             user_auto_deactivated user_password_expired admin_bootstrap
                             admin_password_reset admin_credential_synced_from_env
-                            admin_credential_rotated],
+                            admin_credential_rotated sparc_hash_rotated],
     "Role Management" => %w[role_grant role_revoke role_created role_updated role_deleted],
     "Auth Boundary Members" => %w[authorization_boundary_member_added authorization_boundary_member_removed
                                   authorization_boundary_membership_created authorization_boundary_membership_updated
