@@ -31,6 +31,36 @@ module SparcKeyDerivation
     generator.generate_key("#{PURPOSE_PREFIX}#{purpose}", length)
   end
 
+  # Derive a key from an explicit master rather than the configured
+  # `SPARC_HASH`. Used by `sparc:reencrypt:rotate_master_key` (#419) to
+  # build the OLD-key encryptor so old-encrypted ciphertexts can be
+  # decrypted before re-encrypting under the current master.
+  #
+  # The configured `derive` path is preferred everywhere else. This
+  # method exists only for the rotation rake; callers should not retain
+  # references to derived keys.
+  def derive_from(master, purpose, length: DEFAULT_KEY_LEN)
+    raise ArgumentError, "purpose is required" if purpose.to_s.strip.empty?
+    raise ArgumentError, "master is required" if master.to_s.empty?
+
+    ActiveSupport::KeyGenerator
+      .new(master.to_s, hash_digest_class: OpenSSL::Digest::SHA256)
+      .generate_key("#{PURPOSE_PREFIX}#{purpose}", length)
+  end
+
+  # Constant-time check whether a candidate master derives the same keys
+  # as the currently configured one. Lets the rotation rake refuse a
+  # no-op invocation without exposing or comparing the raw secrets.
+  def master_matches_current?(candidate)
+    return false if candidate.to_s.empty?
+
+    probe = "sparc:v1:rotation_probe"
+    ActiveSupport::SecurityUtils.secure_compare(
+      derive_from(candidate, probe),
+      derive(probe)
+    )
+  end
+
   # Returns true when SPARC_HASH is provisioned. Useful for surfacing a
   # warning in non-dev environments where the fallback path is unsafe.
   def master_secret_configured?

@@ -63,6 +63,17 @@ class FederationPeer < ApplicationRecord
     ActiveSupport::MessageEncryptor.new(key)
   end
 
+  # Build an encryptor keyed by an explicit master rather than the
+  # configured one. Used by FederationPeerReencryptionService (#419) to
+  # decrypt rows still under a previous master before re-encrypting them
+  # under the current one.
+  def self.build_encryptor_with_master(master, purpose)
+    key = SparcKeyDerivation.derive_from(
+      master, purpose, length: ActiveSupport::MessageEncryptor.key_len
+    )
+    ActiveSupport::MessageEncryptor.new(key)
+  end
+
   private
 
   def decrypt(ciphertext, encryptor)
