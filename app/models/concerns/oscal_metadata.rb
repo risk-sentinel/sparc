@@ -50,6 +50,13 @@ module OscalMetadata
   end
 
   # Unified version accessor regardless of document type
+  # Parties declared in metadata_extra["parties"] — used by the origins
+  # picker on POAM child entities (#416/#423) to resolve actor-uuid
+  # references. Each party is `{ "uuid", "type", "name", ... }`.
+  def oscal_parties
+    Array(metadata_extra&.dig("parties"))
+  end
+
   def oscal_document_version
     respond_to?(:ssp_version)     ? ssp_version :
     respond_to?(:sar_version)     ? sar_version :

@@ -543,7 +543,7 @@ removed and are no longer tracked:
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-**Completed (Phases 1-10 + ad-hoc):** 61 issues (incl. #389 POAM wizard + item OSCAL extensibility — completed 2026-04-26; carved out origins UI to follow-up #416)
-**Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367); pre-release follow-ups filed: #415 (leveraged POAM visibility), #416 (POAM item origins UI)
+**Completed (Phases 1-10 + ad-hoc):** 65 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27)
+**Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367); follow-ups filed: #419 (SPARC_HASH master-key rotation rake), #422 (POAM Scenario B cross-instance federated visibility)
 **Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 in progress.
-**First public release: v1.0.0** (#271). **Current version: v1.2.5**.
+**First public release: v1.0.0** (#271). **Current version: v1.4.0** (releasing on PR #425 merge).

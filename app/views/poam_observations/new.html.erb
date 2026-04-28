@@ -1,0 +1,7 @@
+<div class="card">
+  <div class="card-body">
+    <h2>Add Observation to <%= @poam_document.name %></h2>
+    <p class="text-body-secondary mb-3">A finding detected during assessment activities.</p>
+    <%= render "form", poam_document: @poam_document, poam_observation: @poam_observation %>
+  </div>
+</div>

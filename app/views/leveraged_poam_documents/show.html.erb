@@ -1,0 +1,83 @@
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="alert alert-info mb-3">
+      <strong>Inherited from <%= @poam_document.authorization_boundary&.name || "—" %></strong>
+      &mdash; this POA&amp;M is owned by a leveraged system. You have read-only visibility.
+    </div>
+
+    <h2 class="mb-1"><%= @poam_document.name %></h2>
+    <% if @poam_document.description.present? %>
+      <p class="text-body-secondary"><%= @poam_document.description %></p>
+    <% end %>
+
+    <div class="row g-3 small">
+      <div class="col-md-3"><strong>System ID:</strong> <%= @poam_document.system_id || "—" %></div>
+      <div class="col-md-3"><strong>OSCAL version:</strong> <%= @poam_document.oscal_version || "—" %></div>
+      <div class="col-md-3"><strong>POA&amp;M version:</strong> <%= @poam_document.poam_version || "—" %></div>
+      <div class="col-md-3"><strong>Lifecycle:</strong> <%= @poam_document.lifecycle_status %></div>
+    </div>
+  </div>
+</div>
+
+<%# ── Items ── %>
+<div class="card mb-3">
+  <div class="card-body">
+    <h4>POA&amp;M Items <span class="badge text-bg-secondary"><%= @poam_items.size %></span></h4>
+    <% if @poam_items.empty? %>
+      <p class="text-body-secondary mb-0">No items in this POA&amp;M.</p>
+    <% else %>
+      <table class="table table-sm">
+        <thead>
+          <tr><th>Title</th><th>Risk Status</th><th>Risk Level</th><th>Impact</th><th>Deadline</th></tr>
+        </thead>
+        <tbody>
+          <% @poam_items.each do |item| %>
+            <tr>
+              <td><strong><%= item.title %></strong>
+                <% if item.description.present? %>
+                  <div class="small text-body-secondary"><%= truncate(item.description.to_s, length: 140) %></div>
+                <% end %>
+              </td>
+              <td><%= item.risk_status %></td>
+              <td><%= item.risk_level %></td>
+              <td><%= item.impact %></td>
+              <td><%= item.deadline %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Risks / Observations / Findings (read-only summary) ── %>
+<% [
+     [ "Risks", @poam_risks ],
+     [ "Observations", @poam_observations ],
+     [ "Findings", @poam_findings ]
+   ].each do |label, collection| %>
+  <% if collection.any? %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5><%= label %> <span class="badge text-bg-secondary"><%= collection.size %></span></h5>
+        <ul class="mb-0">
+          <% collection.each do |row| %>
+            <li>
+              <strong><%= row.title.presence || "(untitled)" %></strong>
+              <% if row.description.present? %>
+                — <span class="text-body-secondary"><%= truncate(row.description.to_s, length: 160) %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<div class="card">
+  <div class="card-body">
+    <%= link_to "← Back to Leveraged POA&Ms".html_safe, leveraged_poam_documents_path,
+                class: "btn btn-outline-secondary" %>
+  </div>
+</div>

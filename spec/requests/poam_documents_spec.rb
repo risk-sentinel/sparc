@@ -96,7 +96,10 @@ RSpec.describe "PoamDocuments", type: :request do
   # ── Wizard create (#389) ──────────────────────────────────────────────
 
   describe "POST /poam_documents (wizard, #389)" do
-    let(:boundary) { create(:authorization_boundary) }
+    # Deterministic boundary names — Faker can roll names with apostrophes
+    # (e.g. "O'Kon ATO") that get HTML-escaped on render and break raw-string
+    # assertions on response.body.
+    let(:boundary) { create(:authorization_boundary, name: "Wizard Boundary One") }
     let!(:ssp)     { create(:ssp_document, name: "Linked SSP", authorization_boundary: boundary) }
 
     it "creates a POAM with explicit version + ssp_document_id" do
@@ -134,7 +137,7 @@ RSpec.describe "PoamDocuments", type: :request do
     end
 
     it "renders wizard with SSP options grouped by boundary" do
-      ssp_other_boundary = create(:authorization_boundary)
+      ssp_other_boundary = create(:authorization_boundary, name: "Wizard Boundary Two")
       create(:ssp_document, name: "Other Boundary SSP",
              authorization_boundary: ssp_other_boundary)
 
@@ -143,9 +146,9 @@ RSpec.describe "PoamDocuments", type: :request do
       expect(response.body).to include("Source SSP")
       expect(response.body).to include("Linked SSP")
       expect(response.body).to include("Other Boundary SSP")
-      # optgroup labels carry the boundary names
-      expect(response.body).to include(boundary.name)
-      expect(response.body).to include(ssp_other_boundary.name)
+      # optgroup labels carry the boundary names (HTML-escaped on render)
+      expect(response.body).to include(CGI.escapeHTML(boundary.name))
+      expect(response.body).to include(CGI.escapeHTML(ssp_other_boundary.name))
     end
   end
 

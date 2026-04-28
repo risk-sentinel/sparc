@@ -1,0 +1,81 @@
+<%# OSCAL `origins[]` extensibility-array editor (#416/#423).
+    Each row represents one origin with a single actor; the controller
+    normalizes form rows into the OSCAL `{ actors: [{...}] }` shape.
+    Required locals:
+      param_key: form param namespace (e.g. "poam_item", "poam_risk")
+      record:    the model instance with .origins_data
+      parties:   Array<Hash> of { "uuid" => ..., "name" => ... } from the
+                 parent document's metadata_extra["parties"]
+%>
+<details class="mb-3">
+  <summary class="fw-semibold" style="font-size: 1rem; cursor: pointer;">
+    Origins <span class="text-body-secondary">(OSCAL <code>origins</code>)</span>
+  </summary>
+  <p class="text-body-secondary small mt-2 mb-2">
+    Where this finding came from — the assessment tool, party, or process that reported it.
+    Each origin references one actor; for OSCAL multi-actor origins, edit the JSONB directly.
+  </p>
+
+  <% if Array(parties).empty? %>
+    <div class="alert alert-warning small">
+      No parties defined on the parent POA&amp;M yet — origins reference parties by UUID.
+      Add parties via the document's <strong>OSCAL Metadata</strong> section before
+      creating origins.
+    </div>
+  <% else %>
+    <div data-controller="oscal-repeater">
+      <template data-oscal-repeater-target="template">
+        <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
+          <select name="<%= param_key %>[origins_data][][actor_type]"
+                  class="form-select form-select-sm" style="flex: 0 0 110px;">
+            <option value="party">party</option>
+            <option value="tool">tool</option>
+            <option value="other">other</option>
+          </select>
+          <select name="<%= param_key %>[origins_data][][actor_uuid]"
+                  class="form-select form-select-sm" style="flex: 1 1 220px;">
+            <option value="">— Select party —</option>
+            <% parties.each do |p| %>
+              <option value="<%= p["uuid"] %>"><%= p["name"] %></option>
+            <% end %>
+          </select>
+          <input type="text" name="<%= param_key %>[origins_data][][role_id]"
+                 placeholder="role-id (optional)"
+                 class="form-control form-control-sm" style="flex: 1 1 140px;" />
+          <button type="button" data-action="click->oscal-repeater#remove"
+                  class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
+        </div>
+      </template>
+
+      <div data-oscal-repeater-target="rows">
+        <% Array(record.origins_data).each do |origin| %>
+          <% actor = (origin["actors"] || []).first || {} %>
+          <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
+            <select name="<%= param_key %>[origins_data][][actor_type]"
+                    class="form-select form-select-sm" style="flex: 0 0 110px;">
+              <% %w[party tool other].each do |t| %>
+                <option value="<%= t %>" <%= "selected" if actor["type"] == t %>><%= t %></option>
+              <% end %>
+            </select>
+            <select name="<%= param_key %>[origins_data][][actor_uuid]"
+                    class="form-select form-select-sm" style="flex: 1 1 220px;">
+              <option value="">— Select party —</option>
+              <% parties.each do |p| %>
+                <option value="<%= p["uuid"] %>" <%= "selected" if actor["actor-uuid"] == p["uuid"] %>><%= p["name"] %></option>
+              <% end %>
+            </select>
+            <input type="text" name="<%= param_key %>[origins_data][][role_id]"
+                   value="<%= actor["role-id"] %>"
+                   placeholder="role-id (optional)"
+                   class="form-control form-control-sm" style="flex: 1 1 140px;" />
+            <button type="button" data-action="click->oscal-repeater#remove"
+                    class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
+          </div>
+        <% end %>
+      </div>
+
+      <button type="button" data-action="click->oscal-repeater#add"
+              class="btn btn-sm btn-outline-primary mt-1">+ Add origin</button>
+    </div>
+  <% end %>
+</details>

@@ -1,0 +1,8 @@
+<div class="card">
+  <div class="card-body">
+    <h2>Add Risk to <%= @poam_document.name %></h2>
+    <p class="text-body-secondary mb-3">Captures one risk record under this POA&amp;M.
+       Items, observations, and findings can reference this risk.</p>
+    <%= render "form", poam_document: @poam_document, poam_risk: @poam_risk %>
+  </div>
+</div>

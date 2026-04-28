@@ -1,0 +1,6 @@
+<div class="card">
+  <div class="card-body">
+    <h2>Edit Observation — <%= @poam_observation.title.presence || "Untitled" %></h2>
+    <%= render "form", poam_document: @poam_document, poam_observation: @poam_observation %>
+  </div>
+</div>

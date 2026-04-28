@@ -1,0 +1,68 @@
+<%= form_with model: [ poam_document, poam_local_component ], local: true do |f| %>
+  <% if poam_local_component.errors.any? %>
+    <div class="alert alert-danger small">
+      <%= poam_local_component.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="row row-cols-1 row-cols-md-2 g-3">
+    <div class="col">
+      <%= f.label :title, class: "fw-semibold" %>
+      <%= f.text_field :title, class: "form-control", required: true,
+                       placeholder: "e.g., Customer-facing API" %>
+    </div>
+    <div class="col">
+      <%= f.label :component_type, class: "fw-semibold" %>
+      <%= f.select :component_type,
+            options_for_select([
+              [ "Software", "software" ], [ "Service", "service" ],
+              [ "Network", "network" ], [ "Hardware", "hardware" ],
+              [ "Policy", "policy" ], [ "Process", "process" ],
+              [ "Procedure", "procedure" ], [ "Plan", "plan" ],
+              [ "Validation", "validation" ], [ "Guidance", "guidance" ]
+            ], poam_local_component.component_type),
+            { include_blank: "— Select type —" }, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :description, class: "fw-semibold" %>
+    <%= f.text_area :description, class: "form-control", rows: 3 %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :purpose, class: "fw-semibold" %>
+    <%= f.text_area :purpose, class: "form-control", rows: 2,
+                    placeholder: "What this component is responsible for" %>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-2 g-3 mt-1">
+    <div class="col">
+      <%= f.label :status_state, "Status", class: "fw-semibold" %>
+      <%= f.select :status_state,
+            options_for_select([
+              [ "Operational", "operational" ], [ "Under development", "under-development" ],
+              [ "Disposed", "disposition" ], [ "Other", "other" ]
+            ], poam_local_component.status_state),
+            { include_blank: "— Select —" }, class: "form-control" %>
+    </div>
+    <div class="col">
+      <%= f.label :status_remarks, "Status remarks", class: "fw-semibold" %>
+      <%= f.text_field :status_remarks, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= f.label :remarks, class: "fw-semibold" %>
+    <%= f.text_area :remarks, class: "form-control", rows: 2 %>
+  </div>
+
+  <hr class="border-top" style="border: none; margin: 1.5rem 0;">
+  <%= render "shared/oscal_props_array", param_key: "poam_local_component", record: poam_local_component %>
+  <%= render "shared/oscal_links_array", param_key: "poam_local_component", record: poam_local_component %>
+
+  <div class="d-flex gap-3 mt-3">
+    <%= f.submit poam_local_component.persisted? ? "Update Component" : "Add Component", class: "btn btn-success" %>
+    <%= link_to "Cancel", poam_document_path(poam_document), class: "btn btn-secondary" %>
+  </div>
+<% end %>

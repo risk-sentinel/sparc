@@ -180,8 +180,19 @@ Rails.application.routes.draw do
       get :status
     end
     resources :poam_items, only: [ :new, :create, :edit, :update, :destroy ]
+    # POAM child entities (#423) — full admin UI for OSCAL extensibility
+    resources :poam_risks, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :poam_remediations, only: [ :new, :create, :edit, :update, :destroy ] do
+      resources :poam_milestones, only: [ :new, :create, :edit, :update, :destroy ]
+    end
+    resources :poam_observations, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :poam_findings, only: [ :new, :create, :edit, :update, :destroy ]
+    resources :poam_local_components, only: [ :new, :create, :edit, :update, :destroy ]
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end
+
+  # Leveraging-side read-only view of leveraged-system POA&Ms (#415 Scenario A)
+  resources :leveraged_poam_documents, only: %i[index show]
 
   resources :evidences do
     resources :attestations, only: [ :new, :create, :destroy ]

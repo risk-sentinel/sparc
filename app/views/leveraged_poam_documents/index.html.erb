@@ -1,0 +1,45 @@
+<div class="card">
+  <div class="card-body">
+    <h2>Leveraged POA&amp;Ms</h2>
+    <p class="text-body-secondary">
+      POA&amp;Ms owned by leveraged-system boundaries that any of your
+      leveraging-side authorization boundaries depend on. Read-only.
+    </p>
+
+    <% if @leveraged_poams.empty? %>
+      <div class="alert alert-info mb-0">
+        No leveraged POA&amp;Ms in scope. This list populates from
+        <code>LeveragedAuthorization</code> records linking your boundaries to
+        leveraged ones.
+      </div>
+    <% else %>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead>
+            <tr>
+              <th>POA&amp;M</th>
+              <th>Leveraged boundary</th>
+              <th>Lifecycle</th>
+              <th>Items</th>
+              <th class="text-end">&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @leveraged_poams.each do |poam| %>
+              <tr>
+                <td><strong><%= poam.name %></strong></td>
+                <td><%= poam.authorization_boundary&.name %></td>
+                <td><%= poam.lifecycle_status %></td>
+                <td><%= poam.poam_items.count %></td>
+                <td class="text-end">
+                  <%= link_to "View", leveraged_poam_document_path(poam),
+                              class: "btn btn-sm btn-outline-primary" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+</div>
