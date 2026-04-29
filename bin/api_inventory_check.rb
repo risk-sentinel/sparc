@@ -39,7 +39,10 @@ CONTROLLER_TO_DOC = {
   "discovery"                => "discovery",
   "users"                    => "users",
   "authorization_boundaries" => "authorization-boundaries",
-  "back_matter_resources"    => "back-matter-resources"
+  "back_matter_resources"    => "back-matter-resources",
+  "admin/credentials"        => "admin-credentials",
+  "authoritative_sources"    => "authoritative-sources",
+  "federation_peers"         => "federation-peers"
 }.freeze
 
 def load_routes

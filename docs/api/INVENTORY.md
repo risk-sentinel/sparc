@@ -9,22 +9,22 @@ This file is the work-tracking spine for issue [#413](https://github.com/Rebel-R
 ## Summary (as of 2026-04-29)
 
 - **Code:** 95 logical endpoints across 18 controller groups (PATCH+PUT aliases collapsed)
-- **Documentation:** 75 / 95 endpoints documented in `endpoints/*.md` (79%)
+- **Documentation:** 84 / 95 endpoints documented in `endpoints/*.md` (88%)
   - 11 endpoints missing from the doc file that should cover them
-  - 9 endpoints with no doc file at all (3 controller groups)
+  - 0 endpoints with no doc file at all
 - **Postman collection:** 49 / 95 endpoints in collection (52%)
   - 46 endpoints not in the collection
   - 6 controller groups missing from the collection entirely
 
 ### Phase 1 gap summary
 
-#### Doc files needed (3 new files / 9 endpoints)
+#### Doc files needed (3 new files / 9 endpoints) — ✅ closed 2026-04-29
 
-| Controller | Endpoints | Origin |
-|---|---|---|
-| `admin/credentials` | 1 | #402/#403 admin credential rotation |
-| `authoritative_sources` | 2 | #372 federation export/import |
-| `federation_peers` | 6 | #372 federation peer registry |
+| Controller | Endpoints | Origin | Doc file |
+|---|---|---|---|
+| `admin/credentials` | 1 | #402/#403 admin credential rotation | [`admin-credentials.md`](endpoints/admin-credentials.md) |
+| `authoritative_sources` | 2 | #372 federation export/import | [`authoritative-sources.md`](endpoints/authoritative-sources.md) |
+| `federation_peers` | 6 | #372 federation peer registry | [`federation-peers.md`](endpoints/federation-peers.md) |
 
 #### Existing doc files needing updates (5 files / 11 endpoints)
 
@@ -62,9 +62,9 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 
 | Method | Path | Controller#action | In `endpoints/*.md` | In Postman collection |
 |--------|------|-------------------|---------------------|------------------------|
-| `POST` | `/api/v1/admin/refresh_credentials` | `admin/credentials#refresh` | NO (no doc file) | **MISSING** |
-| `GET` | `/api/v1/authoritative_sources/export` | `authoritative_sources#export` | NO (no doc file) | **MISSING** |
-| `POST` | `/api/v1/authoritative_sources/import` | `authoritative_sources#import` | NO (no doc file) | **MISSING** |
+| `POST` | `/api/v1/admin/refresh_credentials` | `admin/credentials#refresh` | yes | **MISSING** |
+| `GET` | `/api/v1/authoritative_sources/export` | `authoritative_sources#export` | yes | **MISSING** |
+| `POST` | `/api/v1/authoritative_sources/import` | `authoritative_sources#import` | yes | **MISSING** |
 | `GET` | `/api/v1/authorization_boundaries` | `authorization_boundaries#index` | yes | **MISSING** |
 | `POST` | `/api/v1/authorization_boundaries` | `authorization_boundaries#create` | yes | **MISSING** |
 | `DELETE` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#destroy` | yes | **MISSING** |
@@ -104,12 +104,12 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/control_mappings/:id` | `control_mappings#show` | yes | yes |
 | `PATCH/PUT` | `/api/v1/control_mappings/:id` | `control_mappings#update` | yes | yes |
 | `GET` | `/api/v1/available` | `discovery#available` | yes | yes |
-| `GET` | `/api/v1/federation_peers` | `federation_peers#index` | NO (no doc file) | **MISSING** |
-| `POST` | `/api/v1/federation_peers` | `federation_peers#create` | NO (no doc file) | **MISSING** |
-| `DELETE` | `/api/v1/federation_peers/:id` | `federation_peers#destroy` | NO (no doc file) | **MISSING** |
-| `GET` | `/api/v1/federation_peers/:id` | `federation_peers#show` | NO (no doc file) | **MISSING** |
-| `PATCH/PUT` | `/api/v1/federation_peers/:id` | `federation_peers#update` | NO (no doc file) | **MISSING** |
-| `POST` | `/api/v1/federation_peers/:id/sync` | `federation_peers#sync` | NO (no doc file) | **MISSING** |
+| `GET` | `/api/v1/federation_peers` | `federation_peers#index` | yes | **MISSING** |
+| `POST` | `/api/v1/federation_peers` | `federation_peers#create` | yes | **MISSING** |
+| `DELETE` | `/api/v1/federation_peers/:id` | `federation_peers#destroy` | yes | **MISSING** |
+| `GET` | `/api/v1/federation_peers/:id` | `federation_peers#show` | yes | **MISSING** |
+| `PATCH/PUT` | `/api/v1/federation_peers/:id` | `federation_peers#update` | yes | **MISSING** |
+| `POST` | `/api/v1/federation_peers/:id/sync` | `federation_peers#sync` | yes | **MISSING** |
 | `GET` | `/api/v1/ksi_catalog/indicators` | `ksi_catalog#indicators` | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/indicators/:id` | `ksi_catalog#show_indicator` | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/mappings` | `ksi_catalog#mappings` | yes | yes |
