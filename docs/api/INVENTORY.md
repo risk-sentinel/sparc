@@ -10,13 +10,15 @@ This file is the work-tracking spine for issue [#413](https://github.com/Rebel-R
 
 - **Code:** 95 logical endpoints across 18 controller groups (PATCH+PUT aliases collapsed)
 - **Documentation:** **95 / 95 endpoints documented** in `endpoints/*.md` (**100%**) ✅
-- **Postman collection:** 49 / 95 endpoints in collection (52%)
-  - 46 endpoints not in the collection
-  - 6 controller groups missing from the collection entirely
+- **Postman collection:** **95 / 95 endpoints covered** (**100%**) ✅
+  - 99 individual requests — PATCH/PUT update aliases each get their own request
+  - 18 folders, mirroring the controller groups
 
-### Phase 1 gap summary
+### Phase 1 status
 
-Phase 1 documentation work is **complete**: every code route is covered by a per-endpoint markdown section. The remaining Phase 1 work is closing the Postman collection gap below; Phase 2 (the Python pytest suite on `sparc-api-automated-testing-phase2`) will add a parallel coverage column once that suite lands.
+**Phase 1 is complete.** Every code route is covered by both a per-endpoint markdown section and at least one request in the Postman collection. `bin/api_inventory_check.rb --check` exits 0 against this commit.
+
+Phase 2 (Python pytest suite on `sparc-api-automated-testing-phase2`) will add a parallel coverage column to this inventory once that suite lands.
 
 #### Doc files needed (3 new files / 9 endpoints) — ✅ closed 2026-04-29
 
@@ -35,20 +37,20 @@ Phase 1 documentation work is **complete**: every code route is covered by a per
 | `sar-documents.md` | `update_fields` (1) |
 | `ksi-validations.md` | overview-table paths normalized to full nested form so the inventory script and human readers see the same identifier (1) |
 
-#### Postman gaps by controller (46 endpoints)
+#### Postman gaps closed — ✅ closed 2026-04-29
 
-| Controller | Missing | Notes |
-|---|---|---|
-| `back_matter_resources` | 15 | Folder absent from collection entirely |
-| `ksi_validations` | 7 | Folder absent from collection entirely |
-| `federation_peers` | 6 | New controller |
-| `users` | 5 | Folder absent from collection entirely |
-| `authorization_boundaries` | 5 | Folder absent from collection entirely |
-| `baseline_parameters` | 3 | Folder absent from collection entirely |
-| `authoritative_sources` | 2 | New controller |
-| `ssp_documents` | 1 | `update_fields` |
-| `sar_documents` | 1 | `update_fields` |
-| `admin/credentials` | 1 | New controller |
+| Folder added or extended | Requests added |
+|---|---|
+| Admin Credentials (new) | 1 |
+| Authoritative Sources (new) | 2 |
+| Authorization Boundaries (new) | 5 |
+| Back-Matter Resources (new) | 15 |
+| Baseline Parameters (new) | 3 |
+| Federation Peers (new) | 6 |
+| KSI Validations (new) | 7 |
+| Users (new) | 5 |
+| SSP Documents (existing, +1) | `update_fields` |
+| SAR Documents (existing, +1) | `update_fields` |
 
 ### Validation
 
@@ -62,32 +64,32 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 
 | Method | Path | Controller#action | In `endpoints/*.md` | In Postman collection |
 |--------|------|-------------------|---------------------|------------------------|
-| `POST` | `/api/v1/admin/refresh_credentials` | `admin/credentials#refresh` | yes | **MISSING** |
-| `GET` | `/api/v1/authoritative_sources/export` | `authoritative_sources#export` | yes | **MISSING** |
-| `POST` | `/api/v1/authoritative_sources/import` | `authoritative_sources#import` | yes | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries` | `authorization_boundaries#index` | yes | **MISSING** |
-| `POST` | `/api/v1/authorization_boundaries` | `authorization_boundaries#create` | yes | **MISSING** |
-| `DELETE` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#destroy` | yes | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#show` | yes | **MISSING** |
-| `PATCH/PUT` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#update` | yes | **MISSING** |
-| `GET` | `/api/v1/back_matter_resources` | `back_matter_resources#index` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources` | `back_matter_resources#create` | yes | **MISSING** |
-| `DELETE` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#destroy` | yes | **MISSING** |
-| `GET` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#show` | yes | **MISSING** |
-| `PATCH/PUT` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#update` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/approve_promotion` | `back_matter_resources#approve_promotion` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/archive` | `back_matter_resources#archive` | yes | **MISSING** |
-| `GET` | `/api/v1/back_matter_resources/:id/changes` | `back_matter_resources#changes` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/link` | `back_matter_resources#link` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/promote` | `back_matter_resources#promote` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/reject_promotion` | `back_matter_resources#reject_promotion` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/restore` | `back_matter_resources#restore` | yes | **MISSING** |
-| `DELETE` | `/api/v1/back_matter_resources/:id/unlink` | `back_matter_resources#unlink` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/bulk` | `back_matter_resources#bulk` | yes | **MISSING** |
-| `GET` | `/api/v1/back_matter_resources/promotion_queue` | `back_matter_resources#promotion_queue` | yes | **MISSING** |
-| `GET` | `/api/v1/profile_documents/:profile_document_id/parameters` | `baseline_parameters#show` | yes | **MISSING** |
-| `PATCH/PUT` | `/api/v1/profile_documents/:profile_document_id/parameters` | `baseline_parameters#update` | yes | **MISSING** |
-| `GET` | `/api/v1/profile_documents/:profile_document_id/parameters/export` | `baseline_parameters#export` | yes | **MISSING** |
+| `POST` | `/api/v1/admin/refresh_credentials` | `admin/credentials#refresh` | yes | yes |
+| `GET` | `/api/v1/authoritative_sources/export` | `authoritative_sources#export` | yes | yes |
+| `POST` | `/api/v1/authoritative_sources/import` | `authoritative_sources#import` | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries` | `authorization_boundaries#index` | yes | yes |
+| `POST` | `/api/v1/authorization_boundaries` | `authorization_boundaries#create` | yes | yes |
+| `DELETE` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#destroy` | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#show` | yes | yes |
+| `PATCH/PUT` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#update` | yes | yes |
+| `GET` | `/api/v1/back_matter_resources` | `back_matter_resources#index` | yes | yes |
+| `POST` | `/api/v1/back_matter_resources` | `back_matter_resources#create` | yes | yes |
+| `DELETE` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#destroy` | yes | yes |
+| `GET` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#show` | yes | yes |
+| `PATCH/PUT` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#update` | yes | yes |
+| `POST` | `/api/v1/back_matter_resources/:id/approve_promotion` | `back_matter_resources#approve_promotion` | yes | yes |
+| `POST` | `/api/v1/back_matter_resources/:id/archive` | `back_matter_resources#archive` | yes | yes |
+| `GET` | `/api/v1/back_matter_resources/:id/changes` | `back_matter_resources#changes` | yes | yes |
+| `POST` | `/api/v1/back_matter_resources/:id/link` | `back_matter_resources#link` | yes | yes |
+| `POST` | `/api/v1/back_matter_resources/:id/promote` | `back_matter_resources#promote` | yes | yes |
+| `POST` | `/api/v1/back_matter_resources/:id/reject_promotion` | `back_matter_resources#reject_promotion` | yes | yes |
+| `POST` | `/api/v1/back_matter_resources/:id/restore` | `back_matter_resources#restore` | yes | yes |
+| `DELETE` | `/api/v1/back_matter_resources/:id/unlink` | `back_matter_resources#unlink` | yes | yes |
+| `POST` | `/api/v1/back_matter_resources/bulk` | `back_matter_resources#bulk` | yes | yes |
+| `GET` | `/api/v1/back_matter_resources/promotion_queue` | `back_matter_resources#promotion_queue` | yes | yes |
+| `GET` | `/api/v1/profile_documents/:profile_document_id/parameters` | `baseline_parameters#show` | yes | yes |
+| `PATCH/PUT` | `/api/v1/profile_documents/:profile_document_id/parameters` | `baseline_parameters#update` | yes | yes |
+| `GET` | `/api/v1/profile_documents/:profile_document_id/parameters/export` | `baseline_parameters#export` | yes | yes |
 | `GET` | `/api/v1/cdef_documents` | `cdef_documents#index` | yes | yes |
 | `POST` | `/api/v1/cdef_documents` | `cdef_documents#create` | yes | yes |
 | `DELETE` | `/api/v1/cdef_documents/:id` | `cdef_documents#destroy` | yes | yes |
@@ -104,23 +106,23 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/control_mappings/:id` | `control_mappings#show` | yes | yes |
 | `PATCH/PUT` | `/api/v1/control_mappings/:id` | `control_mappings#update` | yes | yes |
 | `GET` | `/api/v1/available` | `discovery#available` | yes | yes |
-| `GET` | `/api/v1/federation_peers` | `federation_peers#index` | yes | **MISSING** |
-| `POST` | `/api/v1/federation_peers` | `federation_peers#create` | yes | **MISSING** |
-| `DELETE` | `/api/v1/federation_peers/:id` | `federation_peers#destroy` | yes | **MISSING** |
-| `GET` | `/api/v1/federation_peers/:id` | `federation_peers#show` | yes | **MISSING** |
-| `PATCH/PUT` | `/api/v1/federation_peers/:id` | `federation_peers#update` | yes | **MISSING** |
-| `POST` | `/api/v1/federation_peers/:id/sync` | `federation_peers#sync` | yes | **MISSING** |
+| `GET` | `/api/v1/federation_peers` | `federation_peers#index` | yes | yes |
+| `POST` | `/api/v1/federation_peers` | `federation_peers#create` | yes | yes |
+| `DELETE` | `/api/v1/federation_peers/:id` | `federation_peers#destroy` | yes | yes |
+| `GET` | `/api/v1/federation_peers/:id` | `federation_peers#show` | yes | yes |
+| `PATCH/PUT` | `/api/v1/federation_peers/:id` | `federation_peers#update` | yes | yes |
+| `POST` | `/api/v1/federation_peers/:id/sync` | `federation_peers#sync` | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/indicators` | `ksi_catalog#indicators` | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/indicators/:id` | `ksi_catalog#show_indicator` | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/mappings` | `ksi_catalog#mappings` | yes | yes |
 | `GET` | `/api/v1/ksi_catalog/themes` | `ksi_catalog#themes` | yes | yes |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations` | `ksi_validations#index` | yes | **MISSING** |
-| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations` | `ksi_validations#create` | yes | **MISSING** |
-| `DELETE` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#destroy` | yes | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#show` | yes | **MISSING** |
-| `PATCH/PUT` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#update` | yes | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export` | `ksi_validations#export` | yes | **MISSING** |
-| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/summary` | `ksi_validations#summary` | yes | **MISSING** |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations` | `ksi_validations#index` | yes | yes |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations` | `ksi_validations#create` | yes | yes |
+| `DELETE` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#destroy` | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#show` | yes | yes |
+| `PATCH/PUT` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#update` | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export` | `ksi_validations#export` | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/summary` | `ksi_validations#summary` | yes | yes |
 | `GET` | `/api/v1/poam_documents` | `poam_documents#index` | yes | yes |
 | `POST` | `/api/v1/poam_documents` | `poam_documents#create` | yes | yes |
 | `DELETE` | `/api/v1/poam_documents/:id` | `poam_documents#destroy` | yes | yes |
@@ -142,7 +144,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/sar_documents/:id` | `sar_documents#show` | yes | yes |
 | `PATCH/PUT` | `/api/v1/sar_documents/:id` | `sar_documents#update` | yes | yes |
 | `GET` | `/api/v1/sar_documents/:id/export` | `sar_documents#export` | yes | yes |
-| `PUT` | `/api/v1/sar_documents/:id/update_fields` | `sar_documents#update_fields` | yes | **MISSING** |
+| `PUT` | `/api/v1/sar_documents/:id/update_fields` | `sar_documents#update_fields` | yes | yes |
 | `POST` | `/api/v1/sar_documents/convert` | `sar_documents#convert` | yes | yes |
 | `GET` | `/api/v1/ssp_documents` | `ssp_documents#index` | yes | yes |
 | `POST` | `/api/v1/ssp_documents` | `ssp_documents#create` | yes | yes |
@@ -150,11 +152,11 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/ssp_documents/:id` | `ssp_documents#show` | yes | yes |
 | `PATCH/PUT` | `/api/v1/ssp_documents/:id` | `ssp_documents#update` | yes | yes |
 | `GET` | `/api/v1/ssp_documents/:id/export` | `ssp_documents#export` | yes | yes |
-| `PUT` | `/api/v1/ssp_documents/:id/update_fields` | `ssp_documents#update_fields` | yes | **MISSING** |
+| `PUT` | `/api/v1/ssp_documents/:id/update_fields` | `ssp_documents#update_fields` | yes | yes |
 | `POST` | `/api/v1/ssp_documents/convert` | `ssp_documents#convert` | yes | yes |
-| `GET` | `/api/v1/users` | `users#index` | yes | **MISSING** |
-| `POST` | `/api/v1/users` | `users#create` | yes | **MISSING** |
-| `DELETE` | `/api/v1/users/:id` | `users#destroy` | yes | **MISSING** |
-| `GET` | `/api/v1/users/:id` | `users#show` | yes | **MISSING** |
-| `PATCH/PUT` | `/api/v1/users/:id` | `users#update` | yes | **MISSING** |
+| `GET` | `/api/v1/users` | `users#index` | yes | yes |
+| `POST` | `/api/v1/users` | `users#create` | yes | yes |
+| `DELETE` | `/api/v1/users/:id` | `users#destroy` | yes | yes |
+| `GET` | `/api/v1/users/:id` | `users#show` | yes | yes |
+| `PATCH/PUT` | `/api/v1/users/:id` | `users#update` | yes | yes |
 

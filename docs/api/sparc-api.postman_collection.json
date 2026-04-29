@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 54 endpoints covering OSCAL document lifecycle, FedRAMP 20x KSI management, and platform administration.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 99 endpoints across 18 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -80,6 +80,21 @@
       "key": "indicator_id",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "peer_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "back_matter_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -99,8 +114,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/available",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "available"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "available"
+              ]
             },
             "description": "Returns authorization-scoped list of all API endpoints the caller can access. The response includes endpoint paths, HTTP methods, and brief descriptions filtered by the caller's role and permissions.\n\nResponse format:\n```json\n{\n  \"endpoints\": [\n    {\n      \"path\": \"/api/v1/ssp_documents\",\n      \"method\": \"GET\",\n      \"description\": \"List SSP documents\"\n    }\n  ]\n}\n```"
           }
@@ -123,8 +144,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ssp_documents?authorization_boundary_id=1&page=1&items=25",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ssp_documents"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents"
+              ],
               "query": [
                 {
                   "key": "authorization_boundary_id",
@@ -169,8 +196,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/ssp_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ssp_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents"
+              ]
             },
             "description": "Creates a new SSP document. The document is associated with an authorization boundary and will be initialized with empty control fields ready for population.\n\nResponse: 201 Created with the new SSP document JSON including its generated slug."
           }
@@ -187,8 +220,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ssp_documents", "{{ssp_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}"
+              ]
             },
             "description": "Returns a single SSP document by slug, including all associated controls and control fields.\n\nResponse format:\n```json\n{\n  \"ssp_document\": {\n    \"id\": 1,\n    \"slug\": \"acme-cloud-platform-ssp\",\n    \"name\": \"ACME Cloud Platform SSP\",\n    \"controls\": [...]\n  }\n}\n```"
           }
@@ -213,8 +253,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ssp_documents", "{{ssp_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}"
+              ]
             },
             "description": "Updates an existing SSP document's metadata (name, description). Does not modify controls or control fields directly.\n\nResponse: 200 OK with the updated SSP document JSON."
           }
@@ -231,8 +278,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ssp_documents", "{{ssp_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}"
+              ]
             },
             "description": "Soft-deletes an SSP document. The document is marked as deleted but retained in the database for audit purposes. Can be restored by an administrator.\n\nResponse: 200 OK with confirmation message."
           }
@@ -266,8 +320,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/ssp_documents/convert",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ssp_documents", "convert"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "convert"
+              ]
             },
             "description": "Uploads an Excel (.xlsx) file for asynchronous parsing into an SSP document with controls and control fields. The file is processed by a background Sidekiq job. Returns a conversion job ID for status polling.\n\nResponse: 202 Accepted with conversion job details:\n```json\n{\n  \"conversion_job\": {\n    \"id\": 1,\n    \"status\": \"pending\"\n  }\n}\n```"
           }
@@ -284,10 +345,52 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}/export",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ssp_documents", "{{ssp_slug}}", "export"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}",
+                "export"
+              ]
             },
             "description": "Exports an SSP document as a downloadable JSON file. The export includes the full document hierarchy: document metadata, controls, and all control fields.\n\nResponse: 200 OK with Content-Disposition header for file download."
+          }
+        },
+        {
+          "name": "Bulk Update SSP Control Fields",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}/update_fields",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}",
+                "update_fields"
+              ]
+            },
+            "description": "Bulk-update editable control fields on one SSP. Delegates to SspUpdateService. Returns the full updated document so the caller can refresh in one round-trip.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"controls\": {\n    \"AC-1\": {\n      \"implementation_status\": \"implemented\",\n      \"responsible_role\": \"System Owner\",\n      \"control_summary\": \"Updated implementation narrative...\"\n    },\n    \"AC-2\": {\n      \"implementation_status\": \"partial\",\n      \"control_summary\": \"Provisioning automated; deprovisioning manual.\"\n    }\n  }\n}"
+            }
           }
         }
       ]
@@ -308,8 +411,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sar_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sar_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sar_documents"
+              ]
             },
             "description": "Returns a paginated list of SAR documents scoped to the caller's authorization boundaries.\n\nResponse format:\n```json\n{\n  \"sar_documents\": [...],\n  \"meta\": { \"total\": 5, \"page\": 1, \"items\": 25 }\n}\n```"
           }
@@ -334,8 +443,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sar_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sar_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sar_documents"
+              ]
             },
             "description": "Creates a new SAR document associated with an authorization boundary.\n\nResponse: 201 Created with the new SAR document JSON including its generated slug."
           }
@@ -352,8 +467,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sar_documents", "{{sar_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sar_documents",
+                "{{sar_slug}}"
+              ]
             },
             "description": "Returns a single SAR document by slug, including all associated controls, control fields, and assessment findings.\n\nResponse: 200 OK with full SAR document JSON."
           }
@@ -378,8 +500,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sar_documents", "{{sar_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sar_documents",
+                "{{sar_slug}}"
+              ]
             },
             "description": "Updates an existing SAR document's metadata.\n\nResponse: 200 OK with the updated SAR document JSON."
           }
@@ -396,8 +525,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sar_documents", "{{sar_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sar_documents",
+                "{{sar_slug}}"
+              ]
             },
             "description": "Soft-deletes a SAR document. The document is retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
           }
@@ -431,8 +567,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sar_documents/convert",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sar_documents", "convert"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sar_documents",
+                "convert"
+              ]
             },
             "description": "Uploads an Excel (.xlsx) file for asynchronous parsing into a SAR document. Processed by a background Sidekiq job.\n\nResponse: 202 Accepted with conversion job details."
           }
@@ -449,10 +592,52 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}/export",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sar_documents", "{{sar_slug}}", "export"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sar_documents",
+                "{{sar_slug}}",
+                "export"
+              ]
             },
             "description": "Exports a SAR document as a downloadable JSON file including all assessment findings and control results.\n\nResponse: 200 OK with Content-Disposition header for file download."
+          }
+        },
+        {
+          "name": "Bulk Update SAR Control Fields",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sar_documents/{{sar_slug}}/update_fields",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sar_documents",
+                "{{sar_slug}}",
+                "update_fields"
+              ]
+            },
+            "description": "Bulk-update editable control fields on one SAR. Only fields whose backing SarControlField is editable? are mutated; non-editable fields silently skip.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"controls\": {\n    \"AC-1\": {\n      \"assessor_finding\": \"satisfied\",\n      \"assessor_remarks\": \"Policy reviewed; signed by SO on 2026-04-15.\",\n      \"evidence_url\": \"https://evidence.example.com/AC-1-policy-2026.pdf\"\n    }\n  }\n}"
+            }
           }
         }
       ]
@@ -473,8 +658,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sap_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sap_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sap_documents"
+              ]
             },
             "description": "Returns a paginated list of SAP documents scoped to the caller's authorization boundaries.\n\nResponse format:\n```json\n{\n  \"sap_documents\": [...],\n  \"meta\": { \"total\": 3, \"page\": 1, \"items\": 25 }\n}\n```"
           }
@@ -499,8 +690,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sap_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sap_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sap_documents"
+              ]
             },
             "description": "Creates a new SAP document defining the scope, methodology, and schedule for a security assessment.\n\nResponse: 201 Created with the new SAP document JSON."
           }
@@ -517,8 +714,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sap_documents/{{sap_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sap_documents", "{{sap_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sap_documents",
+                "{{sap_slug}}"
+              ]
             },
             "description": "Returns a single SAP document by slug with full assessment plan details.\n\nResponse: 200 OK with SAP document JSON."
           }
@@ -543,8 +747,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sap_documents/{{sap_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sap_documents", "{{sap_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sap_documents",
+                "{{sap_slug}}"
+              ]
             },
             "description": "Updates an existing SAP document's metadata.\n\nResponse: 200 OK with the updated SAP document JSON."
           }
@@ -561,8 +772,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sap_documents/{{sap_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sap_documents", "{{sap_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sap_documents",
+                "{{sap_slug}}"
+              ]
             },
             "description": "Soft-deletes a SAP document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
           }
@@ -585,8 +803,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/poam_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "poam_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "poam_documents"
+              ]
             },
             "description": "Returns a paginated list of POA&M documents scoped to the caller's authorization boundaries.\n\nResponse format:\n```json\n{\n  \"poam_documents\": [...],\n  \"meta\": { \"total\": 2, \"page\": 1, \"items\": 25 }\n}\n```"
           }
@@ -611,8 +835,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/poam_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "poam_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "poam_documents"
+              ]
             },
             "description": "Creates a new POA&M document for tracking remediation milestones and scheduled completion dates for identified weaknesses.\n\nResponse: 201 Created with the new POA&M document JSON."
           }
@@ -629,8 +859,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/poam_documents/{{poam_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "poam_documents", "{{poam_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "poam_documents",
+                "{{poam_slug}}"
+              ]
             },
             "description": "Returns a single POA&M document by slug with all remediation items and milestone tracking details.\n\nResponse: 200 OK with POA&M document JSON."
           }
@@ -655,8 +892,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/poam_documents/{{poam_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "poam_documents", "{{poam_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "poam_documents",
+                "{{poam_slug}}"
+              ]
             },
             "description": "Updates an existing POA&M document's metadata.\n\nResponse: 200 OK with the updated POA&M document JSON."
           }
@@ -673,8 +917,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/poam_documents/{{poam_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "poam_documents", "{{poam_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "poam_documents",
+                "{{poam_slug}}"
+              ]
             },
             "description": "Soft-deletes a POA&M document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
           }
@@ -697,8 +948,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/control_catalogs",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_catalogs"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_catalogs"
+              ]
             },
             "description": "Returns all available control catalogs (e.g., NIST SP 800-53 Rev 4, Rev 5). Includes catalog metadata and control family counts.\n\nResponse format:\n```json\n{\n  \"control_catalogs\": [\n    {\n      \"id\": 1,\n      \"name\": \"NIST SP 800-53 Rev 5\",\n      \"version\": \"5.0\",\n      \"families_count\": 20,\n      \"controls_count\": 1189\n    }\n  ]\n}\n```"
           }
@@ -723,8 +980,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/control_catalogs",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_catalogs"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_catalogs"
+              ]
             },
             "description": "Creates a new control catalog. Admin-only endpoint. Catalogs serve as the reference framework for control implementations across all document types.\n\nResponse: 201 Created with the new catalog JSON."
           }
@@ -741,8 +1004,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_catalogs", "{{catalog_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_catalogs",
+                "{{catalog_id}}"
+              ]
             },
             "description": "Returns a single control catalog by ID, including all control families and their controls.\n\nResponse: 200 OK with full catalog JSON including nested families and controls."
           }
@@ -767,8 +1037,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_catalogs", "{{catalog_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_catalogs",
+                "{{catalog_id}}"
+              ]
             },
             "description": "Updates a control catalog's metadata. Admin-only endpoint.\n\nResponse: 200 OK with the updated catalog JSON."
           }
@@ -785,8 +1062,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_catalogs", "{{catalog_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_catalogs",
+                "{{catalog_id}}"
+              ]
             },
             "description": "Deletes a control catalog. Admin-only endpoint. Will fail if any documents reference controls from this catalog.\n\nResponse: 200 OK with confirmation message."
           }
@@ -809,8 +1093,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/profile_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "profile_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents"
+              ]
             },
             "description": "Returns a list of all profile documents. Profiles define baseline control selections and parameter assignments.\n\nResponse format:\n```json\n{\n  \"profile_documents\": [\n    {\n      \"slug\": \"fedramp-moderate-rev5\",\n      \"name\": \"FedRAMP Moderate Rev 5\",\n      \"status\": \"published\"\n    }\n  ]\n}\n```"
           }
@@ -835,8 +1125,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/profile_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "profile_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents"
+              ]
             },
             "description": "Creates a new profile document linked to a control catalog. The profile can then have baseline parameters configured.\n\nResponse: 201 Created with the new profile document JSON."
           }
@@ -853,8 +1149,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "profile_documents", "{{profile_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}"
+              ]
             },
             "description": "Returns a single profile document by slug with baseline selections and parameter settings.\n\nResponse: 200 OK with full profile document JSON."
           }
@@ -879,8 +1182,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "profile_documents", "{{profile_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}"
+              ]
             },
             "description": "Updates a profile document's metadata.\n\nResponse: 200 OK with the updated profile document JSON."
           }
@@ -897,8 +1207,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "profile_documents", "{{profile_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}"
+              ]
             },
             "description": "Soft-deletes a profile document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
           }
@@ -921,8 +1238,16 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/parameters?family=ac",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "profile_documents", "{{profile_slug}}", "parameters"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "parameters"
+              ],
               "query": [
                 {
                   "key": "family",
@@ -949,16 +1274,24 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"parameters\": [\n    {\n      \"id\": \"ac-1_prm_1\",\n      \"value\": \"annually and upon significant changes\"\n    },\n    {\n      \"id\": \"ac-1_prm_2\",\n      \"value\": \"all organizational personnel\"\n    },\n    {\n      \"id\": \"ac-2_prm_1\",\n      \"value\": \"information system account types defined in SSP\"\n    }\n  ]\n}"
-            },
             "url": {
               "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/parameters",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "profile_documents", "{{profile_slug}}", "parameters"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "parameters"
+              ]
             },
-            "description": "Bulk updates parameter values for a profile document. Accepts an array of parameter ID/value pairs. All parameters are validated against their defined constraints.\n\nResponse: 200 OK with the updated parameter list and any validation warnings."
+            "description": "Bulk-update baseline parameter values for a profile.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parameters\": {\n    \"ac-2_prm_1\": \"30 days\",\n    \"ac-2_prm_2\": \"annually\"\n  }\n}"
+            }
           }
         },
         {
@@ -972,18 +1305,62 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/parameters/export?format=json",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "profile_documents", "{{profile_slug}}", "parameters", "export"],
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/parameters/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "parameters",
+                "export"
+              ],
               "query": [
                 {
                   "key": "format",
-                  "value": "json",
-                  "description": "Export format: json (default), yaml, or xml"
+                  "value": "yaml",
+                  "description": "Export format: yaml or json",
+                  "disabled": true
                 }
               ]
             },
-            "description": "Exports profile baseline parameters in the specified format. Supports JSON, YAML, and XML output formats for integration with external tools and OSCAL workflows.\n\nResponse: 200 OK with Content-Disposition header. Format controlled by ?format= query parameter (json|yaml|xml)."
+            "description": "Download the baseline parameter set in YAML or JSON form."
+          }
+        },
+        {
+          "name": "Get Parameters Schema",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/parameters",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "parameters"
+              ],
+              "query": [
+                {
+                  "key": "family",
+                  "value": "ac",
+                  "description": "Filter to one control family",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get the baseline parameters schema for a profile, optionally scoped to one family."
           }
         }
       ]
@@ -1004,8 +1381,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/cdef_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "cdef_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents"
+              ]
             },
             "description": "Returns a list of all Component Definition documents. CDEFs describe how individual system components implement security controls.\n\nResponse format:\n```json\n{\n  \"cdef_documents\": [\n    {\n      \"slug\": \"mongodb-component-definition\",\n      \"name\": \"MongoDB Component Definition\",\n      \"controls_count\": 23\n    }\n  ]\n}\n```"
           }
@@ -1030,8 +1413,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/cdef_documents",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "cdef_documents"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents"
+              ]
             },
             "description": "Creates a new Component Definition document. Can also be created via OSCAL JSON/YAML/XML import or from a published profile.\n\nResponse: 201 Created with the new CDEF document JSON."
           }
@@ -1048,8 +1437,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "cdef_documents", "{{cdef_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}"
+              ]
             },
             "description": "Returns a single CDEF document by slug with all component controls and implementation details.\n\nResponse: 200 OK with full CDEF document JSON."
           }
@@ -1074,8 +1470,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "cdef_documents", "{{cdef_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}"
+              ]
             },
             "description": "Updates a CDEF document's metadata.\n\nResponse: 200 OK with the updated CDEF document JSON."
           }
@@ -1092,8 +1495,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "cdef_documents", "{{cdef_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}"
+              ]
             },
             "description": "Soft-deletes a CDEF document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
           }
@@ -1116,8 +1526,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/control_mappings",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_mappings"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_mappings"
+              ]
             },
             "description": "Returns all control mappings that define relationships between controls across different frameworks and catalogs.\n\nResponse format:\n```json\n{\n  \"control_mappings\": [\n    {\n      \"id\": 1,\n      \"source_control_id\": \"ac-1\",\n      \"target_control_id\": \"A.5.1\",\n      \"source_framework\": \"NIST SP 800-53 Rev 5\",\n      \"target_framework\": \"ISO 27001:2022\",\n      \"relationship\": \"equivalent\"\n    }\n  ]\n}\n```"
           }
@@ -1142,8 +1558,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/control_mappings",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_mappings"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_mappings"
+              ]
             },
             "description": "Creates a new control mapping between two controls from different catalogs/frameworks. Admin-only endpoint. Relationship types: equivalent, partial, superset, subset.\n\nResponse: 201 Created with the new mapping JSON."
           }
@@ -1160,8 +1582,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/control_mappings/{{mapping_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_mappings", "{{mapping_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_mappings",
+                "{{mapping_id}}"
+              ]
             },
             "description": "Returns a single control mapping by ID with full source and target control details.\n\nResponse: 200 OK with control mapping JSON."
           }
@@ -1186,8 +1615,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/control_mappings/{{mapping_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_mappings", "{{mapping_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_mappings",
+                "{{mapping_id}}"
+              ]
             },
             "description": "Updates an existing control mapping. Admin-only endpoint.\n\nResponse: 200 OK with the updated mapping JSON."
           }
@@ -1204,8 +1640,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/control_mappings/{{mapping_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "control_mappings", "{{mapping_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_mappings",
+                "{{mapping_id}}"
+              ]
             },
             "description": "Deletes a control mapping. Admin-only endpoint.\n\nResponse: 200 OK with confirmation message."
           }
@@ -1228,8 +1671,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ksi_catalog/themes",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ksi_catalog", "themes"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ksi_catalog",
+                "themes"
+              ]
             },
             "description": "Returns all FedRAMP 20x KSI themes. Themes group related Key Security Indicators by security domain (e.g., AUTH for Authentication, VULN for Vulnerability Management).\n\nResponse format:\n```json\n{\n  \"themes\": [\n    {\n      \"code\": \"AUTH\",\n      \"name\": \"Authentication\",\n      \"description\": \"Identity and authentication controls\",\n      \"indicators_count\": 5\n    }\n  ]\n}\n```"
           }
@@ -1246,8 +1696,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ksi_catalog/indicators?theme=AUTH&impact_level=high",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ksi_catalog", "indicators"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ksi_catalog",
+                "indicators"
+              ],
               "query": [
                 {
                   "key": "theme",
@@ -1278,8 +1735,16 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ksi_catalog/indicators/{{indicator_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ksi_catalog", "indicators", "{{indicator_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ksi_catalog",
+                "indicators",
+                "{{indicator_id}}"
+              ]
             },
             "description": "Returns a single KSI indicator by ID with full details including all NIST SP 800-53 control mappings. Shows which NIST controls satisfy this indicator.\n\nResponse format:\n```json\n{\n  \"indicator\": {\n    \"id\": 1,\n    \"theme\": \"AUTH\",\n    \"code\": \"AUTH-01\",\n    \"name\": \"Multi-Factor Authentication\",\n    \"description\": \"System enforces MFA for all privileged and non-privileged users\",\n    \"nist_mappings\": [\n      { \"control_id\": \"ia-2\", \"relationship\": \"primary\" },\n      { \"control_id\": \"ia-2(1)\", \"relationship\": \"supporting\" }\n    ]\n  }\n}\n```"
           }
@@ -1296,8 +1761,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ksi_catalog/mappings",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ksi_catalog", "mappings"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ksi_catalog",
+                "mappings"
+              ]
             },
             "description": "Returns the complete mapping table between FedRAMP 20x KSI indicators and NIST SP 800-53 controls. Useful for understanding which NIST controls contribute to each KSI.\n\nResponse format:\n```json\n{\n  \"mappings\": [\n    {\n      \"indicator_code\": \"AUTH-01\",\n      \"nist_control_id\": \"ia-2\",\n      \"relationship\": \"primary\"\n    }\n  ]\n}\n```"
           }
@@ -1320,10 +1792,38 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number",
+                  "disabled": true
+                },
+                {
+                  "key": "items",
+                  "value": "25",
+                  "description": "Items per page",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "compliant",
+                  "description": "Filter by validation status",
+                  "disabled": true
+                }
+              ]
             },
-            "description": "Returns all KSI validations for an authorization boundary. Each validation records the assessment status of a specific KSI indicator.\n\nResponse format:\n```json\n{\n  \"ksi_validations\": [\n    {\n      \"id\": 1,\n      \"indicator_code\": \"AUTH-01\",\n      \"status\": \"passed\",\n      \"validation_method\": \"automated\",\n      \"validated_at\": \"2026-03-15T10:30:00Z\"\n    }\n  ]\n}\n```"
+            "description": "List KSI validation records for one boundary."
           }
         },
         {
@@ -1340,16 +1840,24 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ksi_validation\": {\n    \"catalog_control_id\": 1,\n    \"status\": \"passed\",\n    \"validation_method\": \"automated\",\n    \"notes\": \"Automated scan passed — MFA enforced for all user accounts via Azure AD Conditional Access\",\n    \"evidence_url\": \"https://evidence.example.com/scan-results/auth-01-2026-03\"\n  }\n}"
-            },
             "url": {
               "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations"
+              ]
             },
-            "description": "Creates a new KSI validation record for an authorization boundary. Records the assessment result for a specific control/indicator combination.\n\nStatus values: passed, failed, partial, not_assessed\nValidation methods: automated, manual, hybrid\n\nResponse: 201 Created with the new validation JSON."
+            "description": "Create a new KSI validation record under this boundary.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ksi_validation\": {\n    \"ksi_indicator_id\": 1,\n    \"status\": \"compliant\",\n    \"evidence_url\": \"https://evidence.example.com/ksi-1.pdf\",\n    \"remarks\": \"Verified per Q2 review\"\n  }\n}"
+            }
           }
         },
         {
@@ -1364,8 +1872,17 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/{{validation_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "{{validation_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations",
+                "{{validation_id}}"
+              ]
             },
             "description": "Returns a single KSI validation by ID with full details including associated control information, evidence, and audit history.\n\nResponse: 200 OK with validation JSON."
           }
@@ -1384,16 +1901,25 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ksi_validation\": {\n    \"status\": \"failed\",\n    \"notes\": \"Re-assessment found MFA bypass for service accounts — remediation required\",\n    \"evidence_url\": \"https://evidence.example.com/scan-results/auth-01-2026-03-retest\"\n  }\n}"
-            },
             "url": {
               "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/{{validation_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "{{validation_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations",
+                "{{validation_id}}"
+              ]
             },
-            "description": "Updates an existing KSI validation record. Commonly used to update status after re-assessment or to add evidence links.\n\nResponse: 200 OK with the updated validation JSON."
+            "description": "Update an existing KSI validation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ksi_validation\": {\n    \"status\": \"non_compliant\",\n    \"remarks\": \"Awaiting Q3 evidence\"\n  }\n}"
+            }
           }
         },
         {
@@ -1408,10 +1934,19 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/{{validation_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "{{validation_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations",
+                "{{validation_id}}"
+              ]
             },
-            "description": "Deletes a KSI validation record. Use with caution as this removes the audit trail for this validation.\n\nResponse: 200 OK with confirmation message."
+            "description": "Delete a KSI validation record."
           }
         },
         {
@@ -1426,8 +1961,17 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/summary",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "summary"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations",
+                "summary"
+              ]
             },
             "description": "Returns an aggregated dashboard summary of KSI validation status for an authorization boundary. Includes counts by status, theme-level rollups, and overall compliance posture.\n\nResponse format:\n```json\n{\n  \"summary\": {\n    \"total\": 45,\n    \"passed\": 38,\n    \"failed\": 3,\n    \"partial\": 2,\n    \"not_assessed\": 2,\n    \"compliance_percentage\": 84.4,\n    \"by_theme\": {\n      \"AUTH\": { \"passed\": 4, \"failed\": 1, \"total\": 5 },\n      \"VULN\": { \"passed\": 6, \"failed\": 0, \"total\": 6 }\n    }\n  }\n}\n```"
           }
@@ -1444,8 +1988,17 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/export?format=json",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "authorization_boundaries", "{{boundary_id}}", "ksi_validations", "export"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations",
+                "export"
+              ],
               "query": [
                 {
                   "key": "format",
@@ -1455,6 +2008,1208 @@
               ]
             },
             "description": "Exports a comprehensive KSI validation report for an authorization boundary. Includes all validations with evidence, timestamps, and NIST control mappings. Supports JSON, YAML, and XML formats.\n\nResponse: 200 OK with Content-Disposition header for file download. Format controlled by ?format= query parameter (json|yaml|xml)."
+          }
+        },
+        {
+          "name": "Get KSI Validation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/{{validation_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations",
+                "{{validation_id}}"
+              ]
+            },
+            "description": "Show one validation record."
+          }
+        },
+        {
+          "name": "Validations Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations",
+                "summary"
+              ]
+            },
+            "description": "Dashboard-style aggregation of validation status counts for this boundary."
+          }
+        },
+        {
+          "name": "Export Compliance Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}/ksi_validations/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}",
+                "ksi_validations",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json",
+                  "description": "Report format",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Export the KSI compliance report for this boundary."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Credentials",
+      "item": [
+        {
+          "name": "Refresh Admin Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/refresh_credentials",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "refresh_credentials"
+              ]
+            },
+            "description": "Bcrypt the supplied plaintext password into the admin user's password_digest. Idempotent — same value returns 200 unchanged. Requires admin.rotate_credentials permission and SPARC_ADMIN_REFRESH_ENABLED=true.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"new-plaintext-from-secrets-manager\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authoritative Sources",
+      "item": [
+        {
+          "name": "Export Authoritative Bundle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authoritative_sources/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authoritative_sources",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "peer",
+                  "value": "exporter-prod",
+                  "description": "Name of the FederationPeer requesting the bundle"
+                },
+                {
+                  "key": "since",
+                  "value": "2026-04-15T00:00:00Z",
+                  "description": "ISO-8601 timestamp; only resources updated at/after this time are included",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Build and return an HMAC-signed federation envelope for the named peer. Requires back_matter.federate permission. The peer must be a registered FederationPeer."
+          }
+        },
+        {
+          "name": "Import Authoritative Bundle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authoritative_sources/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authoritative_sources",
+                "import"
+              ]
+            },
+            "description": "Verify a signed envelope from a registered peer and ingest each contained back-matter resource. Returns per-resource imported/skipped/errors buckets.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peer\": \"exporter-prod\",\n  \"envelope\": {\n    \"alg\": \"HMAC-SHA256-base64url\",\n    \"payload\": \"<base64url-encoded JSON>\",\n    \"signature\": \"<hex HMAC>\",\n    \"key_id\": \"exporter-prod\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authorization Boundaries",
+      "item": [
+        {
+          "name": "List Authorization Boundaries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number",
+                  "disabled": true
+                },
+                {
+                  "key": "items",
+                  "value": "25",
+                  "description": "Items per page",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List authorization boundaries the caller has access to. Admins see all; non-admins see only boundaries they are members of."
+          }
+        },
+        {
+          "name": "Get Authorization Boundary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}"
+              ]
+            },
+            "description": "Retrieve one authorization boundary by id."
+          }
+        },
+        {
+          "name": "Create Authorization Boundary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries"
+              ]
+            },
+            "description": "Create a new authorization boundary. Requires admin or appropriate organization role.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"authorization_boundary\": {\n    \"name\": \"ACME Cloud Platform\",\n    \"description\": \"FedRAMP Moderate boundary\",\n    \"organization_id\": 1\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Authorization Boundary",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}"
+              ]
+            },
+            "description": "Update an authorization boundary's mutable fields.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"authorization_boundary\": {\n    \"description\": \"Updated description\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Authorization Boundary",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{boundary_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{boundary_id}}"
+              ]
+            },
+            "description": "Soft-delete an authorization boundary."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Back-Matter Resources",
+      "item": [
+        {
+          "name": "List Back-Matter Resources",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number",
+                  "disabled": true
+                },
+                {
+                  "key": "items",
+                  "value": "25",
+                  "description": "Items per page",
+                  "disabled": true
+                },
+                {
+                  "key": "organization_id",
+                  "value": "1",
+                  "description": "Filter by organization",
+                  "disabled": true
+                },
+                {
+                  "key": "globally_available",
+                  "value": "true",
+                  "description": "Filter by global availability",
+                  "disabled": true
+                },
+                {
+                  "key": "rel",
+                  "value": "reference",
+                  "description": "Filter by OSCAL relationship type",
+                  "disabled": true
+                },
+                {
+                  "key": "source",
+                  "value": "managed",
+                  "description": "Filter: managed | imported | sparc | authoritative",
+                  "disabled": true
+                },
+                {
+                  "key": "document_type",
+                  "value": "SspDocument",
+                  "description": "Filter by parent document type",
+                  "disabled": true
+                },
+                {
+                  "key": "document_id",
+                  "value": "1",
+                  "description": "Filter by parent document id",
+                  "disabled": true
+                },
+                {
+                  "key": "control_type",
+                  "value": "CdefControl",
+                  "description": "Filter by linked control type",
+                  "disabled": true
+                },
+                {
+                  "key": "control_id",
+                  "value": "1",
+                  "description": "Filter by linked control id",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List back-matter resources with optional filters. Requires back_matter.read."
+          }
+        },
+        {
+          "name": "Get Back-Matter Resource",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}"
+              ]
+            },
+            "description": "Show one resource with linked controls and resource_data."
+          }
+        },
+        {
+          "name": "Create Back-Matter Resource",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources"
+              ]
+            },
+            "description": "Create a new back-matter resource. Requires back_matter.write. Only admins can create source: 'authoritative' resources.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"back_matter_resource\": {\n    \"title\": \"Access Control Policy v3\",\n    \"rel\": \"reference\",\n    \"media_type\": \"application/pdf\",\n    \"href\": \"https://policies.example.com/ac-policy-v3.pdf\",\n    \"globally_available\": true\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Back-Matter Resource",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}"
+              ]
+            },
+            "description": "Update an existing back-matter resource.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"back_matter_resource\": {\n    \"title\": \"Updated title\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Back-Matter Resource",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}"
+              ]
+            },
+            "description": "Hard-delete a resource and unlink all its control associations."
+          }
+        },
+        {
+          "name": "Link Resource to Control",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}/link",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}",
+                "link"
+              ]
+            },
+            "description": "Link this resource to a control. linkable_type must be one of: CatalogControl, CdefControl, ProfileControl, SspControl, SarControl, SapControl.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"linkable_type\": \"CdefControl\",\n  \"linkable_id\": 42\n}"
+            }
+          }
+        },
+        {
+          "name": "Unlink Resource from Control",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}/unlink",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}",
+                "unlink"
+              ],
+              "query": [
+                {
+                  "key": "link_id",
+                  "value": "1",
+                  "description": "ControlBackMatterLink id to remove"
+                }
+              ]
+            },
+            "description": "Remove a control link without deleting the resource."
+          }
+        },
+        {
+          "name": "Request Promotion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}/promote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}",
+                "promote"
+              ]
+            },
+            "description": "Mark this resource as pending authoritative promotion. Requires back_matter.promote or back_matter.write."
+          }
+        },
+        {
+          "name": "Approve Promotion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}/approve_promotion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}",
+                "approve_promotion"
+              ]
+            },
+            "description": "Approve a pending promotion. Requires back_matter.approve_promotion or per-resource approver authority."
+          }
+        },
+        {
+          "name": "Reject Promotion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}/reject_promotion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}",
+                "reject_promotion"
+              ]
+            },
+            "description": "Reject a pending promotion with an optional reason.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Awaiting annual review.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Archive Resource",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}/archive",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}",
+                "archive"
+              ]
+            },
+            "description": "Soft-archive a resource (archived_at set). Excluded from default index and exporter paths until restored."
+          }
+        },
+        {
+          "name": "Restore Resource",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}/restore",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}",
+                "restore"
+              ]
+            },
+            "description": "Restore a previously-archived resource."
+          }
+        },
+        {
+          "name": "Get Change-Log",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/{{back_matter_id}}/changes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "{{back_matter_id}}",
+                "changes"
+              ]
+            },
+            "description": "Reverse-chronological change-log for one resource: archive/restore, federation updates, bulk-import events."
+          }
+        },
+        {
+          "name": "Bulk Import Resources",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "bulk"
+              ]
+            },
+            "description": "Create many resources in one transaction. Returns batch_uuid plus per-entry imported/skipped/errors buckets. Requires back_matter.bulk_import or back_matter.write.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entries\": [\n    {\n      \"title\": \"AC Policy v3\",\n      \"rel\": \"reference\",\n      \"href\": \"https://policies.example.gov/ac-v3.pdf\",\n      \"media_type\": \"application/pdf\"\n    },\n    {\n      \"title\": \"AC-2 Evidence Q2 2026\",\n      \"rel\": \"evidence\",\n      \"href\": \"https://evidence.example.gov/ac-2-q2.pdf\",\n      \"media_type\": \"application/pdf\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Promotion Queue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/back_matter_resources/promotion_queue",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "back_matter_resources",
+                "promotion_queue"
+              ]
+            },
+            "description": "List pending promotions the caller is authorized to approve. Self-filtering — no separate permission gate."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Federation Peers",
+      "item": [
+        {
+          "name": "List Federation Peers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/federation_peers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "federation_peers"
+              ]
+            },
+            "description": "List all configured peers ordered by name. Not paginated."
+          }
+        },
+        {
+          "name": "Get Federation Peer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/federation_peers/{{peer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "federation_peers",
+                "{{peer_id}}"
+              ]
+            },
+            "description": "Show one peer with detailed public_metadata."
+          }
+        },
+        {
+          "name": "Create Federation Peer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/federation_peers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "federation_peers"
+              ]
+            },
+            "description": "Register a new peer. service_token and signing_secret are write-only and never echoed back.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"federation_peer\": {\n    \"name\": \"exporter-prod\",\n    \"base_url\": \"https://exporter.sparc.example.gov\",\n    \"enabled\": true,\n    \"public_metadata\": {\n      \"contact_email\": \"ops@exporter.example.gov\"\n    },\n    \"service_token\": \"sparc_remote_token_value\",\n    \"signing_secret\": \"shared-hmac-secret-from-out-of-band-channel\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Federation Peer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/federation_peers/{{peer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "federation_peers",
+                "{{peer_id}}"
+              ]
+            },
+            "description": "Update a peer's mutable fields. Submitting service_token/signing_secret rotates the secret. name is not mutable post-create.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"federation_peer\": {\n    \"enabled\": true,\n    \"service_token\": \"rotated-token\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Federation Peer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/federation_peers/{{peer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "federation_peers",
+                "{{peer_id}}"
+              ]
+            },
+            "description": "Hard-delete a peer from the registry."
+          }
+        },
+        {
+          "name": "Sync from Federation Peer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/federation_peers/{{peer_id}}/sync",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "federation_peers",
+                "{{peer_id}}",
+                "sync"
+              ]
+            },
+            "description": "Pull authoritative resources from this peer using its stored service_token, verify the signed envelope, and ingest the bundle."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number",
+                  "disabled": true
+                },
+                {
+                  "key": "items",
+                  "value": "25",
+                  "description": "Items per page",
+                  "disabled": true
+                },
+                {
+                  "key": "email",
+                  "value": "@example.com",
+                  "description": "Partial-match filter on email",
+                  "disabled": true
+                },
+                {
+                  "key": "name",
+                  "value": "Smith",
+                  "description": "Partial-match filter on first or last name",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Filter by status: active | inactive | locked",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List users (admin only)."
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Show one user with roles. Admin or self."
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "Create a new user (admin only).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"email\": \"new.user@example.com\",\n    \"first_name\": \"Jane\",\n    \"last_name\": \"Doe\",\n    \"password\": \"<temporary-password>\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Update a user. Admins can edit any user; non-admins can only edit their own name/email.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"first_name\": \"Updated\",\n    \"last_name\": \"Name\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Soft-delete (deactivate) a user. Admin only."
           }
         }
       ]
