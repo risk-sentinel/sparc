@@ -22,15 +22,17 @@ Validations are scoped to the authorization boundary. Users can only access vali
 
 ## Endpoints
 
+All endpoints are nested under an authorization boundary; the boundary id appears as the first path segment.
+
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `.../ksi_validations` | List all validations |
-| `GET` | `.../ksi_validations/:id` | Show a single validation |
-| `POST` | `.../ksi_validations` | Create a new validation |
-| `PUT` | `.../ksi_validations/:id` | Update a validation |
-| `DELETE` | `.../ksi_validations/:id` | Delete a validation |
-| `GET` | `.../ksi_validations/summary` | Dashboard aggregation |
-| `GET` | `.../ksi_validations/export` | Export validations |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations` | List all validations for the boundary |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | Show a single validation |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations` | Create a new validation |
+| `PUT` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | Update a validation |
+| `DELETE` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | Delete a validation |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/summary` | Dashboard aggregation |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export` | Export validations as compliance report |
 
 ---
 

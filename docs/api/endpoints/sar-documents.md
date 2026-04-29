@@ -12,6 +12,7 @@ Security Assessment Results (SAR) documents record the findings from a security 
 | `PUT` | `/api/v1/sar_documents/:slug` | Update a SAR document | `sar.write` |
 | `DELETE` | `/api/v1/sar_documents/:slug` | Soft-delete a SAR document | `sar.write` |
 | `POST` | `/api/v1/sar_documents/convert` | Upload and parse an Excel file into a SAR | `sar.write` |
+| `PUT` | `/api/v1/sar_documents/:slug/update_fields` | Bulk-update editable control fields on one SAR | `sar.write` |
 | `GET` | `/api/v1/sar_documents/:slug/export` | Export SAR as JSON | `sar.read` |
 
 ---
@@ -366,6 +367,76 @@ curl -s -X POST \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
   -F "excel_file=@/path/to/acme-annual-assessment-2025.xlsx" \
   "https://sparc.example.com/api/v1/sar_documents/convert" | jq .
+```
+
+---
+
+### PUT /api/v1/sar_documents/:slug/update_fields
+
+Bulk-update editable control fields on a single SAR. Mirrors the `ssp_documents` endpoint of the same name — accepts a `controls` map keyed by control identifier, with each value being a partial map of field updates the controller applies in one save. Only fields whose backing `SarControlField` is `editable?` are mutated; non-editable fields silently skip.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `slug` | string | URL-friendly document identifier |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `controls` | object | Yes | Map of control identifier → field-update hash. Field identifiers within each control follow the same key convention exposed in `GET /:slug` (the document's serialized `controls[].fields` array). |
+
+```json
+{
+  "controls": {
+    "AC-1": {
+      "assessor_finding": "satisfied",
+      "assessor_remarks": "Policy reviewed; signed by SO on 2026-04-15.",
+      "evidence_url": "https://evidence.example.com/AC-1-policy-2026.pdf"
+    },
+    "AC-2": {
+      "assessor_finding": "other_than_satisfied",
+      "assessor_remarks": "Provisioning automated; deprovisioning manual."
+    }
+  }
+}
+```
+
+#### Response Body
+
+```json
+{
+  "success": true,
+  "message": "Controls updated successfully",
+  "data": { /* serialized SAR document with updated controls */ }
+}
+```
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Bulk update applied |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks `sar.write` |
+| `404 Not Found` | No SAR document matches the slug, or one of the requested control identifiers does not exist on this document |
+| `422 Unprocessable Entity` | A field update failed validation; the response body's `error` field contains the offending message |
+
+#### Side effects
+
+A successful call writes one row to `audit_events`:
+
+- `action`: `sar_document_updated`
+- `metadata.controls_updated`: number of distinct control identifiers in the request
+
+#### cURL Example
+
+```bash
+curl -X PUT "https://sparc.example.com/api/v1/sar_documents/acme-annual-assessment-2025/update_fields" \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  --data-binary @sar-bulk-edit.json
 ```
 
 ---
