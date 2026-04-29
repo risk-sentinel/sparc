@@ -9,14 +9,14 @@ This file is the work-tracking spine for issue [#413](https://github.com/Rebel-R
 ## Summary (as of 2026-04-29)
 
 - **Code:** 95 logical endpoints across 18 controller groups (PATCH+PUT aliases collapsed)
-- **Documentation:** 84 / 95 endpoints documented in `endpoints/*.md` (88%)
-  - 11 endpoints missing from the doc file that should cover them
-  - 0 endpoints with no doc file at all
+- **Documentation:** **95 / 95 endpoints documented** in `endpoints/*.md` (**100%**) ✅
 - **Postman collection:** 49 / 95 endpoints in collection (52%)
   - 46 endpoints not in the collection
   - 6 controller groups missing from the collection entirely
 
 ### Phase 1 gap summary
+
+Phase 1 documentation work is **complete**: every code route is covered by a per-endpoint markdown section. The remaining Phase 1 work is closing the Postman collection gap below; Phase 2 (the Python pytest suite on `sparc-api-automated-testing-phase2`) will add a parallel coverage column once that suite lands.
 
 #### Doc files needed (3 new files / 9 endpoints) — ✅ closed 2026-04-29
 
@@ -26,14 +26,14 @@ This file is the work-tracking spine for issue [#413](https://github.com/Rebel-R
 | `authoritative_sources` | 2 | #372 federation export/import | [`authoritative-sources.md`](endpoints/authoritative-sources.md) |
 | `federation_peers` | 6 | #372 federation peer registry | [`federation-peers.md`](endpoints/federation-peers.md) |
 
-#### Existing doc files needing updates (5 files / 11 endpoints)
+#### Existing doc files updated — ✅ closed 2026-04-29
 
-| Doc file | Missing endpoints | Origin |
-|---|---|---|
-| `back-matter-resources.md` | `approve_promotion`, `archive`, `changes`, `promote`, `reject_promotion`, `restore`, `bulk`, `promotion_queue` (8) | #372 promotion workflow |
-| `ssp-documents.md` | `update_fields` (1) | bulk-field-edit feature |
-| `sar-documents.md` | `update_fields` (1) | bulk-field-edit feature |
-| `ksi-validations.md` | nested `DELETE` (1) | nested-route detail |
+| Doc file | Endpoints added |
+|---|---|
+| `back-matter-resources.md` | `approve_promotion`, `archive`, `changes`, `promote`, `reject_promotion`, `restore`, `bulk`, `promotion_queue` (8) |
+| `ssp-documents.md` | `update_fields` (1) |
+| `sar-documents.md` | `update_fields` (1) |
+| `ksi-validations.md` | overview-table paths normalized to full nested form so the inventory script and human readers see the same identifier (1) |
 
 #### Postman gaps by controller (46 endpoints)
 
@@ -75,16 +75,16 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#destroy` | yes | **MISSING** |
 | `GET` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#show` | yes | **MISSING** |
 | `PATCH/PUT` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#update` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/approve_promotion` | `back_matter_resources#approve_promotion` | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/archive` | `back_matter_resources#archive` | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/back_matter_resources/:id/changes` | `back_matter_resources#changes` | **MISSING** | **MISSING** |
+| `POST` | `/api/v1/back_matter_resources/:id/approve_promotion` | `back_matter_resources#approve_promotion` | yes | **MISSING** |
+| `POST` | `/api/v1/back_matter_resources/:id/archive` | `back_matter_resources#archive` | yes | **MISSING** |
+| `GET` | `/api/v1/back_matter_resources/:id/changes` | `back_matter_resources#changes` | yes | **MISSING** |
 | `POST` | `/api/v1/back_matter_resources/:id/link` | `back_matter_resources#link` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/promote` | `back_matter_resources#promote` | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/reject_promotion` | `back_matter_resources#reject_promotion` | **MISSING** | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/:id/restore` | `back_matter_resources#restore` | **MISSING** | **MISSING** |
+| `POST` | `/api/v1/back_matter_resources/:id/promote` | `back_matter_resources#promote` | yes | **MISSING** |
+| `POST` | `/api/v1/back_matter_resources/:id/reject_promotion` | `back_matter_resources#reject_promotion` | yes | **MISSING** |
+| `POST` | `/api/v1/back_matter_resources/:id/restore` | `back_matter_resources#restore` | yes | **MISSING** |
 | `DELETE` | `/api/v1/back_matter_resources/:id/unlink` | `back_matter_resources#unlink` | yes | **MISSING** |
-| `POST` | `/api/v1/back_matter_resources/bulk` | `back_matter_resources#bulk` | **MISSING** | **MISSING** |
-| `GET` | `/api/v1/back_matter_resources/promotion_queue` | `back_matter_resources#promotion_queue` | **MISSING** | **MISSING** |
+| `POST` | `/api/v1/back_matter_resources/bulk` | `back_matter_resources#bulk` | yes | **MISSING** |
+| `GET` | `/api/v1/back_matter_resources/promotion_queue` | `back_matter_resources#promotion_queue` | yes | **MISSING** |
 | `GET` | `/api/v1/profile_documents/:profile_document_id/parameters` | `baseline_parameters#show` | yes | **MISSING** |
 | `PATCH/PUT` | `/api/v1/profile_documents/:profile_document_id/parameters` | `baseline_parameters#update` | yes | **MISSING** |
 | `GET` | `/api/v1/profile_documents/:profile_document_id/parameters/export` | `baseline_parameters#export` | yes | **MISSING** |
@@ -116,7 +116,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/ksi_catalog/themes` | `ksi_catalog#themes` | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations` | `ksi_validations#index` | yes | **MISSING** |
 | `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations` | `ksi_validations#create` | yes | **MISSING** |
-| `DELETE` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#destroy` | **MISSING** | **MISSING** |
+| `DELETE` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#destroy` | yes | **MISSING** |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#show` | yes | **MISSING** |
 | `PATCH/PUT` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#update` | yes | **MISSING** |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export` | `ksi_validations#export` | yes | **MISSING** |
@@ -142,7 +142,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/sar_documents/:id` | `sar_documents#show` | yes | yes |
 | `PATCH/PUT` | `/api/v1/sar_documents/:id` | `sar_documents#update` | yes | yes |
 | `GET` | `/api/v1/sar_documents/:id/export` | `sar_documents#export` | yes | yes |
-| `PUT` | `/api/v1/sar_documents/:id/update_fields` | `sar_documents#update_fields` | **MISSING** | **MISSING** |
+| `PUT` | `/api/v1/sar_documents/:id/update_fields` | `sar_documents#update_fields` | yes | **MISSING** |
 | `POST` | `/api/v1/sar_documents/convert` | `sar_documents#convert` | yes | yes |
 | `GET` | `/api/v1/ssp_documents` | `ssp_documents#index` | yes | yes |
 | `POST` | `/api/v1/ssp_documents` | `ssp_documents#create` | yes | yes |
@@ -150,7 +150,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/ssp_documents/:id` | `ssp_documents#show` | yes | yes |
 | `PATCH/PUT` | `/api/v1/ssp_documents/:id` | `ssp_documents#update` | yes | yes |
 | `GET` | `/api/v1/ssp_documents/:id/export` | `ssp_documents#export` | yes | yes |
-| `PUT` | `/api/v1/ssp_documents/:id/update_fields` | `ssp_documents#update_fields` | **MISSING** | **MISSING** |
+| `PUT` | `/api/v1/ssp_documents/:id/update_fields` | `ssp_documents#update_fields` | yes | **MISSING** |
 | `POST` | `/api/v1/ssp_documents/convert` | `ssp_documents#convert` | yes | yes |
 | `GET` | `/api/v1/users` | `users#index` | yes | **MISSING** |
 | `POST` | `/api/v1/users` | `users#create` | yes | **MISSING** |

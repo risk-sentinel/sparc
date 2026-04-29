@@ -12,6 +12,7 @@ System Security Plan (SSP) documents capture the security controls implemented f
 | `PUT` | `/api/v1/ssp_documents/:slug` | Update an SSP document | `ssp.write` |
 | `DELETE` | `/api/v1/ssp_documents/:slug` | Soft-delete an SSP document | `ssp.write` |
 | `POST` | `/api/v1/ssp_documents/convert` | Upload and parse an Excel file into an SSP | `ssp.write` |
+| `PUT` | `/api/v1/ssp_documents/:slug/update_fields` | Bulk-update editable control fields on one SSP | `ssp.write` |
 | `GET` | `/api/v1/ssp_documents/:slug/export` | Export SSP as JSON | `ssp.read` |
 
 ---
@@ -376,6 +377,80 @@ curl -s -X POST \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
   -F "excel_file=@/path/to/acme-cloud-platform-ssp.xlsx" \
   "https://sparc.example.com/api/v1/ssp_documents/convert" | jq .
+```
+
+---
+
+### PUT /api/v1/ssp_documents/:slug/update_fields
+
+Bulk-update editable control fields on a single SSP. The endpoint accepts a `controls` map keyed by control identifier; each entry is a partial map of field updates that the `SspUpdateService` applies in one save. This is the API surface the inline-editing UI uses, but it's also intended for ETL / migration scripts that need to write many fields atomically without going through `PUT /:slug` for each field.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `slug` | string | URL-friendly document identifier |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `controls` | object | Yes | Map of control identifier → field-update hash. Field identifiers within each control follow the same key convention exposed in `GET /:slug` (the document's serialized `controls[].fields` array). |
+
+```json
+{
+  "controls": {
+    "AC-1": {
+      "implementation_status": "implemented",
+      "responsible_role": "System Owner",
+      "control_summary": "Updated implementation narrative..."
+    },
+    "AC-2": {
+      "implementation_status": "partial",
+      "control_summary": "Account provisioning automated; deprovisioning still manual."
+    }
+  }
+}
+```
+
+#### Response Body
+
+```json
+{
+  "success": true,
+  "message": "Controls updated successfully",
+  "data": { /* serialized SSP document with updated controls */ }
+}
+```
+
+The `data` field is the full updated SSP document (same shape as `GET /:slug` detailed response), so the caller can refresh its UI in one round-trip.
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Bulk update applied (the `success: true` flag is also `true` in the body) |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks `ssp.write` |
+| `404 Not Found` | No SSP document matches the slug |
+| `422 Unprocessable Entity` | A field update failed validation; the response body's `error` field contains the offending message |
+
+#### Side effects
+
+A successful call writes one row to `audit_events`:
+
+- `action`: `ssp_document_updated`
+- `metadata.controls_updated`: number of distinct control identifiers in the request
+
+Per-field changes are not separately audited — this is bulk-edit by design; the granular history is in the document's serialized controls.
+
+#### cURL Example
+
+```bash
+curl -X PUT "https://sparc.example.com/api/v1/ssp_documents/acme-cloud-platform-ssp/update_fields" \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  --data-binary @ssp-bulk-edit.json
 ```
 
 ---
