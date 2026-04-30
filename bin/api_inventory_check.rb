@@ -87,13 +87,26 @@ def load_postman_endpoints
       elsif it["request"]
         method = it["request"]["method"]
         parts  = it.dig("request", "url", "path") || []
-        norm   = parts.map { |p| p.gsub(/\{\{[^}]+\}\}/, ":id") }
+        # Postman uses {{var}} for path-vars; rails routes use :id and
+        # :nested_resource_id. Normalize both sides to a generic ":id"
+        # marker so nested-resource paths match regardless of which
+        # specific id-name appears.
+        norm = parts.map { |p| p.gsub(/\{\{[^}]+\}\}/, ":id") }
         set << "#{method} /#{norm.join('/')}"
       end
     end
   }
   walk.call(collection["item"])
   set
+end
+
+# Normalize a route path's id-style segments to ":id" so the postman
+# matcher does not need to know each nested-resource's specific param
+# name. (Rails generates :authorization_boundary_id for nested
+# resources; postman uses {{boundary_id}} or similar — both collapse
+# here to ":id".)
+def normalize_id_segments(path)
+  path.gsub(%r{/:[a-z_]+}, "/:id")
 end
 
 def doc_status(route, doc_text)
@@ -112,7 +125,8 @@ end
 
 def postman_status(route, postman_set)
   methods = route[:method].split("/")
-  methods.any? { |m| postman_set.include?("#{m} #{route[:path]}") } ? "yes" : "**MISSING**"
+  norm_path = normalize_id_segments(route[:path])
+  methods.any? { |m| postman_set.include?("#{m} #{norm_path}") } ? "yes" : "**MISSING**"
 end
 
 routes      = load_routes.sort_by { |r| [r[:controller], r[:path], r[:method]] }

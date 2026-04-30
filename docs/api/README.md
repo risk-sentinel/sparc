@@ -24,7 +24,7 @@ Complete Postman collection and environment files for the SPARC REST API (v1).
 
 | File | Description |
 |------|-------------|
-| `sparc-api.postman_collection.json` | 61 endpoints across 13 folders |
+| `sparc-api.postman_collection.json` | 99 requests across 18 folders (covers 95 logical endpoints — PATCH and PUT update aliases each get their own request) |
 | `sparc-prod.postman_environment.json` | Production (sparc.risk-sentinel-sparc.org) |
 | `sparc-local.postman_environment.json` | Local development (localhost:3000) |
 
@@ -60,53 +60,73 @@ SPARC supports three API authentication modes (controlled by `SPARC_API_AUTH` en
 
 ## Collection Structure
 
-### 1. Discovery (1 endpoint)
+### 1. Discovery (1 request)
 - `GET /api/v1/available` — Authorization-scoped endpoint inventory
 
-### 2. SSP Documents (7 endpoints)
+### 2. SSP Documents (8 requests)
 - CRUD + Excel convert + bulk field update + JSON export
 - Uses `:slug` identifier (e.g., `acme-cloud-platform-ssp`)
 
-### 3. SAR Documents (7 endpoints)
-- Same pattern as SSP — CRUD + convert + export
+### 3. SAR Documents (8 requests)
+- Same pattern as SSP — CRUD + convert + bulk field update + export
 
-### 4. SAP Documents (5 endpoints)
+### 4. SAP Documents (5 requests)
 - Standard CRUD with soft-delete
 
-### 5. POA&M Documents (5 endpoints)
+### 5. POA&M Documents (5 requests)
 - Standard CRUD with soft-delete
 
-### 6. Control Catalogs (5 endpoints)
+### 6. Control Catalogs (5 requests)
 - CRUD — **admin-only for writes**
 - Uses numeric `:id`
 
-### 7. Profile Documents (5 endpoints)
+### 7. Profile Documents (5 requests)
 - CRUD with soft-delete
 - Uses `:slug` identifier
 
-### 8. Baseline Parameters (3 endpoints)
-- Nested under profiles: `/api/v1/profile_documents/:slug/parameters`
+### 8. Baseline Parameters (3 requests)
+- Nested under profiles: `/api/v1/profile_documents/:profile_slug/parameters`
 - GET schema (with `?family=ac` filter), PUT bulk update, GET export (`?format=yaml`)
 
-### 9. CDEF Documents (5 endpoints)
+### 9. CDEF Documents (5 requests)
 - CRUD with soft-delete
 
-### 10. Control Mappings (5 endpoints)
+### 10. Control Mappings (5 requests)
 - CRUD — **admin-only for writes**
 
-### 11. KSI Catalog (4 endpoints)
+### 11. KSI Catalog (4 requests)
 - Read-only: themes, indicators (with filters), indicator detail, NIST mappings
 
-### 12. KSI Validations (7 endpoints)
+### 12. KSI Validations (7 requests)
 - Nested under authorization boundaries
 - CRUD + summary dashboard + compliance report export
 
-### 13. Back-Matter Resources (7 endpoints)
+### 13. Back-Matter Resources (15 requests)
 - CRUD + link/unlink control associations
+- Promotion workflow: request, approve, reject (#372)
+- Archive / restore + per-resource change-log (#372)
+- Bulk import + promotion queue (#372)
 - Filterable by organization, globally_available, rel, source, document, control
 - OSCAL-validated `rel` (12 values) and `media_type` (IANA types)
-- Supports `authoritative` source for enterprise provider publishing
 - Uses numeric `:id`
+
+### 14. Authorization Boundaries (5 requests)
+- CRUD scoped to caller's boundary memberships (admins see all)
+
+### 15. Users (5 requests)
+- CRUD scoped to admin (self-update allowed for any authenticated user)
+
+### 16. Federation Peers (6 requests, #372)
+- CRUD plus `POST /:peer_id/sync` to pull authoritative resources
+- `service_token` and `signing_secret` are write-only (never echoed back)
+
+### 17. Authoritative Sources (2 requests, #372)
+- `GET /export` — build an HMAC-signed federation envelope for a peer
+- `POST /import` — verify and ingest a peer's signed envelope
+
+### 18. Admin Credentials (1 request, #402/#403)
+- `POST /admin/refresh_credentials` — Lambda-driven admin password rotation
+- Requires `admin.rotate_credentials` permission and `SPARC_ADMIN_REFRESH_ENABLED=true`
 
 ## Response Format
 
@@ -143,6 +163,9 @@ All list endpoints return paginated responses:
 | `boundary_id` | Authorization boundary ID | `1` |
 | `validation_id` | KSI validation ID | `1` |
 | `indicator_id` | KSI indicator ID | `1` |
+| `peer_id` | Federation peer ID | `1` |
+| `back_matter_id` | Back-matter resource ID | `1` |
+| `user_id` | User ID | `1` |
 
 ## Running as Test Suite
 
