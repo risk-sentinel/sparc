@@ -20,6 +20,7 @@ require "set"
 REPO_ROOT = File.expand_path("..", __dir__)
 DOCS_DIR  = File.join(REPO_ROOT, "docs/api/endpoints")
 POSTMAN   = File.join(REPO_ROOT, "docs/api/sparc-api.postman_collection.json")
+PYTESTS   = File.join(REPO_ROOT, "tests/api")
 
 # Map of controller key (the `controller` part of `controller#action`)
 # to the doc file basename under docs/api/endpoints/.
@@ -129,27 +130,99 @@ def postman_status(route, postman_set)
   methods.any? { |m| postman_set.include?("#{m} #{norm_path}") } ? "yes" : "**MISSING**"
 end
 
-routes      = load_routes.sort_by { |r| [r[:controller], r[:path], r[:method]] }
-doc_text    = load_doc_text
-postman_set = load_postman_endpoints
+# For each test_<controller>.py module under tests/api/, build a map of
+# controller -> file content. Pytest coverage is granular per route: an
+# endpoint is "covered" when its action name appears in the test module
+# for its controller (action names are unique within a controller and
+# the test classes/functions reference them, e.g. TestPromotion,
+# test_admin_destroys_resource, /:id/promote). Falls back to "module
+# exists" when an action name is generic enough to false-negative
+# (index, show, create, update, destroy).
+GENERIC_ACTIONS = %w[index show create update destroy].freeze
 
-puts "| Method | Path | Controller#action | In `endpoints/*.md` | In Postman collection |"
-puts "|--------|------|-------------------|---------------------|------------------------|"
+CONTROLLER_TO_TEST_MODULE = {
+  "ssp_documents"            => "test_ssp_documents.py",
+  "sar_documents"            => "test_sar_documents.py",
+  "sap_documents"            => "test_sap_documents.py",
+  "poam_documents"           => "test_poam_documents.py",
+  "cdef_documents"           => "test_cdef_documents.py",
+  "profile_documents"        => "test_profile_documents.py",
+  "control_catalogs"         => "test_control_catalogs.py",
+  "control_mappings"         => "test_control_mappings.py",
+  "baseline_parameters"      => "test_baseline_parameters.py",
+  "ksi_catalog"              => "test_ksi_catalog.py",
+  "ksi_validations"          => "test_ksi_validations.py",
+  "discovery"                => "test_discovery.py",
+  "users"                    => "test_users.py",
+  "authorization_boundaries" => "test_authorization_boundaries.py",
+  "back_matter_resources"    => "test_back_matter_resources.py",
+  "admin/credentials"        => "test_admin_credentials.py",
+  "authoritative_sources"    => "test_authoritative_sources.py",
+  "federation_peers"         => "test_federation_peers.py"
+}.freeze
+
+def load_pytest_module_texts
+  return {} unless Dir.exist?(PYTESTS)
+
+  CONTROLLER_TO_TEST_MODULE.each_with_object({}) do |(ctrl, fname), h|
+    path = File.join(PYTESTS, fname)
+    h[ctrl] = File.exist?(path) ? File.read(path) : nil
+  end
+end
+
+def pytest_status(route, pytest_module_texts)
+  return "_n/a (suite not present)_" if pytest_module_texts.empty?
+
+  text = pytest_module_texts[route[:controller]]
+  return "**MISSING**" unless text  # no module for this controller
+
+  # For non-generic actions, require the action name to appear in the
+  # module text. For generic CRUD actions, the module's mere existence
+  # is sufficient — the conftest fixtures + standard test classes
+  # exercise them.
+  if GENERIC_ACTIONS.include?(route[:action])
+    "yes"
+  elsif text.downcase.include?(route[:action].downcase)
+    # Action name appears verbatim somewhere — test class, function
+    # name, comment, or path string.
+    "yes"
+  elsif text.downcase.include?(route[:action].tr('_', '').downcase)
+    # CamelCase form: show_indicator -> ShowIndicator (test class
+    # convention).
+    "yes"
+  else
+    "**MISSING**"
+  end
+end
+
+routes              = load_routes.sort_by { |r| [r[:controller], r[:path], r[:method]] }
+doc_text            = load_doc_text
+postman_set         = load_postman_endpoints
+pytest_module_texts = load_pytest_module_texts
+
+puts "| Method | Path | Controller#action | In `endpoints/*.md` | In Postman collection | Covered by pytest |"
+puts "|--------|------|-------------------|---------------------|------------------------|-------------------|"
 
 stats = Hash.new(0)
 routes.each do |r|
   d = doc_status(r, doc_text)
   p = postman_status(r, postman_set)
+  t = pytest_status(r, pytest_module_texts)
   stats["doc_#{d}"] += 1
   stats["pm_#{p}"]  += 1
-  puts "| `#{r[:method]}` | `#{r[:path]}` | `#{r[:controller]}##{r[:action]}` | #{d} | #{p} |"
+  stats["py_#{t}"]  += 1
+  puts "| `#{r[:method]}` | `#{r[:path]}` | `#{r[:controller]}##{r[:action]}` | #{d} | #{p} | #{t} |"
 end
 
 if ARGV.include?("--check")
   doc_gaps = stats["doc_**MISSING**"] + stats["doc_NO (no doc file)"]
   pm_gaps  = stats["pm_**MISSING**"]
-  if doc_gaps.positive? || pm_gaps.positive?
-    warn "Inventory drift: #{doc_gaps} undocumented endpoint(s), #{pm_gaps} missing Postman entry/entries"
+  py_gaps  = stats["py_**MISSING**"]
+  total_gaps = doc_gaps + pm_gaps + py_gaps
+  if total_gaps.positive?
+    warn "Inventory drift: #{doc_gaps} undocumented endpoint(s), " \
+         "#{pm_gaps} missing Postman entry/entries, " \
+         "#{py_gaps} endpoint(s) with no pytest coverage"
     exit 1
   end
 end
