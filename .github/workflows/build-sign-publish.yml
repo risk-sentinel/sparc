@@ -168,10 +168,10 @@ jobs:
             org.opencontainers.image.title=SPARC
             org.opencontainers.image.description=Systematic Policy and Regulatory Compliance
             org.opencontainers.image.version=${{ needs.prepare.outputs.version_stripped }}
-            org.opencontainers.image.source=https://github.com/Rebel-Raiders/sparc
+            org.opencontainers.image.source=https://github.com/risk-sentinel/sparc
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ needs.prepare.outputs.build_date }}
-            org.opencontainers.image.vendor=Rebel-Raiders
+            org.opencontainers.image.vendor=risk-sentinel
             org.opencontainers.image.licenses=MIT
 
       - name: Compute ECR tags
@@ -301,7 +301,7 @@ jobs:
       - name: Verify Docker Hub signature
         run: |
           cosign verify \
-            --certificate-identity-regexp="https://github.com/Rebel-Raiders/sparc/" \
+            --certificate-identity-regexp="https://github.com/risk-sentinel/sparc/" \
             --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
             risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
 
@@ -309,7 +309,7 @@ jobs:
         if: vars.ECR_REGISTRY != ''
         run: |
           cosign verify \
-            --certificate-identity-regexp="https://github.com/Rebel-Raiders/sparc/" \
+            --certificate-identity-regexp="https://github.com/risk-sentinel/sparc/" \
             --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
             ${{ vars.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
 
@@ -381,7 +381,7 @@ jobs:
           \`\`\`bash
           cosign verify \\
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\
-            --certificate-identity-regexp="github.com/Rebel-Raiders/sparc" \\
+            --certificate-identity-regexp="github.com/risk-sentinel/sparc" \\
             risksentinel/sparc:${VERSION}
           \`\`\`
           EOF
