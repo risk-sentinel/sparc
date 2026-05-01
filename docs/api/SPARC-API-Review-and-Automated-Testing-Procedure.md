@@ -4,7 +4,7 @@
 
 The repeatable procedure used to keep SPARC's API documentation and automated test coverage aligned with code. Updated whenever the procedure itself changes; the running coverage state lives in [`INVENTORY.md`](INVENTORY.md).
 
-This document satisfies the procedural deliverable in issue [#413](https://github.com/Rebel-Raiders/sparc/issues/413).
+This document satisfies the procedural deliverable in issue [#413](https://github.com/risk-sentinel/sparc/issues/413).
 
 ---
 
@@ -221,4 +221,4 @@ Drift between the two — e.g. a procedural step described here that the invento
 - [`INVENTORY.md`](INVENTORY.md) — the running coverage state
 - [`README.md`](README.md) — operator-facing introduction to the Postman collection
 - [`introduction.md`](introduction.md), [`authentication.md`](authentication.md), [`pagination.md`](pagination.md), [`errors.md`](errors.md) — cross-cutting API concerns referenced from per-endpoint docs
-- Issue [#413](https://github.com/Rebel-Raiders/sparc/issues/413) — the umbrella tracking issue for this procedure
+- Issue [#413](https://github.com/risk-sentinel/sparc/issues/413) — the umbrella tracking issue for this procedure

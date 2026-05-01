@@ -193,5 +193,5 @@ curl -s -X POST "https://leveraging.sparc.example.gov/api/v1/authoritative_sourc
 
 - [Federation Peers](federation-peers.md) — peer CRUD + sync pull endpoints
 - [Back-Matter Resources](back-matter-resources.md) — the resource model these bundles ship
-- SPARC issue [#372](https://github.com/Rebel-Raiders/sparc/issues/372) — the original feature request
+- SPARC issue [#372](https://github.com/risk-sentinel/sparc/issues/372) — the original feature request
 - [`SPARC_HASH_ROTATION.md`](../../SPARC_HASH_ROTATION.md) — operator runbook for rotating the master secret that derives every peer's `signing_secret`

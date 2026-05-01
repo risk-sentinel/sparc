@@ -1,6 +1,6 @@
 # Configuration Reference
 
-SPARC is configured via environment variables prefixed with `SPARC_`. All authentication features default to **disabled** (whitelist approach). See [docs/ENVIRONMENT_VARIABLES.md](https://github.com/Rebel-Raiders/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md) for the canonical reference.
+SPARC is configured via environment variables prefixed with `SPARC_`. All authentication features default to **disabled** (whitelist approach). See [docs/ENVIRONMENT_VARIABLES.md](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md) for the canonical reference.
 
 ## Application
 
@@ -137,7 +137,7 @@ Development `docker-compose.yaml` uses offset ports to avoid conflicts with loca
 
 ## Related
 
-- [docs/ENVIRONMENT_VARIABLES.md](https://github.com/Rebel-Raiders/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md) -- Canonical reference
-- [docs/AUTHENTICATION.md](https://github.com/Rebel-Raiders/sparc/blob/main/docs/AUTHENTICATION.md) -- Auth provider setup guide
-- [docs/OKTA_DEV_SETUP.md](https://github.com/Rebel-Raiders/sparc/blob/main/docs/OKTA_DEV_SETUP.md) -- Okta OIDC configuration walkthrough
-- [Issue #38](https://github.com/Rebel-Raiders/sparc/issues/38) -- Environment variables configuration reference
+- [docs/ENVIRONMENT_VARIABLES.md](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md) -- Canonical reference
+- [docs/AUTHENTICATION.md](https://github.com/risk-sentinel/sparc/blob/main/docs/AUTHENTICATION.md) -- Auth provider setup guide
+- [docs/OKTA_DEV_SETUP.md](https://github.com/risk-sentinel/sparc/blob/main/docs/OKTA_DEV_SETUP.md) -- Okta OIDC configuration walkthrough
+- [Issue #38](https://github.com/risk-sentinel/sparc/issues/38) -- Environment variables configuration reference

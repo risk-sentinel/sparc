@@ -256,7 +256,7 @@ The ops role / runbook executor needs IAM:
 
 These are strictly less than what `ecs:ExecuteCommand` (ECS Exec) would require, so they should be cleaner to grant for a small ops group.
 
-See [Rebel-Raiders/sparc-iac#200](https://github.com/Rebel-Raiders/sparc-iac/issues/200) for the release-coordination thread covering this rotation.
+See [risk-sentinel/sparc-iac#200](https://github.com/risk-sentinel/sparc-iac/issues/200) for the release-coordination thread covering this rotation.
 
 ---
 
@@ -295,5 +295,5 @@ A: Yes. Stand up the rotation in staging (`sparc-staging/sparc-hash`) end-to-end
 
 - [`ADMIN_CREDENTIAL_ROTATION.md`](ADMIN_CREDENTIAL_ROTATION.md) — admin password rotation; the run-task pattern documented here is structurally similar to its rake-task path
 - [`compliance/nist-sp800-53-rev5-mapping.md`](compliance/nist-sp800-53-rev5-mapping.md) — IA-5, SC-12, AU-2 mappings (search "SPARC_HASH" / "Federation")
-- [Rebel-Raiders/sparc-iac#200](https://github.com/Rebel-Raiders/sparc-iac/issues/200) — release coordination thread
-- SPARC issue [#419](https://github.com/Rebel-Raiders/sparc/issues/419) — the original feature request
+- [risk-sentinel/sparc-iac#200](https://github.com/risk-sentinel/sparc-iac/issues/200) — release coordination thread
+- SPARC issue [#419](https://github.com/risk-sentinel/sparc/issues/419) — the original feature request

@@ -831,13 +831,13 @@ jobs:
   #      single "sparc-compliance-latest" artifact
   #   2. Sends a repository_dispatch to sparc-iac with the run_id
   #   3. sparc-iac downloads via GitHub REST API:
-  #      GET /repos/Rebel-Raiders/sparc/actions/runs/{run_id}/artifacts
-  #      GET /repos/Rebel-Raiders/sparc/actions/artifacts/{id}/zip
+  #      GET /repos/risk-sentinel/sparc/actions/runs/{run_id}/artifacts
+  #      GET /repos/risk-sentinel/sparc/actions/artifacts/{id}/zip
   #
   # Required secret: SPARC_IAC_DISPATCH_TOKEN
   #   A GitHub PAT (or fine-grained token) with:
-  #   - `contents: read` on Rebel-Raiders/sparc (artifact download)
-  #   - `contents: write` on Rebel-Raiders/sparc-iac (dispatch)
+  #   - `contents: read` on risk-sentinel/sparc (artifact download)
+  #   - `contents: write` on risk-sentinel/sparc-iac (dispatch)
   # ═══════════════════════════════════════════════════════════════
 
   publish_for_sparc_iac:
@@ -903,7 +903,7 @@ jobs:
           SARIF_FILES=$(ls sparc-compliance/sarif/*.sarif* 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           jq -n \
             --arg sid "sparc-application" \
-            --arg repo "Rebel-Raiders/sparc" \
+            --arg repo "risk-sentinel/sparc" \
             --arg run_id "${{ github.run_id }}" \
             --arg sha "${{ github.sha }}" \
             --arg ref "${{ github.ref }}" \
@@ -963,12 +963,12 @@ jobs:
         uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.SPARC_IAC_DISPATCH_TOKEN }}
-          repository: Rebel-Raiders/sparc-iac
+          repository: risk-sentinel/sparc-iac
           event-type: sparc-compliance-updated
           client-payload: |
             {
               "system_id": "sparc-application",
-              "source_repo": "Rebel-Raiders/sparc",
+              "source_repo": "risk-sentinel/sparc",
               "run_id": "${{ github.run_id }}",
               "git_sha": "${{ github.sha }}",
               "artifact_name": "sparc-compliance-latest",

@@ -9,14 +9,14 @@
 - Auto-creates admin account on first `db:seed` with a random password and `must_reset_password` flag
 - Session fixation prevention via `reset_session` before storing `user_id`
 - Email normalization: downcased and stripped of whitespace
-- Related: [PR #73](https://github.com/Rebel-Raiders/sparc/pull/73) ([Issue #70](https://github.com/Rebel-Raiders/sparc/issues/70)), [PR #105](https://github.com/Rebel-Raiders/sparc/pull/105) ([Issue #91](https://github.com/Rebel-Raiders/sparc/issues/91))
+- Related: [PR #73](https://github.com/risk-sentinel/sparc/pull/73) ([Issue #70](https://github.com/risk-sentinel/sparc/issues/70)), [PR #105](https://github.com/risk-sentinel/sparc/pull/105) ([Issue #91](https://github.com/risk-sentinel/sparc/issues/91))
 
 ### GitHub OAuth (`SPARC_GITHUB_CLIENT_ID` set)
 
 - Auto-enabled when the GitHub client ID environment variable is present
 - OAuth scope: `user:email`
 - Creates an `Identity` record with `provider="github"`
-- Related: [PR #73](https://github.com/Rebel-Raiders/sparc/pull/73)
+- Related: [PR #73](https://github.com/risk-sentinel/sparc/pull/73)
 
 ### GitLab OAuth (`SPARC_GITLAB_CLIENT_ID` set)
 
@@ -30,7 +30,7 @@
 - Custom scopes via `SPARC_OIDC_SCOPES` (default: `"openid profile email"`)
 - Button text via `SPARC_OIDC_PROVIDER_TITLE` (default: `"SSO"`)
 - MFA enforcement via `SPARC_OIDC_FORCE_MFA` (validates ACR/amr claims)
-- Related: [Issue #33](https://github.com/Rebel-Raiders/sparc/issues/33) (Okta), [Issue #35](https://github.com/Rebel-Raiders/sparc/issues/35) (generic OIDC)
+- Related: [Issue #33](https://github.com/risk-sentinel/sparc/issues/33) (Okta), [Issue #35](https://github.com/risk-sentinel/sparc/issues/35) (generic OIDC)
 
 ### LDAP (`SPARC_ENABLE_LDAP=true`)
 
@@ -40,7 +40,7 @@
   3. User bind with supplied password
 - Auto-creates a SPARC user from LDAP attributes on first login
 - Supports `simple_tls`, `start_tls`, or plain (unencrypted) connections
-- Related: [PR #73](https://github.com/Rebel-Raiders/sparc/pull/73)
+- Related: [PR #73](https://github.com/risk-sentinel/sparc/pull/73)
 
 ### Session Management
 
@@ -77,16 +77,16 @@
 - System dependencies: jemalloc (memory allocator), libvips (image processing), pg-client
 - Precompiled assets in the build stage, copied to final image
 
-### AWS ECS Fargate ([Issue #109](https://github.com/Rebel-Raiders/sparc/issues/109) -- planned)
+### AWS ECS Fargate ([Issue #109](https://github.com/risk-sentinel/sparc/issues/109) -- planned)
 
 - Terraform infrastructure as code
 - ALB + ECS services for containerized deployment
 
-### AWS EC2 ([Issue #110](https://github.com/Rebel-Raiders/sparc/issues/110) -- planned)
+### AWS EC2 ([Issue #110](https://github.com/risk-sentinel/sparc/issues/110) -- planned)
 
 - Terraform with ALB + Auto Scaling Group
 
-### Azure VM ([Issue #111](https://github.com/Rebel-Raiders/sparc/issues/111) -- planned)
+### Azure VM ([Issue #111](https://github.com/risk-sentinel/sparc/issues/111) -- planned)
 
 - Terraform with Application Gateway
 

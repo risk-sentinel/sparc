@@ -291,4 +291,4 @@ curl -s -X POST "https://leveraging.sparc.example.gov/api/v1/federation_peers/7/
 - [Authoritative Sources](authoritative-sources.md) — the federation export/import endpoints `sync` consumes
 - [Back-Matter Resources](back-matter-resources.md) — what gets exchanged in the bundles
 - [`SPARC_HASH_ROTATION.md`](../../SPARC_HASH_ROTATION.md) — operator runbook for rotating the master secret behind these encrypted columns
-- SPARC issue [#372](https://github.com/Rebel-Raiders/sparc/issues/372) — the original feature request
+- SPARC issue [#372](https://github.com/risk-sentinel/sparc/issues/372) — the original feature request
