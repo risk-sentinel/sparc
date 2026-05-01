@@ -1,0 +1,89 @@
+# SPARC API automated test suite — Phase 2 of #413.
+#
+# Self-contained: every dependency declared here, no external downloads
+# required at test time. Pin to >= versions only; lock-files are generated
+# by the install step in CI (not committed).
+#
+# Local install:
+#   cd tests/api
+#   python -m venv .venv && source .venv/bin/activate
+#   pip install -e ".[dev]"
+#
+# Run all tests against a local SPARC instance:
+#   SPARC_TEST_BASE_URL=http://localhost:3000 \
+#   SPARC_TEST_ADMIN_TOKEN=sparc_... \
+#   SPARC_TEST_USER_TOKEN=sparc_... \
+#     pytest
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sparc-api-tests"
+version = "0.1.0"
+description = "Automated REST API test suite for SPARC v1 (issue #413 Phase 2)"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.6",
+    "pytest>=8.0",
+    "pytest-xdist>=3.5",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sparc_api_tests*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--showlocals",
+    "--tb=short",
+]
+markers = [
+    "phase1: tests targeting endpoints that existed before issue #413",
+    "phase2: tests targeting endpoints / behavior added in or after issue #413",
+    "happy: positive-path coverage for an endpoint",
+    "auth: authentication-failure coverage (401 cases)",
+    "authz: authorization-failure coverage (403 cases)",
+    "validation: input-validation / 422 coverage",
+    "pagination: pagination + filtering coverage",
+    "idempotency: repeated-call no-op coverage",
+    "discovery: tests for /api/v1/available",
+    "documents: tests for SSP/SAR/SAP/POAM/CDEF/Profile",
+    "back_matter: tests for back-matter resources",
+    "admin: tests for admin/credentials",
+    "federation: tests for federation peers and authoritative sources",
+    "users: tests for /api/v1/users",
+    "boundaries: tests for /api/v1/authorization_boundaries",
+    "catalogs: tests for control catalogs/mappings",
+    "ksi: tests for KSI catalog/validations",
+    "baselines: tests for baseline parameters",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true

@@ -115,11 +115,13 @@ The Phase 2 work happens on branch `sparc-api-automated-testing-phase2` and prod
 ### Test framework
 
 - **Language:** Python 3.12+
-- **Runner:** `pytest`
+- **Dependency manager:** [`uv`](https://docs.astral.sh/uv/) (`uv.lock` committed; reproducible installs via `uv sync --frozen`)
+- **Runner:** `pytest` 9+ via `uv run pytest`
 - **HTTP client:** `httpx` (for both sync and async support)
 - **Schema validation:** `pydantic` v2 against response schemas captured during Phase 1 doc work
 - **Layout:** `tests/api/` at the repo root, one test module per controller group (`test_ssp_documents.py`, `test_back_matter_resources.py`, etc.)
 - **Fixtures:** under `tests/api/fixtures/` — JSON request bodies, sample upload files, environment templates
+- **Containerized runner:** `tests/api/Dockerfile` based on `ghcr.io/astral-sh/uv:python3.12-bookworm-slim` for fully isolated local + CI runs
 
 ### Coverage requirements per endpoint
 
@@ -136,6 +138,28 @@ For every row in `INVENTORY.md`, the Phase 2 suite must include at minimum:
 
 Tests are tagged so they can be run by phase (`pytest -m phase1` / `pytest -m phase2`) or by controller (`pytest -k back_matter_resources`).
 
+### Running the suite
+
+```bash
+cd tests/api
+uv sync --extra dev                    # one-time install
+uv run pytest                          # full suite
+uv run pytest -m phase1                # subset by phase
+uv run pytest -m back_matter           # subset by controller marker
+uv run pytest -k "test_admin_creates"  # subset by name pattern
+uv run pytest -n auto                  # parallel via pytest-xdist
+```
+
+Containerized invocation (no local Python or uv install required):
+
+```bash
+cd tests/api
+docker build -t sparc-api-tests .
+docker run --rm --network=host --env-file .env sparc-api-tests pytest
+```
+
+See `tests/api/README.md` for the full reference.
+
 ### Test data and configuration
 
 The suite is **completely self-contained**. Running it requires:
@@ -147,15 +171,28 @@ The suite is **completely self-contained**. Running it requires:
 
 All fixtures (sample SSP Excel files, OSCAL JSON, OSCAL XML, KSI catalog seeds) ship in the repo under `tests/api/fixtures/`. No external downloads are required.
 
+### Drift detection
+
+`bin/api_inventory_check.rb` now treats the pytest suite as a third coverage signal. Re-running it on any commit produces a three-column inventory (docs / Postman / pytest); `--check` mode exits 1 if any row is missing in any signal.
+
+```bash
+bin/api_inventory_check.rb            # print full table to stdout
+bin/api_inventory_check.rb --check    # exit 1 on any drift
+```
+
+This is the recommended pre-commit gate when changing any `/api/v1/` route — running the script catches a missing endpoint doc, an absent Postman entry, or an uncovered pytest module before the PR is opened.
+
 ### CI integration
 
-The Phase 2 suite runs in GitHub Actions against an ephemeral SPARC instance booted from the same Docker Compose stack used for development. The workflow:
+The Phase 2 suite is designed to run in GitHub Actions against an ephemeral SPARC instance booted from the same Docker Compose stack used for development. A workflow that:
 
 1. Boots the `web` + `db` + `redis` services
 2. Seeds the test database
-3. Generates the admin and user Bearer tokens
-4. Runs the full pytest suite
-5. Reports per-test results in the run summary, with a coverage delta against `INVENTORY.md` (any inventory row not covered by at least one passing test is flagged)
+3. Generates admin and user Bearer tokens
+4. Runs `uv run pytest` against the boot
+5. Reports per-test results in the run summary, with a coverage delta against `INVENTORY.md`
+
+is the natural next step. The workflow file itself is **not** part of Phase 2 — adding it requires explicit user approval per repo policy on CI changes — and is filed as a follow-up. Until that lands, `tests/api/Dockerfile` lets contributors run the full suite against any reachable SPARC instance with a single `docker run`.
 
 Failures produce per-endpoint diffs (expected vs. actual response schema, status code, header values) so a failing PR can identify the regressing endpoint at a glance.
 

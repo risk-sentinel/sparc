@@ -1,0 +1,11 @@
+# Local dev artifacts not to be committed
+.venv/
+.env
+.pytest_cache/
+__pycache__/
+*.pyc
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+# uv leaves a python-version pin per-checkout; not relevant to commit
+.python-version
