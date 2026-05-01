@@ -1,14 +1,14 @@
 # Changelog
 
-All notable changes to SPARC are documented here. Versions follow semantic versioning. Links reference the [Rebel-Raiders/sparc](https://github.com/Rebel-Raiders/sparc) repository.
+All notable changes to SPARC are documented here. Versions follow semantic versioning. Links reference the [risk-sentinel/sparc](https://github.com/risk-sentinel/sparc) repository.
 
 ---
 
 ## (unreleased) -- OSCAL XML Catalog Parameters & Baseline Adjustments (2026-03-11)
 
 ### Added
-- **OSCAL XML catalog import** — full support for OSCAL 1.x XML serialization format alongside existing JSON and legacy SCAP XML imports; correctly parses `<param>`, `<select>`, `<choice>`, `<label>`, and `<guideline>` elements into the same `params_data` structure as JSON imports ([Issue #162](https://github.com/Rebel-Raiders/sparc/issues/162))
-- **Parameter suggestion badges** — profile control edit form now shows clickable catalog-defined choices as quick-pick badges above the text input for selection-type parameters; users can click to fill or type custom values ([Issue #162](https://github.com/Rebel-Raiders/sparc/issues/162))
+- **OSCAL XML catalog import** — full support for OSCAL 1.x XML serialization format alongside existing JSON and legacy SCAP XML imports; correctly parses `<param>`, `<select>`, `<choice>`, `<label>`, and `<guideline>` elements into the same `params_data` structure as JSON imports ([Issue #162](https://github.com/risk-sentinel/sparc/issues/162))
+- **Parameter suggestion badges** — profile control edit form now shows clickable catalog-defined choices as quick-pick badges above the text input for selection-type parameters; users can click to fill or type custom values ([Issue #162](https://github.com/risk-sentinel/sparc/issues/162))
 - **Selection info in profile show view** — read-only parameter display now shows available catalog options for selection-type parameters
 - **CatalogImportService specs** — 29 new tests covering OSCAL XML format detection, parameter extraction (label, select/choice, guideline, props), enhancement recursion, and JSON regression
 
@@ -17,15 +17,15 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 ## (unreleased) -- Home Screen OSCAL Layer Alignment (2026-03-11)
 
 ### Changed
-- **Home screen cards grouped by OSCAL layers** — Controls (blue), Implementation (green), Assessment (orange), and Environments (purple) with section headers and colored accent bars ([Issue #164](https://github.com/Rebel-Raiders/sparc/issues/164))
+- **Home screen cards grouped by OSCAL layers** — Controls (blue), Implementation (green), Assessment (orange), and Environments (purple) with section headers and colored accent bars ([Issue #164](https://github.com/risk-sentinel/sparc/issues/164))
 - **Control Mapping card added** to home screen under Controls Layer
-- **Stat tiles redesigned with horizontal OSCAL layer labels** — replaced vertical truncated text badges with full horizontal labels (CONTROLS, IMPLEMENTATION, ASSESSMENT, ENVIRONMENTS) above each metric group; each group wrapped in a color-coded container with accent border and tinted background ([Issue #164](https://github.com/Rebel-Raiders/sparc/issues/164))
+- **Stat tiles redesigned with horizontal OSCAL layer labels** — replaced vertical truncated text badges with full horizontal labels (CONTROLS, IMPLEMENTATION, ASSESSMENT, ENVIRONMENTS) above each metric group; each group wrapped in a color-coded container with accent border and tinted background ([Issue #164](https://github.com/risk-sentinel/sparc/issues/164))
 - **Unique family & control counts** — Families and Controls tiles now show distinct counts across all catalogs instead of total rows
 - **Login page OSCAL diagram** updated to include Mapping Model in the Controls Layer
 - **Login page branding upsized** — SPARC logo enlarged from 72px/88px to 96px/120px (mobile/desktop), Welcome heading upgraded from h4 to h3, and description text set to standard body size
 
 ### Fixed
-- **Heatmap card click filtering** — clicking anywhere on a heatmap family card body now filters by that family, not just badges/links ([Issue #159](https://github.com/Rebel-Raiders/sparc/issues/159))
+- **Heatmap card click filtering** — clicking anywhere on a heatmap family card body now filters by that family, not just badges/links ([Issue #159](https://github.com/risk-sentinel/sparc/issues/159))
 - **Family group visibility** — empty family groups are hidden when heatmap filter is active
 - **Profile show page** — controls grouped by collapsible NIST families with Expand/Collapse All buttons; catalog sub-parts shown as nested implementation statements
 
@@ -37,7 +37,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 ## (unreleased) -- Control Family Selection/Deselection (2026-03-10)
 
 ### Added
-- **Family-level control selection** — "Create Profile from Catalog" page now groups controls by family in collapsible accordions with family-level select/deselect checkboxes, tri-state indicators, and expand/collapse all ([Issue #151](https://github.com/Rebel-Raiders/sparc/issues/151))
+- **Family-level control selection** — "Create Profile from Catalog" page now groups controls by family in collapsible accordions with family-level select/deselect checkboxes, tri-state indicators, and expand/collapse all ([Issue #151](https://github.com/risk-sentinel/sparc/issues/151))
 - **Baseline auto-select** — choosing a baseline level (LOW, MODERATE, HIGH) auto-checks all controls matching that impact level via a dedicated server endpoint, keeping baseline logic server-side
 - **Manage Controls page** — existing catalog-linked profiles now have a "Manage Controls" button to bulk add/remove controls with parameter inheritance from the source catalog
 - **Stimulus controller** — `family_selector_controller.js` replaces inline vanilla JS with proper Hotwire architecture; supports both dynamic (create) and server-rendered (manage) modes
@@ -48,7 +48,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 ## (unreleased) -- OSCAL Document UUID & Back Matter (2026-03-10)
 
 ### Added
-- **Stable document UUID** — dedicated `uuid` column on all six OSCAL document tables (SSP, SAR, CDEF, SAP, POAM, Profile), auto-generated by Postgres `gen_random_uuid()`. OSCAL imports preserve the source document UUID. Exports use the stable column value instead of generating a random UUID each time. ([Issue #147](https://github.com/Rebel-Raiders/sparc/issues/147))
+- **Stable document UUID** — dedicated `uuid` column on all six OSCAL document tables (SSP, SAR, CDEF, SAP, POAM, Profile), auto-generated by Postgres `gen_random_uuid()`. OSCAL imports preserve the source document UUID. Exports use the stable column value instead of generating a random UUID each time. ([Issue #147](https://github.com/risk-sentinel/sparc/issues/147))
 - **OSCAL back-matter support** — every exported OSCAL document now includes a `back-matter` section with a SPARC-identifying resource (title, description, rlink to app URL) for auditor traceability
 - **Centralized back-matter logic** — `OscalMetadata` concern provides `build_oscal_back_matter` and `sparc_back_matter_resource` methods, eliminating duplicate implementations across export services
 - **Round-trip back-matter fidelity** — imported back-matter resources are fully preserved and merged with the SPARC resource on export; Profile parser no longer strips resource fields
@@ -60,7 +60,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 ## (unreleased) -- User Lifecycle Enhancements (2026-03-10)
 
 ### Added
-- **User UUID** — immutable UUID column for audit traceability, auto-generated by Postgres `gen_random_uuid()` ([Issue #146](https://github.com/Rebel-Raiders/sparc/issues/146))
+- **User UUID** — immutable UUID column for audit traceability, auto-generated by Postgres `gen_random_uuid()` ([Issue #146](https://github.com/risk-sentinel/sparc/issues/146))
 - **Soft-delete (deactivate)** — admin can deactivate users instead of hard-deleting; records `deleted_at` timestamp and `inactive_reason` for audit trails
 - **Reactivate with force password reset** — admin checkbox to require password change on reactivation
 - **Password expiration** — local-auth users are forced to change password after configurable `SPARC_PASSWORD_EXPIRY_DAYS` (default 30); OAuth/SSO users are exempt
@@ -75,7 +75,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 ## (unreleased) -- Organization Management (2026-03-10)
 
 ### Added
-- **Organization entity** with UUID-based audit traceability — organizations own authorization boundaries and serve as the parent grouping unit ([Issue #145](https://github.com/Rebel-Raiders/sparc/issues/145), [Issue #137](https://github.com/Rebel-Raiders/sparc/issues/137))
+- **Organization entity** with UUID-based audit traceability — organizations own authorization boundaries and serve as the parent grouping unit ([Issue #145](https://github.com/risk-sentinel/sparc/issues/145), [Issue #137](https://github.com/risk-sentinel/sparc/issues/137))
 - Admin CRUD interface for organizations with search, status filtering, and pagination
 - Organization membership management with senior-official-pattern roles (Org Admin, Head of Agency, CIO, CISO, Risk Executive, etc.)
 - Soft-delete via deactivate/reactivate — organizations are never hard-deleted, preserving UUID for audit trails
@@ -88,15 +88,15 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 ## v3.4.8 -- Home Screen & Navigation UX (2026-03-09)
 
 ### Fixed
-- Dashboard section cards now have consistent OSCAL-layer-colored borders — Controls (blue), Implementation (green), Assessment (orange), Boundaries (purple) — with uniform hover effect ([Issue #152](https://github.com/Rebel-Raiders/sparc/issues/152))
-- "Auth Boundaries" navbar link upgraded to dropdown showing the user's assigned boundaries with status badges and quick navigation; admins see all boundaries ([Issue #153](https://github.com/Rebel-Raiders/sparc/issues/153))
+- Dashboard section cards now have consistent OSCAL-layer-colored borders — Controls (blue), Implementation (green), Assessment (orange), Boundaries (purple) — with uniform hover effect ([Issue #152](https://github.com/risk-sentinel/sparc/issues/152))
+- "Auth Boundaries" navbar link upgraded to dropdown showing the user's assigned boundaries with status badges and quick navigation; admins see all boundaries ([Issue #153](https://github.com/risk-sentinel/sparc/issues/153))
 
 ---
 
 ## v3.4.7 -- Control Parameters & Profile Publish (2026-03-09)
 
 ### Added
-- Catalog-level OSCAL parameter definitions (`params`) extracted and stored during catalog import as `params_data` JSONB column on `catalog_controls` ([Issue #143](https://github.com/Rebel-Raiders/sparc/issues/143))
+- Catalog-level OSCAL parameter definitions (`params`) extracted and stored during catalog import as `params_data` JSONB column on `catalog_controls` ([Issue #143](https://github.com/risk-sentinel/sparc/issues/143))
 - Control family show view displays parameter badges and expandable parameter details (ID, label, constraint/choices)
 - Catalog control edit form with editable parameter labels for organization-specific customization
 - OSCAL catalog export now emits `params` array on controls when present
@@ -119,22 +119,22 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 ## v3.4.6 -- Fix Docker Migration Failure (2026-03-09)
 
 ### Fixed
-- Removed duplicate `error_message` column addition from `AddOscalSspEntities` migration that caused `docker compose up --build` to fail on existing Postgres volumes ([Issue #140](https://github.com/Rebel-Raiders/sparc/issues/140))
+- Removed duplicate `error_message` column addition from `AddOscalSspEntities` migration that caused `docker compose up --build` to fail on existing Postgres volumes ([Issue #140](https://github.com/risk-sentinel/sparc/issues/140))
 
 ---
 
 ## v3.4.5 -- Heatmap Removal & Environment UX Fix (2026-03-09)
 
 ### Fixed
-- Removed aggregate compliance heatmap from home page -- document-level heatmaps remain on individual SSP, SAR, CDEF, SAP, and Profile pages ([Issue #136](https://github.com/Rebel-Raiders/sparc/issues/136))
-- Renamed "Boundaries & Components" section to "Environments & Components" on authorization boundary show page for clearer terminology ([Issue #136](https://github.com/Rebel-Raiders/sparc/issues/136))
+- Removed aggregate compliance heatmap from home page -- document-level heatmaps remain on individual SSP, SAR, CDEF, SAP, and Profile pages ([Issue #136](https://github.com/risk-sentinel/sparc/issues/136))
+- Renamed "Boundaries & Components" section to "Environments & Components" on authorization boundary show page for clearer terminology ([Issue #136](https://github.com/risk-sentinel/sparc/issues/136))
 
 ---
 
 ## v3.4.4 -- Authorization Boundary Rebrand (2026-03-09)
 
 ### Changed
-- Rebranded "Project" to "Authorization Boundary" throughout the application -- models, controllers, views, routes, database schema, and documentation now align with NIST RMF / FedRAMP terminology ([Issue #124](https://github.com/Rebel-Raiders/sparc/issues/124))
+- Rebranded "Project" to "Authorization Boundary" throughout the application -- models, controllers, views, routes, database schema, and documentation now align with NIST RMF / FedRAMP terminology ([Issue #124](https://github.com/risk-sentinel/sparc/issues/124))
 - Renamed database tables `projects` to `authorization_boundaries`, `project_memberships` to `authorization_boundary_memberships`
 - Renamed all `project_id` foreign key columns to `authorization_boundary_id`
 - Updated role scope from `project` to `authorization_boundary`
@@ -145,7 +145,7 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ## v3.4.3 -- HTTPS Enforcement & Security Headers (2026-03-09)
 
-- Enforce HTTPS-only traffic with HSTS preload, subdomains, and 1-year max-age ([Issue #106](https://github.com/Rebel-Raiders/sparc/issues/106))
+- Enforce HTTPS-only traffic with HSTS preload, subdomains, and 1-year max-age ([Issue #106](https://github.com/risk-sentinel/sparc/issues/106))
 - Health-check endpoint `/up` excluded from SSL redirect for container probes (ALB, Kubernetes)
 - Security headers middleware: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Permitted-Cross-Domain-Policies`
 - Content Security Policy enabled in report-only mode (Bootstrap CDN allowlisted)
@@ -154,13 +154,13 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ## v3.4.2 -- Hide Expected Excel Fields from Upload UI (2026-03-09)
 
-- Removed hardcoded "Expected Excel Format" tables from SSP and SAR upload pages ([Issue #129](https://github.com/Rebel-Raiders/sparc/issues/129))
+- Removed hardcoded "Expected Excel Format" tables from SSP and SAR upload pages ([Issue #129](https://github.com/risk-sentinel/sparc/issues/129))
 - Replaced with concise import notes referencing data mapping definitions (`lib/data_mappings/`)
 - OSCAL files (JSON, XML, YAML) noted as auto-detected with no mapping required
 
 ## v3.4.1 -- Full Multi-Format Support (2026-03-09)
 
-- Full OSCAL tri-format support: import and export JSON, YAML, and XML for all six document types ([Issue #120](https://github.com/Rebel-Raiders/sparc/issues/120))
+- Full OSCAL tri-format support: import and export JSON, YAML, and XML for all six document types ([Issue #120](https://github.com/risk-sentinel/sparc/issues/120))
 - Six new YAML parser services (SSP, SAR, POAM, Profile, CDEF, SAP) using delegation pattern to avoid logic duplication
 - New SAP XML parser service (`SapXmlParserService`) completing XML import coverage for all document types
 - OSCAL export format conversion via `OscalExportFormatService` (JSON to YAML/XML)
@@ -173,11 +173,11 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ## v3.4.0 -- Robust Audit Logging (2026-03-09)
 
-- Comprehensive audit logging with approximately 80 tracked actions across 16 categories ([PR #121](https://github.com/Rebel-Raiders/sparc/pull/121), [Issue #101](https://github.com/Rebel-Raiders/sparc/issues/101))
+- Comprehensive audit logging with approximately 80 tracked actions across 16 categories ([PR #121](https://github.com/risk-sentinel/sparc/pull/121), [Issue #101](https://github.com/risk-sentinel/sparc/issues/101))
 - Polymorphic subject tracking (`subject_type`/`subject_id`) for resource-level traceability
 - Admin audit log UI at `/admin/audit_logs` with filtering, detail views, and CSV export
 - `Auditable` controller concern providing a DRY `audit_log` helper method
-- Structured JSON logging to `Rails.logger.info` for integration with CloudWatch/Datadog ([PR #122](https://github.com/Rebel-Raiders/sparc/pull/122))
+- Structured JSON logging to `Rails.logger.info` for integration with CloudWatch/Datadog ([PR #122](https://github.com/risk-sentinel/sparc/pull/122))
 - Fixed silent audit failures in `ControlMappingsController`
 - Authorization failure logging for security monitoring
 
@@ -189,68 +189,68 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
   - **Assessment** (orange) -- SAP, SAR, POA&M
 - User avatar system with upload and remove functionality
 - Version badge displayed in the navbar
-- [PR #118](https://github.com/Rebel-Raiders/sparc/pull/118) -- Control Mapping Models
+- [PR #118](https://github.com/risk-sentinel/sparc/pull/118) -- Control Mapping Models
 
 ## v3.2.1 -- Bug Fix (2026-03-09)
 
-- Fixed user dropdown menu not opening after Turbo navigation ([PR #117](https://github.com/Rebel-Raiders/sparc/pull/117), [Issue #116](https://github.com/Rebel-Raiders/sparc/issues/116))
+- Fixed user dropdown menu not opening after Turbo navigation ([PR #117](https://github.com/risk-sentinel/sparc/pull/117), [Issue #116](https://github.com/risk-sentinel/sparc/issues/116))
 
 ## v3.2.0 -- RBAC Enforcement & Summary Tiles (2026-03-08)
 
-- Full OSCAL/RMF/FedRAMP role coverage with 29 roles ([PR #115](https://github.com/Rebel-Raiders/sparc/pull/115))
-- Restricted catalog and baseline editing to Policy Manager and Instance Admin ([Issue #99](https://github.com/Rebel-Raiders/sparc/issues/99))
-- Summary tiles across all main sections for at-a-glance status ([Issue #103](https://github.com/Rebel-Raiders/sparc/issues/103))
-- Added SPARC SME and Evidence Integration Engineer roles ([Issue #96](https://github.com/Rebel-Raiders/sparc/issues/96))
+- Full OSCAL/RMF/FedRAMP role coverage with 29 roles ([PR #115](https://github.com/risk-sentinel/sparc/pull/115))
+- Restricted catalog and baseline editing to Policy Manager and Instance Admin ([Issue #99](https://github.com/risk-sentinel/sparc/issues/99))
+- Summary tiles across all main sections for at-a-glance status ([Issue #103](https://github.com/risk-sentinel/sparc/issues/103))
+- Added SPARC SME and Evidence Integration Engineer roles ([Issue #96](https://github.com/risk-sentinel/sparc/issues/96))
 
 ## v3.1.1 -- SSP Rebrand (2026-03-08)
 
-- Rebranded "Controls Implementation" to "System Security Plan" throughout the application ([PR #113](https://github.com/Rebel-Raiders/sparc/pull/113), [Issue #97](https://github.com/Rebel-Raiders/sparc/issues/97))
+- Rebranded "Controls Implementation" to "System Security Plan" throughout the application ([PR #113](https://github.com/risk-sentinel/sparc/pull/113), [Issue #97](https://github.com/risk-sentinel/sparc/issues/97))
 
 ## v3.1.0 -- RBAC Admin Screens (2026-03-08)
 
-- User administration screen with search, suspend, and reactivate capabilities ([Issue #93](https://github.com/Rebel-Raiders/sparc/issues/93))
-- Role administration with permission matrix editing ([Issue #94](https://github.com/Rebel-Raiders/sparc/issues/94))
-- Authorization boundary administration with member and role management ([Issue #92](https://github.com/Rebel-Raiders/sparc/issues/92))
-- [PR #112](https://github.com/Rebel-Raiders/sparc/pull/112)
+- User administration screen with search, suspend, and reactivate capabilities ([Issue #93](https://github.com/risk-sentinel/sparc/issues/93))
+- Role administration with permission matrix editing ([Issue #94](https://github.com/risk-sentinel/sparc/issues/94))
+- Authorization boundary administration with member and role management ([Issue #92](https://github.com/risk-sentinel/sparc/issues/92))
+- [PR #112](https://github.com/risk-sentinel/sparc/pull/112)
 
 ## v3.0.0 -- Authentication & RBAC Foundation (2026-03-08)
 
-- Local email/password authentication conforming to NIST SP 800-63B ([Issue #70](https://github.com/Rebel-Raiders/sparc/issues/70))
-- OAuth support for GitHub and GitLab ([Issue #34](https://github.com/Rebel-Raiders/sparc/issues/34))
-- OIDC support for Okta, Keycloak, and generic providers ([Issue #33](https://github.com/Rebel-Raiders/sparc/issues/33), [Issue #35](https://github.com/Rebel-Raiders/sparc/issues/35))
+- Local email/password authentication conforming to NIST SP 800-63B ([Issue #70](https://github.com/risk-sentinel/sparc/issues/70))
+- OAuth support for GitHub and GitLab ([Issue #34](https://github.com/risk-sentinel/sparc/issues/34))
+- OIDC support for Okta, Keycloak, and generic providers ([Issue #33](https://github.com/risk-sentinel/sparc/issues/33), [Issue #35](https://github.com/risk-sentinel/sparc/issues/35))
 - LDAP authentication with bind-and-search pattern
 - RBAC system with 29 seeded roles and 20 permission keys
-- Login page restructure with OSCAL overview ([Issue #90](https://github.com/Rebel-Raiders/sparc/issues/90), [Issue #102](https://github.com/Rebel-Raiders/sparc/issues/102))
-- Fixed local login and admin password reset flow ([Issue #91](https://github.com/Rebel-Raiders/sparc/issues/91))
-- [PR #73](https://github.com/Rebel-Raiders/sparc/pull/73), [PR #104](https://github.com/Rebel-Raiders/sparc/pull/104), [PR #105](https://github.com/Rebel-Raiders/sparc/pull/105)
+- Login page restructure with OSCAL overview ([Issue #90](https://github.com/risk-sentinel/sparc/issues/90), [Issue #102](https://github.com/risk-sentinel/sparc/issues/102))
+- Fixed local login and admin password reset flow ([Issue #91](https://github.com/risk-sentinel/sparc/issues/91))
+- [PR #73](https://github.com/risk-sentinel/sparc/pull/73), [PR #104](https://github.com/risk-sentinel/sparc/pull/104), [PR #105](https://github.com/risk-sentinel/sparc/pull/105)
 
 ## v2.0.1 (2026-03-06)
 
-- Dark mode fixes for consistent theming ([Issue #47](https://github.com/Rebel-Raiders/sparc/issues/47))
-- Bug fixes for SSP viewing and inline editing ([Issue #41](https://github.com/Rebel-Raiders/sparc/issues/41), [Issue #42](https://github.com/Rebel-Raiders/sparc/issues/42))
+- Dark mode fixes for consistent theming ([Issue #47](https://github.com/risk-sentinel/sparc/issues/47))
+- Bug fixes for SSP viewing and inline editing ([Issue #41](https://github.com/risk-sentinel/sparc/issues/41), [Issue #42](https://github.com/risk-sentinel/sparc/issues/42))
 
 ## v2.0.0 -- OSCAL Full Schema (2026-03-06)
 
 ### UI & Framework
-- Bootstrap 5.3 adoption for modern responsive layout ([Issue #51](https://github.com/Rebel-Raiders/sparc/issues/51))
-- Interactive heat maps for control status visualization ([Issue #81](https://github.com/Rebel-Raiders/sparc/issues/81))
-- Dashboard aggregate heatmap across all documents ([Issue #83](https://github.com/Rebel-Raiders/sparc/issues/83))
+- Bootstrap 5.3 adoption for modern responsive layout ([Issue #51](https://github.com/risk-sentinel/sparc/issues/51))
+- Interactive heat maps for control status visualization ([Issue #81](https://github.com/risk-sentinel/sparc/issues/81))
+- Dashboard aggregate heatmap across all documents ([Issue #83](https://github.com/risk-sentinel/sparc/issues/83))
 
 ### OSCAL Compliance
-- Full OSCAL schema uplift for all artifact types ([Issue #58](https://github.com/Rebel-Raiders/sparc/issues/58))
-- OSCAL schema validation against official NIST schemas ([Issue #45](https://github.com/Rebel-Raiders/sparc/issues/45))
-- OSCAL metadata management and inheritance ([Issue #52](https://github.com/Rebel-Raiders/sparc/issues/52))
-- Vendor-neutral data mapping schema ([Issue #54](https://github.com/Rebel-Raiders/sparc/issues/54))
+- Full OSCAL schema uplift for all artifact types ([Issue #58](https://github.com/risk-sentinel/sparc/issues/58))
+- OSCAL schema validation against official NIST schemas ([Issue #45](https://github.com/risk-sentinel/sparc/issues/45))
+- OSCAL metadata management and inheritance ([Issue #52](https://github.com/risk-sentinel/sparc/issues/52))
+- Vendor-neutral data mapping schema ([Issue #54](https://github.com/risk-sentinel/sparc/issues/54))
 
 ### Document Types
-- SSP wizard, enrichment, and enhanced export ([Issue #30](https://github.com/Rebel-Raiders/sparc/issues/30))
-- SAR creation, enrichment, and wizard ([Issue #32](https://github.com/Rebel-Raiders/sparc/issues/32))
-- SAP creation ([Issue #28](https://github.com/Rebel-Raiders/sparc/issues/28))
-- POA&M import and management ([Issue #27](https://github.com/Rebel-Raiders/sparc/issues/27), [Issue #29](https://github.com/Rebel-Raiders/sparc/issues/29))
+- SSP wizard, enrichment, and enhanced export ([Issue #30](https://github.com/risk-sentinel/sparc/issues/30))
+- SAR creation, enrichment, and wizard ([Issue #32](https://github.com/risk-sentinel/sparc/issues/32))
+- SAP creation ([Issue #28](https://github.com/risk-sentinel/sparc/issues/28))
+- POA&M import and management ([Issue #27](https://github.com/risk-sentinel/sparc/issues/27), [Issue #29](https://github.com/risk-sentinel/sparc/issues/29))
 - Component Definition (CDEF) support
 
 ### Other
-- Evidence and attestation collection ([Issue #31](https://github.com/Rebel-Raiders/sparc/issues/31))
-- Authorization boundary orchestration with RMF roles ([Issue #46](https://github.com/Rebel-Raiders/sparc/issues/46))
-- Document duplication ([Issue #56](https://github.com/Rebel-Raiders/sparc/issues/56))
-- Control catalog and family CRUD ([Issue #48](https://github.com/Rebel-Raiders/sparc/issues/48), [Issue #49](https://github.com/Rebel-Raiders/sparc/issues/49))
+- Evidence and attestation collection ([Issue #31](https://github.com/risk-sentinel/sparc/issues/31))
+- Authorization boundary orchestration with RMF roles ([Issue #46](https://github.com/risk-sentinel/sparc/issues/46))
+- Document duplication ([Issue #56](https://github.com/risk-sentinel/sparc/issues/56))
+- Control catalog and family CRUD ([Issue #48](https://github.com/risk-sentinel/sparc/issues/48), [Issue #49](https://github.com/risk-sentinel/sparc/issues/49))

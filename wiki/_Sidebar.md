@@ -21,6 +21,6 @@
 ---
 
 **Links**
-* [Repository](https://github.com/Rebel-Raiders/sparc)
-* [Releases](https://github.com/Rebel-Raiders/sparc/releases)
-* [Issues](https://github.com/Rebel-Raiders/sparc/issues)
+* [Repository](https://github.com/risk-sentinel/sparc)
+* [Releases](https://github.com/risk-sentinel/sparc/releases)
+* [Issues](https://github.com/risk-sentinel/sparc/issues)

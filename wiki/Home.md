@@ -6,9 +6,9 @@ Welcome to the official SPARC wiki. SPARC is a Rails application for managing NI
 
 | Resource | Link |
 |----------|------|
-| Repository | [Rebel-Raiders/sparc](https://github.com/Rebel-Raiders/sparc) |
-| Releases | [All releases](https://github.com/Rebel-Raiders/sparc/releases) |
-| Issues | [Open issues](https://github.com/Rebel-Raiders/sparc/issues) |
+| Repository | [risk-sentinel/sparc](https://github.com/risk-sentinel/sparc) |
+| Releases | [All releases](https://github.com/risk-sentinel/sparc/releases) |
+| Issues | [Open issues](https://github.com/risk-sentinel/sparc/issues) |
 | Current Version | **v3.4.0** |
 
 ## Wiki Sections
@@ -73,7 +73,7 @@ See [Configuration](Configuration) for all environment variables and [Integratio
 This wiki is version-controlled via its own git repository. To contribute:
 
 ```bash
-git clone https://github.com/Rebel-Raiders/sparc.wiki.git
+git clone https://github.com/risk-sentinel/sparc.wiki.git
 cd sparc.wiki
 # Edit or add .md files
 git add . && git commit -m "Update wiki"

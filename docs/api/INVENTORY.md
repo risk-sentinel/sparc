@@ -4,7 +4,7 @@
 
 Authoritative cross-reference between SPARC's `/api/v1/` routes (as defined in code), per-endpoint markdown documentation under `docs/api/endpoints/`, and the Postman collection at `docs/api/sparc-api.postman_collection.json`.
 
-This file is the work-tracking spine for issue [#413](https://github.com/Rebel-Raiders/sparc/issues/413). Phase 1 work closes "**MISSING**" rows below; Phase 2 will add a parallel column for "covered by Python pytest suite" once that suite lands on `sparc-api-automated-testing-phase2`.
+This file is the work-tracking spine for issue [#413](https://github.com/risk-sentinel/sparc/issues/413). Phase 1 work closes "**MISSING**" rows below; Phase 2 will add a parallel column for "covered by Python pytest suite" once that suite lands on `sparc-api-automated-testing-phase2`.
 
 ## Summary (as of 2026-04-30)
 

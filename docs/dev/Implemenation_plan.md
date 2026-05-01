@@ -144,6 +144,7 @@ authentication mode coverage matrix.
 - [x] #296 -- Downsize hero card size by ~20% (CSS padding, font sizes, mobile breakpoints) -- **COMPLETED 2026-03-25**
 - [x] #300 -- Add compliance artifact pipeline with S3 upload on PRs (OIDC + S3 + CDEF validation workflow) -- **COMPLETED 2026-03-25**
 - [x] #314 -- Optimize CI pipeline: dependency caching, parallel scans, Docker layer caching, pipeline metrics job -- **COMPLETED 2026-03-26**
+- [x] #430 -- GitHub org migration: Rebel-Raiders → risk-sentinel (pre-cutover sweep of workflows, app refs, docs, wiki, compliance CDEFs; cosign identity regex retargeted; cross-repo dispatch retargeted) -- **COMPLETED 2026-05-01**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -543,7 +544,7 @@ removed and are no longer tracked:
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-**Completed (Phases 1-10 + ad-hoc):** 66 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25)
+**Completed (Phases 1-10 + ad-hoc):** 67 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration pre-cutover sweep — completed 2026-05-01)
 **Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367); follow-ups filed: #422 (POAM Scenario B cross-instance federated visibility)
 **Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 in progress.
 **First public release: v1.0.0** (#271). **Current version: v1.4.1** (releasing on #419 PR merge).

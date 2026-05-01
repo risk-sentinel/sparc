@@ -120,7 +120,7 @@ The rotation Lambda's idempotency guarantees:
 The rake task fails before mutating DB (per `AdminCredentialRotationService#call`
 ordering), so retry is safe. Common causes:
 - SPARC's task role lacks `PutSecretValue` on admin-credentials → check
-  sparc-iac IAM (Rebel-Raiders/sparc-iac#197).
+  sparc-iac IAM (risk-sentinel/sparc-iac#197).
 - `SPARC_ADMIN_CREDENTIALS_SECRET_ARN` env var is unset → ECS task
   definition needs this configured.
 
@@ -153,7 +153,7 @@ HTTP response, or notification.
 ## Sparc-iac coordination
 
 The sparc-iac counterpart for full Lambda-driven rotation is tracked in
-**Rebel-Raiders/sparc-iac#197**:
+**risk-sentinel/sparc-iac#197**:
 
 1. Task-definition `secrets:` block injects `SPARC_ADMIN_PASSWORD` from
    `admin-credentials:password::`

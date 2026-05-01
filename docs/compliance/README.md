@@ -56,13 +56,13 @@ Security scan HDF ───┘ (via sparc-compliance-latest artifact + repositor
    - `manifest.json` — File inventory with run ID and git SHA for traceability
 
 3. **`repository_dispatch` notification** — After publishing the artifact, SPARC sends a
-   `sparc-compliance-updated` event to `Rebel-Raiders/sparc-iac` with the `run_id` in
+   `sparc-compliance-updated` event to `risk-sentinel/sparc-iac` with the `run_id` in
    the payload. sparc-iac can then download the artifact via the GitHub REST API:
    ```bash
    # List artifacts for the run
-   gh api repos/Rebel-Raiders/sparc/actions/runs/{run_id}/artifacts
+   gh api repos/risk-sentinel/sparc/actions/runs/{run_id}/artifacts
    # Download the compliance bundle
-   gh api repos/Rebel-Raiders/sparc/actions/artifacts/{artifact_id}/zip > compliance.zip
+   gh api repos/risk-sentinel/sparc/actions/artifacts/{artifact_id}/zip > compliance.zip
    ```
    **Required secret:** `SPARC_IAC_DISPATCH_TOKEN` — a GitHub PAT with `contents:read`
    on sparc and `contents:write` on sparc-iac.
@@ -185,8 +185,8 @@ The S3 upload uses GitHub Actions OIDC federation. The IAM role
   "Condition": {
     "StringLike": {
       "token.actions.githubusercontent.com:sub": [
-        "repo:Rebel-Raiders/sparc-iac:*",
-        "repo:Rebel-Raiders/sparc:ref:refs/heads/main"
+        "repo:risk-sentinel/sparc-iac:*",
+        "repo:risk-sentinel/sparc:ref:refs/heads/main"
       ]
     }
   }
@@ -208,5 +208,5 @@ The S3 upload uses GitHub Actions OIDC federation. The IAM role
 
 - [NIST SP 800-53 Rev 5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final)
 - [OSCAL Component Definition Model](https://pages.nist.gov/OSCAL/concepts/layer/implementation/component-definition/)
-- [sparc-iac FedRAMP 20x Docs](https://github.com/Rebel-Raiders/sparc-iac/tree/main/docs/FedRAMP_20x)
+- [sparc-iac FedRAMP 20x Docs](https://github.com/risk-sentinel/sparc-iac/tree/main/docs/FedRAMP_20x)
 - [SAF CLI](https://saf-cli.mitre.org/)

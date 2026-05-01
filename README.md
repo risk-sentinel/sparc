@@ -4,7 +4,7 @@
 
 **SPARC** is an open-source compliance documentation platform that transforms how organizations manage NIST 800-53 security controls. It replaces fragmented spreadsheets and siloed documents with a **coordinated, web-based, real-time source of truth** — empowering security teams, assessors, system owners, and program managers to document, assess, and prove compliance across the full RMF lifecycle.
 
-> **Documentation:** See the **[SPARC Wiki](https://github.com/Rebel-Raiders/sparc/wiki)** for comprehensive documentation covering RBAC, screens, core functions, integrations, architecture, and configuration.
+> **Documentation:** See the **[SPARC Wiki](https://github.com/risk-sentinel/sparc/wiki)** for comprehensive documentation covering RBAC, screens, core functions, integrations, architecture, and configuration.
 
 ---
 
@@ -28,7 +28,7 @@
 ### Docker (Recommended)
 
 ```bash
-git clone https://github.com/Rebel-Raiders/sparc.git
+git clone https://github.com/risk-sentinel/sparc.git
 cd sparc
 docker compose up --build
 ```
@@ -44,7 +44,7 @@ See [Docker Deployment](docs/DOCKER.md) for full details.
 ### Local Development
 
 ```bash
-git clone https://github.com/Rebel-Raiders/sparc.git
+git clone https://github.com/risk-sentinel/sparc.git
 cd sparc
 bundle install
 bin/rails db:create db:migrate db:seed

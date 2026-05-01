@@ -588,7 +588,7 @@ The admin credential rotation workflow propagates rotations performed in AWS Sec
 | SI-10 | Password-length validation (min 8 chars), presence check, idempotency check (`admin.authenticate(plaintext)` before mutating); failures return structured 4xx without partial DB mutation | authentication | `app/services/admin_credential_rotation_service.rb`, `app/controllers/api/v1/admin/credentials_controller.rb` |
 
 **Configuration dependencies:**
-- ECS task definition injects `SPARC_ADMIN_PASSWORD` from the `admin-credentials` SM secret (sparc-iac change — see Rebel-Raiders/sparc-iac#197)
+- ECS task definition injects `SPARC_ADMIN_PASSWORD` from the `admin-credentials` SM secret (sparc-iac change — see risk-sentinel/sparc-iac#197)
 - SPARC ECS task role has `secretsmanager:PutSecretValue` + `UpdateSecretVersionStage` on `admin-credentials` (write-only — sparc-iac IAM delta)
 - `SPARC_ADMIN_REFRESH_ENABLED=true` to enable the API endpoint (off by default — fail closed)
 - A SPARC service account holds the `admin.rotate_credentials` permission and its `sparc_sa_*` token is provisioned to the rotation Lambda via a separate SM secret
@@ -616,7 +616,7 @@ The authoritative back-matter workflow added in #372 contributes to the followin
 | SI-10 | `AuthoritativeSourceFetchService` enforces 25 MB body cap, 30s read timeout, content-type-derived filename validation; `BackMatterBulkImportService` validates each row independently with per-row error reporting; signed bundle verification rejects unknown algorithms and tampered payloads | session-mgmt, audit | `app/services/authoritative_source_fetch_service.rb`, `app/services/back_matter_bulk_import_service.rb`, `app/services/federation_bundle_signing_service.rb` |
 
 **Configuration dependencies:**
-- `SPARC_HASH` ≥32 bytes (provisioned by sparc-iac into AWS Secrets Manager — issue Rebel-Raiders/sparc-iac#195). Falls back to Rails `secret_key_base` in dev/test with a logged warning in production.
+- `SPARC_HASH` ≥32 bytes (provisioned by sparc-iac into AWS Secrets Manager — issue risk-sentinel/sparc-iac#195). Falls back to Rails `secret_key_base` in dev/test with a logged warning in production.
 - `SPARC_AUTHORITATIVE_FETCH_ENABLED=true` to allow URL auto-fetch on resource creation. Off by default.
 
 ---

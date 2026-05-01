@@ -1,6 +1,6 @@
 # Admin Credentials
 
-Out-of-band rotation entry point for the SPARC instance admin password. The endpoint is designed to be called by a sparc-iac-managed Lambda that has already written the new password to AWS Secrets Manager (`AWSPENDING`); SPARC bcrypts the value into the admin user's `password_digest` and the Lambda is responsible for promoting `AWSPENDING` → `AWSCURRENT` after a successful 200. The contract is documented in [Rebel-Raiders/sparc-iac#197](https://github.com/Rebel-Raiders/sparc-iac/issues/197) and the operator runbook lives in `docs/ADMIN_CREDENTIAL_ROTATION.md`.
+Out-of-band rotation entry point for the SPARC instance admin password. The endpoint is designed to be called by a sparc-iac-managed Lambda that has already written the new password to AWS Secrets Manager (`AWSPENDING`); SPARC bcrypts the value into the admin user's `password_digest` and the Lambda is responsible for promoting `AWSPENDING` → `AWSCURRENT` after a successful 200. The contract is documented in [risk-sentinel/sparc-iac#197](https://github.com/risk-sentinel/sparc-iac/issues/197) and the operator runbook lives in `docs/ADMIN_CREDENTIAL_ROTATION.md`.
 
 The endpoint is **disabled by default** to fail closed in environments that have not opted in to remote rotation. Set `SPARC_ADMIN_REFRESH_ENABLED=true` on the SPARC ECS task definition to enable it.
 
@@ -118,5 +118,5 @@ curl -X POST "https://sparc.example.com/api/v1/admin/refresh_credentials" \
 
 - [`ADMIN_CREDENTIAL_ROTATION.md`](../../ADMIN_CREDENTIAL_ROTATION.md) — operator runbook covering the full Path A / B / C flows
 - [`SPARC_HASH_ROTATION.md`](../../SPARC_HASH_ROTATION.md) — sibling runbook for rotating the `SPARC_HASH` master secret
-- SPARC issues [#402](https://github.com/Rebel-Raiders/sparc/issues/402) and [#403](https://github.com/Rebel-Raiders/sparc/issues/403) — the original feature requests
-- [Rebel-Raiders/sparc-iac#197](https://github.com/Rebel-Raiders/sparc-iac/issues/197) — sparc-iac counterpart (task-def secrets injection + IAM delta + rotation Lambda)
+- SPARC issues [#402](https://github.com/risk-sentinel/sparc/issues/402) and [#403](https://github.com/risk-sentinel/sparc/issues/403) — the original feature requests
+- [risk-sentinel/sparc-iac#197](https://github.com/risk-sentinel/sparc-iac/issues/197) — sparc-iac counterpart (task-def secrets injection + IAM delta + rotation Lambda)

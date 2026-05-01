@@ -49,7 +49,7 @@ The DB is a materialized cache that boot reconciliation keeps in sync.
 
 ## Quick start (new SPARC deployment)
 
-These steps assume a fresh SPARC deployment on ECS Fargate with sparc-iac provisioned per the [#197 contract](https://github.com/Rebel-Raiders/sparc-iac/issues/197).
+These steps assume a fresh SPARC deployment on ECS Fargate with sparc-iac provisioned per the [#197 contract](https://github.com/risk-sentinel/sparc-iac/issues/197).
 
 1. **Convert `admin-credentials` to JSON form** (one-time, only if it's currently plaintext):
    ```bash
@@ -106,7 +106,7 @@ If step 5 fails after step 4 succeeded, SPARC's DB is "ahead" of SM AWSCURRENT u
    | `allowed_cidrs` | `["<Lambda NAT egress IP>/32"]` | Rejects requests from anywhere else |
    | `expires_at` | 1 year out | Forces annual rotation of the rotation token itself |
 
-2. **Provision the rotation Lambda's SM secret** (sparc-iac side — see [#197](https://github.com/Rebel-Raiders/sparc-iac/issues/197)):
+2. **Provision the rotation Lambda's SM secret** (sparc-iac side — see [#197](https://github.com/risk-sentinel/sparc-iac/issues/197)):
    ```bash
    aws secretsmanager create-secret \
      --name sparc-{env}/rotation-lambda-token \
@@ -181,7 +181,7 @@ Output:
 
 ### What it requires (sparc-iac side)
 
-- ECS task role IAM policy includes `secretsmanager:PutSecretValue` + `UpdateSecretVersionStage` on `admin-credentials` (write-only — see [#197](https://github.com/Rebel-Raiders/sparc-iac/issues/197))
+- ECS task role IAM policy includes `secretsmanager:PutSecretValue` + `UpdateSecretVersionStage` on `admin-credentials` (write-only — see [#197](https://github.com/risk-sentinel/sparc-iac/issues/197))
 - `SPARC_ADMIN_CREDENTIALS_SECRET_ARN` env var set on the task definition
 
 ---
@@ -222,7 +222,7 @@ Use this when standing up SPARC on ECS Fargate for the first time, or when retro
 - [ ] Create the rotation service account with the `admin.rotate_credentials` permission
 - [ ] Capture the `sparc_sa_*` token at creation time (only shown once)
 
-### Sparc-iac side (per [#197](https://github.com/Rebel-Raiders/sparc-iac/issues/197))
+### Sparc-iac side (per [#197](https://github.com/risk-sentinel/sparc-iac/issues/197))
 
 - [ ] Convert `admin-credentials` SM secret to JSON form (`{"password":"..."}`)
 - [ ] Add `SPARC_ADMIN_PASSWORD` to ECS task definition `secrets:` block, sourced from `admin-credentials:password::`
@@ -500,8 +500,8 @@ If none of the SM versions match a working password, you've lost the admin crede
 - **[`API.md`](API.md)** — full SPARC API reference
 - **[`ENVIRONMENT_VARIABLES.md`](ENVIRONMENT_VARIABLES.md)** — every SPARC env var
 - **[`compliance/nist-sp800-53-rev5-mapping.md`](compliance/nist-sp800-53-rev5-mapping.md)** — NIST 800-53 Rev 5 control mapping (search "Admin Credential Rotation")
-- **[Rebel-Raiders/sparc-iac#197](https://github.com/Rebel-Raiders/sparc-iac/issues/197)** — sparc-iac counterpart (task-def secrets injection + IAM delta + rotation Lambda)
-- **SPARC issues [#402](https://github.com/Rebel-Raiders/sparc/issues/402) and [#403](https://github.com/Rebel-Raiders/sparc/issues/403)** — the original feature requests
+- **[risk-sentinel/sparc-iac#197](https://github.com/risk-sentinel/sparc-iac/issues/197)** — sparc-iac counterpart (task-def secrets injection + IAM delta + rotation Lambda)
+- **SPARC issues [#402](https://github.com/risk-sentinel/sparc/issues/402) and [#403](https://github.com/risk-sentinel/sparc/issues/403)** — the original feature requests
 
 ---
 

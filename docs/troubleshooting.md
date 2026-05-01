@@ -48,4 +48,4 @@ Common issues and their solutions when running SPARC.
 
 ## Still Stuck?
 
-Run `docker compose logs` and look for errors. Feel free to [open an issue](https://github.com/Rebel-Raiders/sparc/issues) with the output.
+Run `docker compose logs` and look for errors. Feel free to [open an issue](https://github.com/risk-sentinel/sparc/issues) with the output.

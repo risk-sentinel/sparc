@@ -67,7 +67,7 @@ For ECS Fargate deployments using AWS Secrets Manager. See **[Admin Credential R
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_ADMIN_PASSWORD | Plaintext admin password injected by ECS from the `admin-credentials` Secrets Manager secret. `bootstrap_admin` reconciles the DB to match on every container start. Never set this manually in development; it's ECS-managed. | (unset) | _(injected by ECS)_ | When using rotation |
-| SPARC_ADMIN_REFRESH_ENABLED | Enables `POST /api/v1/admin/refresh_credentials` for Lambda-driven rotation. Defaults to fail-closed (returns 503). Set to `true` only after the rotation Lambda + service-account token are provisioned per [sparc-iac#197](https://github.com/Rebel-Raiders/sparc-iac/issues/197). | `false` | `true` | No |
+| SPARC_ADMIN_REFRESH_ENABLED | Enables `POST /api/v1/admin/refresh_credentials` for Lambda-driven rotation. Defaults to fail-closed (returns 503). Set to `true` only after the rotation Lambda + service-account token are provisioned per [sparc-iac#197](https://github.com/risk-sentinel/sparc-iac/issues/197). | `false` | `true` | No |
 | SPARC_ALLOW_CRED_ROTATION | Outside production, the `sparc:rotate_admin_credentials` rake task refuses to run unless this is `1`. Production has no gate. | (unset) | `1` | No |
 | SPARC_PRINT_ROTATED_PASSWORD | Break-glass only — when `1`, the rotate-credentials rake task prints the plaintext password to stdout. Be mindful of log retention. Default behavior (unset) tells the operator to retrieve the password from the AWS Console. | (unset) | `1` | No |
 
@@ -273,7 +273,7 @@ Converter mappings (DISA CCI, CIS, SCAP/OVAL) are seeded from `lib/data_mappings
 
 ## AWS Secrets Manager (ECS/EC2 Deployments)
 
-Two-secret strategy aligned with [sparc-iac #22](https://github.com/Rebel-Raiders/sparc-iac/issues/22):
+Two-secret strategy aligned with [sparc-iac #22](https://github.com/risk-sentinel/sparc-iac/issues/22):
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
