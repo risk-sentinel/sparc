@@ -11,7 +11,7 @@
 # the DB is updated to match — this is how rotations performed in SM
 # (manually, by sparc-iac, or by the rotation Lambda) propagate into
 # the running task on its next restart. See docs/dev/admin_credential_rotation.md
-# and Rebel-Raiders/sparc-iac#197 for the full rotation flow.
+# and risk-sentinel/sparc-iac#197 for the full rotation flow.
 #
 # NIST IA-4: Identifier Management
 # NIST IA-5: Authenticator Management (rotation propagation)

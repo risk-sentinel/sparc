@@ -4,7 +4,7 @@
 # already written it to AWS Secrets Manager (AWSPENDING). SPARC bcrypts
 # the value into the admin user's `password_digest`; the Lambda is
 # responsible for promoting AWSPENDING → AWSCURRENT after a successful
-# 200 response. See Rebel-Raiders/sparc-iac#197 for the Lambda contract.
+# 200 response. See risk-sentinel/sparc-iac#197 for the Lambda contract.
 #
 # Auth uses SPARC's existing service account API token mechanism (#257):
 # the Lambda holds a `sparc_sa_*` Bearer token (stored in its own SM
