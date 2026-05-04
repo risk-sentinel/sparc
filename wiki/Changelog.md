@@ -4,6 +4,57 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.5.0 -- API Test Suite, Org Migration & Dependency Hardening (2026-05-04)
+
+Minor release. Ships the comprehensive Python pytest API test suite ([#413](https://github.com/risk-sentinel/sparc/issues/413), [PR #432](https://github.com/risk-sentinel/sparc/pull/432) — 247 tests across 18 modules covering every documented endpoint), completes the GitHub org migration to `risk-sentinel` ([#430](https://github.com/risk-sentinel/sparc/issues/430)), and absorbs a wave of dependency security patches and bumps. **No breaking changes** to SPARC user-visible behavior — existing deployments upgrade in place.
+
+Full release notes (with verification evidence and audit context) on the [v1.5.0 GitHub release page](https://github.com/risk-sentinel/sparc/releases/tag/v1.5.0).
+
+### Highlights
+
+- **Python pytest API test suite** — 247 tests, 18 modules, all 95 endpoints covered. Lives at `tests/api/`. ([#413](https://github.com/risk-sentinel/sparc/issues/413), [PR #432](https://github.com/risk-sentinel/sparc/pull/432))
+- **GitHub org migration** — `Rebel-Raiders/sparc` → `risk-sentinel/sparc`. Workflows, cosign identity regex, cross-repo dispatch, docs, wiki, compliance CDEFs all retargeted. ([#430](https://github.com/risk-sentinel/sparc/issues/430), [PR #434](https://github.com/risk-sentinel/sparc/pull/434))
+- **Security patches** — `net-imap` STARTTLS-stripping (GHSA-vcgp-9326-pqcp) + CRLF injection (GHSA-75xq-5h9v-w6px, GHSA-hm49-wcqc-g2xg) ([PR #438](https://github.com/risk-sentinel/sparc/pull/438)); `erb` defense-in-depth against `Marshal.load` of attacker-controlled ERB instances ([PR #410](https://github.com/risk-sentinel/sparc/pull/410)).
+- **`jwt` major bump** — 2.10.2 → 3.1.2. SPARC's JWT consumer surface verified compatible (only one file uses the gem); new regression spec covers happy + rejection paths. ([PR #289](https://github.com/risk-sentinel/sparc/pull/289))
+
+### Added
+
+- Python pytest suite at `tests/api/` — request-level contract coverage for every documented endpoint, parametrized for the three auth modes ([#413](https://github.com/risk-sentinel/sparc/issues/413))
+- API documentation review — Phase 1 closed: 100% endpoint doc coverage, Postman collection now covers all 95 endpoints ([#413](https://github.com/risk-sentinel/sparc/issues/413), [PR #427](https://github.com/risk-sentinel/sparc/pull/427), [PR #428](https://github.com/risk-sentinel/sparc/pull/428), [PR #429](https://github.com/risk-sentinel/sparc/pull/429), [PR #431](https://github.com/risk-sentinel/sparc/pull/431))
+- API procedure document — review-and-automated-testing workflow at `docs/api/SPARC-API-Review-and-Automated-Testing-Procedure.md`
+- OIDC JWT decode regression spec — closes the test-coverage gap for the live JWT happy path ([PR #289](https://github.com/risk-sentinel/sparc/pull/289))
+- `.github/CODEOWNERS` — admin review required for non-admin PRs ([#435](https://github.com/risk-sentinel/sparc/issues/435))
+
+### Changed
+
+- Repository now lives at `https://github.com/risk-sentinel/sparc`. All cross-repo references in workflows (cosign identity regex, `repository_dispatch` target), app code, docs, wiki, and OSCAL CDEF `remarks` retargeted ([#430](https://github.com/risk-sentinel/sparc/issues/430))
+- Implementation plan reorganized — Phase 12 (post-migration test/CI hardening + federation follow-ups) added with priority-ordered backlog ([PR #439](https://github.com/risk-sentinel/sparc/pull/439))
+
+### Security
+
+- **`net-imap` 0.6.3 → 0.6.4** ([PR #438](https://github.com/risk-sentinel/sparc/pull/438))
+  - GHSA-vcgp-9326-pqcp — STARTTLS stripping (MITM could silently prevent TLS upgrade)
+  - GHSA-75xq-5h9v-w6px, GHSA-hm49-wcqc-g2xg — CRLF / command / argument injection
+- **`erb` 6.0.2 → 6.0.4** ([PR #410](https://github.com/risk-sentinel/sparc/pull/410)) — defense-in-depth: prohibit `def_method` on marshal-loaded ERB instances; release-tooling and packaging fixes
+- **`jwt` 2.10.2 → 3.1.2** ([PR #289](https://github.com/risk-sentinel/sparc/pull/289)) — major version bump; the v3 line requires explicit algorithm on JWK verify (SPARC already passes `algorithms: ["RS256"]`), enforces RSA ≥2048 bits (Okta JWKS already meets this), and stricter base64 (RFC 4648). Audit found one consumer (`app/controllers/concerns/api_authentication.rb`); new spec covers a real RS256 token through the full decode path
+
+### Dependencies
+
+- `aws-sdk-s3` 1.219.0 → 1.220.0
+- `aws-sdk-rds` 1.310.0 → 1.311.0
+- `bootsnap` 1.23.0 → 1.24.1
+- `faker` 3.6.1 → 3.8.0
+- `rubyzip` 3.2.2 → 3.3.0 (in-major; only behavioral change in 3.3.0 is `Zip::InputStream` IO-compat refactor — SPARC consumers unaffected)
+- `aws-sdk-core` 3.244.0 → 3.246.0, `aws-sdk-kms` 1.123.0 → 1.124.0, `aws-partitions` 1.1237.0 → 1.1244.0 (transitive)
+
+([PR #437](https://github.com/risk-sentinel/sparc/pull/437) bundled the application-direct deps in this group.)
+
+### Verification
+
+Full RSpec on the merged dependency state: **2076 examples, 0 failures**. `bundle exec rubocop` clean.
+
+---
+
 ## (unreleased) -- OSCAL XML Catalog Parameters & Baseline Adjustments (2026-03-11)
 
 ### Added
