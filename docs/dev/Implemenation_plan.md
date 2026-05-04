@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-04-14
+**Last updated:** 2026-05-04
 
 ---
 
@@ -126,7 +126,7 @@ authentication mode coverage matrix.
 - [ ] #244 -- Add security gate with threshold-based merge/deploy blocking
 - [ ] #246 -- Repository cleanup & OSCAL schema validation overhaul
 - [x] #249 -- Mutually exclusive API auth modes (SPARC_API_AUTH=local|oidc|hybrid) -- **COMPLETED 2026-03-21**
-- [ ] #250 -- Add API discovery endpoint (GET /api/v1/available)
+- [x] #250 -- Add API discovery endpoint (GET /api/v1/available) -- **COMPLETED 2026-03-21**
 - [x] #257 -- Service Account Management for API Access -- **COMPLETED 2026-03-21**
 - [x] #259 -- AWS Secrets Manager integration for ECS deployments -- **COMPLETED 2026-03-21**
 - [x] #264 -- Gitleaks pattern for SPARC service account tokens (`.gitleaks.toml`) -- **COMPLETED 2026-03-21**
@@ -144,7 +144,7 @@ authentication mode coverage matrix.
 - [x] #296 -- Downsize hero card size by ~20% (CSS padding, font sizes, mobile breakpoints) -- **COMPLETED 2026-03-25**
 - [x] #300 -- Add compliance artifact pipeline with S3 upload on PRs (OIDC + S3 + CDEF validation workflow) -- **COMPLETED 2026-03-25**
 - [x] #314 -- Optimize CI pipeline: dependency caching, parallel scans, Docker layer caching, pipeline metrics job -- **COMPLETED 2026-03-26**
-- [x] #430 -- GitHub org migration: Rebel-Raiders → risk-sentinel (pre-cutover sweep of workflows, app refs, docs, wiki, compliance CDEFs; cosign identity regex retargeted; cross-repo dispatch retargeted) -- **COMPLETED 2026-05-01**
+- [x] #430 -- GitHub org migration: Rebel-Raiders → risk-sentinel (pre-cutover sweep PR #434 landed 2026-05-01; transfer + verification + wiki re-push completed 2026-05-02) -- **COMPLETED 2026-05-02**
 
 <!-- markdownlint-enable MD013 -->
 
@@ -442,8 +442,6 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | ------ | ----- | ----------- | -------- | ------------ |
 | [x] | #234 | Refactor avatar upload with crop/scale/center controls -- **COMPLETED 2026-03-21** | LOW | None |
 | [x] | #237 | Persistent Data Quality card on catalog show page -- **COMPLETED 2026-03-21** | MEDIUM | None |
-| [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | **HIGH** | None |
-| [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | MEDIUM | None |
 | [x] | #249 | Mutually exclusive API auth modes (local/oidc/hybrid) + service accounts -- **COMPLETED 2026-03-21** | **HIGH** (security) | None |
 | [x] | #250 | API discovery endpoint (GET /api/v1/available) -- **COMPLETED 2026-03-21** | LOW | None |
 | [x] | #257 | Service Account Management for API Access -- **COMPLETED 2026-03-21** | **HIGH** (security) | AFTER #249 |
@@ -468,18 +466,13 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 
 **Deliverables:** Hardened API auth, CI security gates, cleaner repo, OSCAL-compliant back-matter, enterprise API
 
-**Parallelism: Remaining issues (#244, #246) can run simultaneously.**
-
-```text
-Dev B: #244 (security gate)        -- CI/Infrastructure domain
-Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
-```
-
-> All Phase 10 issues except #244 and #246 are complete.
+> **Status:** All Phase 10 issues are complete. #244 and #246 carried
+> forward to Phase 12 (post-migration active backlog) for prioritized
+> execution alongside the new test/CI hardening work.
 
 ---
 
-### Phase 11: OSCAL Integrity, Enterprise API & Infrastructure (upcoming)
+### Phase 11: OSCAL Integrity, Enterprise API & Infrastructure (complete)
 
 **Goal:** UUID integrity, authoritative resource API, import quality, CI optimization, container hardening
 
@@ -487,19 +480,62 @@ Dev C: #246 (repo cleanup/schema)  -- Shared/Validation domain
 
 | Status | Issue | Description | Priority | Dependencies |
 | ------ | ----- | ----------- | -------- | ------------ |
-| [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | **HIGH** (security) | None |
-| [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | MEDIUM | None |
-| [ ] | #341 | Add XML document type fingerprinting for upload validation | MEDIUM | None |
-| [ ] | #344 | Upgrade Docker base image to Debian Trixie -- remediate OS-level CVEs | **HIGH** (security) | None |
+| [x] | #344 | Upgrade Docker base image to Debian Trixie -- remediate OS-level CVEs -- **COMPLETED 2026-04-15** | **HIGH** (security) | None |
 | [x] | #346 | Optimize CodeQL scan -- scope to Ruby, reduce analysis time -- **COMPLETED 2026-04-15** | LOW | None |
 | [x] | #358 | Configure Dependabot grouping -- batch low-risk updates -- **COMPLETED 2026-04-15** | LOW | None |
 | [x] | #361 | UUID collision handling on OSCAL import + replace placeholder UUIDs -- **COMPLETED 2026-04-14** | **HIGH** (compliance) | #371 |
-| [ ] | #367 | Code coverage threshold and tracking -- SimpleCov integration | MEDIUM | None |
 | [x] | #372 | Import Authoritative Sources for Global and Organizational Use -- **COMPLETED 2026-04-26** | **HIGH** (enterprise) | #375 |
 
 <!-- markdownlint-enable MD013 -->
 
 **Deliverables:** UUID integrity, optimized CI/CD, hardened container images, authoritative source import
+
+> **Status:** Phase 11 complete. #244, #246, #341, #367 carried forward
+> to Phase 12 alongside the post-migration test/CI hardening backlog.
+
+---
+
+### Phase 12: Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups (current)
+
+**Goal:** Unblock developer velocity (CI gate hygiene), close the contract→content gap in the API test suite, hold federation follow-on for first real federated deployment, and finish the carried-over Platform Hardening / Phase 11 items.
+
+<!-- markdownlint-disable MD013 -->
+
+| Priority | Status | Issue | Description | Notes |
+| -------- | ------ | ----- | ----------- | ----- |
+| **P0** | [ ] | #436 | CI: path-filtered required checks block config/docs PRs — adopt consolidating-gate pattern | Bug; hit on #435 (CODEOWNERS PR) and #434 (org migration). Likely small CI workflow PR. Unblocks all future config/docs PRs from needing admin override. **Lands first.** |
+| **P1** | [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | Pairs with #367 (the gate consumes coverage data). After #436 lands, the consolidating-gate pattern simplifies #244's required-check wiring. |
+| **P1** | [ ] | #367 | Code coverage threshold and tracking — SimpleCov integration | Bundles naturally with #244. |
+| **P1** | [ ] | #433 | Test suite — content-style validation (response schemas, fixtures, round-trip, audit, OSCAL) | Large multi-slice (~2.5-3.5k LOC, similar to #432). Closes the type/field-drift gap left open by #432's contract-style suite (pydantic schemas, realistic fixtures, round-trip + audit-log + OSCAL schema assertions). Independent of #436/#244/#367 — can run in parallel. |
+| **P2** | [ ] | #341 | Add XML document type fingerprinting for upload validation | Defensive, post-#392; touches `FileUploadable` and parser entry-points. Coordinate with anything else editing those concerns. |
+| **P2** | [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | Background lane. Scope-define needed; treat as parallelizable while a feature ships. |
+| **P3** | [ ] | #422 | POAM Scenario B — cross-instance federated POAM visibility (carved from #415) | Gated on first real federation deployment (peers configured + `SPARC_HASH` rotated in production). Stays parked until that exists. |
+| **P3** | [ ] | #413 | Comprehensive SPARC API Documentation Review and Automated Testing — umbrella | Phase 1 + Phase 2 acceptance criteria shipped (PR #432 — 247 tests covering all 95 endpoints). Stays open as the umbrella reference for the API testing program; close once #433 lands and the content-style layer is in place. |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** CI gate hygiene that doesn't block config/docs PRs; threshold-blocking security + coverage gates; type-safe API test suite; XML upload defense; cleaner repo. Federation follow-up parked for production deployment.
+
+**Sequencing:**
+
+```text
+Sprint 12a (P0 + P1 launch):
+  Dev A: #436 (CI consolidating-gate fix)   -- one-PR, lands first
+  Dev B: #244 + #367 bundle                 -- after #436 (gate pattern available)
+  Dev C: #433 slice 1                        -- pydantic schemas + fixtures (independent)
+
+Sprint 12b (P1 finish + P2):
+  Dev A: #341 (XML fingerprinting)
+  Dev C: #433 slices 2-6                     -- continues
+  Dev B: #246 (repo cleanup)                 -- background lane
+
+Out (gated): #422 — first federation deployment
+Umbrella: #413 — close on #433 merge
+```
+
+> **Order rule:** #436 lands first because every subsequent CI work
+> (#244, #367) benefits from the consolidating-gate pattern. #433 is
+> independent — it can run in parallel from sprint 12a.
 
 ---
 
@@ -538,13 +574,14 @@ removed and are no longer tracked:
 | 7 | 2-3 weeks | OSCAL Import Quality + Traceability | #207, #213, #217 | **COMPLETE** |
 | 8 | 2-3 weeks | API Expansion (all OSCAL resources) | #229, #240, #242 | **COMPLETE** |
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
-| 10 | Ongoing | Platform Hardening & Polish | #234-#375 (25 issues) | In Progress |
-| 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #244, #246, #341, #344, #346, #358, #361, #367, #372 | In Progress |
+| 10 | Ongoing | Platform Hardening & Polish | #234-#375 (25 issues) | **COMPLETE** |
+| 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #344, #346, #358, #361, #372 | **COMPLETE** |
+| 12 | Current | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | #436, #244, #367, #433, #341, #246, #422, #413 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 64 (23 original + 41 ad-hoc/new)
-**Completed (Phases 1-10 + ad-hoc):** 67 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration pre-cutover sweep — completed 2026-05-01)
-**Remaining:** 5 issues (Phase 10: #244, #246; Phase 11: #341, #344, #367); follow-ups filed: #422 (POAM Scenario B cross-instance federated visibility)
-**Phases 1-9 complete.** Phase 10 nearly complete. Phase 11 in progress.
-**First public release: v1.0.0** (#271). **Current version: v1.4.1** (releasing on #419 PR merge).
+**Total issues tracked:** 65 (23 original + 42 ad-hoc/new — adds #436)
+**Completed (Phases 1-11 + ad-hoc):** 68 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration completed 2026-05-02)
+**Remaining (Phase 12 active backlog):** 8 issues — P0: #436 / P1: #244, #367, #433 / P2: #341, #246 / P3: #422 (gated on first federation deployment), #413 (umbrella; closes on #433 merge)
+**Phases 1-11 complete.** Phase 12 (post-migration active backlog) in progress.
+**First public release: v1.0.0** (#271). **Current version: v1.4.1** (released on #419 PR merge). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430).
