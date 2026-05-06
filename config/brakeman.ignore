@@ -1,8 +1,12 @@
 {
   "ignored_warnings": [
     {
-      "fingerprint": "c9c58dcbb8a057384f80b5f6084815496c6a1d3cdee8756bf4fdaa16b715f9d6",
-      "note": "Attestation#role is descriptive metadata identifying the attester (control_owner, isso, ciso, etc.), NOT an app-level authorization role. Defense-in-depth: app/models/attestation.rb adds `validates :role, inclusion: { in: ROLES }` so mass-assignment cannot set arbitrary values; only the controlled vocabulary in Attestation::ROLES is accepted. The Brakeman BRAKE0105 warning fires because the field name 'role' is on its dangerous-key list, not because the assignment is actually unsafe."
+      "fingerprint": "85a0dc658a70597402234c68bb646c6ca9b9f8eb02dcf92f686dcbd95f4cfbe4",
+      "note": "Attestation#role is descriptive metadata identifying the attester (control_owner, isso, ciso, etc.), NOT an app-level authorization role. Defense-in-depth: app/models/attestation.rb adds `validates :role, inclusion: { in: ROLES }` so mass-assignment cannot set arbitrary values; only the controlled vocabulary in Attestation::ROLES is accepted. Same rationale applies to :frequency (FREQUENCIES inclusion) and :status (STATUSES inclusion) added in #440. The Brakeman BRAKE0105 warning fires because the field name 'role' is on its dangerous-key list, not because the assignment is actually unsafe."
+    },
+    {
+      "fingerprint": "c11c11d05203d702220c243b2bfca868efe10bf17ec4e9bee1197641e7bf8e72",
+      "note": "API mirror of the UI attestations_controller.rb permit list. Same rationale as fingerprint 85a0dc658a70...: Attestation#role/#frequency/#status are bounded by inclusion validators on the model so mass-assignment cannot set arbitrary values."
     }
   ],
   "updated": "2026-05-06",

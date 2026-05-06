@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_26_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_06_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -66,12 +66,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_000000) do
     t.string "attester_name", null: false
     t.datetime "created_at", null: false
     t.bigint "evidence_id", null: false
+    t.string "frequency"
     t.string "role"
     t.string "signature_hash"
     t.text "statement", null: false
+    t.string "status", default: "passed", null: false
     t.datetime "updated_at", null: false
     t.index ["attested_at"], name: "index_attestations_on_attested_at"
     t.index ["evidence_id"], name: "index_attestations_on_evidence_id"
+    t.index ["status"], name: "index_attestations_on_status"
   end
 
   create_table "audit_events", force: :cascade do |t|

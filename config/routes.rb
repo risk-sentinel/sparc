@@ -362,6 +362,16 @@ Rails.application.routes.draw do
       resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ]
       resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ]
 
+      # Evidence attestations (#440 — periodic-review records + CMS schema export).
+      # API surface mirrors the UI nesting (`/evidences/:evidence_id/attestations`).
+      resources :evidences, only: [] do
+        resources :attestations, only: [ :index, :show, :create, :destroy ] do
+          collection do
+            get :export
+          end
+        end
+      end
+
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ]
       resources :profile_documents, only: [ :index, :show, :create, :update, :destroy ] do

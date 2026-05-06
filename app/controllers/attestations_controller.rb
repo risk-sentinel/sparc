@@ -32,6 +32,6 @@ class AttestationsController < ApplicationController
   end
 
   def attestation_params
-    params.require(:attestation).permit(:attester_name, :attester_email, :role, :statement, :attested_at)
+    params.require(:attestation).permit(:attester_name, :attester_email, :role, :statement, :attested_at, :frequency, :status)
   end
 end

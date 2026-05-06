@@ -16,6 +16,15 @@ class Attestation < ApplicationRecord
   # static analyzer but is bounded by this inclusion check.
   validates :role, inclusion: { in: ROLES }, allow_nil: true
 
+  # Periodic-review cadence; aligns with CMS / SAF CLI attestation schema (#440).
+  FREQUENCIES = %w[daily weekly monthly quarterly annually ad_hoc].freeze
+  validates :frequency, inclusion: { in: FREQUENCIES }, allow_nil: true
+
+  # CMS attestation `status` field. SPARC's existing attestations were
+  # implicitly affirmative; default of "passed" preserves that semantic.
+  STATUSES = %w[passed failed].freeze
+  validates :status, inclusion: { in: STATUSES }
+
   ROLE_LABELS = {
     "control_owner" => "Control Owner",
     "system_owner" => "System Owner",
@@ -25,8 +34,21 @@ class Attestation < ApplicationRecord
     "authorizing_official" => "Authorizing Official"
   }.freeze
 
+  FREQUENCY_LABELS = {
+    "daily" => "Daily",
+    "weekly" => "Weekly",
+    "monthly" => "Monthly",
+    "quarterly" => "Quarterly",
+    "annually" => "Annually",
+    "ad_hoc" => "Ad-hoc"
+  }.freeze
+
   def role_label
     ROLE_LABELS[role] || role&.titleize || "Unknown"
+  end
+
+  def frequency_label
+    FREQUENCY_LABELS[frequency] || frequency&.titleize
   end
 
   def generate_signature!

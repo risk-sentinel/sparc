@@ -46,6 +46,20 @@
           <%= f.datetime_local_field :attested_at, class: "form-control",
               value: @attestation.attested_at&.strftime("%Y-%m-%dT%H:%M") || Time.current.strftime("%Y-%m-%dT%H:%M") %>
         </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Review Frequency</label>
+          <%= f.select :frequency,
+              options_for_select(Attestation::FREQUENCY_LABELS.map { |k, v| [ v, k ] }, @attestation.frequency),
+              { include_blank: "Not specified" }, class: "form-select" %>
+          <small class="form-text text-muted">Cadence for re-attestation (CMS attestation schema).</small>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Status</label>
+          <%= f.select :status,
+              options_for_select(Attestation::STATUSES.map { |s| [ s.titleize, s ] }, @attestation.status || "passed"),
+              {}, class: "form-select" %>
+          <small class="form-text text-muted">Attestation outcome (passed = control verified).</small>
+        </div>
       </div>
 
       <div class="alert alert-info small">
