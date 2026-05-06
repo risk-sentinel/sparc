@@ -19,13 +19,18 @@ jobs:
             exit 0
           fi
 
+          # Strip <!-- pr-checklist:skip --> ... <!-- /pr-checklist:skip --> blocks.
+          # Contents inside (and the marker lines themselves) are excluded from
+          # the checkbox count. See CONTRIBUTING.md for the convention.
+          FILTERED=$(echo "$BODY" | sed '/<!-- pr-checklist:skip -->/,/<!-- \/pr-checklist:skip -->/d')
+
           # Count unchecked boxes (- [ ])
-          UNCHECKED=$(echo "$BODY" | grep -cE '^\s*-\s*\[ \]' || true)
+          UNCHECKED=$(echo "$FILTERED" | grep -cE '^\s*-\s*\[ \]' || true)
           # Count checked boxes (- [x] or - [X])
-          CHECKED=$(echo "$BODY" | grep -ciE '^\s*-\s*\[x\]' || true)
+          CHECKED=$(echo "$FILTERED" | grep -ciE '^\s*-\s*\[x\]' || true)
           TOTAL=$((CHECKED + UNCHECKED))
 
-          echo "Checkboxes found: $TOTAL ($CHECKED checked, $UNCHECKED unchecked)"
+          echo "Checkboxes found: $TOTAL ($CHECKED checked, $UNCHECKED unchecked) [skip-marker blocks excluded]"
 
           if [ "$TOTAL" -eq 0 ]; then
             echo "::warning::No checklist items found in PR description."
@@ -33,7 +38,7 @@ jobs:
           fi
 
           if [ "$UNCHECKED" -gt 0 ]; then
-            echo "::error::$UNCHECKED unchecked checkbox(es) remaining in the PR description. Complete all test plan items before merging."
+            echo "::error::$UNCHECKED unchecked checkbox(es) remaining in the PR description. Complete all test plan items before merging, or move CI/post-merge items into a <!-- pr-checklist:skip --> block (see CONTRIBUTING.md)."
             exit 1
           fi
 

@@ -509,6 +509,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | **P1** | [ ] | #433 | Test suite — content-style validation (response schemas, fixtures, round-trip, audit, OSCAL) | Large multi-slice (~2.5-3.5k LOC, similar to #432). Closes the type/field-drift gap left open by #432's contract-style suite (pydantic schemas, realistic fixtures, round-trip + audit-log + OSCAL schema assertions). Independent of #436/#244/#367 — can run in parallel. |
 | **P2** | [ ] | #341 | Add XML document type fingerprinting for upload validation | Defensive, post-#392; touches `FileUploadable` and parser entry-points. Coordinate with anything else editing those concerns. |
 | **P2** | [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | Background lane. Scope-define needed; treat as parallelizable while a feature ships. |
+| **P2** | [x] | ~~#445~~ | ~~PR checklist hygiene: PR template + skip-marker for CI/post-merge boxes~~ — **COMPLETED 2026-05-06** | Shipped on `feature/445_pr_checklist_hygiene`. Tier 1: `.github/PULL_REQUEST_TEMPLATE.md` (five-section shape: Summary / Changes / Test plan / Verified by CI / Post-merge verification — checkboxes only in Test plan, plain bullets elsewhere) + `CONTRIBUTING.md` documenting the convention. Tier 2: `.github/workflows/pr-checklist.yml` strips `<!-- pr-checklist:skip --> ... <!-- /pr-checklist:skip -->` blocks before counting `- [ ]` so contributors have a machine-enforced escape hatch for CI-verified or post-merge items. Triggered by mid-PR body restructures on PR #441 (release) and PR #444 (security gate). Tier 3 (re-trigger aggregator on `pull_request: edited`) deferred. |
 | **P3** | [ ] | #422 | POAM Scenario B — cross-instance federated POAM visibility (carved from #415) | Gated on first real federation deployment (peers configured + `SPARC_HASH` rotated in production). Stays parked until that exists. |
 | **P3** | [ ] | #413 | Comprehensive SPARC API Documentation Review and Automated Testing — umbrella | Phase 1 + Phase 2 acceptance criteria shipped (PR #432 — 247 tests covering all 95 endpoints). Stays open as the umbrella reference for the API testing program; close once #433 lands and the content-style layer is in place. |
 
@@ -576,12 +577,12 @@ removed and are no longer tracked:
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
 | 10 | Ongoing | Platform Hardening & Polish | #234-#375 (25 issues) | **COMPLETE** |
 | 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #344, #346, #358, #361, #372 | **COMPLETE** |
-| 12 | Current | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, #433, #341, #246, #422, #413 | In Progress |
+| 12 | Current | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, ~~#445~~, #433, #341, #246, #422, #413 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 65 (23 original + 42 ad-hoc/new — adds #436)
-**Completed (Phases 1-11 + ad-hoc):** 71 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration completed 2026-05-02; #436 CI consolidating-gate pattern completed 2026-05-05; #244 security gate + #367 coverage threshold completed 2026-05-06)
+**Total issues tracked:** 66 (23 original + 43 ad-hoc/new — adds #436, #445)
+**Completed (Phases 1-11 + ad-hoc):** 72 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration completed 2026-05-02; #436 CI consolidating-gate pattern completed 2026-05-05; #244 security gate + #367 coverage threshold completed 2026-05-06; #445 PR checklist hygiene completed 2026-05-06)
 **Remaining (Phase 12 active backlog):** 5 issues — P1: #433 / P2: #341, #246 / P3: #422 (gated on first federation deployment), #413 (umbrella; closes on #433 merge)
 **Phases 1-11 complete.** Phase 12 (post-migration active backlog) in progress.
 **First public release: v1.0.0** (#271). **Current version: v1.5.0** (released 2026-05-05 — API test suite, org migration, security patches). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430).
