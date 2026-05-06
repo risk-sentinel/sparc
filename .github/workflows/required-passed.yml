@@ -29,6 +29,7 @@ permissions:
 
 jobs:
   required-passed:
+    name: Required Checks Passed
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (for required-checks.json)
@@ -45,7 +46,7 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const SELF_NAME = 'required-passed';     // this job's name
+            const SELF_NAME = 'Required Checks Passed';  // matches the job's `name:` field below; must equal the context name in branch protection
             const POLL_INTERVAL_S = 15;
             const TIMEOUT_MIN = 25;
             const MAX_ITER = Math.ceil((TIMEOUT_MIN * 60) / POLL_INTERVAL_S);

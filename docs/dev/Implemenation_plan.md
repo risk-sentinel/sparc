@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-05-04
+**Last updated:** 2026-05-05
 
 ---
 
@@ -503,7 +503,7 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 
 | Priority | Status | Issue | Description | Notes |
 | -------- | ------ | ----- | ----------- | ----- |
-| **P0** | [ ] | #436 | CI: path-filtered required checks block config/docs PRs — adopt consolidating-gate pattern | Bug; hit on #435 (CODEOWNERS PR) and #434 (org migration). Likely small CI workflow PR. Unblocks all future config/docs PRs from needing admin override. **Lands first.** |
+| **P0** | [x] | ~~#436~~ | ~~CI: path-filtered required checks block config/docs PRs — adopt consolidating-gate pattern~~ — **COMPLETED 2026-05-05** | Shipped on `bug/436_ci_consolidating_gate` (PR #442). Adds `.github/required-checks.json` (single source of truth), `.github/workflows/required-passed.yml` (aggregator with path-aware sanity rules — catches misconfigured-skip bugs by demanding `success` when changed paths match a rule's `filterPathSpec`), and `.github/workflows/validate-required-checks-sync.yml` (drift validator — fails CI if rule's `filterPathSpec` is not a subset of the workflow's actual path filter). Branch protection cutover: `gh api PUT /repos/.../branches/main/protection` and `gh api PUT /repos/.../rulesets/13385940` updated to require only `Required Checks Passed`. |
 | **P1** | [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | Pairs with #367 (the gate consumes coverage data). After #436 lands, the consolidating-gate pattern simplifies #244's required-check wiring. |
 | **P1** | [ ] | #367 | Code coverage threshold and tracking — SimpleCov integration | Bundles naturally with #244. |
 | **P1** | [ ] | #433 | Test suite — content-style validation (response schemas, fixtures, round-trip, audit, OSCAL) | Large multi-slice (~2.5-3.5k LOC, similar to #432). Closes the type/field-drift gap left open by #432's contract-style suite (pydantic schemas, realistic fixtures, round-trip + audit-log + OSCAL schema assertions). Independent of #436/#244/#367 — can run in parallel. |
@@ -519,9 +519,8 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 **Sequencing:**
 
 ```text
-Sprint 12a (P0 + P1 launch):
-  Dev A: #436 (CI consolidating-gate fix)   -- one-PR, lands first
-  Dev B: #244 + #367 bundle                 -- after #436 (gate pattern available)
+Sprint 12a (P1 launch — P0 #436 shipped 2026-05-05):
+  Dev B: #244 + #367 bundle                 -- consolidating-gate pattern available; build security threshold check on top
   Dev C: #433 slice 1                        -- pydantic schemas + fixtures (independent)
 
 Sprint 12b (P1 finish + P2):
@@ -533,8 +532,9 @@ Out (gated): #422 — first federation deployment
 Umbrella: #413 — close on #433 merge
 ```
 
-> **Order rule:** #436 lands first because every subsequent CI work
-> (#244, #367) benefits from the consolidating-gate pattern. #433 is
+> **Order rule:** #436 has shipped — every subsequent CI work (#244,
+> #367) benefits from the consolidating-gate pattern. Single required
+> status check on `main` is now `Required Checks Passed`. #433 is
 > independent — it can run in parallel from sprint 12a.
 
 ---
@@ -576,12 +576,12 @@ removed and are no longer tracked:
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
 | 10 | Ongoing | Platform Hardening & Polish | #234-#375 (25 issues) | **COMPLETE** |
 | 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #344, #346, #358, #361, #372 | **COMPLETE** |
-| 12 | Current | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | #436, #244, #367, #433, #341, #246, #422, #413 | In Progress |
+| 12 | Current | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, #244, #367, #433, #341, #246, #422, #413 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 65 (23 original + 42 ad-hoc/new — adds #436)
-**Completed (Phases 1-11 + ad-hoc):** 68 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration completed 2026-05-02)
-**Remaining (Phase 12 active backlog):** 8 issues — P0: #436 / P1: #244, #367, #433 / P2: #341, #246 / P3: #422 (gated on first federation deployment), #413 (umbrella; closes on #433 merge)
+**Completed (Phases 1-11 + ad-hoc):** 69 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration completed 2026-05-02; #436 CI consolidating-gate pattern completed 2026-05-05)
+**Remaining (Phase 12 active backlog):** 7 issues — P1: #244, #367, #433 / P2: #341, #246 / P3: #422 (gated on first federation deployment), #413 (umbrella; closes on #433 merge)
 **Phases 1-11 complete.** Phase 12 (post-migration active backlog) in progress.
-**First public release: v1.0.0** (#271). **Current version: v1.4.1** (released on #419 PR merge). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430).
+**First public release: v1.0.0** (#271). **Current version: v1.5.0** (released 2026-05-05 — API test suite, org migration, security patches). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430).
