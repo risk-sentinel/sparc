@@ -1,0 +1,156 @@
+{
+  "_doc": [
+    "Single source of truth for required-check gating. Read by:",
+    "  .github/workflows/required-passed.yml          — aggregator (consumes filterPathSpec to decide if a check is required for a PR's changed files)",
+    "  .github/workflows/validate-required-checks-sync.yml — drift validator (asserts each rule's filterPathSpec is a subset of the workflow's actual path filter)",
+    "",
+    "When you add or modify a required check:",
+    "  1. Add/update the rule here.",
+    "  2. Update the corresponding workflow's path filter to match.",
+    "  3. The drift validator will fail the PR if the two get out of sync.",
+    "",
+    "Glob syntax (subset of dorny/paths-filter):",
+    "  '**.ext'  matches any file ending in .ext",
+    "  'dir/**'  matches anything under dir/",
+    "  'name*'   matches any file starting with 'name' at the same depth",
+    "  exact path strings are matched literally"
+  ],
+  "version": 1,
+  "rules": [
+    {
+      "checkName": "Test plan checklist",
+      "workflow": ".github/workflows/pr-checklist.yml",
+      "alwaysRequired": true,
+      "comment": "pr-checklist.yml has no path filter — must run + pass on every PR. If this is ever skipped, treat as a CI bug."
+    },
+    {
+      "checkName": "lint",
+      "workflow": ".github/workflows/ci.yml",
+      "workflowFilterName": "app_code",
+      "filterPathSpec": [
+        "**.rb",
+        "Gemfile*",
+        ".github/workflows/ci.yml",
+        "config/**",
+        "app/**",
+        "lib/**",
+        "db/**",
+        "spec/**",
+        "bin/**"
+      ]
+    },
+    {
+      "checkName": "test",
+      "workflow": ".github/workflows/ci.yml",
+      "workflowFilterName": "app_code",
+      "filterPathSpec": [
+        "**.rb",
+        "Gemfile*",
+        ".github/workflows/ci.yml",
+        "config/**",
+        "app/**",
+        "lib/**",
+        "db/**",
+        "spec/**",
+        "bin/**"
+      ]
+    },
+    {
+      "checkName": "validate_compliance_artifacts",
+      "workflow": ".github/workflows/compliance.yml",
+      "workflowFilterName": "_top_level_paths",
+      "filterPathSpec": [
+        "docs/compliance/**",
+        ".github/oscal-metadata.json",
+        "app/controllers/concerns/**",
+        "app/models/concerns/**",
+        "config/initializers/**"
+      ],
+      "comment": "compliance.yml uses top-level on.pull_request.paths — workflow does not fire at all when paths don't match (no skipped check is reported). The aggregator must not require this check on PRs whose paths don't intersect."
+    },
+    {
+      "checkName": "secrets_scan",
+      "workflow": ".github/workflows/security.yml",
+      "workflowFilterName": "app_code",
+      "filterPathSpec": [
+        "**.rb",
+        "Gemfile*",
+        "Dockerfile",
+        "docker-compose*.yml",
+        ".github/workflows/security.yml",
+        ".github/oscal-metadata.json",
+        ".trivyignore",
+        "config/**",
+        "app/**",
+        "lib/**",
+        "db/**",
+        "spec/**",
+        "bin/**",
+        "docs/compliance/**"
+      ]
+    },
+    {
+      "checkName": "dependency_audit",
+      "workflow": ".github/workflows/security.yml",
+      "workflowFilterName": "app_code",
+      "filterPathSpec": [
+        "**.rb",
+        "Gemfile*",
+        "Dockerfile",
+        "docker-compose*.yml",
+        ".github/workflows/security.yml",
+        ".github/oscal-metadata.json",
+        ".trivyignore",
+        "config/**",
+        "app/**",
+        "lib/**",
+        "db/**",
+        "spec/**",
+        "bin/**",
+        "docs/compliance/**"
+      ]
+    },
+    {
+      "checkName": "trivy_fs_scan",
+      "workflow": ".github/workflows/security.yml",
+      "workflowFilterName": "app_code",
+      "filterPathSpec": [
+        "**.rb",
+        "Gemfile*",
+        "Dockerfile",
+        "docker-compose*.yml",
+        ".github/workflows/security.yml",
+        ".github/oscal-metadata.json",
+        ".trivyignore",
+        "config/**",
+        "app/**",
+        "lib/**",
+        "db/**",
+        "spec/**",
+        "bin/**",
+        "docs/compliance/**"
+      ]
+    },
+    {
+      "checkName": "trivy_container_scan",
+      "workflow": ".github/workflows/security.yml",
+      "workflowFilterName": "app_code",
+      "filterPathSpec": [
+        "**.rb",
+        "Gemfile*",
+        "Dockerfile",
+        "docker-compose*.yml",
+        ".github/workflows/security.yml",
+        ".github/oscal-metadata.json",
+        ".trivyignore",
+        "config/**",
+        "app/**",
+        "lib/**",
+        "db/**",
+        "spec/**",
+        "bin/**",
+        "docs/compliance/**"
+      ]
+    }
+  ]
+}

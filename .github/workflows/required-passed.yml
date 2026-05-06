@@ -1,0 +1,179 @@
+name: Required Checks Passed
+
+# Single consolidating gate for branch protection. Replaces the per-check
+# required-status-checks list. Issue #436 — path-filtered required checks
+# previously left PRs in permanent "Expected — Waiting for status to be
+# reported" state when their path filters excluded a PR. This workflow is
+# the one required check on `main`; it polls the Checks API for the PR's
+# HEAD sha and applies path-aware sanity rules from .github/required-checks.json.
+#
+# Rules (per rule entry in required-checks.json):
+#   - alwaysRequired:     check MUST exist + report success
+#   - filterPathSpec:     if any of the PR's changed files matches one of
+#                         these globs, the check MUST exist + report success;
+#                         otherwise skipped/missing is acceptable
+#
+# Conclusions treated as OK:  success, skipped, neutral
+# Conclusions treated as fail: failure, cancelled, timed_out, action_required, stale
+#
+# This workflow itself is excluded from the wait list to avoid deadlock.
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  checks: read
+  pull-requests: read
+  contents: read
+
+jobs:
+  required-passed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for required-checks.json)
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            .github/required-checks.json
+          sparse-checkout-cone-mode: false
+
+      - name: Wait for upstream checks + apply path-aware rules
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const SELF_NAME = 'required-passed';     // this job's name
+            const POLL_INTERVAL_S = 15;
+            const TIMEOUT_MIN = 25;
+            const MAX_ITER = Math.ceil((TIMEOUT_MIN * 60) / POLL_INTERVAL_S);
+
+            const OK_CONCLUSIONS = new Set(['success', 'skipped', 'neutral']);
+            const FAIL_CONCLUSIONS = new Set(['failure', 'cancelled', 'timed_out', 'action_required', 'stale']);
+
+            const sha = context.payload.pull_request.head.sha;
+            const prNumber = context.payload.pull_request.number;
+            core.info(`PR #${prNumber}, head sha=${sha}`);
+
+            const config = JSON.parse(
+              fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, '.github/required-checks.json'), 'utf8')
+            );
+            core.info(`Loaded ${config.rules.length} rule(s) from required-checks.json (version ${config.version})`);
+
+            // ── Convert dorny/paths-filter glob to a regex matcher
+            function globToRegex(glob) {
+              // Substitute glob wildcards FIRST (using a placeholder that survives escaping)
+              let r = glob.replace(/\*\*/g, '__DOUBLESTAR__').replace(/\*/g, '__SINGLESTAR__');
+              // Escape regex specials in the remaining literal text
+              r = r.replace(/[.+?^${}()|\[\]\\]/g, '\\$&');
+              // Restore wildcards as regex
+              r = r.replace(/__DOUBLESTAR__/g, '.*');
+              r = r.replace(/__SINGLESTAR__/g, '[^/]*');
+              return new RegExp('^' + r + '$');
+            }
+
+            function changedPathsMatchRule(changedPaths, rule) {
+              if (rule.alwaysRequired) return true;
+              if (!rule.filterPathSpec) return false;
+              const regexes = rule.filterPathSpec.map(globToRegex);
+              return changedPaths.some(p => regexes.some(rx => rx.test(p)));
+            }
+
+            // ── Get changed files via REST API (paginated)
+            const changedFiles = await github.paginate(
+              github.rest.pulls.listFiles,
+              { owner: context.repo.owner, repo: context.repo.repo, pull_number: prNumber, per_page: 100 }
+            );
+            const changedPaths = changedFiles.map(f => f.filename);
+            core.info(`Changed files (${changedPaths.length}): ${changedPaths.join(', ')}`);
+
+            // ── Pre-compute applicability per rule based on changed paths
+            const applicability = config.rules.map(rule => ({
+              rule,
+              required: changedPathsMatchRule(changedPaths, rule),
+            }));
+            for (const { rule, required } of applicability) {
+              core.info(`Rule '${rule.checkName}': ${required ? 'REQUIRED' : 'not applicable'} for this PR`);
+            }
+
+            // ── Poll loop
+            let iter = 0;
+            while (iter < MAX_ITER) {
+              iter += 1;
+
+              const allChecks = await github.paginate(
+                github.rest.checks.listForRef,
+                { owner: context.repo.owner, repo: context.repo.repo, ref: sha, per_page: 100 }
+              );
+              const others = allChecks.filter(c => c.name !== SELF_NAME);
+
+              // Index by name (latest run wins if duplicates)
+              const byName = new Map();
+              for (const c of others) byName.set(c.name, c);
+
+              // 1. Catastrophic failure: any check that completed with a failure conclusion
+              //    (regardless of whether the rule said it was required) — surface and fail.
+              const allFailed = [...byName.values()].filter(
+                c => c.status === 'completed' && FAIL_CONCLUSIONS.has(c.conclusion)
+              );
+              if (allFailed.length > 0) {
+                core.setFailed(
+                  `Failed checks: ${allFailed.map(c => `${c.name}=${c.conclusion}`).join(', ')}`
+                );
+                return;
+              }
+
+              // 2. Apply path-aware rules
+              const ruleViolations = [];
+              for (const { rule, required } of applicability) {
+                if (!required) continue;
+                const check = byName.get(rule.checkName);
+                if (!check) {
+                  // Required by the rule but not yet present — keep waiting (might still be queueing)
+                  continue;
+                }
+                if (check.status !== 'completed') continue;
+                if (!OK_CONCLUSIONS.has(check.conclusion)) {
+                  ruleViolations.push(`'${rule.checkName}' required for changed paths but conclusion=${check.conclusion}`);
+                  continue;
+                }
+                // Skipped on a check the rule says is required = bug
+                if (check.conclusion === 'skipped') {
+                  ruleViolations.push(
+                    `'${rule.checkName}' is required for the changed files (matches /${rule.filterPathSpec ? rule.filterPathSpec.join('|') : 'alwaysRequired'}/) but reported 'skipped' — likely a misconfigured 'if:' or path filter; investigate`
+                  );
+                }
+              }
+              if (ruleViolations.length > 0) {
+                core.setFailed('Path-aware sanity violations:\n  - ' + ruleViolations.join('\n  - '));
+                return;
+              }
+
+              // 3. Pending check: still waiting for any required check to complete
+              const stillPending = applicability.filter(({ rule, required }) => {
+                if (!required) return false;
+                const check = byName.get(rule.checkName);
+                return !check || check.status !== 'completed';
+              });
+
+              if (stillPending.length === 0) {
+                // All required checks complete + OK
+                const summary = applicability
+                  .filter(({ required }) => required)
+                  .map(({ rule }) => `${rule.checkName}=${byName.get(rule.checkName).conclusion}`)
+                  .join(', ');
+                core.info(`All required checks satisfied: ${summary}`);
+                return;
+              }
+
+              // 4. Pending non-required checks (failure-only watch already done above)
+              core.info(
+                `Iter ${iter}/${MAX_ITER}: still waiting on ${stillPending.length} required check(s): ` +
+                stillPending.map(({ rule }) => rule.checkName).join(', ')
+              );
+              await new Promise(r => setTimeout(r, POLL_INTERVAL_S * 1000));
+            }
+
+            core.setFailed(`Timed out after ${TIMEOUT_MIN} minutes waiting for required checks to complete.`);

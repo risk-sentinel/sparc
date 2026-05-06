@@ -1,0 +1,147 @@
+name: Validate required-checks.json sync
+
+# Drift validator for issue #436. Asserts that every rule in
+# .github/required-checks.json has a filterPathSpec that is a SUBSET of the
+# corresponding workflow's actual path filter. If a rule says check X is
+# required when path Y changes, the workflow that produces check X must
+# actually fire on path Y — otherwise the aggregator would block valid PRs.
+#
+# Triggers on PRs that touch the JSON or any workflow file. Drift is
+# surfaced as a CI failure on the PR that introduces it.
+
+on:
+  pull_request:
+    paths:
+      - '.github/required-checks.json'
+      - '.github/workflows/*.yml'
+      - '.github/workflows/*.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install js-yaml
+        run: npm install --no-save js-yaml@4
+
+      - name: Validate JSON-vs-workflow filter sync
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const yaml = require('js-yaml');
+
+            const config = JSON.parse(fs.readFileSync('.github/required-checks.json', 'utf8'));
+
+            const errors = [];
+            const warnings = [];
+
+            // Extract filter list for a given rule from the workflow file
+            function extractWorkflowFilter(rule) {
+              const wfPath = rule.workflow;
+              if (!fs.existsSync(wfPath)) {
+                return { error: `workflow file not found: ${wfPath}` };
+              }
+              const wfYaml = yaml.load(fs.readFileSync(wfPath, 'utf8'));
+
+              // Top-level on.pull_request.paths (compliance.yml pattern)
+              // Note: 'on' is parsed as `true` (YAML bool) by js-yaml without explicit quoting.
+              const onBlock = wfYaml['on'] || wfYaml[true];
+              if (rule.workflowFilterName === '_top_level_paths') {
+                const paths = onBlock?.pull_request?.paths;
+                if (!Array.isArray(paths)) {
+                  return { error: `${wfPath}: expected on.pull_request.paths array but found ${typeof paths}` };
+                }
+                return { paths };
+              }
+
+              // dorny/paths-filter named filter (ci.yml + security.yml pattern)
+              // Find any job that uses dorny/paths-filter and has a `filters:` input
+              const jobs = wfYaml.jobs || {};
+              for (const jobName of Object.keys(jobs)) {
+                const steps = jobs[jobName].steps || [];
+                for (const step of steps) {
+                  if (typeof step.uses === 'string' && step.uses.startsWith('dorny/paths-filter')) {
+                    const filters = step.with?.filters;
+                    if (typeof filters !== 'string') continue;
+                    // filters is a YAML string (a multi-line block); parse it as YAML
+                    const parsed = yaml.load(filters);
+                    if (parsed && Array.isArray(parsed[rule.workflowFilterName])) {
+                      return { paths: parsed[rule.workflowFilterName] };
+                    }
+                  }
+                }
+              }
+              return { error: `${wfPath}: could not find dorny/paths-filter with filter name '${rule.workflowFilterName}'` };
+            }
+
+            // alwaysRequired rules: confirm the workflow has no path filter (it should always fire)
+            // Subset check rules: every glob in filterPathSpec must exist in the workflow's filter
+            for (const rule of config.rules) {
+              if (rule.alwaysRequired) {
+                if (!fs.existsSync(rule.workflow)) {
+                  errors.push(`Rule '${rule.checkName}' (alwaysRequired): workflow file ${rule.workflow} not found`);
+                  continue;
+                }
+                const wfYaml = yaml.load(fs.readFileSync(rule.workflow, 'utf8'));
+                const onBlock = wfYaml['on'] || wfYaml[true];
+                const topPaths = onBlock?.pull_request?.paths;
+                const topPathsIgnore = onBlock?.pull_request?.['paths-ignore'];
+                if (Array.isArray(topPaths) || Array.isArray(topPathsIgnore)) {
+                  errors.push(
+                    `Rule '${rule.checkName}' is alwaysRequired, but ${rule.workflow} has a top-level paths filter — would skip on excluded PRs`
+                  );
+                }
+                continue;
+              }
+
+              if (!Array.isArray(rule.filterPathSpec)) {
+                errors.push(`Rule '${rule.checkName}': missing filterPathSpec`);
+                continue;
+              }
+
+              const result = extractWorkflowFilter(rule);
+              if (result.error) {
+                errors.push(`Rule '${rule.checkName}': ${result.error}`);
+                continue;
+              }
+
+              const wfFilterSet = new Set(result.paths);
+              const missing = rule.filterPathSpec.filter(p => !wfFilterSet.has(p));
+              if (missing.length > 0) {
+                errors.push(
+                  `Rule '${rule.checkName}' (workflow ${rule.workflow}, filter '${rule.workflowFilterName}'): ` +
+                  `JSON declares patterns not present in workflow filter: ${missing.join(', ')}. ` +
+                  `Either widen the workflow filter to include them, or narrow filterPathSpec.`
+                );
+              }
+
+              // Optional warning: workflow filter has paths the JSON doesn't claim — informational only
+              const extra = result.paths.filter(p => !rule.filterPathSpec.includes(p));
+              if (extra.length > 0) {
+                warnings.push(
+                  `Rule '${rule.checkName}': workflow filter has additional patterns not in JSON: ${extra.join(', ')}. ` +
+                  `Harmless — workflow runs more often than the rule requires. Add to filterPathSpec if you want the aggregator to enforce on those paths too.`
+                );
+              }
+            }
+
+            if (warnings.length > 0) {
+              core.warning('Sync warnings:\n  - ' + warnings.join('\n  - '));
+            }
+            if (errors.length > 0) {
+              core.setFailed('required-checks.json is out of sync with workflow filters:\n  - ' + errors.join('\n  - '));
+              return;
+            }
+            core.info('All ' + config.rules.length + ' rule(s) in required-checks.json are in sync with their workflows.');
