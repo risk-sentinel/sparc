@@ -2,17 +2,9 @@
   "ignored_warnings": [
     {
       "fingerprint": "c9c58dcbb8a057384f80b5f6084815496c6a1d3cdee8756bf4fdaa16b715f9d6",
-      "note": "Attestation role is a descriptive string (e.g. isso, assessor), not an authorization role. Safe to permit."
-    },
-    {
-      "fingerprint": "09c385370a5a79e86da8f2c83cc5d8a691f1624b24cd8b471f63c37b5b6860cd",
-      "note": "Api::V1::UsersController#create is gated by `before_action :authorize_admin!, only: [:create, ...]`. Only admins reach this action; an admin granting another user the admin role is an intentional privileged capability, not privilege escalation by an untrusted actor."
-    },
-    {
-      "fingerprint": "1894c63a9188108594146e245c28538de3087d2bc6f9b46f7d3ddb8581997efd",
-      "note": "Api::V1::UsersController#update runtime-branches between user_admin_update_params (admins) and user_self_update_params (non-admins). Non-admin self-updates cannot reach the :admin / :status keys — they're only reachable when current_user.admin? is true. Brakeman cannot follow the runtime branch."
+      "note": "Attestation#role is descriptive metadata identifying the attester (control_owner, isso, ciso, etc.), NOT an app-level authorization role. Defense-in-depth: app/models/attestation.rb adds `validates :role, inclusion: { in: ROLES }` so mass-assignment cannot set arbitrary values; only the controlled vocabulary in Attestation::ROLES is accepted. The Brakeman BRAKE0105 warning fires because the field name 'role' is on its dangerous-key list, not because the assignment is actually unsafe."
     }
   ],
-  "updated": "2026-04-19",
+  "updated": "2026-05-06",
   "brakeman_version": "8.0.4"
 }

@@ -23,7 +23,25 @@ if ENV["COVERAGE"]
     add_group "Services", "app/services"
     add_group "Jobs", "app/jobs"
     add_group "Concerns", "app/models/concerns"
-    minimum_coverage 50
+
+    # Minimum overall line coverage. Set at 70% to lock in today's
+    # measured baseline (71.17% as of 2026-05-06) with a small buffer
+    # to absorb run-to-run variance. Ratchet upward in follow-up PRs;
+    # never downward (#367 ratchet policy).
+    #
+    # Per-file coverage gate (minimum_coverage_by_file) is intentionally
+    # NOT enabled in this PR: 15 existing files measure at 0% line
+    # coverage and would fail any non-zero per-file floor. Tracked in
+    # follow-up issue: bring those files above 30%, then enable.
+    #
+    # Branch coverage (enable_coverage :branch) is also deferred -- not
+    # measured today, so we don't have a baseline to set a floor against.
+    # Track in follow-up: enable, measure, set floor.
+    #
+    # Threshold is enforced only when CI=true (full suite) so developers
+    # running individual specs locally don't trip the floor on partial
+    # runs. CI runs the full suite; the gate fires there.
+    minimum_coverage 70 if ENV["CI"]
   end
 end
 

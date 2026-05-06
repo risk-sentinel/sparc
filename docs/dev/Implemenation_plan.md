@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-05-05
+**Last updated:** 2026-05-06
 
 ---
 
@@ -504,8 +504,8 @@ Dev B: #108 (sample data)          -- Phase 9b ✅ COMPLETE
 | Priority | Status | Issue | Description | Notes |
 | -------- | ------ | ----- | ----------- | ----- |
 | **P0** | [x] | ~~#436~~ | ~~CI: path-filtered required checks block config/docs PRs — adopt consolidating-gate pattern~~ — **COMPLETED 2026-05-05** | Shipped on `bug/436_ci_consolidating_gate` (PR #442). Adds `.github/required-checks.json` (single source of truth), `.github/workflows/required-passed.yml` (aggregator with path-aware sanity rules — catches misconfigured-skip bugs by demanding `success` when changed paths match a rule's `filterPathSpec`), and `.github/workflows/validate-required-checks-sync.yml` (drift validator — fails CI if rule's `filterPathSpec` is not a subset of the workflow's actual path filter). Branch protection cutover: `gh api PUT /repos/.../branches/main/protection` and `gh api PUT /repos/.../rulesets/13385940` updated to require only `Required Checks Passed`. |
-| **P1** | [ ] | #244 | Security gate with threshold-based merge/deploy blocking in CI | Pairs with #367 (the gate consumes coverage data). After #436 lands, the consolidating-gate pattern simplifies #244's required-check wiring. |
-| **P1** | [ ] | #367 | Code coverage threshold and tracking — SimpleCov integration | Bundles naturally with #244. |
+| **P1** | [x] | ~~#244~~ | ~~Security gate with threshold-based merge/deploy blocking in CI~~ — **COMPLETED 2026-05-06** | Shipped on `feature/244_367_security_gate_coverage`. Pivots to MITRE hdf-libs as the manipulation engine. New artifacts: `bin/sparc_findings_to_hdf_amendments.rb` (converts `docs/compliance/sparc-findings.yml` dispositions to HDF Amendments JSON; validates severity-based review cadence + freshness), `docs/compliance/threshold.yml` (SAF CLI strict policy on amended residual: critical=0, high≤5), new `security_gate` job in `.github/workflows/security.yml` (applies amendments via `hdf-cli amend`, then `saf validate threshold`), `security_gate` rule in `.github/required-checks.json`. CRITICAL findings cannot use disposition `accepted` (only `false_positive`, `deferred`, or `remediated`). Refactored `Api::V1::UsersController` to set `:admin`/`:status` outside mass-assignment (BRAKE0105 remediation); added `validates :role, inclusion:` on `Attestation` (defense-in-depth for residual BRAKE0105 FP). Added 10 new container findings + DS-0002 trivy-fs FP to `.trivyignore`. NIST: CA-7, CA-7(4), RA-3, SI-2 mappings updated. |
+| **P1** | [x] | ~~#367~~ | ~~Code coverage threshold and tracking — SimpleCov integration~~ — **COMPLETED 2026-05-06** | Shipped on the same branch as #244. SimpleCov `minimum_coverage 70` (gated on `ENV['CI']` so single-spec local runs aren't tripped). Today's measured baseline 71.17% line coverage (9875/13876 LOC); 70% floor gives small buffer for run-to-run variance. Per-file coverage gate and branch coverage deferred to follow-up issues (15 existing files at 0% line need fix-or-exclude before per-file enforcement; branch coverage needs measurement first). NIST: SA-11 mapping updated. |
 | **P1** | [ ] | #433 | Test suite — content-style validation (response schemas, fixtures, round-trip, audit, OSCAL) | Large multi-slice (~2.5-3.5k LOC, similar to #432). Closes the type/field-drift gap left open by #432's contract-style suite (pydantic schemas, realistic fixtures, round-trip + audit-log + OSCAL schema assertions). Independent of #436/#244/#367 — can run in parallel. |
 | **P2** | [ ] | #341 | Add XML document type fingerprinting for upload validation | Defensive, post-#392; touches `FileUploadable` and parser entry-points. Coordinate with anything else editing those concerns. |
 | **P2** | [ ] | #246 | Repository cleanup & OSCAL schema validation overhaul | Background lane. Scope-define needed; treat as parallelizable while a feature ships. |
@@ -576,12 +576,12 @@ removed and are no longer tracked:
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
 | 10 | Ongoing | Platform Hardening & Polish | #234-#375 (25 issues) | **COMPLETE** |
 | 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #344, #346, #358, #361, #372 | **COMPLETE** |
-| 12 | Current | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, #244, #367, #433, #341, #246, #422, #413 | In Progress |
+| 12 | Current | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, #433, #341, #246, #422, #413 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 65 (23 original + 42 ad-hoc/new — adds #436)
-**Completed (Phases 1-11 + ad-hoc):** 69 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration completed 2026-05-02; #436 CI consolidating-gate pattern completed 2026-05-05)
-**Remaining (Phase 12 active backlog):** 7 issues — P1: #244, #367, #433 / P2: #341, #246 / P3: #422 (gated on first federation deployment), #413 (umbrella; closes on #433 merge)
+**Completed (Phases 1-11 + ad-hoc):** 71 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration completed 2026-05-02; #436 CI consolidating-gate pattern completed 2026-05-05; #244 security gate + #367 coverage threshold completed 2026-05-06)
+**Remaining (Phase 12 active backlog):** 5 issues — P1: #433 / P2: #341, #246 / P3: #422 (gated on first federation deployment), #413 (umbrella; closes on #433 merge)
 **Phases 1-11 complete.** Phase 12 (post-migration active backlog) in progress.
 **First public release: v1.0.0** (#271). **Current version: v1.5.0** (released 2026-05-05 — API test suite, org migration, security patches). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430).

@@ -821,6 +821,128 @@ jobs:
           retention-days: 90
 
   # ═══════════════════════════════════════════════════════════════
+  # Security Gate (#244)
+  # ═══════════════════════════════════════════════════════════════
+  # Threshold-based merge-blocking gate. Pipeline:
+  #
+  #   1. Apply amendments from docs/compliance/sparc-findings.yml
+  #      (false_positive / waiver / poam dispositions) to each scanner
+  #      HDF using mitre/hdf-libs `hdf amend`. Dispositioned findings
+  #      become `notApplicable` (FP/waiver) or `failed` w/ POA&M tracking
+  #      (deferred). Remediated entries are skipped (not emitted).
+  #
+  #   2. Run `saf validate threshold -T docs/compliance/threshold.yml`
+  #      against each amended HDF. Threshold enforces strict policy on
+  #      the residual: critical=0, high=5, medium=20, scanner-specific
+  #      tighter bands for SAST/secrets.
+  #
+  #   3. Job fails if any amended HDF violates threshold OR if the
+  #      converter rejects sparc-findings.yml (validation: critical
+  #      can't be accepted, review windows, freshness check).
+  #
+  # NOTE: hdf-cli is currently bootstrapped via curl install. Per #244
+  # plan, sparc-iac will bake hdf-cli into the sparc-ci-runner image;
+  # once that lands, drop the install step.
+  # ═══════════════════════════════════════════════════════════════
+
+  security_gate:
+    runs-on: ubuntu-latest
+    needs: [ changes, normalize_hdf ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout (for findings + threshold + converter)
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            docs/compliance/sparc-findings.yml
+            docs/compliance/threshold.yml
+            bin/sparc_findings_to_hdf_amendments.rb
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Ruby (converter only — no bundle)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4
+
+      - name: Download HDF results
+        uses: actions/download-artifact@v8
+        with:
+          name: hdf-results
+          path: hdf-results/
+
+      - name: Install hdf (mitre/hdf-libs CLI — bootstrap, to be baked into runner)
+        env:
+          # Pin to a known stable. Bump intentionally; any change here is
+          # reviewed alongside threshold + amendment changes.
+          HDF_VERSION: "3.1.0"
+        run: |
+          set -e
+          OS=linux
+          ARCH=amd64
+          ASSET="hdf_${HDF_VERSION}_${OS}_${ARCH}.tar.gz"
+          URL="https://github.com/mitre/hdf-libs/releases/download/v${HDF_VERSION}/${ASSET}"
+          echo "Downloading ${URL}"
+          curl -fsSL "${URL}" -o /tmp/hdf.tar.gz
+          tar -xzf /tmp/hdf.tar.gz -C /tmp/
+          # Tarball contains the `hdf` binary plus auxiliary files; place
+          # the binary on PATH.
+          sudo install -m 0755 /tmp/hdf /usr/local/bin/hdf
+          hdf version
+
+      - name: Convert sparc-findings.yml to HDF Amendments
+        run: |
+          ruby bin/sparc_findings_to_hdf_amendments.rb \
+            --input docs/compliance/sparc-findings.yml \
+            --output amendments.hdf.json
+          echo "## Security Gate" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Converted findings to HDF Amendments. Override count:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          jq '.overrides | length' amendments.hdf.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Verify amendment document against v3.1.0 schema
+        run: |
+          hdf amend verify amendments.hdf.json
+          hdf amend list amendments.hdf.json | head -20
+
+      - name: Apply amendments to each HDF
+        run: |
+          set -e
+          mkdir -p amended
+          for hdf in hdf-results/*.hdf.json; do
+            [ -f "$hdf" ] || continue
+            name=$(basename "$hdf")
+            echo "Amending $name..."
+            hdf amend apply --results "$hdf" --amendments amendments.hdf.json -o "amended/$name" || {
+              echo "::warning::hdf amend apply failed for $name; using raw HDF as fallback"
+              cp "$hdf" "amended/$name"
+            }
+          done
+          ls -la amended/
+
+      - name: Validate threshold against amended HDFs
+        uses: mitre/saf_action@v1
+        with:
+          command_string: 'validate threshold -F amended -T docs/compliance/threshold.yml'
+
+      - name: Step summary on success
+        if: success()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✓ Security gate passed — all amended HDFs satisfy threshold.yml" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload amended HDFs (debug)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: amended-hdfs
+          path: amended/
+          retention-days: 30
+
+  # ═══════════════════════════════════════════════════════════════
   # Cross-Repo: Publish Compliance Artifacts for sparc-iac
   # ═══════════════════════════════════════════════════════════════
   # sparc-iac's FedRAMP 20x pipeline consumes SPARC's HDF scan

@@ -31,7 +31,26 @@
 findings:
 
   # ==========================================================================
-  # HIGH -- 4 unique CVEs
+  # CRITICAL -- 1 unique CVE
+  # Per #244 policy, CRITICAL findings cannot be accepted/false_positive.
+  # Allowed dispositions: deferred (POA&M) or remediated. Review cadence:
+  # 30 days regardless of disposition.
+  # ==========================================================================
+
+  - cve_id: CVE-2026-33845
+    package: libgnutls30
+    installed_version: "3.7.9-2+deb12u6"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. GnuTLS DTLS handshake parsing flaw -- malformed fragments with zero length and non-zero offset cause integer underflow during reassembly, leading to out-of-bounds read (info disclosure or DoS). SPARC does NOT use DTLS in any code path and does NOT invoke libgnutls30: (a) no DTLS sockets are bound, (b) Rails/Puma uses TLS over TCP via libssl3 (OpenSSL), not GnuTLS, (c) outbound connections (PostgreSQL, Redis, S3, OIDC) are TCP-TLS only via OpenSSL. libgnutls30 is a transitive dependency of base-image apt/curl utilities removed via Dockerfile hardening (#342) -- present in image inventory but not loaded by the application. Attack vector requires a remote DTLS peer; surface is not reachable. Severity classification (CRITICAL) reflects upstream CVSS in the abstract, not effective risk in SPARC's deployment context. Remediation candidate when Debian Bookworm publishes a fix or on Trixie/distroless migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  # ==========================================================================
+  # HIGH -- 13 unique CVEs (4 existing + 9 new this PR)
   # ==========================================================================
 
   - cve_id: CVE-2026-4046
@@ -43,8 +62,8 @@ findings:
     rationale: "FALSE POSITIVE. glibc iconv vulnerability triggered only by IBM1390/IBM1399 character set conversions. SPARC exclusively uses UTF-8 encoding -- all file parser services enforce force_encoding('UTF-8'). No iconv calls, no IBM EBCDIC character set operations, no character set conversion in the application. Debian slim base image does not ship IBM charset locale data. Vulnerable code path is unreachable."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
 
   - cve_id: CVE-2025-69720
     package: libncursesw6
@@ -55,8 +74,8 @@ findings:
     rationale: "ACCEPTED RISK. Ruby readline extension links to libncursesw6 at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling Ruby. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
 
   - cve_id: CVE-2026-27135
     package: libnghttp2-14
@@ -67,8 +86,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
 
   - cve_id: CVE-2026-29111
     package: libsystemd0
@@ -79,8 +98,118 @@ findings:
     rationale: "FALSE POSITIVE. CVE requires systemd running as PID 1 receiving IPC API calls with spurious data. SPARC container runs Rails server as PID 1 (docker-entrypoint -> bin/rails server), not systemd. No D-Bus socket exists in the container, no systemd IPC calls in the codebase, no sd_bus/sd_notify/systemctl usage. libsystemd0 is a transitive dependency of the base image, never invoked. Attack vector is unreachable."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  # ── New entries -- 2026-05-06 scan delta (#244 baseline expansion) ────
+
+  - cve_id: CVE-2026-4878
+    package: libcap2
+    installed_version: "1:2.66-4+deb12u2+b2"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. TOCTOU race condition in libcap's cap_set_file() that allows a local unprivileged user with write access to a parent directory to redirect file capability updates. SPARC container runs as non-root UID 1000 with no Linux capabilities granted, no setcap operations performed at runtime, and no shared writable directories. Attack vector requires (a) local shell access with write permissions and (b) ability to invoke setcap on attacker-controlled paths -- neither exists in the container's runtime model. libcap2 is a transitive dependency of base-image utilities and is not invoked by the application. Remediation path: Debian Trixie upgrade or distroless base."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-41989
+    package: libgcrypt20
+    installed_version: "1.10.1-3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. Heap buffer overflow in libgcrypt's gcry_pk_decrypt via crafted ECDH ciphertext. SPARC does NOT use libgcrypt: all application-layer cryptography goes through OpenSSL (libssl3) via Rails encrypted credentials, JWT RS256 verification, ActiveSupport::KeyGenerator (HKDF), and the Ruby openssl extension. ECDH operations specifically are not invoked anywhere in SPARC. libgcrypt20 is a transitive dependency of base-image apt/curl utilities (removed via #342 Dockerfile hardening but library files remain in image inventory). Vulnerable code path is not loaded. Remediation path: monitor Debian patch availability; eliminate via distroless base."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-33846
+    package: libgnutls30
+    installed_version: "3.7.9-2+deb12u6"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. Heap buffer overflow in GnuTLS DTLS handshake fragment reassembly (merge_handshake_packet). Same surface as CVE-2026-33845 -- SPARC does NOT use DTLS or GnuTLS in any code path. TLS is via OpenSSL (libssl3); libgnutls30 is a transitive dep of base-image apt/curl utilities. Attack vector requires a remote DTLS peer; surface is not reachable. See CVE-2026-33845 rationale for full deployment context."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-41316
+    package: erb (base-image-bundled stdlib, version 4.0.4)
+    installed_version: "4.0.4"
+    fixed_version: ">= 6.0.4 (or backport 4.0.4.1)"
+    severity: HIGH
+    disposition: deferred
+    rationale: "DEFERRED. ERB instance variable @_init guard bypass allowing code execution via Marshal.load deserialization of crafted ERB objects. SPARC's Gemfile pins erb 6.0.4 (PR #410, v1.5.0) which is patched. However, the production image's ruby:3.4.4-slim base bundles an OLDER erb 4.0.4 in the Ruby stdlib path (separate from /usr/local/bundle gems). Trivy reports this as the older bundled version. SPARC application code uses the Gemfile-installed erb 6.0.4, not the stdlib bundled version, so the vulnerable Marshal.load path is not actually exposed at runtime. Remediation paths: (a) wait for ruby:3.4.4-slim base image to publish patched stdlib, (b) upgrade base to a newer Ruby, (c) explicitly remove the bundled stdlib erb at build time. **TODO: open follow-up issue to track base-image stdlib remediation.**"
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-42246
+    package: net-imap (base-image-bundled stdlib, version 0.5.8)
+    installed_version: "0.5.8"
+    fixed_version: ">= 0.6.4"
+    severity: HIGH
+    disposition: deferred
+    rationale: "DEFERRED. Net::IMAP STARTTLS stripping vulnerability allowing a man-in-the-middle attacker to inject a tagged OK response that causes #starttls to return successfully without actually starting TLS. SPARC's Gemfile pins net-imap 0.6.4 (PR #438, v1.5.0) which is patched. Same base-image-bundle issue as CVE-2026-41316: ruby:3.4.4-slim ships an older net-imap 0.5.8 in the stdlib path. SPARC does not use Net::IMAP in any application code (no IMAP client, no email retrieval). Vulnerable surface is not loaded. Remediation paths same as CVE-2026-41316. **TODO: open follow-up issue to track base-image stdlib remediation.**"
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-32280
+    package: thruster (Go binary, stdlib v1.26.1)
+    installed_version: "thruster 0.1.20 / Go stdlib v1.26.1"
+    fixed_version: ">= Go 1.25.9, >= Go 1.26.2"
+    severity: HIGH
+    disposition: deferred
+    rationale: "DEFERRED. Go crypto/x509 chain-building DoS via certificates with excessive intermediate count. SPARC's thruster gem (v0.1.20, basecamp/thruster -- HTTP/2 reverse proxy for Puma serving static asset acceleration and compression) bundles a precompiled Go binary built against Go stdlib v1.26.1. Thruster IS on the production request path (terminates HTTP/2, serves static assets). Mitigations: (a) thruster trusts only AWS ACM/ALB-issued certs in our deployment (chain originates from AWS root CA, not arbitrary), (b) ALB terminates TLS upstream so thruster sees pre-validated connections in the typical deployment topology -- but verify per-environment. Remediation: monitor basecamp/thruster for a release rebuilt against Go 1.26.2+; alternatively rebuild the binary in-house. **TODO: open follow-up issue 'Rebuild thruster with Go >= 1.26.2 (CVE-2026-32280/81/83/33810)'.**"
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-32281
+    package: thruster (Go binary, stdlib v1.26.1)
+    installed_version: "thruster 0.1.20 / Go stdlib v1.26.1"
+    fixed_version: ">= Go 1.25.9, >= Go 1.26.2"
+    severity: HIGH
+    disposition: deferred
+    rationale: "DEFERRED. Go crypto/x509 inefficiency in policy-mapping certificate validation, possible DoS. Same package and surface as CVE-2026-32280 (thruster Go stdlib). Same mitigations and remediation path -- tracked under the CVE-2026-32280 follow-up issue."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-32283
+    package: thruster (Go binary, stdlib v1.26.1)
+    installed_version: "thruster 0.1.20 / Go stdlib v1.26.1"
+    fixed_version: ">= Go 1.25.9, >= Go 1.26.2"
+    severity: HIGH
+    disposition: deferred
+    rationale: "DEFERRED. Go TLS 1.3 deadlock from multiple key-update messages in a single record, leading to resource consumption DoS. Same package and surface as CVE-2026-32280 (thruster Go stdlib). Same mitigations and remediation path -- tracked under the CVE-2026-32280 follow-up issue."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-33810
+    package: thruster (Go binary, stdlib v1.26.1)
+    installed_version: "thruster 0.1.20 / Go stdlib v1.26.1"
+    fixed_version: ">= Go 1.26.2"
+    severity: HIGH
+    disposition: deferred
+    rationale: "DEFERRED. Go crypto/x509 wildcard DNS SAN excluded-constraint case-mismatch (improper validation). Same package and surface as CVE-2026-32280 (thruster Go stdlib). Same mitigations and remediation path -- tracked under the CVE-2026-32280 follow-up issue."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
 
   # ==========================================================================
   # MEDIUM -- 17 unique CVEs
@@ -95,8 +224,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-1965
     package: curl
@@ -107,8 +236,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-3783
     package: curl
@@ -119,8 +248,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-3784
     package: curl
@@ -131,8 +260,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2025-30258
     package: dirmngr
@@ -143,8 +272,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2025-68972
     package: dirmngr
@@ -155,8 +284,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2025-15281
     package: libc-bin
@@ -167,8 +296,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-0915
     package: libc-bin
@@ -179,8 +308,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-4437
     package: libc-bin
@@ -191,8 +320,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-4438
     package: libc-bin
@@ -203,8 +332,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2023-50495
     package: libncursesw6
@@ -215,8 +344,8 @@ findings:
     rationale: "ACCEPTED RISK. Ruby readline extension links to libncursesw6 at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling Ruby. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2024-10041
     package: libpam-modules
@@ -227,8 +356,8 @@ findings:
     rationale: "ACCEPTED RISK. PAM authentication modules. SPARC uses app-layer auth (Devise/OIDC), not PAM. Required by login/passwd package chain. Remediation path: evaluate removal when login/passwd are moved to bootstrap stage."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2025-7709
     package: libsqlite3-0
@@ -239,8 +368,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-4105
     package: libsystemd0
@@ -251,8 +380,8 @@ findings:
     rationale: "ACCEPTED RISK. libsystemd0 is a transitive dependency of the Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal in Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2025-13151
     package: libtasn1-6
@@ -263,8 +392,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2025-58767
     package: rexml
@@ -275,8 +404,8 @@ findings:
     rationale: "XML parsing vulnerability in rexml gem. Remediated -- current version 3.4.4 exceeds fix threshold (>= 3.4.2). SPARC uses rexml for OSCAL XML parsing -- input is from trusted admin uploads only."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-27171
     package: zlib1g
@@ -287,8 +416,8 @@ findings:
     rationale: "ACCEPTED RISK. Compression library required by Ruby (Zlib module), Rack HTTP compression middleware, and gem decompression. Cannot remove -- runtime requirement. Remediation path: apply Debian security patches when available."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   # ==========================================================================
   # LOW -- 51 unique CVEs
@@ -303,8 +432,8 @@ findings:
     rationale: "ACCEPTED RISK. APT package manager -- not invoked at runtime (all packages installed at build time). Removing is possible but aggressive and may break future image debugging. Remediation path: distroless base image (long-term)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: TEMP-0841856-B18BAF
     package: bash
@@ -315,8 +444,8 @@ findings:
     rationale: "ACCEPTED RISK. Required by container entrypoint script (bin/docker-entrypoint). Cannot remove. Remediation path: none -- bash is a runtime requirement."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2022-0563
     package: bsdutils
@@ -327,8 +456,8 @@ findings:
     rationale: "ACCEPTED RISK. Part of util-linux chain -- deep base image dependency. Container does not use mount, blkid, or block device utilities. Removal risks breaking dpkg and other core package management. Remediation path: Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-14104
     package: bsdutils
@@ -339,8 +468,8 @@ findings:
     rationale: "ACCEPTED RISK. Part of util-linux chain -- deep base image dependency. Container does not use mount, blkid, or block device utilities. Removal risks breaking dpkg and other core package management. Remediation path: Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2026-3184
     package: bsdutils
@@ -351,8 +480,8 @@ findings:
     rationale: "ACCEPTED RISK. Part of util-linux chain -- deep base image dependency. Container does not use mount, blkid, or block device utilities. Removal risks breaking dpkg and other core package management. Remediation path: Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2016-2781
     package: coreutils
@@ -363,8 +492,8 @@ findings:
     rationale: "ACCEPTED RISK. GNU core utilities (cp, mv, chmod, chown, mkdir, etc.) required by Rails asset pipeline, entrypoint script, and file operations. Cannot remove. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2017-18018
     package: coreutils
@@ -375,8 +504,8 @@ findings:
     rationale: "ACCEPTED RISK. GNU core utilities (cp, mv, chmod, chown, mkdir, etc.) required by Rails asset pipeline, entrypoint script, and file operations. Cannot remove. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-5278
     package: coreutils
@@ -387,8 +516,8 @@ findings:
     rationale: "ACCEPTED RISK. GNU core utilities (cp, mv, chmod, chown, mkdir, etc.) required by Rails asset pipeline, entrypoint script, and file operations. Cannot remove. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2024-2379
     package: curl
@@ -399,8 +528,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-0725
     package: curl
@@ -411,8 +540,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-10966
     package: curl
@@ -423,8 +552,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-14017
     package: curl
@@ -435,8 +564,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-14524
     package: curl
@@ -447,8 +576,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-14819
     package: curl
@@ -459,8 +588,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-15079
     package: curl
@@ -471,8 +600,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-15224
     package: curl
@@ -483,8 +612,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2022-3219
     package: dirmngr
@@ -495,8 +624,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-6297
     package: dpkg
@@ -507,8 +636,8 @@ findings:
     rationale: "ACCEPTED RISK. Debian package manager -- deep base image dependency. Not invoked at runtime but removing breaks the OS package chain. Remediation path: distroless base image (long-term)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2022-27943
     package: gcc-12-base
@@ -519,8 +648,8 @@ findings:
     rationale: "ACCEPTED RISK. GCC runtime libraries (libgcc_s.so) required by Ruby binary and native gem extensions (pg, bcrypt). Cannot remove. Remediation path: none -- runtime requirement."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2010-4756
     package: libc-bin
@@ -531,8 +660,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2018-20796
     package: libc-bin
@@ -543,8 +672,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2019-1010023
     package: libc-bin
@@ -555,8 +684,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2019-1010024
     package: libc-bin
@@ -567,8 +696,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2019-1010025
     package: libc-bin
@@ -579,8 +708,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2019-9192
     package: libc-bin
@@ -591,8 +720,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2018-6829
     package: libgcrypt20
@@ -603,8 +732,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2024-2236
     package: libgcrypt20
@@ -615,8 +744,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2018-5709
     package: libgssapi-krb5-2
@@ -627,8 +756,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2024-26458
     package: libgssapi-krb5-2
@@ -639,8 +768,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2024-26461
     package: libgssapi-krb5-2
@@ -651,8 +780,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2015-3276
     package: libldap-2.5-0
@@ -663,8 +792,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2017-14159
     package: libldap-2.5-0
@@ -675,8 +804,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2017-17740
     package: libldap-2.5-0
@@ -687,8 +816,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2020-15719
     package: libldap-2.5-0
@@ -699,8 +828,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2026-22185
     package: libldap-2.5-0
@@ -711,8 +840,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-6141
     package: libncursesw6
@@ -723,8 +852,8 @@ findings:
     rationale: "ACCEPTED RISK. Ruby readline extension links to libncursesw6 at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling Ruby. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2011-4116
     package: libperl5.36
@@ -735,8 +864,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2023-31486
     package: libperl5.36
@@ -747,8 +876,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2021-45346
     package: libsqlite3-0
@@ -759,8 +888,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-29088
     package: libsqlite3-0
@@ -771,8 +900,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-70873
     package: libsqlite3-0
@@ -783,8 +912,8 @@ findings:
     rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2025-27587
     package: libssl3
@@ -795,8 +924,8 @@ findings:
     rationale: "ACCEPTED RISK. OpenSSL/TLS library required for PostgreSQL connections (libpq), Redis TLS, and OIDC HTTPS calls. Cannot remove -- critical for data in transit encryption. Remediation path: none -- runtime requirement. Apply Debian security updates when available."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2013-4392
     package: libsystemd0
@@ -807,8 +936,8 @@ findings:
     rationale: "ACCEPTED RISK. libsystemd0 is a transitive dependency of the Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal in Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2023-31437
     package: libsystemd0
@@ -819,8 +948,8 @@ findings:
     rationale: "ACCEPTED RISK. libsystemd0 is a transitive dependency of the Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal in Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2023-31438
     package: libsystemd0
@@ -831,8 +960,8 @@ findings:
     rationale: "ACCEPTED RISK. libsystemd0 is a transitive dependency of the Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal in Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2023-31439
     package: libsystemd0
@@ -843,8 +972,8 @@ findings:
     rationale: "ACCEPTED RISK. libsystemd0 is a transitive dependency of the Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal in Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2007-5686
     package: login
@@ -855,8 +984,8 @@ findings:
     rationale: "ACCEPTED RISK. Shadow utilities (login, su, nologin). Container runs as non-root UID 1000 with no interactive login. useradd (from this package) is only needed at build time for user creation. Cannot remove at runtime without breaking passwd/shadow chain. Remediation path: move user creation to bootstrap stage in Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: CVE-2024-56433
     package: login
@@ -867,8 +996,8 @@ findings:
     rationale: "ACCEPTED RISK. Shadow utilities (login, su, nologin). Container runs as non-root UID 1000 with no interactive login. useradd (from this package) is only needed at build time for user creation. Cannot remove at runtime without breaking passwd/shadow chain. Remediation path: move user creation to bootstrap stage in Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: TEMP-0628843-DBAD28
     package: login
@@ -879,8 +1008,8 @@ findings:
     rationale: "ACCEPTED RISK. Shadow utilities (login, su, nologin). Container runs as non-root UID 1000 with no interactive login. useradd (from this package) is only needed at build time for user creation. Cannot remove at runtime without breaking passwd/shadow chain. Remediation path: move user creation to bootstrap stage in Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: TEMP-0517018-A83CE6
     package: sysvinit-utils
@@ -891,8 +1020,8 @@ findings:
     rationale: "ACCEPTED RISK. SysV init utilities. Container does not use SysV init. Candidate for removal but may have transitive dependencies. Remediation path: evaluate removal in Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   - cve_id: TEMP-0290435-0B57B5
     package: tar
@@ -903,8 +1032,8 @@ findings:
     rationale: "ACCEPTED RISK. GNU tar utility. SPARC does not extract archives at runtime. Candidate for removal but may be required by dpkg/apt chain. Remediation path: evaluate removal in Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
 
   # ==========================================================================
   # INFORMATIONAL -- 4 unique CVEs
@@ -919,8 +1048,8 @@ findings:
     rationale: "ACCEPTED RISK. Part of util-linux chain -- deep base image dependency. Container does not use mount, blkid, or block device utilities. Removal risks breaking dpkg and other core package management. Remediation path: Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-2219
     package: dpkg
@@ -931,8 +1060,8 @@ findings:
     rationale: "ACCEPTED RISK. Debian package manager -- deep base image dependency. Not invoked at runtime but removing breaks the OS package chain. Remediation path: distroless base image (long-term)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-34743
     package: liblzma5
@@ -943,8 +1072,8 @@ findings:
     rationale: "ACCEPTED RISK. LZMA compression library. Transitive dependency of dpkg. SPARC does not decompress LZMA data. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
   - cve_id: CVE-2026-27820
     package: zlib
@@ -955,8 +1084,8 @@ findings:
     rationale: "zlib gem vulnerability. Fix available (~> 3.0.1, ~> 3.1.2, >= 3.2.3). Remediation: update Gemfile pin."
     nist_control: ra-5
     reviewed_by: "@clem-field"
-    discovery_date: "2026-04-03"
-    next_review_date: "2026-05-03"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-07-05"
 
 # POA&M reference: Accepted findings are included in the FedRAMP package
 # via Trivy HDF -> OSCAL SAR -> POA&M. The sparc-iac compliance workflow

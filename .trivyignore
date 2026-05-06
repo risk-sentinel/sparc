@@ -119,3 +119,17 @@ CVE-2026-0861
 #   image — libldap-2.5-0 was a transitive dependency of curl, never used by SPARC.
 # Reviewed: 2026-04-05
 CVE-2023-2953
+
+# DS-0002 — Trivy filesystem misconfiguration: image runs as root
+# Classification: FALSE POSITIVE for production
+# Description: Trivy fs scan reports DS-0002 against tests/api/Dockerfile,
+#   the dev/CI test-runner image used to execute the Python pytest suite
+#   against a deployed SPARC instance. tests/api/Dockerfile is NOT the
+#   production image — it's CI tooling that runs ephemerally in GitHub
+#   Actions. The production Dockerfile (./Dockerfile, ruby:3.4.4-slim base)
+#   already runs as non-root UID 1000 and is properly hardened (#342).
+# Mitigation: dev/test image isolation; never deployed to production.
+#   Reviewed annually as part of test-tooling audit.
+# Reference: trivy-fs scan run 25409853872 against tests/api/Dockerfile
+# Reviewed: 2026-05-06
+DS-0002

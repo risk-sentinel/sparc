@@ -1,0 +1,95 @@
+# threshold.yml -- Security gate thresholds for #244
+#
+# Format: MITRE SAF CLI threshold file
+#   https://saf-cli.mitre.org/#/validate?id=threshold-file
+#
+# Applied AFTER hdf-cli amend has filtered out dispositioned findings
+# from sparc-findings.yml. This means counts here represent ONLY:
+#   - findings without an entry in sparc-findings.yml (truly unknown)
+#   - findings whose disposition is 'deferred' (still failed; tracked POA&M)
+#
+# Suppressions live in docs/compliance/sparc-findings.yml; this file
+# enforces what is acceptable for the residual.
+#
+# Severity policy:
+#   critical: zero tolerance (no waivers allowed; immediate remediation)
+#   high:     <=5 outstanding (deferred-with-POA&M counts toward this)
+#   medium:   <=20
+#   low:      unlimited (-1)
+#   none/info: unlimited
+#
+# Per-scanner overrides apply to non-container scanners where we expect
+# a strict zero-tolerance posture (SAST, secrets, IaC misconfigurations).
+
+compliance:
+  min: 80                      # overall pass rate floor
+
+failed:
+  critical:
+    max: 0                     # zero tolerance for critical -- per #244 policy
+  high:
+    max: 5                     # tight band; deferred POA&Ms count
+  medium:
+    max: 20
+  low:
+    max: -1                    # unlimited
+  none:
+    max: -1
+
+passed:
+  total:
+    min: 0                     # no minimum -- pass count varies by scanner
+
+skipped:
+  total:
+    max: -1
+
+error:
+  total:
+    max: 0                     # zero tolerance for scan errors
+
+# Per-scanner overrides
+# brakeman: SAST. Mass-assignment, SQLi, XSS surfaces are unsafe to defer.
+# gitleaks: secrets in git history. Always zero tolerance.
+# codeql:   semantic SAST. Zero tolerance for high+.
+# trivy-fs: filesystem misconfig (Dockerfile, manifests). Tight band.
+# trivy-container: OS + Ruby gem CVEs. Suppression layer carries most;
+#                  residual must still satisfy strict policy.
+brakeman:
+  failed:
+    critical:
+      max: 0
+    high:
+      max: 0
+
+gitleaks:
+  failed:
+    critical:
+      max: 0
+    high:
+      max: 0
+    medium:
+      max: 0
+    low:
+      max: 0
+
+codeql:
+  failed:
+    critical:
+      max: 0
+    high:
+      max: 0
+
+trivy-fs:
+  failed:
+    critical:
+      max: 0
+    high:
+      max: 0
+
+trivy-container:
+  failed:
+    critical:
+      max: 0
+    high:
+      max: 5

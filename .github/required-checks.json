@@ -151,6 +151,28 @@
         "bin/**",
         "docs/compliance/**"
       ]
+    },
+    {
+      "checkName": "security_gate",
+      "workflow": ".github/workflows/security.yml",
+      "workflowFilterName": "app_code",
+      "filterPathSpec": [
+        "**.rb",
+        "Gemfile*",
+        "Dockerfile",
+        "docker-compose*.yml",
+        ".github/workflows/security.yml",
+        ".github/oscal-metadata.json",
+        ".trivyignore",
+        "config/**",
+        "app/**",
+        "lib/**",
+        "db/**",
+        "spec/**",
+        "bin/**",
+        "docs/compliance/**"
+      ],
+      "comment": "#244 threshold-based security gate. Runs after normalize_hdf; applies amendments from sparc-findings.yml via hdf-cli, then enforces threshold.yml via SAF CLI. Path filter mirrors the security.yml app_code filter so it only runs when scans run."
     }
   ]
 }
