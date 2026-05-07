@@ -859,6 +859,7 @@ jobs:
             docs/compliance/sparc-findings.yml
             docs/compliance/threshold.yml
             bin/sparc_findings_to_hdf_amendments.rb
+            bin/install-hdf.sh
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
@@ -872,24 +873,14 @@ jobs:
           name: hdf-results
           path: hdf-results/
 
-      - name: Install hdf (mitre/hdf-libs CLI — bootstrap, to be baked into runner)
+      - name: Install hdf (mitre/hdf-libs CLI)
+        # Single source of truth for hdf provisioning is bin/install-hdf.sh —
+        # used here, by the SPARC Dockerfile (#449), and by local dev. The
+        # script handles arch detection and SHA-256 verification against
+        # checksums.txt from the same release.
         env:
-          # Pin to a known stable. Bump intentionally; any change here is
-          # reviewed alongside threshold + amendment changes.
-          HDF_VERSION: "3.1.0"
-        run: |
-          set -e
-          OS=linux
-          ARCH=amd64
-          ASSET="hdf_${HDF_VERSION}_${OS}_${ARCH}.tar.gz"
-          URL="https://github.com/mitre/hdf-libs/releases/download/v${HDF_VERSION}/${ASSET}"
-          echo "Downloading ${URL}"
-          curl -fsSL "${URL}" -o /tmp/hdf.tar.gz
-          tar -xzf /tmp/hdf.tar.gz -C /tmp/
-          # Tarball contains the `hdf` binary plus auxiliary files; place
-          # the binary on PATH.
-          sudo install -m 0755 /tmp/hdf /usr/local/bin/hdf
-          hdf version
+          HDF_LIBS_VERSION: "3.1.0"
+        run: bin/install-hdf.sh
 
       - name: Convert sparc-findings.yml to HDF Amendments
         run: |

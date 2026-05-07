@@ -173,6 +173,9 @@ class AuditEvent < ApplicationRecord
     service_account_deleted
     service_account_token_regenerated
     service_account_auto_disabled
+    translation_hdf_to_oscal_sar
+    translation_hdf_to_oscal_poam
+    translation_oscal_poam_to_hdf_amendments
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }
@@ -242,7 +245,9 @@ class AuditEvent < ApplicationRecord
                           organization_reactivated organization_member_added organization_member_removed],
     "Service Accounts" => %w[service_account_created service_account_updated service_account_disabled
                              service_account_enabled service_account_deleted
-                             service_account_token_regenerated service_account_auto_disabled]
+                             service_account_token_regenerated service_account_auto_disabled],
+    "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
+                         translation_oscal_poam_to_hdf_amendments]
   }.freeze
 
   # ── Scopes ─────────────────────────────────────────────────────────────

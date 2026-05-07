@@ -1,0 +1,108 @@
+# Stateless translation endpoints between HDF and OSCAL artefacts (#449).
+#
+# These endpoints do not persist anything to SPARC's database — tenant
+# compliance state remains in the tenant's own systems. SPARC's value
+# here is centralizing the MITRE hdf-libs CLI install, pinning the
+# version, and exposing the translation as authenticated REST.
+#
+# Endpoints:
+#   POST /api/v1/oscal/sar_from_hdf              — HDF results → OSCAL SAR
+#   POST /api/v1/oscal/poam_from_hdf             — HDF results → OSCAL POAM
+#   POST /api/v1/hdf/amendments_from_oscal_poam  — OSCAL POAM → HDF Amendments
+#
+# Payload may arrive as either:
+#   - multipart/form-data with a `:file` field, OR
+#   - raw JSON request body (Content-Type: application/json)
+#
+# NIST 800-53 controls covered:
+#   IA-2  Identification and Authentication (Bearer token required)
+#   AC-3  Access Enforcement (any authenticated user; no extra permission required)
+#   AU-12 Audit Record Generation (each translation logged)
+#   CA-7  Continuous Monitoring (translation surface for tenant CI pipelines)
+#   SI-2  Flaw Remediation (amendments output gates tenant pipelines)
+#
+class Api::V1::TranslationsController < Api::V1::BaseController
+  rescue_from HdfRunner::Error do |e|
+    render json: {
+      error: "hdf-libs translation failed",
+      details: e.message,
+      stderr: e.stderr.to_s.lines.first(20).join.strip
+    }, status: :unprocessable_entity
+  end
+
+  # POST /api/v1/oscal/sar_from_hdf
+  def sar_from_hdf
+    with_uploaded_payload do |path|
+      with_optional_boundary do |boundary|
+        result = translation_service.hdf_to_oscal_sar(path, boundary: boundary)
+        audit_log("translation_hdf_to_oscal_sar",
+                  metadata: { authorization_boundary_id: boundary&.id })
+        render json: result
+      end
+    end
+  end
+
+  # POST /api/v1/oscal/poam_from_hdf
+  def poam_from_hdf
+    with_uploaded_payload do |path|
+      with_optional_boundary do |boundary|
+        result = translation_service.hdf_to_oscal_poam(path, boundary: boundary)
+        audit_log("translation_hdf_to_oscal_poam",
+                  metadata: { authorization_boundary_id: boundary&.id })
+        render json: result
+      end
+    end
+  end
+
+  # POST /api/v1/hdf/amendments_from_oscal_poam
+  def amendments_from_oscal_poam
+    with_uploaded_payload do |path|
+      result = translation_service.oscal_poam_to_hdf_amendments(path)
+      audit_log("translation_oscal_poam_to_hdf_amendments")
+      render json: result
+    end
+  end
+
+  private
+
+  def translation_service
+    @translation_service ||= HdfOscalTranslationService.new
+  end
+
+  # Yield a file path the runner can read from. Accepts multipart upload
+  # via :file or a raw request body.
+  def with_uploaded_payload
+    if params[:file].respond_to?(:tempfile)
+      yield params[:file].tempfile.path
+    elsif request.raw_post.present?
+      Tempfile.create([ "translation-input-", ".json" ]) do |f|
+        f.binmode
+        f.write(request.raw_post)
+        f.flush
+        yield f.path
+      end
+    else
+      render json: {
+        error: "No payload supplied",
+        details: "Provide a multipart :file upload or a raw JSON request body"
+      }, status: :bad_request
+    end
+  end
+
+  # Optional back-matter enrichment. When `:authorization_boundary_id` is
+  # supplied, the caller must have evidence.read for that boundary; SPARC
+  # then merges the boundary's Evidence records into the OSCAL output's
+  # back-matter as `resource` entries with attestation provenance props.
+  def with_optional_boundary
+    boundary_param = params[:authorization_boundary_id]
+    return yield(nil) if boundary_param.blank?
+
+    boundary = AuthorizationBoundary.find(boundary_param)
+
+    unless current_user.admin? || current_user.has_permission?("evidence.read")
+      raise NotAuthorizedError, "Not authorized to read evidence for this boundary"
+    end
+
+    yield boundary
+  end
+end

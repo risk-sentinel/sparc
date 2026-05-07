@@ -2,16 +2,19 @@
 # check=error=true
 
 ARG RUBY_VERSION=3.4.4
+ARG HDF_LIBS_VERSION=3.1.0
 
 # ────────────────────────────────────────
-# Bootstrap stage: APT keyring + sources setup
-# This stage is discarded — only the keyring, sources list,
-# and CA certificates are copied to the base stage.
+# Bootstrap stage: APT keyring + sources setup + hdf-cli download
+# This stage is discarded — only the keyring, sources list, CA certs,
+# and the verified hdf binary are copied to the base stage.
 # curl, gnupg, perl, and all transitive dependencies
 # (libnghttp2, libldap, libgssapi-krb5, libtasn1, libgcrypt, etc.)
 # never enter the production image.
 # See issue #342 for the full package analysis.
 FROM docker.io/library/ruby:${RUBY_VERSION}-slim AS bootstrap
+
+ARG HDF_LIBS_VERSION
 
 RUN apt-get update -qq --allow-releaseinfo-change --allow-insecure-repositories && \
     apt-get install --no-install-recommends -y \
@@ -25,6 +28,14 @@ RUN rm -f /etc/apt/sources.list /etc/apt/sources.list.d/* && \
     echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian bookworm-updates main" >> /etc/apt/sources.list && \
     echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://security.debian.org/debian-security bookworm-security main" >> /etc/apt/sources.list
 
+# Provision MITRE hdf-libs CLI for runtime translation between scanner
+# formats and OSCAL/HDF artefacts (#449). Pinned via HDF_LIBS_VERSION;
+# tarball SHA-256 verified against checksums.txt from the same release.
+COPY bin/install-hdf.sh /tmp/install-hdf.sh
+RUN mkdir -p /tmp/hdf-install && \
+    HDF_LIBS_VERSION="${HDF_LIBS_VERSION}" HDF_INSTALL_DIR=/tmp/hdf-install \
+      /tmp/install-hdf.sh
+
 # ────────────────────────────────────────
 # Base image — runtime only, minimal attack surface
 FROM docker.io/library/ruby:${RUBY_VERSION}-slim AS base
@@ -36,6 +47,10 @@ COPY --from=bootstrap /etc/apt/sources.list /etc/apt/sources.list
 COPY --from=bootstrap /usr/share/keyrings/debian-archive-keyring.gpg /usr/share/keyrings/debian-archive-keyring.gpg
 COPY --from=bootstrap /etc/ssl/certs/ /etc/ssl/certs/
 COPY --from=bootstrap /usr/share/ca-certificates/ /usr/share/ca-certificates/
+
+# hdf-cli static binary (Go) — single file, no transitive runtime deps.
+# See bin/install-hdf.sh for SHA-256 verification.
+COPY --from=bootstrap /tmp/hdf-install/hdf /usr/local/bin/hdf
 
 # Install runtime deps only — no build tools, no unused packages
 # NOTE: libvips was removed — it pulled in ImageMagick, libtiff, libhdf5,

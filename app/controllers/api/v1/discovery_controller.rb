@@ -197,6 +197,17 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
       permission_read: nil, permission_write: nil, admin_only: true },
     { path: "/api/v1/users/:id", methods: %w[GET PUT DELETE],
       description: "Single user",
-      permission_read: nil, permission_write: nil, admin_only: true }
+      permission_read: nil, permission_write: nil, admin_only: true },
+
+    # --- HDF ↔ OSCAL Translation Bridge (#449) ---
+    { path: "/api/v1/oscal/sar_from_hdf", methods: %w[POST],
+      description: "Translate HDF results to OSCAL SAR (stateless)",
+      permission_read: nil, permission_write: nil, admin_only: false },
+    { path: "/api/v1/oscal/poam_from_hdf", methods: %w[POST],
+      description: "Translate HDF results to OSCAL POAM (stateless)",
+      permission_read: nil, permission_write: nil, admin_only: false },
+    { path: "/api/v1/hdf/amendments_from_oscal_poam", methods: %w[POST],
+      description: "Translate OSCAL POAM to HDF Amendments (stateless; for `hdf amend apply`)",
+      permission_read: nil, permission_write: nil, admin_only: false }
   ].freeze
 end

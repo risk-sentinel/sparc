@@ -4,6 +4,53 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.6.0 -- HDF ↔ OSCAL Translation Bridge & CMS Attestation Export (2026-05-07)
+
+Minor release. Ships the [#449](https://github.com/risk-sentinel/sparc/issues/449) **HDF ↔ OSCAL translation bridge** — three stateless API endpoints that let tenant compliance pipelines move scan data between the HDF and OSCAL ecosystems without managing the `hdf` CLI on their side. Also includes the [#440](https://github.com/risk-sentinel/sparc/issues/440) **CMS attestation export** that landed mid-week. **No breaking changes**; existing deployments upgrade in place.
+
+Full release notes (with verification evidence) live on the [v1.6.0 GitHub release page](https://github.com/risk-sentinel/sparc/releases/tag/v1.6.0).
+
+### Highlights
+
+- **HDF ↔ OSCAL translation bridge ([#449](https://github.com/risk-sentinel/sparc/issues/449))** — three new authenticated endpoints under `/api/v1/`:
+  - `POST oscal/sar_from_hdf` — HDF results → OSCAL Assessment Results
+  - `POST oscal/poam_from_hdf` — HDF results → OSCAL Plan of Action and Milestones
+  - `POST hdf/amendments_from_oscal_poam` — OSCAL POA&M → HDF Amendments JSON (round-tripped through `hdf amend verify` before serving)
+- **Optional Evidence back-matter enrichment** — pass `?authorization_boundary_id=N` to either OSCAL emission endpoint and SPARC merges the boundary's Evidence + Attestation records into the OSCAL output as `back-matter.resources[]` (with control-id, attestation provenance, and rlinks). Requires `evidence.read` on the boundary.
+- **`hdf` binary baked into the SPARC container** — `bin/install-hdf.sh` provisions MITRE hdf-libs v3.1.0 from GitHub releases, SHA-256 verified against `checksums.txt`. Same script used by the security_gate CI job; bumping `HDF_LIBS_VERSION` updates both surfaces.
+- **CMS attestation JSON export ([#440](https://github.com/risk-sentinel/sparc/issues/440))** — `Api::V1::AttestationsController#export` emits SPARC attestations in the canonical CMS / SAF CLI 6-field schema, denormalized one record per linked control_id. New `frequency` + `status` columns on `attestations` align SPARC with the upstream pattern without forking the internal model.
+
+### Added
+
+- `app/services/hdf_runner.rb` — Ruby subprocess wrapper centralizing all `hdf` CLI invocations (convert / validate / info / stats / amend_verify / amend_apply / version) with structured error class
+- `app/services/hdf_oscal_translation_service.rb` — three translation flows + back-matter enrichment helpers
+- `app/controllers/api/v1/translations_controller.rb` — public REST surface for the translation bridge
+- `app/services/cms_attestation_export_service.rb` — emits CMS attestation JSON (one record per linked control)
+- `app/controllers/api/v1/attestations_controller.rb` — fills the existing UI-only API gap; CRUD + `:export`
+- `bin/install-hdf.sh` — single source of truth for hdf-cli install (Dockerfile + CI + local dev)
+- `docs/compliance/hdf-oscal-bridge-demo.md` — pipeline-only curl demo for the translation surface
+
+### Changed
+
+- `Dockerfile` bakes the verified `hdf` binary into `/usr/local/bin/` via the bootstrap stage (no curl/gnupg in the production image)
+- `.github/workflows/security.yml` security_gate now uses `bin/install-hdf.sh` instead of an inline curl-tar block
+- `app/models/attestation.rb` gains `frequency` + `status` columns and inclusion validators
+- `attestations` UI form gains frequency + status selects
+- NIST mapping (CA-2, CA-7, RA-3, SI-2) updated for the new translation surface and CMS export
+
+### Migrations
+
+- `add_frequency_and_status_to_attestations` — adds `frequency` (string, nullable) + `status` (string, default `"passed"`, NOT NULL) + index on `status`. Backwards-compatible; existing rows default to `passed`.
+
+### Verified
+
+- `bundle exec rspec` — 2137 examples, 0 failures, 2 pending (real-binary integration specs gated on `hdf` being on PATH)
+- `bundle exec rubocop` — clean on changed files
+- `bundle exec brakeman` — clean (2 ignored, 0 active)
+- HDF binary install script verified against MITRE release SHA-256
+
+---
+
 ## v1.5.0 -- API Test Suite, Org Migration & Dependency Hardening (2026-05-04)
 
 Minor release. Ships the comprehensive Python pytest API test suite ([#413](https://github.com/risk-sentinel/sparc/issues/413), [PR #432](https://github.com/risk-sentinel/sparc/pull/432) — 247 tests across 18 modules covering every documented endpoint), completes the GitHub org migration to `risk-sentinel` ([#430](https://github.com/risk-sentinel/sparc/issues/430)), and absorbs a wave of dependency security patches and bumps. **No breaking changes** to SPARC user-visible behavior — existing deployments upgrade in place.
