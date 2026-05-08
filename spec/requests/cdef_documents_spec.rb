@@ -26,6 +26,15 @@ RSpec.describe "CdefDocuments", type: :request do
       get cdef_documents_path
       expect(response.body).to include("Test CDEF Alpha")
     end
+
+    it "renders the shared OSCAL export dropdown for completed docs (#451 A1)" do
+      create(:cdef_document, status: "completed")
+      get cdef_documents_path
+      # Stimulus controller marker confirms the shared partial replaced the
+      # plain-link inline dropdown — clicks now route through the validation
+      # modal that surfaces specific errors.
+      expect(response.body).to include('data-controller="oscal-export"')
+    end
   end
 
   describe "GET /cdef_documents/:id" do
@@ -84,21 +93,39 @@ RSpec.describe "CdefDocuments", type: :request do
     end
   end
 
-  describe "GET /cdef_documents/:id/download_yaml" do
-    it "raises OSCAL validation error on empty document" do
+  describe "GET /cdef_documents/:id/download_yaml (#451)" do
+    it "redirects with flash warning when validation fails (no 500)" do
       cdef = create(:cdef_document)
-      expect {
-        get download_yaml_cdef_document_path(cdef)
-      }.to raise_error(StandardError)
+      get download_yaml_cdef_document_path(cdef)
+      expect(response).to redirect_to(
+        cdef_document_path(cdef, oscal_validation_failed: 1, oscal_format: "yaml")
+      )
+      expect(flash[:warning]).to match(/schema validation/i)
+    end
+
+    it "honors skip_validation=1 to emit unvalidated YAML" do
+      cdef = create(:cdef_document)
+      get download_yaml_cdef_document_path(cdef, skip_validation: 1)
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/x-yaml")
     end
   end
 
-  describe "GET /cdef_documents/:id/download_xml" do
-    it "raises OSCAL validation error on empty document" do
+  describe "GET /cdef_documents/:id/download_xml (#451)" do
+    it "redirects with flash warning when validation fails (no 500)" do
       cdef = create(:cdef_document)
-      expect {
-        get download_xml_cdef_document_path(cdef)
-      }.to raise_error(StandardError)
+      get download_xml_cdef_document_path(cdef)
+      expect(response).to redirect_to(
+        cdef_document_path(cdef, oscal_validation_failed: 1, oscal_format: "xml")
+      )
+      expect(flash[:warning]).to match(/schema validation/i)
+    end
+
+    it "honors skip_validation=1 to emit unvalidated XML" do
+      cdef = create(:cdef_document)
+      get download_xml_cdef_document_path(cdef, skip_validation: 1)
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/xml")
     end
   end
 

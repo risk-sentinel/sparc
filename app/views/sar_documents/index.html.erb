@@ -74,19 +74,19 @@
                   <%= link_to "Enrich", enrich_sar_document_path(doc), class: "sparc-btn-enrich-sm" %>
                 <% end %>
                 <% if doc.completed? %>
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white; padding: 0.25rem 0.6rem; font-size: 0.78rem;" data-bs-toggle="dropdown" aria-expanded="false">
-                      Export OSCAL
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                      <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
-                      <li><%= link_to "JSON", download_oscal_sar_document_path(doc), class: "dropdown-item" %></li>
-                      <li><%= link_to "YAML", download_yaml_sar_document_path(doc), class: "dropdown-item" %></li>
-                      <li><%= link_to "XML", download_xml_sar_document_path(doc), class: "dropdown-item" %></li>
-                      <li><hr class="dropdown-divider"></li>
-                      <li><%= link_to "Excel", download_excel_sar_document_path(doc), class: "dropdown-item" %></li>
-                    </ul>
-                  </div>
+                  <%# #451 A1: shared partial routes dropdown clicks through the
+                      Stimulus modal that surfaces specific validation errors. %>
+                  <% sar_extra_items = capture do %>
+                    <li><%= link_to "Excel", download_excel_sar_document_path(doc), class: "dropdown-item" %></li>
+                  <% end %>
+                  <%= render "shared/oscal_export_dropdown",
+                        validate_path: validate_oscal_export_sar_document_path(doc),
+                        download_json_path: download_oscal_validated_sar_document_path(doc),
+                        download_yaml_path: download_yaml_sar_document_path(doc),
+                        download_xml_path: download_xml_sar_document_path(doc),
+                        fallback_json_path: download_oscal_unvalidated_sar_document_path(doc),
+                        document_type: "SAR",
+                        extra_items: sar_extra_items %>
                 <% end %>
                 <%= button_to "Delete", sar_document_path(doc), method: :delete,
                       class: "btn btn-danger btn-sm",

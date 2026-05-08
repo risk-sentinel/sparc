@@ -73,21 +73,39 @@ RSpec.describe "SspDocuments", type: :request do
     end
   end
 
-  describe "GET /ssp_documents/:id/download_yaml" do
-    it "raises validation error on empty document" do
+  describe "GET /ssp_documents/:id/download_yaml (#451)" do
+    it "redirects with flash warning when validation fails (no 500)" do
       ssp = create(:ssp_document)
-      expect {
-        get download_yaml_ssp_document_path(ssp)
-      }.to raise_error(StandardError)
+      get download_yaml_ssp_document_path(ssp)
+      expect(response).to redirect_to(
+        ssp_document_path(ssp, oscal_validation_failed: 1, oscal_format: "yaml")
+      )
+      expect(flash[:warning]).to match(/schema validation/i)
+    end
+
+    it "honors skip_validation=1 to emit unvalidated YAML" do
+      ssp = create(:ssp_document)
+      get download_yaml_ssp_document_path(ssp, skip_validation: 1)
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/x-yaml")
     end
   end
 
-  describe "GET /ssp_documents/:id/download_xml" do
-    it "raises validation error on empty document" do
+  describe "GET /ssp_documents/:id/download_xml (#451)" do
+    it "redirects with flash warning when validation fails (no 500)" do
       ssp = create(:ssp_document)
-      expect {
-        get download_xml_ssp_document_path(ssp)
-      }.to raise_error(StandardError)
+      get download_xml_ssp_document_path(ssp)
+      expect(response).to redirect_to(
+        ssp_document_path(ssp, oscal_validation_failed: 1, oscal_format: "xml")
+      )
+      expect(flash[:warning]).to match(/schema validation/i)
+    end
+
+    it "honors skip_validation=1 to emit unvalidated XML" do
+      ssp = create(:ssp_document)
+      get download_xml_ssp_document_path(ssp, skip_validation: 1)
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/xml")
     end
   end
 

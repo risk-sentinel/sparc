@@ -88,8 +88,13 @@ module OscalMetadata
       base["published"] = published.is_a?(String) ? published : published.iso8601
     end
 
-    # Merge all stored metadata_extra fields
-    extra = metadata_extra || {}
+    # Allowlist filter: METADATA_EXTRA_KEYS are the OSCAL spec metadata
+    # fields. Anything else parked in metadata_extra (#451) — internal
+    # SPARC bookkeeping like ProgressTrackable's processing_stage /
+    # processing_message / processing_*_at, import_warnings, etc. —
+    # is filtered out before export. OSCAL schemas reject additional
+    # properties under metadata, so leaking these would fail validation.
+    extra = (metadata_extra || {}).slice(*METADATA_EXTRA_KEYS)
     if extra.any?
       merged = base.merge(extra)
     else

@@ -16,6 +16,29 @@ import { Controller } from "@hotwired/stimulus"
 //   data-oscal-export-doc-type-param="SSP"
 export default class extends Controller {
 
+  // #451 A2: when a controller redirects from a failed validated download
+  // (?oscal_validation_failed=1&oscal_format=json|yaml|xml) the show page
+  // lands without any user click. Auto-trigger the same modal flow as a
+  // dropdown click so the user sees the specific validation errors.
+  connect() {
+    const url = new URL(window.location)
+    if (url.searchParams.get("oscal_validation_failed") !== "1") return
+
+    const format = (url.searchParams.get("oscal_format") || "json").toUpperCase()
+    const link = this.element.querySelector(`[data-oscal-export-format-param="${format}"]`)
+    if (!link) return
+
+    // Strip the params so refresh doesn't re-open the modal.
+    url.searchParams.delete("oscal_validation_failed")
+    url.searchParams.delete("oscal_format")
+    window.history.replaceState({}, "", url.toString())
+
+    // Defer to next tick so all controllers in the dropdown have connected.
+    requestAnimationFrame(() => {
+      this.download({ preventDefault: () => {}, currentTarget: link })
+    })
+  }
+
   async download(event) {
     event.preventDefault()
 

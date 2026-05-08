@@ -192,8 +192,8 @@ class ControlCatalogsController < ApplicationController
                 disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for Catalog #{@control_catalog.id}: #{result.errors.first(3).join('; ')}")
-      flash[:warning] = "OSCAL export failed schema validation. Use the unvalidated download instead."
-      redirect_to control_catalog_path(@control_catalog)
+      flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+      redirect_to control_catalog_path(@control_catalog, oscal_validation_failed: 1, oscal_format: "json")
     end
   end
 
@@ -229,6 +229,10 @@ class ControlCatalogsController < ApplicationController
               filename:    "#{@control_catalog.name}_oscal_catalog_#{Date.today}.yaml",
               type:        "application/x-yaml",
               disposition: "attachment"
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL YAML validation failed for Catalog #{@control_catalog.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    redirect_to control_catalog_path(@control_catalog, oscal_validation_failed: 1, oscal_format: "yaml")
   end
 
   def download_xml
@@ -241,6 +245,10 @@ class ControlCatalogsController < ApplicationController
               filename:    "#{@control_catalog.name}_oscal_catalog_#{Date.today}.xml",
               type:        "application/xml",
               disposition: "attachment"
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL XML validation failed for Catalog #{@control_catalog.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    redirect_to control_catalog_path(@control_catalog, oscal_validation_failed: 1, oscal_format: "xml")
   end
 
   # Returns control IDs matching a given baseline level.

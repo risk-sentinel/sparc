@@ -227,8 +227,8 @@ class SarDocumentsController < ApplicationController
                 disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for SAR #{@sar_document.id}: #{result.errors.first(3).join('; ')}")
-      flash[:warning] = "OSCAL export failed schema validation. Use the unvalidated download instead."
-      redirect_to sar_document_path(@sar_document)
+      flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+      redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "json")
     end
   end
 
@@ -267,6 +267,10 @@ class SarDocumentsController < ApplicationController
               filename:    "#{@sar_document.name}_oscal_sar_#{Date.today}.yaml",
               type:        "application/x-yaml",
               disposition: "attachment"
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL YAML validation failed for SAR #{@sar_document.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "yaml")
   end
 
   def download_xml
@@ -280,6 +284,10 @@ class SarDocumentsController < ApplicationController
               filename:    "#{@sar_document.name}_oscal_sar_#{Date.today}.xml",
               type:        "application/xml",
               disposition: "attachment"
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL XML validation failed for SAR #{@sar_document.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "xml")
   end
 
   def enrich

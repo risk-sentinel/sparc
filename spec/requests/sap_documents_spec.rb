@@ -65,21 +65,39 @@ RSpec.describe "SapDocuments", type: :request do
     end
   end
 
-  describe "GET /sap_documents/:id/download_yaml" do
-    it "raises OSCAL validation error on empty document" do
+  describe "GET /sap_documents/:id/download_yaml (#451)" do
+    it "redirects with flash warning when validation fails (no 500)" do
       sap = create(:sap_document)
-      expect {
-        get download_yaml_sap_document_path(sap)
-      }.to raise_error(StandardError)
+      get download_yaml_sap_document_path(sap)
+      expect(response).to redirect_to(
+        sap_document_path(sap, oscal_validation_failed: 1, oscal_format: "yaml")
+      )
+      expect(flash[:warning]).to match(/schema validation/i)
+    end
+
+    it "honors skip_validation=1 to emit unvalidated YAML" do
+      sap = create(:sap_document)
+      get download_yaml_sap_document_path(sap, skip_validation: 1)
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/x-yaml")
     end
   end
 
-  describe "GET /sap_documents/:id/download_xml" do
-    it "raises OSCAL validation error on empty document" do
+  describe "GET /sap_documents/:id/download_xml (#451)" do
+    it "redirects with flash warning when validation fails (no 500)" do
       sap = create(:sap_document)
-      expect {
-        get download_xml_sap_document_path(sap)
-      }.to raise_error(StandardError)
+      get download_xml_sap_document_path(sap)
+      expect(response).to redirect_to(
+        sap_document_path(sap, oscal_validation_failed: 1, oscal_format: "xml")
+      )
+      expect(flash[:warning]).to match(/schema validation/i)
+    end
+
+    it "honors skip_validation=1 to emit unvalidated XML" do
+      sap = create(:sap_document)
+      get download_xml_sap_document_path(sap, skip_validation: 1)
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/xml")
     end
   end
 

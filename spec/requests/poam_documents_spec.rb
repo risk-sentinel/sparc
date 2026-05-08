@@ -55,21 +55,39 @@ RSpec.describe "PoamDocuments", type: :request do
     end
   end
 
-  describe "GET /poam_documents/:id/download_yaml" do
-    it "raises OSCAL validation error on empty document" do
+  describe "GET /poam_documents/:id/download_yaml (#451)" do
+    it "redirects with flash warning when validation fails (no 500)" do
       poam = create(:poam_document)
-      expect {
-        get download_yaml_poam_document_path(poam)
-      }.to raise_error(StandardError)
+      get download_yaml_poam_document_path(poam)
+      expect(response).to redirect_to(
+        poam_document_path(poam, oscal_validation_failed: 1, oscal_format: "yaml")
+      )
+      expect(flash[:warning]).to match(/schema validation/i)
+    end
+
+    it "honors skip_validation=1 to emit unvalidated YAML" do
+      poam = create(:poam_document)
+      get download_yaml_poam_document_path(poam, skip_validation: 1)
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/x-yaml")
     end
   end
 
-  describe "GET /poam_documents/:id/download_xml" do
-    it "raises OSCAL validation error on empty document" do
+  describe "GET /poam_documents/:id/download_xml (#451)" do
+    it "redirects with flash warning when validation fails (no 500)" do
       poam = create(:poam_document)
-      expect {
-        get download_xml_poam_document_path(poam)
-      }.to raise_error(StandardError)
+      get download_xml_poam_document_path(poam)
+      expect(response).to redirect_to(
+        poam_document_path(poam, oscal_validation_failed: 1, oscal_format: "xml")
+      )
+      expect(flash[:warning]).to match(/schema validation/i)
+    end
+
+    it "honors skip_validation=1 to emit unvalidated XML" do
+      poam = create(:poam_document)
+      get download_xml_poam_document_path(poam, skip_validation: 1)
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/xml")
     end
   end
 

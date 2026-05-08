@@ -66,17 +66,15 @@
                   <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.25rem 0.6rem; font-size: 0.78rem;", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
                 <% end %>
                 <% if doc.completed? %>
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-sm dropdown-toggle" style="background: #8e44ad; color: white; padding: 0.25rem 0.6rem; font-size: 0.78rem;" data-bs-toggle="dropdown" aria-expanded="false">
-                      Export OSCAL
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                      <li><h6 class="dropdown-header">OSCAL (validated)</h6></li>
-                      <li><%= link_to "JSON", download_oscal_cdef_document_path(doc), class: "dropdown-item" %></li>
-                      <li><%= link_to "YAML", download_yaml_cdef_document_path(doc), class: "dropdown-item" %></li>
-                      <li><%= link_to "XML", download_xml_cdef_document_path(doc), class: "dropdown-item" %></li>
-                    </ul>
-                  </div>
+                  <%# #451 A1: shared partial routes dropdown clicks through the
+                      Stimulus modal that surfaces specific validation errors. %>
+                  <%= render "shared/oscal_export_dropdown",
+                        validate_path: validate_oscal_export_cdef_document_path(doc),
+                        download_json_path: download_oscal_validated_cdef_document_path(doc),
+                        download_yaml_path: download_yaml_cdef_document_path(doc),
+                        download_xml_path: download_xml_cdef_document_path(doc),
+                        fallback_json_path: download_oscal_unvalidated_cdef_document_path(doc),
+                        document_type: "CDEF" %>
                 <% end %>
                 <% if signed_in? %>
                   <%= button_to "Delete", cdef_document_path(doc), method: :delete,
