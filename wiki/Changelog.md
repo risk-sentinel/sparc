@@ -4,9 +4,9 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.6.0 -- HDF ↔ OSCAL Translation Bridge & CMS Attestation Export (2026-05-07)
+## v1.6.0 -- HDF ↔ OSCAL Translation Bridge, CMS Attestation Export & OSCAL Export Hardening (2026-05-08)
 
-Minor release. Ships the [#449](https://github.com/risk-sentinel/sparc/issues/449) **HDF ↔ OSCAL translation bridge** — three stateless API endpoints that let tenant compliance pipelines move scan data between the HDF and OSCAL ecosystems without managing the `hdf` CLI on their side. Also includes the [#440](https://github.com/risk-sentinel/sparc/issues/440) **CMS attestation export** that landed mid-week. **No breaking changes**; existing deployments upgrade in place.
+Minor release. Ships the [#449](https://github.com/risk-sentinel/sparc/issues/449) **HDF ↔ OSCAL translation bridge** — three stateless API endpoints that let tenant compliance pipelines move scan data between the HDF and OSCAL ecosystems without managing the `hdf` CLI on their side. Bundled with [#440](https://github.com/risk-sentinel/sparc/issues/440) **CMS attestation export**, [#451](https://github.com/risk-sentinel/sparc/issues/451) **OSCAL export schema-validation hardening + uniform error UX**, and [#453](https://github.com/risk-sentinel/sparc/issues/453) **OSCAL schemas baked into the container** (decouples runtime validation from NIST GitHub availability — multi-version validation now works air-gapped). **No breaking changes**; existing deployments upgrade in place.
 
 Full release notes (with verification evidence) live on the [v1.6.0 GitHub release page](https://github.com/risk-sentinel/sparc/releases/tag/v1.6.0).
 
@@ -38,16 +38,28 @@ Full release notes (with verification evidence) live on the [v1.6.0 GitHub relea
 - `attestations` UI form gains frequency + status selects
 - NIST mapping (CA-2, CA-7, RA-3, SI-2) updated for the new translation surface and CMS export
 
+### Fixed (#451)
+
+- **OSCAL export schema-validation leak** — `OscalMetadata#build_oscal_metadata` was merging the entire `metadata_extra` blob into OSCAL output. ProgressTrackable's `processing_stage` / `processing_message` / `processing_*_at` keys leaked into metadata and tripped schema validation. Switched to `slice(*METADATA_EXTRA_KEYS)` allowlist — covers every document type that includes the concern. Version-agnostic.
+- **YAML/XML download 500s** — `download_yaml` / `download_xml` across CDEF, SSP, SAR, POAM, Profile, SAP, and Catalog now rescue `OscalValidationError` and redirect with a flash message that includes the `?skip_validation=1` escape hatch, matching the existing `download_oscal` UX.
+- **Inconsistent error UX across views** — six index views (CDEF, SSP, SAR, POAM, Profile, SAP) replaced their inline plain-link export dropdowns with the shared `_oscal_export_dropdown` partial. The Stimulus controller's new `connect()` hook reads `?oscal_validation_failed=1&oscal_format=…` from the redirected show page and auto-opens the validation modal so direct-URL hits land in the same modal as dropdown clicks. Every human-facing path → same modal, same specific errors.
+
+### Schema infrastructure (#453)
+
+- **OSCAL schemas baked into the container** — new `oscal:bundle_schemas` rake task downloads all 5 supported versions (1.1.1 / 1.1.2 / 1.1.3 / 1.2.0 / 1.2.1) × 8 document types from NIST GitHub release assets at Docker build time and writes them to `lib/oscal_schemas_bundle/v<version>/<file>` plus a `manifest.json` with SHA-256 checksums. `oscal:seed_schemas` extended with three-tier fallback: bundle (offline, checksum-verified) → NIST GitHub fetch → legacy disk fallback. Air-gapped deployments validate against all 5 versions without runtime network dependency.
+- **Two pre-existing bugs fixed in passing**: `OscalSchema::NIST_SCHEMA_URL_TEMPLATE` was pointing at a `raw.githubusercontent.com/.../json/schema/...` path that NIST never published — every fetch was 404'ing and silently falling back to disk; only v1.1.2 was ever loaded into the DB. URL corrected to the GitHub release-asset path. `DOCUMENT_TYPE_MAP` had `oscal_component-definition_schema.json` for component-definition; NIST publishes it as `oscal_component_schema.json` — corrected to match the validator's `SCHEMA_MAP`.
+
 ### Migrations
 
 - `add_frequency_and_status_to_attestations` — adds `frequency` (string, nullable) + `status` (string, default `"passed"`, NOT NULL) + index on `status`. Backwards-compatible; existing rows default to `passed`.
 
 ### Verified
 
-- `bundle exec rspec` — 2137 examples, 0 failures, 2 pending (real-binary integration specs gated on `hdf` being on PATH)
+- `bundle exec rspec` — 2150+ examples, 0 failures, 2 pending (real-binary integration specs gated on `hdf` being on PATH)
 - `bundle exec rubocop` — clean on changed files
 - `bundle exec brakeman` — clean (2 ignored, 0 active)
 - HDF binary install script verified against MITRE release SHA-256
+- OSCAL schema bundle verified end-to-end: 37 schemas downloaded, 37 SHA-256 verified at seed time, 37 loaded into the DB
 
 ---
 

@@ -118,9 +118,16 @@ RSpec.describe OscalSchema, type: :model do
   end
 
   describe ".nist_url" do
-    it "builds the correct NIST download URL" do
+    it "builds the correct NIST download URL (#453: GitHub release-asset path)" do
       url = described_class.nist_url("1.1.2", "ssp")
-      expect(url).to eq("https://raw.githubusercontent.com/usnistgov/OSCAL/v1.1.2/json/schema/oscal_ssp_schema.json")
+      expect(url).to eq("https://github.com/usnistgov/OSCAL/releases/download/v1.1.2/oscal_ssp_schema.json")
+    end
+
+    it "uses the NIST-published filename for component-definition (#453)" do
+      # NIST emits the component-definition schema as `oscal_component_schema.json`
+      # (no hyphen) — fixed in #453 after pre-existing 404s every fetch.
+      url = described_class.nist_url("1.1.2", "component-definition")
+      expect(url).to end_with("oscal_component_schema.json")
     end
 
     it "returns nil for unknown document types" do

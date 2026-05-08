@@ -16,17 +16,25 @@ class OscalSchema < ApplicationRecord
   # Versions where mapping schemas exist (introduced in 1.2.0)
   MAPPING_VERSIONS = %w[1.2.0 1.2.1].freeze
 
-  # Maps OSCAL document types to their NIST schema filename component and root key.
-  # document_type uses OSCAL naming (hyphenated), not SPARC internal symbols.
+  # Maps OSCAL document types to their NIST schema filename component and
+  # root key. Filenames match exactly what NIST publishes as GitHub
+  # release assets (verified against tags v1.1.1 / v1.1.2 / v1.1.3 /
+  # v1.2.0 / v1.2.1). document_type uses OSCAL naming (hyphenated),
+  # not SPARC internal symbols.
+  #
+  # Note: NIST emits the component-definition schema as
+  # `oscal_component_schema.json` (no hyphen), even though the OSCAL
+  # document_type is `component-definition`. The validator's SCHEMA_MAP
+  # uses the same filename — both maps must agree.
   DOCUMENT_TYPE_MAP = {
     "catalog"              => { file: "oscal_catalog_schema.json",            root_key: "catalog" },
     "profile"              => { file: "oscal_profile_schema.json",            root_key: "profile" },
-    "component-definition" => { file: "oscal_component-definition_schema.json", root_key: "component-definition" },
-    "ssp"                  => { file: "oscal_ssp_schema.json",               root_key: "system-security-plan" },
+    "component-definition" => { file: "oscal_component_schema.json",          root_key: "component-definition" },
+    "ssp"                  => { file: "oscal_ssp_schema.json",                root_key: "system-security-plan" },
     "assessment-plan"      => { file: "oscal_assessment-plan_schema.json",    root_key: "assessment-plan" },
     "assessment-results"   => { file: "oscal_assessment-results_schema.json", root_key: "assessment-results" },
-    "poam"                 => { file: "oscal_poam_schema.json",              root_key: "plan-of-action-and-milestones" },
-    "mapping"              => { file: "oscal_mapping_schema.json",           root_key: "mapping-collection" }
+    "poam"                 => { file: "oscal_poam_schema.json",               root_key: "plan-of-action-and-milestones" },
+    "mapping"              => { file: "oscal_mapping_schema.json",            root_key: "mapping-collection" }
   }.freeze
 
   # Maps SPARC internal symbols to OSCAL document type strings
@@ -41,7 +49,13 @@ class OscalSchema < ApplicationRecord
     mapping:              "mapping"
   }.freeze
 
-  NIST_SCHEMA_URL_TEMPLATE = "https://raw.githubusercontent.com/usnistgov/OSCAL/v%<version>s/json/schema/%<file>s"
+  # NIST publishes schema files as GitHub release assets, not in a
+  # source-tree path. Pre-#453 this template pointed at
+  # `raw.githubusercontent.com/.../json/schema/...` which 404s for
+  # every release tag — the seed task always silently fell through to
+  # the disk fallback (single version). Fixed to use the release-asset
+  # URL pattern that actually serves the schemas.
+  NIST_SCHEMA_URL_TEMPLATE = "https://github.com/usnistgov/OSCAL/releases/download/v%<version>s/%<file>s"
 
   validates :oscal_version, presence: true
   validates :document_type, presence: true

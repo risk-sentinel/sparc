@@ -96,6 +96,14 @@ COPY . .
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 RUN bundle exec bootsnap precompile app/ lib/
 
+# #453: Bundle every (version × document_type) OSCAL schema from NIST
+# GitHub into lib/oscal_schemas_bundle/ with a manifest.json carrying
+# SHA-256 checksums. The seed task at deploy time prefers this bundle
+# over a live NIST fetch, so production images validate against all 5
+# supported OSCAL versions without runtime network dependency on
+# raw.githubusercontent.com.
+RUN SECRET_KEY_BASE_DUMMY=1 bin/rails oscal:bundle_schemas
+
 # ────────────────────────────────────────
 # Final stage — production image
 FROM base
