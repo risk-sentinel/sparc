@@ -1,23 +1,38 @@
 # SPARC — Systematic Policy and Regulatory Compliance
 
+![SPARC Logo](docs/images/sparc_logo_clear.png)
+
 ![Home Page](docs/images/sparc_home.jpg)
 
-**SPARC** is an open-source compliance documentation platform that transforms how organizations manage NIST 800-53 security controls. It replaces fragmented spreadsheets and siloed documents with a **coordinated, web-based, real-time source of truth** — empowering security teams, assessors, system owners, and program managers to document, assess, and prove compliance across the full RMF lifecycle.
+**SPARC** is an open-source compliance documentation platform that transforms how
+organizations manage NIST 800-53 security controls. It replaces fragmented
+spreadsheets and siloed documents with a **coordinated, web-based, real-time**
+**source of truth** — empowering security teams, assessors, system owners, and
+program managers to document, assess, and prove compliance across the full RMF lifecycle.
 
-> **Documentation:** See the **[SPARC Wiki](https://github.com/risk-sentinel/sparc/wiki)** for comprehensive documentation covering RBAC, screens, core functions, integrations, architecture, and configuration.
+> **Documentation:** See the **[SPARC Wiki](https://github.com/risk-sentinel/sparc/wiki)**
+>for comprehensive documentation covering RBAC, screens, core functions, integrations,
+>architecture, and configuration.
 
 ---
 
 ## Key Features
 
-- **Full RMF Artifact Lifecycle** — Manage Catalogs, Profiles, Component Definitions (CDEFs), SSPs, SAPs, SARs, and POA&Ms in one platform
-- **SSP Creation Wizard** — Build System Security Plans from scratch by selecting baselines and assembling components
-- **Multi-Format Import** — Import from Excel (.xlsx/.xls), OSCAL JSON, OSCAL XML, DISA STIGs (XCCDF), and InSpec profiles
-- **OSCAL Export** — Export validated OSCAL v1.1.2 JSON for SSPs, CDEFs, Profiles, SARs, and POA&Ms
-- **Interactive Heat Maps** — Visual compliance dashboards showing control status by NIST family
+- **Full RMF Artifact Lifecycle** — Manage Catalogs, Profiles, Component Definitions
+(CDEFs), SSPs, SAPs, SARs, and POA&Ms in one platform
+- **SSP Creation Wizard** — Build System Security Plans from scratch by selecting
+baselines and assembling components
+- **Multi-Format Import** — Import from Excel (.xlsx/.xls), OSCAL JSON, OSCAL XML,
+DISA STIGs (XCCDF), and InSpec profiles
+- **OSCAL Export** — Export validated OSCAL v1.1.2 JSON for SSPs, CDEFs, Profiles,
+SARs, and POA&Ms
+- **Interactive Heat Maps** — Visual compliance dashboards showing control status
+by NIST family
 - **Inline Field Editing** — Edit implementation details directly in the browser
-- **Authentication & SSO** — Local login, GitHub/GitLab OAuth, OIDC (Okta/Keycloak/Entra ID), and LDAP
-- **Role-Based Access** — 29 NIST RMF roles with project-level scoping and admin UI
+- **Authentication & SSO** — Local login, GitHub/GitLab OAuth, OIDC (Okta/Keycloak/
+Entra ID), and LDAP
+- **Role-Based Access** — 29 NIST RMF roles with project-level scoping and admin
+UI
 - **Background Processing** — Async job processing for large files via Sidekiq
 - **RESTful API** — Programmatic access at `/api/v1/`
 
@@ -33,7 +48,7 @@ cd sparc
 docker compose up --build
 ```
 
-Open **http://localhost:3000**. Then seed the NIST catalogs:
+Open [local host](http://localhost:3000). Then seed the NIST catalogs:
 
 ```bash
 docker compose exec web bin/rails db:seed
@@ -53,19 +68,21 @@ bin/rails server
 
 **Prerequisites:** Ruby 3.4.4, PostgreSQL 15+, Redis 7+, Bundler
 
-Start Redis (`redis-server`) and Sidekiq (`bundle exec sidekiq`) in separate terminals for background job processing.
+Start Redis (`redis-server`) and Sidekiq (`bundle exec sidekiq`) in separate
+terminals for background job processing.
 
 ---
 
 ## Authentication Setup
 
-Authentication is **opt-in** — all routes are public by default until you enable an auth method.
+Authentication is **opt-in** — all routes are public by default until you enable
+an auth method.
 
 ### 1. Enable local login
 
 Copy `.env.example` to `.env` and set:
 
-```
+```bash
 SPARC_ENABLE_LOCAL_LOGIN=true
 SPARC_ENABLE_USER_REGISTRATION=true
 ```
@@ -76,15 +93,19 @@ SPARC_ENABLE_USER_REGISTRATION=true
 bin/rails db:seed
 ```
 
-The seed task creates an admin account and prints the credentials to the console. The admin must change their password on first login.
+The seed task creates an admin account and prints the credentials to the console.
+The admin must change their password on first login.
 
-> **Lost your admin password?** Run `bin/rails sparc:bootstrap_admin` to regenerate credentials.
+> **Lost your admin password?** Run `bin/rails sparc:bootstrap_admin` to
+>regenerate credentials.
 
 ### 3. (Optional) Enable SSO
 
-Add GitHub, GitLab, or Okta credentials to your `.env` — see [Authentication & Authorization](docs/AUTHENTICATION.md) for full setup instructions.
+Add GitHub, GitLab, or Okta credentials to your `.env` — see [Authentication & Authorization](docs/AUTHENTICATION.md)
+for full setup instructions.
 
-**Important:** After any `.env` change, restart the Rails server. dotenv loads environment variables at boot time only.
+**Important:** After any `.env` change, restart the Rails server. dotenv loads
+environment variables at boot time only.
 
 ---
 
@@ -100,19 +121,22 @@ bundle exec brakeman     # Security scan
 
 ## Configuration
 
-SPARC is configured via environment variables with sensible defaults. No configuration is required for local development.
+SPARC is configured via environment variables with sensible defaults. No configuration
+is required for local development.
 
 - **Full reference:** [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md)
-- **Quick start templates:** `.env.example` (development), `.env.production.example` (production)
+- **Quick start templates:** `.env.example` (development), `.env.production.example`
+(production)
 
-The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all variables with defaults.
+The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all
+variables with defaults.
 
 ---
 
 ## Documentation
 
 | Topic | Link |
-|-------|------|
+| ------- | ------ |
 | **User & Operations** | |
 | Authentication & Authorization | [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) |
 | Admin Credential Rotation | [docs/ADMIN_CREDENTIAL_ROTATION.md](docs/ADMIN_CREDENTIAL_ROTATION.md) |
@@ -143,7 +167,7 @@ The centralized `SparcConfig` module (`app/models/sparc_config.rb`) reads all va
 The UI follows the OSCAL / RMF artifact dependency chain:
 
 | Order | Artifact | Purpose | Status |
-|-------|----------|---------|--------|
+| ------- | ---------- | --------- | -------- |
 | 1 | **Catalog** | Raw control definitions (e.g., NIST SP 800-53) | Implemented |
 | 2 | **Profile** | Tailored baseline / selection set | Implemented |
 | 3 | **Component Definition (CDEF)** | Reusable control implementations | Implemented |
@@ -159,13 +183,15 @@ The UI follows the OSCAL / RMF artifact dependency chain:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Ensure all checks pass:
-   ```bash
-   bundle exec rubocop && bundle exec brakeman && bundle exec rspec
-   ```
+
+    ```bash
+    bundle exec rubocop && bundle exec brakeman && bundle exec rspec
+    ```
+
 4. Commit your changes and open a Pull Request against `main`
 
 | Branch Prefix | Purpose |
-|---------------|---------|
+| --------------- | --------- |
 | `feature/` | New functionality |
 | `fix/` | Bug fixes |
 | `refactor/` | Code restructuring |
@@ -175,7 +201,8 @@ The UI follows the OSCAL / RMF artifact dependency chain:
 
 ## Acknowledgments
 
-- **[NIST](https://www.nist.gov/)** — SP 800-53 control catalog framework and [OSCAL](https://pages.nist.gov/OSCAL/) standard
+- **[NIST](https://www.nist.gov/)** — SP 800-53 control catalog framework
+- [OSCAL](https://pages.nist.gov/OSCAL/) standard
 - **[MITRE](https://www.mitre.org/)** — [SAF](https://saf.mitre.org/) and [Heimdall](https://github.com/mitre/heimdall2)
 - **[Chef/Progress InSpec](https://www.inspec.io/)** — Compliance-as-code framework
 - **[DISA](https://www.disa.mil/)** — STIGs in XCCDF format
@@ -183,7 +210,8 @@ The UI follows the OSCAL / RMF artifact dependency chain:
 
 ### Contributors
 
-- **[@clem-field](https://github.com/clem-field)** — Creator, lead developer, and maintainer
+- **[@clem-field](https://github.com/clem-field)** — Creator, lead developer, and
+maintainer
 
 ---
 
