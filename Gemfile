@@ -86,7 +86,9 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "faker"
   gem "bundler-audit", require: false
-  gem "cyclonedx-ruby", require: false
+  # NOTE (#463): cyclonedx-ruby was removed — v1.1.0 only emits XML despite
+  # the .cdx.json extension we used in CI. Replaced with @cyclonedx/cdxgen
+  # in .github/workflows/security.yml (emits valid CycloneDX JSON).
 end
 
 group :test do

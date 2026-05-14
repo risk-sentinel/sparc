@@ -110,9 +110,20 @@ jobs:
               );
               const others = allChecks.filter(c => c.name !== SELF_NAME);
 
-              // Index by name (latest run wins if duplicates)
+              // #463 — Index by name; when a SHA has multiple runs of the
+              // same check (e.g. a failure followed by a re-run pass after
+              // editing the PR body), the latest by started_at must win.
+              // Previously this used `Map.set` in array order, which fails
+              // because the checks API does not guarantee chronological
+              // ordering — stale failures could pin the aggregator to a
+              // FAILURE result even after the fresh run passed.
+              const sorted = [...others].sort((a, b) =>
+                new Date(b.started_at) - new Date(a.started_at)
+              );
               const byName = new Map();
-              for (const c of others) byName.set(c.name, c);
+              for (const c of sorted) {
+                if (!byName.has(c.name)) byName.set(c.name, c);
+              }
 
               // 1. Catastrophic failure: any check that completed with a failure conclusion
               //    (regardless of whether the rule said it was required) — surface and fail.

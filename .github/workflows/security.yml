@@ -508,6 +508,10 @@ jobs:
           if-no-files-found: warn
 
   # ── 7. SBOM Generation (CycloneDX) ────────────────────────────
+  # #463 — switched from `cyclonedx-ruby` gem (v1.1.0 — only emits XML,
+  # misleadingly with a .cdx.json extension) to @cyclonedx/cdxgen which
+  # emits the actual CycloneDX JSON spec. SAF CLI's cyclonedx_sbom2hdf
+  # and Grype both require JSON; XML input fails parsing silently.
   sbom_generation:
     runs-on: ubuntu-latest
     needs: [ changes ]
@@ -522,8 +526,21 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
-      - name: Generate CycloneDX SBOM
-        run: bundle exec cyclonedx-ruby -p . -o sbom-ruby.cdx.json
+      - name: Set up Node 22 (for cdxgen)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate CycloneDX SBOM (JSON via cdxgen)
+        env:
+          # cdxgen settings: Ruby project, JSON output, no auto-upload anywhere
+          FETCH_LICENSE: 'true'
+        run: |
+          npx --yes @cyclonedx/cdxgen@11 -t ruby -o sbom-ruby.cdx.json .
+          echo "--- SBOM head ---"
+          head -c 300 sbom-ruby.cdx.json
+          echo
+          jq '{bomFormat, specVersion, components: (.components | length)}' sbom-ruby.cdx.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v7
@@ -733,10 +750,31 @@ jobs:
 
       # ── Parallel SARIF/SBOM/ASFF → HDF conversions ──
       # All conversions run in parallel via background processes for ~3x speedup
+      #
+      # #463 — @mitre/saf transitively depends on @mitre/heimdall-lite which
+      # requires Node >=22. The default ubuntu-latest runner Node (v20.x)
+      # produces an EBADENGINE *warning* (not error), so npm install completes
+      # but cyclonedx_sbom2hdf + anchoregrype2hdf silently fail at runtime
+      # with MODULE_NOT_FOUND. Pin Node 22 + a known-good @mitre/saf version.
+      - name: Set up Node 22 (required by @mitre/saf transitive deps)
+        if: always()
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Install SAF CLI
         if: always()
-        run: npm install -g @mitre/saf
+        run: npm install -g @mitre/saf@1.6.0
+
+      - name: Verify SAF CLI converters are available
+        if: always()
+        run: |
+          saf --version
+          echo "Available SAF converters (expect all 4 listed):"
+          saf convert --help 2>&1 | grep -E "sarif2hdf|trivy2hdf|cyclonedx_sbom2hdf|anchoregrype2hdf" || {
+            echo "::error::One or more expected SAF converters are missing"
+            exit 1
+          }
 
       - name: Convert all scan results to HDF (parallel)
         if: always()
@@ -752,15 +790,20 @@ jobs:
           fi
           echo "SAF CLI: $SAF_BIN"
 
-          mkdir -p hdf-results
+          mkdir -p hdf-results hdf-conversion-logs
           PIDS=()
+          LOGS=()
 
-          # Helper: run conversion in background only if input file exists
+          # #463 — capture per-conversion stdout+stderr to a log file so
+          # background-process errors surface in CI logs instead of being
+          # swallowed by pipe buffering.
           run_convert() {
             local input="$1"; shift
             if [ -f "$input" ]; then
-              "$SAF_BIN" "$@" 2>&1 &
+              local logfile="hdf-conversion-logs/conv-${#PIDS[@]}.log"
+              ( "$SAF_BIN" "$@" > "$logfile" 2>&1 ) &
               PIDS+=($!)
+              LOGS+=("$logfile")
             fi
           }
 
@@ -791,27 +834,47 @@ jobs:
           run_convert scan-results/trivy-container-results/trivy-container-sbom.cdx.json \
             convert cyclonedx_sbom2hdf -i scan-results/trivy-container-results/trivy-container-sbom.cdx.json -o hdf-results/trivy-container-sbom.hdf.json
 
-          run_convert scan-results/sbom-cyclonedx/sbom-ruby.cdx.json \
-            convert cyclonedx_sbom2hdf -i scan-results/sbom-cyclonedx/sbom-ruby.cdx.json -o hdf-results/sbom-ruby.hdf.json
+          # #463 — download-artifact@v8 with `name:` (vs `pattern:`) extracts
+          # files directly into `path:` rather than a name-prefixed subdir.
+          # The sbom-cyclonedx and grype-sbom-results artifacts land at the
+          # scan-results/ root, not under a per-artifact subdirectory.
+          run_convert scan-results/sbom-ruby.cdx.json \
+            convert cyclonedx_sbom2hdf -i scan-results/sbom-ruby.cdx.json -o hdf-results/sbom-ruby.hdf.json
 
           # Grype JSON → HDF (#461 — SBOM-driven SCA findings)
-          run_convert scan-results/grype-sbom-results/grype-ruby.json \
-            convert anchoregrype2hdf -i scan-results/grype-sbom-results/grype-ruby.json -o hdf-results/grype-ruby.hdf.json
+          run_convert scan-results/grype-ruby.json \
+            convert anchoregrype2hdf -i scan-results/grype-ruby.json -o hdf-results/grype-ruby.hdf.json
 
-          run_convert scan-results/grype-sbom-results/grype-fs.json \
-            convert anchoregrype2hdf -i scan-results/grype-sbom-results/grype-fs.json -o hdf-results/grype-fs.hdf.json
+          run_convert scan-results/grype-fs.json \
+            convert anchoregrype2hdf -i scan-results/grype-fs.json -o hdf-results/grype-fs.hdf.json
 
-          run_convert scan-results/grype-sbom-results/grype-container.json \
-            convert anchoregrype2hdf -i scan-results/grype-sbom-results/grype-container.json -o hdf-results/grype-container.hdf.json
+          run_convert scan-results/grype-container.json \
+            convert anchoregrype2hdf -i scan-results/grype-container.json -o hdf-results/grype-container.hdf.json
 
-          # Wait for all conversions to complete
+          # Wait for all conversions to complete; track failures by index
+          # so we can dump the matching log file for diagnosis.
           FAILED=0
-          for pid in "${PIDS[@]}"; do
-            wait "$pid" 2>/dev/null || FAILED=$((FAILED + 1))
+          FAILED_INDICES=()
+          for i in "${!PIDS[@]}"; do
+            if ! wait "${PIDS[$i]}" 2>/dev/null; then
+              FAILED=$((FAILED + 1))
+              FAILED_INDICES+=("$i")
+            fi
           done
 
           HDF_COUNT=$(find hdf-results -name '*.hdf.json' 2>/dev/null | wc -l)
-          echo "Conversions complete: $HDF_COUNT HDF files generated ($FAILED warnings)"
+          echo "Conversions complete: $HDF_COUNT HDF files generated ($FAILED failures)"
+
+          # #463 — surface failing conversion output so future converter
+          # regressions are visible instead of silently dropped.
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::group::Failed conversion logs"
+            for i in "${FAILED_INDICES[@]}"; do
+              echo "--- ${LOGS[$i]} ---"
+              cat "${LOGS[$i]}" || true
+            done
+            echo "::endgroup::"
+          fi
 
       - name: Supplement HDF files with OSCAL metadata
         if: always()
@@ -820,12 +883,24 @@ jobs:
           for hdf_file in hdf-results/*.hdf.json; do
             [ -f "$hdf_file" ] || continue
             echo "  Supplementing $(basename $hdf_file)..."
-            npx --yes @mitre/saf supplement passthrough write \
+            # #463 — reuse the globally-installed pinned SAF CLI; previously
+            # this used `npx --yes @mitre/saf` which would re-resolve `latest`
+            # and could pull a different version than the install step above.
+            saf supplement passthrough write \
               -i "$hdf_file" \
               -f "${{ env.ORG_METADATA_FILE }}" \
               -o "$hdf_file" 2>&1 || echo "  Warning: supplement failed for $(basename $hdf_file)"
           done
           echo "  Done. $(ls hdf-results/*.hdf.json 2>/dev/null | wc -l) HDF files processed."
+
+      - name: Upload conversion logs (debug)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: hdf-conversion-logs
+          path: hdf-conversion-logs/
+          retention-days: 14
+          if-no-files-found: ignore
 
       - name: Upload HDF results
         if: always()
@@ -944,14 +1019,18 @@ jobs:
           cp all-results/trivy-fs-results/*.sarif combined-archive/sarif/ 2>/dev/null || true
           cp all-results/trivy-container-results/*.sarif combined-archive/sarif/ 2>/dev/null || true
           cp all-results/trivy-container-results/*-asff.json combined-archive/asff/ 2>/dev/null || true
-          cp all-results/bundler-audit-json/*.json combined-archive/ 2>/dev/null || true
-          cp all-results/sbom-cyclonedx/*.json combined-archive/sbom/ 2>/dev/null || true
+          # #463 — download-artifact@v8 with `name:` (vs `pattern:`) extracts
+          # flat into `path:`. The bundler-audit-json, sbom-cyclonedx, and
+          # grype-sbom-results artifacts land at all-results/ root, not in a
+          # per-artifact subdirectory. Use flat-prefix globs instead.
+          cp all-results/bundler-audit-results.json combined-archive/ 2>/dev/null || true
+          cp all-results/sbom-ruby.cdx.json combined-archive/sbom/ 2>/dev/null || true
           cp all-results/trivy-fs-results/*.cdx.json combined-archive/sbom/ 2>/dev/null || true
           cp all-results/trivy-container-results/*.cdx.json combined-archive/sbom/ 2>/dev/null || true
           # #461 — Grype SBOM-driven SCA: SARIF + raw JSON
           mkdir -p combined-archive/grype
-          cp all-results/grype-sbom-results/*.sarif combined-archive/sarif/ 2>/dev/null || true
-          cp all-results/grype-sbom-results/*.json combined-archive/grype/ 2>/dev/null || true
+          cp all-results/grype-*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/grype-*.json combined-archive/grype/ 2>/dev/null || true
           cd combined-archive && zip -r ../security-scan-results.zip .
 
       - name: Evaluate severity threshold

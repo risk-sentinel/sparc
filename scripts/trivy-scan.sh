@@ -14,7 +14,11 @@
 # Prerequisites:
 #   - Docker (for container scanning)
 #   - Trivy (auto-installed if missing via direct binary download)
-#   - SAF CLI (optional, for HDF conversion: npm install -g @mitre/saf)
+#   - Node 22+ AND SAF CLI ≥1.6.0 (optional, for HDF conversion):
+#       npm install -g @mitre/saf@1.6.0
+#     Note (#463): @mitre/saf transitively requires Node ≥22. On Node 20.x
+#     install completes with an EBADENGINE warning but cyclonedx_sbom2hdf
+#     and anchoregrype2hdf will silently fail at runtime.
 #
 # Output files are written to docs/hdf/ (gitignored).
 # ============================================================================
