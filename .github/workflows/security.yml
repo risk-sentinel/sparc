@@ -533,6 +533,142 @@ jobs:
           path: sbom-ruby.cdx.json
           retention-days: 90
 
+  # ── 8. Grype SBOM Vulnerability Scan ──────────────────────────
+  # Issue #461 — consume the CycloneDX SBOMs produced by sbom_generation
+  # and the Trivy fs/container scans, and run Grype against each. Grype
+  # is the authoritative SBOM-driven SCA layer; Trivy's own vuln scan
+  # stays in place as a second source against the raw filesystem and
+  # image. SARIF goes to Code Scanning; JSON is normalized to HDF by the
+  # downstream normalize_hdf job via SAF CLI (anchoregrype2hdf).
+  grype_sbom_scan:
+    runs-on: ubuntu-latest
+    needs: [ changes, sbom_generation, trivy_fs_scan, trivy_container_scan ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      GRYPE_VERSION: v0.91.0
+      # Ramp: start at critical only so the first PR's findings don't
+      # block merge. Bump to high once baseline is triaged.
+      GRYPE_FAIL_ON: critical
+    steps:
+      - name: Cache Grype binary
+        id: grype-cache
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/grype
+          key: grype-${{ runner.os }}-${{ env.GRYPE_VERSION }}
+
+      - name: Install Grype
+        if: steps.grype-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
+            | sh -s -- -b /usr/local/bin "${GRYPE_VERSION}"
+          grype version
+
+      - name: Cache Grype vulnerability DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/grype/db
+          # Weekly key — DB updates daily but weekly cache balances freshness vs hit rate
+          key: grype-db-${{ runner.os }}-${{ env.GRYPE_VERSION }}-$(date +%Y%U)
+
+      - name: Download Ruby SBOM (sbom_generation)
+        uses: actions/download-artifact@v8
+        with:
+          name: sbom-cyclonedx
+          path: sboms/ruby/
+
+      - name: Download Trivy FS SBOM
+        uses: actions/download-artifact@v8
+        with:
+          name: trivy-fs-results
+          path: sboms/trivy-fs/
+
+      - name: Download Trivy container SBOM
+        uses: actions/download-artifact@v8
+        with:
+          name: trivy-container-results
+          path: sboms/trivy-container/
+
+      - name: Create output directory
+        run: mkdir -p grype-results
+
+      - name: Scan Ruby SBOM (sbom-ruby.cdx.json)
+        continue-on-error: true
+        run: |
+          grype "sbom:sboms/ruby/sbom-ruby.cdx.json" \
+            --fail-on "${GRYPE_FAIL_ON}" \
+            -o sarif=grype-results/grype-ruby.sarif \
+            -o json=grype-results/grype-ruby.json
+
+      - name: Scan Trivy FS SBOM (trivy-fs-sbom.cdx.json)
+        continue-on-error: true
+        run: |
+          grype "sbom:sboms/trivy-fs/trivy-fs-sbom.cdx.json" \
+            --fail-on "${GRYPE_FAIL_ON}" \
+            -o sarif=grype-results/grype-fs.sarif \
+            -o json=grype-results/grype-fs.json
+
+      - name: Scan Trivy container SBOM (trivy-container-sbom.cdx.json)
+        continue-on-error: true
+        run: |
+          grype "sbom:sboms/trivy-container/trivy-container-sbom.cdx.json" \
+            --fail-on "${GRYPE_FAIL_ON}" \
+            -o sarif=grype-results/grype-container.sarif \
+            -o json=grype-results/grype-container.json
+
+      - name: Upload Ruby SBOM SARIF to Code Scanning
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-ruby.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: grype-results/grype-ruby.sarif
+          category: grype-sbom-ruby
+
+      - name: Upload Trivy FS SBOM SARIF to Code Scanning
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-fs.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: grype-results/grype-fs.sarif
+          category: grype-sbom-trivy-fs
+
+      - name: Upload Trivy container SBOM SARIF to Code Scanning
+        if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-container.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: grype-results/grype-container.sarif
+          category: grype-sbom-trivy-container
+
+      - name: Upload Grype artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: grype-sbom-results
+          path: grype-results/
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Enforce fail threshold
+        if: always()
+        run: |
+          # Re-run Grype with --fail-on enforcing — the per-SBOM steps used
+          # continue-on-error to ensure all three scans run and artifacts are
+          # uploaded. This step gates the job once everything is captured.
+          FAILED=0
+          for sbom in \
+            "sboms/ruby/sbom-ruby.cdx.json" \
+            "sboms/trivy-fs/trivy-fs-sbom.cdx.json" \
+            "sboms/trivy-container/trivy-container-sbom.cdx.json"; do
+            if [ -f "$sbom" ]; then
+              if ! grype "sbom:$sbom" --fail-on "${GRYPE_FAIL_ON}" -o table > /dev/null 2>&1; then
+                echo "::error::Grype found ${GRYPE_FAIL_ON}+ vulnerabilities in $sbom"
+                FAILED=1
+              fi
+            fi
+          done
+          exit $FAILED
+
   # ═══════════════════════════════════════════════════════════════
   # Sequential: SAF CLI HDF Normalization
   # ═══════════════════════════════════════════════════════════════
@@ -550,6 +686,7 @@ jobs:
       - trivy_fs_scan
       - trivy_container_scan
       - sbom_generation
+      - grype_sbom_scan
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Checkout code (for OSCAL metadata)
@@ -581,6 +718,12 @@ jobs:
         with:
           path: scan-results/
           name: bundler-audit-json
+
+      - name: Download Grype SBOM scan artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: scan-results/
+          name: grype-sbom-results
 
       - name: Create HDF output directory
         run: mkdir -p hdf-results
@@ -650,6 +793,16 @@ jobs:
 
           run_convert scan-results/sbom-cyclonedx/sbom-ruby.cdx.json \
             convert cyclonedx_sbom2hdf -i scan-results/sbom-cyclonedx/sbom-ruby.cdx.json -o hdf-results/sbom-ruby.hdf.json
+
+          # Grype JSON → HDF (#461 — SBOM-driven SCA findings)
+          run_convert scan-results/grype-sbom-results/grype-ruby.json \
+            convert anchoregrype2hdf -i scan-results/grype-sbom-results/grype-ruby.json -o hdf-results/grype-ruby.hdf.json
+
+          run_convert scan-results/grype-sbom-results/grype-fs.json \
+            convert anchoregrype2hdf -i scan-results/grype-sbom-results/grype-fs.json -o hdf-results/grype-fs.hdf.json
+
+          run_convert scan-results/grype-sbom-results/grype-container.json \
+            convert anchoregrype2hdf -i scan-results/grype-sbom-results/grype-container.json -o hdf-results/grype-container.hdf.json
 
           # Wait for all conversions to complete
           FAILED=0
@@ -723,6 +876,12 @@ jobs:
           path: all-results/
           name: bundler-audit-json
 
+      - name: Download Grype SBOM artifacts for archive
+        uses: actions/download-artifact@v8
+        with:
+          path: all-results/
+          name: grype-sbom-results
+
       - name: Download HDF results for archive
         uses: actions/download-artifact@v8
         with:
@@ -789,6 +948,10 @@ jobs:
           cp all-results/sbom-cyclonedx/*.json combined-archive/sbom/ 2>/dev/null || true
           cp all-results/trivy-fs-results/*.cdx.json combined-archive/sbom/ 2>/dev/null || true
           cp all-results/trivy-container-results/*.cdx.json combined-archive/sbom/ 2>/dev/null || true
+          # #461 — Grype SBOM-driven SCA: SARIF + raw JSON
+          mkdir -p combined-archive/grype
+          cp all-results/grype-sbom-results/*.sarif combined-archive/sarif/ 2>/dev/null || true
+          cp all-results/grype-sbom-results/*.json combined-archive/grype/ 2>/dev/null || true
           cd combined-archive && zip -r ../security-scan-results.zip .
 
       - name: Evaluate severity threshold

@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-05-06
+**Last updated:** 2026-05-13
 
 ---
 
@@ -89,6 +89,7 @@ authentication mode coverage matrix.
 ### 9. CI/CD & Security Scanning
 
 - [x] #186 -- Hybrid security scanning in GitHub Actions (Trivy + CodeQL/Semgrep + Brakeman + SAF CLI) -- **COMPLETED 2026-03-15**
+- [ ] #461 -- SBOM-driven vulnerability scanning (Grype) — consume CycloneDX SBOMs from sbom_generation + Trivy, SARIF to Code Scanning, HDF via SAF CLI
 
 ### 10. Database Maintenance
 
