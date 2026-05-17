@@ -92,7 +92,8 @@ authentication mode coverage matrix.
 - [ ] #461 -- SBOM-driven vulnerability scanning (Grype) — consume CycloneDX SBOMs from sbom_generation + Trivy, SARIF to Code Scanning, HDF via SAF CLI
 - [x] #463 -- Fix SAF CLI MODULE_NOT_FOUND: pin Node 22 + @mitre/saf@1.6.0 so `cyclonedx_sbom2hdf` and `anchoregrype2hdf` converters work; harden parallel-script error capture -- **COMPLETED 2026-05-14** (PR #464)
 - [x] #456 -- Remove redundant `db:prepare:all` invocation from `bin/docker-entrypoint` (eliminates `Rails::Command::UnrecognizedCommandError` noise in production logs) -- **COMPLETED 2026-05-14** (PR #467)
-- [ ] #466 -- AWS Labs CDEF runtime ingestion (opt-in via `SPARC_AWS_LABS_CDEF_ENABLED`); Solid Queue recurring refresh; read-only AWS rows with copy-to-amend; full Apache 2.0 attribution (NOTICE + LICENSES/ + THIRD_PARTY_NOTICES.md)
+- [x] #466 -- AWS Labs CDEF runtime ingestion (opt-in via `SPARC_AWS_LABS_CDEF_ENABLED`); Solid Queue recurring refresh; read-only AWS rows with copy-to-amend; full Apache 2.0 attribution (NOTICE + LICENSES/ + THIRD_PARTY_NOTICES.md) -- **COMPLETED 2026-05-17** (PR #469)
+- [ ] #470 -- Squash 29 accumulated migrations (since 2026-03-19 squash) into single consolidated file; bundles with patch release
 
 ### 10. Database Maintenance
 
