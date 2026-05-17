@@ -527,7 +527,7 @@ jobs:
           bundler-cache: true
 
       - name: Set up Node 22 (for cdxgen)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
 
@@ -572,7 +572,7 @@ jobs:
     steps:
       - name: Cache Grype binary
         id: grype-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /usr/local/bin/grype
           key: grype-${{ runner.os }}-${{ env.GRYPE_VERSION }}
@@ -585,7 +585,7 @@ jobs:
           grype version
 
       - name: Cache Grype vulnerability DB
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/grype/db
           # Weekly key — DB updates daily but weekly cache balances freshness vs hit rate
@@ -758,7 +758,7 @@ jobs:
       # with MODULE_NOT_FOUND. Pin Node 22 + a known-good @mitre/saf version.
       - name: Set up Node 22 (required by @mitre/saf transitive deps)
         if: always()
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
 
