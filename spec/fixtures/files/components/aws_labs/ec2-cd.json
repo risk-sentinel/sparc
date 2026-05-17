@@ -1,0 +1,33 @@
+{
+  "component-definition": {
+    "uuid": "55555555-5555-4555-8555-000000000001",
+    "metadata": {
+      "title": "AWS EC2 Component Definition",
+      "version": "2.1.0",
+      "oscal-version": "1.0.4",
+      "last-modified": "2026-03-15T00:00:00Z"
+    },
+    "components": [
+      {
+        "uuid": "66666666-6666-4666-8666-000000000001",
+        "type": "service",
+        "title": "Amazon EC2",
+        "description": "Elastic compute service.",
+        "control-implementations": [
+          {
+            "uuid": "77777777-7777-4777-8777-000000000001",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_HIGH-baseline-resolved-profile_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 HIGH",
+            "implemented-requirements": [
+              {
+                "uuid": "88888888-8888-4888-8888-000000000001",
+                "control-id": "sc-12",
+                "description": "EC2 metadata service v2 requires session tokens."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

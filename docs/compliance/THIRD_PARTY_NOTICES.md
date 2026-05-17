@@ -1,0 +1,58 @@
+# Third-Party Content Notices
+
+This document enumerates external content sources that SPARC ingests at
+runtime (distinct from third-party Ruby gems, which are listed in
+`Gemfile.lock`). License compliance for each source is tracked here so that
+audits and regulator reviews have a single, durable provenance record.
+
+## Active Sources
+
+### AWS Labs OSCAL Content for AWS Services
+
+| Field | Value |
+| --- | --- |
+| **Source repo** | [`awslabs/oscal-content-for-aws-services`](https://github.com/awslabs/oscal-content-for-aws-services) |
+| **Copyright** | Copyright Amazon.com, Inc. or its affiliates. |
+| **License** | Apache License, Version 2.0 (compatible with SPARC's Apache 2.0) |
+| **License text** | [`LICENSES/AWS-LABS-OSCAL-CONTENT-LICENSE`](../../LICENSES/AWS-LABS-OSCAL-CONTENT-LICENSE) |
+| **Ingestion service** | `AwsLabsCdefImportService` |
+| **Runtime gate** | `SPARC_AWS_LABS_CDEF_ENABLED=true` (default off — air-gapped tenants are unaffected) |
+| **Content type** | OSCAL v1.x Component Definitions (one per AWS service) |
+| **Storage** | `cdef_documents` rows with `import_metadata.source_type = "aws_labs"` |
+| **Refresh cadence** | Daily 06:00 UTC via `AwsLabsCdefRefreshJob` (Solid Queue recurring) |
+| **Integrity** | Each row records `source_url`, `source_sha` (GitHub blob SHA), `source_commit_sha`, and `fetched_at` in `import_metadata` for audit. |
+| **NIST control alignment** | RA-3(1) Supply Chain Risk Assessment, CA-2 Control Assessments, CM-8 Component Inventory, SR-3 Supply Chain Controls, SA-15 Development Process |
+
+#### Attribution & Distribution
+
+Per Apache 2.0 Section 4, downstream consumers of SPARC who receive AWS Labs
+content via SPARC must:
+
+1. Receive a copy of the AWS Labs LICENSE — included at
+   `LICENSES/AWS-LABS-OSCAL-CONTENT-LICENSE`.
+2. Retain attribution notices — preserved in the top-level `NOTICE` file and
+   in `import_metadata.source_url` on each ingested row.
+
+#### Customization Policy
+
+Imported AWS Labs CDEFs are **read-only** in SPARC. Users who need to amend
+content click "Copy for editing" on the CDEF detail page, which creates a
+new `CdefDocument` row with `cloned_from_id` set to the original and
+`import_metadata.source_type = "user_upload"`. The clone is fully editable
+and is never overwritten by future refreshes.
+
+This preserves the upstream content under its original Apache 2.0 license
+while letting tenants tailor derivatives without polluting the canonical
+copy.
+
+#### Disabling at Runtime
+
+To disable AWS Labs ingestion (e.g., for air-gapped deployments or to remove
+the upstream dependency entirely):
+
+```bash
+SPARC_AWS_LABS_CDEF_ENABLED=false   # default — no fetch occurs
+```
+
+Previously-imported rows remain in the database until manually removed via
+the admin UI or API. The recurring job becomes a no-op.

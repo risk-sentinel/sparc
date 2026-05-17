@@ -19,3 +19,12 @@ production:
   service_account_maintenance:
     class: ServiceAccountMaintenanceJob
     schedule: every day at 3am
+  # #466 — refresh AWS Labs CDEF catalog. Service is gated on
+  # SPARC_AWS_LABS_CDEF_ENABLED so this is a no-op for tenants that haven't
+  # opted in. ETag conditional fetch makes the unchanged-tree path near-free.
+  # Interval is operator-tunable via SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS
+  # (default 7). AWS Labs CDEFs change on the order of weeks, so weekly avoids
+  # log/audit noise without missing meaningful upstream updates.
+  aws_labs_cdef_refresh:
+    class: AwsLabsCdefRefreshJob
+    schedule: every <%= ENV.fetch("SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS", "7").to_i.clamp(1, 90) %> days at 6am

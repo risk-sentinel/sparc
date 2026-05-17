@@ -31,11 +31,36 @@
           <% if @cdef_document.cdef_version.present? %>
             <span class="sparc-version-badge">v<%= @cdef_document.cdef_version %></span>
           <% end %>
-          <% if signed_in? %>
+          <% if @cdef_document.aws_labs_source? %>
+            <span class="badge bg-warning text-dark" title="Read-only — imported from AWS Labs">
+              AWS Labs (read-only)
+            </span>
+          <% end %>
+          <% if signed_in? && !@cdef_document.aws_labs_source? %>
             <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
           <% end %>
         </div>
       </div>
+
+      <% if @cdef_document.aws_labs_source? %>
+        <div class="alert alert-warning d-flex justify-content-between align-items-center mt-2 mb-0" role="alert">
+          <div>
+            <strong>Imported from AWS Labs.</strong>
+            This component definition is maintained upstream and is read-only here.
+            <% if @cdef_document.source_url.present? %>
+              <a href="<%= @cdef_document.source_url %>" target="_blank" rel="noopener" class="alert-link">View source</a>.
+            <% end %>
+            To make edits, create a copy.
+          </div>
+          <% if signed_in? %>
+            <%= button_to "Copy for editing",
+                  copy_cdef_document_path(@cdef_document),
+                  method: :post,
+                  class: "btn btn-primary btn-sm ms-3",
+                  form: { class: "mb-0" } %>
+          <% end %>
+        </div>
+      <% end %>
 
       <% if signed_in? %>
         <div id="doc-meta-edit" style="display: none;">

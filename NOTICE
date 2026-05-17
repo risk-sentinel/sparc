@@ -1,0 +1,31 @@
+SPARC — Systematic Policy and Regulatory Compliance
+Copyright 2026 Risk Sentinel
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this software except in compliance with the License. You may obtain a
+copy of the License at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+================================================================================
+Third-Party Content
+================================================================================
+
+This product optionally ingests content from third-party sources at runtime.
+Attribution and license terms for each external content source are tracked in
+docs/compliance/THIRD_PARTY_NOTICES.md and in LICENSES/.
+
+When the `SPARC_AWS_LABS_CDEF_ENABLED=true` runtime flag is set, SPARC fetches
+OSCAL Component Definitions from:
+
+  awslabs/oscal-content-for-aws-services
+  https://github.com/awslabs/oscal-content-for-aws-services
+  Copyright Amazon.com, Inc. or its affiliates.
+  Licensed under the Apache License, Version 2.0
+  See LICENSES/AWS-LABS-OSCAL-CONTENT-LICENSE for the full license text.
+
+Ingested Component Definitions retain the upstream license and are flagged in
+SPARC with `import_metadata.source_type = "aws_labs"`. Users who modify these
+definitions must do so via the in-app "Copy for editing" workflow, which
+preserves the original under its upstream license and creates an editable
+derivative.

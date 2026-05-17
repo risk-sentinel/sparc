@@ -199,6 +199,39 @@ module SparcConfig
   def admin_credentials_secret_arn  = ENV.fetch("SPARC_ADMIN_CREDENTIALS_SECRET_ARN", nil)
   def aws_region                    = ENV.fetch("SPARC_AWS_REGION", ENV.fetch("AWS_REGION", "us-east-1"))
 
+  # ── AWS Labs CDEF Fetch (#466) ────────────────────────────────────────────
+  # Runtime ingestion of OSCAL Component Definitions from
+  # awslabs/oscal-content-for-aws-services. Opt-in so air-gapped tenants are
+  # unaffected by default. Apache 2.0 attribution is maintained in
+  # docs/compliance/THIRD_PARTY_NOTICES.md and the top-level NOTICE file.
+  def aws_labs_cdef_enabled?     = ENV.fetch("SPARC_AWS_LABS_CDEF_ENABLED", "false") == "true"
+  def aws_labs_cdef_repo         = ENV.fetch("SPARC_AWS_LABS_CDEF_REPO", "awslabs/oscal-content-for-aws-services")
+  def aws_labs_cdef_branch       = ENV.fetch("SPARC_AWS_LABS_CDEF_BRANCH", "main")
+  def aws_labs_github_token      = ENV["SPARC_AWS_LABS_GITHUB_TOKEN"]
+
+  # AWS Labs CDEFs change on the order of weeks, not days. Default the
+  # recurring refresh to every 7 days so audit logs and runtime traffic stay
+  # quiet; operators who track a fast-moving fork can lower the interval.
+  # Minimum 1, maximum 90 (a quarter) so the schedule remains parseable by
+  # Fugit and the refresh stays within a reasonable window for compliance.
+  def aws_labs_cdef_refresh_interval_days
+    raw = ENV.fetch("SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS", "7").to_i
+    raw.clamp(1, 90)
+  end
+
+  # When unset, defaults to the OSCAL versions SPARC's loaded schemas
+  # already support — so the import only pulls CDEFs we can validate.
+  def aws_labs_oscal_versions
+    raw = ENV["SPARC_AWS_LABS_OSCAL_VERSIONS"]
+    if raw.present?
+      raw.split(",").map(&:strip).reject(&:blank?)
+    elsif defined?(OscalSchema) && OscalSchema.table_exists?
+      OscalSchema.distinct.pluck(:oscal_version).compact
+    else
+      []
+    end
+  end
+
   # ── Convenience ───────────────────────────────────────────────────────────
 
   def any_auth_enabled?

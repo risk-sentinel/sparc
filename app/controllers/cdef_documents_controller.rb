@@ -187,7 +187,13 @@ class CdefDocumentsController < ApplicationController
     service = DocumentDuplicationService.new(@cdef_document)
     copy = service.duplicate
 
-    audit_log("cdef_document_copied", subject: copy, metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name, copy_name: copy.name })
+    # Issue #466 — when the source is an AWS-Labs-sourced (read-only) CDEF,
+    # record the lineage so refreshes leave the user's clone untouched.
+    if @cdef_document.aws_labs_source?
+      copy.update!(cloned_from_id: @cdef_document.id)
+    end
+
+    audit_log("cdef_document_copied", subject: copy, metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name, copy_name: copy.name, source_type: @cdef_document.aws_labs_source? ? "aws_labs" : nil }.compact)
     flash[:success] = "Component Definition duplicated as '#{copy.name}'"
     redirect_to cdef_document_path(copy)
   end
@@ -316,6 +322,14 @@ class CdefDocumentsController < ApplicationController
   end
 
   def ensure_editable!
+    # Issue #466 — AWS Labs-sourced CDEFs are read-only. Users clone them
+    # via the existing copy action to make changes. The clone records
+    # cloned_from_id so refreshes never touch it.
+    if @cdef_document.aws_labs_source?
+      flash[:error] = "This component definition was imported from AWS Labs and is read-only. Use 'Copy' to create an editable clone."
+      redirect_to cdef_document_path(@cdef_document) and return
+    end
+
     return unless @cdef_document.published_lifecycle?
 
     flash[:error] = "This component definition is published and read-only. Create a copy to make changes."

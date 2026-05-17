@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_06_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_17_144141) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -297,6 +297,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_06_000000) do
     t.string "benchmark_id"
     t.string "cdef_type"
     t.string "cdef_version"
+    t.bigint "cloned_from_id"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.text "description"
@@ -316,7 +317,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_06_000000) do
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index "((import_metadata ->> 'source_url'::text)), ((import_metadata ->> 'source_sha'::text))", name: "idx_cdef_docs_aws_labs_source_unique", unique: true, where: "((import_metadata ->> 'source_type'::text) = 'aws_labs'::text)"
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
+    t.index ["cloned_from_id"], name: "index_cdef_documents_on_cloned_from_id"
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
     t.index ["deleted_at"], name: "index_cdef_documents_on_deleted_at"
     t.index ["globally_available"], name: "idx_cdef_documents_global", where: "(globally_available = true)"
@@ -1544,6 +1547,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_06_000000) do
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_control_statements", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
+  add_foreign_key "cdef_documents", "cdef_documents", column: "cloned_from_id"
   add_foreign_key "cdef_documents", "organizations", on_delete: :nullify
   add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify
   add_foreign_key "control_back_matter_links", "back_matter_resources"

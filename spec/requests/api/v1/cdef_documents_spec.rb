@@ -48,6 +48,22 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       expect(parsed["data"].length).to eq(1)
     end
 
+    # Issue #466 — filter on import_metadata.source_type for AWS Labs inventory
+    it "filters by source_type=aws_labs" do
+      create(:cdef_document, name: "User CDEF")
+      create(:cdef_document, name: "AWS S3", import_metadata: {
+        "source_type" => "aws_labs",
+        "source_url" => "https://github.com/awslabs/example/blob/main/s3.json",
+        "source_sha" => "abc"
+      })
+
+      get api_v1_cdef_documents_path, params: { source_type: "aws_labs" }, headers: auth_headers
+      parsed = JSON.parse(response.body)
+      expect(parsed["data"].length).to eq(1)
+      expect(parsed["data"].first["name"]).to eq("AWS S3")
+      expect(parsed["data"].first["source"]).to include("type" => "aws_labs", "sha" => "abc")
+    end
+
     context "as a non-admin user" do
       let(:regular_user) { create(:user) }
       let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }

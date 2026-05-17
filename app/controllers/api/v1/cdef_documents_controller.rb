@@ -25,6 +25,13 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
     scope = scope.where(cdef_type: params[:cdef_type]) if params[:cdef_type].present?
 
+    # Issue #466 — filter by provenance. source_type=aws_labs returns only
+    # AWS-Labs-sourced CDEFs (the inventory); source_type=user_upload
+    # excludes them.
+    if params[:source_type].present?
+      scope = scope.where("import_metadata->>'source_type' = ?", params[:source_type])
+    end
+
     result = paginate(scope)
     render json: {
       data: result[:data].map { |c| serialize_cdef(c) },
@@ -95,6 +102,20 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:description] = cdef.description
       data[:oscal_version] = cdef.oscal_version
       data[:controls_count] = cdef.cdef_controls.count
+    end
+
+    # Issue #466 — expose AWS Labs provenance on every row so API consumers
+    # can distinguish ingested from user-authored CDEFs.
+    if cdef.aws_labs_source?
+      data[:source] = {
+        type: "aws_labs",
+        url: cdef.source_url,
+        sha: cdef.import_metadata["source_sha"],
+        oscal_version: cdef.import_metadata["source_oscal_version"],
+        fetched_at: cdef.import_metadata["fetched_at"]
+      }
+    elsif cdef.cloned_from_id.present?
+      data[:source] = { type: "cloned", cloned_from_id: cdef.cloned_from_id }
     end
 
     append_oscal_fields(data, cdef, detailed: detailed)

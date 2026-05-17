@@ -82,6 +82,37 @@ RSpec.describe "CdefDocuments", type: :request do
       }.to change(CdefDocument, :count).by(1)
       expect(response).to have_http_status(:redirect)
     end
+
+    # Issue #466 — when the source is AWS-sourced, the copy records
+    # cloned_from_id so refreshes leave the clone untouched.
+    it "records cloned_from_id when source is AWS-sourced" do
+      aws_cdef = create(:cdef_document,
+                        name: "AWS S3",
+                        import_metadata: { "source_type" => "aws_labs", "source_url" => "u", "source_sha" => "s" })
+
+      expect {
+        post copy_cdef_document_path(aws_cdef)
+      }.to change(CdefDocument, :count).by(1)
+
+      clone = CdefDocument.where.not(id: aws_cdef.id).order(:created_at).last
+      expect(clone.cloned_from_id).to eq(aws_cdef.id)
+      expect(clone.editable?).to be(true)
+      expect(clone.aws_labs_source?).to be(false)
+    end
+  end
+
+  # Issue #466 — read-only guard on AWS-sourced rows
+  describe "PATCH /cdef_documents/:id/update_field on AWS-sourced row" do
+    it "redirects with a flash error and does not modify the document" do
+      aws_cdef = create(:cdef_document, name: "AWS S3",
+                        import_metadata: { "source_type" => "aws_labs", "source_url" => "u", "source_sha" => "s" })
+
+      patch update_field_cdef_document_path(aws_cdef),
+            params: { control_id: "ac-3", field_name: "description", field_value: "hax" }
+
+      expect(response).to redirect_to(cdef_document_path(aws_cdef))
+      expect(flash[:error]).to match(/AWS Labs/i)
+    end
   end
 
   describe "GET /cdef_documents/:id/download_json" do

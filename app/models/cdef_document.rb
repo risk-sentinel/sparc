@@ -16,6 +16,10 @@ class CdefDocument < ApplicationRecord
   has_many :boundaries, through: :boundary_cdef_documents
   belongs_to :profile_document, optional: true
   belongs_to :organization, optional: true
+  # Issue #466 — AWS-sourced CDEFs are read-only; users clone them to edit.
+  # cloned_from points back to the original; clones are isolated from refreshes.
+  belongs_to :cloned_from, class_name: "CdefDocument", optional: true
+  has_many :clones, class_name: "CdefDocument", foreign_key: :cloned_from_id, dependent: :nullify
   has_one_attached :file
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
@@ -29,7 +33,32 @@ class CdefDocument < ApplicationRecord
     where(globally_available: true, organization_id: org&.id)
   }
 
+  # Issue #466 — rows ingested by AwsLabsCdefImportService are tagged in
+  # import_metadata.source_type. Scope keeps queries readable.
+  scope :aws_labs_sourced, -> {
+    where("import_metadata->>'source_type' = ?", "aws_labs")
+  }
+
   CDEF_TYPES = %w[disa_stig scap cis custom].freeze
+
+  # True if this CDEF was imported from AWS Labs (read-only).
+  def aws_labs_source?
+    import_metadata.is_a?(Hash) && import_metadata["source_type"] == "aws_labs"
+  end
+
+  # Issue #466 — AWS-sourced CDEFs are read-only. Controllers should check
+  # this before applying field/statement/metadata edits and redirect users
+  # to the clone action when false.
+  def editable?
+    !aws_labs_source?
+  end
+
+  # Issue #466 — convenience for the show-page banner + audit/UX. Returns
+  # the source URL recorded in import_metadata, or nil for non-AWS rows.
+  def source_url
+    return nil unless aws_labs_source?
+    import_metadata["source_url"]
+  end
 
   def to_json_data
     {

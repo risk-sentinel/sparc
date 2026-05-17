@@ -51,6 +51,12 @@
                 "remarks": "Implemented in Gemfile.lock and .github/workflows/security.yml (grype_sbom_scan)."
               },
               {
+                "uuid": "c8f5e1a2-4d63-4f8b-9e21-1a3c5d7b9e02",
+                "control-id": "ra-3.1",
+                "description": "SPARC's runtime CDEF ingestion (#466) treats external authoritative sources as a tracked supply chain. The AWS Labs OSCAL Component Definitions repository (awslabs/oscal-content-for-aws-services) is enumerated via the GitHub Trees API, fetched per-blob with the blob SHA recorded for integrity, and imported only after OSCAL spec-version filtering against SPARC's loaded schemas. Each imported row carries source_url, source_sha, source_commit_sha, and fetched_at provenance fields. The feature is opt-in via SPARC_AWS_LABS_CDEF_ENABLED so air-gapped deployments are unaffected; an ETag-conditional fetch makes the daily refresh near-zero cost when nothing has changed upstream.",
+                "remarks": "Implemented in app/services/aws_labs_cdef_import_service.rb + aws_labs_cdef_source_client.rb. License compliance (Apache 2.0 inheritance from upstream): NOTICE + LICENSES/AWS-LABS-OSCAL-CONTENT-LICENSE + docs/compliance/THIRD_PARTY_NOTICES.md. Read-only + clone-to-amend policy preserves upstream content untouched while letting tenants tailor derivatives."
+              },
+              {
                 "uuid": "79182407-620a-48ac-849c-b091fe46fe83",
                 "control-id": "si-2",
                 "description": "SPARC addresses flaw remediation through automated vulnerability detection and dependency update tooling. Trivy identifies CVEs in container images and filesystem dependencies. Bundler-audit checks Ruby gems against the Ruby Advisory Database. Dependabot automatically creates pull requests for vulnerable or outdated dependencies. Accepted container findings are documented in docs/compliance/sparc-findings.yml with deployment-agnostic mitigating controls (non-root container, reverse proxy, TLS, network whitelisting, seccomp isolation) and 30-day review cycles for re-evaluation.",

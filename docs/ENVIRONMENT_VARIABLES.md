@@ -316,3 +316,54 @@ When `SPARC_AWS_SECRETS_ENABLED=true`, the `00_aws_secrets.rb` initializer:
 - DB user created with `GRANT rds_iam TO sparc;`
 
 IAM auth tokens are 15-minute auto-rotating credentials — no static DB password needed.
+
+---
+
+## AWS Labs CDEF Fetch (#466)
+
+Runtime ingestion of OSCAL Component Definitions from
+[`awslabs/oscal-content-for-aws-services`](https://github.com/awslabs/oscal-content-for-aws-services).
+Imported CDEFs land in the `cdef_documents` table with
+`import_metadata.source_type = "aws_labs"` and are read-only — users click
+"Copy for editing" to amend. Refreshes never touch clones.
+
+License compliance: top-level `NOTICE`, verbatim upstream LICENSE at
+`LICENSES/AWS-LABS-OSCAL-CONTENT-LICENSE`, and source registry at
+`docs/compliance/THIRD_PARTY_NOTICES.md` (Apache 2.0 inheritance).
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_AWS_LABS_CDEF_ENABLED | Master switch. Off by default so air-gapped tenants are unaffected. | `false` | `true` | No |
+| SPARC_AWS_LABS_CDEF_REPO | Override source repo (e.g. internal fork or mirror) | `awslabs/oscal-content-for-aws-services` | `acme-corp/oscal-content-mirror` | No |
+| SPARC_AWS_LABS_CDEF_BRANCH | Pin to a tag or branch for reproducibility | `main` | `v2026.05` | No |
+| SPARC_AWS_LABS_OSCAL_VERSIONS | CSV of OSCAL spec versions to ingest. When unset, defaults to whatever versions SPARC's loaded `OscalSchema` rows already cover. | (auto-detect) | `1.1.2,1.0.4` | No |
+| SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS | How often the recurring job runs. AWS Labs content changes on the order of weeks; weekly default keeps audit logs quiet. Clamped to 1..90. | `7` | `30` | No |
+| SPARC_AWS_LABS_GITHUB_TOKEN | Optional PAT (GitHub fine-grained token with `contents:read` is enough). Raises rate limit from 60→5000 req/hr. | (unset) | `github_pat_…` | When refreshing frequently |
+
+### How It Works
+
+1. Solid Queue's `AwsLabsCdefRefreshJob` runs every
+   `SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS` days at 06:00 UTC (configured
+   via ERB in `config/recurring.yml`).
+2. The job is a no-op when `SPARC_AWS_LABS_CDEF_ENABLED=false`, so it's
+   safe to schedule in every environment.
+3. When enabled, the service enumerates `component-definitions/**/*.json`
+   via the GitHub Trees API with ETag-conditional fetches — the
+   steady-state daily/weekly tick is near-free when nothing has changed.
+4. For each new or updated file, the highest `metadata.version` per
+   (service directory, oscal-version) is kept; lower versions are
+   discarded.
+5. Records carry `import_metadata.source_url`, `source_sha`,
+   `source_commit_sha`, and `fetched_at` for full audit-trail provenance.
+
+### Manual Trigger
+
+```bash
+bin/rails aws_labs:cdefs:import          # respects ETag cache
+bin/rails 'aws_labs:cdefs:import[true]'  # force re-fetch ignoring ETag
+```
+
+### Disabling
+
+Set `SPARC_AWS_LABS_CDEF_ENABLED=false` (the default). Previously-imported
+rows remain in the database; the recurring job becomes a no-op.
