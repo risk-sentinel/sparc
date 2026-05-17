@@ -90,7 +90,8 @@ authentication mode coverage matrix.
 
 - [x] #186 -- Hybrid security scanning in GitHub Actions (Trivy + CodeQL/Semgrep + Brakeman + SAF CLI) -- **COMPLETED 2026-03-15**
 - [ ] #461 -- SBOM-driven vulnerability scanning (Grype) — consume CycloneDX SBOMs from sbom_generation + Trivy, SARIF to Code Scanning, HDF via SAF CLI
-- [ ] #463 -- Fix SAF CLI MODULE_NOT_FOUND: pin Node 22 + @mitre/saf@1.6.0 so `cyclonedx_sbom2hdf` and `anchoregrype2hdf` converters work; harden parallel-script error capture
+- [x] #463 -- Fix SAF CLI MODULE_NOT_FOUND: pin Node 22 + @mitre/saf@1.6.0 so `cyclonedx_sbom2hdf` and `anchoregrype2hdf` converters work; harden parallel-script error capture -- **COMPLETED 2026-05-14** (PR #464)
+- [ ] #456 -- Remove redundant `db:prepare:all` invocation from `bin/docker-entrypoint` (eliminates `Rails::Command::UnrecognizedCommandError` noise in production logs)
 
 ### 10. Database Maintenance
 

@@ -25,7 +25,6 @@ echo "PostgreSQL is ready!"
 if [[ "$*" == *"rails"*"server"* ]]; then
     echo "Running database preparation (create/migrate all databases)..."
     bundle exec rails db:prepare
-    bundle exec rails db:prepare:all 2>/dev/null || true
 
     # Enable Solid Queue in Puma for single-container deployments (ECS)
     export SOLID_QUEUE_IN_PUMA="${SOLID_QUEUE_IN_PUMA:-true}"
