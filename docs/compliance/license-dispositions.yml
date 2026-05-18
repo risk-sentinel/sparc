@@ -83,6 +83,93 @@ dispositions:
     discovery_date: "2026-05-18"
     next_review_date: "2026-08-16"
 
+  # ── Ruby gems where cdxgen missed the license metadata (#481) ────────────
+  #
+  # These gems have well-known upstream licenses but cdxgen's extraction
+  # path didn't capture them (typically because they're native-extension
+  # gems where license-file detection inside the gem package is unreliable).
+  # Each entry cites the upstream LICENSE URL as the authoritative source.
+
+  - name: omniauth-gitlab
+    license: MIT
+    disposition: accepted
+    rationale: "Upstream license: MIT. See https://github.com/linchus/omniauth-gitlab/blob/master/LICENSE (Linchus Technologies). cdxgen missed the license metadata; this disposition records the upstream-authoritative SPDX ID for audit."
+    nist_control: sa-15
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+
+  - name: swd
+    license: MIT
+    disposition: accepted
+    rationale: "Upstream license: MIT. See https://github.com/nov/swd/blob/master/MIT-LICENSE. cdxgen missed the license metadata; this disposition records the upstream-authoritative SPDX ID."
+    nist_control: sa-15
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+
+  - name: validate_url
+    license: MIT
+    disposition: accepted
+    rationale: "Upstream license: MIT. See https://github.com/perfectline/validates_url/blob/master/LICENSE. cdxgen missed the license metadata; this disposition records the upstream-authoritative SPDX ID."
+    nist_control: sa-15
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+
+  # ── Debian system libs with missing license metadata (#481) ──────────────
+  #
+  # Trivy didn't populate license fields for these specific base-image
+  # libraries despite their Debian copyright files being authoritative.
+  # Same dynamic-link / not-a-derivative-work rationale as the 62-package
+  # system-layer group below.
+
+  - name: libcrypt1
+    license: LGPL-2.1-or-later
+    disposition: accepted
+    rationale: "Upstream Debian copyright (per /usr/share/doc/libcrypt1/copyright in the base image): LGPL-2.1-or-later. Dynamically-linked C runtime library; not a derivative-work integration with SPARC application code."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+
+  - name: libgcc-s1
+    license: "GPL-3.0-or-later WITH GCC-exception-3.1"
+    disposition: accepted
+    rationale: "Upstream Debian copyright: GPL-3.0-or-later with the GCC Runtime Library Exception (3.1). The exception explicitly permits linking with Apache-2.0 / other-licensed code without copyleft propagation. Standard for libgcc across distributions."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+
+  - name: libstdc++6
+    license: "GPL-3.0-or-later WITH GCC-exception-3.1"
+    disposition: accepted
+    rationale: "Upstream Debian copyright: GPL-3.0-or-later with the GCC Runtime Library Exception (3.1). The exception explicitly permits linking with Apache-2.0 / other-licensed code without copyleft propagation. Standard for libstdc++ across distributions."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+
+  # ── Vendored binary: MITRE hdf-libs CLI (#481, holistic disposition) ─────
+  #
+  # The `hdf` CLI binary (downloaded by bin/install-hdf.sh and installed
+  # at /usr/local/bin/hdf) is a single Apache-2.0 distribution from MITRE
+  # (mitre/hdf-libs). Its 80+ transitively-vendored Go modules
+  # (github.com/*, golang.org/*, gopkg.in/*, sigs.k8s.io/*, etc.) are
+  # subsumed under the Apache-2.0 grant of the consolidated binary -- no
+  # per-module itemization required. Individual Go module names are
+  # filtered from the inventory via license-policy.yml::skip_patterns.
+
+  - name: "hdf (vendored binary)"
+    license: Apache-2.0
+    disposition: accepted
+    rationale: "MITRE hdf-libs CLI binary embedded in SPARC's container image at /usr/local/bin/hdf via bin/install-hdf.sh. The binary as a unit ships under Apache-2.0 (mitre/hdf-libs upstream). License text committed at LICENSES/MITRE-HDF-LIBS-LICENSE. Its transitively-vendored Go module dependencies are subsumed under the Apache-2.0 grant of the consolidated binary distribution and skip-patterned from inventory itemization."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+
   # ── System-layer (Debian base image) GPL dispositions ────────────────────
   #
   # Generated from license-inventory.json for components where

@@ -70,3 +70,24 @@ SPARC_AWS_LABS_CDEF_ENABLED=false   # default — no fetch occurs
 
 Previously-imported rows remain in the database until manually removed via
 the admin UI or API. The recurring job becomes a no-op.
+
+### MITRE hdf-libs (embedded CLI binary)
+
+| Field | Value |
+| --- | --- |
+| **Source repo** | [`mitre/hdf-libs`](https://github.com/mitre/hdf-libs) |
+| **Copyright** | Copyright © 2025 The MITRE Corporation. Approved for Public Release; Distribution Unlimited. Case Number 18-3678. |
+| **License** | Apache License, Version 2.0 |
+| **License text** | [`LICENSES/MITRE-HDF-LIBS-LICENSE`](../../LICENSES/MITRE-HDF-LIBS-LICENSE) |
+| **Provisioning** | `bin/install-hdf.sh` (downloads + SHA-256 verifies the release binary) |
+| **Install path** | `/usr/local/bin/hdf` in the SPARC container image |
+| **Used by** | `security_gate` job (HDF amendments + threshold validation) |
+| **NIST control alignment** | RA-3(1) Supply Chain Risk Assessment, SR-3 Supply Chain Controls, SR-11 Component Authenticity (SHA-256 verification at install time) |
+
+The hdf binary is a single Apache-2.0 distribution. Its ~80 transitively
+vendored Go module dependencies (`github.com/*`, `golang.org/*`,
+`gopkg.in/*`, `sigs.k8s.io/*`, etc.) are subsumed under the Apache-2.0
+grant of the consolidated binary distribution; they are recorded as
+holistically dispositioned in `docs/compliance/license-dispositions.yml`
+and not itemized individually in the license inventory (the relevant
+`skip_patterns` in `license-policy.yml` exclude their namespaces).

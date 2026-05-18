@@ -106,6 +106,47 @@ RSpec.describe LicenseInventoryBuilder do
       expect(action_items_names).not_to include("./vendored/thing")
     end
 
+    # Issue #481 — purl-based skip filter for ecosystems where component
+    # names are bare package names (e.g. PyPI) and name-only patterns
+    # can't filter the whole ecosystem.
+    it "skips components matching policy skip_purls (purl-based filter)" do
+      purl_policy = policy.merge("skip_purls" => [ "^pkg:pypi/" ])
+      path = write_sbom("#{@tmpdir}/mixed.json",
+        component("py-test-dep", license_id: nil).merge("purl" => "pkg:pypi/py-test-dep@1.0.0"),
+        component("real-gem", license_id: "MIT").merge("purl" => "pkg:gem/real-gem@1.0.0"))
+      File.write("#{@tmpdir}/mixed.json", {
+        "bomFormat" => "CycloneDX",
+        "components" => [
+          { "name" => "py-test-dep", "version" => "1.0.0", "purl" => "pkg:pypi/py-test-dep@1.0.0" },
+          { "name" => "real-gem", "version" => "1.0.0", "purl" => "pkg:gem/real-gem@1.0.0",
+            "licenses" => [ { "license" => { "id" => "MIT" } } ] }
+        ]
+      }.to_json)
+
+      report = described_class.new(sboms: { mixed: "#{@tmpdir}/mixed.json" }, policy: purl_policy, dispositions: dispositions).build
+
+      action_items_names = report[:action_items].map { |a| a[:name] }
+      expect(action_items_names).not_to include("py-test-dep")
+      expect(action_items_names).not_to include("real-gem")   # has license
+    end
+
+    it "skip_purls does not affect components without a purl" do
+      purl_policy = policy.merge("skip_purls" => [ "^pkg:pypi/" ])
+      File.write("#{@tmpdir}/no-purl.json", {
+        "bomFormat" => "CycloneDX",
+        "components" => [
+          { "name" => "no-purl-component", "version" => "1.0.0" }  # purl absent
+        ]
+      }.to_json)
+
+      report = described_class.new(sboms: { no_purl: "#{@tmpdir}/no-purl.json" }, policy: purl_policy, dispositions: dispositions).build
+
+      # Without a purl, skip_purls is a no-op; component falls through to
+      # unmapped per the policy.
+      expect(report[:action_items].length).to eq(1)
+      expect(report[:action_items].first[:name]).to eq("no-purl-component")
+    end
+
     it "generates action items for unmapped components per unmapped_action" do
       path = write_sbom("#{@tmpdir}/ruby.json", component("nameless"))
       report = described_class.new(sboms: { ruby: path }, policy: policy, dispositions: dispositions).build

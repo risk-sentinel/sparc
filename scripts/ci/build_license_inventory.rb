@@ -289,10 +289,21 @@ class LicenseInventoryBuilder
     blocklist = (@policy["blocklist"] || []).to_set
     unmapped  = (@policy["unmapped_action"] || "warn").to_s
     skip_patterns = (@policy["skip_patterns"] || []).map { |p| Regexp.new(p) }
+    # #481 — skip_purls matches against the package-URL field instead of the
+    # name. Useful when an ecosystem's component names are bare package names
+    # (e.g. PyPI: `annotated-types`) but the purl reveals their ecosystem
+    # (`pkg:pypi/annotated-types@0.7.0`).
+    skip_purls = (@policy["skip_purls"] || []).map { |p| Regexp.new(p) }
 
     rows.each do |row|
       # Skip patterns short-circuit policy evaluation entirely.
       if skip_patterns.any? { |re| row[:name].to_s.match?(re) }
+        row[:disposition] = "skipped"
+        next
+      end
+
+      # #481 — purl-based skip (ecosystem-level filter).
+      if row[:purl] && skip_purls.any? { |re| row[:purl].to_s.match?(re) }
         row[:disposition] = "skipped"
         next
       end

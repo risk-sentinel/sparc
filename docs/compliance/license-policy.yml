@@ -143,9 +143,30 @@ policy:
     # filesystems; the entries inside them are the real components.
     - "^Gemfile\\.lock$"
     - "^.*\\.lock$"                  # tests/api/uv.lock and similar lockfile pseudo-entries
-    # Vendored Go binaries (the `hdf` CLI we ship): every Go module shows
-    # up under github.com/<vendor>/.... Real license attribution comes from
-    # docs/compliance/THIRD_PARTY_NOTICES.md once the hdf binary is dispositioned
-    # holistically. See #475 follow-up.
+    # Vendored Go modules from the embedded `hdf` CLI binary. The binary
+    # itself is dispositioned holistically (license-dispositions.yml ->
+    # `hdf (vendored binary)`, Apache-2.0 from MITRE) so individual Go
+    # dependencies are not itemized. License text for the binary lives at
+    # LICENSES/MITRE-HDF-LIBS-LICENSE.
     - "^github\\.com/"
     - "^golang\\.org/x/"
+    - "^golang\\.org/"               # remaining golang.org/ namespaces (non-x)
+    - "^google\\.golang\\.org/"      # protobuf, grpc, etc.
+    - "^gopkg\\.in/"                 # yaml.v3, mgo.v2, etc.
+    - "^sigs\\.k8s\\.io/"            # kubernetes-sigs utilities
+    - "^stdlib$"                     # Go standard library version pseudo-entries
+
+  # Purl-based skip patterns (#481). When a component's name is the bare
+  # package name (e.g. PyPI: `annotated-types`) but the purl reveals its
+  # ecosystem (`pkg:pypi/annotated-types@0.7.0`), skip_patterns on `name`
+  # can't filter the whole ecosystem. skip_purls fills that gap.
+  #
+  # Each entry is a Ruby regex string matched against the component purl.
+  # Only purls that exist (non-null) are subject to this check.
+  skip_purls:
+    # All currently-tracked PyPI components are dependencies of the
+    # tests/api/ Python test scaffold, which is not part of the SPARC
+    # container image or any redistributed artifact. If SPARC ever adds
+    # a production Python service, narrow this to a tests/api-only
+    # filter or remove and add per-component dispositions.
+    - "^pkg:pypi/"
