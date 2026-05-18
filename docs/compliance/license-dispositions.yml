@@ -67,16 +67,21 @@ dispositions:
   # current SAR/SSP imports; only legacy .xls (Excel 97-2003 binary format)
   # requires `spreadsheet`. Decision needed: drop .xls support OR find an
   # MIT-licensed .xls reader. Track replacement under a follow-up issue.
+  # #479: REMEDIATED. roo-xls (the gem that pulled `spreadsheet` in as a
+  # transitive) was removed from Gemfile. `spreadsheet 1.3.4` no longer
+  # appears in Gemfile.lock; the GPL-3.0 runtime concern is fully closed
+  # for the Apache-2.0 open-source release. The Excel upload/export UI
+  # was scrubbed at the same time, though the underlying parser/export
+  # services are preserved for API consumers using `roo` (MIT, .xlsx only).
   - name: spreadsheet
     version: "1.3.4"
     license: GPL-3.0-only
-    disposition: replace
-    target_component: "roo (MIT) for .xlsx; decision on .xls support pending"
-    rationale: "RUNTIME GPL-3.0-only dependency. With the repo going public under Apache-2.0, GPL-3.0 strong copyleft creates a redistribution incompatibility because spreadsheet is loaded into the running service via SspExcelParserService and SarExcelParserService. Must replace before public release OR explicitly dual-license SPARC under Apache-2.0 + GPL-3.0 for the redistributed combination. Replacement path: switch .xlsx to `roo` (MIT, already evaluated); decide whether to drop legacy .xls support."
+    disposition: remediated
+    rationale: "RESOLVED via #479. roo-xls (transitive parent) removed from Gemfile; spreadsheet no longer present in Gemfile.lock. Excel UI references scrubbed from views. .xlsx parsing/export preserved via roo (MIT) for API consumers. Legacy .xls (Excel 97-2003) support was dropped as the trade-off."
     nist_control: sa-22
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-18"
-    next_review_date: "2026-06-17"
+    next_review_date: "2026-08-16"
 
   # ── System-layer (Debian base image) GPL dispositions ────────────────────
   #

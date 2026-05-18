@@ -116,7 +116,7 @@ tail -f /path/to/sparc/log/development.log   # Rails app log
 ## Sidekiq / Background Jobs
 
 puma-dev only manages the web server. If you need background job
-processing (Excel imports, large catalog imports), start Sidekiq
+processing (document imports, large catalog imports), start Sidekiq
 separately:
 
 ```bash

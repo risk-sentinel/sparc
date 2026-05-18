@@ -25,7 +25,13 @@
 # ==========================================================================
 
 policy:
-  enforce: false   # set to true to fail CI on blocklist + un-dispositioned warns
+  # #479: enforce flipped to true after the spreadsheet GPL-3.0 runtime
+  # concern was remediated (roo-xls removed; license-inventory warn
+  # bucket reaches 0 outstanding action items). CI now fails on any
+  # blocklist hit OR un-dispositioned warn-list license entering the
+  # inventory. Operator-add dispositions in license-dispositions.yml to
+  # resolve new flags rather than weakening the policy.
+  enforce: true
 
   # SPDX IDs that need no review. Mainstream permissive + LGPL.
   # See: https://spdx.org/licenses/

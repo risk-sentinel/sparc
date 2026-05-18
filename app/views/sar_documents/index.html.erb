@@ -39,7 +39,7 @@
               <% source_label, source_class = case doc.creation_method
                                when "wizard" then ["Wizard", "sparc-source-wizard"]
                                when "oscal_import" then ["OSCAL", "sparc-source-oscal"]
-                               else ["Excel", "sparc-source-excel"]
+                               else ["Import", "sparc-source-excel"]
                                end %>
               <span class="sparc-source-badge <%= source_class %>"><%= source_label %></span>
             </td>
@@ -76,17 +76,16 @@
                 <% if doc.completed? %>
                   <%# #451 A1: shared partial routes dropdown clicks through the
                       Stimulus modal that surfaces specific validation errors. %>
-                  <% sar_extra_items = capture do %>
-                    <li><%= link_to "Excel", download_excel_sar_document_path(doc), class: "dropdown-item" %></li>
-                  <% end %>
+                  <%# #479: Excel export route still exists but is no longer
+                      surfaced as a UI option. API consumers can call the route
+                      directly via download_excel_sar_document_path. %>
                   <%= render "shared/oscal_export_dropdown",
                         validate_path: validate_oscal_export_sar_document_path(doc),
                         download_json_path: download_oscal_validated_sar_document_path(doc),
                         download_yaml_path: download_yaml_sar_document_path(doc),
                         download_xml_path: download_xml_sar_document_path(doc),
                         fallback_json_path: download_oscal_unvalidated_sar_document_path(doc),
-                        document_type: "SAR",
-                        extra_items: sar_extra_items %>
+                        document_type: "SAR" %>
                 <% end %>
                 <%= button_to "Delete", sar_document_path(doc), method: :delete,
                       class: "btn btn-danger btn-sm",
@@ -99,6 +98,6 @@
       </tbody>
     </table>
   <% else %>
-    <p class="text-center p-4 text-body-secondary">No Security Assessment Results found. Upload a workbook or create from the wizard to get started.</p>
+    <p class="text-center p-4 text-body-secondary">No Security Assessment Results found. Upload an OSCAL file or create from the wizard to get started.</p>
   <% end %>
 </div>

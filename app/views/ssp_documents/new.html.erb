@@ -5,9 +5,9 @@
     <%= render "shared/dropzone",
       form: f,
       field: :file,
-      accept: ".xlsx,.xls,.json,.xml,.yaml,.yml",
+      accept: ".json,.xml,.yaml,.yml",
       multiple: true,
-      hint: "Upload an Excel workbook, OSCAL SSP JSON, OSCAL SSP XML, or OSCAL SSP YAML file." %>
+      hint: "Upload an OSCAL SSP JSON, OSCAL SSP XML, or OSCAL SSP YAML file." %>
 
     <%= render "shared/boundary_picker", param_key: :ssp_document %>
 
@@ -42,11 +42,6 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><strong>Excel</strong></td>
-        <td>.xlsx, .xls</td>
-        <td>Workbooks following the expected SSP column mapping</td>
-      </tr>
       <tr>
         <td><strong>OSCAL JSON</strong></td>
         <td>.json</td>

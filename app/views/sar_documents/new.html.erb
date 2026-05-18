@@ -5,9 +5,9 @@
     <%= render "shared/dropzone",
       form: f,
       field: :file,
-      accept: ".xlsx,.xls,.json,.xml,.yaml,.yml",
+      accept: ".json,.xml,.yaml,.yml",
       multiple: true,
-      hint: "Upload an Excel workbook, OSCAL Assessment Results JSON, XML, or YAML file. Excel workbooks with multiple tabs will each be imported as a separate section." %>
+      hint: "Upload an OSCAL Assessment Results JSON, XML, or YAML file." %>
 
     <%= render "shared/boundary_picker", param_key: :sar_document %>
 
@@ -50,7 +50,6 @@
 <div class="card">
   <h3>Import Notes</h3>
   <div class="text-body-secondary" style="font-size: 0.9rem; line-height: 1.6;">
-    <p class="mb-2"><strong>Excel (.xlsx, .xls)</strong> &mdash; Workbooks must follow the expected column mapping for successful import. Each worksheet tab is treated as a named section.</p>
     <p class="mb-0"><strong>OSCAL (JSON, XML, YAML)</strong> &mdash; OSCAL Assessment Results files are auto-detected and require no column mapping.</p>
   </div>
 </div>

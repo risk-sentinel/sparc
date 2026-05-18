@@ -27,7 +27,8 @@
                 </span>
                 <% if ssp.creation_method.present? %>
                   <span class="badge bg-secondary">
-                    <%= { "excel" => "Excel", "wizard" => "Wizard", "oscal_import" => "OSCAL", "profile" => "Profile" }[ssp.creation_method] || ssp.creation_method %>
+                    <%# #479: legacy "excel" rows display as "Import" — UI no longer advertises Excel. %>
+                    <%= { "excel" => "Import", "wizard" => "Wizard", "oscal_import" => "OSCAL", "profile" => "Profile" }[ssp.creation_method] || ssp.creation_method %>
                   </span>
                 <% end %>
               </div>

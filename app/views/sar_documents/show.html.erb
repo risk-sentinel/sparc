@@ -81,7 +81,10 @@
         <% if @sar_document.creation_method.present? %>
           &nbsp;&bull;&nbsp;
           <span class="sparc-creation-badge">
-            <%= { "excel" => "Excel Import", "wizard" => "Wizard", "oscal_import" => "OSCAL Import" }[@sar_document.creation_method] || @sar_document.creation_method %>
+            <%# #479: legacy "excel" rows display as "Import" — the underlying
+                creation_method value is preserved but no longer surfaced as
+                "Excel" in the UI. %>
+            <%= { "excel" => "Import", "wizard" => "Wizard", "oscal_import" => "OSCAL Import" }[@sar_document.creation_method] || @sar_document.creation_method %>
           </span>
         <% end %>
         <% if @sar_document.enriched? %>
@@ -96,17 +99,15 @@
               publish_path: publish_sar_document_path(@sar_document),
               check_path: publish_check_sar_document_path(@sar_document) %>
       <% end %>
-      <% excel_item = capture do %>
-        <li><%= link_to "Excel", download_excel_sar_document_path(@sar_document), class: "dropdown-item" %></li>
-      <% end %>
+      <%# #479: Excel download route still exists (download_excel_sar_document_path)
+          for API consumers but is no longer surfaced in the UI dropdown. %>
       <%= render "shared/oscal_export_dropdown",
             validate_path: validate_oscal_export_sar_document_path(@sar_document),
             download_json_path: download_oscal_validated_sar_document_path(@sar_document),
             download_yaml_path: download_yaml_sar_document_path(@sar_document),
             download_xml_path: download_xml_sar_document_path(@sar_document),
             fallback_json_path: download_oscal_unvalidated_sar_document_path(@sar_document),
-            document_type: "SAR",
-            extra_items: excel_item %>
+            document_type: "SAR" %>
       <% unless @sar_document.enriched? %>
         <%= link_to "&#x2728; Enrich".html_safe, enrich_sar_document_path(@sar_document),
               class: "sparc-btn-enrich" %>

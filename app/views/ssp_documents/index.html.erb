@@ -39,7 +39,7 @@
               <% source_label, source_class = case doc.creation_method
                                when "wizard" then ["Wizard", "sparc-source-wizard"]
                                when "oscal_import" then ["OSCAL", "sparc-source-oscal"]
-                               else ["Excel", "sparc-source-excel"]
+                               else ["Import", "sparc-source-excel"]
                                end %>
               <span class="sparc-source-badge <%= source_class %>"><%= source_label %></span>
             </td>
@@ -95,6 +95,6 @@
       </tbody>
     </table>
   <% else %>
-    <p class="text-center p-4 text-body-secondary">No System Security Plan documents found. Upload your first workbook to get started.</p>
+    <p class="text-center p-4 text-body-secondary">No System Security Plan documents found. Upload your first OSCAL file to get started.</p>
   <% end %>
 </div>

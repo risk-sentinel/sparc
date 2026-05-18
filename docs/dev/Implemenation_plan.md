@@ -95,8 +95,9 @@ authentication mode coverage matrix.
 - [x] #466 -- AWS Labs CDEF runtime ingestion (opt-in via `SPARC_AWS_LABS_CDEF_ENABLED`); Solid Queue recurring refresh; read-only AWS rows with copy-to-amend; full Apache 2.0 attribution (NOTICE + LICENSES/ + THIRD_PARTY_NOTICES.md) -- **COMPLETED 2026-05-17** (PR #469)
 - [x] #470 -- Squash 29 accumulated migrations (since 2026-03-19 squash) into single consolidated file + v1.6.1 patch bump -- **COMPLETED 2026-05-17** (PR #471, released as v1.6.1)
 - [x] #472 -- SBOM license tracking + policy gate: Trivy `--scanners license`, consolidated `license-inventory.{json,md}` artifact, merged `sparc-combined-sbom.cdx.json`, `license-policy.yml` + `license-dispositions.yml` (warn-only) -- **COMPLETED 2026-05-17** (PR #474)
-- [ ] #473 -- Aggregator hardening: add `edited` to pull_request types + in-flight-aware short-circuit so body-edit reruns supersede stale failures
-- [ ] #475 -- Triage outstanding license action items (80 warn + 317 unmapped) and record dispositions; baseline review before flipping `license-policy.yml::enforce: true`
+- [x] #473 -- Aggregator hardening -- **COMPLETED 2026-05-17** (PR #476)
+- [x] #475 -- Triage outstanding license action items + LICENSES/ population + baseline dispositions -- **COMPLETED 2026-05-17 / 18** (PRs #477, #478)
+- [x] #479 -- Drop roo-xls (GPL-3.0 transitive); scrub Excel UI references; flip license-policy enforce to true; v1.6.2 bump -- **COMPLETED 2026-05-18** (this PR)
 
 ### 10. Database Maintenance
 

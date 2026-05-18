@@ -133,7 +133,7 @@ curl -X DELETE -H "Authorization: Bearer $TOKEN" \
 
 | Endpoint | Method | Description |
 | -------- | ------ | ----------- |
-| `/api/v1/ssp_documents/convert` | POST | Upload and convert an SSP Excel file |
+| `/api/v1/ssp_documents/convert` | POST | Upload and convert an SSP source file |
 | `/api/v1/ssp_documents/:id/update_fields` | PUT | Update SSP control fields |
 | `/api/v1/ssp_documents/:id/export` | GET | Export SSP as JSON |
 
@@ -141,7 +141,7 @@ curl -X DELETE -H "Authorization: Bearer $TOKEN" \
 
 | Endpoint | Method | Description |
 | -------- | ------ | ----------- |
-| `/api/v1/sar_documents/convert` | POST | Upload and convert a SAR Excel file |
+| `/api/v1/sar_documents/convert` | POST | Upload and convert a SAR source file |
 | `/api/v1/sar_documents/:id/update_fields` | PUT | Update SAR control fields |
 | `/api/v1/sar_documents/:id/export` | GET | Export SAR as JSON |
 

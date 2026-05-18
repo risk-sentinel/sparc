@@ -9,22 +9,11 @@
 <body>
     <div class="container">
         <h1>🔐 System Security Plan Editor</h1>
-        
-        <!-- Excel to JSON Conversion Section -->
-        <div class="conversion-section">
-            <h2>📊 Convert Excel to JSON</h2>
-            <div class="upload-container">
-                <label for="excelInput"><strong>Upload Excel File (.xlsx):</strong></label>
-                <input type="file" id="excelInput" accept=".xlsx,.xls" onchange="handleExcelUpload(event)">
-                <button class="convert-btn" id="convertBtn" onclick="convertExcelToJSON()" disabled>
-                    🔄 Convert to JSON
-                </button>
-            </div>
-            <div id="conversionStatus" class="status-message"></div>
-        </div>
-        
-        <div class="divider"></div>
-        
+
+        <%# #479: The Excel-to-JSON upload section was removed from the UI.
+            The underlying conversion route and parser service still exist
+            for API consumers; this view no longer surfaces the entry point. %>
+
         <!-- Existing Document Selector -->
         <div class="json-section">
             <h2>📁 Load Existing Document</h2>
@@ -102,69 +91,10 @@
         let currentData = null;
         let currentIndex = 0;
 
-        /**
-         * Handle Excel file selection
-         */
-        function handleExcelUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                document.getElementById('convertBtn').disabled = false;
-                showConversionStatus(`Selected: ${file.name}`, 'info');
-            }
-        }
-
-        /**
-         * Convert Excel file to JSON using Rails API
-         */
-        async function convertExcelToJSON() {
-            const fileInput = document.getElementById('excelInput');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showConversionStatus('Please select an Excel file first', 'error');
-                return;
-            }
-
-            const convertBtn = document.getElementById('convertBtn');
-            convertBtn.disabled = true;
-            convertBtn.textContent = '⏳ Converting...';
-
-            try {
-                const formData = new FormData();
-                formData.append('excel_file', file);
-
-                showConversionStatus('Uploading and converting file...', 'info');
-
-                const response = await fetch(`${API_BASE_URL}/ssp_documents/convert`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Conversion failed');
-                }
-
-                const result = await response.json();
-                
-                showConversionStatus('✅ Conversion successful! Loading data...', 'success');
-                
-                currentDocumentId = result.document_id;
-                loadConvertedJSON(result.data);
-                showNotification('Excel file converted and loaded successfully!', 'success');
-
-            } catch (error) {
-                console.error('Conversion error:', error);
-                showConversionStatus(`❌ Error: ${error.message}`, 'error');
-                showNotification(`Conversion failed: ${error.message}`, 'error');
-            } finally {
-                convertBtn.disabled = false;
-                convertBtn.textContent = '🔄 Convert to JSON';
-            }
-        }
+        // #479: handleExcelUpload + convertExcelToJSON were removed along
+        // with the Excel upload UI block. The Rails API conversion route
+        // (/api/v1/ssp_documents/convert) and parser service are preserved
+        // for programmatic consumers.
 
         /**
          * Load existing document from database
@@ -426,21 +356,8 @@
             document.getElementById('actionButtons').style.display = 'flex';
         }
 
-        /**
-         * Display conversion status message
-         */
-        function showConversionStatus(message, type) {
-            const statusElement = document.getElementById('conversionStatus');
-            statusElement.textContent = message;
-            statusElement.className = `status-message ${type}`;
-            statusElement.style.display = 'block';
-
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusElement.style.display = 'none';
-                }, 5000);
-            }
-        }
+        // #479: showConversionStatus removed along with the Excel upload UI;
+        // its only callers were the deleted handleExcelUpload + convertExcelToJSON.
 
         /**
          * Show notification

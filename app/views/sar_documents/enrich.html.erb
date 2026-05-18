@@ -202,13 +202,13 @@
       </div>
     </details>
 
-    <%# ── Auto-generate from Excel ── %>
+    <%# ── Auto-generate OSCAL entities from imported controls ── %>
     <% if @sar_document.sar_controls.any? && @results.empty? %>
       <div style="background: rgba(243,156,18,0.08); border: 1px solid rgba(243,156,18,0.3); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <span style="font-size: 1.2rem;">&#x2728;</span>
           <div style="flex: 1;">
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--bs-body-color);">Auto-generate OSCAL entities from Excel data</div>
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--bs-body-color);">Auto-generate OSCAL entities from imported controls</div>
             <div style="font-size: 0.78rem; color: var(--sparc-text-muted); margin-top: 0.15rem;">
               Create a result with observations and findings from your <%= @sar_document.sar_controls.count %> imported controls.
               Pass results become "satisfied" findings, Failed become "not-satisfied".

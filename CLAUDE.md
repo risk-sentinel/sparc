@@ -42,7 +42,7 @@ bundle exec brakeman
 # Rails console
 bin/rails console
 
-# Background jobs (needed for SSP Excel parsing)
+# Background jobs (Solid Queue is default in production; Sidekiq optional)
 bundle exec sidekiq
 ```
 
@@ -61,17 +61,18 @@ Control catalogs have a parallel hierarchy: `ControlCatalog` → `ControlFamily`
 
 ### Key Services (app/services/)
 
-- `SspExcelParserService` / `SarExcelParserService` — parse uploaded Excel files into the document/control/field model hierarchy
 - `JsonExportService` — serialize documents to downloadable JSON
 - `SspUpdateService` — handle inline field updates from the UI
 - `CatalogImportService` — import NIST control catalogs
-- `SarExcelExportService` — export SAR documents back to Excel
 - `OscalSspExportService` / `OscalComponentDefinitionExportService` — OSCAL v1.1.2 JSON exports
 - `OscalSchemaValidationService` — validate OSCAL JSON against NIST schemas
+- `AwsLabsCdefImportService` — runtime ingestion of OSCAL CDEFs from AWS Labs (#466)
+- `SspExcelParserService` / `SarExcelParserService` / `SarExcelExportService` — parse/export Excel files (.xlsx). Code preserved for API consumers; no longer surfaced in the UI as of #479.
 
 ### Background Jobs
 
-- `DocumentConversionJob` — async Excel-to-JSON parsing for documents (large files)
+- `DocumentConversionJob` — async file-to-JSON parsing for document imports (large files)
+- `AwsLabsCdefRefreshJob` — recurring Solid Queue job that ingests AWS Labs OSCAL CDEFs (#466, weekly default)
 - Job status is tracked via the `ConversionJob` model
 
 ### API

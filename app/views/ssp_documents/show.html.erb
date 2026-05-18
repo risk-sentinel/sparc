@@ -443,7 +443,7 @@
               </div>
             <% end %>
 
-            <%# Read-only fields (from Excel parse, not user-editable) %>
+            <%# Read-only fields (from upstream import, not user-editable) %>
             <% ro_fields = field_map.values.reject { |f|
                  SspControlField::EDITABLE_FIELDS.include?(f.field_name)
                }.select { |f| f.field_value.present? } %>
