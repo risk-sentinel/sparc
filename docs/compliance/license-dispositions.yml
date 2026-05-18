@@ -28,7 +28,21 @@
 # warns when next_review_date is in the past (still emits the action item).
 # ==========================================================================
 
-dispositions: []
+dispositions:
+  # Brakeman ships under the "Brakeman Public Use License" -- a permissive,
+  # MIT-style license that is not SPDX-registered. Single-component
+  # exception; SPARC uses brakeman as a CI-only SAST tool (not shipped to
+  # tenants), so we accept the non-SPDX license as compatible with our
+  # Apache-2.0 distribution.
+  - name: brakeman
+    license: Brakeman Public Use License
+    disposition: accepted
+    rationale: "Permissive MIT-style license; brakeman is a dev/CI-only dependency (Gemfile dev group) -- never shipped in the SPARC container or to tenants. License text reviewed and confirmed compatible with Apache-2.0 redistribution constraints."
+    nist_control: sa-15
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+
 
 # Example shape (kept commented so the file parses as an empty array):
 #

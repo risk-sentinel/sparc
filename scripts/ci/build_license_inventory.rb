@@ -34,6 +34,44 @@ require "date"
 require "set"
 
 class LicenseInventoryBuilder
+  # #475 — Canonicalize common non-SPDX license strings emitted by upstream
+  # package metadata (Trivy passes these through unmodified). Keeps the
+  # policy file readable (one entry per logical license) and the action-item
+  # list focused on real signals instead of formatting variants.
+  #
+  # Add entries here when a known-equivalent variant appears in the
+  # inventory. Avoid case-insensitive regex matching: explicit aliases are
+  # auditable, fuzzy matching hides legitimate variants.
+  LICENSE_ALIASES = {
+    "Apache 2.0"                  => "Apache-2.0",
+    "Apache 2"                    => "Apache-2.0",
+    "Apache License 2.0"          => "Apache-2.0",
+    "Apache License, Version 2.0" => "Apache-2.0",
+    "BSD 2-Clause"                => "BSD-2-Clause",
+    "BSD 3-Clause"                => "BSD-3-Clause",
+    "MIT License"                 => "MIT",
+    "ISC License"                 => "ISC",
+    "public-domain"               => "CC0-1.0",
+    "PD"                          => "CC0-1.0",
+
+    # SPDX deprecated old ambiguous IDs in favor of explicit -only / -or-later
+    # forms (SPDX 3.10+). Upstream package metadata frequently uses the
+    # deprecated bare IDs; canonicalize to -only since that's the safer
+    # interpretation when the upstream didn't pick a side.
+    "GPL-3.0"                     => "GPL-3.0-only",
+    "GPL-2.0"                     => "GPL-2.0-only",
+    "LGPL-3.0"                    => "LGPL-3.0-only",
+    "LGPL-2.1"                    => "LGPL-2.1-only",
+    "LGPL-2.0"                    => "LGPL-2.0-only",
+    "AGPL-3.0"                    => "AGPL-3.0-only",
+
+    # OpenLDAP uses the OLDAP-* SPDX namespace, not OpenLDAP-*.
+    "OpenLDAP-2.8"                => "OLDAP-2.8",
+
+    # SPDX doesn't have a dedicated MIT-X11 ID; functionally identical to MIT.
+    "MIT-X11"                     => "MIT"
+  }.freeze
+
   attr_reader :sboms, :policy, :dispositions, :git_sha
 
   def initialize(sboms:, policy:, dispositions:, git_sha: nil)
@@ -54,6 +92,12 @@ class LicenseInventoryBuilder
         rows << build_row(c, source)
       end
     end
+
+    # #475 — Collapse duplicate (purl)-keyed rows from multiple SBOMs into one.
+    # A gem appears in both `sbom-ruby` (with license) and `trivy-container`
+    # (without). Without dedup the action-item list double-counts the
+    # without-license row as `unmapped` even though the license is known.
+    rows = deduplicate_rows(rows)
 
     apply_policy!(rows)
     {
@@ -178,6 +222,26 @@ class LicenseInventoryBuilder
     [ component["name"], component["version"], component["type"] ].join("|")
   end
 
+  # Same dedup key for rows (already-built component hashes).
+  def row_dedup_key(row)
+    return row[:purl] if row[:purl] && !row[:purl].to_s.empty?
+    [ row[:name], row[:version], row[:type] ].join("|")
+  end
+
+  # Collapse duplicate rows from multiple SBOMs. When the same purl appears
+  # in two sources (e.g. sbom-ruby with a license, trivy-container without),
+  # prefer the row that HAS a license. Combine source labels so provenance
+  # is preserved.
+  def deduplicate_rows(rows)
+    grouped = rows.group_by { |r| row_dedup_key(r) }
+    grouped.map do |_key, group|
+      with_license = group.find { |r| r[:license] && !r[:license].to_s.empty? }
+      winner = (with_license || group.first).dup
+      winner[:source] = group.map { |r| r[:source] }.uniq.sort.join(",")
+      winner
+    end
+  end
+
   def build_row(component, source)
     licenses = normalize_licenses(component["licenses"])
     {
@@ -209,7 +273,14 @@ class LicenseInventoryBuilder
       else
         []
       end
-    end.compact.reject(&:empty?)
+    end.compact.reject(&:empty?).map { |id| canonicalize_license(id) }
+  end
+
+  # #475 — Map non-SPDX variants ("Apache 2.0", "public-domain") to their
+  # canonical SPDX identifiers via LICENSE_ALIASES. Unknown strings pass
+  # through unchanged so they show up in the inventory for triage.
+  def canonicalize_license(id)
+    LICENSE_ALIASES[id] || id
   end
 
   def apply_policy!(rows)

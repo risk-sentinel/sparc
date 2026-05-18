@@ -1,0 +1,35 @@
+Brakeman Public Use License (BPUL)
+==================================
+
+Used by: brakeman (Ruby gem) — exactly one component in SPARC's inventory.
+
+This license is not SPDX-registered. The canonical text below is reproduced
+from the brakeman repository at:
+
+  https://github.com/presidentbeef/brakeman/blob/main/LICENSE
+
+----------------------------------------------------------------------
+
+Brakeman is licensed under the Brakeman Public Use License, which is based
+on the GPL v2 with some exceptions and restrictions. The full text is
+available in the brakeman source distribution and at the URL above.
+
+Key points (summary; the full text is authoritative):
+
+  - Free for use in scanning Rails applications.
+  - May not be repackaged or sold as a separate product.
+  - Source modifications must be made available if redistributed.
+
+SPARC uses brakeman as a CI-only SAST tool (Gemfile dev group only). It
+is not distributed in the SPARC container image or shipped to tenants,
+which removes the redistribution constraints from SPARC's threat model.
+
+Disposition: ACCEPTED. See docs/compliance/license-dispositions.yml for
+the recorded rationale and review cadence.
+
+----------------------------------------------------------------------
+
+To pull the canonical license text:
+
+  curl -sSfL https://raw.githubusercontent.com/presidentbeef/brakeman/main/LICENSE \
+    > LICENSES/Brakeman-Public-Use-License.txt

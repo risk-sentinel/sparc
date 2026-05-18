@@ -6,7 +6,7 @@ RSpec.describe LicenseInventoryBuilder do
     {
       "enforce" => false,
       "allowlist" => [ "MIT", "Apache-2.0", "BSD-3-Clause" ],
-      "warn_list" => [ "GPL-3.0", "AGPL-3.0" ],
+      "warn_list" => [ "GPL-3.0-only", "AGPL-3.0-only" ],
       "blocklist" => [ "BUSL-1.1", "SSPL-1.0" ],
       "unmapped_action" => "warn",
       "skip_patterns" => [ "^\\./.*" ]
@@ -71,14 +71,14 @@ RSpec.describe LicenseInventoryBuilder do
       path = write_sbom("#{@tmpdir}/ruby.json",
         component("a", license_id: "MIT"),
         component("b", license_id: "MIT"),
-        component("c", license_id: "GPL-3.0"),
+        component("c", license_id: "GPL-3.0-only"),
         component("d", license_id: "BUSL-1.1"))
       report = described_class.new(sboms: { ruby: path }, policy: policy, dispositions: dispositions).build
 
       keys = report[:by_license].keys
       expect(keys.first).to eq("MIT")
       expect(report[:by_license]["MIT"][:disposition]).to eq("OK")
-      expect(report[:by_license]["GPL-3.0"][:disposition]).to eq("WARN")
+      expect(report[:by_license]["GPL-3.0-only"][:disposition]).to eq("WARN")
       expect(report[:by_license]["BUSL-1.1"][:disposition]).to eq("BLOCK")
     end
 
@@ -124,7 +124,7 @@ RSpec.describe LicenseInventoryBuilder do
     end
 
     it "respects per-component dispositions (accepted suppresses action item)" do
-      path = write_sbom("#{@tmpdir}/ruby.json", component("gpl-gem", license_id: "GPL-3.0"))
+      path = write_sbom("#{@tmpdir}/ruby.json", component("gpl-gem", license_id: "GPL-3.0-only"))
       disp = [ { "name" => "gpl-gem", "disposition" => "accepted", "rationale" => "..." } ]
       report = described_class.new(sboms: { ruby: path }, policy: policy, dispositions: disp).build
 
@@ -145,8 +145,8 @@ RSpec.describe LicenseInventoryBuilder do
 
     it "version-specific dispositions only match the listed version" do
       path = write_sbom("#{@tmpdir}/ruby.json",
-        component("v-gem", version: "1.0.0", license_id: "AGPL-3.0"),
-        component("v-gem", version: "2.0.0", license_id: "AGPL-3.0"))
+        component("v-gem", version: "1.0.0", license_id: "AGPL-3.0-only"),
+        component("v-gem", version: "2.0.0", license_id: "AGPL-3.0-only"))
       disp = [ { "name" => "v-gem", "version" => "1.0.0", "disposition" => "accepted", "rationale" => "1.x only" } ]
       report = described_class.new(sboms: { ruby: path }, policy: policy, dispositions: disp).build
 
@@ -171,7 +171,7 @@ RSpec.describe LicenseInventoryBuilder do
     it "produces a human-readable report with action item table when items exist" do
       path = write_sbom("#{@tmpdir}/ruby.json",
         component("clean", license_id: "MIT"),
-        component("gpl", license_id: "GPL-3.0"))
+        component("gpl", license_id: "GPL-3.0-only"))
       builder = described_class.new(sboms: { ruby: path }, policy: policy, dispositions: dispositions)
       md = builder.to_markdown(builder.build)
 
@@ -180,7 +180,7 @@ RSpec.describe LicenseInventoryBuilder do
       expect(md).to include("## License Distribution")
       expect(md).to include("## Action Items")
       expect(md).to include("`gpl`")
-      expect(md).to include("`GPL-3.0`")
+      expect(md).to include("`GPL-3.0-only`")
     end
 
     it "emits a no-action-items message when policy is clean" do
@@ -271,6 +271,53 @@ RSpec.describe LicenseInventoryBuilder do
 
       sha_prop = builder.merged_sbom.dig("metadata", "properties").find { |p| p["name"] == "sparc:git-sha" }
       expect(sha_prop["value"]).to eq("deadbeef")
+    end
+  end
+
+  # Issue #475 — license-alias canonicalization + cross-SBOM dedup
+  describe "license normalization and dedup polish" do
+    it "canonicalizes non-SPDX aliases (Apache 2.0 -> Apache-2.0)" do
+      path = write_sbom("#{@tmpdir}/ruby.json",
+        component("foo", license_name: "Apache 2.0"),
+        component("bar", license_name: "MIT License"),
+        component("baz", license_name: "public-domain"))
+      report = described_class.new(sboms: { ruby: path }, policy: policy, dispositions: dispositions).build
+
+      licenses = report[:by_component].map { |r| r[:license] }
+      expect(licenses).to contain_exactly("Apache-2.0", "MIT", "CC0-1.0")
+    end
+
+    it "deduplicates rows across SBOMs by purl, preferring the row with a license" do
+      ruby = write_sbom("#{@tmpdir}/ruby.json",
+        component("aws-sdk-s3", version: "1.222.0", license_id: "MIT"))
+      trivy = write_sbom("#{@tmpdir}/trivy.json",
+        # Same purl, but Trivy didn't capture a license -- a real case from CI.
+        component("aws-sdk-s3", version: "1.222.0", license_id: nil))
+      report = described_class.new(
+        sboms: { ruby: ruby, "trivy-container": trivy },
+        policy: policy, dispositions: dispositions
+      ).build
+
+      # One row remains, the one WITH the license. Source includes both SBOMs.
+      expect(report[:summary][:total_components]).to eq(1)
+      row = report[:by_component].first
+      expect(row[:license]).to eq("MIT")
+      expect(row[:source]).to eq("ruby,trivy-container")
+    end
+
+    it "does not double-count action items when both SBOMs see the same component" do
+      ruby = write_sbom("#{@tmpdir}/ruby.json",
+        component("gpl-gem", version: "1.0.0", license_id: "GPL-3.0-only"))
+      trivy = write_sbom("#{@tmpdir}/trivy.json",
+        component("gpl-gem", version: "1.0.0", license_id: nil))
+      report = described_class.new(
+        sboms: { ruby: ruby, "trivy-container": trivy },
+        policy: policy, dispositions: dispositions
+      ).build
+
+      # Only one action item; the dedup preserves the license-bearing row.
+      expect(report[:action_items].length).to eq(1)
+      expect(report[:action_items].first[:license]).to eq("GPL-3.0-only")
     end
   end
 end

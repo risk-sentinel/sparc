@@ -29,28 +29,55 @@ policy:
 
   # SPDX IDs that need no review. Mainstream permissive + LGPL.
   # See: https://spdx.org/licenses/
+  #
+  # When adding entries, prefer the SPDX canonical form. Common non-SPDX
+  # variants ("Apache 2.0" with a space, "public-domain") are normalized
+  # by LICENSE_ALIASES in build_license_inventory.rb -- do NOT list both
+  # variants here.
   allowlist:
+    # Permissive
     - MIT
+    - MIT-0
+    # NOTE: MIT-X11 is normalized to MIT by LICENSE_ALIASES — no separate entry needed.
     - Apache-2.0
     - BSD-2-Clause
     - BSD-3-Clause
+    - BSD-4-Clause      # historical "advertising" clause; still permissive
     - 0BSD
     - ISC
+    - Python-2.0
+    - Ruby
+    - Unlicense
+    - Zlib
+    - WTFPL
+    - Sleepycat         # Oracle BDB pre-AGPL; effectively permissive when not redistributing modifications
+    - PostgreSQL        # MIT-like license used by libpq + related
+    - OLDAP-2.8         # BSD-style, permissive (SPDX uses OLDAP-* not OpenLDAP-*)
+    - Beerware          # MIT-like, single-component oddities
+
+    # LGPL family (dynamic-linking compatible with closed source)
     - LGPL-2.1
     - LGPL-2.1-only
     - LGPL-2.1-or-later
     - LGPL-3.0
     - LGPL-3.0-only
     - LGPL-3.0-or-later
+
+    # Weak copyleft (file-level)
     - MPL-2.0
-    - Python-2.0
-    - Ruby
-    - Unlicense
+
+    # Public-domain equivalents
     - CC0-1.0
     - CC-BY-3.0
     - CC-BY-4.0
-    - Zlib
-    - WTFPL
+
+    # Documentation licenses (no software components affected)
+    - GFDL-1.3-no-invariants-or-later
+
+    # SPDX expression with exception -- strictly more permissive than the
+    # bare license, so treat as allowlist. Single-component occurrence on
+    # a Debian library; expression preserved verbatim per SPDX rules.
+    - "BSD-3-clause-Cambridge WITH BINARY-LIBRARY-LIKE-PACKAGES-exception"
 
   # Require review but do not block. Generate action items in the report.
   warn_list:
@@ -102,6 +129,17 @@ policy:
     - "^usr/local/bundle/.*\\.so$"   # native gem extensions (parent gem already covers license)
     - "^usr/local/bundle/.*/(exe|bin)/" # gem-shipped executables in the container
     - "^operating-system$"           # debian/ubuntu OS metarecord
+    - "^debian$"                     # OS itself as a component
     - "^var/lib/dpkg/"               # dpkg internal status entries
     - "^usr/share/doc/"              # documentation directories
     - "^\\$\\{"                      # malformed entries with unresolved shell expansion
+    # #475 — Trivy treats lockfiles themselves as "components" when scanning
+    # filesystems; the entries inside them are the real components.
+    - "^Gemfile\\.lock$"
+    - "^.*\\.lock$"                  # tests/api/uv.lock and similar lockfile pseudo-entries
+    # Vendored Go binaries (the `hdf` CLI we ship): every Go module shows
+    # up under github.com/<vendor>/.... Real license attribution comes from
+    # docs/compliance/THIRD_PARTY_NOTICES.md once the hdf binary is dispositioned
+    # holistically. See #475 follow-up.
+    - "^github\\.com/"
+    - "^golang\\.org/x/"

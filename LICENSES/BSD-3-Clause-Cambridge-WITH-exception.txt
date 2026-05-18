@@ -1,0 +1,33 @@
+BSD-3-Clause-Cambridge WITH BINARY-LIBRARY-LIKE-PACKAGES-exception
+===================================================================
+
+Used by: 1 component (typically a Debian font / research library).
+
+This is an SPDX *expression* combining a BSD-3-Clause variant with an
+exception that broadens permissions for binary library redistribution.
+The expression itself is recognized by SPDX, but no single canonical
+text file exists -- the rendered license is the BSD-3-Clause-Cambridge
+text plus the linking exception text.
+
+Base license: see LICENSES/BSD-3-Clause.txt (the closest SPDX-canonical
+form; the Cambridge variant only differs in attribution wording).
+
+The "BINARY-LIBRARY-LIKE-PACKAGES" exception is a strict expansion of
+permissions: it explicitly allows distribution of binary forms of the
+library and its derivatives without additional obligations beyond
+those of BSD-3-Clause. This is strictly *more* permissive than the
+base license, so SPARC treats it as allowlisted -- see
+docs/compliance/license-policy.yml.
+
+For the audit package, the upstream Debian source provides the
+verbatim text. To populate this file with the canonical exception text
+when needed for a regulator handoff:
+
+  apt-get source <debian-package-using-this-license>
+  cp <source>/debian/copyright LICENSES/BSD-3-Clause-Cambridge-WITH-exception.txt
+
+----------------------------------------------------------------------
+
+For most compliance flows the cross-reference to BSD-3-Clause.txt plus
+the recorded disposition in docs/compliance/license-policy.yml's
+allowlist is sufficient.
