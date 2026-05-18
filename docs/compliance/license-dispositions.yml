@@ -29,6 +29,8 @@
 # ==========================================================================
 
 dispositions:
+  # ── Application-layer (Ruby gem) GPL dispositions ────────────────────────
+
   # Brakeman ships under the "Brakeman Public Use License" -- a permissive,
   # MIT-style license that is not SPDX-registered. Single-component
   # exception; SPARC uses brakeman as a CI-only SAST tool (not shipped to
@@ -43,30 +45,608 @@ dispositions:
     discovery_date: "2026-05-18"
     next_review_date: "2026-08-16"
 
+  # bundler-audit ships under GPL-3.0-or-later. Used only as a CI-time
+  # security scanner (Gemfile dev group) -- never loaded into the running
+  # SPARC service and never redistributed. Same pattern as brakeman.
+  - name: bundler-audit
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Dev/CI-only dependency (Gemfile dev group). bundler-audit runs only in CI as a vulnerability scanner against Gemfile.lock; it is never loaded into the SPARC application process or shipped in the production container image. GPL-3.0-or-later does not trigger derivative-work obligations on SPARC's Apache-2.0 codebase because the gem is not linked at runtime."
+    nist_control: sa-15
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
 
-# Example shape (kept commented so the file parses as an empty array):
-#
-# dispositions:
-#   - name: example-gem
-#     version: "1.2.3"
-#     license: AGPL-3.0
-#     disposition: accepted
-#     rationale: "Network-use clause does not apply -- the component is
-#                 used only in CLI tooling that runs against local files,
-#                 not in any networked service path. Verified against
-#                 lib/example_usage.rb."
-#     nist_control: sa-15
-#     reviewed_by: "@clem-field"
-#     discovery_date: "2026-05-17"
-#     next_review_date: "2026-08-15"
-#
-#   - name: another-gem
-#     license: BUSL-1.1
-#     disposition: replace
-#     target_component: "another-gem-oss-fork"
-#     rationale: "Upstream relicensed to BUSL in 1.5; pinning to last MIT
-#                 version (1.4.x) is temporary. Migration ticket: #999."
-#     nist_control: sa-22
-#     reviewed_by: "@clem-field"
-#     discovery_date: "2026-05-17"
-#     next_review_date: "2026-06-17"
+  # spreadsheet 1.3.4 is GPL-3.0-only. Used at RUNTIME for Excel parsing
+  # (SspExcelParserService / SarExcelParserService). With SPARC about to be
+  # open-sourced under Apache-2.0, this is a real incompatibility -- GPL-3.0
+  # is strong copyleft; linking it into the Apache-2.0 service would force
+  # the combined work under GPL-3.0 on redistribution.
+  #
+  # Replacement target: the `roo` gem (MIT) handles .xlsx parsing for our
+  # current SAR/SSP imports; only legacy .xls (Excel 97-2003 binary format)
+  # requires `spreadsheet`. Decision needed: drop .xls support OR find an
+  # MIT-licensed .xls reader. Track replacement under a follow-up issue.
+  - name: spreadsheet
+    version: "1.3.4"
+    license: GPL-3.0-only
+    disposition: replace
+    target_component: "roo (MIT) for .xlsx; decision on .xls support pending"
+    rationale: "RUNTIME GPL-3.0-only dependency. With the repo going public under Apache-2.0, GPL-3.0 strong copyleft creates a redistribution incompatibility because spreadsheet is loaded into the running service via SspExcelParserService and SarExcelParserService. Must replace before public release OR explicitly dual-license SPARC under Apache-2.0 + GPL-3.0 for the redistributed combination. Replacement path: switch .xlsx to `roo` (MIT, already evaluated); decide whether to drop legacy .xls support."
+    nist_control: sa-22
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-06-17"
+
+  # ── System-layer (Debian base image) GPL dispositions ────────────────────
+  #
+  # Generated from license-inventory.json for components where
+  # source == "trivy-container" AND license matches GPL family. These are
+  # all packages from the Debian Bookworm 12 base image. The single
+  # rationale below applies uniformly: SPARC links these as dynamic OS-level
+  # libraries, not derivative-work integrations. The FSF, ASF, and Linux
+  # distro communities universally treat this pattern as separable from
+  # the application copyright.
+  #
+  # When the base image rolls (e.g., to Trixie, distroless, or chiselled
+  # Ubuntu), regenerate this section by re-running the inventory and
+  # re-applying group-disposition logic.
+
+  - name: adduser
+    version: "3.134"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: apt
+    version: "2.6.1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: base-files
+    version: "12.4+deb12u13"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: base-passwd
+    version: "3.6.1"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: bash
+    version: "5.2.15-2+b10"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: bsdutils
+    version: "1:2.38.1-5+deb12u3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: ca-certificates
+    version: "20230311+deb12u1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: coreutils
+    version: "9.1-1"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: debian-archive-keyring
+    version: "2023.3+deb12u2"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: debianutils
+    version: "5.7-0.5~deb12u1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: diffutils
+    version: "1:3.8-4"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: dpkg
+    version: "1.21.22"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: e2fsprogs
+    version: "1.47.0-2+b2"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: gcc-12-base
+    version: "12.2.0-14+deb12u1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: gpgv
+    version: "2.2.40-1.1+deb12u2"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: grep
+    version: "3.8-5"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: gzip
+    version: "1.12-1"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: hostname
+    version: "3.23+nmu1"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libacl1
+    version: "2.3.1-3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libapt-pkg6.0
+    version: "2.6.1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libattr1
+    version: "1:2.5.1-4"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libaudit-common
+    version: "1:3.0.9-1"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libaudit1
+    version: "1:3.0.9-1"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libblkid1
+    version: "2.38.1-5+deb12u3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libcom-err2
+    version: "1.47.0-2+b2"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libext2fs2
+    version: "1.47.0-2+b2"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libgcrypt20
+    version: "1.10.1-3"
+    license: LGPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libgdbm-compat4
+    version: "1.23-3"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libgdbm6
+    version: "1.23-3"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libgmp10
+    version: "2:6.2.1+dfsg1-1.1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libgssapi-krb5-2
+    version: "1.20.1-2+deb12u4"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libidn2-0
+    version: "2.3.3-1+b1"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libk5crypto3
+    version: "1.20.1-2+deb12u4"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libkeyutils1
+    version: "1.6.3-2"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libkrb5-3
+    version: "1.20.1-2+deb12u4"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libkrb5support0
+    version: "1.20.1-2+deb12u4"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libmount1
+    version: "2.38.1-5+deb12u3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libperl5.36
+    version: "5.36.0-7+deb12u3"
+    license: GPL-1.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libreadline8
+    version: "8.2-1.3"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libsemanage-common
+    version: "3.4-1"
+    license: LGPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libsemanage2
+    version: "3.4-1+b5"
+    license: LGPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libsmartcols1
+    version: "2.38.1-5+deb12u3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libss2
+    version: "1.47.0-2+b2"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libtasn1-6
+    version: "4.19.0-2+deb12u1"
+    license: LGPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: libuuid1
+    version: "2.38.1-5+deb12u3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: logsave
+    version: "1.47.0-2+b2"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: mawk
+    version: "1.3.4.20200120-3.1"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: mount
+    version: "2.38.1-5+deb12u3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: netbase
+    version: "6.4"
+    license: GPL-2.0-only
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: perl
+    version: "5.36.0-7+deb12u3"
+    license: GPL-1.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: perl-base
+    version: "5.36.0-7+deb12u3"
+    license: GPL-1.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: perl-modules-5.36
+    version: "5.36.0-7+deb12u3"
+    license: GPL-1.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: postgresql-client
+    version: "15+248+deb12u1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: postgresql-client-common
+    version: "248+deb12u1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: readline-common
+    version: "8.2-1.3"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: sed
+    version: "4.9-1"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: sensible-utils
+    version: "0.0.17+nmu1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: sysvinit-utils
+    version: "3.06-4"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: tar
+    version: "1.34+dfsg-1.2+deb12u1"
+    license: GPL-3.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: usr-is-merged
+    version: "37~deb12u1"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: util-linux
+    version: "2.38.1-5+deb12u3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
+  - name: util-linux-extra
+    version: "2.38.1-5+deb12u3"
+    license: GPL-2.0-or-later
+    disposition: accepted
+    rationale: "Debian Bookworm base-image system package. Dynamically-linked OS-level dependency, not a derivative work of SPARC application code per the standard FSF/ASF interpretation of GPL/LGPL across process and library boundaries. SPARC ships under Apache-2.0 and does not redistribute host-OS system libraries as part of its source tree."
+    nist_control: sr-3
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-18"
+    next_review_date: "2026-08-16"
