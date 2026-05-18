@@ -221,6 +221,9 @@ Rails.application.routes.draw do
     collection do
       get :select_profile
       post :create_from_profile
+      # #488 — admin trigger for AwsLabsCdefRefreshJob, RBAC gated on
+      # converters.write to match the DISA CCI refresh button precedent.
+      post :refresh_aws_labs
     end
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
   end

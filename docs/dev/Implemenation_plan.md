@@ -97,7 +97,11 @@ authentication mode coverage matrix.
 - [x] #472 -- SBOM license tracking + policy gate: Trivy `--scanners license`, consolidated `license-inventory.{json,md}` artifact, merged `sparc-combined-sbom.cdx.json`, `license-policy.yml` + `license-dispositions.yml` (warn-only) -- **COMPLETED 2026-05-17** (PR #474)
 - [x] #473 -- Aggregator hardening -- **COMPLETED 2026-05-17** (PR #476)
 - [x] #475 -- Triage outstanding license action items + LICENSES/ population + baseline dispositions -- **COMPLETED 2026-05-17 / 18** (PRs #477, #478)
-- [x] #479 -- Drop roo-xls (GPL-3.0 transitive); scrub Excel UI references; flip license-policy enforce to true; v1.6.2 bump -- **COMPLETED 2026-05-18** (this PR)
+- [x] #479 -- Drop roo-xls (GPL-3.0 transitive); scrub Excel UI references; flip license-policy enforce to true; v1.6.2 bump -- **COMPLETED 2026-05-18** (PR #480)
+- [x] #481 -- Close out 120 unmapped license-inventory components (5-category triage) -- **COMPLETED 2026-05-18** (PR #482)
+- [x] #483 -- Harmonize top-level license to Apache-2.0; v1.6.3 bump -- **COMPLETED 2026-05-18** (PR #484)
+- [ ] #487 -- AWS Labs CDEF bootstrap-on-boot initializer (no shell access required); closes the "fresh deploy waits a week" gap
+- [ ] #488 -- AWS Labs CDEF "Refresh from AWS Labs" admin button on CDEF index (mirrors DISA CCI Refresh Now); same `converters.write` RBAC bucket
 
 ### 10. Database Maintenance
 

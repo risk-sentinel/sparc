@@ -6,6 +6,11 @@ class CdefDocumentsController < ApplicationController
 
   before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement]
   before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement ]
+  # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
+  # ConvertersController. Treats AWS Labs catalog refresh as an
+  # authoritative-upstream-content operation alongside DISA CCI / STIG
+  # refreshes — gated on `converters.write` or admin.
+  before_action :authorize_converter_write!, only: [ :refresh_aws_labs ]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -222,6 +227,37 @@ class CdefDocumentsController < ApplicationController
     redirect_to select_profile_cdef_documents_path
   end
 
+  # POST /cdef_documents/refresh_aws_labs (#488)
+  #
+  # Manually trigger an AwsLabsCdefRefreshJob without waiting for the weekly
+  # recurring tick. Mirrors the DISA CCI "Refresh Now" button precedent
+  # (ConvertersController#refresh_cci). RBAC: converters.write via the
+  # before_action above. Feature-flag gated; an in-flight cache lock
+  # prevents rapid double-clicks from flooding the queue.
+  def refresh_aws_labs
+    unless SparcConfig.aws_labs_cdef_enabled?
+      redirect_to cdef_documents_path,
+        flash: { error: "AWS Labs CDEF ingestion is disabled (set SPARC_AWS_LABS_CDEF_ENABLED=true to enable)." }
+      return
+    end
+
+    lock_key = "aws_labs_cdef_refresh:in_flight"
+    if Rails.cache.exist?(lock_key)
+      redirect_to cdef_documents_path,
+        flash: { warning: "An AWS Labs CDEF refresh is already in flight. Try again in a few minutes." }
+      return
+    end
+    Rails.cache.write(lock_key, true, expires_in: 5.minutes)
+
+    AwsLabsCdefRefreshJob.perform_later(force: true)
+    audit_log("aws_labs_cdef_refresh_requested",
+      subject: nil,
+      metadata: { triggered_via: "ui", actor_email: current_user&.email })
+
+    redirect_to cdef_documents_path,
+      flash: { success: "AWS Labs CDEF refresh queued. New rows will appear once the worker processes them." }
+  end
+
   def status
     render json: {
       status: @cdef_document.status,
@@ -319,6 +355,14 @@ class CdefDocumentsController < ApplicationController
   def publish_config
     { document: @cdef_document, audit_event: "cdef_document_published",
       redirect_path: cdef_document_path(@cdef_document), label: "CDEF" }
+  end
+
+  # Issue #488 — matches the wrapper of the same name in
+  # ConvertersController so the AWS Labs catalog-refresh action sits in
+  # the same RBAC bucket as the DISA CCI / STIG refresh actions
+  # (`converters.write` or admin).
+  def authorize_converter_write!
+    authorize_permission!("converters.write")
   end
 
   def ensure_editable!

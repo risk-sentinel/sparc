@@ -263,4 +263,71 @@ RSpec.describe "CdefDocuments", type: :request do
       expect(flash[:error]).to include("not found")
     end
   end
+
+  # Issue #488 — manual "Refresh from AWS Labs" button trigger.
+  describe "POST /cdef_documents/refresh_aws_labs" do
+    let(:admin) { create(:user, :admin) }
+
+    before do
+      Rails.cache.clear  # In-flight lock lives in cache; reset per example.
+      allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+    end
+
+    context "when the feature is disabled" do
+      before { allow(SparcConfig).to receive(:aws_labs_cdef_enabled?).and_return(false) }
+
+      it "redirects with a flash error and does not enqueue the job" do
+        sign_in_as(admin)
+        expect {
+          post refresh_aws_labs_cdef_documents_path
+        }.not_to have_enqueued_job(AwsLabsCdefRefreshJob)
+
+        expect(response).to redirect_to(cdef_documents_path)
+        expect(flash[:error]).to match(/disabled/i)
+      end
+    end
+
+    context "when the feature is enabled" do
+      before { allow(SparcConfig).to receive(:aws_labs_cdef_enabled?).and_return(true) }
+
+      it "enqueues the refresh job with force: true and audit-logs" do
+        sign_in_as(admin)
+        expect {
+          post refresh_aws_labs_cdef_documents_path
+        }.to have_enqueued_job(AwsLabsCdefRefreshJob).with(force: true)
+
+        expect(response).to redirect_to(cdef_documents_path)
+        expect(flash[:success]).to match(/queued/i)
+        expect(AuditEvent.where(action: "aws_labs_cdef_refresh_requested")).to exist
+      end
+
+      it "no-ops with a flash warning when an in-flight refresh is already cached" do
+        # Test env uses :null_store; stub Rails.cache.exist? directly so the
+        # controller sees the in-flight flag without needing a memory cache.
+        allow(Rails.cache).to receive(:exist?).with("aws_labs_cdef_refresh:in_flight").and_return(true)
+        sign_in_as(admin)
+
+        expect {
+          post refresh_aws_labs_cdef_documents_path
+        }.not_to have_enqueued_job(AwsLabsCdefRefreshJob)
+
+        expect(response).to redirect_to(cdef_documents_path)
+        expect(flash[:warning]).to match(/already in flight/i)
+      end
+
+      it "blocks unauthenticated users via the before_action authorization chain" do
+        # No sign_in_as — request runs without a current_user.
+        post refresh_aws_labs_cdef_documents_path
+        expect(response).not_to have_http_status(:ok)
+      end
+
+      it "blocks signed-in non-admin users without converters.write permission" do
+        regular_user = create(:user)
+        sign_in_as(regular_user)
+        expect {
+          post refresh_aws_labs_cdef_documents_path
+        }.not_to have_enqueued_job(AwsLabsCdefRefreshJob)
+      end
+    end
+  end
 end

@@ -13,11 +13,53 @@
     <h2>Component Definitions</h2>
     <% if signed_in? %>
       <div class="d-flex gap-2">
+        <%# #488: manual trigger for AwsLabsCdefRefreshJob, gated on the
+            converters.write permission (same RBAC bucket as the DISA CCI
+            "Refresh Now" button). Button + modal are hidden entirely when
+            the feature flag is off — no point teasing operators with a
+            button that would just flash an error. %>
+        <% if can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
+          <button type="button" class="btn btn-outline-secondary"
+                  data-bs-toggle="modal" data-bs-target="#refreshAwsLabsModal"
+                  style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+            Refresh from AWS Labs
+          </button>
+        <% end %>
         <%= link_to "Create New", select_profile_cdef_documents_path, class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
         <%= link_to "Upload File", new_cdef_document_path, class: "btn btn-success" %>
       </div>
     <% end %>
   </div>
+
+  <%# #488 — Refresh from AWS Labs confirmation modal (matches the DISA
+      CCI confirmation modal pattern from app/views/converters/show.html.erb). %>
+  <% if signed_in? && can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
+    <div class="modal fade" id="refreshAwsLabsModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Refresh from AWS Labs</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>This will fetch the latest OSCAL Component Definitions from
+              <a href="https://github.com/awslabs/oscal-content-for-aws-services" target="_blank" rel="noopener">
+              awslabs/oscal-content-for-aws-services</a> and import any new or
+              updated entries.</p>
+            <p class="mb-0 small text-body-secondary">Imports are idempotent — existing rows
+              with matching SHA are left unchanged. Refreshes typically take a few seconds.
+              The job runs asynchronously; new rows appear once the worker processes them.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <%= button_to "Refresh Now", refresh_aws_labs_cdef_documents_path,
+                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  form: { style: "display: inline;" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
 
   <% if @cdef_documents.any? %>
     <table class="table table-hover">

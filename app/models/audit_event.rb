@@ -66,6 +66,7 @@ class AuditEvent < ApplicationRecord
     cdef_document_exported
     cdef_document_imported
     cdef_document_copied
+    aws_labs_cdef_refresh_requested
     sap_document_created
     sap_document_updated
     sap_document_deleted
@@ -204,7 +205,8 @@ class AuditEvent < ApplicationRecord
     "CDEF Documents" => %w[cdef_document_created cdef_document_updated cdef_document_deleted
                            cdef_document_delete_blocked
                            cdef_document_exported cdef_document_imported cdef_document_copied
-                           cdef_document_published],
+                           cdef_document_published
+                           aws_labs_cdef_refresh_requested],
     "SAP Documents" => %w[sap_document_created sap_document_updated sap_document_deleted
                           sap_document_delete_blocked sap_document_exported sap_document_imported
                           sap_document_published],
