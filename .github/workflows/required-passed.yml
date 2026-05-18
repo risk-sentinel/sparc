@@ -20,6 +20,11 @@ name: Required Checks Passed
 
 on:
   pull_request:
+    # #473 — `edited` is critical: Test plan checklist fires on body edits
+    # via pr-checklist.yml's [opened, edited, synchronize, reopened] trigger.
+    # Without `edited` here the aggregator never re-evaluates when an updated
+    # body produces a passing pr-checklist run, leaving stale failures pinned.
+    types: [ opened, edited, synchronize, reopened ]
     branches: [ main ]
 
 permissions:
@@ -125,19 +130,44 @@ jobs:
                 if (!byName.has(c.name)) byName.set(c.name, c);
               }
 
-              // 1. Catastrophic failure: any check that completed with a failure conclusion
-              //    (regardless of whether the rule said it was required) — surface and fail.
+              // #473 — Pre-compute the set of check names that currently have
+              // an in-flight run on this SHA. The aggregator must not declare
+              // failure when an in-flight rerun for the same check name could
+              // still land green (e.g. PR Checklist runs against a failed body,
+              // then re-runs against an updated body — the earlier failure is
+              // stale by the time we'd otherwise short-circuit on it).
+              // The existing 25-min timeout still bounds the wait so a stuck
+              // in-flight check eventually surfaces.
+              const inFlightNames = new Set(
+                allChecks
+                  .filter(c => c.status !== 'completed')
+                  .map(c => c.name)
+              );
+
+              // 1. Catastrophic failure: any check that completed with a failure
+              //    conclusion AND has no in-flight rerun on the same SHA.
               const allFailed = [...byName.values()].filter(
                 c => c.status === 'completed' && FAIL_CONCLUSIONS.has(c.conclusion)
               );
-              if (allFailed.length > 0) {
+              const realFailures = allFailed.filter(c => !inFlightNames.has(c.name));
+              if (realFailures.length > 0) {
                 core.setFailed(
-                  `Failed checks: ${allFailed.map(c => `${c.name}=${c.conclusion}`).join(', ')}`
+                  `Failed checks: ${realFailures.map(c => `${c.name}=${c.conclusion}`).join(', ')}`
                 );
                 return;
               }
+              const supersededFailures = allFailed.filter(c => inFlightNames.has(c.name));
+              if (supersededFailures.length > 0) {
+                core.info(
+                  `Iter ${iter}/${MAX_ITER}: ignoring stale failures (in-flight rerun pending) for: ` +
+                  supersededFailures.map(c => c.name).join(', ')
+                );
+              }
 
-              // 2. Apply path-aware rules
+              // 2. Apply path-aware rules. Same defensive pattern: when the
+              //    latest completed run for a required check has a non-OK
+              //    conclusion but an in-flight rerun exists, keep polling
+              //    rather than declaring a rule violation.
               const ruleViolations = [];
               for (const { rule, required } of applicability) {
                 if (!required) continue;
@@ -147,6 +177,9 @@ jobs:
                   continue;
                 }
                 if (check.status !== 'completed') continue;
+                // #473 — defer to the in-flight rerun if one exists
+                if (inFlightNames.has(rule.checkName)) continue;
+
                 if (!OK_CONCLUSIONS.has(check.conclusion)) {
                   ruleViolations.push(`'${rule.checkName}' required for changed paths but conclusion=${check.conclusion}`);
                   continue;

@@ -94,8 +94,9 @@ authentication mode coverage matrix.
 - [x] #456 -- Remove redundant `db:prepare:all` invocation from `bin/docker-entrypoint` (eliminates `Rails::Command::UnrecognizedCommandError` noise in production logs) -- **COMPLETED 2026-05-14** (PR #467)
 - [x] #466 -- AWS Labs CDEF runtime ingestion (opt-in via `SPARC_AWS_LABS_CDEF_ENABLED`); Solid Queue recurring refresh; read-only AWS rows with copy-to-amend; full Apache 2.0 attribution (NOTICE + LICENSES/ + THIRD_PARTY_NOTICES.md) -- **COMPLETED 2026-05-17** (PR #469)
 - [x] #470 -- Squash 29 accumulated migrations (since 2026-03-19 squash) into single consolidated file + v1.6.1 patch bump -- **COMPLETED 2026-05-17** (PR #471, released as v1.6.1)
-- [ ] #472 -- SBOM license tracking + policy gate: Trivy `--scanners license`, consolidated `license-inventory.{json,md}` artifact, `license-policy.yml` + `license-dispositions.yml` (warn-only initially), action-item list for warn/blocklist hits
-- [ ] #473 -- Aggregator hardening: don't short-circuit on stale failure when an in-flight re-run is pending for the same check name
+- [x] #472 -- SBOM license tracking + policy gate: Trivy `--scanners license`, consolidated `license-inventory.{json,md}` artifact, merged `sparc-combined-sbom.cdx.json`, `license-policy.yml` + `license-dispositions.yml` (warn-only) -- **COMPLETED 2026-05-17** (PR #474)
+- [ ] #473 -- Aggregator hardening: add `edited` to pull_request types + in-flight-aware short-circuit so body-edit reruns supersede stale failures
+- [ ] #475 -- Triage outstanding license action items (80 warn + 317 unmapped) and record dispositions; baseline review before flipping `license-policy.yml::enforce: true`
 
 ### 10. Database Maintenance
 
