@@ -403,7 +403,9 @@ jobs:
           category: trivy-fs
 
       - name: Run Trivy filesystem scan (CycloneDX for SAF)
-        run: trivy fs --format cyclonedx --output trivy-fs-sbom.cdx.json --scanners vuln .
+        # #472 — `license` scanner adds component license fields to the
+        # CycloneDX output (zero coverage without it on filesystem scans).
+        run: trivy fs --format cyclonedx --output trivy-fs-sbom.cdx.json --scanners vuln,license .
         continue-on-error: true
 
       - name: Upload Trivy FS artifacts
@@ -492,7 +494,9 @@ jobs:
         continue-on-error: true
 
       - name: Run Trivy container scan (CycloneDX for SAF)
-        run: trivy image --format cyclonedx --output trivy-container-sbom.cdx.json --scanners vuln sparc:${{ github.sha }}
+        # #472 — `license` scanner closes the ~21% license gap in the
+        # container SBOM (Debian packages get license metadata populated).
+        run: trivy image --format cyclonedx --output trivy-container-sbom.cdx.json --scanners vuln,license sparc:${{ github.sha }}
         continue-on-error: true
 
       - name: Upload Trivy container artifacts
@@ -685,6 +689,86 @@ jobs:
             fi
           done
           exit $FAILED
+
+  # ── 9. License Inventory (#472) ──────────────────────────────────
+  # Consolidates the three CycloneDX SBOMs (Ruby + Trivy fs + Trivy
+  # container) into a single license-inventory.{json,md} artifact via
+  # scripts/ci/build_license_inventory.rb. Applies docs/compliance/
+  # license-policy.yml with per-component exceptions from license-
+  # dispositions.yml, producing both machine-readable and human-
+  # readable outputs plus an action-item list for warn/block hits.
+  #
+  # Enforcement is policy-controlled (license-policy.yml -> policy.enforce).
+  # Initial release: warn-only. Flip enforce: true in a follow-up PR
+  # after operators baseline the inventory.
+  license_inventory:
+    runs-on: ubuntu-latest
+    needs: [ changes, sbom_generation, trivy_fs_scan, trivy_container_scan ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout (script + policy + dispositions)
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            scripts/ci/build_license_inventory.rb
+            docs/compliance/license-policy.yml
+            docs/compliance/license-dispositions.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Ruby (matches the rest of the security workflow)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+
+      - name: Download Ruby SBOM
+        uses: actions/download-artifact@v8
+        with:
+          name: sbom-cyclonedx
+          path: sboms/ruby/
+
+      - name: Download Trivy FS SBOM
+        uses: actions/download-artifact@v8
+        with:
+          name: trivy-fs-results
+          path: sboms/trivy-fs/
+
+      - name: Download Trivy container SBOM
+        uses: actions/download-artifact@v8
+        with:
+          name: trivy-container-results
+          path: sboms/trivy-container/
+
+      - name: Build license inventory
+        run: |
+          mkdir -p license-results
+          ruby scripts/ci/build_license_inventory.rb \
+            --sbom sbom-ruby:sboms/ruby/sbom-ruby.cdx.json \
+            --sbom trivy-fs:sboms/trivy-fs/trivy-fs-sbom.cdx.json \
+            --sbom trivy-container:sboms/trivy-container/trivy-container-sbom.cdx.json \
+            --policy docs/compliance/license-policy.yml \
+            --dispositions docs/compliance/license-dispositions.yml \
+            --out-json license-results/license-inventory.json \
+            --out-md   license-results/license-inventory.md \
+            --out-merged-sbom license-results/sparc-combined-sbom.cdx.json \
+            --git-sha "${{ github.sha }}"
+
+      - name: Append summary to GitHub Step Summary
+        if: always()
+        run: |
+          if [ -f license-results/license-inventory.md ]; then
+            cat license-results/license-inventory.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload license inventory artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: license-inventory
+          path: license-results/
+          retention-days: 90
+          if-no-files-found: warn
 
   # ═══════════════════════════════════════════════════════════════
   # Sequential: SAF CLI HDF Normalization
@@ -917,7 +1001,7 @@ jobs:
 
   bundle_results:
     runs-on: ubuntu-latest
-    needs: [ changes, normalize_hdf ]
+    needs: [ changes, normalize_hdf, license_inventory ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Download HDF results
@@ -956,6 +1040,13 @@ jobs:
         with:
           path: all-results/
           name: grype-sbom-results
+
+      - name: Download license inventory for archive
+        uses: actions/download-artifact@v8
+        with:
+          path: all-results/
+          name: license-inventory
+        continue-on-error: true
 
       - name: Download HDF results for archive
         uses: actions/download-artifact@v8
@@ -1031,6 +1122,11 @@ jobs:
           mkdir -p combined-archive/grype
           cp all-results/grype-*.sarif combined-archive/sarif/ 2>/dev/null || true
           cp all-results/grype-*.json combined-archive/grype/ 2>/dev/null || true
+          # #472 — license inventory (consolidated JSON + MD) + canonical merged SBOM
+          mkdir -p combined-archive/licenses
+          cp all-results/license-inventory.json combined-archive/licenses/ 2>/dev/null || true
+          cp all-results/license-inventory.md combined-archive/licenses/ 2>/dev/null || true
+          cp all-results/sparc-combined-sbom.cdx.json combined-archive/sbom/ 2>/dev/null || true
           cd combined-archive && zip -r ../security-scan-results.zip .
 
       - name: Evaluate severity threshold
@@ -1231,9 +1327,16 @@ jobs:
           merge-multiple: true
         continue-on-error: true
 
+      - name: Download license inventory
+        uses: actions/download-artifact@v8
+        with:
+          name: license-inventory
+          path: licenses/
+        continue-on-error: true
+
       - name: Bundle compliance artifacts for sparc-iac
         run: |
-          mkdir -p sparc-compliance/hdf sparc-compliance/cdefs sparc-compliance/sbom sparc-compliance/sarif
+          mkdir -p sparc-compliance/hdf sparc-compliance/cdefs sparc-compliance/sbom sparc-compliance/sarif sparc-compliance/licenses
 
           # HDF scan results (normalized by SAF CLI — includes SBOM-to-HDF conversions)
           cp hdf-results/*.hdf.json sparc-compliance/hdf/ 2>/dev/null || true
@@ -1243,6 +1346,11 @@ jobs:
 
           # SBOMs for supply chain evidence (CycloneDX format)
           cp sbom/*.json sparc-compliance/sbom/ 2>/dev/null || true
+
+          # #472 — Consolidated license inventory (JSON + MD) + canonical merged SBOM
+          cp licenses/license-inventory.json sparc-compliance/licenses/ 2>/dev/null || true
+          cp licenses/license-inventory.md sparc-compliance/licenses/ 2>/dev/null || true
+          cp licenses/sparc-combined-sbom.cdx.json sparc-compliance/sbom/ 2>/dev/null || true
 
           # Raw SARIF scan results for audit trail
           find sarif-results/ -name '*.sarif' -exec cp {} sparc-compliance/sarif/ \; 2>/dev/null || true
@@ -1256,6 +1364,7 @@ jobs:
           CDEF_FILES=$(ls sparc-compliance/cdefs/*.json 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           SBOM_FILES=$(ls sparc-compliance/sbom/*.json 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           SARIF_FILES=$(ls sparc-compliance/sarif/*.sarif* 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
+          LICENSE_FILES=$(ls sparc-compliance/licenses/* 2>/dev/null | jq -R -s 'split("\n") | map(select(length > 0) | split("/") | last)')
           jq -n \
             --arg sid "sparc-application" \
             --arg repo "risk-sentinel/sparc" \
@@ -1267,6 +1376,7 @@ jobs:
             --argjson cdefs "$CDEF_FILES" \
             --argjson sbom "$SBOM_FILES" \
             --argjson sarif "${SARIF_FILES:-[]}" \
+            --argjson licenses "${LICENSE_FILES:-[]}" \
             '{
               "system-id": $sid,
               "source-repo": $repo,
@@ -1274,7 +1384,7 @@ jobs:
               "git-sha": $sha,
               "git-ref": $ref,
               "generated-at": $ts,
-              "artifacts": { "hdf": $hdf, "cdefs": $cdefs, "sbom": $sbom, "sarif": $sarif }
+              "artifacts": { "hdf": $hdf, "cdefs": $cdefs, "sbom": $sbom, "sarif": $sarif, "licenses": $licenses }
             }' > sparc-compliance/manifest.json
 
           echo "## Compliance Bundle Contents" >> $GITHUB_STEP_SUMMARY

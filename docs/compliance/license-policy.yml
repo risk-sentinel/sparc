@@ -1,0 +1,107 @@
+# SPARC License Policy (#472)
+# ==========================================================================
+#
+# Declarative license-disposition policy for the SBOM-driven license
+# inventory built by scripts/ci/build_license_inventory.rb.
+#
+# The script reads this file plus the three CycloneDX SBOMs produced by
+# the security workflow (sbom-ruby + trivy-fs-sbom + trivy-container-sbom)
+# and emits two artifacts on every Security Scanning run:
+#   - license-inventory.json   (machine-readable, for sparc-iac + audit)
+#   - license-inventory.md     (human-readable, for compliance review)
+#
+# Component-level exceptions are tracked in license-dispositions.yml --
+# this file is purely the per-LICENSE policy.
+#
+# Disposition workflow:
+#   allowlist -> no action
+#   warn_list -> action item generated, no CI failure
+#   blocklist -> action item generated, CI failure when enforce=true
+#   unmapped  -> action determined by unmapped_action
+#
+# CI enforcement starts WARN-ONLY (enforce: false) so we can observe the
+# baseline before tightening. Flip enforce=true in a follow-up PR after
+# the inventory has been reviewed against the existing dispositions.
+# ==========================================================================
+
+policy:
+  enforce: false   # set to true to fail CI on blocklist + un-dispositioned warns
+
+  # SPDX IDs that need no review. Mainstream permissive + LGPL.
+  # See: https://spdx.org/licenses/
+  allowlist:
+    - MIT
+    - Apache-2.0
+    - BSD-2-Clause
+    - BSD-3-Clause
+    - 0BSD
+    - ISC
+    - LGPL-2.1
+    - LGPL-2.1-only
+    - LGPL-2.1-or-later
+    - LGPL-3.0
+    - LGPL-3.0-only
+    - LGPL-3.0-or-later
+    - MPL-2.0
+    - Python-2.0
+    - Ruby
+    - Unlicense
+    - CC0-1.0
+    - CC-BY-3.0
+    - CC-BY-4.0
+    - Zlib
+    - WTFPL
+
+  # Require review but do not block. Generate action items in the report.
+  warn_list:
+    - GPL-2.0
+    - GPL-2.0-only
+    - GPL-2.0-or-later
+    - GPL-3.0
+    - GPL-3.0-only
+    - GPL-3.0-or-later
+    - AGPL-3.0
+    - AGPL-3.0-only
+    - AGPL-3.0-or-later
+    - EPL-1.0
+    - EPL-2.0
+    - CDDL-1.0
+    - CDDL-1.1
+    - OFL-1.1
+    - Artistic-2.0
+
+  # Hard blocks: source-available / commercial-only / non-OSI.
+  # Components matching these licenses generate fail-grade action items.
+  blocklist:
+    - SSPL-1.0
+    - BUSL-1.1
+    - Commons-Clause
+    - Elastic-2.0
+    - JSON          # the original "do not be evil" clause
+    - NPOSL-3.0
+    - PolyForm-Noncommercial-1.0.0
+    - PolyForm-Strict-1.0.0
+    - PolyForm-Small-Business-1.0.0
+    - Confluent-Community-1.0
+    - RPSL-1.0
+
+  # How to treat components with NO license field (cdxgen path-only entries,
+  # OS kernel objects without metadata, etc.). Options: ignore | warn | block
+  unmapped_action: warn
+
+  # Path patterns to skip entirely from policy checks. Useful when Trivy
+  # emits SBOM rows for things like "./hdf-schema/dist/go" or vendored
+  # binaries that aren't licensable in the usual sense.
+  #
+  # Each entry is a Ruby regex string (anchors required). After the first
+  # full CI run, expand this list with patterns matching the most common
+  # `unmapped` entries in license-inventory.md.
+  skip_patterns:
+    - "^\\./.*"                      # leading-dot relative paths (cdxgen evidence pseudo-entries)
+    - "^usr/local/bin/"              # binaries in the container (hdf, etc.)
+    - "^usr/local/bundle/.*\\.so$"   # native gem extensions (parent gem already covers license)
+    - "^usr/local/bundle/.*/(exe|bin)/" # gem-shipped executables in the container
+    - "^operating-system$"           # debian/ubuntu OS metarecord
+    - "^var/lib/dpkg/"               # dpkg internal status entries
+    - "^usr/share/doc/"              # documentation directories
+    - "^\\$\\{"                      # malformed entries with unresolved shell expansion

@@ -1,0 +1,58 @@
+# SPARC License Dispositions (#472)
+# ==========================================================================
+#
+# Per-component license dispositions. Companion to license-policy.yml.
+#
+# When a component's license appears in license-policy.yml::warn_list or
+# blocklist, the build_license_inventory.rb script generates an action item
+# for it -- unless this file already records a disposition.
+#
+# Disposition values:
+#   accepted    -- license is fine for SPARC's deployment model; reasoning
+#                  documented in `rationale`. Reviewer + next_review_date set.
+#   replace     -- the component should be swapped out for an allowlisted
+#                  alternative. `target_component` documents the chosen
+#                  replacement. Open until the gem is gone from Gemfile.lock.
+#   waiver      -- a per-deployment legal waiver applies. Used carefully;
+#                  must reference a tracking document.
+#   remediated  -- dispositioned, then resolved (replaced/removed). Kept in
+#                  the file for audit but treated as inactive by the report.
+#
+# Match strategy:
+#   - `name`-only entries match any version of the component.
+#   - `name` + `version` entries are version-specific (use for waivers tied
+#     to specific upstream releases).
+#   - The first matching entry wins; place more-specific entries first.
+#
+# Review cadence: 90 days per FedRAMP supply-chain controls. The script
+# warns when next_review_date is in the past (still emits the action item).
+# ==========================================================================
+
+dispositions: []
+
+# Example shape (kept commented so the file parses as an empty array):
+#
+# dispositions:
+#   - name: example-gem
+#     version: "1.2.3"
+#     license: AGPL-3.0
+#     disposition: accepted
+#     rationale: "Network-use clause does not apply -- the component is
+#                 used only in CLI tooling that runs against local files,
+#                 not in any networked service path. Verified against
+#                 lib/example_usage.rb."
+#     nist_control: sa-15
+#     reviewed_by: "@clem-field"
+#     discovery_date: "2026-05-17"
+#     next_review_date: "2026-08-15"
+#
+#   - name: another-gem
+#     license: BUSL-1.1
+#     disposition: replace
+#     target_component: "another-gem-oss-fork"
+#     rationale: "Upstream relicensed to BUSL in 1.5; pinning to last MIT
+#                 version (1.4.x) is temporary. Migration ticket: #999."
+#     nist_control: sa-22
+#     reviewed_by: "@clem-field"
+#     discovery_date: "2026-05-17"
+#     next_review_date: "2026-06-17"
