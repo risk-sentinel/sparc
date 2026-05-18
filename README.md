@@ -217,4 +217,11 @@ maintainer
 
 ## License
 
-SPARC is released under the [MIT License](LICENSE).
+SPARC is released under the [Apache License, Version 2.0](LICENSE).
+Copyright 2026 Risk Sentinel.
+
+Third-party content sources and per-component license dispositions
+are tracked in [`docs/compliance/THIRD_PARTY_NOTICES.md`](docs/compliance/THIRD_PARTY_NOTICES.md)
+and [`docs/compliance/license-dispositions.yml`](docs/compliance/license-dispositions.yml).
+Canonical text for every license referenced by SPARC's SBOM lives under
+[`LICENSES/`](LICENSES/).
