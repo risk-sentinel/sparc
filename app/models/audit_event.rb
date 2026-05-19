@@ -177,6 +177,7 @@ class AuditEvent < ApplicationRecord
     translation_hdf_to_oscal_sar
     translation_hdf_to_oscal_poam
     translation_oscal_poam_to_hdf_amendments
+    converter_refresh_started
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }
@@ -237,7 +238,8 @@ class AuditEvent < ApplicationRecord
                              control_catalog_published],
     "Control Mappings" => %w[control_mapping_created control_mapping_updated control_mapping_deleted
                              control_mapping_exported control_mapping_published
-                             control_mapping_deprecated mapping_entry_created mapping_entry_deleted],
+                             control_mapping_deprecated mapping_entry_created mapping_entry_deleted
+                             converter_refresh_started],
     "Evidence" => %w[evidence_created evidence_updated evidence_deleted
                      attestation_created attestation_deleted],
     "Authorization Boundaries" => %w[authorization_boundary_created authorization_boundary_updated

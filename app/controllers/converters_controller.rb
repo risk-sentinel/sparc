@@ -3,10 +3,11 @@
 class ConvertersController < ApplicationController
   before_action :authorize_converter_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :do_import, :refresh_cci,
-    :import_stig
+    :refresh_aws_config, :refresh_aws_security_hub, :import_stig
   ]
   before_action :set_converter, only: [
-    :show, :edit, :update, :destroy, :export, :refresh_cci
+    :show, :edit, :update, :destroy, :export, :refresh_cci,
+    :refresh_aws_config, :refresh_aws_security_hub
   ]
 
   def index
@@ -94,20 +95,29 @@ class ConvertersController < ApplicationController
 
   # POST /converters/:id/refresh_cci
   def refresh_cci
-    unless @converter.converter_type == "cci_to_nist"
-      redirect_to @converter, flash: { error: "Refresh is only available for CCI → NIST converters." }
-      return
-    end
+    refresh_converter!(
+      expected_type: "cci_to_nist",
+      flash_label: "CCI refresh",
+      success_message: "CCI refresh started. This may take a minute."
+    )
+  end
 
-    if @converter.status == "processing"
-      redirect_to @converter, flash: { warning: "A refresh is already in progress." }
-      return
-    end
+  # POST /converters/:id/refresh_aws_config (#494)
+  def refresh_aws_config
+    refresh_converter!(
+      expected_type: "aws_config_to_nist",
+      flash_label: "AWS Config refresh",
+      success_message: "Re-vendoring MITRE AWS Config → NIST mappings. Status updates auto-refresh below."
+    )
+  end
 
-    @converter.update!(status: "processing", error_message: nil)
-    ConverterRefreshJob.perform_later(@converter.id)
-    audit_log("converter_refresh_started", subject: @converter, metadata: { name: @converter.name })
-    redirect_to @converter, flash: { success: "CCI refresh started. This may take a minute." }
+  # POST /converters/:id/refresh_aws_security_hub (#494)
+  def refresh_aws_security_hub
+    refresh_converter!(
+      expected_type: "aws_security_hub_to_nist",
+      flash_label: "AWS Security Hub refresh",
+      success_message: "Re-scraping AWS Security Hub user guide. This may take 2–3 minutes."
+    )
   end
 
   # GET /converters/stig_parser
@@ -179,6 +189,30 @@ class ConvertersController < ApplicationController
 
   def authorize_converter_write!
     authorize_permission!("converters.write")
+  end
+
+  # Shared refresh entry point used by refresh_cci, refresh_aws_config,
+  # and refresh_aws_security_hub. Validates converter_type, guards
+  # against re-entrancy, sets status=processing, enqueues the job, and
+  # audit-logs. The actual data work happens in the background service
+  # selected by ConverterRefreshJob::SERVICE_BY_TYPE.
+  def refresh_converter!(expected_type:, flash_label:, success_message:)
+    unless @converter.converter_type == expected_type
+      redirect_to @converter, flash: { error: "Refresh is only available for #{expected_type} converters." }
+      return
+    end
+
+    if @converter.status == "processing"
+      redirect_to @converter, flash: { warning: "A refresh is already in progress." }
+      return
+    end
+
+    @converter.update!(status: "processing", error_message: nil)
+    ConverterRefreshJob.perform_later(@converter.id)
+    audit_log("converter_refresh_started",
+              subject: @converter,
+              metadata: { name: @converter.name, converter_type: @converter.converter_type })
+    redirect_to @converter, flash: { success: success_message }
   end
 
   # Build a Converter record from imported JSON

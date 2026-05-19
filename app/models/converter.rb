@@ -19,13 +19,13 @@ class Converter < ApplicationRecord
 
   validates :name, presence: true
   validates :uuid, presence: true, uniqueness: true
-  validates :converter_type, presence: true, inclusion: { in: %w[cci_to_nist cis_to_nist scap_oval_to_nist stig_to_nist aws_security_hub_to_nist custom] }
+  validates :converter_type, presence: true, inclusion: { in: %w[cci_to_nist cis_to_nist scap_oval_to_nist stig_to_nist aws_config_to_nist aws_security_hub_to_nist custom] }
   validates :status, inclusion: { in: %w[draft complete deprecated processing failed] }
 
   scope :sorted, -> { order(updated_at: :desc) }
   scope :published, -> { where(status: "complete") }
 
-  TYPES = %w[cci_to_nist cis_to_nist scap_oval_to_nist stig_to_nist aws_security_hub_to_nist custom].freeze
+  TYPES = %w[cci_to_nist cis_to_nist scap_oval_to_nist stig_to_nist aws_config_to_nist aws_security_hub_to_nist custom].freeze
   STATUSES = %w[draft complete deprecated processing failed].freeze
 
   TYPE_LABELS = {
@@ -33,6 +33,7 @@ class Converter < ApplicationRecord
     "cis_to_nist" => "CIS → NIST",
     "scap_oval_to_nist" => "SCAP/OVAL → NIST",
     "stig_to_nist" => "STIG → NIST",
+    "aws_config_to_nist" => "AWS Config → NIST",
     "aws_security_hub_to_nist" => "AWS Security Hub → NIST",
     "custom" => "Custom"
   }.freeze

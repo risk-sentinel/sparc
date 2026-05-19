@@ -108,25 +108,42 @@ namespace :mappings do
 
   desc "Report AWS Security Hub -> NIST mapping coverage across imported AWS Labs CDEFs"
   task coverage_report: :environment do
-    converter = Converter.find_by(converter_type: "aws_security_hub_to_nist")
-    unless converter
-      abort "aws_security_hub_to_nist Converter not found. Run `bin/rails db:seed` first."
+    require "set"
+
+    sec_hub_converter    = Converter.find_by(converter_type: "aws_security_hub_to_nist")
+    aws_config_converter = Converter.find_by(converter_type: "aws_config_to_nist")
+
+    unless sec_hub_converter && aws_config_converter
+      abort "Required converters not found. Run `bin/rails db:seed` first.\n" \
+            "  aws_security_hub_to_nist: #{sec_hub_converter ? 'OK' : 'MISSING'}\n" \
+            "  aws_config_to_nist:       #{aws_config_converter ? 'OK' : 'MISSING'}"
     end
 
-    mapped_sec_hub_ids = converter.converter_entries.reorder(nil).distinct.pluck(:source_id).to_set
-    aws_docs           = CdefDocument.aws_labs_sourced
+    direct_ids = sec_hub_converter.converter_entries.reorder(nil).distinct.pluck(:source_id).to_set
+    config_rules_mapped = aws_config_converter.converter_entries.reorder(nil).distinct.pluck(:source_id).to_set
+
+    # Build the SecHub -> Config Rule bridge from the data file so we can
+    # determine which unmapped SecHub controls could in theory chain via
+    # the AWS Config converter.
+    require Rails.root.join("lib/aws_security_hub/aws_security_hub_mapping_loader")
+    bridge_path = Rails.root.join("lib/data_mappings/aws_security_hub_to_nist.json")
+    bridge = bridge_path.exist? ? AwsSecurityHub::AwsSecurityHubMappingLoader.build_config_rule_bridge(JSON.parse(File.read(bridge_path))) : {}
+
+    aws_docs = CdefDocument.aws_labs_sourced
 
     if aws_docs.empty?
-      puts "No AWS-Labs-sourced CdefDocuments yet (SPARC_AWS_LABS_CDEF_ENABLED=true required)."
-      puts "Converter has #{converter.converter_entries.count} rows across " \
-           "#{mapped_sec_hub_ids.size} mapped SecHub controls."
+      puts "Converter inventory (no AWS-Labs-sourced CdefDocuments yet)"
+      puts "  aws_security_hub_to_nist: #{sec_hub_converter.converter_entries.count} rows across #{direct_ids.size} SecHub controls"
+      puts "  aws_config_to_nist:       #{aws_config_converter.converter_entries.count} rows across #{config_rules_mapped.size} Config Rules"
       next
     end
 
     total_controls = 0
     referenced_sec_hub_ids = Set.new
-    mapped_controls = 0
-    unmapped_controls = []
+    direct_match_count = 0
+    chained_match_count = 0
+    unmapped_count = 0
+    unmapped_ids = Set.new
 
     aws_docs.find_each do |doc|
       doc.cdef_controls.find_each do |c|
@@ -134,42 +151,48 @@ namespace :mappings do
         next unless c.control_id.to_s.match?(/\A[A-Za-z][A-Za-z0-9]*\.\d+\z/)
 
         referenced_sec_hub_ids << c.control_id
-        if mapped_sec_hub_ids.include?(c.control_id)
-          mapped_controls += 1
+
+        if direct_ids.include?(c.control_id)
+          direct_match_count += 1
+        elsif (rule = bridge[c.control_id]) && config_rules_mapped.include?(rule)
+          chained_match_count += 1
         else
-          unmapped_controls << { doc: doc.name, sec_hub_id: c.control_id }
+          unmapped_count += 1
+          unmapped_ids << c.control_id
         end
       end
     end
 
     puts "AWS Security Hub -> NIST 800-53 mapping coverage"
     puts "================================================="
-    puts "AWS Labs CDEFs imported:           #{aws_docs.count}"
-    puts "Total CdefControl rows:            #{total_controls}"
-    puts "SecHub-shaped control_ids:         #{referenced_sec_hub_ids.size} unique"
-    puts "  with NIST mapping (covered):     #{(referenced_sec_hub_ids & mapped_sec_hub_ids).size}"
-    puts "  without mapping (gap):           #{(referenced_sec_hub_ids - mapped_sec_hub_ids).size}"
+    puts "AWS Labs CDEFs imported:               #{aws_docs.count}"
+    puts "Total CdefControl rows:                #{total_controls}"
+    puts "Unique SecHub-shaped control_ids:      #{referenced_sec_hub_ids.size}"
     puts ""
-    puts "Per-control rows (across documents)"
-    puts "  mapped:                          #{mapped_controls}"
-    puts "  unmapped:                        #{unmapped_controls.length}"
+    puts "Resolution path"
+    puts "  direct (aws_security_hub_to_nist):   #{direct_match_count}"
+    puts "  chained (via aws_config_to_nist):    #{chained_match_count}"
+    puts "  unmapped:                            #{unmapped_count}"
+    puts ""
+    puts "Converter inventory"
+    puts "  aws_security_hub_to_nist: #{sec_hub_converter.converter_entries.count} rows / #{direct_ids.size} SecHub controls"
+    puts "  aws_config_to_nist:       #{aws_config_converter.converter_entries.count} rows / #{config_rules_mapped.size} Config Rules"
 
-    if (gap_ids = referenced_sec_hub_ids - mapped_sec_hub_ids).any?
+    if unmapped_ids.any?
       puts ""
       puts "Unmapped SecHub controls (sample of up to 30):"
-      gap_ids.to_a.sort.first(30).each { |id| puts "  - #{id}" }
-      puts "" if gap_ids.size > 30
-      puts "  ... and #{gap_ids.size - 30} more" if gap_ids.size > 30
+      unmapped_ids.to_a.sort.first(30).each { |id| puts "  - #{id}" }
+      puts "  ... and #{unmapped_ids.size - 30} more" if unmapped_ids.size > 30
       puts ""
       puts "To resolve gaps:"
-      puts "  1. Re-scrape AWS docs (in case AWS added the mapping):"
-      puts "     bundle exec rake mappings:scrape_aws_security_hub"
-      puts "  2. Re-vendor MITRE data (in case MITRE updated):"
-      puts "     bundle exec rake mappings:vendor_mitre_aws_config"
-      puts "  3. Re-seed the converter:"
-      puts "     bin/rails db:seed"
-      puts "  4. For controls AWS and MITRE both omit, hand-curate via"
-      puts "     the converter UI (converters.write permission)."
+      puts "  1. Re-scrape AWS docs (case: AWS may have added the mapping)"
+      puts "     /converters/<aws_security_hub_to_nist> -> 'Refresh from AWS docs'"
+      puts "     OR rake mappings:scrape_aws_security_hub"
+      puts "  2. Re-vendor MITRE data (case: MITRE may have added the Config Rule)"
+      puts "     /converters/<aws_config_to_nist> -> 'Refresh from MITRE'"
+      puts "     OR rake mappings:vendor_mitre_aws_config"
+      puts "  3. For controls AWS + MITRE both omit, hand-curate via the converter UI"
+      puts "     (Edit on /converters/<id>, requires converters.write)"
     end
   end
 end

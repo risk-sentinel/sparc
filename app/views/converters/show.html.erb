@@ -13,13 +13,29 @@
           Refresh from DISA
         </button>
       <% end %>
+      <%# #494 — AWS Config Rule refresh button %>
+      <% if @converter.converter_type == "aws_config_to_nist" && can_write_converters? %>
+        <button type="button" class="btn btn-warning btn-sm fw-semibold"
+                data-bs-toggle="modal" data-bs-target="#refreshAwsConfigModal"
+                <%= "disabled" if @converter.status == "processing" %>>
+          Refresh from MITRE
+        </button>
+      <% end %>
+      <%# #494 — AWS Security Hub refresh button %>
+      <% if @converter.converter_type == "aws_security_hub_to_nist" && can_write_converters? %>
+        <button type="button" class="btn btn-warning btn-sm fw-semibold"
+                data-bs-toggle="modal" data-bs-target="#refreshAwsSecurityHubModal"
+                <%= "disabled" if @converter.status == "processing" %>>
+          Refresh from AWS docs
+        </button>
+      <% end %>
       <%= link_to "Export JSON", export_converter_path(@converter), class: "btn btn-sm",
             style: "background: #8e44ad; color: white; font-size: 0.8rem;" %>
       <%= link_to "Back", converters_path, class: "btn btn-secondary btn-sm" %>
     </div>
   </div>
 
-  <%# ── Refresh Confirmation Modal ── %>
+  <%# ── Refresh Confirmation Modals ── %>
   <% if @converter.converter_type == "cci_to_nist" && can_write_converters? %>
     <div class="modal fade" id="refreshCciModal" tabindex="-1" aria-labelledby="refreshCciModalLabel" aria-hidden="true">
       <div class="modal-dialog">
@@ -39,6 +55,68 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
             <%= button_to "Refresh Now", refresh_cci_converter_path(@converter),
+                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  form: { style: "display: inline;" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# #494 — AWS Config Rule refresh modal %>
+  <% if @converter.converter_type == "aws_config_to_nist" && can_write_converters? %>
+    <div class="modal fade" id="refreshAwsConfigModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Refresh AWS Config Rule mapping from MITRE</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>This will re-vendor MITRE's
+              <a href="https://github.com/mitre/heimdall2" target="_blank" rel="noopener">heimdall2</a>
+              AwsConfigMappingData and reload the MITRE-vendored entries on this converter.</p>
+            <ul class="small text-body-secondary mb-0">
+              <li>Only rows tagged <code>category=mitre_vendored</code> are replaced</li>
+              <li>Operator-added rows (other categories) are preserved</li>
+              <li>The unique-pair index dedupes any collisions</li>
+              <li>Typically completes in under a minute</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <%= button_to "Refresh Now", refresh_aws_config_converter_path(@converter),
+                  method: :post, class: "btn btn-warning btn-sm fw-semibold",
+                  form: { style: "display: inline;" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# #494 — AWS Security Hub refresh modal %>
+  <% if @converter.converter_type == "aws_security_hub_to_nist" && can_write_converters? %>
+    <div class="modal fade" id="refreshAwsSecurityHubModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Refresh AWS Security Hub mapping from AWS docs</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>This will re-scrape the
+              <a href="https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-controls-reference.html" target="_blank" rel="noopener">AWS Security Hub User Guide</a>
+              and reload the AWS-direct entries on this converter.</p>
+            <ul class="small text-body-secondary mb-0">
+              <li>Only rows tagged <code>category=aws_direct</code> are replaced</li>
+              <li>Operator-added rows (other categories) are preserved</li>
+              <li>Re-scrape covers ~80 service pages (250 ms throttle) — expect 2–3 minutes</li>
+              <li>Status updates appear below while running</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <%= button_to "Refresh Now", refresh_aws_security_hub_converter_path(@converter),
                   method: :post, class: "btn btn-warning btn-sm fw-semibold",
                   form: { style: "display: inline;" } %>
           </div>

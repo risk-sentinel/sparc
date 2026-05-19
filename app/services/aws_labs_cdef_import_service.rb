@@ -205,44 +205,72 @@ class AwsLabsCdefImportService
     document
   end
 
-  # Issue #491 — Walks the freshly-parsed CdefControls and looks up each
-  # AWS Security Hub control_id (e.g., "IAM.3", "S3.5") in the
-  # aws_security_hub_to_nist Converter. Persists the lookup result as
-  # CdefControlField rows so heatmap / OSCAL export / SSP cross-reference
-  # consumers can resolve to NIST 800-53 rev5 control identifiers.
+  # Issue #491 / #494 -- Two-hop NIST enrichment.
   #
-  # We do NOT mutate the control_id column itself -- the AWS upstream
-  # identifier remains the canonical reference for the row. The NIST
-  # mapping is additive metadata, with the SecHub id always recoverable.
+  # For each AWS Security Hub control_id on a freshly-parsed CdefControl:
   #
-  # Fields written per CdefControl when a mapping exists:
-  #   - aws_security_hub_id  : the original SecHub identifier (provenance)
-  #   - nist_oscal_ids       : comma-joined OSCAL ids (audit / display)
-  #   - nist_primary_id      : the lowest-sorted NIST id (primary for grouping)
-  #   - nist_mapping_source  : "aws_direct" or "mitre_fallback" -- which
-  #                            data source produced the mapping
+  #   1. Direct lookup in the aws_security_hub_to_nist Converter
+  #      (sourced from AWS Security Hub User Guide).
+  #      Found  -> use those NIST ids; mark source = "aws_direct".
+  #      Empty  -> proceed to step 2.
+  #
+  #   2. Pull the aws_config_rule for this SecHub id from the
+  #      lib/data_mappings/aws_security_hub_to_nist.json bridge file
+  #      (cached in memory).
+  #      None recorded -> leave unmapped.
+  #
+  #   3. Lookup that Config Rule in the aws_config_to_nist Converter
+  #      (sourced from mitre/heimdall2, hand-extensible).
+  #      Found  -> use those NIST ids; mark source = "via_config_rule".
+  #      Empty  -> leave unmapped.
+  #
+  # We do NOT mutate the control_id column. The AWS upstream identifier
+  # remains the canonical reference; NIST mapping is additive metadata
+  # written to cdef_control_fields.
+  #
+  # Fields written per enriched CdefControl:
+  #   - aws_security_hub_id   : the original SecHub identifier
+  #   - nist_oscal_ids        : comma-joined OSCAL ids (sorted)
+  #   - nist_primary_id       : lowest-sorted NIST id (grouping key)
+  #   - nist_mapping_source   : "aws_direct" | "via_config_rule"
+  #   - aws_config_rule       : the Config Rule name (when via_config_rule)
   def enrich_with_nist_mappings!(document)
-    converter = Converter.find_by(converter_type: "aws_security_hub_to_nist")
-    unless converter
+    sec_hub_converter    = Converter.find_by(converter_type: "aws_security_hub_to_nist")
+    aws_config_converter = Converter.find_by(converter_type: "aws_config_to_nist")
+
+    unless sec_hub_converter
       @logger.debug("[AwsLabsCdefImportService] No aws_security_hub_to_nist Converter; skipping NIST enrichment")
       return
     end
+
+    bridge = sec_hub_config_rule_bridge
 
     enriched_count = 0
     document.cdef_controls.find_each do |control|
       sec_hub_id = control.control_id.to_s
       next unless sec_hub_id.match?(/\A[A-Za-z][A-Za-z0-9]*\.\d+\z/)
 
-      entries = converter.converter_entries.where(source_id: sec_hub_id)
-      next if entries.empty?
+      direct_ids = sec_hub_converter.converter_entries
+        .where(source_id: sec_hub_id)
+        .reorder(nil).distinct.pluck(:target_id).uniq.sort
 
-      nist_ids = entries.pluck(:target_id).uniq.sort
-      mapping_source = entries.pluck(:category).uniq.first
+      if direct_ids.any?
+        write_enrichment!(control, sec_hub_id, direct_ids, source: "aws_direct")
+        enriched_count += 1
+        next
+      end
 
-      upsert_cdef_field!(control, "aws_security_hub_id", sec_hub_id, editable: false)
-      upsert_cdef_field!(control, "nist_oscal_ids", nist_ids.join(","), editable: false)
-      upsert_cdef_field!(control, "nist_primary_id", nist_ids.first, editable: false)
-      upsert_cdef_field!(control, "nist_mapping_source", mapping_source, editable: false)
+      # Fallback: chain through AWS Config Rule.
+      config_rule = bridge[sec_hub_id]
+      next if config_rule.nil? || config_rule.empty? || aws_config_converter.nil?
+
+      chained_ids = aws_config_converter.converter_entries
+        .where(source_id: config_rule)
+        .reorder(nil).distinct.pluck(:target_id).uniq.sort
+
+      next if chained_ids.empty?
+
+      write_enrichment!(control, sec_hub_id, chained_ids, source: "via_config_rule", config_rule: config_rule)
       enriched_count += 1
     end
 
@@ -252,9 +280,32 @@ class AwsLabsCdefImportService
     end
   end
 
+  def write_enrichment!(control, sec_hub_id, nist_ids, source:, config_rule: nil)
+    upsert_cdef_field!(control, "aws_security_hub_id", sec_hub_id, editable: false)
+    upsert_cdef_field!(control, "nist_oscal_ids", nist_ids.join(","), editable: false)
+    upsert_cdef_field!(control, "nist_primary_id", nist_ids.first, editable: false)
+    upsert_cdef_field!(control, "nist_mapping_source", source, editable: false)
+    upsert_cdef_field!(control, "aws_config_rule", config_rule, editable: false) if config_rule
+  end
+
   def upsert_cdef_field!(control, field_name, field_value, editable:)
     field = control.cdef_control_fields.find_or_initialize_by(field_name: field_name)
     field.update!(field_value: field_value, editable: editable)
+  end
+
+  # Cached SecHub -> AWS Config Rule bridge, built once per service
+  # instance from the scraped JSON. Used as the second hop when the
+  # AWS Security Hub converter has no direct row for a SecHub id.
+  def sec_hub_config_rule_bridge
+    @sec_hub_config_rule_bridge ||= begin
+      require Rails.root.join("lib/aws_security_hub/aws_security_hub_mapping_loader")
+      path = Rails.root.join("lib/data_mappings/aws_security_hub_to_nist.json")
+      if path.exist?
+        AwsSecurityHub::AwsSecurityHubMappingLoader.build_config_rule_bridge(JSON.parse(File.read(path)))
+      else
+        {}
+      end
+    end
   end
 
   def derive_name(candidate)

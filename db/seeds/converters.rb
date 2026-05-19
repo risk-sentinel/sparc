@@ -249,37 +249,31 @@ rescue => e
   Rails.logger.error("[Seed:Converters] SCAP/OVAL failed: #{e.class} — #{e.message}")
 end
 
-# ── 4. AWS Security Hub → NIST SP 800-53 rev5 (#491) ──────────────────
-# Primary data: lib/data_mappings/aws_security_hub_to_nist.json (AWS docs scrape)
-# Fallback:     lib/data_mappings/mitre_aws_config_to_nist.json (vendored MITRE)
-# Composite logic lives in lib/aws_security_hub/composite_mapping_builder.rb.
+# ── 4. AWS Config Rule → NIST SP 800-53 (#494, MITRE-sourced) ─────────
+# Vendored from mitre/heimdall2 AwsConfigMappingData. First-class
+# converter: editable, refreshable independently of AWS Security Hub.
+# AwsLabsCdefImportService chains through this converter when AWS does
+# not publish a direct NIST mapping for a Sec Hub control.
 begin
-require Rails.root.join("lib/aws_security_hub/composite_mapping_builder")
+require Rails.root.join("lib/aws_security_hub/aws_config_mapping_loader")
 
-aws_path   = MAPPINGS_DIR.join("aws_security_hub_to_nist.json")
 mitre_path = MAPPINGS_DIR.join("mitre_aws_config_to_nist.json")
-
-if aws_path.exist? && mitre_path.exist?
-  puts "Seeding AWS Security Hub → NIST rev5 converter..."
-  aws_doc   = JSON.parse(File.read(aws_path))
+if mitre_path.exist?
+  puts "Seeding AWS Config Rule → NIST converter..."
   mitre_doc = JSON.parse(File.read(mitre_path))
 
   converter = seed_converter(
-    name: "AWS Security Hub → NIST SP 800-53 rev5",
-    converter_type: "aws_security_hub_to_nist",
-    source_framework: "AWS Security Hub",
-    version: aws_doc["version"],
-    description: "AWS Security Hub controls mapped to NIST 800-53 rev5. " \
-                 "Primary source: AWS Security Hub User Guide (scraped). " \
-                 "Fallback: MITRE heimdall2 AwsConfigMappingData (joined via AWS Config rule).",
-    source: aws_doc["source"]
+    name: "AWS Config Rule → NIST SP 800-53",
+    converter_type: "aws_config_to_nist",
+    source_framework: "AWS Config Rules",
+    version: mitre_doc["version"],
+    description: "AWS Config Rule → NIST 800-53 mapping vendored from mitre/heimdall2 " \
+                 "(Apache-2.0). Editable to extend coverage beyond MITRE's curated set.",
+    source: mitre_doc["source"]
   )
 
   if converter.converter_entries.none?
-    rows, stats = AwsSecurityHub::CompositeMappingBuilder.build(
-      aws_direct: aws_doc, mitre: mitre_doc
-    )
-
+    rows = AwsSecurityHub::AwsConfigMappingLoader.build(mitre_doc)
     row_order = 0
     entries = rows.map do |r|
       {
@@ -295,17 +289,69 @@ if aws_path.exist? && mitre_path.exist?
         updated_at: Time.current
       }
     end
-
     ConverterEntry.insert_all(entries) if entries.any?
-    puts "  Loaded #{entries.length} entries " \
-         "(aws_direct=#{stats[:aws_direct]}, mitre_fallback=#{stats[:mitre_fallback]}, unmapped=#{stats[:unmapped]})"
+    puts "  Loaded #{entries.length} entries from #{mitre_doc["total_entries"]} MITRE Config Rules"
+  else
+    puts "  AWS Config entries already exist (#{converter.converter_entries.count}), skipping"
+  end
+else
+  puts "  Skipping AWS Config Rule converter (missing #{mitre_path})"
+end
+rescue => e
+  puts "  ERROR loading AWS Config Rule converter: #{e.class} — #{e.message}"
+  Rails.logger.error("[Seed:Converters] AWS Config Rule failed: #{e.class} — #{e.message}")
+end
+
+# ── 5. AWS Security Hub → NIST SP 800-53 rev5 (#491 + #494) ────────────
+# AWS-direct mappings only (sourced from the AWS Security Hub User Guide).
+# Sec Hub controls without an AWS-published NIST mapping are resolved at
+# import time by AwsLabsCdefImportService chaining through the AWS Config
+# Rule converter (above) via the aws_config_rule recorded in remarks.
+begin
+require Rails.root.join("lib/aws_security_hub/aws_security_hub_mapping_loader")
+
+aws_path = MAPPINGS_DIR.join("aws_security_hub_to_nist.json")
+if aws_path.exist?
+  puts "Seeding AWS Security Hub → NIST rev5 converter..."
+  aws_doc = JSON.parse(File.read(aws_path))
+
+  converter = seed_converter(
+    name: "AWS Security Hub → NIST SP 800-53 rev5",
+    converter_type: "aws_security_hub_to_nist",
+    source_framework: "AWS Security Hub",
+    version: aws_doc["version"],
+    description: "AWS Security Hub controls mapped to NIST 800-53 rev5 directly. " \
+                 "Source: AWS Security Hub User Guide (scraped). Chained with the " \
+                 "AWS Config Rule converter at import time for controls without an " \
+                 "AWS-published NIST mapping.",
+    source: aws_doc["source"]
+  )
+
+  if converter.converter_entries.none?
+    rows = AwsSecurityHub::AwsSecurityHubMappingLoader.build(aws_doc)
+    row_order = 0
+    entries = rows.map do |r|
+      {
+        converter_id: converter.id,
+        source_id: r["source_id"],
+        target_id: r["target_id"],
+        relationship: r["relationship"],
+        category: r["category"],
+        remarks: r["remarks"],
+        row_order: row_order += 1,
+        uuid: SecureRandom.uuid,
+        created_at: Time.current,
+        updated_at: Time.current
+      }
+    end
+    ConverterEntry.insert_all(entries) if entries.any?
+    direct_count = rows.map { |r| r["source_id"] }.uniq.size
+    puts "  Loaded #{entries.length} entries from #{direct_count} AWS-direct Sec Hub controls"
   else
     puts "  AWS Security Hub entries already exist (#{converter.converter_entries.count}), skipping"
   end
 else
-  puts "  Skipping AWS Security Hub converter (missing input files):"
-  puts "    aws_security_hub_to_nist.json present?  #{aws_path.exist?}"
-  puts "    mitre_aws_config_to_nist.json present?  #{mitre_path.exist?}"
+  puts "  Skipping AWS Security Hub converter (missing #{aws_path})"
 end
 rescue => e
   puts "  ERROR loading AWS Security Hub converter: #{e.class} — #{e.message}"
@@ -313,7 +359,7 @@ rescue => e
 end
 
 # ── Post-load verification ─────────────────────────────────────────────
-expected = %w[cci_to_nist cis_to_nist scap_oval_to_nist aws_security_hub_to_nist]
+expected = %w[cci_to_nist cis_to_nist scap_oval_to_nist aws_config_to_nist aws_security_hub_to_nist]
 loaded = Converter.where(converter_type: expected).pluck(:converter_type)
 missing = expected - loaded
 if missing.any?

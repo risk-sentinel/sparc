@@ -266,6 +266,8 @@ Rails.application.routes.draw do
     member do
       get :export
       post :refresh_cci
+      post :refresh_aws_config          # #494
+      post :refresh_aws_security_hub    # #494
     end
     collection do
       get :import

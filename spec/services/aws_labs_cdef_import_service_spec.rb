@@ -156,19 +156,29 @@ RSpec.describe AwsLabsCdefImportService do
     end
   end
 
-  # Issue #491 — enrich AWS-Labs CDEFs with NIST mappings via the
-  # aws_security_hub_to_nist Converter at import time.
-  describe "NIST enrichment via aws_security_hub_to_nist Converter (#491)" do
+  # Issues #491 + #494 -- two-hop NIST enrichment with Converters
+  # aws_security_hub_to_nist (direct) and aws_config_to_nist (chained
+  # via the SecHub -> AWS Config Rule bridge in lib/data_mappings/).
+  describe "NIST enrichment via two-hop chain (#491 + #494)" do
     let(:iam_cd) { fixture_dir.join("iam-cd-realistic.json").read }
-    let(:converter) do
+
+    let!(:sec_hub_converter) do
       Converter.create!(
         name: "AWS Security Hub → NIST SP 800-53 rev5",
         converter_type: "aws_security_hub_to_nist",
         source_framework: "AWS Security Hub",
         target_framework: "NIST SP 800-53",
-        version: "test",
-        description: "spec",
-        status: "complete"
+        version: "test", description: "spec", status: "complete"
+      )
+    end
+
+    let!(:aws_config_converter) do
+      Converter.create!(
+        name: "AWS Config Rule → NIST SP 800-53",
+        converter_type: "aws_config_to_nist",
+        source_framework: "AWS Config Rules",
+        target_framework: "NIST SP 800-53",
+        version: "test", description: "spec", status: "complete"
       )
     end
 
@@ -183,36 +193,64 @@ RSpec.describe AwsLabsCdefImportService do
         .with(path: "component-definitions/iam/iam-cd.json")
         .and_return(file_entry(path: "component-definitions/iam/iam-cd.json", sha: "sha-iam", content: iam_cd))
 
-      # Seed minimal converter rows: IAM.3 maps to two NIST ids (aws_direct),
-      # IAM.7 maps to one (mitre_fallback). IAM.99999 has no rows.
+      # Hop 1: IAM.3 mapped directly via aws_security_hub_to_nist.
       [
-        { sec_hub: "IAM.3", nist: "ac-2.1", source: "aws_direct" },
-        { sec_hub: "IAM.3", nist: "ac-3.15", source: "aws_direct" },
-        { sec_hub: "IAM.7", nist: "ia-5.1", source: "mitre_fallback" }
+        { source: "IAM.3", target: "ac-2.1" },
+        { source: "IAM.3", target: "ac-3.15" }
       ].each_with_index do |r, i|
         ConverterEntry.create!(
-          converter: converter,
-          source_id: r[:sec_hub],
-          target_id: r[:nist],
-          relationship: "intersects",
-          category: r[:source],
-          row_order: i + 1
+          converter: sec_hub_converter,
+          source_id: r[:source], target_id: r[:target],
+          relationship: "intersects", category: "aws_direct",
+          row_order: i + 1, remarks: "title=Rotate | aws_config_rule=access-keys-rotated | source=aws_direct"
         )
       end
+
+      # Hop 2: IAM.7 has no direct row in sec_hub_converter, but the
+      # bridge gives its Config Rule (iam-password-policy), and the
+      # aws_config_converter maps that rule to NIST.
+      ConverterEntry.create!(
+        converter: aws_config_converter,
+        source_id: "iam-password-policy",
+        target_id: "ia-5.1",
+        relationship: "intersects", category: "mitre_vendored",
+        row_order: 1, remarks: "aws_config_rule_source_identifier=IAM_PASSWORD_POLICY"
+      )
+
+      # Stub the bridge so we don't depend on the live JSON for fixture data.
+      bridge = { "IAM.3" => "access-keys-rotated", "IAM.7" => "iam-password-policy", "IAM.99999" => nil }
+      allow_any_instance_of(described_class).to receive(:sec_hub_config_rule_bridge).and_return(bridge)
     end
 
-    it "writes nist_oscal_ids, nist_primary_id, aws_security_hub_id, and nist_mapping_source fields" do
+    it "hop 1: writes aws_direct fields for SecHub controls in aws_security_hub_to_nist" do
       described_class.new(client: client).run
 
       doc = CdefDocument.aws_labs_sourced.last
       iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
-      expect(iam3).not_to be_nil
-
       fields = iam3.cdef_control_fields.pluck(:field_name, :field_value).to_h
       expect(fields["aws_security_hub_id"]).to eq("IAM.3")
-      expect(fields["nist_oscal_ids"]).to eq("ac-2.1,ac-3.15")  # sorted
+      expect(fields["nist_oscal_ids"]).to eq("ac-2.1,ac-3.15")
       expect(fields["nist_primary_id"]).to eq("ac-2.1")
       expect(fields["nist_mapping_source"]).to eq("aws_direct")
+    end
+
+    it "hop 2: chains through aws_config_to_nist when no aws_direct row exists" do
+      described_class.new(client: client).run
+
+      doc = CdefDocument.aws_labs_sourced.last
+      iam7 = doc.cdef_controls.find_by(control_id: "IAM.7")
+      fields = iam7.cdef_control_fields.pluck(:field_name, :field_value).to_h
+      expect(fields["nist_oscal_ids"]).to eq("ia-5.1")
+      expect(fields["nist_mapping_source"]).to eq("via_config_rule")
+      expect(fields["aws_config_rule"]).to eq("iam-password-policy")
+    end
+
+    it "leaves controls with neither hop matching un-enriched" do
+      described_class.new(client: client).run
+
+      doc = CdefDocument.aws_labs_sourced.last
+      unmapped = doc.cdef_controls.find_by(control_id: "IAM.99999")
+      expect(unmapped.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
     end
 
     it "preserves the original SecHub control_id (does not mutate it)" do
@@ -221,27 +259,23 @@ RSpec.describe AwsLabsCdefImportService do
       expect(doc.cdef_controls.pluck(:control_id)).to include("IAM.3", "IAM.7", "IAM.99999")
     end
 
-    it "tags MITRE-sourced mappings with nist_mapping_source=mitre_fallback" do
-      described_class.new(client: client).run
-      doc = CdefDocument.aws_labs_sourced.last
-      iam7 = doc.cdef_controls.find_by(control_id: "IAM.7")
-      fields = iam7.cdef_control_fields.pluck(:field_name, :field_value).to_h
-      expect(fields["nist_mapping_source"]).to eq("mitre_fallback")
-    end
-
-    it "leaves controls with no converter rows un-enriched" do
-      described_class.new(client: client).run
-      doc = CdefDocument.aws_labs_sourced.last
-      unmapped = doc.cdef_controls.find_by(control_id: "IAM.99999")
-      expect(unmapped.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
-    end
-
-    it "no-ops gracefully when the Converter record is missing" do
-      converter.destroy!
+    it "no-ops gracefully when aws_security_hub_to_nist Converter is missing" do
+      sec_hub_converter.destroy!
       expect { described_class.new(client: client).run }.not_to raise_error
       doc = CdefDocument.aws_labs_sourced.last
       iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
       expect(iam3.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
+    end
+
+    it "skips hop 2 gracefully when aws_config_to_nist Converter is missing" do
+      aws_config_converter.destroy!
+      described_class.new(client: client).run
+      doc = CdefDocument.aws_labs_sourced.last
+      iam7 = doc.cdef_controls.find_by(control_id: "IAM.7")
+      # No fallback available, but hop 1 controls (IAM.3) still enriched.
+      expect(iam7.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
+      iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
+      expect(iam3.cdef_control_fields.where(field_name: "nist_oscal_ids")).not_to be_empty
     end
 
     it "marks enrichment fields as non-editable" do
