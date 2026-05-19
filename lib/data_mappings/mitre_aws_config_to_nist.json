@@ -1,0 +1,1678 @@
+{
+  "format": "mitre_aws_config_to_nist",
+  "version": "vendored-2026-05-19",
+  "source": "https://raw.githubusercontent.com/mitre/heimdall2/master/libs/hdf-converters/src/mappings/AwsConfigMappingData.ts",
+  "license": "Apache-2.0",
+  "attribution": "© 2025 The MITRE Corporation. Approved for Public Release; Distribution Unlimited. Case Number 18-3678.",
+  "description": "AWS Config Rule → NIST SP 800-53 rev4 mapping vendored from mitre/heimdall2. Used by SPARC as the base layer of the AWS Security Hub → NIST converter (issue #491).",
+  "rev": 4,
+  "total_entries": 106,
+  "mappings": [
+    {
+      "aws_config_rule_name": "secretsmanager-scheduled-rotation-success-check",
+      "aws_config_rule_source_identifier": "SECRETSMANAGER_SCHEDULED_ROTATION_SUCCESS_CHECK",
+      "nist_rev4_raw": [
+        "AC-2(1)",
+        "AC-2(j)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.1",
+        "ac-2_smt.j"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-user-group-membership-check",
+      "aws_config_rule_source_identifier": "IAM_USER_GROUP_MEMBERSHIP_CHECK",
+      "nist_rev4_raw": [
+        "AC-2(1)",
+        "AC-2(j)",
+        "AC-3",
+        "AC-6"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.1",
+        "ac-2_smt.j",
+        "ac-3",
+        "ac-6"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-password-policy",
+      "aws_config_rule_source_identifier": "IAM_PASSWORD_POLICY",
+      "nist_rev4_raw": [
+        "AC-2(1)",
+        "AC-2(f)",
+        "AC-2(j)",
+        "IA-2",
+        "IA-5(1)(a)(d)(e)",
+        "IA-5(4)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.1",
+        "ac-2_smt.f",
+        "ac-2_smt.j",
+        "ia-2",
+        "ia-5.1_smt.a",
+        "ia-5.1_smt.d",
+        "ia-5.1_smt.e",
+        "ia-5.4"
+      ]
+    },
+    {
+      "aws_config_rule_name": "access-keys-rotated",
+      "aws_config_rule_source_identifier": "ACCESS_KEYS_ROTATED",
+      "nist_rev4_raw": [
+        "AC-2(1)",
+        "AC-2(j)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.1",
+        "ac-2_smt.j"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-user-unused-credentials-check",
+      "aws_config_rule_source_identifier": "IAM_USER_UNUSED_CREDENTIALS_CHECK",
+      "nist_rev4_raw": [
+        "AC-2(1)",
+        "AC-2(3)",
+        "AC-2(f)",
+        "AC-3",
+        "AC-6"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.1",
+        "ac-2.3",
+        "ac-2_smt.f",
+        "ac-3",
+        "ac-6"
+      ]
+    },
+    {
+      "aws_config_rule_name": "securityhub-enabled",
+      "aws_config_rule_source_identifier": "SECURITYHUB_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(1)",
+        "AC-2(4)",
+        "AC-2(12)(a)",
+        "AC-2(g)",
+        "AC-17(1)",
+        "AU-6(1)(3)",
+        "CA-7(a)(b)",
+        "SA-10",
+        "SI-4(2)",
+        "SI-4(4)",
+        "SI-4(5)",
+        "SI-4(16)",
+        "SI-4(a)(b)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.1",
+        "ac-2.4",
+        "ac-2.12_smt.a",
+        "ac-2_smt.g",
+        "ac-17.1",
+        "au-6.1",
+        "ca-7_smt.a",
+        "ca-7_smt.b",
+        "sa-10",
+        "si-4.2",
+        "si-4.4",
+        "si-4.5",
+        "si-4.16",
+        "si-4_smt.a",
+        "si-4_smt.b",
+        "si-4_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "guardduty-enabled-centralized",
+      "aws_config_rule_source_identifier": "GUARDDUTY_ENABLED_CENTRALIZED",
+      "nist_rev4_raw": [
+        "AC-2(1)",
+        "AC-2(4)",
+        "AC-2(12)(a)",
+        "AC-2(g)",
+        "AC-17(1)",
+        "AU-6(1)(3)",
+        "CA-7(a)(b)",
+        "RA-5",
+        "SA-10",
+        "SI-4(1)",
+        "SI-4(2)",
+        "SI-4(4)",
+        "SI-4(5)",
+        "SI-4(16)",
+        "SI-4(a)(b)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.1",
+        "ac-2.4",
+        "ac-2.12_smt.a",
+        "ac-2_smt.g",
+        "ac-17.1",
+        "au-6.1",
+        "ca-7_smt.a",
+        "ca-7_smt.b",
+        "ra-5",
+        "sa-10",
+        "si-4.1",
+        "si-4.2",
+        "si-4.4",
+        "si-4.5",
+        "si-4.16",
+        "si-4_smt.a",
+        "si-4_smt.b",
+        "si-4_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cloud-trail-cloud-watch-logs-enabled",
+      "aws_config_rule_source_identifier": "CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(4)",
+        "AC-2(g)",
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-6(1)(3)",
+        "AU-7(1)",
+        "AU-12(a)(c)",
+        "CA-7(a)(b)",
+        "SI-4(2)",
+        "SI-4(4)",
+        "SI-4(5)",
+        "SI-4(a)(b)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.4",
+        "ac-2_smt.g",
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-6.1",
+        "au-7.1",
+        "au-12_smt.a",
+        "au-12_smt.c",
+        "ca-7_smt.a",
+        "ca-7_smt.b",
+        "si-4.2",
+        "si-4.4",
+        "si-4.5",
+        "si-4_smt.a",
+        "si-4_smt.b",
+        "si-4_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cloudtrail-enabled",
+      "aws_config_rule_source_identifier": "CLOUD_TRAIL_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(4)",
+        "AC-2(g)",
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.4",
+        "ac-2_smt.g",
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "multi-region-cloudtrail-enabled",
+      "aws_config_rule_source_identifier": "MULTI_REGION_CLOUD_TRAIL_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(4)",
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.4",
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-logging-enabled",
+      "aws_config_rule_source_identifier": "RDS_LOGGING_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(4)",
+        "AC-2(g)",
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.4",
+        "ac-2_smt.g",
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cloudwatch-alarm-action-check",
+      "aws_config_rule_source_identifier": "CLOUDWATCH_ALARM_ACTION_CHECK",
+      "nist_rev4_raw": [
+        "AC-2(4)",
+        "AU-6(1)(3)",
+        "AU-7(1)",
+        "CA-7(a)(b)",
+        "IR-4(1)",
+        "SI-4(2)",
+        "SI-4(4)",
+        "SI-4(5)",
+        "SI-4(a)(b)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.4",
+        "au-6.1",
+        "au-7.1",
+        "ca-7_smt.a",
+        "ca-7_smt.b",
+        "ir-4.1",
+        "si-4.2",
+        "si-4.4",
+        "si-4.5",
+        "si-4_smt.a",
+        "si-4_smt.b",
+        "si-4_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "redshift-cluster-configuration-check",
+      "aws_config_rule_source_identifier": "REDSHIFT_CLUSTER_CONFIGURATION_CHECK",
+      "nist_rev4_raw": [
+        "AC-2(4)",
+        "AC-2(g)",
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)",
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "ac-2.4",
+        "ac-2_smt.g",
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c",
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-root-access-key-check",
+      "aws_config_rule_source_identifier": "IAM_ROOT_ACCESS_KEY_CHECK",
+      "nist_rev4_raw": [
+        "AC-2(f)",
+        "AC-2(j)",
+        "AC-3",
+        "AC-6",
+        "AC-6(10)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2_smt.f",
+        "ac-2_smt.j",
+        "ac-3",
+        "ac-6",
+        "ac-6.10"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-logging-enabled",
+      "aws_config_rule_source_identifier": "S3_BUCKET_LOGGING_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(g)",
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2_smt.g",
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cloudtrail-s3-dataevents-enabled",
+      "aws_config_rule_source_identifier": "CLOUDTRAIL_S3_DATAEVENTS_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(g)",
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2_smt.g",
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "root-account-mfa-enabled",
+      "aws_config_rule_source_identifier": "ROOT_ACCOUNT_MFA_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(j)",
+        "IA-2(1)(11)"
+      ],
+      "nist_oscal_ids": [
+        "ac-2_smt.j",
+        "ia-2.1"
+      ]
+    },
+    {
+      "aws_config_rule_name": "emr-kerberos-enabled",
+      "aws_config_rule_source_identifier": "EMR_KERBEROS_ENABLED",
+      "nist_rev4_raw": [
+        "AC-2(j)",
+        "AC-3",
+        "AC-5(c)",
+        "AC-6"
+      ],
+      "nist_oscal_ids": [
+        "ac-2_smt.j",
+        "ac-3",
+        "ac-5_smt.c",
+        "ac-6"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-group-has-users-check",
+      "aws_config_rule_source_identifier": "IAM_GROUP_HAS_USERS_CHECK",
+      "nist_rev4_raw": [
+        "AC-2(j)",
+        "AC-3",
+        "AC-5(c)",
+        "AC-6",
+        "SC-2"
+      ],
+      "nist_oscal_ids": [
+        "ac-2_smt.j",
+        "ac-3",
+        "ac-5_smt.c",
+        "ac-6",
+        "sc-2"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-policy-no-statements-with-admin-access",
+      "aws_config_rule_source_identifier": "IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS",
+      "nist_rev4_raw": [
+        "AC-2(j)",
+        "AC-3",
+        "AC-5(c)",
+        "AC-6",
+        "SC-2"
+      ],
+      "nist_oscal_ids": [
+        "ac-2_smt.j",
+        "ac-3",
+        "ac-5_smt.c",
+        "ac-6",
+        "sc-2"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-user-no-policies-check",
+      "aws_config_rule_source_identifier": "IAM_USER_NO_POLICIES_CHECK",
+      "nist_rev4_raw": [
+        "AC-2(j)",
+        "AC-3",
+        "AC-5(c)",
+        "AC-6"
+      ],
+      "nist_oscal_ids": [
+        "ac-2_smt.j",
+        "ac-3",
+        "ac-5_smt.c",
+        "ac-6"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-public-write-prohibited",
+      "aws_config_rule_source_identifier": "S3_BUCKET_PUBLIC_WRITE_PROHIBITED",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "lambda-function-public-access-prohibited",
+      "aws_config_rule_source_identifier": "LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-snapshots-public-prohibited",
+      "aws_config_rule_source_identifier": "RDS_SNAPSHOTS_PUBLIC_PROHIBITED",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "redshift-cluster-public-access-check",
+      "aws_config_rule_source_identifier": "REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-policy-grantee-check",
+      "aws_config_rule_source_identifier": "S3_BUCKET_POLICY_GRANTEE_CHECK",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-6",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-6",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-public-read-prohibited",
+      "aws_config_rule_source_identifier": "S3_BUCKET_PUBLIC_READ_PROHIBITED",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-account-level-public-access-blocks",
+      "aws_config_rule_source_identifier": "S3_ACCOUNT_LEVEL_PUBLIC_ACCESS_BLOCKS",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "dms-replication-not-public",
+      "aws_config_rule_source_identifier": "DMS_REPLICATION_NOT_PUBLIC",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ebs-snapshot-public-restorable-check",
+      "aws_config_rule_source_identifier": "EBS_SNAPSHOT_PUBLIC_RESTORABLE_CHECK",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "sagemaker-notebook-no-direct-internet-access",
+      "aws_config_rule_source_identifier": "SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS",
+      "nist_rev4_raw": [
+        "AC-3",
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-3",
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-instance-public-access-check",
+      "aws_config_rule_source_identifier": "RDS_INSTANCE_PUBLIC_ACCESS_CHECK",
+      "nist_rev4_raw": [
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "lambda-inside-vpc",
+      "aws_config_rule_source_identifier": "LAMBDA_INSIDE_VPC",
+      "nist_rev4_raw": [
+        "AC-4",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-instances-in-vpc",
+      "aws_config_rule_source_identifier": "INSTANCES_IN_VPC",
+      "nist_rev4_raw": [
+        "AC-4",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "restricted-common-ports",
+      "aws_config_rule_source_identifier": "RESTRICTED_INCOMING_TRAFFIC",
+      "nist_rev4_raw": [
+        "AC-4",
+        "CM-2",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "cm-2",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "restricted-ssh",
+      "aws_config_rule_source_identifier": "INCOMING_SSH_DISABLED",
+      "nist_rev4_raw": [
+        "AC-4",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "vpc-default-security-group-closed",
+      "aws_config_rule_source_identifier": "VPC_DEFAULT_SECURITY_GROUP_CLOSED",
+      "nist_rev4_raw": [
+        "AC-4",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "vpc-sg-open-only-to-authorized-ports",
+      "aws_config_rule_source_identifier": "VPC_SG_OPEN_ONLY_TO_AUTHORIZED_PORTS",
+      "nist_rev4_raw": [
+        "AC-4",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "acm-certificate-expiration-check",
+      "aws_config_rule_source_identifier": "ACM_CERTIFICATE_EXPIRATION_CHECK",
+      "nist_rev4_raw": [
+        "AC-4",
+        "AC-17(2)",
+        "SC-12"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "ac-17.2",
+        "sc-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-instance-no-public-ip",
+      "aws_config_rule_source_identifier": "EC2_INSTANCE_NO_PUBLIC_IP",
+      "nist_rev4_raw": [
+        "AC-4",
+        "AC-6",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "ac-6",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elasticsearch-in-vpc-only",
+      "aws_config_rule_source_identifier": "ELASTICSEARCH_IN_VPC_ONLY",
+      "nist_rev4_raw": [
+        "AC-4",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "emr-master-no-public-ip",
+      "aws_config_rule_source_identifier": "EMR_MASTER_NO_PUBLIC_IP",
+      "nist_rev4_raw": [
+        "AC-4",
+        "AC-21(b)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "ac-21_smt.b",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "internet-gateway-authorized-vpc-only",
+      "aws_config_rule_source_identifier": "INTERNET_GATEWAY_AUTHORIZED_VPC_ONLY",
+      "nist_rev4_raw": [
+        "AC-4",
+        "AC-17(3)",
+        "SC-7",
+        "SC-7(3)"
+      ],
+      "nist_oscal_ids": [
+        "ac-4",
+        "ac-17.3",
+        "sc-7",
+        "sc-7.3"
+      ]
+    },
+    {
+      "aws_config_rule_name": "codebuild-project-envvar-awscred-check",
+      "aws_config_rule_source_identifier": "CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK",
+      "nist_rev4_raw": [
+        "AC-6",
+        "IA-5(7)",
+        "SA-3(a)"
+      ],
+      "nist_oscal_ids": [
+        "ac-6",
+        "ia-5.7",
+        "sa-3_smt.a"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-imdsv2-check",
+      "aws_config_rule_source_identifier": "EC2_IMDSV2_CHECK",
+      "nist_rev4_raw": [
+        "AC-6"
+      ],
+      "nist_oscal_ids": [
+        "ac-6"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-no-inline-policy-check",
+      "aws_config_rule_source_identifier": "IAM_NO_INLINE_POLICY_CHECK",
+      "nist_rev4_raw": [
+        "AC-6"
+      ],
+      "nist_oscal_ids": [
+        "ac-6"
+      ]
+    },
+    {
+      "aws_config_rule_name": "alb-http-to-https-redirection-check",
+      "aws_config_rule_source_identifier": "ALB_HTTP_TO_HTTPS_REDIRECTION_CHECK",
+      "nist_rev4_raw": [
+        "AC-17(2)",
+        "SC-7",
+        "SC-8",
+        "SC-8(1)",
+        "SC-13",
+        "SC-23"
+      ],
+      "nist_oscal_ids": [
+        "ac-17.2",
+        "sc-7",
+        "sc-8",
+        "sc-8.1",
+        "sc-13",
+        "sc-23"
+      ]
+    },
+    {
+      "aws_config_rule_name": "redshift-require-tls-ssl",
+      "aws_config_rule_source_identifier": "REDSHIFT_REQUIRE_TLS_SSL",
+      "nist_rev4_raw": [
+        "AC-17(2)",
+        "SC-7",
+        "SC-8",
+        "SC-8(1)",
+        "SC-13"
+      ],
+      "nist_oscal_ids": [
+        "ac-17.2",
+        "sc-7",
+        "sc-8",
+        "sc-8.1",
+        "sc-13"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-ssl-requests-only",
+      "aws_config_rule_source_identifier": "S3_BUCKET_SSL_REQUESTS_ONLY",
+      "nist_rev4_raw": [
+        "AC-17(2)",
+        "SC-7",
+        "SC-8",
+        "SC-8(1)",
+        "SC-13"
+      ],
+      "nist_oscal_ids": [
+        "ac-17.2",
+        "sc-7",
+        "sc-8",
+        "sc-8.1",
+        "sc-13"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elb-acm-certificate-required",
+      "aws_config_rule_source_identifier": "ELB_ACM_CERTIFICATE_REQUIRED",
+      "nist_rev4_raw": [
+        "AC-17(2)",
+        "SC-7",
+        "SC-8",
+        "SC-8(1)",
+        "SC-13"
+      ],
+      "nist_oscal_ids": [
+        "ac-17.2",
+        "sc-7",
+        "sc-8",
+        "sc-8.1",
+        "sc-13"
+      ]
+    },
+    {
+      "aws_config_rule_name": "alb-http-drop-invalid-header-enabled",
+      "aws_config_rule_source_identifier": "ALB_HTTP_DROP_INVALID_HEADER_ENABLED",
+      "nist_rev4_raw": [
+        "AC-17(2)",
+        "SC-7",
+        "SC-8",
+        "SC-8(1)",
+        "SC-23"
+      ],
+      "nist_oscal_ids": [
+        "ac-17.2",
+        "sc-7",
+        "sc-8",
+        "sc-8.1",
+        "sc-23"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elb-tls-https-listeners-only",
+      "aws_config_rule_source_identifier": "ELB_TLS_HTTPS_LISTENERS_ONLY",
+      "nist_rev4_raw": [
+        "AC-17(2)",
+        "SC-7",
+        "SC-8",
+        "SC-8(1)",
+        "SC-23"
+      ],
+      "nist_oscal_ids": [
+        "ac-17.2",
+        "sc-7",
+        "sc-8",
+        "sc-8.1",
+        "sc-23"
+      ]
+    },
+    {
+      "aws_config_rule_name": "api-gw-execution-logging-enabled",
+      "aws_config_rule_source_identifier": "API_GW_EXECUTION_LOGGING_ENABLED",
+      "nist_rev4_raw": [
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)"
+      ],
+      "nist_oscal_ids": [
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elb-logging-enabled",
+      "aws_config_rule_source_identifier": "ELB_LOGGING_ENABLED",
+      "nist_rev4_raw": [
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)"
+      ],
+      "nist_oscal_ids": [
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "vpc-flow-logs-enabled",
+      "aws_config_rule_source_identifier": "VPC_FLOW_LOGS_ENABLED",
+      "nist_rev4_raw": [
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)"
+      ],
+      "nist_oscal_ids": [
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "wafv2-logging-enabled",
+      "aws_config_rule_source_identifier": "WAFV2_LOGGING_ENABLED",
+      "nist_rev4_raw": [
+        "AU-2(a)(d)",
+        "AU-3",
+        "AU-12(a)(c)",
+        "SC-7",
+        "SI-4(a)(b)(c)"
+      ],
+      "nist_oscal_ids": [
+        "au-2_smt.a",
+        "au-2_smt.d",
+        "au-3",
+        "au-12_smt.a",
+        "au-12_smt.c",
+        "sc-7",
+        "si-4_smt.a",
+        "si-4_smt.b",
+        "si-4_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cloud-trail-encryption-enabled",
+      "aws_config_rule_source_identifier": "CLOUD_TRAIL_ENCRYPTION_ENABLED",
+      "nist_rev4_raw": [
+        "AU-9",
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "au-9",
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cloudwatch-log-group-encrypted",
+      "aws_config_rule_source_identifier": "CLOUDWATCH_LOG_GROUP_ENCRYPTED",
+      "nist_rev4_raw": [
+        "AU-9",
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "au-9",
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-replication-enabled",
+      "aws_config_rule_source_identifier": "S3_BUCKET_REPLICATION_ENABLED",
+      "nist_rev4_raw": [
+        "AU-9(2)",
+        "CP-9(b)",
+        "CP-10",
+        "SC-5",
+        "SC-36"
+      ],
+      "nist_oscal_ids": [
+        "au-9.2",
+        "cp-9_smt.b",
+        "cp-10",
+        "sc-5",
+        "sc-36"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cw-loggroup-retention-period-check",
+      "aws_config_rule_source_identifier": "CW_LOGGROUP_RETENTION_PERIOD_CHECK",
+      "nist_rev4_raw": [
+        "AU-11",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "au-11",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-instance-detailed-monitoring-enabled",
+      "aws_config_rule_source_identifier": "EC2_INSTANCE_DETAILED_MONITORING_ENABLED",
+      "nist_rev4_raw": [
+        "CA-7(a)(b)",
+        "SI-4(2)",
+        "SI-4(a)(b)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ca-7_smt.a",
+        "ca-7_smt.b",
+        "si-4.2",
+        "si-4_smt.a",
+        "si-4_smt.b",
+        "si-4_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-enhanced-monitoring-enabled",
+      "aws_config_rule_source_identifier": "RDS_ENHANCED_MONITORING_ENABLED",
+      "nist_rev4_raw": [
+        "CA-7(a)(b)"
+      ],
+      "nist_oscal_ids": [
+        "ca-7_smt.a",
+        "ca-7_smt.b"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-instance-managed-by-systems-manager",
+      "aws_config_rule_source_identifier": "EC2_INSTANCE_MANAGED_BY_SSM",
+      "nist_rev4_raw": [
+        "CM-2",
+        "CM-7(a)",
+        "CM-8(1)",
+        "CM-8(3)(a)",
+        "SA-3(a)",
+        "SA-10",
+        "SI-2(2)",
+        "SI-7(1)"
+      ],
+      "nist_oscal_ids": [
+        "cm-2",
+        "cm-7_smt.a",
+        "cm-8.1",
+        "cm-8.3_smt.a",
+        "sa-3_smt.a",
+        "sa-10",
+        "si-2.2",
+        "si-7.1"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-managedinstance-association-compliance-status-check",
+      "aws_config_rule_source_identifier": "EC2_MANAGEDINSTANCE_ASSOCIATION_COMPLIANCE_STATUS_CHECK",
+      "nist_rev4_raw": [
+        "CM-2",
+        "CM-7(a)",
+        "CM-8(3)(a)",
+        "SI-2(2)"
+      ],
+      "nist_oscal_ids": [
+        "cm-2",
+        "cm-7_smt.a",
+        "cm-8.3_smt.a",
+        "si-2.2"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-stopped-instance",
+      "aws_config_rule_source_identifier": "EC2_STOPPED_INSTANCE",
+      "nist_rev4_raw": [
+        "CM-2"
+      ],
+      "nist_oscal_ids": [
+        "cm-2"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-volume-inuse-check",
+      "aws_config_rule_source_identifier": "EC2_VOLUME_INUSE_CHECK",
+      "nist_rev4_raw": [
+        "CM-2",
+        "SC-4"
+      ],
+      "nist_oscal_ids": [
+        "cm-2",
+        "sc-4"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elb-deletion-protection-enabled",
+      "aws_config_rule_source_identifier": "ELB_DELETION_PROTECTION_ENABLED",
+      "nist_rev4_raw": [
+        "CM-2",
+        "CP-10"
+      ],
+      "nist_oscal_ids": [
+        "cm-2",
+        "cp-10"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cloudtrail-security-trail-enabled",
+      "aws_config_rule_source_identifier": "CLOUDTRAIL_SECURITY_TRAIL_ENABLED",
+      "nist_rev4_raw": [
+        "CM-2"
+      ],
+      "nist_oscal_ids": [
+        "cm-2"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-managedinstance-patch-compliance-status-check",
+      "aws_config_rule_source_identifier": "EC2_MANAGEDINSTANCE_PATCH_COMPLIANCE_STATUS_CHECK",
+      "nist_rev4_raw": [
+        "CM-8(3)(a)",
+        "SI-2(2)",
+        "SI-7(1)"
+      ],
+      "nist_oscal_ids": [
+        "cm-8.3_smt.a",
+        "si-2.2",
+        "si-7.1"
+      ]
+    },
+    {
+      "aws_config_rule_name": "db-instance-backup-enabled",
+      "aws_config_rule_source_identifier": "DB_INSTANCE_BACKUP_ENABLED",
+      "nist_rev4_raw": [
+        "CP-9(b)",
+        "CP-10",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "cp-9_smt.b",
+        "cp-10",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "dynamodb-pitr-enabled",
+      "aws_config_rule_source_identifier": "DYNAMODB_PITR_ENABLED",
+      "nist_rev4_raw": [
+        "CP-9(b)",
+        "CP-10",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "cp-9_smt.b",
+        "cp-10",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elasticache-redis-cluster-automatic-backup-check",
+      "aws_config_rule_source_identifier": "ELASTICACHE_REDIS_CLUSTER_AUTOMATIC_BACKUP_CHECK",
+      "nist_rev4_raw": [
+        "CP-9(b)",
+        "CP-10",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "cp-9_smt.b",
+        "cp-10",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "dynamodb-in-backup-plan",
+      "aws_config_rule_source_identifier": "DYNAMODB_IN_BACKUP_PLAN",
+      "nist_rev4_raw": [
+        "CP-9(b)",
+        "CP-10",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "cp-9_smt.b",
+        "cp-10",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ebs-in-backup-plan",
+      "aws_config_rule_source_identifier": "EBS_IN_BACKUP_PLAN",
+      "nist_rev4_raw": [
+        "CP-9(b)",
+        "CP-10",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "cp-9_smt.b",
+        "cp-10",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "efs-in-backup-plan",
+      "aws_config_rule_source_identifier": "EFS_IN_BACKUP_PLAN",
+      "nist_rev4_raw": [
+        "CP-9(b)",
+        "CP-10",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "cp-9_smt.b",
+        "cp-10",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-in-backup-plan",
+      "aws_config_rule_source_identifier": "RDS_IN_BACKUP_PLAN",
+      "nist_rev4_raw": [
+        "CP-9(b)",
+        "CP-10",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "cp-9_smt.b",
+        "cp-10",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "dynamodb-autoscaling-enabled",
+      "aws_config_rule_source_identifier": "DYNAMODB_AUTOSCALING_ENABLED",
+      "nist_rev4_raw": [
+        "CP-10",
+        "SC-5"
+      ],
+      "nist_oscal_ids": [
+        "cp-10",
+        "sc-5"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-multi-az-support",
+      "aws_config_rule_source_identifier": "RDS_MULTI_AZ_SUPPORT",
+      "nist_rev4_raw": [
+        "CP-10",
+        "SC-5",
+        "SC-36"
+      ],
+      "nist_oscal_ids": [
+        "cp-10",
+        "sc-5",
+        "sc-36"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-versioning-enabled",
+      "aws_config_rule_source_identifier": "S3_BUCKET_VERSIONING_ENABLED",
+      "nist_rev4_raw": [
+        "CP-10",
+        "SI-12"
+      ],
+      "nist_oscal_ids": [
+        "cp-10",
+        "si-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "vpc-vpn-2-tunnels-up",
+      "aws_config_rule_source_identifier": "VPC_VPN_2_TUNNELS_UP",
+      "nist_rev4_raw": [
+        "CP-10"
+      ],
+      "nist_oscal_ids": [
+        "cp-10"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elb-cross-zone-load-balancing-enabled",
+      "aws_config_rule_source_identifier": "ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED",
+      "nist_rev4_raw": [
+        "CP-10",
+        "SC-5"
+      ],
+      "nist_oscal_ids": [
+        "cp-10",
+        "sc-5"
+      ]
+    },
+    {
+      "aws_config_rule_name": "root-account-hardware-mfa-enabled",
+      "aws_config_rule_source_identifier": "ROOT_ACCOUNT_HARDWARE_MFA_ENABLED",
+      "nist_rev4_raw": [
+        "IA-2(1)(11)"
+      ],
+      "nist_oscal_ids": [
+        "ia-2.1"
+      ]
+    },
+    {
+      "aws_config_rule_name": "mfa-enabled-for-iam-console-access",
+      "aws_config_rule_source_identifier": "MFA_ENABLED_FOR_IAM_CONSOLE_ACCESS",
+      "nist_rev4_raw": [
+        "IA-2(1)(2)(11)"
+      ],
+      "nist_oscal_ids": [
+        "ia-2.1"
+      ]
+    },
+    {
+      "aws_config_rule_name": "iam-user-mfa-enabled",
+      "aws_config_rule_source_identifier": "IAM_USER_MFA_ENABLED",
+      "nist_rev4_raw": [
+        "IA-2(1)(2)(11)"
+      ],
+      "nist_oscal_ids": [
+        "ia-2.1"
+      ]
+    },
+    {
+      "aws_config_rule_name": "guardduty-non-archived-findings",
+      "aws_config_rule_source_identifier": "GUARDDUTY_NON_ARCHIVED_FINDINGS",
+      "nist_rev4_raw": [
+        "IR-4(1)",
+        "IR-6(1)",
+        "IR-7(1)",
+        "RA-5",
+        "SA-10",
+        "SI-4(a)(b)(c)"
+      ],
+      "nist_oscal_ids": [
+        "ir-4.1",
+        "ir-6.1",
+        "ir-7.1",
+        "ra-5",
+        "sa-10",
+        "si-4_smt.a",
+        "si-4_smt.b",
+        "si-4_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "codebuild-project-source-repo-url-check",
+      "aws_config_rule_source_identifier": "CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK",
+      "nist_rev4_raw": [
+        "SA-3(a)"
+      ],
+      "nist_oscal_ids": [
+        "sa-3_smt.a"
+      ]
+    },
+    {
+      "aws_config_rule_name": "autoscaling-group-elb-healthcheck-required",
+      "aws_config_rule_source_identifier": "AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED",
+      "nist_rev4_raw": [
+        "SC-5"
+      ],
+      "nist_oscal_ids": [
+        "sc-5"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-instance-deletion-protection-enabled",
+      "aws_config_rule_source_identifier": "RDS_INSTANCE_DELETION_PROTECTION_ENABLED",
+      "nist_rev4_raw": [
+        "SC-5"
+      ],
+      "nist_oscal_ids": [
+        "sc-5"
+      ]
+    },
+    {
+      "aws_config_rule_name": "alb-waf-enabled",
+      "aws_config_rule_source_identifier": "ALB_WAF_ENABLED",
+      "nist_rev4_raw": [
+        "SC-7",
+        "SI-4(a)(b)(c)"
+      ],
+      "nist_oscal_ids": [
+        "sc-7",
+        "si-4_smt.a",
+        "si-4_smt.b",
+        "si-4_smt.c"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elasticsearch-node-to-node-encryption-check",
+      "aws_config_rule_source_identifier": "ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK",
+      "nist_rev4_raw": [
+        "SC-7",
+        "SC-8",
+        "SC-8(1)"
+      ],
+      "nist_oscal_ids": [
+        "sc-7",
+        "sc-8",
+        "sc-8.1"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cmk-backing-key-rotation-enabled",
+      "aws_config_rule_source_identifier": "CMK_BACKING_KEY_ROTATION_ENABLED",
+      "nist_rev4_raw": [
+        "SC-12"
+      ],
+      "nist_oscal_ids": [
+        "sc-12"
+      ]
+    },
+    {
+      "aws_config_rule_name": "kms-cmk-not-scheduled-for-deletion",
+      "aws_config_rule_source_identifier": "KMS_CMK_NOT_SCHEDULED_FOR_DELETION",
+      "nist_rev4_raw": [
+        "SC-12",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-12",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "api-gw-cache-enabled-and-encrypted",
+      "aws_config_rule_source_identifier": "API_GW_CACHE_ENABLED_AND_ENCRYPTED",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "efs-encrypted-check",
+      "aws_config_rule_source_identifier": "EFS_ENCRYPTED_CHECK",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "elasticsearch-encrypted-at-rest",
+      "aws_config_rule_source_identifier": "ELASTICSEARCH_ENCRYPTED_AT_REST",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "encrypted-volumes",
+      "aws_config_rule_source_identifier": "ENCRYPTED_VOLUMES",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-storage-encrypted",
+      "aws_config_rule_source_identifier": "RDS_STORAGE_ENCRYPTED",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-server-side-encryption-enabled",
+      "aws_config_rule_source_identifier": "S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "sagemaker-endpoint-configuration-kms-key-configured",
+      "aws_config_rule_source_identifier": "SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "sagemaker-notebook-instance-kms-key-configured",
+      "aws_config_rule_source_identifier": "SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "sns-encrypted-kms",
+      "aws_config_rule_source_identifier": "SNS_ENCRYPTED_KMS",
+      "nist_rev4_raw": [
+        "SC-13",
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-13",
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "dynamodb-table-encrypted-kms",
+      "aws_config_rule_source_identifier": "DYNAMODB_TABLE_ENCRYPTED_KMS",
+      "nist_rev4_raw": [
+        "SC-13"
+      ],
+      "nist_oscal_ids": [
+        "sc-13"
+      ]
+    },
+    {
+      "aws_config_rule_name": "s3-bucket-default-lock-enabled",
+      "aws_config_rule_source_identifier": "S3_BUCKET_DEFAULT_LOCK_ENABLED",
+      "nist_rev4_raw": [
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "ec2-ebs-encryption-by-default",
+      "aws_config_rule_source_identifier": "EC2_EBS_ENCRYPTION_BY_DEFAULT",
+      "nist_rev4_raw": [
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "rds-snapshot-encrypted",
+      "aws_config_rule_source_identifier": "RDS_SNAPSHOT_ENCRYPTED",
+      "nist_rev4_raw": [
+        "SC-28"
+      ],
+      "nist_oscal_ids": [
+        "sc-28"
+      ]
+    },
+    {
+      "aws_config_rule_name": "cloud-trail-log-file-validation-enabled",
+      "aws_config_rule_source_identifier": "CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED",
+      "nist_rev4_raw": [
+        "SI-7",
+        "SI-7(1)"
+      ],
+      "nist_oscal_ids": [
+        "si-7",
+        "si-7.1"
+      ]
+    }
+  ]
+}

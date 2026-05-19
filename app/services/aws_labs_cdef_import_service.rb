@@ -201,7 +201,60 @@ class AwsLabsCdefImportService
       ),
       status: "completed"
     )
+    enrich_with_nist_mappings!(document)
     document
+  end
+
+  # Issue #491 — Walks the freshly-parsed CdefControls and looks up each
+  # AWS Security Hub control_id (e.g., "IAM.3", "S3.5") in the
+  # aws_security_hub_to_nist Converter. Persists the lookup result as
+  # CdefControlField rows so heatmap / OSCAL export / SSP cross-reference
+  # consumers can resolve to NIST 800-53 rev5 control identifiers.
+  #
+  # We do NOT mutate the control_id column itself -- the AWS upstream
+  # identifier remains the canonical reference for the row. The NIST
+  # mapping is additive metadata, with the SecHub id always recoverable.
+  #
+  # Fields written per CdefControl when a mapping exists:
+  #   - aws_security_hub_id  : the original SecHub identifier (provenance)
+  #   - nist_oscal_ids       : comma-joined OSCAL ids (audit / display)
+  #   - nist_primary_id      : the lowest-sorted NIST id (primary for grouping)
+  #   - nist_mapping_source  : "aws_direct" or "mitre_fallback" -- which
+  #                            data source produced the mapping
+  def enrich_with_nist_mappings!(document)
+    converter = Converter.find_by(converter_type: "aws_security_hub_to_nist")
+    unless converter
+      @logger.debug("[AwsLabsCdefImportService] No aws_security_hub_to_nist Converter; skipping NIST enrichment")
+      return
+    end
+
+    enriched_count = 0
+    document.cdef_controls.find_each do |control|
+      sec_hub_id = control.control_id.to_s
+      next unless sec_hub_id.match?(/\A[A-Za-z][A-Za-z0-9]*\.\d+\z/)
+
+      entries = converter.converter_entries.where(source_id: sec_hub_id)
+      next if entries.empty?
+
+      nist_ids = entries.pluck(:target_id).uniq.sort
+      mapping_source = entries.pluck(:category).uniq.first
+
+      upsert_cdef_field!(control, "aws_security_hub_id", sec_hub_id, editable: false)
+      upsert_cdef_field!(control, "nist_oscal_ids", nist_ids.join(","), editable: false)
+      upsert_cdef_field!(control, "nist_primary_id", nist_ids.first, editable: false)
+      upsert_cdef_field!(control, "nist_mapping_source", mapping_source, editable: false)
+      enriched_count += 1
+    end
+
+    if enriched_count > 0
+      @logger.info("[AwsLabsCdefImportService] Enriched #{enriched_count} controls with NIST mappings " \
+                   "for document #{document.id} (#{document.name})")
+    end
+  end
+
+  def upsert_cdef_field!(control, field_name, field_value, editable:)
+    field = control.cdef_control_fields.find_or_initialize_by(field_name: field_name)
+    field.update!(field_value: field_value, editable: editable)
   end
 
   def derive_name(candidate)

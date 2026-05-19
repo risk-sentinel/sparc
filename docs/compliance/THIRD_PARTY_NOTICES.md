@@ -91,3 +91,25 @@ grant of the consolidated binary distribution; they are recorded as
 holistically dispositioned in `docs/compliance/license-dispositions.yml`
 and not itemized individually in the license inventory (the relevant
 `skip_patterns` in `license-policy.yml` exclude their namespaces).
+
+### MITRE heimdall2 — AWS Config Rule → NIST mapping (vendored data)
+
+| Field | Value |
+| --- | --- |
+| **Source repo** | [`mitre/heimdall2`](https://github.com/mitre/heimdall2) |
+| **Source file** | [`libs/hdf-converters/src/mappings/AwsConfigMappingData.ts`](https://github.com/mitre/heimdall2/blob/master/libs/hdf-converters/src/mappings/AwsConfigMappingData.ts) |
+| **Copyright** | © 2025 The MITRE Corporation. Approved for Public Release; Distribution Unlimited. Case Number 18-3678. |
+| **License** | Apache License, Version 2.0 |
+| **License text** | [`LICENSES/MITRE-HEIMDALL2-LICENSE`](../../LICENSES/MITRE-HEIMDALL2-LICENSE) |
+| **Vendored as** | `lib/data_mappings/mitre_aws_config_to_nist.json` |
+| **Re-vendor task** | `rake mappings:vendor_mitre_aws_config` |
+| **Used by** | Issue #491 — AWS Security Hub → NIST 800-53 converter (base layer of the composite mapping) |
+| **NIST control alignment** | CA-2 Control Assessments, SR-3 Supply Chain Controls (vendored content is integrity-checked at port time via the rake task's HTTP fetch + parse pipeline) |
+
+The vendored JSON is a structural port of MITRE's TypeScript data — same
+semantics, SPARC-shaped envelope. Each mapping carries both the original
+`nist_rev4_raw` strings (audit trail) and a `nist_oscal_ids` array
+(consumer-ready, lowercase + OSCAL `.<n>` / `_smt.<x>` notation).
+
+Re-vendoring: when MITRE adds entries upstream, run the rake task and
+commit the diff with a reference to the upstream commit SHA.

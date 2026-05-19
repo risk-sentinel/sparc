@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Security Hub CSPM controls for AWS Identity and Access Management - AWS Security Hub</title><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="assets_root" content="/assets" /><meta name="target_state" content="iam-controls" /><meta name="default_state" content="iam-controls" /><link rel="icon" type="image/ico" href="/assets/images/favicon.ico" /><link rel="shortcut icon" type="image/ico" href="/assets/images/favicon.ico" /><link rel="canonical" href="https://docs.aws.amazon.com/securityhub/latest/userguide/iam-controls.html" /><meta name="description" content="See a list of AWS Security Hub CSPM controls for the AWS Identity and Access Management service and resources." /><meta name="deployment_region" content="IAD" /><meta name="product" content="AWS Security Hub" /><meta name="guide" content="User Guide" /><meta name="abstract" content="Learn about AWS Security Hub." /><meta name="guide-locale" content="en_us" /><meta name="tocs" content="toc-contents.json" /><link rel="canonical" href="https://docs.aws.amazon.com/securityhub/latest/userguide/iam-controls.html" /><link rel="alternate" href="https://docs.aws.amazon.com/id_id/securityhub/latest/userguide/iam-controls.html" hreflang="id-id" /><link rel="alternate" href="https://docs.aws.amazon.com/id_id/securityhub/latest/userguide/iam-controls.html" hreflang="id" /><link rel="alternate" href="https://docs.aws.amazon.com/de_de/securityhub/latest/userguide/iam-controls.html" hreflang="de-de" /><link rel="alternate" href="https://docs.aws.amazon.com/de_de/securityhub/latest/userguide/iam-controls.html" hreflang="de" /><link rel="alternate" href="https://docs.aws.amazon.com/securityhub/latest/userguide/iam-controls.html" hreflang="en-us" /><link rel="alternate" href="https://docs.aws.amazon.com/securityhub/latest/userguide/iam-controls.html" hreflang="en" /><link rel="alternate" href="https://docs.aws.amazon.com/es_es/securityhub/latest/userguide/iam-controls.html" hreflang="es-es" /><link rel="alternate" href="https://docs.aws.amazon.com/es_es/securityhub/latest/userguide/iam-controls.html" hreflang="es" /><link rel="alternate" href="https://docs.aws.amazon.com/fr_fr/securityhub/latest/userguide/iam-controls.html" hreflang="fr-fr" /><link rel="alternate" href="https://docs.aws.amazon.com/fr_fr/securityhub/latest/userguide/iam-controls.html" hreflang="fr" /><link rel="alternate" href="https://docs.aws.amazon.com/it_it/securityhub/latest/userguide/iam-controls.html" hreflang="it-it" /><link rel="alternate" href="https://docs.aws.amazon.com/it_it/securityhub/latest/userguide/iam-controls.html" hreflang="it" /><link rel="alternate" href="https://docs.aws.amazon.com/ja_jp/securityhub/latest/userguide/iam-controls.html" hreflang="ja-jp" /><link rel="alternate" href="https://docs.aws.amazon.com/ja_jp/securityhub/latest/userguide/iam-controls.html" hreflang="ja" /><link rel="alternate" href="https://docs.aws.amazon.com/ko_kr/securityhub/latest/userguide/iam-controls.html" hreflang="ko-kr" /><link rel="alternate" href="https://docs.aws.amazon.com/ko_kr/securityhub/latest/userguide/iam-controls.html" hreflang="ko" /><link rel="alternate" href="https://docs.aws.amazon.com/pt_br/securityhub/latest/userguide/iam-controls.html" hreflang="pt-br" /><link rel="alternate" href="https://docs.aws.amazon.com/pt_br/securityhub/latest/userguide/iam-controls.html" hreflang="pt" /><link rel="alternate" href="https://docs.aws.amazon.com/zh_cn/securityhub/latest/userguide/iam-controls.html" hreflang="zh-cn" /><link rel="alternate" href="https://docs.aws.amazon.com/zh_tw/securityhub/latest/userguide/iam-controls.html" hreflang="zh-tw" /><link rel="alternate" href="https://docs.aws.amazon.com/securityhub/latest/userguide/iam-controls.html" hreflang="x-default" /><meta name="feedback-item" content="Security Hub" /><meta name="this_doc_product" content="AWS Security Hub" /><meta name="this_doc_guide" content="&#xA;            User Guide&#xA;        " /><head xmlns="http://www.w3.org/1999/xhtml"> <script defer="" src="/assets/r/awsdocs-doc-page.2.0.0.js"></script><link href="/assets/r/awsdocs-doc-page.2.0.0.css" rel="stylesheet"/></head>
+<script defer="" id="awsc-panorama-bundle" type="text/javascript" src="https://prod.pa.cdn.uis.awsstatic.com/panorama-nav-init.js" data-config="{'appEntity':'aws-documentation','region':'us-east-1','service':'securityhub'}"></script><meta id="panorama-serviceSubSection" value="&#xA;            User Guide&#xA;        " /><meta id="panorama-serviceConsolePage" value="Security Hub CSPM controls for AWS Identity and Access Management" /></head><body class="awsdocs awsui"><div class="awsdocs-container"><p><a href="iam-controls.md">View a markdown version of this page</a></p><awsdocs-header></awsdocs-header><awsui-app-layout id="app-layout" class="awsui-util-no-gutters" ng-controller="ContentController as $ctrl" header-selector="awsdocs-header" navigation-hide="false" navigation-width="$ctrl.navWidth" navigation-open="$ctrl.navOpen" navigation-change="$ctrl.onNavChange($event)" tools-hide="$ctrl.hideTools" tools-width="$ctrl.toolsWidth" tools-open="$ctrl.toolsOpen" tools-change="$ctrl.onToolsChange($event)"><div id="guide-toc" dom-region="navigation"><awsdocs-toc></awsdocs-toc></div><div id="main-column" dom-region="content" tabindex="-1"><awsdocs-view class="awsdocs-view"><div id="awsdocs-content"><head><title>Security Hub CSPM controls for AWS Identity and Access Management - AWS Security Hub</title><meta name="pdf" content="/pdfs/securityhub/latest/userguide/securityhub.pdf#iam-controls" /><meta name="rss" content="aws-security-hub-doc-updates.rss" /><meta name="forums" content="https://repost.aws/tags/TAFZPV4oyuS6-TWxLQfz5qSQ" /><meta name="feedback" content="https://docs.aws.amazon.com/forms/aws-doc-feedback?hidden_service_name=Security%20Hub&amp;topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/iam-controls.html" /><meta name="feedback-yes" content="feedbackyes.html?topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/iam-controls.html" /><meta name="feedback-no" content="feedbackno.html?topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/iam-controls.html" /><meta name="keywords" content="AWS Security Hub,AWS Security Hub CSPM,Security Hub CSPM,AWS security,cloud security,cloud compliance,cloud security posture management,cloud SIEM,AWS security finding format,ASFF,Security Hub CSPM overview,how Security Hub CSPM works,Security Hub CSPM controls,security controls,cspm controls,Security Hub CSPM controls reference,Security Hub CSPM controls list,Security Hub CSPM controls glossary,AWS security controls list,Security Hub CSPM controls for IAM,AWS Identity and Access Management security controls,IAM security controls,IAM security checks" /><link rel="alternate" type="text/markdown" href="iam-controls.md" title="Markdown version" /><script type="application/ld+json">
+{
+    "@context" : "https://schema.org",
+    "@type" : "BreadcrumbList",
+    "itemListElement" : [
+      {
+        "@type" : "ListItem",
+        "position" : 1,
+        "name" : "AWS",
+        "item" : "https://aws.amazon.com"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 2,
+        "name" : "AWS Security Hub",
+        "item" : "https://docs.aws.amazon.com/securityhub/index.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 3,
+        "name" : "
+            User Guide
+        ",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 4,
+        "name" : "Introduction to AWS Security Hub CSPM",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 5,
+        "name" : "Understanding security controls in Security Hub CSPM",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide/controls-view-manage.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 6,
+        "name" : "Control reference for Security Hub CSPM",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-controls-reference.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 7,
+        "name" : "Security Hub CSPM controls for AWS Identity and Access Management",
+        "item" : "https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-controls-reference.html"
+      }
+    ]
+}
+</script></head><body><div id="main"><div style="display: none"><a href="/pdfs/securityhub/latest/userguide/securityhub.pdf#iam-controls" target="_blank" rel="noopener noreferrer" title="Open PDF"></a></div><div id="breadcrumbs" class="breadcrumb"><a href="/index.html">Documentation</a><a href="/securityhub/index.html">AWS Security Hub</a><a href="what-are-securityhub-services.html">
+            User Guide
+        </a></div><div id="page-toc-src"><a href="#iam-1">[IAM.1] IAM policies should not allow full "*" administrative privileges</a><a href="#iam-2">[IAM.2] IAM users should not have IAM policies attached</a><a href="#iam-3">[IAM.3] IAM users' access keys should be rotated every 90 days or less</a><a href="#iam-4">[IAM.4] IAM root user access key should not exist</a><a href="#iam-5">[IAM.5] MFA should be enabled for all IAM users that have a console password</a><a href="#iam-6">[IAM.6] Hardware MFA should be enabled for the root user</a><a href="#iam-7">[IAM.7] Password policies for IAM users should have strong configurations</a><a href="#iam-8">[IAM.8] Unused IAM user credentials should be removed</a><a href="#iam-9">[IAM.9] MFA should be enabled for the root user</a><a href="#iam-10">[IAM.10] Password policies for IAM users should have strong configurations</a><a href="#iam-11">[IAM.11] Ensure IAM password policy requires at least one uppercase letter</a><a href="#iam-12">[IAM.12] Ensure IAM password policy requires at least one lowercase letter</a><a href="#iam-13">[IAM.13] Ensure IAM password policy requires at least one symbol</a><a href="#iam-14">[IAM.14] Ensure IAM password policy requires at least one number</a><a href="#iam-15">[IAM.15] Ensure IAM password policy requires minimum password length of 14 or greater</a><a href="#iam-16">[IAM.16] Ensure IAM password policy prevents password reuse</a><a href="#iam-17">[IAM.17] Ensure IAM password policy expires passwords within 90 days or less</a><a href="#iam-18">[IAM.18] Ensure a support role has been created to manage incidents with AWS Support</a><a href="#iam-19">[IAM.19] MFA should be enabled for all IAM users</a><a href="#iam-20">[IAM.20] Avoid the use of the root user</a><a href="#iam-21">[IAM.21] IAM customer managed policies that you create should not allow wildcard actions for services</a><a href="#iam-22">[IAM.22] IAM user credentials unused for 45 days should be removed</a><a href="#iam-23">[IAM.23] IAM Access Analyzer analyzers should be tagged</a><a href="#iam-24">[IAM.24] IAM roles should be tagged</a><a href="#iam-25">[IAM.25] IAM users should be tagged</a><a href="#iam-26">[IAM.26] Expired SSL/TLS certificates managed in IAM should be removed</a><a href="#iam-27">[IAM.27] IAM identities should not have the AWSCloudShellFullAccess policy attached</a><a href="#iam-28">[IAM.28] IAM Access Analyzer external access analyzer should be enabled</a></div><div id="main-content" class="awsui-util-container"><div id="main-col-body"><awsdocs-language-banner data-service="$ctrl.pageService"></awsdocs-language-banner><h1 class="topictitle" id="iam-controls">Security Hub CSPM controls for AWS Identity and Access Management</h1><div class="awsdocs-page-header-container"><awsdocs-page-header></awsdocs-page-header><awsdocs-filter-selector id="awsdocs-filter-selector"></awsdocs-filter-selector></div><p>These AWS Security Hub CSPM controls evaluate the AWS Identity and Access Management (IAM) service and resources. The controls might not be available in all AWS Regions. For more information, see <a href="./securityhub-regions.html#securityhub-regions-control-support">Availability of controls by Region</a>.</p>
+  
+   <h2 id="iam-1">[IAM.1] IAM policies should not allow full "*" administrative privileges</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark
+            v1.2.0/1.22, CIS AWS Foundations Benchmark v1.4.0/1.16, NIST.800-53.r5 AC-2,
+            NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(15), NIST.800-53.r5
+            AC-3(7), NIST.800-53.r5 AC-5, NIST.800-53.r5 AC-6, NIST.800-53.r5 AC-6(10),
+            NIST.800-53.r5 AC-6(2), NIST.800-53.r5 AC-6(3), NIST.800-171.r2 3.1.4, PCI DSS
+            v3.2.1/7.2.1</p>
+   <p><b>Category:</b> Protect &gt; Secure access management</p>
+   <p><b>Severity:</b> High</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::IAM::Policy</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-policy-no-statements-with-admin-access.html"><code class="code">iam-policy-no-statements-with-admin-access</code></a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b></p>
+   <div class="itemizedlist">
+     
+   <ul class="itemizedlist"><li class="listitem"><p><code class="code">excludePermissionBoundaryPolicy: true</code> (not customizable)</p></li></ul></div>
+   <p>This control checks whether the default version of IAM policies (also known as customer
+    managed policies) has administrator access by including a statement with <code class="code">"Effect": "Allow"</code> with
+    <code class="code">"Action": "*"</code> over <code class="code">"Resource": "*"</code>. The control fails if you have IAM policies with such a statement.</p> 
+   <p>The control only checks the customer managed policies that you create. It does not check
+    inline and AWS managed policies.</p>
+   <p>IAM policies define a set of privileges that are granted to users, groups, or roles.
+    Following standard security advice, AWS recommends that you grant least privilege, which means
+    to grant only the permissions that are required to perform a task. When you provide full
+    administrative privileges instead of the minimum set of permissions that the user needs, you
+    expose the resources to potentially unwanted actions.</p>
+   <p>Instead of allowing full administrative privileges, determine what users need to do and
+    then craft policies that let the users perform only those tasks. It is more secure to start with
+    a minimum set of permissions and grant additional permissions as necessary. Do not start with
+    permissions that are too lenient and then try to tighten them later.</p>
+   <p>You should remove IAM policies that have a statement with <code class="code">"Effect": "Allow"
+    </code>with <code class="code">"Action": "*"</code> over <code class="code">"Resource": "*"</code>.</p>
+<div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, global 
+resource recording can be enabled in a single Region. If you only record global resources in a 
+single Region, then you can disable this control in all Regions except the Region where you 
+record global resources.</p></div></div>
+    
+    <h3 id="iam-1-remediation">Remediation</h3>
+    <p>To modify your IAM policies so that they do not allow full "*"
+     administrative privileges, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-edit.html">Editing IAM policies</a> in the
+     <em>IAM User Guide</em>.</p>
+    
+  
+ 
+  
+   <h2 id="iam-2">[IAM.2] IAM users should not have IAM policies attached</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.14, CIS AWS Foundations Benchmark v3.0.0/1.15, CIS AWS Foundations Benchmark v1.2.0/1.16,
+            NIST.800-53.r5 AC-2, NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-3, NIST.800-53.r5
+            AC-3(15), NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-6, NIST.800-53.r5 AC-6(3),
+            NIST.800-171.r2 3.1.1, NIST.800-171.r2 3.1.2, NIST.800-171.r2 3.1.7, NIST.800-171.r2
+            3.3.9, NIST.800-171.r2 3.13.3, PCI DSS v3.2.1/7.2.1</p>
+   <p><b>Category:</b> Protect &gt; Secure access management</p>
+   <p><b>Severity:</b> Low</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::IAM::User</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-user-no-policies-check.html"><code class="code">iam-user-no-policies-check</code></a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b> None</p>
+   <p>This control checks whether your IAM users have policies attached. The control fails if your IAM users have policies 
+attached. Instead, IAM users must inherit permissions from IAM groups or assume a role.</p>
+   <p>By default, IAM users, groups, and roles have no access to AWS resources. IAM
+    policies grant privileges to users, groups, or roles. We recommend that you apply IAM policies
+    directly to groups and roles but not to users. Assigning privileges at the group or role level
+    reduces the complexity of access management as the number of users grows. Reducing access
+    management complexity might in turn reduce the opportunity for a principal to inadvertently
+    receive or retain excessive privileges. </p>
+   <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, global 
+resource recording can be enabled in a single Region. If you only record global resources in a 
+single Region, you can disable this control in all Regions except the Region where you 
+record global resources.</p></div></div>
+    
+    <h3 id="iam-2-remediation">Remediation</h3>
+    <p>To resolve this issue, <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_groups_create.html">create an IAM group</a>, and attach the policy to the group. Then, 
+<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_groups_manage_add-remove-users.html">add the users to the group</a>. 
+The policy is applied to each user in the group. To remove a policy attached directly to a user, see 
+    	<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html">Adding and removing IAM identity permissions</a> 
+in the <em>IAM User Guide</em>.</p>
+    
+  
+ 
+   <h2 id="iam-3">[IAM.3] IAM users' access keys should be rotated every 90 days or less</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.13, CIS AWS Foundations Benchmark v3.0.0/1.14, CIS AWS Foundations Benchmark v1.4.0/1.14, CIS AWS Foundations Benchmark v1.2.0/1.4, NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-2(3), NIST.800-53.r5 AC-3(15), PCI DSS v4.0.1/8.3.9, PCI DSS v4.0.1/8.6.3</p>
+   <p><b>Category:</b> Protect &gt; Secure access management</p>
+   <p><b>Severity:</b> Medium </p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::IAM::User</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/access-keys-rotated.html"><code class="code">access-keys-rotated</code></a></p>
+   <p><b>Schedule type:</b> Periodic</p>
+   <p><b>Parameters:</b></p>
+   <div class="itemizedlist">
+     
+   <ul class="itemizedlist"><li class="listitem">
+        <p><code class="code">maxAccessKeyAge</code>: <code class="code">90</code> (not customizable)</p>
+    </li></ul></div>
+   <p>This control checks whether the active access keys are rotated within 90 days.</p>
+   <p>We highly recommend that you do not generate and remove all access keys in your account.
+    Instead, the recommended best practice is to either create one or more IAM roles or to use
+     <a href="https://aws.amazon.com/identity/federation/" rel="noopener noreferrer" target="_blank"><span>federation</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a> through AWS IAM Identity Center. You can use these
+    methods to allow your users to access the
+    AWS Management Console and AWS CLI.</p>
+   <p>Each approach has its use cases. Federation is generally better for enterprises that have
+    an existing central directory or plan to need more than the current limit on IAM users.
+    Applications that run outside of an AWS environment need access keys for programmatic access
+    to AWS resources.</p>
+   <p>However, if the resources that need programmatic access run inside AWS, the best practice
+    is to use IAM roles. Roles allow you to grant a resource access without hardcoding an access
+    key ID and secret access key into the configuration.</p>
+   <p>To learn more about protecting your access keys and account, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws-access-keys-best-practices.html">Best practices
+     for managing AWS access keys</a> in the <em>AWS General Reference</em>.
+    Also see the blog post <a href="https://aws.amazon.com/blogs/security/guidelines-for-protecting-your-aws-account-while-using-programmatic-access/" rel="noopener noreferrer" target="_blank"><span>Guidelines for protecting your AWS account while using programmatic access</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a>.</p>
+   <p>If you already have an access key, Security Hub CSPM recommends that you rotate the access keys every
+    90 days. Rotating access keys reduces the chance that an access key that is associated with a
+    compromised or terminated account is used. It also ensures that data cannot be accessed with an
+    old key that might have been lost, cracked, or stolen. Always update your applications after you
+    rotate access keys. </p>
+   <p>Access keys consist of an access key ID and a secret access key. They are used to sign
+    programmatic requests that you make to AWS. Users need their own access keys to make
+    programmatic calls to AWS from the AWS CLI, Tools for Windows PowerShell, the AWS SDKs, or
+    direct HTTP calls using the API operations for individual AWS services.</p>
+   <p>If your organization uses AWS IAM Identity Center (IAM Identity Center), your users can sign in to Active Directory, a
+    built-in IAM Identity Center directory, or <a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html">another identity
+     provider (IdP) connected to IAM Identity Center</a>. They can then be mapped to an IAM role that
+    enables them to run AWS CLI commands or call AWS API operations without the need for 
+    access keys. To learn more, see <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html">Configuring the AWS CLI to use
+     AWS IAM Identity Center</a> in the <em>AWS Command Line Interface User Guide</em>.</p>
+   <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, global 
+           resource recording can be enabled in a single Region. If you only record global resources in a 
+           single Region, then you can disable this control in all Regions except the Region where you 
+           record global resources.</p></div></div>
+    
+    <h3 id="iam-3-remediation">Remediation</h3>
+       <p>To  rotate access keys that are older than 90 days, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_RotateAccessKey">Rotating access keys</a> in the <em>IAM User Guide</em>.
+   Follow the instructions for any user with an <b>Access key age</b> greater than 90 days.</p> 
+    
+  
+ 
+  
+   <h2 id="iam-4">[IAM.4] IAM root user access key should not exist</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.3, CIS AWS Foundations Benchmark v3.0.0/1.4, CIS AWS Foundations Benchmark v1.4.0/1.4, CIS AWS Foundations Benchmark v1.2.0/1.12, PCI DSS v3.2.1/2.1, PCI DSS v3.2.1/2.2, PCI DSS v3.2.1/7.2.1, NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-3(15), NIST.800-53.r5 AC-3(7), NIST.800-53.r5 AC-6, NIST.800-53.r5 AC-6(10), NIST.800-53.r5 AC-6(2)</p>
+   <p><b>Category:</b> Protect &gt; Secure access management</p>
+   <p><b>Severity:</b> Critical </p>
+   <p><b>Resource type:</b> <code class="code">AWS::::Account</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-root-access-key-check.html"><code class="code">iam-root-access-key-check</code></a></p>
+   <p><b>Schedule type:</b> Periodic</p>
+   <p><b>Parameters:</b> None</p>
+   <p>This control checks whether the root user access key is present. </p>
+   <p>The root user is the most privileged user in an AWS account. AWS access keys provide
+    programmatic access to a given account.</p>
+   <p>Security Hub CSPM recommends that you remove all access keys that are associated with the root user.
+    This limits that vectors that can be used to compromise your account. It also encourages the
+    creation and use of role-based accounts that are least privileged. </p>
+   
+    
+    <h3 id="iam-4-remediation">Remediation</h3>
+   	<p>To delete the root user access key, see  <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html#id_root-user_manage_delete-key">Deleting access keys for the root user</a> in the <em>IAM User Guide</em>. 
+   	    To delete the root user access keys from an AWS account in AWS GovCloud (US), see <a href="https://docs.aws.amazon.com/govcloud-us/latest/UserGuide/govcloud-account-root-user.html#delete-govcloud-root-access-key">Deleting my AWS GovCloud (US) account root user access keys</a> in the <em>AWS GovCloud (US) User Guide</em>.</p>
+    
+  
+ 
+   <h2 id="iam-5">[IAM.5] MFA should be enabled for all IAM users that have a console password</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.9, CIS AWS Foundations Benchmark v3.0.0/1.10, CIS AWS Foundations Benchmark v1.4.0/1.10, CIS AWS Foundations Benchmark v1.2.0/1.2, NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-3(15), NIST.800-53.r5 IA-2(1), NIST.800-53.r5 IA-2(2), NIST.800-53.r5 IA-2(6), NIST.800-53.r5 IA-2(8), PCI DSS v4.0.1/8.4.2</p>
+   <p><b>Category:</b> Protect &gt; Secure access management</p>
+   <p><b>Severity:</b> Medium</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::IAM::User</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/mfa-enabled-for-iam-console-access.html"><code class="code">mfa-enabled-for-iam-console-access</code></a></p>
+   <p><b>Schedule type:</b> Periodic</p>
+   <p><b>Parameters:</b> None</p>
+   <p>This control checks whether AWS multi-factor authentication (MFA) is enabled for all
+    IAM users that use a console password.</p>
+   <p>Multi-factor authentication (MFA) adds an extra layer of protection on top of a user name
+    and password. With MFA enabled, when a user signs in to an AWS website, they are prompted for
+    their user name and password. In addition, they are prompted for an authentication code from
+    their AWS MFA device.</p>
+   <p>We recommend that you enable MFA for all accounts that have a console password. MFA is
+    designed to provide increased security for console access. The authenticating principal must
+    possess a device that emits a time-sensitive key and must have knowledge of a credential.</p>
+<div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, global 
+		resource recording can be enabled in a single Region. If you only record global resources in a 
+		single Region, then you can disable this control in all Regions except the Region where you 
+		record global resources.</p></div></div>
+    
+    <h3 id="iam-5-remediation">Remediation</h3>
+   	<p>To add MFA for IAM users, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html">Using multi-factor authentication (MFA) in AWS</a> in the <em>IAM User Guide</em>.</p>
+    
+  
+ 
+  
+   <h2 id="iam-6">[IAM.6] Hardware MFA should be enabled for the root user</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.5, CIS AWS Foundations Benchmark v3.0.0/1.6, CIS AWS Foundations Benchmark v1.4.0/1.6, CIS AWS Foundations Benchmark v1.2.0/1.14, PCI DSS v3.2.1/8.3.1, NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-3(15), NIST.800-53.r5 IA-2(1), NIST.800-53.r5 IA-2(2), NIST.800-53.r5 IA-2(6), NIST.800-53.r5 IA-2(8), PCI DSS v4.0.1/8.4.2</p>
+   <p><b>Category:</b> Protect &gt; Secure access management</p>
+   <p><b>Severity:</b> Critical</p>
+   <p><b>Resource type:</b> <code class="code">AWS::::Account</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/root-account-hardware-mfa-enabled.html"><code class="code">root-account-hardware-mfa-enabled</code></a></p>
+   <p><b>Schedule type:</b> Periodic</p>
+   <p><b>Parameters:</b> None</p>
+   <p>This control checks whether your AWS account is enabled to use a hardware multi-factor authentication (MFA) device to sign in with root user credentials. The control fails if hardware MFA isn't enabled or virtual MFA devices are permitted for signing in with root user credentials.</p>
+   <p>Virtual MFA might not provide the same level of security as hardware MFA devices. We recommend that you use a virtual MFA device only while you wait for hardware purchase approval or for your hardware to arrive. To learn more, 
+       see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html"> Assign a virtual MFA device (console)</a> in the <em>IAM User Guide</em>.</p>
+        <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>Security Hub CSPM evaluates this control based on the presence of root user credentials (login profile) in an AWS account. The control generates <code class="code">PASSED</code> findings in the following cases:</p><div class="itemizedlist">
+                 
+                 
+            <ul class="itemizedlist"><li class="listitem">
+                    <p>Root user credentials are present in the account and hardware MFA is enabled for the root user.</p>
+                </li><li class="listitem">
+                    <p>Root user credentials aren’t present in the account.</p>
+                </li></ul></div><p>The control generates a <code class="code">FAILED</code> finding if root user credentials are present in the account and hardware MFA is not enabled for the root user.</p></div></div>
+   
+    
+    <h3 id="iam-6-remediation">Remediation</h3>
+   	<p>For information about enabling hardware MFA for the root user, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/enable-mfa-for-root.html">Multi-factor authentication for an AWS account root user</a> in the <em>IAM User Guide</em>.</p>
+    
+  
+ 
+  
+   <h2 id="iam-7">[IAM.7] Password policies for IAM users should have strong configurations</h2>
+    <p><b>Related requirements:</b> NIST.800-53.r5 AC-2(1),
+            NIST.800-53.r5 AC-2(3), NIST.800-53.r5 AC-3(15), NIST.800-53.r5 IA-5(1), NIST.800-171.r2
+            3.5.2, NIST.800-171.r2 3.5.7, NIST.800-171.r2 3.5.8, PCI DSS v4.0.1/8.3.6, PCI DSS v4.0.1/8.3.7,
+            PCI DSS v4.0.1/8.3.9, PCI DSS v4.0.1/8.3.10.1, PCI DSS v4.0.1/8.6.3</p>
+   <p><b>Category:</b> Protect &gt; Secure access management</p>
+   <p><b>Severity:</b> Medium</p>
+    <p><b>Resource type:</b> <code class="code">AWS::::Account</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+   <p><b>Schedule type:</b> Periodic</p>
+   <p><b>Parameters:</b></p>
+    <div class="table-container"><div class="table-contents"><table id="w524aab9c37c13d107c17c17"><thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Allowed custom values</th>
+                    <th>Security Hub CSPM default value</th>
+                </tr>
+            </thead>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">RequireUppercaseCharacters</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Require at least one uppercase character in password</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Boolean</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">true</code> or <code class="code">false</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">true</code></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">RequireLowercaseCharacters</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Require at least one lowercase character in password</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Boolean</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">true</code> or <code class="code">false</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">true</code></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">RequireSymbols</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Require at least one symbol in password</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Boolean</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">true</code> or <code class="code">false</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">true</code></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">RequireNumbers</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Require at least one number in password</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Boolean</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">true</code> or <code class="code">false</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">true</code></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">MinimumPasswordLength</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Minimum number of characters in the password</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Integer</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">8</code> to <code class="code">128</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">8</code></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">PasswordReusePrevention</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Number of password rotations before an old password can be reused</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Integer</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">12</code> to <code class="code">24</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>No default value</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td tabindex="-1">
+                        <p><code class="code">MaxPasswordAge</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Number of days before password expiration</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>Integer</p>
+                    </td>
+                    <td tabindex="-1">
+                        <p><code class="code">1</code> to <code class="code">90</code></p>
+                    </td>
+                    <td tabindex="-1">
+                        <p>No default value</p>
+                    </td>
+                </tr>
+            </table></div></div>
+   <p>This control checks whether the account password policy for IAM users uses strong configurations. 
+The control fails if the password policy doesn't use strong configurations. Unless you provide custom parameter values, 
+Security Hub CSPM uses the default values mentioned in the preceding table. The <code class="code">PasswordReusePrevention</code> and <code class="code">MaxPasswordAge</code> parameters have no default value, so
+if you exclude these parameters, Security Hub CSPM ignores number of password rotations and password age when evaluating this control.</p>
+   <p>To access the AWS Management Console, IAM users need passwords. As a best practice, Security Hub CSPM highly
+    recommends that instead of creating IAM users, you use federation. Federation allows users to
+    use their existing corporate credentials to log into the AWS Management Console. Use AWS IAM Identity Center (IAM Identity Center) to
+    create or federate the user, and then assume an IAM role into an account.</p>
+   <p>To learn more about identity providers and federation, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers.html">Identity providers and
+     federation</a> in the <em>IAM User Guide</em>. To learn more
+    about IAM Identity Center, see the <a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html"><em>AWS IAM Identity Center User Guide</em></a>.</p>
+   <p> If you need to use IAM users, Security Hub CSPM recommends that you enforce the creation of strong
+    user passwords. You can set a password policy on your AWS account to specify complexity
+    requirements and mandatory rotation periods for passwords. When you create or change a password
+    policy, most of the password policy settings are enforced the next time users change their
+    passwords. Some of the settings are enforced immediately.</p>
+    
+    
+    <h3 id="iam-7-remediation">Remediation</h3>
+    <p>To update your password policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>.</p>
+    
+  
+ 
+  
+   <h2 id="iam-8">[IAM.8] Unused IAM user credentials should be removed</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark
+            v1.2.0/1.3, NIST.800-53.r5 AC-2, NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-2(3),
+            NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(15), NIST.800-53.r5 AC-3(7), NIST.800-53.r5
+            AC-6, NIST.800-171.r2 3.1.2, PCI DSS v3.2.1/8.1.4, PCI DSS v4.0.1/8.2.6</p>
+   <p><b>Category:</b> Protect &gt; Secure access management </p>
+   <p><b>Severity:</b> Medium </p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::IAM::User</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-user-unused-credentials-check.html"><code class="code">iam-user-unused-credentials-check</code></a></p>
+   <p><b>Schedule type:</b> Periodic</p>
+   <p><b>Parameters:</b></p>
+   <div class="itemizedlist">
+     
+   <ul class="itemizedlist"><li class="listitem">
+        <p><code class="code">maxCredentialUsageAge</code>: <code class="code">90</code> (not customizable)</p>
+    </li></ul></div>
+   <p>This control checks whether your IAM users have passwords or active access keys that have
+    not been used for 90 days.</p>
+   <p>IAM users can access AWS resources using different types of credentials, such as
+    passwords or access keys. </p>
+   <p>Security Hub CSPM recommends that you remove or deactivate all credentials that were unused for 90 days
+    or more. Disabling or removing unnecessary credentials reduces the window of opportunity for
+    credentials associated with a compromised or abandoned account to be used.</p>
+<div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, global 
+  		resource recording can be enabled in a single Region. If you only record global resources in a 
+  		single Region, then you can disable this control in all Regions except the Region where you 
+  		record global resources.</p></div></div>
+    
+    <h3 id="iam-8-remediation">Remediation</h3>
+    <p>When you view user information in the IAM console, there are columns for
+      <b>Access key age</b>, <b>Password age</b>, and <b>Last
+      activity</b>. If the value in any of these columns is greater than 90 days, make the
+     credentials for those users inactive.</p>
+       <p>You can also use <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_getting-report.html#getting-credential-reports-console">credential reports</a> to monitor users and identify those with no
+     activity for 90 or more days. You can download credential reports in <code>.csv</code>
+     format from the IAM console.</p>
+    <p>After you identify the inactive accounts or unused credentials, 
+        deactivate them. For instructions, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_admin-change-user.html#id_credentials_passwords_admin-change-user_console">Creating, changing, or deleting an IAM user password (console)</a> in the <em>IAM User Guide</em>.</p>
+    
+  
+ 
+  
+    <h2 id="iam-9">[IAM.9] MFA should be enabled for the root user</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.4, PCI DSS v3.2.1/8.3.1, PCI DSS v4.0.1/8.4.2, CIS AWS Foundations Benchmark v3.0.0/1.5, CIS AWS Foundations Benchmark v1.4.0/1.5, CIS AWS Foundations Benchmark v1.2.0/1.13, NIST.800-53.r5 AC-2(1), NIST.800-53.r5 AC-3(15), NIST.800-53.r5 IA-2(1), NIST.800-53.r5 IA-2(2), NIST.800-53.r5 IA-2(6), NIST.800-53.r5 IA-2(8)</p>
+    <p><b>Category:</b> Protect &gt; Secure access management </p>
+    <p><b>Severity:</b> Critical</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/root-account-mfa-enabled.html"><code class="code">root-account-mfa-enabled</code></a></p>
+        <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+        <p>This control checks whether multi-factor authentication (MFA) is enabled for the IAM
+            root user of an AWS account to sign in to the AWS Management Console. The control fails if MFA isn't enabled for the root user of the account.</p>
+        <p>The IAM
+            root user of an AWS account has complete access to all the services and resources in the account. If MFA is enabled, the user must enter a 
+            username, a password, and an authentication code from their AWS MFA device in order to sign in to the AWS Management Console. MFA adds an extra layer of 
+            protection on top of a username and password.</p>
+    <p>This control generates <code class="code">PASSED</code> findings in the following cases:</p>
+    <div class="itemizedlist">
+         
+             
+    <ul class="itemizedlist"><li class="listitem">
+                <p>Root user credentials are present in the account and MFA is enabled for the root user.</p>
+            </li><li class="listitem">
+                <p>Root user credentials aren’t present in the account.</p>
+            </li></ul></div>
+    <p>The control generates <code class="code">FAILED</code> findings if root user credentials are present in the account and MFA isn’t enabled for the root user.</p>
+    
+         
+            <h3 id="iam-9-remediation">Remediation</h3>
+            <p>For information about enabling MFA for the root user of an AWS account, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/enable-mfa-for-root.html">Multi-factor authentication for the AWS account root user</a> in the <em>AWS Identity and Access Management User Guide</em>.</p>
+         
+    
+ 
+  
+      <h2 id="iam-10">[IAM.10] Password policies for IAM users should have strong configurations</h2>
+<p><b>Related requirements:</b> NIST.800-171.r2 3.5.2, NIST.800-171.r2
+            3.5.7, NIST.800-171.r2 3.5.8, PCI DSS v3.2.1/8.1.4, PCI DSS v3.2.1/8.2.3, PCI DSS
+            v3.2.1/8.2.4, PCI DSS v3.2.1/8.2.5</p>
+    <p><b>Category:</b> Protect &gt; Secure access management </p>
+    <p><b>Severity:</b> Medium</p>
+      <p><b>Resource type:</b> <code class="code">AWS::::Account</code></p>
+      <p><b>AWS Config rule:</b>
+        <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+      <p><b>Schedule type:</b> Periodic</p>
+      <p><b>Parameters:</b> None</p>
+      <p>This control checks whether the account password policy for IAM users uses the
+        following minimum PCI DSS configurations.</p>
+      <div class="itemizedlist">
+         
+         
+         
+         
+         
+         
+      <ul class="itemizedlist"><li class="listitem">
+          <p><code class="code">RequireUppercaseCharacters</code> – Require at least one uppercase
+            character in password. (Default = <code class="code">true</code>)</p>
+        </li><li class="listitem">
+          <p><code class="code">RequireLowercaseCharacters</code> – Require at least one lowercase
+            character in password. (Default = <code class="code">true</code>)</p>
+        </li><li class="listitem">
+          <p><code class="code">RequireNumbers</code> – Require at least one number in password.
+            (Default = <code class="code">true</code>)</p>
+        </li><li class="listitem">
+          <p><code class="code">MinimumPasswordLength</code> – Password minimum length. (Default = 7 or
+            longer)</p>
+        </li><li class="listitem">
+          <p><code class="code">PasswordReusePrevention</code> – Number of passwords before allowing
+            reuse. (Default = 4)</p>
+        </li><li class="listitem">
+            <p><code class="code">MaxPasswordAge</code> – Number of days before password expiration. (Default =
+            90)</p>
+        </li></ul></div>
+    <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>On May 30, 2025, Security Hub CSPM removed this control from the PCI DSS v4.0.1 standard. PCI DSS v4.0.1 now
+                requires passwords to have a minimum of 8 characters. This control continues to
+                apply to the PCI DSS v3.2.1 standard, which has different password requirements.</p><p>To evaluate account password policies against PCI DSS v4.0.1 requirements, you can use the
+                    <a href="#iam-7">IAM.7 control</a>. This control requires passwords to
+                have a minimum of 8 characters. It also supports custom values for password length
+                and other parameters. The IAM.7 control is part of the PCI DSS v4.0.1 standard in
+                Security Hub CSPM.</p></div></div>
+    
+       
+        <h3 id="iam-10-remediation">Remediation</h3>
+      	<p>To update your password policy to use the recommended
+      		configuration, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>.</p>
+       
+    
+ 
+  
+            <h2 id="iam-11">[IAM.11] Ensure IAM password policy requires at least one uppercase letter</h2>
+	<p><b>Related requirements:</b> CIS AWS Foundations Benchmark
+            v1.2.0/1.5, NIST.800-171.r2 3.5.7, PCI DSS v4.0.1/8.3.6, PCI DSS v4.0.1/8.6.3</p>
+    <p><b>Category:</b> Protect &gt; Secure access management </p>
+    <p><b>Severity:</b> Medium</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+            <p><b>AWS Config rule:</b>
+                <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>Password policies, in part, enforce password complexity requirements. Use IAM
+                password policies to ensure that passwords use different character sets.</p>
+            <p>CIS recommends that the password policy require at least one uppercase letter.
+                Setting a password complexity policy increases account resiliency against brute
+                force login attempts.</p>
+    
+             
+                <h3 id="iam-11-remediation">Remediation</h3>
+                <p>To change your password policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>. For <b>Password strength</b>, select 
+                    <b>Require at least one uppercase letter from the Latin alphabet (A–Z)</b>.</p>
+             
+        
+ 
+  
+            <h2 id="iam-12">[IAM.12] Ensure IAM password policy requires at least one lowercase letter</h2>
+	<p><b>Related requirements:</b> CIS AWS Foundations Benchmark
+            v1.2.0/1.6, NIST.800-171.r2 3.5.7, PCI DSS v4.0.1/8.3.6, PCI DSS v4.0.1/8.6.3</p>
+    <p><b>Category:</b> Protect &gt; Secure access management </p>
+    <p><b>Severity:</b> Medium</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+            <p><b>AWS Config rule:</b>
+                <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>Password policies, in part, enforce password complexity requirements. Use IAM
+                password policies to ensure that passwords use different character sets. CIS
+                recommends that the password policy require at least one lowercase letter. Setting a
+                password complexity policy increases account resiliency against brute force login
+                attempts.</p>
+    
+             
+                <h3 id="iam-12-remediation">Remediation</h3>
+                <p>To change your password policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>. For <b>Password strength</b>, select 
+                    <b>Require at least one lowercase letter from the Latin alphabet (A–Z)</b>.</p>
+             
+        
+ 
+  
+            <h2 id="iam-13">[IAM.13] Ensure IAM password policy requires at least one symbol</h2>
+	<p><b>Related requirements:</b> CIS AWS Foundations Benchmark
+            v1.2.0/1.7, NIST.800-171.r2 3.5.7</p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+    <p><b>Severity:</b> Medium</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+            <p><b>AWS Config rule:</b>
+                <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>Password policies, in part, enforce password complexity requirements. Use IAM
+                password policies to ensure that passwords use different character sets.</p>
+            <p>CIS recommends that the password policy require at least one symbol. Setting a
+                password complexity policy increases account resiliency against brute force login
+                attempts.</p>
+    
+             
+                <h3 id="iam-13-remediation">Remediation</h3>
+                <p>To change your password policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>. For <b>Password strength</b>, select 
+                    <b>Require at least one nonalphanumeric character</b>.</p>
+             
+        
+ 
+  
+            <h2 id="iam-14">[IAM.14] Ensure IAM password policy requires at least one number</h2>
+	<p><b>Related requirements:</b> CIS AWS Foundations Benchmark
+            v1.2.0/1.8, NIST.800-171.r2 3.5.7, PCI DSS v4.0.1/8.3.6, PCI DSS v4.0.1/8.6.3</p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+            <p><b>Severity:</b> Medium</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+            <p><b>AWS Config rule:</b>
+                <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>Password policies, in part, enforce password complexity requirements. Use IAM
+                password policies to ensure that passwords use different character sets.</p>
+            <p>CIS recommends that the password policy require at least one number. Setting a
+                password complexity policy increases account resiliency against brute force login
+                attempts.</p>
+    
+             
+                <h3 id="iam-14-remediation">Remediation</h3>
+                <p>To change your password policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>. For <b>Password strength</b>, select 
+                    <b>Require at least one number</b>.</p>
+             
+        
+ 
+  
+            <h2 id="iam-15">[IAM.15] Ensure IAM password policy requires minimum password length of 14 or greater</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.7, CIS AWS Foundations Benchmark v3.0.0/1.8, CIS AWS Foundations Benchmark v1.4.0/1.8,
+            CIS AWS Foundations Benchmark v1.2.0/1.9, NIST.800-171.r2 3.5.7</p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+    <p><b>Severity:</b> Medium</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+            <p><b>AWS Config rule:</b>
+                <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>Password policies, in part, enforce password complexity requirements. Use IAM
+                password policies to ensure that passwords are at least a given length.</p>
+            <p>CIS recommends that the password policy require a minimum password length of 14
+                characters. Setting a password complexity policy increases account resiliency
+                against brute force login attempts.</p>
+    
+             
+                <h3 id="iam-15-remediation">Remediation</h3>
+                <p>To change your password policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>. For <b>Password minimum length</b>, enter 
+                    <code class="userinput">14</code> or a larger number.</p>
+             
+        
+ 
+  
+            <h2 id="iam-16">[IAM.16] Ensure IAM password policy prevents password reuse</h2>
+	<p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.8, CIS AWS Foundations Benchmark v3.0.0/1.9, CIS AWS Foundations Benchmark v1.4.0/1.9,
+            CIS AWS Foundations Benchmark v1.2.0/1.10, NIST.800-171.r2 3.5.8, PCI DSS v4.0.1/8.3.7</p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+    <p><b>Severity:</b> Low</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+            <p><b>AWS Config rule:</b>
+                <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>This control checks whether the number of passwords to remember is set to 24. The
+                control fails if the value is not 24.</p>
+            <p>IAM password policies can prevent the reuse of a given password by the same
+                user.</p>
+            <p>CIS recommends that the password policy prevent the reuse of passwords. Preventing
+                password reuse increases account resiliency against brute force login
+                attempts.</p>
+    
+         
+                <h3 id="iam-16-remediation">Remediation</h3>
+            <p>To change your password policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>. For <b>Prevent password reuse</b>, enter 
+                <code class="userinput">24</code>.</p>
+             
+        
+ 
+  
+            <h2 id="iam-17">[IAM.17] Ensure IAM password policy expires passwords within 90 days or less</h2>
+	<p><b>Related requirements:</b> CIS AWS Foundations Benchmark
+            v1.2.0/1.11, PCI DSS v4.0.1/8.3.9, PCI DSS v4.0.1/8.3.10.1</p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+    <p><b>Severity:</b> Low</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+            <p><b>AWS Config rule:</b>
+                <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-password-policy.html"><code class="code">iam-password-policy</code></a></p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>IAM password policies can require passwords to be rotated or expired after a
+                given number of days.</p>
+            <p>CIS recommends that the password policy expire passwords after 90 days or less.
+                Reducing the password lifetime increases account resiliency against brute force
+                login attempts. Requiring regular password changes also helps in the following
+                scenarios:</p>
+            <div class="itemizedlist">
+                 
+                 
+                 
+                 
+            <ul class="itemizedlist"><li class="listitem">
+                    <p>Passwords can be stolen or compromised without your knowledge. This can
+                        happen via a system compromise, software vulnerability, or internal
+                        threat.</p>
+                </li><li class="listitem">
+                    <p>Certain corporate and government web filters or proxy servers can
+                        intercept and record traffic even if it's encrypted.</p>
+                </li><li class="listitem">
+                    <p>Many people use the same password for many systems such as work, email,
+                        and personal.</p>
+                </li><li class="listitem">
+                    <p>Compromised end-user workstations might have a keystroke logger.</p>
+                </li></ul></div>
+    
+             
+                <h3 id="iam-17-remediation">Remediation</h3>
+                <p>To change your password policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html">Setting an account password policy for IAM users</a> in the <em>IAM User Guide</em>. For <b>Turn on password expiration</b>, enter 
+                    <code class="userinput">90</code> or a smaller number.</p>
+             
+        
+ 
+  
+        <h2 id="iam-18">[IAM.18] Ensure a support role has been created to manage incidents with AWS Support</h2>
+	<p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.16, CIS AWS Foundations Benchmark v3.0.0/1.17, CIS AWS Foundations Benchmark v1.4.0/1.17,
+            CIS AWS Foundations Benchmark v1.2.0/1.20, NIST.800-171.r2 3.1.2, PCI DSS v4.0.1/12.10.3</p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+    <p><b>Severity:</b> Low</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::::Account</code></p>
+        <p><b>AWS Config rule:</b>
+            <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-policy-in-use.html"><code class="code">iam-policy-in-use</code></a></p>
+        <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b></p>
+    <div class="itemizedlist">
+         
+         
+    <ul class="itemizedlist"><li class="listitem"><p><code class="code">policyARN</code>: <code class="code">arn:<code class="replaceable">partition</code>:iam::aws:policy/AWSSupportAccess</code> (not customizable)</p></li><li class="listitem"><p><code class="code">policyUsageType</code>: <code class="code">ANY</code> (not customizable)</p></li></ul></div>
+        <p>AWS provides a support center that can be used for incident notification and
+            response, as well as technical support and customer services.</p>
+        <p>Create an IAM role to allow authorized users to manage incidents with AWS
+            Support. By implementing least privilege for access control, an IAM role will
+            require an appropriate IAM policy to allow support center access in order to
+            manage incidents with Support.</p>
+        <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, global 
+                resource recording can be enabled in a single Region. If you only record global resources in a 
+                single Region, then you can disable this control in all Regions except the Region where you 
+                record global resources.</p></div></div>
+        
+         
+            <h3 id="iam-18-remediation">Remediation</h3>
+            <p>To remediate this issue, create a role to allow authorized users to manage
+                Support incidents.</p>
+            <div class="minimized-block" data-minimized="true"><div class="minimized-content">
+            <div class="procedure"><h6>To create the role to use for Support access</h6><ol><li><p>Open the IAM console at
+         <a href="https://console.aws.amazon.com/iam/" rel="noopener noreferrer" target="_blank"><span>https://console.aws.amazon.com/iam/</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a>.</p></li><li>
+                    <p>In the IAM navigation pane, choose <b>Roles</b>, then
+                        choose <b>Create role</b>.</p>
+                </li><li>
+                    <p>For <b>Role type</b>, choose the <b>Another AWS account</b>.</p>
+                </li><li>
+                    <p>For <b>Account ID</b>, enter the AWS account ID of the
+                            AWS account to which you want to grant access to your
+                            resources.</p>
+                    <p>If the users or groups that will assume this role are in the same
+                        account, then enter the local account number.</p>
+                    <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>The administrator of the specified account can grant permission to
+                            assume this role to any user in that account. To do this, the
+                            administrator attaches a policy to the user or a group that grants
+                            permission for the <code class="code">sts:AssumeRole</code> action. In that
+                            policy, the resource must be the role ARN.</p></div></div>
+                </li><li>
+                    <p>Choose <b>Next: Permissions</b>.</p>
+                </li><li>
+                    <p>Search for the managed policy <code class="code">AWSSupportAccess</code>.</p>
+                </li><li>
+                    <p>Select the check box for the <code class="code">AWSSupportAccess</code> managed
+                        policy.</p>
+                </li><li>
+                    <p>Choose <b>Next: Tags</b>.</p>
+                </li><li>
+                    <p>(Optional) To add metadata to the role, attach tags as key-value
+                        pairs.</p>
+                    <p>For more information about using tags in IAM, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_tags.html">Tagging
+                        IAM users and roles</a> in the <em>IAM User Guide</em>.</p>
+                </li><li>
+                    <p>Choose <b>Next: Review</b>.</p>
+                </li><li>
+                    <p>For <b>Role name</b>, enter a name for your role.</p>
+                    <p>Role names must be unique within your AWS account. They are not case
+                            sensitive.</p>
+                </li><li>
+                    <p>(Optional) For <b>Role description</b>, enter a
+                        description for the new role.</p>
+                </li><li>
+                    <p>Review the role, then choose <b>Create role</b>.</p>
+                </li></ol></div>
+            <div class="minimized-fader"></div></div><div class="show-more-btn"><a href="#"><awsui-icon class="show-more-text" variant="link" name="caret-right-filled"></awsui-icon><span class="show-more-text">Show more</span><awsui-icon class="show-less-text" variant="link" name="caret-up-filled"></awsui-icon><span class="show-less-text">Show less</span></a></div></div>
+         
+    
+ 
+      <h2 id="iam-19">[IAM.19] MFA should be enabled for all IAM users</h2>
+	<p><b>Related requirements:</b> NIST.800-53.r5 AC-2(1), NIST.800-53.r5
+            AC-3(15), NIST.800-53.r5 IA-2(1), NIST.800-53.r5 IA-2(2), NIST.800-53.r5 IA-2(6),
+            NIST.800-53.r5 IA-2(8), NIST.800-171.r2 3.3.8, NIST.800-171.r2 3.5.3, NIST.800-171.r2
+            3.5.4, NIST.800-171.r2 3.7.5, PCI DSS v3.2.1/8.3.1, PCI DSS v4.0.1/8.4.2, </p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+    <p><b>Severity:</b> Medium</p>
+      <p><b>Resource type:</b>
+        <code class="code">AWS::IAM::User</code></p>
+      <p><b>AWS Config rule:</b>
+        <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-user-mfa-enabled.html"><code class="code">iam-user-mfa-enabled</code></a></p>
+      <p><b>Schedule type:</b> Periodic</p>
+      <p><b>Parameters:</b> None</p>
+      <p>This control checks whether the IAM users have multi-factor authentication (MFA)
+        enabled.</p>
+    <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, global 
+            resource recording can be enabled in a single Region. If you only record global resources in a 
+            single Region, then you can disable this control in all Regions except the Region where you 
+            record global resources.</p></div></div>
+       
+        <h3 id="iam-19-remediation">Remediation</h3>
+      	<p>To add MFA for IAM users, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable.html">Enabling MFA devices for users in AWS</a> in the <em>IAM User Guide</em>.</p>
+       
+    
+ 
+  
+            <h2 id="iam-20">[IAM.20] Avoid the use of the root user</h2>
+    <div class="awsdocs-note awsdocs-important"><div class="awsdocs-note-title"><awsui-icon name="status-warning" variant="error"></awsui-icon><h6>Important</h6></div><div class="awsdocs-note-text"><p>Security Hub CSPM retired this control in April 2024. 
+        For more information, see <a href="./controls-change-log.html">Change log for Security Hub CSPM controls</a>.</p></div></div>
+<p><b>Related requirements:</b> CIS AWS Foundations Benchmark v1.2.0/1.1</p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+    <p><b>Severity:</b> Low</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::IAM::User</code></p>
+            <p><b>AWS Config rule:</b> <code class="code">use-of-root-account-test</code> (custom Security Hub CSPM rule)</p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>This control checks whether an AWS account has restrictions on the usage of the
+            root user. The control evaluates the following resources:</p>
+            <div class="itemizedlist">
+                 
+                 
+                 
+                 
+            <ul class="itemizedlist"><li class="listitem"><p>Amazon Simple Notification Service (Amazon SNS) topics</p></li><li class="listitem"><p>AWS CloudTrail trails</p></li><li class="listitem"><p>Metric filters associated with the CloudTrail trails</p></li><li class="listitem"><p>Amazon CloudWatch alarms based on the filters</p></li></ul></div>
+            <p>This check results in a <code class="code">FAILED</code> finding if one or more of the following statements is true:</p>
+            <div class="itemizedlist">
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+            <ul class="itemizedlist"><li class="listitem"><p>No CloudTrail trails exist in the account.</p></li><li class="listitem"><p>A CloudTrail trail is enabled, but not configured with at-least one multi-Region trail that includes
+                    read and write management events.</p></li><li class="listitem"><p>A CloudTrail trail is enabled, but not associated with a CloudWatch Logs log group.</p></li><li class="listitem"><p>The exact metric filter prescribed by the Center for Internet Security (CIS) is not used. The prescribed metric filter is 
+<code class="code">'<span>{</span>$.userIdentity.type="Root" &amp;&amp; $.userIdentity.invokedBy NOT EXISTS &amp;&amp; $.eventType !="AwsServiceEvent"}'</code>.</p></li><li class="listitem"><p>No CloudWatch alarms based on the metric filter exist in the account.</p></li><li class="listitem"><p>CloudWatch alarms configured to send notification to the associated SNS topic don't trigger based on the alarm condition.</p></li><li class="listitem"><p>The SNS topic doesn't comply with the <a href="https://docs.aws.amazon.com/sns/latest/api/API_Publish.html">constraints for sending a message to an SNS topic</a>.</p></li><li class="listitem"><p>The SNS topic doesn't have at least one subscriber.</p></li></ul></div>
+            <p>This check results in a control status of <code class="code">NO_DATA</code> if one or more of the following statements is true:</p>
+            <div class="itemizedlist">
+                 
+                 
+            <ul class="itemizedlist"><li class="listitem"><p>A multi-Region trail is based in a different Region. Security Hub CSPM can only generate findings in the Region 
+where the trail is based.</p></li><li class="listitem"><p>A multi-Region trail belongs to a different account. Security Hub CSPM can only generate findings for the 
+account that owns the trail.</p></li></ul></div>
+    <p>This check results in a control status of <code class="code">WARNING</code> if one or more of the following statements is true:</p>
+    <div class="itemizedlist">
+         
+         
+    <ul class="itemizedlist"><li class="listitem"><p>The current account doesn't own the SNS topic referenced in the CloudWatch alarm.</p></li><li class="listitem"><p>The current account doesn't have access to the SNS topic when invoking the
+                        <code class="code">ListSubscriptionsByTopic</code> SNS API.</p></li></ul></div>
+    <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>We recommend using organization trails to log events from many accounts in an
+                organization. Organization trails are multi-Region trails by default and can only be
+                managed by the AWS Organizations management account or the CloudTrail delegated administrator
+                account. Using an organization trail results in a control status of NO_DATA for
+                controls evaluated in organization member accounts. In member accounts, Security Hub CSPM only
+                generates findings for member-owned resources. Findings that pertain to organization
+                trails are generated in the resource owner's account. You can see these findings in
+                your Security Hub CSPM delegated administrator account by using cross-Region aggregation.</p></div></div>
+            <p>As a best practice, use your root user credentials only when required to <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tasks-that-require-root.html">
+                perform account and service management tasks</a>. Apply IAM policies directly
+            to groups and roles but not to users. For instructions on setting up an administrator
+            for daily use, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html"> Creating your first IAM admin user and group</a> in the
+                <em>IAM User Guide</em>.</p>
+             
+                <h3 id="iam-20-remediation">Remediation</h3>
+                <p>The steps to remediate this issue include setting up an Amazon SNS topic, a CloudTrail
+                    trail, a metric filter, and an alarm for the metric filter.</p>
+                <div class="minimized-block" data-minimized="true"><div class="minimized-content">
+                <div class="procedure"><h6>To create an Amazon SNS topic</h6><ol><li><p>Open the Amazon SNS console at
+         <a href="https://console.aws.amazon.com/sns/v3/home" rel="noopener noreferrer" target="_blank"><span>https://console.aws.amazon.com/sns/v3/home</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a>.</p></li><li>
+                        <p>Create an Amazon SNS topic that receives all CIS alarms.</p>
+                        <p>Create at least one subscriber to the topic. For more information, see
+                                <a href="https://docs.aws.amazon.com/sns/latest/dg/sns-getting-started.html#CreateTopic">Getting started with Amazon SNS</a> in the
+                                <em>Amazon Simple Notification Service Developer Guide</em>.</p>
+                    </li></ol></div>
+                <p>Next, set up an active CloudTrail that applies to all Regions. To do so, follow the
+                    remediation steps in <a href="./cloudtrail-controls.html#cloudtrail-1">[CloudTrail.1] CloudTrail should be enabled and configured with at least one multi-Region trail that includes read and write management events</a>.</p>
+                <p>Make a note of the name of the CloudWatch Logs log group that you associate with the
+                    CloudTrail trail. You create the metric filter for that log group.</p>
+                <p>Finally, create the metric filter and alarm.</p>
+                <div class="procedure"><h6>To create a metric filter and alarm</h6><ol><li><p>Open the CloudWatch console at
+         <a href="https://console.aws.amazon.com/cloudwatch/" rel="noopener noreferrer" target="_blank"><span>https://console.aws.amazon.com/cloudwatch/</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a>.</p></li><li>
+                        <p>In the navigation pane, choose <b>Log groups</b>.</p>
+                    </li><li>
+                        <p>Select the check box for the CloudWatch Logs log group that is associated with
+                            the CloudTrail trail that you created.</p>
+                    </li><li>
+                        <p>From <b>Actions</b>, choose <b>Create Metric
+                                Filter</b>.</p>
+                    </li><li>
+                        <p>Under <b>Define pattern</b>, do the following:</p>
+                        <ol><li>
+                                <p>Copy the following pattern and then paste it into the
+                                        <b>Filter Pattern</b> field.</p>
+                                <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli ()--><code class=""><span>{</span>$.userIdentity.type="Root" &amp;&amp; $.userIdentity.invokedBy NOT EXISTS &amp;&amp; $.eventType !="AwsServiceEvent"}</code></pre>
+                            </li><li>
+                                <p>Choose <b>Next</b>.</p>
+                            </li></ol>
+                    </li><li>
+                        <p>Under <b>Assign Metric</b>, do the following:</p>
+                        <ol><li>
+                                <p>In <b>Filter name</b>, enter a name for your
+                                    metric filter.</p>
+                            </li><li>
+                                <p>For <b>Metric Namespace</b>, enter
+                                        <code class="userinput">LogMetrics</code>.</p>
+                                <p>If you use the same namespace for all of your CIS log metric
+                                    filters, then all CIS Benchmark metrics are grouped
+                                    together.</p>
+                            </li><li>
+                                <p>For <b>Metric Name</b>, enter a name for the
+                                    metric.  Remember the name of the metric. You will need to
+                                    select the metric when you create the alarm.</p>
+                            </li><li>
+                                <p>For <b>Metric value</b>, enter
+                                        <code class="userinput">1</code>.</p>
+                            </li><li>
+                                <p>Choose <b>Next</b>.</p>
+                            </li></ol>
+                    </li><li>
+                        <p>Under <b>Review and create</b>, verify the information
+                            that you provided for the new metric filter. Then, choose
+                                <b>Create metric filter</b>.</p>
+                    </li><li>
+                        <p>In the navigation pane, choose <b>Log groups</b>, and then choose the filter you created under <b>Metric filters</b>.</p>
+                    </li><li>
+                        <p>Select the check box for the filter. Choose <b>Create alarm</b>.</p>
+                    </li><li>
+                        <p>Under <b>Specify metric and conditions</b>, do the
+                            following:</p>
+                        <ol><li>
+                                <p>Under <b>Conditions</b>, for
+                                        <b>Threshold</b>, choose
+                                        <b>Static</b>.</p>
+                            </li><li>
+                                <p>For <b>Define the alarm condition</b>, choose
+                                        <b>Greater/Equal</b>.</p>
+                            </li><li>
+                                <p>For <b>Define the threshold value</b>, enter
+                                        <code class="userinput">1</code>.</p>
+                            </li><li>
+                                <p>Choose <b>Next</b>.</p>
+                            </li></ol>
+                    </li><li>
+                        <p>Under <b>Configure actions</b>, do the following:</p>
+                        <ol><li>
+                                <p>Under <b>Alarm state trigger</b>, choose
+                                        <b>In alarm</b>.</p>
+                            </li><li>
+                                <p>Under <b>Select an SNS topic</b>, choose
+                                        <b>Select an existing SNS topic</b>.</p>
+                            </li><li>
+                                <p>For <b>Send a notification to</b>, enter the
+                                    name of the SNS topic that you created in the previous
+                                    procedure.</p>
+                            </li><li>
+                                <p>Choose <b>Next</b>.</p>
+                            </li></ol>
+                    </li><li>
+                        <p>Under <b>Add name and description</b>, enter a
+                                <b>Name</b> and <b>Description</b> for
+                            the alarm, such as <code class="userinput">CIS-1.1-RootAccountUsage</code>. Then
+                            choose <b>Next</b>.</p>
+                    </li><li>
+                        <p>Under <b>Preview and create</b>, review the alarm
+                            configuration. Then choose <b>Create alarm</b>.</p>
+                    </li></ol></div>
+                <div class="minimized-fader"></div></div><div class="show-more-btn"><a href="#"><awsui-icon class="show-more-text" variant="link" name="caret-right-filled"></awsui-icon><span class="show-more-text">Show more</span><awsui-icon class="show-less-text" variant="link" name="caret-up-filled"></awsui-icon><span class="show-less-text">Show less</span></a></div></div>
+             
+        
+ 
+  
+   <h2 id="iam-21">[IAM.21] IAM customer managed policies that you create should not allow wildcard actions for services</h2>
+    <p><b>Related requirements:</b> NIST.800-53.r5 AC-2, NIST.800-53.r5
+            AC-2(1), NIST.800-53.r5 AC-3, NIST.800-53.r5 AC-3(15), NIST.800-53.r5 AC-3(7),
+            NIST.800-53.r5 AC-5, NIST.800-53.r5 AC-6, NIST.800-53.r5 AC-6(10), NIST.800-53.r5
+            AC-6(2), NIST.800-53.r5 AC-6(3), NIST.800-171.r2 3.1.1, NIST.800-171.r2 3.1.2,
+            NIST.800-171.r2 3.1.5, NIST.800-171.r2 3.1.7, NIST.800-171.r2 3.3.8, NIST.800-171.r2
+            3.3.9, NIST.800-171.r2 3.13.3, NIST.800-171.r2 3.13.4</p>
+   <p><b>Category:</b> Detect &gt; Secure access management </p>
+   <p><b>Severity:</b> Low</p>
+   <p><b>Resource type:</b>
+    <code class="code">AWS::IAM::Policy</code></p>
+   <p><b>AWS Config rule:</b>
+    <a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-policy-no-statements-with-full-access.html"><code class="code">iam-policy-no-statements-with-full-access</code></a></p>
+   <p><b>Schedule type:</b> Change triggered</p>
+   <p><b>Parameters:</b></p>
+   <div class="itemizedlist">
+     
+   <ul class="itemizedlist"><li class="listitem">
+     <p><code class="code">excludePermissionBoundaryPolicy</code>: <code class="code">True</code> (not customizable)</p>
+    </li></ul></div>
+   <p>This control checks whether the IAM identity-based policies that you create have Allow
+    statements that use the * wildcard to grant permissions for all actions on any service. The
+    control fails if any policy statement includes <code class="code">"Effect": "Allow"</code> with
+     <code class="code">"Action": "Service:*"</code>. </p>
+   <p>For example, the following statement in a policy results in a failed finding.</p>
+   <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (none)--><code class="nohighlight">"Statement": [
+<span>{</span>
+  "Sid": "EC2-Wildcard",
+  "Effect": "Allow",
+  "Action": "ec2:*",
+  "Resource": "*"
+}</code></pre>
+   <p>The control also fails if you use <code class="code">"Effect": "Allow"</code> with <code class="code">"NotAction":
+      "<code class="replaceable">service</code>:*"</code>. In that case, the <code class="code">NotAction</code>
+    element provides access to all of the actions in an AWS service, except for the actions
+    specified in <code class="code">NotAction</code>.</p>
+   <p>This control only applies to customer managed IAM policies. It does not apply to IAM
+    policies that are managed by AWS.</p>
+   <p>When you assign permissions to AWS services, it is important to scope the allowed IAM
+    actions in your IAM policies. You should restrict IAM actions to only those actions that are
+    needed. This helps you to provision least privilege permissions. Overly permissive policies
+    might lead to privilege escalation if the policies are attached to an IAM principal that might
+    not require the permission.</p>
+   <p>In some cases, you might want to allow IAM actions that have a similar prefix, such as
+     <code class="code">DescribeFlowLogs</code> and <code class="code">DescribeAvailabilityZones</code>. In these authorized
+    cases, you can add a suffixed wildcard to the common prefix. For example,
+     <code class="code">ec2:Describe*</code>.</p>
+   <p>This control passes if you use a prefixed IAM action with a suffixed wildcard. For
+    example, the following statement in a policy results in a passed finding.</p>
+   <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (none)--><code class="nohighlight">"Statement": [
+<span>{</span>
+  "Sid": "EC2-Wildcard",
+  "Effect": "Allow",
+  "Action": "ec2:Describe*",
+  "Resource": "*"
+}</code></pre>
+   <p>When you group related IAM actions in this way, you can also avoid exceeding the IAM
+    policy size limits.</p>
+   <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, global 
+   		resource recording can be enabled in a single Region. If you only record global resources in a 
+   		single Region, then you can disable this control in all Regions except the Region where you 
+   		record global resources.</p></div></div>
+    
+    <h3 id="iam-21-remediation">Remediation</h3>
+    <p>To remediate this issue, update your IAM policies so that they do not allow full "*"
+     administrative privileges. For details about how to edit an IAM policy, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-edit.html">Editing IAM policies</a> in
+     the <em>IAM User Guide</em>.</p>
+    
+  
+ 
+  
+            <h2 id="iam-22">[IAM.22] IAM user credentials unused for 45 days should be removed</h2>
+    <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.11, CIS AWS Foundations Benchmark v3.0.0/1.12, CIS AWS Foundations Benchmark v1.4.0/1.12,
+            NIST.800-171.r2 3.1.2</p>
+    <p><b>Category:</b> Protect &gt; Secure access management</p>
+    <p><b>Severity:</b> Medium</p>
+    <p><b>Resource type:</b>
+        <code class="code">AWS::IAM::User</code></p>
+            <p><b>AWS Config rule: </b><a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-user-unused-credentials-check.html"><code class="code">iam-user-unused-credentials-check</code></a></p>
+            <p><b>Schedule type:</b> Periodic</p>
+    <p><b>Parameters:</b> None</p>
+            <p>This control checks whether your IAM users have passwords or active access keys that have not been used for 45 days or more. 
+To do so, it checks whether the <code class="code">maxCredentialUsageAge</code> parameter of the AWS Config rule is equal to 45 or more.</p>
+            <p>Users can access AWS resources using different types of credentials, such as passwords or access keys.</p>
+            <p>CIS recommends that you remove or deactivate all credentials that have been unused for 45 days or more. 
+Disabling or removing unnecessary credentials reduces the window of opportunity for credentials associated with a compromised or abandoned account to be used.</p>
+            <p>The AWS Config rule for this control uses the <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetCredentialReport.html"><code class="code">GetCredentialReport</code></a> and <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GenerateCredentialReport.html"><code class="code">GenerateCredentialReport</code></a> API operations, which are
+                only updated every four hours. Changes to IAM users can take up to four hours to
+                be visible to this control.</p>
+<div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>AWS Config should be enabled in all Regions in which you use Security Hub CSPM. However, you can enable
+                    recording of global resources in a single Region. If you only record global
+                    resources in a single Region, then you can disable this control in all Regions
+                    except the Region where you record global resources.</p></div></div>
+             
+                <h3 id="iam-22-remediation">Remediation</h3>
+                <p>When you view user information in the IAM console, there are columns for
+                    <b>Access key age</b>, <b>Password age</b>, and <b>Last
+                        activity</b>. If the value in any of these columns is greater than 45 days, make the
+                    credentials for those users inactive.</p>
+                <p>You can also use <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_getting-report.html#getting-credential-reports-console">credential reports</a> to monitor users and identify those with no
+                    activity for 45 or more days. You can download credential reports in <code>.csv</code>
+                    format from the IAM console.</p>
+                <p>After you identify the inactive accounts or unused credentials, 
+                    deactivate them. For instructions, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_admin-change-user.html#id_credentials_passwords_admin-change-user_console">Creating, changing, or deleting an IAM user password (console)</a> in the <em>IAM User Guide</em>.</p>
+             
+ 
+        <h2 id="iam-23">[IAM.23] IAM Access Analyzer analyzers should be tagged</h2>
+        <p><b>Category:</b> Identify &gt; Inventory &gt; Tagging</p>
+        <p><b>Severity:</b> Low</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::AccessAnalyzer::Analyzer</code></p>
+        <p><b>AWS Config rule: </b> <code class="code">tagged-accessanalyzer-analyzer</code> (custom Security Hub CSPM rule)</p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b></p>
+        <div class="table-container"><div class="table-contents"><table id="w524aab9c37c13d107c49c15"><thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Allowed custom values</th>
+                        <th>Security Hub CSPM default value</th>
+                    </tr>
+                </thead>
+                    <tr>
+                        <td tabindex="-1">
+                            <code class="code">requiredTagKeys</code>
+                        </td>
+                        <td tabindex="-1">List of non-system tag keys that the evaluated resource must contain. Tag keys are case sensitive.
+                        </td>
+                        <td tabindex="-1">StringList (maximum of 6 items)
+                        </td>
+                        <td tabindex="-1">1–6 tag keys that meet <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html#tag-conventions">AWS requirements</a>.
+                        </td>
+                        <td tabindex="-1">
+                            <code class="code">No default value</code>
+                        </td>
+                    </tr>
+                </table></div></div>
+        <p>This control checks whether an analyzer managed by AWS Identity and Access Management Access Analyzer (IAM Access Analyzer) has tags with the specific keys defined in the parameter 
+            <code class="code">requiredTagKeys</code>. The control fails if the analyzer doesn’t have any tag keys or if it doesn’t have all the keys specified in the 
+            parameter <code class="code">requiredTagKeys</code>. If the parameter <code class="code">requiredTagKeys</code> isn't provided, the control only checks for the existence 
+            of a tag key and fails if the analyzer isn't tagged with any key. System tags, which are automatically applied and begin with <code class="code">aws:</code>, 
+            are ignored.</p>
+        <p>A tag is a label that you assign to an AWS resource, and it consists of a key and an optional value. You can create tags to 
+            categorize resources by purpose, owner, environment, or other criteria. Tags can help you identify, organize, search for, and filter resources. 
+            Tagging also helps you track accountable resource owners for actions and notifications. When you use tagging, you can implement attribute-based 
+            access control (ABAC) as an authorization strategy, which defines permissions based on tags. You can attach tags to IAM entities (users or roles) 
+            and to AWS resources. You can create a single ABAC policy or a separate set of policies for your IAM principals. You can design these ABAC 
+            policies to allow operations when the principal's tag matches the resource tag. For more information, see 
+            <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_attribute-based-access-control.html">What is ABAC for AWS?</a> in the <em>IAM User Guide</em>.</p>
+        <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>Don’t add personally identifiable information (PII) or other confidential or sensitive information in tags. Tags are accessible 
+                to many AWS services, including AWS Billing. For more tagging best practices, see 
+                <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html#tag-best-practices">Tagging your AWS resources</a> in the 
+                <em>AWS General Reference</em>.</p></div></div>
+         
+            <h3 id="iam-23-remediation">Remediation</h3>
+            <p>To add tags to an analyzer, see <a href="https://docs.aws.amazon.com/access-analyzer/latest/APIReference/API_TagResource.html">TagResource</a> in the <em>AWS IAM Access Analyzer API Reference</em>.</p>
+         
+     
+        <h2 id="iam-24">[IAM.24] IAM roles should be tagged</h2>
+        <p><b>Category:</b> Identify &gt; Inventory &gt; Tagging</p>
+        <p><b>Severity:</b> Low</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::IAM::Role</code></p>
+        <p><b>AWS Config rule: </b> <code class="code">tagged-iam-role</code> (custom Security Hub CSPM rule)</p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b></p>
+        <div class="table-container"><div class="table-contents"><table id="w524aab9c37c13d107c51c15"><thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Allowed custom values</th>
+                        <th>Security Hub CSPM default value</th>
+                    </tr>
+                </thead>
+                    <tr>
+                        <td tabindex="-1">
+                            <code class="code">requiredTagKeys</code>
+                        </td>
+                        <td tabindex="-1">List of non-system tag keys that the evaluated resource must contain. Tag keys are case sensitive.
+                        </td>
+                        <td tabindex="-1">StringList (maximum of 6 items)
+                        </td>
+                        <td tabindex="-1">1–6 tag keys that meet <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html#tag-conventions">AWS requirements</a>.
+                        </td>
+                        <td tabindex="-1">
+                            <code class="code">No default value</code>
+                        </td>
+                    </tr>
+                </table></div></div>
+        <p>This control checks whether an AWS Identity and Access Management (IAM) role has tags with the specific keys defined in the parameter 
+            <code class="code">requiredTagKeys</code>. The control fails if the role doesn’t have any tag keys or if it doesn’t have all the keys specified in the 
+            parameter <code class="code">requiredTagKeys</code>. If the parameter <code class="code">requiredTagKeys</code> isn't provided, the control only checks for the existence 
+            of a tag key and fails if the role isn't tagged with any key. System tags, which are automatically applied and begin with <code class="code">aws:</code>, 
+            are ignored.</p>
+        <p>A tag is a label that you assign to an AWS resource, and it consists of a key and an optional value. You can create tags to 
+            categorize resources by purpose, owner, environment, or other criteria. Tags can help you identify, organize, search for, and filter resources. 
+            Tagging also helps you track accountable resource owners for actions and notifications. When you use tagging, you can implement attribute-based 
+            access control (ABAC) as an authorization strategy, which defines permissions based on tags. You can attach tags to IAM entities (users or roles) 
+            and to AWS resources. You can create a single ABAC policy or a separate set of policies for your IAM principals. You can design these ABAC 
+            policies to allow operations when the principal's tag matches the resource tag. For more information, see 
+            <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_attribute-based-access-control.html">What is ABAC for AWS?</a> in the <em>IAM User Guide</em>.</p>
+        <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>Don’t add personally identifiable information (PII) or other confidential or sensitive information in tags. Tags are accessible 
+                to many AWS services, including AWS Billing. For more tagging best practices, see 
+                <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html#tag-best-practices">Tagging your AWS resources</a> in the 
+                <em>AWS General Reference</em>.</p></div></div>
+         
+            <h3 id="iam-24-remediation">Remediation</h3>
+            <p>To add tags to an IAM role, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_tags.html">Tagging IAM resources</a> in the <em>IAM User Guide</em>.</p>
+         
+     
+        <h2 id="iam-25">[IAM.25] IAM users should be tagged</h2>
+        <p><b>Category:</b> Identify &gt; Inventory &gt; Tagging</p>
+        <p><b>Severity:</b> Low</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::IAM::User</code></p>
+        <p><b>AWS Config rule: </b> <code class="code">tagged-iam-user</code> (custom Security Hub CSPM rule)</p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b></p>
+        <div class="table-container"><div class="table-contents"><table id="w524aab9c37c13d107c53c15"><thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Allowed custom values</th>
+                        <th>Security Hub CSPM default value</th>
+                    </tr>
+                </thead>
+                    <tr>
+                        <td tabindex="-1">
+                            <code class="code">requiredTagKeys</code>
+                        </td>
+                        <td tabindex="-1">List of non-system tag keys that the evaluated resource must contain. Tag keys are case sensitive.
+                        </td>
+                        <td tabindex="-1">StringList (maximum of 6 items)
+                        </td>
+                        <td tabindex="-1">1–6 tag keys that meet <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html#tag-conventions">AWS requirements</a>.
+                        </td>
+                        <td tabindex="-1">
+                            <code class="code">No default value</code>
+                        </td>
+                    </tr>
+                </table></div></div>
+        <p>This control checks whether an AWS Identity and Access Management (IAM) user has tags with the specific keys defined in the parameter 
+            <code class="code">requiredTagKeys</code>. The control fails if the user doesn’t have any tag keys or if it doesn’t have all the keys specified in the 
+            parameter <code class="code">requiredTagKeys</code>. If the parameter <code class="code">requiredTagKeys</code> isn't provided, the control only checks for the existence 
+            of a tag key and fails if the user isn't tagged with any key. System tags, which are automatically applied and begin with <code class="code">aws:</code>, 
+            are ignored.</p>
+        <p>A tag is a label that you assign to an AWS resource, and it consists of a key and an optional value. You can create tags to 
+            categorize resources by purpose, owner, environment, or other criteria. Tags can help you identify, organize, search for, and filter resources. 
+            Tagging also helps you track accountable resource owners for actions and notifications. When you use tagging, you can implement attribute-based 
+            access control (ABAC) as an authorization strategy, which defines permissions based on tags. You can attach tags to IAM entities (users or roles) 
+            and to AWS resources. You can create a single ABAC policy or a separate set of policies for your IAM principals. You can design these ABAC 
+            policies to allow operations when the principal's tag matches the resource tag. For more information, see 
+            <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_attribute-based-access-control.html">What is ABAC for AWS?</a> in the <em>IAM User Guide</em>.</p>
+        <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>Don’t add personally identifiable information (PII) or other confidential or sensitive information in tags. Tags are accessible 
+                to many AWS services, including AWS Billing. For more tagging best practices, see 
+                <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html#tag-best-practices">Tagging your AWS resources</a> in the 
+                <em>AWS General Reference</em>.</p></div></div>
+         
+            <h3 id="iam-25-remediation">Remediation</h3>
+            <p>To add tags to an IAM user, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_tags.html">Tagging IAM resources</a> in the <em>IAM User Guide</em>.</p>
+         
+     
+        <h2 id="iam-26">[IAM.26] Expired SSL/TLS certificates managed in IAM should be removed</h2>
+        <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.18, CIS AWS Foundations Benchmark v3.0.0/1.19</p>
+        <p><b>Category:</b> Identify &gt; Compliance</p>
+        <p><b>Severity:</b> Medium</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::IAM::ServerCertificate</code></p>
+        <p><b>AWS Config rule: </b><a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-server-certificate-expiration-check.html"><code class="code">iam-server-certificate-expiration-check</code></a></p>
+        <p><b>Schedule type:</b> Periodic</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This controls checks whether an active SSL/TLS server certificate that is managed in IAM has expired. The control 
+fails if the expired SSL/TLS server certificate isn't removed.</p>
+        <p>To enable HTTPS connections to your website or application in AWS, you need an SSL/TLS server certificate. You can 
+use IAM or AWS Certificate Manager (ACM) to store and deploy server certificates. Use IAM as a certificate manager only when you must 
+support HTTPS connections in an AWS Region that isn't supported by ACM. IAM securely encrypts your private keys and stores 
+the encrypted version in IAM SSL certificate storage. IAM supports deploying server certificates in all Regions, but you must 
+obtain your certificate from an external provider for use with AWS. You can't upload an ACM certificate to IAM. Additionally, 
+you can't manage your certificates from the IAM console. Removing expired SSL/TLS certificates eliminates the risk that an 
+invalid certificate is deployed accidentally to a resource, which can damage the credibility of the underlying application or 
+website.</p>
+         
+            <h3 id="iam-26-remediation">Remediation</h3>
+            <p>To remove a server certificate from IAM, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_server-certs.html">Managing server certificates in IAM</a> in the <em>IAM User Guide</em>.</p>
+         
+     
+        <h2 id="iam-27">[IAM.27] IAM identities should not have the AWSCloudShellFullAccess policy attached</h2>
+        <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.21, CIS AWS Foundations Benchmark v3.0.0/1.22</p>
+        <p><b>Category:</b> Protect &gt; Secure access management &gt; Secure IAM policies</p>
+        <p><b>Severity:</b> Medium</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::IAM::Role</code>, <code class="code">AWS::IAM::User</code>, <code class="code">AWS::IAM::Group</code></p>
+        <p><b>AWS Config rule: </b><a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-policy-blacklisted-check.html"><code class="code">iam-policy-blacklisted-check</code></a></p>
+        <p><b>Schedule type:</b> Change triggered</p>
+        <p><b>Parameters:</b></p>
+        <div class="itemizedlist">
+             
+        <ul class="itemizedlist"><li class="listitem"><p>"policyArns": "arn:aws:iam::aws:policy/AWSCloudShellFullAccess,arn:aws-cn:iam::aws:policy/AWSCloudShellFullAccess, arn:aws-us-gov:iam::aws:policy/AWSCloudShellFullAccess"</p></li></ul></div>
+        <p>This control checks whether an IAM identity (user, role, or group) has the AWS managed policy 
+            <code class="code">AWSCloudShellFullAccess</code> attached. The control fails if an IAM identity has the 
+            <code class="code">AWSCloudShellFullAccess</code> policy attached.</p>
+        <p>AWS CloudShell provides a convenient way to run CLI commands against AWS services. The AWS managed policy 
+<code class="code">AWSCloudShellFullAccess</code> provides full access to CloudShell, which allows file upload and download capability 
+between a user's local system and the CloudShell environment. Within the CloudShell environment, a user has sudo 
+permissions, and can access the internet. As a result, atttaching this managed policy to an IAM identity gives them the ability 
+to install file transfer software and move data from CloudShell to external internet servers. We recommend following the 
+principle of least privilege and attaching narrower permissions to your IAM identities.</p>
+         
+            <h3 id="iam-27-remediation">Remediation</h3>
+            <p>To detach the <code class="code">AWSCloudShellFullAccess</code> policy from an IAM identity, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html">Adding and removing IAM identity permissions</a> in the <em>IAM User Guide</em>.</p>
+         
+     
+        <h2 id="iam-28">[IAM.28] IAM Access Analyzer external access analyzer should be enabled</h2>
+        <p><b>Related requirements:</b> CIS AWS Foundations Benchmark v5.0.0/1.19, CIS AWS Foundations Benchmark v3.0.0/1.20</p>
+        <p><b>Category:</b> Detect &gt; Detection services &gt; Privileged
+            usage monitoring</p>
+        <p><b>Severity:</b> High</p>
+        <p><b>Resource type:</b>
+            <code class="code">AWS::AccessAnalyzer::Analyzer</code></p>
+        <p><b>AWS Config rule: </b><a href="https://docs.aws.amazon.com/config/latest/developerguide/iam-external-access-analyzer-enabled.html"><code class="code">iam-external-access-analyzer-enabled</code></a></p>
+        <p><b>Schedule type:</b> Periodic</p>
+        <p><b>Parameters:</b> None</p>
+        <p>This control checks whether an AWS account has an IAM Access Analyzer external access
+            analyzer enabled. The control fails if the account doesn't have an external access
+            analyzer enabled in your currently selected AWS Region.</p>
+        <p>IAM Access Analyzer external access analyzers help identify resources, such as Amazon Simple Storage Service
+            (Amazon S3) buckets or IAM roles, that are shared with an external entity. This helps you
+            avoid unintended access to your resources and data. IAM Access Analyzer is Regional and must
+            be enabled in each Region. To identify resources that are shared with external
+            principals, an access analyzer uses logic-based reasoning to analyze resource-based
+            policies in your AWS environment. When you create an external access analyzer, you can
+            create and enable it for your entire organization or individual accounts.</p>
+        <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>If an account is part of an organization in AWS Organizations, this control doesn't factor
+                external access analyzers that specify the organization as the zone of trust and are
+                enabled for the organization in the current Region. If your organization uses this
+                type of configuration, consider disabling this control for individual member
+                accounts in your organization in the Region.</p></div></div>
+         
+            <h3 id="iam-28-remediation">Remediation</h3>
+            <p>For information about enabling an external access analyzer in a specific Region,
+                see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-getting-started.html">Getting started
+                    with IAM Access Analyzer</a> in the <em>IAM User Guide</em>. You
+                must enable an analyzer in each Region in which you want to monitor access to your
+                resources.</p>
+         
+    <awsdocs-copyright class="copyright-print"></awsdocs-copyright><awsdocs-thumb-feedback right-edge="{{$ctrl.thumbFeedbackRightEdge}}"></awsdocs-thumb-feedback></div><noscript><div><div><div><div id="js_error_message"><p><img src="https://d1ge0kk1l5kms0.cloudfront.net/images/G/01/webservices/console/warning.png" alt="Warning" /> <strong>Javascript is disabled or is unavailable in your browser.</strong></p><p>To use the Amazon Web Services Documentation, Javascript must be enabled. Please refer to your browser's Help pages for instructions.</p></div></div></div></div></noscript><div id="main-col-footer" class="awsui-util-font-size-0"><div id="doc-conventions"><a target="_top" href="/general/latest/gr/docconventions.html">Document Conventions</a></div><div class="prev-next"><div id="previous" class="prev-link" accesskey="p" href="./guardduty-controls.html">Amazon GuardDuty controls</div><div id="next" class="next-link" accesskey="n" href="./inspector-controls.html">Amazon Inspector controls</div></div></div><awsdocs-page-utilities></awsdocs-page-utilities></div><div id="quick-feedback-yes" style="display: none;"><div class="title">Did this page help you? - Yes</div><div class="content"><p>Thanks for letting us know we're doing a good job!</p><p>If you've got a moment, please tell us what we did right so we can do more of it.</p><p><awsui-button id="fblink" rel="noopener noreferrer" target="_blank" text="Feedback" click="linkClick($event)" href="https://docs.aws.amazon.com/forms/aws-doc-feedback?hidden_service_name=Security Hub&amp;topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/iam-controls.html"></awsui-button></p></div></div><div id="quick-feedback-no" style="display: none;"><div class="title">Did this page help you? - No</div><div class="content"><p>Thanks for letting us know this page needs work. We're sorry we let you down.</p><p>If you've got a moment, please tell us how we can make the documentation better.</p><p><awsui-button id="fblink" rel="noopener noreferrer" target="_blank" text="Feedback" click="linkClick($event)" href="https://docs.aws.amazon.com/forms/aws-doc-feedback?hidden_service_name=Security Hub&amp;topic_url=https://docs.aws.amazon.com/en_us/securityhub/latest/userguide/iam-controls.html"></awsui-button></p></div></div></div></body></div></awsdocs-view><div class="page-loading-indicator" id="page-loading-indicator"><awsui-spinner size="large"></awsui-spinner></div></div><div id="tools-panel" dom-region="tools"><awsdocs-tools-panel id="awsdocs-tools-panel"></awsdocs-tools-panel></div></awsui-app-layout><awsdocs-cookie-banner class="doc-cookie-banner"></awsdocs-cookie-banner></div></body></html>

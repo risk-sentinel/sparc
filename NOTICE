@@ -29,3 +29,15 @@ SPARC with `import_metadata.source_type = "aws_labs"`. Users who modify these
 definitions must do so via the in-app "Copy for editing" workflow, which
 preserves the original under its upstream license and creates an editable
 derivative.
+
+SPARC also vendors mapping data from:
+
+  mitre/heimdall2 (AwsConfigMappingData.ts)
+  https://github.com/mitre/heimdall2
+  © 2025 The MITRE Corporation. Approved for Public Release; Distribution
+  Unlimited. Case Number 18-3678.
+  Licensed under the Apache License, Version 2.0
+  See LICENSES/MITRE-HEIMDALL2-LICENSE for the full license text.
+
+The vendored data lives at `lib/data_mappings/mitre_aws_config_to_nist.json`
+and is used to build the AWS Security Hub → NIST 800-53 converter (#491).

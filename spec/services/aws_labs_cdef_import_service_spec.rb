@@ -155,4 +155,100 @@ RSpec.describe AwsLabsCdefImportService do
       expect(clone.editable?).to be(true)
     end
   end
+
+  # Issue #491 — enrich AWS-Labs CDEFs with NIST mappings via the
+  # aws_security_hub_to_nist Converter at import time.
+  describe "NIST enrichment via aws_security_hub_to_nist Converter (#491)" do
+    let(:iam_cd) { fixture_dir.join("iam-cd-realistic.json").read }
+    let(:converter) do
+      Converter.create!(
+        name: "AWS Security Hub → NIST SP 800-53 rev5",
+        converter_type: "aws_security_hub_to_nist",
+        source_framework: "AWS Security Hub",
+        target_framework: "NIST SP 800-53",
+        version: "test",
+        description: "spec",
+        status: "complete"
+      )
+    end
+
+    let(:tree) do
+      [ tree_entry(path: "component-definitions/iam/iam-cd.json", sha: "sha-iam") ]
+    end
+
+    before do
+      allow(SparcConfig).to receive(:aws_labs_oscal_versions).and_return([ "1.1.2" ])
+      allow(client).to receive(:list_component_definition_files).and_return(tree)
+      allow(client).to receive(:fetch_file)
+        .with(path: "component-definitions/iam/iam-cd.json")
+        .and_return(file_entry(path: "component-definitions/iam/iam-cd.json", sha: "sha-iam", content: iam_cd))
+
+      # Seed minimal converter rows: IAM.3 maps to two NIST ids (aws_direct),
+      # IAM.7 maps to one (mitre_fallback). IAM.99999 has no rows.
+      [
+        { sec_hub: "IAM.3", nist: "ac-2.1", source: "aws_direct" },
+        { sec_hub: "IAM.3", nist: "ac-3.15", source: "aws_direct" },
+        { sec_hub: "IAM.7", nist: "ia-5.1", source: "mitre_fallback" }
+      ].each_with_index do |r, i|
+        ConverterEntry.create!(
+          converter: converter,
+          source_id: r[:sec_hub],
+          target_id: r[:nist],
+          relationship: "intersects",
+          category: r[:source],
+          row_order: i + 1
+        )
+      end
+    end
+
+    it "writes nist_oscal_ids, nist_primary_id, aws_security_hub_id, and nist_mapping_source fields" do
+      described_class.new(client: client).run
+
+      doc = CdefDocument.aws_labs_sourced.last
+      iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
+      expect(iam3).not_to be_nil
+
+      fields = iam3.cdef_control_fields.pluck(:field_name, :field_value).to_h
+      expect(fields["aws_security_hub_id"]).to eq("IAM.3")
+      expect(fields["nist_oscal_ids"]).to eq("ac-2.1,ac-3.15")  # sorted
+      expect(fields["nist_primary_id"]).to eq("ac-2.1")
+      expect(fields["nist_mapping_source"]).to eq("aws_direct")
+    end
+
+    it "preserves the original SecHub control_id (does not mutate it)" do
+      described_class.new(client: client).run
+      doc = CdefDocument.aws_labs_sourced.last
+      expect(doc.cdef_controls.pluck(:control_id)).to include("IAM.3", "IAM.7", "IAM.99999")
+    end
+
+    it "tags MITRE-sourced mappings with nist_mapping_source=mitre_fallback" do
+      described_class.new(client: client).run
+      doc = CdefDocument.aws_labs_sourced.last
+      iam7 = doc.cdef_controls.find_by(control_id: "IAM.7")
+      fields = iam7.cdef_control_fields.pluck(:field_name, :field_value).to_h
+      expect(fields["nist_mapping_source"]).to eq("mitre_fallback")
+    end
+
+    it "leaves controls with no converter rows un-enriched" do
+      described_class.new(client: client).run
+      doc = CdefDocument.aws_labs_sourced.last
+      unmapped = doc.cdef_controls.find_by(control_id: "IAM.99999")
+      expect(unmapped.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
+    end
+
+    it "no-ops gracefully when the Converter record is missing" do
+      converter.destroy!
+      expect { described_class.new(client: client).run }.not_to raise_error
+      doc = CdefDocument.aws_labs_sourced.last
+      iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
+      expect(iam3.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
+    end
+
+    it "marks enrichment fields as non-editable" do
+      described_class.new(client: client).run
+      doc = CdefDocument.aws_labs_sourced.last
+      iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
+      expect(iam3.cdef_control_fields.pluck(:editable).uniq).to eq([ false ])
+    end
+  end
 end

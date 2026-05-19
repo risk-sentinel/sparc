@@ -1,0 +1,38 @@
+{
+  "component-definition": {
+    "uuid": "11111111-2222-3333-4444-555555555555",
+    "metadata": {
+      "title": "AWS Identity and Access Management",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-05-19T00:00:00Z",
+      "parties": [
+        {
+          "uuid": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+          "type": "organization",
+          "name": "AWS"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "11111111-2222-3333-4444-666666666666",
+        "type": "service",
+        "title": "AWS Identity and Access Management",
+        "description": "IAM CDEF using AWS Security Hub control identifiers (realistic upstream).",
+        "control-implementations": [
+          {
+            "uuid": "11111111-2222-3333-4444-777777777777",
+            "source": "#internal-anchor-not-a-nist-profile",
+            "description": "Real upstream uses SecHub IDs, not NIST IDs.",
+            "implemented-requirements": [
+              { "uuid": "11111111-2222-3333-4444-000000000001", "control-id": "IAM.3", "description": "IAM users' access keys should be rotated every 90 days or less" },
+              { "uuid": "11111111-2222-3333-4444-000000000002", "control-id": "IAM.7", "description": "Password policies for IAM users should have strong configurations" },
+              { "uuid": "11111111-2222-3333-4444-000000000003", "control-id": "IAM.99999", "description": "Hypothetical unmapped control (should not get enrichment fields)" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

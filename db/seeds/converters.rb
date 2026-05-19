@@ -249,8 +249,71 @@ rescue => e
   Rails.logger.error("[Seed:Converters] SCAP/OVAL failed: #{e.class} — #{e.message}")
 end
 
+# ── 4. AWS Security Hub → NIST SP 800-53 rev5 (#491) ──────────────────
+# Primary data: lib/data_mappings/aws_security_hub_to_nist.json (AWS docs scrape)
+# Fallback:     lib/data_mappings/mitre_aws_config_to_nist.json (vendored MITRE)
+# Composite logic lives in lib/aws_security_hub/composite_mapping_builder.rb.
+begin
+require Rails.root.join("lib/aws_security_hub/composite_mapping_builder")
+
+aws_path   = MAPPINGS_DIR.join("aws_security_hub_to_nist.json")
+mitre_path = MAPPINGS_DIR.join("mitre_aws_config_to_nist.json")
+
+if aws_path.exist? && mitre_path.exist?
+  puts "Seeding AWS Security Hub → NIST rev5 converter..."
+  aws_doc   = JSON.parse(File.read(aws_path))
+  mitre_doc = JSON.parse(File.read(mitre_path))
+
+  converter = seed_converter(
+    name: "AWS Security Hub → NIST SP 800-53 rev5",
+    converter_type: "aws_security_hub_to_nist",
+    source_framework: "AWS Security Hub",
+    version: aws_doc["version"],
+    description: "AWS Security Hub controls mapped to NIST 800-53 rev5. " \
+                 "Primary source: AWS Security Hub User Guide (scraped). " \
+                 "Fallback: MITRE heimdall2 AwsConfigMappingData (joined via AWS Config rule).",
+    source: aws_doc["source"]
+  )
+
+  if converter.converter_entries.none?
+    rows, stats = AwsSecurityHub::CompositeMappingBuilder.build(
+      aws_direct: aws_doc, mitre: mitre_doc
+    )
+
+    row_order = 0
+    entries = rows.map do |r|
+      {
+        converter_id: converter.id,
+        source_id: r["source_id"],
+        target_id: r["target_id"],
+        relationship: r["relationship"],
+        category: r["category"],
+        remarks: r["remarks"],
+        row_order: row_order += 1,
+        uuid: SecureRandom.uuid,
+        created_at: Time.current,
+        updated_at: Time.current
+      }
+    end
+
+    ConverterEntry.insert_all(entries) if entries.any?
+    puts "  Loaded #{entries.length} entries " \
+         "(aws_direct=#{stats[:aws_direct]}, mitre_fallback=#{stats[:mitre_fallback]}, unmapped=#{stats[:unmapped]})"
+  else
+    puts "  AWS Security Hub entries already exist (#{converter.converter_entries.count}), skipping"
+  end
+else
+  puts "  Skipping AWS Security Hub converter (missing input files):"
+  puts "    aws_security_hub_to_nist.json present?  #{aws_path.exist?}"
+  puts "    mitre_aws_config_to_nist.json present?  #{mitre_path.exist?}"
+end
+rescue => e
+  puts "  ERROR loading AWS Security Hub converter: #{e.class} — #{e.message}"
+  Rails.logger.error("[Seed:Converters] AWS Security Hub failed: #{e.class} — #{e.message}")
+end
+
 # ── Post-load verification ─────────────────────────────────────────────
-expected = %w[cci_to_nist cis_to_nist scap_oval_to_nist]
+expected = %w[cci_to_nist cis_to_nist scap_oval_to_nist aws_security_hub_to_nist]
 loaded = Converter.where(converter_type: expected).pluck(:converter_type)
 missing = expected - loaded
 if missing.any?
