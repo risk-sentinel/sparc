@@ -24,41 +24,43 @@
   --bs-body-font-size: 1.05rem;
   --bs-body-color: #333333;
   --bs-secondary-color: #666666;
-  --bs-tertiary-color: #999999;
+  --bs-tertiary-color: #6a6a6a;
 
-  /* Borders */
-  --bs-border-color: #dddddd;
+  /* Borders — WCAG 2.1 AA: 3:1 against body bg (#f5f5f5) for UI components */
+  --bs-border-color: #828b97;
 
-  /* Primary palette (RGB triplets for Bootstrap's rgba() helpers) */
-  --bs-primary-rgb: 52, 152, 219;
-  --bs-success-rgb: 39, 174, 96;
-  --bs-danger-rgb: 231, 76, 60;
-  --bs-secondary-rgb: 149, 165, 166;
+  /* Primary palette (RGB triplets for Bootstrap's rgba() helpers)
+     darkened so white-on-button passes WCAG 2.1 AA 4.5:1 */
+  --bs-primary-rgb: 31, 111, 165;
+  --bs-success-rgb: 29, 131, 72;
+  --bs-danger-rgb: 192, 57, 43;
+  --bs-secondary-rgb: 93, 106, 108;
   --bs-warning-rgb: 243, 156, 18;
 
-  /* Links */
-  --bs-link-color-rgb: 52, 152, 219;
-  --bs-link-hover-color-rgb: 41, 128, 185;
+  /* Links — synced to AA-passing primary on #f5f5f5 */
+  --bs-link-color-rgb: 31, 111, 165;
+  --bs-link-hover-color-rgb: 24, 90, 133;
 
   /* SPARC custom tokens */
-  --sparc-primary: #3498db;
-  --sparc-primary-hover: #2980b9;
-  --sparc-success: #27ae60;
-  --sparc-success-hover: #229954;
-  --sparc-danger: #e74c3c;
-  --sparc-danger-hover: #c0392b;
-  --sparc-secondary: #95a5a6;
-  --sparc-secondary-hover: #7f8c8d;
-  --sparc-warning: #f39c12;
-  --sparc-purple: #8e44ad;
+  --sparc-primary: #1f6fa5;
+  --sparc-primary-hover: #185a85;
+  --sparc-success: #1d8348;
+  --sparc-success-hover: #155e34;
+  --sparc-danger: #c0392b;
+  --sparc-danger-hover: #922a20;
+  --sparc-secondary: #5d6a6c;
+  --sparc-secondary-hover: #4a5556;
+  --sparc-warning: #f39c12;       /* paired with black label per WCAG */
+  --sparc-purple: #8e44ad;        /* already passes white-text AA */
   --sparc-purple-hover: #7d3c98;
-  --sparc-orange: #e67e22;
+  --sparc-orange: #b6580a;
   --sparc-surface: #ffffff;
   --sparc-surface-alt: #f8f9fa;
-  --sparc-border: #dddddd;
-  --sparc-border-soft: #e0e6ef;
+  --sparc-border: #828b97;
+  --sparc-border-soft: #c4c8cf;
   --sparc-text-muted: #666666;
-  --sparc-text-faint: #999999;
+  --sparc-text-faint: #6a6a6a;
+  --sparc-focus: #1f6fa5;
 }
 
 [data-bs-theme="dark"] {
@@ -71,19 +73,20 @@
   --bs-body-font-size: 1.05rem;
   --bs-body-color: #e2e8f0;
   --bs-secondary-color: #94a3b8;
-  --bs-tertiary-color: #718096;
+  --bs-tertiary-color: #94a3b8;     /* was #718096 (3.45 AA-large on cards) */
 
-  /* Borders */
-  --bs-border-color: #2d3748;
+  /* Borders — WCAG 2.1 AA: 3:1 against #0f1419 body and #252d3a cards */
+  --bs-border-color: #717a8a;
 
-  /* Primary palette */
+  /* Primary palette — pale brand colors paired with black labels
+     (see .btn-* dark-mode override block; pale + black gives 5–15:1 AA) */
   --bs-primary-rgb: 93, 173, 226;
   --bs-success-rgb: 46, 204, 113;
   --bs-danger-rgb: 239, 83, 80;
   --bs-secondary-rgb: 176, 190, 197;
   --bs-warning-rgb: 246, 224, 94;
 
-  /* Links */
+  /* Links — pale brand already AAA against body bg with white text */
   --bs-link-color-rgb: 93, 173, 226;
   --bs-link-hover-color-rgb: 52, 152, 219;
 
@@ -102,10 +105,11 @@
   --sparc-orange: #f6ad55;
   --sparc-surface: #1e2632;
   --sparc-surface-alt: #252d3a;
-  --sparc-border: #2d3748;
-  --sparc-border-soft: #263244;
+  --sparc-border: #717a8a;
+  --sparc-border-soft: #4a5568;
   --sparc-text-muted: #94a3b8;
-  --sparc-text-faint: #718096;
+  --sparc-text-faint: #94a3b8;
+  --sparc-focus: #5dade2;
 }
 
 
@@ -216,6 +220,46 @@
   --bs-btn-border-color: var(--sparc-secondary);
   --bs-btn-hover-bg: var(--sparc-secondary-hover);
   --bs-btn-hover-border-color: var(--sparc-secondary-hover);
+}
+
+/* WCAG 2.1 AA: warning yellow needs black label in both themes (white = 2.2:1, black = 9.6:1) */
+.btn-warning,
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:active {
+  --bs-btn-color: #000;
+  --bs-btn-hover-color: #000;
+  --bs-btn-active-color: #000;
+}
+
+/* Dark-mode buttons: pale brand colors paired with black labels (5–15:1 AA) */
+[data-bs-theme="dark"] .btn-primary,
+[data-bs-theme="dark"] .btn-success,
+[data-bs-theme="dark"] .btn-danger,
+[data-bs-theme="dark"] .btn-secondary,
+[data-bs-theme="dark"] .btn-info {
+  --bs-btn-color: #000;
+  --bs-btn-hover-color: #000;
+  --bs-btn-active-color: #000;
+}
+
+/* Universal :focus-visible — WCAG 2.4.7 (visible focus indicator) */
+*:focus-visible {
+  outline: 2px solid var(--sparc-focus);
+  outline-offset: 2px;
+}
+
+/* Forced-colors mode (Windows High Contrast etc.) — let system colors win */
+@media (forced-colors: active) {
+  .btn,
+  .form-control,
+  .form-select {
+    border: 1px solid CanvasText;
+  }
+  *:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
 }
 
 /* Tables — restore original padding and header bg */
@@ -1351,14 +1395,17 @@ a.link-purple { color: var(--sparc-purple); }
   .sparc-hero-tile-label { font-size: 0.75rem; }
 }
 
+/* WCAG 2.1 AA: route through --sparc-success (tracks theme; AA in both) */
 .sparc-check-icon {
-  color: #27ae60;
+  color: var(--sparc-success);
   flex-shrink: 0;
 }
 
-[data-bs-theme="dark"] .sparc-check-icon {
-  color: #2ecc71;
-}
+/* OSCAL overview SVG layer labels — themed via tokens so the text passes AA
+   in both modes; rect tints stay decorative (opacity, no contrast requirement) */
+.oscal-svg-text-controls       { fill: var(--sparc-primary); }
+.oscal-svg-text-implementation { fill: var(--sparc-success); }
+.oscal-svg-text-assessment     { fill: var(--sparc-orange); }
 
 
 /* ── Source badges (index tables) ──────────────────────────────── */
