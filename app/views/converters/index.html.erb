@@ -71,7 +71,7 @@
                       style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
                 <% if can_write_converters? %>
                   <%= button_to "Delete", converter_path(converter), method: :delete,
-                        class: "btn btn-outline-danger btn-sm",
+                        class: "btn btn-danger btn-sm",
                         style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
                         form: { data: { turbo_confirm: "Delete converter '#{converter.name}'?" }, style: "display: inline;" } %>
                 <% end %>
