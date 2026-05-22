@@ -201,6 +201,17 @@ class CdefDocumentsController < ApplicationController
     audit_log("cdef_document_copied", subject: copy, metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name, copy_name: copy.name, source_type: @cdef_document.aws_labs_source? ? "aws_labs" : nil }.compact)
     flash[:success] = "Component Definition duplicated as '#{copy.name}'"
     redirect_to cdef_document_path(copy)
+  rescue StandardError => e
+    # Issue #519 — surface duplication failures in logs + audit + flash
+    # instead of a bare 500. AWS Labs CDEFs are the known repro path.
+    Rails.logger.error("[cdef_documents#copy] source_id=#{@cdef_document.id} aws_labs=#{@cdef_document.aws_labs_source?} failed: #{e.class}: #{e.message}")
+    Rails.logger.error("[cdef_documents#copy] backtrace: " + e.backtrace.first(20).join(" | "))
+    audit_log("cdef_document_copy_failed", subject: @cdef_document,
+      metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name,
+                  source_type: @cdef_document.aws_labs_source? ? "aws_labs" : nil,
+                  error_class: e.class.to_s, error_message: e.message.to_s[0, 300] }.compact)
+    flash[:error] = "Could not duplicate '#{@cdef_document.name}': #{e.message.to_s[0, 200]}"
+    redirect_to cdef_document_path(@cdef_document)
   end
 
   def select_profile

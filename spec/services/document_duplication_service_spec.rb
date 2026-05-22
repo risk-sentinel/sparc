@@ -104,5 +104,78 @@ RSpec.describe DocumentDuplicationService do
       copy = described_class.new(source).duplicate
       expect(copy.cdef_type).to eq("disa_stig")
     end
+
+    # Issue #519 — statements were silently dropped during copy prior to the
+    # DocumentDuplicationService refactor that added the optional statements
+    # association. AWS Labs CDEFs (which always carry implemented-requirement
+    # statements per OSCAL component-definition) lost them on the user's
+    # clone, masking related downstream failures.
+    describe "statement copying (#519)" do
+      let!(:statement) do
+        control.cdef_control_statements.create!(
+          statement_id: "smt.a",
+          implementation_prose: "Statement prose body",
+          uuid: SecureRandom.uuid
+        )
+      end
+
+      it "deep-clones cdef_control_statements onto the copy" do
+        copy = described_class.new(source).duplicate
+        copied_control = copy.cdef_controls.first
+        expect(copied_control.cdef_control_statements.count).to eq(1)
+        expect(copied_control.cdef_control_statements.first.statement_id).to eq("smt.a")
+        expect(copied_control.cdef_control_statements.first.implementation_prose).to eq("Statement prose body")
+      end
+
+      it "gives copied statements fresh UUIDs (uuid is globally unique)" do
+        copy = described_class.new(source).duplicate
+        copied_stmt = copy.cdef_controls.first.cdef_control_statements.first
+        expect(copied_stmt.uuid).to be_present
+        expect(copied_stmt.uuid).not_to eq(statement.uuid)
+      end
+
+      it "preserves the statement_id under the new control_id (uniqueness scope)" do
+        copy = described_class.new(source).duplicate
+        copied_stmt = copy.cdef_controls.first.cdef_control_statements.first
+        expect(copied_stmt.cdef_control_id).to eq(copy.cdef_controls.first.id)
+        expect(copied_stmt.cdef_control_id).not_to eq(control.id)
+      end
+    end
+
+    describe "AWS-Labs-sourced CDEF copy (#519)" do
+      before do
+        source.update!(import_metadata: {
+          "source_type" => "aws_labs",
+          "source_url"  => "https://example.invalid/iam.oscal.json",
+          "source_sha"  => "deadbeef"
+        })
+        control.cdef_control_statements.create!(
+          statement_id: "smt.a",
+          implementation_prose: "Statement prose",
+          uuid: SecureRandom.uuid
+        )
+        # Enrichment-style fields added by AwsLabsCdefImportService#enrich_with_nist_mappings!
+        control.cdef_control_fields.create!(field_name: "aws_security_hub_id",  field_value: "IAM.1", editable: false)
+        control.cdef_control_fields.create!(field_name: "nist_oscal_ids",       field_value: "ac-2,ac-3", editable: false)
+        control.cdef_control_fields.create!(field_name: "nist_mapping_source",  field_value: "aws_direct", editable: false)
+      end
+
+      it "duplicates without raising and preserves statements + enrichment fields" do
+        expect { described_class.new(source).duplicate }.not_to raise_error
+
+        copy = described_class.new(source).duplicate(new_name: "Copy of #{source.name}-2")
+        copied_control = copy.cdef_controls.first
+        expect(copied_control.cdef_control_statements.count).to eq(1)
+        # 1 fix_text from the parent let! block + 3 enrichment fields = 4
+        expect(copied_control.cdef_control_fields.count).to eq(4)
+      end
+
+      it "strips the source_type from the copy's import_metadata so it isn't read-only" do
+        copy = described_class.new(source).duplicate
+        expect(copy.import_metadata["source_type"]).to be_nil
+        expect(copy.aws_labs_source?).to be false
+        expect(copy.editable?).to be true
+      end
+    end
   end
 end
