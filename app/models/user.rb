@@ -20,7 +20,9 @@ class User < ApplicationRecord
   # Allow password_digest to be null for OIDC-only users
   has_secure_password validations: false
 
+  include AttachmentSizeLimit
   has_one_attached :avatar
+  limit_attachment_size :avatar, max: -> { SparcConfig.max_avatar_bytes }
 
   has_many :identities, dependent: :destroy
   has_many :user_roles, dependent: :destroy

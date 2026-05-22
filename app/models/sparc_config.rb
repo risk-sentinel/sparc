@@ -150,6 +150,24 @@ module SparcConfig
 
   def force_ssl? = ENV.fetch("FORCE_SSL", "true") == "true"
 
+  # ── Upload Limits (#510) ─────────────────────────────────────────────────
+  # Operators set caps in megabytes; SparcConfig does the byte math.
+  # Single unified cap (max_upload_mb) applies to both the raw upload size
+  # AND the uncompressed total of zip-based formats (xlsx). Teams who
+  # legitimately need larger XLSX payloads raise the global cap — surfaces
+  # the cost of that choice instead of burying it in a format-specific knob.
+  # Avatar stays separate (small images shouldn't compete with document caps).
+
+  def max_upload_mb     = ENV.fetch("SPARC_MAX_UPLOAD_MB", "50").to_i
+  def max_avatar_mb     = ENV.fetch("SPARC_MAX_AVATAR_MB", "2").to_i
+  def max_upload_bytes  = max_upload_mb * 1.megabyte
+  def max_avatar_bytes  = max_avatar_mb * 1.megabyte
+
+  # XLSX upload gate (#510). Default false — XLSX is hidden from
+  # DocumentTypeRegistry unless explicitly enabled. Code-only flag;
+  # intentionally not surfaced in public env-var documentation.
+  def xlsx_uploads_enabled? = ENV.fetch("SPARC_ENABLE_XLSX_UPLOADS", "false") == "true"
+
   # ── Consent Banner ──────────────────────────────────────────────────────
 
   def banner_enabled?     = ENV.fetch("SPARC_BANNER_ENABLED", "false") == "true"

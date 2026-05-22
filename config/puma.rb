@@ -54,6 +54,19 @@ plugin :tmp_restart
 # Run the Solid Queue supervisor inside of Puma for single-server deployments
 plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 
+# ── Upload Body Limit (#510) ─────────────────────────────────────────────
+# Recommended reverse-proxy (nginx) body cap: ~10 MB above SparcConfig's
+# max_upload_mb (50 MB default → 60 MB headroom). The app-level validator
+# in AttachmentSizeLimit and the FileUploadable zip-bomb check provide the
+# strict upper bound; the proxy cap is the fail-fast outer layer that
+# rejects oversized requests before they hit Puma.
+#
+# sparc-iac (nginx / ALB) deploy config: set `client_max_body_size 60m;`
+# (or whatever value matches SPARC_MAX_UPLOAD_MB + ~10 MB).
+#
+# Puma itself does not have a request-body cap before reading; the proxy
+# layer is the right place for it. This comment documents the contract.
+
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]

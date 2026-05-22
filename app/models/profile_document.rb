@@ -7,9 +7,12 @@ class ProfileDocument < ApplicationRecord
 
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true
+  include AttachmentSizeLimit
+
   belongs_to :source_profile, class_name: "ProfileDocument", optional: true
   has_many :derived_profiles, class_name: "ProfileDocument", foreign_key: :source_profile_id
   has_one_attached :file
+  limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 

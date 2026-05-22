@@ -9,9 +9,12 @@ class SarDocument < ApplicationRecord
   belongs_to :authorization_boundary, optional: true
 
   has_many :sar_controls, dependent: :delete_all
+  include AttachmentSizeLimit
+
   has_many :sar_results, dependent: :delete_all
   has_many :sar_local_components, dependent: :delete_all
   has_one_attached :file
+  limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }
 
   belongs_to :sap_document, optional: true
   belongs_to :profile_document, optional: true

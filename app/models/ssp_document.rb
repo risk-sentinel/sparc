@@ -14,8 +14,11 @@ class SspDocument < ApplicationRecord
     profile_document_id: ->(b) { b.profile_document_id }
   )
 
+  include AttachmentSizeLimit
+
   has_many :ssp_controls, dependent: :destroy
   has_one_attached :file
+  limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }
 
   # OSCAL entity associations
   has_many :ssp_information_types, dependent: :delete_all

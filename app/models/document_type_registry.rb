@@ -83,7 +83,25 @@ class DocumentTypeRegistry
 
   class << self
     def for(key)
-      TYPES.fetch(key.to_sym) { raise ArgumentError, "Unknown document type: #{key}" }
+      entry = TYPES.fetch(key.to_sym) { raise ArgumentError, "Unknown document type: #{key}" }
+      apply_xlsx_gate(entry)
+    end
+
+    private
+
+    # #510: XLSX/XLS extensions are filtered out of allowed_extensions unless
+    # SparcConfig.xlsx_uploads_enabled? returns true. Default-disabled
+    # obscures the legacy XLSX path that survives only for API consumers
+    # (UI access was already removed in #479). The Entry returned to callers
+    # reflects current configuration so the upstream FileUploadable check
+    # rejects XLSX with the same "Unsupported file type" message as if XLSX
+    # had never been registered.
+    def apply_xlsx_gate(entry)
+      return entry if SparcConfig.xlsx_uploads_enabled?
+      return entry unless entry.allowed_extensions.key?(".xlsx") || entry.allowed_extensions.key?(".xls")
+
+      filtered = entry.allowed_extensions.except(".xlsx", ".xls")
+      Entry.new(**entry.to_h.merge(allowed_extensions: filtered))
     end
   end
 end

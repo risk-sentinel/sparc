@@ -8,8 +8,11 @@ class SapDocument < ApplicationRecord
 
   belongs_to :authorization_boundary, optional: true
 
+  include AttachmentSizeLimit
+
   has_many :sap_controls, dependent: :delete_all
   has_one_attached :file
+  limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }
 
   belongs_to :ssp_document, optional: true
   belongs_to :profile_document, optional: true

@@ -18,9 +18,12 @@ class PoamDocument < ApplicationRecord
   has_many :poam_items, dependent: :delete_all
   has_many :poam_risks, dependent: :delete_all
   has_many :poam_observations, dependent: :delete_all
+  include AttachmentSizeLimit
+
   has_many :poam_findings, dependent: :delete_all
   has_many :poam_local_components, dependent: :delete_all
   has_one_attached :file
+  limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 

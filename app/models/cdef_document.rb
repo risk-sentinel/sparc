@@ -11,6 +11,8 @@ class CdefDocument < ApplicationRecord
   # writes globally_available + organization_id or attaches via
   # boundary_cdef_documents.
 
+  include AttachmentSizeLimit
+
   has_many :cdef_controls, dependent: :delete_all
   has_many :boundary_cdef_documents, dependent: :destroy
   has_many :boundaries, through: :boundary_cdef_documents
@@ -21,6 +23,7 @@ class CdefDocument < ApplicationRecord
   belongs_to :cloned_from, class_name: "CdefDocument", optional: true
   has_many :clones, class_name: "CdefDocument", foreign_key: :cloned_from_id, dependent: :nullify
   has_one_attached :file
+  limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 

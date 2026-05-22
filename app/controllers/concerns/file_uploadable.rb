@@ -38,6 +38,8 @@ module FileUploadable
     file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
 
     begin
+      reject_if_zip_bomb!(uploaded_file, file_type)
+
       attrs = {
         name:              File.basename(uploaded_file.original_filename, ".*"),
         file_type:         file_type,
@@ -126,6 +128,28 @@ module FileUploadable
     end
   end
 
+  # #510: pre-parse zip-bomb defense for xlsx uploads. The xlsx container
+  # is a zip; Roo doesn't cap uncompressed total. We peek at the entry
+  # headers (cheap — no actual decompression) and reject if the declared
+  # uncompressed sum exceeds SparcConfig.max_upload_bytes (the unified cap;
+  # see SparcConfig comments). .xls (binary OLE2) is not a zip, so the
+  # check is no-op for it. Wrapping rescue in the caller turns any failure
+  # into a clean flash[:error] instead of a 500.
+  def reject_if_zip_bomb!(uploaded_file, file_type)
+    return unless file_type == "excel"
+    ext = File.extname(uploaded_file.original_filename.to_s).downcase
+    return unless ext == ".xlsx"
+
+    limit = SparcConfig.max_upload_bytes
+    total = Zip::File.open(uploaded_file.path) { |z| z.entries.sum(&:size) }
+    return if total <= limit
+
+    actual_mb = (total / 1.megabyte.to_f).round(2)
+    limit_mb  = (limit / 1.megabyte.to_f).round(2)
+    raise "File rejected: uncompressed XLSX size #{actual_mb} MB exceeds upload limit (#{limit_mb} MB). " \
+          "Suspected zip bomb, or raise SPARC_MAX_UPLOAD_MB to accept larger payloads."
+  end
+
   # Handle multi-file upload — creates one document per file, enqueues one job each.
   # Falls back to single-file upload if only one file is provided.
   def handle_multi_file_upload(type_key, param_key:)
@@ -150,6 +174,7 @@ module FileUploadable
     uploaded_files.each do |uploaded_file|
       begin
         file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
+        reject_if_zip_bomb!(uploaded_file, file_type)
 
         attrs = {
           name:              File.basename(uploaded_file.original_filename, ".*"),
