@@ -5,12 +5,24 @@ require "tempfile"
 require "zip"
 
 RSpec.describe FileUploadable do
-  # Minimal harness to exercise the private zip-bomb check.
+  # Minimal harness to exercise the private validation methods.
   let(:harness) do
     Class.new do
       include FileUploadable
-      public :reject_if_zip_bomb!
+      public :reject_if_zip_bomb!, :validate_content_type!, :validate_syntactic_structure!
     end.new
+  end
+
+  # Build a fake ActionDispatch::Http::UploadedFile-like double pointing at
+  # an on-disk tempfile with controlled content.
+  def fake_upload(filename:, bytes:)
+    tmp = Tempfile.new([ "fileup", File.extname(filename) ])
+    tmp.binmode
+    tmp.write(bytes)
+    tmp.flush
+    instance_double("ActionDispatch::Http::UploadedFile",
+                    original_filename: filename,
+                    path: tmp.path)
   end
 
   describe "#reject_if_zip_bomb! (#510)" do
@@ -62,6 +74,122 @@ RSpec.describe FileUploadable do
           expect { harness.reject_if_zip_bomb!(fake, "excel") }
             .to raise_error(/uncompressed XLSX size.*MB exceeds upload limit.*MB.*SPARC_MAX_UPLOAD_MB/)
         end
+      end
+    end
+  end
+
+  describe "#validate_content_type! (#509)" do
+    context "extension matches actual content" do
+      it "passes valid JSON labeled .json" do
+        fake = fake_upload(filename: "good.json", bytes: '{"hello":"world"}')
+        expect { harness.validate_content_type!(fake) }.not_to raise_error
+      end
+
+      it "passes valid XML labeled .xml" do
+        fake = fake_upload(filename: "good.xml", bytes: %(<?xml version="1.0"?><root/>))
+        expect { harness.validate_content_type!(fake) }.not_to raise_error
+      end
+
+      it "passes valid XLSX (zip) labeled .xlsx" do
+        Tempfile.create([ "good", ".xlsx" ]) do |tmp|
+          Zip::File.open(tmp.path, create: true) do |zip|
+            zip.get_output_stream("xl/sheet.xml") { |io| io.write("<x/>") }
+          end
+          fake = instance_double("ActionDispatch::Http::UploadedFile",
+                                 original_filename: "good.xlsx",
+                                 path: tmp.path)
+          expect { harness.validate_content_type!(fake) }.not_to raise_error
+        end
+      end
+    end
+
+    context "extension does NOT match actual content (attack vector)" do
+      it "rejects a PE32 binary mislabeled as .json" do
+        # PE32 (Windows executable) magic bytes: "MZ" followed by header.
+        pe32_header = "MZ" + ("\x00" * 60) + "PE\x00\x00".b
+        fake = fake_upload(filename: "trojan.json", bytes: pe32_header)
+        expect { harness.validate_content_type!(fake) }
+          .to raise_error(/extension \.json expects.*actual content type is/)
+      end
+
+      it "rejects a zip mislabeled as .json" do
+        Tempfile.create([ "fake", ".json" ]) do |tmp|
+          Zip::File.open(tmp.path, create: true) do |zip|
+            zip.get_output_stream("foo.txt") { |io| io.write("hello") }
+          end
+          fake = instance_double("ActionDispatch::Http::UploadedFile",
+                                 original_filename: "fake.json",
+                                 path: tmp.path)
+          expect { harness.validate_content_type!(fake) }
+            .to raise_error(/extension \.json expects.*actual content type is/)
+        end
+      end
+
+      it "rejects a PDF mislabeled as .yaml" do
+        pdf_bytes = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n".b
+        fake = fake_upload(filename: "fake.yaml", bytes: pdf_bytes)
+        expect { harness.validate_content_type!(fake) }
+          .to raise_error(/extension \.yaml expects.*actual content type is/)
+      end
+    end
+
+    context "extension not in allowlist" do
+      it "is a no-op (extension layer already rejected)" do
+        fake = fake_upload(filename: "weird.bin", bytes: "abc")
+        expect { harness.validate_content_type!(fake) }.not_to raise_error
+      end
+    end
+  end
+
+  describe "#validate_syntactic_structure! (#509)" do
+    context "json" do
+      it "passes valid JSON" do
+        fake = fake_upload(filename: "ok.json", bytes: '{"a":1,"b":[2,3]}')
+        expect { harness.validate_syntactic_structure!(fake, "json") }.not_to raise_error
+      end
+
+      it "rejects malformed JSON with a clear message" do
+        fake = fake_upload(filename: "bad.json", bytes: '{"a":')
+        expect { harness.validate_syntactic_structure!(fake, "json") }
+          .to raise_error(/not valid JSON/)
+      end
+    end
+
+    context "yaml" do
+      it "passes valid YAML" do
+        fake = fake_upload(filename: "ok.yaml", bytes: "a: 1\nb:\n  - 2\n  - 3\n")
+        expect { harness.validate_syntactic_structure!(fake, "yaml") }.not_to raise_error
+      end
+
+      it "rejects malformed YAML" do
+        fake = fake_upload(filename: "bad.yaml", bytes: ":\n  - bad indent: [unbalanced")
+        expect { harness.validate_syntactic_structure!(fake, "yaml") }
+          .to raise_error(/not valid YAML/)
+      end
+    end
+
+    context "xml / xccdf" do
+      it "passes valid XML via XmlSecurity (XXE-safe)" do
+        fake = fake_upload(filename: "ok.xml", bytes: %(<?xml version="1.0"?><root><child/></root>))
+        expect { harness.validate_syntactic_structure!(fake, "xml") }.not_to raise_error
+      end
+
+      it "rejects malformed XML" do
+        fake = fake_upload(filename: "bad.xml", bytes: "<root><unclosed>")
+        expect { harness.validate_syntactic_structure!(fake, "xml") }
+          .to raise_error(/not valid XML/)
+      end
+
+      it "applies the same check for xccdf file_type" do
+        fake = fake_upload(filename: "ok.xml", bytes: %(<?xml version="1.0"?><Benchmark/>))
+        expect { harness.validate_syntactic_structure!(fake, "xccdf") }.not_to raise_error
+      end
+    end
+
+    context "excel" do
+      it "is a no-op for excel (zip-bomb check handles structural validity)" do
+        fake = fake_upload(filename: "x.xlsx", bytes: "anything")
+        expect { harness.validate_syntactic_structure!(fake, "excel") }.not_to raise_error
       end
     end
   end

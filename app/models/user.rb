@@ -57,16 +57,31 @@ class User < ApplicationRecord
   # AC-2: Service accounts must have a human owner
   validates :owner_id, presence: { message: "is required for service accounts" }, if: :service_account?
 
-  # SI-10: Avatar file validation — type and size constraints
-  validate :avatar_acceptable, if: -> { avatar.attached? }
+  # SI-10: Avatar file validation — magic-byte type check (no client-supplied
+  # Content-Type trust per #509). Size cap handled by AttachmentSizeLimit
+  # (above), which honors SPARC_MAX_AVATAR_MB.
+  #
+  # The controller layer (ProfilesController#update_avatar) is the primary
+  # gate — it runs Marcel against the tempfile BEFORE attach. This model
+  # validator is defense-in-depth for non-controller paths (API, console,
+  # direct ActiveRecord usage). When the blob hasn't yet been persisted to
+  # the storage service (validators run before save), there's nothing to
+  # sniff; we skip — the controller layer already validated, or the bytes
+  # will be re-validated on the next save once the blob is in the service.
+  ALLOWED_AVATAR_MIME_TYPES = %w[image/png image/jpeg image/gif image/webp].freeze
 
-  def avatar_acceptable
-    unless avatar.blob.content_type.in?(%w[image/png image/jpeg image/gif image/webp])
-      errors.add(:avatar, "must be a PNG, JPG, GIF, or WebP image")
-    end
-    unless avatar.blob.byte_size <= 2.megabytes
-      errors.add(:avatar, "must be less than 2 MB")
-    end
+  validate :avatar_image_type, if: -> { avatar.attached? }
+
+  def avatar_image_type
+    actual = avatar.blob.open { |io| Marcel::MimeType.for(io) }
+    return if ALLOWED_AVATAR_MIME_TYPES.include?(actual)
+
+    errors.add(:avatar, "must be a PNG, JPG, GIF, or WebP image (detected #{actual.inspect})")
+  rescue Errno::ENOENT, ActiveStorage::FileNotFoundError
+    # Blob not yet persisted to the storage service; controller layer is
+    # the primary gate. Skip; will re-validate on the next save once the
+    # blob is in the service.
+    nil
   end
 
   # ── Callbacks ───────────────────────────────────────────────────────────

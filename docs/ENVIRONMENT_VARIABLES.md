@@ -222,6 +222,30 @@ notifications, etc.
 
 ---
 
+## Upload Limits (#510)
+
+<!-- markdownlint-disable MD013 -->
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_MAX_UPLOAD_MB | Maximum allowed upload size in **megabytes** for every document type (SSP, SAR, SAP, POAM, CDEF, Profile, Evidence). Also caps the uncompressed total of zip-based formats (e.g., XLSX) as a zip-bomb defense. SparcConfig converts to bytes internally. Teams needing larger XLSX payloads raise this single global cap. | `50` | `100` | No |
+| SPARC_MAX_AVATAR_MB | Maximum allowed user-avatar upload size in **megabytes**. Separate from document uploads so avatars never compete with document payload caps. | `2` | `5` | No |
+
+<!-- markdownlint-enable MD013 -->
+
+### Reverse-proxy alignment
+
+Set the reverse-proxy body cap (nginx / ALB / etc.) to `SPARC_MAX_UPLOAD_MB + ~10 MB` headroom so the proxy is the fail-fast outer layer:
+
+```nginx
+# nginx — when SPARC_MAX_UPLOAD_MB=50
+client_max_body_size 60m;
+```
+
+The app-level `AttachmentSizeLimit` validator and the `FileUploadable` zip-bomb check provide the strict upper bound; the proxy cap rejects oversized requests before they reach Puma.
+
+---
+
 ## Development HTTPS
 
 <!-- markdownlint-disable MD013 -->

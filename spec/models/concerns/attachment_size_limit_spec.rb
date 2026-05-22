@@ -41,15 +41,35 @@ RSpec.describe AttachmentSizeLimit do
   describe "User avatar uses max_avatar_bytes" do
     let(:user) { User.create!(email: "att-test@example.com", password: "Sup3rSecure!Pw", password_confirmation: "Sup3rSecure!Pw") }
 
+    # PNG file signature (8 bytes) so User#avatar_image_type (#509)
+    # sniffs the bytes as image/png. Padded with zeros to reach the
+    # size needed for each test case.
+    PNG_SIGNATURE = "\x89PNG\r\n\x1a\n".b
+    def png_payload(size)
+      PNG_SIGNATURE + ("\x00".b * (size - PNG_SIGNATURE.bytesize))
+    end
+
+    # Persist the blob synchronously via create_and_upload! so the disk
+    # service has the file when User#avatar_image_type (#509) reads bytes
+    # via blob.open during validation.
+    def attach_persisted_avatar(user, filename:, bytes:)
+      blob = ActiveStorage::Blob.create_and_upload!(
+        io: StringIO.new(bytes),
+        filename: filename,
+        content_type: "image/png"
+      )
+      user.avatar.attach(blob)
+    end
+
     it "accepts an avatar under the avatar cap" do
       allow(SparcConfig).to receive(:max_avatar_bytes).and_return(10.kilobytes)
-      user.avatar.attach(io: StringIO.new("a" * 5.kilobytes), filename: "ok.png", content_type: "image/png")
+      attach_persisted_avatar(user, filename: "ok.png", bytes: png_payload(5.kilobytes))
       expect(user).to be_valid
     end
 
     it "rejects an avatar over the avatar cap" do
       allow(SparcConfig).to receive(:max_avatar_bytes).and_return(1.kilobyte)
-      user.avatar.attach(io: StringIO.new("a" * 5.kilobytes), filename: "big.png", content_type: "image/png")
+      attach_persisted_avatar(user, filename: "big.png", bytes: png_payload(5.kilobytes))
       expect(user).not_to be_valid
       expect(user.errors[:avatar].first).to match(/is too large/)
     end

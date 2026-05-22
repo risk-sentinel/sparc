@@ -18,14 +18,14 @@ class ProfilesController < ApplicationController
     if params[:user] && params[:user][:avatar].present?
       avatar = params[:user][:avatar]
 
-      # SI-10: Server-side validation of file type and size
-      unless avatar.content_type.in?(%w[image/png image/jpeg image/gif image/webp])
-        redirect_to edit_profile_path, flash: { error: "Avatar must be a PNG, JPG, GIF, or WebP image." }
-        return
-      end
-
-      if avatar.size > 2.megabytes
-        redirect_to edit_profile_path, flash: { error: "Avatar must be less than 2 MB." }
+      # SI-10: Server-side validation. Magic-byte content-type sniff (#509)
+      # — client-supplied Content-Type header is NOT trusted. Size cap
+      # checked at the model layer via AttachmentSizeLimit (#510), which
+      # honors SPARC_MAX_AVATAR_MB.
+      actual = File.open(avatar.tempfile.path, "rb") { |io| Marcel::MimeType.for(io) }
+      unless User::ALLOWED_AVATAR_MIME_TYPES.include?(actual)
+        redirect_to edit_profile_path,
+          flash: { error: "Avatar must be a PNG, JPG, GIF, or WebP image (detected #{actual.inspect})." }
         return
       end
 

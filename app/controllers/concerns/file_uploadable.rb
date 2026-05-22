@@ -38,7 +38,9 @@ module FileUploadable
     file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
 
     begin
+      validate_content_type!(uploaded_file)
       reject_if_zip_bomb!(uploaded_file, file_type)
+      validate_syntactic_structure!(uploaded_file, file_type)
 
       attrs = {
         name:              File.basename(uploaded_file.original_filename, ".*"),
@@ -150,6 +152,83 @@ module FileUploadable
           "Suspected zip bomb, or raise SPARC_MAX_UPLOAD_MB to accept larger payloads."
   end
 
+  # #509: per-extension MIME allowlist for magic-byte / content-type
+  # cross-check. Marcel sniffs the actual content type from file bytes
+  # (no client-supplied header trust). Multiple acceptable values per
+  # extension cover Marcel's variability for plain-text formats (JSON
+  # without BOM sniffs as text/plain, etc.). application/octet-stream
+  # is allowed for .xml/.xlsx where Marcel commonly can't pin a more
+  # specific type, but NOT for .json/.yaml/.xls — those have stable
+  # magic bytes when valid, so octet-stream there indicates garbage.
+  EXPECTED_MIME_BY_EXT = {
+    ".json"  => %w[application/json text/plain text/json],
+    ".xml"   => %w[application/xml text/xml application/octet-stream text/plain],
+    ".yaml"  => %w[text/plain text/yaml application/yaml application/x-yaml],
+    ".yml"   => %w[text/plain text/yaml application/yaml application/x-yaml],
+    ".xlsx"  => %w[application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/zip application/octet-stream],
+    ".xls"   => %w[application/vnd.ms-excel application/x-ole-storage]
+  }.freeze
+
+  # #509: assert the actual file bytes match the declared extension.
+  # Defeats trivial "rename PE32 binary to foo.json" attacks that the
+  # extension allowlist alone permits. Marcel reads the file directly,
+  # bypassing the client-supplied Content-Type header.
+  #
+  # We pass `name:` to Marcel so the extension is used only as a tiebreaker
+  # for content with ambiguous magic bytes (e.g., short plain-text JSON
+  # without a BOM). Explicit magic bytes — PE32 ("MZ..."), PDF ("%PDF"),
+  # zip ("PK..."), etc. — are always detected from content and override the
+  # filename hint, so an attacker can't bypass by just renaming.
+  def validate_content_type!(uploaded_file)
+    ext = File.extname(uploaded_file.original_filename.to_s).downcase
+    expected = EXPECTED_MIME_BY_EXT[ext]
+    return unless expected # extension not in our allowlist → extension layer already rejected
+
+    actual = File.open(uploaded_file.path, "rb") do |io|
+      Marcel::MimeType.for(io, name: uploaded_file.original_filename.to_s)
+    end
+    return if expected.include?(actual)
+
+    raise "File rejected: extension #{ext} expects one of [#{expected.join(', ')}], " \
+          "but actual content type is #{actual.inspect}."
+  end
+
+  # #509: syntactic structural-validity check. Catches truncated or
+  # malformed uploads at submit time instead of letting them queue and
+  # fail in DocumentConversionJob (cleaner UX, less DLQ noise, tighter
+  # pen-test posture). Bounded by Timeout to prevent pathological input
+  # tying up Puma. Shallow syntactic check only — semantic validation
+  # (OSCAL schema, etc.) still happens in the parser job.
+  STRUCTURAL_PARSE_TIMEOUT_SECONDS = 5
+
+  def validate_syntactic_structure!(uploaded_file, file_type)
+    # .xlsx structural validity is the zip itself — already checked by
+    # reject_if_zip_bomb! via Zip::File.open. .xls is binary OLE2; we
+    # don't carry an OLE2 syntactic parser. Excel formats skipped here.
+    return if file_type == "excel"
+
+    content = File.read(uploaded_file.path)
+
+    Timeout.timeout(STRUCTURAL_PARSE_TIMEOUT_SECONDS) do
+      case file_type
+      when "json"
+        JSON.parse(content)
+      when "yaml"
+        YAML.safe_load(content, permitted_classes: [ Date, Time ])
+      when "xml", "xccdf"
+        XmlSecurity.parse(content, strict: true)
+      end
+    end
+  rescue Timeout::Error
+    raise "File rejected: structural parse exceeded #{STRUCTURAL_PARSE_TIMEOUT_SECONDS}s (file may be malformed or excessively complex)."
+  rescue JSON::ParserError => e
+    raise "File rejected: not valid JSON (#{e.message.to_s[0, 150]})."
+  rescue Psych::SyntaxError => e
+    raise "File rejected: not valid YAML (#{e.message.to_s[0, 150]})."
+  rescue Nokogiri::XML::SyntaxError => e
+    raise "File rejected: not valid XML (#{e.message.to_s[0, 150]})."
+  end
+
   # Handle multi-file upload — creates one document per file, enqueues one job each.
   # Falls back to single-file upload if only one file is provided.
   def handle_multi_file_upload(type_key, param_key:)
@@ -174,7 +253,9 @@ module FileUploadable
     uploaded_files.each do |uploaded_file|
       begin
         file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
+        validate_content_type!(uploaded_file)
         reject_if_zip_bomb!(uploaded_file, file_type)
+        validate_syntactic_structure!(uploaded_file, file_type)
 
         attrs = {
           name:              File.basename(uploaded_file.original_filename, ".*"),
