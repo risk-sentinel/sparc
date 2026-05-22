@@ -16,7 +16,7 @@ class SspXmlParserService
   def parse
     update_processing_stage!(:reading_file)
     xml = File.read(@file_path).force_encoding("UTF-8")
-    doc = Nokogiri::XML(xml) { |config| config.noblanks }
+    doc = XmlSecurity.parse(xml)
     root = doc.at_xpath("xmlns:system-security-plan", "xmlns" => OSCAL_NS) ||
            doc.at_xpath("system-security-plan") ||
            raise("Invalid OSCAL SSP XML: missing <system-security-plan> root")

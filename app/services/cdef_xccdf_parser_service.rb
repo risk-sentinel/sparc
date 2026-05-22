@@ -11,7 +11,7 @@ class CdefXccdfParserService
   def parse
     update_processing_stage!(:reading_file)
     xml_content = File.read(@file_path).force_encoding("UTF-8")
-    doc = Nokogiri::XML(xml_content) { |c| c.strict.noblanks }
+    doc = XmlSecurity.parse(xml_content)
     doc.remove_namespaces!
 
     # Auto-detect OSCAL component-definition vs XCCDF Benchmark
@@ -274,7 +274,7 @@ class CdefXccdfParserService
 
     if raw.include?("<VulnDiscussion>")
       begin
-        inner = Nokogiri::XML("<root>#{raw}</root>").at_xpath("//VulnDiscussion")
+        inner = XmlSecurity.parse("<root>#{raw}</root>").at_xpath("//VulnDiscussion")
         return inner&.text&.strip if inner
       rescue Nokogiri::XML::SyntaxError
         # Fall through to raw text

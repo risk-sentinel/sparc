@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="checkov-style sample" tests="2" failures="1" errors="0">
+  <testsuite name="aws.iam" tests="2" failures="1" errors="0">
+    <testcase classname="CKV_AWS_1" name="Ensure IAM password policy expires passwords within 90 days or less">
+      <failure type="CheckResult" message="resource aws_iam_account_password_policy.main did not satisfy CKV_AWS_1"/>
+    </testcase>
+    <testcase classname="CKV_AWS_2" name="Ensure no security groups allow ingress from 0.0.0.0/0 to port 22"/>
+  </testsuite>
+</testsuites>

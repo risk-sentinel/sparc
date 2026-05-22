@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+  <!ENTITY xxe SYSTEM "http://sparc-xxe-canary.invalid/should-never-be-fetched">
+]>
+<root>
+  <leak>&xxe;</leak>
+</root>

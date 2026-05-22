@@ -14,7 +14,7 @@ class SarXmlParserService
   def parse
     update_processing_stage!(:reading_file)
     xml = File.read(@file_path).force_encoding("UTF-8")
-    doc = Nokogiri::XML(xml) { |config| config.noblanks }
+    doc = XmlSecurity.parse(xml)
     root = doc.at_xpath("xmlns:assessment-results", "xmlns" => OSCAL_NS) ||
            doc.at_xpath("assessment-results") ||
            raise("Invalid OSCAL Assessment Results XML: missing <assessment-results> root")

@@ -340,8 +340,7 @@ class CatalogImportService
   def import_oscal_xml
     update_processing_stage!(:parsing, "Parsing OSCAL XML catalog...")
 
-    require "nokogiri"
-    doc = Nokogiri::XML(@content) { |c| c.strict.noblanks }
+    doc = XmlSecurity.parse(@content)
     doc.remove_namespaces!
 
     catalog_node = doc.at_xpath("//catalog")
@@ -566,8 +565,7 @@ class CatalogImportService
   def import_nist_xml
     update_processing_stage!(:parsing, "Parsing NIST XML catalog...")
 
-    require "nokogiri"
-    doc = Nokogiri::XML(@content) { |c| c.strict.noblanks }
+    doc = XmlSecurity.parse(@content)
     doc.remove_namespaces!
 
     controls = doc.xpath("//control")

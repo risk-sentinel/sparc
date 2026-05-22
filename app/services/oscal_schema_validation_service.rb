@@ -122,7 +122,7 @@ class OscalSchemaValidationService
     end
 
     xsd_schema = xsd_schema_cache[model_type.to_sym] ||= Nokogiri::XML::Schema(File.read(xsd_path))
-    doc = Nokogiri::XML(xml_string) { |config| config.noblanks }
+    doc = XmlSecurity.parse(xml_string, strict: false)
 
     validation_errors = xsd_schema.validate(doc)
     error_messages = validation_errors.first(50).map { |err| err.message }

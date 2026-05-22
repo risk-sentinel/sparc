@@ -126,7 +126,7 @@ class CciRefreshService
   # ── Parse & Validate ──────────────────────────────────────────────────
 
   def parse_and_validate_xml(xml_path)
-    doc = Nokogiri::XML(File.read(xml_path))
+    doc = XmlSecurity.parse(File.read(xml_path))
     doc.remove_namespaces!
 
     root = doc.at_xpath("//cci_list")

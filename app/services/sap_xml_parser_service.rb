@@ -19,7 +19,7 @@ class SapXmlParserService
   def parse
     update_processing_stage!(:reading_file)
     xml = File.read(@file_path).force_encoding("UTF-8")
-    doc = Nokogiri::XML(xml) { |config| config.noblanks }
+    doc = XmlSecurity.parse(xml)
     root = doc.at_xpath("xmlns:assessment-plan", "xmlns" => OSCAL_NS) ||
            doc.at_xpath("assessment-plan") ||
            raise("Invalid OSCAL Assessment Plan XML: missing <assessment-plan> root")

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Benchmark>
+<Benchmark id="xccdf_test_with_doctype" xmlns="http://checklists.nist.gov/xccdf/1.2">
+  <title>XCCDF with bare DOCTYPE (no entities)</title>
+  <description>Some XCCDF emitters include a DOCTYPE declaration. This fixture exercises the happy-path: a bare DOCTYPE with no internal subset and no external DTD reference. Must parse without rejection.</description>
+  <version>1.0.0</version>
+  <status>accepted</status>
+  <Group id="V-TEST-1">
+    <Rule id="SV-TEST-1_rule" severity="medium">
+      <title>Test rule</title>
+      <description>Test rule body.</description>
+    </Rule>
+  </Group>
+</Benchmark>

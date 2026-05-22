@@ -11,7 +11,7 @@ class ProfileXmlParserService
 
   def parse
     update_processing_stage!(:reading_file)
-    doc = Nokogiri::XML(File.read(@file_path)) { |config| config.noblanks }
+    doc = XmlSecurity.parse(File.read(@file_path))
     doc.remove_namespaces!
 
     # Detect resolved profile catalogs (XML with <catalog> root + resolution-tool or source-profile)

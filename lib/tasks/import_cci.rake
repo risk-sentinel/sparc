@@ -15,7 +15,7 @@ namespace :mapping do
 
     revisions = SparcConfig.cci_revisions
     puts "Parsing #{xml_path} (revisions: #{revisions.join(', ')})..."
-    doc = Nokogiri::XML(File.read(xml_path))
+    doc = XmlSecurity.parse(File.read(xml_path))
     doc.remove_namespaces!
 
     items = doc.xpath("//cci_item")

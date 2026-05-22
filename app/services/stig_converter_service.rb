@@ -108,7 +108,7 @@ class StigConverterService
   private
 
   def parse_xml
-    doc = Nokogiri::XML(@xml_content) { |c| c.strict.noblanks }
+    doc = XmlSecurity.parse(@xml_content)
     doc.remove_namespaces!
     doc
   rescue Nokogiri::XML::SyntaxError => e
