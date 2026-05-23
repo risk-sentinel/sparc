@@ -615,7 +615,7 @@
            document: @ssp_document,
            resources_path: ssp_document_back_matter_resources_path(@ssp_document) %>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function toggleAllFamilies(expand) {
     document.querySelectorAll('#controlsContainer details.sparc-family-group').forEach(function(det) {
       det.open = expand;

@@ -65,7 +65,7 @@
 
 <%# Lightweight inline JS to disable the boundary picker when Global is chosen.
     Avoids introducing a Stimulus controller for one toggle. %>
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   (function () {
     var boundaryRadio = document.getElementById("<%= param_key %>_scope_boundary");
     var globalRadio   = document.getElementById("<%= param_key %>_scope_global");

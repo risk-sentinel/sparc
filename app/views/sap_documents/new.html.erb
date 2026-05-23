@@ -88,7 +88,7 @@
         </div>
       </div>
 
-      <script>
+      <script nonce="<%= content_security_policy_nonce %>">
         function autoPopulateProfile(sspSelect) {
           var profileSelect = document.getElementById("profile-select");
           if (!profileSelect) return;

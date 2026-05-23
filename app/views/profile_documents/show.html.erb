@@ -338,7 +338,7 @@
            document: @profile_document,
            resources_path: profile_document_back_matter_resources_path(@profile_document) %>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function toggleDocMeta() {
     var view = document.getElementById('doc-meta-view');
     var edit = document.getElementById('doc-meta-edit');

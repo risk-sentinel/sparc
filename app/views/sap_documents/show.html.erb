@@ -381,7 +381,7 @@
   <% end %>
 </div>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function toggleAllFamilies(open) {
     document.querySelectorAll('#controlsContainer details.sparc-family-group').forEach(function(det) {
       det.open = open;
@@ -534,7 +534,7 @@
            document: @sap_document,
            resources_path: sap_document_back_matter_resources_path(@sap_document) %>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function toggleDocMeta() {
     var view = document.getElementById('doc-meta-view');
     var edit = document.getElementById('doc-meta-edit');

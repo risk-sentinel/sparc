@@ -224,7 +224,7 @@
   <% end %>
 </div>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function addInfoType() {
     var container = document.getElementById('info-types-container');
     var html = '<div class="info-type-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">' +

@@ -231,7 +231,7 @@
   <% end %>
 </div>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function addResult() {
     var container = document.getElementById('results-container');
     var html = '<div class="result-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">' +

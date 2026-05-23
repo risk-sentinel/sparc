@@ -8,7 +8,7 @@
     <%= csp_meta_tag %>
 
     <%# Apply saved or system theme before first paint to prevent FOUC %>
-    <script>
+    <script nonce="<%= content_security_policy_nonce %>">
       (function() {
         var t = localStorage.getItem("sparc-theme");
         if (t) {
@@ -32,7 +32,7 @@
 
     <%# Mermaid.js for OSCAL relationship diagrams (loaded on all pages, ~200KB gzipped, renders only .mermaid elements) %>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
-    <script>
+    <script nonce="<%= content_security_policy_nonce %>">
       document.addEventListener("DOMContentLoaded", function() {
         if (typeof mermaid !== "undefined") { mermaid.initialize({ startOnLoad: false, theme: "base", themeVariables: { primaryColor: "#2c3e50", primaryTextColor: "#ecf0f1", primaryBorderColor: "#3498db", lineColor: "#5d6d7e", secondaryColor: "#2c3e50", tertiaryColor: "#2c3e50", background: "transparent", mainBkg: "#2c3e50", nodeBorder: "#5d6d7e", clusterBkg: "rgba(255,255,255,0.03)", clusterBorder: "rgba(255,255,255,0.12)", titleColor: "rgba(255,255,255,0.6)", edgeLabelBackground: "transparent", fontFamily: "inherit" } }); mermaid.run(); }
       });

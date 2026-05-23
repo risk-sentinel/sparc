@@ -427,7 +427,7 @@
            document: @poam_document,
            resources_path: poam_document_back_matter_resources_path(@poam_document) %>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function toggleDocMeta() {
     var view = document.getElementById('doc-meta-view');
     var edit = document.getElementById('doc-meta-edit');

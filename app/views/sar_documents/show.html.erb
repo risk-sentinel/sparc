@@ -622,7 +622,7 @@
            document: @sar_document,
            resources_path: sar_document_back_matter_resources_path(@sar_document) %>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function toggleEdit(id) {
     // Auto-expand card details if collapsed
     var details = document.getElementById('details-' + id);

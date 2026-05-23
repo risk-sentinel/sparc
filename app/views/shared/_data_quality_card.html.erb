@@ -103,7 +103,7 @@
   </details>
 </div>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   // Toggle arrow on details open/close
   document.querySelectorAll('.data-quality-card details').forEach(function(details) {
     var arrow = details.querySelector('.data-quality-arrow');

@@ -389,7 +389,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function collectRows(containerId, fields) {
     var rows = document.querySelectorAll('#' + containerId + ' > div');
     var items = [];

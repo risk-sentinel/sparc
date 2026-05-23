@@ -229,7 +229,7 @@
   </div><%# end card-body %>
 </div><%# end card %>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function toggleEditResource(resourceId) {
     var editRow = document.getElementById('edit-resource-' + resourceId);
     if (editRow) {

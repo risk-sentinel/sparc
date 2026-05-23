@@ -424,7 +424,7 @@
   <% end %>
 </div>
 
-<script>
+<script nonce="<%= content_security_policy_nonce %>">
   function toggleMode(stepName) {
     var radio = document.querySelector('input[name="' + stepName + '_radio"]:checked');
     if (!radio) return;

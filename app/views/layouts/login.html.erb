@@ -8,7 +8,7 @@
     <%= csp_meta_tag %>
 
     <%# Apply saved or system theme before first paint to prevent FOUC %>
-    <script>
+    <script nonce="<%= content_security_policy_nonce %>">
       (function() {
         var t = localStorage.getItem("sparc-theme");
         if (t) {
@@ -238,7 +238,7 @@
       </div>
     <% end %>
 
-    <script>
+    <script nonce="<%= content_security_policy_nonce %>">
       // ── Tab Switching ─────────────────────────────
       function switchTab(tabId) {
         document.querySelectorAll('.login-tab').forEach(function(t) { t.classList.remove('active'); });
