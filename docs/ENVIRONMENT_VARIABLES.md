@@ -9,6 +9,10 @@ automatically.
 Copy `.env.example` (development) or `.env.production.example`
 (production) as a starting point.
 
+**For a security-focused operator hardening guide** (minimum-viable
+configuration block, threat model, deployment-layer requirements,
+v1.7.0 hardening checklist) see [PRODUCTION_SECURITY.md](PRODUCTION_SECURITY.md).
+
 ---
 
 ## System Configuration
