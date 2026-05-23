@@ -168,6 +168,38 @@ module SparcConfig
   # intentionally not surfaced in public env-var documentation.
   def xlsx_uploads_enabled? = ENV.fetch("SPARC_ENABLE_XLSX_UPLOADS", "false") == "true"
 
+  # ── Cookieless User-Data Subdomain (#515) ────────────────────────────────
+  # User-uploaded blobs (SSP/SAR/CDEF/POAM JSON, XML, YAML, XLSX, evidence)
+  # are served from a separate cookieless hostname. Even if a future code
+  # change accidentally sets disposition: "inline" on a user-uploaded
+  # HTML/SVG file, the browser script lives on the userdata.* origin and
+  # can't read the SPARC session cookie (which is host-only on the main
+  # app hostname per Rails default — verified, do NOT add Domain= to the
+  # session cookie config; that would defeat the protection).
+  #
+  # By default the userdata host is derived as "userdata.<app-host>" from
+  # SPARC_APP_URL — single operator setting drives both. Edge cases
+  # (per-tenant subdomains, on-prem split DNS) can override via
+  # SPARC_USERDATA_HOST.
+  #
+  # Pairs with sparc-iac DNS/ALB/cert for the userdata.* hostname.
+
+  def app_uri
+    URI.parse(app_url)
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  def userdata_host
+    return ENV["SPARC_USERDATA_HOST"] if ENV["SPARC_USERDATA_HOST"].present?
+    return nil unless app_uri&.host
+    "userdata.#{app_uri.host}"
+  end
+
+  def userdata_protocol
+    app_uri&.scheme || "https"
+  end
+
   # ── Rate Limiting (#513) ─────────────────────────────────────────────────
   # Rack::Attack throttle thresholds, operator-tunable per the project
   # pattern. Defaults are conservative (favor availability over

@@ -246,6 +246,36 @@ The app-level `AttachmentSizeLimit` validator and the `FileUploadable` zip-bomb 
 
 ---
 
+## Cookieless User-Data Subdomain (#515)
+
+<!-- markdownlint-disable MD013 -->
+
+User-uploaded blobs (SSP/SAR/CDEF/POAM JSON/XML/YAML/XLSX, evidence) are served from a separate cookieless hostname. Even if a future code change accidentally sets `disposition: "inline"` on a user-uploaded HTML or SVG file, the browser script lives on the `userdata.*` origin and cannot read the SPARC session cookie (which is host-only on the main app hostname — Rails default, NOT explicitly `Domain=`-scoped).
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_USERDATA_HOST | Override hostname for serving ActiveStorage blobs. When unset, derived as `userdata.<host>` from `SPARC_APP_URL`. Most operators don't need to set this; only relevant for per-tenant subdomain patterns, on-prem split DNS, etc. | (derived) | `userdata.sparc.risk-sentinel.org` | No |
+
+<!-- markdownlint-enable MD013 -->
+
+### How the cookieless protection works
+
+1. User logs in at `https://sparc.risk-sentinel.org/` — session cookie is set **without** a `Domain=` attribute (Rails default), so the browser treats it as **host-only** and never sends it to subdomains.
+2. User uploads a file — ActiveStorage stores the blob (S3 or local disk).
+3. App generates a download link — URL is `https://userdata.sparc.risk-sentinel.org/rails/active_storage/blobs/<signed-id>/...` (configured via `config.active_storage.url_options` in production).
+4. Browser fetches the blob — sends NO session cookie (different exact-match host).
+5. Even a malicious HTML/SVG that somehow rendered inline cannot exfiltrate the SPARC session.
+
+### Don't `Domain=`-scope the session cookie
+
+`config/initializers/session_store.rb` documents the constraint explicitly. Setting `domain: "sparc.risk-sentinel.org"` would cause the cookie to be sent to ANY subdomain (per RFC 6265 §5.1.3) — defeating the whole protection. The host-only default is correct; leave it alone.
+
+### sparc-iac coordination
+
+Requires DNS / ALB rule / TLS cert for the `userdata.*` hostname — covered by **sparc-iac issue #269**. SPARC's app-side change ships independently but does nothing useful until the iac side lands.
+
+---
+
 ## Rate Limiting (#513)
 
 <!-- markdownlint-disable MD013 -->

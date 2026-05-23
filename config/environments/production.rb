@@ -31,6 +31,42 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
+  # #515: serve user-uploaded blobs from a cookieless subdomain.
+  # SPARC_USERDATA_HOST override OR "userdata.<host>" derived from
+  # SPARC_APP_URL. Every rails_blob_url / url_for(blob) call now emits
+  # URLs on the userdata.* origin. Browser does not send the SPARC
+  # session cookie to that origin (host-only cookie — see
+  # config/initializers/session_store.rb). Pairs with sparc-iac DNS/
+  # ALB/cert.
+  #
+  # ENV read directly here (not via SparcConfig). Environment configs
+  # load before Zeitwerk autoloads app/models, so a SparcConfig.* call
+  # at the top of this file would raise NameError during
+  # assets:precompile / Docker build. The SparcConfig accessors still
+  # exist for app code; this duplication is intentional and minimal.
+  userdata_host = ENV["SPARC_USERDATA_HOST"].presence
+  app_url_env   = ENV["SPARC_APP_URL"].presence
+  if userdata_host.nil? && app_url_env
+    begin
+      app_uri       = URI.parse(app_url_env)
+      userdata_host = "userdata.#{app_uri.host}" if app_uri.host.present?
+    rescue URI::InvalidURIError
+      # leave userdata_host nil; ActiveStorage falls back to request host
+    end
+  end
+
+  if userdata_host
+    userdata_protocol = begin
+      URI.parse(app_url_env || "https://x").scheme
+    rescue URI::InvalidURIError
+      "https"
+    end
+    config.active_storage.url_options = {
+      host:     userdata_host,
+      protocol: userdata_protocol
+    }
+  end
+
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
 
