@@ -38,6 +38,7 @@ module FileUploadable
     file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
 
     begin
+      reject_if_executable_signature!(uploaded_file)
       validate_content_type!(uploaded_file)
       reject_if_zip_bomb!(uploaded_file, file_type)
       validate_syntactic_structure!(uploaded_file, file_type)
@@ -127,6 +128,33 @@ module FileUploadable
     registry.allowed_extensions.fetch(ext) do
       accepted = registry.allowed_extensions.keys.join(", ")
       raise "Unsupported file type. Accepted: #{accepted}"
+    end
+  end
+
+  # #509: explicit executable-signature deny-list. Cheap (reads first 32
+  # bytes) and definitive — catches the gap where Marcel's MIME sniff
+  # returns ambiguously (application/octet-stream) but the bytes are
+  # clearly executable. Runs BEFORE validate_content_type! so we never
+  # accept executables even if a future MIME-allowlist edit accidentally
+  # widens what's accepted. Catches Windows PE, Linux ELF, macOS Mach-O,
+  # Java class, WebAssembly modules, and Unix shebang scripts.
+  EXECUTABLE_MAGIC_BYTES = {
+    "MZ".b                => "PE/MS-DOS executable (.exe, .dll)",
+    "\x7fELF".b           => "ELF binary (Linux executable)",
+    "\xfe\xed\xfa\xce".b  => "Mach-O 32-bit (macOS executable)",
+    "\xfe\xed\xfa\xcf".b  => "Mach-O 64-bit (macOS executable)",
+    "\xce\xfa\xed\xfe".b  => "Mach-O 32-bit (reverse byte order)",
+    "\xcf\xfa\xed\xfe".b  => "Mach-O 64-bit (reverse byte order)",
+    "\xca\xfe\xba\xbe".b  => "Java class file / Mach-O universal binary",
+    "\x00asm".b           => "WebAssembly module",
+    "#!".b                => "Shebang script (#!/bin/sh, #!/usr/bin/env ...)"
+  }.freeze
+
+  def reject_if_executable_signature!(uploaded_file)
+    header = File.binread(uploaded_file.path, 32)
+    EXECUTABLE_MAGIC_BYTES.each do |signature, description|
+      next unless header.start_with?(signature)
+      raise "File rejected: detected #{description}. Executable content is not permitted as an upload."
     end
   end
 
@@ -253,6 +281,7 @@ module FileUploadable
     uploaded_files.each do |uploaded_file|
       begin
         file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
+        reject_if_executable_signature!(uploaded_file)
         validate_content_type!(uploaded_file)
         reject_if_zip_bomb!(uploaded_file, file_type)
         validate_syntactic_structure!(uploaded_file, file_type)

@@ -9,7 +9,8 @@ RSpec.describe FileUploadable do
   let(:harness) do
     Class.new do
       include FileUploadable
-      public :reject_if_zip_bomb!, :validate_content_type!, :validate_syntactic_structure!
+      public :reject_if_zip_bomb!, :validate_content_type!,
+             :validate_syntactic_structure!, :reject_if_executable_signature!
     end.new
   end
 
@@ -190,6 +191,91 @@ RSpec.describe FileUploadable do
       it "is a no-op for excel (zip-bomb check handles structural validity)" do
         fake = fake_upload(filename: "x.xlsx", bytes: "anything")
         expect { harness.validate_syntactic_structure!(fake, "excel") }.not_to raise_error
+      end
+    end
+  end
+
+  describe "#reject_if_executable_signature! (#509)" do
+    context "Windows PE / DOS executable (MZ)" do
+      it "rejects PE32 bytes regardless of filename extension" do
+        fake = fake_upload(filename: "trojan.json", bytes: "MZ" + ("\x00" * 60) + "PE\x00\x00".b)
+        expect { harness.reject_if_executable_signature!(fake) }
+          .to raise_error(/detected PE\/MS-DOS executable.*not permitted/)
+      end
+    end
+
+    context "ELF binary (Linux)" do
+      it "rejects ELF magic bytes" do
+        fake = fake_upload(filename: "payload.json", bytes: "\x7fELF\x02\x01\x01".b + ("\x00" * 16))
+        expect { harness.reject_if_executable_signature!(fake) }
+          .to raise_error(/detected ELF binary.*not permitted/)
+      end
+    end
+
+    context "Mach-O (macOS)" do
+      it "rejects Mach-O 64-bit magic bytes" do
+        fake = fake_upload(filename: "macbin.json", bytes: "\xfe\xed\xfa\xcf".b + ("\x00" * 16))
+        expect { harness.reject_if_executable_signature!(fake) }
+          .to raise_error(/detected Mach-O 64-bit.*not permitted/)
+      end
+
+      it "rejects Mach-O reverse byte order" do
+        fake = fake_upload(filename: "macbin2.json", bytes: "\xcf\xfa\xed\xfe".b + ("\x00" * 16))
+        expect { harness.reject_if_executable_signature!(fake) }
+          .to raise_error(/detected Mach-O 64-bit \(reverse byte order\).*not permitted/)
+      end
+    end
+
+    context "Java class file" do
+      it "rejects the CAFEBABE magic bytes" do
+        fake = fake_upload(filename: "evil.json", bytes: "\xca\xfe\xba\xbe".b + ("\x00" * 16))
+        expect { harness.reject_if_executable_signature!(fake) }
+          .to raise_error(/detected Java class file.*not permitted/)
+      end
+    end
+
+    context "WebAssembly module" do
+      it "rejects the \\x00asm magic bytes" do
+        fake = fake_upload(filename: "module.json", bytes: "\x00asm\x01\x00\x00\x00".b + ("\x00" * 16))
+        expect { harness.reject_if_executable_signature!(fake) }
+          .to raise_error(/detected WebAssembly module.*not permitted/)
+      end
+    end
+
+    context "Shebang script" do
+      it "rejects shebang prefix" do
+        fake = fake_upload(filename: "evil.json", bytes: "#!/bin/sh\nrm -rf /\n")
+        expect { harness.reject_if_executable_signature!(fake) }
+          .to raise_error(/detected Shebang script.*not permitted/)
+      end
+    end
+
+    context "happy paths — legitimate content" do
+      it "passes a valid JSON document" do
+        fake = fake_upload(filename: "ok.json", bytes: '{"a":1,"b":[2,3]}')
+        expect { harness.reject_if_executable_signature!(fake) }.not_to raise_error
+      end
+
+      it "passes a valid XML document" do
+        fake = fake_upload(filename: "ok.xml", bytes: %(<?xml version="1.0"?><root/>))
+        expect { harness.reject_if_executable_signature!(fake) }.not_to raise_error
+      end
+
+      it "passes a valid YAML document" do
+        fake = fake_upload(filename: "ok.yaml", bytes: "key: value\nlist:\n  - 1\n  - 2\n")
+        expect { harness.reject_if_executable_signature!(fake) }.not_to raise_error
+      end
+
+      it "passes a valid XLSX (zip header is allowed; xlsx context handled by allowlist+bomb check)" do
+        Tempfile.create([ "ok", ".xlsx" ]) do |tmp|
+          Zip::File.open(tmp.path, create: true) do |zip|
+            zip.get_output_stream("xl/sheet.xml") { |io| io.write("<x/>") }
+          end
+          fake = instance_double("ActionDispatch::Http::UploadedFile",
+                                 original_filename: "ok.xlsx",
+                                 path: tmp.path)
+          expect { harness.reject_if_executable_signature!(fake) }.not_to raise_error
+        end
       end
     end
   end
