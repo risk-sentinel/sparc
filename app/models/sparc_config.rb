@@ -168,6 +168,23 @@ module SparcConfig
   # intentionally not surfaced in public env-var documentation.
   def xlsx_uploads_enabled? = ENV.fetch("SPARC_ENABLE_XLSX_UPLOADS", "false") == "true"
 
+  # ── Rate Limiting (#513) ─────────────────────────────────────────────────
+  # Rack::Attack throttle thresholds, operator-tunable per the project
+  # pattern. Defaults are conservative (favor availability over
+  # aggressive blocking); tighten for high-security tenants. Safelist
+  # CIDRs bypass all throttles — used for internal health-check IPs,
+  # NLB targets, etc. Loopback addresses are safelisted by default for
+  # development convenience.
+  def rate_limiting_enabled?               = ENV.fetch("SPARC_RATE_LIMITING_ENABLED", "true") == "true"
+  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "30").to_i
+  def rate_limit_uploads_per_hour_per_user = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER", "100").to_i
+  def rate_limit_api_writes_per_minute     = ENV.fetch("SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE", "300").to_i
+  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "5").to_i
+
+  def rate_limit_safelist_cidrs
+    ENV.fetch("SPARC_RATE_LIMIT_SAFELIST_CIDRS", "127.0.0.1,::1").split(",").map(&:strip).reject(&:empty?)
+  end
+
   # ── Consent Banner ──────────────────────────────────────────────────────
 
   def banner_enabled?     = ENV.fetch("SPARC_BANNER_ENABLED", "false") == "true"

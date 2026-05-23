@@ -39,6 +39,9 @@ gem "dotenv-rails", require: false, groups: [ :development, :test ]
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.22"
 
+# ── Security ────────────────────────────────────────────────────────────────
+gem "rack-attack", "~> 6.7"                    # Rate limiting + throttling (#513)
+
 # ── Authentication ──────────────────────────────────────────────────────────
 gem "omniauth", "~> 2.1"                       # OAuth/OIDC foundation
 gem "omniauth-rails_csrf_protection", "~> 2.0" # CSRF protection for OmniAuth POST

@@ -246,6 +246,47 @@ The app-level `AttachmentSizeLimit` validator and the `FileUploadable` zip-bomb 
 
 ---
 
+## Rate Limiting (#513)
+
+<!-- markdownlint-disable MD013 -->
+
+Rack::Attack throttle thresholds. Counters live in `Rails.cache` (`solid_cache` in production, in-memory in development, disabled in test). Defaults are conservative — tighten for high-security tenants by setting the env vars below. Throttle hits emit a `[rack-attack] THROTTLED` log line (ingested by CloudWatch in prod) and return HTTP `429` with `Retry-After` + a JSON body that names the offending bucket.
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_RATE_LIMITING_ENABLED | Master kill switch for all throttles. Set `false` during emergency triage. | `true` | `false` | No |
+| SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP | Per-IP cap on upload endpoints (document creates + avatar + evidence). Defends against bulk-upload abuse. | `30` | `60` | No |
+| SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER | Per-authenticated-user cap on upload endpoints. Stops a compromised account from filling storage. | `100` | `500` | No |
+| SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE | Per-Bearer-token cap on `/api/v1` write methods (POST/PUT/PATCH/DELETE). Protects mass-import API consumers from runaway scripts. | `300` | `600` | No |
+| SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN | Per-IP cap on `POST /login` + `/auth/failure` within 1 minute. Credential-stuffing defense. | `5` | `3` | No |
+| SPARC_RATE_LIMIT_SAFELIST_CIDRS | Comma-separated CIDR list. IPs in any listed CIDR bypass ALL throttles. Used for internal health-check IPs, NLB targets, etc. Loopback addresses safelisted by default for dev convenience. | `127.0.0.1,::1` | `127.0.0.1,::1,10.0.0.0/8` | No |
+
+<!-- markdownlint-enable MD013 -->
+
+### Throttle buckets
+
+| Bucket | Discriminator | Window | Default limit |
+|---|---|---|---|
+| `uploads/5min/ip` | client IP | 5 minutes | 30 |
+| `uploads/hour/user` | authenticated user id | 1 hour | 100 |
+| `api/writes/min/token` | Bearer token (first 12 chars) | 1 minute | 300 |
+| `logins/failures/min/ip` | client IP | 1 minute | 5 |
+
+### 429 response shape
+
+```json
+{
+  "error": "Too many requests",
+  "code": "rate_limit_exceeded",
+  "bucket": "uploads/5min/ip",
+  "retry_after": 300
+}
+```
+
+Plus headers: `Retry-After: <seconds>` and `X-RateLimit-Bucket: <bucket-name>`.
+
+---
+
 ## Development HTTPS
 
 <!-- markdownlint-disable MD013 -->
