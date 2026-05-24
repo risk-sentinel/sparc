@@ -106,6 +106,19 @@ Controls which auth method the REST API accepts. Modes are mutually exclusive.
 | --- | --- | --- | --- | --- |
 | SPARC_ENABLE_USER_REGISTRATION | Allow self-service account creation (often false in prod) | false | `true` | No |
 
+### Login Consent Banner (#190)
+
+Show a mandatory consent/warning banner modal before login options
+appear. The banner HTML is loaded from the file at
+`SPARC_BANNER_MESSAGE` (relative paths resolve against `Rails.root`)
+and sanitized for XSS before rendering in a Bootstrap 5 modal. A
+sample file is provided at `docs/sample-consent-banner.html`.
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_BANNER_ENABLED | Show mandatory consent banner on login page | false | `true` | No |
+| SPARC_BANNER_MESSAGE | File path to banner HTML body (resolved against `Rails.root`) | (none) | `docs/sample-consent-banner.html` | Yes (if enabled) |
+
 ### GitHub OAuth
 
 <!-- markdownlint-disable MD013 -->
@@ -177,6 +190,55 @@ policies. These settings apply to all users unless noted otherwise.
 
 The `InactivityCheckJob` should be scheduled via cron or your job
 scheduler (e.g., `rails runner "InactivityCheckJob.perform_now"`).
+
+---
+
+## Dynamic Roles
+
+Configurable role lists for organizations and authorization boundaries.
+Comma-separated lists overriding the hardcoded defaults in
+`OrganizationMembership::DEFAULT_ROLES` and
+`AuthorizationBoundaryMembership::DEFAULT_ROLES`. Useful when a tenant
+needs a custom title set (e.g., agency-specific role names).
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_ORGANIZATION_ROLES | Comma-separated list of role names available to organization members (in addition to the always-present "Org Admin" system role) | Head of Agency, Senior Accountable Official, CIO, CISO, Risk Executive, Chief Acquisition Officer, Senior Agency Official for Privacy, Member | `Director, Officer, Member` | No |
+| SPARC_AUTH_BOUNDARY_ROLES | Comma-separated list of role names available to authorization-boundary members | Assessor / 3PAO, Authorizing Official (AO), CISO, ISSO, Team Member, System Owner (SO), View Only | `Assessor, AO, ISSO, Owner, Viewer` | No |
+
+> Set these BEFORE inviting members — existing role assignments are not
+> automatically migrated to a new role list. Removing a role name that
+> users already hold leaves them with the removed-role label until an
+> admin reassigns them.
+
+---
+
+## Organization Metadata (OSCAL Exports)
+
+Default values embedded in OSCAL document metadata (SSP, SAR, CDEF,
+etc.) when the system generates an export. Each field is optional —
+exports omit empty values rather than write blanks.
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_ORG_NAME | Organization name embedded in OSCAL metadata | Default Organization | `ACME Federal Services` | No |
+| SPARC_ORG_DESCRIPTION | Organization description embedded in OSCAL metadata | (none) | `Cloud compliance platform for civilian agencies` | No |
+| SPARC_ORG_ADDRESS | Organization address embedded in OSCAL metadata | (none) | `1600 Pennsylvania Ave NW, Washington, DC 20500` | No |
+| SPARC_ORG_CONTACT_PERSON | Primary contact person embedded in OSCAL metadata | (none) | `Jane Doe` | No |
+| SPARC_ORG_CONTACT_EMAIL | Primary contact email embedded in OSCAL metadata | (none) | `compliance@acme.gov` | No |
+
+---
+
+## DISA CCI Catalog Retrieval
+
+Controls the source URL and revision set used when SPARC fetches the
+DISA CCI (Control Correlation Identifier) list for NIST 800-53 mapping.
+Override the URL for air-gapped or mirror environments.
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_DISA_CCI_URL | Source URL for the DISA CCI list ZIP | `https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CCI_List.zip` | `https://mirror.internal/U_CCI_List.zip` | No |
+| SPARC_CCI_REVS | Comma-separated NIST 800-53 revisions to extract from the CCI list | `4,5` | `5` (Rev 5 only) or `4,5,6` (when Rev 6 publishes) | No |
 
 ---
 
