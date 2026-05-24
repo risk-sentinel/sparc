@@ -15,6 +15,17 @@ on:
         required: true
       DOCKERHUB_TOKEN:
         required: true
+      # AWS OIDC + ECR — declared here so the workflow file validates for
+      # both `push: tags` and `workflow_call` triggers. Optional because
+      # the workflow has graceful fallback / skip logic when not set.
+      # (Added during #543 vars→secrets rotation; missing declaration
+      # caused startup-failure runs on every main push post-#544.)
+      AWS_ROLE_ARN:
+        required: false
+      AWS_REGION:
+        required: false
+      ECR_REGISTRY:
+        required: false
     outputs:
       digest:
         description: 'Multi-platform image manifest digest'
