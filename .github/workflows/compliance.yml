@@ -11,6 +11,10 @@ on:
       - 'app/models/concerns/**'
       - 'config/initializers/**'
 
+# Least-privilege default (#545). Read-only workflow.
+permissions:
+  contents: read
+
 jobs:
   validate_compliance_artifacts:
     runs-on: ubuntu-latest

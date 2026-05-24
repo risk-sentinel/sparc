@@ -1,1 +1,41 @@
-* @sm00thindian @clem-field
+# SPARC CODEOWNERS — required reviewers per path.
+#
+# Catch-all uses the broader `sparc-dev` team so day-to-day code review
+# is not a single-person bottleneck. Sensitive paths (CI workflows, DB
+# migrations, boot-time hooks, compliance artifacts, base image) require
+# `sparc-admin` review because changes there affect deploy posture,
+# attack surface, or audit obligations.
+#
+# Last reviewed: 2026-05-24 (#545, pre-public-flip hardening)
+
+# ─── Catch-all ──────────────────────────────────────────────────────────
+*                               @risk-sentinel/sparc-dev
+
+# ─── CI / Actions ───────────────────────────────────────────────────────
+# Workflow changes can introduce secret exfiltration, CI minute drain,
+# or fork-PR escalation paths. Admin review required.
+/.github/                       @risk-sentinel/sparc-admin
+/.github/CODEOWNERS             @risk-sentinel/sparc-admin
+
+# ─── Database migrations ───────────────────────────────────────────────
+# Schema changes are irreversible in prod without downtime. Admin review
+# catches missing indexes, accidental destructive operations, and
+# missing idempotent guards (see #537 incident).
+/db/migrate/                    @risk-sentinel/sparc-admin
+
+# ─── Boot-time configuration ───────────────────────────────────────────
+# Initializers run before Zeitwerk indexes app/ — easy to introduce
+# autoload-order bugs that only manifest in container builds.
+/config/initializers/           @risk-sentinel/sparc-admin
+/config/environments/           @risk-sentinel/sparc-admin
+
+# ─── Compliance artifacts ──────────────────────────────────────────────
+# OSCAL CDEFs and the NIST 800-53 mapping carry audit weight. Admin
+# review keeps the compliance posture coherent across PRs.
+/docs/compliance/               @risk-sentinel/sparc-admin
+
+# ─── Base image ─────────────────────────────────────────────────────────
+# Base image changes affect every deployed instance and shift CVE
+# baseline.
+/Dockerfile                     @risk-sentinel/sparc-admin
+/docker-compose-prod.yaml       @risk-sentinel/sparc-admin

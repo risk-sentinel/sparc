@@ -5,6 +5,11 @@ on:
   push:
     branches: [ main ]
 
+# Least-privilege default (#545). Jobs that need more (e.g., pull-requests:
+# read for paths-filter) declare their own permissions block to override.
+permissions:
+  contents: read
+
 jobs:
 
   # ── Path filter: skip expensive jobs on workflow-only PRs ──────
