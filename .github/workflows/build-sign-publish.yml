@@ -136,8 +136,8 @@ jobs:
         if: needs.prepare.outputs.dry_run != 'true'
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
         if: needs.prepare.outputs.dry_run != 'true'
@@ -149,7 +149,7 @@ jobs:
         run: |
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
           DOCKERHUB="risksentinel/sparc"
-          ECR="${{ vars.ECR_REGISTRY || 'ECR_NOT_CONFIGURED' }}"
+          ECR="${{ secrets.ECR_REGISTRY || 'ECR_NOT_CONFIGURED' }}"
 
           echo "dockerhub_image=${DOCKERHUB}" >> "$GITHUB_OUTPUT"
           echo "ecr_image=${ECR}" >> "$GITHUB_OUTPUT"
@@ -176,10 +176,10 @@ jobs:
 
       - name: Compute ECR tags
         id: ecr-tags
-        if: vars.ECR_REGISTRY != '' && needs.prepare.outputs.dry_run != 'true'
+        if: secrets.ECR_REGISTRY != '' && needs.prepare.outputs.dry_run != 'true'
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
-          ECR="${{ vars.ECR_REGISTRY }}"
+          ECR="${{ secrets.ECR_REGISTRY }}"
           # Version tag only — no latest (ECR uses immutable tags)
           echo "tags=${ECR}:${VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -273,8 +273,8 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
@@ -289,10 +289,10 @@ jobs:
           COSIGN_EXPERIMENTAL: "1"
 
       - name: Sign ECR image
-        if: vars.ECR_REGISTRY != ''
+        if: secrets.ECR_REGISTRY != ''
         run: |
           cosign sign --yes \
-            ${{ vars.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
+            ${{ secrets.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
         env:
           COSIGN_EXPERIMENTAL: "1"
 
@@ -306,12 +306,12 @@ jobs:
             risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
 
       - name: Verify ECR signature
-        if: vars.ECR_REGISTRY != ''
+        if: secrets.ECR_REGISTRY != ''
         run: |
           cosign verify \
             --certificate-identity-regexp="https://github.com/risk-sentinel/sparc/" \
             --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-            ${{ vars.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
+            ${{ secrets.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
 
       # ── SBOM generation and attestation ──
 
@@ -330,13 +330,13 @@ jobs:
             risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
 
       - name: Attest SBOM to ECR
-        if: vars.ECR_REGISTRY != ''
+        if: secrets.ECR_REGISTRY != ''
         run: |
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
           cosign attest --yes \
             --predicate sparc-sbom-${VERSION}.cdx.json \
             --type cyclonedx \
-            ${{ vars.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
+            ${{ secrets.ECR_REGISTRY }}@${{ needs.build-and-push.outputs.digest }}
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v7
@@ -360,7 +360,7 @@ jobs:
           | Registry | Image | Tag |
           |----------|-------|-----|
           | Docker Hub | \`risksentinel/sparc\` | \`${VERSION}\` |
-          | ECR | \`${{ vars.ECR_REGISTRY }}\` | \`${VERSION}\` |
+          | ECR | \`${{ secrets.ECR_REGISTRY }}\` | \`${VERSION}\` |
 
           ### Signing & Attestation
 

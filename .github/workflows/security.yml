@@ -488,7 +488,7 @@ jobs:
 
       - name: Run Trivy container scan (ASFF for SAF trivy2hdf)
         env:
-          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: trivy image --format template --template "@contrib/asff.tpl" --output trivy-container-asff.json --scanners vuln sparc:${{ github.sha }}
         continue-on-error: true
@@ -1404,8 +1404,8 @@ jobs:
         if: env.HAS_DISPATCH_TOKEN == 'true'
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Upload compliance artifacts to S3
         if: env.HAS_DISPATCH_TOKEN == 'true'
@@ -1413,7 +1413,7 @@ jobs:
           DATE=$(date -u +%Y-%m-%d)
           SHA=${GITHUB_SHA::7}
           PREFIX="${DATE}/${SHA}/app"
-          BUCKET="${{ vars.COMPLIANCE_S3_BUCKET }}"
+          BUCKET="${{ secrets.COMPLIANCE_S3_BUCKET }}"
           if [ -z "$BUCKET" ]; then
             echo "::warning::COMPLIANCE_S3_BUCKET not set — skipping S3 upload"
             exit 0
@@ -1524,8 +1524,8 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Upload performance chart to S3
         if: github.ref == 'refs/heads/main'
@@ -1533,10 +1533,10 @@ jobs:
           BUCKET="<security-artifacts-bucket>"
           aws s3 cp docs/ci/pipeline-performance.png \
             "s3://${BUCKET}/latest/pipeline-performance.png" \
-            --region ${{ vars.AWS_REGION || 'us-east-1' }}
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           aws s3 cp docs/ci/pipeline-metrics.csv \
             "s3://${BUCKET}/latest/pipeline-metrics.csv" \
-            --region ${{ vars.AWS_REGION || 'us-east-1' }}
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Performance Summary
         run: |
