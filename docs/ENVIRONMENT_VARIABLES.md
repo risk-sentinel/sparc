@@ -187,6 +187,7 @@ policies. These settings apply to all users unless noted otherwise.
 | --- | --- | --- | --- | --- |
 | SPARC_INACTIVITY_DAYS | Number of days of inactivity (no sign-in) before a user account is automatically deactivated by `InactivityCheckJob`. Applies to all users. | 30 | `90` | No |
 | SPARC_PASSWORD_EXPIRY_DAYS | Number of days before a local-auth user's password expires and must be reset. OAuth/SSO-only users are exempt. | 30 | `90` | No |
+| SPARC_PROCESSING_STUCK_MINUTES | Minutes after which a document stuck in pending/processing stops auto-refreshing on its show page (#548). Without this guard, documents whose parsing job never ran trap the browser in a 3-second refresh loop. | 5 | `10` | No |
 
 The `InactivityCheckJob` should be scheduled via cron or your job
 scheduler (e.g., `rails runner "InactivityCheckJob.perform_now"`).

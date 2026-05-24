@@ -26,8 +26,14 @@ class Api::V1::BaseController < ActionController::API
 
   private
 
+  # Resolve pagination size from request params (?items=N or ?per_page=N),
+  # falling back to the per-endpoint default. Clamped to a hard ceiling to
+  # prevent ?items=999999 from triggering a giant ActiveRecord query (#549).
+  MAX_PAGINATION_LIMIT = 200
+
   def paginate(scope, items: 25)
-    pagy, records = pagy(:offset, scope, limit: items)
+    per_page = resolve_pagination_size(default: items)
+    pagy, records = pagy(:offset, scope, limit: per_page)
     {
       data: records,
       meta: {
@@ -37,6 +43,16 @@ class Api::V1::BaseController < ActionController::API
         items: pagy.limit
       }
     }
+  end
+
+  def resolve_pagination_size(default:)
+    raw = params[:items].presence || params[:per_page].presence
+    return default if raw.blank?
+
+    n = raw.to_i
+    return default if n <= 0
+
+    [ n, MAX_PAGINATION_LIMIT ].min
   end
 
   # Shared OSCAL metadata and back-matter serialization for document APIs.

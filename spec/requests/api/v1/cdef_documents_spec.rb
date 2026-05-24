@@ -30,6 +30,41 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       expect(parsed["meta"]).to include("page", "count")
     end
 
+    # Issue #549 — paginate() must honor ?items / ?per_page from the client.
+    # Previously these were ignored and meta.items always reflected the
+    # controller's hardcoded default.
+    describe "pagination query params" do
+      before { create_list(:cdef_document, 8) }
+
+      it "honors ?items=N" do
+        get api_v1_cdef_documents_path, params: { items: 3 }, headers: auth_headers
+        parsed = JSON.parse(response.body)
+        expect(parsed["data"].length).to eq(3)
+        expect(parsed["meta"]["items"]).to eq(3)
+      end
+
+      it "honors ?per_page=N as an alias for ?items" do
+        get api_v1_cdef_documents_path, params: { per_page: 2 }, headers: auth_headers
+        parsed = JSON.parse(response.body)
+        expect(parsed["data"].length).to eq(2)
+        expect(parsed["meta"]["items"]).to eq(2)
+      end
+
+      it "clamps absurd ?items values to MAX_PAGINATION_LIMIT" do
+        get api_v1_cdef_documents_path, params: { items: 999_999 }, headers: auth_headers
+        parsed = JSON.parse(response.body)
+        expect(parsed["meta"]["items"]).to eq(Api::V1::BaseController::MAX_PAGINATION_LIMIT)
+      end
+
+      it "falls back to default when ?items is non-positive or blank" do
+        get api_v1_cdef_documents_path, params: { items: 0 }, headers: auth_headers
+        expect(JSON.parse(response.body)["meta"]["items"]).to eq(25)
+
+        get api_v1_cdef_documents_path, params: { items: "" }, headers: auth_headers
+        expect(JSON.parse(response.body)["meta"]["items"]).to eq(25)
+      end
+    end
+
     it "filters by cdef_type" do
       create(:cdef_document, cdef_type: "disa_stig")
       create(:cdef_document, cdef_type: "cis")

@@ -9,6 +9,14 @@
 
   progress_message = document.metadata_extra&.dig("processing_message")
   started_at       = document.metadata_extra&.dig("processing_started_at")
+
+  # #548 — bail out of the meta-refresh loop when a document has been
+  # pending/processing past the configured threshold. Without this guard,
+  # documents whose parsing job never ran (API-created stubs, dead Sidekiq
+  # jobs, etc.) trap the browser in a 3-second redirect loop forever.
+  stuck_minutes = SparcConfig.processing_stuck_minutes
+  reference_time = started_at.present? ? Time.parse(started_at) : document.created_at
+  is_stuck = reference_time.present? && reference_time < stuck_minutes.minutes.ago
 %>
 
 <% if document.failed? %>
@@ -17,6 +25,23 @@
     <h2 class="sparc-processing-title sparc-processing-title-error"><%= failed_title %></h2>
     <p class="sparc-processing-text">
       <%= document.error_message.presence || "An unknown error occurred." %>
+    </p>
+    <div style="margin-top: 1.25rem;">
+      <%= link_to "&#8592; #{back_label}".html_safe, back_path, class: "sparc-btn-ghost" %>
+    </div>
+  </div>
+<% elsif is_stuck %>
+  <div class="sparc-processing-banner">
+    <div class="sparc-processing-icon">&#x26A0;</div>
+    <h2 class="sparc-processing-title sparc-processing-title-error">Processing Stuck</h2>
+    <p class="sparc-processing-text">
+      This document has been in <strong><%= document.status %></strong> status
+      for more than <%= stuck_minutes %> minutes with no progress. The parsing
+      job may have failed silently or never been queued.
+    </p>
+    <p class="sparc-processing-text-muted" style="font-size: 0.85rem;">
+      Try deleting and re-uploading the document. If this keeps happening,
+      contact an administrator to check the background job queue.
     </p>
     <div style="margin-top: 1.25rem;">
       <%= link_to "&#8592; #{back_label}".html_safe, back_path, class: "sparc-btn-ghost" %>

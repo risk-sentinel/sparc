@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.7.1"
+  VERSION = "1.7.2"
 
   module_function
 
@@ -75,6 +75,11 @@ module SparcConfig
 
   def inactivity_days      = ENV.fetch("SPARC_INACTIVITY_DAYS", "30").to_i
   def password_expiry_days = ENV.fetch("SPARC_PASSWORD_EXPIRY_DAYS", "30").to_i
+
+  # #548 — guard against meta-refresh trap on document show pages.
+  # Documents in pending/processing for longer than this stop polling
+  # and show a "stuck" message instead of looping every 3 seconds.
+  def processing_stuck_minutes = ENV.fetch("SPARC_PROCESSING_STUCK_MINUTES", "5").to_i
 
   # ── Authentication Toggles ────────────────────────────────────────────────
   # All default to false — features must be explicitly enabled.
