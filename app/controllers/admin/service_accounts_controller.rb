@@ -10,7 +10,7 @@ module Admin
   # NIST 800-53 Controls:
   #   AC-2 Account Management (create/disable/enable/delete lifecycle)
   #   AC-3 Access Enforcement (endpoint scoping via allowed_endpoints)
-  #   AC-6 Least Privilege (service accounts cannot be admin)
+  #   AC-6 Least Privilege (admin flag is per-SA opt-in, never implicit)
   #   AC-17 Remote Access (optional CIDR allowlist)
   #   IA-4 Identifier Management (UUID + sparc_sa_ prefix)
   #   IA-5 Authenticator Management (token generation, expiration, rotation)
@@ -171,11 +171,11 @@ module Admin
     end
 
     def service_account_params
-      params.require(:user).permit(:email, :first_name, :last_name, :display_name, :owner_id)
+      params.require(:user).permit(:email, :first_name, :last_name, :display_name, :owner_id, :admin)
     end
 
     def service_account_update_params
-      params.require(:user).permit(:email, :first_name, :last_name, :display_name, :owner_id)
+      params.require(:user).permit(:email, :first_name, :last_name, :display_name, :owner_id, :admin)
     end
 
     def parse_list_param(param)

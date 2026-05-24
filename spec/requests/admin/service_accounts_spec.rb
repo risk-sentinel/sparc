@@ -54,10 +54,11 @@ RSpec.describe "Admin::ServiceAccounts", type: :request do
       expect(flash[:api_token]).to start_with("sparc_sa_")
     end
 
-    it "rejects service account with admin flag" do
+    # Issue #536 — admin-owned SAs may carry admin privileges. Operator
+    # decides per-SA; AC-6 is satisfied by per-SA opt-in (no implicit admin).
+    it "allows a service account with the admin flag set" do
       sa = build(:user, service_account: true, admin: true, owner: owner)
-      expect(sa).not_to be_valid
-      expect(sa.errors[:admin]).to include("cannot be true for service accounts")
+      expect(sa).to be_valid
     end
   end
 

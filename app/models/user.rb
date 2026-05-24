@@ -52,8 +52,6 @@ class User < ApplicationRecord
 
   validates :status, inclusion: { in: %w[active suspended deactivated] }
 
-  # AC-6: Service accounts cannot be instance admins
-  validate :service_account_cannot_be_admin
   # AC-2: Service accounts must have a human owner
   validates :owner_id, presence: { message: "is required for service accounts" }, if: :service_account?
 
@@ -228,12 +226,6 @@ class User < ApplicationRecord
   end
 
   private
-
-  def service_account_cannot_be_admin
-    if service_account? && admin?
-      errors.add(:admin, "cannot be true for service accounts")
-    end
-  end
 
   def normalize_email
     self.email = email.to_s.downcase.strip if email.present?
