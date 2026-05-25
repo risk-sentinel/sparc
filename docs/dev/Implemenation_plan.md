@@ -3,7 +3,7 @@
 Structured, prioritized roadmap for the open issues in the SPARC
 GitHub repository.
 
-**Last updated:** 2026-05-13
+**Last updated:** 2026-05-25
 
 ---
 
@@ -558,6 +558,90 @@ Umbrella: #413 — close on #433 merge
 
 ---
 
+### Phase 13: v1.7.x Pre-Pen-Test Hardening + Patch Fixes (COMPLETE)
+
+**Goal:** Harden the upload + transport + auth surface ahead of a planned penetration test, then ship the prod bugs surfaced during baseline API test runs against `sparc.risk-sentinel.org`.
+
+<!-- markdownlint-disable MD013 -->
+
+| Priority | Status | Issue | Description | Notes |
+| -------- | ------ | ----- | ----------- | ----- |
+| **P0** | [x] | ~~#509~~ | ~~Magic-byte / content-type cross-check + structural parse validation~~ — **COMPLETED 2026-05-22** | Marcel-driven content-type validation (defeats rename-only `foo.exe → foo.json` attacks) + 5s structural parse timeout. Shipped on `feature/509_magic_byte_validation` (PR #523) + executable-signature deny-list follow-up on `feature/509_followup_executable_signatures` (PR #526). |
+| **P0** | [x] | ~~#510~~ | ~~File size limits + zip-bomb defense~~ — **COMPLETED 2026-05-22** | `SPARC_MAX_UPLOAD_MB` / `SPARC_MAX_AVATAR_MB` env-var caps + uncompressed-total check for `.xlsx` (Roo parsing). Shipped on `feature/510_upload_size_limits` (PR #522). |
+| **P0** | [x] | ~~#511~~ | ~~Nokogiri XXE hardening via XmlSecurity helper~~ — **COMPLETED 2026-05-22** | Single `lib/xml_security.rb` funnel applied across 11 call-sites — `NONET`, no `NOENT/DTDLOAD/HUGE`. Defeats XXE + billion-laughs. Shipped on `feature/511_nokogiri_xxe_hardening` (PR #517). |
+| **P0** | [x] | ~~#513~~ | ~~Rate limiting via Rack::Attack~~ — **COMPLETED 2026-05-23** | Five throttle buckets (auth + API write + uploads + login failures + global) keyed off Rails.cache (solid_cache prod). Safelist CIDRs via `SPARC_RATE_LIMIT_SAFELIST_CIDRS`. Shipped on `feature/513_rate_limiting` (PR #527). |
+| **P0** | [x] | ~~#514~~ | ~~CSP enforce mode + per-request nonces~~ — **COMPLETED 2026-05-23** | Promoted from `report_only=true` to enforce. Nonce generator switched from `request.session.id` to `SecureRandom.base64(16)`. Shipped on `feature/514_csp_enforce` (PR #529). |
+| **P0** | [x] | ~~#515~~ | ~~Cookieless userdata subdomain for blob downloads~~ — **COMPLETED 2026-05-23** | Session cookie scoped host-only (no `Domain=` attribute per RFC 6265); blob serving routed through `userdata.<host>` so session token is never exposed to user-uploaded content. Shipped on `feature/515_cookieless_userdata` (PR #530). |
+| **P0** | [x] | ~~#524~~ | ~~Production security operator guide~~ — **COMPLETED 2026-05-23** | 16-section operator hardening guide at `docs/PRODUCTION_SECURITY.md` (388 lines): threat model, auth + MFA, segmentation, malware scanning patterns, CSP, rate limiting, audit/compliance, image hygiene, DR, sparc-validate, v1.7.0 checklist. Shipped on `feature/524_prod_security_doc` (PR #533). |
+| **P0** | [x] | ~~#525~~ | ~~Scanner findings audit + suppression inventory~~ — **COMPLETED 2026-05-23** | `docs/security/SCANNER_FINDINGS_AUDIT.md` consolidates `.trivyignore` (9 entries) + confirms zero app-code suppressions across Brakeman / CodeQL / Rubocop / Bundler-audit / Trivy / Grype. Shipped on `feature/525_scanner_findings_audit` (PR #532). |
+| **P0** | [x] | ~~#535~~ | ~~Admin navigation: surface Service Accounts in User dropdown~~ — **COMPLETED 2026-05-24** | One-line view fix in `app/views/layouts/application.html.erb` + spec coverage. Shipped on `fix/535_admin_nav_service_accounts` (PR #540) as part of v1.7.1. |
+| **P0** | [x] | ~~#536~~ | ~~Hybrid mode: allow admin-owned SAs to hold admin~~ — **COMPLETED 2026-05-24** | Drop the `service_account_cannot_be_admin` validation in `app/models/user.rb`; expose admin checkbox on `/admin/service_accounts/new` + edit. AC-6 satisfied by explicit per-SA opt-in. Shipped on `fix/536_allow_admin_service_accounts` as part of v1.7.1 bundle (PR #539). |
+| **P0** | [x] | ~~#537~~ | ~~Restore `cloned_from_id` column on `cdef_documents` (schema drift)~~ — **COMPLETED 2026-05-24** | Idempotent migration recovering the column + FK + partial unique index that #466 originally added; lost on prod DBs that crossed the #470 squash without running #466 first. Shipped in v1.7.1 bundle (PR #539). |
+| **P0** | [x] | ~~#541~~ | ~~Document 10 SPARC_* env vars missing from operator catalog~~ — **COMPLETED 2026-05-24** | Added Login Consent Banner / Dynamic Roles / Organization Metadata / DISA CCI sections to `docs/ENVIRONMENT_VARIABLES.md`. Drift audit (`grep -oE 'SPARC_[A-Z_]+'`) now clean modulo intentionally-omitted `SPARC_ENABLE_XLSX_UPLOADS`. Shipped on `docs/541_env_var_doc_gap` (PR #542). |
+| **P0** | [x] | ~~#543~~ | ~~Rotate all GitHub Actions vars to secrets (pre-public-flip)~~ — **COMPLETED 2026-05-24** | 22 references across `build-sign-publish.yml` + `security.yml` rewritten from `vars.X` → `secrets.X`. Fork-PR safety verified — every AWS-touching step already gated by `HAS_DISPATCH_TOKEN` or main-only conditions. Shipped on `security/543_vars_to_secrets` (PR #544). |
+| **P0** | [x] | ~~#547~~ | ~~Declare AWS secrets in build-sign-publish workflow_call block~~ — **COMPLETED 2026-05-24** | Added `AWS_ROLE_ARN` / `AWS_REGION` / `ECR_REGISTRY` to `on.workflow_call.secrets` (regression from #543). Necessary but not sufficient — see #553. Shipped on `fix/build_workflow_secrets_declaration` (PR #547). |
+| **P0** | [x] | ~~#548~~ | ~~Processing-banner meta-refresh trap bailout (Tier 1)~~ — **COMPLETED 2026-05-24** | `_processing_banner.html.erb` no longer emits `<meta refresh>` for documents stuck past `SparcConfig.processing_stuck_minutes` (default 5, override `SPARC_PROCESSING_STUCK_MINUTES`). Renders "Processing Stuck" message + Back button. Shipped in v1.7.2 bundle (PR #552). Tier 2/3 (API status=complete + sweeper) tracked in #548. |
+| **P0** | [x] | ~~#549~~ | ~~paginate() honors ?items / ?per_page query params~~ — **COMPLETED 2026-05-24** | `Api::V1::BaseController#paginate` now reads `params[:items] || params[:per_page]` with `MAX_PAGINATION_LIMIT = 200` clamp guard. Cleared 6 `test_pagination_query_params_respected` failures across document types in `tests/api/`. Shipped in v1.7.2 bundle (PR #552). |
+| **P0** | [x] | ~~#553~~ | ~~Move secrets.ECR_REGISTRY out of step-level if conditionals~~ — **COMPLETED 2026-05-24** | The real fix for the #547 follow-on: GitHub does NOT allow `secrets` context in step-level `if:` despite docs claiming otherwise (caught by actionlint). Hoisted to job-level `env: HAS_ECR` mirroring security.yml's `HAS_DISPATCH_TOKEN` pattern. Unblocked v1.7.2 image build (the first v1.7.2 tag silently failed to fire the workflow). Shipped on `fix/build_workflow_secrets_in_if` (PR #553). |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** OWASP-aligned upload defense, transport hardening (CSP, cookie scoping, rate limiting), CI secret hygiene, operator-facing security documentation, and three patch releases (v1.7.0, v1.7.1, v1.7.2) closing every prod bug surfaced during baseline pen-test prep.
+
+---
+
+### Phase 14: Pre-Public-Flip + API Test Validation + CDEF Mutations (CURRENT)
+
+**Goal:** Land the remaining pre-public-flip hardening (operator UI clicks + IaC trust-policy work), close the content-style API test gap (#433), then build OSCAL-correct CDEF mutation primitives (#498, #499) so the AWS Labs ingest flow has a first-class authoring layer.
+
+<!-- markdownlint-disable MD013 -->
+
+| Priority | Status | Issue | Description | Notes |
+| -------- | ------ | ----- | ----------- | ----- |
+| **P0** | [ ] | #545 | Pre-public-flip hardening checklist | Operator UI clicks (branch protection, env-scoped secrets, outside-contributor approval, tag protection, default GITHUB_TOKEN perms, org Actions allowlist) + pre-flip log audit. Code-side (CODEOWNERS + workflow `permissions:` blocks) already shipped via PR #546. Companion `risk-sentinel/sparc-iac#281` tightens the OIDC trust policy. Blocks: public repo flip. |
+| **P0** | [ ] | #433 | Test suite — content-style validation | In progress. Slice 1 (pydantic response schemas) ready to start once v1.7.2 deploys on prod and an admin-flagged SA exists. Baseline run shows 151 of ~205 tests pass; pagination drift (now fixed via #549) and SA-admin gate (now fixed via #536) cleared. Remaining failures will be the actual schema/content drift work. |
+| **P1** | [ ] | #498 | CdefMutationService — single discipline for OSCAL-compliant CDEF mutations + first-class back-matter | Foundational for #499. Currently CDEF mutations are scattered across controllers + services; this consolidates and enforces OSCAL invariants at the mutation boundary. |
+| **P1** | [ ] | #499 | Bulk-apply Converter output to CDEF clone + NIST Rev 4 ↔ Rev 5 helper | Depends on #498. Lets operators take Converter results (AWS Security Hub → NIST) and apply them en masse to a cloned CDEF, with mapping help between Rev 4 ↔ Rev 5 framework versions. |
+| **P2** | [ ] | #528 | CSP follow-up — remove unsafe-inline, refactor inline scripts, add reporting | Post-v1.7.0 follow-up. Track-down all inline `<script>` blocks across `app/views/`, refactor to per-request nonces or Stimulus controllers. Required to remove `'unsafe-inline'` from the active CSP policy. |
+| **P2** | [ ] | #531 | Optional GuardDuty S3 tag check hook on blob serving | Post-v1.7.0 follow-up. ActiveStorage middleware that reads GuardDuty's `GuardDuty-Malware-Protection-Status` S3 object tag and refuses to serve infected blobs. Defense-in-depth beside container-side scanning. |
+| **P2** | [ ] | #447 | Umbrella: HDF Amendment translation/UI layer for tenant CI/CD finding triage | Plan B (deferred 2026-05-06). Hosted multi-reviewer disposition workflow with full UI. Stays parked unless customer demand justifies the scope (~4k LOC + UI). #449 shipped the lean stateless API instead. |
+| **P3** | [ ] | #341 | Add XML document type fingerprinting for upload validation | Defensive, post-#392. Touches `FileUploadable` and parser entry-points. Coordinate with anything else editing those concerns. |
+| **P3** | [ ] | #246 | Repository cleanup & OSCAL fixtures bloat | Background lane. Scope-define needed; treat as parallelizable while a feature ships. |
+| **P3** | [ ] | #413 | API documentation + automated testing — umbrella | Close on #433 merge (Phase 2 of the umbrella). |
+| **P3** | [ ] | #422 | POAM Scenario B — cross-instance federated POAM visibility | Gated on first real federation deployment (peers configured + `SPARC_HASH` rotated in production). Stays parked until that exists. |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Repo safe to flip public, type-safe API test suite catching schema drift before deploy, OSCAL-correct CDEF mutation API and bulk Converter application workflow, CSP without `unsafe-inline`.
+
+**Sequencing:**
+
+```text
+Sprint 14a (PUBLIC-FLIP CRITICAL):
+  Operator:   #545 settings clicks + sparc-iac#281 OIDC trust apply
+  Dev A:      #433 slice 1 (pydantic schemas, read paths)  -- starts after v1.7.2 deploys
+
+Sprint 14b (post-flip):
+  Dev A:      #433 slices 2-5 (write paths, round-trip, audit, OSCAL)
+  Dev B:      #498 CdefMutationService
+  Dev C:      #341 XML fingerprinting (background)
+
+Sprint 14c:
+  Dev B:      #499 bulk Converter → CDEF (depends on #498)
+  Dev A:      #528 CSP unsafe-inline removal (after #433 lands so test coverage is in place)
+  Dev C:      #531 GuardDuty hook (if Prisma/GuardDuty decision lands)
+
+Backlog / gated:
+  #246  -- background lane any time
+  #413  -- closes when #433 merges
+  #422  -- gated on first federated deployment
+  #447  -- gated on customer demand
+```
+
+> **Order rule:** #545 + sparc-iac#281 MUST land before any visibility flip on the repo. Everything else can run in parallel once those are done.
+
+---
+
 ## Closed / Removed Issues
 
 The following issues from the original plan have been resolved or
@@ -595,12 +679,14 @@ removed and are no longer tracked:
 | 9 | 3-4 weeks | FedRAMP 20x | #107, #108 | **COMPLETE** |
 | 10 | Ongoing | Platform Hardening & Polish | #234-#375 (25 issues) | **COMPLETE** |
 | 11 | 4-6 weeks | OSCAL Integrity, Enterprise & Infrastructure | #344, #346, #358, #361, #372 | **COMPLETE** |
-| 12 | Current | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, ~~#445~~, ~~#440~~, ~~#449~~, ~~#451~~, #453, #447 (Plan B), #433, #341, #246, #422, #413 | In Progress |
+| 12 | Complete | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, ~~#445~~, ~~#440~~, ~~#449~~, ~~#451~~, ~~#453~~ | **COMPLETE** (carried items #433, #341, #246, #422, #413, #447 moved to Phase 14) |
+| 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
+| 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422 | In Progress |
 
 <!-- markdownlint-enable MD013 -->
 
-**Total issues tracked:** 71 (23 original + 48 ad-hoc/new — adds #436, #445, #440, #447, #449, #451, #453)
-**Completed (Phases 1-11 + ad-hoc):** 75 issues (incl. #415 Scenario A + #416 + #423 + #424 POAM completion — completed 2026-04-27; #419 SPARC_HASH master-key rotation rake — completed 2026-04-25; #430 GitHub org migration completed 2026-05-02; #436 CI consolidating-gate pattern completed 2026-05-05; #244 security gate + #367 coverage threshold completed 2026-05-06; #445 PR checklist hygiene completed 2026-05-06; #440 CMS attestation export completed 2026-05-06; #449 HDF↔OSCAL translation bridge completed 2026-05-07; #451 OSCAL export schema-validation fixes + UX uniformity completed 2026-05-07)
-**Remaining (Phase 12 active backlog):** 6 issues — P1: #433 / P2: #341, #246 / P3: #453 (OSCAL schema bake — active, must land before v1.6.0 prod deploy), #447 (Plan B / hosted-disposition workflow with UI — deferred), #422 (gated on first federation deployment), #413 (umbrella; closes on #433 merge)
-**Phases 1-11 complete.** Phase 12 (post-migration active backlog) in progress.
-**First public release: v1.0.0** (#271). **Current version: v1.5.0** (released 2026-05-05 — API test suite, org migration, security patches). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430).
+**Total issues tracked:** 88 (23 original + 65 ad-hoc/new — adds the v1.7.x hardening cluster #509–#553)
+**Completed (Phases 1-13):** 92 issues including the full v1.7.x sprint (17 issues across hardening + patch releases). v1.7.2 shipped 2026-05-24 (image `risksentinel/sparc:1.7.2`).
+**Remaining (Phase 14 active backlog):** 11 issues — P0: #545 (operator clicks pre-public-flip), #433 (in progress) / P1: #498, #499 (CDEF mutations chain) / P2: #528, #531, #447 (deferred) / P3: #341, #246, #413, #422 (gated)
+**Phases 1-13 complete.** Phase 14 (pre-public-flip + API test validation + CDEF mutations) in progress.
+**First public release: v1.0.0** (#271). **Current version: v1.7.2** (released 2026-05-24 — pagination fix + processing-banner trap + CI workflow validator fix). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430). **Repo flipping to public** — gated on #545 completion + `risk-sentinel/sparc-iac#281`.

@@ -5,15 +5,17 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-04-14
+**Last updated:** 2026-05-25
 
 ---
 
 ## 1. Domain Ownership Map
 
-The codebase divides into **13 isolated domains**. Each issue is
-assigned to exactly one primary domain. A developer "owns" a domain
-lane for a sprint.
+The codebase divides into **15 isolated domains** (#509–#515 added two
+v1.7.0 hardening lanes — Upload Security and Transport/Session
+Hardening — that didn't exist when this map was first drawn). Each
+issue is assigned to exactly one primary domain. A developer "owns"
+a domain lane for a sprint.
 
 <!-- markdownlint-disable MD013 -->
 
@@ -30,8 +32,10 @@ lane for a sprint.
 | **Boundary/Org** | `authorization_boundary.rb`, `organization.rb`, boundary controllers, admin org views | Dev D |
 | **Evidence** | `evidence.rb`, `attestation.rb`, `evidences_controller` | Dev D |
 | **API (v1)** | `api/v1/*_controller.rb`, API serializers, API auth middleware | Dev D |
-| **CI/Infrastructure** | `.github/workflows/`, `docker-compose.yml`, `Dockerfile`, CI pipelines | Dev E |
-| **Shared/Cross-cutting** | `OscalMetadata` concern, `oscal_schema_validation_service`, `document_duplication_service`, `application.html.erb` layout, shared partials, routes, Stimulus controllers, `db/migrate/` | Requires PR review from 2 devs |
+| **CI/Infrastructure** | `.github/workflows/`, `docker-compose.yaml`, `Dockerfile`, CI pipelines, `.github/CODEOWNERS`, `.github/required-checks.json` | Dev E |
+| **Upload Security** | `lib/xml_security.rb`, `app/controllers/concerns/file_uploadable.rb`, `app/models/concerns/attachment_size_limit.rb`, magic-byte detection logic, zip-bomb checks, executable-signature deny-list. Touches every upload entry point — coordinate with parser services. | Dev D (owns auth) — share lane with Dev E (uploads cross deploy infra) |
+| **Transport/Session Hardening** | `config/initializers/content_security_policy.rb`, `config/initializers/rack_attack.rb`, `config/initializers/session_store.rb` (comment-only protective file), `config/environments/production.rb` userdata host wiring, `SparcConfig` rate-limit + userdata accessors | Dev E (deploy posture) |
+| **Shared/Cross-cutting** | `OscalMetadata` concern, `oscal_schema_validation_service`, `document_duplication_service`, `application.html.erb` layout, `_processing_banner.html.erb` (#548), shared partials, routes, Stimulus controllers, `db/migrate/`, `app/models/sparc_config.rb` (every new env-var lands here) | Requires PR review from 2 devs |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -352,6 +356,67 @@ Dev E: #300 (compliance artifact pipeline) -- CI/Infrastructure domain ✅ COMPL
 
 ---
 
+### Phase 13 -- v1.7.x Pre-Pen-Test Hardening (COMPLETE)
+
+All 17 issues shipped across v1.7.0 / v1.7.1 / v1.7.2 (2026-05-22 → 2026-05-24). Domain breakdown so future work in these areas knows who touched them last:
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Domain | Files Touched | Notes |
+| ------ | ----- | ------ | ------------- | ----- |
+| [x] | #509 | Upload Security | `file_uploadable.rb`, `parser_service`s, magic-byte deny-list constant | Marcel-driven content-type validation |
+| [x] | #510 | Upload Security | `attachment_size_limit.rb` concern, `sparc_config.rb` MB accessors, Roo path size guard | Zip-bomb defense, env-var caps |
+| [x] | #511 | Upload Security | `lib/xml_security.rb` (new), 11 Nokogiri call-sites | XXE hardening single funnel |
+| [x] | #513 | Transport/Session Hardening | `config/initializers/rack_attack.rb` (new), `sparc_config.rb` throttle accessors | 5 throttle buckets, safelist CIDR |
+| [x] | #514 | Transport/Session Hardening | `config/initializers/content_security_policy.rb` | enforce mode, per-request nonces |
+| [x] | #515 | Transport/Session Hardening | `config/environments/production.rb`, `sparc_config.rb` userdata host derivation | Cookieless userdata subdomain |
+| [x] | #524 | Documentation | `docs/PRODUCTION_SECURITY.md` (new, 388 lines) | Operator hardening guide |
+| [x] | #525 | Documentation | `docs/security/SCANNER_FINDINGS_AUDIT.md` (new), `.trivyignore` review | Suppression inventory |
+| [x] | #535 | Shared/UI | `app/views/layouts/application.html.erb` admin nav, view spec | One-line nav fix |
+| [x] | #536 | Auth/Users | `app/models/user.rb` (drop validation), `admin/service_accounts_controller.rb`, new + edit views | Lift SA admin restriction |
+| [x] | #537 | Shared/Cross-cutting | `db/migrate/20260523200000_*.rb`, `cdef_documents_controller.rb` (existing reference), schema | Idempotent migration recovering lost column |
+| [x] | #541 | Documentation | `docs/ENVIRONMENT_VARIABLES.md` | Drift audit + 10 new entries |
+| [x] | #543 | CI/Infrastructure | `.github/workflows/build-sign-publish.yml`, `.github/workflows/security.yml` | vars → secrets rotation |
+| [x] | #547 | CI/Infrastructure | `.github/workflows/build-sign-publish.yml` (workflow_call.secrets block) | Necessary not sufficient for #553 |
+| [x] | #548 | Shared/UI | `app/views/shared/_processing_banner.html.erb`, `sparc_config.rb`, view spec | Meta-refresh trap bailout (Tier 1) |
+| [x] | #549 | API (v1) | `app/controllers/api/v1/base_controller.rb` | paginate() honors ?items/?per_page |
+| [x] | #553 | CI/Infrastructure | `.github/workflows/build-sign-publish.yml` (job-level env hoist) | Real fix for #547 follow-on |
+
+<!-- markdownlint-enable MD013 -->
+
+> **Lesson saved to team memory:** the v1.7.x sprint produced four
+> repeatable failure modes worth knowing — initializer autoload order
+> (#514), middleware spec patterns (#513), `secrets` context in step
+> `if:` (#553), and workflow `on.workflow_call.secrets` declarations
+> (#547). Each has a dedicated memory file in the agent's persistent
+> store.
+
+---
+
+### Phase 14 -- Pre-Public-Flip + API Test Validation + CDEF Mutations (CURRENT)
+
+<!-- markdownlint-disable MD013 -->
+
+| Status | Issue | Domain | Files Modified (planned) | Collision Risk |
+| ------ | ----- | ------ | ------------------------ | -------------- |
+| [ ] | **#545** Pre-public-flip hardening checklist | CI/Infrastructure + GitHub Settings | `.github/CODEOWNERS` (already expanded via PR #546), workflow `permissions:` blocks (already added), repo-settings UI clicks (operator), `risk-sentinel/sparc-iac#281` (IaC repo) | **LOW** code-wise — most is operator clicks. Cross-repo coordination required for the OIDC trust policy. |
+| [ ] | **#433** Content-style API tests | API (v1) + Shared (test fixtures) | `tests/api/schemas/` (new), `tests/api/test_*.py` extensions, `tests/api/fixtures/` additions | **LOW** — Python test suite is isolated from Ruby app code. Edits to `app/controllers/api/v1/*` controllers may surface if a contract diff is intentional vs accidental. |
+| [ ] | **#498** CdefMutationService | CDEF | `app/services/cdef_mutation_service.rb` (new), `app/controllers/api/v1/cdef_documents_controller.rb`, `app/controllers/cdef_documents_controller.rb`, `app/models/cdef_document.rb` | **MEDIUM** — refactors mutation paths across both API and web controllers. Coordinate with anyone touching CDEF flows. |
+| [ ] | **#499** Bulk Converter → CDEF + Rev 4↔Rev 5 helper | CDEF + Converters | `app/services/cdef_mutation_service.rb` (consumer), `converter.rb`, new Rev-mapping helper, `cdef_documents_controller.rb` (bulk action) | **MEDIUM** — depends on #498 landing first. Touches Converters domain which is currently quiet. |
+| [ ] | **#528** Remove unsafe-inline from CSP | Transport/Session Hardening + Shared/UI | `config/initializers/content_security_policy.rb`, every inline `<script>` block across `app/views/` (refactor to nonce or Stimulus) | **HIGH** — view file changes will conflict with any feature work happening in those view trees. Recommend doing late in a sprint when other view work is done. |
+| [ ] | **#531** GuardDuty S3 tag hook | Upload Security + ActiveStorage middleware | New middleware (e.g., `app/middleware/guardduty_blob_gate.rb`), `config/application.rb` middleware insert | **LOW** — new file, narrow insert. |
+| [ ] | **#447** HDF Amendment umbrella (Plan B, deferred) | Evidence + new ScannerFinding domain | Substantial new domain — gated on customer demand | **HIGH** (when activated) — wholly new models + UI; needs its own domain lane |
+| [ ] | **#341** XML upload fingerprinting | Upload Security | `file_uploadable.rb` (XML-specific path), `xml_security.rb` (deepen) | **LOW** — extends existing concern; coordinate with #511 author. |
+| [ ] | **#246** Repo cleanup / OSCAL fixtures bloat | Shared/Cross-cutting + test fixtures | `spec/fixtures/files/**`, possibly `db/seeds/**` for the larger OSCAL samples | **LOW** — background lane; touches files no production code path uses. |
+| [ ] | **#413** API docs + tests umbrella | (umbrella) | Closes when #433 merges | N/A |
+| [ ] | **#422** POAM Scenario B federated visibility | (gated) | Stays parked | N/A |
+
+<!-- markdownlint-enable MD013 -->
+
+> **Sequencing:** #545 + sparc-iac#281 first (public-flip blocker), then #433 (in-progress), then #498 → #499 chain. #528 last in any sprint because of view-conflict risk.
+
+---
+
 ## 3. Branching Strategy
 
 ### Branch Naming Convention
@@ -464,9 +529,15 @@ These files are touched by multiple issues. Extra care required.
 | `app/models/concerns/oscal_metadata.rb` | #148, #149, #177 | **HIGH RISK.** Assign one developer to this concern per sprint. Others wait for merge. |
 | `app/services/oscal_schema_validation_service.rb` | #148, #125, #107 | Additive methods. Each adds a new validation method. Low conflict if methods are namespaced. #107 runs last (Phase 6), so no conflict with #148/#125. |
 | `app/services/document_duplication_service.rb` | #176, #172, #173, #174 | Each document type adds its own `dup_*` method. Low conflict if well-separated. |
-| `.github/workflows/` | #100 (CI test), #186 (security scanning) | Different workflow files. #100 adds test runner; #186 adds security pipeline. **LOW** risk. |
+| `.github/workflows/` | #100 (CI test), #186 (security scanning), #543/#547/#553 (secrets rotation chain) | Different workflow files mostly. **MEDIUM** risk for `build-sign-publish.yml` + `security.yml` — they share secret references and validator rules. Always validate edits with `actionlint` before push (see #553 incident — phantom failure runs from invalid expressions). |
 | `db/seeds.rb` | #108 (dual mode), #107 (FedRAMP seeds) | Both in Phase 6 (sequential: #107 then #108). Use separate seed files: `db/seeds/nist_traditional.rb`, `db/seeds/fedramp_20x.rb`. Main `seeds.rb` just dispatches. |
-| `db/migrate/` | All migration issues + #183 (squash) + #283 (v1.1.0 squash) | **HIGH RISK for squash PRs.** Squash must be the last migration-related PR to merge. See Section 4 rule 6. |
+| `db/migrate/` | All migration issues + #183 (squash) + #283 (v1.1.0 squash) + #470 (v1.6.1 squash) | **HIGH RISK for squash PRs.** Squash migration's idempotent guard (`return if table_exists?(:ssp_documents)`) skips on existing DBs and DOES NOT add individual columns added between squashes — caused #537 prod schema drift. Squashes must capture every column added since the previous squash. |
+| `app/models/sparc_config.rb` | Every new `SPARC_*` env var lands here | **MEDIUM** risk. Additive method blocks. Coordinate the section a new env var belongs in (organization metadata, rate limiting, upload caps, etc.) and add to `docs/ENVIRONMENT_VARIABLES.md` in the same PR. |
+| `app/views/shared/_processing_banner.html.erb` | Every document show view renders it (#142, #549, #548) | **LOW** but critical UX — changes affect every document type at once. The Tier 1 stuck-bailout fix landed in v1.7.2; Tier 2/3 still tracked under #548. |
+| `lib/xml_security.rb` | #511, future XML-related upload work, #341 (XML fingerprinting) | **LOW** — single funnel by design. Extend with new methods rather than modifying existing call paths. |
+| `app/controllers/concerns/file_uploadable.rb` | #509, #510, #511, #341 | **MEDIUM** — every upload entrypoint depends on it. Test changes through `tests/api/` + parser specs together. |
+| `app/controllers/api/v1/base_controller.rb` | Every paginated index (#549, future API work) | **LOW** — additive helpers. Pagination override clamp at `MAX_PAGINATION_LIMIT = 200` (#549). |
+| `.github/CODEOWNERS` | Phase 13/14 hardening (#545/#546) | **LOW** — meta-rule changes go through `sparc-admin` team review per the file's own rule. |
 
 <!-- markdownlint-enable MD013 -->
 
