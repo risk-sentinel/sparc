@@ -22,6 +22,12 @@ import httpx
 import pytest
 
 from conftest import assert_error_envelope, assert_paginated_envelope
+from schemas import (
+    BackMatterResourceIndex,
+    BackMatterResourceShow,
+    validate_index_response,
+    validate_show_response,
+)
 
 
 pytestmark = [pytest.mark.back_matter, pytest.mark.phase1]
@@ -86,6 +92,8 @@ class TestIndex:
         response = admin_client.get(PATH)
         assert response.status_code == 200, response.text
         assert_paginated_envelope(response.json())
+        # #433 slice 2 — content-style validation
+        validate_index_response(response, BackMatterResourceIndex)
 
     @pytest.mark.pagination
     def test_filter_by_rel(
@@ -107,7 +115,8 @@ class TestShow:
         self, admin_client: httpx.Client, resource: dict[str, Any]
     ) -> None:
         response = admin_client.get(f"{PATH}/{resource['id']}")
-        assert response.status_code == 200
+        # #433 slice 2 — content-style validation
+        validate_show_response(response, BackMatterResourceShow)
         assert response.json()["data"]["id"] == resource["id"]
 
     @pytest.mark.auth

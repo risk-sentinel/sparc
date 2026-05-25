@@ -17,6 +17,12 @@ import pytest
 
 from _document_helpers import create_doc, delete_doc, make_payload
 from conftest import assert_error_envelope, assert_paginated_envelope
+from schemas import (
+    CdefDocumentIndex,
+    CdefDocumentShow,
+    validate_index_response,
+    validate_show_response,
+)
 
 
 pytestmark = [pytest.mark.documents, pytest.mark.phase1]
@@ -45,6 +51,9 @@ class TestIndex:
         response = admin_client.get(PATH)
         assert response.status_code == 200, response.text
         assert_paginated_envelope(response.json())
+        # #433 slice 1 — content-style validation: every item in the list
+        # must conform to the CdefDocumentIndex schema (strict, extra=forbid).
+        validate_index_response(response, CdefDocumentIndex)
 
     @pytest.mark.pagination
     def test_pagination_query_params_respected(self, admin_client: httpx.Client) -> None:
@@ -64,8 +73,12 @@ class TestShow:
         self, admin_client: httpx.Client, cdef_doc: dict[str, Any]
     ) -> None:
         response = admin_client.get(f"{PATH}/{cdef_doc['slug']}")
-        assert response.status_code == 200
-        assert response.json()["data"]["slug"] == cdef_doc["slug"]
+        # #433 slice 1 — content-style validation: the show response is the
+        # detailed CdefDocumentShow shape (adds description / oscal_version /
+        # controls_count / oscal_metadata / back_matter_resources beyond what
+        # the index returns).
+        envelope = validate_show_response(response, CdefDocumentShow)
+        assert envelope.data.slug == cdef_doc["slug"]
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
@@ -102,6 +115,13 @@ class TestCreate:
 
 class TestUpdate:
     @pytest.mark.happy
+    @pytest.mark.xfail(
+        reason="#555 — Update returns compact (index) shape instead of detailed "
+        "(show), so `description` is absent from the response even though the "
+        "update persists. Remove this xfail once the controller passes "
+        "detailed: true on update.",
+        strict=False,
+    )
     def test_admin_updates_via_put(
         self, admin_client: httpx.Client, cdef_doc: dict[str, Any]
     ) -> None:

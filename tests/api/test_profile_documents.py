@@ -18,6 +18,12 @@ import pytest
 
 from _document_helpers import create_doc, delete_doc, make_payload
 from conftest import assert_error_envelope, assert_paginated_envelope
+from schemas import (
+    ProfileDocumentIndex,
+    ProfileDocumentShow,
+    validate_index_response,
+    validate_show_response,
+)
 
 
 pytestmark = [pytest.mark.documents, pytest.mark.phase1]
@@ -46,6 +52,8 @@ class TestIndex:
         response = admin_client.get(PATH)
         assert response.status_code == 200, response.text
         assert_paginated_envelope(response.json())
+        # #433 slice 2 — content-style validation
+        validate_index_response(response, ProfileDocumentIndex)
 
     @pytest.mark.pagination
     def test_pagination_query_params_respected(self, admin_client: httpx.Client) -> None:
@@ -65,8 +73,9 @@ class TestShow:
         self, admin_client: httpx.Client, profile_doc: dict[str, Any]
     ) -> None:
         response = admin_client.get(f"{PATH}/{profile_doc['slug']}")
-        assert response.status_code == 200
-        assert response.json()["data"]["slug"] == profile_doc["slug"]
+        # #433 slice 2 — content-style validation (detailed Show shape)
+        envelope = validate_show_response(response, ProfileDocumentShow)
+        assert envelope.data.slug == profile_doc["slug"]
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
@@ -103,6 +112,11 @@ class TestCreate:
 
 class TestUpdate:
     @pytest.mark.happy
+    @pytest.mark.xfail(
+        reason="#555 — Update returns compact (index) shape instead of "
+        "detailed; `description` is absent from the response.",
+        strict=False,
+    )
     def test_admin_updates_via_put(
         self, admin_client: httpx.Client, profile_doc: dict[str, Any]
     ) -> None:

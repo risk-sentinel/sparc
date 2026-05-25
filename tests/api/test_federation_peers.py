@@ -18,6 +18,14 @@ import httpx
 import pytest
 
 from conftest import assert_error_envelope
+from pydantic import ValidationError
+
+from schemas import (
+    FederationPeerIndex,
+    FederationPeerListEnvelope,
+    FederationPeerShow,
+    validate_show_response,
+)
 
 
 pytestmark = [pytest.mark.federation, pytest.mark.phase2]
@@ -67,6 +75,13 @@ class TestIndex:
         body = response.json()
         assert "data" in body and isinstance(body["data"], list)
         assert "meta" in body and "count" in body["meta"]
+        # #433 slice 2 — content-style validation. federation_peers has
+        # its own envelope (reduced meta) per #562 — once that lands,
+        # switch this back to the shared PaginatedEnvelope.
+        try:
+            FederationPeerListEnvelope.model_validate(body)
+        except ValidationError as exc:
+            pytest.fail(f"FederationPeerListEnvelope drift: {exc}")
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
@@ -79,13 +94,13 @@ class TestShow:
         self, admin_client: httpx.Client, peer: dict[str, Any]
     ) -> None:
         response = admin_client.get(f"{PATH}/{peer['id']}")
-        assert response.status_code == 200
-        body = response.json()["data"]
-        assert body["id"] == peer["id"]
-        assert "service_token" not in body
-        assert "signing_secret" not in body
-        assert body["service_token_set"] is True
-        assert body["signing_secret_set"] is True
+        # #433 slice 2 — content-style validation (also enforces that the
+        # schema declares no `service_token` / `signing_secret` field, so a
+        # future serializer regression that leaks them would fail loudly).
+        envelope = validate_show_response(response, FederationPeerShow)
+        assert envelope.data.id == peer["id"]
+        assert envelope.data.service_token_set is True
+        assert envelope.data.signing_secret_set is True
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

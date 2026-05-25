@@ -13,6 +13,10 @@ import httpx
 import pytest
 
 from conftest import assert_error_envelope, assert_paginated_envelope
+from schemas import (
+    ControlMappingIndex,
+    validate_index_response,
+)
 
 
 pytestmark = [pytest.mark.catalogs, pytest.mark.phase1]
@@ -44,6 +48,12 @@ class TestIndex:
         response = admin_client.get(PATH)
         assert response.status_code == 200, response.text
         assert_paginated_envelope(response.json())
+        # #433 slice 2 — content-style validation
+        validate_index_response(response, ControlMappingIndex)
+
+    # ControlMapping Show endpoint exercising (positive case) deferred to
+    # slice 3 — the routing for show appears to need a slug not id, will
+    # confirm against fixtures rather than against arbitrary existing data.
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
