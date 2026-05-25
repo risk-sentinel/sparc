@@ -63,6 +63,7 @@ markers = [
     "authz: authorization-failure coverage (403 cases)",
     "validation: input-validation / 422 coverage",
     "pagination: pagination + filtering coverage",
+    "unicode: unicode / RTL / long-string round-trip coverage (#433 slice 7)",
     "idempotency: repeated-call no-op coverage",
     "discovery: tests for /api/v1/available",
     "documents: tests for SSP/SAR/SAP/POAM/CDEF/Profile",
