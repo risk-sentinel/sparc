@@ -25,6 +25,7 @@ from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     BackMatterResourceIndex,
     BackMatterResourceShow,
+    assert_create_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -136,6 +137,18 @@ class TestCreate:
         response = admin_client.post(PATH, json=_new_payload())
         assert response.status_code in (200, 201)
         _delete(admin_client, response.json()["data"]["id"])
+
+    @pytest.mark.happy
+    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+        """#433 slice 4 — fields sent on Create must come back from Show."""
+        assert_create_round_trip(
+            admin_client,
+            PATH,
+            _new_payload(),
+            "back_matter_resource",
+            BackMatterResourceShow,
+            identifier="id",
+        )
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

@@ -17,6 +17,7 @@ from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     ControlCatalogIndex,
     ControlCatalogShow,
+    assert_create_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -101,6 +102,24 @@ class TestCreate:
         assert response.status_code in (200, 201)
         c = response.json().get("data") or response.json()
         _delete(admin_client, c["id"])
+
+    @pytest.mark.happy
+    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+        """#433 slice 4 — Create payload fields survive Create → Show.
+
+        Catalog create returns both ``id`` and ``slug``, but the show /
+        update / destroy URLs take ``slug`` only. The existing tests use
+        ``id`` and silently tolerate 404 from the delete — this round-trip
+        uses the correct ``slug`` identifier.
+        """
+        assert_create_round_trip(
+            admin_client,
+            PATH,
+            _new_payload(),
+            "control_catalog",
+            ControlCatalogShow,
+            identifier="slug",
+        )
 
     @pytest.mark.authz
     def test_non_admin_returns_403(self, user_client: httpx.Client) -> None:

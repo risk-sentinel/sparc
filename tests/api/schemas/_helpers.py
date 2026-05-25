@@ -63,8 +63,9 @@ def assert_create_round_trip(
     show_model: Type[ItemT],
     *,
     ignore_fields: set[str] | None = None,
+    identifier: str = "slug",
 ) -> ShowEnvelope[ItemT]:
-    """Create a document, fetch it via Show, assert every field in the
+    """Create a resource, fetch it via Show, assert every field in the
     request payload survived persistence.
 
     Catches two classes of drift the schema layer alone misses:
@@ -75,11 +76,18 @@ def assert_create_round_trip(
     - **Show-endpoint bugs:** the value is persisted (you can see it in
       Rails console) but the Show serializer omits it from the response.
 
-    Server-managed fields (timestamps, ids, slug, uuid, derived counts)
-    cannot be round-tripped — pass them via ``ignore_fields`` if the
-    payload happens to set them (it normally won't).
+    Args:
+        identifier: which field of the create response to use as the
+            show-URL segment. Documents use ``"slug"`` (default);
+            ControlCatalog / ControlMapping / BackMatterResource /
+            FederationPeer use ``"id"``.
+        ignore_fields: payload fields the show response is NOT expected
+            to mirror (e.g. ``service_token`` and ``signing_secret`` on
+            federation peers — the API exposes only ``*_set`` booleans).
+            Server-managed fields like timestamps, ids, slugs, derived
+            counts also belong here if the payload happens to set them.
 
-    The created document is deleted in a ``finally`` block so the
+    The created resource is deleted in a ``finally`` block so the
     helper is safe to use without an explicit fixture.
     """
     ignore_fields = ignore_fields or set()
@@ -87,14 +95,14 @@ def assert_create_round_trip(
     create_response = client.post(path, json=payload)
     assert create_response.status_code in (200, 201), create_response.text
     created = create_response.json()["data"]
-    slug = created["slug"]
+    resource_id = created[identifier]
 
     try:
-        show_response = client.get(f"{path}/{slug}")
+        show_response = client.get(f"{path}/{resource_id}")
         envelope = validate_show_response(show_response, show_model)
         shown = envelope.data.model_dump(mode="json")
 
-        sent = payload.get(param_key, {})
+        sent = payload.get(param_key, payload)  # peers/back-matter don't wrap
         mismatches = []
         for field, expected in sent.items():
             if field in ignore_fields:
@@ -110,14 +118,14 @@ def assert_create_round_trip(
 
         if mismatches:
             pytest.fail(
-                f"Round-trip drift at {path}/{slug} "
+                f"Round-trip drift at {path}/{resource_id} "
                 f"(create payload → show response):\n" + "\n".join(mismatches)
             )
 
         return envelope
     finally:
         # Best-effort cleanup; ignore 404 if a destroy test ran concurrently.
-        client.delete(f"{path}/{slug}")
+        client.delete(f"{path}/{resource_id}")
 
 
 def _format_drift(

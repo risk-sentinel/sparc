@@ -15,6 +15,8 @@ import pytest
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     ControlMappingIndex,
+    ControlMappingShow,
+    assert_create_round_trip,
     validate_index_response,
 )
 
@@ -82,6 +84,47 @@ class TestCreate:
         assert response.status_code in (200, 201), response.text
         body = response.json().get("data") or response.json()
         _delete(admin_client, body["id"])
+
+    @pytest.mark.happy
+    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+        """#433 slice 4 — fields sent on Create must come back from Show.
+
+        Mappings require source / target catalog ids on this instance —
+        we pull two existing catalogs to satisfy the validation, then
+        verify the round-trip. Skips cleanly if fewer than 2 catalogs
+        exist (which would be an unusual test instance).
+        """
+        catalogs = admin_client.get("/api/v1/control_catalogs", params={"items": 2}).json()
+        if len(catalogs.get("data", [])) < 2:
+            pytest.skip("need at least 2 control catalogs to exercise mapping round-trip")
+        source_id = catalogs["data"][0]["id"]
+        target_id = catalogs["data"][1]["id"]
+
+        suffix = uuid.uuid4().hex[:8]
+        payload = {
+            "control_mapping": {
+                "name": f"phase2-mapping-rt-{suffix}",
+                "description": "round-trip created by #433 slice 4",
+                "status": "draft",
+                "method_type": "human",
+                "source_catalog_id": source_id,
+                "target_catalog_id": target_id,
+            }
+        }
+        # source/target catalog ids come back as nested objects
+        # (source_catalog / target_catalog), not mirrored as top-level
+        # ids — so they live in ignore_fields.
+        # ControlMapping show uses slug (same pattern as catalogs — the
+        # controller does `find_by!(slug: params[:id])`).
+        assert_create_round_trip(
+            admin_client,
+            PATH,
+            payload,
+            "control_mapping",
+            ControlMappingShow,
+            identifier="slug",
+            ignore_fields={"source_catalog_id", "target_catalog_id"},
+        )
 
     @pytest.mark.authz
     def test_non_admin_returns_403(self, user_client: httpx.Client) -> None:

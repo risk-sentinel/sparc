@@ -24,6 +24,7 @@ from schemas import (
     FederationPeerIndex,
     FederationPeerListEnvelope,
     FederationPeerShow,
+    assert_create_round_trip,
     validate_show_response,
 )
 
@@ -118,6 +119,24 @@ class TestCreate:
         assert response.status_code in (200, 201)
         peer_id = response.json()["data"]["id"]
         _delete(admin_client, peer_id)
+
+    @pytest.mark.happy
+    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+        """#433 slice 4 — fields sent on Create must come back from Show.
+
+        Sensitive fields (service_token, signing_secret) are exposed as
+        boolean ``*_set`` indicators only — the values themselves never
+        come back. They live in ignore_fields.
+        """
+        assert_create_round_trip(
+            admin_client,
+            PATH,
+            _new_payload(),
+            "federation_peer",
+            FederationPeerShow,
+            identifier="id",
+            ignore_fields={"service_token", "signing_secret"},
+        )
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
