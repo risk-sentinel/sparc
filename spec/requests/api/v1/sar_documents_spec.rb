@@ -111,6 +111,19 @@ RSpec.describe "Api::V1::SarDocuments", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["name"]).to eq("Updated SAR")
     end
+
+    it "emits a sar_document_updated audit event (#433 slice 5)" do
+      sar = create(:sar_document, authorization_boundary: boundary)
+      assert_audit_event(
+        action: "sar_document_updated",
+        subject_type: "SarDocument",
+        metadata: { name: "Updated SAR" }
+      ) do
+        put api_v1_sar_document_path(sar), params: {
+          sar_document: { name: "Updated SAR" }
+        }, headers: auth_headers, as: :json
+      end
+    end
   end
 
   describe "DELETE /api/v1/sar_documents/:id" do
@@ -124,6 +137,17 @@ RSpec.describe "Api::V1::SarDocuments", type: :request do
       expect(parsed["data"]["deleted"]).to be true
       expect(SarDocument.find_by(id: sar.id)).to be_nil
       expect(SarDocument.with_deleted.find_by(id: sar.id)).to be_present
+    end
+
+    it "emits a sar_document_deleted audit event (#433 slice 5)" do
+      sar = create(:sar_document, authorization_boundary: boundary)
+      assert_audit_event(
+        action: "sar_document_deleted",
+        subject_type: "SarDocument",
+        metadata: { name: sar.name }
+      ) do
+        delete api_v1_sar_document_path(sar), headers: auth_headers
+      end
     end
   end
 

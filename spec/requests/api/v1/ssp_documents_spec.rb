@@ -148,6 +148,19 @@ RSpec.describe "Api::V1::SspDocuments", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["name"]).to eq("Updated SSP")
     end
+
+    it "emits an ssp_document_updated audit event (#433 slice 5)" do
+      ssp = create(:ssp_document, authorization_boundary: boundary)
+      assert_audit_event(
+        action: "ssp_document_updated",
+        subject_type: "SspDocument",
+        metadata: { name: "Updated SSP" }
+      ) do
+        put api_v1_ssp_document_path(ssp), params: {
+          ssp_document: { name: "Updated SSP" }
+        }, headers: auth_headers, as: :json
+      end
+    end
   end
 
   # --- Destroy (soft-delete) ---
@@ -165,6 +178,17 @@ RSpec.describe "Api::V1::SspDocuments", type: :request do
       # Document no longer visible in default scope
       expect(SspDocument.find_by(id: ssp.id)).to be_nil
       expect(SspDocument.with_deleted.find_by(id: ssp.id)).to be_present
+    end
+
+    it "emits an ssp_document_deleted audit event (#433 slice 5)" do
+      ssp = create(:ssp_document, authorization_boundary: boundary)
+      assert_audit_event(
+        action: "ssp_document_deleted",
+        subject_type: "SspDocument",
+        metadata: { name: ssp.name }
+      ) do
+        delete api_v1_ssp_document_path(ssp), headers: auth_headers
+      end
     end
 
     it "soft-deleted document returns 404 on show" do

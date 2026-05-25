@@ -132,6 +132,19 @@ RSpec.describe "Api::V1::ProfileDocuments", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["name"]).to eq("Updated Profile")
     end
+
+    it "emits a profile_document_updated audit event (#433 slice 5)" do
+      profile = create(:profile_document)
+      assert_audit_event(
+        action: "profile_document_updated",
+        subject_type: "ProfileDocument",
+        metadata: { name: "Updated Profile" }
+      ) do
+        put api_v1_profile_document_path(profile), params: {
+          profile_document: { name: "Updated Profile" }
+        }, headers: auth_headers, as: :json
+      end
+    end
   end
 
   describe "DELETE /api/v1/profile_documents/:id" do
@@ -145,6 +158,17 @@ RSpec.describe "Api::V1::ProfileDocuments", type: :request do
       expect(parsed["data"]["deleted"]).to be true
       expect(ProfileDocument.find_by(id: profile.id)).to be_nil
       expect(ProfileDocument.with_deleted.find_by(id: profile.id)).to be_present
+    end
+
+    it "emits a profile_document_deleted audit event (#433 slice 5)" do
+      profile = create(:profile_document)
+      assert_audit_event(
+        action: "profile_document_deleted",
+        subject_type: "ProfileDocument",
+        metadata: { name: profile.name }
+      ) do
+        delete api_v1_profile_document_path(profile), headers: auth_headers
+      end
     end
   end
 end

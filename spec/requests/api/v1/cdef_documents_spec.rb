@@ -147,12 +147,16 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       expect(parsed["data"]["name"]).to eq("New CDEF")
     end
 
-    it "creates an audit event" do
-      expect {
+    it "emits a cdef_document_created audit event" do
+      assert_audit_event(
+        action: "cdef_document_created",
+        subject_type: "CdefDocument",
+        metadata: { name: "Audited CDEF" }
+      ) do
         post api_v1_cdef_documents_path, params: {
           cdef_document: { name: "Audited CDEF", cdef_type: "custom" }
         }, headers: auth_headers, as: :json
-      }.to change(AuditEvent, :count).by(1)
+      end
     end
 
     context "as a non-admin user" do
@@ -181,6 +185,19 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["name"]).to eq("Updated CDEF")
     end
+
+    it "emits a cdef_document_updated audit event (#433 slice 5)" do
+      cdef = create(:cdef_document)
+      assert_audit_event(
+        action: "cdef_document_updated",
+        subject_type: "CdefDocument",
+        metadata: { name: "Updated CDEF" }
+      ) do
+        put api_v1_cdef_document_path(cdef), params: {
+          cdef_document: { name: "Updated CDEF" }
+        }, headers: auth_headers, as: :json
+      end
+    end
   end
 
   describe "DELETE /api/v1/cdef_documents/:id" do
@@ -194,6 +211,17 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       expect(parsed["data"]["deleted"]).to be true
       expect(CdefDocument.find_by(id: cdef.id)).to be_nil
       expect(CdefDocument.with_deleted.find_by(id: cdef.id)).to be_present
+    end
+
+    it "emits a cdef_document_deleted audit event (#433 slice 5)" do
+      cdef = create(:cdef_document)
+      assert_audit_event(
+        action: "cdef_document_deleted",
+        subject_type: "CdefDocument",
+        metadata: { name: cdef.name }
+      ) do
+        delete api_v1_cdef_document_path(cdef), headers: auth_headers
+      end
     end
   end
 end

@@ -145,6 +145,19 @@ RSpec.describe "Api::V1::ControlMappings", type: :request do
       expect(parsed["data"]["name"]).to eq("Updated Mapping")
     end
 
+    it "emits a control_mapping_updated audit event (#433 slice 5)" do
+      mapping = create(:control_mapping)
+      assert_audit_event(
+        action: "control_mapping_updated",
+        subject_type: "ControlMapping",
+        metadata: { name: "Updated Mapping" }
+      ) do
+        put api_v1_control_mapping_path(mapping), params: {
+          control_mapping: { name: "Updated Mapping" }
+        }, headers: auth_headers, as: :json
+      end
+    end
+
     context "as a non-admin user" do
       let(:regular_user) { create(:user) }
       let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
@@ -171,6 +184,18 @@ RSpec.describe "Api::V1::ControlMappings", type: :request do
       expect(response).to have_http_status(:ok)
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["deleted"]).to be true
+    end
+
+    it "emits a control_mapping_deleted audit event (#433 slice 5)" do
+      mapping = create(:control_mapping)
+      mapping_name = mapping.name
+      assert_audit_event(
+        action: "control_mapping_deleted",
+        subject_type: "ControlMapping",
+        metadata: { name: mapping_name }
+      ) do
+        delete api_v1_control_mapping_path(mapping), headers: auth_headers
+      end
     end
 
     it "cascades to entries" do

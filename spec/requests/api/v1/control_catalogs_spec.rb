@@ -132,6 +132,19 @@ RSpec.describe "Api::V1::ControlCatalogs", type: :request do
       expect(parsed["data"]["name"]).to eq("Updated Catalog")
     end
 
+    it "emits a control_catalog_updated audit event (#433 slice 5)" do
+      catalog = create(:control_catalog)
+      assert_audit_event(
+        action: "control_catalog_updated",
+        subject_type: "ControlCatalog",
+        metadata: { name: "Updated Catalog" }
+      ) do
+        put api_v1_control_catalog_path(catalog), params: {
+          control_catalog: { name: "Updated Catalog" }
+        }, headers: auth_headers, as: :json
+      end
+    end
+
     context "as a non-admin user" do
       let(:regular_user) { create(:user) }
       let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
@@ -157,6 +170,17 @@ RSpec.describe "Api::V1::ControlCatalogs", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["deleted"]).to be true
       expect(ControlCatalog.find_by(id: catalog.id)).to be_nil
+    end
+
+    it "emits a control_catalog_deleted audit event (#433 slice 5)" do
+      catalog = create(:control_catalog)
+      assert_audit_event(
+        action: "control_catalog_deleted",
+        subject_type: "ControlCatalog",
+        metadata: { name: catalog.name }
+      ) do
+        delete api_v1_control_catalog_path(catalog), headers: auth_headers
+      end
     end
 
     it "returns 422 if catalog has dependencies" do

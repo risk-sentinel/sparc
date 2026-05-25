@@ -112,6 +112,19 @@ RSpec.describe "Api::V1::PoamDocuments", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["name"]).to eq("Updated POA&M")
     end
+
+    it "emits a poam_document_updated audit event (#433 slice 5)" do
+      poam = create(:poam_document, authorization_boundary: boundary)
+      assert_audit_event(
+        action: "poam_document_updated",
+        subject_type: "PoamDocument",
+        metadata: { name: "Updated POA&M" }
+      ) do
+        put api_v1_poam_document_path(poam), params: {
+          poam_document: { name: "Updated POA&M" }
+        }, headers: auth_headers, as: :json
+      end
+    end
   end
 
   describe "DELETE /api/v1/poam_documents/:id" do
@@ -125,6 +138,17 @@ RSpec.describe "Api::V1::PoamDocuments", type: :request do
       expect(parsed["data"]["deleted"]).to be true
       expect(PoamDocument.find_by(id: poam.id)).to be_nil
       expect(PoamDocument.with_deleted.find_by(id: poam.id)).to be_present
+    end
+
+    it "emits a poam_document_deleted audit event (#433 slice 5)" do
+      poam = create(:poam_document, authorization_boundary: boundary)
+      assert_audit_event(
+        action: "poam_document_deleted",
+        subject_type: "PoamDocument",
+        metadata: { name: poam.name }
+      ) do
+        delete api_v1_poam_document_path(poam), headers: auth_headers
+      end
     end
   end
 end

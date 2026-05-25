@@ -88,6 +88,31 @@ RSpec.describe "Api::V1::Users", type: :request do
       expect(parsed["data"]["email"]).to eq("newuser@example.com")
     end
 
+    it "emits an api_user_created audit event (#433 slice 5)" do
+      # xfail per #567 — api_user_created is missing from AuditEvent::ACTIONS,
+      # so the audit_log call silently fails (caught by base_controller rescue).
+      # Remove this skip once the action is whitelisted.
+      skip "blocked on #567 — api_user_created missing from AuditEvent::ACTIONS"
+
+      auth_headers
+      assert_audit_event(
+        action: "api_user_created",
+        subject_type: "User",
+        metadata: { email: "audited@example.com" }
+      ) do
+        post api_v1_users_path, params: {
+          user: {
+            email: "audited@example.com",
+            password: "SecurePassword123!",
+            password_confirmation: "SecurePassword123!",
+            first_name: "Audited",
+            last_name: "User",
+            display_name: "Audited User"
+          }
+        }, headers: auth_headers, as: :json
+      end
+    end
+
     context "as a non-admin" do
       let(:regular_user) { create(:user) }
       let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
@@ -113,6 +138,21 @@ RSpec.describe "Api::V1::Users", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["display_name"]).to eq("Updated Name")
     end
+
+    it "emits an api_user_updated audit event (#433 slice 5)" do
+      skip "blocked on #567 — api_user_updated missing from AuditEvent::ACTIONS"
+
+      target_user = create(:user)
+      assert_audit_event(
+        action: "api_user_updated",
+        subject_type: "User",
+        metadata: { email: target_user.email }
+      ) do
+        patch api_v1_user_path(target_user),
+              params: { user: { display_name: "Audited Update" } },
+              headers: auth_headers, as: :json
+      end
+    end
   end
 
   describe "DELETE /api/v1/users/:id" do
@@ -125,6 +165,19 @@ RSpec.describe "Api::V1::Users", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["status"]).to eq("deactivated")
       expect(target_user.reload.status).to eq("deactivated")
+    end
+
+    it "emits an api_user_deactivated audit event (#433 slice 5)" do
+      skip "blocked on #567 — api_user_deactivated missing from AuditEvent::ACTIONS"
+
+      target_user = create(:user)
+      assert_audit_event(
+        action: "api_user_deactivated",
+        subject_type: "User",
+        metadata: { email: target_user.email }
+      ) do
+        delete api_v1_user_path(target_user), headers: auth_headers
+      end
     end
 
     context "as a non-admin" do
