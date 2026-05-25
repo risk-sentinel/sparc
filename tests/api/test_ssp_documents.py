@@ -25,6 +25,7 @@ from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     SspDocumentIndex,
     SspDocumentShow,
+    assert_create_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -127,6 +128,30 @@ class TestCreate:
         assert body["data"]["name"] == payload["ssp_document"]["name"]
 
         _delete_ssp(admin_client, body["data"]["slug"])
+
+    @pytest.mark.happy
+    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+        """#433 slice 3 — fields sent on Create must come back from Show."""
+        assert_create_round_trip(
+            admin_client, PATH, _new_payload(), PARAM_KEY, SspDocumentShow
+        )
+
+    @pytest.mark.happy
+    def test_create_round_trip_rich_payload(self, admin_client: httpx.Client) -> None:
+        """#433 slice 3 — exercise type-specific SSP fields beyond name/description."""
+        suffix = uuid.uuid4().hex[:8]
+        payload = make_payload(
+            PARAM_KEY,
+            {
+                "authorization_boundary_id": 1,
+                "ssp_version": "2.1.0",
+                "system_status": "operational",
+                "security_sensitivity_level": "moderate",
+            },
+        )
+        assert_create_round_trip(
+            admin_client, PATH, payload, PARAM_KEY, SspDocumentShow
+        )
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

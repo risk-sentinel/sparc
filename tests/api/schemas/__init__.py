@@ -61,6 +61,7 @@ from ._federation import (
     FederationPeerShow,
 )
 from ._helpers import (
+    assert_create_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -102,6 +103,7 @@ __all__ = [
     "FederationPeerListEnvelope",
     "FederationPeerShow",
     # Helpers
+    "assert_create_round_trip",
     "validate_index_response",
     "validate_show_response",
 ]

@@ -20,6 +20,7 @@ from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     CdefDocumentIndex,
     CdefDocumentShow,
+    assert_create_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -95,6 +96,41 @@ class TestCreate:
         response = admin_client.post(PATH, json=_new_payload())
         assert response.status_code in (200, 201), response.text
         delete_doc(admin_client, PATH, response.json()["data"]["slug"])
+
+    @pytest.mark.happy
+    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+        """#433 slice 3 — fields sent on Create must come back from Show.
+
+        Catches persistence drops and show-serializer omissions that the
+        index/show schema validation alone can't surface.
+        """
+        assert_create_round_trip(
+            admin_client, PATH, _new_payload(), PARAM_KEY, CdefDocumentShow
+        )
+
+    @pytest.mark.happy
+    def test_create_round_trip_rich_payload(self, admin_client: httpx.Client) -> None:
+        """#433 slice 3 — exercise more than just name+description.
+
+        Sets every type-specific field permitted by the CDEF create
+        params (cdef_type, cdef_version, file_type, benchmark_id) and
+        confirms every one survives Create → Show.
+        """
+        from _document_helpers import make_payload
+
+        suffix = uuid.uuid4().hex[:8]
+        payload = make_payload(
+            PARAM_KEY,
+            {
+                "cdef_type": "custom",
+                "cdef_version": "1.2.3",
+                "file_type": "json",
+                "benchmark_id": f"BENCH-{suffix}",
+            },
+        )
+        assert_create_round_trip(
+            admin_client, PATH, payload, PARAM_KEY, CdefDocumentShow
+        )
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

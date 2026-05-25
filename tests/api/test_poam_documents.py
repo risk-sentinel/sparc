@@ -21,6 +21,7 @@ from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     PoamDocumentIndex,
     PoamDocumentShow,
+    assert_create_round_trip,
     validate_index_response,
     validate_show_response,
 )
@@ -92,6 +93,13 @@ class TestCreate:
         response = admin_client.post(PATH, json=_new_payload())
         assert response.status_code in (200, 201), response.text
         delete_doc(admin_client, PATH, response.json()["data"]["slug"])
+
+    @pytest.mark.happy
+    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+        """#433 slice 3 — fields sent on Create must come back from Show."""
+        assert_create_round_trip(
+            admin_client, PATH, _new_payload(), PARAM_KEY, PoamDocumentShow
+        )
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

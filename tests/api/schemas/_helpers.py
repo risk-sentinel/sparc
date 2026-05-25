@@ -55,6 +55,71 @@ def validate_show_response(
         pytest.fail(_format_drift(exc, response, expected=model.__name__))
 
 
+def assert_create_round_trip(
+    client: httpx.Client,
+    path: str,
+    payload: dict,
+    param_key: str,
+    show_model: Type[ItemT],
+    *,
+    ignore_fields: set[str] | None = None,
+) -> ShowEnvelope[ItemT]:
+    """Create a document, fetch it via Show, assert every field in the
+    request payload survived persistence.
+
+    Catches two classes of drift the schema layer alone misses:
+
+    - **Persistence bugs:** the client sends ``description: "foo"`` and
+      the model never persists it (silent drop, mass-assignment guard,
+      etc.). Show response would omit it or return something else.
+    - **Show-endpoint bugs:** the value is persisted (you can see it in
+      Rails console) but the Show serializer omits it from the response.
+
+    Server-managed fields (timestamps, ids, slug, uuid, derived counts)
+    cannot be round-tripped — pass them via ``ignore_fields`` if the
+    payload happens to set them (it normally won't).
+
+    The created document is deleted in a ``finally`` block so the
+    helper is safe to use without an explicit fixture.
+    """
+    ignore_fields = ignore_fields or set()
+
+    create_response = client.post(path, json=payload)
+    assert create_response.status_code in (200, 201), create_response.text
+    created = create_response.json()["data"]
+    slug = created["slug"]
+
+    try:
+        show_response = client.get(f"{path}/{slug}")
+        envelope = validate_show_response(show_response, show_model)
+        shown = envelope.data.model_dump(mode="json")
+
+        sent = payload.get(param_key, {})
+        mismatches = []
+        for field, expected in sent.items():
+            if field in ignore_fields:
+                continue
+            if field not in shown:
+                mismatches.append(
+                    f"  - {field!r}: sent {expected!r}, not present in show response"
+                )
+            elif shown[field] != expected:
+                mismatches.append(
+                    f"  - {field!r}: sent {expected!r}, shown {shown[field]!r}"
+                )
+
+        if mismatches:
+            pytest.fail(
+                f"Round-trip drift at {path}/{slug} "
+                f"(create payload → show response):\n" + "\n".join(mismatches)
+            )
+
+        return envelope
+    finally:
+        # Best-effort cleanup; ignore 404 if a destroy test ran concurrently.
+        client.delete(f"{path}/{slug}")
+
+
 def _format_drift(
     exc: ValidationError,
     response: httpx.Response,
