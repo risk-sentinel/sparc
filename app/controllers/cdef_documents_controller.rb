@@ -154,8 +154,11 @@ class CdefDocumentsController < ApplicationController
     field_name = params[:field_name]
     field_value = params[:field_value]
 
-    service = CdefUpdateService.new(@cdef_document)
-    service.update_field(control_id, field_name, field_value)
+    # #498 slice 2 — wrap the inline-edit mutation in CdefMutationService
+    # so a field edit that would corrupt OSCAL gets rolled back.
+    CdefMutationService.apply(@cdef_document) do |c|
+      CdefUpdateService.new(c).update_field(control_id, field_name, field_value)
+    end
 
     audit_log("cdef_control_updated", subject: @cdef_document,
       metadata: { control_id: control_id, field_name: field_name })
@@ -167,7 +170,7 @@ class CdefDocumentsController < ApplicationController
         redirect_to cdef_document_path(@cdef_document, anchor: "control-#{control_id}")
       end
     end
-  rescue ArgumentError, ActiveRecord::RecordNotFound => e
+  rescue ArgumentError, ActiveRecord::RecordNotFound, CdefMutationService::ValidationError => e
     respond_to do |format|
       format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
       format.html do
@@ -178,13 +181,20 @@ class CdefDocumentsController < ApplicationController
   end
 
   def update_metadata
-    if @cdef_document.update(document_metadata_params)
-      @cdef_document.regenerate_oscal_uuid!
-      audit_log("cdef_document_updated", subject: @cdef_document, metadata: { name: @cdef_document.name, metadata_update: true })
-      flash[:success] = "Document updated"
-    else
-      flash[:error] = @cdef_document.errors.full_messages.join(", ")
+    # #498 slice 2 — route through CdefMutationService so OSCAL
+    # validation runs before the metadata change commits.
+    CdefMutationService.apply(@cdef_document) do |c|
+      c.update!(document_metadata_params)
+      c.regenerate_oscal_uuid!
     end
+    audit_log("cdef_document_updated", subject: @cdef_document, metadata: { name: @cdef_document.name, metadata_update: true })
+    flash[:success] = "Document updated"
+    redirect_to cdef_document_path(@cdef_document)
+  rescue ActiveRecord::RecordInvalid => e
+    flash[:error] = e.record.errors.full_messages.join(", ")
+    redirect_to cdef_document_path(@cdef_document)
+  rescue CdefMutationService::ValidationError => e
+    flash[:error] = "OSCAL validation failed — change rolled back: " + e.message.truncate(200)
     redirect_to cdef_document_path(@cdef_document)
   end
 
@@ -288,14 +298,23 @@ class CdefDocumentsController < ApplicationController
                       .permit(*CdefControlStatement::EDITABLE_ATTRIBUTES,
                               set_parameters_data: [])
 
-    if statement.update(permitted)
-      @cdef_document.regenerate_oscal_uuid!
-      audit_log("cdef_statement_updated", subject: @cdef_document,
-                metadata: { statement_id: statement.statement_id })
-      flash[:success] = "Statement #{statement.label.presence || statement.statement_id} updated."
-    else
-      flash[:error] = statement.errors.full_messages.join(", ")
+    # #498 slice 2 — wrap statement edit in CdefMutationService so the
+    # post-edit OSCAL is validated. Statement attributes are referenced
+    # from components[].control-implementations[]; an edit that
+    # violated the schema would silently persist before.
+    CdefMutationService.apply(@cdef_document) do |c|
+      statement.update!(permitted)
+      c.regenerate_oscal_uuid!
     end
+    audit_log("cdef_statement_updated", subject: @cdef_document,
+              metadata: { statement_id: statement.statement_id })
+    flash[:success] = "Statement #{statement.label.presence || statement.statement_id} updated."
+    redirect_to cdef_document_path(@cdef_document, anchor: "stmt-#{statement.id}")
+  rescue ActiveRecord::RecordInvalid => e
+    flash[:error] = e.record.errors.full_messages.join(", ")
+    redirect_to cdef_document_path(@cdef_document, anchor: "stmt-#{statement.id}")
+  rescue CdefMutationService::ValidationError => e
+    flash[:error] = "OSCAL validation failed — change rolled back: " + e.message.truncate(200)
     redirect_to cdef_document_path(@cdef_document, anchor: "stmt-#{statement.id}")
   end
 

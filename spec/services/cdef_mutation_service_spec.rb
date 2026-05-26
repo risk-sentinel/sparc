@@ -110,4 +110,15 @@ RSpec.describe CdefMutationService do
       expect(result).to eq(cdef)
     end
   end
+
+  describe "create-style usage (slice 2 — new + save inside block)" do
+    it "commits a brand-new CDEF when the post-save state passes validation" do
+      new_cdef = build(:cdef_document, name: "Created via service",
+                                       cdef_type: "custom",
+                                       oscal_version: "1.1.2")
+      result = described_class.apply(new_cdef) { |c| c.save! }
+      expect(result).to be_persisted
+      expect(CdefDocument.find_by(name: "Created via service")).to be_present
+    end
+  end
 end

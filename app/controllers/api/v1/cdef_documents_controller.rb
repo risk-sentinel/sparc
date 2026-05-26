@@ -47,10 +47,17 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   # POST /api/v1/cdef_documents
   def create
     cdef = CdefDocument.new(cdef_params)
-    cdef.save!
+    # #498 slice 2 — route through CdefMutationService for post-save
+    # OSCAL validation. Empty-CDEF creates skip validation legitimately
+    # (the service handles that), so a metadata-only create still works.
+    CdefMutationService.apply(cdef) do |c|
+      c.save!
+    end
 
     audit_log("cdef_document_created", subject: cdef, metadata: { name: cdef.name })
     render json: { data: serialize_cdef(cdef) }, status: :created
+  rescue CdefMutationService::ValidationError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   # PATCH /api/v1/cdef_documents/:id
