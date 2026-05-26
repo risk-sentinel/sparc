@@ -29,11 +29,17 @@ PATH = "/api/v1/users"
 
 def _new_payload(**overrides: Any) -> dict[str, Any]:
     suffix = uuid.uuid4().hex[:8]
+    password = f"phase2-test-pw-{suffix}!"
     body = {
         "email": f"phase2-user-{suffix}@example.com",
         "first_name": "Phase",
         "last_name": "Two",
-        "password": f"phase2-test-pw-{suffix}!",
+        "password": password,
+        # API requires confirmation match (Devise-style). The Ruby
+        # request specs always send it; the Python helper used to omit
+        # it, causing every create to 422 with
+        # "Password confirmation can't be blank".
+        "password_confirmation": password,
     }
     body.update(overrides)
     return {"user": body}
