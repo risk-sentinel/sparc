@@ -40,12 +40,26 @@ RSpec.describe CdefJsonParserService do
       expect(document.uuid).to eq("a7ba800c-a432-44cd-9075-0862cd66da6b")
     end
 
-    it "stores import_metadata with format and back_matter" do
+    it "stores import_metadata with format (back-matter now promoted to first-class records)" do
       service.parse
       document.reload
 
       expect(document.import_metadata["format"]).to eq("oscal_cdef")
-      expect(document.import_metadata["back_matter"]).to be_present
+      # #498 slice 3 — back-matter no longer stashed; it's promoted to
+      # first-class BackMatterResource rows. See "promotes OSCAL
+      # back-matter" example below.
+      expect(document.import_metadata).not_to have_key("back_matter")
+    end
+
+    it "promotes OSCAL back-matter resources to first-class BackMatterResource rows (#498 slice 3)" do
+      expect { service.parse }.to change(BackMatterResource, :count).by_at_least(1)
+      document.reload
+
+      promoted = document.back_matter_resources.where(source: "imported")
+      expect(promoted).to be_present
+      first = promoted.first
+      expect(first.uuid).to match(/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i)
+      expect(first.title).to be_present
     end
 
     it "extracts description fields from implemented-requirements" do

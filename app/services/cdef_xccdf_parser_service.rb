@@ -8,7 +8,7 @@ class CdefXccdfParserService
     @file_path = file_path
   end
 
-  def parse
+  def parse(validate: true)
     update_processing_stage!(:reading_file)
     xml_content = File.read(@file_path).force_encoding("UTF-8")
     doc = XmlSecurity.parse(xml_content)
@@ -16,9 +16,18 @@ class CdefXccdfParserService
 
     # Auto-detect OSCAL component-definition vs XCCDF Benchmark
     if doc.at_xpath("//component-definition")
-      parse_oscal_xml(doc)
+      # OSCAL XML routes through CdefJsonParserService which already
+      # handles the CdefMutationService wrapping (and the validate
+      # opt-out for trusted upstream sources).
+      parse_oscal_xml(doc, validate: validate)
     elsif doc.at_xpath("//Benchmark")
-      parse_xccdf(doc)
+      # #498 slice 3 — XCCDF writes go through CdefMutationService
+      # so a benchmark import producing invalid OSCAL rolls back.
+      if validate
+        CdefMutationService.apply(@document) { |_doc| parse_xccdf(doc) }
+      else
+        parse_xccdf(doc)
+      end
     else
       raise "Unrecognized XML format: expected <Benchmark> (XCCDF) or <component-definition> (OSCAL)"
     end
@@ -28,14 +37,14 @@ class CdefXccdfParserService
 
   # ── OSCAL Component Definition XML ─────────────────────────────
 
-  def parse_oscal_xml(doc)
+  def parse_oscal_xml(doc, validate: true)
     json_hash = build_oscal_json_from_xml(doc)
 
     temp_path = Rails.root.join("tmp", "cdef_oscal_#{SecureRandom.hex(8)}.json").to_s
     File.write(temp_path, JSON.generate(json_hash))
 
     begin
-      CdefJsonParserService.new(@document, temp_path).parse
+      CdefJsonParserService.new(@document, temp_path).parse(validate: validate)
     ensure
       FileUtils.rm_f(temp_path)
     end

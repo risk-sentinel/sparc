@@ -181,7 +181,11 @@ class AwsLabsCdefImportService
       tmp.binmode
       tmp.write(candidate[:content])
       tmp.flush
-      CdefJsonParserService.new(document, tmp.path).parse
+      # #498 slice 3 — AWS Labs OSCAL is trusted upstream content;
+      # any schema-validation gap there is tracked separately and
+      # must not block ingestion. User uploads still get the default
+      # pre-commit validation via the parser's default.
+      CdefJsonParserService.new(document, tmp.path).parse(validate: false)
     end
 
     document.reload

@@ -29,10 +29,6 @@
 # OSCAL representation fails schema validation, the service raises
 # `CdefMutationService::ValidationError` and the transaction rolls back.
 #
-# Slice 1 scope: the service contract + pre-save OSCAL validation.
-# Wired into Api::V1::CdefDocumentsController#update as proof; other
-# write paths (clone, parser write-through, web controller, manual
-# edit) refactor to use this in slice 2.
 class CdefMutationService
   class ValidationError < StandardError; end
 
@@ -45,6 +41,26 @@ class CdefMutationService
     raise ArgumentError, "block required" unless block_given?
 
     new(cdef_document).apply { |c| yield c }
+  end
+
+  # Construction-style wrapper for paths that build a brand-new
+  # CdefDocument inside the block (clone, create-from-profile,
+  # parser-driven import). The block must return the persisted
+  # CdefDocument; the service validates its post-construction OSCAL
+  # representation inside the same transaction.
+  def self.build_and_apply
+    raise ArgumentError, "block required" unless block_given?
+
+    ActiveRecord::Base.transaction do
+      cdef = yield
+      unless cdef.is_a?(CdefDocument) && cdef.persisted?
+        raise ArgumentError, "block must return a persisted CdefDocument"
+      end
+
+      cdef.reload
+      new(cdef).send(:validate_oscal_representation!)
+      cdef
+    end
   end
 
   def initialize(cdef_document)

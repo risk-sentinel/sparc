@@ -28,26 +28,31 @@ class CdefFromProfileService
     catalog = @profile.resolved_catalog_json
     metadata = catalog.dig("catalog", "metadata") || {}
 
-    @document = CdefDocument.create!(
-      name:                @name,
-      cdef_type:           "custom",
-      status:              "completed",
-      lifecycle_status:    "started",
-      oscal_version:       metadata["oscal-version"] || "1.1.2",
-      description:         metadata["title"],
-      profile_document_id: @profile.id,
-      import_metadata: {
-        "source_type"         => "profile",
-        "source_profile_id"   => @profile.id,
-        "source_profile_uuid" => @profile.uuid,
-        "source_profile_name" => @profile.name,
-        "format"              => "resolved_catalog"
-      }
-    )
+    # #498 slice 3 — route construction through CdefMutationService so
+    # the assembled CDEF's OSCAL is validated before commit; a profile
+    # that resolves to a structurally-bad catalog rolls back instead
+    # of leaving an unusable CDEF in the database.
+    CdefMutationService.build_and_apply do
+      @document = CdefDocument.create!(
+        name:                @name,
+        cdef_type:           "custom",
+        status:              "completed",
+        lifecycle_status:    "started",
+        oscal_version:       metadata["oscal-version"] || "1.1.2",
+        description:         metadata["title"],
+        profile_document_id: @profile.id,
+        import_metadata: {
+          "source_type"         => "profile",
+          "source_profile_id"   => @profile.id,
+          "source_profile_uuid" => @profile.uuid,
+          "source_profile_name" => @profile.name,
+          "format"              => "resolved_catalog"
+        }
+      )
 
-    build_controls_from_catalog(catalog)
-
-    @document
+      build_controls_from_catalog(catalog)
+      @document
+    end
   end
 
   private

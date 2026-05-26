@@ -199,13 +199,17 @@ class CdefDocumentsController < ApplicationController
   end
 
   def copy
-    service = DocumentDuplicationService.new(@cdef_document)
-    copy = service.duplicate
-
-    # Issue #466 — when the source is an AWS-Labs-sourced (read-only) CDEF,
-    # record the lineage so refreshes leave the user's clone untouched.
-    if @cdef_document.aws_labs_source?
-      copy.update!(cloned_from_id: @cdef_document.id)
+    # #498 slice 3 — clone runs through CdefMutationService.build_and_apply
+    # so the duplicated CDEF's OSCAL representation is validated before
+    # commit. A clone that would produce an invalid OSCAL (corrupted
+    # source, missing required fields) rolls back instead of leaving
+    # an unusable copy.
+    copy = CdefMutationService.build_and_apply do
+      duplicated = DocumentDuplicationService.new(@cdef_document).duplicate
+      if @cdef_document.aws_labs_source?
+        duplicated.update!(cloned_from_id: @cdef_document.id)
+      end
+      duplicated
     end
 
     audit_log("cdef_document_copied", subject: copy, metadata: { source_id: @cdef_document.id, source_name: @cdef_document.name, copy_name: copy.name, source_type: @cdef_document.aws_labs_source? ? "aws_labs" : nil }.compact)
@@ -329,14 +333,22 @@ class CdefDocumentsController < ApplicationController
     resource.organization = current_user.organizations.first if current_user.organizations.any?
     resource.globally_available = params.dig(:back_matter_resource, :globally_available) == "1"
 
-    if resource.save
+    # #498 slice 3 — wrap back-matter writes in CdefMutationService so a
+    # resource that would push the OSCAL out of schema is rejected
+    # pre-commit. The resource + link create together inside the
+    # transaction; ValidationError or save failure rolls both back.
+    CdefMutationService.apply(@cdef_document) do |_c|
+      resource.save!
       control.control_back_matter_links.create!(back_matter_resource: resource)
-      audit_log("control_resource_created", subject: resource,
-                metadata: { control_id: params[:control_id], title: resource.title })
-      render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title, href: resource.href } }
-    else
-      render json: { success: false, error: resource.errors.full_messages.join(", ") }, status: :unprocessable_entity
     end
+
+    audit_log("control_resource_created", subject: resource,
+              metadata: { control_id: params[:control_id], title: resource.title })
+    render json: { success: true, resource: { id: resource.id, uuid: resource.uuid, title: resource.title, href: resource.href } }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { success: false, error: e.record.errors.full_messages.join(", ") }, status: :unprocessable_entity
+  rescue CdefMutationService::ValidationError => e
+    render json: { success: false, error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
   end
 
   def link_control_resource

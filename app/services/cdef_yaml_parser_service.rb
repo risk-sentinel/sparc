@@ -12,7 +12,7 @@ class CdefYamlParserService
     @file_path = file_path
   end
 
-  def parse
+  def parse(validate: true)
     update_processing_stage!(:reading_file)
     content = File.read(@file_path).force_encoding("UTF-8")
     data = YAML.safe_load(content, permitted_classes: [ Date, Time ])
@@ -22,7 +22,7 @@ class CdefYamlParserService
     tmp_json.write(JSON.generate(data))
     tmp_json.close
 
-    CdefJsonParserService.new(@document, tmp_json.path).parse
+    CdefJsonParserService.new(@document, tmp_json.path).parse(validate: validate)
   ensure
     tmp_json&.unlink
   end

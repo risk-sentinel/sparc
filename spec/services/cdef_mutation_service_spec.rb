@@ -121,4 +121,58 @@ RSpec.describe CdefMutationService do
       expect(CdefDocument.find_by(name: "Created via service")).to be_present
     end
   end
+
+  describe ".build_and_apply (slice 3 — construction inside the block)" do
+    it "returns the block's CdefDocument after validating its post-build OSCAL" do
+      result = described_class.build_and_apply do
+        new_cdef = create(:cdef_document, name: "Built via service",
+                                          cdef_type: "custom",
+                                          oscal_version: "1.1.2")
+        create(:cdef_control, cdef_document: new_cdef, control_id: "ac-1",
+                              title: "Access Control Policy")
+        new_cdef
+      end
+      expect(result).to be_persisted
+      expect(result.name).to eq("Built via service")
+    end
+
+    it "raises ArgumentError when the block returns a non-CdefDocument" do
+      expect {
+        described_class.build_and_apply { "not a cdef" }
+      }.to raise_error(ArgumentError, /must return a persisted CdefDocument/)
+    end
+
+    it "raises ArgumentError when the block returns an unpersisted CdefDocument" do
+      expect {
+        described_class.build_and_apply { build(:cdef_document) }
+      }.to raise_error(ArgumentError, /must return a persisted CdefDocument/)
+    end
+
+    it "raises ArgumentError without a block" do
+      expect { described_class.build_and_apply }.to raise_error(ArgumentError, /block required/)
+    end
+
+    it "rolls back when the post-construction OSCAL is invalid" do
+      bad_result = OscalSchemaValidationService::Result.new(
+        valid?: false,
+        errors: [ "/component-definition/components: required field missing" ],
+        schema_version: "1.1.2"
+      )
+      allow_any_instance_of(OscalComponentDefinitionExportService)
+        .to receive(:validation_result).and_return(bad_result)
+
+      expect {
+        described_class.build_and_apply do
+          new_cdef = create(:cdef_document, name: "Will roll back",
+                                            cdef_type: "custom",
+                                            oscal_version: "1.1.2")
+          create(:cdef_control, cdef_document: new_cdef, control_id: "ac-1",
+                                title: "AC")
+          new_cdef
+        end
+      }.to raise_error(CdefMutationService::ValidationError, /invalid OSCAL/)
+
+      expect(CdefDocument.find_by(name: "Will roll back")).to be_nil
+    end
+  end
 end

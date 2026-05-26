@@ -8,7 +8,23 @@ class CdefJsonParserService
     @file_path = file_path
   end
 
-  def parse
+  # `validate:` defaults to true so user uploads (the common case)
+  # are rejected pre-commit when the import produces an invalid
+  # OSCAL representation. Trusted upstream pipelines that ingest
+  # third-party OSCAL (AWS Labs CDEFs, where any schema gap is
+  # tracked separately and should not block ingestion) pass
+  # `validate: false`.
+  def parse(validate: true)
+    if validate
+      CdefMutationService.apply(@document) { |_doc| _parse_dispatch }
+    else
+      _parse_dispatch
+    end
+  end
+
+  private
+
+  def _parse_dispatch
     update_processing_stage!(:reading_file)
     content = File.read(@file_path).force_encoding("UTF-8")
     data    = JSON.parse(content)
@@ -21,8 +37,6 @@ class CdefJsonParserService
     else                       parse_generic(data)
     end
   end
-
-  private
 
   def detect_json_format(data)
     return :oscal_cdef     if data.key?("component-definition")
@@ -47,12 +61,17 @@ class CdefJsonParserService
       description:     metadata["title"],
       metadata_extra:  metadata_extra.presence || {},
       import_metadata: {
-        "format"      => "oscal_cdef",
-        "uuid"        => cdef["uuid"],
-        "back_matter" => cdef.dig("back-matter", "resources")
+        "format" => "oscal_cdef",
+        "uuid"   => cdef["uuid"]
       }.compact
     )
     @document.assign_oscal_uuid!(cdef["uuid"])
+
+    # #498 slice 3 — promote OSCAL back-matter to first-class
+    # BackMatterResource rows instead of stashing the raw array in
+    # import_metadata. Promoted rows have source: "imported" and the
+    # exporter picks them up via the normal managed_resources query.
+    promote_back_matter_resources(cdef.dig("back-matter", "resources"))
 
     # Extract controls from components
     components = cdef["components"] || []
@@ -309,6 +328,38 @@ class CdefJsonParserService
     when 0.4..0.69 then "medium"
     when 0.01..0.39 then "low"
     else "info"
+    end
+  end
+
+  # #498 slice 3 — turn OSCAL back-matter `resources[]` entries into
+  # first-class BackMatterResource rows attached to the importing
+  # CDEF (source: "imported"). Replaces the legacy stash at
+  # `import_metadata["back_matter"]`. Falls back to a uuid-derived
+  # title when the OSCAL resource is title-less since the model
+  # validates `title` presence. Resources lacking a v4 UUID are
+  # skipped — the model's RFC 4122 v4 validation would reject them
+  # and we don't want to fail the whole import on a non-conformant
+  # back-matter entry.
+  def promote_back_matter_resources(resources)
+    return if resources.blank?
+
+    Array(resources).each do |res|
+      uuid = res["uuid"].to_s
+      next unless uuid.match?(/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i)
+
+      first_rlink = Array(res["rlinks"]).first || {}
+      title = res["title"].presence || "Imported resource #{uuid.first(8)}"
+
+      @document.back_matter_resources.create!(
+        uuid:          uuid,
+        title:         title,
+        description:   res["description"],
+        href:          first_rlink["href"],
+        media_type:    first_rlink["media-type"],
+        rel:           "reference",
+        source:        "imported",
+        resource_data: res.except("uuid", "title", "description", "rlinks")
+      )
     end
   end
 end
