@@ -1,12 +1,16 @@
-# Builds the OSCAL back-matter section for a document by merging three
-# resource sources:
+# Builds the OSCAL back-matter section for a document by merging
+# resources from two persisted sources plus the SPARC identifier:
 #
-#   1. Managed BackMatterResource records (user-created in SPARC)
-#   2. Imported resources from import_metadata (preserved from OSCAL import)
+#   1. Authoritative BackMatterResource records (provider-published,
+#      highest priority, instance-wide)
+#   2. Managed/imported BackMatterResource records attached to this
+#      document (resourceable: document) or linked through its
+#      controls (ControlBackMatterLink)
 #   3. SPARC identifier resource (persistent UUID per document)
 #
-# Deduplication: managed resources win over imported resources with the
-# same UUID. This allows users to "take ownership" of imported resources.
+# As of #583 all back-matter lives in the back_matter_resources table —
+# the legacy `import_metadata["back_matter"]` stash has been promoted to
+# first-class rows during import, so no JSON-stash merge is needed.
 #
 # Usage:
 #   BackMatterBuilder.new(ssp_document).build
@@ -18,7 +22,7 @@ class BackMatterBuilder
   end
 
   def build
-    resources = authoritative_resources + managed_resources + deduplicated_imports + [ sparc_resource ]
+    resources = authoritative_resources + managed_resources + [ sparc_resource ]
     { "resources" => resources }
   end
 
@@ -44,14 +48,6 @@ class BackMatterBuilder
     # Exclude UUIDs already claimed by authoritative resources
     (doc_resources + ctrl_resources).uniq { |r| r["uuid"] }
                                     .reject { |r| authoritative_uuids.include?(r["uuid"]) }
-  end
-
-  def managed_uuids
-    @managed_uuids ||= (
-      authoritative_uuids.to_a +
-      @document.back_matter_resources.active.pluck(:uuid) +
-      control_linked_resources.pluck(:uuid)
-    ).to_set
   end
 
   # Resources linked to controls within this document (not directly
@@ -80,11 +76,6 @@ class BackMatterBuilder
       resource_ids = conditions.reduce { |acc, c| acc.or(c) }&.select(:back_matter_resource_id)
       resource_ids ? BackMatterResource.active.where(id: resource_ids) : BackMatterResource.none
     end
-  end
-
-  def deduplicated_imports
-    imported = @document.import_metadata&.dig("back_matter") || []
-    imported.reject { |r| managed_uuids.include?(r["uuid"]) }
   end
 
   def sparc_resource

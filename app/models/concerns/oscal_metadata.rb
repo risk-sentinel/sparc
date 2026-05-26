@@ -83,9 +83,22 @@ module OscalMetadata
       "last-modified" => updated_at&.iso8601 || Time.current.iso8601
     }
 
-    # Include published timestamp if available
+    # Include published timestamp if available. Defensive parse — if
+    # the stored value isn't a valid datetime (e.g. legacy "true"
+    # bool-string), skip rather than emit a value that fails OSCAL
+    # metadata.published schema validation (#584).
     if respond_to?(:published) && published.present?
-      base["published"] = published.is_a?(String) ? published : published.iso8601
+      iso =
+        if published.is_a?(String)
+          begin
+            Time.parse(published).iso8601
+          rescue ArgumentError, TypeError
+            nil
+          end
+        else
+          published.iso8601
+        end
+      base["published"] = iso if iso
     end
 
     # Allowlist filter: METADATA_EXTRA_KEYS are the OSCAL spec metadata

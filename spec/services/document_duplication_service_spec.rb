@@ -134,6 +134,35 @@ RSpec.describe DocumentDuplicationService do
         expect(copied_stmt.uuid).not_to eq(statement.uuid)
       end
 
+      # #582 — clone-time statement UUIDs derive deterministically from
+      # the new control's UUID + statement_id so re-exporting the same
+      # clone byte-compares cleanly. Same property the parser already
+      # provides for fresh imports.
+      it "derives clone statement UUIDs deterministically from the new control + statement_id" do
+        copy = described_class.new(source).duplicate
+        copied_control = copy.cdef_controls.first
+        copied_stmt    = copied_control.cdef_control_statements.first
+        expected = OscalUuidService.derived(copied_control.uuid, "cdef-statement", "smt.a")
+        expect(copied_stmt.uuid).to eq(expected)
+      end
+
+      it "two duplicates of the same source give different statement UUIDs but each is stable" do
+        copy_a = described_class.new(source).duplicate
+        copy_b = described_class.new(source).duplicate
+        stmt_a = copy_a.cdef_controls.first.cdef_control_statements.first
+        stmt_b = copy_b.cdef_controls.first.cdef_control_statements.first
+        # Different clones have different parent control UUIDs → different
+        # derived statement UUIDs. But each clone, re-derived, would
+        # produce the same UUID.
+        expect(stmt_a.uuid).not_to eq(stmt_b.uuid)
+        expect(stmt_a.uuid).to eq(
+          OscalUuidService.derived(copy_a.cdef_controls.first.uuid, "cdef-statement", "smt.a")
+        )
+        expect(stmt_b.uuid).to eq(
+          OscalUuidService.derived(copy_b.cdef_controls.first.uuid, "cdef-statement", "smt.a")
+        )
+      end
+
       it "preserves the statement_id under the new control_id (uniqueness scope)" do
         copy = described_class.new(source).duplicate
         copied_stmt = copy.cdef_controls.first.cdef_control_statements.first

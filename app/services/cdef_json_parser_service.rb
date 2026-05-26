@@ -2,6 +2,7 @@ class CdefJsonParserService
   include BatchInsertable
   include ProgressTrackable
   include CciNistResolvable
+  include BackMatterPromotable
 
   def initialize(cdef_document, file_path)
     @document  = cdef_document
@@ -331,35 +332,5 @@ class CdefJsonParserService
     end
   end
 
-  # #498 slice 3 — turn OSCAL back-matter `resources[]` entries into
-  # first-class BackMatterResource rows attached to the importing
-  # CDEF (source: "imported"). Replaces the legacy stash at
-  # `import_metadata["back_matter"]`. Falls back to a uuid-derived
-  # title when the OSCAL resource is title-less since the model
-  # validates `title` presence. Resources lacking a v4 UUID are
-  # skipped — the model's RFC 4122 v4 validation would reject them
-  # and we don't want to fail the whole import on a non-conformant
-  # back-matter entry.
-  def promote_back_matter_resources(resources)
-    return if resources.blank?
-
-    Array(resources).each do |res|
-      uuid = res["uuid"].to_s
-      next unless uuid.match?(/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i)
-
-      first_rlink = Array(res["rlinks"]).first || {}
-      title = res["title"].presence || "Imported resource #{uuid.first(8)}"
-
-      @document.back_matter_resources.create!(
-        uuid:          uuid,
-        title:         title,
-        description:   res["description"],
-        href:          first_rlink["href"],
-        media_type:    first_rlink["media-type"],
-        rel:           "reference",
-        source:        "imported",
-        resource_data: res.except("uuid", "title", "description", "rlinks")
-      )
-    end
-  end
+  # promote_back_matter_resources moved to BackMatterPromotable concern (#583).
 end

@@ -10,6 +10,7 @@
 #
 class SapJsonParserService
   include ProgressTrackable
+  include BackMatterPromotable
 
   def initialize(document, file_path)
     @document = document
@@ -52,8 +53,7 @@ class SapJsonParserService
     attrs[:metadata_extra] = metadata.except("title", "version", "oscal-version", "last-modified")
 
     attrs[:import_metadata] = {
-      "uuid"        => plan["uuid"],
-      "back_matter" => plan.dig("back-matter", "resources")
+      "uuid" => plan["uuid"]
     }.compact
 
     # #395 P2: SAP supports `import-ssp.href`. When the href is `uuid:<...>`,
@@ -66,6 +66,9 @@ class SapJsonParserService
 
     @document.update!(attrs.compact)
     @document.assign_oscal_uuid!(plan["uuid"])
+
+    # #583 — promote OSCAL back-matter to first-class BackMatterResource rows.
+    promote_back_matter_resources(plan.dig("back-matter", "resources"))
   end
 
   def parse_controls(plan)

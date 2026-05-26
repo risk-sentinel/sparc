@@ -682,10 +682,11 @@ class SarDocumentsController < ApplicationController
 
   # Copy back-matter resources from each linked source (SAP + its chained
   # SSP/profile, the directly linked SSP, the directly linked profile)
-  # into this SAR. Reads from BOTH BackMatterResource records (managed)
-  # AND import_metadata["back_matter"] (imported from OSCAL).
-  # Idempotent on UUID -- existing entries are skipped. Returns count of
-  # newly-created records.
+  # into this SAR. All back-matter is now first-class
+  # BackMatterResource rows (#583) — a single pass over
+  # source.back_matter_resources is sufficient. Idempotent on the
+  # upstream UUID (tracked via resource_data["source_uuid"]). Returns
+  # count of newly-created records.
   def copy_back_matter_into_sar(sap_id, ssp_id, profile_id)
     sources = []
     if sap_id.present?
@@ -701,7 +702,6 @@ class SarDocumentsController < ApplicationController
     sources.compact!
     sources.uniq!
 
-    existing_uuids = @sar_document.back_matter_resources.pluck(:uuid).to_set
     # source_uuids tracks which upstream UUIDs we've already copied so a
     # second associate_source call doesn't produce duplicates.
     existing_source_uuids = @sar_document.back_matter_resources
@@ -711,50 +711,25 @@ class SarDocumentsController < ApplicationController
     copied = 0
 
     sources.each do |source|
-      # 1. Managed BackMatterResource records. UUID is globally unique
-      # at the DB level, so we generate a new UUID for the SAR's copy and
-      # stash the original in resource_data["source_uuid"] for traceability.
-      if source.respond_to?(:back_matter_resources)
-        source.back_matter_resources.each do |src_bm|
-          next if existing_source_uuids.include?(src_bm.uuid)
-          new_uuid = SecureRandom.uuid
-          merged_data = (src_bm.resource_data || {}).merge("source_uuid" => src_bm.uuid)
-          @sar_document.back_matter_resources.create!(
-            uuid:          new_uuid,
-            title:         src_bm.title,
-            description:   src_bm.description,
-            rel:           src_bm.rel,
-            media_type:    src_bm.media_type,
-            href:          src_bm.href,
-            source:        "imported",
-            resource_data: merged_data
-          )
-          existing_uuids << new_uuid
-          existing_source_uuids << src_bm.uuid
-          copied += 1
-        end
-      end
-
-      # 2. Imported back-matter (OSCAL JSON hashes preserved on import)
-      imported = source.respond_to?(:import_metadata) ? (source.import_metadata&.dig("back_matter") || []) : []
-      imported.each do |bm_hash|
-        uuid = bm_hash["uuid"]
-        next if uuid.blank? || existing_uuids.include?(uuid)
-        rlink = (bm_hash["rlinks"] || []).first || {}
+      next unless source.respond_to?(:back_matter_resources)
+      source.back_matter_resources.each do |src_bm|
+        next if existing_source_uuids.include?(src_bm.uuid)
+        # UUID is globally unique at the DB level, so we generate a
+        # new UUID for the SAR's copy and stash the original in
+        # resource_data["source_uuid"] for traceability.
+        merged_data = (src_bm.resource_data || {}).merge("source_uuid" => src_bm.uuid)
         @sar_document.back_matter_resources.create!(
-          uuid:          uuid,
-          title:         bm_hash["title"] || "Imported Resource",
-          description:   bm_hash["description"],
-          rel:           "reference",
-          media_type:    rlink["media-type"],
-          href:          rlink["href"],
+          uuid:          SecureRandom.uuid,
+          title:         src_bm.title,
+          description:   src_bm.description,
+          rel:           src_bm.rel,
+          media_type:    src_bm.media_type,
+          href:          src_bm.href,
           source:        "imported",
-          resource_data: bm_hash.except("uuid", "title", "description", "rlinks")
+          resource_data: merged_data
         )
-        existing_uuids << uuid
+        existing_source_uuids << src_bm.uuid
         copied += 1
-      rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.warn("[SarDocumentsController] skipping invalid back-matter #{uuid}: #{e.message}")
       end
     end
 

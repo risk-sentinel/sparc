@@ -7,6 +7,7 @@
 #
 class SarJsonParserService
   include ProgressTrackable
+  include BackMatterPromotable
 
   def initialize(document, file_path)
     @document  = document
@@ -40,7 +41,6 @@ class SarJsonParserService
   def update_document_metadata(ar)
     metadata   = ar["metadata"] || {}
     import_ap  = ar["import-ap"] || {}
-    back_matter = ar.dig("back-matter", "resources") || []
 
     metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
 
@@ -56,14 +56,16 @@ class SarJsonParserService
       import_ap_href:     import_ap["href"],
       metadata_extra:     metadata_extra.presence || {},
       import_metadata:    {
-        "uuid"        => ar["uuid"],
-        "back_matter" => back_matter
+        "uuid" => ar["uuid"]
       }.compact
     }
     attrs[:sap_document_id] = sap_id if sap_id
 
     @document.update!(**attrs)
     @document.update!(name: metadata["title"]) if metadata["title"].present?
+
+    # #583 — promote OSCAL back-matter to first-class BackMatterResource rows.
+    promote_back_matter_resources(ar.dig("back-matter", "resources"))
   end
 
   # ── Local definitions ──────────────────────────────────────────

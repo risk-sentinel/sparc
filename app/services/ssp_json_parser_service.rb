@@ -7,6 +7,7 @@
 #
 class SspJsonParserService
   include ProgressTrackable
+  include BackMatterPromotable
 
   def initialize(document, file_path)
     @document  = document
@@ -53,14 +54,16 @@ class SspJsonParserService
       import_profile_href: profile_href,
       metadata_extra:     metadata.except("title", "version", "oscal-version", "last-modified"),
       import_metadata:    {
-        "uuid"        => ssp["uuid"],
-        "back_matter" => ssp.dig("back-matter", "resources")
+        "uuid" => ssp["uuid"]
       }.compact
     }
     attrs[:profile_document_id] = profile_id if profile_id
 
     @document.update!(**attrs)
     @document.update!(name: metadata["title"]) if metadata["title"].present?
+
+    # #583 — promote OSCAL back-matter to first-class BackMatterResource rows.
+    promote_back_matter_resources(ssp.dig("back-matter", "resources"))
   end
 
   # ── System characteristics ───────────────────────────────────────

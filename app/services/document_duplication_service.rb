@@ -67,17 +67,33 @@ class DocumentDuplicationService
   #
   # Some child models (e.g. CdefControlStatement) carry a `validates :uuid,
   # presence: true` Ruby-side check. The schema-level `gen_random_uuid()`
-  # default only fires at INSERT, but validation runs before save and would
-  # fail. Pre-fill a fresh SecureRandom UUID when the model has the column —
-  # safe because we've already excluded `uuid` via SKIP_ATTRIBUTES (no
-  # collision with the source's uuid).
+  # default only fires at INSERT, but validation runs before save and
+  # would fail. Pre-fill the UUID before save.
+  #
+  # For CdefControlStatement we derive deterministically from the new
+  # parent control's UUID + statement_id (#582) — `(cdef_control_id,
+  # statement_id)` is uniquely indexed, so the derived UUID is stable
+  # across re-exports of the clone. Re-exporting the same clone byte-
+  # compares cleanly on statement identifiers without affecting the
+  # source document. Other child types (e.g. control fields) keep
+  # SecureRandom.uuid because they lack a stable per-parent natural key.
   def copy_field_children!(source_control, new_control, assoc, parent_fk)
     source_control.public_send(assoc).each do |source_child|
       child_attrs = source_child.attributes.except(*SKIP_ATTRIBUTES)
       child_attrs.delete(parent_fk)
       child_class = source_child.class
-      child_attrs["uuid"] = SecureRandom.uuid if child_class.column_names.include?("uuid")
+      if child_class.column_names.include?("uuid")
+        child_attrs["uuid"] = derive_child_uuid(child_class, new_control, source_child)
+      end
       new_control.public_send(assoc).create!(child_attrs)
+    end
+  end
+
+  def derive_child_uuid(child_class, new_control, source_child)
+    if child_class.name == "CdefControlStatement" && source_child.statement_id.present?
+      OscalUuidService.derived(new_control.uuid, "cdef-statement", source_child.statement_id)
+    else
+      SecureRandom.uuid
     end
   end
 

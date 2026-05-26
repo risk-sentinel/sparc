@@ -1,6 +1,7 @@
 class ProfileJsonParserService
   include BatchInsertable
   include ProgressTrackable
+  include BackMatterPromotable
 
   def initialize(profile_document, file_path)
     @document  = profile_document
@@ -109,11 +110,16 @@ class ProfileJsonParserService
         "format"       => "oscal_profile",
         "uuid"         => profile["uuid"],
         "catalog_href" => catalog_ref,
-        "merge"        => profile["merge"],
-        "back_matter"  => back_matter
+        "merge"        => profile["merge"]
       }.compact
     )
     @document.assign_oscal_uuid!(profile["uuid"])
+
+    # #583 — promote OSCAL back-matter to first-class BackMatterResource
+    # rows. `back_matter` (the raw OSCAL array) is still passed to
+    # link_source_catalog because that helper inspects href patterns
+    # in the raw resources to find a matching ControlCatalog.
+    promote_back_matter_resources(back_matter)
 
     # Auto-link to the source catalog if one is already imported
     link_source_catalog(catalog_ref, back_matter) unless @document.control_catalog_id.present?
@@ -289,11 +295,13 @@ class ProfileJsonParserService
       import_metadata: {
         "format"               => "oscal_resolved_profile",
         "uuid"                 => catalog["uuid"],
-        "source_profile_href"  => source_profile_href,
-        "back_matter"          => (catalog.dig("back-matter", "resources") || [])
+        "source_profile_href"  => source_profile_href
       }.compact
     )
     @document.assign_oscal_uuid!(catalog["uuid"])
+
+    # #583 — promote OSCAL back-matter to first-class BackMatterResource rows.
+    promote_back_matter_resources(catalog.dig("back-matter", "resources"))
   end
 
   # Link to source catalog by matching the source-profile filename against catalog names.
@@ -322,8 +330,14 @@ class ProfileJsonParserService
       end
     end
 
-    # Fall back to back-matter matching
-    back_matter = @document.import_metadata&.dig("back_matter") || []
+    # Fall back to back-matter matching — #583 reads from promoted
+    # BackMatterResource rows (was import_metadata stash). The helper
+    # expects raw OSCAL hashes, so we reconstruct the shape from the
+    # promoted rows.
+    back_matter = @document.back_matter_resources.map do |bmr|
+      { "uuid" => bmr.uuid, "title" => bmr.title,
+        "rlinks" => bmr.href.present? ? [ { "href" => bmr.href, "media-type" => bmr.media_type } ] : nil }.compact
+    end
     link_source_catalog(nil, back_matter) if back_matter.any?
   end
 

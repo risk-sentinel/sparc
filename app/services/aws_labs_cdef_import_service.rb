@@ -174,18 +174,24 @@ class AwsLabsCdefImportService
       file_type: "json",
       lifecycle_status: "published",
       globally_available: true,
-      published: "true"
+      # #584 — must be an ISO 8601 datetime (OSCAL metadata.published
+      # schema), not a boolean-string. The legacy "true" value tripped
+      # the exporter validation.
+      published: Time.current.iso8601
     )
 
     Tempfile.create([ "aws-labs-cdef-", ".json" ]) do |tmp|
       tmp.binmode
       tmp.write(candidate[:content])
       tmp.flush
-      # #498 slice 3 — AWS Labs OSCAL is trusted upstream content;
-      # any schema-validation gap there is tracked separately and
-      # must not block ingestion. User uploads still get the default
-      # pre-commit validation via the parser's default.
-      CdefJsonParserService.new(document, tmp.path).parse(validate: false)
+      # #584 — AWS Labs OSCAL is run through the same pre-commit
+      # validation as user uploads. The original validate: false
+      # opt-out (#498 slice 3) turned out to be masking a bad test
+      # fixture (one placeholder party UUID), not a real upstream
+      # gap. A future real-world AWS Labs ingestion failure now
+      # surfaces as an error in the import Result (not silently
+      # ingested) so operators can file an issue with specifics.
+      CdefJsonParserService.new(document, tmp.path).parse
     end
 
     document.reload

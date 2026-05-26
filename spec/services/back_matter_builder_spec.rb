@@ -33,13 +33,17 @@ RSpec.describe BackMatterBuilder, type: :service do
       expect(policy["uuid"]).to eq(uuid)
     end
 
-    it "includes imported resources from import_metadata" do
+    # #583 — back-matter is no longer stashed in import_metadata; it's
+    # promoted to first-class BackMatterResource rows at import time.
+    # The builder picks them up via the same managed_resources query as
+    # user-created resources (source != "authoritative").
+    it "includes promoted imported resources (source: 'imported')" do
       imported_uuid = SecureRandom.uuid
-      ssp.update_column(:import_metadata, {
-        "back_matter" => [
-          { "uuid" => imported_uuid, "title" => "Imported Doc" }
-        ]
-      })
+      ssp.back_matter_resources.create!(
+        title: "Imported Doc",
+        uuid: imported_uuid,
+        source: "imported"
+      )
 
       result = builder.build
       imported = result["resources"].find { |r| r["title"] == "Imported Doc" }
@@ -47,22 +51,18 @@ RSpec.describe BackMatterBuilder, type: :service do
       expect(imported["uuid"]).to eq(imported_uuid)
     end
 
-    it "deduplicates imported resources when managed resource has same UUID" do
+    it "deduplicates resources sharing a UUID across managed + imported sources" do
       shared_uuid = SecureRandom.uuid
-
-      # Create managed resource with the UUID
+      # Same UUID, two rows — one managed, one imported. The unique
+      # index on back_matter_resources.uuid will prevent two rows from
+      # actually sharing a UUID in production, but the builder's uniq
+      # logic still applies for the doc_resources + ctrl_resources
+      # merge below.
       ssp.back_matter_resources.create!(
         title: "Managed Version",
         uuid: shared_uuid,
         source: "managed"
       )
-
-      # Set imported resource with same UUID
-      ssp.update_column(:import_metadata, {
-        "back_matter" => [
-          { "uuid" => shared_uuid, "title" => "Imported Version" }
-        ]
-      })
 
       result = builder.build
       matching = result["resources"].select { |r| r["uuid"] == shared_uuid }

@@ -379,8 +379,9 @@ class SapDocumentsController < ApplicationController
   end
 
   # Copy back-matter resources from the linked profile and/or SSP to this SAP.
-  # Reads from BOTH back_matter_resources table (managed) AND
-  # import_metadata["back_matter"] (imported from OSCAL).
+  # All back-matter is now first-class BackMatterResource rows (#583),
+  # so a single pass over source.back_matter_resources is sufficient —
+  # no need to read the legacy import_metadata stash.
   # Skips resources whose UUIDs are already present (idempotent re-runs).
   # Returns the count of new resources copied.
   def copy_back_matter_from_source(profile_id, ssp_id)
@@ -397,7 +398,6 @@ class SapDocumentsController < ApplicationController
     copied = 0
 
     sources.each do |source|
-      # 1. Copy managed BackMatterResource records
       source.back_matter_resources.each do |src_bm|
         next if existing_uuids.include?(src_bm.uuid)
         @sap_document.back_matter_resources.create!(
@@ -412,28 +412,6 @@ class SapDocumentsController < ApplicationController
         )
         existing_uuids << src_bm.uuid
         copied += 1
-      end
-
-      # 2. Copy imported back-matter from import_metadata (OSCAL JSON hashes)
-      imported = source.respond_to?(:import_metadata) ? (source.import_metadata&.dig("back_matter") || []) : []
-      imported.each do |bm_hash|
-        uuid = bm_hash["uuid"]
-        next if uuid.blank? || existing_uuids.include?(uuid)
-        rlink = (bm_hash["rlinks"] || []).first || {}
-        @sap_document.back_matter_resources.create!(
-          uuid:          uuid,
-          title:         bm_hash["title"] || "Imported Resource",
-          description:   bm_hash["description"],
-          rel:           "reference",
-          media_type:    rlink["media-type"],
-          href:          rlink["href"],
-          source:        "imported",
-          resource_data: bm_hash.except("uuid", "title", "description", "rlinks")
-        )
-        existing_uuids << uuid
-        copied += 1
-      rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.warn("Skipping invalid imported back-matter resource #{uuid}: #{e.message}")
       end
     end
 

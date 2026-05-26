@@ -340,6 +340,9 @@ class CdefDocumentsController < ApplicationController
     CdefMutationService.apply(@cdef_document) do |_c|
       resource.save!
       control.control_back_matter_links.create!(back_matter_resource: resource)
+      # #581 — emit per-resource audit row alongside the document-level
+      # control_resource_created audit_log.
+      BackMatterAudit.record_create(resource, user: current_user)
     end
 
     audit_log("control_resource_created", subject: resource,

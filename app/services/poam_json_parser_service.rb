@@ -1,5 +1,6 @@
 class PoamJsonParserService
   include ProgressTrackable
+  include BackMatterPromotable
 
   def initialize(poam_document, file_path)
     @document  = poam_document
@@ -38,7 +39,6 @@ class PoamJsonParserService
     metadata    = poam["metadata"] || {}
     import_ssp  = poam["import-ssp"]
     system_id   = poam["system-id"]
-    back_matter = poam.dig("back-matter", "resources") || []
 
     # Preserve extra metadata fields for round-trip fidelity
     metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
@@ -56,14 +56,16 @@ class PoamJsonParserService
       metadata_extra:          metadata_extra.presence || {},
       local_definitions_extra: {},
       import_metadata:         {
-        "uuid"        => poam["uuid"],
-        "import_ssp"  => import_ssp,
-        "back_matter" => back_matter
+        "uuid"       => poam["uuid"],
+        "import_ssp" => import_ssp
       }.compact
     }
     attrs[:ssp_document_id] = ssp_id if ssp_id
 
     @document.update!(**attrs)
+
+    # #583 — promote OSCAL back-matter to first-class BackMatterResource rows.
+    promote_back_matter_resources(poam.dig("back-matter", "resources"))
   end
 
   # ── Observations ─────────────────────────────────────────────────

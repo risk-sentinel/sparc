@@ -256,22 +256,24 @@ RSpec.describe "SarDocuments", type: :request do
       expect(copied.resource_data["source_uuid"]).to eq(source_uuid)
     end
 
-    it "copies imported back-matter from import_metadata of the linked SSP" do
-      ssp.update!(import_metadata: {
-        "back_matter" => [
-          { "uuid" => "11111111-aaaa-4000-8000-000000000001",
-            "title" => "Imported Policy",
-            "description" => "From OSCAL SSP import",
-            "rlinks" => [ { "href" => "https://example.com/imported.pdf",
-                            "media-type" => "application/pdf" } ] }
-        ]
-      })
+    # #583 — imported back-matter is now first-class (parser promotion);
+    # SSP simply has BackMatterResource records with source: "imported".
+    # The SAR's associate_source copies those rows directly.
+    it "copies promoted imported back-matter from the linked SSP" do
+      source_uuid = "11111111-aaaa-4000-8000-000000000001"
+      ssp.back_matter_resources.create!(uuid: source_uuid, title: "Imported Policy",
+                                        description: "From OSCAL SSP import",
+                                        href: "https://example.com/imported.pdf",
+                                        media_type: "application/pdf",
+                                        rel: "reference", source: "imported")
 
       patch associate_source_sar_document_path(sar), params: {
         sar_document: { ssp_document_id: ssp.id }
       }
 
-      copied = sar.reload.back_matter_resources.find_by(uuid: "11111111-aaaa-4000-8000-000000000001")
+      # SAR generates a fresh UUID for the copy and stashes the source
+      # UUID in resource_data (existing behavior for SAR copies).
+      copied = sar.reload.back_matter_resources.find_by("resource_data->>'source_uuid' = ?", source_uuid)
       expect(copied).to be_present
       expect(copied.title).to eq("Imported Policy")
       expect(copied.href).to eq("https://example.com/imported.pdf")
