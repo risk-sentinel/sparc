@@ -151,13 +151,6 @@ class TestCreate:
 
 class TestUpdate:
     @pytest.mark.happy
-    @pytest.mark.xfail(
-        reason="#555 — Update returns compact (index) shape instead of detailed "
-        "(show), so `description` is absent from the response even though the "
-        "update persists. Remove this xfail once the controller passes "
-        "detailed: true on update.",
-        strict=False,
-    )
     def test_admin_updates_via_put(
         self, admin_client: httpx.Client, cdef_doc: dict[str, Any]
     ) -> None:

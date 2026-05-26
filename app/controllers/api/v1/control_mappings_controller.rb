@@ -54,7 +54,8 @@ class Api::V1::ControlMappingsController < Api::V1::BaseController
     @mapping.update!(mapping_params)
 
     audit_log("control_mapping_updated", subject: @mapping, metadata: { name: @mapping.name })
-    render json: { data: serialize_mapping(@mapping) }
+    # #555 — return the detailed shape so callers can read-after-write.
+    render json: { data: serialize_mapping(@mapping, detailed: true) }
   end
 
   # DELETE /api/v1/control_mappings/:id
@@ -68,8 +69,15 @@ class Api::V1::ControlMappingsController < Api::V1::BaseController
 
   private
 
+  # #566 — accept either numeric id or slug. See set_catalog above for
+  # the rationale.
   def set_mapping
-    @mapping = ControlMapping.find_by!(slug: params[:id])
+    id_or_slug = params[:id].to_s
+    @mapping = if id_or_slug.match?(/\A\d+\z/)
+      ControlMapping.find_by!(id: id_or_slug)
+    else
+      ControlMapping.find_by!(slug: id_or_slug)
+    end
   end
 
   def mapping_params

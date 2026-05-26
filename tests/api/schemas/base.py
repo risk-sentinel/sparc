@@ -80,12 +80,10 @@ class DocumentBase(BaseModel):
     slug: str
     uuid: str
     name: str
-    # `status` is permitted nullable because SSP and SAR responses
-    # return `null` for API-created documents that haven't completed
-    # parsing (every other doc type returns a string in the same
-    # situation — see #557 for the inconsistency tracking). When that
-    # gap closes, tighten this back to `str`.
-    status: str | None = None
+    # #557 fixed in v1.7.3 — DB default `pending` + after_initialize
+    # backstop in SspDocument / SarDocument bring them in line with
+    # CDEF / POAM. Tightened back to required string.
+    status: str
     lifecycle_status: str
     file_type: str | None = None
     created_at: datetime

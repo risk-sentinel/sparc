@@ -6,6 +6,11 @@ class SspDocument < ApplicationRecord
   include SoftDeletable
   include BoundaryLinkInheritance
 
+  # #557 — belt-and-suspenders for the API-create path. The DB default
+  # now backstops this, but the after_initialize ensures Rails console
+  # / jobs / direct `SspDocument.new` get the same default behavior.
+  after_initialize { self.status ||= "pending" }
+
   belongs_to :authorization_boundary, optional: true
 
   # #395 P2: inherit profile_document_id from the boundary's profile when

@@ -58,7 +58,9 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     @cdef.update!(cdef_params)
 
     audit_log("cdef_document_updated", subject: @cdef, metadata: { name: @cdef.name })
-    render json: { data: serialize_cdef(@cdef) }
+    # #555 — return the detailed shape so callers can read-after-write
+    # without an extra GET.
+    render json: { data: serialize_cdef(@cdef, detailed: true) }
   end
 
   # DELETE /api/v1/cdef_documents/:id

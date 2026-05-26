@@ -120,11 +120,6 @@ class TestCreate:
 
 class TestUpdate:
     @pytest.mark.happy
-    @pytest.mark.xfail(
-        reason="#555 — Update returns compact (index) shape instead of "
-        "detailed; `description` is absent from the response.",
-        strict=False,
-    )
     def test_admin_updates_via_put(
         self, admin_client: httpx.Client, poam_doc: dict[str, Any]
     ) -> None:

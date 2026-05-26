@@ -105,6 +105,13 @@ class Api::V1::BaseController < ActionController::API
 
   # Provide audit_log helper since we're not inheriting from ApplicationController.
   # Uses AuditEvent.log which handles polymorphic subject extraction.
+  #
+  # #567 — the rescue used to silently swallow every AuditEvent failure
+  # (including validation failures from unregistered action names),
+  # which meant compliance bugs landed in prod with no signal at all.
+  # Now: re-raise in dev / test so specs catch missing-action bugs
+  # immediately; in prod still rescue + log so a runtime audit-log
+  # outage doesn't take down API requests.
   def audit_log(action, subject: nil, metadata: {})
     AuditEvent.log(
       action: action,
@@ -115,5 +122,6 @@ class Api::V1::BaseController < ActionController::API
     )
   rescue => e
     Rails.logger.warn("Audit log failed: #{e.message}")
+    raise unless Rails.env.production?
   end
 end

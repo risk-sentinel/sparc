@@ -6,6 +6,10 @@ class SarDocument < ApplicationRecord
   include SoftDeletable
   include BoundaryLinkInheritance
 
+  # #557 — belt-and-suspenders for the API-create path. See SspDocument
+  # for the same fix.
+  after_initialize { self.status ||= "pending" }
+
   belongs_to :authorization_boundary, optional: true
 
   has_many :sar_controls, dependent: :delete_all

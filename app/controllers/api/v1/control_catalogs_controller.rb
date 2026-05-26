@@ -53,7 +53,8 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
     @catalog.update!(catalog_params)
 
     audit_log("control_catalog_updated", subject: @catalog, metadata: { name: @catalog.name })
-    render json: { data: serialize_catalog(@catalog) }
+    # #555 — return the detailed shape so callers can read-after-write.
+    render json: { data: serialize_catalog(@catalog, detailed: true) }
   end
 
   # DELETE /api/v1/control_catalogs/:id
@@ -69,8 +70,17 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
 
   private
 
+  # #566 — accept either numeric id or slug as the URL segment. The
+  # Create response returns both, and a caller that builds a follow-up
+  # URL from `id` shouldn't 404 just because they didn't notice that
+  # show/update/destroy historically only matched on slug.
   def set_catalog
-    @catalog = ControlCatalog.find_by!(slug: params[:id])
+    id_or_slug = params[:id].to_s
+    @catalog = if id_or_slug.match?(/\A\d+\z/)
+      ControlCatalog.find_by!(id: id_or_slug)
+    else
+      ControlCatalog.find_by!(slug: id_or_slug)
+    end
   end
 
   def catalog_params

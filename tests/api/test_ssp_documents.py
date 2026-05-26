@@ -177,16 +177,8 @@ class TestCreate:
 
 # ── update ─────────────────────────────────────────────────────────────────
 
-_UPDATE_SHAPE_XFAIL = pytest.mark.xfail(
-    reason="#555 — Update returns compact (index) shape instead of detailed; "
-    "`description` is absent from the response. Drift caught by #433 slice 2.",
-    strict=False,
-)
-
-
 class TestUpdate:
     @pytest.mark.happy
-    @_UPDATE_SHAPE_XFAIL
     def test_admin_updates_document_via_put(
         self, admin_client: httpx.Client, ssp_doc: dict[str, Any]
     ) -> None:
@@ -199,7 +191,6 @@ class TestUpdate:
         assert response.json()["data"]["description"] == new_description
 
     @pytest.mark.happy
-    @_UPDATE_SHAPE_XFAIL
     def test_admin_updates_document_via_patch(
         self, admin_client: httpx.Client, ssp_doc: dict[str, Any]
     ) -> None:

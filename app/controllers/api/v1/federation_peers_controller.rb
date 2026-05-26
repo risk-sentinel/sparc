@@ -16,8 +16,14 @@ class Api::V1::FederationPeersController < Api::V1::BaseController
   before_action :set_peer, only: %i[show update destroy sync]
 
   def index
-    peers = FederationPeer.order(:name)
-    render json: { data: peers.map { |p| serialize_peer(p) }, meta: { count: peers.size } }
+    # #562 — was rendering `meta: { count: ... }` only, diverging from
+    # every other paginated index. Now uses the shared paginate() helper
+    # so consumers get the standard `{page, pages, count, items}` envelope.
+    result = paginate(FederationPeer.order(:name))
+    render json: {
+      data: result[:data].map { |p| serialize_peer(p) },
+      meta: result[:meta]
+    }
   end
 
   def show

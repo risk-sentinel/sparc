@@ -92,7 +92,6 @@ RSpec.describe "Api::V1::Users", type: :request do
       # xfail per #567 — api_user_created is missing from AuditEvent::ACTIONS,
       # so the audit_log call silently fails (caught by base_controller rescue).
       # Remove this skip once the action is whitelisted.
-      skip "blocked on #567 — api_user_created missing from AuditEvent::ACTIONS"
 
       auth_headers
       assert_audit_event(
@@ -140,8 +139,6 @@ RSpec.describe "Api::V1::Users", type: :request do
     end
 
     it "emits an api_user_updated audit event (#433 slice 5)" do
-      skip "blocked on #567 — api_user_updated missing from AuditEvent::ACTIONS"
-
       target_user = create(:user)
       assert_audit_event(
         action: "api_user_updated",
@@ -168,8 +165,6 @@ RSpec.describe "Api::V1::Users", type: :request do
     end
 
     it "emits an api_user_deactivated audit event (#433 slice 5)" do
-      skip "blocked on #567 — api_user_deactivated missing from AuditEvent::ACTIONS"
-
       target_user = create(:user)
       assert_audit_event(
         action: "api_user_deactivated",

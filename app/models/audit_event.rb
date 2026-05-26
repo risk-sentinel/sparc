@@ -178,6 +178,12 @@ class AuditEvent < ApplicationRecord
     translation_hdf_to_oscal_poam
     translation_oscal_poam_to_hdf_amendments
     converter_refresh_started
+    api_user_created
+    api_user_updated
+    api_user_deactivated
+    api_authorization_boundary_created
+    api_authorization_boundary_updated
+    api_authorization_boundary_deleted
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }
@@ -189,7 +195,11 @@ class AuditEvent < ApplicationRecord
     "User Management" => %w[user_suspended user_reactivated user_deactivated
                             user_auto_deactivated user_password_expired admin_bootstrap
                             admin_password_reset admin_credential_synced_from_env
-                            admin_credential_rotated sparc_hash_rotated],
+                            admin_credential_rotated sparc_hash_rotated
+                            api_user_created api_user_updated api_user_deactivated],
+    "Auth Boundary Admin" => %w[api_authorization_boundary_created
+                                api_authorization_boundary_updated
+                                api_authorization_boundary_deleted],
     "Role Management" => %w[role_grant role_revoke role_created role_updated role_deleted],
     "Auth Boundary Members" => %w[authorization_boundary_member_added authorization_boundary_member_removed
                                   authorization_boundary_membership_created authorization_boundary_membership_updated

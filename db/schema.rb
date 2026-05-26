@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_23_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_26_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1098,7 +1098,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_200000) do
     t.string "sar_version"
     t.string "slug"
     t.bigint "ssp_document_id"
-    t.string "status"
+    t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sar_documents_on_authorization_boundary_id"
@@ -1394,7 +1394,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_200000) do
     t.string "security_sensitivity_level"
     t.string "slug"
     t.string "ssp_version"
-    t.string "status"
+    t.string "status", default: "pending"
     t.string "system_id"
     t.string "system_name_short"
     t.string "system_status", default: "operational"

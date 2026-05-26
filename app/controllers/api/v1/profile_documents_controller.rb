@@ -52,7 +52,8 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     @profile.update!(profile_params)
 
     audit_log("profile_document_updated", subject: @profile, metadata: { name: @profile.name })
-    render json: { data: serialize_profile(@profile) }
+    # #555 — return the detailed shape so callers can read-after-write.
+    render json: { data: serialize_profile(@profile, detailed: true) }
   end
 
   # DELETE /api/v1/profile_documents/:id

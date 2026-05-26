@@ -55,7 +55,9 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
     @document.update!(document_params)
 
     audit_log("#{document_audit_name}_updated", subject: @document, metadata: { name: @document.name })
-    render json: { data: serialize_document(@document) }
+    # #555 — return the detailed shape so callers can read-after-write.
+    # Affects SSP, SAR, SAP, POAM (all DocumentBase subclasses).
+    render json: { data: serialize_document(@document, detailed: true) }
   end
 
   # DELETE /api/v1/{resource}/:id
