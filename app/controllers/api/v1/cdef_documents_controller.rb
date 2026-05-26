@@ -55,12 +55,20 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   # PATCH /api/v1/cdef_documents/:id
   def update
-    @cdef.update!(cdef_params)
+    # #498 slice 1 — route the mutation through CdefMutationService so
+    # the post-mutation OSCAL hash is validated against the NIST
+    # component-definition schema before the transaction commits. A
+    # mutation that would produce an invalid OSCAL document is
+    # rejected with 422 instead of silently persisting.
+    CdefMutationService.apply(@cdef) do |c|
+      c.update!(cdef_params)
+    end
 
     audit_log("cdef_document_updated", subject: @cdef, metadata: { name: @cdef.name })
-    # #555 — return the detailed shape so callers can read-after-write
-    # without an extra GET.
+    # #555 — return the detailed shape so callers can read-after-write.
     render json: { data: serialize_cdef(@cdef, detailed: true) }
+  rescue CdefMutationService::ValidationError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   # DELETE /api/v1/cdef_documents/:id
