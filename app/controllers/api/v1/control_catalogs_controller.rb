@@ -17,8 +17,12 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::ControlCatalogsController < Api::V1::BaseController
+  # #575 Path D — authorize BEFORE finding so non-admin / unpermissioned
+  # callers get 403 (not 404 leaking existence info), and accept either
+  # the admin flag or an explicit `catalogs.write` permission so roles
+  # like policy_manager can manage catalogs without instance-admin.
+  before_action :authorize_catalogs_write!, only: [ :create, :update, :destroy ]
   before_action :set_catalog, only: [ :show, :update, :destroy ]
-  before_action :authorize_admin!, only: [ :create, :update, :destroy ]
 
   # GET /api/v1/control_catalogs
   def index
@@ -69,6 +73,17 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
   end
 
   private
+
+  # #575 Path D — admins always pass; everyone else needs the
+  # `catalogs.write` role permission. Mirrors the pattern in
+  # DocumentBaseController#authorize_document_write! but for an
+  # instance-scoped (non-boundary) resource.
+  def authorize_catalogs_write!
+    return if current_user&.admin?
+    return if current_user&.has_permission?("catalogs.write")
+
+    render json: { error: "Forbidden" }, status: :forbidden
+  end
 
   # #566 — accept either numeric id or slug as the URL segment. The
   # Create response returns both, and a caller that builds a follow-up

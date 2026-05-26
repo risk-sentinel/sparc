@@ -101,8 +101,16 @@ class Api::V1::KsiValidationsController < Api::V1::BaseController
 
   private
 
+  # #574 — accept either numeric id or slug. Same rationale as #566
+  # for control_catalogs / control_mappings: callers that build nested
+  # URLs from the `id` returned by the parent create shouldn't 404.
   def set_boundary
-    @boundary = AuthorizationBoundary.find_by!(slug: params[:authorization_boundary_id])
+    id_or_slug = params[:authorization_boundary_id].to_s
+    @boundary = if id_or_slug.match?(/\A\d+\z/)
+      AuthorizationBoundary.find_by!(id: id_or_slug)
+    else
+      AuthorizationBoundary.find_by!(slug: id_or_slug)
+    end
   end
 
   def set_validation

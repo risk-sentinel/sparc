@@ -17,8 +17,11 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::ControlMappingsController < Api::V1::BaseController
+  # #575 Path D — authorize BEFORE finding so non-admin / unpermissioned
+  # callers get 403, not 404 leaking existence. Admin OR `mappings.write`
+  # permission passes.
+  before_action :authorize_mappings_write!, only: [ :create, :update, :destroy ]
   before_action :set_mapping, only: [ :show, :update, :destroy ]
-  before_action :authorize_admin!, only: [ :create, :update, :destroy ]
 
   # GET /api/v1/control_mappings
   def index
@@ -68,6 +71,14 @@ class Api::V1::ControlMappingsController < Api::V1::BaseController
   end
 
   private
+
+  # #575 Path D — admin shortcut + `mappings.write` permission gate.
+  def authorize_mappings_write!
+    return if current_user&.admin?
+    return if current_user&.has_permission?("mappings.write")
+
+    render json: { error: "Forbidden" }, status: :forbidden
+  end
 
   # #566 — accept either numeric id or slug. See set_catalog above for
   # the rationale.

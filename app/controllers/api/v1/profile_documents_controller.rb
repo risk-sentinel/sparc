@@ -16,6 +16,11 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::ProfileDocumentsController < Api::V1::BaseController
+  # #575 Path D — admin OR `profiles.write` permission required for
+  # any mutation. Was previously open to any authenticated user (no
+  # gate at all). Run authorize BEFORE set_profile so a non-admin
+  # without the permission gets 403, not 404 leaking existence.
+  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy ]
   before_action :set_profile, only: [ :show, :update, :destroy ]
 
   # GET /api/v1/profile_documents
@@ -66,8 +71,22 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
 
   private
 
+  # #575 Path D — admin shortcut + `profiles.write` permission gate.
+  def authorize_profiles_write!
+    return if current_user&.admin?
+    return if current_user&.has_permission?("profiles.write")
+
+    render json: { error: "Forbidden" }, status: :forbidden
+  end
+
+  # #574 — accept either numeric id or slug.
   def set_profile
-    @profile = ProfileDocument.find_by!(slug: params[:id])
+    id_or_slug = params[:id].to_s
+    @profile = if id_or_slug.match?(/\A\d+\z/)
+      ProfileDocument.find_by!(id: id_or_slug)
+    else
+      ProfileDocument.find_by!(slug: id_or_slug)
+    end
   end
 
   def profile_params

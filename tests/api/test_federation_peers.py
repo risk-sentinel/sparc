@@ -18,13 +18,11 @@ import httpx
 import pytest
 
 from conftest import assert_error_envelope
-from pydantic import ValidationError
-
 from schemas import (
     FederationPeerIndex,
-    FederationPeerListEnvelope,
     FederationPeerShow,
     assert_create_round_trip,
+    validate_index_response,
     validate_show_response,
 )
 
@@ -76,13 +74,9 @@ class TestIndex:
         body = response.json()
         assert "data" in body and isinstance(body["data"], list)
         assert "meta" in body and "count" in body["meta"]
-        # #433 slice 2 — content-style validation. federation_peers has
-        # its own envelope (reduced meta) per #562 — once that lands,
-        # switch this back to the shared PaginatedEnvelope.
-        try:
-            FederationPeerListEnvelope.model_validate(body)
-        except ValidationError as exc:
-            pytest.fail(f"FederationPeerListEnvelope drift: {exc}")
+        # #562 was fixed in v1.7.3 — federation_peers now uses the
+        # shared paginate() helper, so the standard envelope applies.
+        validate_index_response(response, FederationPeerIndex)
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:

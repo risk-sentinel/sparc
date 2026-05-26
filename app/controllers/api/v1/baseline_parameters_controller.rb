@@ -67,8 +67,15 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
 
   private
 
+  # #574 — accept either numeric id or slug; same rationale as the
+  # ksi_validations and #566 fixes.
   def set_profile
-    @profile = ProfileDocument.find_by!(slug: params[:profile_document_id])
+    id_or_slug = params[:profile_document_id].to_s
+    @profile = if id_or_slug.match?(/\A\d+\z/)
+      ProfileDocument.find_by!(id: id_or_slug)
+    else
+      ProfileDocument.find_by!(slug: id_or_slug)
+    end
   end
 
   def parameter_payload

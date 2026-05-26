@@ -106,12 +106,33 @@ RSpec.describe "Api::V1::ProfileDocuments", type: :request do
       }.to change(AuditEvent, :count).by(1)
     end
 
-    context "as a non-admin user" do
+    context "as a non-admin user without profiles.write" do
       let(:regular_user) { create(:user) }
       let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
       let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
 
-      it "can create profiles (all authenticated)" do
+      # #575 Path D — was "all authenticated"; now admin OR
+      # `profiles.write` permission required.
+      it "is forbidden" do
+        post api_v1_profile_documents_path, params: {
+          profile_document: { name: "User Profile" }
+        }, headers: user_headers, as: :json
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "as a non-admin user WITH profiles.write" do
+      let(:regular_user) { create(:user) }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
+      let(:writer_role) do
+        Role.find_or_create_by!(name: "profile_writer", display_name: "Profile Writer",
+                                scope: "instance", permissions: { "profiles.write" => true })
+      end
+
+      before { regular_user.user_roles.create!(role: writer_role) }
+
+      it "can create profiles" do
         post api_v1_profile_documents_path, params: {
           profile_document: { name: "User Profile" }
         }, headers: user_headers, as: :json

@@ -44,23 +44,8 @@ class FederationPeerShow(FederationPeerIndex):
     public_metadata: dict = {}
 
 
-class _FederationMeta(BaseModel):
-    """Reduced meta currently returned by federation_peers#index.
-
-    Drop this and use the standard `Meta` once #562 lands.
-    """
-
-    model_config = STRICT
-    count: int
-
-
-class FederationPeerListEnvelope(BaseModel):
-    """Index envelope for federation_peers — accepts the reduced meta.
-
-    Used in place of the shared `PaginatedEnvelope[FederationPeerIndex]`
-    until #562 (federation_peers meta standardization) lands.
-    """
-
-    model_config = STRICT
-    data: list[FederationPeerIndex]
-    meta: _FederationMeta
+# #562 fixed in v1.7.3 — federation_peers#index now uses the shared
+# paginate() helper, so the standard `PaginatedEnvelope[FederationPeerIndex]`
+# applies and the reduced-meta workaround envelope is no longer needed.
+# The deletion of `_FederationMeta` / `FederationPeerListEnvelope` is the
+# cleanup that #562's fix unlocked.

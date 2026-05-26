@@ -67,8 +67,14 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
 
   private
 
+  # #574 — accept either numeric id or slug.
   def set_boundary
-    @boundary = AuthorizationBoundary.find_by!(slug: params[:id])
+    id_or_slug = params[:id].to_s
+    @boundary = if id_or_slug.match?(/\A\d+\z/)
+      AuthorizationBoundary.find_by!(id: id_or_slug)
+    else
+      AuthorizationBoundary.find_by!(slug: id_or_slug)
+    end
   end
 
   def authorize_boundary_read!

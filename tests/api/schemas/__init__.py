@@ -57,7 +57,6 @@ from ._catalog_mapping import (
 from ._back_matter import BackMatterResourceIndex, BackMatterResourceShow
 from ._federation import (
     FederationPeerIndex,
-    FederationPeerListEnvelope,
     FederationPeerShow,
 )
 from ._helpers import (
@@ -100,7 +99,6 @@ __all__ = [
     "BackMatterResourceShow",
     # Federation
     "FederationPeerIndex",
-    "FederationPeerListEnvelope",
     "FederationPeerShow",
     # Helpers
     "assert_create_round_trip",

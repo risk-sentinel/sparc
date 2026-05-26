@@ -139,9 +139,17 @@ class TestCreate:
         )
 
     @pytest.mark.authz
-    def test_non_admin_without_write_returns_403(self, user_client: httpx.Client) -> None:
+    def test_non_admin_can_create(self, user_client: httpx.Client) -> None:
+        """CDEF is intentionally open to any authenticated user per the
+        controller's design comment ("All CRUD operations are available
+        to any authenticated user"). The AWS Labs bulk-ingest flow and
+        the catalog refresh button both rely on this. If this ever
+        needs RBAC gating, see #575 Path D for the pattern to follow.
+        """
         response = user_client.post(PATH, json=_new_payload())
-        assert response.status_code in (401, 403)
+        assert response.status_code in (200, 201), response.text
+        # Clean up the document the non-admin just created.
+        delete_doc(user_client, PATH, response.json()["data"]["slug"])
 
     @pytest.mark.validation
     def test_missing_name_returns_422(self, admin_client: httpx.Client) -> None:
