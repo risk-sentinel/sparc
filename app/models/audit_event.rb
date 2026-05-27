@@ -188,6 +188,8 @@ class AuditEvent < ApplicationRecord
     api_user_created
     api_user_updated
     api_user_deactivated
+    api_session_bridged
+    api_session_bridge_failed
     api_authorization_boundary_created
     api_authorization_boundary_updated
     api_authorization_boundary_deleted
@@ -197,7 +199,8 @@ class AuditEvent < ApplicationRecord
 
   # ── Categories (for admin UI grouping) ─────────────────────────────────
   ACTION_CATEGORIES = {
-    "Authentication" => %w[login_success login_failure logout password_change],
+    "Authentication" => %w[login_success login_failure logout password_change
+                            api_session_bridged api_session_bridge_failed],
     "Authorization" => %w[authorization_failure],
     "User Management" => %w[user_suspended user_reactivated user_deactivated
                             user_auto_deactivated user_password_expired admin_bootstrap

@@ -65,6 +65,11 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
       description: "API discovery — lists available endpoints scoped to caller permissions",
       permission_read: nil, permission_write: nil, admin_only: false },
 
+    # --- Session bridge (#573) ---
+    { path: "/api/v1/sessions/from_token", methods: %w[POST],
+      description: "Exchange a Bearer API token for a Rails session cookie (UI test automation)",
+      permission_read: nil, permission_write: nil, admin_only: false },
+
     # --- SSP Documents ---
     { path: "/api/v1/ssp_documents", methods: %w[GET POST],
       description: "System Security Plans",

@@ -109,6 +109,17 @@ Rack::Attack.throttle("logins/failures/min/ip",
   req.ip if rack_attack_login_failure_request?(req)
 end
 
+# #573 — dedicated bucket for the API → session bridge. Same family
+# of throttle as login failures: stricter than general api/writes
+# because a successful bridge yields a session cookie. The IP is
+# the discriminator (not the token), so a token brute-force from
+# one IP can't sidestep by rotating tokens.
+Rack::Attack.throttle("api/sessions_from_token/min/ip",
+                      limit: ->(_req) { SparcConfig.rate_limit_login_failures_per_minute },
+                      period: 1.minute) do |req|
+  req.ip if req.path == "/api/v1/sessions/from_token" && req.request_method == "POST"
+end
+
 # ── 429 response ───────────────────────────────────────────────────────────
 
 Rack::Attack.throttled_responder = lambda do |request|

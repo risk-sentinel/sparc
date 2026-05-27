@@ -349,6 +349,13 @@ Rails.application.routes.draw do
       # API discovery (#250)
       get "available", to: "discovery#available"
 
+      # #573 — Bearer-token → Rails session cookie bridge. Lets a
+      # test runner (Playwright/etc.) acquire a valid session cookie
+      # from a SPARC API token so it can drive the UI without screen-
+      # scraping the login form. Authenticated via the same Bearer
+      # token path as every other /api/v1/* endpoint.
+      post "sessions/from_token", to: "sessions#from_token", as: :sessions_from_token
+
       # Document CRUD + legacy actions (#229)
       resources :ssp_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do

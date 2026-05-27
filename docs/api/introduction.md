@@ -133,6 +133,67 @@ curl -s -X DELETE https://sparc.example.com/api/v1/ssp_documents/acme-cloud-plat
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" | jq .
 ```
 
+## UI Automation: Bearer-Token to Session Cookie Bridge (#573)
+
+Test runners (Playwright, Cypress, headless Chromium) often need to
+drive the SPARC UI as an authenticated user. The bridge endpoint
+exchanges a SPARC API token for a Rails session cookie that
+subsequent web requests will accept:
+
+```
+POST /api/v1/sessions/from_token
+Authorization: Bearer sparc_sa_<your_service_account_token>
+```
+
+Response: `204 No Content` with a `Set-Cookie` header containing the
+Rails session cookie. Attach that cookie to subsequent web requests
+to drive the UI as the bridged user.
+
+### Playwright (Python) example
+
+```python
+import os
+import requests
+from playwright.sync_api import sync_playwright
+
+SPARC_URL = "https://sparc.example.com"
+TOKEN     = os.environ["SPARC_TEST_ADMIN_TOKEN"]
+
+# Bridge: token → session cookie
+resp = requests.post(
+    f"{SPARC_URL}/api/v1/sessions/from_token",
+    headers={"Authorization": f"Bearer {TOKEN}"},
+)
+assert resp.status_code == 204
+session_cookie = resp.cookies.get_dict()
+
+with sync_playwright() as p:
+    browser = p.chromium.launch()
+    context = browser.new_context()
+    # Hand Playwright the bridged session cookie
+    for name, value in session_cookie.items():
+        context.add_cookies([{"name": name, "value": value,
+                              "url": SPARC_URL}])
+    page = context.new_page()
+    page.goto(f"{SPARC_URL}/admin/users")  # already authenticated
+    ...
+```
+
+### Security notes
+
+- The bridge requires a valid Bearer token; revoked / expired tokens
+  return `401` with no `Set-Cookie`.
+- Bridged sessions inherit `SPARC_SESSION_TIMEOUT_MINUTES` — no
+  longer-lived than form-login sessions.
+- Every bridge attempt is audit-logged (`api_session_bridged` on
+  success, `api_session_bridge_failed` on failure) and visible in
+  `/admin/audit_logs` under the **Authentication** category.
+- The endpoint shares a dedicated Rack::Attack throttle bucket
+  (`api/sessions_from_token/min/ip`) keyed on client IP, distinct
+  from general API write rate limits.
+- A non-admin SA bridges into a non-admin session. Admin-or-not
+  follows the user record.
+
 ## Further Reading
 
 - [Authentication](authentication.md) -- token types, auth modes, and generating tokens
