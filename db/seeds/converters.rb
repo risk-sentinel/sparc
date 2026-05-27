@@ -8,7 +8,13 @@ require "json"
 
 MAPPINGS_DIR = Rails.root.join("lib/data_mappings")
 
-def seed_converter(name:, converter_type:, source_framework:, version:, description:, source:)
+def seed_converter(name:, converter_type:, source_framework:, version:, description:, source:, target_rev: nil)
+  # #499 slice 2 — `target_rev` records which NIST 800-53 revision the
+  # converter's `target_id` values are expressed in ("4" or "5"). The
+  # normalizer (ControlIdNormalizer) consults this when a caller asks
+  # for a different rev than the converter natively emits. Stored in
+  # metadata_extra to avoid a schema migration; accessed via
+  # Converter#target_rev.
   Converter.find_or_create_by!(name: name) do |c|
     c.converter_type   = converter_type
     c.source_framework = source_framework
@@ -16,7 +22,7 @@ def seed_converter(name:, converter_type:, source_framework:, version:, descript
     c.version          = version
     c.description      = description
     c.status           = "complete"
-    c.metadata_extra   = { source: source }
+    c.metadata_extra   = { source: source, target_rev: target_rev }.compact.transform_keys(&:to_s)
   end
 end
 
@@ -43,7 +49,10 @@ if cci_file.exist?
     source_framework: data["source"],
     version: data["version"],
     description: data["description"],
-    source: data["source"]
+    source: data["source"],
+    # CciNistResolvable prefers nist_rev5 with nist_rev4 fallback,
+    # so the natively-emitted ids are Rev 5 for the dominant case.
+    target_rev: "5"
   )
 
   if converter.converter_entries.none?
@@ -89,7 +98,8 @@ if cis_file.exist?
     source_framework: data["source"],
     version: data["version"],
     description: data["description"],
-    source: data["source"]
+    source: data["source"],
+    target_rev: "5"  # CIS Controls v8 → NIST 800-53 Rev 5 per fixture
   )
 
   if converter.converter_entries.none?
@@ -154,7 +164,8 @@ if scap_file.exist?
     source_framework: data["source"],
     version: data["version"],
     description: data["description"],
-    source: data["source"]
+    source: data["source"],
+    target_rev: "5"  # SCAP/OVAL → NIST 800-53 Rev 5 per fixture description
   )
 
   if converter.converter_entries.none?
@@ -269,7 +280,11 @@ if mitre_path.exist?
     version: mitre_doc["version"],
     description: "AWS Config Rule → NIST 800-53 mapping vendored from mitre/heimdall2 " \
                  "(Apache-2.0). Editable to extend coverage beyond MITRE's curated set.",
-    source: mitre_doc["source"]
+    source: mitre_doc["source"],
+    # MITRE heimdall2 AwsConfigMappingData emits Rev 4 control ids.
+    # The ControlIdNormalizer auto-translates to Rev 5 when a caller
+    # requests target_rev=5.
+    target_rev: "4"
   )
 
   if converter.converter_entries.none?
@@ -324,7 +339,8 @@ if aws_path.exist?
                  "Source: AWS Security Hub User Guide (scraped). Chained with the " \
                  "AWS Config Rule converter at import time for controls without an " \
                  "AWS-published NIST mapping.",
-    source: aws_doc["source"]
+    source: aws_doc["source"],
+    target_rev: "5"
   )
 
   if converter.converter_entries.none?

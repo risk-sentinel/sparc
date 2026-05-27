@@ -217,6 +217,10 @@ Rails.application.routes.draw do
       post :create_control_resource
       post :link_control_resource
       delete :unlink_control_resource
+      # #499 slice 5 — bulk-apply Converter UI (preview-then-confirm).
+      get  :bulk_apply
+      post :bulk_apply_preview
+      post :bulk_apply_confirm
     end
     collection do
       get :select_profile
@@ -385,7 +389,14 @@ Rails.application.routes.draw do
           get :export, on: :member
         end
       end
-      resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ]
+      resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          # #499 slice 3 — bulk-apply Converter output to a CDEF clone.
+          # Preview returns a signed token; confirm (slice 4) replays it.
+          post "bulk_apply_converter/preview", action: :bulk_apply_converter_preview, as: :bulk_apply_converter_preview
+          post "bulk_apply_converter/confirm", action: :bulk_apply_converter_confirm, as: :bulk_apply_converter_confirm
+        end
+      end
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]
 
       # Back-matter resource management (#375) + authoritative workflow (#372)

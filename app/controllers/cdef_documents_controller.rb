@@ -4,7 +4,7 @@ class CdefDocumentsController < ApplicationController
   include OscalExportable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm]
   before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement ]
   # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
   # ConvertersController. Treats AWS Labs catalog refresh as an
@@ -368,6 +368,69 @@ class CdefDocumentsController < ApplicationController
     end
   end
 
+  # ── #499 slice 5 — bulk-apply Converter UI (preview-then-confirm) ──
+
+  # GET /cdef_documents/:id/bulk_apply
+  def bulk_apply
+    authorize_bulk_apply_web!
+    refuse_if_aws_labs!
+    @converters = Converter.where(status: "complete").order(:name)
+    @baseline_present = @cdef_document.profile_document.present?
+  end
+
+  # POST /cdef_documents/:id/bulk_apply_preview
+  def bulk_apply_preview
+    authorize_bulk_apply_web!
+    refuse_if_aws_labs!
+
+    @converter = Converter.find_by(id: params[:converter_id])
+    unless @converter
+      flash[:error] = "Converter not found"
+      return redirect_to(bulk_apply_cdef_document_path(@cdef_document))
+    end
+
+    @target_rev = params[:target_rev].presence
+    @only_missing_vs_baseline = ActiveModel::Type::Boolean.new.cast(params[:only_missing_vs_baseline])
+
+    @result = CdefBulkApplyService.new(
+      cdef:                     @cdef_document,
+      converter:                @converter,
+      target_rev:               @target_rev,
+      only_missing_vs_baseline: @only_missing_vs_baseline
+    ).preview
+
+    audit_log("cdef_bulk_apply_converter_previewed", subject: @cdef_document,
+              metadata: { converter_id: @converter.id, ready: @result.stats[:ready] })
+    render :bulk_apply_preview
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to bulk_apply_cdef_document_path(@cdef_document)
+  end
+
+  # POST /cdef_documents/:id/bulk_apply_confirm
+  def bulk_apply_confirm
+    authorize_bulk_apply_web!
+    refuse_if_aws_labs!
+
+    selected = params[:selected_target_ids].respond_to?(:to_unsafe_h) ? params[:selected_target_ids].to_unsafe_h : {}
+
+    result = CdefBulkApplyService.apply!(
+      cdef:                @cdef_document,
+      token:               params[:token].to_s,
+      selected_target_ids: selected,
+      user:                current_user
+    )
+
+    flash[:success] = "Bulk apply complete — added #{result[:added]} control(s)"
+    redirect_to cdef_document_path(@cdef_document)
+  rescue ArgumentError => e
+    flash[:error] = "Apply failed: #{e.message}"
+    redirect_to bulk_apply_cdef_document_path(@cdef_document)
+  rescue CdefMutationService::ValidationError => e
+    flash[:error] = "OSCAL validation failed — apply rolled back: #{e.message.truncate(200)}"
+    redirect_to bulk_apply_cdef_document_path(@cdef_document)
+  end
+
   def unlink_control_resource
     control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
     link = control.control_back_matter_links.find(params[:link_id])
@@ -378,6 +441,22 @@ class CdefDocumentsController < ApplicationController
   end
 
   private
+
+  # #499 slice 5 — bulk-apply web UI auth helpers.
+  def authorize_bulk_apply_web!
+    return if current_user&.admin?
+    return if current_user&.has_permission?("converters.write")
+
+    flash[:error] = "Not authorized to bulk-apply converters."
+    redirect_to cdef_document_path(@cdef_document) and return
+  end
+
+  def refuse_if_aws_labs!
+    return unless @cdef_document.aws_labs_source?
+
+    flash[:error] = "Bulk-apply is disabled on AWS-Labs-sourced CDEFs. Clone first."
+    redirect_to cdef_document_path(@cdef_document) and return
+  end
 
   def control_resource_params
     params.require(:back_matter_resource).permit(:title, :description, :href, :media_type, :rel)

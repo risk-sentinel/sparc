@@ -16,7 +16,7 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
-  before_action :set_cdef, only: [ :show, :update, :destroy ]
+  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm ]
 
   # GET /api/v1/cdef_documents
   def index
@@ -78,6 +78,81 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
+  # POST /api/v1/cdef_documents/:id/bulk_apply_converter/preview
+  # #499 slice 3 — return the changeset a Converter would apply to this
+  # CDEF (no writes), plus a HMAC-signed token the confirm endpoint
+  # (slice 4) will replay.
+  def bulk_apply_converter_preview
+    authorize_bulk_apply!
+
+    converter = Converter.find_by(id: params[:converter_id]) ||
+                Converter.find_by(uuid: params[:converter_id])
+    return render(json: { error: "Converter not found" }, status: :not_found) unless converter
+
+    if @cdef.aws_labs_source?
+      return render(
+        json: { error: "Cannot bulk-apply to an AWS-Labs-sourced CDEF — clone first" },
+        status: :unprocessable_entity
+      )
+    end
+
+    service = CdefBulkApplyService.new(
+      cdef:                     @cdef,
+      converter:                converter,
+      target_rev:               params[:target_rev],
+      source_ids:               params[:source_ids],
+      only_missing_vs_baseline: ActiveModel::Type::Boolean.new.cast(params[:only_missing_vs_baseline])
+    )
+
+    result = service.preview
+
+    audit_log_api("cdef_bulk_apply_converter_previewed", @cdef,
+                  converter_id: converter.id, ready: result.stats[:ready])
+    render json: {
+      data: {
+        cdef_id:        @cdef.id,
+        cdef_slug:      @cdef.slug,
+        converter_id:   converter.id,
+        converter_uuid: converter.uuid,
+        target_rev:     params[:target_rev],
+        token:          result.token,
+        stats:          result.stats,
+        rows:           result.rows.map(&:to_h)
+      }
+    }
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  # POST /api/v1/cdef_documents/:id/bulk_apply_converter/confirm
+  # #499 slice 4 — replay a preview token and apply ready rows via
+  # CdefMutationService (transactional + OSCAL-validated).
+  def bulk_apply_converter_confirm
+    authorize_bulk_apply!
+
+    if @cdef.aws_labs_source?
+      return render(
+        json: { error: "Cannot bulk-apply to an AWS-Labs-sourced CDEF — clone first" },
+        status: :unprocessable_entity
+      )
+    end
+
+    selected = params[:selected_target_ids].respond_to?(:to_unsafe_h) ? params[:selected_target_ids].to_unsafe_h : Hash(params[:selected_target_ids])
+
+    result = CdefBulkApplyService.apply!(
+      cdef:                @cdef,
+      token:               params[:token].to_s,
+      selected_target_ids: selected,
+      user:                current_user
+    )
+
+    render json: { data: { cdef_id: @cdef.id, cdef_slug: @cdef.slug, **result } }
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  rescue CdefMutationService::ValidationError => e
+    render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
+  end
+
   # DELETE /api/v1/cdef_documents/:id
   def destroy
     @cdef.soft_delete!
@@ -90,6 +165,29 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   def set_cdef
     @cdef = CdefDocument.find_by!(slug: params[:id])
+  end
+
+  # #499 slice 3 — bulk-apply gated on converters.write (matches the
+  # existing AWS Labs refresh authorization).
+  def authorize_bulk_apply!
+    return if current_user.admin?
+    return if current_user.has_permission?("converters.write")
+
+    raise NotAuthorizedError, "Not authorized to bulk-apply converters"
+  end
+
+  # #499 slice 4 — minimal AuditEvent wrapper for API context (the
+  # controller's auditable concern lives in Auditable; mirror it here
+  # for the API base controller which is ActionController::API).
+  def audit_log_api(action, subject, metadata = {})
+    AuditEvent.log(
+      user:       current_user,
+      action:     action,
+      ip_address: request.remote_ip,
+      user_agent: request.user_agent,
+      subject:    subject,
+      metadata:   metadata
+    )
   end
 
   def cdef_params

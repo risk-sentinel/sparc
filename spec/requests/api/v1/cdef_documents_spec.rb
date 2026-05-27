@@ -224,4 +224,153 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       end
     end
   end
+
+  # ── #499 slice 3 — bulk-apply Converter preview ─────────────────────
+  describe "POST /api/v1/cdef_documents/:id/bulk_apply_converter/preview" do
+    let(:cdef) { create(:cdef_document, name: "Bulk Apply Spec") }
+    let(:converter) do
+      conv = Converter.create!(name: "Spec Converter", converter_type: "custom",
+                               status: "complete", metadata_extra: { "target_rev" => "5" })
+      ConverterEntry.create!(converter: conv, source_id: "src-x", target_id: "ac-2",
+                             relationship: "equivalent", row_order: 0)
+      conv
+    end
+    let(:path) { "/api/v1/cdef_documents/#{cdef.slug}/bulk_apply_converter/preview" }
+
+    it "returns the changeset + token for admin caller" do
+      post path, params: { converter_id: converter.id }, headers: auth_headers, as: :json
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)["data"]
+      expect(data["rows"].length).to eq(1)
+      expect(data["rows"].first["target_id"]).to eq("ac-2")
+      expect(data["token"]).to be_present
+      expect(data["stats"]).to include("ready" => 1, "already_present" => 0)
+    end
+
+    it "returns 404 for an unknown converter_id" do
+      post path, params: { converter_id: 999_999 }, headers: auth_headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 422 when the CDEF is AWS-Labs-sourced" do
+      cdef.update!(import_metadata: { "source_type" => "aws_labs", "source_url" => "https://example/cdef.json" })
+      post path, params: { converter_id: converter.id }, headers: auth_headers, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to include("clone first")
+    end
+
+    it "returns 401 without an API token" do
+      post path, params: { converter_id: converter.id }, as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    context "as a non-admin user without converters.write" do
+      let(:regular_user) { create(:user) }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
+
+      it "returns 403" do
+        post path, params: { converter_id: converter.id }, headers: user_headers, as: :json
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "as a non-admin user WITH converters.write" do
+      let(:regular_user) { create(:user) }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
+      let(:writer_role) do
+        Role.find_or_create_by!(name: "converter_writer", display_name: "Converter Writer",
+                                scope: "instance", permissions: { "converters.write" => true })
+      end
+
+      before { regular_user.user_roles.create!(role: writer_role) }
+
+      it "is authorized to preview" do
+        post path, params: { converter_id: converter.id }, headers: user_headers, as: :json
+        expect(response).to have_http_status(:ok)
+      end
+    end
+  end
+
+  # ── #499 slice 4 — bulk-apply Converter confirm ─────────────────────
+  describe "POST /api/v1/cdef_documents/:id/bulk_apply_converter/confirm" do
+    let(:cdef) { create(:cdef_document, name: "Confirm Spec") }
+    let(:converter) do
+      conv = Converter.create!(name: "Confirm Converter", converter_type: "custom",
+                               status: "complete", metadata_extra: { "target_rev" => "5" })
+      ConverterEntry.create!(converter: conv, source_id: "src-a", target_id: "au-2",
+                             relationship: "equivalent", row_order: 0)
+      conv
+    end
+    let(:preview_path) { "/api/v1/cdef_documents/#{cdef.slug}/bulk_apply_converter/preview" }
+    let(:confirm_path) { "/api/v1/cdef_documents/#{cdef.slug}/bulk_apply_converter/confirm" }
+
+    def fetch_token
+      post preview_path, params: { converter_id: converter.id }, headers: auth_headers, as: :json
+      JSON.parse(response.body).dig("data", "token")
+    end
+
+    it "applies the changeset and adds CdefControl rows" do
+      token = fetch_token
+      expect {
+        post confirm_path, params: { token: token }, headers: auth_headers, as: :json
+      }.to change { cdef.cdef_controls.count }.by(1)
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)["data"]
+      expect(data["added"]).to eq(1)
+      expect(data["added_control_ids"]).to eq([ "au-2" ])
+    end
+
+    it "is idempotent — re-confirming the same token after apply doesn't add duplicates" do
+      token = fetch_token
+      post confirm_path, params: { token: token }, headers: auth_headers, as: :json
+
+      # Re-preview (token from after the apply) + re-confirm.
+      token2 = fetch_token
+      expect {
+        post confirm_path, params: { token: token2 }, headers: auth_headers, as: :json
+      }.not_to change { cdef.cdef_controls.count }
+    end
+
+    it "rejects a token from a different CDEF" do
+      token = fetch_token
+      other = create(:cdef_document, name: "Other CDEF")
+      post "/api/v1/cdef_documents/#{other.slug}/bulk_apply_converter/confirm",
+           params: { token: token }, headers: auth_headers, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to include("CDEF mismatch")
+    end
+
+    it "rejects a tampered token" do
+      token = fetch_token
+      tampered = token.sub(/\.\w/, ".X")
+      post confirm_path, params: { token: tampered }, headers: auth_headers, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to include("signature invalid")
+    end
+
+    it "returns 422 when the CDEF is AWS-Labs-sourced" do
+      token = fetch_token
+      cdef.update!(import_metadata: { "source_type" => "aws_labs", "source_url" => "https://example/cdef.json" })
+      post confirm_path, params: { token: token }, headers: auth_headers, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns 401 without an API token" do
+      post confirm_path, params: { token: "anything" }, as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    context "as a non-admin user without converters.write" do
+      let(:regular_user) { create(:user) }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
+
+      it "returns 403" do
+        post confirm_path, params: { token: "anything" }, headers: user_headers, as: :json
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+  end
 end

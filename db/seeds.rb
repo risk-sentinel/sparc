@@ -2401,6 +2401,13 @@ load Rails.root.join("db/seeds/fedramp_20x_ksi.rb")
 end # SeedRunner fedramp_20x_ksi
 
 # ══════════════════════════════════════════════════════════════════════
+# REQUIRED: NIST SP 800-53 Rev 4 ↔ Rev 5 ControlMapping (#499 slice 1)
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("nist_rev4_rev5_mapping") do
+load Rails.root.join("db/seeds/nist_rev4_rev5_mapping.rb")
+end # SeedRunner nist_rev4_rev5_mapping
+
+# ══════════════════════════════════════════════════════════════════════
 # REQUIRED: Converter Mapping Fixtures
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("converters") do

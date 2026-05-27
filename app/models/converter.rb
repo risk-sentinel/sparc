@@ -42,6 +42,19 @@ class Converter < ApplicationRecord
     TYPE_LABELS[converter_type] || converter_type.titleize
   end
 
+  # #499 slice 2 — which NIST 800-53 revision the converter's
+  # `target_id` values are expressed in ("4" or "5"). Stored in
+  # metadata_extra rather than a column to avoid a schema migration.
+  # `ControlIdNormalizer.translate` consults this when a caller asks
+  # for a different rev than the converter natively emits.
+  def target_rev
+    metadata_extra&.dig("target_rev")
+  end
+
+  def target_rev=(rev)
+    self.metadata_extra = (metadata_extra || {}).merge("target_rev" => rev&.to_s)
+  end
+
   def entries_count
     converter_entries.count
   end

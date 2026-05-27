@@ -1,0 +1,62 @@
+<%# #499 slice 5 — bulk-apply Converter picker. Step 1 of 2 (preview → confirm). %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h3 class="mb-1">Bulk Apply Converter</h3>
+      <div class="text-muted small">
+        Target CDEF:
+        <%= link_to @cdef_document.name, cdef_document_path(@cdef_document) %>
+      </div>
+    </div>
+    <%= link_to "← Back to CDEF", cdef_document_path(@cdef_document),
+          class: "sparc-btn-ghost-muted" %>
+  </div>
+
+  <% if @converters.none? %>
+    <div class="alert alert-warning">
+      No completed converters available. Seed converters via
+      <code>bin/rails db:seed</code> first.
+    </div>
+  <% else %>
+    <%= form_with url: bulk_apply_preview_cdef_document_path(@cdef_document),
+                  method: :post, local: true, class: "sparc-card p-4" do |f| %>
+      <div class="mb-3">
+        <%= f.label :converter_id, "Converter", class: "form-label fw-semibold" %>
+        <%= f.select :converter_id,
+              @converters.map { |c| [ "#{c.name} (target Rev #{c.target_rev || '?'})", c.id ] },
+              { include_blank: "Pick a converter…" },
+              class: "form-select", required: true %>
+        <div class="form-text">
+          The converter's target Rev is shown. If it differs from your CDEF's
+          baseline rev, set <em>Target Rev</em> below and the normalizer
+          will translate.
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :target_rev, "Target Rev (optional)", class: "form-label fw-semibold" %>
+        <%= f.select :target_rev,
+              [ [ "Use converter's native rev", "" ], [ "Rev 4", "4" ], [ "Rev 5", "5" ] ],
+              {},
+              class: "form-select" %>
+      </div>
+
+      <div class="form-check mb-4">
+        <%= f.check_box :only_missing_vs_baseline, class: "form-check-input",
+              disabled: !@baseline_present %>
+        <%= f.label :only_missing_vs_baseline, class: "form-check-label" do %>
+          Only show controls that are missing vs. baseline
+          <% unless @baseline_present %>
+            <span class="text-muted small">(no profile linked to this CDEF)</span>
+          <% end %>
+        <% end %>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= f.submit "Preview Changes", class: "sparc-btn-primary" %>
+        <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "sparc-btn-ghost" %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

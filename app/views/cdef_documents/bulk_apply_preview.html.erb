@@ -1,0 +1,101 @@
+<%# #499 slice 5 — bulk-apply preview table. Step 2 of 2 (preview → confirm). %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h3 class="mb-1">Preview: Bulk Apply</h3>
+      <div class="text-muted small">
+        <strong><%= @converter.name %></strong> →
+        <%= link_to @cdef_document.name, cdef_document_path(@cdef_document) %>
+        <% if @target_rev.present? && @target_rev != @converter.target_rev %>
+          <span class="badge bg-info ms-2">
+            translated <%= @converter.target_rev %> → <%= @target_rev %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+    <%= link_to "← Pick a different converter",
+          bulk_apply_cdef_document_path(@cdef_document), class: "sparc-btn-ghost-muted" %>
+  </div>
+
+  <div class="sparc-card p-3 mb-4 d-flex gap-4">
+    <div><strong><%= @result.stats[:total] %></strong> total rows</div>
+    <div class="text-success"><strong><%= @result.stats[:ready] %></strong> ready</div>
+    <div class="text-warning">
+      <strong><%= @result.stats[:needs_disambiguation] %></strong>
+      need disambiguation
+    </div>
+    <div class="text-muted">
+      <strong><%= @result.stats[:already_present] %></strong> already present
+    </div>
+  </div>
+
+  <% if @result.rows.none? %>
+    <div class="alert alert-info">
+      Nothing to add — the CDEF already has every control this converter maps to.
+    </div>
+    <%= link_to "Back to CDEF", cdef_document_path(@cdef_document),
+          class: "sparc-btn-ghost" %>
+  <% else %>
+    <%= form_with url: bulk_apply_confirm_cdef_document_path(@cdef_document),
+                  method: :post, local: true do |f| %>
+      <%= f.hidden_field :token, value: @result.token %>
+
+      <div class="sparc-card p-0 mb-4" style="overflow-x: auto;">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Source</th>
+              <th>Target</th>
+              <th>Title</th>
+              <th>Relationship</th>
+              <th>Status</th>
+              <th>Pick</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @result.rows.each do |row| %>
+              <tr class="<%= 'table-warning' if row.status == 'needs_disambiguation' %>
+                         <%= 'text-muted' if row.status == 'already_present' %>">
+                <td><code><%= row.source_id %></code></td>
+                <td><code><%= row.target_id %></code></td>
+                <td><%= row.title.to_s.truncate(60) %></td>
+                <td>
+                  <% if row.relationship.present? %>
+                    <span class="badge bg-secondary"><%= row.relationship %></span>
+                  <% end %>
+                </td>
+                <td>
+                  <% case row.status %>
+                  <% when "ready" %>
+                    <span class="badge bg-success">ready</span>
+                  <% when "needs_disambiguation" %>
+                    <span class="badge bg-warning text-dark">needs pick</span>
+                  <% when "already_present" %>
+                    <span class="badge bg-light text-muted border">already present</span>
+                  <% end %>
+                  <% if row.note.present? %>
+                    <div class="small text-muted mt-1"><%= row.note %></div>
+                  <% end %>
+                </td>
+                <td>
+                  <% if row.status == "needs_disambiguation" %>
+                    <input type="radio"
+                           name="selected_target_ids[<%= row.source_id %>]"
+                           value="<%= row.target_id %>" />
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= f.submit "Confirm & Apply", class: "sparc-btn-primary",
+              data: { turbo_confirm: "Add #{@result.stats[:ready]} ready control(s) to this CDEF? Disambiguation picks above will also be applied." } %>
+        <%= link_to "Cancel", cdef_document_path(@cdef_document), class: "sparc-btn-ghost" %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

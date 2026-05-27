@@ -67,6 +67,8 @@ class AuditEvent < ApplicationRecord
     cdef_document_imported
     cdef_document_copied
     cdef_back_matter_promoted
+    cdef_bulk_apply_converter_previewed
+    cdef_bulk_apply_converter_applied
     aws_labs_cdef_refresh_requested
     control_resource_created
     control_resource_linked
@@ -221,6 +223,8 @@ class AuditEvent < ApplicationRecord
                            cdef_document_delete_blocked
                            cdef_document_exported cdef_document_imported cdef_document_copied
                            cdef_document_published cdef_back_matter_promoted
+                           cdef_bulk_apply_converter_previewed
+                           cdef_bulk_apply_converter_applied
                            aws_labs_cdef_refresh_requested
                            control_resource_created control_resource_linked
                            control_resource_unlinked],

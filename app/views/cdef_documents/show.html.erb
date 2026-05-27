@@ -97,6 +97,12 @@
                 class: "sparc-btn-ghost", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
         <% end %>
       <% end %>
+      <%# #499 slice 5 — bulk-apply Converter (editable clones only). %>
+      <% if signed_in? && !@cdef_document.aws_labs_source? &&
+            (current_user.admin? || current_user.has_permission?("converters.write")) %>
+        <%= link_to "Bulk Apply Converter", bulk_apply_cdef_document_path(@cdef_document),
+              class: "sparc-btn-ghost" %>
+      <% end %>
       <% if signed_in? && @cdef_document.draft? %>
         <%= render "shared/publish_button", document: @cdef_document,
               publish_path: publish_cdef_document_path(@cdef_document),
