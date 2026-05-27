@@ -12,9 +12,22 @@
 # and the new source_uuid metadata key (for v1.8.2 imports), so a
 # resume from a partially-failed v1.8.1 deploy picks up cleanly.
 class PromoteCdefBackMatterImports < ActiveRecord::Migration[8.1]
+  # v1.8.3 — deferred. The schema_migrations row gets recorded at
+  # db:migrate time but the body below executes post-boot via
+  # DeferredDataMigrationJob, so the container comes up immediately
+  # and ECS health checks pass while the data migration runs in the
+  # background. See app/lib/deferred_data_migration.rb.
+  include DeferredDataMigration
+
   UUID_V4 = /\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
   def up
+    defer_data_migration do
+      promote_all_cdefs
+    end
+  end
+
+  def promote_all_cdefs
     CdefDocument.find_each do |cdef|
       resources = cdef.import_metadata&.dig("back_matter")
       next if resources.blank?

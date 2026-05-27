@@ -1,0 +1,74 @@
+<%# v1.8.3 — read-only status page for deferred data migrations. %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h3 class="mb-1">Data Migrations</h3>
+      <div class="text-muted small">
+        Post-boot deferred data migrations and their current status.
+        Use <code>bin/rake sparc:data_migrations:run</code> from a
+        one-off task to retry; <code>sparc:data_migrations:reset NAME=ClassName</code>
+        to put a row back into the pending queue.
+      </div>
+    </div>
+    <%= link_to "Refresh", admin_data_migrations_path, class: "sparc-btn-ghost-muted" %>
+  </div>
+
+  <div class="sparc-card p-3 mb-4 d-flex gap-4">
+    <div><strong><%= @counts[:pending] %></strong> pending</div>
+    <div class="text-info"><strong><%= @counts[:running] %></strong> running</div>
+    <div class="text-success"><strong><%= @counts[:completed] %></strong> completed</div>
+    <div class="text-danger"><strong><%= @counts[:failed] %></strong> failed</div>
+  </div>
+
+  <% if @data_migration_runs.empty? %>
+    <div class="alert alert-info">
+      No deferred data migrations have been registered yet. They get
+      registered the first time their schema migration runs via
+      <code>db:migrate</code>; the body executes post-boot via
+      <code>DeferredDataMigrationJob</code>.
+    </div>
+  <% else %>
+    <div class="sparc-card p-0" style="overflow-x: auto;">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Version</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Completed</th>
+            <th>Duration</th>
+            <th>Records</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @data_migration_runs.each do |run| %>
+            <tr>
+              <td><code><%= run.name %></code></td>
+              <td><%= run.version %></td>
+              <td>
+                <% case run.status %>
+                <% when "pending" %>
+                  <span class="badge bg-secondary">pending</span>
+                <% when "running" %>
+                  <span class="badge bg-info">running</span>
+                <% when "completed" %>
+                  <span class="badge bg-success">completed</span>
+                <% when "failed" %>
+                  <span class="badge bg-danger">failed</span>
+                <% end %>
+              </td>
+              <td><%= run.started_at&.iso8601 || "—" %></td>
+              <td><%= run.completed_at&.iso8601 || "—" %></td>
+              <td><%= run.duration_seconds ? "#{run.duration_seconds}s" : "—" %></td>
+              <td><%= run.records_processed %></td>
+              <td class="small text-muted"><%= run.error_message&.truncate(120) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_26_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -465,6 +465,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200000) do
     t.index ["slug"], name: "index_converters_on_slug", unique: true
     t.index ["status"], name: "index_converters_on_status"
     t.index ["uuid"], name: "index_converters_on_uuid", unique: true
+  end
+
+  create_table "data_migration_runs", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.string "name", null: false
+    t.integer "records_processed", default: 0, null: false
+    t.datetime "started_at"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.string "version", default: "1.0.0"
+    t.index ["name"], name: "index_data_migration_runs_on_name", unique: true
+    t.index ["status"], name: "index_data_migration_runs_on_status"
   end
 
   create_table "evidence_control_links", force: :cascade do |t|

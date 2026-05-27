@@ -17,6 +17,13 @@
 # key (for v1.8.2 imports), so resume from a partially-failed v1.8.1
 # attempt picks up cleanly.
 class PromoteRemainingBackMatterImports < ActiveRecord::Migration[8.1]
+  # v1.8.3 — deferred. Same rationale as PromoteCdefBackMatterImports.
+  # Sequenced across 5 doc types; can run for many minutes on a
+  # large fleet. Running in-band would block the container from
+  # binding the port → ECS health check fails. Now runs post-boot
+  # via DeferredDataMigrationJob with the container already up.
+  include DeferredDataMigration
+
   UUID_V4 = /\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
   DOC_TYPES = [
@@ -28,6 +35,12 @@ class PromoteRemainingBackMatterImports < ActiveRecord::Migration[8.1]
   ].freeze
 
   def up
+    defer_data_migration do
+      promote_all_doc_types
+    end
+  end
+
+  def promote_all_doc_types
     DOC_TYPES.each do |klass, _action|
       klass.find_each do |doc|
         resources = doc.import_metadata&.dig("back_matter")

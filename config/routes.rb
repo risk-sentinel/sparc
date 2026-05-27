@@ -310,6 +310,8 @@ Rails.application.routes.draw do
     end
     resources :roles
     resources :audit_logs, only: [ :index, :show ]
+    # v1.8.3 — deferred data migration status
+    resources :data_migrations, only: [ :index ]
     resources :authorization_boundaries, except: :destroy do
       member do
         post :add_member
