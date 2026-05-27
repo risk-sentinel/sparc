@@ -5,9 +5,17 @@
 # CDEF-specific migration; this completes the sweep so
 # BackMatterBuilder#deduplicated_imports can be deleted.
 #
-# Idempotent: rows with a UUID already present in back_matter_resources
-# for the same document are skipped. The stash key is removed after
-# successful promotion so subsequent exports don't double-render.
+# v1.8.2 idempotency fix: the original v1.8.0 implementation stored
+# the OSCAL source uuid as BMR.uuid directly. back_matter_resources.uuid
+# has a GLOBAL unique index, so two docs that legitimately referenced
+# the same source uuid (very common across SSP + SAR + SAP for shared
+# NIST references) crashed the second doc and killed the deploy.
+# Now: every BMR gets a fresh uuid; source is preserved in
+# resource_data['source_uuid'] (matches the SAR cross-doc copy
+# pattern). Per-doc dedup checks BOTH the legacy uuid column (for
+# v1.8.0 imports that succeeded) and the new source_uuid metadata
+# key (for v1.8.2 imports), so resume from a partially-failed v1.8.1
+# attempt picks up cleanly.
 class PromoteRemainingBackMatterImports < ActiveRecord::Migration[8.1]
   UUID_V4 = /\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
@@ -25,19 +33,18 @@ class PromoteRemainingBackMatterImports < ActiveRecord::Migration[8.1]
         resources = doc.import_metadata&.dig("back_matter")
         next if resources.blank?
 
-        existing_uuids = doc.back_matter_resources.pluck(:uuid).to_set
         promoted = 0
 
         Array(resources).each do |res|
-          uuid = res["uuid"].to_s
-          next unless uuid.match?(UUID_V4)
-          next if existing_uuids.include?(uuid)
+          source_uuid = res["uuid"].to_s
+          next unless source_uuid.match?(UUID_V4)
+          next if already_promoted_for?(doc, source_uuid)
 
           first_rlink = Array(res["rlinks"]).first || {}
-          title = res["title"].presence || "Imported resource #{uuid.first(8)}"
+          title = res["title"].presence || "Imported resource #{source_uuid.first(8)}"
 
           doc.back_matter_resources.create!(
-            uuid:          uuid,
+            uuid:          SecureRandom.uuid,
             title:         title,
             description:   res["description"],
             href:          first_rlink["href"],
@@ -45,8 +52,8 @@ class PromoteRemainingBackMatterImports < ActiveRecord::Migration[8.1]
             rel:           "reference",
             source:        "imported",
             resource_data: res.except("uuid", "title", "description", "rlinks")
+                              .merge("source_uuid" => source_uuid)
           )
-          existing_uuids << uuid
           promoted += 1
         end
 
@@ -68,5 +75,17 @@ class PromoteRemainingBackMatterImports < ActiveRecord::Migration[8.1]
 
   def down
     raise ActiveRecord::IrreversibleMigration
+  end
+
+  private
+
+  # Has this document already had a BMR promoted for the given
+  # source OSCAL uuid? Matches both pre-v1.8.2 imports (uuid ==
+  # source uuid) and v1.8.2+ imports (resource_data['source_uuid']).
+  def already_promoted_for?(doc, source_uuid)
+    doc.back_matter_resources
+       .where("back_matter_resources.uuid = :u OR back_matter_resources.resource_data ->> 'source_uuid' = :u",
+              u: source_uuid)
+       .exists?
   end
 end
