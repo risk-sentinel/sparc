@@ -191,4 +191,81 @@ RSpec.describe "Sessions", type: :request do
       expect(event.action).to eq("logout")
     end
   end
+
+  # ── v1.8.1 — Okta/OIDC tab CSP regression (#hotfix) ───────────────────
+  describe "login page tab toggle (CSP regression guard)" do
+    before do
+      allow(SparcConfig).to receive(:enable_oidc?).and_return(true)
+      allow(SparcConfig).to receive(:oidc_provider_title).and_return("Okta")
+    end
+
+    it "renders tab buttons with data-tab attributes (not inline onclick)" do
+      get login_path
+      expect(response.body).to include('data-tab="tab-local"')
+      expect(response.body).to include('data-tab="tab-oidc"')
+      # Inline onclick handlers are blocked by CSP (no 'unsafe-inline');
+      # if any tab button regresses to inline onclick the toggle silently dies.
+      expect(response.body).not_to match(/<button[^>]*data-tab[^>]*onclick=/)
+    end
+
+    it "wires the click delegation in the nonce'd <script> block" do
+      get login_path
+      expect(response.body).to match(/<script\s+nonce=".+?">[^<]*addEventListener\('click'/m)
+    end
+
+    it "shows the OIDC tab when OIDC is enabled" do
+      get login_path
+      expect(response.body).to include("Sign in with Okta")
+    end
+  end
+
+  # ── #587 — login_failure reason capture ────────────────────────────
+  describe "POST /login failure-reason audit metadata (#587)" do
+    it "records reason: invalid_password when the password is wrong" do
+      user = create(:user, status: "active")
+      expect {
+        post login_path, params: { email: user.email, password: "wrong" }
+      }.to change { AuditEvent.where(action: "login_failure").count }.by(1)
+
+      event = AuditEvent.where(action: "login_failure").last
+      expect(event.metadata["reason"]).to eq("invalid_password")
+      expect(event.metadata["auth_method"]).to eq("local")
+    end
+
+    it "records reason: unknown_email when no user matches" do
+      post login_path, params: { email: "ghost-#{SecureRandom.hex(4)}@nowhere.test", password: "anything" }
+      event = AuditEvent.where(action: "login_failure").last
+      expect(event.metadata["reason"]).to eq("unknown_email")
+      expect(event.metadata["auth_method"]).to eq("local")
+    end
+
+    it "records reason: no_local_password when the user is OAuth-only" do
+      user = create(:user)
+      user.update_column(:password_digest, nil)
+      post login_path, params: { email: user.email, password: "anything" }
+      event = AuditEvent.where(action: "login_failure").last
+      expect(event.metadata["reason"]).to eq("no_local_password")
+    end
+
+    it "records reason: account_deactivated for the deactivated short-circuit" do
+      user = create(:user, status: "active")
+      allow_any_instance_of(User).to receive(:deactivated?).and_return(true)
+      post login_path, params: { email: user.email, password: "SecurePassword123!" }
+      event = AuditEvent.where(action: "login_failure").last
+      expect(event.metadata["reason"]).to eq("account_deactivated")
+      expect(event.metadata["auth_method"]).to eq("local")
+    end
+
+    it "user-facing flash stays generic even when reason is specific" do
+      post login_path, params: { email: "ghost-#{SecureRandom.hex(4)}@nowhere.test", password: "x" }
+      expect(flash[:error]).to eq("Invalid email or password.")
+    end
+
+    it "tags login_success events with auth_method=local" do
+      user = create(:user, status: "active")
+      post login_path, params: { email: user.email, password: "SecurePassword123!" }
+      event = AuditEvent.where(action: "login_success").last
+      expect(event.metadata["auth_method"]).to eq("local")
+    end
+  end
 end

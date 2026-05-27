@@ -86,7 +86,7 @@ class SessionsController < ApplicationController
         provider: "local",
         ip_address: request.remote_ip,
         user_agent: request.user_agent,
-        metadata: { email: params[:email].to_s, reason: "service_account_web_login" }
+        metadata: { email: params[:email].to_s, reason: "service_account_web_login", auth_method: "local" }
       )
 
       flash.now[:error] = "Service accounts cannot log in via the web interface. Use API tokens instead."
@@ -102,7 +102,7 @@ class SessionsController < ApplicationController
         provider: "local",
         ip_address: request.remote_ip,
         user_agent: request.user_agent,
-        metadata: { email: params[:email].to_s, reason: "account_deactivated" }
+        metadata: { email: params[:email].to_s, reason: "account_deactivated", auth_method: "local" }
       )
 
       flash.now[:error] = "Your account has been deactivated. Contact an administrator."
@@ -117,19 +117,25 @@ class SessionsController < ApplicationController
         action: "login_success",
         provider: "local",
         ip_address: request.remote_ip,
-        user_agent: request.user_agent
+        user_agent: request.user_agent,
+        metadata: { auth_method: "local" }
       )
 
       return_to = session.delete(:return_to) || root_path
       redirect_to return_to, success: "Signed in successfully."
     else
+      # #587 — classify the generic failure path so operators can tell
+      # invalid_password from no_local_password from unknown_email,
+      # etc., without console-diving. User-facing message stays
+      # generic to prevent email enumeration.
+      reason = LoginFailureReason.classify(user: user, password: params[:password])
       AuditEvent.log(
         user: user,
         action: "login_failure",
         provider: "local",
         ip_address: request.remote_ip,
         user_agent: request.user_agent,
-        metadata: { email: params[:email].to_s }
+        metadata: { email: params[:email].to_s, reason: reason, auth_method: "local" }
       )
 
       flash.now[:error] = "Invalid email or password."
@@ -181,18 +187,24 @@ class SessionsController < ApplicationController
         provider: "ldap",
         ip_address: request.remote_ip,
         user_agent: request.user_agent,
-        metadata: { username: params[:username] }
+        metadata: { username: params[:username], auth_method: "ldap" }
       )
 
       return_to = session.delete(:return_to) || root_path
       redirect_to return_to, success: "Signed in with LDAP."
     else
+      # #587 — LDAP credential rejection. LdapAuthService returns nil
+      # or an empty email on bad bind; we can't distinguish unknown-
+      # dn from wrong-password without a richer return shape from the
+      # service. Use ldap_bind_failed as the single reason for now;
+      # a follow-up could widen LdapAuthService to surface the
+      # specific LDAP result code.
       AuditEvent.log(
         action: "login_failure",
         provider: "ldap",
         ip_address: request.remote_ip,
         user_agent: request.user_agent,
-        metadata: { username: params[:username].to_s }
+        metadata: { username: params[:username].to_s, reason: "ldap_bind_failed", auth_method: "ldap" }
       )
 
       flash.now[:error] = "Invalid LDAP credentials."

@@ -3,11 +3,15 @@
   <ul class="nav nav-tabs nav-fill mb-3" role="tablist" style="font-size: 0.85rem;">
     <% tab_index = 0 %>
 
+    <%# Inline event-handler attributes (onclick=, onload=, etc.) are
+        blocked by the v1.7.0 CSP — no 'unsafe-inline' in script-src,
+        and the per-page nonce only exempts nonce-attributed script
+        blocks. Click delegation happens in the nonced script block
+        in the login layout, keyed off data-tab. v1.8.1 hotfix. %>
     <% if SparcConfig.enable_local_login? %>
       <li class="nav-item flex-fill" role="presentation">
         <button class="nav-link w-100 fw-semibold <%= 'active' if tab_index == 0 %>"
                 data-tab="tab-local"
-                onclick="switchTab('tab-local')"
                 type="button" role="tab">
           Local Login
         </button>
@@ -19,7 +23,6 @@
       <li class="nav-item flex-fill" role="presentation">
         <button class="nav-link w-100 fw-semibold <%= 'active' if tab_index == 0 %>"
                 data-tab="tab-oidc"
-                onclick="switchTab('tab-oidc')"
                 type="button" role="tab">
           <%= SparcConfig.oidc_provider_title %>
         </button>
@@ -31,7 +34,6 @@
       <li class="nav-item flex-fill" role="presentation">
         <button class="nav-link w-100 fw-semibold <%= 'active' if tab_index == 0 %>"
                 data-tab="tab-ldap"
-                onclick="switchTab('tab-ldap')"
                 type="button" role="tab">
           LDAP
         </button>

@@ -240,14 +240,27 @@
 
     <script nonce="<%= content_security_policy_nonce %>">
       // ── Tab Switching ─────────────────────────────
+      // Click delegation off [data-tab]. The previous inline
+      // onclick=switchTab() attributes on the nav buttons were
+      // silently blocked by the v1.7.0 CSP (#514) — the per-page
+      // nonce only exempts nonce-attributed script blocks, not
+      // inline event-handler HTML attributes. Result: OIDC / LDAP
+      // tab buttons appeared clickable but did nothing — users
+      // were stuck on whichever tab rendered first. v1.8.1 hotfix.
       function switchTab(tabId) {
-        document.querySelectorAll('.login-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('[data-tab]').forEach(function(t) { t.classList.remove('active'); });
         document.querySelectorAll('.login-tab-panel').forEach(function(p) { p.classList.remove('active'); });
         var tab = document.querySelector('[data-tab="' + tabId + '"]');
         var panel = document.getElementById(tabId);
         if (tab) tab.classList.add('active');
         if (panel) panel.classList.add('active');
       }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[data-tab]').forEach(function(btn) {
+          btn.addEventListener('click', function() { switchTab(btn.getAttribute('data-tab')); });
+        });
+      });
     </script>
 
     <%# Easter egg video overlay — triggered by navbar logo click %>
