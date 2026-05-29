@@ -574,6 +574,39 @@ jobs:
       # block merge. Bump to high once baseline is triaged.
       GRYPE_FAIL_ON: critical
     steps:
+      # ── Honor CVE dispositions (#593) ──────────────────────────────────
+      # docs/compliance/sparc-findings.yml is the single source of truth for
+      # triaged container CVEs (false_positive / accepted / deferred). Derive a
+      # Grype ignore list from it so this fast --fail-on gate does not block on
+      # CVEs already dispositioned there. The authoritative threshold
+      # accounting (deferred criticals still fail) runs in the security_gate
+      # job, which amends the same file into the HDF before validate.
+      - name: Checkout disposition registry
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: docs/compliance/sparc-findings.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Ruby (ignore-list generator only — no bundle)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4
+
+      - name: Generate Grype ignore list from sparc-findings.yml
+        run: |
+          ruby -ryaml -e '
+            data  = YAML.safe_load(File.read("docs/compliance/sparc-findings.yml"))
+            rules = Array(data && data["findings"]).map { |f|
+              next nil unless f["cve_id"]
+              r = { "vulnerability" => f["cve_id"] }
+              r["package"] = { "name" => f["package"] } if f["package"] && !f["package"].to_s.empty?
+              r
+            }.compact.uniq
+            File.write(".grype.yaml", { "ignore" => rules }.to_yaml)
+            warn "Grype: #{rules.size} dispositioned CVE(s) loaded from sparc-findings.yml"
+          '
+          echo "Generated .grype.yaml with $(grep -c 'vulnerability:' .grype.yaml) ignore rule(s)"
+
       - name: Cache Grype binary
         id: grype-cache
         uses: actions/cache@v5

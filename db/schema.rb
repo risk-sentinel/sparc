@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1527,8 +1527,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_000000) do
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
-    t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["owner_id"], name: "index_users_on_owner_id"
     t.index ["service_account"], name: "index_users_on_service_account"
     t.index ["status"], name: "index_users_on_status"

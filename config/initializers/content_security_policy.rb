@@ -30,6 +30,9 @@ Rails.application.configure do
     policy.object_src  :none
     policy.frame_ancestors :self
     policy.base_uri    :self
+    # Strict 'self' globally. The login page relaxes this per-controller to
+    # allow OAuth POST-redirects to enabled IdPs — see #593 and
+    # SessionsController#new (SparcConfig.oauth_form_action_origins).
     policy.form_action :self
   end
 

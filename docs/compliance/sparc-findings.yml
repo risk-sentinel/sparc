@@ -31,10 +31,12 @@
 findings:
 
   # ==========================================================================
-  # CRITICAL -- 1 unique CVE
-  # Per #244 policy, CRITICAL findings cannot be accepted/false_positive.
-  # Allowed dispositions: deferred (POA&M) or remediated. Review cadence:
-  # 30 days regardless of disposition.
+  # CRITICAL -- 3 unique CVEs
+  # Per #244 policy, CRITICAL findings cannot be 'accepted' (no risk
+  # acceptance for criticals). Allowed dispositions: false_positive (scanner
+  # is wrong / code path unreachable), deferred (POA&M), or remediated. See
+  # CRITICAL_ALLOWED_DISPOSITIONS in bin/sparc_findings_to_hdf_amendments.rb.
+  # Review cadence: 30 days regardless of disposition.
   # ==========================================================================
 
   - cve_id: CVE-2026-33845
@@ -48,6 +50,30 @@ findings:
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
     next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-8376
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. Heap buffer overflow in Perl_study_chunk (regcomp_study.c) when compiling a regex with a repeated fixed string -- the vulnerable size check is reached ONLY on 32-bit builds. SPARC ships exclusively as 64-bit container images (linux/amd64 and linux/arm64, ruby:3.4.4-slim); the 32-bit code path is unreachable. Debian has marked this won't-fix for Bookworm. perl is a transitive dependency of the ruby:slim base image, not invoked by the Rails application (all parsing/regex is Ruby/Onigmo, not perl). No 32-bit artifact is built or deployed. Remediation candidate on Debian Trixie/distroless migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-29"
+    next_review_date: "2026-06-28"
+
+  - cve_id: CVE-2026-42496
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Archive::Tar before 3.08 extracts symlinks whose targets escape the extraction directory (_make_special_file passes the tar linkname to symlink() without containment), enabling path traversal when extracting an attacker-controlled tar. SPARC never invokes perl's Archive::Tar: all archive/upload handling is Ruby (Marcel magic-byte sniffing, Rubyzip, OSCAL/Excel parsers) and no application code path shells out to perl tar/Archive::Tar. perl is a transitive dependency of the ruby:slim base image only. No fixed Debian perl package exists yet. Container runs as non-root (UID 1000) with no interactive shell. Remediation candidate when Debian ships a patched perl or on Trixie/distroless migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-29"
+    next_review_date: "2026-06-28"
 
   # ==========================================================================
   # HIGH -- 13 unique CVEs (4 existing + 9 new this PR)

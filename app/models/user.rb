@@ -38,6 +38,13 @@ class User < ApplicationRecord
   has_many :owned_service_accounts, class_name: "User", foreign_key: :owner_id, dependent: :nullify, inverse_of: :owner
 
   # ── Validations ─────────────────────────────────────────────────────────
+  # IA-4: email is the canonical identifier. normalize_email (below) downcases
+  # it and `case_sensitive: false` gives a friendly error on duplicates, but
+  # the DATABASE is the real guarantee: a functional unique index on
+  # LOWER(email) (migration 20260529000000, #593) rejects case-variant
+  # duplicates even under races or callback-bypassing writes — closing the
+  # "log in as Jane.Doe@x.com vs jane.doe@x.com" workaround when both local
+  # login and OIDC are enabled.
   validates :email, presence: true,
                     uniqueness: { case_sensitive: false },
                     format: { with: URI::MailTo::EMAIL_REGEXP }

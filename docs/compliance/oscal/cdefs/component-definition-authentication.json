@@ -102,7 +102,7 @@
                 "uuid": "b1e0d87d-cc65-4f17-97c0-ec0f81519e4f",
                 "control-id": "ia-4",
                 "description": "SPARC uniquely identifies users via email address with case-insensitive uniqueness validation enforced at both the application and database levels. Each user record has a unique database ID and email, preventing duplicate identifiers across the system. Service accounts are assigned UUID-based identifiers and their API tokens use the sparc_sa_ prefix, enabling clear identification and differentiation of service account tokens from human user tokens in logs and audit records.",
-                "remarks": "Implemented in app/models/user.rb and app/models/api_token.rb with database unique index. Tested by spec/models/user_spec.rb."
+                "remarks": "Implemented in app/models/user.rb and app/models/api_token.rb. Case-insensitive uniqueness is enforced at the database layer by a functional UNIQUE index on LOWER(email) (migration 20260529000000, #593) in addition to the application-level normalize_email callback and uniqueness validation — the DB index rejects case-variant duplicates even under races or callback-bypassing writes. Tested by spec/models/user_spec.rb."
               },
               {
                 "uuid": "31143bfd-b593-4817-8354-9121e2233873",

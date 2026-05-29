@@ -41,6 +41,20 @@ RSpec.describe User, type: :model do
       expect(duplicate).not_to be_valid
       expect(duplicate.errors[:email]).to include("has already been taken")
     end
+
+    # #593 — DB-level enforcement: even when the app-layer validation and the
+    # normalize_email callback are bypassed (raw insert, race condition), the
+    # functional unique index on LOWER(email) must reject case-variant
+    # duplicates. This closes the local-vs-OIDC casing workaround at the
+    # database, not just the model.
+    it "rejects case-variant duplicates at the database when validations are bypassed" do
+      create(:user, email: "jane.doe@aol.com")
+      collision = build(:user, email: "Jane.Doe@AOL.com")
+      # skip normalize_email + uniqueness validation; go straight to INSERT
+      allow(collision).to receive(:normalize_email)
+      expect { collision.save!(validate: false) }
+        .to raise_error(ActiveRecord::RecordNotUnique)
+    end
   end
 
   describe "#active?" do

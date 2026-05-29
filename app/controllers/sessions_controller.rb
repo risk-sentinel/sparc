@@ -9,6 +9,20 @@ class SessionsController < ApplicationController
   skip_before_action :require_authentication, only: [ :new, :create ], raise: false
   skip_before_action :check_password_reset, only: [ :new, :create, :destroy ], raise: false
 
+  # #593 — The login page starts SSO via same-origin POST forms to
+  # /auth/:provider, which OmniAuth answers with a 302 to the external IdP.
+  # Chromium enforces the global `form-action 'self'` (see
+  # config/initializers/content_security_policy.rb) against every redirect hop,
+  # so it silently blocks the OAuth button; Firefox does not, which masked the
+  # bug. Relax form-action to the enabled IdP origins on the LOGIN PAGE ONLY —
+  # every other page keeps the strict 'self' policy. All other CSP directives
+  # (script-src nonce, etc.) are inherited from the global policy unchanged.
+  #
+  # NIST 800-53: SC-7 (Boundary Protection), SC-18 (Mobile Code — CSP)
+  content_security_policy(only: :new) do |policy|
+    policy.form_action :self, *SparcConfig.oauth_form_action_origins
+  end
+
   def new
     redirect_to root_path if signed_in?
     load_consent_banner

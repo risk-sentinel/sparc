@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.8.4"
+  VERSION = "1.8.5"
 
   module_function
 
@@ -239,6 +239,41 @@ module SparcConfig
   def gitlab_client_id     = ENV.fetch("SPARC_GITLAB_CLIENT_ID", nil)
   def gitlab_client_secret = ENV.fetch("SPARC_GITLAB_CLIENT_SECRET", nil)
   def gitlab_site          = ENV.fetch("SPARC_GITLAB_SITE", "https://gitlab.com")
+
+  # ── OAuth form-action origins (CSP) ───────────────────────────────────────
+  # External IdP origins the login page must be allowed to POST-redirect to.
+  # The login form starts SSO with a same-origin POST to /auth/:provider, which
+  # OmniAuth answers with a 302 to the IdP. Chromium enforces the CSP
+  # `form-action` directive against EVERY hop in that redirect chain, so the IdP
+  # origin must be explicitly allowlisted or the button is silently blocked.
+  # Firefox does not re-check redirects, which masked the bug. See issue #593.
+  #
+  # Returns scheme://host[:port] origins (no path), suitable for direct
+  # interpolation into a CSP directive. Only enabled providers are included.
+  #
+  # NIST 800-53: SC-7 (Boundary Protection), SC-18 (Mobile Code — CSP)
+  def oauth_form_action_origins
+    origins = []
+    origins << "https://github.com"          if github_enabled?
+    origins << oauth_origin(gitlab_site)      if gitlab_enabled?
+    origins << oauth_origin(oidc_issuer_url)  if enable_oidc? && oidc_issuer_url.present?
+    origins.compact.uniq
+  end
+
+  # Normalize a URL to its CSP source origin (scheme://host[:port], no path).
+  # Returns nil for blank/invalid input so callers can compact it away.
+  def oauth_origin(url)
+    return nil if url.blank?
+
+    uri = URI.parse(url)
+    return nil if uri.scheme.blank? || uri.host.blank?
+
+    default_port = uri.scheme == "https" ? 443 : 80
+    port = uri.port && uri.port != default_port ? ":#{uri.port}" : ""
+    "#{uri.scheme}://#{uri.host}#{port}"
+  rescue URI::InvalidURIError
+    nil
+  end
 
   # ── DISA CCI ─────────────────────────────────────────────────────────
   # URL for the official DISA CCI XML ZIP archive.
