@@ -46,7 +46,7 @@ SPARC_SMOKE_SA_TOKEN=sparc_sa_... \
 |---------|---------|---------|
 | `SPARC_SMOKE_BASE_URL` | `https://sparc.risk-sentinel.org` | Target deployment |
 | `SPARC_SMOKE_SA_TOKEN` | _(unset)_ | Service-account bearer token; authenticated tests skip without it |
-| `SPARC_SESSION_COOKIE_NAME` | `_sparc_session` | Rails session cookie name |
+| `SPARC_SESSION_COOKIE_NAME` | _(auto-detected)_ | Override the Rails session cookie name; by default the cookie returned by the bridge is auto-detected (`_ssp_tpr_manager_session`) |
 
 ### Minting the SA token
 

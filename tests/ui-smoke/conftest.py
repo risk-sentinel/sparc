@@ -19,7 +19,11 @@ BASE_URL = os.environ.get(
     "SPARC_SMOKE_BASE_URL", "https://sparc.risk-sentinel.org"
 ).rstrip("/")
 SA_TOKEN = os.environ.get("SPARC_SMOKE_SA_TOKEN")
-SESSION_COOKIE_NAME = os.environ.get("SPARC_SESSION_COOKIE_NAME", "_sparc_session")
+# Optional override. When unset, the session cookie is auto-detected from the
+# bridge response — Rails derives the name from the app module, which is
+# `_ssp_tpr_manager_session` for SPARC's legacy module name. Auto-detection
+# keeps the suite correct if that ever changes.
+SESSION_COOKIE_NAME = os.environ.get("SPARC_SESSION_COOKIE_NAME")
 
 
 @pytest.fixture(scope="session")
@@ -34,7 +38,7 @@ def browser_context_args(browser_context_args):
 
 
 @pytest.fixture(scope="session")
-def session_cookie() -> str:
+def session_cookie() -> dict:
     """Bridge a service-account token to a Rails session cookie (#573).
 
     Skips authenticated tests when no token is configured so the
@@ -52,12 +56,17 @@ def session_cookie() -> str:
         f"cookie-bridge POST /api/v1/sessions/from_token returned "
         f"{resp.status_code} (expected 204): {resp.text[:200]}"
     )
-    value = resp.cookies.get(SESSION_COOKIE_NAME)
+    available = list(resp.cookies.keys())
+    name = SESSION_COOKIE_NAME
+    if not name:
+        # The bridge sets exactly the Rails session cookie; pick it.
+        session_cookies = [n for n in available if n.endswith("_session")]
+        name = (session_cookies or available or [None])[0]
+    value = resp.cookies.get(name) if name else None
     assert value, (
-        f"no {SESSION_COOKIE_NAME} cookie in bridge response; "
-        f"got cookies: {list(resp.cookies.keys())}"
+        f"no session cookie in bridge response; got cookies: {available}"
     )
-    return value
+    return {"name": name, "value": value}
 
 
 @pytest.fixture
@@ -66,8 +75,8 @@ def authed_page(context, session_cookie, base_url):
     context.add_cookies(
         [
             {
-                "name": SESSION_COOKIE_NAME,
-                "value": session_cookie,
+                "name": session_cookie["name"],
+                "value": session_cookie["value"],
                 "domain": urlparse(base_url).hostname,
                 "path": "/",
                 "httpOnly": True,
