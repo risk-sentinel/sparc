@@ -553,6 +553,26 @@ injection for direct import into compliance dashboards.
 
 ---
 
+## Section 508 / Accessibility (WCAG 2.1 AA)
+
+Section 508 of the Rehabilitation Act requires federal ICT to conform to
+**WCAG 2.1 Level AA**. SPARC's application UI is checked automatically against
+that bar by axe-core, integrated into both layers of the UI test net (#572).
+
+| Standard | Scope | Automated Control | Code / Config Location | Status |
+|---|---|---|---|---|
+| WCAG 2.1 A + AA (Section 508) | SPARC web UI | axe-core accessibility checks -- Layer 1 (RSpec system specs, real Chrome, per-PR) + Layer 2 (Playwright post-deploy, Chromium + Firefox). Baseline + ratchet: new violations fail the build; tracked debt is recorded and burned down. | `spec/system/accessibility_spec.rb`, `spec/support/axe_helper.rb`, `tests/ui-smoke/test_accessibility.py`, `tests/ui-smoke/a11y_baseline.json` | Partial |
+
+**Current conformance gaps (tracked, #602):** 3 serious violations on the login
+consent-banner -- 2x insufficient color-contrast (`.text-warning` heading,
+`.btn-outline-secondary`) and 1x non-keyboard-focusable scroll region
+(`#consentBannerBody`). Net-new regressions are blocked by the axe ratchet; the
+existing items are scheduled for remediation.
+
+> Note: Section 508 / WCAG is a distinct legal standard, not a NIST SP 800-53
+> control -- it is documented here for authorization-package completeness, not
+> as an 800-53 control mapping.
+
 ## SR -- Supply Chain Risk Management
 
 | Control ID | Title | Baseline | Responsibility | Implementation Summary | Code / Config Location | Status |
