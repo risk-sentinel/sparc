@@ -15,6 +15,10 @@ on:
         description: "SPARC base URL to smoke-test against"
         default: "https://sparc.risk-sentinel.org"
         required: true
+      capture_baseline:
+        description: "Capture/refresh the axe a11y baseline (uploads a11y_baseline.json artifact) instead of enforcing"
+        type: boolean
+        default: false
   workflow_run:
     workflows: ["Deploy"]
     types: [completed]
@@ -53,6 +57,7 @@ jobs:
         run: uv run playwright install --with-deps chromium firefox
 
       - name: Run UI smoke (Chromium + Firefox)
+        if: ${{ github.event.inputs.capture_baseline != 'true' }}
         working-directory: tests/ui-smoke
         env:
           SPARC_SMOKE_SA_TOKEN: ${{ secrets.SPARC_SMOKE_SA_TOKEN }}
@@ -60,10 +65,28 @@ jobs:
           uv run pytest --browser chromium --browser firefox \
             --junitxml=results.xml -v
 
+      - name: Capture axe a11y baseline (Chromium + Firefox)
+        if: ${{ github.event.inputs.capture_baseline == 'true' }}
+        working-directory: tests/ui-smoke
+        env:
+          SPARC_SMOKE_SA_TOKEN: ${{ secrets.SPARC_SMOKE_SA_TOKEN }}
+          UPDATE_A11Y_BASELINE: "1"
+        run: |
+          uv run pytest test_accessibility.py \
+            --browser chromium --browser firefox -v
+
       - name: Upload results
-        if: always()
+        if: ${{ always() && github.event.inputs.capture_baseline != 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: ui-smoke-results
           path: tests/ui-smoke/results.xml
+          if-no-files-found: warn
+
+      - name: Upload captured a11y baseline
+        if: ${{ always() && github.event.inputs.capture_baseline == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: a11y-baseline
+          path: tests/ui-smoke/a11y_baseline.json
           if-no-files-found: warn
