@@ -20,6 +20,7 @@ regression net for that class of bug.
 |------|---------|------|
 | `test_login_page.py` | Login page loads; no CSP violations; SSO submit not blocked by `form-action` (#593) | none |
 | `test_authenticated_nav.py` | Cookie-bridge → session; core pages render clean (no 5xx / console / CSP errors) | SA token |
+| `test_accessibility.py` | axe-core WCAG 2.1 A/AA audit, baseline+ratchet (Layer 3, #599) | login: none; core pages: SA token |
 | `conftest.py` | Base-URL + cookie-bridge fixtures | — |
 | `helpers.py` | CSP-violation recorder, console collector, same-origin check | — |
 
@@ -55,6 +56,30 @@ opt-in admin per #536) and copy its `sparc_sa_...` token. The suite exchanges it
 for a session via `POST /api/v1/sessions/from_token` (#573) — the token is never
 typed into the login form. Store it as the `SPARC_SMOKE_SA_TOKEN` CI secret;
 revoke/rotate from the same admin page.
+
+## Accessibility (Layer 3 — axe-core, #599)
+
+`test_accessibility.py` runs axe-core against the login page and the core
+authenticated pages, scoped to **WCAG 2.1 A + AA** (the Section 508 conformance
+bar). It uses **baseline + ratchet**: existing violations are recorded in
+`a11y_baseline.json` (per page, fingerprinted by rule + CSS target) and pass;
+only **new** violations fail. A page with no baseline entry yet is skipped until
+its baseline is captured.
+
+```bash
+# Enforce (default) — fails on NEW violations only:
+uv run pytest test_accessibility.py --browser chromium --browser firefox
+
+# Capture/refresh the baseline (e.g. after fixing debt, or to add the
+# authenticated pages — needs SPARC_SMOKE_SA_TOKEN), then commit the file:
+UPDATE_A11Y_BASELINE=1 SPARC_SMOKE_SA_TOKEN=sparc_sa_... \
+  uv run pytest test_accessibility.py --browser chromium --browser firefox
+```
+
+The login baseline (5 violations: 4 color-contrast + 1 aria-allowed-role) is
+committed; the authenticated pages' baseline is captured on the first CI run
+with the token, then committed. Burn the baseline down over time — each fix is a
+line removed from `a11y_baseline.json`.
 
 ## CI
 
