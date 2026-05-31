@@ -1,0 +1,69 @@
+name: UI Smoke (Layer 2)
+
+# Real-browser post-deploy smoke (Playwright, Chromium + Firefox) for the
+# UI test net (#572/#573). Mirrors api-tests.yml: manual dispatch or after a
+# successful Deploy, gated/non-blocking during ramp. Catches cross-browser
+# regressions like #593 (CSP form-action killing SSO buttons in Chromium only).
+#
+# Requires repo secret SPARC_SMOKE_SA_TOKEN (service-account bearer token) for
+# the authenticated nav walk; the login-page smoke runs without it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "SPARC base URL to smoke-test against"
+        default: "https://sparc.risk-sentinel.org"
+        required: true
+  workflow_run:
+    workflows: ["Deploy"]
+    types: [completed]
+
+env:
+  SPARC_SMOKE_BASE_URL: ${{ github.event.inputs.base_url || 'https://sparc.risk-sentinel.org' }}
+
+jobs:
+  ui-smoke:
+    name: UI smoke (Chromium + Firefox)
+    runs-on: ubuntu-latest
+    # Gated, non-blocking during ramp (#572/#573). Drop continue-on-error once
+    # the suite is proven stable post-deploy.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: tests/ui-smoke
+          sparse-checkout-cone-mode: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Sync deps
+        working-directory: tests/ui-smoke
+        run: uv sync --locked
+
+      - name: Install Playwright browsers
+        working-directory: tests/ui-smoke
+        run: uv run playwright install --with-deps chromium firefox
+
+      - name: Run UI smoke (Chromium + Firefox)
+        working-directory: tests/ui-smoke
+        env:
+          SPARC_SMOKE_SA_TOKEN: ${{ secrets.SPARC_SMOKE_SA_TOKEN }}
+        run: |
+          uv run pytest --browser chromium --browser firefox \
+            --junitxml=results.xml -v
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-smoke-results
+          path: tests/ui-smoke/results.xml
+          if-no-files-found: warn

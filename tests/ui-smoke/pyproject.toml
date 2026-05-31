@@ -1,0 +1,50 @@
+# SPARC Layer 2 UI smoke suite (Playwright) — #573 / umbrella #572.
+#
+# Real-browser smoke tests that drive the deployed UI. Layer 1 (RSpec +
+# headless Chrome system specs) runs in CI against the app; this layer runs
+# post-deploy against a real URL in BOTH Chromium and Firefox, which is what
+# catches cross-browser regressions like the #593 CSP form-action bug
+# (OAuth buttons dead in Chromium, fine in Firefox).
+#
+# Local run:
+#   cd tests/ui-smoke
+#   uv sync
+#   uv run playwright install chromium firefox
+#   SPARC_SMOKE_BASE_URL=https://sparc.risk-sentinel.org \
+#     uv run pytest --browser chromium --browser firefox
+#
+# Authenticated tests additionally need a service-account bearer token:
+#   SPARC_SMOKE_SA_TOKEN=sparc_sa_... uv run pytest ...
+# (unauthenticated login-page tests run without it.)
+
+[project]
+name = "sparc-ui-smoke"
+version = "0.1.0"
+description = "Layer 2 Playwright UI smoke suite for SPARC (#572/#573)"
+requires-python = ">=3.12"
+dependencies = [
+    "pytest>=8.0",
+    "pytest-playwright>=0.5",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# Flat test directory — nothing to package; the build is a no-op so uv can
+# manage the venv without trying to discover/import the test modules.
+[tool.setuptools]
+py-modules = []
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+markers = [
+    "authenticated: test requires SPARC_SMOKE_SA_TOKEN (cookie-bridge auth)",
+]
