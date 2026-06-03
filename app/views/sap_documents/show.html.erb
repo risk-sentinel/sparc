@@ -23,6 +23,8 @@
 
   type_colors = { "initial" => "#3498db", "annual" => "#27ae60", "continuous" => "#8e44ad", "ad-hoc" => "#f39c12" }
   type_color = type_colors[@sap_document.assessment_type] || "#7f8c8d"
+  type_variants = { "initial" => "info", "annual" => "success", "continuous" => "purple", "ad-hoc" => "warning" }
+  type_variant = type_variants[@sap_document.assessment_type] || "neutral"
 %>
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
@@ -39,7 +41,7 @@
           <% if @sap_document.sap_version.present? %>
             <span class="sparc-version-badge">v<%= @sap_document.sap_version %></span>
           <% end %>
-          <span class="sparc-tag-outline" style="background: <%= type_color %>33; color: <%= type_color %>; border: 1px solid <%= type_color %>66;">
+          <span class="sparc-tag-outline sparc-status--<%= type_variant %>">
             <%= @sap_document.assessment_type&.titleize || "Initial" %>
           </span>
           <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
@@ -157,7 +159,7 @@
      heatmap_families: @heatmap_families,
      heatmap_statuses: @heatmap_methods,
      title: "Assessment Methods by Control Family",
-     color_helper: :sap_method_color,
+     variant_helper: :sap_method_variant,
      filter_key: "method",
      show_percentage: false,
      legend_items: [["Examine", "#3498db"], ["Interview", "#f39c12"], ["Test", "#e74c3c"], ["Multiple", "#9b59b6"], ["None", "#95a5a6"]] %>
@@ -169,7 +171,7 @@
        heatmap_families: @status_heatmap_families,
        heatmap_statuses: @status_heatmap_statuses,
        title: "Assessment Status by Control Family (Objective Rollup)",
-       color_helper: :sap_objective_status_color,
+       variant_helper: :sap_objective_status_variant,
        filter_key: "objective-status",
        show_percentage: false,
        legend_items: [
@@ -182,7 +184,7 @@
 <%# ── NEEDS RE-ASSOCIATION BANNER ──────────────────────────────── %>
 <% if @needs_reassociation %>
   <div class="card mt-3" style="border-left: 4px solid #f39c12;">
-    <strong style="color: #f39c12;">Per-objective tracking unavailable.</strong>
+    <strong class="sparc-text-warning-bold">Per-objective tracking unavailable.</strong>
     <span class="text-body-secondary">
       This SAP isn't linked to a profile, so individual NIST 800-53A determination
       statements (assessment objectives) can't be populated. Use the Associate Source
@@ -194,7 +196,7 @@
 <%# ── ASSOCIATE SOURCE (when 0 controls and SAP uses include-all) ── %>
 <% if @total_controls == 0 && @sap_document.draft? %>
   <div class="card mt-3" style="border-left: 4px solid #f39c12;">
-    <h3 style="color: #f39c12;">No Controls Assigned</h3>
+    <h3 class="sparc-heading-assessment">No Controls Assigned</h3>
     <p class="text-body-secondary">
       This SAP uses <code>reviewed-controls.include-all</code> but no source profile or SSP
       could be matched automatically. Associate it with an existing profile or SSP below to
@@ -277,6 +279,8 @@
       status_val = control.assessment_status.presence || "planned"
       status_colors_map = { "planned" => "#95a5a6", "in-progress" => "#f39c12", "completed" => "#27ae60" }
       status_color = status_colors_map[status_val] || "#95a5a6"
+      status_variants_map = { "planned" => "neutral", "in-progress" => "warning", "completed" => "success" }
+      status_variant = status_variants_map[status_val] || "neutral"
       family_code = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
     %>
     <%# data-methods drives chip filtering: a multi-method control matches each of its
@@ -296,20 +300,20 @@
               <%= control.control_id.presence || "&mdash;".html_safe %>
             </span>
             <% if methods.empty? %>
-              <span class="sparc-status-pill" style="background: #95a5a6;">None</span>
+              <span class="sparc-status-pill sparc-status--neutral">None</span>
             <% else %>
               <% methods.each do |m| %>
-                <span class="sparc-status-pill" style="background: <%= method_colors_map[m] || '#95a5a6' %>;">
+                <span class="sparc-status-pill sparc-status--<%= sap_method_variant(m) %>">
                   <%= m.titleize %>
                 </span>
               <% end %>
               <% if is_multiple %>
-                <span class="sparc-tag-outline" title="This control has multiple assessment methods" style="background: #9b59b633; color: #9b59b6; border: 1px solid #9b59b666; font-weight: 600;">
+                <span class="sparc-tag-outline sparc-status--purple" title="This control has multiple assessment methods" style="font-weight: 600;">
                   Multiple
                 </span>
               <% end %>
             <% end %>
-            <span class="sparc-tag-outline" style="background: <%= status_color %>22; color: <%= status_color %>; border: 1px solid <%= status_color %>44;">
+            <span class="sparc-tag-outline sparc-status--<%= status_variant %>">
               <%= status_val.titleize %>
             </span>
             <% if control.assessor_name.present? %>
@@ -350,7 +354,7 @@
 
             <% if control.test_case.present? %>
               <div class="sparc-statement-block" style="background: rgba(231,76,60,0.07); border-color: rgba(231,76,60,0.2); border-left: 3px solid #e74c3c;">
-                <div class="sparc-statement-label" style="color: #e74c3c;">Test Case / Check Content</div>
+                <div class="sparc-statement-label sparc-heading-danger">Test Case / Check Content</div>
                 <div class="sparc-field-value-padded" style="padding: 0;"><%= control.test_case %></div>
               </div>
             <% end %>

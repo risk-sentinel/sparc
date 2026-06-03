@@ -5,7 +5,7 @@
 ] %>
 
 <% if @poam_documents.any? { |d| d.processing? || d.pending? } %>
-  <meta http-equiv="refresh" content="10">
+  <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
 <div class="card" style="overflow-x: auto;">
@@ -53,8 +53,8 @@
             <td style="font-size: 0.8rem;">
               <% if doc.completed? %>
                 <span class="text-primary" title="Risks"><%= doc.poam_risks.count %>R</span>
-                <span style="color: #9b59b6;" title="Observations"><%= doc.poam_observations.count %>O</span>
-                <span style="color: #e67e22;" title="Findings"><%= doc.poam_findings.count %>F</span>
+                <span class="sparc-heading-enterprise" title="Observations"><%= doc.poam_observations.count %>O</span>
+                <span class="sparc-heading-assessment" title="Findings"><%= doc.poam_findings.count %>F</span>
               <% else %>
                 <span class="text-body-tertiary">—</span>
               <% end %>

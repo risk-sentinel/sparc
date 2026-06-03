@@ -9,7 +9,7 @@
 
     <%# ── Step 1: Plan Metadata ── %>
     <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #3498db; padding: 1.25rem;">
-      <h3 class="mb-3" style="font-size: 1rem; color: #3498db;">Step 1: Plan Details</h3>
+      <h3 class="mb-3 sparc-heading-controls" style="font-size: 1rem;">Step 1: Plan Details</h3>
 
       <div class="form-group">
         <label for="sap_document_name">Plan Name</label>
@@ -51,7 +51,7 @@
 
     <%# ── Step 2: Source Documents ── %>
     <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #27ae60; padding: 1.25rem;">
-      <h3 class="mb-3" style="font-size: 1rem; color: #27ae60;">Step 2: Select Source Documents</h3>
+      <h3 class="mb-3 sparc-heading-implementation" style="font-size: 1rem;">Step 2: Select Source Documents</h3>
       <p class="text-body-secondary mb-3" style="font-size: 0.85rem;">
         Controls will be pulled from the selected SSP. If no SSP is selected, controls will be pulled from the selected Profile/Baseline.
       </p>
@@ -70,8 +70,7 @@
                   ),
                   { include_blank: "— Select SSP (optional) —" },
                   class: "form-control", id: "ssp-select",
-                  data: { ssp_profile_map: ssp_profile_map.to_json },
-                  onchange: "autoPopulateProfile(this)" %>
+                  data: { ssp_profile_map: ssp_profile_map.to_json } %>
           </div>
         </div>
         <div class="col">
@@ -88,6 +87,10 @@
         </div>
       </div>
 
+      <%# Auto-populate the profile when an SSP is chosen. Wired via
+          addEventListener (not an inline onchange= attribute) so the enforced
+          CSP's script-src-attr does not block it — same pattern as the v1.8.1
+          login fix. See #599 nav sweep (the inline onchange tripped CSP). %>
       <script nonce="<%= content_security_policy_nonce %>">
         function autoPopulateProfile(sspSelect) {
           var profileSelect = document.getElementById("profile-select");
@@ -100,12 +103,21 @@
             profileSelect.value = profileId;
           }
         }
+
+        document.addEventListener("DOMContentLoaded", function () {
+          var sspSelect = document.getElementById("ssp-select");
+          if (sspSelect) {
+            sspSelect.addEventListener("change", function () {
+              autoPopulateProfile(sspSelect);
+            });
+          }
+        });
       </script>
     </div>
 
     <%# ── Step 3: Assessment Methods ── %>
     <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #8e44ad; padding: 1.25rem;">
-      <h3 class="mb-3" style="font-size: 1rem; color: #8e44ad;">Step 3: Default Assessment Methods</h3>
+      <h3 class="mb-3 sparc-heading-enterprise" style="font-size: 1rem;">Step 3: Default Assessment Methods</h3>
       <p class="text-body-secondary mb-3" style="font-size: 0.85rem;">
         Methods are auto-assigned based on control family heuristics (technical controls default to <strong>Test</strong>,
         personnel/physical to <strong>Interview</strong>, policy to <strong>Examine</strong>).

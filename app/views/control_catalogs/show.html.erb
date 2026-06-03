@@ -27,8 +27,8 @@
         <%= @control_catalog.name %>
         <% if @control_catalog.original_filename.present? %>
           <% ext = File.extname(@control_catalog.original_filename).delete(".").upcase %>
-          <% badge_color = { "JSON" => "#3498db", "XML" => "#27ae60", "YAML" => "#8e44ad", "YML" => "#8e44ad" }[ext] || "#95a5a6" %>
-          <span class="badge" style="background: <%= badge_color %>; font-size: 0.55rem; vertical-align: middle;"><%= ext %></span>
+          <% ext_variant = { "JSON" => "info", "XML" => "success", "YAML" => "purple", "YML" => "purple" }[ext] || "neutral" %>
+          <span class="badge sparc-status--<%= ext_variant %>" style="font-size: 0.55rem; vertical-align: middle;"><%= ext %></span>
         <% end %>
       </h2>
       <p class="text-body-secondary" style="margin-top: 0.5rem;">

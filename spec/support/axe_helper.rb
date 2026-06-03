@@ -20,11 +20,10 @@ module SparcAxe
   # Known, tracked violations per page (rule id). Documented debt — fixing a
   # page means deleting its rule ids here. Captured against the rendered app
   # at #599; see also tests/ui-smoke/a11y_baseline.json for the Layer 2 set.
-  BASELINE_SKIPS = {
-    # Login page: low-contrast secondary button + heading, and the
-    # consent-banner scroll region missing keyboard focusability.
-    login: %i[color-contrast scrollable-region-focusable].freeze
-  }.freeze
+  # Empty: the login-page debt (low-contrast secondary button + amber heading,
+  # consent-banner scroll region missing keyboard focusability) was burned down
+  # in #602 (v1.8.6). Add new page keys here only to track freshly-found debt.
+  BASELINE_SKIPS = {}.freeze
 
   def self.baseline_for(key)
     BASELINE_SKIPS.fetch(key, [])

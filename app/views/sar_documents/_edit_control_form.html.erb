@@ -49,7 +49,7 @@
     <div class="form-group">
       <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-secondary-color);">
         <%= fname.tr("_", " ") %>
-        <span style="color: #27ae60; font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
+        <span class="sparc-heading-implementation" style="font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
       </label>
       <% if fname == "result" %>
         <%= select_tag "fields[#{fname}]",

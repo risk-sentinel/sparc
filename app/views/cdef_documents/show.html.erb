@@ -161,7 +161,7 @@
      heatmap_families: @heatmap_families,
      heatmap_statuses: @heatmap_severities,
      title: "Severity by Control Family",
-     color_helper: :cdef_severity_color,
+     variant_helper: :cdef_severity_variant,
      filter_key: "severity",
      show_percentage: false,
      legend_items: [["High", "#e74c3c"], ["Medium", "#f39c12"], ["Low", "#3498db"], ["Info", "#95a5a6"]] %>
@@ -218,6 +218,7 @@
       sev_val      = control.severity.presence || "(Unknown)"
       sev_colors_map = { "high" => "#e74c3c", "medium" => "#f39c12", "low" => "#3498db", "info" => "#95a5a6" }
       sev_color    = sev_colors_map[sev_val] || "#7f8c8d"
+      sev_variant  = cdef_severity_variant(sev_val)
       family_code  = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
       description  = field_map["description"]&.field_value.presence
       cci_refs     = field_map["cci_refs"]&.field_value.presence
@@ -234,7 +235,7 @@
             <span class="sparc-ctrl-id">
               <%= control.control_id.presence || "&mdash;".html_safe %>
             </span>
-            <span class="sparc-status-pill" style="background: <%= sev_color %>; text-transform: capitalize;">
+            <span class="sparc-status-pill sparc-status--<%= sev_variant %>" style="text-transform: capitalize;">
               <%= sev_val %>
             </span>
             <% if control.stig_id.present? && control.stig_id != control.control_id %>
@@ -301,7 +302,7 @@
                     <%# Display mode %>
                     <div id="field-display-<%= control.control_id %>-<%= field.field_name %>">
                       <% if field.field_name == "severity" %>
-                        <span class="sparc-status-pill" style="background: <%= sev_colors_map[field.field_value] || '#7f8c8d' %>; font-size: 0.75rem; font-weight: 600; text-transform: capitalize;"><%= field.field_value %></span>
+                        <span class="sparc-status-pill sparc-status--<%= cdef_severity_variant(field.field_value) %>" style="font-size: 0.75rem; font-weight: 600; text-transform: capitalize;"><%= field.field_value %></span>
                       <% elsif field.field_name == "cci_refs" %>
                         <div class="d-flex flex-wrap" style="gap: 0.3rem;">
                           <% field.field_value.to_s.split(",").map(&:strip).each do |cci| %>

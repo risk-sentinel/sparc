@@ -10,12 +10,12 @@
     <%# ── Step 1: Assessment Basics ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #3498db; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
+        <span class="sparc-status--info" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
         Assessment Basics
       </summary>
       <div style="padding: 1rem 1.25rem;">
         <div class="form-group">
-          <label for="name">Assessment Name <span style="color: #e74c3c;">*</span></label>
+          <label for="name">Assessment Name <span class="sparc-required">*</span></label>
           <%= f.text_field :name, required: true, class: "form-control", placeholder: "e.g., FY2026 Annual Security Assessment" %>
         </div>
         <div class="form-group">
@@ -28,7 +28,7 @@
     <%# ── Step 2: SAP Selection ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #27ae60; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
+        <span class="sparc-status--success" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
         Assessment Plan (SAP) Selection
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -57,7 +57,7 @@
     <%# ── Step 3: Assessment Period ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #f39c12; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
+        <span class="sparc-status--warning" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
         Assessment Period
       </summary>
       <div style="padding: 1rem 1.25rem;">

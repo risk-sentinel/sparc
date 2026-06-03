@@ -44,13 +44,15 @@
   /* SPARC custom tokens */
   --sparc-primary: #1f6fa5;
   --sparc-primary-hover: #185a85;
-  --sparc-success: #1d8348;
+  --sparc-success: #19743f;  /* WCAG AA: 5.31:1 on #f5f5f5 (was #1d8348 = 4.39, failed AA as outline-button text); white-on-fill still passes 5.78:1 */
   --sparc-success-hover: #155e34;
   --sparc-danger: #c0392b;
   --sparc-danger-hover: #922a20;
   --sparc-secondary: #5d6a6c;
   --sparc-secondary-hover: #4a5556;
   --sparc-warning: #f39c12;       /* paired with black label per WCAG */
+  --sparc-warning-fg: #8a6300;    /* dark amber as TEXT: 4.98:1 on #f5f5f5 (--sparc-warning #f39c12 as text was 2.01:1) */
+  --sparc-info: #0c6e80;          /* WCAG AA: 5.42:1 on #f5f5f5 (Bootstrap .text-info #0dcaf0 was 1.95:1) */
   --sparc-purple: #8e44ad;        /* already passes white-text AA */
   --sparc-purple-hover: #7d3c98;
   --sparc-orange: #b6580a;
@@ -72,8 +74,8 @@
   /* Text */
   --bs-body-font-size: 1.05rem;
   --bs-body-color: #e2e8f0;
-  --bs-secondary-color: #94a3b8;
-  --bs-tertiary-color: #94a3b8;     /* was #718096 (3.45 AA-large on cards) */
+  --bs-secondary-color: #a6b4c6;    /* WCAG AA: 5.1:1 on #343a40 cards (#94a3b8 was 4.48, just under) */
+  --bs-tertiary-color: #a6b4c6;     /* #599 R5: muted text passes AA on dark surfaces */
 
   /* Borders — WCAG 2.1 AA: 3:1 against #0f1419 body and #252d3a cards */
   --bs-border-color: #717a8a;
@@ -100,6 +102,8 @@
   --sparc-secondary: #b0bec5;
   --sparc-secondary-hover: #90a4ae;
   --sparc-warning: #f6e05e;
+  --sparc-warning-fg: #f6e05e;    /* light amber as text: passes AA on dark surfaces */
+  --sparc-info: #5bc8da;          /* light cyan: passes AA on dark surfaces */
   --sparc-purple: #bb6bd9;
   --sparc-purple-hover: #a855c7;
   --sparc-orange: #f6ad55;
@@ -220,6 +224,77 @@
   --bs-btn-border-color: var(--sparc-secondary);
   --bs-btn-hover-bg: var(--sparc-secondary-hover);
   --bs-btn-hover-border-color: var(--sparc-secondary-hover);
+}
+
+/* Outline buttons — Bootstrap bakes literal default hex into --bs-btn-color
+   (e.g. #0d6efd primary, #6c757d secondary), so the --bs-*-rgb token overrides
+   above never reach them and the small variants fail WCAG 2.1 AA 4.5:1 on the
+   #f5f5f5 body. Re-point resting text/border at the darkened --sparc-* tokens
+   (each verified >=4.95:1 on #f5f5f5); hover keeps Bootstrap's white-on-fill.
+   WCAG 2.1 AA (SC 1.4.3) — see #599 a11y sweep / docs/dev/a11y_worm_refactor_plan.md */
+.btn-outline-primary {
+  --bs-btn-color: var(--sparc-primary);
+  --bs-btn-border-color: var(--sparc-primary);
+  --bs-btn-hover-bg: var(--sparc-primary);
+  --bs-btn-hover-border-color: var(--sparc-primary);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--sparc-secondary);
+  --bs-btn-border-color: var(--sparc-secondary);
+  --bs-btn-hover-bg: var(--sparc-secondary);
+  --bs-btn-hover-border-color: var(--sparc-secondary);
+}
+
+.btn-outline-success {
+  --bs-btn-color: var(--sparc-success);
+  --bs-btn-border-color: var(--sparc-success);
+  --bs-btn-hover-bg: var(--sparc-success);
+  --bs-btn-hover-border-color: var(--sparc-success);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--sparc-danger);
+  --bs-btn-border-color: var(--sparc-danger);
+  --bs-btn-hover-bg: var(--sparc-danger);
+  --bs-btn-hover-border-color: var(--sparc-danger);
+}
+
+/* #599 Round 3: info + warning outlines were missed in Round 1. Bootstrap's
+   #0dcaf0 / #ffc107 as outline text are 1.79:1 / 1.63:1 on light. Route text
+   through AA tokens; warning hover fills amber and switches to black. */
+.btn-outline-info {
+  --bs-btn-color: var(--sparc-info);
+  --bs-btn-border-color: var(--sparc-info);
+  --bs-btn-hover-bg: var(--sparc-info);
+  --bs-btn-hover-border-color: var(--sparc-info);
+}
+
+.btn-outline-warning {
+  --bs-btn-color: var(--sparc-warning-fg);
+  --bs-btn-border-color: var(--sparc-warning-fg);
+  --bs-btn-hover-bg: var(--sparc-warning);
+  --bs-btn-hover-border-color: var(--sparc-warning);
+  --bs-btn-hover-color: #000;
+}
+
+/* Dark theme: --sparc-danger (#ef5350) as outline TEXT is only 3.98:1 on the
+   #252d3a card. Use a lighter red for the resting text/border (5.59:1) — the
+   solid .btn-danger fill is untouched (it pairs #ef5350 with black). */
+[data-bs-theme="dark"] .btn-outline-danger {
+  --bs-btn-color: #f48a87;
+  --bs-btn-border-color: #f48a87;
+}
+
+/* Inline <code> — Bootstrap's default #d63384 pink is 4.12:1 on #f5f5f5
+   (fails AA). Darken to #ab296a (5.39:1 light) while keeping the magenta
+   identity; pale #e685b5 on dark surfaces. WCAG 2.1 AA — see #599 sweep. */
+code {
+  color: #ab296a;
+}
+
+[data-bs-theme="dark"] code {
+  color: #e685b5;
 }
 
 /* WCAG 2.1 AA: warning yellow needs black label in both themes (white = 2.2:1, black = 9.6:1) */
@@ -624,11 +699,103 @@
   color: #5dade2 !important;
 }
 
+/* #599 R5: Bootstrap text-bg / bg-secondary badges put white text on the
+   SPARC dark palette, whose fills are PALE (#b0bec5 secondary 1.9:1, #2ecc71
+   success 2.1:1). Pair them with black in dark theme — same move as the dark
+   btn overrides. Scoped to .badge so .bg-secondary panels are untouched. */
+[data-bs-theme="dark"] .badge.text-bg-secondary,
+[data-bs-theme="dark"] .badge.bg-secondary,
+[data-bs-theme="dark"] .badge.text-bg-success,
+[data-bs-theme="dark"] .badge.text-bg-info,
+[data-bs-theme="dark"] .badge.text-bg-primary,
+[data-bs-theme="dark"] .badge.text-bg-danger {
+  color: #000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   3b. STATUS PILL — semantic variants (WORM, #599 Round 2)
+   Single source of truth for status/severity/priority badge color.
+   Markup declares meaning (sparc-status--<variant>); CSS owns the AA
+   contrast. Every fg/bg pair verified WCAG 2.1 AA >= 4.5:1, light + dark.
+   Helpers (*_variant) map domain values → these keys; never hex.
+   ═══════════════════════════════════════════════════════════════════ */
+.sparc-status {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  font-size: 0.78rem;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* Light theme — Bootstrap subtle palette (matches .badge-*; ~7:1) */
+.sparc-status--success { color: #0f5132 !important; background: #d1e7dd !important; border-color: #badbcc !important; }
+.sparc-status--warning { color: #664d03 !important; background: #fff3cd !important; border-color: #ffecb5 !important; }
+.sparc-status--danger  { color: #842029 !important; background: #f8d7da !important; border-color: #f5c2c7 !important; }
+.sparc-status--info    { color: #055160 !important; background: #cff4fc !important; border-color: #b6effb !important; }
+.sparc-status--neutral { color: #41464b !important; background: #e2e3e5 !important; border-color: #d3d6d8 !important; }
+.sparc-status--purple  { color: #5b2c6f !important; background: #ebdef0 !important; border-color: #d7bde2 !important; }
+.sparc-status--orange  { color: #7a3d00 !important; background: #ffe8d4 !important; border-color: #ffd6b0 !important; }
+
+/* Dark theme — mirrors .badge-* dark overrides (light text on dark fill) */
+[data-bs-theme="dark"] .sparc-status--success { color: #68d391 !important; background: #1a3a2a !important; border-color: #2c5440 !important; }
+[data-bs-theme="dark"] .sparc-status--warning { color: #f6e05e !important; background: #3a3520 !important; border-color: #574f2e !important; }
+[data-bs-theme="dark"] .sparc-status--danger  { color: #fc8181 !important; background: #3a1a1a !important; border-color: #5a2a2a !important; }
+[data-bs-theme="dark"] .sparc-status--info    { color: #5dade2 !important; background: #1a2a3a !important; border-color: #2c4257 !important; }
+[data-bs-theme="dark"] .sparc-status--neutral { color: #ced4da !important; background: #2a2d31 !important; border-color: #41464b !important; }
+[data-bs-theme="dark"] .sparc-status--purple  { color: #cba3e3 !important; background: #2e2440 !important; border-color: #463a5e !important; }
+[data-bs-theme="dark"] .sparc-status--orange  { color: #f6ad55 !important; background: #3a2a14 !important; border-color: #574326 !important; }
+
+/* Decorative fills — solid hues for non-text elements (heatmap stacked bars,
+   legend swatches). No contrast requirement; keeps the saturated palette. */
+.sparc-fill--success { background: #27ae60; }
+.sparc-fill--warning { background: #f39c12; }
+.sparc-fill--danger  { background: #e74c3c; }
+.sparc-fill--info    { background: #3498db; }
+.sparc-fill--neutral { background: #95a5a6; }
+.sparc-fill--purple  { background: #9b59b6; }
+.sparc-fill--orange  { background: #ff9900; }
+
+/* Family compliance-percentage text — AA on light/dark card surfaces
+   (replaces inline #27ae60/#e67e22/#e74c3c which failed at 2.8–3.9:1). */
+.sparc-pct-good { color: #19743f; }
+.sparc-pct-mid  { color: #8a5000; }
+.sparc-pct-low  { color: #c0392b; }
+[data-bs-theme="dark"] .sparc-pct-good { color: #68d391; }
+[data-bs-theme="dark"] .sparc-pct-mid  { color: #f6ad55; }
+[data-bs-theme="dark"] .sparc-pct-low  { color: #fc8181; }
+
+/* Section / OSCAL-layer heading colors (WORM, #599 Round 3). Replaces inline
+   <h_ style="color:#hex"> (controls=blue, implementation=green, assessment=
+   amber, enterprise=purple) that rendered at 2.8–3.6:1. AA on light + dark. */
+.sparc-heading-controls       { color: #1a5276; }
+.sparc-heading-implementation { color: #19743f; }
+.sparc-heading-assessment     { color: #8a5000; }
+.sparc-heading-enterprise     { color: #6c3483; }
+.sparc-heading-danger         { color: #c0392b; }
+[data-bs-theme="dark"] .sparc-heading-controls       { color: #5dade2; }
+[data-bs-theme="dark"] .sparc-heading-implementation { color: #68d391; }
+[data-bs-theme="dark"] .sparc-heading-assessment     { color: #f6ad55; }
+[data-bs-theme="dark"] .sparc-heading-enterprise     { color: #cba3e3; }
+[data-bs-theme="dark"] .sparc-heading-danger         { color: #fc8181; }
+
+/* Required-field asterisk — AA red (was inline #e74c3c ~3.9:1 as small text) */
+.sparc-required { color: #c0392b; }
+[data-bs-theme="dark"] .sparc-required { color: #fc8181; }
+
 /* Custom button variants */
 .btn-sparc-purple {
   background-color: var(--sparc-purple);
   border-color: var(--sparc-purple);
   color: white;
+}
+/* #599 R5: in dark theme --sparc-purple is a pale #bb6bd9; white text is only
+   3.37:1. Pair with black like the dark .btn-* overrides (matches .btn-success
+   adapting to black-on-pale-fill in dark). */
+[data-bs-theme="dark"] .btn-sparc-purple,
+[data-bs-theme="dark"] .btn-sparc-purple:hover {
+  color: #000;
 }
 .btn-sparc-purple:hover {
   background-color: var(--sparc-purple-hover);
@@ -645,6 +812,8 @@
 /* Link accent colors */
 a.link-accent { color: var(--sparc-primary); }
 a.link-purple { color: var(--sparc-purple); }
+/* #599 R5: --sparc-purple (#bb6bd9) is only 3.4:1 on dark surfaces */
+[data-bs-theme="dark"] a.link-purple { color: #cba3e3; }
 
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -678,6 +847,20 @@ a.link-purple { color: var(--sparc-purple); }
   display: inline-block;
 }
 .sparc-btn-ghost-muted:hover { background: rgba(255, 255, 255, 0.15); color: white; text-decoration: none; }
+
+/* Light theme: the white-on-white-tint ghost button is invisible (1.06:1) on
+   light pages like /admin/data_migrations. Use dark text/border on a faint dark
+   tint so it passes WCAG AA there; the dark-theme rule above is unchanged.
+   WCAG 2.1 AA — see #599 a11y sweep. */
+[data-bs-theme="light"] .sparc-btn-ghost-muted {
+  background: rgba(0, 0, 0, 0.04);
+  color: #333333;
+  border-color: rgba(0, 0, 0, 0.18);
+}
+[data-bs-theme="light"] .sparc-btn-ghost-muted:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #000;
+}
 
 .sparc-btn-oscal {
   background: rgba(46, 204, 113, 0.2);
@@ -919,14 +1102,17 @@ a.link-purple { color: var(--sparc-purple); }
   padding: 0.35rem 0.85rem;
   font-size: 0.8rem;
   flex-shrink: 0;
-  background: #3498db;
+  background: var(--sparc-primary);  /* WCAG AA: was #3498db (white = 3.15:1) */
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   white-space: nowrap;
 }
-.sparc-btn-edit:hover { background: #2980b9; }
+.sparc-btn-edit:hover { background: var(--sparc-primary-hover); }
+/* Dark theme: --sparc-primary is a pale blue (#5dade2); pair it with black text
+   like Bootstrap's dark .btn-primary (white would be 2.45:1). */
+[data-bs-theme="dark"] .sparc-btn-edit { color: #000; }
 
 
 /* ── Status pill / outline tag ─────────────────────────────────── */
@@ -959,7 +1145,7 @@ a.link-purple { color: var(--sparc-purple); }
   gap: 0.2rem;
   background: rgba(44, 62, 80, 0.1);
   border: 1px solid rgba(44, 62, 80, 0.25);
-  color: var(--bs-secondary-color);
+  color: #495057;  /* WCAG AA: --bs-secondary-color (#666) was 4.46:1 on the tint */
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
   font-size: 0.72rem;
@@ -972,12 +1158,15 @@ a.link-purple { color: var(--sparc-purple); }
   gap: 0.2rem;
   background: rgba(39, 174, 96, 0.08);
   border: 1px solid rgba(39, 174, 96, 0.2);
-  color: var(--bs-secondary-color);
+  color: #495057;  /* WCAG AA: see .sparc-asset-tag */
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
   font-size: 0.72rem;
   font-weight: 600;
 }
+
+[data-bs-theme="dark"] .sparc-asset-tag,
+[data-bs-theme="dark"] .sparc-env-tag { color: #ced4da; }
 
 .sparc-tag-separator {
   color: var(--bs-tertiary-color);
@@ -1093,7 +1282,7 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 .sparc-heatmap-badge {
-  color: white;
+  /* color owned by the .sparc-status--<variant> companion class (AA) */
   border-radius: 4px;
   padding: 0.15rem 0.45rem;
   font-size: 0.7rem;
@@ -1103,7 +1292,7 @@ a.link-purple { color: var(--sparc-purple); }
   text-decoration: none;
   display: inline-block;
 }
-.sparc-heatmap-badge:hover { opacity: 0.85; color: white; text-decoration: none; }
+.sparc-heatmap-badge:hover { opacity: 0.85; text-decoration: none; }
 .sparc-heatmap-badge:focus-visible {
   outline: 2px solid var(--sparc-primary);
   outline-offset: 2px;
@@ -1401,6 +1590,32 @@ a.link-purple { color: var(--sparc-purple); }
   flex-shrink: 0;
 }
 
+/* Bootstrap .text-info (#0dcaf0) is only ~1.95:1 on light surfaces — route
+   through --sparc-info so it passes WCAG AA in both themes (e.g. the "running"
+   counter on /admin/data_migrations). !important matches Bootstrap's utility. */
+.text-info {
+  color: var(--sparc-info) !important;
+}
+
+/* Same treatment for the other low-contrast Bootstrap text utilities:
+   .text-warning (#f39c12 ~1.8:1) and .text-success (dips below AA on light
+   tints). Route through AA tokens (both have dark-theme values). #599 R3. */
+.text-warning {
+  color: var(--sparc-warning-fg) !important;
+}
+.text-success {
+  color: var(--sparc-success) !important;
+}
+
+/* Consent-banner notice (#602): admin-supplied banner HTML styles its NOTICE
+   heading with Bootstrap .text-warning, which renders --sparc-warning (#f39c12)
+   as TEXT at only 2.01:1 on the modal's light surface. Scope a WCAG-AA dark
+   amber here so the banner-body amber passes without touching the token's
+   intended amber-fill-on-black use elsewhere. !important matches Bootstrap. */
+#consentBannerBody .text-warning {
+  color: var(--sparc-warning-fg) !important;
+}
+
 /* OSCAL overview SVG layer labels — themed via tokens so the text passes AA
    in both modes; rect tints stay decorative (opacity, no contrast requirement) */
 .oscal-svg-text-controls       { fill: var(--sparc-primary); }
@@ -1420,31 +1635,36 @@ a.link-purple { color: var(--sparc-purple); }
 
 .sparc-source-excel {
   background: rgba(149, 165, 166, 0.13);
-  color: #95a5a6;
+  color: #495057;  /* WCAG AA: was #95a5a6 (~2:1) as text on the light tint */
   border: 1px solid rgba(149, 165, 166, 0.33);
 }
 
 .sparc-source-wizard {
   background: rgba(52, 152, 219, 0.13);
-  color: #3498db;
+  color: #1a5276;  /* WCAG AA: was #3498db (~3:1) */
   border: 1px solid rgba(52, 152, 219, 0.33);
 }
 
 .sparc-source-oscal {
   background: rgba(46, 204, 113, 0.13);
-  color: #2ecc71;
+  color: #155724;  /* WCAG AA: was #2ecc71 (~2.3:1) */
   border: 1px solid rgba(46, 204, 113, 0.33);
 }
+
+[data-bs-theme="dark"] .sparc-source-excel  { color: #ced4da; }
+[data-bs-theme="dark"] .sparc-source-wizard { color: #5dade2; }
+[data-bs-theme="dark"] .sparc-source-oscal  { color: #68d391; }
 
 /* Index table "Enriched" / "Basic" indicators */
 .sparc-oscal-enriched {
   background: rgba(46, 204, 113, 0.15);
-  color: #27ae60;
+  color: #155724;  /* WCAG AA: was #27ae60 (~2.8:1) */
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
   font-size: 0.72rem;
   font-weight: 600;
 }
+[data-bs-theme="dark"] .sparc-oscal-enriched { color: #68d391; }
 
 .sparc-oscal-basic {
   color: var(--bs-tertiary-color);
@@ -1454,7 +1674,7 @@ a.link-purple { color: var(--sparc-purple); }
 /* Index table "Enrich" action link */
 .sparc-btn-enrich-sm {
   background: rgba(243, 156, 18, 0.15);
-  color: #e67e22;
+  color: #8a5000;  /* WCAG AA: was #e67e22 (~3:1) as text on the amber tint */
   border: 1px solid rgba(243, 156, 18, 0.3);
   padding: 0.35rem 0.75rem;
   border-radius: 4px;
@@ -1463,7 +1683,9 @@ a.link-purple { color: var(--sparc-purple); }
   font-weight: 500;
   display: inline-block;
 }
-.sparc-btn-enrich-sm:hover { background: rgba(243, 156, 18, 0.25); color: #e67e22; text-decoration: none; }
+.sparc-btn-enrich-sm:hover { background: rgba(243, 156, 18, 0.25); color: #6f4000; text-decoration: none; }
+[data-bs-theme="dark"] .sparc-btn-enrich-sm,
+[data-bs-theme="dark"] .sparc-btn-enrich-sm:hover { color: #f6ad55; }
 
 
 /* ── Enrich page sections ──────────────────────────────────────── */
@@ -1530,14 +1752,17 @@ a.link-purple { color: var(--sparc-purple); }
 }
 
 .sparc-text-success-bold {
-  color: #2ecc71;
+  color: #19743f;  /* WCAG AA: was #2ecc71 (~2.8:1) */
   font-weight: 600;
 }
 
 .sparc-text-warning-bold {
-  color: #f39c12;
+  color: #8a5000;  /* WCAG AA: was #f39c12 (~1.9:1) */
   font-weight: 600;
 }
+
+[data-bs-theme="dark"] .sparc-text-success-bold { color: #68d391; }
+[data-bs-theme="dark"] .sparc-text-warning-bold { color: #f6ad55; }
 
 /* ── Family Selector (profile create / manage controls) ────────── */
 .sparc-family-group {

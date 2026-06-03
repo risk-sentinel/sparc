@@ -26,7 +26,7 @@
           <tr>
             <td><strong><%= control.control_id %></strong></td>
             <td>
-              <span class="badge" style="background: <%= ssp_status_color(status) %>; color: #fff;">
+              <span class="badge sparc-status--<%= ssp_status_variant(status) %>">
                 <%= status %>
               </span>
             </td>

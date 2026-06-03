@@ -6,7 +6,7 @@
 ] %>
 
 <% if @control_catalogs.any? { |c| c.processing? || c.pending? } %>
-  <meta http-equiv="refresh" content="10">
+  <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
 <div class="card">
@@ -19,7 +19,7 @@
     <% if can_write_catalogs? %>
       <div class="d-flex flex-wrap gap-2">
         <%= link_to "↑ Import from File", import_control_catalogs_path,
-              class: "btn fw-semibold", style: "background: #8e44ad; color: white; text-decoration: none; font-size: 0.875rem; white-space: nowrap;" %>
+              class: "btn btn-sparc-purple fw-semibold", style: "font-size: 0.875rem; white-space: nowrap;" %>
         <%= link_to "＋ New Catalog", new_control_catalog_path, class: "btn btn-success" %>
       </div>
     <% end %>
@@ -45,8 +45,8 @@
               <strong><%= link_to catalog.name, catalog, class: "text-primary", style: "text-decoration: none;" %></strong>
               <% if catalog.original_filename.present? %>
                 <% ext = File.extname(catalog.original_filename).delete(".").upcase %>
-                <% badge_color = { "JSON" => "#3498db", "XML" => "#27ae60", "YAML" => "#8e44ad", "YML" => "#8e44ad" }[ext] || "#95a5a6" %>
-                <span class="badge" style="background: <%= badge_color %>; font-size: 0.65rem; vertical-align: middle; margin-left: 0.35rem;"><%= ext %></span>
+                <% ext_variant = { "JSON" => "info", "XML" => "success", "YAML" => "purple", "YML" => "purple" }[ext] || "neutral" %>
+                <span class="badge sparc-status--<%= ext_variant %>" style="font-size: 0.65rem; vertical-align: middle; margin-left: 0.35rem;"><%= ext %></span>
               <% end %>
             </td>
             <td><%= catalog.version.presence || "—" %></td>
@@ -78,7 +78,7 @@
                       fallback_json_path: download_oscal_unvalidated_control_catalog_path(catalog),
                       document_type: "Catalog" %>
                 <% if can_write_catalogs? %>
-                  <%= link_to "Edit", edit_control_catalog_path(catalog), class: "btn btn-sm", style: "background: #f39c12; color: white;" %>
+                  <%= link_to "Edit", edit_control_catalog_path(catalog), class: "btn btn-sm btn-warning" %>
                   <%= button_to "Delete", catalog, method: :delete,
                       form: { data: { turbo_confirm: "Delete '#{catalog.name}'? This will remove all families and controls." } },
                       class: "btn btn-sm btn-danger" %>

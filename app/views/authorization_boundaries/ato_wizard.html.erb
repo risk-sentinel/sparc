@@ -10,7 +10,7 @@
     <%# ── Step 1: Confirm Authorization Boundary ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #3498db; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
+        <span class="sparc-status--info" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
         Confirm Authorization Boundary
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -42,7 +42,7 @@
     <%# ── Step 2: Select Baseline / Profile ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #27ae60; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
+        <span class="sparc-status--success" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
         Select Baseline / Profile
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -71,7 +71,7 @@
                     class: "form-control" %>
             </div>
           <% else %>
-            <p style="color: #e74c3c; font-size: 0.88rem;">
+            <p class="sparc-heading-danger" style="font-size: 0.88rem;">
               No completed profiles found. Please
               <%= link_to "upload a Profile", new_profile_document_path %> first.
             </p>
@@ -86,7 +86,7 @@
     <%# ── Step 3: Select Components (CDEFs) ── %>
     <details class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #e67e22; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
+        <span class="sparc-status--orange" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
         Select Components (CDEFs)
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -137,7 +137,7 @@
     <%# ── Step 4: System Security Plan (SSP) ── %>
     <details class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">4</span>
+        <span class="sparc-status--danger" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">4</span>
         System Security Plan (SSP)
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -164,7 +164,7 @@
 
         <div id="ssp_create_new_panel" style="display: none; margin-top: 0.75rem;">
           <div class="form-group">
-            <label for="ssp_name">SSP Name <span style="color: #e74c3c;">*</span></label>
+            <label for="ssp_name">SSP Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :ssp_name, nil, class: "form-control", placeholder: "e.g., My System SSP" %>
           </div>
           <div class="form-group">
@@ -225,7 +225,7 @@
     <%# ── Step 5: Security Assessment Plan (SAP) ── %>
     <details class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #9b59b6; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">5</span>
+        <span class="sparc-status--purple" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">5</span>
         Security Assessment Plan (SAP)
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -252,7 +252,7 @@
 
         <div id="sap_create_new_panel" style="display: none; margin-top: 0.75rem;">
           <div class="form-group">
-            <label for="sap_name">SAP Name <span style="color: #e74c3c;">*</span></label>
+            <label for="sap_name">SAP Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :sap_name, nil, class: "form-control", placeholder: "e.g., Annual Security Assessment Plan" %>
           </div>
           <div class="form-group">
@@ -293,7 +293,7 @@
     <%# ── Step 6: Security Assessment Results (SAR) ── %>
     <details class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #1abc9c; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">6</span>
+        <span class="sparc-status--info" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">6</span>
         Security Assessment Results (SAR)
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -320,7 +320,7 @@
 
         <div id="sar_create_new_panel" style="display: none; margin-top: 0.75rem;">
           <div class="form-group">
-            <label for="sar_name">SAR Name <span style="color: #e74c3c;">*</span></label>
+            <label for="sar_name">SAR Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :sar_name, nil, class: "form-control", placeholder: "e.g., Annual Assessment Results" %>
           </div>
           <div class="form-group">
@@ -354,7 +354,7 @@
     <%# ── Step 7: Plan of Action & Milestones (POA&M) ── %>
     <details class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #34495e; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">7</span>
+        <span class="sparc-status--neutral" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">7</span>
         Plan of Action &amp; Milestones (POA&amp;M)
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -381,7 +381,7 @@
 
         <div id="poam_create_new_panel" style="display: none; margin-top: 0.75rem;">
           <div class="form-group">
-            <label for="poam_name">POA&amp;M Name <span style="color: #e74c3c;">*</span></label>
+            <label for="poam_name">POA&amp;M Name <span class="sparc-required">*</span></label>
             <%= text_field_tag :poam_name, nil, class: "form-control", placeholder: "e.g., FY2026 Plan of Action & Milestones" %>
           </div>
           <div class="form-group">
@@ -405,7 +405,7 @@
     <%# ── Step 8: Review & Submit ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #8e44ad; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">8</span>
+        <span class="sparc-status--purple" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">8</span>
         Review &amp; Submit
       </summary>
       <div style="padding: 1rem 1.25rem;">

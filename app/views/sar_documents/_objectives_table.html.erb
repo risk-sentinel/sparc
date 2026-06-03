@@ -20,7 +20,7 @@
 
   <div class="sparc-statement-block" style="background: rgba(52,152,219,0.04); border-color: rgba(52,152,219,0.18); border-left: 3px solid #3498db; margin-top: 0.75rem;">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2" style="margin-bottom: 0.4rem;">
-      <div class="sparc-statement-label" style="color: #3498db;">
+      <div class="sparc-statement-label sparc-heading-controls">
         Assessment Objectives
         <span class="text-body-secondary" style="font-weight: 400; font-size: 0.7rem;">
           (<%= pluralize(objectives.size, "objective") %>)
@@ -28,7 +28,7 @@
       </div>
       <span class="text-body-tertiary" style="font-size: 0.7rem;">
         Rollup:
-        <span style="color: <%= status_colors[control.objective_status_rollup] || '#7f8c8d' %>; font-weight: 600;">
+        <span class="sparc-status sparc-status--<%= sar_objective_status_variant(control.objective_status_rollup) %>">
           <%= control.objective_status_rollup.to_s.humanize %>
         </span>
       </span>
@@ -66,7 +66,7 @@
                 <% end %>
               </td>
               <td>
-                <span class="sparc-status-pill" style="background: <%= color %>; font-size: 0.68rem;">
+                <span class="sparc-status-pill sparc-status--<%= sar_objective_status_variant(obj.status) %>" style="font-size: 0.68rem;">
                   <%= obj.status.humanize %>
                 </span>
               </td>

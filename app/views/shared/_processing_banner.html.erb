@@ -75,5 +75,5 @@
     <% end %>
   </div>
 
-  <meta http-equiv="refresh" content="<%= refresh_sec %>">
+  <div data-controller="auto-refresh" data-auto-refresh-interval-value="<%= refresh_sec.to_i * 1000 %>" hidden></div>
 <% end %>

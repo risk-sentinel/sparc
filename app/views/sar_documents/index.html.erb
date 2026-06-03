@@ -5,7 +5,7 @@
 ] %>
 
 <% if @sar_documents.any? { |d| d.processing? || d.pending? } %>
-  <meta http-equiv="refresh" content="10">
+  <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
 <div class="card">

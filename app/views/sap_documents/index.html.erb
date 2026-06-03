@@ -5,7 +5,7 @@
 ] %>
 
 <% if @sap_documents.any? { |d| d.processing? || d.pending? } %>
-  <meta http-equiv="refresh" content="10">
+  <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
 <div class="card" style="overflow-x: auto;">
@@ -37,9 +37,8 @@
           <tr>
             <td><strong><%= link_to doc.name, sap_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
-              <% type_colors = { "initial" => "#3498db", "annual" => "#27ae60", "continuous" => "#8e44ad", "ad-hoc" => "#f39c12" } %>
-              <% color = type_colors[doc.assessment_type] || "#7f8c8d" %>
-              <span class="rounded fw-semibold" style="padding: 0.2rem 0.6rem; background: <%= color %>22; color: <%= color %>; border: 1px solid <%= color %>44; font-size: 0.78rem; white-space: nowrap;">
+              <% type_variants = { "initial" => "info", "annual" => "success", "continuous" => "purple", "ad-hoc" => "warning" } %>
+              <span class="sparc-status sparc-status--<%= type_variants[doc.assessment_type] || 'neutral' %>">
                 <%= doc.assessment_type&.titleize || "Initial" %>
               </span>
             </td>

@@ -31,14 +31,14 @@
             <%= f.text_field :system_id, class: "form-control", placeholder: "e.g., system-uuid" %>
           </div>
           <div class="form-group">
-            <label>System Status</label>
+            <%= f.label :system_status, "System Status" %>
             <%= f.select :system_status,
                   SspDocument::SYSTEM_STATUSES.map { |s| [s.titleize, s] },
                   { include_blank: "-- Select --" },
                   { class: "form-control" } %>
           </div>
           <div class="form-group">
-            <label>Date Authorized</label>
+            <%= f.label :date_authorized, "Date Authorized" %>
             <%= f.date_field :date_authorized, class: "form-control" %>
           </div>
         </div>

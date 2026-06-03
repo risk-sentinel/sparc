@@ -15,7 +15,7 @@
                placeholder="Search by name, contact, or email...">
       </div>
       <div class="col-md-3">
-        <select name="status" class="form-select form-select-sm">
+        <select name="status" aria-label="Filter by status" class="form-select form-select-sm">
           <option value="">All statuses</option>
           <% %w[active inactive].each do |s| %>
             <option value="<%= s %>" <%= "selected" if params[:status] == s %>><%= s.capitalize %></option>

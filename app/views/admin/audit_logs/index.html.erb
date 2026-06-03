@@ -18,8 +18,8 @@
                  placeholder="Search actions or metadata...">
         </div>
         <div class="col-md-2">
-          <label class="form-label small fw-semibold mb-1">User</label>
-          <select name="user_id" class="form-select form-select-sm">
+          <label for="filter_user_id" class="form-label small fw-semibold mb-1">User</label>
+          <select id="filter_user_id" name="user_id" class="form-select form-select-sm">
             <option value="">All users</option>
             <% @users.each do |u| %>
               <option value="<%= u.id %>" <%= "selected" if params[:user_id].to_s == u.id.to_s %>><%= u.email %></option>
@@ -27,8 +27,8 @@
           </select>
         </div>
         <div class="col-md-2">
-          <label class="form-label small fw-semibold mb-1">Category</label>
-          <select name="category" class="form-select form-select-sm">
+          <label for="filter_category" class="form-label small fw-semibold mb-1">Category</label>
+          <select id="filter_category" name="category" class="form-select form-select-sm">
             <option value="">All categories</option>
             <% @categories.each do |cat| %>
               <option value="<%= cat %>" <%= "selected" if params[:category] == cat %>><%= cat %></option>
@@ -36,8 +36,8 @@
           </select>
         </div>
         <div class="col-md-2">
-          <label class="form-label small fw-semibold mb-1">Resource Type</label>
-          <select name="subject_type" class="form-select form-select-sm">
+          <label for="filter_subject_type" class="form-label small fw-semibold mb-1">Resource Type</label>
+          <select id="filter_subject_type" name="subject_type" class="form-select form-select-sm">
             <option value="">All types</option>
             <% @subject_types.each do |st| %>
               <option value="<%= st %>" <%= "selected" if params[:subject_type] == st %>><%= st %></option>

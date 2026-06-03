@@ -49,7 +49,7 @@
               <%= link_to converter.name, converter_path(converter), class: "text-decoration-none" %>
             </td>
             <td>
-              <span class="badge" style="background: <%= converter_type_color(converter.converter_type) %>22; color: <%= converter_type_color(converter.converter_type) %>; border: 1px solid <%= converter_type_color(converter.converter_type) %>44; font-size: 0.7rem;">
+              <span class="badge sparc-status--<%= converter_type_variant(converter.converter_type) %>" style="font-size: 0.7rem; white-space: normal; text-align: left;">
                 <%= converter.type_label %>
               </span>
             </td>

@@ -144,10 +144,10 @@
       <% end %>
       <div class="d-flex flex-wrap gap-1" style="margin-top: 0.25rem;">
         <% if @ssp_document.security_sensitivity_level.present? %>
-          <span style="background: rgba(52,152,219,0.1); color: #2980b9; padding: 0.12rem 0.45rem; border-radius: 3px; font-size: 0.72rem; font-weight: 600;"><%= @ssp_document.security_sensitivity_level.split("-").last.capitalize %></span>
+          <span class="sparc-status sparc-status--info" style="font-size: 0.72rem;"><%= @ssp_document.security_sensitivity_level.split("-").last.capitalize %></span>
         <% end %>
         <% if @ssp_document.system_status.present? %>
-          <span style="background: rgba(39,174,96,0.1); color: #27ae60; padding: 0.12rem 0.45rem; border-radius: 3px; font-size: 0.72rem; font-weight: 600;"><%= @ssp_document.system_status.titleize %></span>
+          <span class="sparc-status sparc-status--success" style="font-size: 0.72rem;"><%= @ssp_document.system_status.titleize %></span>
         <% end %>
       </div>
     </div>
@@ -162,7 +162,7 @@
       </div>
       <% @components.first(5).each do |comp| %>
         <div class="d-flex align-items-center gap-1" style="margin-bottom: 0.25rem;">
-          <span style="background: <%= comp.component_type == 'this-system' ? 'rgba(142,68,173,0.12)' : 'rgba(52,152,219,0.1)' %>; color: <%= comp.component_type == 'this-system' ? '#8e44ad' : '#2980b9' %>; padding: 0.08rem 0.35rem; border-radius: 3px; font-size: 0.68rem; font-weight: 600;"><%= comp.component_type %></span>
+          <span class="sparc-status sparc-status--<%= comp.component_type == 'this-system' ? 'purple' : 'info' %>" style="font-size: 0.68rem;"><%= comp.component_type %></span>
           <span style="font-size: 0.82rem; color: var(--bs-body-color);"><%= truncate(comp.title, length: 30) %></span>
         </div>
       <% end %>
@@ -209,7 +209,7 @@
      heatmap_families: @heatmap_families,
      heatmap_statuses: @heatmap_statuses,
      title: "Compliance by Control Family",
-     color_helper: :ssp_status_color,
+     variant_helper: :ssp_status_variant,
      filter_key: "status",
      url_sync: true,
      initial_family: params[:family],
@@ -242,6 +242,7 @@
       field_map   = control.ssp_control_fields.index_by(&:field_name)
       status_val  = field_map["status"]&.field_value.presence || "(Unknown)"
       status_color = ssp_status_color(status_val)
+      status_variant = ssp_status_variant(status_val)
       family_code  = control.control_id.to_s.split("-").first.upcase
       stated_req   = field_map["stated_requirement"]&.field_value.presence
       type_use_val = field_map["control_application"]&.field_value.presence
@@ -258,7 +259,7 @@
         <div style="min-width: 0; flex: 1;">
           <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
             <span class="sparc-ctrl-id"><%= control.control_id %></span>
-            <span class="sparc-status-pill" style="background: <%= status_color %>;"><%= status_val %></span>
+            <span class="sparc-status-pill sparc-status--<%= status_variant %>"><%= status_val %></span>
             <% if type_use_val.present? %>
               <span class="sparc-asset-tag"><%= type_use_val %></span>
             <% end %>
@@ -314,7 +315,7 @@
                   </td>
                   <td class="sparc-field-value">
                     <% if field.field_name == "status" %>
-                      <span class="sparc-status-pill" style="background: <%= ssp_status_color(field.field_value) %>; font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
+                      <span class="sparc-status-pill sparc-status--<%= ssp_status_variant(field.field_value) %>" style="font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
                     <% else %>
                       <%= field.field_value %>
                     <% end %>
@@ -335,7 +336,7 @@
                 <% control.provider_statements.each_with_index do |stmt, i| %>
                   <div style="margin-bottom: 0.6rem; padding: 0.75rem 1rem; background: var(--bs-secondary-bg); border-left: 3px solid #8e44ad; border-radius: 0 6px 6px 0;">
                     <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.4rem;">
-                      <span style="background: #8e44ad; color: white; padding: 0.1rem 0.45rem; border-radius: 3px; font-size: 0.64rem; font-weight: 700;">INHERITED</span>
+                      <span class="sparc-status sparc-status--purple" style="font-size: 0.64rem;">INHERITED</span>
                       <% if stmt.title.present? %>
                         <span style="font-size: 0.82rem; font-weight: 600; color: var(--bs-body-color);">
                           <%= stmt.title %>

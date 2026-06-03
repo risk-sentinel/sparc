@@ -25,7 +25,7 @@
                 <div class="sparc-sidebar-boundary">
                   <button class="sparc-sidebar-toggle sparc-sidebar-indent-2"
                           data-bs-toggle="collapse" data-bs-target="#sidebarAb<%= ab.id %>" aria-expanded="false">
-                    <span class="badge rounded-pill" style="background: <%= ab_status_color(ab.status) %>; font-size: 0.55rem; vertical-align: middle;">
+                    <span class="badge rounded-pill sparc-status--<%= ab_status_variant(ab.status) %>" style="font-size: 0.55rem; vertical-align: middle;">
                       <%= ab.status&.upcase %>
                     </span>
                     <%= ab.name %>

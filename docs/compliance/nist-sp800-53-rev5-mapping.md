@@ -561,13 +561,22 @@ that bar by axe-core, integrated into both layers of the UI test net (#572).
 
 | Standard | Scope | Automated Control | Code / Config Location | Status |
 |---|---|---|---|---|
-| WCAG 2.1 A + AA (Section 508) | SPARC web UI | axe-core accessibility checks -- Layer 1 (RSpec system specs, real Chrome, per-PR) + Layer 2 (Playwright post-deploy, Chromium + Firefox). Baseline + ratchet: new violations fail the build; tracked debt is recorded and burned down. | `spec/system/accessibility_spec.rb`, `spec/support/axe_helper.rb`, `tests/ui-smoke/test_accessibility.py`, `tests/ui-smoke/a11y_baseline.json` | Partial |
+| WCAG 2.1 A + AA (Section 508) | SPARC web UI | axe-core accessibility checks -- Layer 1 (RSpec system specs, real Chrome, per-PR) + Layer 2 (Playwright post-deploy, Chromium + Firefox). Baseline + ratchet: new violations fail the build; tracked debt is recorded and burned down. | `spec/system/accessibility_spec.rb`, `spec/support/axe_helper.rb`, `tests/ui-smoke/test_accessibility.py`, `tests/ui-smoke/a11y_baseline.json` | Implemented¹ |
 
-**Current conformance gaps (tracked, #602):** 3 serious violations on the login
-consent-banner -- 2x insufficient color-contrast (`.text-warning` heading,
-`.btn-outline-secondary`) and 1x non-keyboard-focusable scroll region
-(`#consentBannerBody`). Net-new regressions are blocked by the axe ratchet; the
-existing items are scheduled for remediation.
+**Conformance status (v1.8.6, #599 / #602):** the captured baseline was burned
+down to zero. A local real-Chromium axe sweep across the 20 core pages reports
+**0 color-contrast, select-name, label, and meta-refresh violations in both
+light and dark themes.** The remediation introduced a WORM color architecture --
+semantic helper keys + single-source `.sparc-status`/`.sparc-heading` components
+in `sparc-theme.css` own all contrast, so views carry no badge/heading color
+hex and future palette changes stay AA by construction. The login consent-banner
+items (#602 -- amber heading contrast, `.btn-outline-secondary`,
+`#consentBannerBody` keyboard focus) are resolved.
+
+> ¹ Local-verification status. The committed `a11y_baseline.json` still reflects
+> the pre-v1.8.6 production capture; the authoritative prod re-capture (and
+> baseline shrink) happens post-deploy, after which the Layer 2 ratchet enforces
+> the cleared state. Net-new regressions are blocked per-PR by Layer 1 today.
 
 > Note: Section 508 / WCAG is a distinct legal standard, not a NIST SP 800-53
 > control -- it is documented here for authorization-package completeness, not

@@ -5,7 +5,7 @@
 ] %>
 
 <% if @cdef_documents.any? { |d| d.processing? || d.pending? } %>
-  <meta http-equiv="refresh" content="10">
+  <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
 <div class="card" style="overflow-x: auto;">
@@ -79,8 +79,8 @@
           <tr>
             <td><strong><%= link_to doc.name, cdef_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
-              <% type_colors = { "disa_stig" => "#e74c3c", "scap" => "#3498db", "cis" => "#f39c12", "custom" => "#95a5a6" } %>
-              <span class="rounded fw-semibold" style="padding: 0.2rem 0.6rem; background: <%= type_colors[doc.cdef_type] || '#7f8c8d' %>22; color: <%= type_colors[doc.cdef_type] || '#7f8c8d' %>; border: 1px solid <%= type_colors[doc.cdef_type] || '#7f8c8d' %>44; font-size: 0.78rem; white-space: nowrap;">
+              <% type_variants = { "disa_stig" => "danger", "scap" => "info", "cis" => "warning", "custom" => "neutral" } %>
+              <span class="sparc-status sparc-status--<%= type_variants[doc.cdef_type] || 'neutral' %>">
                 <%= doc.cdef_type&.upcase&.tr("_", " ") || "Unknown" %>
               </span>
             </td>
@@ -105,7 +105,7 @@
               <div class="d-flex flex-wrap gap-1" style="max-width: 280px;">
                 <%= link_to "View", cdef_document_path(doc), class: "btn btn-primary btn-sm", style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;" %>
                 <% if signed_in? && doc.completed? %>
-                  <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm", style: "background: #2980b9; color: white; padding: 0.25rem 0.6rem; font-size: 0.78rem;", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
+                  <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm btn-primary", style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
                 <% end %>
                 <% if doc.completed? %>
                   <%# #451 A1: shared partial routes dropdown clicks through the

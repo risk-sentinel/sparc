@@ -5,7 +5,7 @@
     <%# ── Controls Layer ── %>
     <div style="border: 1px solid rgba(52,152,219,0.45); border-top: 3px solid #3498db; border-radius: 0.375rem; padding: 0.35rem 0.5rem 0.5rem; background: rgba(52,152,219,0.06);">
       <div class="text-center" style="margin-bottom: 0.35rem;">
-        <span class="badge" style="background: #3498db; font-size: 0.75rem; letter-spacing: 0.05rem; padding: 0.25rem 0.6rem;">CONTROLS</span>
+        <span class="badge sparc-status--info" style="font-size: 0.75rem; letter-spacing: 0.05rem;">CONTROLS</span>
       </div>
       <div class="d-flex gap-2">
         <% [[@catalog_count, "Catalogs"], [@family_count, "Families"], [@control_count, "Controls"], [@profile_count, "Baselines"], [@mapping_count, "Mappings"]].each do |count, label| %>
@@ -20,7 +20,7 @@
     <%# ── Implementation Layer ── %>
     <div style="border: 1px solid rgba(39,174,96,0.45); border-top: 3px solid #27ae60; border-radius: 0.375rem; padding: 0.35rem 0.5rem 0.5rem; background: rgba(39,174,96,0.06);">
       <div class="text-center" style="margin-bottom: 0.35rem;">
-        <span class="badge" style="background: #27ae60; font-size: 0.75rem; letter-spacing: 0.05rem; padding: 0.25rem 0.6rem;">IMPLEMENTATION</span>
+        <span class="badge sparc-status--success" style="font-size: 0.75rem; letter-spacing: 0.05rem;">IMPLEMENTATION</span>
       </div>
       <div class="d-flex gap-2">
         <% [[@ssp_count, "SSPs"], [@cdef_count, "CDEFs"], [@converter_count, "Converters"]].each do |count, label| %>
@@ -35,7 +35,7 @@
     <%# ── Assessment Layer ── %>
     <div style="border: 1px solid rgba(230,126,34,0.45); border-top: 3px solid #e67e22; border-radius: 0.375rem; padding: 0.35rem 0.5rem 0.5rem; background: rgba(230,126,34,0.06);">
       <div class="text-center" style="margin-bottom: 0.35rem;">
-        <span class="badge" style="background: #e67e22; font-size: 0.75rem; letter-spacing: 0.05rem; padding: 0.25rem 0.6rem;">ASSESSMENT</span>
+        <span class="badge sparc-status--orange" style="font-size: 0.75rem; letter-spacing: 0.05rem;">ASSESSMENT</span>
       </div>
       <div class="d-flex gap-2">
         <% [[@sap_count, "SAPs"], [@evidence_count, "Evidence"], [@sar_count, "SARs"], [@poam_count, "POA&Ms"]].each do |count, label| %>
@@ -50,7 +50,7 @@
     <%# ── Enterprise ── %>
     <div style="border: 1px solid rgba(155,89,182,0.45); border-top: 3px solid #9b59b6; border-radius: 0.375rem; padding: 0.35rem 0.5rem 0.5rem; background: rgba(155,89,182,0.06);">
       <div class="text-center" style="margin-bottom: 0.35rem;">
-        <span class="badge" style="background: #9b59b6; font-size: 0.75rem; letter-spacing: 0.05rem; padding: 0.25rem 0.6rem;">ENTERPRISE</span>
+        <span class="badge sparc-status--purple" style="font-size: 0.75rem; letter-spacing: 0.05rem;">ENTERPRISE</span>
       </div>
       <div class="d-flex gap-2">
         <% [[@organization_count, "Organizations"], [@authorization_boundary_count, "Auth Boundaries"]].each do |count, label| %>
@@ -71,6 +71,7 @@
     {
       label: "Controls Layer",
       color: "#3498db",
+      cls: "sparc-heading-controls",
       cards: [
         { title: "Control Catalogs",     path: control_catalogs_path,   new_path: new_control_catalog_path,   icon: "&#128218;" },
         { title: "Baselines / Profiles", path: profile_documents_path,  new_path: new_profile_document_path,  icon: "&#128203;" },
@@ -80,6 +81,7 @@
     {
       label: "Implementation Layer",
       color: "#27ae60",
+      cls: "sparc-heading-implementation",
       cards: [
         { title: "SSPs",        path: ssp_documents_path,   new_path: new_ssp_document_path,   icon: "&#128196;" },
         { title: "CDEFs",       path: cdef_documents_path,  new_path: new_cdef_document_path,  icon: "&#128737;" },
@@ -89,6 +91,7 @@
     {
       label: "Assessment Layer",
       color: "#e67e22",
+      cls: "sparc-heading-assessment",
       cards: [
         { title: "SAPs",      path: sap_documents_path,  new_path: new_sap_document_path,  icon: "&#128221;" },
         { title: "Evidence",   path: evidences_path,       new_path: new_evidence_path,      icon: "&#128274;" },
@@ -99,6 +102,7 @@
     {
       label: "Enterprise",
       color: "#9b59b6",
+      cls: "sparc-heading-enterprise",
       cards: [
         { title: "Organizations",    path: admin_organizations_path,     new_path: new_admin_organization_path,     icon: "&#127970;" },
         { title: "Auth Boundaries",  path: authorization_boundaries_path, new_path: new_authorization_boundary_path, icon: "&#128188;" },
@@ -111,7 +115,7 @@
   <div class="mb-2">
     <div class="d-flex align-items-center gap-2 mb-2">
       <span style="display: inline-block; width: 4px; height: 1.1rem; background: <%= group[:color] %>; border-radius: 2px;"></span>
-      <h6 class="mb-0 fw-bold" style="font-size: 0.85rem; color: <%= group[:color] %>;"><%= group[:label] %></h6>
+      <h6 class="mb-0 fw-bold <%= group[:cls] %>" style="font-size: 0.85rem;"><%= group[:label] %></h6>
     </div>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2">
       <% group[:cards].each do |s| %>

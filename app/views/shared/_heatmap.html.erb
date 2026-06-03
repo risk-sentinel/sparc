@@ -6,7 +6,7 @@
     heatmap_families  — Array of family codes (sorted)
     heatmap_statuses  — Array of status/severity keys (ordered)
     title             — Section title (e.g. "Compliance by Control Family")
-    color_helper      — Symbol: method name to call for status color (:ssp_status_color, :sar_status_color, etc.)
+    variant_helper    — Symbol: method returning a .sparc-status--<variant> key (:ssp_status_variant, etc.). Drives AA badge text + decorative fills.
     filter_key        — "status" or "severity" — the secondary filter dimension
 
   Optional locals:
@@ -113,7 +113,7 @@
                  aria-label="Filter by family <%= family %>"><%= family %></a>
             <% end %>
             <% if show_pct %>
-              <span style="font-size: 0.72rem; font-weight: 700; color: <%= family_pct >= 80 ? '#27ae60' : family_pct >= 50 ? '#e67e22' : '#e74c3c' %>;"><%= family_pct %>%</span>
+              <span class="<%= family_pct >= 80 ? 'sparc-pct-good' : family_pct >= 50 ? 'sparc-pct-mid' : 'sparc-pct-low' %>" style="font-size: 0.72rem; font-weight: 700;"><%= family_pct %>%</span>
             <% end %>
           </div>
           <div style="font-size: 0.62rem; color: var(--bs-tertiary-color); margin-bottom: 0.55rem;"><%= family_total %> controls</div>
@@ -122,7 +122,7 @@
           <div class="sparc-heatmap-bar d-flex">
             <% heatmap_statuses.each do |s| %>
               <% next if (family_data[s] || 0) == 0 %>
-              <div style="width: <%= ((family_data[s] || 0) * 100.0 / [family_total, 1].max).round(3) %>%; background: <%= send(color_helper, s) %>;"></div>
+              <div class="sparc-fill--<%= send(variant_helper, s) %>" style="width: <%= ((family_data[s] || 0) * 100.0 / [family_total, 1].max).round(3) %>%;"></div>
             <% end %>
           </div>
 
@@ -140,13 +140,13 @@
                           cell_active ? { family: nil, status: nil } : { family: family, status: s }
                         )),
                       title: "#{family} / #{s}: #{count}",
-                      class: "sparc-heatmap-badge",
+                      class: "sparc-heatmap-badge sparc-status--#{send(variant_helper, s)}",
                       role: "button",
                       "aria-label": "#{family} #{s}: #{count} controls",
                       "aria-pressed": cell_active ? "true" : "false",
-                      style: "background: #{send(color_helper, s)}; opacity: #{cell_active ? '1' : (has_any_filter ? '0.35' : '1')}; #{'outline: 2px solid #2c3e50;' if cell_active}" %>
+                      style: "opacity: #{cell_active ? '1' : (has_any_filter ? '0.35' : '1')}; #{'outline: 2px solid #2c3e50;' if cell_active}" %>
               <% else %>
-                <div class="sparc-heatmap-badge"
+                <div class="sparc-heatmap-badge sparc-status--<%= send(variant_helper, s) %>"
                      data-heatmap-target="badge"
                      data-family="<%= family %>"
                      data-<%= fkey %>="<%= s %>"
@@ -155,8 +155,7 @@
                      tabindex="0"
                      aria-label="<%= family %> <%= s %>: <%= count %> controls"
                      aria-pressed="false"
-                     title="<%= family %> / <%= s %>: <%= count %>"
-                     style="background: <%= send(color_helper, s) %>;">
+                     title="<%= family %> / <%= s %>: <%= count %>">
                   <%= count %>
                 </div>
               <% end %>

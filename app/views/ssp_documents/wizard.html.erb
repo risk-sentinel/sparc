@@ -10,12 +10,12 @@
     <%# ── Step 1: Basics ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #3498db; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
+        <span class="sparc-status--info" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">1</span>
         System Basics
       </summary>
       <div style="padding: 1rem 1.25rem;">
         <div class="form-group">
-          <label for="name">System Name <span style="color: #e74c3c;">*</span></label>
+          <label for="name">System Name <span class="sparc-required">*</span></label>
           <%= f.text_field :name, required: true, class: "form-control", placeholder: "e.g., My Agency System" %>
         </div>
         <div class="form-group">
@@ -23,7 +23,7 @@
           <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Brief description of the system..." %>
         </div>
         <div class="form-group">
-          <label for="profile_document_id">Profile Baseline <span style="color: #e74c3c;">*</span></label>
+          <label for="profile_document_id">Profile Baseline <span class="sparc-required">*</span></label>
           <% if @profiles.any? %>
             <%= f.select :profile_document_id,
                   @profiles.map { |p| ["#{p.name} (#{p.profile_controls.count} controls)", p.id] },
@@ -33,7 +33,7 @@
               Controls from this profile will be imported into the SSP.
             </small>
           <% else %>
-            <p style="color: #e74c3c; font-size: 0.88rem;">
+            <p class="sparc-heading-danger" style="font-size: 0.88rem;">
               No completed profiles found. Please
               <%= link_to "upload a Profile", new_profile_document_path %> first.
             </p>
@@ -45,7 +45,7 @@
     <%# ── Step 2: Components (CDEFs) ── %>
     <details class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #27ae60; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
+        <span class="sparc-status--success" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">2</span>
         Component Definitions (Optional)
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -79,7 +79,7 @@
     <%# ── Step 3: System Characteristics ── %>
     <details class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #e67e22; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
+        <span class="sparc-status--orange" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">3</span>
         System Characteristics
       </summary>
       <div style="padding: 1rem 1.25rem;">
@@ -131,7 +131,7 @@
     <%# ── Step 4: Review & Create ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
       <summary class="bg-body-secondary fw-semibold d-flex align-items-center gap-2" style="cursor: pointer; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--bs-body-color); list-style: none; user-select: none;">
-        <span style="background: #8e44ad; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">4</span>
+        <span class="sparc-status--purple" style="border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">4</span>
         Review & Create
       </summary>
       <div style="padding: 1rem 1.25rem;">

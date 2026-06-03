@@ -158,7 +158,7 @@
                       <% boundaries.each do |ab| %>
                         <li><%= link_to authorization_boundary_path(ab), class: "dropdown-item d-flex align-items-center justify-content-between gap-2" do %>
                           <span class="text-truncate" style="max-width: 160px;"><%= ab.name %></span>
-                          <span class="badge rounded-pill" style="background: <%= ab_status_color(ab.status) %>22; color: <%= ab_status_color(ab.status) %>; border: 1px solid <%= ab_status_color(ab.status) %>44; font-size: 0.65rem; padding: 0.1rem 0.4rem;">
+                          <span class="badge rounded-pill sparc-status--<%= ab_status_variant(ab.status) %>" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">
                             <%= ab.status.capitalize %>
                           </span>
                         <% end %></li>

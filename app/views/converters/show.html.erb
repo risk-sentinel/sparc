@@ -130,7 +130,7 @@
   <% refresh_message = @converter.metadata_extra&.dig("refresh_message") %>
 
   <% if @converter.status == "processing" %>
-    <meta http-equiv="refresh" content="3">
+    <div data-controller="auto-refresh" data-auto-refresh-interval-value="3000" hidden></div>
     <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
       <div class="spinner-border spinner-border-sm me-2" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -189,7 +189,7 @@
           <dl class="row mb-0">
             <dt class="col-sm-4">Type</dt>
             <dd class="col-sm-8">
-              <span class="badge" style="background: <%= converter_type_color(@converter.converter_type) %>22; color: <%= converter_type_color(@converter.converter_type) %>; border: 1px solid <%= converter_type_color(@converter.converter_type) %>44;">
+              <span class="badge sparc-status--<%= converter_type_variant(@converter.converter_type) %>">
                 <%= @converter.type_label %>
               </span>
             </dd>

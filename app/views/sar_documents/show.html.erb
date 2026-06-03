@@ -154,7 +154,7 @@
   <% if @assets.any? %>
   <div class="d-flex align-items-center gap-2">
     <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color); white-space: nowrap;">&#x1F4BB; Asset</span>
-    <select onchange="if(this.value) window.location=this.value;"
+    <select onchange="if(this.value) window.location=this.value;" aria-label="Filter by asset"
             style="padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid var(--bs-border-color); background: var(--bs-secondary-bg); color: var(--bs-body-color); font-size: 0.82rem; cursor: pointer; min-width: 180px; max-width: 360px;">
       <option value="<%= sar_document_path(@sar_document, filter_params.except(:page, :asset)) %>"
               <%= 'selected' if active_asset.blank? %>>All Assets (<%= @assets.size %>)</option>
@@ -217,7 +217,7 @@
      heatmap_families: @heatmap_families,
      heatmap_statuses: @heatmap_statuses,
      title: "Results by Control Family",
-     color_helper: :sar_status_color,
+     variant_helper: :sar_status_variant,
      filter_key: "status",
      link_mode: :server,
      document: @sar_document,
@@ -239,7 +239,7 @@
        heatmap_families: @status_heatmap_families,
        heatmap_statuses: @status_heatmap_statuses,
        title: "Assessment Status by Control Family (Objective Rollup)",
-       color_helper: :sar_objective_status_color,
+       variant_helper: :sar_objective_status_variant,
        filter_key: "objective-status",
        show_percentage: false,
        legend_items: [
@@ -252,7 +252,7 @@
 <%# ── NEEDS RE-ASSOCIATION BANNER ──────────────────────────────── %>
 <% if @needs_reassociation %>
   <div class="card mt-3 mb-3" style="border-left: 4px solid #f39c12;">
-    <strong style="color: #f39c12;">Per-objective tracking unavailable.</strong>
+    <strong class="sparc-text-warning-bold">Per-objective tracking unavailable.</strong>
     <span class="text-body-secondary">
       This SAR isn't linked to a profile, so individual NIST 800-53A determination
       statements (assessment objectives) can't be populated for findings traceability.
@@ -264,7 +264,7 @@
 <% no_chain = @sar_document.sap_document_id.blank? && @sar_document.ssp_document_id.blank? && @sar_document.profile_document_id.blank? %>
 <% if no_chain && @sar_document.draft? %>
   <div class="card mt-3" style="border-left: 4px solid #f39c12;">
-    <h3 style="color: #f39c12;">Associate Source for Full Context</h3>
+    <h3 class="sparc-heading-assessment">Associate Source for Full Context</h3>
     <p class="text-body-secondary">
       OSCAL Assessment Results don't carry implementation details, responsibility
       assignments, or impact statements -- those come from the linked SAP / SSP.
@@ -327,6 +327,7 @@
       field_map    = control.sar_control_fields.index_by(&:field_name)
       result_val   = field_map["result"]&.field_value.presence || "(Unknown)"
       result_color = sar_status_color(result_val)
+      result_variant = sar_status_variant(result_val)
       ws_val       = field_map["working_status"]&.field_value.presence
       family_code  = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
       card_asset   = control.subject_asset.to_s.strip
@@ -359,12 +360,12 @@
               <span class="sparc-tag-separator">&#x25B6;</span>
             <% end %>
 
-            <span class="sparc-status-pill" style="background: <%= result_color %>;">
+            <span class="sparc-status-pill sparc-status--<%= result_variant %>">
               <%= result_val %>
             </span>
 
             <% if ws_val.present? %>
-              <span class="sparc-tag-outline" style="background: <%= sar_status_color(ws_val) %>22; color: <%= sar_status_color(ws_val) %>; border: 1px solid <%= sar_status_color(ws_val) %>55;">
+              <span class="sparc-tag-outline sparc-status--<%= sar_status_variant(ws_val) %>">
                 <%= ws_val %>
               </span>
             <% end %>
@@ -450,7 +451,7 @@
                   </td>
                   <td class="sparc-field-value">
                     <% if field.field_name == "working_status" %>
-                      <span class="sparc-tag-outline" style="background: <%= sar_status_color(field.field_value) %>22; color: <%= sar_status_color(field.field_value) %>; border: 1px solid <%= sar_status_color(field.field_value) %>55;"><%= field.field_value %></span>
+                      <span class="sparc-tag-outline sparc-status--<%= sar_status_variant(field.field_value) %>"><%= field.field_value %></span>
                     <% else %>
                       <%= field.field_value %>
                     <% end %>

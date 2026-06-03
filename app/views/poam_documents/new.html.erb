@@ -6,7 +6,7 @@
 
   <%= form_with model: PoamDocument.new, url: poam_documents_path, local: true do |f| %>
     <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #e74c3c; padding: 1.25rem;">
-      <h3 class="mb-3" style="font-size: 1rem; color: #e74c3c;">POA&amp;M Details</h3>
+      <h3 class="mb-3 sparc-heading-danger" style="font-size: 1rem;">POA&amp;M Details</h3>
 
       <div class="form-group">
         <label for="poam_document_name">Name</label>
@@ -42,7 +42,7 @@
 
     <%# ── OSCAL Metadata (#389) ── %>
     <div class="bg-body-secondary rounded-3 mb-4" style="border: 1px solid var(--bs-border-color); border-left: 4px solid #2980b9; padding: 1.25rem;">
-      <h3 class="mb-3" style="font-size: 1rem; color: #2980b9;">OSCAL Metadata</h3>
+      <h3 class="mb-3 sparc-heading-controls" style="font-size: 1rem;">OSCAL Metadata</h3>
       <p class="text-body-secondary small mb-3">
         Required for valid OSCAL exports. Defaults are pre-filled — edit only if you have a specific reason.
       </p>

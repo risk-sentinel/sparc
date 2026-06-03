@@ -162,7 +162,7 @@
      heatmap_families: @heatmap_families,
      heatmap_statuses: @heatmap_priorities,
      title: "Priority by Control Family",
-     color_helper: :profile_priority_color,
+     variant_helper: :profile_priority_variant,
      filter_key: "priority",
      show_percentage: false,
      legend_items: [["P1 (High)", "#e74c3c"], ["P2 (Medium)", "#f39c12"], ["P3 (Low)", "#3498db"], ["None", "#95a5a6"]] %>
@@ -194,6 +194,7 @@
             pri_val      = control.priority.presence || "(None)"
             pri_colors_map = { "P1" => "#e74c3c", "P2" => "#f39c12", "P3" => "#3498db" }
             pri_color    = pri_colors_map[pri_val] || "#95a5a6"
+            pri_variant  = profile_priority_variant(pri_val)
           %>
           <div class="control-card"
                data-family="<%= family_code %>"
@@ -207,7 +208,7 @@
                   <span class="sparc-ctrl-id">
                     <%= control.display_id.presence || "&mdash;".html_safe %>
                   </span>
-                  <span class="sparc-status-pill" style="background: <%= pri_color %>;">
+                  <span class="sparc-status-pill sparc-status--<%= pri_variant %>">
                     <%= pri_val %>
                   </span>
                 </div>

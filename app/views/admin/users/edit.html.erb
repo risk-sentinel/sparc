@@ -9,8 +9,8 @@
       <div class="card-body p-4">
         <%= form_with model: @user, url: admin_user_path(@user), method: :patch, local: true do |f| %>
           <div class="mb-3">
-            <label class="form-label fw-semibold small">Email</label>
-            <input type="text" class="form-control" value="<%= @user.email %>" disabled>
+            <label for="user_email_display" class="form-label fw-semibold small">Email</label>
+            <input type="text" id="user_email_display" class="form-control" value="<%= @user.email %>" disabled>
             <div class="form-text">Email cannot be changed (it's the identity anchor).</div>
           </div>
 
@@ -94,7 +94,7 @@
               <p class="small fw-semibold mb-2">Add Authorization Boundary Role</p>
               <div class="row g-2 align-items-end">
                 <div class="col-md-5">
-                  <select name="user[authorization_boundary_roles][][authorization_boundary_id]" class="form-select form-select-sm">
+                  <select name="user[authorization_boundary_roles][][authorization_boundary_id]" aria-label="Authorization boundary" class="form-select form-select-sm">
                     <option value="">Select authorization boundary...</option>
                     <% @available_authorization_boundaries.each do |authorization_boundary| %>
                       <option value="<%= authorization_boundary.id %>"><%= authorization_boundary.name %></option>
@@ -102,7 +102,7 @@
                   </select>
                 </div>
                 <div class="col-md-5">
-                  <select name="user[authorization_boundary_roles][][role_id]" class="form-select form-select-sm">
+                  <select name="user[authorization_boundary_roles][][role_id]" aria-label="Role" class="form-select form-select-sm">
                     <option value="">Select role...</option>
                     <% @available_authorization_boundary_roles.each do |role| %>
                       <option value="<%= role.id %>"><%= role.display_name %></option>

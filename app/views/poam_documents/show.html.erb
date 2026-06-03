@@ -20,6 +20,12 @@
     "open" => "#e74c3c", "investigating" => "#e67e22", "remediating" => "#f39c12",
     "deviation-requested" => "#d35400", "deviation-approved" => "#f39c12", "closed" => "#27ae60"
   }
+  # WORM (#599 Round 3): semantic variant keys for .sparc-status--<variant>
+  impact_variants = { "high" => "danger", "medium" => "warning", "low" => "info" }
+  status_variants = {
+    "open" => "danger", "investigating" => "orange", "remediating" => "warning",
+    "deviation-requested" => "orange", "deviation-approved" => "warning", "closed" => "success"
+  }
 
   risk_status_options = [
     ["Open", "open"], ["Investigating", "investigating"], ["Remediating", "remediating"],
@@ -92,27 +98,27 @@
       <div class="sparc-hero-tile-label">Total Items</div>
     </div>
     <div class="sparc-hero-tile rounded-3" style="background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.3);">
-      <div class="sparc-hero-tile-count" style="color: #e74c3c;"><%= open_count %></div>
+      <div class="sparc-hero-tile-count sparc-heading-danger"><%= open_count %></div>
       <div class="sparc-hero-tile-label">Open</div>
     </div>
     <div class="sparc-hero-tile rounded-3" style="background: rgba(243,156,18,0.15); border: 1px solid rgba(243,156,18,0.3);">
-      <div class="sparc-hero-tile-count" style="color: #f39c12;"><%= other_count %></div>
+      <div class="sparc-hero-tile-count sparc-heading-assessment"><%= other_count %></div>
       <div class="sparc-hero-tile-label">In Progress</div>
     </div>
     <div class="sparc-hero-tile rounded-3" style="background: rgba(39,174,96,0.15); border: 1px solid rgba(39,174,96,0.3);">
-      <div class="sparc-hero-tile-count" style="color: #27ae60;"><%= closed_count %></div>
+      <div class="sparc-hero-tile-count sparc-heading-implementation"><%= closed_count %></div>
       <div class="sparc-hero-tile-label">Closed</div>
     </div>
     <div class="sparc-hero-tile rounded-3" style="background: rgba(52,152,219,0.15); border: 1px solid rgba(52,152,219,0.3);">
-      <div class="sparc-hero-tile-count" style="color: #3498db;"><%= @risk_count %></div>
+      <div class="sparc-hero-tile-count sparc-heading-controls"><%= @risk_count %></div>
       <div class="sparc-hero-tile-label">Risks</div>
     </div>
     <div class="sparc-hero-tile rounded-3" style="background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.3);">
-      <div class="sparc-hero-tile-count" style="color: #9b59b6;"><%= @observation_count %></div>
+      <div class="sparc-hero-tile-count sparc-heading-enterprise"><%= @observation_count %></div>
       <div class="sparc-hero-tile-label">Observations</div>
     </div>
     <div class="sparc-hero-tile rounded-3" style="background: rgba(230,126,34,0.15); border: 1px solid rgba(230,126,34,0.3);">
-      <div class="sparc-hero-tile-count" style="color: #e67e22;"><%= @finding_count %></div>
+      <div class="sparc-hero-tile-count sparc-heading-assessment"><%= @finding_count %></div>
       <div class="sparc-hero-tile-label">Findings</div>
     </div>
   </div>
@@ -135,19 +141,19 @@
       <% @heatmap_statuses.each do |status| %>
         <tr>
           <td class="fw-semibold">
-            <% sc = status_colors[status] || "#7f8c8d" %>
-            <span class="sparc-tag-outline" style="background: <%= sc %>22; color: <%= sc %>; border: 1px solid <%= sc %>44;"><%= status %></span>
+            <% scv = status_variants[status] || "neutral" %>
+            <span class="sparc-tag-outline sparc-status--<%= scv %>"><%= status %></span>
           </td>
           <% @heatmap_impacts.each do |imp| %>
             <% count = @heatmap_data.dig(status, imp) || 0 %>
-            <% ic = impact_colors[imp] || "#7f8c8d" %>
+            <% icv = impact_variants[imp] || "neutral" %>
             <td class="text-center">
               <% if count > 0 %>
                 <%= link_to count, poam_document_path(@poam_document, risk_status: status, impact: imp),
-                      class: "sparc-heatmap-badge",
+                      class: "sparc-heatmap-badge sparc-status--#{icv}",
                       role: "button",
                       "aria-label": "#{status} #{imp}: #{count} items",
-                      style: "background: #{ic}22; color: #{ic}; border: 1px solid #{ic}44; min-width: 28px;" %>
+                      style: "min-width: 28px;" %>
               <% else %>
                 <span class="text-body-tertiary">—</span>
               <% end %>
@@ -169,7 +175,7 @@
   <div class="card d-flex align-items-center gap-3" style="border-left: 4px solid #f39c12; padding: 1rem 1.25rem;">
     <span style="font-size: 1.5rem;">&#9888;</span>
     <div class="flex-grow-1">
-      <div class="fw-semibold" style="font-size: 0.95rem; color: #f39c12;">Add at least one POA&amp;M item before publishing</div>
+      <div class="fw-semibold sparc-heading-assessment" style="font-size: 0.95rem;">Add at least one POA&amp;M item before publishing</div>
       <div class="text-body-secondary" style="font-size: 0.85rem;">
         OSCAL schema requires the <code>poam-items</code> array to contain at least one entry.
         Publishing now will fail schema validation.
@@ -200,6 +206,8 @@
   <%
     sc = status_colors[item.risk_status] || "#7f8c8d"
     ic = impact_colors[item.impact] || "#7f8c8d"
+    scv = status_variants[item.risk_status] || "neutral"
+    icv = impact_variants[item.impact] || "neutral"
     risks = item.poam_risks
     observations = item.poam_observations
     findings = item.poam_findings
@@ -214,8 +222,8 @@
           <span class="text-body-tertiary fw-semibold" style="font-size: 0.7rem;">#<%= idx + 1 %></span>
           <h3 style="margin: 0; font-size: 1.05rem;"><%= item.title %></h3>
           <% related_controls.each do |cid| %>
-            <span class="sparc-tag-outline" title="NIST 800-53 control referenced in this item"
-                  style="background: rgba(52,152,219,0.15); color: #3498db; border: 1px solid rgba(52,152,219,0.3); font-family: monospace; font-weight: 600;">
+            <span class="sparc-tag-outline sparc-status--info" title="NIST 800-53 control referenced in this item"
+                  style="font-family: monospace; font-weight: 600;">
               <%= cid.upcase %>
             </span>
           <% end %>
@@ -240,10 +248,10 @@
     <%# ── Status/risk badges ── %>
     <div class="d-flex gap-2 flex-wrap" style="margin-bottom: 0.75rem;">
       <% if item.risk_status.present? %>
-        <span class="sparc-tag-outline" style="background: <%= sc %>22; color: <%= sc %>; border: 1px solid <%= sc %>44;"><%= item.risk_status %></span>
+        <span class="sparc-tag-outline sparc-status--<%= scv %>"><%= item.risk_status %></span>
       <% end %>
       <% if item.impact.present? %>
-        <span class="sparc-tag-outline" style="background: <%= ic %>22; color: <%= ic %>; border: 1px solid <%= ic %>44;">Impact: <%= item.impact %></span>
+        <span class="sparc-tag-outline sparc-status--<%= icv %>">Impact: <%= item.impact %></span>
       <% end %>
       <% if item.likelihood.present? %>
         <span class="sparc-tag-outline bg-body-secondary text-body-secondary" style="border: 1px solid var(--bs-border-color);">Likelihood: <%= item.likelihood %></span>
@@ -252,13 +260,13 @@
         <span class="sparc-tag-outline bg-body-secondary text-body-secondary" style="border: 1px solid var(--bs-border-color);">Deadline: <%= item.deadline.strftime("%Y-%m-%d") %></span>
       <% end %>
       <% if risks.any? %>
-        <span class="sparc-tag-outline" style="background: rgba(52,152,219,0.15); border: 1px solid rgba(52,152,219,0.3); color: #3498db;"><%= pluralize(risks.size, "risk") %></span>
+        <span class="sparc-tag-outline sparc-status--info"><%= pluralize(risks.size, "risk") %></span>
       <% end %>
       <% if observations.any? %>
-        <span class="sparc-tag-outline" style="background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.3); color: #9b59b6;"><%= pluralize(observations.size, "observation") %></span>
+        <span class="sparc-tag-outline sparc-status--purple"><%= pluralize(observations.size, "observation") %></span>
       <% end %>
       <% if findings.any? %>
-        <span class="sparc-tag-outline" style="background: rgba(230,126,34,0.15); border: 1px solid rgba(230,126,34,0.3); color: #e67e22;"><%= pluralize(findings.size, "finding") %></span>
+        <span class="sparc-tag-outline sparc-status--orange"><%= pluralize(findings.size, "finding") %></span>
       <% end %>
     </div>
 
@@ -277,8 +285,8 @@
             <% risks.each do |risk| %>
               <div class="bg-body-secondary rounded" style="border: 1px solid var(--bs-border-color); padding: 0.6rem 0.8rem; margin-bottom: 0.4rem;">
                 <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.3rem;">
-                  <% rsc = status_colors[risk.status] || "#7f8c8d" %>
-                  <span class="sparc-tag-outline" style="background: <%= rsc %>22; color: <%= rsc %>; border: 1px solid <%= rsc %>44;"><%= risk.status %></span>
+                  <% rscv = status_variants[risk.status] || "neutral" %>
+                  <span class="sparc-tag-outline sparc-status--<%= rscv %>"><%= risk.status %></span>
                   <span class="fw-semibold" style="font-size: 0.88rem; color: var(--bs-body-color);"><%= risk.title %></span>
                 </div>
                 <% if risk.description.present? %>
@@ -291,7 +299,7 @@
                 <%# ── Remediations + Milestones ── %>
                 <% risk.poam_remediations.each do |rem| %>
                   <div class="rounded mt-2" style="padding: 0.4rem 0.6rem; background: rgba(52,152,219,0.06); border: 1px solid rgba(52,152,219,0.15);">
-                    <div class="sparc-statement-label" style="color: #3498db;">
+                    <div class="sparc-statement-label sparc-heading-controls">
                       Remediation: <%= rem.lifecycle %>
                     </div>
                     <div class="fw-semibold" style="font-size: 0.82rem; color: var(--bs-body-color);"><%= rem.title %></div>
@@ -301,7 +309,7 @@
 
                     <% rem.poam_milestones.each do |ms| %>
                       <div class="rounded mt-1" style="padding: 0.3rem 0.5rem; background: rgba(39,174,96,0.06); border: 1px solid rgba(39,174,96,0.15);">
-                        <div class="sparc-statement-label" style="color: #27ae60;">
+                        <div class="sparc-statement-label sparc-heading-implementation">
                           Milestone
                           <% if ms.due_date.present? %>
                             <span class="text-body-secondary" style="font-weight: 400;">&middot; Due: <%= ms.due_date.strftime("%Y-%m-%d") %></span>
