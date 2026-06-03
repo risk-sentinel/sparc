@@ -136,6 +136,11 @@ variables with defaults.
 
 ## Documentation
 
+> 📑 **Full index:** [**docs/MAP.md**](docs/MAP.md) — a categorized, navigable
+> inventory of every document under `docs/`, with start-here pathways per
+> audience (operator, API integrator, contributor, security reviewer, compliance
+> author). The curated highlights below are the most-used entries.
+
 | Topic | Link |
 | ------- | ------ |
 | **User & Operations** | |
