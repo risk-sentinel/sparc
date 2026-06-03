@@ -11,7 +11,7 @@ The application uses a dark sticky navbar (`navbar-dark bg-dark sticky-top`) tha
 | Position | Element | Visibility | Details |
 |----------|---------|------------|---------|
 | Left | SPARC logo | Always | Responsive SVG logo linked to root path |
-| Left | Version badge | Always | `v3.4.0` secondary badge |
+| Left | Version badge | Always | Secondary badge rendered dynamically from `SparcConfig::VERSION` (currently **v1.8.6**) |
 | Center-Right | Home | Always | Nav link to `/` |
 | Center-Right | Controls dropdown (blue) | Always | Control Catalogs, Baselines, Mappings |
 | Center-Right | Implementation dropdown (green) | Auth required | System Security Plans, Component Definitions |
@@ -765,6 +765,36 @@ Pagination below the table (shown when more than one page exists).
 | **Auth** | Instance Admin |
 
 Full event metadata display: timestamp, user, action, category, subject type and ID, IP address, user agent, and any additional stored metadata.
+
+#### Organizations
+
+| | |
+|---|---|
+| **Routes** | `GET /admin/organizations`, `…/new`, `…/:id/edit` (no destroy) |
+| **Controller** | `Admin::OrganizationsController` |
+| **Auth** | Instance Admin |
+
+Manage organization entities (UUID-based audit traceability) for multi-org instances. Create and edit only — organizations are never hard-deleted.
+
+#### Service Accounts & API Tokens
+
+| | |
+|---|---|
+| **Routes** | `GET /admin/service_accounts` (full CRUD); nested `POST/DELETE /admin/service_accounts/:id/api_tokens` |
+| **Controller** | `Admin::ServiceAccountsController`, `Admin::ApiTokensController` |
+| **Auth** | Instance Admin |
+
+Create non-interactive automation identities and issue/revoke their `sparc_sa_<token>` Bearer tokens. The plaintext token is shown **once** on creation; only a SHA-256 digest is stored. Service accounts authenticate the REST API and can bridge to a UI session via `POST /api/v1/sessions/from_token`.
+
+#### Data Migrations
+
+| | |
+|---|---|
+| **Route** | `GET /admin/data_migrations` |
+| **Controller** | `Admin::DataMigrationsController` |
+| **Auth** | Instance Admin |
+
+Status view for **deferred data migrations** (v1.8.3) — migrations that register at `db:migrate` time and run their body post-boot via a Solid Queue job. Shows each migration's state (pending / running / completed / failed) so operators can confirm a long-running backfill finished after a deploy.
 
 ---
 

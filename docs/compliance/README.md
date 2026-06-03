@@ -50,7 +50,7 @@ Security scan HDF ───┘ (via sparc-compliance-latest artifact + repositor
 2. **`sparc-compliance-latest` artifact** — Published by the `publish_for_sparc_iac` job
    in `.github/workflows/security.yml` on every push to `main`. Bundles:
    - `hdf/` — HDF-normalized scan results (Brakeman, CodeQL, Trivy, Gitleaks, etc.)
-   - `cdefs/` — OSCAL component definitions (5 files, 46 controls)
+   - `cdefs/` — OSCAL component definitions (5 files, 49 controls)
    - `sbom/` — CycloneDX SBOM for supply chain evidence
    - `oscal-metadata.json` — System ID and party metadata
    - `manifest.json` — File inventory with run ID and git SHA for traceability

@@ -21,6 +21,13 @@ This page documents every major subsystem and feature in SPARC, the Systematic a
 13. [REST API](#13-rest-api)
 14. [Dark Mode & Theming](#14-dark-mode--theming)
 15. [HTTPS Enforcement & Security Headers](#15-https-enforcement--security-headers)
+16. [Converters (CCI / AWS / STIG → NIST)](#16-converters-cci--aws--stig--nist)
+17. [AWS Labs CDEF Ingestion](#17-aws-labs-cdef-ingestion)
+18. [HDF ↔ OSCAL Translation Bridge](#18-hdf--oscal-translation-bridge)
+19. [FedRAMP 20x KSI Catalog & Validations](#19-fedramp-20x-ksi-catalog--validations)
+20. [Authoritative Sources & Federation](#20-authoritative-sources--federation)
+21. [Leveraged Authorizations](#21-leveraged-authorizations)
+22. [Organizations & Service Accounts](#22-organizations--service-accounts)
 
 ---
 
@@ -995,3 +1002,92 @@ The application version is centralized in `SparcConfig::VERSION` (defined in `ap
 ### Related
 
 - Issue #106
+
+---
+
+## 16. Converters (CCI / AWS / STIG → NIST)
+
+Converters translate external framework identifiers into NIST SP 800-53 control IDs so that findings expressed in another vocabulary can be mapped into SPARC's control model. They are managed from `/converters` and are **independently refreshable** by operators with the `converters.write` permission.
+
+### Converter types
+
+| Converter | Refresh action | Source |
+|-----------|---------------|--------|
+| DISA CCI → NIST | `POST /converters/:id/refresh_cci` | DISA CCI list |
+| AWS Config → NIST | `POST /converters/:id/refresh_aws_config` (#494) | `AwsConfigRefreshService` |
+| AWS Security Hub → NIST | `POST /converters/:id/refresh_aws_security_hub` (#494) | `AwsSecurityHubRefreshService` |
+| STIG benchmark | `GET /converters/stig_parser`, `POST /converters/import_stig` | `StigConverterService` |
+
+Each converter owns a set of `ConverterEntry` rows (`resources :converter_entries`) holding the individual source-ID → NIST-control-ID pairs. Converters seed via `db/seeds/converters.rb` under `SeedRunner.run_section("converters")` — **bump `SeedRunner::CURRENT_VERSIONS["converters"]` when editing those seeds** or production silently skips the change (see [Changelog](Changelog) v1.6.6).
+
+A converter mapping can be **bulk-applied to a CDEF** via the CDEF `bulk_apply_converter` preview/apply flow (v1.8.0).
+
+---
+
+## 17. AWS Labs CDEF Ingestion
+
+SPARC can ingest OSCAL Component Definitions published by AWS Labs at runtime (#466). The `AwsLabsCdefImportService` (via `AwsLabsCdefSourceClient`) pulls CDEFs from the configured repo/branch.
+
+- **Recurring job:** `AwsLabsCdefRefreshJob` runs on a multi-day Solid Queue schedule (interval via `SPARC_AWS_LABS_CDEF_INTERVAL_DAYS`).
+- **Bootstrap-on-first-deploy:** when `SPARC_AWS_LABS_CDEF_ENABLED=true` and no AWS-Labs-sourced rows exist, the first boot enqueues a refresh so tenants don't wait for the weekly tick (#487).
+- **Manual refresh:** `POST /cdef_documents/refresh_aws_labs` (admin button).
+- AWS Labs CDEFs use **Security Hub control IDs** (e.g. `IAM.1`, `S3.5`); the converters above bridge them to NIST (#491).
+
+---
+
+## 18. HDF ↔ OSCAL Translation Bridge
+
+Three stateless `/api/v1/` endpoints let tenant compliance pipelines move scan data between the **HDF (Heimdall Data Format)** and OSCAL ecosystems without running the `hdf` CLI themselves (#449). The `hdf` binary is baked into the SPARC container.
+
+| Endpoint | Direction |
+|----------|-----------|
+| `POST /api/v1/oscal/sar_from_hdf` | HDF results → OSCAL Assessment Results (SAR) |
+| `POST /api/v1/oscal/poam_from_hdf` | HDF results → OSCAL POA&M |
+| `POST /api/v1/hdf/amendments_from_oscal_poam` | OSCAL POA&M → HDF Amendments JSON |
+
+Passing `?authorization_boundary_id=N` to either OSCAL emission endpoint merges the boundary's Evidence + Attestation records into the output as `back-matter.resources[]` (requires `evidence.read` on the boundary). Implemented by `HdfOscalTranslationService` + `HdfRunner`.
+
+---
+
+## 19. FedRAMP 20x KSI Catalog & Validations
+
+SPARC tracks **Key Security Indicators (KSIs)** — FedRAMP 20x machine-checkable indicators grouped into themes.
+
+- **Read-only catalog:** `GET /api/v1/ksi_catalog/themes`, `GET /api/v1/ksi_catalog/indicators` (seeded from `db/seeds/fedramp_20x_ksi.rb`).
+- **Validations:** `KsiValidation` records are nested under an authorization boundary (`resources :ksi_validations`), with `summary` and `export` collection actions.
+- **Export:** `KsiExportService` emits the boundary's KSI validation state.
+
+---
+
+## 20. Authoritative Sources & Federation
+
+The authoritative-source system (#372) lets boundaries draw OSCAL back-matter resources from a trusted upstream library, and lets SPARC instances share those libraries peer-to-peer.
+
+- **Authoritative sources:** `GET /authoritative_sources` — browse the shared back-matter library.
+- **Promotion queue:** `resources :promotion_queue` plus per-resource `promote` / `approve_promotion` / `reject_promotion` actions move a candidate resource through review into the authoritative library, with `BackMatterResourceChange` audit rows.
+- **Federation peers:** `resources :federation_peers` with a `sync` action exchange **HMAC-signed OSCAL bundles** between instances. Signing uses the `SPARC_HASH`-derived key material (`FederationBundleSigningService`); peer key rotation is handled by `FederationPeerReencryptionService`.
+
+> SPARC is a **translation engine + UI** for OSCAL / policy-as-code, not a system of record — tenant systems own the source of truth; federation shares *references*, not authority.
+
+---
+
+## 21. Leveraged Authorizations
+
+A leveraging system can inherit an authorization (and its provider-implemented controls) from an underlying system such as a cloud platform.
+
+- **Create on the leveraging boundary:** `resources :leveraged_authorizations` (`new`/`create`/`show`/`destroy`), with a `populate` action that pulls inherited implementation data into the leveraging SSP (#396).
+- **Read-only leveraged POA&Ms:** `resources :leveraged_poam_documents` (`index`/`show`) surface the leveraged system's POA&M items to the leveraging side (#415).
+- Implemented by `LeveragedAuthorizationService`; inherited rows appear as **provider statements** in the SSP control view.
+
+---
+
+## 22. Organizations & Service Accounts
+
+Admin-namespace features for tenant and automation identity management.
+
+- **Organizations:** `resources :organizations` (admin) — organization entities with UUID-based audit traceability for multi-org instances.
+- **Service accounts:** `resources :service_accounts` (admin) — non-interactive identities for API automation, each owning **API tokens** (`resources :api_tokens`, `create`/`destroy`). Tokens are `sparc_sa_<token>` Bearer credentials with a SHA-256 digest at rest.
+- **User lifecycle:** admin users can be deactivated via `PATCH /admin/users/:id/deactivate`.
+- **API session bridge:** `POST /api/v1/sessions/from_token` exchanges a service-account Bearer token (or OIDC JWT) for a Rails session cookie, enabling headless UI test automation (#573, v1.8.4).
+
+See [RBAC](RBAC) for how service accounts and roles interact, and [Configuration](Configuration) for the `SPARC_API_AUTH` modes (token / jwt / hybrid).

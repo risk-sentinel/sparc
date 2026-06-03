@@ -2,7 +2,7 @@
 # SPARC Documentation Map
 
 Central, navigable index of everything under [`docs/`](.). SPARC (Systematic
-and Regulatory Compliance) is a Rails 8 application for managing NIST SP 800-53
+and Regulatory Compliance) is a Rails 8.1 application for managing NIST SP 800-53
 compliance documentation — SSPs, SARs, SAPs, POA&Ms, CDEFs, and control
 catalogs — with a REST API and OSCAL v1.1.2 import/export.
 
@@ -44,6 +44,7 @@ catalogs — with a REST API and OSCAL v1.1.2 import/export.
 | Doc | Purpose |
 |---|---|
 | [TECH_STACK.md](TECH_STACK.md) | Ruby/Rails/Postgres/Hotwire stack overview |
+| [architecture.md](architecture.md) | Component/data-flow diagram + domain ERD (mermaid) |
 | [oscal-data-mapping.md](oscal-data-mapping.md) | How SPARC's domain model maps to OSCAL |
 | [framework_mapping_plan.md](framework_mapping_plan.md) | STIG / CIS / CCI / SCAP → OSCAL framework mapping plan |
 | [catalog-schema.md](catalog-schema.md) | Control-catalog schema |
@@ -65,7 +66,7 @@ catalogs — with a REST API and OSCAL v1.1.2 import/export.
 |---|---|
 | [api/introduction.md](api/introduction.md) | API overview & getting started |
 | [api/authentication.md](api/authentication.md) | Bearer-token auth & the session cookie bridge |
-| [api/INVENTORY.md](api/INVENTORY.md) | **Index of all endpoints** (links the 19 per-resource docs in `api/endpoints/`) |
+| [api/INVENTORY.md](api/INVENTORY.md) | **Index of all endpoints** (links the 18 per-resource docs in `api/endpoints/`) |
 | [api/errors.md](api/errors.md) · [api/pagination.md](api/pagination.md) | Error format & pagination conventions |
 | [api/README.md](api/README.md) | Postman collection + local/prod environments |
 | [api/SPARC-API-Review-and-Automated-Testing-Procedure.md](api/SPARC-API-Review-and-Automated-Testing-Procedure.md) | API review & automated-test procedure |
@@ -143,26 +144,23 @@ The [`data_mapping/`](data_mapping/) folder documents how each document type map
 
 ---
 
-## Gap analysis (candidate follow-ups)
+## Gap analysis (resolved under #606)
 
-These are documentation gaps observed while building this map — tracked for
-prioritization under #606, not addressed here:
+The documentation gaps observed while building this map have been addressed as
+part of the #606 wiki + docs refresh:
 
-1. **No top-level architecture diagram.** A single C4-style diagram (request →
-   controller → service → OSCAL export, plus Sidekiq/Solid Queue jobs) would
-   anchor `TECH_STACK.md`. The data-flow story is currently spread across
-   `oscal-data-mapping.md` and `data_mapping/`.
-2. **No consolidated data-model / ERD.** `data_mapping/` covers OSCAL field
-   maps but not the Rails domain ERD (Document → Control → ControlField across
-   the four document types).
-3. **Glossary missing.** NIST/OSCAL/SPARC terms (SSP, SAR, SAP, POA&M, CDEF,
-   KSI, baseline, profile, back-matter) aren't defined in one place.
-4. **Getting-started quick-start** is implicit (README + CLAUDE.md); a single
-   "first 15 minutes" page would help evaluators.
-5. **Duplicate consent-banner sample** — `docs/sample-consent-banner.html` and
-   `docs/banners/sample-consent-banner.html` overlap; `banners/` is the home.
-6. **Wiki ↔ docs/ sync** — the GitHub wiki should link to this map as its
-   `docs/` entry point (per #606).
+1. ✅ **Top-level architecture diagram** — added [`architecture.md`](architecture.md)
+   (mermaid component/data-flow diagram).
+2. ✅ **Consolidated data-model / ERD** — domain ERD added in
+   [`architecture.md`](architecture.md).
+3. ✅ **Glossary** — NIST/OSCAL/SPARC terms (SSP, SAR, SAP, POA&M, CDEF, KSI,
+   baseline, profile, back-matter, federation) are defined in the wiki
+   [Glossary](https://github.com/risk-sentinel/sparc/wiki/Glossary).
+4. ✅ **Getting-started quick-start** — the wiki
+   [Getting Started](https://github.com/risk-sentinel/sparc/wiki/Getting-Started)
+   page provides a "first 15 minutes" walkthrough.
+5. ✅ **Wiki ↔ docs/ sync** — the wiki sidebar links this map as its `docs/`
+   entry point, and the wiki is mirrored from the repo `wiki/` directory.
 
 ---
 

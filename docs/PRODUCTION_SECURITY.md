@@ -55,7 +55,7 @@ SPARC_SESSION_TIMEOUT_MINUTES=15
 
 # ── Consent banner ─────────────────────────────────────────────────────────
 SPARC_BANNER_ENABLED=true
-SPARC_BANNER_MESSAGE=docs/sample-consent-banner.html
+SPARC_BANNER_MESSAGE=docs/banners/sample-consent-banner.html
 
 # ── Master secret derivation (#372) ────────────────────────────────────────
 SPARC_HASH=<32+ chars from AWS Secrets Manager>

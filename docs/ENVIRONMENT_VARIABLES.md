@@ -112,12 +112,13 @@ Show a mandatory consent/warning banner modal before login options
 appear. The banner HTML is loaded from the file at
 `SPARC_BANNER_MESSAGE` (relative paths resolve against `Rails.root`)
 and sanitized for XSS before rendering in a Bootstrap 5 modal. A
-sample file is provided at `docs/sample-consent-banner.html`.
+sample file is provided at `docs/banners/sample-consent-banner.html`
+(see [`docs/banners/`](banners/) for DoD and demo variants).
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_BANNER_ENABLED | Show mandatory consent banner on login page | false | `true` | No |
-| SPARC_BANNER_MESSAGE | File path to banner HTML body (resolved against `Rails.root`) | (none) | `docs/sample-consent-banner.html` | Yes (if enabled) |
+| SPARC_BANNER_MESSAGE | File path to banner HTML body (resolved against `Rails.root`) | (none) | `docs/banners/sample-consent-banner.html` | Yes (if enabled) |
 
 ### GitHub OAuth
 

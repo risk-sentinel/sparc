@@ -2,7 +2,7 @@
 
 ## Overview
 
-SPARC follows a Rails monolith architecture with Hotwire (Turbo + Stimulus) for interactive frontend behavior, Sidekiq for background job processing, and PostgreSQL with JSONB columns for flexible schema storage. The domain model is organized around OSCAL document types, each following a consistent three-level hierarchy.
+SPARC follows a Rails monolith architecture with Hotwire (Turbo + Stimulus) for interactive frontend behavior, **Solid Queue** for background job processing (Sidekiq + Redis remain available as an optional adapter), and PostgreSQL with JSONB columns for flexible schema storage. The domain model is organized around OSCAL document types, each following a consistent three-level hierarchy.
 
 ---
 
@@ -222,53 +222,106 @@ Authentication Flow:
 
 ## Service Layer
 
+SPARC's business logic lives in `app/services/` (~90 service objects). They group
+into the following families. The lists below name the representative services in
+each family rather than every file.
+
 ### Parser Services (Import)
 
-| Service | Input | Output |
-|---------|-------|--------|
-| `SspExcelParserService` | Excel (.xlsx) | `SspDocument` + controls + fields |
-| `SarExcelParserService` | Excel (.xlsx) | `SarDocument` + controls + fields |
-| `CdefJsonParserService` | OSCAL JSON | `CdefDocument` + controls + fields |
-| `CdefXccdfParserService` | XCCDF (DISA STIG) | `CdefDocument` + controls + fields |
-| `CatalogImportService` | OSCAL Catalog JSON | `ControlCatalog` + families + controls |
+Each document type has a parser **per serialization format**. OSCAL ingestion
+auto-detects the format via `OscalFormatDetectionService`, and
+`OscalJsonToXmlConverter` bridges JSON↔XML where needed.
+
+| Document type | Parser services |
+|---------------|-----------------|
+| SSP | `SspJsonParserService`, `SspXmlParserService`, `SspYamlParserService`, `SspExcelParserService` |
+| SAR | `SarJsonParserService`, `SarXmlParserService`, `SarYamlParserService`, `SarExcelParserService` |
+| SAP | `SapJsonParserService`, `SapXmlParserService`, `SapYamlParserService` |
+| POA&M | `PoamJsonParserService`, `PoamXmlParserService`, `PoamYamlParserService` |
+| Profile | `ProfileJsonParserService`, `ProfileXmlParserService`, `ProfileYamlParserService` |
+| CDEF | `CdefJsonParserService`, `CdefXccdfParserService` (DISA STIG), `CdefYamlParserService` |
+| Catalog | `CatalogImportService`, `CatalogImportValidationService`, `CatalogBuilderService`, `CatalogPartExtractorService` |
 
 ### Export Services
 
-| Service | Output Format | Notes |
-|---------|---------------|-------|
-| `OscalSspExportService` | OSCAL JSON | Validated against NIST v1.1.2 schemas |
-| `OscalComponentDefinitionExportService` | OSCAL JSON | Component definition export |
+| Service | Output | Notes |
+|---------|--------|-------|
+| `OscalSspExportService` | OSCAL JSON/XML | SSP export, schema-validated |
+| `OscalSarExportService` | OSCAL JSON/XML | SAR (Assessment Results) export |
+| `OscalAssessmentPlanExportService` | OSCAL JSON/XML | SAP export |
+| `OscalPoamExportService` | OSCAL JSON/XML | POA&M export |
+| `OscalProfileExportService` | OSCAL JSON/XML | Profile / baseline export |
+| `OscalCatalogExportService` | OSCAL JSON/XML | Control-catalog export |
+| `OscalComponentDefinitionExportService` | OSCAL JSON/XML | CDEF export |
+| `OscalMappingExportService` | OSCAL JSON | Control-mapping export |
 | `JsonExportService` | JSON | Simplified internal format |
 | `SarExcelExportService` | Excel (.xlsx) | Round-trip with SAR import |
-| `AuditCsvExportService` | CSV | Audit log export for compliance reporting |
+| `AuditCsvExportService` | CSV | Audit-log export for compliance reporting |
+| `AtoPackageExportService` / `AtoPackageService` | Bundle | Assembles a complete ATO package |
+| `CmsAttestationExportService` | CMS format | CMS attestation export (#440) |
+| `KsiExportService` | JSON/CSV | FedRAMP 20x KSI validation export |
+| `OscalExportFormatService`, `OscalResolvedProfileCatalogService` | — | Shared format helpers / resolved-profile catalog generation |
 
 ### Validation
 
 | Service | Purpose |
 |---------|---------|
-| `OscalSchemaValidationService` | Validates OSCAL JSON against official NIST v1.1.2 schemas using the `json_schemer` gem |
+| `OscalSchemaValidationService` | Validates OSCAL against NIST v1.1.2 schemas (`json_schemer`); schemas are baked into the container (air-gap safe) |
+| `PublicationValidationService` | Pre-publish readiness checks |
+| `CatalogImportValidationService` | Validates imported catalogs before persistence |
 
-### Auth
+### Generation, Wizards & Cross-Document Derivation
+
+| Service | Purpose |
+|---------|---------|
+| `SspWizardService`, `SarWizardService` | Step-by-step SSP / SAR creation wizards |
+| `SapGeneratorService` | Generates SAPs from templates |
+| `FrameworkMappingGeneratorService` | Generates STIG/CIS/CCI → OSCAL framework mappings |
+| `SspFromProfileService`, `SarFromProfileService`, `SarFromSspService`, `CdefFromProfileService` | Derive one document type from another |
+| `CdefToSspInheritanceService` | Pull CDEF implementations into an SSP as provider statements |
+
+### CDEF Mutation & Baseline
+
+| Service | Purpose |
+|---------|---------|
+| `CdefMutationService` | Validates post-mutation OSCAL against the NIST schema **before commit** (v1.8.0) |
+| `CdefBulkApplyService`, `CdefUpdateService` | Bulk / inline CDEF edits |
+| `CdefBaselineGapService`, `BaselineParameterService` | Baseline gap analysis & parameter resolution |
+
+### Back-Matter & Federation (#372)
+
+| Service | Purpose |
+|---------|---------|
+| `BackMatterBuilderService`, `BackMatterBulkImportService` | Build / bulk-import OSCAL back-matter resources |
+| `BackMatterResourcePromotionService`, `BackMatterAudit` | Promote stash → first-class resources with audit trail |
+| `AuthoritativeSourceFederationService`, `AuthoritativeSourceFetchService` | Authoritative-source library exchange & fetch |
+| `FederationBundleSigningService`, `FederationPeerReencryptionService` | HMAC-signed bundle exchange between SPARC instances |
+
+### Converters & External Ingestion
+
+| Service | Purpose |
+|---------|---------|
+| `CciRefreshService` | DISA CCI → NIST mapping refresh |
+| `AwsConfigRefreshService`, `AwsSecurityHubRefreshService` | AWS Config / Security Hub → NIST (#494) |
+| `StigConverterService` | STIG benchmark conversion |
+| `AwsLabsCdefImportService`, `AwsLabsCdefSourceClient` | Runtime ingestion of AWS Labs OSCAL CDEFs (#466) |
+| `HdfOscalTranslationService`, `HdfRunner` | HDF ↔ OSCAL translation bridge (#449) |
+
+### Auth & Security
 
 | Service | Purpose |
 |---------|---------|
 | `LdapAuthService` | LDAP bind-and-search authentication |
-
-### Generation
-
-| Service | Purpose |
-|---------|---------|
-| `SapGeneratorService` | Generates Security Assessment Plans from templates |
-| `SspWizardService` | Step-by-step SSP creation wizard logic |
+| `AdminCredentialRotationService` | Rotates the bootstrap admin credential |
+| `LoginFailureReason` | Captures structured login-failure reason codes |
 
 ### Utilities
 
-| Service | Purpose |
-|---------|---------|
-| `DocumentDuplicationService` | Deep-copies a document with all associated records |
-| `DashboardAggregationService` | Aggregates control status data across documents for the dashboard heatmap |
-| `DataMappingSchema` | Vendor-neutral schema for mapping between data formats |
-| `OscalMetadataInheritanceService` | Propagates OSCAL metadata from parent documents to children |
+`DocumentDuplicationService`, `DashboardAggregationService`, `DataMappingSchema`,
+`OscalMetadataInheritanceService`, `OscalUuidService`, `ControlIdNormalizer`,
+`ControlObjectiveExtractorService`, `ProfilePriorityAssignmentService`,
+`BoundaryMetadataSyncService`, `LeveragedAuthorizationService`,
+`DeferredDataMigrationRunner` (runs deferred data migrations post-boot, v1.8.3).
 
 ---
 

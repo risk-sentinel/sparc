@@ -1,8 +1,76 @@
 # Changelog
 
-All notable changes to SPARC are documented here. Versions follow semantic versioning. Links reference the [risk-sentinel/sparc](https://github.com/risk-sentinel/sparc) repository.
+All notable changes to SPARC are documented here. Versions follow semantic versioning. Links reference the [risk-sentinel/sparc](https://github.com/risk-sentinel/sparc) repository. Full release notes (with verification evidence) live on each version's [GitHub release page](https://github.com/risk-sentinel/sparc/releases).
 
 ---
+
+## v1.8.6 -- UI Accessibility (WCAG 2.1 AA) + UI Test Net (2026-06-03)
+
+Accessibility + test-infrastructure release. Ships the **Section 508 / WCAG 2.1 AA** burndown ([#599](https://github.com/risk-sentinel/sparc/issues/599), [#602](https://github.com/risk-sentinel/sparc/issues/602)): a WORM (Write-Once, Read-Many) color architecture where semantic helper keys and single-source `.sparc-status` / `.sparc-heading` components own all contrast — views carry no badge/heading hex. **0 axe color-contrast / select-name / label / meta-refresh violations** across the 20 core pages in both light and dark themes. Adds the **UI Test Net** ([#572](https://github.com/risk-sentinel/sparc/issues/572)): Layer 2 Playwright post-deploy smoke and Layer 3 axe-core accessibility ratchet. Dependency patches incl. **puma 8.0.1 → 8.0.2** (PROXY-protocol-v1 injection hardening, [#601](https://github.com/risk-sentinel/sparc/issues/601)). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.8.6).
+
+## v1.8.5 -- Chromium OAuth Login Fix + DB-Enforced Email Uniqueness (2026-05-29)
+
+Patch release. Restores SSO login in Chromium browsers — the global CSP `form-action 'self'` was blocking the OmniAuth → IdP redirect (Chromium enforces `form-action` on every redirect hop; Firefox does not), so login now relaxes `form-action` to the **configured IdP origins only** ([#593](https://github.com/risk-sentinel/sparc/issues/593)). Adds **database-enforced case-insensitive email uniqueness** via a functional `UNIQUE` index on `LOWER(email)`, plus two base-image `perl` CVE dispositions. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.8.5).
+
+## v1.8.4 -- API Session-from-Token Cookie Bridge (2026-05-27)
+
+Closes [#573](https://github.com/risk-sentinel/sparc/issues/573) (Layer 2 prerequisite of the UI-testing umbrella [#572](https://github.com/risk-sentinel/sparc/issues/572)). Adds `POST /api/v1/sessions/from_token`, which exchanges a SPARC API Bearer token (or OIDC JWT) for a Rails session cookie so headless test runners (Playwright, Cypress, Chromium) can drive the UI as an authenticated user without scraping the login form. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.8.4).
+
+## v1.8.3 -- Deferred Data Migrations (2026-05-27)
+
+Architectural fix removing the deploy kill-loop class of bug. Any `ActiveRecord::Migration` marked `include DeferredDataMigration` registers at `db:migrate` time (fast — no data work) and runs its body post-boot via an in-Puma Solid Queue job. The container binds its port and passes ECS health checks within seconds even on multi-minute data migrations. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.8.3).
+
+## v1.8.2 -- Critical: Back-Matter Promotion UUID Collision Fix (2026-05-27)
+
+Production hotfix. `back_matter_resources.uuid` carries a **global** unique index, but v1.8.0's promotion stored the source OSCAL uuid directly as `BMR.uuid` — two documents legitimately referencing the same source uuid (common across SSP/SAR/SAP/CDEF for shared NIST 800-53 references) crashed the second INSERT mid-migration. Resolves the `Uuid has already been taken` deploy failure. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.8.2).
+
+## v1.8.1 -- Login OIDC Tab CSP Regression Hotfix (2026-05-27)
+
+Production hotfix. The v1.7.0 CSP ([#514](https://github.com/risk-sentinel/sparc/issues/514)) enforced `script-src` with no `'unsafe-inline'`; the login page's tab switching used inline `onclick=` handlers (not nonce-exempt), so users with both local + OIDC/LDAP enabled could not click the Okta/LDAP tabs. Tab handlers moved to nonce'd scripts. Also captures `login_failure` reason codes. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.8.1).
+
+## v1.8.0 -- CdefMutationService + Back-Matter Promotion (2026-05-27)
+
+Minor release. Every CDEF mutation now funnels through **`CdefMutationService`**, which validates the post-mutation OSCAL against the NIST component-definition v1.1.2 schema **before** the transaction commits — an invalid result is rejected pre-commit instead of silently persisting. OSCAL back-matter is **promoted** out of the legacy `import_metadata["back_matter"]` stash to first-class `BackMatterResource` rows across SSP / SAR / SAP / Profile / POA&M, with `BackMatterResourceChange` audit rows on mutation. Bundles [#498](https://github.com/risk-sentinel/sparc/issues/498), [#581](https://github.com/risk-sentinel/sparc/issues/581), [#582](https://github.com/risk-sentinel/sparc/issues/582), [#583](https://github.com/risk-sentinel/sparc/issues/583), [#584](https://github.com/risk-sentinel/sparc/issues/584). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.8.0).
+
+## v1.7.4 -- Nested-Route id-or-slug + RBAC Permission Gating (2026-05-26)
+
+Patch release closing the last two API contract-drift bugs from the [#433](https://github.com/risk-sentinel/sparc/issues/433) test suite. The `authorization_boundaries` controller and every nested controller under it now accept **either an id or a slug** in the URL ([#574](https://github.com/risk-sentinel/sparc/issues/574)), plus RBAC permission-gating fixes. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.7.4).
+
+## v1.7.3 -- API Contract + Compliance Drift Bundle (2026-05-26)
+
+Patch release fixing five prod drift bugs surfaced by the [#433](https://github.com/risk-sentinel/sparc/issues/433) content-style tests. Notably, five `#update` endpoints (cdef_documents, control_catalogs, control_mappings, profile_documents, and the SSP/SAR/SAP/POA&M document base) now return the **detailed** serialization so callers can read-after-write to confirm a change ([#555](https://github.com/risk-sentinel/sparc/issues/555)). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.7.3).
+
+## v1.7.2 -- Pagination + Processing-Banner Trap + CI Fix (2026-05-24)
+
+Patch release. `Api::V1::BaseController#paginate` now reads `params[:items]` / `params[:per_page]` (previously ignored, so every index returned the default) with a clamp at `MAX_PAGINATION_LIMIT = 200` to block `?items=999999` DoS attempts ([#549](https://github.com/risk-sentinel/sparc/issues/549)). Includes a processing-banner fix and a critical CI workflow fix that unblocks image publication. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.7.2).
+
+## v1.7.1 -- Prod Bug Fixes Unblocking API Test Suite (2026-05-24)
+
+Patch release covering three prod issues surfaced during [#433](https://github.com/risk-sentinel/sparc/issues/433) API testing against `sparc.risk-sentinel.org`. Headline: recovers the `cloned_from_id` column on `cdef_documents` (lost on databases that crossed the [#470](https://github.com/risk-sentinel/sparc/issues/470) squash boundary), fixing a 500 on every `/api/v1/cdef_documents` verb ([#537](https://github.com/risk-sentinel/sparc/issues/537)). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.7.1).
+
+## v1.6.6 -- Hotfix: SeedRunner Converters Version Bump (2026-05-19)
+
+Two-line deploy hotfix ([#495](https://github.com/risk-sentinel/sparc/pull/495)). v1.6.5 added new `converters` seed sections but did not bump `SeedRunner::CURRENT_VERSIONS["converters"]`, so production deploys skipped the section and the new `aws_config_to_nist` Converter never appeared. Bumps `converters` `1.2.0 → 1.3.0`. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.6.6).
+
+## v1.6.5 -- Decoupled AWS Converters with Refresh UI (2026-05-19)
+
+Cleans up the v1.6.4 AWS Labs bootstrap initializer (`ApplicationRecord` autoload `NameError` + 3×-per-boot firing, [#492](https://github.com/risk-sentinel/sparc/issues/492)) and splits the v1.6.4 composite AWS converter into two first-class converters (`aws_config_to_nist`, `aws_security_hub_to_nist`) that operators can **refresh independently** from the converter management page ([#494](https://github.com/risk-sentinel/sparc/issues/494)). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.6.5).
+
+## v1.6.4 -- AWS Labs CDEF Bootstrap + Admin Refresh Button (2026-05-18)
+
+Patch release delivering the operator-facing half of AWS Labs CDEF runtime ingestion ([#466](https://github.com/risk-sentinel/sparc/issues/466)). A new initializer enqueues `AwsLabsCdefRefreshJob` on the first boot where `SPARC_AWS_LABS_CDEF_ENABLED=true` and no AWS-Labs rows exist, so tenants don't wait for the weekly tick ([#487](https://github.com/risk-sentinel/sparc/issues/487)). Bundles a `faraday` security bump and a `thruster` patch. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.6.4).
+
+## v1.6.3 -- Apache-2.0 License Harmonization (2026-05-18)
+
+Legal-terms harmonization. The top-level `LICENSE` is now **Apache License 2.0**, matching what `NOTICE`, `THIRD_PARTY_NOTICES.md`, the component dispositions, and the `LICENSES/` texts had assumed since v1.6.0 — chosen for its express patent grant and NOTICE provision ([#483](https://github.com/risk-sentinel/sparc/issues/483)). Ships alongside the [#481](https://github.com/risk-sentinel/sparc/issues/481) unmapped-component triage. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.6.3).
+
+## v1.6.2 -- Open-Source Readiness: License Inventory + Policy (2026-05-18)
+
+No new app features — the infrastructure of supply-chain transparency. Consolidates three CycloneDX SBOMs into a canonical license inventory (`license-inventory.json` / `.md`), adds declarative `license-policy.yml` + per-component `license-dispositions.yml` (policy-as-code), enables Trivy `--scanners license`, and removes the only GPL-3.0 runtime dependency ([#472](https://github.com/risk-sentinel/sparc/issues/472)). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.6.2).
+
+## v1.6.1 -- SBOM-Driven SCA, AWS Labs CDEFs, SAF CLI Hardening (2026-05-17)
+
+Maintenance + capability release. Adds **Grype** SBOM vulnerability scanning consuming the CycloneDX SBOMs (SARIF + HDF, [#461](https://github.com/risk-sentinel/sparc/issues/461)), hardens HDF normalization (Node 22 pin + cdxgen JSON SBOM, [#463](https://github.com/risk-sentinel/sparc/issues/463)), and clears the dependency-bump backlog with the second migration squash. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.6.1).
 
 ## v1.6.0 -- HDF ↔ OSCAL Translation Bridge, CMS Attestation Export & OSCAL Export Hardening (2026-05-08)
 
@@ -113,6 +181,14 @@ Full release notes (with verification evidence and audit context) on the [v1.5.0
 Full RSpec on the merged dependency state: **2076 examples, 0 failures**. `bundle exec rubocop` clean.
 
 ---
+
+# Legacy history (pre-v1.x reset)
+
+> The entries below predate SPARC's adoption of the public **v1.x** release
+> line. The `(unreleased)` items (2026-03) and the `v2.x`–`v3.x` versions
+> were the project's earlier internal numbering. They are retained verbatim
+> for traceability; their functionality is present in the current v1.x
+> releases above.
 
 ## (unreleased) -- OSCAL XML Catalog Parameters & Baseline Adjustments (2026-03-11)
 

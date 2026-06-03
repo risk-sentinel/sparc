@@ -77,18 +77,30 @@
 - System dependencies: jemalloc (memory allocator), libvips (image processing), pg-client
 - Precompiled assets in the build stage, copied to final image
 
-### AWS ECS Fargate ([Issue #109](https://github.com/risk-sentinel/sparc/issues/109) -- planned)
+### AWS (Production) — managed by `sparc-iac`
 
-- Terraform infrastructure as code
-- ALB + ECS services for containerized deployment
+Production deployment is **not** defined in this repository. It lives in the
+separate **[`sparc-iac`](https://github.com/risk-sentinel/sparc-iac)** repo,
+which provisions the AWS infrastructure as Terraform and deploys the
+container image published by this repo's CI:
 
-### AWS EC2 ([Issue #110](https://github.com/risk-sentinel/sparc/issues/110) -- planned)
+- **AWS ECS** behind an Application Load Balancer, running the signed SPARC container image.
+- Database credentials and the `SPARC_HASH` master secret sourced from **AWS Secrets Manager** (`SPARC_AWS_SECRETS_ENABLED`), with optional **IAM database authentication** (`SPARC_AWS_IAM_DB_AUTH`).
+- Active Storage backed by **Amazon S3** (`ACTIVE_STORAGE_SERVICE=amazon`).
+- The application consumes the compliance evidence bundle (`sparc-compliance-latest`) published by this repo's `security.yml` workflow.
 
-- Terraform with ALB + Auto Scaling Group
+> The SPARC application image is built and signed by the **`container-build-sign`**
+> repo; `sparc-iac` consumes that signed image. See the
+> [repo layout](#repository-layout) note below.
 
-### Azure VM ([Issue #111](https://github.com/risk-sentinel/sparc/issues/111) -- planned)
+### Repository layout
 
-- Terraform with Application Gateway
+| Repo | Responsibility |
+|------|----------------|
+| `sparc` | The Rails application (this repo) |
+| `sparc-iac` | AWS deployment infrastructure (Terraform, ECS) |
+| `container-build-sign` | Base image build + image signing |
+| `sparc-validate` | External validation harness |
 
 ---
 

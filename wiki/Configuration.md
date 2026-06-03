@@ -24,8 +24,8 @@ SPARC is configured via environment variables prefixed with `SPARC_`. All authen
 | `DATABASE_URL` | (none) | Full PostgreSQL connection URL |
 | `SPARC_DB_HOST` | `localhost` | Database host |
 | `SPARC_DB_PORT` | `5432` | Database port |
-| `SPARC_DB_NAME` | `ssp_tpr_manager_development` | Database name |
-| `SPARC_DB_USER` | `postgres` | Database user |
+| `SPARC_DB_NAME` | `sparc` | Database name |
+| `SPARC_DB_USER` | (none) | Database user |
 | `SPARC_DB_PASSWORD` | (none) | Database password |
 | `SPARC_DB_SSLMODE` | (none) | PostgreSQL SSL mode |
 
@@ -93,13 +93,13 @@ Auto-enabled when client ID is present (no separate enable flag needed).
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SPARC_ENABLE_SMTP` | `false` | Enable SMTP email delivery |
-| `SMTP_ADDRESS` | (none) | SMTP server address |
-| `SMTP_PORT` | `587` | SMTP server port |
-| `SMTP_USERNAME` | (none) | SMTP username |
-| `SMTP_PASSWORD` | (none) | SMTP password |
-| `SMTP_AUTH` | `plain` | Auth method (plain, login, cram_md5) |
-| `SMTP_STARTTLS_AUTO` | `true` | Auto-negotiate STARTTLS |
-| `SMTP_FROM_ADDRESS` | (none) | Default sender address |
+| `SPARC_SMTP_ADDRESS` | (none) | SMTP server address |
+| `SPARC_SMTP_PORT` | `587` | SMTP server port |
+| `SPARC_SMTP_USERNAME` | (none) | SMTP username |
+| `SPARC_SMTP_PASSWORD` | (none) | SMTP password |
+| `SPARC_SMTP_AUTH` | `plain` | Auth method (plain, login, cram_md5) |
+| `SPARC_SMTP_STARTTLS_AUTO` | `true` | Auto-negotiate STARTTLS |
+| `SPARC_SMTP_FROM_ADDRESS` | (none) | Default sender address |
 
 ## Logging
 
@@ -123,7 +123,7 @@ Auto-enabled when client ID is present (no separate enable flag needed).
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL for Sidekiq |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL (required only when using the optional Sidekiq adapter; Solid Queue is the default and needs no Redis) |
 
 ## Docker Compose Defaults
 

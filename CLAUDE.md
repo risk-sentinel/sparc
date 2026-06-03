@@ -110,6 +110,6 @@ NIST SP 800-53 Rev 5 compliance docs live in `docs/compliance/`:
 
 - `docs/compliance/README.md` — process guide, sparc-iac integration model
 - `docs/compliance/nist-sp800-53-rev5-mapping.md` — central control mapping (HIGH baseline, 370 controls)
-- `docs/compliance/oscal/cdefs/*.json` — OSCAL v1.1.2 component definitions (5 files, 46 controls)
+- `docs/compliance/oscal/cdefs/*.json` — OSCAL v1.1.2 component definitions (5 files, 49 controls)
 
 When touching security-critical code, update the relevant CDEFs and add inline NIST control comments. See `docs/dev/issue_rules.md` for the full process.

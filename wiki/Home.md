@@ -1,6 +1,6 @@
 # SPARC — Systematic and Regulatory Compliance
 
-Welcome to the official SPARC wiki. SPARC is a Rails application for managing NIST 800-53 compliance documentation — System Security Plans (SSPs), Security Assessment Results (SARs), Component Definitions (CDEFs), Security Assessment Plans (SAPs), Plans of Action & Milestones (POA&Ms), and control catalogs. It replaces spreadsheet-based workflows with a web UI and REST API, with full OSCAL export support.
+Welcome to the official SPARC wiki. SPARC is a Rails 8.1 application for managing NIST SP 800-53 compliance documentation — System Security Plans (SSPs), Security Assessment Results (SARs), Security Assessment Plans (SAPs), Plans of Action & Milestones (POA&Ms), Component Definitions (CDEFs), and control catalogs. It replaces spreadsheet-based workflows with a web UI and REST API, with full OSCAL v1.1.2 import/export support.
 
 ## Quick Links
 
@@ -9,33 +9,50 @@ Welcome to the official SPARC wiki. SPARC is a Rails application for managing NI
 | Repository | [risk-sentinel/sparc](https://github.com/risk-sentinel/sparc) |
 | Releases | [All releases](https://github.com/risk-sentinel/sparc/releases) |
 | Issues | [Open issues](https://github.com/risk-sentinel/sparc/issues) |
-| Current Version | **v3.4.0** |
+| Documentation index | [`docs/MAP.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/MAP.md) — full `docs/` inventory |
+| Current Version | **v1.8.6** |
+
+> **Versioning note:** SPARC's public release line is **v1.x** (current: v1.8.6).
+> Older `v2.x`–`v3.x` entries in the [Changelog](Changelog) are the project's
+> pre-reset numbering, retained for historical traceability.
 
 ## Wiki Sections
 
+### [Getting Started](Getting-Started)
+First-15-minutes setup — Docker quick start, seeding the NIST catalogs, first login, and where to go next.
+
 ### [Role-Based Access Control (RBAC)](RBAC)
-29 roles aligned with NIST SP 800-37 Rev. 2 and OSCAL standards, 20 granular permission keys, instance vs. authorization boundary scoping, and the Instance Admin bypass flag.
+29 roles aligned with NIST SP 800-37 Rev. 2 and OSCAL standards, granular permission keys, instance vs. authorization-boundary scoping, and the Instance Admin bypass flag.
 
 ### [Screens & UI](Screens)
-Complete inventory of every page in the application — Controls Layer, Implementation Layer, Assessment Layer, Authorization Boundary Management, Evidence, Admin, and API endpoints.
+Complete inventory of every page in the application — Controls Layer, Implementation Layer, Assessment Layer, Authorization Boundary Management, Evidence, Federation, and Admin.
 
 ### [Core Functions & Features](Core-Functions)
-OSCAL import/export/validation, document processing pipeline, SSP wizard, control mapping, audit logging, heatmap analytics, and more.
+OSCAL import/export/validation, the document processing pipeline, SSP/SAR wizards, control mapping, converters (CCI / AWS), KSI validations, the HDF ↔ OSCAL bridge, authoritative-source federation, and audit logging.
+
+### [Architecture](Architecture)
+Domain model hierarchy, database schema, the service layer, and background-job architecture.
 
 ### [Integrations](Integrations)
-Authentication providers (local, GitHub, GitLab, OIDC, LDAP), deployment patterns (Docker, AWS ECS Fargate, EC2, Azure), OSCAL ecosystem, and Active Storage.
+Authentication providers (local, GitHub, GitLab, OIDC, LDAP), deployment patterns (Docker, AWS), the OSCAL ecosystem, and Active Storage.
+
+### [API Reference](API-Reference)
+REST API overview and a pointer to the full per-endpoint docs and Postman collection under [`docs/api/`](https://github.com/risk-sentinel/sparc/tree/main/docs/api).
+
+### [Configuration Reference](Configuration)
+All `SPARC_*` environment variables for auth, database, OIDC, LDAP, SMTP, logging, and deployment.
 
 ### [Glossary](Glossary)
 OSCAL and NIST RMF terminology reference.
 
+### [FAQ & Troubleshooting](FAQ)
+Common questions and fixes for setup, auth, OSCAL validation, and deployment.
+
+### [Contributing](Contributing)
+How to propose changes — the mandatory issue process, branching, and compliance-artifact requirements.
+
 ### [Changelog](Changelog)
-Release history from v2.0.0 through v3.4.0.
-
-### [Architecture](Architecture)
-Domain model hierarchy, database schema, service layer, and background job architecture.
-
-### [Configuration Reference](Configuration)
-All `SPARC_*` environment variables for auth, database, OIDC, LDAP, SMTP, logging, and deployment.
+Full release history — the current v1.x line plus the legacy v2.x–v3.x entries.
 
 ---
 
@@ -43,14 +60,14 @@ All `SPARC_*` environment variables for auth, database, OIDC, LDAP, SMTP, loggin
 
 | Component | Technology |
 |-----------|-----------|
-| Framework | Ruby 3.4.4, Rails 8.1.2 |
+| Framework | Ruby 3.4.4, Rails 8.1.3 |
 | Database | PostgreSQL 15 |
-| Background Jobs | Sidekiq + Redis |
+| Background Jobs | Solid Queue (default) · Sidekiq + Redis (optional) |
 | Frontend | Hotwire (Turbo + Stimulus), Bootstrap 5.3 |
 | Asset Pipeline | Propshaft, importmap (no Node build step) |
 | Auth | OmniAuth (GitHub, GitLab, OIDC), net-ldap, bcrypt |
-| OSCAL Validation | json_schemer (NIST OSCAL v1.1.2 schemas) |
-| File Parsing | Roo (Excel), Nokogiri (XML) |
+| OSCAL Validation | json_schemer (NIST OSCAL v1.1.2 schemas, baked into the container) |
+| File Parsing | Nokogiri (XML), Roo (Excel — feature-flagged) |
 | Containerization | Docker, Docker Compose |
 
 ## Getting Started
@@ -66,18 +83,16 @@ bin/rails db:create db:migrate db:seed
 bin/rails server
 ```
 
-See [Configuration](Configuration) for all environment variables and [Integrations](Integrations) for auth provider setup.
+See [Getting Started](Getting-Started) for a guided walkthrough, [Configuration](Configuration) for all environment variables, and [Integrations](Integrations) for auth provider setup.
 
 ## Contributing to the Wiki
 
-This wiki is version-controlled via its own git repository. To contribute:
+This wiki is mirrored from the `wiki/` directory in the main repository and
+published via `wiki/PUSH_TO_WIKI.sh`. **Edit the source under `wiki/` in
+[risk-sentinel/sparc](https://github.com/risk-sentinel/sparc/tree/main/wiki)
+through the normal issue/PR process** — direct edits to the wiki git repo are
+overwritten on the next sync.
 
-```bash
-git clone https://github.com/risk-sentinel/sparc.wiki.git
-cd sparc.wiki
-# Edit or add .md files
-git add . && git commit -m "Update wiki"
-git push origin master
-```
-
-All pages use GitHub-flavored Markdown. Please include cross-references to issues, PRs, and commits where relevant.
+All pages use GitHub-flavored Markdown. Please include cross-references to
+issues, PRs, and commits where relevant. See [Contributing](Contributing) for
+the full process.
