@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 99 endpoints across 18 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 104 endpoints across 18 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -95,6 +95,14 @@
       "key": "user_id",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "evidence_id",
+      "value": "1"
+    },
+    {
+      "key": "attestation_id",
+      "value": "1"
     }
   ],
   "item": [
@@ -3210,6 +3218,322 @@
               ]
             },
             "description": "Soft-delete (deactivate) a user. Admin only."
+          }
+        }
+      ]
+    },
+    {
+      "name": "HDF ↔ OSCAL Translations",
+      "item": [
+        {
+          "name": "SAR from HDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/oscal/sar_from_hdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "oscal",
+                "sar_from_hdf"
+              ],
+              "query": [
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "{{boundary_id}}",
+                  "description": "Optional: merge boundary Evidence into OSCAL back-matter (needs evidence.read)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Translate HDF results to an OSCAL SAR (#449).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": {\"name\": \"test-target\", \"release\": \"1.0.0\"},\n  \"version\": \"5.22.3\",\n  \"profiles\": [{\"name\": \"sample\", \"controls\": [{\"id\": \"SPARC-AC-3\", \"title\": \"x\", \"impact\": 0.5, \"tags\": {\"nist\": [\"AC-3\"]}, \"results\": [{\"status\": \"failed\", \"code_desc\": \"x\", \"start_time\": \"2026-06-01T00:00:00Z\"}]}]}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POA&M from HDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/oscal/poam_from_hdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "oscal",
+                "poam_from_hdf"
+              ],
+              "query": [
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "{{boundary_id}}",
+                  "description": "Optional: merge boundary Evidence into OSCAL back-matter (needs evidence.read)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Translate HDF results to an OSCAL POA&M (#449).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": {\"name\": \"test-target\", \"release\": \"1.0.0\"},\n  \"version\": \"5.22.3\",\n  \"profiles\": [{\"name\": \"sample\", \"controls\": [{\"id\": \"SPARC-AC-3\", \"title\": \"x\", \"impact\": 0.5, \"tags\": {\"nist\": [\"AC-3\"]}, \"results\": [{\"status\": \"failed\", \"code_desc\": \"x\", \"start_time\": \"2026-06-01T00:00:00Z\"}]}]}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Amendments from OSCAL POA&M",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/hdf/amendments_from_oscal_poam",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hdf",
+                "amendments_from_oscal_poam"
+              ]
+            },
+            "description": "Translate an OSCAL POA&M to HDF Amendments (#449).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan-of-action-and-milestones\": {\"uuid\": \"REPLACE\", \"metadata\": {\"oscal-version\": \"1.1.2\"}, \"poam-items\": []}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Bridge Token to Session Cookie",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/from_token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions",
+                "from_token"
+              ]
+            },
+            "description": "Exchange a Bearer token for a Rails session cookie (#573). 204 + Set-Cookie on success."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attestations",
+      "item": [
+        {
+          "name": "List Attestations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/attestations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "attestations"
+              ]
+            },
+            "description": "List attestations for an evidence record (#440)."
+          }
+        },
+        {
+          "name": "Show Attestation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/attestations/{{attestation_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "attestations",
+                "{{attestation_id}}"
+              ]
+            },
+            "description": "Show a single attestation (detailed)."
+          }
+        },
+        {
+          "name": "Create Attestation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/attestations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "attestations"
+              ]
+            },
+            "description": "Create + sign an attestation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attestation\": {\n    \"attester_name\": \"Jane Reviewer\",\n    \"attester_email\": \"jane@example.com\",\n    \"role\": \"isso\",\n    \"statement\": \"Reviewed and accurate.\",\n    \"frequency\": \"quarterly\",\n    \"status\": \"current\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Attestation",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/attestations/{{attestation_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "attestations",
+                "{{attestation_id}}"
+              ]
+            },
+            "description": "Delete an attestation (audit-logged)."
+          }
+        },
+        {
+          "name": "Export Attestations (CMS)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/attestations/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "attestations",
+                "export"
+              ]
+            },
+            "description": "CMS / SAF CLI JSON export, one record per linked control_id."
           }
         }
       ]

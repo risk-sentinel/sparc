@@ -6,22 +6,24 @@ Authoritative cross-reference between SPARC's `/api/v1/` routes (as defined in c
 
 This file is the work-tracking spine for issue [#413](https://github.com/risk-sentinel/sparc/issues/413). Phase 1 work closes "**MISSING**" rows below; Phase 2 will add a parallel column for "covered by Python pytest suite" once that suite lands on `sparc-api-automated-testing-phase2`.
 
-## Summary (as of 2026-04-30)
+## Summary (as of 2026-06-04)
 
-- **Code:** 95 logical endpoints across 18 controller groups (PATCH+PUT aliases collapsed)
-- **Documentation:** **95 / 95 endpoints documented** in `endpoints/*.md` (**100%**) ✅
-- **Postman collection:** **95 / 95 endpoints covered** (**100%**) ✅
-  - 99 individual requests — PATCH/PUT update aliases each get their own request
-  - 18 folders, mirroring the controller groups
-- **Pytest suite:** **95 / 95 endpoints covered** by `tests/api/` (**100%**) ✅
-  - 247 tests across 18 test modules — one module per controller group
+- **Code:** 104 logical endpoints across 21 controller groups (PATCH+PUT aliases collapsed)
+- **Documentation:** **104 / 104 endpoints documented** in `endpoints/*.md` (**100%**) ✅
+- **Postman collection:** **104 / 104 endpoints covered** (**100%**) ✅
+  - 108 individual requests — PATCH/PUT update aliases each get their own request
+  - 21 folders, mirroring the controller groups
+- **Pytest suite:** **104 / 104 endpoints covered** by `tests/api/` (**100%**) ✅
+  - 273 tests across 21 test modules — one module per controller group
   - Coverage classes: happy / auth / authz / validation / pagination / idempotency
 
 ### Phase status
 
-**Both Phase 1 and Phase 2 are complete.** `bin/api_inventory_check.rb --check` exits 0 against this commit — every code route has per-endpoint documentation, at least one Postman collection entry, and at least one pytest test class.
+**Phases 1 and 2 are complete for the full 104-endpoint surface.** The three post-baseline controllers added under [#610](https://github.com/risk-sentinel/sparc/issues/610) — `translations` (HDF↔OSCAL bridge, #449), `sessions` (token→cookie bridge, #573), and `attestations` (#440) — now each have an `endpoints/*.md` page, a Postman folder, and a `tests/api/test_*.py` module.
 
-The remaining open Phase 1 item is the 30% independent validation pass against this stable inventory + suite — a separate review activity.
+> **Gate re-run required:** `bin/api_inventory_check.rb --check` needs `bin/rails routes` (a DB-connected env), so the green 0-exit gate is confirmed in CI / a running environment, not on a bare checkout. The table below was updated by hand to match the three new controllers; re-running the script regenerates it verbatim.
+
+The remaining open item is the **30% independent validation pass** against this stable inventory + suite — a separate review activity tracked on [#413](https://github.com/risk-sentinel/sparc/issues/413) / [#610](https://github.com/risk-sentinel/sparc/issues/610).
 
 #### Doc files needed (3 new files / 9 endpoints) — ✅ closed 2026-04-29
 
@@ -68,6 +70,11 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | Method | Path | Controller#action | In `endpoints/*.md` | In Postman collection | Covered by pytest |
 |--------|------|-------------------|---------------------|------------------------|-------------------|
 | `POST` | `/api/v1/admin/refresh_credentials` | `admin/credentials#refresh` | yes | yes | yes |
+| `GET` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#index` | yes | yes | yes |
+| `POST` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#create` | yes | yes | yes |
+| `DELETE` | `/api/v1/evidences/:evidence_id/attestations/:id` | `attestations#destroy` | yes | yes | yes |
+| `GET` | `/api/v1/evidences/:evidence_id/attestations/:id` | `attestations#show` | yes | yes | yes |
+| `GET` | `/api/v1/evidences/:evidence_id/attestations/export` | `attestations#export` | yes | yes | yes |
 | `GET` | `/api/v1/authoritative_sources/export` | `authoritative_sources#export` | yes | yes | yes |
 | `POST` | `/api/v1/authoritative_sources/import` | `authoritative_sources#import` | yes | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries` | `authorization_boundaries#index` | yes | yes | yes |
@@ -149,6 +156,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/sar_documents/:id/export` | `sar_documents#export` | yes | yes | yes |
 | `PUT` | `/api/v1/sar_documents/:id/update_fields` | `sar_documents#update_fields` | yes | yes | yes |
 | `POST` | `/api/v1/sar_documents/convert` | `sar_documents#convert` | yes | yes | yes |
+| `POST` | `/api/v1/sessions/from_token` | `sessions#from_token` | yes | yes | yes |
 | `GET` | `/api/v1/ssp_documents` | `ssp_documents#index` | yes | yes | yes |
 | `POST` | `/api/v1/ssp_documents` | `ssp_documents#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/ssp_documents/:id` | `ssp_documents#destroy` | yes | yes | yes |
@@ -157,6 +165,9 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/ssp_documents/:id/export` | `ssp_documents#export` | yes | yes | yes |
 | `PUT` | `/api/v1/ssp_documents/:id/update_fields` | `ssp_documents#update_fields` | yes | yes | yes |
 | `POST` | `/api/v1/ssp_documents/convert` | `ssp_documents#convert` | yes | yes | yes |
+| `POST` | `/api/v1/hdf/amendments_from_oscal_poam` | `translations#amendments_from_oscal_poam` | yes | yes | yes |
+| `POST` | `/api/v1/oscal/poam_from_hdf` | `translations#poam_from_hdf` | yes | yes | yes |
+| `POST` | `/api/v1/oscal/sar_from_hdf` | `translations#sar_from_hdf` | yes | yes | yes |
 | `GET` | `/api/v1/users` | `users#index` | yes | yes | yes |
 | `POST` | `/api/v1/users` | `users#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/users/:id` | `users#destroy` | yes | yes | yes |

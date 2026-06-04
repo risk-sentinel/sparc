@@ -75,6 +75,9 @@ markers = [
     "catalogs: tests for control catalogs/mappings",
     "ksi: tests for KSI catalog/validations",
     "baselines: tests for baseline parameters",
+    "translations: tests for the HDF <-> OSCAL translation bridge (#449)",
+    "sessions: tests for the API session-from-token cookie bridge (#573)",
+    "attestations: tests for evidence attestations (#440)",
 ]
 
 [tool.ruff]

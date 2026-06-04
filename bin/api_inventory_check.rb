@@ -43,7 +43,10 @@ CONTROLLER_TO_DOC = {
   "back_matter_resources"    => "back-matter-resources",
   "admin/credentials"        => "admin-credentials",
   "authoritative_sources"    => "authoritative-sources",
-  "federation_peers"         => "federation-peers"
+  "federation_peers"         => "federation-peers",
+  "translations"             => "translations",
+  "sessions"                 => "sessions",
+  "attestations"             => "attestations"
 }.freeze
 
 def load_routes
@@ -158,7 +161,10 @@ CONTROLLER_TO_TEST_MODULE = {
   "back_matter_resources"    => "test_back_matter_resources.py",
   "admin/credentials"        => "test_admin_credentials.py",
   "authoritative_sources"    => "test_authoritative_sources.py",
-  "federation_peers"         => "test_federation_peers.py"
+  "federation_peers"         => "test_federation_peers.py",
+  "translations"             => "test_translations.py",
+  "sessions"                 => "test_sessions.py",
+  "attestations"             => "test_attestations.py"
 }.freeze
 
 def load_pytest_module_texts

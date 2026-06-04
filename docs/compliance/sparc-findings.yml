@@ -31,7 +31,7 @@
 findings:
 
   # ==========================================================================
-  # CRITICAL -- 3 unique CVEs
+  # CRITICAL -- 11 unique CVEs (3 base-image + 8 thruster Go-module, #612)
   # Per #244 policy, CRITICAL findings cannot be 'accepted' (no risk
   # acceptance for criticals). Allowed dispositions: false_positive (scanner
   # is wrong / code path unreachable), deferred (POA&M), or remediated. See
@@ -74,6 +74,111 @@ findings:
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-29"
     next_review_date: "2026-06-28"
+
+  # --------------------------------------------------------------------------
+  # thruster (Go HTTP/2 reverse proxy) transitive Go-module CVEs — discovered
+  # by Grype 2026-06-04 (newly published advisories against an unchanged
+  # image; see #612). thruster 0.1.21 is the latest gem, so no bump remediates
+  # these yet. 7x golang.org/x/crypto/ssh* are false-positive (thruster is an
+  # HTTP proxy, the ssh subpackages are never imported/invoked); 1x
+  # golang.org/x/net/idna is deferred (x/net is on the HTTP path).
+  # --------------------------------------------------------------------------
+
+  - cve_id: GO-2026-5005
+    package: golang.org/x/crypto
+    installed_version: "0.46.0"
+    fixed_version: "0.52.0"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). CVE-2026-39833 — invoking key constraints are not enforced in golang.org/x/crypto/ssh/agent. Flagged because the thruster 0.1.21 Go reverse-proxy binary (gem \"thruster\", in front of Puma) embeds golang.org/x/crypto v0.46.0, but thruster imports x/crypto only for ACME/autocert TLS — NOT the ssh/ssh-agent/knownhosts subpackages. SPARC runs no SSH client, server, or agent through thruster or anywhere in the app; the vulnerable golang.org/x/crypto/ssh/agent code path is never imported or invoked (Go dead-code elimination drops unimported packages). Same present-but-unreachable basis as the libgnutls30/perl entries above. Remediation candidate when an upstream thruster release bumps golang.org/x/crypto>=0.52.0."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-04"
+    next_review_date: "2026-07-04"
+
+  - cve_id: GO-2026-5006
+    package: golang.org/x/crypto
+    installed_version: "0.46.0"
+    fixed_version: "0.52.0"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). CVE-2026-39832 — agent constraints dropped when forwarding keys in golang.org/x/crypto/ssh/agent. thruster (the only consumer of x/crypto in the image) is an HTTP/2 reverse proxy and does not import golang.org/x/crypto/ssh/agent; SPARC performs no SSH agent forwarding. The vulnerable code path is not linked or invoked. Same basis as the other x/crypto/ssh findings in #612. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-04"
+    next_review_date: "2026-07-04"
+
+  - cve_id: GO-2026-5017
+    package: golang.org/x/crypto
+    installed_version: "0.46.0"
+    fixed_version: "0.52.0"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). CVE-2026-39830 — a client can cause server deadlock on unexpected responses in golang.org/x/crypto/ssh. thruster does not import golang.org/x/crypto/ssh; SPARC runs no SSH server, so the deadlock path cannot be reached. x/crypto is present in the thruster binary only for ACME/autocert TLS. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-04"
+    next_review_date: "2026-07-04"
+
+  - cve_id: GO-2026-5019
+    package: golang.org/x/crypto
+    installed_version: "0.46.0"
+    fixed_version: "0.52.0"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). CVE-2026-39831 — bypass of FIDO/U2F security-key physical-interaction in golang.org/x/crypto/ssh. SPARC uses no SSH and no FIDO/U2F SSH keys; thruster (HTTP proxy) does not import golang.org/x/crypto/ssh. The code path is not linked or invoked. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-04"
+    next_review_date: "2026-07-04"
+
+  - cve_id: GO-2026-5020
+    package: golang.org/x/crypto
+    installed_version: "0.46.0"
+    fixed_version: "0.52.0"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). CVE-2026-39834 — infinite loop on large channel writes in golang.org/x/crypto/ssh. thruster does not import golang.org/x/crypto/ssh and SPARC opens no SSH channels; the DoS path is unreachable. x/crypto is present only for ACME/autocert TLS in the thruster binary. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-04"
+    next_review_date: "2026-07-04"
+
+  - cve_id: GO-2026-5021
+    package: golang.org/x/crypto
+    installed_version: "0.46.0"
+    fixed_version: "0.52.0"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). CVE-2026-42508 — authorization bypass via unenforced @revoked status in golang.org/x/crypto/ssh/knownhosts. SPARC maintains no SSH known_hosts and performs no SSH host-key verification; thruster (HTTP proxy) does not import golang.org/x/crypto/ssh/knownhosts. The vulnerable path is not linked or invoked. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-04"
+    next_review_date: "2026-07-04"
+
+  - cve_id: GO-2026-5023
+    package: golang.org/x/crypto
+    installed_version: "0.46.0"
+    fixed_version: "0.52.0"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). CVE-2026-46595 — VerifiedPublicKeyCallback permissions-skip enforcement gap in golang.org/x/crypto/ssh. SPARC runs no SSH server and does not use ssh.ServerConfig callbacks; thruster (HTTP proxy) does not import golang.org/x/crypto/ssh. The code path is not linked or invoked. Remediation: upstream thruster release bumping golang.org/x/crypto>=0.52.0."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-04"
+    next_review_date: "2026-07-04"
+
+  - cve_id: GO-2026-5026
+    package: golang.org/x/net
+    installed_version: "0.48.0"
+    fixed_version: "0.55.0"
+    severity: CRITICAL
+    disposition: deferred
+    rationale: "DEFERRED (POA&M). CVE-2026-39821 — golang.org/x/net/idna fails to reject ASCII-only Punycode-encoded labels. Flagged because thruster 0.1.21 embeds golang.org/x/net v0.48.0 for HTTP/2. Unlike the x/crypto/ssh findings, x/net is on thruster's HTTP request path and idna may be reached during host-label normalization, so this is tracked as a POA&M rather than dispositioned false-positive. Effective risk is low: the flaw is a Punycode label-validation correctness issue, thruster sits behind an ALB/nginx with TLS termination and a controlled set of upstream hostnames, and SPARC does not process attacker-controlled internationalized-domain hostnames. Remediation: upstream thruster release bumping golang.org/x/net>=0.55.0, or base-image rebuild. Re-evaluate at next review."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-04"
+    next_review_date: "2026-07-04"
 
   # ==========================================================================
   # HIGH -- 13 unique CVEs (4 existing + 9 new this PR)
