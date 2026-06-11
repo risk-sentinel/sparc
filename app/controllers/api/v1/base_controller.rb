@@ -124,4 +124,25 @@ class Api::V1::BaseController < ActionController::API
     Rails.logger.warn("Audit log failed: #{e.message}")
     raise unless Rails.env.production?
   end
+
+  # #618 — A metadata-only API create has no file in Active Storage, so the
+  # DocumentConversionJob the UI/upload path enqueues never runs (and would
+  # fail if it did — there is nothing to parse). Without this, the record sits
+  # in the schema-default `pending` forever: the "stuck document" bug. Resolve
+  # a fileless create to the terminal `completed` status on save so callers and
+  # the UI see a definitive state. File-bearing paths (UI uploads, /convert)
+  # keep pending + enqueue/parse and are untouched (guarded by file.attached?).
+  #
+  # NIST: SI-11 (Error Handling) — no silent indefinite-pending state.
+  def finalize_unprocessed_create(doc)
+    return unless doc.respond_to?(:status) && doc.respond_to?(:pending?)
+    return if doc.respond_to?(:file) && doc.file.attached?
+    return unless doc.pending?
+
+    doc.update!(status: "completed")
+    Rails.logger.info(
+      "[DocumentLifecycle] event=completed reason=metadata_only_create " \
+      "document_type=#{doc.class.name} document_id=#{doc.id} job_id=none"
+    )
+  end
 end

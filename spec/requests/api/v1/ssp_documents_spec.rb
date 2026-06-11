@@ -108,6 +108,17 @@ RSpec.describe "Api::V1::SspDocuments", type: :request do
       expect(parsed["data"]["name"]).to eq("New SSP")
     end
 
+    # #618 — fileless API create resolves to a terminal status via the shared
+    # DocumentBaseController path, instead of hanging in `pending`.
+    it "resolves a fileless create to completed (not stuck in pending)" do
+      post api_v1_ssp_documents_path, params: {
+        ssp_document: { name: "Fileless SSP", authorization_boundary_id: boundary.id }
+      }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["data"]["status"]).to eq("completed")
+    end
+
     it "creates an audit event" do
       expect {
         post api_v1_ssp_documents_path, params: {

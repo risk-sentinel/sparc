@@ -28,3 +28,10 @@ production:
   aws_labs_cdef_refresh:
     class: AwsLabsCdefRefreshJob
     schedule: every <%= ENV.fetch("SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS", "7").to_i.clamp(1, 90) %> days at 6am
+  # #618 — server-side stuck-document reaper. Resolves fileless metadata docs
+  # to `completed` and marks genuinely stalled file parses `failed` (see the
+  # job for the two conditions). Runs frequently since the unit of staleness
+  # (SPARC_DOCUMENT_REAP_MINUTES, default 10) is minutes, not days.
+  stuck_document_reaper:
+    class: StuckDocumentReaperJob
+    schedule: every 5 minutes

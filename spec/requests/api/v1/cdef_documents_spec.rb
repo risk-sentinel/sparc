@@ -147,6 +147,19 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       expect(parsed["data"]["name"]).to eq("New CDEF")
     end
 
+    # #618 — a metadata-only API create has no file to parse, so it must NOT
+    # linger in the schema-default `pending` (the "stuck document" bug). It
+    # resolves to a terminal `completed` status on save.
+    it "resolves a fileless create to completed (not stuck in pending)" do
+      post api_v1_cdef_documents_path, params: {
+        cdef_document: { name: "Fileless CDEF", cdef_type: "custom" }
+      }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["data"]["status"]).to eq("completed")
+      expect(CdefDocument.find_by(name: "Fileless CDEF").status).to eq("completed")
+    end
+
     it "emits a cdef_document_created audit event" do
       assert_audit_event(
         action: "cdef_document_created",

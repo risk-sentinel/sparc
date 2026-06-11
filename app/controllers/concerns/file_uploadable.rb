@@ -64,6 +64,9 @@ module FileUploadable
       apply_post_create_scope!(document, param_key)
 
       DocumentConversionJob.perform_later(type_key.to_s, document.id)
+      # #618 — pairs with DocumentConversionJob's started/succeeded/failed lines
+      # so a document's parse journey is traceable by document_id.
+      Rails.logger.info("[DocumentLifecycle] event=enqueued document_type=#{type_key} document_id=#{document.id}")
 
       audit_log("#{type_key}_document_created", subject: document,
         metadata: { name: document.name, file_type: file_type,
@@ -304,6 +307,8 @@ module FileUploadable
         apply_post_create_scope!(document, param_key)
 
         DocumentConversionJob.perform_later(type_key.to_s, document.id)
+        # #618 — see handle_file_upload for the lifecycle-logging rationale.
+        Rails.logger.info("[DocumentLifecycle] event=enqueued document_type=#{type_key} document_id=#{document.id}")
 
         audit_log("#{type_key}_document_created", subject: document,
           metadata: { name: document.name, file_type: file_type,

@@ -44,6 +44,7 @@ class DocumentConversionJob < ApplicationJob
         "processing_started_at" => Time.current.iso8601
       )
     )
+    log_lifecycle("started", document_type_key, document_id)
 
     begin
       unless document.file.attached?
@@ -82,6 +83,7 @@ class DocumentConversionJob < ApplicationJob
       end
 
       document.update!(**attrs)
+      log_lifecycle("succeeded", document_type_key, document_id)
 
       # #392: drop the redundant S3 blob unless the operator opted in to
       # persistence. Failures don't reach this line — the blob is retained
@@ -100,7 +102,26 @@ class DocumentConversionJob < ApplicationJob
           "processing_failed_at" => Time.current.iso8601
         )
       )
+      log_lifecycle("failed", document_type_key, document_id, error: e.message)
       Rails.logger.error("#{document_type_key} conversion failed for document #{document_id}: #{e.message}")
+    end
+  end
+
+  private
+
+  # #618 — structured, greppable lifecycle log for the parse pipeline. Pairs
+  # with the `enqueued` line emitted at the enqueue site (FileUploadable) and
+  # the reaper's `reaped` line, so a document's whole journey
+  # (enqueued → started → succeeded|failed|reaped) is traceable in CloudWatch
+  # by document_id. NIST: AU-3 (Content of Audit Records).
+  def log_lifecycle(event, document_type_key, document_id, error: nil)
+    line = "[DocumentLifecycle] event=#{event} document_type=#{document_type_key} " \
+           "document_id=#{document_id} job_id=#{job_id}"
+    line += " error=#{error.inspect}" if error
+    if event == "failed"
+      Rails.logger.warn(line)
+    else
+      Rails.logger.info(line)
     end
   end
 end

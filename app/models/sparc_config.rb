@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.8.8"
+  VERSION = "1.8.9"
 
   module_function
 
@@ -80,6 +80,13 @@ module SparcConfig
   # Documents in pending/processing for longer than this stop polling
   # and show a "stuck" message instead of looping every 3 seconds.
   def processing_stuck_minutes = ENV.fetch("SPARC_PROCESSING_STUCK_MINUTES", "5").to_i
+
+  # #618 — server-side counterpart to the front-end "stuck" banner. The
+  # StuckDocumentReaperJob transitions documents left in pending/processing
+  # past this many minutes (with no live parse job) to a terminal state, so a
+  # lost enqueue or dead worker can't strand a document forever. Set higher
+  # than processing_stuck_minutes to avoid reaping a legitimately long parse.
+  def document_reap_minutes = ENV.fetch("SPARC_DOCUMENT_REAP_MINUTES", "10").to_i
 
   # ── Authentication Toggles ────────────────────────────────────────────────
   # All default to false — features must be explicitly enabled.

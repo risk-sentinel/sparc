@@ -47,6 +47,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   def create
     profile = ProfileDocument.new(profile_params)
     profile.save!
+    finalize_unprocessed_create(profile)   # #618 — no file to parse ⇒ don't hang in `pending`
 
     audit_log("profile_document_created", subject: profile, metadata: { name: profile.name })
     render json: { data: serialize_profile(profile) }, status: :created

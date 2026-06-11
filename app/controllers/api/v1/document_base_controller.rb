@@ -44,6 +44,7 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
   def create
     doc = document_class.new(document_params)
     doc.save!
+    finalize_unprocessed_create(doc)   # #618 — no file to parse ⇒ don't hang in `pending`
 
     audit_log("#{document_audit_name}_created", subject: doc, metadata: { name: doc.name })
     render json: { data: serialize_document(doc) }, status: :created,

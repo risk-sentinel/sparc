@@ -53,6 +53,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     CdefMutationService.apply(cdef) do |c|
       c.save!
     end
+    finalize_unprocessed_create(cdef)   # #618 — no file to parse ⇒ don't hang in `pending`
 
     audit_log("cdef_document_created", subject: cdef, metadata: { name: cdef.name })
     render json: { data: serialize_cdef(cdef) }, status: :created
