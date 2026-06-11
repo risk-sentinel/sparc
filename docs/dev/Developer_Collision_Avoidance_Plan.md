@@ -410,6 +410,7 @@ All 17 issues shipped across v1.7.0 / v1.7.1 / v1.7.2 (2026-05-22 → 2026-05-24
 | [ ] | **#246** Repo cleanup / OSCAL fixtures bloat | Shared/Cross-cutting + test fixtures | `spec/fixtures/files/**`, possibly `db/seeds/**` for the larger OSCAL samples | **LOW** — background lane; touches files no production code path uses. |
 | [ ] | **#413** API docs + tests umbrella | (umbrella) | Closes when #433 merges | N/A |
 | [ ] | **#422** POAM Scenario B federated visibility | (gated) | Stays parked | N/A |
+| [ ] | **#616** Emit CycloneDX SBOM to org SCA bucket | CI/Infrastructure | `.github/workflows/sbom-and-sca.yml` (NEW — calls org-shared `container-build-sign/sbom-source.yml`+`sca-scan.yml@v0.1.0`, emits to `s3://<security-artifacts-bucket>/sca/sparc/`), `.security/sca-allowlist.yaml` (NEW), `docs/compliance/nist-sp800-53-rev5-mapping.md` (SR-3, CM-8, RA-5), `docs/compliance/oscal/cdefs/component-definition-security-scanning.json` (SR-3, RA-5 remarks), `app/models/sparc_config.rb` (VERSION → 1.8.8) | **LOW** — new workflow file + compliance docs. Non-gating (not in `required-checks.json`). Cross-repo IAM dep: `SCA_EMIT_ROLE_ARN` provisioned in sparc-iac (umbrella container-build-sign#12). Validate with `actionlint`. |
 
 <!-- markdownlint-enable MD013 -->
 

@@ -1,0 +1,18 @@
+# SCA allow-list — CVE suppressions for .github/workflows/sbom-and-sca.yml
+#
+# Consumed by container-build-sign's reusable sca-scan.yml@v0.1.0. A finding
+# (from Grype or Trivy) at/above the gate (CRITICAL) is suppressed only if its
+# vulnerability id appears here with a future `expires` date. Missing or past
+# `expires` → the entry is ignored and the finding gates the build.
+#
+# Schema:
+#   cves:
+#     - id: CVE-2024-12345          # or GHSA-xxxx-yyyy-zzzz — either scanner's id
+#       reason: >                   # required by convention — why it's safe to defer
+#         Vendor disputed; not exploitable in our usage. See <link to ticket/upstream>.
+#       expires: 2026-09-01         # ISO date, REQUIRED. Forces re-review; past dates no-op.
+#
+# Keep this empty until a real suppression is needed — an empty list means no
+# CVE is suppressed.
+
+cves: []

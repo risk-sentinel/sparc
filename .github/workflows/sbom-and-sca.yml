@@ -1,0 +1,137 @@
+# SBOM + SCA — source-dependency supply-chain pipeline for the sparc Rails app.
+#
+# Producer side of the org-wide SCA rollup (umbrella risk-sentinel/container-build-sign#12,
+# this repo's issue #616). Hub-and-spoke: every repo emits a CycloneDX SBOM to
+# s3://<security-artifacts-bucket>/sca/<repo>/ and a central reader
+# (OWASP Dependency-Track) aggregates sca/*/latest/.
+#
+# Pipeline (v0.1.0 contract — see container-build-sign docs/dev/sbom_sca_pipeline.md):
+#   sbom  → reusable sbom-source.yml : Syft → CycloneDX JSON over the source tree
+#                                      (picks up Gemfile.lock; sparc has no
+#                                      package-lock.json — JS deps ship via importmap).
+#   sca   → reusable sca-scan.yml    : Grype (SBOM-driven) + Trivy fs, reconciled
+#                                      against .security/sca-allowlist.yaml, gate=CRITICAL.
+#   emit  → push the CycloneDX to S3 : sca/sparc/<YYYY-MM-DD>/sparc.cdx.json + latest/.
+#
+# The app *image* SBOM is attested separately (cosign attest --type cyclonedx in
+# build-sign-publish.yml on release tags), so it already joins the image-side rollup.
+#
+# Graceful degrade: the emit job is skipped on pull_request events and whenever the
+# SCA_EMIT_ROLE_ARN OIDC secret is unset (the SBOM is still produced as a workflow
+# artifact). The s3:PutObject role on sca/sparc/* is provisioned in sparc-iac
+# (cross-repo IAM, tracked under container-build-sign#12 — analogous to sparc-iac#399).
+#
+# NIST SP 800-53 Rev 5:
+#   SR-3 / SR-4  Supply Chain Controls & Provenance — signed-build CI emits a
+#                CycloneDX bill of materials per build + daily.
+#   CM-8         System Component Inventory — the SBOM is the authoritative
+#                third-party-dependency inventory for the Rails application.
+#   RA-5         Vulnerability Monitoring & Scanning — Grype + Trivy continuously
+#                re-scan against fresh CVE feeds (daily cron over the same deps).
+name: SBOM + SCA
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 8 * * *'   # daily drift check — new CVEs land against unchanged deps
+  workflow_dispatch:
+    inputs:
+      emit:
+        description: 'Push the CycloneDX to S3 (needs the SCA_EMIT_ROLE_ARN IAM role). false = SBOM+SCA only.'
+        type: boolean
+        default: true
+
+# Least-privilege default (#545). actions: read lets the reusable sca-scan.yml
+# download the SBOM artifact (matches the org reference caller in sparc-iac #246).
+# The emit job overrides with its own block (contents: read + id-token: write).
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: sbom-and-sca-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Generate the source CycloneDX SBOM (Syft) ──────────────────
+  sbom:
+    uses: risk-sentinel/container-build-sign/.github/workflows/sbom-source.yml@d7ec024eb4642c57bac57a00ade0c31c73ef23b7 # v0.1.0
+    with:
+      artifact_name: cyclonedx-sbom
+
+  # ── Scan it (Grype primary + Trivy fs secondary), gate CRITICAL ──
+  sca:
+    needs: sbom
+    uses: risk-sentinel/container-build-sign/.github/workflows/sca-scan.yml@d7ec024eb4642c57bac57a00ade0c31c73ef23b7 # v0.1.0
+    with:
+      sbom_artifact: cyclonedx-sbom
+      severity_gate: CRITICAL
+
+  # ── Emit the CycloneDX to the org SCA bucket ───────────────────
+  emit:
+    needs: sbom
+    runs-on: ubuntu-latest
+    # No emit from PRs (no creds, fork-safety) or when the IAM role isn't set yet.
+    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.emit) }}
+    permissions:
+      contents: read
+      id-token: write          # AWS OIDC: S3 write
+    env:
+      BUCKET: <security-artifacts-bucket>
+      PREFIX: sca/sparc
+      # Mapped from the secret so step-level `if:` can gate on presence
+      # (the secrets context isn't allowed directly in `if:`).
+      ROLE_ARN: ${{ secrets.SCA_EMIT_ROLE_ARN }}
+    steps:
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cyclonedx-sbom
+          path: sbom-input
+
+      - name: Normalize SBOM filename
+        run: |
+          set -euo pipefail
+          SRC=$(find sbom-input -maxdepth 2 -name '*.json' | head -n1)
+          if [ -z "$SRC" ]; then
+            echo "::error::No CycloneDX JSON found in the cyclonedx-sbom artifact"
+            exit 1
+          fi
+          cp "$SRC" sparc.cdx.json
+          echo "components: $(jq '.components | length' sparc.cdx.json)"
+
+      # OIDC is optional: present → emit to S3; absent / not-yet-provisioned →
+      # continue-on-error degrades to artifact-only via the HAVE_AWS gate below.
+      - name: Configure AWS credentials (OIDC)
+        id: aws
+        if: ${{ env.ROLE_ARN != '' }}
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ secrets.SCA_EMIT_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Emit to S3
+        if: ${{ steps.aws.outcome == 'success' }}
+        run: |
+          set -eo pipefail
+          DATE=$(date -u +%F)
+          for dest in "${PREFIX}/${DATE}" "${PREFIX}/latest"; do
+            aws s3 cp sparc.cdx.json "s3://${BUCKET}/${dest}/sparc.cdx.json" --no-progress
+          done
+          echo "Emitted to s3://${BUCKET}/${PREFIX}/{${DATE},latest}/sparc.cdx.json"
+
+      - name: Note when emit was skipped
+        if: ${{ steps.aws.outcome != 'success' }}
+        run: |
+          echo "::notice::S3 emit skipped — SCA_EMIT_ROLE_ARN not set or role not assumable yet (IAM pending in sparc-iac, see container-build-sign#12). SBOM is available as the cyclonedx-sbom workflow artifact."
+
+      - name: Upload CycloneDX as workflow artifact (always)
+        uses: actions/upload-artifact@v4
+        with:
+          name: sparc-cdx
+          path: sparc.cdx.json
+          if-no-files-found: error
+          retention-days: 90
