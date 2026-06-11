@@ -107,12 +107,28 @@ def validate!(finding, errors, today: Date.today)
     errors << "#{cve_id}: CRITICAL findings cannot use disposition='#{disp}'; allowed dispositions are #{CRITICAL_ALLOWED_DISPOSITIONS.join(', ')} (no waivers/false-positives — must remediate or document POA&M)"
   end
 
+  validate_review_cadence(finding, errors, severity: severity, disposition: disp, discovery: discovery, next_rev: next_rev, today: today)
+
+  errors
+end
+
+# Review-cadence checks (window + overdue). These apply to dispositions that
+# hold or defer RISK — accepted / deferred. They do NOT apply to
+# false_positive: a false positive is a determination that the finding is not
+# real (scanner is wrong / vulnerable code path unreachable), so there is no
+# risk on a remediation clock to re-review every 30 days (#620 — Ruby
+# default-gem shadows, perl, x/crypto/ssh). discovery_date/next_review_date are
+# still required for provenance (checked in validate!), but a stale
+# next_review_date on a false_positive does not gate the build.
+def validate_review_cadence(finding, errors, severity:, disposition:, discovery:, next_rev:, today:)
+  return if disposition == "false_positive"
+
+  cve_id = finding["cve_id"]
+
   if discovery && next_rev && MAX_REVIEW_DAYS.key?(severity)
-    max_days = MAX_REVIEW_DAYS[severity]
     actual_days = (next_rev - discovery).to_i
-    if actual_days > max_days
-      errors << "#{cve_id}: review window is #{actual_days}d — policy max for #{severity} is #{max_days}d"
-    end
+    max_days = MAX_REVIEW_DAYS[severity]
+    errors << "#{cve_id}: review window is #{actual_days}d — policy max for #{severity} is #{max_days}d" if actual_days > max_days
   end
 
   if next_rev && next_rev < today

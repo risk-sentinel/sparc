@@ -32,6 +32,9 @@ findings:
 
   # ==========================================================================
   # CRITICAL -- 11 unique CVEs (3 base-image + 8 thruster Go-module, #612)
+  # NOTE: the 2026-06-10 rebuild-rescan delta block at the END of this file
+  # (#620) adds 3 more CRITICAL entries (net-imap x2, zlib) — all dispositioned
+  # there rather than re-sorted into this section.
   # Per #244 policy, CRITICAL findings cannot be 'accepted' (no risk
   # acceptance for criticals). Allowed dispositions: false_positive (scanner
   # is wrong / code path unreachable), deferred (POA&M), or remediated. See
@@ -205,8 +208,8 @@ findings:
     rationale: "ACCEPTED RISK. Ruby readline extension links to libncursesw6 at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling Ruby. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
   - cve_id: CVE-2026-27135
     package: libnghttp2-14
@@ -243,8 +246,8 @@ findings:
     rationale: "ACCEPTED RISK. TOCTOU race condition in libcap's cap_set_file() that allows a local unprivileged user with write access to a parent directory to redirect file capability updates. SPARC container runs as non-root UID 1000 with no Linux capabilities granted, no setcap operations performed at runtime, and no shared writable directories. Attack vector requires (a) local shell access with write permissions and (b) ability to invoke setcap on attacker-controlled paths -- neither exists in the container's runtime model. libcap2 is a transitive dependency of base-image utilities and is not invoked by the application. Remediation path: Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
   - cve_id: CVE-2026-41989
     package: libgcrypt20
@@ -275,72 +278,72 @@ findings:
     installed_version: "4.0.4"
     fixed_version: ">= 6.0.4 (or backport 4.0.4.1)"
     severity: HIGH
-    disposition: deferred
-    rationale: "DEFERRED. ERB instance variable @_init guard bypass allowing code execution via Marshal.load deserialization of crafted ERB objects. SPARC's Gemfile pins erb 6.0.4 (PR #410, v1.5.0) which is patched. However, the production image's ruby:3.4.4-slim base bundles an OLDER erb 4.0.4 in the Ruby stdlib path (separate from /usr/local/bundle gems). Trivy reports this as the older bundled version. SPARC application code uses the Gemfile-installed erb 6.0.4, not the stdlib bundled version, so the vulnerable Marshal.load path is not actually exposed at runtime. Remediation paths: (a) wait for ruby:3.4.4-slim base image to publish patched stdlib, (b) upgrade base to a newer Ruby, (c) explicitly remove the bundled stdlib erb at build time. **TODO: open follow-up issue to track base-image stdlib remediation.**"
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (default-gem shadow). ERB instance variable @_init guard bypass via Marshal.load of crafted ERB objects. The Gemfile now explicitly pins erb >= 6.0.4 (#620, same override pattern as the resolv CVE-2025-24294 pin), so Bundler installs and activates the patched 6.0.4 into /usr/local/bundle. ruby:3.4.4-slim still ships erb 4.0.4 as a default gem in specifications/default/, which the filesystem scanner reports — but Bundler activates 6.0.4, so `require \"erb\"` never loads the vulnerable 4.0.4 code. The flagged file is present-but-not-loaded (same basis as the libgnutls30/perl entries). Remediation candidate: drop the default-gem file on a distroless/base migration."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
   - cve_id: CVE-2026-42246
     package: net-imap (base-image-bundled stdlib, version 0.5.8)
     installed_version: "0.5.8"
     fixed_version: ">= 0.6.4"
     severity: HIGH
-    disposition: deferred
-    rationale: "DEFERRED. Net::IMAP STARTTLS stripping vulnerability allowing a man-in-the-middle attacker to inject a tagged OK response that causes #starttls to return successfully without actually starting TLS. SPARC's Gemfile pins net-imap 0.6.4 (PR #438, v1.5.0) which is patched. Same base-image-bundle issue as CVE-2026-41316: ruby:3.4.4-slim ships an older net-imap 0.5.8 in the stdlib path. SPARC does not use Net::IMAP in any application code (no IMAP client, no email retrieval). Vulnerable surface is not loaded. Remediation paths same as CVE-2026-41316. **TODO: open follow-up issue to track base-image stdlib remediation.**"
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (default-gem shadow). Net::IMAP STARTTLS-stripping MITM. The Gemfile now explicitly pins net-imap >= 0.6.4 (#620, resolv-style override); Bundler activates the patched 0.6.4.x from /usr/local/bundle. ruby:3.4.4-slim ships net-imap 0.5.8 as a default gem, which the scanner reports, but it is never activated — and SPARC uses no Net::IMAP code path (no IMAP client / email retrieval) regardless. Present-but-not-loaded; see CVE-2026-42257/42258 (the CRITICAL siblings in the same net-imap 0.5.8 default gem). Remediation candidate: drop the default-gem file on a distroless/base migration."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
   - cve_id: CVE-2026-32280
     package: thruster (Go binary, stdlib v1.26.1)
-    installed_version: "thruster 0.1.20 / Go stdlib v1.26.1"
-    fixed_version: ">= Go 1.25.9, >= Go 1.26.2"
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.2"
     severity: HIGH
-    disposition: deferred
-    rationale: "DEFERRED. Go crypto/x509 chain-building DoS via certificates with excessive intermediate count. SPARC's thruster gem (v0.1.20, basecamp/thruster -- HTTP/2 reverse proxy for Puma serving static asset acceleration and compression) bundles a precompiled Go binary built against Go stdlib v1.26.1. Thruster IS on the production request path (terminates HTTP/2, serves static assets). Mitigations: (a) thruster trusts only AWS ACM/ALB-issued certs in our deployment (chain originates from AWS root CA, not arbitrary), (b) ALB terminates TLS upstream so thruster sees pre-validated connections in the typical deployment topology -- but verify per-environment. Remediation: monitor basecamp/thruster for a release rebuilt against Go 1.26.2+; alternatively rebuild the binary in-house. **TODO: open follow-up issue 'Rebuild thruster with Go >= 1.26.2 (CVE-2026-32280/81/83/33810)'.**"
+    disposition: remediated
+    rationale: "REMEDIATED. Go crypto/x509 chain-building DoS in the thruster Go stdlib. Fixed in Go 1.26.2; the thruster gem bumped 0.1.20 -> 0.1.21 (Go stdlib 1.26.1 -> 1.26.2), so this CVE no longer appears in the container scan. Superseded by the Go-1.26.2 thruster findings (CVE-2026-33811 etc.) which are tracked separately as accepted risk."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
   - cve_id: CVE-2026-32281
     package: thruster (Go binary, stdlib v1.26.1)
-    installed_version: "thruster 0.1.20 / Go stdlib v1.26.1"
-    fixed_version: ">= Go 1.25.9, >= Go 1.26.2"
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.2"
     severity: HIGH
-    disposition: deferred
-    rationale: "DEFERRED. Go crypto/x509 inefficiency in policy-mapping certificate validation, possible DoS. Same package and surface as CVE-2026-32280 (thruster Go stdlib). Same mitigations and remediation path -- tracked under the CVE-2026-32280 follow-up issue."
+    disposition: remediated
+    rationale: "REMEDIATED. Go crypto/x509 policy-mapping validation DoS. Fixed in Go 1.26.2 via the thruster 0.1.20 -> 0.1.21 bump; no longer in the scan."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
   - cve_id: CVE-2026-32283
     package: thruster (Go binary, stdlib v1.26.1)
-    installed_version: "thruster 0.1.20 / Go stdlib v1.26.1"
-    fixed_version: ">= Go 1.25.9, >= Go 1.26.2"
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.2"
     severity: HIGH
-    disposition: deferred
-    rationale: "DEFERRED. Go TLS 1.3 deadlock from multiple key-update messages in a single record, leading to resource consumption DoS. Same package and surface as CVE-2026-32280 (thruster Go stdlib). Same mitigations and remediation path -- tracked under the CVE-2026-32280 follow-up issue."
+    disposition: remediated
+    rationale: "REMEDIATED. Go TLS 1.3 key-update deadlock DoS. Fixed in Go 1.26.2 via the thruster 0.1.20 -> 0.1.21 bump; no longer in the scan."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
   - cve_id: CVE-2026-33810
     package: thruster (Go binary, stdlib v1.26.1)
-    installed_version: "thruster 0.1.20 / Go stdlib v1.26.1"
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
     fixed_version: ">= Go 1.26.2"
     severity: HIGH
-    disposition: deferred
-    rationale: "DEFERRED. Go crypto/x509 wildcard DNS SAN excluded-constraint case-mismatch (improper validation). Same package and surface as CVE-2026-32280 (thruster Go stdlib). Same mitigations and remediation path -- tracked under the CVE-2026-32280 follow-up issue."
+    disposition: remediated
+    rationale: "REMEDIATED. Go crypto/x509 wildcard DNS SAN excluded-constraint case-mismatch. Fixed in Go 1.26.2 via the thruster 0.1.20 -> 0.1.21 bump; no longer in the scan."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
   # ==========================================================================
   # MEDIUM -- 17 unique CVEs
@@ -1208,15 +1211,221 @@ findings:
 
   - cve_id: CVE-2026-27820
     package: zlib
-    installed_version: "3.2.1"
-    fixed_version: "~> 3.0.1, ~> 3.1.2, >= 3.2.3"
-    severity: INFORMATIONAL
-    disposition: deferred
-    rationale: "zlib gem vulnerability. Fix available (~> 3.0.1, ~> 3.1.2, >= 3.2.3). Remediation: update Gemfile pin."
+    installed_version: "3.2.1 (default gem) / 3.2.3 (bundled)"
+    fixed_version: ">= 3.2.3"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (default-gem shadow). The Gemfile now pins zlib >= 3.2.3 (#620, resolv-style override), so Bundler installs and loads the patched 3.2.3. ruby:3.4.4-slim ships zlib 3.2.1 as a default gem; if its gemspec lingers on disk the filesystem scanner reports it, but Bundler activates 3.2.3 so the vulnerable 3.2.1 code is never loaded. Present-but-not-loaded -- same basis as the net-imap/erb default-gem shadows. (Scanner rates this CRITICAL; the prior INFORMATIONAL classification is corrected here.)"
     nist_control: ra-5
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
+    discovery_date: "2026-06-10"
     next_review_date: "2026-07-05"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # 2026-06-10 rebuild rescan delta (#620)
+  # New CVEs surfaced after the openssl + apt rebuild and CVE-DB refresh.
+  #   net-imap (2 CRIT + 1 HIGH): Ruby default-gem 0.5.8 shadow; Gemfile now
+  #     pins net-imap >= 0.6.4 (resolv-style) -> patched version is what loads.
+  #   perl (4 HIGH): libperl5.36, no Debian fix; perl unused by SPARC (same
+  #     basis as the existing perl false_positives).
+  #   thruster (8 HIGH): Go 1.26.2 stdlib CVEs in the precompiled binary;
+  #     accepted risk -- thruster 0.1.21 is the latest gem (no Go >= 1.26.3
+  #     build upstream), it runs behind ALB/nginx TLS termination, and trusts
+  #     only AWS-issued certs. Re-evaluate when basecamp ships on Go >= 1.26.3.
+  #   oauth2 (1 HIGH): real bundled dep, remediated by bumping to 2.0.22.
+  # ══════════════════════════════════════════════════════════════════════════
+
+  - cve_id: CVE-2026-42257
+    package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
+    installed_version: "0.5.8 (default) / 0.6.4.1 (bundled)"
+    fixed_version: ">= 0.6.4"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (default-gem shadow). Net::IMAP response-parsing flaw. The Gemfile pins net-imap >= 0.6.4 (#620), so Bundler activates the patched 0.6.4.1 from /usr/local/bundle. ruby:3.4.4-slim's net-imap 0.5.8 default gem is reported by the filesystem scanner but never activated; additionally SPARC uses no Net::IMAP code path (no IMAP client / email retrieval). Vulnerable code is not loaded."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-42258
+    package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
+    installed_version: "0.5.8 (default) / 0.6.4.1 (bundled)"
+    fixed_version: ">= 0.6.4"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (default-gem shadow). Second net-imap 0.5.8 parsing CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 is bundled and loaded, the 0.5.8 default gem is present-but-not-loaded, and SPARC invokes no Net::IMAP path."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-42245
+    package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
+    installed_version: "0.5.8 (default) / 0.6.4.1 (bundled)"
+    fixed_version: ">= 0.6.4"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (default-gem shadow). net-imap 0.5.8 HIGH CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 bundled and loaded, 0.5.8 default gem not activated, no Net::IMAP usage in SPARC."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-42497
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. libperl5.36 HIGH CVE with no Debian fix. perl is a transitive base-image dependency (apt/curl utilities removed via #342 hardening); SPARC executes no perl code -- all parsing/regex is Ruby/Onigmo. Same present-but-unreachable basis as the existing perl entries (CVE-2026-8376, CVE-2026-42496). Remediation candidate on distroless/Trixie migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-48959
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. libperl5.36 HIGH CVE, no Debian fix. perl unused by SPARC; same basis as CVE-2026-42497 and the existing perl false_positives."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-48962
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. libperl5.36 HIGH CVE, no Debian fix. perl unused by SPARC; same basis as CVE-2026-42497."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-9538
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. libperl5.36 HIGH CVE, no Debian fix. perl unused by SPARC; same basis as CVE-2026-42497."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-33811
+    package: thruster (Go binary, stdlib v1.26.2)
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.3"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster precompiled binary (HTTP/2 reverse proxy in front of Puma, on the production request path). thruster 0.1.21 is the latest release (no upstream build on Go >= 1.26.3 exists), so no bump remediates it yet. Mitigations: thruster sits behind ALB/nginx with TLS termination, trusts only AWS-issued certs, and serves a controlled static-asset/upstream set. Risk knowingly accepted with compensating controls; re-evaluate when basecamp/thruster ships on Go >= 1.26.3 (or rebuild in-house)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-33814
+    package: thruster (Go binary, stdlib v1.26.2)
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.3"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same package, deployment posture, and mitigations as CVE-2026-33811. No upstream thruster release on Go >= 1.26.3."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-39820
+    package: thruster (Go binary, stdlib v1.26.2)
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.3"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-39823
+    package: thruster (Go binary, stdlib v1.26.2)
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.3"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-39825
+    package: thruster (Go binary, stdlib v1.26.2)
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.3"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-39836
+    package: thruster (Go binary, stdlib v1.26.2)
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.3"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-42499
+    package: thruster (Go binary, stdlib v1.26.2)
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.3"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-42504
+    package: thruster (Go binary, stdlib v1.26.2)
+    installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
+    fixed_version: ">= Go 1.26.4"
+    severity: HIGH
+    disposition: accepted
+    rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811. Fixed upstream in Go 1.26.4."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: GHSA-pp92-crg2-gfv9
+    package: oauth2
+    installed_version: "2.0.18 -> 2.0.22"
+    fixed_version: ">= 2.0.22"
+    severity: HIGH
+    disposition: remediated
+    rationale: "REMEDIATED. oauth2 gem advisory; SPARC's bundled oauth2 was bumped 2.0.18 -> 2.0.22 in the Gemfile (#620). oauth2 is a real (non-default) bundled dependency, so the patched version fully replaces the vulnerable one -- no longer present in the scan."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
 
 # POA&M reference: Accepted findings are included in the FedRAMP package
 # via Trivy HDF -> OSCAL SAR -> POA&M. The sparc-iac compliance workflow

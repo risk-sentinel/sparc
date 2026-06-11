@@ -60,6 +60,13 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       libjemalloc2 postgresql-client && \
     apt-get upgrade -y && \
+    # SI-2: CVE-2026-45447 (#620) — force openssl/libssl3 to the patched
+    # bookworm-security build (3.0.20-1~deb12u2). openssl is reachable (TLS for
+    # Puma + all outbound connections), so this CRITICAL is remediated, not
+    # dispositioned. The explicit --only-upgrade also changes this layer's hash
+    # so the gha apt cache can't pin a stale openssl across builds (the cause of
+    # the 3.0.19 the scan flagged despite `apt-get upgrade` already running).
+    apt-get install --no-install-recommends -y --only-upgrade openssl libssl3 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
     ln -sf $(find /usr/lib -name libjemalloc.so.2 -print -quit) /usr/lib/libjemalloc.so.2
@@ -82,7 +89,7 @@ FROM base AS build
 
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-      build-essential git libpq-dev libyaml-dev pkg-config nodejs && \
+      build-essential git libpq-dev libyaml-dev pkg-config nodejs zlib1g-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 

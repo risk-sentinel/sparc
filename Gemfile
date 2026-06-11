@@ -34,6 +34,12 @@ gem "aws-sdk-secretsmanager", "~> 1.133"  # Secrets Manager (ECS deployments)
 gem "aws-sdk-rds", "~> 1.314"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS fix (overrides Ruby 3.4.4 bundled 0.6.0)
+# #620 — pin patched versions of Ruby default gems so Bundler loads them instead
+# of the vulnerable versions shipped in ruby:3.4.4-slim (same pattern as resolv).
+gem "zlib", ">= 3.2.3"             # CVE-2026-27820 (overrides bundled 3.2.1)
+gem "net-imap", ">= 0.6.4"         # CVE-2026-42257/42258 (CRITICAL) + 42245/42246 (overrides bundled 0.5.8)
+gem "erb", ">= 6.0.4"             # CVE-2026-41316 (overrides bundled 4.0.4)
+gem "oauth2", ">= 2.0.22"          # GHSA-pp92-crg2-gfv9 (bumps transitive 2.0.18)
 gem "dotenv-rails", require: false, groups: [ :development, :test ]
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
