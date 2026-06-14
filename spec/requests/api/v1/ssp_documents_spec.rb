@@ -257,4 +257,51 @@ RSpec.describe "Api::V1::SspDocuments", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
   end
+
+  # #627/#628 — content-completeness exposed independently of the parse status.
+  describe "serializer content-completeness" do
+    it "reports an empty SSP as content-incomplete despite status completed" do
+      ssp = create(:ssp_document, status: "completed", authorization_boundary: boundary)
+
+      get api_v1_ssp_document_path(ssp), headers: auth_headers
+      parsed = JSON.parse(response.body)["data"]
+
+      expect(parsed["status"]).to eq("completed")
+      expect(parsed["content_complete"]).to be(false)
+    end
+  end
+
+  # #628 — populate an existing empty SSP from a published profile.
+  describe "POST /api/v1/ssp_documents/:id/populate_from_profile" do
+    let(:resolved_catalog) do
+      {
+        "catalog" => {
+          "uuid" => SecureRandom.uuid,
+          "metadata" => { "title" => "Test", "oscal-version" => "1.1.2" },
+          "groups" => [
+            { "id" => "ac", "title" => "Access Control",
+              "controls" => [
+                { "id" => "ac-1", "title" => "Policy",
+                  "props" => [ { "name" => "priority", "value" => "P1" } ],
+                  "parts" => [ { "name" => "statement", "prose" => "Test statement" } ] }
+              ] }
+          ]
+        }
+      }
+    end
+    let(:profile) do
+      create(:profile_document, lifecycle_status: "published",
+        resolved_catalog_json: resolved_catalog, published: Time.current.iso8601)
+    end
+
+    it "populates an empty SSP from a published profile" do
+      ssp = create(:ssp_document, authorization_boundary: boundary)
+
+      post populate_from_profile_api_v1_ssp_document_path(ssp),
+        params: { source_profile_id: profile.slug }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(ssp.reload.ssp_controls.count).to be > 0
+    end
+  end
 end

@@ -264,6 +264,72 @@ RSpec.describe "CdefDocuments", type: :request do
     end
   end
 
+  # #628 — populate an existing empty CDEF from a published profile.
+  describe "POST /cdef_documents/:id/populate_from_profile" do
+    let(:resolved_catalog) do
+      {
+        "catalog" => {
+          "uuid" => SecureRandom.uuid,
+          "metadata" => { "title" => "Test", "oscal-version" => "1.1.2" },
+          "groups" => [
+            {
+              "id" => "ac", "title" => "Access Control",
+              "controls" => [
+                { "id" => "ac-1", "title" => "Policy",
+                  "props" => [ { "name" => "priority", "value" => "P1" } ],
+                  "parts" => [ { "name" => "statement", "prose" => "Test statement" } ] }
+              ]
+            }
+          ]
+        }
+      }
+    end
+    let(:profile) do
+      create(:profile_document, lifecycle_status: "published",
+        resolved_catalog_json: resolved_catalog, published: Time.current.iso8601)
+    end
+
+    it "populates an empty CDEF and redirects to it" do
+      cdef = create(:cdef_document)
+
+      post populate_from_profile_cdef_document_path(cdef), params: { source_profile_id: profile.slug }
+
+      expect(cdef.reload.cdef_controls.count).to eq(1)
+      expect(response).to redirect_to(cdef_document_path(cdef))
+    end
+
+    it "redirects with error when the CDEF already has controls" do
+      cdef = create(:cdef_document)
+      create(:cdef_control, cdef_document: cdef)
+
+      post populate_from_profile_cdef_document_path(cdef), params: { source_profile_id: profile.slug }
+
+      expect(response).to redirect_to(attach_profile_cdef_document_path(cdef))
+      expect(flash[:error]).to include("already has controls")
+    end
+  end
+
+  # #627 — publication is gated on content-completeness, not the parse status.
+  describe "PATCH /cdef_documents/:id/publish content gate" do
+    it "refuses to publish a CDEF with no controls" do
+      # Valid OSCAL metadata so the content gate (not the metadata check) is
+      # what blocks publication.
+      party_uuid = SecureRandom.uuid
+      metadata = {
+        "roles" => [ { "id" => "prepared-by", "title" => "Prepared By" } ],
+        "parties" => [ { "uuid" => party_uuid, "type" => "organization", "name" => "Org" } ],
+        "responsible-parties" => [ { "role-id" => "prepared-by", "party-uuids" => [ party_uuid ] } ]
+      }
+      cdef = create(:cdef_document, status: "completed", lifecycle_status: "in_progress",
+        metadata_extra: metadata)
+
+      patch publish_cdef_document_path(cdef)
+
+      expect(cdef.reload.published_lifecycle?).to be(false)
+      expect(flash[:error]).to include("missing required content")
+    end
+  end
+
   # Issue #488 — manual "Refresh from AWS Labs" button trigger.
   describe "POST /cdef_documents/refresh_aws_labs" do
     let(:admin) { create(:user, :admin) }

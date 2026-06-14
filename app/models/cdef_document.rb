@@ -4,6 +4,7 @@ class CdefDocument < ApplicationRecord
   include Sluggable
   include Lifecycle
   include SoftDeletable
+  include ContentCompleteness
 
   # CDEF intentionally does NOT include BoundaryLinkInheritance: it has
   # no authorization_boundary_id column. Scope is handled at the
@@ -43,6 +44,11 @@ class CdefDocument < ApplicationRecord
   }
 
   CDEF_TYPES = %w[disa_stig scap cis custom].freeze
+
+  # #628 — content-completeness, independent of the parse `status`. A CDEF
+  # asserts how a component implements controls, so it needs at least one
+  # control before it can be published; a metadata-only API create has none.
+  requires_content("At least one control") { cdef_controls.exists? }
 
   # True if this CDEF was imported from AWS Labs (read-only).
   def aws_labs_source?

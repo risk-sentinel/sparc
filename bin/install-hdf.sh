@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-HDF_LIBS_VERSION="${HDF_LIBS_VERSION:-3.1.0}"
+HDF_LIBS_VERSION="${HDF_LIBS_VERSION:-3.2.0}"
 HDF_INSTALL_DIR="${HDF_INSTALL_DIR:-/usr/local/bin}"
 
 # Detect platform

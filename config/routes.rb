@@ -68,6 +68,10 @@ Rails.application.routes.draw do
       # #398: bulk refresh inherited statements from all linked CDEFs
       post :refresh_inherited_statements
       post :reset_inherited_statement
+      # #628: populate an existing empty SSP from a published profile so a
+      # metadata-only shell isn't a dead end.
+      get :attach_profile
+      post :populate_from_profile
     end
     collection do
       post :import_json
@@ -221,6 +225,10 @@ Rails.application.routes.draw do
       get  :bulk_apply
       post :bulk_apply_preview
       post :bulk_apply_confirm
+      # #628: populate an existing empty CDEF from a published profile so a
+      # metadata-only shell isn't a dead end.
+      get :attach_profile
+      post :populate_from_profile
     end
     collection do
       get :select_profile
@@ -364,6 +372,8 @@ Rails.application.routes.draw do
         member do
           put :update_fields
           get :export
+          # #628 — populate an existing empty SSP from a published profile.
+          post :populate_from_profile
         end
       end
 
@@ -404,6 +414,8 @@ Rails.application.routes.draw do
           # Preview returns a signed token; confirm (slice 4) replays it.
           post "bulk_apply_converter/preview", action: :bulk_apply_converter_preview, as: :bulk_apply_converter_preview
           post "bulk_apply_converter/confirm", action: :bulk_apply_converter_confirm, as: :bulk_apply_converter_confirm
+          # #628 — populate an existing empty CDEF from a published profile.
+          post :populate_from_profile
         end
       end
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]

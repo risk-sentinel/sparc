@@ -1,6 +1,6 @@
 # HDF ↔ OSCAL Translations API
 
-Stateless translation endpoints between the **Heimdall Data Format (HDF)** and **OSCAL** artifacts (#449). These endpoints do not persist anything to SPARC's database — tenant compliance state stays in the tenant's own systems. SPARC's value is centralizing the MITRE [hdf-libs](https://github.com/mitre/hdf-libs) CLI install (pinned to v3.1.0), and exposing the native HDF↔OSCAL translation as authenticated REST.
+Stateless translation endpoints between the **Heimdall Data Format (HDF)** and **OSCAL** artifacts (#449). These endpoints do not persist anything to SPARC's database — tenant compliance state stays in the tenant's own systems. SPARC's value is centralizing the MITRE [hdf-libs](https://github.com/mitre/hdf-libs) CLI install (pinned to v3.2.0), and exposing the native HDF↔OSCAL translation as authenticated REST.
 
 ## Base URL
 

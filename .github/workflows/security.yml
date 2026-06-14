@@ -1250,7 +1250,7 @@ jobs:
         # script handles arch detection and SHA-256 verification against
         # checksums.txt from the same release.
         env:
-          HDF_LIBS_VERSION: "3.1.0"
+          HDF_LIBS_VERSION: "3.2.0"
         run: bin/install-hdf.sh
 
       - name: Convert sparc-findings.yml to HDF Amendments
@@ -1265,7 +1265,7 @@ jobs:
           jq '.overrides | length' amendments.hdf.json >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Verify amendment document against v3.1.0 schema
+      - name: Verify amendment document against v3.2.0 schema
         run: |
           hdf amend verify amendments.hdf.json
           hdf amend list amendments.hdf.json | head -20

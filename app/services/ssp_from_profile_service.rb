@@ -28,9 +28,6 @@ class SspFromProfileService
   def create
     validate!
 
-    catalog  = @profile.resolved_catalog_json
-    metadata = catalog.dig("catalog", "metadata") || {}
-
     @document = SspDocument.create!(
       name:                @name,
       creation_method:     "profile",
@@ -40,13 +37,7 @@ class SspFromProfileService
       oscal_version:       metadata["oscal-version"] || "1.1.2",
       description:         metadata["title"],
       profile_document_id: @profile.id,
-      import_metadata:     {
-        "source_type"         => "profile",
-        "source_profile_id"   => @profile.id,
-        "source_profile_uuid" => @profile.uuid,
-        "source_profile_name" => @profile.name,
-        "format"              => "resolved_catalog"
-      }
+      import_metadata:     profile_import_metadata
     )
 
     @this_system = create_this_system_component
@@ -59,6 +50,29 @@ class SspFromProfileService
     @document
   end
 
+  # #628 — populate an EXISTING empty SSP from a published profile, giving a
+  # metadata-only shell a control basis instead of a dead end. Preserves the
+  # user's name/description; only fills blanks, scaffolds missing OSCAL
+  # entities, links the profile, and imports controls.
+  def populate(document)
+    validate!
+    raise ArgumentError, "SSP already has controls" if document.ssp_controls.exists?
+
+    @document = document
+    ActiveRecord::Base.transaction do
+      document.update!(profile_link_attrs(document))
+      @this_system = document.ssp_components.find_by(component_type: "this-system") ||
+                     create_this_system_component
+      create_default_information_type unless document.ssp_information_types.exists?
+      create_default_user unless document.ssp_users.exists?
+
+      imported_ids = build_controls_from_catalog(catalog)
+      create_by_component_records(imported_ids)
+    end
+
+    @document
+  end
+
   private
 
   def validate!
@@ -66,12 +80,44 @@ class SspFromProfileService
     raise ArgumentError, "Profile must have a resolved catalog" if @profile.resolved_catalog_json.blank?
   end
 
+  def catalog
+    @catalog ||= @profile.resolved_catalog_json
+  end
+
+  def metadata
+    @metadata ||= catalog.dig("catalog", "metadata") || {}
+  end
+
+  def profile_import_metadata
+    {
+      "source_type"         => "profile",
+      "source_profile_id"   => @profile.id,
+      "source_profile_uuid" => @profile.uuid,
+      "source_profile_name" => @profile.name,
+      "format"              => "resolved_catalog"
+    }
+  end
+
+  # Attributes applied when linking a profile to an existing SSP. Fills
+  # description/oscal_version/creation_method only when blank so a user's
+  # edits survive.
+  def profile_link_attrs(document)
+    attrs = {
+      profile_document_id: @profile.id,
+      import_metadata:     profile_import_metadata
+    }
+    attrs[:creation_method] = "profile" if document.creation_method.blank?
+    attrs[:description]      = metadata["title"] if document.description.blank?
+    attrs[:oscal_version]    = (metadata["oscal-version"] || "1.1.2") if document.oscal_version.blank?
+    attrs
+  end
+
   def create_this_system_component
     @document.ssp_components.create!(
       uuid:           SecureRandom.uuid,
       component_type: "this-system",
-      title:          @name,
-      description:    "This system — #{@name}",
+      title:          @document.name,
+      description:    "This system — #{@document.name}",
       status_state:   "under-development"
     )
   end

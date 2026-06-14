@@ -4,6 +4,7 @@ class ProfileDocument < ApplicationRecord
   include Sluggable
   include Lifecycle
   include SoftDeletable
+  include ContentCompleteness
 
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true
@@ -19,6 +20,12 @@ class ProfileDocument < ApplicationRecord
   validates :name, presence: true
 
   BASELINE_LEVELS = %w[LOW MODERATE HIGH].freeze
+
+  # #627 — content-completeness, independent of the parse `status`. A profile
+  # tailors a catalog, so it needs a linked catalog and at least one control
+  # before it can be published; a metadata-only API create has neither.
+  requires_content("A linked control catalog") { control_catalog_id.present? }
+  requires_content("At least one control") { profile_controls.exists? }
 
   def to_json_data
     {

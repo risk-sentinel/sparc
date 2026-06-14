@@ -17,11 +17,22 @@ RSpec.describe "Publication workflow", type: :request do
     }
   end
 
-  # Shared examples for all document types that use the Publishable concern
-  shared_examples "publishable document" do |factory:, path_helper:, check_path_helper:|
-    let(:document) { create(factory, lifecycle_status: "in_progress", metadata_extra: valid_metadata) }
+  # Shared examples for all document types that use the Publishable concern.
+  # `content_setup` (#627) adds the type's required content so the document is
+  # content-complete and the publish gate lets it through; types without a
+  # ContentCompleteness requirement pass nil (no-op).
+  shared_examples "publishable document" do |factory:, path_helper:, check_path_helper:, content_setup: nil|
+    let(:document) do
+      doc = create(factory, lifecycle_status: "in_progress", metadata_extra: valid_metadata)
+      instance_exec(doc, &content_setup) if content_setup
+      doc
+    end
     let(:document_without_metadata) { create(factory, lifecycle_status: "in_progress") }
-    let(:published_document) { create(factory, lifecycle_status: "published", metadata_extra: valid_metadata) }
+    let(:published_document) do
+      doc = create(factory, lifecycle_status: "published", metadata_extra: valid_metadata)
+      instance_exec(doc, &content_setup) if content_setup
+      doc
+    end
 
     describe "GET publish_check" do
       it "returns JSON readiness data" do
@@ -77,7 +88,11 @@ RSpec.describe "Publication workflow", type: :request do
     it_behaves_like "publishable document",
       factory: :ssp_document,
       path_helper: :publish_ssp_document_path,
-      check_path_helper: :publish_check_ssp_document_path
+      check_path_helper: :publish_check_ssp_document_path,
+      content_setup: ->(doc) {
+        doc.update!(system_id: "SYS-1")
+        create(:ssp_control, ssp_document: doc)
+      }
   end
 
   context "SAR Documents" do
@@ -98,7 +113,8 @@ RSpec.describe "Publication workflow", type: :request do
     it_behaves_like "publishable document",
       factory: :cdef_document,
       path_helper: :publish_cdef_document_path,
-      check_path_helper: :publish_check_cdef_document_path
+      check_path_helper: :publish_check_cdef_document_path,
+      content_setup: ->(doc) { create(:cdef_control, cdef_document: doc) }
   end
 
   context "POA&M Documents" do

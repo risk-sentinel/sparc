@@ -216,4 +216,53 @@ RSpec.describe SspFromProfileService do
       }.to raise_error(ArgumentError, /must have a resolved catalog/)
     end
   end
+
+  describe "#populate" do
+    # #628 — populate an existing empty SSP from a published profile.
+    it "imports controls into an existing empty SSP" do
+      ssp = create(:ssp_document, name: "My Shell")
+
+      result = described_class.new(profile).populate(ssp)
+
+      expect(result).to eq(ssp)
+      expect(ssp.reload.ssp_controls.count).to be > 0
+      expect(ssp.name).to eq("My Shell")
+    end
+
+    it "links the profile and scaffolds the this-system component" do
+      ssp = create(:ssp_document)
+
+      described_class.new(profile).populate(ssp)
+
+      expect(ssp.reload.profile_document_id).to eq(profile.id)
+      expect(ssp.ssp_components.find_by(component_type: "this-system")).to be_present
+    end
+
+    it "makes the SSP content-complete" do
+      ssp = create(:ssp_document, system_id: "SYS-1")
+      expect(ssp.content_complete?).to be(false)
+
+      described_class.new(profile).populate(ssp)
+
+      expect(ssp.reload.content_complete?).to be(true)
+    end
+
+    it "raises when the SSP already has controls" do
+      ssp = create(:ssp_document)
+      create(:ssp_control, ssp_document: ssp)
+
+      expect {
+        described_class.new(profile).populate(ssp)
+      }.to raise_error(ArgumentError, /already has controls/)
+    end
+
+    it "raises for an unpublished profile" do
+      unpublished = create(:profile_document, lifecycle_status: "in_progress")
+      ssp = create(:ssp_document)
+
+      expect {
+        described_class.new(unpublished).populate(ssp)
+      }.to raise_error(ArgumentError, /must be published/)
+    end
+  end
 end

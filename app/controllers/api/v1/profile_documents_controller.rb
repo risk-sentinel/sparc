@@ -105,6 +105,9 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
       name: profile.name,
       status: profile.status,
       lifecycle_status: profile.lifecycle_status,
+      # #627 — content-completeness is distinct from the parse `status`.
+      content_complete: profile.content_complete?,
+      content_completeness_gaps: profile.content_completeness_gaps,
       file_type: profile.file_type,
       baseline_level: profile.baseline_level,
       profile_version: profile.profile_version,

@@ -22,8 +22,22 @@ module Publishable
   # Returns metadata readiness data for the publication modal.
   def publish_check
     config = publish_config
-    service = PublicationValidationService.new(config[:document], current_user: current_user)
-    render json: service.publication_readiness
+    doc = config[:document]
+    service = PublicationValidationService.new(doc, current_user: current_user)
+    readiness = service.publication_readiness
+
+    # #627 — content-completeness is a publication prerequisite, distinct from
+    # OSCAL metadata. Surface it in the readiness payload so the modal can show
+    # the missing content (e.g. "At least one control") and the gate is honest.
+    if doc.respond_to?(:content_complete?)
+      complete = doc.content_complete?
+      readiness[:content_complete] = complete
+      readiness[:content_gaps] = doc.content_completeness_gaps
+      readiness[:checks][:content_complete] = complete if readiness[:checks].is_a?(Hash)
+      readiness[:ready] &&= complete
+    end
+
+    render json: readiness
   end
 
   # PATCH /documents/:id/publish
@@ -48,6 +62,16 @@ module Publishable
     hook_result = before_publish_lifecycle(doc)
     if hook_result.is_a?(Hash) && hook_result[:error]
       flash[:error] = hook_result[:error]
+      redirect_to config[:redirect_path] and return
+    end
+
+    # #627 — final backstop: gate publication on content-completeness, not just
+    # the parse `status`. A metadata-only shell (0 controls, no system
+    # characteristics) is `status: completed` yet must not be published/trusted.
+    # Runs after the type-specific hook so its more precise messages (e.g.
+    # Profile's "no source catalog") take precedence.
+    if doc.respond_to?(:content_complete?) && !doc.content_complete?
+      flash[:error] = "Cannot publish: document is missing required content — #{doc.content_completeness_gaps.join('; ')}."
       redirect_to config[:redirect_path] and return
     end
 

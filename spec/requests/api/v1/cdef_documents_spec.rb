@@ -386,4 +386,74 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       end
     end
   end
+
+  # #627/#628 — content-completeness exposed independently of the parse status.
+  describe "serializer content-completeness" do
+    it "reports an empty CDEF as content-incomplete despite status completed" do
+      cdef = create(:cdef_document, status: "completed")
+
+      get api_v1_cdef_document_path(cdef), headers: auth_headers
+      parsed = JSON.parse(response.body)["data"]
+
+      expect(parsed["status"]).to eq("completed")
+      expect(parsed["content_complete"]).to be(false)
+      expect(parsed["content_completeness_gaps"]).to include("At least one control")
+    end
+  end
+
+  # #628 — populate an existing empty CDEF from a published profile.
+  describe "POST /api/v1/cdef_documents/:id/populate_from_profile" do
+    let(:resolved_catalog) do
+      {
+        "catalog" => {
+          "uuid" => SecureRandom.uuid,
+          "metadata" => { "title" => "Test", "oscal-version" => "1.1.2" },
+          "groups" => [
+            { "id" => "ac", "title" => "Access Control",
+              "controls" => [
+                { "id" => "ac-1", "title" => "Policy",
+                  "props" => [ { "name" => "priority", "value" => "P1" } ],
+                  "parts" => [ { "name" => "statement", "prose" => "Test statement" } ] }
+              ] }
+          ]
+        }
+      }
+    end
+    let(:profile) do
+      create(:profile_document, lifecycle_status: "published",
+        resolved_catalog_json: resolved_catalog, published: Time.current.iso8601)
+    end
+
+    it "populates an empty CDEF and returns it content-complete" do
+      cdef = create(:cdef_document)
+
+      post populate_from_profile_api_v1_cdef_document_path(cdef),
+        params: { source_profile_id: profile.slug }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      parsed = JSON.parse(response.body)["data"]
+      expect(parsed["content_complete"]).to be(true)
+      expect(cdef.reload.cdef_controls.count).to eq(1)
+    end
+
+    it "returns 422 when the CDEF already has controls" do
+      cdef = create(:cdef_document)
+      create(:cdef_control, cdef_document: cdef)
+
+      post populate_from_profile_api_v1_cdef_document_path(cdef),
+        params: { source_profile_id: profile.slug }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns 404 for an unpublished profile" do
+      cdef = create(:cdef_document)
+      draft = create(:profile_document, lifecycle_status: "in_progress")
+
+      post populate_from_profile_api_v1_cdef_document_path(cdef),
+        params: { source_profile_id: draft.slug }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

@@ -25,9 +25,6 @@ class CdefFromProfileService
   def create
     validate!
 
-    catalog = @profile.resolved_catalog_json
-    metadata = catalog.dig("catalog", "metadata") || {}
-
     # #498 slice 3 — route construction through CdefMutationService so
     # the assembled CDEF's OSCAL is validated before commit; a profile
     # that resolves to a structurally-bad catalog rolls back instead
@@ -41,13 +38,7 @@ class CdefFromProfileService
         oscal_version:       metadata["oscal-version"] || "1.1.2",
         description:         metadata["title"],
         profile_document_id: @profile.id,
-        import_metadata: {
-          "source_type"         => "profile",
-          "source_profile_id"   => @profile.id,
-          "source_profile_uuid" => @profile.uuid,
-          "source_profile_name" => @profile.name,
-          "format"              => "resolved_catalog"
-        }
+        import_metadata:     profile_import_metadata
       )
 
       build_controls_from_catalog(catalog)
@@ -55,11 +46,57 @@ class CdefFromProfileService
     end
   end
 
+  # #628 — populate an EXISTING empty CDEF from a published profile, giving a
+  # metadata-only shell a control basis instead of a dead end. Preserves any
+  # user-entered name/description; only fills blanks and links the profile.
+  def populate(document)
+    validate!
+    raise ArgumentError, "Component definition already has controls" if document.cdef_controls.exists?
+    raise ArgumentError, "Component definition is read-only" unless document.editable?
+
+    @document = document
+    CdefMutationService.apply(document) do |doc|
+      doc.update!(profile_link_attrs(doc))
+      build_controls_from_catalog(catalog)
+    end
+    @document
+  end
+
   private
 
   def validate!
     raise ArgumentError, "Profile must be published" unless @profile.lifecycle_status == "published"
     raise ArgumentError, "Profile must have a resolved catalog" if @profile.resolved_catalog_json.blank?
+  end
+
+  def catalog
+    @catalog ||= @profile.resolved_catalog_json
+  end
+
+  def metadata
+    @metadata ||= catalog.dig("catalog", "metadata") || {}
+  end
+
+  def profile_import_metadata
+    {
+      "source_type"         => "profile",
+      "source_profile_id"   => @profile.id,
+      "source_profile_uuid" => @profile.uuid,
+      "source_profile_name" => @profile.name,
+      "format"              => "resolved_catalog"
+    }
+  end
+
+  # Attributes applied when linking a profile to an existing CDEF. Fills
+  # description/oscal_version only when blank so a user's edits survive.
+  def profile_link_attrs(document)
+    attrs = {
+      profile_document_id: @profile.id,
+      import_metadata:     profile_import_metadata
+    }
+    attrs[:description]   = metadata["title"] if document.description.blank?
+    attrs[:oscal_version] = (metadata["oscal-version"] || "1.1.2") if document.oscal_version.blank?
+    attrs
   end
 
   def build_controls_from_catalog(catalog)

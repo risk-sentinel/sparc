@@ -11,7 +11,8 @@ class SspDocumentsController < ApplicationController
     :publish, :publish_check,
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
-    :refresh_inherited_statements, :reset_inherited_statement
+    :refresh_inherited_statements, :reset_inherited_statement,
+    :attach_profile, :populate_from_profile
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement ]
 
@@ -161,6 +162,49 @@ class SspDocumentsController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     flash[:error] = "Published profile not found."
     redirect_to select_profile_ssp_documents_path
+  end
+
+  # GET /ssp_documents/:id/attach_profile (#628)
+  # Profile picker for an EXISTING empty SSP so a metadata-only shell can gain
+  # a control basis instead of being a dead end.
+  def attach_profile
+    if @ssp_document.published_lifecycle?
+      flash[:error] = "This SSP is published and read-only."
+      redirect_to(ssp_document_path(@ssp_document)) and return
+    end
+    if @ssp_document.ssp_controls.exists?
+      flash[:notice] = "This SSP already has controls."
+      redirect_to(ssp_document_path(@ssp_document)) and return
+    end
+
+    @profiles = ProfileDocument.where(lifecycle_status: "published")
+                               .where.not(resolved_catalog_json: nil)
+                               .includes(:control_catalog)
+                               .order(updated_at: :desc)
+  end
+
+  # POST /ssp_documents/:id/populate_from_profile (#628)
+  # Populate an existing empty SSP from a published profile.
+  def populate_from_profile
+    if @ssp_document.published_lifecycle?
+      flash[:error] = "This SSP is published and read-only."
+      redirect_to(ssp_document_path(@ssp_document)) and return
+    end
+
+    profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
+
+    SspFromProfileService.new(profile).populate(@ssp_document)
+
+    audit_log("ssp_document_populated_from_profile", subject: @ssp_document,
+      metadata: { name: @ssp_document.name, source_profile_id: profile.id, source_profile_name: profile.name })
+    flash[:success] = "Populated '#{@ssp_document.name}' from profile '#{profile.name}'."
+    redirect_to ssp_document_path(@ssp_document)
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to attach_profile_ssp_document_path(@ssp_document)
+  rescue ActiveRecord::RecordNotFound
+    flash[:error] = "Published profile not found."
+    redirect_to attach_profile_ssp_document_path(@ssp_document)
   end
 
   # ── Enrichment (uplift legacy SSPs) ──────────────────────────────

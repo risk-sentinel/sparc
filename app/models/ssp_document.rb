@@ -5,6 +5,7 @@ class SspDocument < ApplicationRecord
   include Lifecycle
   include SoftDeletable
   include BoundaryLinkInheritance
+  include ContentCompleteness
 
   # #557 — belt-and-suspenders for the API-create path. The DB default
   # now backstops this, but the after_initialize ensures Rails console
@@ -48,6 +49,14 @@ class SspDocument < ApplicationRecord
   CREATION_METHODS = %w[excel wizard oscal_import profile].freeze
   SYSTEM_STATUSES = %w[operational under-development under-major-modification disposition other].freeze
   SENSITIVITY_LEVELS = %w[fips-199-low fips-199-moderate fips-199-high].freeze
+
+  # #627 — content-completeness, independent of the parse `status`. An SSP
+  # needs system characteristics (at minimum) and at least one control before
+  # it can be published; a metadata-only API create satisfies neither.
+  requires_content("System characteristics") do
+    system_id.present? || system_name_short.present? || security_sensitivity_level.present?
+  end
+  requires_content("At least one control") { ssp_controls.exists? }
 
   def wizard_created?
     creation_method == "wizard"

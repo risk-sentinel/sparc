@@ -28,6 +28,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
     end
 
     it "publishes a profile with valid metadata and catalog" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
       patch publish_profile_document_path(profile)
       profile.reload
       expect(profile.lifecycle_status).to eq("published")
@@ -68,6 +69,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
 
     it "applies inline metadata fixes from the publish modal" do
       profile.update!(metadata_extra: {})
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
       patch publish_profile_document_path(profile), params: {
         metadata_fixes: {
           roles: [ { "id" => "prepared-by", "title" => "Prepared By" } ].to_json,
@@ -107,6 +109,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
     end
 
     it "creates an audit event on publish" do
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
       expect {
         patch publish_profile_document_path(profile)
       }.to change(AuditEvent, :count).by(1)
@@ -124,6 +127,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
                        metadata_extra: valid_metadata,
                        control_catalog: catalog,
                        profile_version: nil)
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
       patch publish_profile_document_path(profile)
       expect(profile.reload.profile_version).to eq("1.0.0")
     end
@@ -134,6 +138,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
                        metadata_extra: valid_metadata,
                        control_catalog: catalog,
                        profile_version: "1.0.0")
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
       patch publish_profile_document_path(profile)
       expect(profile.reload.profile_version).to eq("1.0.1")
     end
@@ -143,6 +148,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
                     lifecycle_status: "in_progress",
                     metadata_extra: valid_metadata,
                     cdef_version: "2.1.3")
+      create(:cdef_control, cdef_document: cdef)
       patch publish_cdef_document_path(cdef)
       expect(cdef.reload.cdef_version).to eq("2.1.4")
     end
@@ -152,6 +158,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
                     lifecycle_status: "in_progress",
                     metadata_extra: valid_metadata,
                     cdef_version: nil)
+      create(:cdef_control, cdef_document: cdef)
       patch publish_cdef_document_path(cdef)
       expect(cdef.reload.cdef_version).to eq("1.0.0")
     end
@@ -161,6 +168,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
                     lifecycle_status: "in_progress",
                     metadata_extra: valid_metadata,
                     cdef_version: "Rev 5 Draft")
+      create(:cdef_control, cdef_document: cdef)
       patch publish_cdef_document_path(cdef)
       expect(cdef.reload.cdef_version).to eq("Rev 5 Draft")
     end
@@ -170,6 +178,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
                     lifecycle_status: "in_progress",
                     metadata_extra: valid_metadata,
                     cdef_version: nil)
+      create(:cdef_control, cdef_document: cdef)
       patch publish_cdef_document_path(cdef)
       expect(flash[:success]).to include("version 1.0.0")
     end
@@ -349,6 +358,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
                        metadata_extra: valid_metadata,
                        control_catalog: catalog,
                        profile_version: "1.0.0")
+      profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
       patch publish_profile_document_path(profile)
       profile.reload
       expect(profile.lifecycle_status).to eq("published")
@@ -365,6 +375,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
                     lifecycle_status: "in_progress",
                     metadata_extra: valid_metadata,
                     cdef_version: "1.0.0")
+      create(:cdef_control, cdef_document: cdef)
       patch publish_cdef_document_path(cdef)
       cdef.reload
       expect(cdef.lifecycle_status).to eq("published")

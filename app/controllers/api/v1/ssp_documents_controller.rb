@@ -22,9 +22,9 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
-  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export ]
+  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :populate_from_profile ]
   before_action :authorize_document_read!, only: [ :show, :export ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields, :populate_from_profile ]
 
   # POST /api/v1/ssp_documents/convert
   def convert
@@ -86,12 +86,44 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
     render json: JSON.parse(json_data)
   end
 
+  # POST /api/v1/ssp_documents/:id/populate_from_profile
+  # #628 — populate an existing empty SSP from a published profile so a
+  # metadata-only shell gains a control basis instead of being a dead end.
+  def populate_from_profile
+    if @document.published_lifecycle?
+      return render(json: { error: "SSP is published and read-only" }, status: :unprocessable_entity)
+    end
+
+    profile = find_published_profile(params[:source_profile_id])
+    return render(json: { error: "Published profile not found" }, status: :not_found) unless profile
+
+    SspFromProfileService.new(profile).populate(@document)
+
+    audit_log("ssp_document_populated_from_profile", subject: @document,
+              metadata: { name: @document.name, source_profile_id: profile.id, source_profile_name: profile.name })
+    render json: { data: serialize_document(@document, detailed: true) }
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   private
 
   def document_class = SspDocument
   def document_param_key = :ssp_document
   def read_permission_key = "ssp.read"
   def write_permission_key = "ssp.write"
+
+  # #628 — resolve a published profile by slug or numeric id. Only published
+  # profiles with a resolved catalog are a valid control basis.
+  def find_published_profile(id_or_slug)
+    id_or_slug = id_or_slug.to_s
+    scope = ProfileDocument.where(lifecycle_status: "published")
+    if id_or_slug.match?(/\A\d+\z/)
+      scope.find_by(id: id_or_slug)
+    else
+      scope.find_by(slug: id_or_slug)
+    end
+  end
 
   def document_params
     params.require(:ssp_document).permit(
@@ -110,6 +142,10 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
       name: doc.name,
       status: doc.status,
       lifecycle_status: doc.lifecycle_status,
+      # #627/#628 — content-completeness is distinct from the parse `status`.
+      # A metadata-only create is `status: completed` yet content-incomplete.
+      content_complete: doc.content_complete?,
+      content_completeness_gaps: doc.content_completeness_gaps,
       file_type: doc.file_type,
       creation_method: doc.creation_method,
       authorization_boundary_id: doc.authorization_boundary_id,

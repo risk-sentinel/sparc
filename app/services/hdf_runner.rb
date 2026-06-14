@@ -22,7 +22,7 @@ require "json"
 #   SI-2 Flaw Remediation     (amendment apply/verify integrate with the gate)
 #   SA-11 Developer Testing   (validate against schema before persistence)
 class HdfRunner
-  PINNED_VERSION = "3.1.0".freeze
+  PINNED_VERSION = "3.2.0".freeze
   DEFAULT_BINARY = "hdf".freeze
 
   class Error < StandardError
@@ -54,7 +54,7 @@ class HdfRunner
     invoke_json("convert", flags, input: input)
   end
 
-  # Validate input against the v3.1.0 schema. Raises on mismatch.
+  # Validate input against the v3.2.0 schema. Raises on mismatch.
   # @param type [String] "results" | "baseline" | "amendments" | etc.
   def validate(input, type: "results")
     invoke("validate", [ "--type", type, "--quiet" ], input: input)

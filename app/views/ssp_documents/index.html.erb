@@ -56,6 +56,13 @@
                 <span class="<%= doc.lifecycle_badge_class %> rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;">
                   <%= doc.lifecycle_label %>
                 </span>
+                <%# #627 — flag content-incomplete drafts (distinct from parse status). %>
+                <% if !doc.published_lifecycle? && !doc.content_complete? %>
+                  <span class="badge-warn rounded fw-semibold" style="padding: 0.2rem 0.6rem; font-size: 0.85rem;"
+                        title="<%= doc.content_completeness_gaps.join('; ') %>">
+                    Incomplete
+                  </span>
+                <% end %>
               <% end %>
             </td>
             <td>

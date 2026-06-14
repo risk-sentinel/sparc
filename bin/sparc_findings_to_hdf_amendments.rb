@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 # Convert docs/compliance/sparc-findings.yml -> HDF Amendments JSON
-# (https://mitre.github.io/hdf-libs/schemas/hdf-amendments/v3.1.0).
+# (https://mitre.github.io/hdf-libs/schemas/hdf-amendments/v3.2.0).
 #
 # Output is consumed by `hdf-cli amend` to mark dispositioned findings
 # as not-applicable / failed-with-POA&M before SAF threshold gating.

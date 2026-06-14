@@ -16,7 +16,7 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
-  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm ]
+  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile ]
 
   # GET /api/v1/cdef_documents
   def index
@@ -154,6 +154,24 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
   end
 
+  # POST /api/v1/cdef_documents/:id/populate_from_profile
+  # #628 — populate an existing empty CDEF from a published profile so a
+  # metadata-only shell gains a control basis instead of being a dead end.
+  def populate_from_profile
+    profile = find_published_profile(params[:source_profile_id])
+    return render(json: { error: "Published profile not found" }, status: :not_found) unless profile
+
+    CdefFromProfileService.new(profile).populate(@cdef)
+
+    audit_log("cdef_document_populated_from_profile", subject: @cdef,
+              metadata: { name: @cdef.name, source_profile_id: profile.id, source_profile_name: profile.name })
+    render json: { data: serialize_cdef(@cdef, detailed: true) }
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  rescue CdefMutationService::ValidationError => e
+    render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
+  end
+
   # DELETE /api/v1/cdef_documents/:id
   def destroy
     @cdef.soft_delete!
@@ -166,6 +184,19 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   def set_cdef
     @cdef = CdefDocument.find_by!(slug: params[:id])
+  end
+
+  # #628 — resolve a published profile by slug or numeric id. Only published
+  # profiles with a resolved catalog are a valid control basis.
+  def find_published_profile(id_or_slug)
+    id_or_slug = id_or_slug.to_s
+    scope = ProfileDocument.where(lifecycle_status: "published")
+    profile = if id_or_slug.match?(/\A\d+\z/)
+      scope.find_by(id: id_or_slug)
+    else
+      scope.find_by(slug: id_or_slug)
+    end
+    profile
   end
 
   # #499 slice 3 — bulk-apply gated on converters.write (matches the
@@ -206,6 +237,10 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       name: cdef.name,
       status: cdef.status,
       lifecycle_status: cdef.lifecycle_status,
+      # #627/#628 — content-completeness is distinct from the parse `status`.
+      # A metadata-only create is `status: completed` yet content-incomplete.
+      content_complete: cdef.content_complete?,
+      content_completeness_gaps: cdef.content_completeness_gaps,
       file_type: cdef.file_type,
       cdef_type: cdef.cdef_type,
       cdef_version: cdef.cdef_version,

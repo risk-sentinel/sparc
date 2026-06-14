@@ -2,7 +2,7 @@
 # check=error=true
 
 ARG RUBY_VERSION=3.4.4
-ARG HDF_LIBS_VERSION=3.1.0
+ARG HDF_LIBS_VERSION=3.2.0
 
 # ────────────────────────────────────────
 # Bootstrap stage: APT keyring + sources setup + hdf-cli download

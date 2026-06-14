@@ -13,9 +13,20 @@
     "  '**.ext'  matches any file ending in .ext",
     "  'dir/**'  matches anything under dir/",
     "  'name*'   matches any file starting with 'name' at the same depth",
-    "  exact path strings are matched literally"
+    "  exact path strings are matched literally",
+    "",
+    "advisoryChecks: non-required, externally-managed checks that the aggregator",
+    "  must NOT treat as a catastrophic failure. They are not in rules[] (so they",
+    "  were never path-required), but required-passed.yml otherwise short-circuits",
+    "  on ANY failed/cancelled check — including these. Listing a check here exempts",
+    "  it from that short-circuit so a broken external check can't block merges.",
+    "  'SonarCloud Code Analysis' is SonarCloud's GitHub App (no in-repo workflow);",
+    "  it currently fails on the org LOC quota (#636) — tracked + fixed org-side."
   ],
   "version": 1,
+  "advisoryChecks": [
+    "SonarCloud Code Analysis"
+  ],
   "rules": [
     {
       "checkName": "Test plan checklist",

@@ -114,7 +114,7 @@ RSpec.describe HdfRunner do
 
     describe "#version" do
       it "memoizes the parsed JSON" do
-        stub_open3(stdout: '{"version":"3.1.0"}')
+        stub_open3(stdout: '{"version":"3.2.0"}')
         2.times { runner.version }
         expect(Open3).to have_received(:capture3).once
       end

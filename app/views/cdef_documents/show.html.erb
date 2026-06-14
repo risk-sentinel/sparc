@@ -36,6 +36,13 @@
               AWS Labs (read-only)
             </span>
           <% end %>
+          <%# #627/#628 — content-completeness is distinct from the parse status. %>
+          <% unless @cdef_document.content_complete? %>
+            <span class="badge bg-warning text-dark"
+                  title="<%= @cdef_document.content_completeness_gaps.join('; ') %>">
+              Incomplete — needs content
+            </span>
+          <% end %>
           <% if signed_in? && !@cdef_document.aws_labs_source? %>
             <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
           <% end %>
@@ -205,6 +212,26 @@
             <% end %>
           </div>
         </details>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# ── EMPTY-STATE: populate from profile (#628) ───────────────────── %>
+<% if !@cdef_document.cdef_controls.exists? && @cdef_document.editable? %>
+  <div class="card border-warning mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h5 class="card-title mb-1">This component definition has no controls yet</h5>
+        <p class="card-text text-body-secondary mb-0">
+          A CDEF needs a control basis before it can be published. Populate it from a
+          published profile to import controls, parameters, and guidance.
+        </p>
+      </div>
+      <% if signed_in? %>
+        <%= link_to "Populate from Profile",
+              attach_profile_cdef_document_path(@cdef_document),
+              class: "btn btn-success" %>
       <% end %>
     </div>
   </div>

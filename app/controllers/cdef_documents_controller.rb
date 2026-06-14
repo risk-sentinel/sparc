@@ -4,8 +4,8 @@ class CdefDocumentsController < ApplicationController
   include OscalExportable
   skip_before_action :require_authentication, only: [ :index, :show ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm]
-  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement ]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile]
+  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile ]
   # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
   # ConvertersController. Treats AWS Labs catalog refresh as an
   # authoritative-upstream-content operation alongside DISA CCI / STIG
@@ -250,6 +250,40 @@ class CdefDocumentsController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     flash[:error] = "Published profile not found."
     redirect_to select_profile_cdef_documents_path
+  end
+
+  # GET /cdef_documents/:id/attach_profile (#628)
+  # Profile picker for an EXISTING empty CDEF so a metadata-only shell can
+  # gain a control basis instead of being a dead end.
+  def attach_profile
+    if @cdef_document.cdef_controls.exists?
+      flash[:notice] = "This component definition already has controls."
+      redirect_to(cdef_document_path(@cdef_document)) and return
+    end
+
+    @profiles = ProfileDocument.where(lifecycle_status: "published")
+                               .where.not(resolved_catalog_json: nil)
+                               .includes(:control_catalog)
+                               .order(updated_at: :desc)
+  end
+
+  # POST /cdef_documents/:id/populate_from_profile (#628)
+  # Populate an existing empty CDEF from a published profile.
+  def populate_from_profile
+    profile = ProfileDocument.find_by!(slug: params[:source_profile_id])
+
+    CdefFromProfileService.new(profile).populate(@cdef_document)
+
+    audit_log("cdef_document_populated_from_profile", subject: @cdef_document,
+      metadata: { name: @cdef_document.name, source_profile_id: profile.id, source_profile_name: profile.name })
+    flash[:success] = "Populated '#{@cdef_document.name}' from profile '#{profile.name}'."
+    redirect_to cdef_document_path(@cdef_document)
+  rescue ArgumentError => e
+    flash[:error] = e.message
+    redirect_to attach_profile_cdef_document_path(@cdef_document)
+  rescue ActiveRecord::RecordNotFound
+    flash[:error] = "Published profile not found."
+    redirect_to attach_profile_cdef_document_path(@cdef_document)
   end
 
   # POST /cdef_documents/refresh_aws_labs (#488)

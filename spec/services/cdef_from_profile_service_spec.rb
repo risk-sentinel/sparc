@@ -199,4 +199,70 @@ RSpec.describe CdefFromProfileService do
       }.to raise_error(ArgumentError, /must have a resolved catalog/)
     end
   end
+
+  describe "#populate" do
+    # #628 — populate an existing empty CDEF from a published profile.
+    it "imports controls into an existing empty CDEF" do
+      cdef = create(:cdef_document, name: "My Shell")
+
+      result = described_class.new(profile).populate(cdef)
+
+      expect(result).to eq(cdef)
+      expect(cdef.reload.cdef_controls.count).to eq(3)
+      expect(cdef.name).to eq("My Shell")
+    end
+
+    it "links the profile and stores provenance" do
+      cdef = create(:cdef_document)
+
+      described_class.new(profile).populate(cdef)
+
+      expect(cdef.reload.profile_document_id).to eq(profile.id)
+      expect(cdef.import_metadata["source_type"]).to eq("profile")
+      expect(cdef.import_metadata["source_profile_id"]).to eq(profile.id)
+    end
+
+    it "fills a blank description but preserves an existing one" do
+      cdef = create(:cdef_document, description: "Author notes")
+
+      described_class.new(profile).populate(cdef)
+
+      expect(cdef.reload.description).to eq("Author notes")
+    end
+
+    it "makes the CDEF content-complete" do
+      cdef = create(:cdef_document)
+      expect(cdef.content_complete?).to be(false)
+
+      described_class.new(profile).populate(cdef)
+
+      expect(cdef.reload.content_complete?).to be(true)
+    end
+
+    it "raises when the CDEF already has controls" do
+      cdef = create(:cdef_document)
+      create(:cdef_control, cdef_document: cdef)
+
+      expect {
+        described_class.new(profile).populate(cdef)
+      }.to raise_error(ArgumentError, /already has controls/)
+    end
+
+    it "raises for an AWS-Labs-sourced (read-only) CDEF" do
+      cdef = create(:cdef_document, import_metadata: { "source_type" => "aws_labs" })
+
+      expect {
+        described_class.new(profile).populate(cdef)
+      }.to raise_error(ArgumentError, /read-only/)
+    end
+
+    it "raises for an unpublished profile" do
+      unpublished = create(:profile_document, lifecycle_status: "in_progress")
+      cdef = create(:cdef_document)
+
+      expect {
+        described_class.new(unpublished).populate(cdef)
+      }.to raise_error(ArgumentError, /must be published/)
+    end
+  end
 end

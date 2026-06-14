@@ -68,6 +68,14 @@ jobs:
             );
             core.info(`Loaded ${config.rules.length} rule(s) from required-checks.json (version ${config.version})`);
 
+            // Advisory (non-required, externally-managed) checks are EXEMPT from the
+            // catastrophic-failure short-circuit below. e.g. 'SonarCloud Code Analysis'
+            // is SonarCloud's GitHub App and can hard-fail on the org LOC quota (#636)
+            // through no fault of the PR; it's deliberately not in rules[], so it must
+            // not be able to block merges either.
+            const ADVISORY = new Set(config.advisoryChecks || []);
+            if (ADVISORY.size) core.info(`Advisory (non-blocking) checks: ${[...ADVISORY].join(', ')}`);
+
             // ── Convert dorny/paths-filter glob to a regex matcher
             function globToRegex(glob) {
               // Substitute glob wildcards FIRST (using a placeholder that survives escaping)
@@ -146,8 +154,11 @@ jobs:
 
               // 1. Catastrophic failure: any check that completed with a failure
               //    conclusion AND has no in-flight rerun on the same SHA.
+              //    Advisory checks (config.advisoryChecks) are excluded — a broken
+              //    externally-managed check (e.g. SonarCloud over the org LOC quota,
+              //    #636) must not block merges.
               const allFailed = [...byName.values()].filter(
-                c => c.status === 'completed' && FAIL_CONCLUSIONS.has(c.conclusion)
+                c => c.status === 'completed' && FAIL_CONCLUSIONS.has(c.conclusion) && !ADVISORY.has(c.name)
               );
               const realFailures = allFailed.filter(c => !inFlightNames.has(c.name));
               if (realFailures.length > 0) {
