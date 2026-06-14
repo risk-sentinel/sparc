@@ -17,6 +17,8 @@
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
   before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile ]
+  # #629 — bulk delete is admin-only.
+  before_action :authorize_admin!, only: [ :bulk_destroy ]
 
   # GET /api/v1/cdef_documents
   def index
@@ -170,6 +172,20 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     render json: { error: e.message }, status: :unprocessable_entity
   rescue CdefMutationService::ValidationError => e
     render json: { error: "OSCAL validation failed: #{e.message.truncate(200)}" }, status: :unprocessable_entity
+  end
+
+  # DELETE /api/v1/cdef_documents/bulk
+  # #629 — admin-only bulk delete; honors the referential-integrity guard and
+  # returns a per-id partial-success result.
+  def bulk_destroy
+    result = BulkDestroyService.new(
+      model_class: CdefDocument, ids: params[:ids],
+      user: current_user, ip_address: request.remote_ip
+    ).call
+    render json: {
+      data: { deleted: result.deleted, blocked: result.blocked, missing: result.missing },
+      meta: { deleted: result.deleted.size, blocked: result.blocked.size, missing: result.missing.size }
+    }
   end
 
   # DELETE /api/v1/cdef_documents/:id

@@ -396,4 +396,33 @@ RSpec.describe "CdefDocuments", type: :request do
       end
     end
   end
+
+  # #629 — admin-only bulk delete with partial-success reporting.
+  describe "DELETE /cdef_documents/bulk_destroy" do
+    let(:admin) { create(:user, :admin) }
+    before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
+    it "deletes selected unassociated CDEFs and reports blocked ones (admin)" do
+      sign_in_as(admin)
+      deletable = create(:cdef_document)
+      blocked   = create(:cdef_document)
+      ssp = create(:ssp_document)
+      create(:ssp_document_cdef_document, cdef_document: blocked, ssp_document: ssp)
+
+      delete bulk_destroy_cdef_documents_path, params: { ids: [ deletable.id, blocked.id ] }
+
+      expect(CdefDocument.exists?(deletable.id)).to be(false)
+      expect(CdefDocument.exists?(blocked.id)).to be(true)
+      expect(flash[:warning]).to be_present
+    end
+
+    it "is admin-only — a non-admin cannot bulk delete" do
+      sign_in_as(user)
+      cdef = create(:cdef_document)
+
+      delete bulk_destroy_cdef_documents_path, params: { ids: [ cdef.id ] }
+
+      expect(CdefDocument.exists?(cdef.id)).to be(true)
+    end
+  end
 end

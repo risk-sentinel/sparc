@@ -56,4 +56,29 @@ RSpec.describe AuthorizationBoundary, type: :model do
       expect(grouped.keys).to include("system_owner", "isso")
     end
   end
+
+  # #629 — referential-integrity guard: only assessment/authorization docs block.
+  describe "#destroy referential guard" do
+    it "blocks deletion when an SSP is attached" do
+      ab = create(:authorization_boundary)
+      create(:ssp_document, authorization_boundary: ab)
+
+      expect(ab.destroy).to be_falsey
+      expect(ab.errors[:base].join).to match(/SSP/)
+      expect(AuthorizationBoundary.exists?(ab.id)).to be(true)
+    end
+
+    it "allows deletion when only members are attached (members cascade, don't block)" do
+      ab = create(:authorization_boundary)
+      create(:authorization_boundary_membership, authorization_boundary: ab)
+
+      expect(ab.destroy).to be_truthy
+      expect(AuthorizationBoundary.exists?(ab.id)).to be(false)
+    end
+
+    it "allows deletion of a boundary with no attached documents" do
+      ab = create(:authorization_boundary)
+      expect(ab.destroy).to be_truthy
+    end
+  end
 end

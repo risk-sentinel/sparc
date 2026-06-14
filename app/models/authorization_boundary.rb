@@ -1,5 +1,9 @@
 class AuthorizationBoundary < ApplicationRecord
   include Sluggable
+  # #629 — block deletion when assessment/authorization documents are attached
+  # (SSP/SAP/SAR/POA&M). Included before the `dependent:` associations so the
+  # guard's before_destroy runs first and aborts before any nullify fires.
+  include SafeDestroyable
   belongs_to :organization, optional: true
   belongs_to :profile_document, optional: true   # #395 P3: one baseline per system
   has_many :boundaries, dependent: :destroy
@@ -96,6 +100,22 @@ class AuthorizationBoundary < ApplicationRecord
   end
 
   private
+
+  # #629 — referential-integrity guard. A boundary cannot be deleted while it
+  # still anchors a system's assessment/authorization documents. Members,
+  # environments, user-roles and KSI validations continue to cascade.
+  def deletion_dependencies
+    deps = []
+    ssp_count = SspDocument.where(authorization_boundary_id: id).count
+    deps << "#{ssp_count} SSP(s)" if ssp_count > 0
+    sap_count = SapDocument.where(authorization_boundary_id: id).count
+    deps << "#{sap_count} Assessment Plan(s)" if sap_count > 0
+    sar_count = SarDocument.where(authorization_boundary_id: id).count
+    deps << "#{sar_count} Assessment Result(s)" if sar_count > 0
+    poam_count = PoamDocument.where(authorization_boundary_id: id).count
+    deps << "#{poam_count} POA&M(s)" if poam_count > 0
+    deps
+  end
 
   def assign_uuid_if_blank
     self.uuid = SecureRandom.uuid if uuid.blank?

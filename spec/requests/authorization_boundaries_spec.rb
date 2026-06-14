@@ -104,4 +104,46 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
       end
     end
   end
+
+  # #629 — single-delete now honors the referential guard (was: always "deleted").
+  describe "DELETE /authorization_boundaries/:id (referential guard)" do
+    before { sign_in_as(user) }
+
+    it "blocks deletion when an SSP is attached and reports the reason" do
+      boundary = create(:authorization_boundary)
+      create(:ssp_document, authorization_boundary: boundary)
+
+      delete authorization_boundary_path(boundary)
+
+      expect(AuthorizationBoundary.exists?(boundary.id)).to be(true)
+      expect(flash[:error]).to match(/SSP/)
+    end
+  end
+
+  # #629 — admin-only bulk delete with partial-success reporting.
+  describe "DELETE /authorization_boundaries/bulk_destroy" do
+    let(:admin) { create(:user, :admin) }
+
+    it "deletes selected unassociated boundaries and reports blocked ones (admin)" do
+      sign_in_as(admin)
+      deletable = create(:authorization_boundary)
+      blocked   = create(:authorization_boundary)
+      create(:ssp_document, authorization_boundary: blocked)
+
+      delete bulk_destroy_authorization_boundaries_path, params: { ids: [ deletable.id, blocked.id ] }
+
+      expect(AuthorizationBoundary.exists?(deletable.id)).to be(false)
+      expect(AuthorizationBoundary.exists?(blocked.id)).to be(true)
+      expect(flash[:warning]).to match(/blocked|Blocked/i)
+    end
+
+    it "is admin-only — a non-admin cannot bulk delete" do
+      sign_in_as(user)
+      boundary = create(:authorization_boundary)
+
+      delete bulk_destroy_authorization_boundaries_path, params: { ids: [ boundary.id ] }
+
+      expect(AuthorizationBoundary.exists?(boundary.id)).to be(true)
+    end
+  end
 end

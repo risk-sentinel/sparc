@@ -29,6 +29,10 @@ Rails.application.routes.draw do
   get "auth/failure", to: "omniauth_callbacks#failure"
 
   resources :authorization_boundaries do
+    collection do
+      # #629 — admin-only multi-row delete from the index.
+      delete "bulk_destroy", to: "authorization_boundaries#bulk_destroy"
+    end
     member do
       get  :ato_wizard
       post :create_ato_package
@@ -233,6 +237,8 @@ Rails.application.routes.draw do
     collection do
       get :select_profile
       post :create_from_profile
+      # #629 — admin-only multi-row delete from the index.
+      delete "bulk_destroy", to: "cdef_documents#bulk_destroy"
       # #488 — admin trigger for AwsLabsCdefRefreshJob, RBAC gated on
       # converters.write to match the DISA CCI refresh button precedent.
       post :refresh_aws_labs
@@ -409,6 +415,10 @@ Rails.application.routes.draw do
         end
       end
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        collection do
+          # #629 — admin-only bulk delete; ids[] body, partial-success result.
+          delete "bulk", to: "cdef_documents#bulk_destroy"
+        end
         member do
           # #499 slice 3 — bulk-apply Converter output to a CDEF clone.
           # Preview returns a signed token; confirm (slice 4) replays it.
@@ -463,6 +473,10 @@ Rails.application.routes.draw do
       # CRUD API endpoints (#95)
       resources :users, only: [ :index, :show, :create, :update, :destroy ]
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
+        collection do
+          # #629 — admin-only bulk delete; ids[] body, partial-success result.
+          delete "bulk", to: "authorization_boundaries#bulk_destroy"
+        end
         # KSI validation tracking (#107)
         resources :ksi_validations, only: [ :index, :show, :create, :update, :destroy ] do
           collection do

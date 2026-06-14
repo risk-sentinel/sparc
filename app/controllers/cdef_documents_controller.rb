@@ -2,7 +2,10 @@ class CdefDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
   include OscalExportable
+  include BulkDestroyable
   skip_before_action :require_authentication, only: [ :index, :show ]
+  # #629 — bulk delete is admin-only.
+  before_action :authorize_admin!, only: [ :bulk_destroy ]
 
   before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile]
   before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile ]
@@ -66,6 +69,15 @@ class CdefDocumentsController < ApplicationController
       flash[:error] = @cdef_document.errors.full_messages.join(", ")
       redirect_to cdef_document_path(@cdef_document)
     end
+  end
+
+  # DELETE /cdef_documents/bulk_destroy (#629) — admin-only.
+  def bulk_destroy
+    perform_bulk_destroy(
+      model_class:   CdefDocument,
+      redirect_path: cdef_documents_path,
+      label:         "component definition"
+    )
   end
 
   def download_json

@@ -1,8 +1,12 @@
 class AuthorizationBoundariesController < ApplicationController
+  include BulkDestroyable
+
   before_action :set_authorization_boundary, only: [
     :show, :edit, :update, :destroy,
     :ato_wizard, :create_ato_package, :download_ato_package
   ]
+  # #629 — bulk delete is admin-only.
+  before_action :authorize_admin!, only: [ :bulk_destroy ]
 
   def index
     @authorization_boundaries = AuthorizationBoundary.order(updated_at: :desc)
@@ -57,10 +61,28 @@ class AuthorizationBoundariesController < ApplicationController
 
   def destroy
     name = @authorization_boundary.name
-    audit_log("authorization_boundary_deleted", subject: @authorization_boundary, metadata: { name: name })
-    @authorization_boundary.destroy
-    flash[:success] = "Authorization boundary '#{name}' deleted."
-    redirect_to authorization_boundaries_path
+    # #629 — honor the referential-integrity guard: only flash success if the
+    # destroy actually happened (previously it always claimed success + logged
+    # the delete before attempting it).
+    if @authorization_boundary.destroy
+      audit_log("authorization_boundary_deleted", subject: @authorization_boundary, metadata: { name: name })
+      flash[:success] = "Authorization boundary '#{name}' deleted."
+      redirect_to authorization_boundaries_path
+    else
+      audit_log("authorization_boundary_delete_blocked", subject: @authorization_boundary,
+        metadata: { name: name, reason: @authorization_boundary.errors.full_messages.join(", ") })
+      flash[:error] = @authorization_boundary.errors.full_messages.join(", ")
+      redirect_to @authorization_boundary
+    end
+  end
+
+  # DELETE /authorization_boundaries/bulk_destroy (#629) — admin-only.
+  def bulk_destroy
+    perform_bulk_destroy(
+      model_class:   AuthorizationBoundary,
+      redirect_path: authorization_boundaries_path,
+      label:         "authorization boundary"
+    )
   end
 
   # ── ATO Package Wizard ─────────────────────────────────────────

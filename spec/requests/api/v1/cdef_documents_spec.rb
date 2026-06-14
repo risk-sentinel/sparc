@@ -6,6 +6,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
   let(:admin) { create(:user, :admin) }
   let(:api_token) { ApiToken.generate!(user: admin, name: "Test") }
   let(:auth_headers) { { "Authorization" => "Bearer #{api_token.plaintext_token}" } }
+  let(:user_token_name) { "User Token" }
 
   before do
     allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
@@ -101,7 +102,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
 
     context "as a non-admin user" do
       let(:regular_user) { create(:user) }
-      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: user_token_name) }
       let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
 
       it "can read cdefs" do
@@ -174,7 +175,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
 
     context "as a non-admin user" do
       let(:regular_user) { create(:user) }
-      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: user_token_name) }
       let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
 
       it "can create cdefs (all authenticated)" do
@@ -279,7 +280,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
 
     context "as a non-admin user without converters.write" do
       let(:regular_user) { create(:user) }
-      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: user_token_name) }
       let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
 
       it "returns 403" do
@@ -290,7 +291,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
 
     context "as a non-admin user WITH converters.write" do
       let(:regular_user) { create(:user) }
-      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: user_token_name) }
       let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
       let(:writer_role) do
         Role.find_or_create_by!(name: "converter_writer", display_name: "Converter Writer",
@@ -377,7 +378,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
 
     context "as a non-admin user without converters.write" do
       let(:regular_user) { create(:user) }
-      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: user_token_name) }
       let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
 
       it "returns 403" do
@@ -454,6 +455,38 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
         params: { source_profile_id: draft.slug }, headers: auth_headers, as: :json
 
       expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  # #629 — admin-only bulk delete; partial-success result.
+  describe "DELETE /api/v1/cdef_documents/bulk" do
+    it "deletes unassociated CDEFs and reports blocked ones (admin)" do
+      deletable = create(:cdef_document)
+      blocked   = create(:cdef_document)
+      ssp = create(:ssp_document)
+      create(:ssp_document_cdef_document, cdef_document: blocked, ssp_document: ssp)
+
+      delete bulk_api_v1_cdef_documents_path,
+        params: { ids: [ deletable.id, blocked.id ] }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)["data"]
+      expect(data["deleted"].map { |d| d["id"] }).to eq([ deletable.id ])
+      expect(data["blocked"].map { |b| b["id"] }).to eq([ blocked.id ])
+      expect(CdefDocument.exists?(deletable.id)).to be(false)
+    end
+
+    it "returns 403 for a non-admin" do
+      regular_user = create(:user)
+      user_token = ApiToken.generate!(user: regular_user, name: user_token_name)
+      cdef = create(:cdef_document)
+
+      delete bulk_api_v1_cdef_documents_path,
+        params: { ids: [ cdef.id ] },
+        headers: { "Authorization" => "Bearer #{user_token.plaintext_token}" }, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+      expect(CdefDocument.exists?(cdef.id)).to be(true)
     end
   end
 end

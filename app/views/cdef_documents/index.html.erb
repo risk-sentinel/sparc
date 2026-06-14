@@ -61,10 +61,26 @@
     </div>
   <% end %>
 
+  <div data-controller="bulk-select">
+  <%# #629 — admin-only bulk delete bar; appears when ≥1 row is selected. %>
+  <% if can_bulk_delete? && @cdef_documents.any? %>
+    <div class="mb-2" data-bulk-select-target="bar" hidden>
+      <%= form_with url: bulk_destroy_cdef_documents_path, method: :delete, id: "cdefBulkForm" do %>
+        <button type="submit" class="btn btn-danger btn-sm" data-bulk-select-target="submit"
+                data-turbo-confirm="Delete the selected component definitions? This cannot be undone.">
+          Delete (<span data-bulk-select-target="count">0</span> selected)
+        </button>
+      <% end %>
+    </div>
+  <% end %>
+
   <% if @cdef_documents.any? %>
     <table class="table table-hover">
       <thead>
         <tr>
+          <% if can_bulk_delete? %>
+            <th style="width: 1%;"><input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" aria-label="Select all"></th>
+          <% end %>
           <th style="white-space: nowrap;">Name</th>
           <th style="white-space: nowrap;">Type</th>
           <th style="white-space: nowrap;">Version</th>
@@ -77,6 +93,9 @@
       <tbody>
         <% @cdef_documents.each do |doc| %>
           <tr>
+            <% if can_bulk_delete? %>
+              <td><input type="checkbox" name="ids[]" value="<%= doc.id %>" form="cdefBulkForm" data-bulk-select-target="row" data-action="bulk-select#toggle" aria-label="Select <%= doc.name %>"></td>
+            <% end %>
             <td><strong><%= link_to doc.name, cdef_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
               <% type_variants = { "disa_stig" => "danger", "scap" => "info", "cis" => "warning", "custom" => "neutral" } %>
@@ -140,4 +159,5 @@
   <% else %>
     <p class="text-center p-4 text-body-secondary">No component definitions found. Upload your first CDEF to get started.</p>
   <% end %>
+  </div>
 </div>

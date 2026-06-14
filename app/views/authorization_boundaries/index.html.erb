@@ -10,9 +10,23 @@
     <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "btn btn-primary" %>
   </div>
 
+  <div data-controller="bulk-select">
+  <%# #629 — admin-only bulk delete bar; appears when ≥1 row is selected. %>
+  <% if can_bulk_delete? && @authorization_boundaries.any? %>
+    <div class="mb-2" data-bulk-select-target="bar" hidden>
+      <%= form_with url: bulk_destroy_authorization_boundaries_path, method: :delete, id: "abBulkForm" do %>
+        <button type="submit" class="btn btn-danger btn-sm" data-bulk-select-target="submit"
+                data-turbo-confirm="Delete the selected authorization boundaries? This cannot be undone.">
+          Delete (<span data-bulk-select-target="count">0</span> selected)
+        </button>
+      <% end %>
+    </div>
+  <% end %>
+
   <% if @authorization_boundaries.any? %>
     <table class="table table-hover" style="table-layout: fixed;">
       <colgroup>
+        <% if can_bulk_delete? %><col style="width: 4%;"><% end %>
         <col style="width: 22%;">
         <col style="width: 30%;">
         <col style="width: 10%;">
@@ -22,6 +36,9 @@
       </colgroup>
       <thead>
         <tr>
+          <% if can_bulk_delete? %>
+            <th><input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" aria-label="Select all"></th>
+          <% end %>
           <th>Name</th>
           <th>Description</th>
           <th>Status</th>
@@ -33,6 +50,9 @@
       <tbody>
         <% @authorization_boundaries.each do |authorization_boundary| %>
           <tr>
+            <% if can_bulk_delete? %>
+              <td><input type="checkbox" name="ids[]" value="<%= authorization_boundary.id %>" form="abBulkForm" data-bulk-select-target="row" data-action="bulk-select#toggle" aria-label="Select <%= authorization_boundary.name %>"></td>
+            <% end %>
             <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= authorization_boundary.name %>">
               <%= link_to authorization_boundary.name, authorization_boundary_path(authorization_boundary) %>
             </td>
@@ -68,4 +88,5 @@
   <% else %>
     <p class="text-center p-4 text-body-secondary">No authorization boundaries yet. Create your first authorization boundary to organize RMF artifacts and personnel.</p>
   <% end %>
+  </div>
 </div>

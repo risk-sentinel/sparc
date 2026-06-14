@@ -104,4 +104,36 @@ RSpec.describe "Api::V1::AuthorizationBoundaries", type: :request do
       expect(parsed["data"].length).to eq(0)
     end
   end
+
+  # #629 — admin-only bulk delete; partial-success result.
+  describe "DELETE /api/v1/authorization_boundaries/bulk" do
+    it "deletes unassociated boundaries and reports blocked ones (admin)" do
+      deletable = create(:authorization_boundary)
+      blocked   = create(:authorization_boundary)
+      create(:ssp_document, authorization_boundary: blocked)
+
+      delete bulk_api_v1_authorization_boundaries_path,
+        params: { ids: [ deletable.id, blocked.id ] }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)["data"]
+      expect(data["deleted"].map { |d| d["id"] }).to eq([ deletable.id ])
+      expect(data["blocked"].map { |b| b["id"] }).to eq([ blocked.id ])
+      expect(AuthorizationBoundary.exists?(deletable.id)).to be(false)
+      expect(AuthorizationBoundary.exists?(blocked.id)).to be(true)
+    end
+
+    it "returns 403 for a non-admin" do
+      regular_user = create(:user)
+      user_token = ApiToken.generate!(user: regular_user, name: "User Token")
+      boundary = create(:authorization_boundary)
+
+      delete bulk_api_v1_authorization_boundaries_path,
+        params: { ids: [ boundary.id ] },
+        headers: { "Authorization" => "Bearer #{user_token.plaintext_token}" }, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+      expect(AuthorizationBoundary.exists?(boundary.id)).to be(true)
+    end
+  end
 end

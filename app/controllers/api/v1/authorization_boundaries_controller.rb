@@ -13,7 +13,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
   before_action :set_boundary, only: [ :show, :update, :destroy ]
   before_action :authorize_boundary_read!, only: [ :show ]
   before_action :authorize_boundary_write!, only: [ :create, :update ]
-  before_action :authorize_admin!, only: [ :destroy ]
+  before_action :authorize_admin!, only: [ :destroy, :bulk_destroy ]
 
   # GET /api/v1/authorization_boundaries
   def index
@@ -56,13 +56,33 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
     render json: { data: serialize_boundary(@boundary) }
   end
 
+  # DELETE /api/v1/authorization_boundaries/bulk
+  # #629 — admin-only bulk delete; honors the referential-integrity guard and
+  # returns a per-id partial-success result.
+  def bulk_destroy
+    result = BulkDestroyService.new(
+      model_class: AuthorizationBoundary, ids: params[:ids],
+      user: current_user, ip_address: request.remote_ip
+    ).call
+    render json: {
+      data: { deleted: result.deleted, blocked: result.blocked, missing: result.missing },
+      meta: { deleted: result.deleted.size, blocked: result.blocked.size, missing: result.missing.size }
+    }
+  end
+
   # DELETE /api/v1/authorization_boundaries/:id
   def destroy
     name = @boundary.name
-    @boundary.destroy!
-
-    audit_log("api_authorization_boundary_deleted", subject: @boundary, metadata: { name: name })
-    render json: { data: { id: @boundary.id, deleted: true } }
+    # #629 — honor the referential-integrity guard (SSP/SAP/SAR/POA&M attached)
+    # with a 422 instead of an unhandled RecordNotDestroyed 500.
+    if @boundary.destroy
+      audit_log("api_authorization_boundary_deleted", subject: @boundary, metadata: { name: name })
+      render json: { data: { id: @boundary.id, deleted: true } }
+    else
+      audit_log("authorization_boundary_delete_blocked", subject: @boundary,
+                metadata: { name: name, reason: @boundary.errors.full_messages.join(", ") })
+      render json: { error: @boundary.errors.full_messages.join(", ") }, status: :unprocessable_entity
+    end
   end
 
   private

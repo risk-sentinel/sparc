@@ -124,6 +124,7 @@ class AuditEvent < ApplicationRecord
     authorization_boundary_created
     authorization_boundary_updated
     authorization_boundary_deleted
+    authorization_boundary_delete_blocked
     project_created
     project_updated
     project_deleted
@@ -267,7 +268,8 @@ class AuditEvent < ApplicationRecord
     "Evidence" => %w[evidence_created evidence_updated evidence_deleted
                      attestation_created attestation_deleted],
     "Authorization Boundaries" => %w[authorization_boundary_created authorization_boundary_updated
-                                     authorization_boundary_deleted project_created project_updated
+                                     authorization_boundary_deleted authorization_boundary_delete_blocked
+                                     project_created project_updated
                                      project_deleted boundary_created boundary_updated boundary_deleted],
     "Organizations" => %w[organization_created organization_updated organization_deactivated
                           organization_reactivated organization_member_added organization_member_removed],

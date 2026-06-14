@@ -19,4 +19,10 @@ module AuthorizationHelper
   def can_write_converters?
     !SparcConfig.any_auth_enabled? || current_user&.admin? || current_user&.has_permission?("converters.write")
   end
+
+  # #629 — bulk delete is instance-admin-only; mirror authorize_admin! so the
+  # UI only renders the controls when the action would actually be allowed.
+  def can_bulk_delete?
+    !SparcConfig.any_auth_enabled? || current_user&.admin?
+  end
 end
