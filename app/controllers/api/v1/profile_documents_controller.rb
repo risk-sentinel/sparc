@@ -20,8 +20,9 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # any mutation. Was previously open to any authenticated user (no
   # gate at all). Run authorize BEFORE set_profile so a non-admin
   # without the permission gets 403, not 404 leaking existence.
-  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy ]
-  before_action :set_profile, only: [ :show, :update, :destroy ]
+  include DocumentApprovalApi
+  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review ]
+  before_action :set_profile, only: [ :show, :update, :destroy, :submit_for_review, :approve, :reject, :baseline_review ]
 
   # GET /api/v1/profile_documents
   def index
@@ -41,6 +42,12 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # GET /api/v1/profile_documents/:id
   def show
     render json: { data: serialize_profile(@profile, detailed: true) }
+  end
+
+  # GET /api/v1/profile_documents/:id/baseline_review
+  # #633 — selected vs expected controls + ODP customization for reviewer sign-off.
+  def baseline_review
+    render json: { data: BaselineReviewService.new(@profile).review.to_h }
   end
 
   # POST /api/v1/profile_documents
@@ -79,6 +86,9 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
 
     render json: { error: "Forbidden" }, status: :forbidden
   end
+
+  # #630 — DocumentApprovalApi hook.
+  def approval_document = @profile
 
   # #574 — accept either numeric id or slug.
   def set_profile

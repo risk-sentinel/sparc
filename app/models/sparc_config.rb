@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.8.11"
+  VERSION = "1.9.0"
 
   module_function
 
@@ -179,6 +179,12 @@ module SparcConfig
   # DocumentTypeRegistry unless explicitly enabled. Code-only flag;
   # intentionally not surfaced in public env-var documentation.
   def xlsx_uploads_enabled? = ENV.fetch("SPARC_ENABLE_XLSX_UPLOADS", "false") == "true"
+
+  # #630 — Document review/approval gate. When true, trust-store documents
+  # (Catalog, Profile, Baseline, CDEF) must be `approved` before they can be
+  # published. Default false: the approval workflow is available but not
+  # enforced, so existing publish flows are unchanged until an org enables it.
+  def require_document_approval? = ENV.fetch("SPARC_REQUIRE_DOCUMENT_APPROVAL", "false") == "true"
 
   # ── Cookieless User-Data Subdomain (#515) ────────────────────────────────
   # User-uploaded blobs (SSP/SAR/CDEF/POAM JSON, XML, YAML, XLSX, evidence)

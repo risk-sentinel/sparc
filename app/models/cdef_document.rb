@@ -5,6 +5,7 @@ class CdefDocument < ApplicationRecord
   include Lifecycle
   include SoftDeletable
   include ContentCompleteness
+  include Approvable
 
   # CDEF intentionally does NOT include BoundaryLinkInheritance: it has
   # no authorization_boundary_id column. Scope is handled at the

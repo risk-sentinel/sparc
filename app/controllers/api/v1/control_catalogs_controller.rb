@@ -17,12 +17,13 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::ControlCatalogsController < Api::V1::BaseController
+  include DocumentApprovalApi
   # #575 Path D — authorize BEFORE finding so non-admin / unpermissioned
   # callers get 403 (not 404 leaking existence info), and accept either
   # the admin flag or an explicit `catalogs.write` permission so roles
   # like policy_manager can manage catalogs without instance-admin.
-  before_action :authorize_catalogs_write!, only: [ :create, :update, :destroy ]
-  before_action :set_catalog, only: [ :show, :update, :destroy ]
+  before_action :authorize_catalogs_write!, only: [ :create, :update, :destroy, :submit_for_review ]
+  before_action :set_catalog, only: [ :show, :update, :destroy, :submit_for_review, :approve, :reject ]
 
   # GET /api/v1/control_catalogs
   def index
@@ -89,6 +90,9 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
   # Create response returns both, and a caller that builds a follow-up
   # URL from `id` shouldn't 404 just because they didn't notice that
   # show/update/destroy historically only matched on slug.
+  # #630 — DocumentApprovalApi hook.
+  def approval_document = @catalog
+
   def set_catalog
     id_or_slug = params[:id].to_s
     @catalog = if id_or_slug.match?(/\A\d+\z/)

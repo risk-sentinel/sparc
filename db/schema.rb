@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_14_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -294,6 +294,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
   end
 
   create_table "cdef_documents", force: :cascade do |t|
+    t.string "approval_status", default: "draft", null: false
+    t.datetime "approved_at"
+    t.bigint "approved_by_user_id"
     t.string "benchmark_id"
     t.string "cdef_type"
     t.string "cdef_version"
@@ -313,11 +316,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
     t.string "oscal_version"
     t.bigint "profile_document_id"
     t.string "published"
+    t.text "rejection_reason"
     t.string "slug"
     t.string "status", default: "pending"
+    t.datetime "submitted_at"
+    t.bigint "submitted_by_user_id"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index "((import_metadata ->> 'source_url'::text)), ((import_metadata ->> 'source_sha'::text))", name: "idx_cdef_docs_aws_labs_source_unique", unique: true, where: "((import_metadata ->> 'source_type'::text) = 'aws_labs'::text)"
+    t.index ["approval_status"], name: "index_cdef_documents_on_approval_status"
+    t.index ["approved_by_user_id"], name: "index_cdef_documents_on_approved_by_user_id"
     t.index ["cdef_type"], name: "index_cdef_documents_on_cdef_type"
     t.index ["cloned_from_id"], name: "index_cdef_documents_on_cloned_from_id"
     t.index ["created_at"], name: "index_cdef_documents_on_created_at"
@@ -328,6 +336,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
     t.index ["profile_document_id"], name: "index_cdef_documents_on_profile_document_id"
     t.index ["slug"], name: "index_cdef_documents_on_slug", unique: true
     t.index ["status"], name: "index_cdef_documents_on_status"
+    t.index ["submitted_by_user_id"], name: "index_cdef_documents_on_submitted_by_user_id"
     t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
   end
 
@@ -343,6 +352,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
   end
 
   create_table "control_catalogs", force: :cascade do |t|
+    t.string "approval_status", default: "draft", null: false
+    t.datetime "approved_at"
+    t.bigint "approved_by_user_id"
     t.string "catalog_content_digest"
     t.datetime "created_at", null: false
     t.text "description"
@@ -354,15 +366,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
     t.string "oscal_uuid", null: false
     t.string "oscal_version"
     t.string "published"
+    t.text "rejection_reason"
     t.string "slug"
     t.string "source"
     t.string "status", default: "completed", null: false
+    t.datetime "submitted_at"
+    t.bigint "submitted_by_user_id"
     t.datetime "updated_at", null: false
     t.string "version"
+    t.index ["approval_status"], name: "index_control_catalogs_on_approval_status"
+    t.index ["approved_by_user_id"], name: "index_control_catalogs_on_approved_by_user_id"
     t.index ["lifecycle_status"], name: "index_control_catalogs_on_lifecycle_status"
     t.index ["name"], name: "index_control_catalogs_on_name"
     t.index ["oscal_uuid"], name: "index_control_catalogs_on_oscal_uuid", unique: true
     t.index ["slug"], name: "index_control_catalogs_on_slug", unique: true
+    t.index ["submitted_by_user_id"], name: "index_control_catalogs_on_submitted_by_user_id"
   end
 
   create_table "control_families", force: :cascade do |t|
@@ -901,6 +919,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
   end
 
   create_table "profile_documents", force: :cascade do |t|
+    t.string "approval_status", default: "draft", null: false
+    t.datetime "approved_at"
+    t.bigint "approved_by_user_id"
     t.string "baseline_level"
     t.bigint "control_catalog_id"
     t.datetime "created_at", null: false
@@ -916,12 +937,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
     t.string "oscal_version"
     t.string "profile_version"
     t.string "published"
+    t.text "rejection_reason"
     t.jsonb "resolved_catalog_json", default: {}
     t.string "slug"
     t.bigint "source_profile_id"
     t.string "status", default: "pending"
+    t.datetime "submitted_at"
+    t.bigint "submitted_by_user_id"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["approval_status"], name: "index_profile_documents_on_approval_status"
+    t.index ["approved_by_user_id"], name: "index_profile_documents_on_approved_by_user_id"
     t.index ["baseline_level"], name: "index_profile_documents_on_baseline_level"
     t.index ["created_at"], name: "index_profile_documents_on_created_at"
     t.index ["deleted_at"], name: "index_profile_documents_on_deleted_at"
@@ -929,6 +955,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_000000) do
     t.index ["slug"], name: "index_profile_documents_on_slug", unique: true
     t.index ["source_profile_id"], name: "index_profile_documents_on_source_profile_id"
     t.index ["status"], name: "index_profile_documents_on_status"
+    t.index ["submitted_by_user_id"], name: "index_profile_documents_on_submitted_by_user_id"
     t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
   end
 

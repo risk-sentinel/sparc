@@ -37,6 +37,16 @@ module Publishable
       readiness[:ready] &&= complete
     end
 
+    # #630 — surface approval state; when the gate is enabled, publication
+    # readiness additionally requires `approved`.
+    if doc.respond_to?(:approved?)
+      approved = doc.approved?
+      readiness[:approval_status] = doc.approval_status
+      readiness[:approval_required] = SparcConfig.require_document_approval?
+      readiness[:checks][:approved] = approved if readiness[:checks].is_a?(Hash)
+      readiness[:ready] &&= approved if SparcConfig.require_document_approval?
+    end
+
     render json: readiness
   end
 
@@ -73,6 +83,14 @@ module Publishable
     if doc.respond_to?(:content_complete?) && !doc.content_complete?
       flash[:error] = "Cannot publish: document is missing required content — #{doc.content_completeness_gaps.join('; ')}."
       redirect_to config[:redirect_path] and return
+    end
+
+    # #630 — review/approval gate. When SPARC_REQUIRE_DOCUMENT_APPROVAL is on,
+    # a trust-store document must be `approved` before it can be published.
+    # Flag-gated so existing publish flows are unchanged until an org enables it.
+    if SparcConfig.require_document_approval? && doc.respond_to?(:approved?) && !doc.approved?
+      flash[:error] = "Cannot publish: document must be reviewed and approved first (current: #{doc.approval_label})."
+      return redirect_to(config[:redirect_path])
     end
 
     auto_increment_version!(doc)

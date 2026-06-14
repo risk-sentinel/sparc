@@ -1,0 +1,70 @@
+<div class="card">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Review Queue</h2>
+    <span class="text-body-secondary"><%= @pending.size %> awaiting your review</span>
+  </div>
+
+  <p class="text-body-secondary mb-4">
+    Trust-store documents (Control Catalog, Profile, CDEF) submitted for review.
+    Approving a document lets it be published; rejecting returns it to the author
+    with your reason. You can only act on documents you did not submit (separation
+    of duties).
+  </p>
+
+  <% if @pending.any? %>
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Name</th>
+          <th>Submitted by</th>
+          <th>Details</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @pending.each do |doc| %>
+          <%
+            case doc
+            when ControlCatalog
+              type_label = "Control Catalog"; show_path = control_catalog_path(doc)
+              approve_path = approve_control_catalog_path(doc); reject_path = reject_control_catalog_path(doc)
+            when ProfileDocument
+              type_label = "Profile"; show_path = profile_document_path(doc)
+              approve_path = approve_profile_document_path(doc); reject_path = reject_profile_document_path(doc)
+            when CdefDocument
+              type_label = "CDEF"; show_path = cdef_document_path(doc)
+              approve_path = approve_cdef_document_path(doc); reject_path = reject_cdef_document_path(doc)
+            end
+          %>
+          <tr>
+            <td><span class="badge bg-secondary"><%= type_label %></span></td>
+            <td><strong><%= link_to doc.name, show_path, class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td class="small text-body-secondary"><%= doc.submitted_by_user&.email || "—" %></td>
+            <td class="small text-body-secondary">
+              <% if doc.is_a?(ProfileDocument) && (br = @baseline_reviews[doc]) %>
+                Baseline <%= br.level || "—" %>:
+                <%= br.selected_count %>/<%= br.expected_count %> selected
+                <% if br.missing.any? %><span class="text-danger" title="<%= br.missing.join(', ') %>">· <%= br.missing.size %> missing</span><% end %>
+                <% if br.extra.any? %><span class="text-warning" title="<%= br.extra.join(', ') %>">· <%= br.extra.size %> extra</span><% end %>
+                · ODP <%= br.odp_customized_count %>/<%= br.odp_total_count %> customized
+              <% else %>
+                &mdash;
+              <% end %>
+            </td>
+            <td style="white-space: nowrap;">
+              <%= button_to "Approve", approve_path, method: :post, class: "btn btn-success btn-sm",
+                    form: { data: { turbo_confirm: "Approve '#{doc.name}'?" }, style: "display:inline;" } %>
+              <%= form_with url: reject_path, method: :post, class: "d-inline" do |f| %>
+                <%= f.text_field :reason, placeholder: "Reason", class: "form-control form-control-sm d-inline-block", style: "width: 11rem;", required: true %>
+                <%= f.submit "Reject", class: "btn btn-danger btn-sm" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-center p-4 text-body-secondary">Nothing awaiting your review.</p>
+  <% end %>
+</div>

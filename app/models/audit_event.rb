@@ -175,6 +175,15 @@ class AuditEvent < ApplicationRecord
     poam_document_published
     profile_document_published
     control_catalog_published
+    control_catalog_submitted_for_review
+    control_catalog_approved
+    control_catalog_rejected
+    profile_document_submitted_for_review
+    profile_document_approved
+    profile_document_rejected
+    cdef_document_submitted_for_review
+    cdef_document_approved
+    cdef_document_rejected
     service_account_created
     service_account_updated
     service_account_disabled
@@ -228,6 +237,7 @@ class AuditEvent < ApplicationRecord
                            cdef_document_delete_blocked
                            cdef_document_exported cdef_document_imported cdef_document_copied
                            cdef_document_published cdef_back_matter_promoted
+                           cdef_document_submitted_for_review cdef_document_approved cdef_document_rejected
                            cdef_bulk_apply_converter_previewed
                            cdef_bulk_apply_converter_applied
                            aws_labs_cdef_refresh_requested
@@ -253,14 +263,16 @@ class AuditEvent < ApplicationRecord
                      profile_document_exported profile_document_imported profile_document_copied
                      profile_controls_bulk_updated
                      profile_control_created profile_control_updated profile_control_deleted
-                     profile_document_published],
+                     profile_document_published
+                     profile_document_submitted_for_review profile_document_approved profile_document_rejected],
     "Control Catalogs" => %w[control_catalog_created control_catalog_updated control_catalog_deleted
                              control_catalog_delete_blocked
                              control_catalog_exported control_catalog_imported
                              control_family_created control_family_updated control_family_deleted
                              catalog_control_created catalog_control_updated catalog_control_deleted
                              catalog_control_baseline_updated catalog_control_baselines_bulk_updated
-                             control_catalog_published],
+                             control_catalog_published
+                             control_catalog_submitted_for_review control_catalog_approved control_catalog_rejected],
     "Control Mappings" => %w[control_mapping_created control_mapping_updated control_mapping_deleted
                              control_mapping_exported control_mapping_published
                              control_mapping_deprecated mapping_entry_created mapping_entry_deleted

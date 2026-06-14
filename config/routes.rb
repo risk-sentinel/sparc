@@ -137,6 +137,10 @@ Rails.application.routes.draw do
       get :download_resolved_catalog
       get :manage_controls
       patch :update_controls
+      # #630/#632/#633 — review/approval workflow (profile + baseline).
+      post :submit_for_review, to: "profile_documents#submit_for_review"
+      post :approve, to: "profile_documents#approve"
+      post :reject, to: "profile_documents#reject"
     end
     collection do
       get :select_catalog
@@ -213,6 +217,10 @@ Rails.application.routes.draw do
       patch :update_statement
       patch :publish
       get :publish_check
+      # #630/#634 — review/approval workflow.
+      post :submit_for_review, to: "cdef_documents#submit_for_review"
+      post :approve, to: "cdef_documents#approve"
+      post :reject, to: "cdef_documents#reject"
       get :download_json
       get :download_oscal
       get :download_oscal_validated
@@ -251,6 +259,10 @@ Rails.application.routes.draw do
       patch :update_metadata
       patch :publish
       get :publish_check
+      # #630/#631 — review/approval workflow.
+      post :submit_for_review, to: "control_catalogs#submit_for_review"
+      post :approve, to: "control_catalogs#approve"
+      post :reject, to: "control_catalogs#reject"
       get :download_oscal
       get :download_oscal_validated
       get :download_oscal_unvalidated
@@ -352,6 +364,9 @@ Rails.application.routes.draw do
     end
   end
 
+  # #630 — review queue for trust-store documents (Catalog/Profile/CDEF).
+  resources :review_queue, only: %i[index]
+
   resources :federation_peers do
     member do
       post :sync
@@ -407,8 +422,23 @@ Rails.application.routes.draw do
       end
 
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
-      resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ]
+      resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          # #630/#631 — review/approval workflow.
+          post :submit_for_review, to: "control_catalogs#submit_for_review"
+          post :approve, to: "control_catalogs#approve"
+          post :reject, to: "control_catalogs#reject"
+        end
+      end
       resources :profile_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          # #630/#632/#633 — review/approval workflow.
+          post :submit_for_review, to: "profile_documents#submit_for_review"
+          post :approve, to: "profile_documents#approve"
+          post :reject, to: "profile_documents#reject"
+          # #633 — baseline diff (selected vs expected controls + ODP values).
+          get :baseline_review, to: "profile_documents#baseline_review"
+        end
         # Baseline parameter management (#240)
         resource :parameters, only: [ :show, :update ], controller: "baseline_parameters" do
           get :export, on: :member
@@ -426,6 +456,10 @@ Rails.application.routes.draw do
           post "bulk_apply_converter/confirm", action: :bulk_apply_converter_confirm, as: :bulk_apply_converter_confirm
           # #628 — populate an existing empty CDEF from a published profile.
           post :populate_from_profile
+          # #630/#634 — review/approval workflow.
+          post :submit_for_review, to: "cdef_documents#submit_for_review"
+          post :approve, to: "cdef_documents#approve"
+          post :reject, to: "cdef_documents#reject"
         end
       end
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]

@@ -3,12 +3,13 @@ class CdefDocumentsController < ApplicationController
   include Publishable
   include OscalExportable
   include BulkDestroyable
+  include DocumentApprovalActions
   skip_before_action :require_authentication, only: [ :index, :show ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile]
-  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile ]
+  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile submit_for_review approve reject]
+  before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile, :submit_for_review ]
   # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
   # ConvertersController. Treats AWS Labs catalog refresh as an
   # authoritative-upstream-content operation alongside DISA CCI / STIG

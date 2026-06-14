@@ -1,6 +1,7 @@
 class ControlCatalogsController < ApplicationController
   include Publishable
   include OscalExportable
+  include DocumentApprovalActions
   skip_before_action :require_authentication, only: [ :index, :show, :baseline_controls ]
 
   before_action :set_control_catalog, only: [
@@ -8,12 +9,13 @@ class ControlCatalogsController < ApplicationController
     :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export, :baseline_controls,
     :update_baseline, :bulk_update_baselines,
-    :publish, :publish_check, :acknowledge_warnings, :revalidate
+    :publish, :publish_check, :acknowledge_warnings, :revalidate,
+    :submit_for_review, :approve, :reject
   ]
   before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines, :publish ]
   before_action :authorize_catalog_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :update_metadata, :revalidate,
-    :update_baseline, :bulk_update_baselines, :publish
+    :update_baseline, :bulk_update_baselines, :publish, :submit_for_review
   ]
 
   def index

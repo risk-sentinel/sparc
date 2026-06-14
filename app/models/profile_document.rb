@@ -5,6 +5,7 @@ class ProfileDocument < ApplicationRecord
   include Lifecycle
   include SoftDeletable
   include ContentCompleteness
+  include Approvable
 
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true

@@ -16,7 +16,8 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
-  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile ]
+  include DocumentApprovalApi
+  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile, :submit_for_review, :approve, :reject ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
@@ -201,6 +202,9 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
   def set_cdef
     @cdef = CdefDocument.find_by!(slug: params[:id])
   end
+
+  # #630 — DocumentApprovalApi hook.
+  def approval_document = @cdef
 
   # #628 — resolve a published profile by slug or numeric id. Only published
   # profiles with a resolved catalog are a valid control basis.

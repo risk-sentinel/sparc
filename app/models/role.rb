@@ -33,8 +33,10 @@ class Role < ApplicationRecord
   PERMISSION_KEYS = %w[
     catalogs.read
     catalogs.write
+    catalogs.approve
     profiles.read
     profiles.write
+    profiles.approve
     authorization_boundaries.read
     authorization_boundaries.write
     authorization_boundaries.manage_members
@@ -48,6 +50,7 @@ class Role < ApplicationRecord
     poam.write
     cdef.read
     cdef.write
+    cdef.approve
     evidence.read
     evidence.write
     mappings.read

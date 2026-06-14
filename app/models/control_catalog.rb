@@ -3,6 +3,7 @@ class ControlCatalog < ApplicationRecord
   include SafeDestroyable
   include Sluggable
   include Lifecycle
+  include Approvable
 
   has_many :control_families, dependent: :destroy
   has_many :catalog_controls, through: :control_families

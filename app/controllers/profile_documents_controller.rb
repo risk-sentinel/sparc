@@ -2,6 +2,7 @@ class ProfileDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
   include OscalExportable
+  include DocumentApprovalActions
   skip_before_action :require_authentication, only: [ :index, :show ]
 
   before_action :set_profile_document, only: %i[
@@ -10,8 +11,9 @@ class ProfileDocumentsController < ApplicationController
     download_yaml download_xml validate_oscal_export status
     update_metadata copy publish publish_check download_resolved_catalog
     manage_controls update_controls
+    submit_for_review approve reject
   ]
-  before_action :ensure_editable!, only: %i[update_metadata update_controls publish]
+  before_action :ensure_editable!, only: %i[update_metadata update_controls publish submit_for_review]
 
   PRIORITY_ORDER = %w[P1 P2 P3].freeze
 
