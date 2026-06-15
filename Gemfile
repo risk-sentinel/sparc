@@ -71,8 +71,12 @@ gem "bootsnap", require: false
 # Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
 gem "kamal", require: false
 
-# Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
-gem "thruster", require: false
+# #639 — thruster removed. It was a Rails 8 default (`require: false`) and was
+# never required or executed (CMD runs Puma directly; in prod TLS/HTTP2/gzip/
+# static are handled by the ALB/proxy). Its vendored static Go binary was baked
+# into the image and only added CVE surface (8 CRITICALs, #612) with no runtime
+# use, so it's dropped. Re-add if an in-container HTTP/2 + X-Sendfile proxy is
+# ever needed without an external proxy in front.
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.0"

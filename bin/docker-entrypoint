@@ -21,7 +21,7 @@ echo "PostgreSQL is ready!"
 
 # Only run db:prepare + seeds when starting the Rails server (web container)
 # This prevents concurrent migration errors from sidekiq/console/etc.
-# CMD may be: ["./bin/rails", "server"] or ["./bin/thrust", "./bin/rails", "server"]
+# CMD is ["./bin/rails", "server"] — Puma runs directly (thruster removed, #639).
 if [[ "$*" == *"rails"*"server"* ]]; then
     echo "Running database preparation (create/migrate all databases)..."
     bundle exec rails db:prepare

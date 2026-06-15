@@ -556,10 +556,6 @@ GEM
       faraday-follow_redirects
     thor (1.5.0)
     thread_safe (0.3.6)
-    thruster (0.1.21)
-    thruster (0.1.21-aarch64-linux)
-    thruster (0.1.21-arm64-darwin)
-    thruster (0.1.21-x86_64-linux)
     timeout (0.6.1)
     tsort (0.2.0)
     turbo-rails (2.0.23)
@@ -662,7 +658,6 @@ DEPENDENCIES
   solid_cache
   solid_queue
   stimulus-rails
-  thruster
   turbo-rails
   tzinfo-data
   web-console
