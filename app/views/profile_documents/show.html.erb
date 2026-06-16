@@ -18,6 +18,9 @@
   level_color  = level_colors[@profile_document.baseline_level] || "#7f8c8d"
 %>
 
+<div data-controller="doc-meta family-toggle heatmap-chip"
+     data-family-toggle-selector-value="#controlsContainer > details.sparc-family-group">
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header">
 
@@ -26,21 +29,21 @@
       <div class="sparc-header-subtitle">OSCAL Profile / Baseline</div>
 
       <%# ── View mode ── %>
-      <div id="doc-meta-view">
+      <div id="doc-meta-view" data-doc-meta-target="view">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h2 class="sparc-header-title"><%= @profile_document.name %></h2>
           <% if @profile_document.profile_version.present? %>
             <span class="sparc-version-badge">v<%= @profile_document.profile_version %></span>
           <% end %>
           <% if signed_in? && !@profile_document.published_lifecycle? %>
-            <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
+            <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
           <% end %>
         </div>
       </div>
 
       <% if signed_in? && !@profile_document.published_lifecycle? %>
         <%# ── Edit mode (hidden) ── %>
-        <div id="doc-meta-edit" style="display: none;">
+        <div id="doc-meta-edit" data-doc-meta-target="edit" style="display: none;">
           <%= form_with url: update_metadata_profile_document_path(@profile_document), method: :patch, local: true do |f| %>
             <div class="d-flex gap-2 align-items-center flex-wrap">
               <%= f.text_field :name, value: @profile_document.name,
@@ -48,7 +51,7 @@
               <%= f.text_field :profile_version, value: @profile_document.profile_version, placeholder: "Version",
                     class: "sparc-input-dark sparc-input-dark-sm" %>
               <%= f.submit "Save", class: "sparc-btn-save" %>
-              <button type="button" onclick="toggleDocMeta()" class="sparc-btn-cancel-dark">Cancel</button>
+              <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
             </div>
           <% end %>
         </div>
@@ -134,7 +137,8 @@
         <% next if count == 0 %>
         <div class="summary-chip sparc-summary-chip"
              data-filter-value="<%= pri %>"
-             onclick="document.getElementById('heatmapSection').dispatchEvent(new CustomEvent('heatmap:chip', {detail: {filter: '<%= j pri %>'}}))"
+             data-action="heatmap-chip#apply"
+             data-heatmap-chip-filter-param="<%= pri %>"
              role="button"
              tabindex="0"
              title="Click to filter: <%= pri %>"
@@ -172,8 +176,8 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <label class="form-label fw-semibold mb-0"><%= @total_controls %> controls in this profile</label>
     <div class="d-flex gap-1">
-      <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAllFamilies(true)">Expand All</button>
-      <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAllFamilies(false)">Collapse All</button>
+      <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#expandAll">Expand All</button>
+      <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#collapseAll">Collapse All</button>
     </div>
   </div>
 
@@ -340,20 +344,6 @@
            resources_path: profile_document_back_matter_resources_path(@profile_document) %>
 
 <script nonce="<%= content_security_policy_nonce %>">
-  function toggleDocMeta() {
-    var view = document.getElementById('doc-meta-view');
-    var edit = document.getElementById('doc-meta-edit');
-    var isEditing = edit.style.display !== 'none';
-    view.style.display = isEditing ? '' : 'none';
-    edit.style.display = isEditing ? 'none' : '';
-  }
-
-  function toggleAllFamilies(expand) {
-    document.querySelectorAll('#controlsContainer > details.sparc-family-group').forEach(function(det) {
-      det.open = expand;
-    });
-  }
-
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.card-details').forEach(function(det) {
       det.addEventListener('toggle', function() {
@@ -363,5 +353,7 @@
     });
   });
 </script>
+
+</div><%# end data-controller wrapper %>
 
 <% end %><%# end unless completed %>

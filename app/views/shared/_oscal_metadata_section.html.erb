@@ -17,17 +17,15 @@
 <% locations = metadata["locations"] || [] %>
 <% remarks = metadata["remarks"] || "" %>
 
-<div class="card mt-4">
+<div class="card mt-4" data-controller="oscal-metadata">
   <div class="card-header d-flex justify-content-between align-items-center"
        style="cursor: pointer;"
-       onclick="document.getElementById('oscal-meta-body').classList.toggle('d-none');
-                this.querySelector('.toggle-icon').textContent =
-                  document.getElementById('oscal-meta-body').classList.contains('d-none') ? '+' : '-';">
+       data-action="click->oscal-metadata#toggle">
     <h5 class="mb-0 fw-semibold">OSCAL Metadata</h5>
-    <span class="toggle-icon fw-bold">+</span>
+    <span class="toggle-icon fw-bold" data-oscal-metadata-target="icon">+</span>
   </div>
 
-  <div id="oscal-meta-body" class="card-body d-none">
+  <div id="oscal-meta-body" class="card-body d-none" data-oscal-metadata-target="body">
 
     <%# ── Core Fields ─────────────────────────────────────────── %>
     <div class="row mb-4">
@@ -231,6 +229,7 @@
     <%# ── Edit Metadata Form ──────────────────────────────────── %>
     <hr>
     <div id="oscal-meta-edit-section"
+         data-oscal-metadata-target="editSection"
          <% if signed_in? && defined?(current_user) && current_user %>
            data-user-name="<%= current_user.display_name.presence || "#{current_user.first_name} #{current_user.last_name}".strip %>"
            data-user-email="<%= current_user.email %>"
@@ -244,12 +243,12 @@
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="fw-semibold mb-0">Edit OSCAL Metadata</h6>
         <% if signed_in? && document.draft? %>
-          <button type="button" class="btn btn-outline-primary btn-sm" onclick="prefillFromProfile()">
+          <button type="button" class="btn btn-outline-primary btn-sm" data-action="oscal-metadata#prefill">
             Pre-fill from my profile
           </button>
         <% end %>
       </div>
-      <%= form_with url: update_path, method: :patch, local: true do |f| %>
+      <%= form_with url: update_path, method: :patch, local: true, html: { data: { action: "submit->oscal-metadata#sync" } } do |f| %>
 
         <%# ── Core fields row ── %>
         <div class="row g-3 mb-3">
@@ -270,7 +269,7 @@
         <%# ── Structured Roles Editor ── %>
         <div class="mb-3">
           <label class="form-label small fw-semibold">Roles</label>
-          <div id="roles-editor">
+          <div id="roles-editor" data-oscal-metadata-target="rolesEditor">
             <% roles.each_with_index do |role, idx| %>
               <div class="row g-2 mb-2 role-row">
                 <div class="col-md-3">
@@ -283,18 +282,26 @@
                   <input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description" value="<%= role["description"] %>">
                 </div>
                 <div class="col-md-1">
-                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.role-row').remove(); syncMetadataJson();">x</button>
+                  <button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button>
                 </div>
               </div>
             <% end %>
           </div>
-          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addRoleRow()">+ Add Role</button>
+          <template data-oscal-metadata-target="roleTemplate">
+            <div class="row g-2 mb-2 role-row">
+              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Role ID (e.g. prepared-by)" data-field="id"></div>
+              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title"></div>
+              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description"></div>
+              <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
+            </div>
+          </template>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" data-action="oscal-metadata#addRole">+ Add Role</button>
         </div>
 
         <%# ── Structured Parties Editor ── %>
         <div class="mb-3">
           <label class="form-label small fw-semibold">Parties</label>
-          <div id="parties-editor">
+          <div id="parties-editor" data-oscal-metadata-target="partiesEditor">
             <% parties.each_with_index do |party, idx| %>
               <div class="row g-2 mb-2 party-row">
                 <div class="col-md-4">
@@ -310,18 +317,26 @@
                   <input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid" value="<%= party["uuid"] %>">
                 </div>
                 <div class="col-md-1">
-                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.party-row').remove(); syncMetadataJson();">x</button>
+                  <button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button>
                 </div>
               </div>
             <% end %>
           </div>
-          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addPartyRow()">+ Add Party</button>
+          <template data-oscal-metadata-target="partyTemplate">
+            <div class="row g-2 mb-2 party-row">
+              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Name" data-field="name"></div>
+              <div class="col-md-2"><select class="form-select form-select-sm" data-field="type"><option value="organization">Organization</option><option value="person">Person</option></select></div>
+              <div class="col-md-5"><input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid"></div>
+              <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
+            </div>
+          </template>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" data-action="oscal-metadata#addParty">+ Add Party</button>
         </div>
 
         <%# ── Structured Revisions Editor ── %>
         <div class="mb-3">
           <label class="form-label small fw-semibold">Revisions</label>
-          <div id="revisions-editor">
+          <div id="revisions-editor" data-oscal-metadata-target="revisionsEditor">
             <% revisions.each_with_index do |rev, idx| %>
               <div class="row g-2 mb-2 revision-row">
                 <div class="col-md-2">
@@ -337,18 +352,27 @@
                   <input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified" value="<%= rev["last-modified"] %>">
                 </div>
                 <div class="col-md-1">
-                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.revision-row').remove(); syncMetadataJson();">x</button>
+                  <button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button>
                 </div>
               </div>
             <% end %>
           </div>
-          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addRevisionRow()">+ Add Revision</button>
+          <template data-oscal-metadata-target="revisionTemplate">
+            <div class="row g-2 mb-2 revision-row">
+              <div class="col-md-2"><input type="text" class="form-control form-control-sm" placeholder="Version" data-field="version"></div>
+              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title"></div>
+              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Published (ISO 8601)" data-field="published"></div>
+              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified"></div>
+              <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
+            </div>
+          </template>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" data-action="oscal-metadata#addRevision">+ Add Revision</button>
         </div>
 
         <%# ── Remarks Editor ── %>
         <div class="mb-3">
           <label class="form-label small fw-semibold">Remarks</label>
-          <textarea id="remarks-editor" class="form-control form-control-sm" rows="3"
+          <textarea id="remarks-editor" data-oscal-metadata-target="remarks" class="form-control form-control-sm" rows="3"
                     placeholder="Notes for human readers of the content"><%= remarks %></textarea>
         </div>
 
@@ -366,6 +390,7 @@
              }
           %>
           <textarea id="metadata-extra-json"
+                    data-oscal-metadata-target="advancedJson"
                     name="<%= param_key %>[metadata_extra_json]"
                     class="form-control form-control-sm font-monospace mt-2"
                     rows="12"
@@ -377,10 +402,10 @@
         </details>
 
         <%# Hidden field that holds the merged metadata_extra JSON (roles + parties + revisions + advanced) %>
-        <input type="hidden" id="merged-metadata-extra" name="<%= param_key %>[metadata_extra_json]">
+        <input type="hidden" id="merged-metadata-extra" data-oscal-metadata-target="mergedJson" name="<%= param_key %>[metadata_extra_json]">
 
         <div class="d-flex gap-2">
-          <%= f.submit "Save Metadata", class: "btn btn-primary btn-sm", onclick: "syncMetadataJson();" %>
+          <%= f.submit "Save Metadata", class: "btn btn-primary btn-sm" %>
         </div>
       <% end %>
     </div>
@@ -389,142 +414,3 @@
   </div>
 </div>
 
-<script nonce="<%= content_security_policy_nonce %>">
-  function collectRows(containerId, fields) {
-    var rows = document.querySelectorAll('#' + containerId + ' > div');
-    var items = [];
-    rows.forEach(function(row) {
-      var item = {};
-      var hasValue = false;
-      fields.forEach(function(field) {
-        var el = row.querySelector('[data-field="' + field + '"]');
-        if (el && el.value.trim() !== '') {
-          item[field] = el.value.trim();
-          hasValue = true;
-        }
-      });
-      if (hasValue) items.push(item);
-    });
-    return items;
-  }
-
-  function syncMetadataJson() {
-    var roles = collectRows('roles-editor', ['id', 'title', 'description']);
-    var parties = collectRows('parties-editor', ['name', 'type', 'uuid']);
-    // Auto-generate UUIDs for parties missing them
-    parties.forEach(function(p) {
-      if (!p.uuid) p.uuid = crypto.randomUUID();
-    });
-    var revisions = collectRows('revisions-editor', ['version', 'title', 'published', 'last-modified']);
-
-    // Collect remarks
-    var remarksEl = document.getElementById('remarks-editor');
-    var remarksVal = remarksEl ? remarksEl.value.trim() : '';
-
-    // Parse advanced JSON and validate
-    var advanced = {};
-    var advEl = document.getElementById('metadata-extra-json');
-    if (advEl && advEl.value.trim()) {
-      try {
-        advanced = JSON.parse(advEl.value);
-        // Strip null values from arrays (template placeholders)
-        Object.keys(advanced).forEach(function(key) {
-          if (Array.isArray(advanced[key])) {
-            advanced[key] = advanced[key].filter(function(item) {
-              return Object.values(item).some(function(v) { return v !== null && v !== ''; });
-            });
-            if (advanced[key].length === 0) delete advanced[key];
-          }
-        });
-      } catch(e) {
-        alert('Invalid JSON in advanced metadata editor. Please fix the JSON syntax before saving.');
-        return false;
-      }
-    }
-
-    // Merge structured + advanced
-    var merged = Object.assign({}, advanced);
-    if (roles.length > 0) merged['roles'] = roles;
-    if (parties.length > 0) merged['parties'] = parties;
-    if (revisions.length > 0) merged['revisions'] = revisions;
-    if (remarksVal) merged['remarks'] = remarksVal;
-
-    document.getElementById('merged-metadata-extra').value = JSON.stringify(merged);
-    // Clear the textarea name so only the hidden field submits
-    if (advEl) advEl.removeAttribute('name');
-  }
-
-  function addRoleRow() {
-    var html = '<div class="row g-2 mb-2 role-row">' +
-      '<div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Role ID (e.g. prepared-by)" data-field="id"></div>' +
-      '<div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title"></div>' +
-      '<div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description"></div>' +
-      '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.role-row\').remove(); syncMetadataJson();">x</button></div>' +
-      '</div>';
-    document.getElementById('roles-editor').insertAdjacentHTML('beforeend', html);
-  }
-
-  function addPartyRow() {
-    var html = '<div class="row g-2 mb-2 party-row">' +
-      '<div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Name" data-field="name"></div>' +
-      '<div class="col-md-2"><select class="form-select form-select-sm" data-field="type"><option value="organization">Organization</option><option value="person">Person</option></select></div>' +
-      '<div class="col-md-5"><input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid"></div>' +
-      '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.party-row\').remove(); syncMetadataJson();">x</button></div>' +
-      '</div>';
-    document.getElementById('parties-editor').insertAdjacentHTML('beforeend', html);
-  }
-
-  function addRevisionRow() {
-    var html = '<div class="row g-2 mb-2 revision-row">' +
-      '<div class="col-md-2"><input type="text" class="form-control form-control-sm" placeholder="Version" data-field="version"></div>' +
-      '<div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title"></div>' +
-      '<div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Published (ISO 8601)" data-field="published"></div>' +
-      '<div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified"></div>' +
-      '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.revision-row\').remove(); syncMetadataJson();">x</button></div>' +
-      '</div>';
-    document.getElementById('revisions-editor').insertAdjacentHTML('beforeend', html);
-  }
-
-  function prefillFromProfile() {
-    var section = document.getElementById('oscal-meta-edit-section');
-    if (!section) return;
-
-    var userName = section.dataset.userName || '';
-    var userEmail = section.dataset.userEmail || '';
-    var orgName = section.dataset.orgName || '';
-    var orgEmail = section.dataset.orgEmail || '';
-
-    // Add prepared-by role if no roles exist yet
-    var rolesEditor = document.getElementById('roles-editor');
-    if (rolesEditor && rolesEditor.querySelectorAll('.role-row').length === 0) {
-      addRoleRow();
-      var newRow = rolesEditor.querySelector('.role-row:last-child');
-      if (newRow) {
-        var idField = newRow.querySelector('[data-field="id"]');
-        var titleField = newRow.querySelector('[data-field="title"]');
-        if (idField) idField.value = 'prepared-by';
-        if (titleField) titleField.value = 'Prepared By';
-      }
-    }
-
-    // Add contact party if no parties exist yet
-    var partiesEditor = document.getElementById('parties-editor');
-    if (partiesEditor && partiesEditor.querySelectorAll('.party-row').length === 0) {
-      addPartyRow();
-      var partyRow = partiesEditor.querySelector('.party-row:last-child');
-      if (partyRow) {
-        var nameField = partyRow.querySelector('[data-field="name"]');
-        var typeField = partyRow.querySelector('[data-field="type"]');
-        if (orgName) {
-          if (nameField) nameField.value = orgName;
-          if (typeField) typeField.value = 'organization';
-        } else if (userName) {
-          if (nameField) nameField.value = userName;
-          if (typeField) typeField.value = 'person';
-        }
-      }
-    }
-
-    syncMetadataJson();
-  }
-</script>

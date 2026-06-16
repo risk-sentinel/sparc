@@ -34,6 +34,13 @@ Rails.application.configure do
     # allow OAuth POST-redirects to enabled IdPs — see #593 and
     # SessionsController#new (SparcConfig.oauth_form_action_origins).
     policy.form_action :self
+
+    # Violation reporting (#528, epic #650). Browsers POST a report to this
+    # same-origin endpoint whenever a directive is violated, so CSP breakage
+    # becomes self-surfacing telemetry instead of a silent per-user console
+    # error. report-uri is exempt from connect-src. The newer Reporting-API
+    # report-to (with a Reporting-Endpoints header) is tracked in #528.
+    policy.report_uri "/security/csp-violations"
   end
 
   # Per-request random nonce (#514). The previous generator used

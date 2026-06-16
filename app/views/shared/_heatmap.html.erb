@@ -87,7 +87,7 @@
              data-family="<%= family %>"
              <% if mode == :server && doc && p_helper %>
                data-href="<%= send(p_helper, doc, f_params.except(:page).merge(card_active ? { family: nil, status: nil } : { family: family, status: nil })) %>"
-               onclick="if(!event.target.closest('a')){window.location.href=this.dataset.href}"
+               data-action="click->heatmap#navigateByHref"
              <% else %>
                data-action="click->heatmap#filterByCard"
              <% end %>>

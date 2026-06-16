@@ -18,6 +18,11 @@
   type_color  = type_colors[@cdef_document.cdef_type] || "#7f8c8d"
 %>
 
+<div data-controller="doc-meta heatmap-chip cdef-control"
+     data-cdef-control-update-field-url-value="<%= update_field_cdef_document_path(@cdef_document) %>"
+     data-cdef-control-create-url-value="<%= create_control_resource_cdef_document_path(@cdef_document) %>"
+     data-cdef-control-unlink-url-value="<%= unlink_control_resource_cdef_document_path(@cdef_document) %>">
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header">
 
@@ -25,7 +30,7 @@
     <div>
       <div class="sparc-header-subtitle">Component Definition</div>
 
-      <div id="doc-meta-view">
+      <div id="doc-meta-view" data-doc-meta-target="view">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h2 class="sparc-header-title"><%= @cdef_document.name %></h2>
           <% if @cdef_document.cdef_version.present? %>
@@ -44,7 +49,7 @@
             </span>
           <% end %>
           <% if signed_in? && !@cdef_document.aws_labs_source? %>
-            <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
+            <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
           <% end %>
         </div>
       </div>
@@ -70,7 +75,7 @@
       <% end %>
 
       <% if signed_in? %>
-        <div id="doc-meta-edit" style="display: none;">
+        <div id="doc-meta-edit" data-doc-meta-target="edit" style="display: none;">
           <%= form_with url: update_metadata_cdef_document_path(@cdef_document), method: :patch, local: true do |f| %>
             <div class="d-flex gap-2 align-items-center flex-wrap">
               <%= f.text_field :name, value: @cdef_document.name,
@@ -78,7 +83,7 @@
               <%= f.text_field :cdef_version, value: @cdef_document.cdef_version, placeholder: "Version",
                     class: "sparc-input-dark sparc-input-dark-sm" %>
               <%= f.submit "Save", class: "sparc-btn-save" %>
-              <button type="button" onclick="toggleDocMeta()" class="sparc-btn-cancel-dark">Cancel</button>
+              <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
             </div>
           <% end %>
         </div>
@@ -140,7 +145,8 @@
         <% next if count == 0 %>
         <div class="summary-chip sparc-summary-chip"
              data-filter-value="<%= sev %>"
-             onclick="document.getElementById('heatmapSection').dispatchEvent(new CustomEvent('heatmap:chip', {detail: {filter: '<%= j sev %>'}}))"
+             data-action="heatmap-chip#apply"
+             data-heatmap-chip-filter-param="<%= sev %>"
              role="button"
              tabindex="0"
              title="Click to filter: <%= sev %>"
@@ -322,7 +328,7 @@
                   <td class="sparc-field-label">
                     <%= field.field_name.tr("_", " ") %>
                     <% if field.editable %>
-                      <span class="sparc-editable-indicator" onclick="toggleFieldEdit('<%= control.control_id %>', '<%= field.field_name %>')" title="Click to edit">&#x270E;</span>
+                      <span class="sparc-editable-indicator" data-action="cdef-control#toggleFieldEdit" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>" title="Click to edit">&#x270E;</span>
                     <% end %>
                   </td>
                   <td class="sparc-field-value">
@@ -359,8 +365,8 @@
                           <input type="text" id="field-input-<%= control.control_id %>-<%= field.field_name %>" class="form-control form-control-sm" value="<%= field.field_value %>" style="font-size: 0.82rem;">
                         <% end %>
                         <div class="mt-1 d-flex gap-1">
-                          <button type="button" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" onclick="saveField('<%= control.control_id %>', '<%= field.field_name %>')">Save</button>
-                          <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" onclick="toggleFieldEdit('<%= control.control_id %>', '<%= field.field_name %>')">Cancel</button>
+                          <button type="button" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#saveField" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Save</button>
+                          <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;" data-action="cdef-control#toggleFieldEdit" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-field-name-param="<%= field.field_name %>">Cancel</button>
                         </div>
                       </div>
                     <% end %>
@@ -393,7 +399,7 @@
                     <code class="small text-body-tertiary ms-1">#<%= resource.uuid.truncate(12) %></code>
                     <% if !@cdef_document.published_lifecycle? && link_record %>
                       <button type="button" class="btn-close btn-close-sm ms-1" style="font-size: 0.5rem;"
-                              onclick="unlinkControlResource('<%= control.control_id %>', '<%= link_record.id %>')"
+                              data-action="cdef-control#unlink" data-cdef-control-control-id-param="<%= control.control_id %>" data-cdef-control-link-id-param="<%= link_record.id %>"
                               title="Unlink"></button>
                     <% end %>
                   </span>
@@ -413,12 +419,12 @@
                     <input type="text" id="ref-media-<%= control.control_id %>" class="form-control form-control-sm" placeholder="application/pdf">
                   </div>
                   <div class="col-md-4 d-flex gap-1">
-                    <button type="button" class="btn btn-sm btn-success" onclick="createControlResource('<%= control.control_id %>')">Create & Link</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAddRef('<%= control.control_id %>')">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-success" data-action="cdef-control#create" data-cdef-control-control-id-param="<%= control.control_id %>">Create & Link</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>">Cancel</button>
                   </div>
                 </div>
               </div>
-              <button type="button" class="btn btn-sm btn-outline-primary" id="add-ref-btn-<%= control.control_id %>" onclick="toggleAddRef('<%= control.control_id %>')" style="font-size: 0.75rem;">
+              <button type="button" class="btn btn-sm btn-outline-primary" id="add-ref-btn-<%= control.control_id %>" data-action="cdef-control#toggleAddRef" data-cdef-control-id-param="<%= control.control_id %>" style="font-size: 0.75rem;">
                 + Add Reference
               </button>
             <% end %>
@@ -483,15 +489,9 @@
            document: @cdef_document,
            resources_path: cdef_document_back_matter_resources_path(@cdef_document) %>
 
-<script nonce="<%= content_security_policy_nonce %>">
-  function toggleDocMeta() {
-    var view = document.getElementById('doc-meta-view');
-    var edit = document.getElementById('doc-meta-edit');
-    var isEditing = edit.style.display !== 'none';
-    view.style.display = isEditing ? '' : 'none';
-    edit.style.display = isEditing ? 'none' : '';
-  }
+</div><%# end data-controller wrapper %>
 
+<script nonce="<%= content_security_policy_nonce %>">
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.card-details').forEach(function(det) {
       det.addEventListener('toggle', function() {
@@ -500,105 +500,6 @@
       });
     });
   });
-
-  // ── Inline field editing ──────────────────────────────────────
-  function toggleFieldEdit(controlId, fieldName) {
-    var display = document.getElementById('field-display-' + controlId + '-' + fieldName);
-    var edit = document.getElementById('field-edit-' + controlId + '-' + fieldName);
-    if (!edit) return;
-    var isEditing = edit.style.display !== 'none';
-    display.style.display = isEditing ? '' : 'none';
-    edit.style.display = isEditing ? 'none' : '';
-    if (!isEditing) {
-      var input = document.getElementById('field-input-' + controlId + '-' + fieldName);
-      if (input) input.focus();
-    }
-  }
-
-  function saveField(controlId, fieldName) {
-    var input = document.getElementById('field-input-' + controlId + '-' + fieldName);
-    if (!input) return;
-    var value = input.value;
-    var url = '<%= update_field_cdef_document_path(@cdef_document) %>';
-    var token = document.querySelector('meta[name="csrf-token"]').content;
-
-    fetch(url, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': token,
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ control_id: controlId, field_name: fieldName, field_value: value })
-    })
-    .then(function(resp) { return resp.json(); })
-    .then(function(data) {
-      if (data.success) {
-        var display = document.getElementById('field-display-' + controlId + '-' + fieldName);
-        display.innerHTML = value ? '<div style="white-space: pre-wrap;">' + escapeHtml(value) + '</div>'
-                                  : '<span class="text-body-tertiary fst-italic" style="font-size: 0.82rem;">Click &#x270E; to add</span>';
-        toggleFieldEdit(controlId, fieldName);
-      } else {
-        alert('Error: ' + (data.error || 'Unknown error'));
-      }
-    })
-    .catch(function(err) { alert('Save failed: ' + err.message); });
-  }
-
-  function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  // ── Control-level resource linking ────────────────────────────
-  function toggleAddRef(controlId) {
-    var form = document.getElementById('add-ref-' + controlId);
-    var btn = document.getElementById('add-ref-btn-' + controlId);
-    var isVisible = form.style.display !== 'none';
-    form.style.display = isVisible ? 'none' : '';
-    btn.style.display = isVisible ? '' : 'none';
-    if (!isVisible) document.getElementById('ref-title-' + controlId).focus();
-  }
-
-  function createControlResource(controlId) {
-    var title = document.getElementById('ref-title-' + controlId).value.trim();
-    if (!title) { alert('Title is required'); return; }
-    var href = document.getElementById('ref-href-' + controlId).value.trim();
-    var mediaType = document.getElementById('ref-media-' + controlId).value.trim();
-    var url = '<%= create_control_resource_cdef_document_path(@cdef_document) %>';
-    var token = document.querySelector('meta[name="csrf-token"]').content;
-
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token, 'Accept': 'application/json' },
-      body: JSON.stringify({ control_id: controlId, back_matter_resource: { title: title, href: href, media_type: mediaType } })
-    })
-    .then(function(resp) { return resp.json(); })
-    .then(function(data) {
-      if (data.success) { location.reload(); }
-      else { alert('Error: ' + (data.error || 'Unknown error')); }
-    })
-    .catch(function(err) { alert('Failed: ' + err.message); });
-  }
-
-  function unlinkControlResource(controlId, linkId) {
-    if (!confirm('Unlink this resource?')) return;
-    var url = '<%= unlink_control_resource_cdef_document_path(@cdef_document) %>';
-    var token = document.querySelector('meta[name="csrf-token"]').content;
-
-    fetch(url, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token, 'Accept': 'application/json' },
-      body: JSON.stringify({ control_id: controlId, link_id: linkId })
-    })
-    .then(function(resp) { return resp.json(); })
-    .then(function(data) {
-      if (data.success) { location.reload(); }
-      else { alert('Error: ' + (data.error || 'Unknown error')); }
-    })
-    .catch(function(err) { alert('Failed: ' + err.message); });
-  }
 </script>
 
 <% end %><%# end unless completed %>

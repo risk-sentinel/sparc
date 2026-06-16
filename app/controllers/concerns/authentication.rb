@@ -79,7 +79,12 @@ module Authentication
 
     if last_active && Time.at(last_active) < timeout.ago
       end_session
-      redirect_to login_path, warning: "Your session has expired. Please sign in again."
+      # 303 See Other so the browser issues a fresh GET to /login (not a Turbo
+      # visit that could reuse a cached snapshot), landing on the login page
+      # rendered with the relaxed form-action CSP + Cache-Control: no-store
+      # (#649). end_session already reset_session'd, clearing the cookie.
+      redirect_to login_path, status: :see_other,
+                  warning: "Your session has expired. Please sign in again."
     else
       session[:last_active_at] = Time.current.to_i
     end

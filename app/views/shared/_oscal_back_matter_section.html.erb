@@ -9,17 +9,15 @@
 <% imported_resources = document.respond_to?(:import_metadata) ? (document.import_metadata&.dig("back_matter") || []) : [] %>
 <% is_draft = document.respond_to?(:draft?) ? document.draft? : true %>
 
-<div class="card mt-4">
+<div class="card mt-4" data-controller="oscal-back-matter">
   <div class="card-header d-flex justify-content-between align-items-center"
        style="cursor: pointer;"
-       onclick="document.getElementById('oscal-back-matter-body').classList.toggle('d-none');
-                this.querySelector('.toggle-icon').textContent =
-                  document.getElementById('oscal-back-matter-body').classList.contains('d-none') ? '+' : '-';">
+       data-action="click->oscal-back-matter#toggle">
     <h5 class="mb-0 fw-semibold">OSCAL Back Matter</h5>
-    <span class="toggle-icon fw-bold">+</span>
+    <span class="toggle-icon fw-bold" data-oscal-back-matter-target="icon">+</span>
   </div>
 
-  <div id="oscal-back-matter-body" class="card-body d-none">
+  <div id="oscal-back-matter-body" class="card-body d-none" data-oscal-back-matter-target="body">
 
     <%# ── Managed Resources ──────────────────────────────────────── %>
     <div class="mb-4">
@@ -67,7 +65,8 @@
                   <td class="text-nowrap">
                     <button class="btn btn-sm btn-outline-primary"
                             type="button"
-                            onclick="toggleEditResource(<%= resource.id %>)"
+                            data-action="oscal-back-matter#toggleEdit"
+                            data-oscal-back-matter-resource-id-param="<%= resource.id %>"
                             title="Edit resource">
                       Edit
                     </button>
@@ -102,7 +101,8 @@
                       <div class="col-md-3">
                         <%= f.submit "Save", class: "btn btn-sm btn-primary" %>
                         <button type="button" class="btn btn-sm btn-outline-secondary"
-                                onclick="toggleEditResource(<%= resource.id %>)">
+                                data-action="oscal-back-matter#toggleEdit"
+                                data-oscal-back-matter-resource-id-param="<%= resource.id %>">
                           Cancel
                         </button>
                       </div>
@@ -228,12 +228,3 @@
 
   </div><%# end card-body %>
 </div><%# end card %>
-
-<script nonce="<%= content_security_policy_nonce %>">
-  function toggleEditResource(resourceId) {
-    var editRow = document.getElementById('edit-resource-' + resourceId);
-    if (editRow) {
-      editRow.classList.toggle('d-none');
-    }
-  }
-</script>

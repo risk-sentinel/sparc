@@ -5,7 +5,7 @@
     Select or create the required artifacts — SSP, SAP, SAR, and POA&M — then assemble them into a single package.
   </p>
 
-  <%= form_with url: create_ato_package_authorization_boundary_path(@authorization_boundary), method: :post, local: true do |f| %>
+  <%= form_with url: create_ato_package_authorization_boundary_path(@authorization_boundary), method: :post, local: true, data: { controller: "ato-wizard" } do |f| %>
 
     <%# ── Step 1: Confirm Authorization Boundary ── %>
     <details open class="mb-3 border rounded-3" style="overflow: hidden;">
@@ -50,13 +50,13 @@
 
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="profile_radio" value="select_existing" onclick="toggleMode('profile')" style="width: 16px; height: 16px;">
+            <input type="radio" name="profile_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="profile" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing Profile</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="profile_radio" value="skip" checked onclick="toggleMode('profile')" style="width: 16px; height: 16px;">
+            <input type="radio" name="profile_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="profile" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
           </label>
         </div>
@@ -94,13 +94,13 @@
 
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="cdef_radio" value="select" onclick="toggleMode('cdef')" style="width: 16px; height: 16px;">
+            <input type="radio" name="cdef_radio" value="select" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="cdef" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Select Components</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="cdef_radio" value="skip" checked onclick="toggleMode('cdef')" style="width: 16px; height: 16px;">
+            <input type="radio" name="cdef_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="cdef" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
           </label>
         </div>
@@ -145,19 +145,19 @@
 
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="ssp_radio" value="create_new" onclick="toggleMode('ssp')" style="width: 16px; height: 16px;">
+            <input type="radio" name="ssp_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Create New SSP</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="ssp_radio" value="select_existing" onclick="toggleMode('ssp')" style="width: 16px; height: 16px;">
+            <input type="radio" name="ssp_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SSP</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="ssp_radio" value="skip" checked onclick="toggleMode('ssp')" style="width: 16px; height: 16px;">
+            <input type="radio" name="ssp_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="ssp" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
           </label>
         </div>
@@ -233,19 +233,19 @@
 
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sap_radio" value="create_new" onclick="toggleMode('sap')" style="width: 16px; height: 16px;">
+            <input type="radio" name="sap_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Create New SAP</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sap_radio" value="select_existing" onclick="toggleMode('sap')" style="width: 16px; height: 16px;">
+            <input type="radio" name="sap_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SAP</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sap_radio" value="skip" checked onclick="toggleMode('sap')" style="width: 16px; height: 16px;">
+            <input type="radio" name="sap_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sap" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
           </label>
         </div>
@@ -301,19 +301,19 @@
 
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sar_radio" value="create_new" onclick="toggleMode('sar')" style="width: 16px; height: 16px;">
+            <input type="radio" name="sar_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Create New SAR</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sar_radio" value="select_existing" onclick="toggleMode('sar')" style="width: 16px; height: 16px;">
+            <input type="radio" name="sar_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing SAR</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="sar_radio" value="skip" checked onclick="toggleMode('sar')" style="width: 16px; height: 16px;">
+            <input type="radio" name="sar_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="sar" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
           </label>
         </div>
@@ -362,19 +362,19 @@
 
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="poam_radio" value="create_new" onclick="toggleMode('poam')" style="width: 16px; height: 16px;">
+            <input type="radio" name="poam_radio" value="create_new" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Create New POA&amp;M</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="poam_radio" value="select_existing" onclick="toggleMode('poam')" style="width: 16px; height: 16px;">
+            <input type="radio" name="poam_radio" value="select_existing" data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Select Existing POA&amp;M</span>
           </label>
         </div>
         <div class="mb-2">
           <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <input type="radio" name="poam_radio" value="skip" checked onclick="toggleMode('poam')" style="width: 16px; height: 16px;">
+            <input type="radio" name="poam_radio" value="skip" checked data-action="ato-wizard#setMode" data-ato-wizard-mode-param="poam" style="width: 16px; height: 16px;">
             <span class="fw-semibold" style="font-size: 0.88rem;">Skip</span>
           </label>
         </div>
@@ -423,32 +423,3 @@
 
   <% end %>
 </div>
-
-<script nonce="<%= content_security_policy_nonce %>">
-  function toggleMode(stepName) {
-    var radio = document.querySelector('input[name="' + stepName + '_radio"]:checked');
-    if (!radio) return;
-
-    var mode = radio.value;
-    var hiddenField = document.getElementById(stepName + '_mode');
-    if (hiddenField) hiddenField.value = mode;
-
-    // Hide all panels for this step
-    var createPanel = document.getElementById(stepName + '_create_new_panel');
-    var selectPanel = document.getElementById(stepName + '_select_existing_panel');
-    var genericSelectPanel = document.getElementById(stepName + '_select_panel');
-
-    if (createPanel) createPanel.style.display = 'none';
-    if (selectPanel) selectPanel.style.display = 'none';
-    if (genericSelectPanel) genericSelectPanel.style.display = 'none';
-
-    // Show the relevant panel
-    if (mode === 'create_new' && createPanel) {
-      createPanel.style.display = 'block';
-    } else if (mode === 'select_existing' && selectPanel) {
-      selectPanel.style.display = 'block';
-    } else if (mode === 'select' && genericSelectPanel) {
-      genericSelectPanel.style.display = 'block';
-    }
-  }
-</script>

@@ -7,7 +7,10 @@
     <link rel="stylesheet" href="<%= asset_path 'ssp_editor.css' %>">
 </head>
 <body>
-    <div class="container">
+    <div class="container"
+         data-controller="ssp-editor"
+         data-ssp-editor-api-base-url-value="/api/v1"
+         data-ssp-editor-download-path-value="/ssp_documents/__ID__/download_json">
         <h1>🔐 System Security Plan Editor</h1>
 
         <%# #479: The Excel-to-JSON upload section was removed from the UI.
@@ -19,7 +22,7 @@
             <h2>📁 Load Existing Document</h2>
             <div class="upload-container">
                 <label for="documentSelector"><strong>Select Document:</strong></label>
-                <select id="documentSelector" onchange="loadExistingDocument(this.value)">
+                <select id="documentSelector" data-ssp-editor-target="documentSelector" data-action="change->ssp-editor#loadExistingDocument">
                     <option value="">-- Select a document --</option>
                     <% SspDocument.completed.order(created_at: :desc).each do |doc| %>
                       <option value="<%= doc.id %>"><%= doc.name %> (<%= doc.created_at.strftime('%Y-%m-%d') %>)</option>
@@ -28,24 +31,24 @@
             </div>
         </div>
         
-        <div id="notification" class="notification"></div>
-        
-        <div id="navigationContainer" class="navigation-container" style="display: none;">
+        <div id="notification" class="notification" data-ssp-editor-target="notification"></div>
+
+        <div id="navigationContainer" class="navigation-container" style="display: none;" data-ssp-editor-target="navigationContainer">
             <div class="navigation-controls">
                 <div class="record-counter">
-                    <span id="recordCounter">Record 0 of 0</span>
+                    <span id="recordCounter" data-ssp-editor-target="recordCounter">Record 0 of 0</span>
                 </div>
-                <select id="recordSelector" onchange="selectRecord(this.value)">
+                <select id="recordSelector" data-ssp-editor-target="recordSelector" data-action="change->ssp-editor#selectRecord">
                     <!-- Options will be populated dynamically -->
                 </select>
                 <div class="nav-buttons">
-                    <button class="nav-btn" id="prevBtn" onclick="navigateRecord(-1)">⬅️ Previous</button>
-                    <button class="nav-btn" id="nextBtn" onclick="navigateRecord(1)">Next ➡️</button>
+                    <button class="nav-btn" id="prevBtn" data-ssp-editor-target="prevBtn" data-action="ssp-editor#navigatePrev">⬅️ Previous</button>
+                    <button class="nav-btn" id="nextBtn" data-ssp-editor-target="nextBtn" data-action="ssp-editor#navigateNext">Next ➡️</button>
                 </div>
             </div>
         </div>
         
-        <div class="legend" style="display: none;">
+        <div class="legend" style="display: none;" data-ssp-editor-target="legend">
             <div class="legend-title">Legend:</div>
             <div class="legend-items">
                 <div class="legend-item">
@@ -59,319 +62,29 @@
             </div>
         </div>
         
-        <div id="headerInfo" class="header-info" style="display: none;">
-            <strong>Control ID:</strong> <span id="controlId"></span> | 
-            <strong>Title:</strong> <span id="controlTitle"></span>
+        <div id="headerInfo" class="header-info" style="display: none;" data-ssp-editor-target="headerInfo">
+            <strong>Control ID:</strong> <span id="controlId" data-ssp-editor-target="controlId"></span> |
+            <strong>Title:</strong> <span id="controlTitle" data-ssp-editor-target="controlTitle"></span>
         </div>
-        
-        <table id="dataTable" class="table table-hover" style="display: none;">
+
+        <table id="dataTable" class="table table-hover" style="display: none;" data-ssp-editor-target="dataTable">
             <thead>
                 <tr>
                     <th>Field Name</th>
                     <th>Value</th>
                 </tr>
             </thead>
-            <tbody id="tableBody">
+            <tbody id="tableBody" data-ssp-editor-target="tableBody">
                 <!-- Data will be inserted here -->
             </tbody>
         </table>
         
-        <div class="button-container" id="actionButtons" style="display: none;">
-            <button class="reset-btn" onclick="resetCurrentRecord()">🔄 Reset Current</button>
-            <button class="save-btn" onclick="saveCurrentRecord()">💾 Save Current</button>
-            <button class="save-all-btn" onclick="saveAllRecords()">💾 Save All Changes</button>
-            <button class="export-btn" onclick="exportJSON()">📥 Export JSON</button>
+        <div class="button-container" id="actionButtons" style="display: none;" data-ssp-editor-target="actionButtons">
+            <button class="reset-btn" data-action="ssp-editor#resetCurrentRecord">🔄 Reset Current</button>
+            <button class="save-btn" data-action="ssp-editor#saveCurrentRecord">💾 Save Current</button>
+            <button class="save-all-btn" data-action="ssp-editor#saveAllRecords">💾 Save All Changes</button>
+            <button class="export-btn" data-action="ssp-editor#exportJSON">📥 Export JSON</button>
         </div>
     </div>
-
-    <script nonce="<%= content_security_policy_nonce %>">
-        // Configuration
-        const API_BASE_URL = '/api/v1';
-        let currentDocumentId = null;
-        let currentData = null;
-        let currentIndex = 0;
-
-        // #479: handleExcelUpload + convertExcelToJSON were removed along
-        // with the Excel upload UI block. The Rails API conversion route
-        // (/api/v1/ssp_documents/convert) and parser service are preserved
-        // for programmatic consumers.
-
-        /**
-         * Load existing document from database
-         */
-        async function loadExistingDocument(documentId) {
-            if (!documentId) return;
-
-            try {
-                showNotification('Loading document...', 'info');
-
-                const response = await fetch(`${API_BASE_URL}/ssp_documents/${documentId}/export`, {
-                    headers: {
-                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to load document');
-                }
-
-                const data = await response.json();
-                currentDocumentId = documentId;
-                loadConvertedJSON(data);
-                showNotification('Document loaded successfully!', 'success');
-
-            } catch (error) {
-                console.error('Load error:', error);
-                showNotification(`Failed to load document: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Load converted JSON data into the editor
-         */
-        function loadConvertedJSON(jsonData) {
-            currentData = jsonData.controls || [];
-            currentIndex = 0;
-            
-            if (currentData.length > 0) {
-                displayRecord(currentIndex);
-                populateRecordSelector();
-                showEditorUI();
-            } else {
-                showNotification('No controls found in the document', 'error');
-            }
-        }
-
-        /**
-         * Display a record
-         */
-        function displayRecord(index) {
-            if (!currentData || currentData.length === 0) return;
-
-            const record = currentData[index];
-            
-            // Update header
-            document.getElementById('controlId').textContent = record.control_id;
-            document.getElementById('controlTitle').textContent = record.title;
-            
-            // Update counter
-            document.getElementById('recordCounter').textContent = `Record ${index + 1} of ${currentData.length}`;
-            
-            // Update table
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
-            
-            record.fields.forEach(field => {
-                const row = tableBody.insertRow();
-                const cellName = row.insertCell(0);
-                const cellValue = row.insertCell(1);
-                
-                cellName.innerHTML = `${field.field_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} ${field.editable ? '<span style="color: #27ae60;">✏️</span>' : '<span style="color: #95a5a6;">🔒</span>'}`;
-                
-                if (field.editable) {
-                    cellValue.innerHTML = `<textarea rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;" data-field="${field.field_name}">${field.field_value || ''}</textarea>`;
-                } else {
-                    cellValue.textContent = field.field_value || '';
-                }
-            });
-            
-            // Update navigation buttons
-            document.getElementById('prevBtn').disabled = (index === 0);
-            document.getElementById('nextBtn').disabled = (index === currentData.length - 1);
-        }
-
-        /**
-         * Populate record selector dropdown
-         */
-        function populateRecordSelector() {
-            const selector = document.getElementById('recordSelector');
-            selector.innerHTML = '';
-            
-            currentData.forEach((record, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${record.control_id} - ${record.title}`;
-                selector.appendChild(option);
-            });
-            
-            selector.value = currentIndex;
-        }
-
-        /**
-         * Navigate between records
-         */
-        function navigateRecord(direction) {
-            const newIndex = currentIndex + direction;
-            if (newIndex >= 0 && newIndex < currentData.length) {
-                currentIndex = newIndex;
-                displayRecord(currentIndex);
-                document.getElementById('recordSelector').value = currentIndex;
-            }
-        }
-
-        /**
-         * Select a specific record
-         */
-        function selectRecord(index) {
-            currentIndex = parseInt(index);
-            displayRecord(currentIndex);
-        }
-
-        /**
-         * Save current record
-         */
-        async function saveCurrentRecord() {
-            if (!currentDocumentId) {
-                showNotification('No document loaded', 'error');
-                return;
-            }
-
-            const record = currentData[currentIndex];
-            const updates = {};
-            
-            // Collect updated field values
-            const textareas = document.querySelectorAll('#tableBody textarea');
-            textareas.forEach(textarea => {
-                const fieldName = textarea.dataset.field;
-                updates[fieldName] = textarea.value;
-            });
-
-            try {
-                const payload = {
-                    controls: {
-                        [record.control_id]: updates
-                    }
-                };
-
-                const response = await fetch(`${API_BASE_URL}/ssp_documents/${currentDocumentId}/update_fields`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Update failed');
-                }
-
-                const result = await response.json();
-                
-                // Update local data
-                record.fields.forEach(field => {
-                    if (updates[field.field_name] !== undefined) {
-                        field.field_value = updates[field.field_name];
-                    }
-                });
-
-                showNotification('✅ Control saved successfully!', 'success');
-
-            } catch (error) {
-                console.error('Save error:', error);
-                showNotification(`❌ Error saving: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Save all records
-         */
-        async function saveAllRecords() {
-            if (!currentDocumentId) {
-                showNotification('No document loaded', 'error');
-                return;
-            }
-
-            try {
-                // Collect all updates
-                const allUpdates = {};
-                
-                currentData.forEach(record => {
-                    const updates = {};
-                    record.fields.forEach(field => {
-                        if (field.editable) {
-                            updates[field.field_name] = field.field_value;
-                        }
-                    });
-                    allUpdates[record.control_id] = updates;
-                });
-
-                const response = await fetch(`${API_BASE_URL}/ssp_documents/${currentDocumentId}/update_fields`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ controls: allUpdates })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Update failed');
-                }
-
-                showNotification('✅ All controls saved successfully!', 'success');
-
-            } catch (error) {
-                console.error('Save error:', error);
-                showNotification(`❌ Error saving: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Reset current record
-         */
-        function resetCurrentRecord() {
-            displayRecord(currentIndex);
-            showNotification('Record reset to original values', 'info');
-        }
-
-        /**
-         * Export to JSON
-         */
-        async function exportJSON() {
-            if (!currentDocumentId) {
-                showNotification('No document loaded', 'error');
-                return;
-            }
-
-            try {
-                window.location.href = `/ssp_documents/${currentDocumentId}/download_json`;
-                showNotification('✅ Export started!', 'success');
-            } catch (error) {
-                console.error('Export error:', error);
-                showNotification(`❌ Error exporting: ${error.message}`, 'error');
-            }
-        }
-
-        /**
-         * Show editor UI elements
-         */
-        function showEditorUI() {
-            document.getElementById('navigationContainer').style.display = 'block';
-            document.querySelector('.legend').style.display = 'flex';
-            document.getElementById('headerInfo').style.display = 'block';
-            document.getElementById('dataTable').style.display = 'table';
-            document.getElementById('actionButtons').style.display = 'flex';
-        }
-
-        // #479: showConversionStatus removed along with the Excel upload UI;
-        // its only callers were the deleted handleExcelUpload + convertExcelToJSON.
-
-        /**
-         * Show notification
-         */
-        function showNotification(message, type) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 5000);
-        }
-    </script>
 </body>
 </html>

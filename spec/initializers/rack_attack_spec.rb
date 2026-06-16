@@ -116,6 +116,25 @@ RSpec.describe "Rack::Attack initializer (#513)" do
     end
   end
 
+  describe "csp-reports/min/ip throttle" do
+    before { allow(SparcConfig).to receive(:rate_limit_csp_reports_per_minute).and_return(2) }
+
+    it "returns 429 after the per-IP report cap" do
+      3.times do
+        post "/security/csp-violations", {}, { "REMOTE_ADDR" => "198.51.100.9" }
+      end
+      expect(last_response.status).to eq(429)
+      expect(last_response.headers["X-RateLimit-Bucket"]).to eq("csp-reports/min/ip")
+    end
+
+    it "does not throttle GET (only the POST beacon path)" do
+      5.times do
+        get "/security/csp-violations", {}, { "REMOTE_ADDR" => "198.51.100.10" }
+      end
+      expect(last_response.status).to eq(200)
+    end
+  end
+
   describe "safelist" do
     before do
       allow(SparcConfig).to receive(:rate_limit_safelist_cidrs).and_return([ "10.0.0.0/8" ])

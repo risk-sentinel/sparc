@@ -1,3 +1,4 @@
+<div data-controller="doc-meta inline-edit">
 <%# #395 P3: boundary context header %>
 <%= render "shared/boundary_header", document: @poam_document %>
 
@@ -46,23 +47,23 @@
       <div class="sparc-header-subtitle">Plan of Action &amp; Milestones</div>
 
       <%# ── View mode ── %>
-      <div id="doc-meta-view">
+      <div id="doc-meta-view" data-doc-meta-target="view">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h2 class="sparc-header-title"><%= @poam_document.name %></h2>
           <% if @poam_document.poam_version.present? %>
             <span class="sparc-version-badge">v<%= @poam_document.poam_version %></span>
           <% end %>
-          <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
+          <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
         </div>
       </div>
 
       <%# ── Edit mode (hidden) ── %>
-      <div id="doc-meta-edit" style="display: none;">
+      <div id="doc-meta-edit" data-doc-meta-target="edit" style="display: none;">
         <%= form_with model: @poam_document, url: update_metadata_poam_document_path(@poam_document), method: :patch, local: true, class: "d-flex align-items-center gap-2 flex-wrap" do |f| %>
           <%= f.text_field :name, value: @poam_document.name, class: "sparc-input-dark sparc-input-dark-lg", placeholder: "Document name" %>
           <%= f.text_field :poam_version, value: @poam_document.poam_version, class: "sparc-input-dark sparc-input-dark-sm", placeholder: "Version" %>
           <%= f.submit "Save", class: "sparc-btn-save" %>
-          <button type="button" onclick="toggleDocMeta()" class="sparc-btn-cancel-dark">Cancel</button>
+          <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
         <% end %>
       </div>
     </div>
@@ -239,7 +240,7 @@
         <% end %>
       </div>
       <div class="d-flex flex-shrink-0" style="gap: 0.35rem;">
-        <button onclick="toggleItemEdit(<%= item.id %>)" id="edit-btn-<%= item.id %>" class="sparc-btn-edit">Edit</button>
+        <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" id="edit-btn-<%= item.id %>" class="sparc-btn-edit">Edit</button>
         <%= link_to "Full Edit", edit_poam_document_poam_item_path(@poam_document, item), class: "bg-body-secondary text-body-secondary rounded", style: "text-decoration: none; border: 1px solid var(--bs-border-color); padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
         <%= button_to "Delete", poam_document_poam_item_path(@poam_document, item), method: :delete, data: { turbo_confirm: "Remove \"#{item.title}\"?" }, class: "btn btn-danger", style: "padding: 0.3rem 0.7rem; font-size: 0.78rem;" %>
       </div>
@@ -403,7 +404,7 @@
 
           <div class="d-flex gap-2">
             <%= f.submit "Save Changes", class: "btn btn-success", style: "padding: 0.35rem 0.9rem; font-size: 0.82rem;" %>
-            <button type="button" onclick="toggleItemEdit(<%= item.id %>)" class="btn btn-secondary" style="padding: 0.35rem 0.9rem; font-size: 0.82rem;">Cancel</button>
+            <button type="button" data-action="inline-edit#toggle" data-inline-edit-id-param="<%= item.id %>" class="btn btn-secondary" style="padding: 0.35rem 0.9rem; font-size: 0.82rem;">Cancel</button>
           </div>
         <% end %>
       </div>
@@ -434,32 +435,4 @@
 <%= render "shared/oscal_back_matter_section",
            document: @poam_document,
            resources_path: poam_document_back_matter_resources_path(@poam_document) %>
-
-<script nonce="<%= content_security_policy_nonce %>">
-  function toggleDocMeta() {
-    var view = document.getElementById('doc-meta-view');
-    var edit = document.getElementById('doc-meta-edit');
-    if (view && edit) {
-      var hidden = edit.style.display === 'none';
-      view.style.display = hidden ? 'none' : '';
-      edit.style.display = hidden ? '' : 'none';
-    }
-  }
-
-  function toggleItemEdit(itemId) {
-    var details = document.getElementById('details-' + itemId);
-    if (details && !details.open) details.open = true;
-
-    var view = document.getElementById('view-' + itemId);
-    var edit = document.getElementById('edit-' + itemId);
-    var btn  = document.getElementById('edit-btn-' + itemId);
-
-    var isEditing = edit.style.display !== 'none';
-
-    view.style.display   = isEditing ? '' : 'none';
-    edit.style.display   = isEditing ? 'none' : '';
-    btn.textContent      = isEditing ? 'Edit' : 'Cancel';
-    btn.style.background = isEditing ? '#3498db' : 'var(--bs-secondary-bg)';
-    btn.style.color      = isEditing ? 'white' : 'var(--bs-secondary-color)';
-  }
-</script>
+</div>

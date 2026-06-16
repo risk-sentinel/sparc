@@ -28,6 +28,12 @@ Rails.application.routes.draw do
   match "auth/:provider/callback", to: "omniauth_callbacks#create", via: [ :get, :post ]
   get "auth/failure", to: "omniauth_callbacks#failure"
 
+  # ── Security telemetry ────────────────────────────────────────────────
+  # CSP violation report sink (#528, epic #650). The CSP header's report-uri
+  # points here; browsers POST violation reports which we log as structured
+  # telemetry. Rate-limited per-IP by Rack::Attack.
+  post "security/csp-violations", to: "security/csp_reports#create", as: :csp_violation_reports
+
   resources :authorization_boundaries do
     collection do
       # #629 — admin-only multi-row delete from the index.

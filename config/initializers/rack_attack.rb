@@ -82,6 +82,10 @@ def rack_attack_login_failure_request?(req)
   req.path == "/login" || req.path == "/auth/failure"
 end
 
+def rack_attack_csp_report_request?(req)
+  req.request_method == "POST" && req.path == "/security/csp-violations"
+end
+
 # ── Throttles ──────────────────────────────────────────────────────────────
 
 Rack::Attack.throttle("uploads/5min/ip",
@@ -118,6 +122,15 @@ Rack::Attack.throttle("api/sessions_from_token/min/ip",
                       limit: ->(_req) { SparcConfig.rate_limit_login_failures_per_minute },
                       period: 1.minute) do |req|
   req.ip if req.path == "/api/v1/sessions/from_token" && req.request_method == "POST"
+end
+
+# #528/#650 — CSP violation report beacon. Per-IP throttle so the log sink
+# can't be flooded. Over-limit reports are dropped with a 429; the browser
+# silently ignores the response (a report beacon expects nothing back).
+Rack::Attack.throttle("csp-reports/min/ip",
+                      limit: ->(_req) { SparcConfig.rate_limit_csp_reports_per_minute },
+                      period: 1.minute) do |req|
+  req.ip if rack_attack_csp_report_request?(req)
 end
 
 # ── 429 response ───────────────────────────────────────────────────────────

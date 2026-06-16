@@ -41,6 +41,8 @@
   has_filters    = [active_section, active_family, active_status, active_asset, active_env].any?(&:present?)
 %>
 
+<div data-controller="doc-meta inline-edit">
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header">
 
@@ -48,17 +50,17 @@
     <div>
       <div class="sparc-header-subtitle">Security Assessment Results</div>
 
-      <div id="doc-meta-view">
+      <div id="doc-meta-view" data-doc-meta-target="view">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h2 class="sparc-header-title"><%= @sar_document.name %></h2>
           <% if @sar_document.sar_version.present? %>
             <span class="sparc-version-badge">v<%= @sar_document.sar_version %></span>
           <% end %>
-          <button onclick="toggleDocMeta()" class="sparc-btn-header-edit">Edit</button>
+          <button type="button" data-action="doc-meta#toggle" class="sparc-btn-header-edit">Edit</button>
         </div>
       </div>
 
-      <div id="doc-meta-edit" style="display: none;">
+      <div id="doc-meta-edit" data-doc-meta-target="edit" style="display: none;">
         <%= form_with url: update_metadata_sar_document_path(@sar_document), method: :patch, local: true do |f| %>
           <div class="d-flex gap-2 align-items-center flex-wrap">
             <%= f.text_field :name, value: @sar_document.name,
@@ -66,7 +68,7 @@
             <%= f.text_field :sar_version, value: @sar_document.sar_version, placeholder: "Version",
                   class: "sparc-input-dark sparc-input-dark-sm" %>
             <%= f.submit "Save", class: "sparc-btn-save" %>
-            <button type="button" onclick="toggleDocMeta()" class="sparc-btn-cancel-dark">Cancel</button>
+            <button type="button" data-action="doc-meta#toggle" class="sparc-btn-cancel-dark">Cancel</button>
           </div>
         <% end %>
       </div>
@@ -154,7 +156,7 @@
   <% if @assets.any? %>
   <div class="d-flex align-items-center gap-2">
     <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-tertiary-color); white-space: nowrap;">&#x1F4BB; Asset</span>
-    <select onchange="if(this.value) window.location=this.value;" aria-label="Filter by asset"
+    <select data-controller="nav-select" data-action="change->nav-select#go" aria-label="Filter by asset"
             style="padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid var(--bs-border-color); background: var(--bs-secondary-bg); color: var(--bs-body-color); font-size: 0.82rem; cursor: pointer; min-width: 180px; max-width: 360px;">
       <option value="<%= sar_document_path(@sar_document, filter_params.except(:page, :asset)) %>"
               <%= 'selected' if active_asset.blank? %>>All Assets (<%= @assets.size %>)</option>
@@ -378,7 +380,9 @@
           <% end %>
         </div>
 
-        <button onclick="toggleEdit(<%= control.id %>)"
+        <button type="button"
+                data-action="inline-edit#toggle"
+                data-inline-edit-id-param="<%= control.id %>"
                 id="edit-btn-<%= control.id %>"
                 class="sparc-btn-edit">
           Edit
@@ -540,7 +544,9 @@
 
             <div class="d-flex gap-2 mt-3">
               <%= f.submit "Save Changes", class: "sparc-btn-save", style: "padding: 0.5rem 1.25rem; font-size: 0.875rem;" %>
-              <button type="button" onclick="toggleEdit(<%= control.id %>)"
+              <button type="button"
+                      data-action="inline-edit#toggle"
+                      data-inline-edit-id-param="<%= control.id %>"
                       style="background: var(--bs-secondary-bg); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem;">
                 Cancel
               </button>
@@ -623,23 +629,9 @@
            document: @sar_document,
            resources_path: sar_document_back_matter_resources_path(@sar_document) %>
 
+</div><%# end [data-controller="doc-meta inline-edit"] %>
+
 <script nonce="<%= content_security_policy_nonce %>">
-  function toggleEdit(id) {
-    // Auto-expand card details if collapsed
-    var details = document.getElementById('details-' + id);
-    if (details && !details.open) details.open = true;
-
-    var view = document.getElementById('view-' + id);
-    var edit = document.getElementById('edit-' + id);
-    var btn  = document.getElementById('edit-btn-' + id);
-    var now  = edit.style.display !== 'none';
-    view.style.display   = now ? '' : 'none';
-    edit.style.display   = now ? 'none' : '';
-    btn.textContent      = now ? 'Edit' : 'Cancel';
-    btn.style.background = now ? '#3498db' : 'var(--bs-secondary-bg)';
-    btn.style.color      = now ? 'white'   : 'var(--bs-secondary-color)';
-  }
-
   var hs = document.getElementById('heatmapSection');
   if (hs) hs.addEventListener('toggle', function() {
     document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
@@ -660,14 +652,6 @@
       });
     });
   });
-
-  function toggleDocMeta() {
-    var view = document.getElementById('doc-meta-view');
-    var edit = document.getElementById('doc-meta-edit');
-    var isEditing = edit.style.display !== 'none';
-    view.style.display = isEditing ? '' : 'none';
-    edit.style.display = isEditing ? 'none' : '';
-  }
 </script>
 
 <% end %><%# end unless completed %>

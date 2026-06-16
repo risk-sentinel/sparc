@@ -113,6 +113,15 @@ export default class extends Controller {
     }
   }
 
+  // Action: server-mode card click — navigate to the card's filter URL.
+  // Replaces an inline onclick (#647, epic #650); ignores clicks that land on
+  // a nested <a> so the family link still works.
+  navigateByHref(event) {
+    if (event.target.closest("a")) return
+    const href = event.currentTarget.dataset.href
+    if (href) window.location.href = href
+  }
+
   // Action: click a summary chip (filter by status/severity only)
   filterByChip(event) {
     event.preventDefault()

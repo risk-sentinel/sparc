@@ -9,6 +9,14 @@ class SessionsController < ApplicationController
   skip_before_action :require_authentication, only: [ :new, :create ], raise: false
   skip_before_action :check_password_reset, only: [ :new, :create, :destroy ], raise: false
 
+  # #649 / epic #650 — the login page relaxes form-action CSP (below) to allow
+  # OAuth POST-redirects. A bfcache/HTTP-cached copy could be restored carrying
+  # the STRICT policy (or a pre-#593 copy), silently blocking the SSO buttons
+  # until a hard reload. `turbo-cache-control: no-cache` (#190) only covers
+  # Turbo's snapshot cache, NOT bfcache. Send Cache-Control: no-store so the
+  # login page is always served fresh with the relaxed policy.
+  after_action :no_store_login, only: [ :new, :create ]
+
   # #593 — The login page starts SSO via same-origin POST forms to
   # /auth/:provider, which OmniAuth answers with a 302 to the external IdP.
   # Chromium enforces the global `form-action 'self'` (see
@@ -52,6 +60,15 @@ class SessionsController < ApplicationController
   end
 
   private
+
+  # ── Cache headers ─────────────────────────────────────────────────────
+
+  # Prevent the login page from being restored from bfcache / HTTP cache with a
+  # stale CSP (#649). Belt-and-suspenders with the turbo-cache-control meta.
+  def no_store_login
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+  end
 
   # ── Consent Banner ────────────────────────────────────────────────────
 

@@ -21,8 +21,9 @@ regression net for that class of bug.
 | `test_login_page.py` | Login page loads; no CSP violations; SSO submit not blocked by `form-action` (#593) | none |
 | `test_authenticated_nav.py` | Cookie-bridge → session; core pages render clean (no 5xx / console / CSP errors) | SA token |
 | `test_accessibility.py` | axe-core WCAG 2.1 A/AA audit, baseline+ratchet (Layer 3, #599) | login: none; core pages: SA token |
+| `test_csp_reporting.py` | CSP `report-uri` present in header; collector accepts reports (204) without auth; tolerates garbage (#528, #650) | none |
 | `conftest.py` | Base-URL + cookie-bridge fixtures | — |
-| `helpers.py` | CSP-violation recorder, console collector, same-origin check | — |
+| `helpers.py` | CSP-violation recorder + `assert_no_csp_violations` / `click_and_assert_clean` interaction checks, console collector, same-origin check | — |
 
 ## Running locally
 
@@ -40,6 +41,27 @@ SPARC_SMOKE_BASE_URL=https://sparc.risk-sentinel.org \
 SPARC_SMOKE_SA_TOKEN=sparc_sa_... \
   uv run pytest --browser chromium --browser firefox
 ```
+
+### Against a local container (the #650 local-first flow)
+
+CSP / inline-handler fixes are validated against a **locally running container
+first**, then promoted to a deployment. Point the suite at `localhost`:
+
+```bash
+# Terminal 1 — bring up the app (maps web to :3000):
+docker compose up --build
+
+# Terminal 2 — mint a local SA token (Admin → Service Accounts, or rails console),
+# then run the interaction + CSP-reporting checks against the local image:
+cd tests/ui-smoke
+SPARC_SMOKE_BASE_URL=http://localhost:3000 \
+SPARC_SMOKE_SA_TOKEN=sparc_sa_... \
+  uv run pytest --browser chromium
+```
+
+Interaction tests assert **zero CSP violations on click** via
+`helpers.click_and_assert_clean` / `assert_no_csp_violations` — the DoD for
+epic #650. `test_csp_reporting.py` confirms the `report-uri` sink is wired.
 
 ## Configuration
 
