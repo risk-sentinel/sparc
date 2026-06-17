@@ -361,7 +361,9 @@ Rails.application.routes.draw do
   end
 
   # ── Authoritative back-matter library (#372) ───────────────────────────
-  resources :authoritative_sources, only: %i[index show]
+  # #646 — any authenticated user can add a source (org/boundary-scoped by
+  # default; instance-wide via the existing promotion approval).
+  resources :authoritative_sources, only: %i[index show new create]
 
   resources :promotion_queue, only: %i[index] do
     member do
@@ -488,10 +490,11 @@ Rails.application.routes.draw do
         end
       end
 
+      # #646 — add a library source (POST /api/v1/authoritative_sources).
       # Federation: signed bundle export/import for cross-instance
       # authoritative source sharing (#372). The peer is identified by name
       # via the `peer` query/body param.
-      resource :authoritative_sources, only: [], controller: "authoritative_sources" do
+      resource :authoritative_sources, only: [ :create ], controller: "authoritative_sources" do
         get  :export,  on: :collection
         post :import,  on: :collection
       end

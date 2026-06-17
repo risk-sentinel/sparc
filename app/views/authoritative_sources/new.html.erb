@@ -1,0 +1,77 @@
+<div class="card">
+  <div class="card-body">
+    <div class="mb-3">
+      <h2 class="mb-1">Add Authoritative Source</h2>
+      <p class="text-body-secondary mb-0">
+        Add a reference to the library. By default it is available only to your
+        organization/boundary; you can request instance-wide availability below.
+      </p>
+    </div>
+
+    <% if @resource.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% @resource.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with model: @resource, url: authoritative_sources_path, method: :post, local: true do |f| %>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.label :title, class: "form-label fw-semibold" %>
+          <span class="text-danger">*</span>
+          <%= f.text_field :title, class: "form-control", required: true,
+                placeholder: "e.g. Organizational Access Control Policy" %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :href, "URL / Href", class: "form-label fw-semibold" %>
+          <%= f.text_field :href, class: "form-control", placeholder: "https://..." %>
+        </div>
+
+        <div class="col-12">
+          <%= f.label :description, class: "form-label fw-semibold" %>
+          <%= f.text_area :description, class: "form-control", rows: 2,
+                placeholder: "Short description of what this reference is." %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :rel, "Relationship", class: "form-label fw-semibold" %>
+          <%= f.select :rel,
+                options_for_select(BackMatterResource::REL_VALUES.map { |r| [ r, r ] }, "reference"),
+                {}, class: "form-select" %>
+        </div>
+        <div class="col-md-4">
+          <%= f.label :media_type, class: "form-label fw-semibold" %>
+          <%= f.select :media_type, BackMatterResource::MEDIA_TYPE_OPTIONS,
+                { include_blank: "— select —" }, class: "form-select" %>
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <%# ── Availability (#646) ── %>
+      <fieldset>
+        <legend class="form-label fw-semibold">Availability</legend>
+        <div class="form-check">
+          <%= check_box_tag :instance_wide, "1", false, class: "form-check-input", id: "instance_wide" %>
+          <%= label_tag :instance_wide, "Make available instance-wide (all organizations)", class: "form-check-label" %>
+        </div>
+        <div class="form-text">
+          Leave unchecked to limit this source to your organization/boundary.
+          Checking it requests instance-wide availability — applied immediately if
+          you have promotion authority (instance admin, policy manager, or an
+          authorizing-official role), otherwise submitted to the
+          <strong>promotion queue</strong> for approval.
+        </div>
+      </fieldset>
+
+      <div class="d-flex gap-2 mt-4">
+        <%= f.submit "Add source", class: "btn btn-primary" %>
+        <%= link_to "Cancel", authoritative_sources_path, class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

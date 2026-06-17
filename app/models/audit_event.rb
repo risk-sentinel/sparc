@@ -73,6 +73,7 @@ class AuditEvent < ApplicationRecord
     control_resource_created
     control_resource_linked
     control_resource_unlinked
+    authoritative_source_created
     data_migration_completed
     sap_document_created
     sap_document_updated
@@ -290,7 +291,8 @@ class AuditEvent < ApplicationRecord
                              service_account_token_regenerated service_account_auto_disabled],
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
                          translation_oscal_poam_to_hdf_amendments],
-    "Data Migrations" => %w[data_migration_completed]
+    "Data Migrations" => %w[data_migration_completed],
+    "Authoritative Sources" => %w[authoritative_source_created]
   }.freeze
 
   # ── Scopes ─────────────────────────────────────────────────────────────

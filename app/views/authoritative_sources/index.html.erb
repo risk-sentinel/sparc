@@ -9,7 +9,10 @@
           and other OSCAL artifacts.
         </p>
       </div>
-      <span class="badge text-bg-secondary"><%= @total %> total</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge text-bg-secondary"><%= @total %> total</span>
+        <%= link_to "+ Add source", new_authoritative_source_path, class: "btn btn-primary btn-sm" %>
+      </div>
     </div>
 
     <%= form_with url: authoritative_sources_path, method: :get,
@@ -49,11 +52,11 @@
         <table class="table table-sm table-hover align-middle">
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Source</th>
-              <th>Rel</th>
-              <th>Scope</th>
-              <th>Updated</th>
+              <th style="min-width: 18rem;">Title</th>
+              <th class="text-nowrap">Source</th>
+              <th class="text-nowrap">Rel</th>
+              <th class="text-nowrap">Scope</th>
+              <th class="text-nowrap">Updated</th>
               <th class="text-end">&nbsp;</th>
             </tr>
           </thead>
@@ -65,7 +68,7 @@
                     <div class="small text-body-secondary"><%= truncate(r.description, length: 120) %></div>
                   <% end %>
                 </td>
-                <td>
+                <td class="text-nowrap">
                   <span class="badge text-bg-<%= r.authoritative? ? "success" : "secondary" %>">
                     <%= r.source %>
                   </span>
@@ -73,8 +76,8 @@
                     <span class="badge text-bg-info" title="<%= r.federated_from_instance %>">federated</span>
                   <% end %>
                 </td>
-                <td><code><%= r.rel %></code></td>
-                <td>
+                <td class="text-nowrap"><code><%= r.rel %></code></td>
+                <td class="text-nowrap">
                   <% if r.globally_available %>
                     <span class="badge text-bg-warning">Global</span>
                   <% elsif r.organization_id %>
@@ -83,7 +86,7 @@
                     <span class="badge text-bg-light">Doc-scoped</span>
                   <% end %>
                 </td>
-                <td><span class="small"><%= r.updated_at.to_date %></span></td>
+                <td class="text-nowrap"><span class="small"><%= r.updated_at.to_date %></span></td>
                 <td class="text-end">
                   <%= link_to "View", authoritative_source_path(r), class: "btn btn-sm btn-outline-primary" %>
                 </td>

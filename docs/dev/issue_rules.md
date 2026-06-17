@@ -11,6 +11,18 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
 - **Never merge PRs** — only the repository owner merges
 - **Always plan before implementing** — step 5 is not optional
 - **Always update compliance artifacts** when touching security-critical code
+- **New navigation requires a Playwright check** — any new page, route, or
+  clickable control (button / link / `data-action` / form submit) MUST be
+  exercised by the `tests/ui-smoke` Playwright suite: add the page to
+  `pages.py` (page-load coverage) and an interaction test that clicks the
+  control and asserts the behavior **and zero CSP violations on interaction**
+  (`helpers.assert_no_csp_violations` / `click_and_assert_clean`). Render-time
+  checks are insufficient — inline-handler/CSP breakage only manifests on click.
+- **New CRUD function requires an API endpoint** — every create/read/update/
+  delete a user can perform MUST have a corresponding `Api::V1::` endpoint, and
+  the UI is a thin client over it (shared service where practical). Add a
+  request spec for the endpoint (happy path + auth/authorization). The UI is
+  never the only way to perform a mutation.
 
 ---
 

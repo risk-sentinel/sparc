@@ -17,8 +17,36 @@
 # NIST 800-53:
 #   AC-3 / AC-4 / AC-20 / AU-2 / SC-8 / SC-12 / SC-13
 class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
-  before_action :authorize_federate!
-  before_action :set_peer
+  # Federation export/import are peer-to-peer (federate permission + a known
+  # peer). The #646 create endpoint is a normal authenticated write — any API
+  # user may add a source (org/boundary-scoped by default).
+  before_action :authorize_federate!, only: %i[export import]
+  before_action :set_peer, only: %i[export import]
+
+  # POST /api/v1/authoritative_sources
+  #
+  # Add a library source (#646). Org/boundary-scoped by default; pass
+  # instance_wide=true to request instance-wide availability (granted directly
+  # if the caller has promotion authority, else queued for approval). The web
+  # UI is a thin client over this endpoint.
+  def create
+    result = AuthoritativeSourceCreator.call(
+      actor: current_user,
+      attrs: create_params,
+      instance_wide: params[:instance_wide]
+    )
+
+    if result.success?
+      audit_log("authoritative_source_created", subject: result.resource,
+                metadata: { title: result.resource.title, availability: result.message })
+      render json: {
+        data: serialize_back_matter_resource(result.resource),
+        message: result.message
+      }, status: :created
+    else
+      render json: { error: result.error }, status: :unprocessable_entity
+    end
+  end
 
   # GET /api/v1/authoritative_sources/export
   def export
@@ -60,6 +88,11 @@ class Api::V1::AuthoritativeSourcesController < Api::V1::BaseController
   end
 
   private
+
+  def create_params
+    params.require(:back_matter_resource)
+          .permit(:title, :description, :href, :rel, :media_type)
+  end
 
   def authorize_federate!
     return if current_user.admin?

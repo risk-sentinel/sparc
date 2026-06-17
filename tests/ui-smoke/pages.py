@@ -66,6 +66,7 @@ FORM_PAGES = [
     ("authorization_boundary_new", "/authorization_boundaries/new"),
     ("evidence_new", "/evidences/new"),
     ("federation_peer_new", "/federation_peers/new"),
+    ("authoritative_source_new", "/authoritative_sources/new"),
     ("profile_edit", "/profile/edit"),
     ("password_edit", "/password/edit"),
 ]

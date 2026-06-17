@@ -84,4 +84,62 @@ RSpec.describe "Api::V1::AuthoritativeSources", type: :request do
       expect(JSON.parse(response.body)["error"]).to match(/Signature verification failed/i)
     end
   end
+
+  describe "POST /api/v1/authoritative_sources (#646 create)" do
+    it "creates an org/boundary-scoped source by default and returns 201" do
+      expect {
+        post api_v1_authoritative_sources_path,
+             params: { back_matter_resource: { title: "API Source", rel: "reference" } },
+             headers: admin_headers, as: :json
+      }.to change(BackMatterResource, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body.dig("data", "title")).to eq("API Source")
+
+      r = BackMatterResource.order(:created_at).last
+      expect(r.source).to eq("managed")
+      expect(r.globally_available).to be(false)
+    end
+
+    it "self-promotes to instance-wide for an admin when instance_wide is set" do
+      post api_v1_authoritative_sources_path,
+           params: { back_matter_resource: { title: "API Global", rel: "reference" },
+                     instance_wide: true },
+           headers: admin_headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      r = BackMatterResource.order(:created_at).last
+      expect(r.globally_available).to be(true)
+      expect(r.source).to eq("authoritative")
+    end
+
+    it "queues instance-wide for a non-privileged token holder" do
+      bystander = create(:user)
+      token = ApiToken.generate!(user: bystander, name: "x")
+
+      post api_v1_authoritative_sources_path,
+           params: { back_matter_resource: { title: "API Wants Global", rel: "reference" },
+                     instance_wide: true },
+           headers: { "Authorization" => "Bearer #{token.plaintext_token}" }, as: :json
+
+      expect(response).to have_http_status(:created)
+      r = BackMatterResource.order(:created_at).last
+      expect(r.globally_available).to be(false)
+      expect(r.promotion_status).to eq("pending_review")
+    end
+
+    it "rejects an unauthenticated request" do
+      post api_v1_authoritative_sources_path,
+           params: { back_matter_resource: { title: "Nope" } }, as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "returns 422 on a validation error" do
+      post api_v1_authoritative_sources_path,
+           params: { back_matter_resource: { title: "" } },
+           headers: admin_headers, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+  end
 end
