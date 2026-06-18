@@ -113,6 +113,6 @@ group :test do
   gem "selenium-webdriver"
   # Layer 3 accessibility (#599) — axe-core matchers for system specs
   gem "axe-core-rspec"
-  gem "shoulda-matchers", "~> 7.0"
+  gem "shoulda-matchers", "~> 8.0"
   gem "simplecov", require: false
 end
