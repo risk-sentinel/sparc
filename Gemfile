@@ -23,7 +23,7 @@ gem "roo", "~> 3.0.0"              # .xlsx file parsing (MIT)
 # gem is GPL-3.0-only and incompatible with SPARC's Apache-2.0 license
 # at runtime. Legacy .xls (Excel 97-2003 binary) support was dropped;
 # .xlsx parsing via `roo` is preserved.
-gem "rubyzip", "~> 3.3.1"          # ZIP file handling
+gem "rubyzip", "~> 3.4.0"          # ZIP file handling
 gem "activerecord-import"           # Bulk imports
 gem "caxlsx", "~> 4.5"             # Excel .xlsx generation
 gem "pagy", "~> 43.5"              # Pagination
