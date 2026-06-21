@@ -31,7 +31,7 @@
 findings:
 
   # ==========================================================================
-  # CRITICAL -- 11 unique CVEs (3 base-image + 8 thruster Go-module, #612)
+  # CRITICAL -- 12 unique CVEs (4 base-image + 8 thruster Go-module, #612)
   # NOTE: the 2026-06-10 rebuild-rescan delta block at the END of this file
   # (#620) adds 3 more CRITICAL entries (net-imap x2, zlib) — all dispositioned
   # there rather than re-sorted into this section.
@@ -77,6 +77,18 @@ findings:
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-29"
     next_review_date: "2026-06-28"
+
+  - cve_id: CVE-2026-12087
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Out-of-bounds heap read in the perl Socket module's pack_ip_mreq_source() (Socket.xs): the length check validates the preceding multiaddr argument's byte count instead of the source argument, so a source shorter than 4 bytes passes validation and the fixed-size copy into imr_sourceaddr reads up to 3 bytes of adjacent heap (info disclosure; CVSS 9.1 from CISA-ADP). Reaching it requires a perl program to call Socket::pack_ip_mreq_source() -- the IP_ADD_SOURCE_MEMBERSHIP source-specific multicast helper -- with an attacker-influenced short source address. SPARC invokes no perl at all: it is a Ruby/Rails app where every socket/multicast/network operation is handled by Ruby (Puma, Ruby's Socket, net/http) and OpenSSL, never perl's Socket module, and SPARC performs no IP multicast group joins anywhere. perl is a transitive dependency of the ruby:3.4.4-slim base image only and no application code path shells out to perl. Container runs as non-root (UID 1000) with no interactive shell. Debian Bookworm ships no fixed perl (only libsocket-perl 2.041-1 is fixed in sid; the perl source package remains unfixed). Same present-but-unreachable basis as the other perl entries above. Remediation candidate when Debian ships a patched perl or on Trixie/distroless migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-21"
+    next_review_date: "2026-07-21"
 
   # --------------------------------------------------------------------------
   # thruster (Go HTTP/2 reverse proxy) transitive Go-module CVEs — discovered
