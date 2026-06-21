@@ -26,6 +26,12 @@ baselines and assembling components
 DISA STIGs (XCCDF), and InSpec profiles
 - **OSCAL Export** — Export validated OSCAL v1.1.2 JSON for SSPs, CDEFs, Profiles,
 SARs, and POA&Ms
+- **HDF ↔ OSCAL Translation** — Convert scanner findings (HDF) to OSCAL SAR via the
+MITRE hdf-libs bridge, with optional evidence back-matter enrichment
+- **Document Review & Approval** — Optional review queue and approval workflow for
+trust-store documents, gated by `SPARC_REQUIRE_DOCUMENT_APPROVAL`
+- **Authoritative Sources & Federation** — Subscribe to HMAC-signed authoritative
+content bundles published by federation peers
 - **Interactive Heat Maps** — Visual compliance dashboards showing control status
 by NIST family
 - **Inline Field Editing** — Edit implementation details directly in the browser
@@ -33,7 +39,8 @@ by NIST family
 Entra ID), and LDAP
 - **Role-Based Access** — 29 NIST RMF roles with project-level scoping and admin
 UI
-- **Background Processing** — Async job processing for large files via Sidekiq
+- **Background Processing** — Async job processing for large files via Solid Queue
+(database-backed; Sidekiq + Redis optional)
 - **RESTful API** — Programmatic access at `/api/v1/`
 
 ---
@@ -66,10 +73,12 @@ bin/rails db:create db:migrate db:seed
 bin/rails server
 ```
 
-**Prerequisites:** Ruby 3.4.4, PostgreSQL 15+, Redis 7+, Bundler
+**Prerequisites:** Ruby 3.4.4, PostgreSQL 15+, Bundler
 
-Start Redis (`redis-server`) and Sidekiq (`bundle exec sidekiq`) in separate
-terminals for background job processing.
+Background jobs run on **Solid Queue** (database-backed) by default — no Redis
+required. In development they execute in-process; to run a dedicated worker,
+start `bin/jobs` in a separate terminal. Sidekiq + Redis remain supported as an
+optional alternative.
 
 ---
 
