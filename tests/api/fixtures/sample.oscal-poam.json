@@ -1,0 +1,23 @@
+{
+  "plan-of-action-and-milestones": {
+    "uuid": "11111111-2222-4333-8444-555555555555",
+    "metadata": {
+      "title": "SPARC contract-test OSCAL POA&M",
+      "last-modified": "2026-06-21T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2"
+    },
+    "system-id": {
+      "identifier-type": "https://ietf.org/rfc/rfc4122",
+      "id": "66666666-7777-4888-8999-aaaaaaaaaaaa"
+    },
+    "poam-items": [
+      {
+        "uuid": "99999999-8888-4777-8666-555555555555",
+        "title": "Remediate finding from scanner HDF",
+        "description": "Minimal POA&M item used to exercise the OSCAL POAM -> HDF Amendments converter.",
+        "related-findings": []
+      }
+    ]
+  }
+}

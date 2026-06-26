@@ -2,7 +2,16 @@ require "rails_helper"
 
 RSpec.describe HdfRunner do
   describe "subprocess invocation contract" do
-    let(:runner) { described_class.new(binary: "fake-hdf") }
+    let(:runner) { described_class.new(binary: fake_binary) }
+
+    # Shared literals extracted to avoid duplication (Sonar S1192).
+    let(:fake_binary)     { "fake-hdf" }
+    let(:scan_path)       { "/tmp/scan.json" }
+    let(:amendments_path) { "/tmp/amendments.json" }
+    let(:baselines_key)   { "baselines" }
+    let(:results_type)    { "results" }
+    let(:oscal_sar)    { "oscal-sar" }
+    let(:version_json) { '{"version":"3.2.0"}' }
 
     def stub_open3(stdout: "", stderr: "", success: true, exit_code: 0)
       status = instance_double(Process::Status, success?: success, exitstatus: exit_code)
@@ -12,26 +21,26 @@ RSpec.describe HdfRunner do
     describe "#convert" do
       it "calls hdf with --json and returns parsed output" do
         stub_open3(stdout: '{"version":1,"profiles":[]}')
-        result = runner.convert("/tmp/scan.json", from: "trivy")
+        result = runner.convert(scan_path, from: "trivy")
         expect(result).to eq("version" => 1, "profiles" => [])
         expect(Open3).to have_received(:capture3).with(
-          "fake-hdf", "convert", "--max-size", "50",
-          "--from", "trivy", "--json", "/tmp/scan.json"
+          fake_binary, "convert", "--max-size", "50",
+          "--from", "trivy", "--json", scan_path
         )
       end
 
       it "passes --to when destination format specified" do
         stub_open3(stdout: "{}")
-        runner.convert("/tmp/scan.json", from: "hdf", to: "oscal-sar")
+        runner.convert(scan_path, from: "hdf", to: oscal_sar)
         expect(Open3).to have_received(:capture3) do |*args|
-          expect(args).to include("--to", "oscal-sar")
+          expect(args).to include("--to", oscal_sar)
         end
       end
 
       it "raises HdfRunner::Error with stderr on non-zero exit" do
         stub_open3(stdout: "", stderr: "validation failed at line 42", success: false, exit_code: 1)
         expect {
-          runner.convert("/tmp/scan.json")
+          runner.convert(scan_path)
         }.to raise_error(HdfRunner::Error) do |err|
           expect(err.exit_code).to eq(1)
           expect(err.stderr).to include("line 42")
@@ -42,7 +51,7 @@ RSpec.describe HdfRunner do
       it "raises HdfRunner::Error when hdf returns non-JSON" do
         stub_open3(stdout: "not json", stderr: "", success: true)
         expect {
-          runner.convert("/tmp/scan.json")
+          runner.convert(scan_path)
         }.to raise_error(HdfRunner::Error, /returned non-JSON/)
       end
 
@@ -56,27 +65,103 @@ RSpec.describe HdfRunner do
       end
     end
 
+    describe "#convert baselines normalization (#648)" do
+      def capture_input_content(stdout: "{}")
+        captured = nil
+        status = instance_double(Process::Status, success?: true, exitstatus: 0)
+        allow(Open3).to receive(:capture3) do |*args|
+          captured = File.read(args.last)
+          [ stdout, "", status ]
+        end
+        yield
+        captured
+      end
+
+      it "injects empty baselines for oscal-sar when the field is missing" do
+        content = capture_input_content do
+          runner.convert(StringIO.new('{"version":1,"profiles":[]}'), from: "hdf", to: oscal_sar)
+        end
+        expect(JSON.parse(content)).to include(baselines_key => [])
+      end
+
+      it "leaves input untouched when baselines already present" do
+        content = capture_input_content do
+          runner.convert(StringIO.new('{"profiles":[],"baselines":[{"x":1}]}'), from: "hdf", to: oscal_sar)
+        end
+        expect(JSON.parse(content)[baselines_key]).to eq([ { "x" => 1 } ])
+      end
+
+      it "does not inject for non-HDF JSON lacking a profiles key" do
+        # Without the `profiles` gate, hdf-cli 3.2.0 would convert
+        # `{...,"baselines":[]}` garbage into a degenerate SAR (exit 0),
+        # silently accepting non-HDF input. See #648.
+        content = capture_input_content do
+          runner.convert(StringIO.new('{"not":"hdf"}'), from: "hdf", to: oscal_sar)
+        end
+        expect(JSON.parse(content)).not_to have_key(baselines_key)
+      end
+
+      it "does not inject for non-oscal-sar conversions" do
+        content = capture_input_content do
+          runner.convert(StringIO.new('{"profiles":[]}'), from: "oscal-poam")
+        end
+        expect(JSON.parse(content)).not_to have_key(baselines_key)
+      end
+
+      it "does not inject when normalization is disabled" do
+        allow(SparcConfig).to receive(:hdf_normalize_baselines?).and_return(false)
+        content = capture_input_content do
+          runner.convert(StringIO.new('{"profiles":[]}'), from: "hdf", to: oscal_sar)
+        end
+        expect(JSON.parse(content)).not_to have_key(baselines_key)
+      end
+    end
+
+    describe "#convert version allowlist (SPARC_HDF_ALLOWED_VERSIONS)" do
+      it "refuses to run when the hdf-cli version is not allowlisted" do
+        allow(SparcConfig).to receive(:hdf_allowed_versions).and_return([ "3.1.0" ])
+        stub_open3(stdout: version_json)
+        expect {
+          runner.convert(scan_path, to: "hdf")
+        }.to raise_error(HdfRunner::Error, /not in SPARC_HDF_ALLOWED_VERSIONS/)
+      end
+
+      it "runs when the version is allowlisted" do
+        allow(SparcConfig).to receive(:hdf_allowed_versions).and_return([ "3.2.0" ])
+        stub_open3(stdout: version_json)
+        expect { runner.convert(scan_path, to: "hdf") }.not_to raise_error
+      end
+
+      it "is a no-op (no version probe) when the allowlist is empty" do
+        allow(SparcConfig).to receive(:hdf_allowed_versions).and_return([])
+        stub_open3(stdout: "{}")
+        runner.convert(scan_path, to: "hdf")
+        # Only the convert shell-out — no extra `version` probe.
+        expect(Open3).to have_received(:capture3).once
+      end
+    end
+
     describe "#validate" do
       it "shells with --type and --quiet, returns true on success" do
         stub_open3(stdout: "")
-        expect(runner.validate("/tmp/scan.json", type: "results")).to be true
+        expect(runner.validate(scan_path, type: results_type)).to be true
         expect(Open3).to have_received(:capture3).with(
-          "fake-hdf", "validate", "--type", "results", "--quiet", "/tmp/scan.json"
+          fake_binary, "validate", "--type", results_type, "--quiet", scan_path
         )
       end
 
       it "raises on non-zero exit" do
         stub_open3(stdout: "", stderr: "schema mismatch", success: false, exit_code: 1)
-        expect { runner.validate("/tmp/scan.json") }.to raise_error(HdfRunner::Error, /schema mismatch/)
+        expect { runner.validate(scan_path) }.to raise_error(HdfRunner::Error, /schema mismatch/)
       end
     end
 
     describe "#info / #stats" do
       it "passes --json and parses the result" do
         stub_open3(stdout: '{"controls":{"passed":10}}')
-        expect(runner.stats("/tmp/scan.json")).to eq("controls" => { "passed" => 10 })
+        expect(runner.stats(scan_path)).to eq("controls" => { "passed" => 10 })
         expect(Open3).to have_received(:capture3).with(
-          "fake-hdf", "stats", "--json", "/tmp/scan.json"
+          fake_binary, "stats", "--json", scan_path
         )
       end
     end
@@ -84,9 +169,9 @@ RSpec.describe HdfRunner do
     describe "#amend_verify" do
       it "shells `amend verify <path>` and returns true" do
         stub_open3(stdout: "")
-        expect(runner.amend_verify("/tmp/amendments.json")).to be true
+        expect(runner.amend_verify(amendments_path)).to be true
         expect(Open3).to have_received(:capture3).with(
-          "fake-hdf", "amend", "verify", "/tmp/amendments.json"
+          fake_binary, "amend", "verify", amendments_path
         )
       end
     end
@@ -101,20 +186,20 @@ RSpec.describe HdfRunner do
         allow(File).to receive(:read).with(/hdf-amended-.*\.json/).and_return(amended_payload)
 
         result = runner.amend_apply(
-          results: "/tmp/scan.json",
-          amendments: "/tmp/amendments.json"
+          results: scan_path,
+          amendments: amendments_path
         )
         expect(result.dig("profiles", 0, "controls", 0, "id")).to eq("AC-2")
         expect(Open3).to have_received(:capture3) do |*args|
-          expect(args).to include("amend", "apply", "--results", "/tmp/scan.json")
-          expect(args).to include("--amendments", "/tmp/amendments.json")
+          expect(args).to include("amend", "apply", "--results", scan_path)
+          expect(args).to include("--amendments", amendments_path)
         end
       end
     end
 
     describe "#version" do
       it "memoizes the parsed JSON" do
-        stub_open3(stdout: '{"version":"3.2.0"}')
+        stub_open3(stdout: version_json)
         2.times { runner.version }
         expect(Open3).to have_received(:capture3).once
       end

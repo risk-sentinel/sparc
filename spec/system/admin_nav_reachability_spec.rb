@@ -23,6 +23,7 @@ RSpec.describe "Admin nav reachability", type: :system do
     # and don't reach Capybara's Puma thread). The system_spec_config
     # support file sets SPARC_ENABLE_LOCAL_LOGIN=true by default.
     visit "/login"
+    accept_consent_banner
     fill_in "Email Address", with: admin.email
     fill_in "Password",      with: "SecurePassword123!"
     click_button "Sign In"

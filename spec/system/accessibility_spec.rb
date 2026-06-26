@@ -18,6 +18,7 @@ RSpec.describe "Accessibility (WCAG 2.1 AA)", type: :system do
     ENV["SPARC_OIDC_CLIENT_ID"]     = "dummy"
 
     visit "/login"
+    accept_consent_banner
     expect(page).to have_button("Local Login")
 
     expect(page).to be_axe_clean

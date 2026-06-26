@@ -21,6 +21,7 @@ RSpec.describe "Admin: create a service account", type: :system do
     # reach Capybara's Puma thread). support/system_spec_config.rb
     # sets SPARC_ENABLE_LOCAL_LOGIN=true by default.
     visit "/login"
+    accept_consent_banner
     fill_in "Email Address", with: admin.email
     fill_in "Password",      with: "SecurePassword123!"
     click_button "Sign In"

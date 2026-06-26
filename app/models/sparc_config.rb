@@ -186,6 +186,23 @@ module SparcConfig
   # enforced, so existing publish flows are unchanged until an org enables it.
   def require_document_approval? = ENV.fetch("SPARC_REQUIRE_DOCUMENT_APPROVAL", "false") == "true"
 
+  # ── HDF / OSCAL translation (#449, #648) ─────────────────────────────────
+  # hdf-cli 3.2.0 made a top-level `baselines` field REQUIRED for the
+  # hdf→oscal-sar conversion, which rejects standard scanner HDF that has no
+  # such field (upstream mitre/hdf-libs#104). When true (default), HdfRunner
+  # injects an empty `baselines: []` before converting so standard HDF works
+  # again. Set false for strict pass-through (no input mutation).
+  def hdf_normalize_baselines? = ENV.fetch("SPARC_HDF_NORMALIZE_BASELINES", "true") == "true"
+
+  # Allowlist of certified hdf-cli tool versions for the translation surface.
+  # Empty (default) = accept whatever version is baked into the image (chosen
+  # at build via the HDF_LIBS_VERSION Docker build arg). When set (e.g.
+  # "3.2.0,3.3.0"), the translation endpoints refuse to run on an
+  # uncertified hdf-cli build.
+  def hdf_allowed_versions
+    ENV.fetch("SPARC_HDF_ALLOWED_VERSIONS", "").split(",").map(&:strip).reject(&:empty?)
+  end
+
   # ── Cookieless User-Data Subdomain (#515) ────────────────────────────────
   # User-uploaded blobs (SSP/SAR/CDEF/POAM JSON, XML, YAML, XLSX, evidence)
   # are served from a separate cookieless hostname. Even if a future code

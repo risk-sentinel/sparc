@@ -29,8 +29,23 @@ RSpec.describe "Login page tab toggle", type: :system do
     ENV["SPARC_OIDC_CLIENT_ID"]        = "dummy"
   end
 
+  it "blocks the login form behind the mandatory consent banner until Proceed (#190)" do
+    visit "/login"
+    # Consent modal is shown on load; the login card is hidden (d-none) and
+    # its controls are not reachable until the user consents.
+    expect(page).to have_button("Proceed")
+    expect(page).to have_no_button("Local Login")
+
+    accept_consent_banner
+
+    # Proceeding reveals the login card and its tabs.
+    expect(page).to have_button("Local Login")
+    expect(page).to have_button("Okta")
+  end
+
   it "renders both tabs and the Local panel is visible on first load" do
     visit "/login"
+    accept_consent_banner
     expect(page).to have_button("Local Login")
     expect(page).to have_button("Okta")
     expect(page).to have_css('#tab-local.active')
@@ -39,6 +54,7 @@ RSpec.describe "Login page tab toggle", type: :system do
 
   it "switching to the Okta tab swaps panel visibility (the CSP regression case)" do
     visit "/login"
+    accept_consent_banner
     click_button "Okta"
     # If inline onclick handlers were blocked (the v1.7.0 → v1.8.0
     # regression), this expectation fails because switchTab never
@@ -50,6 +66,7 @@ RSpec.describe "Login page tab toggle", type: :system do
 
   it "switching back to Local restores the Local panel" do
     visit "/login"
+    accept_consent_banner
     click_button "Okta"
     expect(page).to have_css('#tab-oidc.active', wait: 2)
 

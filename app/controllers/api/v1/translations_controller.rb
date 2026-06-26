@@ -23,11 +23,26 @@
 #
 class Api::V1::TranslationsController < Api::V1::BaseController
   rescue_from HdfRunner::Error do |e|
-    render json: {
-      error: "hdf-libs translation failed",
-      details: e.message,
-      stderr: e.stderr.to_s.lines.first(20).join.strip
-    }, status: :unprocessable_entity
+    # A "no converter found" failure means the bundled hdf-cli doesn't support
+    # this translation path — currently raw hdf→oscal-poam, which 3.2.0 removed:
+    # POA&M is now produced from an HDF *amendments* doc (hdf-amendments →
+    # oscal-poam), not from raw scanner HDF (verified against the 3.2.0 convert
+    # catalog; see docs/dev/hdf-libs-3.2.0-upstream-report.md, mitre/hdf-libs#104).
+    # Surface a clear 501 rather than a generic 422 so callers can distinguish
+    # "unsupported path" from "bad input".
+    if e.message.include?("no converter found")
+      render json: {
+        error: "Translation path not available in the bundled hdf-cli",
+        details: e.message,
+        note: "hdf-cli 3.2.0 removed the direct hdf→oscal-poam converter; OSCAL POA&M is now sourced from hdf-amendments. Tracked upstream: https://github.com/mitre/hdf-libs/issues/104"
+      }, status: :not_implemented
+    else
+      render json: {
+        error: "hdf-libs translation failed",
+        details: e.message,
+        stderr: e.stderr.to_s.lines.first(20).join.strip
+      }, status: :unprocessable_entity
+    end
   end
 
   # POST /api/v1/oscal/sar_from_hdf

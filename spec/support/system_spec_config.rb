@@ -56,6 +56,39 @@ Capybara.configure do |config|
   config.server = :puma, { Silent: true }
 end
 
+# Helper for the mandatory login consent banner (#190). The banner is forced
+# ON for every system spec (see the before-each below) so the consent screen
+# is always exercised in the real flow, independent of a developer's local
+# .env. It renders a Bootstrap modal over a hidden (d-none) login card;
+# `accept_consent_banner` performs the real "Proceed" click that reveals the
+# login form (consent_banner_controller#proceed). Call it right after visiting
+# a page that shows the banner (e.g. /login), before touching the login form.
+module SystemConsentBanner
+  def accept_consent_banner
+    return unless page.has_button?("Proceed", wait: 5)
+
+    click_button "Proceed"
+    # proceed() synchronously un-hides the login card (so the form is ready)
+    # and calls bsModal.hide(). But in headless Chrome the Bootstrap fade-out's
+    # `transitionend` can fail to fire, so hide() never completes its DOM
+    # teardown — the `.modal.show` element and `.modal-backdrop` linger and
+    # intercept clicks on the now-visible login form. Finish the teardown
+    # explicitly (the real consent→reveal already happened via #proceed).
+    page.execute_script(<<~JS)
+      document.querySelectorAll(".modal.show").forEach((m) => {
+        m.classList.remove("show");
+        m.style.display = "none";
+        m.setAttribute("aria-hidden", "true");
+      });
+      document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+      document.body.classList.remove("modal-open");
+      document.body.style.overflow = "";
+    JS
+    expect(page).to have_no_css(".modal.show")
+    expect(page).to have_no_css(".modal-backdrop")
+  end
+end
+
 RSpec.configure do |config|
   # System specs run a Puma server in a separate thread; RSpec mocks
   # are thread-local, so `allow(SparcConfig).to receive(...)` stubs
@@ -65,7 +98,10 @@ RSpec.configure do |config|
   # Snapshot original env at example start; restore after.
   AUTH_ENV_KEYS = %w[SPARC_ENABLE_LOCAL_LOGIN SPARC_ENABLE_OIDC
                      SPARC_ENABLE_LDAP SPARC_OIDC_PROVIDER_TITLE
-                     SPARC_OIDC_ISSUER_URL SPARC_OIDC_CLIENT_ID].freeze
+                     SPARC_OIDC_ISSUER_URL SPARC_OIDC_CLIENT_ID
+                     SPARC_BANNER_ENABLED SPARC_BANNER_MESSAGE].freeze
+
+  config.include SystemConsentBanner, type: :system
 
   config.before(:each, type: :system) do |example|
     if sparc_chrome_binary.nil?
@@ -74,12 +110,20 @@ RSpec.configure do |config|
     end
     driven_by :sparc_headless_chrome
 
-    # Snapshot for after-each restore.
+    # Snapshot for after-each restore (isolates specs from a developer's .env).
     example.metadata[:_sparc_env_snapshot] = AUTH_ENV_KEYS.index_with { |k| ENV[k] }
 
     # Sensible defaults so admin nav specs can form-sign-in. Override
     # per-example by setting ENV[...] in the spec's own before block.
     ENV["SPARC_ENABLE_LOCAL_LOGIN"] = "true"
+
+    # The login consent banner (#190) is a MANDATORY consent screen — force it
+    # on for all system specs so the real banner→Proceed→login flow is always
+    # covered, regardless of whether the developer's local .env enables it.
+    # Specs dismiss it via `accept_consent_banner`. Points at the in-repo DoD
+    # banner file (resolved against Rails.root by SessionsController).
+    ENV["SPARC_BANNER_ENABLED"] = "true"
+    ENV["SPARC_BANNER_MESSAGE"] = "public/banners/dod-banner.html"
   end
 
   config.after(:each, type: :system) do |example|
