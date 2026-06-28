@@ -125,7 +125,7 @@ jobs:
 
       - name: Cache Gitleaks binary
         id: gitleaks-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: /usr/local/bin/gitleaks
           key: gitleaks-${{ runner.os }}-8.24.0
@@ -321,7 +321,7 @@ jobs:
           bundler-cache: true
 
       - name: Cache bundler-audit advisory DB
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: ~/.local/share/ruby-advisory-db
           key: bundler-audit-db-${{ runner.os }}-${{ github.run_id }}
@@ -375,7 +375,7 @@ jobs:
 
       - name: Cache Trivy binary
         id: trivy-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: /usr/local/bin/trivy
           key: trivy-${{ runner.os }}-0.69.3
@@ -446,7 +446,7 @@ jobs:
 
       - name: Cache Trivy binary
         id: trivy-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: /usr/local/bin/trivy
           key: trivy-${{ runner.os }}-0.69.3
@@ -475,7 +475,7 @@ jobs:
 
       - name: Cache Trivy ASFF template
         id: asff-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: contrib/asff.tpl
           key: trivy-asff-tpl-v1
@@ -609,7 +609,7 @@ jobs:
 
       - name: Cache Grype binary
         id: grype-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: /usr/local/bin/grype
           key: grype-${{ runner.os }}-${{ env.GRYPE_VERSION }}
@@ -622,7 +622,7 @@ jobs:
           grype version
 
       - name: Cache Grype vulnerability DB
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: ~/.cache/grype/db
           # Weekly key — DB updates daily but weekly cache balances freshness vs hit rate
@@ -1435,7 +1435,7 @@ jobs:
       # ── S3 Upload ─────────────────────────────────────────────────
       - name: Configure AWS credentials via OIDC
         if: env.HAS_DISPATCH_TOKEN == 'true'
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
@@ -1496,7 +1496,7 @@ jobs:
           fetch-depth: 1
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.12'
 
@@ -1555,7 +1555,7 @@ jobs:
 
       - name: Configure AWS Credentials
         if: github.ref == 'refs/heads/main'
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
