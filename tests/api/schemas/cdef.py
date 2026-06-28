@@ -7,9 +7,9 @@ from typing import Annotated
 from pydantic import Field
 
 from .base import (
+    STRICT,
     BackMatterResource,
     DocumentBase,
-    STRICT,
     Source,
 )
 
@@ -23,6 +23,9 @@ class CdefDocumentIndex(DocumentBase):
     cdef_version: str | None = None
     benchmark_id: str | None = None
     source: Source | None = None  # Present only for AWS Labs / cloned CDEFs
+    # #627/#628 content-completeness gate (CdefDocument includes ContentCompleteness).
+    content_complete: bool
+    content_completeness_gaps: list[str]
 
 
 class CdefDocumentShow(CdefDocumentIndex):

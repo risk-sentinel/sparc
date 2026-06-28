@@ -8,6 +8,7 @@
 # Endpoints:
 #   POST /api/v1/oscal/sar_from_hdf              — HDF results → OSCAL SAR
 #   POST /api/v1/oscal/poam_from_hdf             — HDF results → OSCAL POAM
+#   POST /api/v1/oscal/poam_from_amendments      — HDF Amendments → OSCAL POAM
 #   POST /api/v1/hdf/amendments_from_oscal_poam  — OSCAL POAM → HDF Amendments
 #
 # Payload may arrive as either:
@@ -63,6 +64,24 @@ class Api::V1::TranslationsController < Api::V1::BaseController
       with_optional_boundary do |boundary|
         result = translation_service.hdf_to_oscal_poam(path, boundary: boundary)
         audit_log("translation_hdf_to_oscal_poam",
+                  metadata: { authorization_boundary_id: boundary&.id })
+        render json: result
+      end
+    end
+  end
+
+  # POST /api/v1/oscal/poam_from_amendments
+  #
+  # hdf-cli 3.2.0 removed the direct hdf→oscal-poam converter; an OSCAL POA&M is
+  # now produced from an HDF *amendments* document via
+  # `hdf convert --from hdf-amendments --to oscal-poam` (verified against the
+  # 3.2.0 convert catalog). This is the supported replacement for the removed
+  # raw-HDF→POA&M path that `poam_from_hdf` now 501s. See #663, mitre/hdf-libs#104.
+  def poam_from_amendments
+    with_uploaded_payload do |path|
+      with_optional_boundary do |boundary|
+        result = translation_service.oscal_poam_from_hdf_amendments(path, boundary: boundary)
+        audit_log("translation_hdf_amendments_to_oscal_poam",
                   metadata: { authorization_boundary_id: boundary&.id })
         render json: result
       end

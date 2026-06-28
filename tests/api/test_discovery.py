@@ -20,7 +20,6 @@ import pytest
 
 from conftest import assert_error_envelope
 
-
 pytestmark = [pytest.mark.discovery, pytest.mark.phase1]
 
 
@@ -37,7 +36,9 @@ class TestDiscovery:
         assert payload["api_version"] == "v1"
         assert payload["system_id"] == "sparc-application"
         assert "authenticated_as" in payload
-        assert payload["auth_mode"] in {"token", "oidc", "hybrid"}
+        # api_auth_mode (SPARC_API_AUTH) is one of local|oidc|hybrid — "local"
+        # is the default and was missing here; "token" was never a valid mode (#644).
+        assert payload["auth_mode"] in {"local", "oidc", "hybrid"}
 
         endpoints = payload["endpoints"]
         assert isinstance(endpoints, list) and len(endpoints) > 0

@@ -2,16 +2,19 @@
 # MITRE hdf-libs CLI. Stateless — does not persist anything to SPARC's
 # database. Tenant compliance state remains in tenant systems.
 #
-# Used by `Api::V1::TranslationsController` (#449) to expose three
+# Used by `Api::V1::TranslationsController` (#449, #663) to expose
 # translation endpoints:
-#   - HDF results  → OSCAL SAR
-#   - HDF results  → OSCAL POAM
-#   - OSCAL POAM   → HDF Amendments
+#   - HDF results    → OSCAL SAR
+#   - HDF results    → OSCAL POAM
+#   - HDF Amendments → OSCAL POAM
+#   - OSCAL POAM     → HDF Amendments
 #
 # All three flows are pure pass-through to `hdf convert`. SPARC's value
 # is centralizing the binary install, version pinning, and surfacing the
 # translation as authenticated REST endpoints.
 class HdfOscalTranslationService
+  OSCAL_POAM = "oscal-poam"
+
   def initialize(runner: HdfRunner.new)
     @runner = runner
   end
@@ -32,7 +35,20 @@ class HdfOscalTranslationService
   # @param boundary [AuthorizationBoundary, nil] optional back-matter enrichment
   # @return [Hash] OSCAL POAM document
   def hdf_to_oscal_poam(hdf_input, boundary: nil)
-    oscal = @runner.convert(hdf_input, from: "hdf", to: "oscal-poam")
+    oscal = @runner.convert(hdf_input, from: "hdf", to: OSCAL_POAM)
+    enrich_back_matter(oscal, boundary)
+  end
+
+  # HDF Amendments → OSCAL Plan of Action and Milestones
+  #
+  # hdf-cli 3.2.0 removed the direct hdf→oscal-poam converter; the supported
+  # path is now hdf-amendments→oscal-poam (#663). Pure pass-through to
+  # `hdf convert --from hdf-amendments --to oscal-poam`.
+  # @param amendments_input [String, IO] file path or IO of an HDF Amendments JSON
+  # @param boundary [AuthorizationBoundary, nil] optional back-matter enrichment
+  # @return [Hash] OSCAL POAM document
+  def oscal_poam_from_hdf_amendments(amendments_input, boundary: nil)
+    oscal = @runner.convert(amendments_input, from: "hdf-amendments", to: OSCAL_POAM)
     enrich_back_matter(oscal, boundary)
   end
 
@@ -40,7 +56,7 @@ class HdfOscalTranslationService
   # @param oscal_input [String, IO] file path or IO of an OSCAL POAM JSON/XML
   # @return [Hash] HDF Amendments document
   def oscal_poam_to_hdf_amendments(oscal_input)
-    amendments = @runner.convert(oscal_input, from: "oscal-poam")
+    amendments = @runner.convert(oscal_input, from: OSCAL_POAM)
     # Defense-in-depth: round-trip the result through `hdf amend verify`
     # so we don't serve a payload that won't `hdf amend apply` cleanly.
     Tempfile.create([ "hdf-amendments-", ".json" ]) do |f|

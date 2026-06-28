@@ -166,6 +166,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `PUT` | `/api/v1/ssp_documents/:id/update_fields` | `ssp_documents#update_fields` | yes | yes | yes |
 | `POST` | `/api/v1/ssp_documents/convert` | `ssp_documents#convert` | yes | yes | yes |
 | `POST` | `/api/v1/hdf/amendments_from_oscal_poam` | `translations#amendments_from_oscal_poam` | yes | yes | yes |
+| `POST` | `/api/v1/oscal/poam_from_amendments` | `translations#poam_from_amendments` | yes | yes | yes |
 | `POST` | `/api/v1/oscal/poam_from_hdf` | `translations#poam_from_hdf` | yes | yes | yes |
 | `POST` | `/api/v1/oscal/sar_from_hdf` | `translations#sar_from_hdf` | yes | yes | yes |
 | `GET` | `/api/v1/users` | `users#index` | yes | yes | yes |

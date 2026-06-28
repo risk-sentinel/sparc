@@ -20,7 +20,6 @@ import pytest
 
 from conftest import assert_error_envelope
 
-
 pytestmark = [pytest.mark.ksi, pytest.mark.phase1]
 
 
@@ -90,10 +89,13 @@ class TestCreate:
     def test_invalid_payload_returns_422(
         self, admin_client: httpx.Client, boundary: dict[str, Any]
     ) -> None:
-        # Missing required ksi_indicator_id (or any payload at all) — the
-        # controller rejects with 422.
+        # A PRESENT-but-invalid payload (bad status, missing required
+        # catalog_control_id) trips model validation → 422. Note: an empty
+        # `{"ksi_validation": {}}` would be 400 (ParameterMissing), not 422 —
+        # that tests "missing payload", not "invalid payload" (#644).
         response = admin_client.post(
-            _boundary_path(boundary["id"]), json={"ksi_validation": {}}
+            _boundary_path(boundary["id"]),
+            json={"ksi_validation": {"status": "not-a-valid-status"}},
         )
         assert_error_envelope(response, expected_status=422)
 

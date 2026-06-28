@@ -17,7 +17,9 @@ from conftest import assert_error_envelope
 pytestmark = [pytest.mark.sessions, pytest.mark.phase2]
 
 FROM_TOKEN_PATH = "/api/v1/sessions/from_token"
-SESSION_COOKIE = "_sparc_session"
+# Rails session cookie name (config/initializers/session_store.rb). Verified
+# against the live bridge response (#644).
+SESSION_COOKIE = "_ssp_tpr_manager_session"
 
 
 class TestFromToken:
@@ -60,5 +62,10 @@ class TestFromToken:
     @pytest.mark.auth
     def test_bad_token_returns_401(self, bad_token_client: httpx.Client) -> None:
         response = bad_token_client.post(FROM_TOKEN_PATH)
+        # /sessions/from_token is rate-limited per IP; a full-suite run can
+        # saturate the bucket and return 429 before this test. Skip on 429 —
+        # it's environment state leakage, not a contract failure (#644).
+        if response.status_code == 429:
+            pytest.skip("rate-limited (429) — bucket saturated by prior tests")
         assert response.status_code == 401, response.text
         assert SESSION_COOKIE not in response.headers.get("set-cookie", "")

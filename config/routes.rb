@@ -533,8 +533,9 @@ Rails.application.routes.draw do
       # tenant state; SPARC is the translation engine, not the source of
       # truth. See `Api::V1::TranslationsController` for full surface.
       scope :oscal do
-        post :sar_from_hdf,  to: "translations#sar_from_hdf"
-        post :poam_from_hdf, to: "translations#poam_from_hdf"
+        post :sar_from_hdf,         to: "translations#sar_from_hdf"
+        post :poam_from_hdf,        to: "translations#poam_from_hdf"
+        post :poam_from_amendments, to: "translations#poam_from_amendments"
       end
       scope :hdf do
         post :amendments_from_oscal_poam, to: "translations#amendments_from_oscal_poam"

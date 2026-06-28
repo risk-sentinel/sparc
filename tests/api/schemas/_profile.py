@@ -7,7 +7,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from .base import BackMatterResource, STRICT
+from .base import STRICT, BackMatterResource
 
 
 class ProfileDocumentIndex(BaseModel):
@@ -31,6 +31,9 @@ class ProfileDocumentIndex(BaseModel):
     back_matter_resources_count: Annotated[int, Field(ge=0)]
     created_at: datetime
     updated_at: datetime
+    # #627/#628 content-completeness gate (ProfileDocument includes ContentCompleteness).
+    content_complete: bool
+    content_completeness_gaps: list[str]
 
 
 class ProfileDocumentShow(ProfileDocumentIndex):

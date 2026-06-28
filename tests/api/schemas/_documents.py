@@ -15,9 +15,9 @@ from typing import Annotated
 from pydantic import Field
 
 from .base import (
+    STRICT,
     BackMatterResource,
     DocumentBase,
-    STRICT,
 )
 
 
@@ -35,6 +35,10 @@ class BoundaryScopedDocument(DocumentBase):
 class SspDocumentIndex(BoundaryScopedDocument):
     model_config = STRICT
     creation_method: str | None = None
+    # #627/#628 content-completeness gate — emitted on SSP index + show
+    # (SspDocument includes ContentCompleteness; SAR/SAP/POAM do not).
+    content_complete: bool
+    content_completeness_gaps: list[str]
 
 
 class SspDocumentShow(SspDocumentIndex):

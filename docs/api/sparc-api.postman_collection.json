@@ -3318,6 +3318,52 @@
           }
         },
         {
+          "name": "POA&M from Amendments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/oscal/poam_from_amendments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "oscal",
+                "poam_from_amendments"
+              ],
+              "query": [
+                {
+                  "key": "authorization_boundary_id",
+                  "value": "{{boundary_id}}",
+                  "description": "Optional: merge boundary Evidence into OSCAL back-matter (needs evidence.read)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Translate an HDF Amendments document to an OSCAL POA&M (#663). The hdf-cli 3.2.0-supported replacement for the removed hdf->oscal-poam path.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"overrides\": [{\"type\": \"poam\", \"controlId\": \"AC-2\"}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Amendments from OSCAL POA&M",
           "request": {
             "method": "POST",

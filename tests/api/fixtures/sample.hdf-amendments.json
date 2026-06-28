@@ -1,0 +1,9 @@
+{
+  "overrides": [
+    {
+      "type": "poam",
+      "controlId": "AC-2",
+      "rationale": "Minimal HDF Amendments fixture exercising hdf-amendments -> oscal-poam (#663)."
+    }
+  ]
+}

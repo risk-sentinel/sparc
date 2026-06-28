@@ -35,6 +35,7 @@ If neither is supplied the endpoint returns `400 Bad Request`.
 |--------|------|-------------|
 | `POST` | `/api/v1/oscal/sar_from_hdf` | HDF results → OSCAL Assessment Results (SAR) |
 | `POST` | `/api/v1/oscal/poam_from_hdf` | HDF results → OSCAL Plan of Action & Milestones (POA&M) |
+| `POST` | `/api/v1/oscal/poam_from_amendments` | HDF Amendments → OSCAL Plan of Action & Milestones (POA&M) |
 | `POST` | `/api/v1/hdf/amendments_from_oscal_poam` | OSCAL POA&M → HDF Amendments JSON |
 
 ---
@@ -91,6 +92,30 @@ POST /api/v1/oscal/poam_from_hdf
 ```
 
 Converts an HDF results document into an OSCAL POA&M via `hdf convert --from hdf --to oscal-poam`. Accepts the same `authorization_boundary_id` enrichment parameter as `sar_from_hdf`.
+
+> **Note (hdf-cli 3.2.0):** the bundled hdf-cli removed the direct `hdf → oscal-poam` converter, so this endpoint returns **`501 Not Implemented`**. To produce an OSCAL POA&M, use `poam_from_amendments` below (the 3.2.0-supported path). Tracked in [mitre/hdf-libs#104](https://github.com/mitre/hdf-libs/issues/104) and SPARC #663.
+
+**Response** `200 OK`:
+
+```json
+{
+  "plan-of-action-and-milestones": {
+    "uuid": "…",
+    "metadata": { "oscal-version": "1.1.2" },
+    "poam-items": [ … ]
+  }
+}
+```
+
+---
+
+### POST `poam_from_amendments` — HDF Amendments → OSCAL POA&M
+
+```
+POST /api/v1/oscal/poam_from_amendments
+```
+
+Converts an **HDF Amendments** document into an OSCAL POA&M via `hdf convert --from hdf-amendments --to oscal-poam`. This is the hdf-cli 3.2.0-supported replacement for the removed direct `hdf → oscal-poam` path (#663). Accepts the same optional `authorization_boundary_id` enrichment parameter as `sar_from_hdf`.
 
 **Response** `200 OK`:
 

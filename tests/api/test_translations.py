@@ -1,9 +1,10 @@
 """Tests for the HDF <-> OSCAL translation bridge (#449, #610).
 
-Three stateless endpoints, all POST under /api/v1/:
-  - oscal/sar_from_hdf              HDF results -> OSCAL SAR
-  - oscal/poam_from_hdf             HDF results -> OSCAL POAM
-  - hdf/amendments_from_oscal_poam  OSCAL POAM -> HDF Amendments
+Four stateless endpoints, all POST under /api/v1/:
+  - oscal/sar_from_hdf              HDF results    -> OSCAL SAR
+  - oscal/poam_from_hdf             HDF results    -> OSCAL POAM (501 on 3.2.0)
+  - oscal/poam_from_amendments      HDF Amendments -> OSCAL POAM (#663)
+  - hdf/amendments_from_oscal_poam  OSCAL POAM     -> HDF Amendments
 
 Happy paths exercise the real MITRE hdf-libs CLI baked into the SPARC
 container (https://github.com/mitre/hdf-libs), so they require a running
@@ -34,11 +35,13 @@ pytestmark = [pytest.mark.translations, pytest.mark.phase2]
 
 SAR_PATH = "/api/v1/oscal/sar_from_hdf"
 POAM_PATH = "/api/v1/oscal/poam_from_hdf"
+POAM_FROM_AMENDMENTS_PATH = "/api/v1/oscal/poam_from_amendments"
 AMENDMENTS_PATH = "/api/v1/hdf/amendments_from_oscal_poam"
 BOUNDARIES_PATH = "/api/v1/authorization_boundaries"
 
 _HDF_FIXTURE = Path(__file__).parent / "fixtures" / "sample.hdf.json"
 _OSCAL_POAM_FIXTURE = Path(__file__).parent / "fixtures" / "sample.oscal-poam.json"
+_HDF_AMENDMENTS_FIXTURE = Path(__file__).parent / "fixtures" / "sample.hdf-amendments.json"
 
 
 def _hdf_bytes() -> bytes:
@@ -47,6 +50,10 @@ def _hdf_bytes() -> bytes:
 
 def _oscal_poam_bytes() -> bytes:
     return _OSCAL_POAM_FIXTURE.read_bytes()
+
+
+def _hdf_amendments_bytes() -> bytes:
+    return _HDF_AMENDMENTS_FIXTURE.read_bytes()
 
 
 def _post_raw(client: httpx.Client, path: str, body: bytes) -> httpx.Response:
@@ -108,6 +115,45 @@ class TestPoamFromHdf:
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(_post_raw(anon_client, POAM_PATH, _hdf_bytes()), expected_status=401)
+
+
+class TestPoamFromAmendments:
+    """hdf-cli 3.2.0 replaced the direct hdf->oscal-poam path with
+    hdf-amendments->oscal-poam (#663, upstream mitre/hdf-libs#104). This is the
+    supported way to produce an OSCAL POA&M. Note the converter is permissive
+    (it accepts any JSON object), so there is no garbage->422 case here."""
+
+    @pytest.mark.happy
+    def test_raw_body_returns_oscal_poam(self, admin_client: httpx.Client) -> None:
+        response = _post_raw(admin_client, POAM_FROM_AMENDMENTS_PATH, _hdf_amendments_bytes())
+        assert response.status_code == 200, response.text
+        assert "plan-of-action-and-milestones" in response.json(), response.text
+
+    @pytest.mark.happy
+    def test_multipart_upload_returns_oscal_poam(self, admin_client: httpx.Client) -> None:
+        response = admin_client.post(
+            POAM_FROM_AMENDMENTS_PATH,
+            files={
+                "file": (
+                    "sample.hdf-amendments.json",
+                    _hdf_amendments_bytes(),
+                    "application/json",
+                )
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert "plan-of-action-and-milestones" in response.json()
+
+    @pytest.mark.auth
+    def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
+        assert_error_envelope(
+            _post_raw(anon_client, POAM_FROM_AMENDMENTS_PATH, _hdf_amendments_bytes()),
+            expected_status=401,
+        )
+
+    @pytest.mark.validation
+    def test_no_payload_returns_400(self, admin_client: httpx.Client) -> None:
+        assert_error_envelope(admin_client.post(POAM_FROM_AMENDMENTS_PATH), expected_status=400)
 
 
 class TestAmendmentsFromOscalPoam:

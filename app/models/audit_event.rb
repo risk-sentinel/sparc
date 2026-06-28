@@ -194,6 +194,7 @@ class AuditEvent < ApplicationRecord
     service_account_auto_disabled
     translation_hdf_to_oscal_sar
     translation_hdf_to_oscal_poam
+    translation_hdf_amendments_to_oscal_poam
     translation_oscal_poam_to_hdf_amendments
     converter_refresh_started
     api_user_created
@@ -290,6 +291,7 @@ class AuditEvent < ApplicationRecord
                              service_account_enabled service_account_deleted
                              service_account_token_regenerated service_account_auto_disabled],
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
+                         translation_hdf_amendments_to_oscal_poam
                          translation_oscal_poam_to_hdf_amendments],
     "Data Migrations" => %w[data_migration_completed],
     "Authoritative Sources" => %w[authoritative_source_created]

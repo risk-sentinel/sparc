@@ -104,6 +104,7 @@ POST /api/v1/evidences/:evidence_id/attestations
 POST /api/v1/federation_peers
 POST /api/v1/federation_peers/:id/sync
 POST /api/v1/hdf/amendments_from_oscal_poam
+POST /api/v1/oscal/poam_from_amendments
 POST /api/v1/oscal/poam_from_hdf
 POST /api/v1/oscal/sar_from_hdf
 POST /api/v1/poam_documents

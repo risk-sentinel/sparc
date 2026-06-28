@@ -10,6 +10,7 @@ RSpec.describe "Api::V1::Translations", type: :request do
   let(:json_mime)       { "application/json" }
   let(:json_ct)         { { "Content-Type" => json_mime } }
   let(:auth_header_key) { "Authorization" }
+  let(:poam_root_key)   { "plan-of-action-and-milestones" }
 
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
 
@@ -19,14 +20,16 @@ RSpec.describe "Api::V1::Translations", type: :request do
   let(:translation_service) { instance_double(HdfOscalTranslationService) }
   before { allow(HdfOscalTranslationService).to receive(:new).and_return(translation_service) }
 
-  let(:hdf_payload)  { { "version" => "1.0", "profiles" => [] }.to_json }
-  let(:poam_payload) { { "plan-of-action-and-milestones" => { "uuid" => "x" } }.to_json }
+  let(:hdf_payload)        { { "version" => "1.0", "profiles" => [] }.to_json }
+  let(:poam_payload)       { { poam_root_key => { "uuid" => "x" } }.to_json }
+  let(:amendments_payload) { { "overrides" => [ { "type" => "poam", "controlId" => "AC-2" } ] }.to_json }
 
   describe "authentication" do
     it "401s without a token on every endpoint" do
       [
         api_v1_sar_from_hdf_path,
         api_v1_poam_from_hdf_path,
+        api_v1_poam_from_amendments_path,
         api_v1_amendments_from_oscal_poam_path
       ].each do |path|
         post path, params: hdf_payload, headers: json_ct
@@ -132,7 +135,7 @@ RSpec.describe "Api::V1::Translations", type: :request do
   end
 
   describe "POST /api/v1/oscal/poam_from_hdf" do
-    let(:poam_doc) { { "plan-of-action-and-milestones" => { "uuid" => "p-1" } } }
+    let(:poam_doc) { { poam_root_key => { "uuid" => "p-1" } } }
 
     it "translates a raw JSON body to OSCAL POAM" do
       expect(translation_service).to receive(:hdf_to_oscal_poam)
@@ -145,7 +148,7 @@ RSpec.describe "Api::V1::Translations", type: :request do
       expect(JSON.parse(response.body)).to eq(poam_doc)
     end
 
-    it "audits the translation" do
+    it "audits the HDF→OSCAL POAM translation" do
       allow(translation_service).to receive(:hdf_to_oscal_poam).and_return(poam_doc)
       expect {
         post api_v1_poam_from_hdf_path,
@@ -179,6 +182,30 @@ RSpec.describe "Api::V1::Translations", type: :request do
     end
   end
 
+  describe "POST /api/v1/oscal/poam_from_amendments" do
+    let(:poam_doc) { { poam_root_key => { "uuid" => "p-amd-1" } } }
+
+    it "translates a raw JSON body (HDF amendments) to OSCAL POAM" do
+      expect(translation_service).to receive(:oscal_poam_from_hdf_amendments)
+        .with(an_instance_of(String), boundary: nil)
+        .and_return(poam_doc)
+      post api_v1_poam_from_amendments_path,
+           params: amendments_payload,
+           headers: auth_headers.merge(json_ct)
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq(poam_doc)
+    end
+
+    it "audits the amendments→OSCAL POAM translation" do
+      allow(translation_service).to receive(:oscal_poam_from_hdf_amendments).and_return(poam_doc)
+      expect {
+        post api_v1_poam_from_amendments_path,
+             params: amendments_payload,
+             headers: auth_headers.merge(json_ct)
+      }.to change { AuditEvent.where(action: "translation_hdf_amendments_to_oscal_poam").count }.by(1)
+    end
+  end
+
   describe "POST /api/v1/hdf/amendments_from_oscal_poam" do
     let(:amendments) { { "overrides" => [ { "type" => "poam", "controlId" => "AC-2" } ] } }
 
@@ -191,7 +218,7 @@ RSpec.describe "Api::V1::Translations", type: :request do
       expect(JSON.parse(response.body)).to eq(amendments)
     end
 
-    it "audits the translation" do
+    it "audits the OSCAL POAM→amendments translation" do
       allow(translation_service).to receive(:oscal_poam_to_hdf_amendments).and_return(amendments)
       expect {
         post api_v1_amendments_from_oscal_poam_path,

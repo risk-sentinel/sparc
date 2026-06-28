@@ -75,8 +75,10 @@
               <div style="display: inline-flex; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end;">
                 <%= link_to "View", profile_document_path(doc), class: "btn btn-primary btn-sm", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
                 <% if signed_in? && doc.completed? %>
+                  <%# btn-primary (#1f6fa5) gives white-on-button 5.78:1 — AA-compliant.
+                      The old inline #2980b9 was ~4.3:1 and failed WCAG AA (#668). %>
                   <%= button_to "Copy", copy_profile_document_path(doc), method: :post,
-                        class: "btn btn-sm", style: "background: #2980b9; color: white; font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+                        class: "btn btn-sm btn-primary", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
                         form: { data: { turbo_confirm: "Duplicate this profile?" }, style: "display: inline;" } %>
                 <% end %>
                 <% if doc.completed? %>
