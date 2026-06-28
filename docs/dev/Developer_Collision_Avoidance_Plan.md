@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-05-25
+**Last updated:** 2026-06-28 (v1.9.1 shipped; Phase 14 substantially complete — see Phase 15 for the next-version deployment model)
 
 ---
 
@@ -393,7 +393,14 @@ All 17 issues shipped across v1.7.0 / v1.7.1 / v1.7.2 (2026-05-22 → 2026-05-24
 
 ---
 
-### Phase 14 -- Pre-Public-Flip + API Test Validation + CDEF Mutations (CURRENT)
+### Phase 14 -- Pre-Public-Flip + API Test Validation + CDEF Mutations (substantially SHIPPED through v1.9.1)
+
+> **Status (2026-06-28):** the content/feature core of Phase 14 shipped across **v1.8.11 → v1.9.1**:
+> #627/#628 (content-completeness gate), #629 (bulk delete), #630–634 (document review/approval — v1.9.0 headline),
+> #616 (SBOM/SCA emit), #618 (stuck-doc reaper), and #433/#644 (API contract suite realigned — green, v1.9.1).
+> The translation-engine fixes that surfaced post-#637 also shipped: #648 (HDF→OSCAL 3.2.0 baselines/501) and
+> #663 (`poam_from_amendments`) in v1.9.1.
+> **Items still open roll forward into the Phase 15 deployment model below.**
 
 <!-- markdownlint-disable MD013 -->
 
@@ -410,15 +417,71 @@ All 17 issues shipped across v1.7.0 / v1.7.1 / v1.7.2 (2026-05-22 → 2026-05-24
 | [ ] | **#246** Repo cleanup / OSCAL fixtures bloat | Shared/Cross-cutting + test fixtures | `spec/fixtures/files/**`, possibly `db/seeds/**` for the larger OSCAL samples | **LOW** — background lane; touches files no production code path uses. |
 | [ ] | **#413** API docs + tests umbrella | (umbrella) | Closes when #433 merges | N/A |
 | [ ] | **#422** POAM Scenario B federated visibility | (gated) | Stays parked | N/A |
-| [ ] | **#616** Emit CycloneDX SBOM to org SCA bucket | CI/Infrastructure | `.github/workflows/sbom-and-sca.yml` (NEW — calls org-shared `container-build-sign/sbom-source.yml`+`sca-scan.yml@v0.1.0`, emits to `s3://<security-artifacts-bucket>/sca/sparc/`), `.security/sca-allowlist.yaml` (NEW), `docs/compliance/nist-sp800-53-rev5-mapping.md` (SR-3, CM-8, RA-5), `docs/compliance/oscal/cdefs/component-definition-security-scanning.json` (SR-3, RA-5 remarks), `app/models/sparc_config.rb` (VERSION → 1.8.8) | **LOW** — new workflow file + compliance docs. Non-gating (not in `required-checks.json`). Cross-repo IAM dep: `SCA_EMIT_ROLE_ARN` provisioned in sparc-iac (umbrella container-build-sign#12). Validate with `actionlint`. |
-| [ ] | **#618** API-created docs stuck in pending — finalize + lifecycle logging + reaper | API + Jobs | `app/controllers/api/v1/base_controller.rb` (`finalize_unprocessed_create`), `document_base_controller.rb` / `cdef_documents_controller.rb` / `profile_documents_controller.rb` (create), `app/controllers/concerns/file_uploadable.rb` (enqueue log), `app/jobs/document_conversion_job.rb` (lifecycle log), `app/jobs/stuck_document_reaper_job.rb` (NEW), `config/recurring.yml`, `lib/tasks/documents.rake` (NEW backfill), `app/models/sparc_config.rb` (`SPARC_DOCUMENT_REAP_MINUTES`, VERSION → 1.8.9), mapping SI-11 | **MEDIUM** — touches the shared API create path + a new recurring job. Coordinate with anyone editing `file_uploadable.rb` or API document controllers. Email/in-app notification deferred to a follow-up. |
+| [x] | **#616** Emit CycloneDX SBOM to org SCA bucket | CI/Infrastructure | `.github/workflows/sbom-and-sca.yml` (NEW — calls org-shared `container-build-sign/sbom-source.yml`+`sca-scan.yml@v0.1.0`, emits to `s3://<security-artifacts-bucket>/sca/sparc/`), `.security/sca-allowlist.yaml` (NEW), `docs/compliance/nist-sp800-53-rev5-mapping.md` (SR-3, CM-8, RA-5), `docs/compliance/oscal/cdefs/component-definition-security-scanning.json` (SR-3, RA-5 remarks), `app/models/sparc_config.rb` (VERSION → 1.8.8) | **LOW** — new workflow file + compliance docs. Non-gating (not in `required-checks.json`). Cross-repo IAM dep: `SCA_EMIT_ROLE_ARN` provisioned in sparc-iac (umbrella container-build-sign#12). Validate with `actionlint`. |
+| [x] | **#618** API-created docs stuck in pending — finalize + lifecycle logging + reaper | API + Jobs | `app/controllers/api/v1/base_controller.rb` (`finalize_unprocessed_create`), `document_base_controller.rb` / `cdef_documents_controller.rb` / `profile_documents_controller.rb` (create), `app/controllers/concerns/file_uploadable.rb` (enqueue log), `app/jobs/document_conversion_job.rb` (lifecycle log), `app/jobs/stuck_document_reaper_job.rb` (NEW), `config/recurring.yml`, `lib/tasks/documents.rake` (NEW backfill), `app/models/sparc_config.rb` (`SPARC_DOCUMENT_REAP_MINUTES`, VERSION → 1.8.9), mapping SI-11 | **MEDIUM** — touches the shared API create path + a new recurring job. Coordinate with anyone editing `file_uploadable.rb` or API document controllers. Email/in-app notification deferred to a follow-up. |
 | [x] | **#627 + #628** (MERGED PR #637) Document content-completeness gate + empty-shell populate path | SSP + CDEF + Profile + API | `app/models/concerns/content_completeness.rb` (NEW), `ssp_document.rb` / `cdef_document.rb` / `profile_document.rb` (include + `requires_content`), `app/controllers/concerns/publishable.rb` (publish gate + readiness), `ssp_from_profile_service.rb` / `cdef_from_profile_service.rb` (`#populate`), `cdef_documents_controller.rb` / `ssp_documents_controller.rb` (`attach_profile`/`populate_from_profile`), `api/v1/cdef_documents_controller.rb` / `api/v1/ssp_documents_controller.rb` / `api/v1/profile_documents_controller.rb` (endpoint + serializer fields), `config/routes.rb`, show/index views (badge + populate card), `attach_profile.html.erb` (NEW ×2), mapping SI-10/SI-11 | **MEDIUM** — overlaps the #618 API create path and `Publishable` (used by all publishable doc types). Coordinate with #498/#499 (CDEF flows) and anyone editing `Publishable` or the from-profile services. |
 | [x] | **#629** (MERGED PR #638) Bulk delete (multi-row) for CDEF + Authorization Boundary index (admin) | CDEF + Authorization Boundary + API + JS | `app/services/bulk_destroy_service.rb` (NEW), `app/controllers/concerns/bulk_destroyable.rb` (NEW), `app/models/authorization_boundary.rb` (SafeDestroyable + guard), `app/models/audit_event.rb` (new action), `cdef_documents_controller.rb` / `authorization_boundaries_controller.rb` (bulk_destroy + AB single-delete fix), `api/v1/cdef_documents_controller.rb` / `api/v1/authorization_boundaries_controller.rb` (bulk + AB destroy 422), `config/routes.rb`, `app/javascript/controllers/bulk_select_controller.js` (NEW), `app/helpers/authorization_helper.rb` (`can_bulk_delete?`), CDEF + AB index views, mapping AU-12 | **MEDIUM** — touches CDEF + AB controllers/models/views; coordinate with anyone editing those index pages or the AB destroy path. Held at v1.8.11. |
-| [ ] | **#630–634** Document review/approval workflow epic (Catalog/Profile/Baseline/CDEF) | Catalog + Profile + CDEF + API + JS-free UI | `db/migrate/20260614120000_*` (approval columns on control_catalogs/profile_documents/cdef_documents), `app/models/concerns/approvable.rb` (NEW), `app/services/document_approval_service.rb` (NEW), `app/services/baseline_review_service.rb` (NEW), `app/controllers/concerns/document_approval_actions.rb` + `document_approval_api.rb` (NEW), `app/controllers/review_queue_controller.rb` (NEW) + view, `control_catalog.rb`/`profile_document.rb`/`cdef_document.rb` (include Approvable), `audit_event.rb` (9 actions), `role.rb` (`*.approve` perms), `sparc_config.rb` (flag + VERSION 1.9.0), `publishable.rb` (approval gate), the 3 UI + 3 API controllers (submit/approve/reject), `config/routes.rb`, mapping CA-6 | **HIGH** — touches `Publishable` (shared by all publishable docs) and the catalog/profile/cdef controllers + models. Coordinate with anyone editing those controllers, `Publishable`, or running migrations. Flag-gated (default off) so publish behavior is unchanged until enabled. |
+| [x] | **#630–634** Document review/approval workflow epic (Catalog/Profile/Baseline/CDEF) | Catalog + Profile + CDEF + API + JS-free UI | `db/migrate/20260614120000_*` (approval columns on control_catalogs/profile_documents/cdef_documents), `app/models/concerns/approvable.rb` (NEW), `app/services/document_approval_service.rb` (NEW), `app/services/baseline_review_service.rb` (NEW), `app/controllers/concerns/document_approval_actions.rb` + `document_approval_api.rb` (NEW), `app/controllers/review_queue_controller.rb` (NEW) + view, `control_catalog.rb`/`profile_document.rb`/`cdef_document.rb` (include Approvable), `audit_event.rb` (9 actions), `role.rb` (`*.approve` perms), `sparc_config.rb` (flag + VERSION 1.9.0), `publishable.rb` (approval gate), the 3 UI + 3 API controllers (submit/approve/reject), `config/routes.rb`, mapping CA-6 | **HIGH** — touches `Publishable` (shared by all publishable docs) and the catalog/profile/cdef controllers + models. Coordinate with anyone editing those controllers, `Publishable`, or running migrations. Flag-gated (default off) so publish behavior is unchanged until enabled. |
 
 <!-- markdownlint-enable MD013 -->
 
 > **Sequencing:** #545 + sparc-iac#281 first (public-flip blocker), then #433 (in-progress), then #498 → #499 chain. #528 last in any sprint because of view-conflict risk.
+
+---
+
+### Phase 15 -- Next-Version Deployment Model (post-v1.9.1)
+
+The **18 issues open after v1.9.1** group into **four deployment-oriented lanes**. Each lane maps to a
+domain, so the lanes are collision-safe to run **in parallel** (one owner per lane). Within a lane, items
+are ordered by deployment priority. **Lane A gates the public flip and ships first**; Lanes B–D run alongside.
+Two cross-cutting hazards: **#528** (CSP, touches every view) and **#672** (search, touches every index view +
+API index endpoint) — schedule both **late** and serialize index-view edits to avoid conflicts with Lanes B/C.
+
+<!-- markdownlint-disable MD013 -->
+
+#### Lane A -- Pre-Public-Flip Hardening (deployment-gating) -- Owner: Dev E
+
+| Status | Issue | Domain | Files Modified (planned) | Collision Risk |
+| ------ | ----- | ------ | ------------------------ | -------------- |
+| [ ] | **#545** Pre-public-flip hardening checklist | CI/Infra + GitHub Settings | `.github/CODEOWNERS`, workflow `permissions:`, repo-settings UI, `sparc-iac#281` (OIDC trust) | **LOW** code — mostly operator clicks + cross-repo coordination. **Public-flip blocker.** |
+| [ ] | **#660** Enforce `strict` status checks on main | CI/Infra + GitHub Settings | `Merge_Main` ruleset (UI/API only — no repo files) | **LOW** — operator-side; recommendation + Option A/B already posted on the issue. |
+| [ ] | **#639** Base-image CVE audit + hardened variants | CI/Infra + Container | `Dockerfile`, `bin/install-hdf.sh`, `docs/compliance/sparc-findings.yml` | **MEDIUM** — image build + CVE dispositions; serialize with any base-image bump. |
+| [ ] | **#531** GuardDuty S3 tag hook on blob serving | Upload Security + ActiveStorage | new `app/middleware/guardduty_blob_gate.rb`, `config/application.rb` insert | **LOW** — new file, narrow insert. |
+| [ ] | **#597** CI env-var rename (`AWS_ROLE_ARN`→`SPARC_AWS_ROLE_ARN`, `ECR_REGISTRY`→`SPARC_ECR_REGISTRY`) | CI/Infra | `.github/workflows/*`, coordinated secret rename in `sparc-iac` | **LOW** code — cross-repo secret rename; do atomically with sparc-iac. |
+| [ ] | **#528** Remove `unsafe-inline` from CSP `style-src` | Transport/Session + Shared/UI | `config/initializers/content_security_policy.rb`, inline `style=` across `app/views/` | **HIGH** — view-wide; **do last in the sprint** after Lane B/C view work settles. |
+
+#### Lane B -- Test & Validation Net (release confidence) -- Owner: Dev D + shared test infra
+
+| Status | Issue | Domain | Files Modified (planned) | Collision Risk |
+| ------ | ----- | ------ | ------------------------ | -------------- |
+| [ ] | **#641** Run API + Playwright suites against a deployed instance | CI/Infra + tests | new deployed-smoke workflow, `tests/api/`, `tests/ui-smoke/`, deploy secrets | **LOW** — Python suites isolated; needs a deployed env + tokens (proven locally this cycle). |
+| [ ] | **#642** Finish contract coverage for #628/#629/#630–634 endpoints | API tests | `tests/api/test_*.py`, `tests/api/schemas/` | **LOW** — Python only; isolated from Ruby. |
+| [ ] | **#643** Extend Playwright ui-smoke (populate / bulk-delete / approval+review-queue) | UI tests | `tests/ui-smoke/*.py` | **LOW** — Python; **coordinate with #672** (both touch index-page expectations). |
+| [ ] | **#635** Authorization-boundary orphan janitor + verify teardown deletes | API + Jobs/tests | session janitor (new), `tests/api/` teardown | **LOW–MEDIUM** — touches the AB create/teardown path. |
+| [ ] | **#610** API docs + pytest tail (independent validation pass) | API docs/tests | `docs/api/`, `tests/api/` | **LOW** — sub-task of #413. |
+| [ ] | **#413** Comprehensive API documentation review (umbrella) | (umbrella) | closes when #610 tail + the 30% independent-validation pass land | N/A |
+
+#### Lane C -- Features & UX -- Owner: Dev B/C (doc domains) + shared
+
+| Status | Issue | Domain | Files Modified (planned) | Collision Risk |
+| ------ | ----- | ------ | ------------------------ | -------------- |
+| [ ] | **#672** Search field on all artifact index pages | API (v1) + Shared/UI | `q` param on every `api/v1/*` index endpoint + request specs, ONE shared search partial/Stimulus controller, every `*_documents/index.html.erb` + catalog/profile/boundary index | **MEDIUM–HIGH** — cross-cutting index views; build **one** reusable component; serialize with #643 and any index work. |
+| [ ] | **#623** Notify uploading user on parse failure (email + in-app) | Jobs + API + UI | `app/jobs/document_conversion_job.rb`, new mailer, in-app notification UI | **LOW–MEDIUM** — follow-up to #618; coordinate on the conversion-job path. |
+| [ ] | **#341** XML document fingerprinting for upload validation | Upload Security | `app/controllers/concerns/file_uploadable.rb` (XML path), `lib/xml_security.rb` | **LOW** — extends existing concern; coordinate with #531 (same upload lane). |
+
+#### Lane D -- Translation / Evidence / Federation (gated / owner-blocked) -- Owner: Dev D (Evidence/API)
+
+| Status | Issue | Domain | Files Modified (planned) | Collision Risk |
+| ------ | ----- | ------ | ------------------------ | -------------- |
+| [ ] | **#636** SonarQube → HDF evidence (`saf sonarqube2hdf` / `hdf fetch sonarqube`) | Evidence + CI | new OHDF producer, security-artifact bake-in | **MEDIUM** — **owner-blocked** on the SonarCloud org LOC quota; CI-side. |
+| [ ] | **#447** HDF Amendment translation/UI layer (umbrella) | Evidence + new ScannerFinding domain | wholly new models + UI — gated on customer demand | **HIGH** when activated — needs its own domain lane. Now partially enabled by `poam_from_amendments` (#663). |
+| [ ] | **#422** POAM Scenario B — cross-instance federated POAM visibility | POAM + Federation | gated — stays parked | N/A |
+
+<!-- markdownlint-enable MD013 -->
+
+> **Recommended order:** Lane A first / in parallel (public-flip gate) — start with #545 + #660 + #597 (operator/CI),
+> then #639/#531, and **#528 last**. Lanes B–D run concurrently with one owner each. The two highest-risk
+> cross-cutting items (#528, #672) land at the **end** of the sprint after sibling view/test work is merged.
 
 ---
 
