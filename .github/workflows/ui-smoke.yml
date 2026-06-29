@@ -26,6 +26,11 @@ on:
 env:
   SPARC_SMOKE_BASE_URL: ${{ github.event.inputs.base_url || 'https://sparc.risk-sentinel.org' }}
 
+# Least-privilege default (#545 item 6) — this post-deploy smoke only reads the
+# repo and uploads workflow artifacts; it needs no write scopes.
+permissions:
+  contents: read
+
 jobs:
   ui-smoke:
     name: UI smoke (Chromium + Firefox)
