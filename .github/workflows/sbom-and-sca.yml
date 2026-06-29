@@ -111,7 +111,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: ${{ secrets.SCA_EMIT_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Emit to S3
         if: ${{ steps.aws.outcome == 'success' }}
