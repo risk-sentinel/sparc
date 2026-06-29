@@ -17,6 +17,7 @@ DELETE /api/v1/sap_documents/:id
 DELETE /api/v1/sar_documents/:id
 DELETE /api/v1/ssp_documents/:id
 DELETE /api/v1/users/:id
+GET /api/v1/artifacts/:uuid
 GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations

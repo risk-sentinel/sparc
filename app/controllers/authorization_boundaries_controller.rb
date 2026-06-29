@@ -13,6 +13,7 @@ class AuthorizationBoundariesController < ApplicationController
     @total_count = @authorization_boundaries.count
     @active_count = @authorization_boundaries.where(status: "active").count
     @member_count = AuthorizationBoundaryMembership.count
+    @authorization_boundaries = @authorization_boundaries.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
   end
 
   def show

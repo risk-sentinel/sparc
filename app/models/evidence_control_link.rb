@@ -29,7 +29,9 @@ class EvidenceControlLink < ApplicationRecord
       r.title = evidence.title || "Evidence: #{evidence.evidence_type}"
       r.description = "#{evidence.evidence_type&.titleize} evidence linked to #{control_id}"
       r.media_type = evidence.file&.content_type if evidence.file&.attached?
-      r.href = evidence.original_filename
+      # Durable resolver href (#680) instead of a bare filename, so the stored
+      # back-matter reference resolves across rename/re-upload/URL rotation.
+      r.href = evidence.oscal_resolver_url
       r.source = "managed"
     end
   end

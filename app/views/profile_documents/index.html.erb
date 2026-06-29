@@ -20,6 +20,8 @@
     <% end %>
   </div>
 
+  <%= render "shared/index_search", placeholder: "Search baselines / profiles…" %>
+
   <% if @profile_documents.any? %>
     <table class="table table-hover" style="table-layout: fixed; width: 100%;">
       <thead>

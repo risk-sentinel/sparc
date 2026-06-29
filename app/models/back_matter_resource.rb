@@ -130,17 +130,18 @@ class BackMatterResource < ApplicationRecord
   def build_rlinks
     links = []
 
-    # Direct href link
-    if href.present?
+    if evidence&.uuid.present? && evidence.file&.attached?
+      # SPARC-managed evidence: emit the durable resolver href (#680) — a single,
+      # immutable link that survives rename/re-upload/signed-URL rotation —
+      # rather than the stored bare filename.
+      link = { "href" => evidence.oscal_resolver_url }
+      mt = media_type.presence || evidence.file.content_type
+      link["media-type"] = mt if mt.present?
+      links << link
+    elsif href.present?
+      # Imported / authoritative / external resources: preserve the stored href.
       link = { "href" => href }
       link["media-type"] = media_type if media_type.present?
-      links << link
-    end
-
-    # Evidence file link
-    if evidence&.file&.attached?
-      link = { "href" => evidence.original_filename || evidence.file.filename.to_s }
-      link["media-type"] = evidence.file.content_type if evidence.file.content_type.present?
       links << link
     end
 

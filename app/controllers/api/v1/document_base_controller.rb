@@ -117,6 +117,7 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
   def apply_filters(scope)
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
+    scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
     scope = scope.where(authorization_boundary_id: params[:authorization_boundary_id]) if params[:authorization_boundary_id].present?
     scope
   end

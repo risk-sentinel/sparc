@@ -30,6 +30,7 @@ None.
 | `items` | integer | Items per page (default: `25`) |
 | `status` | string | Filter by document status |
 | `name` | string | Case-insensitive partial match on document name |
+| `q` | string | Case-insensitive search across name and description (#672) |
 | `authorization_boundary_id` | integer | Filter by authorization boundary |
 
 #### Response Body

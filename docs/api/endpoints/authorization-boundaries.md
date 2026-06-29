@@ -47,6 +47,7 @@ Returns a paginated list of authorization boundaries. Non-admin users see only b
 | `items` | integer | No | Items per page (default: `25`) |
 | `status` | string | No | Filter by status (e.g., `active`, `inactive`, `pending`) |
 | `name` | string | No | Filter by name (partial match) |
+| `q` | string | No | Case-insensitive search across name and description (#672) |
 
 **Example Request**
 

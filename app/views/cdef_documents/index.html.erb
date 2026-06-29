@@ -31,6 +31,8 @@
     <% end %>
   </div>
 
+  <%= render "shared/index_search", placeholder: "Search component definitions…" %>
+
   <%# #488 — Refresh from AWS Labs confirmation modal (matches the DISA
       CCI confirmation modal pattern from app/views/converters/show.html.erb). %>
   <% if signed_in? && can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>

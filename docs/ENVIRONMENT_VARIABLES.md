@@ -120,6 +120,28 @@ sample file is provided at `docs/banners/sample-consent-banner.html`
 | SPARC_BANNER_ENABLED | Show mandatory consent banner on login page | false | `true` | No |
 | SPARC_BANNER_MESSAGE | File path to banner HTML body (resolved against `Rails.root`) | (none) | `docs/banners/sample-consent-banner.html` | Yes (if enabled) |
 
+### Environment / Rules Header (#682)
+
+Show a configurable header bar on **every screen** describing the deployment
+environment and its rules of behavior (e.g. `PRODUCTION — Authorized use only`
+or `TEST ENVIRONMENT — Do not enter real data`). Default-off: when
+`SPARC_HEADER_TEXT` is empty/unset no header renders. The text is displayed as
+escaped plain text, so special characters and full UTF-8 (accents, symbols,
+emoji) are supported safely. Maps to NIST **AC-8 (System Use Notification)**.
+
+**Colors are operator-defined and contrast is NOT enforced** — the deployment
+owns its color choices, so SPARC does not validate WCAG contrast on the values
+you supply. (Values *are* validated against a strict hex/`rgb()` grammar to
+prevent injection; a malformed value falls back to the default.) **You are
+responsible for ensuring readable contrast.** The built-in defaults are
+SPARC-brand and pass WCAG AA: `#ffffff` text on `#1f6fa5` highlight = **5.42:1**.
+
+| Variable | Description | Default | Example | Required? |
+| --- | --- | --- | --- | --- |
+| SPARC_HEADER_TEXT | Short environment / rules description shown on all screens. Empty ⇒ header hidden | (none) | `PRODUCTION — Authorized use only` | No |
+| SPARC_HEADER_TEXT_COLOR | Header text color (hex `#rgb`/`#rrggbb` or `rgb()`/`rgba()`); invalid ⇒ default | `#ffffff` | `#0b1f2a` | No |
+| SPARC_HEADER_HIGHLIGHT_COLOR | Header highlight/background color (hex or `rgb()`/`rgba()`); invalid ⇒ default | `#1f6fa5` | `#8a6d00` | No |
+
 ### GitHub OAuth
 
 <!-- markdownlint-disable MD013 -->

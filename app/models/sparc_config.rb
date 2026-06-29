@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.9.1"
+  VERSION = "1.10.0"
 
   module_function
 
@@ -260,6 +260,50 @@ module SparcConfig
 
   def banner_enabled?     = ENV.fetch("SPARC_BANNER_ENABLED", "false") == "true"
   def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil)
+
+  # ── Environment / Rules Header (#682) ─────────────────────────────────────
+  # Operator-configurable header bar shown on EVERY screen describing the
+  # deployment environment and its rules of behavior (e.g. "PRODUCTION —
+  # Authorized use only"). Default-off: an empty SPARC_HEADER_TEXT hides it.
+  #
+  # NIST 800-53: AC-8 System Use Notification — an all-screens rules-of-behavior
+  # notice that complements the login-time consent banner (#190, AC-8 at auth).
+  #
+  # Colors are OPERATOR-defined. SPARC deliberately does NOT enforce WCAG
+  # contrast on supplied values (the deployment owns its choices, per #682),
+  # but every value IS validated against a strict CSS color grammar before use
+  # to prevent style/attribute injection (input validation, not accessibility).
+
+  # SPARC brand defaults — #ffffff text on --sparc-primary #1f6fa5 = 5.42:1,
+  # which passes WCAG AA for normal text. Keep these in sync with the
+  # `.sparc-env-header` defaults in app/assets/stylesheets/sparc-theme.css.
+  HEADER_DEFAULT_TEXT_COLOR      = "#ffffff"
+  HEADER_DEFAULT_HIGHLIGHT_COLOR = "#1f6fa5"
+
+  # Permitted CSS color forms: #rgb / #rgba / #rrggbb / #rrggbbaa and
+  # rgb()/rgba() with numeric components. Anything else falls back to default.
+  # (Single-line, no /x mode — `#` would start a comment under /x.)
+  HEADER_COLOR_PATTERN =
+    %r{\A(?:\#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(\s*\d{1,3}(?:\s*,\s*\d{1,3}){2}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\))\z}
+
+  def header_text     = ENV.fetch("SPARC_HEADER_TEXT", "").to_s
+  def header_enabled? = header_text.strip.present?
+
+  def header_text_color
+    safe_header_color(ENV.fetch("SPARC_HEADER_TEXT_COLOR", nil), HEADER_DEFAULT_TEXT_COLOR)
+  end
+
+  def header_highlight_color
+    safe_header_color(ENV.fetch("SPARC_HEADER_HIGHLIGHT_COLOR", nil), HEADER_DEFAULT_HIGHLIGHT_COLOR)
+  end
+
+  # Returns the supplied color when it matches the CSS color grammar, else the
+  # brand default. Guards against CSS/attribute injection from operator input;
+  # does NOT enforce contrast (operator-owned per #682).
+  def safe_header_color(value, fallback)
+    value = value.to_s.strip
+    HEADER_COLOR_PATTERN.match?(value) ? value : fallback
+  end
 
   # ── GitHub OAuth ──────────────────────────────────────────────────────────
 

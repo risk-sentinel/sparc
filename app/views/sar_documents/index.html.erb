@@ -17,6 +17,8 @@
     </div>
   </div>
 
+  <%= render "shared/index_search", placeholder: "Search SARs…" %>
+
   <% if @sar_documents.any? %>
     <table class="table table-hover">
       <thead>

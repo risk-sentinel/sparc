@@ -52,11 +52,11 @@ RSpec.describe HdfOscalTranslationService do
         expect(names).to include("source", "evidence-type", "status", "control-id", "attestation")
       end
 
-      it "emits an rlink referencing the evidence path" do
+      it "emits an rlink referencing the durable artifact resolver (#680)" do
         allow(runner).to receive(:convert).and_return("assessment-results" => {})
         result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json", boundary: boundary)
         rlinks = result.dig("assessment-results", "back-matter", "resources", 0, "rlinks")
-        expect(rlinks.first["href"]).to match(%r{/evidences/})
+        expect(rlinks.first["href"]).to match(%r{/artifacts/[0-9a-f-]{36}\z})
         expect(rlinks.first["media-type"]).to eq("application/pdf")
       end
     end

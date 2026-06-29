@@ -30,6 +30,7 @@ None.
 | `items` | integer | Items per page (default: `25`) |
 | `status` | string | Filter by document status |
 | `name` | string | Case-insensitive partial match on document name |
+| `q` | string | Case-insensitive search across name and description (#672) |
 | `baseline_level` | string | Filter by baseline level (e.g., `low`, `moderate`, `high`) |
 | `control_catalog_id` | integer | Filter by associated control catalog |
 

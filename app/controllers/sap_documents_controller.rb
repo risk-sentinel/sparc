@@ -18,6 +18,7 @@ class SapDocumentsController < ApplicationController
     @total_count = @sap_documents.count
     @controls_count = SapControl.count
     @completed_count = @sap_documents.where(status: "completed").count
+    @sap_documents = @sap_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
   end
 
   def show

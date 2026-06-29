@@ -26,6 +26,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     scope = CdefDocument.order(created_at: :desc)
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
+    scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
     scope = scope.where(cdef_type: params[:cdef_type]) if params[:cdef_type].present?
 
     # Issue #466 — filter by provenance. source_type=aws_labs returns only

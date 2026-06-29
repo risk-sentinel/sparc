@@ -19,6 +19,7 @@ class PoamDocumentsController < ApplicationController
     @total_count = @poam_documents.count
     @items_count = PoamItem.count
     @completed_count = @poam_documents.where(status: "completed").count
+    @poam_documents = @poam_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
   end
 
   def show

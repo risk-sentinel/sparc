@@ -40,6 +40,7 @@ Returns a paginated list of component definition documents.
 | `items` | integer | No | Items per page (default: `25`) |
 | `status` | string | No | Filter by lifecycle status (e.g., `draft`, `published`, `archived`) |
 | `name` | string | No | Filter by name (partial match) |
+| `q` | string | No | Case-insensitive search across name and description (#672) |
 | `cdef_type` | string | No | Filter by component type (e.g., `software`, `hardware`, `service`) |
 
 **Example Request**

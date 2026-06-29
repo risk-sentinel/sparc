@@ -30,6 +30,7 @@ None.
 | `items` | integer | Items per page (default: `25`) |
 | `status` | string | Filter by catalog status |
 | `name` | string | Case-insensitive partial match on catalog name |
+| `q` | string | Case-insensitive search across name and description (#672) |
 | `lifecycle_status` | string | Filter by lifecycle status (e.g., `active`, `deprecated`) |
 
 #### Response Body

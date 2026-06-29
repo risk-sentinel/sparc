@@ -23,6 +23,7 @@ class CdefDocumentsController < ApplicationController
     @total_count = @cdef_documents.count
     @controls_count = CdefControl.count
     @completed_count = @cdef_documents.where(status: "completed").count
+    @cdef_documents = @cdef_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
   end
 
   def show

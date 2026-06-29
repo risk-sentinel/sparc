@@ -1,5 +1,6 @@
 class AuthorizationBoundary < ApplicationRecord
   include Sluggable
+  include Searchable
   # #629 — block deletion when assessment/authorization documents are attached
   # (SSP/SAP/SAR/POA&M). Included before the `dependent:` associations so the
   # guard's before_destroy runs first and aborts before any nullify fires.

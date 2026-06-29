@@ -21,6 +21,7 @@ class SspDocumentsController < ApplicationController
     @total_count = @ssp_documents.count
     @controls_count = SspControl.count
     @completed_count = @ssp_documents.where(status: "completed").count
+    @ssp_documents = @ssp_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
   end
 
   def show

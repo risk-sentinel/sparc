@@ -216,6 +216,11 @@ Rails.application.routes.draw do
     resources :attestations, only: [ :new, :create, :destroy ]
   end
 
+  # Durable artifact resolver (#680) — immutable UUID → freshly-signed download.
+  # Keeps OSCAL back-matter hrefs valid across rename/re-upload/URL rotation.
+  get "artifacts/:uuid", to: "artifacts#show", as: :artifact,
+      constraints: { uuid: /[0-9a-fA-F-]{36}/ }
+
   resources :cdef_documents do
     member do
       patch :update_metadata
@@ -428,6 +433,10 @@ Rails.application.routes.draw do
           end
         end
       end
+
+      # Durable artifact resolver (#680) — immutable UUID → signed download URL.
+      get "artifacts/:uuid", to: "artifacts#show", as: :artifact,
+          constraints: { uuid: /[0-9a-fA-F-]{36}/ }
 
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do

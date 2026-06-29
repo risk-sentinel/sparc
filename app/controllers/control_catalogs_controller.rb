@@ -24,6 +24,7 @@ class ControlCatalogsController < ApplicationController
     @family_count = ControlFamily.distinct.count(:code)
     @control_count = CatalogControl.distinct.count(:control_id)
     @revision_count = ControlCatalog.where.not(version: [ nil, "" ]).select(:version).distinct.count
+    @control_catalogs = @control_catalogs.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
   end
 
   def show

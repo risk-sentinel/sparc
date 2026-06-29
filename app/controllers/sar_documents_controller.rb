@@ -22,6 +22,7 @@ class SarDocumentsController < ApplicationController
     @total_count = @sar_documents.count
     @controls_count = SarControl.count
     @completed_count = @sar_documents.where(status: "completed").count
+    @sar_documents = @sar_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
   end
 
   def show

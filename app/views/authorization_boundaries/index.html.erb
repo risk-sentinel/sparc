@@ -10,6 +10,8 @@
     <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "btn btn-primary" %>
   </div>
 
+  <%= render "shared/index_search", placeholder: "Search authorization boundaries…" %>
+
   <div data-controller="bulk-select">
   <%# #629 — admin-only bulk delete bar; appears when ≥1 row is selected. %>
   <% if can_bulk_delete? && @authorization_boundaries.any? %>

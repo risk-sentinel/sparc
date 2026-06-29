@@ -14,6 +14,15 @@ class Evidence < ApplicationRecord
   validates :evidence_type, presence: true
   validates :status, presence: true
 
+  # Stable, immutable OSCAL back-matter href (#680). Resolves via the
+  # /artifacts/:uuid resolver to a freshly-signed download URL, so the
+  # reference survives evidence rename (slug change), file re-upload (new
+  # blob), and signed-URL rotation. Absolute (built from SPARC_APP_URL) so
+  # external OSCAL consumers can dereference it. NIST AU-10 / SI-12 / CM-8.
+  def oscal_resolver_url
+    "#{SparcConfig.app_url.to_s.chomp('/')}/artifacts/#{uuid}"
+  end
+
   enum :evidence_type, {
     artifact: "artifact",
     screenshot: "screenshot",

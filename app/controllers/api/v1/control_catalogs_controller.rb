@@ -30,6 +30,7 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
     scope = ControlCatalog.order(created_at: :desc)
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
+    scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
     scope = scope.where(lifecycle_status: params[:lifecycle_status]) if params[:lifecycle_status].present?
 
     result = paginate(scope)

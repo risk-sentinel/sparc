@@ -26,6 +26,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
     scope = scope.order(:name)
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
+    scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
 
     result = paginate(scope)
     render json: {

@@ -22,6 +22,7 @@ class ProfileDocumentsController < ApplicationController
     @total_count = @profile_documents.count
     @controls_count = ProfileControl.count
     @completed_count = @profile_documents.where(status: "completed").count
+    @profile_documents = @profile_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
   end
 
   def show

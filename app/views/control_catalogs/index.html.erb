@@ -25,6 +25,8 @@
     <% end %>
   </div>
 
+  <%= render "shared/index_search", placeholder: "Search catalogs…" %>
+
   <% if @control_catalogs.any? %>
     <table class="table table-hover">
       <thead>

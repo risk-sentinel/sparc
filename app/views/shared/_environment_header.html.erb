@@ -1,0 +1,20 @@
+<%# ── Environment / rules-of-behavior header bar (#682) ──────────────────────
+    Rendered on EVERY screen (application + login layouts) when SPARC_HEADER_TEXT
+    is set. The text is auto-escaped plain text, so arbitrary special / UTF-8
+    characters render safely (no HTML sanitization needed — it is a label, not
+    HTML). Colors are operator-defined and validated in SparcConfig; they are
+    applied via the CSSOM (environment_header_controller) so they are not subject
+    to the CSP style-src directive.
+
+    NIST 800-53: AC-8 System Use Notification — all-screens rules-of-behavior
+    notice; complements the login consent banner (#190). %>
+<% if SparcConfig.header_enabled? %>
+  <div class="sparc-env-header"
+       role="region"
+       aria-label="Environment notice"
+       data-controller="environment-header"
+       data-environment-header-text-color-value="<%= SparcConfig.header_text_color %>"
+       data-environment-header-highlight-color-value="<%= SparcConfig.header_highlight_color %>">
+    <%= SparcConfig.header_text %>
+  </div>
+<% end %>

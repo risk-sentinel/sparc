@@ -33,6 +33,7 @@
 
   <body class="d-flex flex-column min-vh-100"
         data-controller="video-easter-egg<% if @consent_banner_content.present? %> consent-banner<% end %>">
+    <%= render "shared/environment_header" %>
     <%# ── Navbar (same as application layout) ── %>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
       <div class="container-fluid">

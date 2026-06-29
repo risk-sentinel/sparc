@@ -1,0 +1,26 @@
+<%# ── Shared artifact-index search (#672) ────────────────────────────────────
+    Reusable search box for every artifact index (CDEF, Catalog, Profile,
+    POA&M, SSP, SAR, SAP, Authorization Boundary). GET form submitted via Turbo
+    Drive (no full reload); the index-search Stimulus controller debounces
+    auto-submit on input. Filtering is server-side via Model.search_text — the
+    same scope the Api::V1 index endpoints expose as ?q, so the UI is a thin
+    client over the shared filter.
+
+    Locals: placeholder (optional). %>
+<% placeholder = local_assigns.fetch(:placeholder, "Search by name or description…") %>
+<div class="mb-3" data-controller="index-search">
+  <%= form_with url: request.path, method: :get, data: { index_search_target: "form" } do |f| %>
+    <div class="input-group">
+      <%= f.search_field :q,
+            value: params[:q],
+            class: "form-control",
+            placeholder: placeholder,
+            autocomplete: "off",
+            "aria-label": placeholder,
+            data: { action: "input->index-search#submit" } %>
+      <% if params[:q].present? %>
+        <%= link_to "Clear", request.path, class: "btn btn-outline-secondary" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

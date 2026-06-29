@@ -5,7 +5,7 @@ files/domains, assigns developer lanes, and defines branching rules
 so 3-5 developers can work in parallel without stepping on each
 other.
 
-**Last updated:** 2026-06-28 (v1.9.1 shipped; Phase 14 substantially complete — see Phase 15 for the next-version deployment model)
+**Last updated:** 2026-06-29 (v1.10.0 in progress — #682 header bar + #680 Phase 1 resolver + #672 index search + rubyzip #681, one bundled release branch `feature/v1.10.0_header_resolver_search`)
 
 ---
 
@@ -465,7 +465,9 @@ API index endpoint) — schedule both **late** and serialize index-view edits to
 
 | Status | Issue | Domain | Files Modified (planned) | Collision Risk |
 | ------ | ----- | ------ | ------------------------ | -------------- |
-| [ ] | **#672** Search field on all artifact index pages | API (v1) + Shared/UI | `q` param on every `api/v1/*` index endpoint + request specs, ONE shared search partial/Stimulus controller, every `*_documents/index.html.erb` + catalog/profile/boundary index | **MEDIUM–HIGH** — cross-cutting index views; build **one** reusable component; serialize with #643 and any index work. |
+| [x] | **#672** Search field on all artifact index pages | API (v1) + Shared/UI | **SHIPPED (v1.10.0)** — one shared `Searchable.search_text` scope backs both web indexes and `Api::V1` `q`; ONE reusable `_index_search` partial + `index_search` Stimulus controller across all 8 indexes; per-index Playwright ui-smoke. | Resolved — built as a single reusable component as planned. |
+| [x] | **#682** Configurable environment/rules header bar (all screens) | Shared/UI + Config | **SHIPPED (v1.10.0)** — `SparcConfig` header readers + color validator; `_environment_header` partial + `environment_header` Stimulus controller (CSSOM colors, CSP-safe); both layouts. | **LOW** — additive partial in layouts; AC-8. |
+| [x] | **#680** Durable UUID-addressed artifact resolver (Phase 1) | API (v1) + Evidence/OSCAL | **SHIPPED (v1.10.0)** — `/artifacts/:uuid` web + API resolver; back-matter href emission switched to the immutable resolver URL. Touches `back_matter_resource.rb`, `evidence.rb`, `routes.rb`. Phases 2–3 open. | **MEDIUM** — touches hot files `routes.rb` + `back_matter_resource.rb`; coordinate with OSCAL-export work. |
 | [ ] | **#623** Notify uploading user on parse failure (email + in-app) | Jobs + API + UI | `app/jobs/document_conversion_job.rb`, new mailer, in-app notification UI | **LOW–MEDIUM** — follow-up to #618; coordinate on the conversion-job path. |
 | [ ] | **#341** XML document fingerprinting for upload validation | Upload Security | `app/controllers/concerns/file_uploadable.rb` (XML path), `lib/xml_security.rb` | **LOW** — extends existing concern; coordinate with #531 (same upload lane). |
 

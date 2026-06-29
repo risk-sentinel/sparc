@@ -1,5 +1,6 @@
 class ProfileDocument < ApplicationRecord
   include OscalMetadata
+  include Searchable
   include SafeDestroyable
   include Sluggable
   include Lifecycle

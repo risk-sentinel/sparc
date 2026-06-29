@@ -141,4 +141,60 @@ RSpec.describe SparcConfig do
         .to contain_exactly("https://github.com", "https://acme.okta.com")
     end
   end
+
+  describe "environment/rules header (#682)" do
+    around do |ex|
+      saved = %w[SPARC_HEADER_TEXT SPARC_HEADER_TEXT_COLOR SPARC_HEADER_HIGHLIGHT_COLOR]
+              .index_with { |k| ENV[k] }
+      ex.run
+      saved.each { |k, v| v.nil? ? ENV.delete(k) : ENV[k] = v }
+    end
+
+    describe ".header_text / .header_enabled?" do
+      it "is disabled by default (no SPARC_HEADER_TEXT)" do
+        ENV.delete("SPARC_HEADER_TEXT")
+        expect(SparcConfig.header_enabled?).to be(false)
+        expect(SparcConfig.header_text).to eq("")
+      end
+
+      it "is disabled when the text is blank/whitespace-only" do
+        ENV["SPARC_HEADER_TEXT"] = "   "
+        expect(SparcConfig.header_enabled?).to be(false)
+      end
+
+      it "is enabled and returns the text verbatim, including special characters" do
+        ENV["SPARC_HEADER_TEXT"] = %q(PRODUCTION — Authorized use only «PII» & <ok> ☣)
+        expect(SparcConfig.header_enabled?).to be(true)
+        expect(SparcConfig.header_text).to eq(%q(PRODUCTION — Authorized use only «PII» & <ok> ☣))
+      end
+    end
+
+    describe ".header_text_color / .header_highlight_color" do
+      it "defaults to the WCAG-AA brand pair when unset" do
+        ENV.delete("SPARC_HEADER_TEXT_COLOR")
+        ENV.delete("SPARC_HEADER_HIGHLIGHT_COLOR")
+        expect(SparcConfig.header_text_color).to eq("#ffffff")
+        expect(SparcConfig.header_highlight_color).to eq("#1f6fa5")
+      end
+
+      it "accepts valid hex (#rgb, #rrggbb, #rrggbbaa) and rgb()/rgba()" do
+        { "#fff" => "#fff",
+          "#0B1F2A" => "#0B1F2A",
+          "#1f6fa5cc" => "#1f6fa5cc",
+          "rgb(31, 111, 165)" => "rgb(31, 111, 165)",
+          "rgba(0,0,0,0.5)" => "rgba(0,0,0,0.5)" }.each do |input, expected|
+          ENV["SPARC_HEADER_TEXT_COLOR"] = input
+          expect(SparcConfig.header_text_color).to eq(expected)
+        end
+      end
+
+      it "falls back to the default on a malformed / injection-y value" do
+        [ "red", "#12", "#1234567", "blue; content:url(x)", "</div><script>",
+          "rgb(1,2)", "expression(alert(1))", "" ].each do |bad|
+          ENV["SPARC_HEADER_HIGHLIGHT_COLOR"] = bad
+          expect(SparcConfig.header_highlight_color).to eq("#1f6fa5")
+        end
+      end
+    end
+  end
 end

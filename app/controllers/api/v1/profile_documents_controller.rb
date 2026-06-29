@@ -29,6 +29,7 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     scope = ProfileDocument.order(created_at: :desc)
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
+    scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
     scope = scope.where(baseline_level: params[:baseline_level]) if params[:baseline_level].present?
     scope = scope.where(control_catalog_id: params[:control_catalog_id]) if params[:control_catalog_id].present?
 

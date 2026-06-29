@@ -110,7 +110,9 @@ class HdfOscalTranslationService
     resource["props"] = props if props.any?
 
     if evidence.original_filename.present?
-      rlink = { "href" => "/evidences/#{evidence.slug || evidence.id}" }
+      # Durable, immutable resolver href (#680) — survives rename/re-upload/
+      # signed-URL rotation, and is absolute so external OSCAL consumers resolve.
+      rlink = { "href" => evidence.oscal_resolver_url }
       rlink["media-type"] = evidence.file_content_type if evidence.file_content_type.present?
       resource["rlinks"] = [ rlink ]
     end
