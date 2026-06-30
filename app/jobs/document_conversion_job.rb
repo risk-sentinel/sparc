@@ -85,10 +85,12 @@ class DocumentConversionJob < ApplicationJob
       document.update!(**attrs)
       log_lifecycle("succeeded", document_type_key, document_id)
 
-      # #392: drop the redundant S3 blob unless the operator opted in to
-      # persistence. Failures don't reach this line — the blob is retained
-      # on failure so the user can retry / inspect.
-      unless ENV["SPARC_PERSIST_S3_BLOB"].to_s.downcase == "true"
+      # #680: parsed source blobs are now RETAINED by default so a referenced
+      # artifact never disappears out from under an exported document. Purge is
+      # opt-in — set SPARC_PERSIST_S3_BLOB=false to restore purge-after-parse.
+      # (Failures never reach this line — the blob is always retained on failure
+      # so the user can retry / inspect.)
+      if ENV["SPARC_PERSIST_S3_BLOB"].to_s.downcase == "false"
         document.file.purge_later
       end
     rescue StandardError => e

@@ -108,7 +108,7 @@ class BackMatterResource < ApplicationRecord
   # Build an OSCAL-compliant resource hash for export.
   def to_oscal_resource
     resource = {
-      "uuid"  => uuid,
+      "uuid"  => oscal_resource_uuid,
       "title" => title
     }
     resource["description"] = description if description.present?
@@ -116,7 +116,7 @@ class BackMatterResource < ApplicationRecord
     rlinks = build_rlinks
     resource["rlinks"] = rlinks if rlinks.any?
 
-    props = resource_data&.dig("props")
+    props = oscal_resource_props
     resource["props"] = props if props.present?
 
     remarks = resource_data&.dig("remarks")
@@ -126,6 +126,33 @@ class BackMatterResource < ApplicationRecord
   end
 
   private
+
+  # Evidence-backed resources emit the CURRENT content-version UUID (#680), so a
+  # stable link (the resolver href) paired with a changing UUID gives drift
+  # detection. Imported/authoritative resources keep their stored uuid.
+  def oscal_resource_uuid
+    artifact_version&.uuid || uuid
+  end
+
+  # Adds the drift-detection props for evidence-backed resources: a stable
+  # `logical-id` (match the same artifact across documents) + the `reviewed-date`
+  # (the as-of date feeding ODP review-cadence deltas, #685).
+  def oscal_resource_props
+    props = Array(resource_data&.dig("props"))
+    version = artifact_version
+    return props.presence unless version
+
+    props + [
+      { "name" => "logical-id",    "value" => evidence.uuid },
+      { "name" => "reviewed-date", "value" => version.reviewed_at&.utc&.iso8601 }
+    ].reject { |p| p["value"].blank? }
+  end
+
+  def artifact_version
+    return nil unless evidence&.respond_to?(:current_artifact_version)
+
+    evidence.current_artifact_version
+  end
 
   def build_rlinks
     links = []

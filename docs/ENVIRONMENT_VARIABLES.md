@@ -308,7 +308,7 @@ notifications, etc.
 | AWS_SECRET_ACCESS_KEY | AWS secret key for S3 storage | (none) | `wJalr...` | Yes (if amazon) |
 | AWS_REGION | AWS region for S3 bucket | (none) | `us-east-1` | Yes (if amazon) |
 | AWS_BUCKET | S3 bucket name for file uploads | (none) | `sparc-uploads` | Yes (if amazon) |
-| SPARC_PERSIST_S3_BLOB | Keep the original upload blob in storage after a successful parse (#392). Default purges to avoid storing redundant data — parsed OSCAL lives in the RDS records. Set to `true` for audit / re-parse / OSCAL byte-for-byte round-trip workflows. Failed parses always retain the blob regardless. | false | `true` | No |
+| SPARC_PERSIST_S3_BLOB | Keep the original upload blob after a successful parse. **As of #680 the blob is RETAINED by default** so a referenced artifact never disappears out from under an exported document (durable back-matter). Set to `false` to restore the old purge-after-parse behavior (#392). Failed parses always retain the blob regardless. | true (retain) | `false` | No |
 
 ---
 

@@ -1,6 +1,11 @@
 class Attestation < ApplicationRecord
   belongs_to :evidence
 
+  # #680 — an attestation change (added, re-reviewed on a new date, status flip,
+  # or removed) is a material change to the artifact, so it mints a new evidence
+  # artifact version even when the file is unchanged.
+  after_commit :reversion_artifact, on: [ :create, :update, :destroy ]
+
   validates :attester_name, presence: true
   validates :statement, presence: true
   validates :attested_at, presence: true
@@ -55,5 +60,11 @@ class Attestation < ApplicationRecord
     payload = "#{attester_name}|#{attester_email}|#{statement}|#{attested_at.iso8601}|#{evidence_id}"
     self.signature_hash = Digest::SHA256.hexdigest(payload)
     save!
+  end
+
+  private
+
+  def reversion_artifact
+    evidence&.record_artifact_version_if_changed(reason: "attestation")
   end
 end

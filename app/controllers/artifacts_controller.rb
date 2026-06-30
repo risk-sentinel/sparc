@@ -24,4 +24,10 @@ class ArtifactsController < ApplicationController
     evidence = find_artifact!(params[:uuid])
     redirect_to signed_artifact_url(evidence), allow_other_host: true
   end
+
+  # GET /artifacts/versions/:uuid — resolve a specific retained content version.
+  def version
+    artifact_version = find_artifact_version!(params[:uuid])
+    redirect_to signed_version_url(artifact_version), allow_other_host: true
+  end
 end

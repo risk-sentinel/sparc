@@ -91,10 +91,16 @@ class HdfOscalTranslationService
   end
 
   def build_resource(evidence)
-    resource = { "uuid" => evidence.uuid, "title" => evidence.title }
+    # Version-aware identity (#680): the resource uuid is the CURRENT content
+    # version, while the resolver href (location) stays stable — a stable link
+    # with a changing uuid gives drift detection.
+    version = evidence.current_artifact_version
+    resource = { "uuid" => (version&.uuid || evidence.uuid), "title" => evidence.title }
     resource["description"] = evidence.description if evidence.description.present?
 
     props = []
+    props << { "name" => "logical-id",    "value" => evidence.uuid }
+    props << { "name" => "reviewed-date", "value" => version.reviewed_at.utc.iso8601 } if version&.reviewed_at
     props << { "name" => "source",        "value" => evidence.source }                 if evidence.source.present?
     props << { "name" => "evidence-type", "value" => evidence.evidence_type }          if evidence.evidence_type.present?
     props << { "name" => "status",        "value" => evidence.status }                 if evidence.status.present?

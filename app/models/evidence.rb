@@ -1,6 +1,7 @@
 class Evidence < ApplicationRecord
   include Sluggable
   include AttachmentSizeLimit
+  include ArtifactVersionable
   sluggable_source :title
   has_one_attached :file
   limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }

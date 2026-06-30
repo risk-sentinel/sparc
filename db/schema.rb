@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_14_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_29_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -58,6 +58,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120000) do
     t.index ["created_by_id"], name: "index_api_tokens_on_created_by_id"
     t.index ["token_digest"], name: "index_api_tokens_on_token_digest", unique: true
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
+  end
+
+  create_table "artifact_versions", force: :cascade do |t|
+    t.jsonb "attester_snapshot", default: [], null: false
+    t.string "change_reason"
+    t.datetime "created_at", null: false
+    t.bigint "evidence_id", null: false
+    t.string "evidence_status"
+    t.string "file_hash"
+    t.string "fingerprint", null: false
+    t.datetime "reviewed_at"
+    t.datetime "superseded_at"
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["evidence_id", "fingerprint"], name: "index_artifact_versions_on_evidence_id_and_fingerprint"
+    t.index ["evidence_id", "superseded_at"], name: "index_artifact_versions_on_evidence_id_and_superseded_at"
+    t.index ["evidence_id"], name: "index_artifact_versions_on_evidence_id"
+    t.index ["uuid"], name: "index_artifact_versions_on_uuid", unique: true
   end
 
   create_table "attestations", force: :cascade do |t|
@@ -1566,6 +1584,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "api_tokens", "users"
   add_foreign_key "api_tokens", "users", column: "created_by_id"
+  add_foreign_key "artifact_versions", "evidences", on_delete: :cascade
   add_foreign_key "attestations", "evidences", on_delete: :cascade
   add_foreign_key "audit_events", "users", on_delete: :nullify
   add_foreign_key "authorization_boundaries", "organizations", on_delete: :nullify

@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # UUID (8-4-4-4-12 hex) constraint shared by the artifact resolver routes (#680).
+  uuid_constraint = /[0-9a-fA-F-]{36}/
+
   root "home#index"
   get "oscal-overview", to: "home#oscal_overview", as: :oscal_overview
   get "about",          to: "about#index",         as: :about
@@ -216,10 +219,12 @@ Rails.application.routes.draw do
     resources :attestations, only: [ :new, :create, :destroy ]
   end
 
-  # Durable artifact resolver (#680) — immutable UUID → freshly-signed download.
-  # Keeps OSCAL back-matter hrefs valid across rename/re-upload/URL rotation.
+  # Durable artifact resolver (#680) — stable UUID → freshly-signed download;
+  # versions/:uuid resolves a specific retained content version.
+  get "artifacts/versions/:uuid", to: "artifacts#version", as: :artifact_version,
+      constraints: { uuid: uuid_constraint }
   get "artifacts/:uuid", to: "artifacts#show", as: :artifact,
-      constraints: { uuid: /[0-9a-fA-F-]{36}/ }
+      constraints: { uuid: uuid_constraint }
 
   resources :cdef_documents do
     member do
@@ -434,9 +439,12 @@ Rails.application.routes.draw do
         end
       end
 
-      # Durable artifact resolver (#680) — immutable UUID → signed download URL.
+      # Durable artifact resolver (#680) — stable UUID → signed download URL;
+      # versions/:uuid resolves a specific retained content version.
+      get "artifacts/versions/:uuid", to: "artifacts#version", as: :artifact_version,
+          constraints: { uuid: uuid_constraint }
       get "artifacts/:uuid", to: "artifacts#show", as: :artifact,
-          constraints: { uuid: /[0-9a-fA-F-]{36}/ }
+          constraints: { uuid: uuid_constraint }
 
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do

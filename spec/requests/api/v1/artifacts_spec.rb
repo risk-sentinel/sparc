@@ -15,6 +15,7 @@ RSpec.describe "Api::V1::Artifacts", type: :request do
   def evidence_with_file(**attrs)
     create(:evidence, **attrs).tap do |e|
       e.file.attach(io: StringIO.new("PDF-BYTES"), filename: "policy.pdf", content_type: "application/pdf")
+      e.compute_file_hash! # mints the initial artifact version (#680)
     end
   end
 
@@ -48,6 +49,34 @@ RSpec.describe "Api::V1::Artifacts", type: :request do
     it "404s when the artifact has no attached file" do
       evidence = create(:evidence)
       get api_v1_artifact_path(uuid: evidence.uuid), headers: admin_headers
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "includes the current content-version UUID" do
+      evidence = evidence_with_file
+      get api_v1_artifact_path(uuid: evidence.uuid), headers: admin_headers
+      data = JSON.parse(response.body)["data"]
+      expect(data["current_version_uuid"]).to eq(evidence.current_artifact_version.uuid)
+    end
+  end
+
+  describe "GET /api/v1/artifacts/versions/:uuid" do
+    it "resolves a specific version with content + drift metadata" do
+      evidence = evidence_with_file
+      version  = evidence.current_artifact_version
+
+      get api_v1_artifact_version_path(uuid: version.uuid), headers: admin_headers
+      expect(response).to have_http_status(:ok)
+
+      data = JSON.parse(response.body)["data"]
+      expect(data["version_uuid"]).to eq(version.uuid)
+      expect(data["logical_id"]).to eq(evidence.uuid) # stable identity, for drift matching
+      expect(data["current"]).to be(true)
+      expect(data["url"]).to include("/rails/active_storage")
+    end
+
+    it "404s for an unknown version uuid" do
+      get api_v1_artifact_version_path(uuid: SecureRandom.uuid), headers: admin_headers
       expect(response).to have_http_status(:not_found)
     end
   end

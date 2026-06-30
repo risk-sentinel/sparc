@@ -72,8 +72,8 @@ RSpec.describe DocumentConversionJob, type: :job do
     end
   end
 
-  describe "S3 blob retention (#392)" do
-    it "purges the blob after a successful parse by default" do
+  describe "S3 blob retention (#392 / #680)" do
+    it "retains the blob after a successful parse by default (#680)" do
       attach_fixture!(document)
       ENV.delete("SPARC_PERSIST_S3_BLOB")
 
@@ -81,7 +81,7 @@ RSpec.describe DocumentConversionJob, type: :job do
         described_class.new.perform(:profile, document.id)
       end
 
-      expect(document.reload.file).not_to be_attached
+      expect(document.reload.file).to be_attached
     end
 
     it "keeps the blob when SPARC_PERSIST_S3_BLOB=true" do
@@ -93,6 +93,19 @@ RSpec.describe DocumentConversionJob, type: :job do
       end
 
       expect(document.reload.file).to be_attached
+    ensure
+      ENV.delete("SPARC_PERSIST_S3_BLOB")
+    end
+
+    it "purges the blob only when SPARC_PERSIST_S3_BLOB=false (opt-in)" do
+      attach_fixture!(document)
+      ENV["SPARC_PERSIST_S3_BLOB"] = "false"
+
+      perform_enqueued_jobs do
+        described_class.new.perform(:profile, document.id)
+      end
+
+      expect(document.reload.file).not_to be_attached
     ensure
       ENV.delete("SPARC_PERSIST_S3_BLOB")
     end
