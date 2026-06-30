@@ -26,6 +26,13 @@ on:
         required: false
       AWS_REGION:
         required: false
+      # ECR registry is composed in code as
+      # {AWS_ACCOUNT_ID}.dkr.ecr.{AWS_REGION}.amazonaws.com/{SPARC_ECR_REGISTRY}
+      # — SPARC_ECR_REGISTRY is just the repo name (e.g. sparc-prod), kept in a
+      # secret for public-fork portability (a contributor points it at their own
+      # repo). Avoids a whitespace-prone full-URL secret.
+      AWS_ACCOUNT_ID:
+        required: false
       SPARC_ECR_REGISTRY:
         required: false
     outputs:
@@ -166,7 +173,7 @@ jobs:
       - name: Compute image tags
         id: tags
         env:
-          ECR_REGISTRY: ${{ secrets.SPARC_ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
         run: |
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
           DOCKERHUB="risksentinel/sparc"
@@ -199,7 +206,7 @@ jobs:
         id: ecr-tags
         if: env.HAS_ECR == 'true' && needs.prepare.outputs.dry_run != 'true'
         env:
-          ECR_REGISTRY: ${{ secrets.SPARC_ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
           ECR="${ECR_REGISTRY}"
@@ -328,7 +335,7 @@ jobs:
             "${ECR_REGISTRY}@${{ needs.build-and-push.outputs.digest }}"
         env:
           COSIGN_EXPERIMENTAL: "1"
-          ECR_REGISTRY: ${{ secrets.SPARC_ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
 
       # ── Verify signatures ──
 
@@ -356,7 +363,7 @@ jobs:
       - name: Verify ECR signature
         if: env.HAS_ECR == 'true'
         env:
-          ECR_REGISTRY: ${{ secrets.SPARC_ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
         run: |
           for attempt in $(seq 1 8); do
             if cosign verify \
@@ -391,7 +398,7 @@ jobs:
       - name: Attest SBOM to ECR
         if: env.HAS_ECR == 'true'
         env:
-          ECR_REGISTRY: ${{ secrets.SPARC_ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
         run: |
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
           cosign attest --yes \
@@ -410,7 +417,7 @@ jobs:
 
       - name: Release summary
         env:
-          ECR_REGISTRY: ${{ secrets.SPARC_ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.SPARC_ECR_REGISTRY }}
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
           DIGEST="${{ needs.build-and-push.outputs.digest }}"
