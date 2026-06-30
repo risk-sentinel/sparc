@@ -79,7 +79,7 @@ jobs:
       contents: read
       id-token: write          # AWS OIDC: S3 write
     env:
-      BUCKET: <security-artifacts-bucket>
+      BUCKET: ${{ secrets.COMPLIANCE_S3_BUCKET }}
       PREFIX: sca/sparc
       # Mapped from the secret so step-level `if:` can gate on presence
       # (the secrets context isn't allowed directly in `if:`).

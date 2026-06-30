@@ -1566,8 +1566,9 @@ jobs:
         if: github.ref == 'refs/heads/main'
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
+          COMPLIANCE_S3_BUCKET: ${{ secrets.COMPLIANCE_S3_BUCKET }}
         run: |
-          BUCKET="<security-artifacts-bucket>"
+          BUCKET="${COMPLIANCE_S3_BUCKET}"
           aws s3 cp docs/ci/pipeline-performance.png \
             "s3://${BUCKET}/latest/pipeline-performance.png" \
             --region "${AWS_REGION}"
