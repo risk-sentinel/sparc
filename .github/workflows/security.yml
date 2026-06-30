@@ -1437,7 +1437,7 @@ jobs:
         if: env.HAS_DISPATCH_TOKEN == 'true'
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
-          role-to-assume: ${{ secrets.SPARC_AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.SPARC_APP_CI_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload compliance artifacts to S3
@@ -1559,7 +1559,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
-          role-to-assume: ${{ secrets.SPARC_AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.SPARC_APP_CI_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload performance chart to S3

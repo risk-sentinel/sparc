@@ -20,7 +20,9 @@ on:
       # the workflow has graceful fallback / skip logic when not set.
       # (Added during #543 vars→secrets rotation; missing declaration
       # caused startup-failure runs on every main push post-#544.)
-      SPARC_AWS_ROLE_ARN:
+      # #480 — dedicated least-privilege sparc CI/publish role (replaces the
+      # over-broad ci-trust→ci-execute that SPARC_AWS_ROLE_ARN pointed at).
+      SPARC_APP_CI_ARN:
         required: false
       AWS_REGION:
         required: false
@@ -153,7 +155,7 @@ jobs:
         if: needs.prepare.outputs.dry_run != 'true'
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
-          role-to-assume: ${{ secrets.SPARC_AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.SPARC_APP_CI_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -304,7 +306,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
-          role-to-assume: ${{ secrets.SPARC_AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.SPARC_APP_CI_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR

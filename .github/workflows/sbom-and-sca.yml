@@ -17,9 +17,9 @@
 # build-sign-publish.yml on release tags), so it already joins the image-side rollup.
 #
 # Graceful degrade: the emit job is skipped on pull_request events and whenever the
-# SCA_EMIT_ROLE_ARN OIDC secret is unset (the SBOM is still produced as a workflow
-# artifact). The s3:PutObject role on sca/sparc/* is provisioned in sparc-iac
-# (cross-repo IAM, tracked under container-build-sign#12 — analogous to sparc-iac#399).
+# SPARC_APP_CI_ARN OIDC secret is unset (the SBOM is still produced as a workflow
+# artifact). That role (s3:PutObject on sca/sparc/*) is provisioned in sparc-iac#480
+# — sparc's own least-privilege CI role, replacing the borrowed SCA_EMIT role.
 #
 # NIST SP 800-53 Rev 5:
 #   SR-3 / SR-4  Supply Chain Controls & Provenance — signed-build CI emits a
@@ -39,7 +39,7 @@ on:
   workflow_dispatch:
     inputs:
       emit:
-        description: 'Push the CycloneDX to S3 (needs the SCA_EMIT_ROLE_ARN IAM role). false = SBOM+SCA only.'
+        description: 'Push the CycloneDX to S3 (needs the SPARC_APP_CI_ARN IAM role). false = SBOM+SCA only.'
         type: boolean
         default: true
 
@@ -83,7 +83,10 @@ jobs:
       PREFIX: sca/sparc
       # Mapped from the secret so step-level `if:` can gate on presence
       # (the secrets context isn't allowed directly in `if:`).
-      ROLE_ARN: ${{ secrets.SCA_EMIT_ROLE_ARN }}
+      # #480 — sparc's own least-privilege role (s3:PutObject on sca/sparc/*),
+      # replacing the borrowed container-build-sign SCA_EMIT role that didn't
+      # trust repo:risk-sentinel/sparc (assume-role was failing → artifact-only).
+      ROLE_ARN: ${{ secrets.SPARC_APP_CI_ARN }}
     steps:
       - name: Download SBOM artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -110,7 +113,7 @@ jobs:
         continue-on-error: true
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
-          role-to-assume: ${{ secrets.SCA_EMIT_ROLE_ARN }}
+          role-to-assume: ${{ secrets.SPARC_APP_CI_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Emit to S3
@@ -126,7 +129,7 @@ jobs:
       - name: Note when emit was skipped
         if: ${{ steps.aws.outcome != 'success' }}
         run: |
-          echo "::notice::S3 emit skipped — SCA_EMIT_ROLE_ARN not set or role not assumable yet (IAM pending in sparc-iac, see container-build-sign#12). SBOM is available as the cyclonedx-sbom workflow artifact."
+          echo "::notice::S3 emit skipped — SPARC_APP_CI_ARN not set or not assumable. SBOM is available as the cyclonedx-sbom workflow artifact."
 
       - name: Upload CycloneDX as workflow artifact (always)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
