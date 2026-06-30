@@ -64,7 +64,7 @@ SPARC supports three API authentication modes (controlled by `SPARC_API_AUTH` en
 - `GET /api/v1/available` — Authorization-scoped endpoint inventory
 
 ### 2. SSP Documents (8 requests)
-- CRUD + Excel convert + bulk field update + JSON export
+- CRUD + file convert + bulk field update + JSON export
 - Uses `:slug` identifier (e.g., `acme-cloud-platform-ssp`)
 
 ### 3. SAR Documents (8 requests)

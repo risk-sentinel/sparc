@@ -36,7 +36,7 @@ SPARC_OIDC_CLIENT_ID=sparc-prod
 SPARC_OIDC_CLIENT_SECRET=...          # from AWS Secrets Manager
 
 # ── Upload validation (size + zip-bomb + executable deny) ──────────────────
-SPARC_MAX_UPLOAD_MB=50                # also caps XLSX uncompressed total
+SPARC_MAX_UPLOAD_MB=50                # also caps zip-based-format uncompressed total
 SPARC_MAX_AVATAR_MB=2
 
 # ── Rate limiting (Rack::Attack thresholds; tune to your traffic) ──────────
@@ -133,12 +133,12 @@ Every file upload goes through six layers before being stored. Each layer is ind
 | **2. Executable signature deny-list** | PE / ELF / Mach-O / Java class / WebAssembly / shebang scripts, even renamed | `FileUploadable#reject_if_executable_signature!` (#509) |
 | **3. Magic-byte MIME cross-check** | Files with content not matching declared extension (e.g., zip mislabeled as .json) | `Marcel::MimeType.for` + `EXPECTED_MIME_BY_EXT` (#509) |
 | **4. Syntactic structural parse** | Truncated / malformed JSON / YAML / XML | `JSON.parse` / `YAML.safe_load` / `XmlSecurity.parse` with 5s timeout (#509) |
-| **5. Zip-bomb defense (XLSX only)** | Files whose uncompressed total exceeds `SPARC_MAX_UPLOAD_MB` | `Zip::File.open(...).entries.sum(&:size)` (#510) |
+| **5. Zip-bomb defense (zip-based formats)** | Files whose uncompressed total exceeds `SPARC_MAX_UPLOAD_MB` | `Zip::File.open(...).entries.sum(&:size)` (#510) |
 | **6. XXE-safe XML parsing** | XML external entity attacks, billion-laughs entity expansion | `XmlSecurity.parse` (NONET + no NOENT/DTDLOAD/HUGE) (#511) |
 
 | Env var | Default | Recommended | Why |
 |---|---|---|---|
-| `SPARC_MAX_UPLOAD_MB` | `50` | `50` (tune to your largest legitimate file) | Caps both raw upload size AND uncompressed XLSX total — single knob |
+| `SPARC_MAX_UPLOAD_MB` | `50` | `50` (tune to your largest legitimate file) | Caps both raw upload size AND uncompressed zip-archive total — single knob |
 | `SPARC_MAX_AVATAR_MB` | `2` | `2` | Avatar caps shouldn't compete with document caps |
 
 **Reverse-proxy alignment:** nginx / ALB `client_max_body_size` should be `SPARC_MAX_UPLOAD_MB + ~10 MB` headroom (e.g., `60m` when `SPARC_MAX_UPLOAD_MB=50`). The proxy rejects oversized requests before they reach Puma.
@@ -344,7 +344,7 @@ Post-upgrade verification. Run through this list after deploying v1.7.0 to confi
 ### Upload validation
 - [ ] Upload a `.exe` renamed to `.json` → rejected (executable signature deny)
 - [ ] Upload a malformed JSON → rejected (syntactic check)
-- [ ] Upload a synthetic 1 GB zip-bomb XLSX → rejected (size cap)
+- [ ] Upload a synthetic 1 GB zip-bomb archive → rejected (size cap)
 - [ ] `SPARC_MAX_UPLOAD_MB` matches nginx `client_max_body_size + headroom`
 
 ### CSP & headers

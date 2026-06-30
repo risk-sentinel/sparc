@@ -49,7 +49,7 @@ None.
     {
       "path": "/api/v1/ssp_documents/convert",
       "methods": ["POST"],
-      "description": "Parse Excel file into SSP"
+      "description": "Parse uploaded file into SSP"
     },
     {
       "path": "/api/v1/ssp_documents/:slug/update_fields",

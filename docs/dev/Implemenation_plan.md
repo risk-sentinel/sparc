@@ -38,7 +38,7 @@ authentication mode coverage matrix.
 
 <!-- markdownlint-disable MD013 -->
 
-- [x] #142 -- Large Excel uploads block UI (background + progress UX) -- **COMPLETED 2026-03-14**
+- [x] #142 -- Large uploads block UI (background + progress UX) -- **COMPLETED 2026-03-14**
 - [x] #178 -- Safe delete confirmation with dependency checks -- **COMPLETED 2026-03-14**
 
 ### 2. Testing & Developer Experience (Foundation)
@@ -97,7 +97,7 @@ authentication mode coverage matrix.
 - [x] #472 -- SBOM license tracking + policy gate: Trivy `--scanners license`, consolidated `license-inventory.{json,md}` artifact, merged `sparc-combined-sbom.cdx.json`, `license-policy.yml` + `license-dispositions.yml` (warn-only) -- **COMPLETED 2026-05-17** (PR #474)
 - [x] #473 -- Aggregator hardening -- **COMPLETED 2026-05-17** (PR #476)
 - [x] #475 -- Triage outstanding license action items + LICENSES/ population + baseline dispositions -- **COMPLETED 2026-05-17 / 18** (PRs #477, #478)
-- [x] #479 -- Drop roo-xls (GPL-3.0 transitive); scrub Excel UI references; flip license-policy enforce to true; v1.6.2 bump -- **COMPLETED 2026-05-18** (PR #480)
+- [x] #479 -- Drop roo-xls (GPL-3.0 transitive); scrub legacy UI references; flip license-policy enforce to true; v1.6.2 bump -- **COMPLETED 2026-05-18** (PR #480)
 - [x] #481 -- Close out 120 unmapped license-inventory components (5-category triage) -- **COMPLETED 2026-05-18** (PR #482)
 - [x] #483 -- Harmonize top-level license to Apache-2.0; v1.6.3 bump -- **COMPLETED 2026-05-18** (PR #484)
 - [ ] #487 -- AWS Labs CDEF bootstrap-on-boot initializer (no shell access required); closes the "fresh deploy waits a week" gap
@@ -173,7 +173,7 @@ authentication mode coverage matrix.
 
 | Status | Issue | Description | Priority |
 | ------ | ----- | ----------- | -------- |
-| [x] | #142 | Background jobs + Turbo Streams/polling for large Excel uploads | **HIGH** |
+| [x] | #142 | Background jobs + Turbo Streams/polling for large uploads | **HIGH** |
 | [x] | #178 | Dependency-aware delete modal across all OSCAL entities | **HIGH** |
 | [x] | #100 | RSpec/Capybara + RuboCop/Brakeman in CI pipeline -- **COMPLETED 2026-03-14** | **HIGH** |
 | [x] | #134 | HTTPS localhost via mkcert for dev environment -- **COMPLETED 2026-03-14** | MEDIUM |
@@ -567,7 +567,7 @@ Umbrella: #413 — close on #433 merge
 | Priority | Status | Issue | Description | Notes |
 | -------- | ------ | ----- | ----------- | ----- |
 | **P0** | [x] | ~~#509~~ | ~~Magic-byte / content-type cross-check + structural parse validation~~ — **COMPLETED 2026-05-22** | Marcel-driven content-type validation (defeats rename-only `foo.exe → foo.json` attacks) + 5s structural parse timeout. Shipped on `feature/509_magic_byte_validation` (PR #523) + executable-signature deny-list follow-up on `feature/509_followup_executable_signatures` (PR #526). |
-| **P0** | [x] | ~~#510~~ | ~~File size limits + zip-bomb defense~~ — **COMPLETED 2026-05-22** | `SPARC_MAX_UPLOAD_MB` / `SPARC_MAX_AVATAR_MB` env-var caps + uncompressed-total check for `.xlsx` (Roo parsing). Shipped on `feature/510_upload_size_limits` (PR #522). |
+| **P0** | [x] | ~~#510~~ | ~~File size limits + zip-bomb defense~~ — **COMPLETED 2026-05-22** | `SPARC_MAX_UPLOAD_MB` / `SPARC_MAX_AVATAR_MB` env-var caps + uncompressed-total check for zip-based formats. Shipped on `feature/510_upload_size_limits` (PR #522). |
 | **P0** | [x] | ~~#511~~ | ~~Nokogiri XXE hardening via XmlSecurity helper~~ — **COMPLETED 2026-05-22** | Single `lib/xml_security.rb` funnel applied across 11 call-sites — `NONET`, no `NOENT/DTDLOAD/HUGE`. Defeats XXE + billion-laughs. Shipped on `feature/511_nokogiri_xxe_hardening` (PR #517). |
 | **P0** | [x] | ~~#513~~ | ~~Rate limiting via Rack::Attack~~ — **COMPLETED 2026-05-23** | Five throttle buckets (auth + API write + uploads + login failures + global) keyed off Rails.cache (solid_cache prod). Safelist CIDRs via `SPARC_RATE_LIMIT_SAFELIST_CIDRS`. Shipped on `feature/513_rate_limiting` (PR #527). |
 | **P0** | [x] | ~~#514~~ | ~~CSP enforce mode + per-request nonces~~ — **COMPLETED 2026-05-23** | Promoted from `report_only=true` to enforce. Nonce generator switched from `request.session.id` to `SecureRandom.base64(16)`. Shipped on `feature/514_csp_enforce` (PR #529). |
@@ -577,7 +577,7 @@ Umbrella: #413 — close on #433 merge
 | **P0** | [x] | ~~#535~~ | ~~Admin navigation: surface Service Accounts in User dropdown~~ — **COMPLETED 2026-05-24** | One-line view fix in `app/views/layouts/application.html.erb` + spec coverage. Shipped on `fix/535_admin_nav_service_accounts` (PR #540) as part of v1.7.1. |
 | **P0** | [x] | ~~#536~~ | ~~Hybrid mode: allow admin-owned SAs to hold admin~~ — **COMPLETED 2026-05-24** | Drop the `service_account_cannot_be_admin` validation in `app/models/user.rb`; expose admin checkbox on `/admin/service_accounts/new` + edit. AC-6 satisfied by explicit per-SA opt-in. Shipped on `fix/536_allow_admin_service_accounts` as part of v1.7.1 bundle (PR #539). |
 | **P0** | [x] | ~~#537~~ | ~~Restore `cloned_from_id` column on `cdef_documents` (schema drift)~~ — **COMPLETED 2026-05-24** | Idempotent migration recovering the column + FK + partial unique index that #466 originally added; lost on prod DBs that crossed the #470 squash without running #466 first. Shipped in v1.7.1 bundle (PR #539). |
-| **P0** | [x] | ~~#541~~ | ~~Document 10 SPARC_* env vars missing from operator catalog~~ — **COMPLETED 2026-05-24** | Added Login Consent Banner / Dynamic Roles / Organization Metadata / DISA CCI sections to `docs/ENVIRONMENT_VARIABLES.md`. Drift audit (`grep -oE 'SPARC_[A-Z_]+'`) now clean modulo intentionally-omitted `SPARC_ENABLE_XLSX_UPLOADS`. Shipped on `docs/541_env_var_doc_gap` (PR #542). |
+| **P0** | [x] | ~~#541~~ | ~~Document 10 SPARC_* env vars missing from operator catalog~~ — **COMPLETED 2026-05-24** | Added Login Consent Banner / Dynamic Roles / Organization Metadata / DISA CCI sections to `docs/ENVIRONMENT_VARIABLES.md`. Drift audit (`grep -oE 'SPARC_[A-Z_]+'`) now clean modulo intentionally-omitted internal feature flags. Shipped on `docs/541_env_var_doc_gap` (PR #542). |
 | **P0** | [x] | ~~#543~~ | ~~Rotate all GitHub Actions vars to secrets (pre-public-flip)~~ — **COMPLETED 2026-05-24** | 22 references across `build-sign-publish.yml` + `security.yml` rewritten from `vars.X` → `secrets.X`. Fork-PR safety verified — every AWS-touching step already gated by `HAS_DISPATCH_TOKEN` or main-only conditions. Shipped on `security/543_vars_to_secrets` (PR #544). |
 | **P0** | [x] | ~~#547~~ | ~~Declare AWS secrets in build-sign-publish workflow_call block~~ — **COMPLETED 2026-05-24** | Added `AWS_ROLE_ARN` / `AWS_REGION` / `ECR_REGISTRY` to `on.workflow_call.secrets` (regression from #543). Necessary but not sufficient — see #553. Shipped on `fix/build_workflow_secrets_declaration` (PR #547). |
 | **P0** | [x] | ~~#548~~ | ~~Processing-banner meta-refresh trap bailout (Tier 1)~~ — **COMPLETED 2026-05-24** | `_processing_banner.html.erb` no longer emits `<meta refresh>` for documents stuck past `SparcConfig.processing_stuck_minutes` (default 5, override `SPARC_PROCESSING_STUCK_MINUTES`). Renders "Processing Stuck" message + Back button. Shipped in v1.7.2 bundle (PR #552). Tier 2/3 (API status=complete + sweeper) tracked in #548. |

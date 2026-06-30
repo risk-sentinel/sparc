@@ -338,9 +338,9 @@ Full RSpec on the merged dependency state: **2076 examples, 0 failures**. `bundl
 - Centralized version constant in `SparcConfig::VERSION` — no longer hardcoded in layouts
 - HTTPS enforcement and security headers test coverage
 
-## v3.4.2 -- Hide Expected Excel Fields from Upload UI (2026-03-09)
+## v3.4.2 -- Hide Expected Upload Fields from Upload UI (2026-03-09)
 
-- Removed hardcoded "Expected Excel Format" tables from SSP and SAR upload pages ([Issue #129](https://github.com/risk-sentinel/sparc/issues/129))
+- Removed hardcoded "Expected Format" tables from SSP and SAR upload pages ([Issue #129](https://github.com/risk-sentinel/sparc/issues/129))
 - Replaced with concise import notes referencing data mapping definitions (`lib/data_mappings/`)
 - OSCAL files (JSON, XML, YAML) noted as auto-detected with no mapping required
 

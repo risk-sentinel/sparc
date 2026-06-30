@@ -11,7 +11,7 @@ Security Assessment Results (SAR) documents record the findings from a security 
 | `POST` | `/api/v1/sar_documents` | Create a new SAR document | `sar.write` |
 | `PUT` | `/api/v1/sar_documents/:slug` | Update a SAR document | `sar.write` |
 | `DELETE` | `/api/v1/sar_documents/:slug` | Soft-delete a SAR document | `sar.write` |
-| `POST` | `/api/v1/sar_documents/convert` | Upload and parse an Excel file into a SAR | `sar.write` |
+| `POST` | `/api/v1/sar_documents/convert` | Upload and parse a document file into a SAR | `sar.write` |
 | `PUT` | `/api/v1/sar_documents/:slug/update_fields` | Bulk-update editable control fields on one SAR | `sar.write` |
 | `GET` | `/api/v1/sar_documents/:slug/export` | Export SAR as JSON | `sar.read` |
 
@@ -48,7 +48,7 @@ None.
       "name": "ACME Annual Assessment 2025",
       "status": "completed",
       "lifecycle_status": "active",
-      "file_type": "excel",
+      "file_type": "json",
       "creation_method": "upload",
       "authorization_boundary_id": 7,
       "created_at": "2025-09-01T08:00:00Z",
@@ -106,7 +106,7 @@ None.
     "name": "ACME Annual Assessment 2025",
     "status": "completed",
     "lifecycle_status": "active",
-    "file_type": "excel",
+    "file_type": "json",
     "creation_method": "upload",
     "authorization_boundary_id": 7,
     "created_at": "2025-09-01T08:00:00Z",
@@ -235,7 +235,7 @@ Same fields as [POST create](#post-apiv1sar_documents). All fields are optional 
     "name": "ACME Annual Assessment 2025",
     "status": "completed",
     "lifecycle_status": "active",
-    "file_type": "excel",
+    "file_type": "json",
     "creation_method": "upload",
     "authorization_boundary_id": 7,
     "created_at": "2025-09-01T08:00:00Z",
@@ -317,7 +317,7 @@ curl -s -X DELETE \
 
 ### POST /api/v1/sar_documents/convert
 
-Uploads an Excel file and parses it into a SAR document with controls and control fields. The file is processed synchronously and the resulting document is returned in the response.
+Uploads a document file and parses it into a SAR document with controls and control fields. The file is processed synchronously and the resulting document is returned in the response.
 
 #### Path Parameters
 
@@ -327,7 +327,7 @@ None.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `excel_file` | file | yes | Excel file (.xlsx) containing SAR data |
+| `excel_file` | file | yes | Document file containing SAR data |
 
 #### Response Body
 
@@ -366,7 +366,7 @@ None.
 ```bash
 curl -s -X POST \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
-  -F "excel_file=@/path/to/acme-annual-assessment-2025.xlsx" \
+  -F "excel_file=@/path/to/acme-annual-assessment-2025.json" \
   "https://sparc.example.com/api/v1/sar_documents/convert" | jq .
 ```
 

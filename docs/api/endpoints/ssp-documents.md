@@ -11,7 +11,7 @@ System Security Plan (SSP) documents capture the security controls implemented f
 | `POST` | `/api/v1/ssp_documents` | Create a new SSP document | `ssp.write` |
 | `PUT` | `/api/v1/ssp_documents/:slug` | Update an SSP document | `ssp.write` |
 | `DELETE` | `/api/v1/ssp_documents/:slug` | Soft-delete an SSP document | `ssp.write` |
-| `POST` | `/api/v1/ssp_documents/convert` | Upload and parse an Excel file into an SSP | `ssp.write` |
+| `POST` | `/api/v1/ssp_documents/convert` | Upload and parse a document file into an SSP | `ssp.write` |
 | `PUT` | `/api/v1/ssp_documents/:slug/update_fields` | Bulk-update editable control fields on one SSP | `ssp.write` |
 | `GET` | `/api/v1/ssp_documents/:slug/export` | Export SSP as JSON | `ssp.read` |
 
@@ -48,7 +48,7 @@ None.
       "name": "ACME Cloud Platform SSP",
       "status": "completed",
       "lifecycle_status": "active",
-      "file_type": "excel",
+      "file_type": "json",
       "creation_method": "upload",
       "authorization_boundary_id": 7,
       "created_at": "2025-11-15T14:30:00Z",
@@ -106,7 +106,7 @@ None.
     "name": "ACME Cloud Platform SSP",
     "status": "completed",
     "lifecycle_status": "active",
-    "file_type": "excel",
+    "file_type": "json",
     "creation_method": "upload",
     "authorization_boundary_id": 7,
     "created_at": "2025-11-15T14:30:00Z",
@@ -244,7 +244,7 @@ Same fields as [POST create](#post-apiv1ssp_documents). All fields are optional 
     "name": "ACME Cloud Platform SSP",
     "status": "completed",
     "lifecycle_status": "active",
-    "file_type": "excel",
+    "file_type": "json",
     "creation_method": "upload",
     "authorization_boundary_id": 7,
     "created_at": "2025-11-15T14:30:00Z",
@@ -327,7 +327,7 @@ curl -s -X DELETE \
 
 ### POST /api/v1/ssp_documents/convert
 
-Uploads an Excel file and parses it into an SSP document with controls and control fields. The file is processed synchronously and the resulting document is returned in the response.
+Uploads a document file and parses it into an SSP document with controls and control fields. The file is processed synchronously and the resulting document is returned in the response.
 
 #### Path Parameters
 
@@ -337,7 +337,7 @@ None.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `excel_file` | file | yes | Excel file (.xlsx) containing SSP data |
+| `excel_file` | file | yes | Document file containing SSP data |
 
 #### Response Body
 
@@ -376,7 +376,7 @@ None.
 ```bash
 curl -s -X POST \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
-  -F "excel_file=@/path/to/acme-cloud-platform-ssp.xlsx" \
+  -F "excel_file=@/path/to/acme-cloud-platform-ssp.json" \
   "https://sparc.example.com/api/v1/ssp_documents/convert" | jq .
 ```
 

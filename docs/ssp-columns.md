@@ -1,12 +1,12 @@
 # SSP Document Schema
 
-This document describes the Excel file format expected when uploading a **System Security Plan (SSP)** into SPARC.
+This document describes the tabular column format expected when uploading a **System Security Plan (SSP)** into SPARC.
 
 ---
 
 ## Overview
 
-SPARC parses SSP Excel files row-by-row, mapping each row to a security control. Column headers are matched case-insensitively and trimmed of whitespace, so minor formatting differences are tolerated. The parser uses the first worksheet in the workbook.
+SPARC parses tabular SSP files row-by-row, mapping each row to a security control. Column headers are matched case-insensitively and trimmed of whitespace, so minor formatting differences are tolerated. The parser uses the first sheet of the file.
 
 ---
 
@@ -97,7 +97,7 @@ SSP documents can also be created via the REST API:
 POST /api/v1/ssp_documents/convert
 Content-Type: multipart/form-data
 
-file=<your_excel_file.xlsx>
+file=<your_document_file>
 ```
 
 See the API documentation for full request/response details.
@@ -112,4 +112,4 @@ Any SSP document can be exported as structured JSON from the document show page 
 GET /api/v1/ssp_documents/:id/export
 ```
 
-The JSON structure mirrors the Excel format with all control fields preserved.
+The JSON structure mirrors the tabular column format with all control fields preserved.

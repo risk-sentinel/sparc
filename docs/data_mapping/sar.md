@@ -32,7 +32,6 @@ SarDocument
 
 | Source | Service | Notes |
 |--------|---------|-------|
-| Excel (.xlsx) | `SarExcelParserService` | Parses assessment data into SarControl + SarControlField |
 | OSCAL JSON | `SarJsonParserService` | Full round-trip; preserves results, observations, findings, risks, components |
 | OSCAL XML / YAML | `SarJsonParserService` | XML/YAML converted to JSON hash, then delegated to JSON parser |
 | Published Profile | `SarFromProfileService` | Creates SAR shell from profile resolved catalog |
@@ -56,7 +55,7 @@ SarDocument
 The SAR export service uses a **unified approach** with two paths:
 
 1. **Enriched path** -- When `SarResult` records exist (OSCAL imports, wizard, or UI-enriched documents), the service uses the full relational model: SarResult with nested SarObservation, SarFinding, and SarRisk records.
-2. **Synthesized path** -- When no `SarResult` records exist (typical for Excel imports that have not been enriched), the service synthesizes observations and findings from `SarControl` / `SarControlField` data.
+2. **Synthesized path** -- When no `SarResult` records exist (typical for imports that have not been enriched), the service synthesizes observations and findings from `SarControl` / `SarControlField` data.
 
 ---
 

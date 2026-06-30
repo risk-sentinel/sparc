@@ -1,6 +1,6 @@
 # Control Catalog Schema
 
-This document describes the data structures used by SPARC's **Control Catalog** feature, including the Excel import format for loading custom catalogs, families, and controls.
+This document describes the data structures used by SPARC's **Control Catalog** feature, including the import format for loading custom catalogs, families, and controls.
 
 ---
 
@@ -14,7 +14,7 @@ ControlCatalog
         └── CatalogControl  (one per base control, e.g., "AC-1")
 ```
 
-NIST SP 800-53 Rev 4 and Rev 5 are pre-loaded via `db:seed`. Custom catalogs can be added via the UI or by importing Excel files using the column structure below.
+NIST SP 800-53 Rev 4 and Rev 5 are pre-loaded via `db:seed`. Custom catalogs can be added via the UI or by importing files using the column structure below.
 
 ---
 

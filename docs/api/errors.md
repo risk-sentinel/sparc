@@ -44,7 +44,7 @@ Returned when a required parameter is missing.
 
 ```json
 {
-  "error": "File is required. Attach an Excel (.xlsx) file to the request."
+  "error": "File is required. Attach a document file to the request."
 }
 ```
 

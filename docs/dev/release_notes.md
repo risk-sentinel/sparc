@@ -591,8 +591,8 @@ are completely independent of migrations with no cross-dependencies.
 ### Summary
 
 Replaced 13 outdated login page feature bullets with 9 new ones reflecting current SPARC capabilities
-(FedRAMP 20x, OSCAL import/export, HDF/XCCDF converters, REST API, ATO wizard). Removed the legacy
-"Convert Excel workbooks to JSON" reference. Bumped `SparcConfig::VERSION` from `1.0.0` to `1.1.0`.
+(FedRAMP 20x, OSCAL import/export, HDF/XCCDF converters, REST API, ATO wizard). Removed a legacy
+import-format reference. Bumped `SparcConfig::VERSION` from `1.0.0` to `1.1.0`.
 Feature titles now use bold text with em-dash descriptions for visual consistency.
 
 ### What Changed
@@ -3172,9 +3172,9 @@ processing.
   On failure, captures the last known stage for debugging.
 
 - **Parser-level progress reporting** -- all 20 parser services
-  (2 Excel, 1 XCCDF, 6 JSON, 6 XML, 5 YAML) and
+  (1 XCCDF, 6 JSON, 6 XML, 5 YAML, plus tabular parsers) and
   `CatalogImportService` now include `ProgressTrackable` and report
-  stages during parsing. Excel parsers report row-by-row progress
+  stages during parsing. Tabular parsers report row-by-row progress
   every 500 rows for large files.
 
 - **Index view enhancements** -- all 7 index views auto-refresh
@@ -3191,8 +3191,6 @@ processing.
 - `app/jobs/document_conversion_job.rb`
 - `app/jobs/catalog_import_job.rb`
 - `app/services/catalog_import_service.rb`
-- `app/services/ssp_excel_parser_service.rb`
-- `app/services/sar_excel_parser_service.rb`
 - `app/services/ssp_json_parser_service.rb`
 - `app/services/sar_json_parser_service.rb`
 - `app/services/cdef_json_parser_service.rb`

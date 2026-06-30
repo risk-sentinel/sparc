@@ -131,7 +131,7 @@ of truth, light + dark in one place):
 
 (Variants map the full domain space: high/medium/low severity, P1/P2/P3,
 passing/failing/pending/in-progress, active/authorized/draft/deauthorized,
-examine/interview/test, OSCAL/Excel/import sources, converter types.)
+examine/interview/test, OSCAL/import sources, converter types.)
 
 ### 3.2 Helpers: return semantic variant keys, not hex
 

@@ -169,7 +169,7 @@ The suite is **completely self-contained**. Running it requires:
 3. A non-admin Bearer token configured via `SPARC_TEST_USER_TOKEN`
 4. Optionally, `SPARC_TEST_RESET_DB=1` to recreate test data between runs
 
-All fixtures (sample SSP Excel files, OSCAL JSON, OSCAL XML, KSI catalog seeds) ship in the repo under `tests/api/fixtures/`. No external downloads are required.
+All fixtures (sample SSP files, OSCAL JSON, OSCAL XML, KSI catalog seeds) ship in the repo under `tests/api/fixtures/`. No external downloads are required.
 
 ### Drift detection
 

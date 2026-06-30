@@ -67,7 +67,7 @@ Full release history — the current v1.x line plus the legacy v2.x–v3.x entri
 | Asset Pipeline | Propshaft, importmap (no Node build step) |
 | Auth | OmniAuth (GitHub, GitLab, OIDC), net-ldap, bcrypt |
 | OSCAL Validation | json_schemer (NIST OSCAL v1.1.2 schemas, baked into the container) |
-| File Parsing | Nokogiri (XML), Roo (Excel — feature-flagged) |
+| File Parsing | Nokogiri (XML) |
 | Containerization | Docker, Docker Compose |
 
 ## Getting Started

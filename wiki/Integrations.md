@@ -118,7 +118,6 @@ container image published by this repo's CI:
 | OSCAL JSON | Any OSCAL-compliant tool | Native format |
 | SCAP XML | NIST feed v2.0 | Automated vulnerability data |
 | XCCDF | DISA STIG | Security Technical Implementation Guides |
-| Excel | Manual spreadsheets | Legacy migration path |
 
 ### Export Formats
 
@@ -126,7 +125,6 @@ container image published by this repo's CI:
 |--------|------------|-------|
 | OSCAL JSON | Validated against official NIST schemas | Primary export |
 | JSON | N/A | Simplified internal format |
-| Excel | N/A | SAR round-trip support |
 
 ### External Dependencies
 

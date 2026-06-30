@@ -328,7 +328,7 @@ Table columns:
 | Column | Description |
 |--------|-------------|
 | Name | Document name (truncated with tooltip) |
-| Source | Badge indicating creation method: Wizard, OSCAL Import, or Excel (with original filename) |
+| Source | Badge indicating creation method: Wizard, OSCAL Import, or File Upload (with original filename) |
 | Version | SSP version string |
 | Status | Completed/pending badge |
 | Controls | Control count |
@@ -336,7 +336,7 @@ Table columns:
 | Created | Timestamp (`YYYY-MM-DD HH:MM`) |
 | Actions | View, Enrich (if not enriched), Delete (with confirmation) |
 
-Buttons: "Create New SSP" (links to wizard), "Upload File" (direct Excel upload).
+Buttons: "Create New SSP" (links to wizard), "Upload File" (direct file upload).
 
 #### SSP Detail
 
@@ -503,7 +503,7 @@ Summary tiles: total SARs, total controls, pass/fail counts. Table listing all a
 
 **Filter parameters** (all combinable): `section`, `family`, `status`, `asset`, `environment`. Pagination preserved across filters.
 
-Export buttons: Download Excel, Download JSON, Download OSCAL, Enrich (if not enriched), Back.
+Export buttons: Download JSON, Download OSCAL, Enrich (if not enriched), Back.
 
 #### SAR Wizard
 
@@ -806,7 +806,7 @@ The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-o
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/v1/ssp_documents/convert` | Upload Excel workbook, queue async parsing via `DocumentConversionJob` |
+| `POST` | `/api/v1/ssp_documents/convert` | Upload document file, queue async parsing via `DocumentConversionJob` |
 | `PUT` | `/api/v1/ssp_documents/:id/update_fields` | Bulk update control fields (JSON body) |
 | `GET` | `/api/v1/ssp_documents/:id/export` | Export SSP document as JSON |
 
@@ -814,7 +814,7 @@ The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-o
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/v1/sar_documents/convert` | Upload Excel workbook, queue async parsing |
+| `POST` | `/api/v1/sar_documents/convert` | Upload document file, queue async parsing |
 | `PUT` | `/api/v1/sar_documents/:id/update_fields` | Bulk update control fields (JSON body) |
 | `GET` | `/api/v1/sar_documents/:id/export` | Export SAR document as JSON |
 
@@ -851,7 +851,7 @@ Used for inline editing of control fields in SSP and SAR detail views. The edit/
 
 ### Status Polling
 
-Documents uploaded via Excel go through async processing:
+Documents uploaded via file go through async processing:
 1. Initial state: `pending`
 2. Background job picks up: `processing`
 3. Completion: `completed` or `failed`

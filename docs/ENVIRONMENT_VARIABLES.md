@@ -318,7 +318,7 @@ notifications, etc.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_MAX_UPLOAD_MB | Maximum allowed upload size in **megabytes** for every document type (SSP, SAR, SAP, POAM, CDEF, Profile, Evidence). Also caps the uncompressed total of zip-based formats (e.g., XLSX) as a zip-bomb defense. SparcConfig converts to bytes internally. Teams needing larger XLSX payloads raise this single global cap. | `50` | `100` | No |
+| SPARC_MAX_UPLOAD_MB | Maximum allowed upload size in **megabytes** for every document type (SSP, SAR, SAP, POAM, CDEF, Profile, Evidence). Also caps the uncompressed total of zip-based formats as a zip-bomb defense. SparcConfig converts to bytes internally. Teams needing larger payloads raise this single global cap. | `50` | `100` | No |
 | SPARC_MAX_AVATAR_MB | Maximum allowed user-avatar upload size in **megabytes**. Separate from document uploads so avatars never compete with document payload caps. | `2` | `5` | No |
 
 <!-- markdownlint-enable MD013 -->
@@ -340,7 +340,7 @@ The app-level `AttachmentSizeLimit` validator and the `FileUploadable` zip-bomb 
 
 <!-- markdownlint-disable MD013 -->
 
-User-uploaded blobs (SSP/SAR/CDEF/POAM JSON/XML/YAML/XLSX, evidence) are served from a separate cookieless hostname. Even if a future code change accidentally sets `disposition: "inline"` on a user-uploaded HTML or SVG file, the browser script lives on the `userdata.*` origin and cannot read the SPARC session cookie (which is host-only on the main app hostname — Rails default, NOT explicitly `Domain=`-scoped).
+User-uploaded blobs (SSP/SAR/CDEF/POAM JSON/XML/YAML, evidence) are served from a separate cookieless hostname. Even if a future code change accidentally sets `disposition: "inline"` on a user-uploaded HTML or SVG file, the browser script lives on the `userdata.*` origin and cannot read the SPARC session cookie (which is host-only on the main app hostname — Rails default, NOT explicitly `Domain=`-scoped).
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |

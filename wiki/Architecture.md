@@ -234,8 +234,8 @@ auto-detects the format via `OscalFormatDetectionService`, and
 
 | Document type | Parser services |
 |---------------|-----------------|
-| SSP | `SspJsonParserService`, `SspXmlParserService`, `SspYamlParserService`, `SspExcelParserService` |
-| SAR | `SarJsonParserService`, `SarXmlParserService`, `SarYamlParserService`, `SarExcelParserService` |
+| SSP | `SspJsonParserService`, `SspXmlParserService`, `SspYamlParserService` |
+| SAR | `SarJsonParserService`, `SarXmlParserService`, `SarYamlParserService` |
 | SAP | `SapJsonParserService`, `SapXmlParserService`, `SapYamlParserService` |
 | POA&M | `PoamJsonParserService`, `PoamXmlParserService`, `PoamYamlParserService` |
 | Profile | `ProfileJsonParserService`, `ProfileXmlParserService`, `ProfileYamlParserService` |
@@ -255,7 +255,6 @@ auto-detects the format via `OscalFormatDetectionService`, and
 | `OscalComponentDefinitionExportService` | OSCAL JSON/XML | CDEF export |
 | `OscalMappingExportService` | OSCAL JSON | Control-mapping export |
 | `JsonExportService` | JSON | Simplified internal format |
-| `SarExcelExportService` | Excel (.xlsx) | Round-trip with SAR import |
 | `AuditCsvExportService` | CSV | Audit-log export for compliance reporting |
 | `AtoPackageExportService` / `AtoPackageService` | Bundle | Assembles a complete ATO package |
 | `CmsAttestationExportService` | CMS format | CMS attestation export (#440) |

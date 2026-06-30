@@ -9,8 +9,8 @@ SPARC transforms security compliance data through a three-stage pipeline:
 ```
 Import (file upload)          Internal Model             Export (download)
 ─────────────────────     ─────────────────────     ─────────────────────
-Excel / JSON / XML /  →   Document → Controls   →   OSCAL JSON validated
-YAML / XCCDF              → ControlFields            against NIST schemas
+JSON / XML / YAML /   →   Document → Controls   →   OSCAL JSON validated
+XCCDF                     → ControlFields            against NIST schemas
 ```
 
 **Import**: Files are uploaded through the UI or API. `DocumentTypeRegistry` maps the file extension to the correct parser service, which normalises the source data into SPARC's three-level model (Document, Controls, ControlFields).
@@ -23,8 +23,8 @@ YAML / XCCDF              → ControlFields            against NIST schemas
 
 | Document Type | Internal Model | Control Model | Field Model | Parser Services | Export Service | OSCAL Root Element | Schema File |
 |---|---|---|---|---|---|---|---|
-| SSP | `SspDocument` | `SspControl` | `SspControlField` | `SspExcelParserService`, `SspJsonParserService`, `SspXmlParserService`, `SspYamlParserService` | `OscalSspExportService` | `system-security-plan` | `oscal_ssp_schema.json` |
-| SAR | `SarDocument` | `SarControl` | `SarControlField` | `SarExcelParserService`, `SarJsonParserService`, `SarXmlParserService`, `SarYamlParserService` | `OscalSarExportService` | `assessment-results` | `oscal_assessment-results_schema.json` |
+| SSP | `SspDocument` | `SspControl` | `SspControlField` | `SspJsonParserService`, `SspXmlParserService`, `SspYamlParserService` | `OscalSspExportService` | `system-security-plan` | `oscal_ssp_schema.json` |
+| SAR | `SarDocument` | `SarControl` | `SarControlField` | `SarJsonParserService`, `SarXmlParserService`, `SarYamlParserService` | `OscalSarExportService` | `assessment-results` | `oscal_assessment-results_schema.json` |
 | SAP | `SapDocument` | `SapControl` | `SapControlField` | `SapJsonParserService`, `SapXmlParserService`, `SapYamlParserService` | `OscalAssessmentPlanExportService` | `assessment-plan` | `oscal_assessment-plan_schema.json` |
 | POA&M | `PoamDocument` | `PoamItem` | _(none)_ | `PoamJsonParserService`, `PoamXmlParserService`, `PoamYamlParserService` | `OscalPoamExportService` | `plan-of-action-and-milestones` | `oscal_poam_schema.json` |
 | CDEF | `CdefDocument` | `CdefControl` | `CdefControlField` | `CdefJsonParserService`, `CdefYamlParserService`, `CdefXccdfParserService` | `OscalComponentDefinitionExportService` | `component-definition` | `oscal_component_schema.json` |
@@ -44,10 +44,10 @@ Detailed field-level mapping documentation for each document type:
 - [`docs/data_mapping/baseline_resolved_profile.md`](data_mapping/baseline_resolved_profile.md) -- Profile resolution and baselines
 - [`docs/data_mapping/catalogs.md`](data_mapping/catalogs.md) -- Catalog structure and import
 
-Additional column references for Excel-based imports:
+Additional column references for tabular imports:
 
-- [`docs/ssp-columns.md`](ssp-columns.md) -- SSP Excel column definitions
-- [`docs/sar-columns.md`](sar-columns.md) -- SAR Excel column definitions
+- [`docs/ssp-columns.md`](ssp-columns.md) -- SSP column definitions
+- [`docs/sar-columns.md`](sar-columns.md) -- SAR column definitions
 
 ## 4. Three-Level Model Architecture
 
@@ -77,27 +77,27 @@ Document (metadata, title, version, source_data_json)
 
 ## 5. Data Mapping Configuration Files
 
-Data mapping JSON files in `lib/data_mappings/` define how source columns map to the internal model. They are used by Excel parser services and the `DataMappingSchema` class.
+Data mapping JSON files in `lib/data_mappings/` define how source columns map to the internal model. They are used by the tabular parser services and the `DataMappingSchema` class.
 
 ### Available Mapping Files
 
 | File | Purpose |
 |---|---|
-| `ssp_excel.json` | SSP Excel column-to-model mapping |
-| `sar_excel.json` | SAR Excel column-to-model mapping |
+| `ssp_excel.json` | SSP column-to-model mapping |
+| `sar_excel.json` | SAR column-to-model mapping |
 | `cci_to_nist.json` | CCI identifier to NIST control ID crosswalk |
 | `cis_to_nist.json` | CIS benchmark to NIST control ID crosswalk |
 | `scap_oval_to_nist.json` | SCAP/OVAL to NIST control ID crosswalk |
 
 ### Schema Format
 
-Each Excel mapping file follows this structure:
+Each column-mapping file follows this structure:
 
 ```json
 {
   "format": "ssp_excel",
   "version": "1.0",
-  "description": "Mapping schema for SSP Excel import/export",
+  "description": "Mapping schema for SSP column import/export",
   "document_type": "SspDocument",
   "control_type": "SspControl",
   "field_type": "SspControlField",
@@ -120,7 +120,7 @@ Each Excel mapping file follows this structure:
 | Property | Required | Description |
 |---|---|---|
 | `key` | Yes | Internal field identifier |
-| `source_header` | Yes | Column header in the source Excel file (case-insensitive match) |
+| `source_header` | Yes | Column header in the source file (case-insensitive match) |
 | `storage` | Yes | Where the value is stored: `control_attribute` (on the control model), `control_field` (as a ControlField record), or `subject` |
 | `data_type` | No | Data type hint (`string`, `text`, `date`, etc.) |
 | `required` | No | Whether the field must be present in the source |
@@ -176,13 +176,13 @@ result = OscalSchemaValidationService.validate_xml(:ssp, xml_string)
 
 ## 7. Developer Guide: Adding New Field Mappings
 
-### Adding a Field to Excel Import
+### Adding a Field to Column-Based Import
 
 1. **Update the mapping file** (`lib/data_mappings/ssp_excel.json` or `sar_excel.json`):
    ```json
    {
      "key": "new_field_name",
-     "source_header": "Excel Column Header",
+     "source_header": "Column Header",
      "storage": "control_field",
      "data_type": "string",
      "editable": true,
@@ -194,7 +194,7 @@ result = OscalSchemaValidationService.validate_xml(:ssp, xml_string)
 
 3. **Update the parser service** if the field needs special handling (e.g., date parsing, value normalisation). The `DataMappingSchema#column_map` is consumed by the parser to route values automatically.
 
-4. **Add tests** in the corresponding parser spec (`spec/services/ssp_excel_parser_service_spec.rb`).
+4. **Add tests** in the corresponding parser spec under `spec/services/`.
 
 ### Adding a Field to OSCAL Export
 

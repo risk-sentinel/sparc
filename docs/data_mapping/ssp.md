@@ -28,7 +28,6 @@ SspDocument
 
 | Source | Service | Notes |
 |--------|---------|-------|
-| Excel (.xlsx) | `SspExcelParserService` | Parses via `ssp_excel.json` field mapping; creates controls + fields |
 | OSCAL JSON | `SspJsonParserService` | Full round-trip; preserves metadata_extra, components, users, info types |
 | OSCAL XML / YAML | `SspJsonParserService` | XML/YAML converted to JSON hash, then delegated to JSON parser |
 | Published Profile | `SspFromProfileService` | Creates SSP from profile resolved catalog; placeholder fields |
@@ -220,7 +219,7 @@ Only included if SspInventoryItem records exist.
 |------------------------------|----------------|-------|
 | `implementation_statement` | `...statements[statement-id={control-id}_priv].remarks` | Private implementation narrative |
 | `implementation_summary` | `...statements[statement-id={control-id}_pub].remarks` | Public implementation narrative |
-| (provider_statements children) | `...statements[statement-id={control-id}_inherited_{n}].remarks` | Legacy Excel inherited/provider statements; concatenated private + public |
+| (provider_statements children) | `...statements[statement-id={control-id}_inherited_{n}].remarks` | Legacy inherited/provider statements; concatenated private + public |
 
 ### Remarks (from SspControlField)
 

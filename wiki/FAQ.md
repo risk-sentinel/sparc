@@ -15,10 +15,6 @@ policy-as-code, not a system of record: tenant systems own the source of truth.
 NIST OSCAL **v1.1.2**. The schemas are baked into the container so validation
 works air-gapped (no dependency on NIST GitHub availability at runtime).
 
-**Spreadsheet (Excel) upload doesn't appear in the UI — why?**
-Excel import/export code is preserved for API consumers but is no longer
-surfaced in the UI by default. The parser services remain for programmatic use.
-
 ## Authentication
 
 **I can't log in — there's no login form.**

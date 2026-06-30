@@ -1,12 +1,12 @@
 # SAR Document Schema
 
-This document describes the Excel file format expected when uploading a **Security Assessment Results (SAR)** into SPARC.
+This document describes the tabular column format expected when uploading a **Security Assessment Results (SAR)** into SPARC.
 
 ---
 
 ## Overview
 
-SPARC parses SAR Excel files row-by-row, mapping each row to a tested security control. Column headers are matched case-insensitively and trimmed of whitespace. The parser uses the first worksheet in the workbook.
+SPARC parses tabular SAR files row-by-row, mapping each row to a tested security control. Column headers are matched case-insensitively and trimmed of whitespace. The parser uses the first sheet of the file.
 
 SAR files are processed **synchronously** (unlike SSP files, which use a background job). The document is ready immediately after upload.
 
@@ -110,7 +110,7 @@ SAR documents can be created via the REST API:
 POST /api/v1/sar_documents/convert
 Content-Type: multipart/form-data
 
-file=<your_excel_file.xlsx>
+file=<your_document_file>
 ```
 
 ---

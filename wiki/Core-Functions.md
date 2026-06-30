@@ -39,8 +39,8 @@ All document uploads follow a unified flow driven by the `FileUploadable` contro
 
 | Type Key | Document Class     | Control Class     | Field Class            | Allowed Extensions                           |
 |----------|--------------------|-------------------|------------------------|----------------------------------------------|
-| `ssp`    | `SspDocument`      | `SspControl`      | `SspControlField`      | `.xlsx`, `.xls`, `.json`, `.xml`, `.yaml`, `.yml` |
-| `sar`    | `SarDocument`      | `SarControl`      | `SarControlField`      | `.xlsx`, `.xls`, `.json`, `.xml`, `.yaml`, `.yml` |
+| `ssp`    | `SspDocument`      | `SspControl`      | `SspControlField`      | `.json`, `.xml`, `.yaml`, `.yml`             |
+| `sar`    | `SarDocument`      | `SarControl`      | `SarControlField`      | `.json`, `.xml`, `.yaml`, `.yml`             |
 | `cdef`   | `CdefDocument`     | `CdefControl`     | `CdefControlField`     | `.xml`, `.json`, `.yaml`, `.yml`             |
 | `profile`| `ProfileDocument`  | `ProfileControl`  | `ProfileControlField`  | `.json`, `.xml`, `.yaml`, `.yml`             |
 | `sap`    | `SapDocument`      | `SapControl`      | `SapControlField`      | `.json`, `.xml`, `.yaml`, `.yml`             |
@@ -68,7 +68,7 @@ Usage:
 ```ruby
 entry = DocumentTypeRegistry.for(:sar)
 entry.document_class  # => SarDocument
-entry.parser_map      # => { "excel" => SarExcelParserService, "json" => SarJsonParserService, ... }
+entry.parser_map      # => { "json" => SarJsonParserService, "xml" => SarXmlParserService, ... }
 ```
 
 ### Upload Flow
@@ -76,7 +76,7 @@ entry.parser_map      # => { "excel" => SarExcelParserService, "json" => SarJson
 The `FileUploadable` concern (`app/controllers/concerns/file_uploadable.rb`) implements a five-step pipeline that every document controller shares:
 
 1. **Validate file presence** -- returns an error flash if no file is attached.
-2. **Detect file type** -- maps the file extension against `registry.allowed_extensions` to determine the parser format (e.g., `.xlsx` maps to `"excel"`).
+2. **Detect file type** -- maps the file extension against `registry.allowed_extensions` to determine the parser format (e.g., `.json` maps to `"json"`).
 3. **Write to persistent path** -- the file is written to `tmp/` with a safe prefix and random hex suffix. File path components come exclusively from frozen constants (`SAFE_PREFIXES`, `SAFE_EXTENSIONS`), satisfying Brakeman taint analysis.
 4. **Create document record** -- a new document is created with `status: "pending"`, the uploaded file is attached via Active Storage, and `DocumentConversionJob` is enqueued.
 5. **Error handling** -- on failure, the temporary file is cleaned up and the user sees the error.
@@ -109,30 +109,6 @@ GET /:document_type/:id/status
 ### Parser Services
 
 Each parser service handles a specific input format and populates the three-level model hierarchy (Document -> Controls -> Fields).
-
-#### SspExcelParserService
-
-**File:** `app/services/ssp_excel_parser_service.rb`
-
-Parses Excel spreadsheets into SSP documents. Uses a three-phase batch insert strategy:
-
-- **Phase 1:** Batch insert parent controls (rows that have a `control_id`).
-- **Phase 2:** Batch insert child controls (rows without `control_id`, representing provider statements) with `parent_id` resolved from Phase 1 results.
-- **Phase 3:** Batch insert all `SspControlField` records linked to their respective controls.
-
-Column mapping is loaded from the data mapping schema (`lib/data_mappings/ssp_excel.json`) via `DataMappingSchema.load(:ssp_excel)`.
-
-#### SarExcelParserService
-
-**File:** `app/services/sar_excel_parser_service.rb`
-
-Parses multi-sheet Excel workbooks where each sheet represents a section. Key behaviors:
-
-- Iterates all sheets, treating each sheet name as the section identifier.
-- Tracks subject asset/environment pairs by splitting the subject column value on `"|"`.
-- Denormalizes `control_family` (extracted from `control_id` prefix) and `cached_result` directly onto the control record for query performance.
-- Preserves sheet metadata (sheet order and original headers) in `excel_metadata` on the document record for round-trip Excel export.
-- Uses the shared `BatchInsertable` concern for bulk insertion.
 
 #### CdefJsonParserService and CdefXccdfParserService
 
@@ -221,7 +197,7 @@ Control IDs are returned via `returning: :id` so field records can be linked to 
 **Files:** `ssp_excel.json`, `sar_excel.json`
 **Service:** `app/services/data_mapping_schema.rb`
 
-Data mapping files are vendor-neutral, declarative JSON definitions that describe how source columns (Excel headers) map to internal model attributes and fields. Each mapping entry includes:
+Data mapping files are vendor-neutral, declarative JSON definitions that describe how source columns (tabular headers) map to internal model attributes and fields. Each mapping entry includes:
 
 - `source_header` -- the normalized column header from the source file.
 - `key` -- the internal attribute or field name.
@@ -271,7 +247,7 @@ Builds a complete OSCAL v1.1.2 System Security Plan JSON document. The top-level
 - **control-implementation** -- implemented requirements with by-components, statements (private/public/inherited), and props (status, control type, origination, responsible entities).
 - **back-matter** -- preserved resources from import metadata.
 
-The service works uniformly: enriched relational data is used when available (regardless of whether the SSP was created via wizard or Excel import), falling back to placeholder values only when no data exists.
+The service works uniformly: enriched relational data is used when available (regardless of whether the SSP was created via wizard or file import), falling back to placeholder values only when no data exists.
 
 ```ruby
 service = OscalSspExportService.new(ssp_document)
@@ -393,7 +369,7 @@ OscalMetadataInheritanceService.new(ssp_document).resolve!
 
 **File:** `app/services/ssp_wizard_service.rb`
 
-The SSP Wizard allows users to create a System Security Plan from scratch rather than importing from Excel. The entire process runs in a single database transaction.
+The SSP Wizard allows users to create a System Security Plan from scratch rather than importing from a file. The entire process runs in a single database transaction.
 
 ### Wizard Inputs
 
@@ -427,7 +403,7 @@ Control IDs are normalized for matching: lowercased, whitespace replaced with hy
 
 ## 4. SSP Enrichment
 
-SSP Enrichment allows users to uplift legacy Excel-imported SSPs with full OSCAL metadata that cannot be expressed in the spreadsheet format.
+SSP Enrichment allows users to uplift legacy file-imported SSPs with full OSCAL metadata that cannot be expressed in the original tabular format.
 
 ### Enrichable Metadata
 
@@ -443,7 +419,7 @@ The SSP enrichment UI (`enrich` / `update_enrich` actions in `SspDocumentsContro
 
 The controller includes sync helpers that handle create/update/delete of nested OSCAL entities. Each entity section (components, users, information types) can be managed independently, with changes applied via the `update_enrich` action.
 
-The `OscalSspExportService` works uniformly -- it uses enriched relational data when available regardless of whether the SSP was created via wizard or Excel import. Excel-imported SSPs that have been enriched via the UI get proper exports with the enriched data, while un-enriched SSPs continue to export valid OSCAL with sensible defaults.
+The `OscalSspExportService` works uniformly -- it uses enriched relational data when available regardless of whether the SSP was created via wizard or file import. File-imported SSPs that have been enriched via the UI get proper exports with the enriched data, while un-enriched SSPs continue to export valid OSCAL with sensible defaults.
 
 ---
 
@@ -848,17 +824,6 @@ JsonExportService.export_poam(poam_document)
 
 Each export produces pretty-printed JSON via `JSON.pretty_generate`.
 
-### SAR Excel Export
-
-**File:** `app/services/sar_excel_export_service.rb`
-
-The `SarExcelExportService` provides round-trip Excel export for SAR documents, preserving the original sheet order and headers from the import. Uses the `caxlsx` gem to generate `.xlsx` files:
-
-- Sheet order and header metadata are read from `excel_metadata` stored during import.
-- Falls back to generating sections and headers from the control data if metadata is not available.
-- Each sheet gets styled headers and data rows ordered by `row_order`.
-- Excel sheet names are truncated to 31 characters to comply with Excel limits.
-
 ---
 
 ## 13. REST API
@@ -872,13 +837,13 @@ The API provides programmatic access to document operations.
 
 | Endpoint                              | Method | Description                     |
 |---------------------------------------|--------|---------------------------------|
-| `/api/v1/ssp_documents/convert`       | POST   | Upload and convert an Excel file |
+| `/api/v1/ssp_documents/convert`       | POST   | Upload and convert a document file |
 | `/api/v1/ssp_documents/:id/update_fields` | PUT    | Bulk update control fields      |
 | `/api/v1/ssp_documents/:id/export`    | GET    | Export document as JSON          |
 
 #### Convert
 
-Accepts an `excel_file` parameter. Creates a temporary file, processes it via `SspDocument.from_excel`, and returns the parsed JSON data along with the `document_id`.
+Accepts an uploaded file parameter. Creates a temporary file, processes it through the document conversion pipeline, and returns the parsed JSON data along with the `document_id`.
 
 ```json
 {

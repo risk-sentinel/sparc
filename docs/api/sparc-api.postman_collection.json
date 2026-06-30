@@ -138,7 +138,7 @@
     },
     {
       "name": "SSP Documents",
-      "description": "System Security Plan (SSP) document lifecycle management. Supports CRUD operations, Excel file conversion, and JSON export.",
+      "description": "System Security Plan (SSP) document lifecycle management. Supports CRUD operations, document file conversion, and JSON export.",
       "item": [
         {
           "name": "List SSP Documents",
@@ -300,7 +300,7 @@
           }
         },
         {
-          "name": "Convert SSP Excel File",
+          "name": "Convert SSP Document File",
           "request": {
             "method": "POST",
             "header": [
@@ -316,7 +316,7 @@
                   "key": "file",
                   "type": "file",
                   "src": "",
-                  "description": "Excel file (.xlsx) containing SSP data"
+                  "description": "Document file containing SSP data"
                 },
                 {
                   "key": "authorization_boundary_id",
@@ -338,7 +338,7 @@
                 "convert"
               ]
             },
-            "description": "Uploads an Excel (.xlsx) file for asynchronous parsing into an SSP document with controls and control fields. The file is processed by a background Sidekiq job. Returns a conversion job ID for status polling.\n\nResponse: 202 Accepted with conversion job details:\n```json\n{\n  \"conversion_job\": {\n    \"id\": 1,\n    \"status\": \"pending\"\n  }\n}\n```"
+            "description": "Uploads a document file for asynchronous parsing into an SSP document with controls and control fields. The file is processed by a background Sidekiq job. Returns a conversion job ID for status polling.\n\nResponse: 202 Accepted with conversion job details:\n```json\n{\n  \"conversion_job\": {\n    \"id\": 1,\n    \"status\": \"pending\"\n  }\n}\n```"
           }
         },
         {
@@ -405,7 +405,7 @@
     },
     {
       "name": "SAR Documents",
-      "description": "Security Assessment Report (SAR) document lifecycle management. Supports CRUD operations, Excel file conversion, and JSON export.",
+      "description": "Security Assessment Report (SAR) document lifecycle management. Supports CRUD operations, document file conversion, and JSON export.",
       "item": [
         {
           "name": "List SAR Documents",
@@ -547,7 +547,7 @@
           }
         },
         {
-          "name": "Convert SAR Excel File",
+          "name": "Convert SAR Document File",
           "request": {
             "method": "POST",
             "header": [
@@ -563,7 +563,7 @@
                   "key": "file",
                   "type": "file",
                   "src": "",
-                  "description": "Excel file (.xlsx) containing SAR assessment data"
+                  "description": "Document file containing SAR assessment data"
                 },
                 {
                   "key": "authorization_boundary_id",
@@ -585,7 +585,7 @@
                 "convert"
               ]
             },
-            "description": "Uploads an Excel (.xlsx) file for asynchronous parsing into a SAR document. Processed by a background Sidekiq job.\n\nResponse: 202 Accepted with conversion job details."
+            "description": "Uploads a document file for asynchronous parsing into a SAR document. Processed by a background Sidekiq job.\n\nResponse: 202 Accepted with conversion job details."
           }
         },
         {

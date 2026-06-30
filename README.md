@@ -22,7 +22,7 @@ program managers to document, assess, and prove compliance across the full RMF l
 (CDEFs), SSPs, SAPs, SARs, and POA&Ms in one platform
 - **SSP Creation Wizard** — Build System Security Plans from scratch by selecting
 baselines and assembling components
-- **Multi-Format Import** — Import from Excel (.xlsx/.xls), OSCAL JSON, OSCAL XML,
+- **Multi-Format Import** — Import from OSCAL JSON, OSCAL XML,
 DISA STIGs (XCCDF), and InSpec profiles
 - **OSCAL Export** — Export validated OSCAL v1.1.2 JSON for SSPs, CDEFs, Profiles,
 SARs, and POA&Ms
