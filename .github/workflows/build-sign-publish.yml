@@ -129,7 +129,9 @@ jobs:
 
   build-and-push:
     runs-on: ubuntu-latest
-    environment: production   # #545 item 3 — gate the release push behind required reviewers
+    environment: production   # #545 item 3 — the SINGLE release approval gate (required
+    # reviewers). Approving here authorizes the whole release; sign-verify-attest has no
+    # separate gate and runs after this approved build.
     needs: [ prepare ]
     # `secrets` context is NOT allowed in step-level `if:` conditionals
     # (only in env / job.if / step.env). Map the secret presence to a
@@ -285,7 +287,11 @@ jobs:
 
   sign-verify-attest:
     runs-on: ubuntu-latest
-    environment: production   # #545 item 3 — gate the signing/push behind required reviewers
+    # No `environment:` gate by design: the single release approval is at
+    # build-and-push, and this job runs automatically after that approved build
+    # (needs: build-and-push). Secrets are org-level (not env-scoped) and the
+    # SPARC_APP_CI_ARN OIDC trust is not environment-conditioned, so AWS/ECR auth
+    # for cosign sign/verify/attest is unaffected by the missing environment.
     needs: [ prepare, build-and-push ]
     if: needs.prepare.outputs.dry_run != 'true'
     # See build-and-push for why secrets must be hoisted to job-level env.
