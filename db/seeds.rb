@@ -1584,13 +1584,14 @@ SSP1_STATED_REQS = {
 }.freeze
 
 # Provider statements (inherited rows) for selected Hybrid controls in SSP 1.
+INHERITED_FROM_PROVIDER = "Inherited from provider".freeze
 SSP1_INHERITED = {
   "AC-4"  => [
     { title: "Cloud Provider — Network Boundary Controls",
       fields: {
         control_application:            "Inherited",
         coverage_level:            "Implemented",
-        control_type:    "Inherited from provider",
+        control_type:    INHERITED_FROM_PROVIDER,
         implementation_statement: "AWS VPC Security Groups and Network ACLs enforce boundary-level information flow controls. Managed by cloud provider and verified via AWS Config rules.",
         responsible_entities:   "Cloud Provider (AWS)"
       }
@@ -1601,7 +1602,7 @@ SSP1_INHERITED = {
       fields: {
         control_application:            "Inherited",
         coverage_level:            "Configured",
-        control_type:    "Inherited from provider",
+        control_type:    INHERITED_FROM_PROVIDER,
         implementation_statement: "Audit log storage capacity is managed through AWS CloudWatch Logs with auto-scaling enabled. Retention policies are configured at the organization level.",
         responsible_entities:   "Cloud Provider (AWS) / ACME DevOps"
       }
@@ -1612,7 +1613,7 @@ SSP1_INHERITED = {
       fields: {
         control_application:            "Inherited",
         coverage_level:            "Implemented",
-        control_type:    "Inherited from provider",
+        control_type:    INHERITED_FROM_PROVIDER,
         implementation_statement: "Okta manages the full authenticator lifecycle including provisioning, MFA enforcement, and compromised credential monitoring via HaveIBeenPwned integration.",
         responsible_entities:   "Identity Provider (Okta)"
       }

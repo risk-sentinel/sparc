@@ -24,7 +24,7 @@ class SspControlField < ApplicationRecord
     "Will Not Implement"
   ].freeze
 
-  TYPE_USE_AS_VALUES = [
+  CONTROL_APPLICATION_VALUES = [
     "System Specific",
     "Hybrid",
     "Inherited",
@@ -32,14 +32,14 @@ class SspControlField < ApplicationRecord
     "Consumer"
   ].freeze
 
-  PROVIDED_AS_VALUES = [
+  COVERAGE_LEVEL_VALUES = [
     "Implemented",
     "Configured",
     "Documented",
     "Not Applicable"
   ].freeze
 
-  CONTROL_ORIGINATION_VALUES = [
+  CONTROL_TYPE_VALUES = [
     "System Specific",
     "Hybrid — partially inherited",
     "Inherited from provider",

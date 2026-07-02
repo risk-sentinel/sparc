@@ -1,14 +1,14 @@
 {
   "format": "ssp_excel",
   "version": "1.0",
-  "description": "Mapping schema for SSP (System Security Plan) Excel import/export",
+  "description": "Mapping schema for SSP (System Security Plan) spreadsheet import/export. Column headers are OSCAL-aligned.",
   "document_type": "SspDocument",
   "control_type": "SspControl",
   "field_type": "SspControlField",
   "fields": [
     {
       "key": "control_id",
-      "source_header": "paragraph/reqid",
+      "source_header": "control-id",
       "storage": "control_attribute",
       "data_type": "string",
       "required": true,
@@ -16,7 +16,7 @@
     },
     {
       "key": "title",
-      "source_header": "title",
+      "source_header": "control-title",
       "storage": "control_attribute",
       "data_type": "string",
       "required": false,
@@ -24,7 +24,7 @@
     },
     {
       "key": "stated_requirement",
-      "source_header": "stated requirement",
+      "source_header": "control-statement",
       "storage": "control_field",
       "data_type": "text",
       "editable": false,
@@ -32,11 +32,11 @@
         "target": "remarks",
         "prefix": "Stated Requirement"
       },
-      "description": "The stated requirement text for the control"
+      "description": "The control statement / stated requirement text"
     },
     {
       "key": "implementation_statement",
-      "source_header": "private implementation",
+      "source_header": "implementation-statement",
       "storage": "control_field",
       "data_type": "text",
       "editable": true,
@@ -44,11 +44,11 @@
         "target": "statement",
         "statement_suffix": "_priv"
       },
-      "description": "Private (internal) implementation description"
+      "description": "Implementation statement (internal narrative)"
     },
     {
       "key": "implementation_summary",
-      "source_header": "public implementation",
+      "source_header": "implementation-summary",
       "storage": "control_field",
       "data_type": "text",
       "editable": true,
@@ -56,11 +56,11 @@
         "target": "statement",
         "statement_suffix": "_pub"
       },
-      "description": "Public-facing implementation description"
+      "description": "Implementation summary (shareable narrative)"
     },
     {
       "key": "notes",
-      "source_header": "notes",
+      "source_header": "remarks",
       "storage": "control_field",
       "data_type": "text",
       "editable": true,
@@ -68,11 +68,11 @@
         "target": "remarks",
         "prefix": "Notes"
       },
-      "description": "Additional notes about the control implementation"
+      "description": "Additional remarks about the control implementation"
     },
     {
       "key": "status",
-      "source_header": "status",
+      "source_header": "implementation-status",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -88,7 +88,7 @@
     },
     {
       "key": "expected_completion",
-      "source_header": "expected completion",
+      "source_header": "completion-date",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -100,7 +100,7 @@
     },
     {
       "key": "class",
-      "source_header": "class",
+      "source_header": "control-class",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
@@ -108,7 +108,7 @@
     },
     {
       "key": "priority",
-      "source_header": "priority",
+      "source_header": "control-priority",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
@@ -116,7 +116,7 @@
     },
     {
       "key": "responsible_entities",
-      "source_header": "responsible entities",
+      "source_header": "responsible-roles",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -125,19 +125,19 @@
         "prop_name": "responsible-entities",
         "namespace": "https://sparc.local/ns"
       },
-      "description": "Entities responsible for the control"
+      "description": "Roles/entities responsible for the control"
     },
     {
       "key": "control_owner",
-      "source_header": "control owner",
+      "source_header": "responsible-party",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
-      "description": "Owner of the control"
+      "description": "Responsible party / owner of the control"
     },
     {
       "key": "control_application",
-      "source_header": "type/use as",
+      "source_header": "control-application",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -149,11 +149,11 @@
         "prop_name": "control-type",
         "namespace": "https://sparc.local/ns"
       },
-      "description": "Control type classification"
+      "description": "How the control applies to the system"
     },
     {
       "key": "inherited_from",
-      "source_header": "inherited from",
+      "source_header": "inherited-from",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
@@ -165,7 +165,7 @@
     },
     {
       "key": "coverage_level",
-      "source_header": "provided as",
+      "source_header": "coverage-level",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -177,11 +177,11 @@
         "prop_name": "provided-as",
         "namespace": "https://sparc.local/ns"
       },
-      "description": "How the control is provided"
+      "description": "Level at which the control is covered/provided"
     },
     {
       "key": "control_type",
-      "source_header": "control origination",
+      "source_header": "control-type",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -193,11 +193,11 @@
         "prop_name": "control-origination",
         "namespace": "https://sparc.local/ns"
       },
-      "description": "Control origination type"
+      "description": "Control type / origination"
     },
     {
       "key": "history",
-      "source_header": "history",
+      "source_header": "change-history",
       "storage": "control_field",
       "data_type": "text",
       "editable": false,

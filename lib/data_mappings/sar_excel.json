@@ -1,18 +1,18 @@
 {
   "format": "sar_excel",
   "version": "1.0",
-  "description": "Mapping schema for SAR (Security Assessment Results) Excel import/export",
+  "description": "Mapping schema for SAR (Security Assessment Results) spreadsheet import/export. Column headers are OSCAL-aligned.",
   "document_type": "SarDocument",
   "control_type": "SarControl",
   "field_type": "SarControlField",
   "fields": [
     {
       "key": "row_number",
-      "source_header": "#",
+      "source_header": "result-id",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
-      "description": "Original row number from the Excel sheet"
+      "description": "Original row number from the source sheet"
     },
     {
       "key": "inherited",
@@ -24,7 +24,7 @@
     },
     {
       "key": "date",
-      "source_header": "date",
+      "source_header": "assessment-date",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -32,7 +32,7 @@
     },
     {
       "key": "control_id",
-      "source_header": "paragraph",
+      "source_header": "control-id",
       "storage": "control_attribute",
       "data_type": "string",
       "required": true,
@@ -40,46 +40,46 @@
     },
     {
       "key": "coverage_level",
-      "source_header": "provided as",
+      "source_header": "coverage-level",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
-      "description": "How the control is provided"
+      "description": "Level at which the control is covered/provided"
     },
     {
       "key": "tester",
-      "source_header": "tester",
+      "source_header": "assessor",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
-      "description": "Name of the tester/assessor"
+      "description": "Name of the assessor"
     },
     {
       "key": "result",
-      "source_header": "result",
+      "source_header": "finding-result",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
       "validation": {
         "allowed_values": ["Pass", "Failed"]
       },
-      "description": "Test result (Pass/Failed)"
+      "description": "Assessment result (Pass/Failed)"
     },
     {
       "key": "notes_weakness",
-      "source_header": "notes/weakness",
+      "source_header": "finding-remarks",
       "storage": "control_field",
       "data_type": "text",
       "editable": true,
-      "description": "Notes or weakness description"
+      "description": "Finding remarks or weakness description"
     },
     {
       "key": "recommended_fix",
-      "source_header": "recommended fix",
+      "source_header": "recommendation",
       "storage": "control_field",
       "data_type": "text",
       "editable": true,
-      "description": "Recommended fix for identified weaknesses"
+      "description": "Recommended remediation for identified weaknesses"
     },
     {
       "key": "subject",
@@ -91,7 +91,7 @@
     },
     {
       "key": "control_status",
-      "source_header": "control status",
+      "source_header": "implementation-status",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
@@ -99,7 +99,7 @@
     },
     {
       "key": "responsibility",
-      "source_header": "responsibility",
+      "source_header": "responsible-role",
       "storage": "control_field",
       "data_type": "string",
       "editable": false,
@@ -107,15 +107,15 @@
     },
     {
       "key": "title",
-      "source_header": "test title",
+      "source_header": "objective-title",
       "storage": "control_attribute",
       "data_type": "string",
       "required": false,
-      "description": "Title of the test"
+      "description": "Title of the assessment objective"
     },
     {
       "key": "impact_statement",
-      "source_header": "impact statement",
+      "source_header": "impact-statement",
       "storage": "control_field",
       "data_type": "text",
       "editable": false,
@@ -123,19 +123,19 @@
     },
     {
       "key": "test_text",
-      "source_header": "test text",
+      "source_header": "assessment-method",
       "storage": "control_field",
       "data_type": "text",
       "editable": true,
-      "description": "Text describing the test procedure"
+      "description": "Text describing the assessment method / procedure"
     },
     {
       "key": "expected_result",
-      "source_header": "expected result",
+      "source_header": "expected-result",
       "storage": "control_field",
       "data_type": "text",
       "editable": true,
-      "description": "Expected result of the test"
+      "description": "Expected result of the assessment"
     },
     {
       "key": "custom",
@@ -147,7 +147,7 @@
     },
     {
       "key": "custom_name",
-      "source_header": "custom name",
+      "source_header": "custom-name",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -155,7 +155,7 @@
     },
     {
       "key": "custom_author",
-      "source_header": "custom author",
+      "source_header": "custom-author",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,
@@ -163,7 +163,7 @@
     },
     {
       "key": "control_text",
-      "source_header": "control text",
+      "source_header": "control-statement",
       "storage": "control_field",
       "data_type": "text",
       "editable": false,
@@ -171,7 +171,7 @@
     },
     {
       "key": "implementation",
-      "source_header": "implementation",
+      "source_header": "implementation-statement",
       "storage": "control_field",
       "data_type": "text",
       "editable": false,
@@ -179,7 +179,7 @@
     },
     {
       "key": "working_comments",
-      "source_header": "working comments",
+      "source_header": "assessor-remarks",
       "storage": "control_field",
       "data_type": "text",
       "editable": true,
@@ -187,7 +187,7 @@
     },
     {
       "key": "working_status",
-      "source_header": "working status",
+      "source_header": "assessment-status",
       "storage": "control_field",
       "data_type": "string",
       "editable": true,

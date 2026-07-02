@@ -36,10 +36,10 @@ RSpec.describe DataMappingSchema do
 
       it "produces a column map compatible with SspExcelParserService" do
         map = schema.column_map
-        expect(map["paragraph/reqid"]).to eq({ key: :control_id, control_attr: true })
-        expect(map["title"]).to eq({ key: :title, control_attr: true })
-        expect(map["status"]).to eq({ key: "status", control_attr: false })
-        expect(map["notes"]).to eq({ key: "notes", control_attr: false })
+        expect(map["control-id"]).to eq({ key: :control_id, control_attr: true })
+        expect(map["control-title"]).to eq({ key: :title, control_attr: true })
+        expect(map["implementation-status"]).to eq({ key: "status", control_attr: false })
+        expect(map["remarks"]).to eq({ key: "notes", control_attr: false })
       end
 
       it "includes all 17 SSP fields" do
@@ -52,10 +52,10 @@ RSpec.describe DataMappingSchema do
 
       it "produces a column map compatible with SarExcelParserService" do
         map = schema.column_map
-        expect(map["paragraph"]).to eq({ key: :control_id, control_attr: true })
-        expect(map["test title"]).to eq({ key: :title, control_attr: true })
+        expect(map["control-id"]).to eq({ key: :control_id, control_attr: true })
+        expect(map["objective-title"]).to eq({ key: :title, control_attr: true })
         expect(map["subject"]).to eq({ key: :subject, control_attr: :subject })
-        expect(map["result"]).to eq({ key: "result", control_attr: false })
+        expect(map["finding-result"]).to eq({ key: "result", control_attr: false })
       end
 
       it "includes all 23 SAR fields" do

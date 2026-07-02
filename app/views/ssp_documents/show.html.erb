@@ -456,17 +456,17 @@
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "control_application" %>
                   <%= select_tag "fields[#{fname}]",
-                        options_for_select(SspControlField::TYPE_USE_AS_VALUES, fval),
+                        options_for_select(SspControlField::CONTROL_APPLICATION_VALUES, fval),
                         include_blank: "— select —", class: "form-control",
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "coverage_level" %>
                   <%= select_tag "fields[#{fname}]",
-                        options_for_select(SspControlField::PROVIDED_AS_VALUES, fval),
+                        options_for_select(SspControlField::COVERAGE_LEVEL_VALUES, fval),
                         include_blank: "— select —", class: "form-control",
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "control_type" %>
                   <%= select_tag "fields[#{fname}]",
-                        options_for_select(SspControlField::CONTROL_ORIGINATION_VALUES, fval),
+                        options_for_select(SspControlField::CONTROL_TYPE_VALUES, fval),
                         include_blank: "— select —", class: "form-control",
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "expected_completion" %>

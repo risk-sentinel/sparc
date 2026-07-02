@@ -17,6 +17,8 @@
 class OscalSspExportService
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
+  # Namespace for SPARC-specific OSCAL props (control-type, provided-as, etc.).
+  SPARC_NS = "https://sparc.local/ns".freeze
 
   def initialize(ssp_document)
     @document = ssp_document
@@ -465,16 +467,16 @@ class OscalSspExportService
     props << { "name" => "implementation-status", "value" => status.downcase.gsub(/\s+/, "-") } if status.present?
 
     type_use = field_map["control_application"]&.field_value
-    props << { "name" => "control-type", "ns" => "https://sparc.local/ns", "value" => type_use } if type_use.present?
+    props << { "name" => "control-type", "ns" => SPARC_NS, "value" => type_use } if type_use.present?
 
     coverage_level = field_map["coverage_level"]&.field_value
-    props << { "name" => "provided-as", "ns" => "https://sparc.local/ns", "value" => coverage_level } if coverage_level.present?
+    props << { "name" => "provided-as", "ns" => SPARC_NS, "value" => coverage_level } if coverage_level.present?
 
     origination = field_map["control_type"]&.field_value
-    props << { "name" => "control-origination", "ns" => "https://sparc.local/ns", "value" => origination } if origination.present?
+    props << { "name" => "control-origination", "ns" => SPARC_NS, "value" => origination } if origination.present?
 
     responsible = field_map["responsible_entities"]&.field_value
-    props << { "name" => "responsible-entities", "ns" => "https://sparc.local/ns", "value" => responsible } if responsible.present?
+    props << { "name" => "responsible-entities", "ns" => SPARC_NS, "value" => responsible } if responsible.present?
 
     props
   end

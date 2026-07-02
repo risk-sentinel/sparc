@@ -29,7 +29,7 @@ These columns are parsed and stored as control fields. Fields in the **Editable*
 |-------------|---------------------------|----------|-------------|
 | `implementation_status` | `Implementation Status`, `Status` | **Yes** | Current implementation state of the control |
 | `responsible_role` | `Responsible Role`, `Role` | **Yes** | Role or team responsible for the control |
-| `control_type` | `Control Origination`, `Origination` | **Yes** | How the control is satisfied (system-specific, inherited, hybrid) |
+| `control_type` | `control-type`, `Origination` | **Yes** | How the control is satisfied (system-specific, inherited, hybrid) |
 | `customer_responsibility` | `Customer Responsibility`, `Responsibility` | **Yes** | What the customer is responsible for, if anything |
 | `implementation_guidance` | `Implementation Guidance`, `Guidance` | **Yes** | Free-text narrative describing how the control is implemented |
 
@@ -69,7 +69,7 @@ These are conventional values; SPARC does not validate origination text.
 
 ## Example File Layout
 
-| Control ID | Control Title | Responsible Role | Implementation Status | Control Origination | Customer Responsibility | Implementation Guidance |
+| Control ID | Control Title | Responsible Role | Implementation Status | control-type | Customer Responsibility | Implementation Guidance |
 |------------|--------------|------------------|-----------------------|---------------------|------------------------|------------------------|
 | AC-1 | Policy and Procedures | CISO | Implemented | System Specific | None | Policy POL-AC-001 is reviewed annually and approved by the CISO. |
 | AC-2 | Account Management | System Administrator | Implemented | System Specific | None | Accounts provisioned via HR workflow; quarterly access reviews conducted. |
