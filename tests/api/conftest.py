@@ -150,6 +150,83 @@ def _instance_is_alive(admin_client: httpx.Client) -> None:
         )
 
 
+# ── Session janitor: sweep orphaned test resources (#635) ─────────────────
+
+# Every resource the suite creates is named with this prefix
+# (see tests/api/_document_helpers.py). The janitor deletes ONLY resources whose
+# name starts with it — never real data.
+_TEST_NAME_PREFIX = "phase2-"
+
+# Top-level, slug-addressable resource collections the suite creates. Nested
+# resources (e.g. ksi_validations, attestations) cascade-delete with their
+# parent boundary/evidence, so sweeping the parents is sufficient.
+_JANITOR_ENDPOINTS = (
+    "/api/v1/authorization_boundaries",  # incl. phase2-boundary-* and phase2-ksi-parent-*
+    "/api/v1/ssp_documents",
+    "/api/v1/sar_documents",
+    "/api/v1/sap_documents",
+    "/api/v1/poam_documents",
+    "/api/v1/cdef_documents",
+    "/api/v1/profile_documents",
+    "/api/v1/control_catalogs",
+    "/api/v1/control_mappings",
+    "/api/v1/federation_peers",
+)
+
+
+def _sweep_orphans(client: httpx.Client) -> int:
+    """Delete every resource whose name starts with the test prefix.
+
+    Returns the number deleted. Safe by construction: it only issues DELETEs for
+    items matching ``_TEST_NAME_PREFIX``, so real (non-test) data is never
+    touched. Tolerant of individual endpoint/page failures so one bad collection
+    can't abort the sweep.
+    """
+    deleted = 0
+    for path in _JANITOR_ENDPOINTS:
+        page = 1
+        while True:
+            try:
+                resp = client.get(path, params={"page": page})
+            except httpx.HTTPError:
+                break
+            if not resp.is_success:
+                break
+            payload = resp.json()
+            if not isinstance(payload, dict):
+                break
+            for item in payload.get("data", []):
+                name = str(item.get("name", ""))
+                slug = item.get("slug") or item.get("id")
+                if name.startswith(_TEST_NAME_PREFIX) and slug:
+                    try:
+                        d = client.delete(f"{path}/{slug}")
+                        if d.status_code in (200, 202, 204, 404):
+                            deleted += 1
+                    except httpx.HTTPError:
+                        pass
+            meta = payload.get("meta", {})
+            if page >= int(meta.get("pages", 1) or 1):
+                break
+            page += 1
+    return deleted
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _janitor(admin_client: httpx.Client, _instance_is_alive: None) -> Iterator[None]:
+    """Sweep orphaned ``phase2-*`` test resources at session start AND end (#635).
+
+    Per-module teardown is correct but not resilient: an interrupted or failed
+    run skips it, so orphans (100+ ``phase2-boundary-*`` / ``phase2-ksi-parent-*``
+    were found on prod) accumulate on any persistent instance. This makes cleanup
+    self-healing — the pre-sweep clears leftovers from prior runs, the post-sweep
+    catches anything this run missed. Deletes only test-prefixed resources.
+    """
+    _sweep_orphans(admin_client)  # pre-sweep: heal orphans from prior interrupted runs
+    yield
+    _sweep_orphans(admin_client)  # post-sweep: final cleanup regardless of test outcomes
+
+
 # ── Response-shape helpers ────────────────────────────────────────────────
 
 def assert_paginated_envelope(payload: Any) -> None:
