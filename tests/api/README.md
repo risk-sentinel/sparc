@@ -74,6 +74,15 @@ uv run pytest test_discovery.py::TestDiscovery::test_admin_sees_full_inventory -
 
 `uv run pytest -n auto` parallelizes across cores via `pytest-xdist`. Watch for shared-state collisions if you do — most modules guard against this with per-module setup/teardown but a few are intentionally serial (e.g. admin-credential rotation).
 
+### Expected results
+
+A healthy instance runs the full suite in **~1–3 minutes** (network-bound). The
+session janitor (#635) sweeps orphaned `phase2-*` resources at start and end, so
+the **first run against a long-lived instance is slower** while it clears any
+leftovers from prior interrupted runs. If `conftest.py` exits immediately with a
+token/connection message, the fail-fast liveness check caught a bad token or an
+unreachable instance — fix that before reading further failures.
+
 ## Configuration reference
 
 | Variable | Default | Required | Purpose |

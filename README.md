@@ -126,6 +126,30 @@ bundle exec rubocop      # Linting
 bundle exec brakeman     # Security scan
 ```
 
+### Deployed & contract suites (optional)
+
+Two language-agnostic suites run against a **live SPARC instance** (local or
+deployed), outside the RSpec pyramid. Both are managed with [uv](https://docs.astral.sh/uv/)
+and read config from a gitignored `.env` (copy the committed `.env.example`
+template in each directory and fill in service-account tokens):
+
+```bash
+# API contract suite — every /api/v1 endpoint (~1–3 min)
+cd tests/api      && cp .env.example .env   # then edit tokens
+uv run pytest -q
+
+# Playwright UI smoke — real-browser walks of the deployed UI (~1–4 min)
+cd tests/ui-smoke && cp .env.example .env   # then edit tokens
+uv run playwright install chromium          # first run only
+uv run pytest -q
+```
+
+Generate tokens via **Admin → Service Accounts → New**. Some tests **skip**
+when the target instance has no sample document of a given type to exercise, or
+when an accessibility baseline hasn't been captured — skips are expected, not
+failures. See [`tests/api/README.md`](tests/api/README.md) and
+[`tests/ui-smoke/README.md`](tests/ui-smoke/README.md) for full details.
+
 ---
 
 ## Configuration
