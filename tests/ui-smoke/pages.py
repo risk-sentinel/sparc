@@ -34,6 +34,7 @@ INDEX_PAGES = [
     ("authoritative_sources", "/authoritative_sources"),
     ("federation_peers", "/federation_peers"),
     ("promotion_queue", "/promotion_queue"),
+    ("review_queue", "/review_queue"),
     ("about", "/about"),
     ("about_api", "/about/api"),
     ("about_resources", "/about/resources"),
