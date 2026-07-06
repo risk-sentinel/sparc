@@ -15,7 +15,9 @@ from typing import Any
 import httpx
 import pytest
 
+from _bulk_destroy import BulkDestroyContract
 from _document_helpers import create_doc, delete_doc, make_payload
+from _populate_from_profile import PopulateFromProfileContract
 from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
@@ -103,6 +105,26 @@ class TestReviewWorkflow(ReviewWorkflowContract):
 
     @pytest.fixture
     def review_doc(self, cdef_doc: dict[str, Any]) -> dict[str, Any]:
+        return cdef_doc
+
+
+class TestBulkDestroy(BulkDestroyContract):
+    """Admin-only bulk delete (#629). Contract lives in _bulk_destroy."""
+
+    PATH = PATH
+
+    def _create_id(self, admin_client: httpx.Client) -> int:
+        return create_doc(admin_client, PATH, _new_payload())["id"]
+
+
+class TestPopulateFromProfile(PopulateFromProfileContract):
+    """Populate a CDEF from a published profile (#628). Contract lives in
+    _populate_from_profile; CDEFs are slug-addressed."""
+
+    PATH = PATH
+
+    @pytest.fixture
+    def populate_doc(self, cdef_doc: dict[str, Any]) -> dict[str, Any]:
         return cdef_doc
 
 
