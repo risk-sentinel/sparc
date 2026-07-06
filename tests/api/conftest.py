@@ -174,42 +174,48 @@ _JANITOR_ENDPOINTS = (
 )
 
 
-def _sweep_orphans(client: httpx.Client) -> int:
-    """Delete every resource whose name starts with the test prefix.
+def _test_slugs(client: httpx.Client, path: str) -> Iterator[str]:
+    """Yield the slug of every ``phase2-*`` item in a paginated collection.
 
-    Returns the number deleted. Safe by construction: it only issues DELETEs for
-    items matching ``_TEST_NAME_PREFIX``, so real (non-test) data is never
-    touched. Tolerant of individual endpoint/page failures so one bad collection
-    can't abort the sweep.
+    Stops on the first failed/non-dict page so a single bad collection can't
+    abort the sweep.
     """
-    deleted = 0
-    for path in _JANITOR_ENDPOINTS:
-        page = 1
-        while True:
-            try:
-                resp = client.get(path, params={"page": page})
-            except httpx.HTTPError:
-                break
-            if not resp.is_success:
-                break
-            payload = resp.json()
-            if not isinstance(payload, dict):
-                break
-            for item in payload.get("data", []):
-                name = str(item.get("name", ""))
-                slug = item.get("slug") or item.get("id")
-                if name.startswith(_TEST_NAME_PREFIX) and slug:
-                    try:
-                        d = client.delete(f"{path}/{slug}")
-                        if d.status_code in (200, 202, 204, 404):
-                            deleted += 1
-                    except httpx.HTTPError:
-                        pass
-            meta = payload.get("meta", {})
-            if page >= int(meta.get("pages", 1) or 1):
-                break
-            page += 1
-    return deleted
+    page = 1
+    while True:
+        try:
+            payload = client.get(path, params={"page": page}).json()
+        except (httpx.HTTPError, ValueError):
+            return
+        if not isinstance(payload, dict):
+            return
+        for item in payload.get("data", []):
+            slug = item.get("slug") or item.get("id")
+            if slug and str(item.get("name", "")).startswith(_TEST_NAME_PREFIX):
+                yield slug
+        if page >= int(payload.get("meta", {}).get("pages", 1) or 1):
+            return
+        page += 1
+
+
+def _delete(client: httpx.Client, path: str, slug: str) -> bool:
+    """Delete one resource; True if it was removed (or already gone)."""
+    try:
+        return client.delete(f"{path}/{slug}").status_code in (200, 202, 204, 404)
+    except httpx.HTTPError:
+        return False
+
+
+def _sweep_orphans(client: httpx.Client) -> int:
+    """Delete every ``phase2-*`` resource across the janitor endpoints.
+
+    Safe by construction: only test-prefixed names are ever deleted. Returns the
+    number removed.
+    """
+    return sum(
+        _delete(client, path, slug)
+        for path in _JANITOR_ENDPOINTS
+        for slug in _test_slugs(client, path)
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)
