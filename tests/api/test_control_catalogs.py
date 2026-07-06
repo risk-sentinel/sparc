@@ -13,6 +13,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     ControlCatalogIndex,
@@ -59,6 +60,21 @@ def catalog(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield c
     finally:
         _delete(admin_client, c["id"])
+
+
+class TestReviewWorkflow(ReviewWorkflowContract):
+    """DocumentApprovalApi review workflow (#630/#634) for control_catalogs.
+
+    Contract lives in _review_workflow.ReviewWorkflowContract; catalogs are
+    id-addressed (reads open to any user; approve/reject are admin-only).
+    """
+
+    PATH = PATH
+    IDENT_KEY = "id"
+
+    @pytest.fixture
+    def review_doc(self, catalog: dict[str, Any]) -> dict[str, Any]:
+        return catalog
 
 
 class TestIndex:

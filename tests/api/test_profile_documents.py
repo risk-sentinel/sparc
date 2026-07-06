@@ -17,6 +17,7 @@ import httpx
 import pytest
 
 from _document_helpers import create_doc, delete_doc, make_payload
+from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     ProfileDocumentIndex,
@@ -45,6 +46,21 @@ def profile_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield doc
     finally:
         delete_doc(admin_client, PATH, doc["slug"])
+
+
+class TestReviewWorkflow(ReviewWorkflowContract):
+    """DocumentApprovalApi review workflow (#630/#634) for profile_documents.
+
+    Contract lives in _review_workflow.ReviewWorkflowContract; profiles are
+    slug-addressed.
+    """
+
+    PATH = PATH
+    IDENT_KEY = "slug"
+
+    @pytest.fixture
+    def review_doc(self, profile_doc: dict[str, Any]) -> dict[str, Any]:
+        return profile_doc
 
 
 class TestIndex:
