@@ -12,6 +12,9 @@
 !/.env.example
 !/.env.production.example
 
+# Local scratch/working dir (holds transient tokens, e.g. deployed-test.env).
+/scratchpad/
+
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
