@@ -56,6 +56,26 @@ def create_boundary() -> dict[str, Any]:
         return r.json()["data"]
 
 
+def create_catalog() -> dict[str, Any]:
+    """Create a control catalog (id-addressed). Unlike CDEF/SSP/profile, a fresh
+    catalog is submittable for review without controls, so it's the reliable
+    fixture for the review-queue flow."""
+    with _client() as c:
+        r = c.post(
+            "/api/v1/control_catalogs",
+            json={
+                "control_catalog": {
+                    "name": _name("catalog"),
+                    "description": "ui-smoke",
+                    "version": "0.0.1",
+                    "source": "ui-smoke",
+                }
+            },
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
 def create_ssp(boundary_id: int) -> dict[str, Any]:
     with _client() as c:
         r = c.post(

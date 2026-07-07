@@ -18,20 +18,23 @@ from typing import Any
 
 import pytest
 
-from _api_setup import create_cdef, delete_doc, submit_for_review
+from _api_setup import create_catalog, delete_doc, submit_for_review
 from helpers import assert_no_csp_violations, record_csp
 
 pytestmark = pytest.mark.authenticated
 
 
 @pytest.fixture
-def submitted_cdef(session_cookie) -> Iterator[dict[str, Any]]:
-    doc = create_cdef()
-    status = submit_for_review("cdef_documents", doc["slug"])
+def submitted_doc(session_cookie) -> Iterator[dict[str, Any]]:
+    # A control catalog is submittable for review without controls (unlike
+    # CDEF/SSP/profile, which require content), so it's the reliable fixture
+    # for exercising the queue. Catalogs are id-addressed.
+    doc = create_catalog()
+    status = submit_for_review("control_catalogs", doc["id"])
     try:
         yield {"doc": doc, "submit_status": status}
     finally:
-        delete_doc("cdef_documents", doc["slug"])
+        delete_doc("control_catalogs", doc["id"])
 
 
 class TestReviewQueue:
@@ -42,16 +45,16 @@ class TestReviewQueue:
         authed_page.wait_for_load_state("networkidle")
         assert_no_csp_violations(authed_page, during="review_queue load")
 
-    def test_submitted_doc_appears_in_queue(self, authed_page, submitted_cdef):
-        if submitted_cdef["submit_status"] != 200:
+    def test_submitted_doc_appears_in_queue(self, authed_page, submitted_doc):
+        if submitted_doc["submit_status"] != 200:
             pytest.skip(
-                f"submit_for_review returned {submitted_cdef['submit_status']} "
+                f"submit_for_review returned {submitted_doc['submit_status']} "
                 "— document not in a submittable state on this instance"
             )
         record_csp(authed_page)
         authed_page.goto("/review_queue")
         authed_page.wait_for_load_state("networkidle")
-        name = submitted_cdef["doc"]["name"]
+        name = submitted_doc["doc"]["name"]
         assert authed_page.get_by_text(name).count() >= 1, (
             f"submitted document {name!r} not found in /review_queue"
         )
