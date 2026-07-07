@@ -22,7 +22,11 @@ regression net for that class of bug.
 | `test_authenticated_nav.py` | Cookie-bridge → session; core pages render clean (no 5xx / console / CSP errors) | SA token |
 | `test_accessibility.py` | axe-core WCAG 2.1 A/AA audit, baseline+ratchet (Layer 3, #599) | login: none; core pages: SA token |
 | `test_csp_reporting.py` | CSP `report-uri` present in header; collector accepts reports (204) without auth; tolerates garbage (#528, #650) | none |
+| `test_populate_flow.py` | Empty CDEF/SSP → "Incomplete" badge + "Populate from Profile" card; populate clears badge (#627/#628) | SA token |
+| `test_bulk_delete.py` | Admin bulk-select wiring on CDEF + boundary index; select-all reveals delete bar, CSP-clean (#629) | SA token |
+| `test_review_queue.py` | Submitted (via API) document surfaces in `/review_queue`; page CSP-clean (#630-634) | SA token |
 | `conftest.py` | Base-URL + cookie-bridge fixtures | — |
+| `_api_setup.py` | `/api/v1` helpers to provision fixtures (empty/submitted docs) for the flow tests | — |
 | `helpers.py` | CSP-violation recorder + `assert_no_csp_violations` / `click_and_assert_clean` interaction checks, console collector, same-origin check | — |
 
 ## Running locally
