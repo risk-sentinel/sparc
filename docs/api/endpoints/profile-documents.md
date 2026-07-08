@@ -11,6 +11,10 @@ Profile documents represent security baselines and resolved control profiles der
 | `POST` | `/api/v1/profile_documents` | Create a new profile document | Any authenticated user |
 | `PUT` | `/api/v1/profile_documents/:slug` | Update a profile document | Any authenticated user |
 | `DELETE` | `/api/v1/profile_documents/:slug` | Soft-delete a profile document | Any authenticated user |
+| `GET` | `/api/v1/profile_documents/:id/baseline_review` | Compare selected vs expected controls + ODP customization | Any authenticated user |
+| `POST` | `/api/v1/profile_documents/:id/submit_for_review` | Submit a profile for review | Admin or `profiles.write` |
+| `POST` | `/api/v1/profile_documents/:id/approve` | Approve a profile under review | Admin or reviewer |
+| `POST` | `/api/v1/profile_documents/:id/reject` | Reject a profile under review | Admin or reviewer |
 
 ---
 
@@ -325,6 +329,220 @@ None.
 curl -s -X DELETE \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
   "https://sparc.example.com/api/v1/profile_documents/fedramp-high-baseline" | jq .
+```
+
+---
+
+### GET /api/v1/profile_documents/:id/baseline_review
+
+Read-only reviewer sign-off view (#633). Compares the profile's control **selection** and ODP/parameter **values** to the expected baseline (the source catalog's controls flagged for the profile's `baseline_level`). Side-effect free.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | integer/string | Profile ID or slug |
+
+#### Request Body
+
+None.
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "baseline_level": "HIGH",
+    "expected_count": 370,
+    "selected_count": 368,
+    "missing_controls": ["au-6.3", "cm-3.2"],
+    "extra_controls": [],
+    "selection_matches_baseline": false,
+    "odp_customized_count": 24,
+    "odp_total_count": 52
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `missing_controls` | Controls expected at this baseline but NOT selected |
+| `extra_controls` | Controls selected but NOT in the expected baseline |
+| `selection_matches_baseline` | `true` only when both `missing_controls` and `extra_controls` are empty |
+| `odp_customized_count` / `odp_total_count` | Set-parameter (ODP) values customized vs the catalog default, out of the total set |
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Review computed successfully |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `404 Not Found` | No profile matches the given ID |
+
+#### cURL Example
+
+```bash
+curl -s -X GET \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  "https://sparc.example.com/api/v1/profile_documents/fedramp-high-baseline/baseline_review" | jq .
+```
+
+---
+
+### POST /api/v1/profile_documents/:id/submit_for_review
+
+Transition a profile into the review workflow (#630). Uses the same `DocumentApprovalService` code path as the UI. Requires admin or the `profiles.write` permission. A profile with no control content returns `422` with a "missing required content" error.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | integer/string | Profile ID or slug |
+
+#### Request Body
+
+None.
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "id": 5,
+    "slug": "fedramp-high-baseline",
+    "name": "FedRAMP HIGH Baseline",
+    "approval_status": "pending_review",
+    "submitted_by_user_id": 42,
+    "submitted_at": "2026-06-29T12:00:00Z",
+    "approved_by_user_id": null,
+    "approved_at": null,
+    "rejection_reason": null
+  }
+}
+```
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Submitted for review |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks admin / `profiles.write` |
+| `404 Not Found` | No profile matches the given ID |
+| `422 Unprocessable Entity` | Invalid transition, or missing required content on an empty profile |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  "https://sparc.example.com/api/v1/profile_documents/fedramp-high-baseline/submit_for_review" | jq .
+```
+
+---
+
+### POST /api/v1/profile_documents/:id/approve
+
+Approve a profile that is under review (#630).
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | integer/string | Profile ID or slug |
+
+#### Request Body
+
+None.
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "id": 5,
+    "slug": "fedramp-high-baseline",
+    "name": "FedRAMP HIGH Baseline",
+    "approval_status": "approved",
+    "submitted_by_user_id": 42,
+    "submitted_at": "2026-06-29T12:00:00Z",
+    "approved_by_user_id": 7,
+    "approved_at": "2026-06-29T13:00:00Z",
+    "rejection_reason": null
+  }
+}
+```
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Approved |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `404 Not Found` | No profile matches the given ID |
+| `422 Unprocessable Entity` | Invalid transition (e.g., not currently under review) |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  "https://sparc.example.com/api/v1/profile_documents/fedramp-high-baseline/approve" | jq .
+```
+
+---
+
+### POST /api/v1/profile_documents/:id/reject
+
+Reject a profile that is under review, optionally supplying a `reason` (#630).
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | integer/string | Profile ID or slug |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `reason` | string | No | Free-text rejection reason stored on the profile |
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "id": 5,
+    "slug": "fedramp-high-baseline",
+    "name": "FedRAMP HIGH Baseline",
+    "approval_status": "rejected",
+    "submitted_by_user_id": 42,
+    "submitted_at": "2026-06-29T12:00:00Z",
+    "approved_by_user_id": null,
+    "approved_at": null,
+    "rejection_reason": "Baseline selection does not match HIGH"
+  }
+}
+```
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Rejected |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `404 Not Found` | No profile matches the given ID |
+| `422 Unprocessable Entity` | Invalid transition (e.g., not currently under review) |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{ "reason": "Baseline selection does not match HIGH" }' \
+  "https://sparc.example.com/api/v1/profile_documents/fedramp-high-baseline/reject" | jq .
 ```
 
 ---

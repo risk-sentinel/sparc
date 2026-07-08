@@ -103,6 +103,14 @@
     {
       "key": "attestation_id",
       "value": "1"
+    },
+    {
+      "key": "artifact_uuid",
+      "value": "REPLACE_WITH_ARTIFACT_UUID"
+    },
+    {
+      "key": "artifact_version_uuid",
+      "value": "REPLACE_WITH_ARTIFACT_VERSION_UUID"
     }
   ],
   "item": [
@@ -398,6 +406,40 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"controls\": {\n    \"AC-1\": {\n      \"implementation_status\": \"implemented\",\n      \"responsible_role\": \"System Owner\",\n      \"control_summary\": \"Updated implementation narrative...\"\n    },\n    \"AC-2\": {\n      \"implementation_status\": \"partial\",\n      \"control_summary\": \"Provisioning automated; deprovisioning manual.\"\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Populate SSP from Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}/populate_from_profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}",
+                "populate_from_profile"
+              ]
+            },
+            "description": "Populate an empty SSP from a published profile (#628). Published SSPs are rejected with 422.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_profile_id\": \"fedramp-moderate\"\n}"
             }
           }
         }
@@ -1082,6 +1124,92 @@
             },
             "description": "Deletes a control catalog. Admin-only endpoint. Will fail if any documents reference controls from this catalog.\n\nResponse: 200 OK with confirmation message."
           }
+        },
+        {
+          "name": "Submit Catalog for Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}/submit_for_review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_catalogs",
+                "{{catalog_id}}",
+                "submit_for_review"
+              ]
+            },
+            "description": "Submit a control catalog into the review workflow (#630). Requires admin or catalogs.write."
+          }
+        },
+        {
+          "name": "Approve Catalog",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_catalogs",
+                "{{catalog_id}}",
+                "approve"
+              ]
+            },
+            "description": "Approve a control catalog under review (#630)."
+          }
+        },
+        {
+          "name": "Reject Catalog",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/control_catalogs/{{catalog_id}}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "control_catalogs",
+                "{{catalog_id}}",
+                "reject"
+              ]
+            },
+            "description": "Reject a control catalog under review, optional reason (#630).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Baseline mappings incomplete\"\n}"
+            }
+          }
         }
       ]
     },
@@ -1226,6 +1354,118 @@
               ]
             },
             "description": "Soft-deletes a profile document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
+          }
+        },
+        {
+          "name": "Baseline Review",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/baseline_review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "baseline_review"
+              ]
+            },
+            "description": "Selected vs expected controls + ODP customization for reviewer sign-off (#633)."
+          }
+        },
+        {
+          "name": "Submit Profile for Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/submit_for_review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "submit_for_review"
+              ]
+            },
+            "description": "Submit a profile into the review workflow (#630). Requires admin or profiles.write. Empty profiles return 422."
+          }
+        },
+        {
+          "name": "Approve Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "approve"
+              ]
+            },
+            "description": "Approve a profile under review (#630)."
+          }
+        },
+        {
+          "name": "Reject Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile_documents/{{profile_slug}}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile_documents",
+                "{{profile_slug}}",
+                "reject"
+              ]
+            },
+            "description": "Reject a profile under review, optional reason (#630).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Baseline selection does not match HIGH\"\n}"
+            }
           }
         }
       ]
@@ -1515,6 +1755,229 @@
             },
             "description": "Soft-deletes a CDEF document. Retained for audit trail purposes.\n\nResponse: 200 OK with confirmation message."
           }
+        },
+        {
+          "name": "Bulk Delete CDEF Documents",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "bulk"
+              ]
+            },
+            "description": "Admin-only. Bulk-delete CDEFs (#629). Returns per-id deleted/blocked/missing buckets.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [1, 2, 3]\n}"
+            }
+          }
+        },
+        {
+          "name": "Populate CDEF from Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}/populate_from_profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}",
+                "populate_from_profile"
+              ]
+            },
+            "description": "Populate an empty CDEF from a published profile (#628).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_profile_id\": \"fedramp-moderate\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Bulk-Apply Converter (Preview)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}/bulk_apply_converter/preview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}",
+                "bulk_apply_converter",
+                "preview"
+              ]
+            },
+            "description": "Preview a Converter changeset without writing; returns a signed replay token (#499). Requires converters.write.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"converter_id\": 7,\n  \"target_rev\": \"rev5\",\n  \"only_missing_vs_baseline\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Bulk-Apply Converter (Confirm)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}/bulk_apply_converter/confirm",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}",
+                "bulk_apply_converter",
+                "confirm"
+              ]
+            },
+            "description": "Replay a preview token and apply selected rows transactionally (#499). Requires converters.write.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<hmac-signed replay token>\",\n  \"selected_target_ids\": { \"cm-6\": true }\n}"
+            }
+          }
+        },
+        {
+          "name": "Submit CDEF for Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}/submit_for_review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}",
+                "submit_for_review"
+              ]
+            },
+            "description": "Submit a CDEF into the review workflow (#630). Empty CDEFs return 422 (missing required content)."
+          }
+        },
+        {
+          "name": "Approve CDEF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}",
+                "approve"
+              ]
+            },
+            "description": "Approve a CDEF under review (#630)."
+          }
+        },
+        {
+          "name": "Reject CDEF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cdef_documents/{{cdef_slug}}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cdef_documents",
+                "{{cdef_slug}}",
+                "reject"
+              ]
+            },
+            "description": "Reject a CDEF under review, optional reason (#630).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Missing implementation narratives for CM family\"\n}"
+            }
+          }
         }
       ]
     },
@@ -1619,7 +2082,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"control_mapping\": {\n    \"relationship\": \"partial\",\n    \"notes\": \"Updated: AC-1 partially maps to A.5.1 — scope differs in organizational applicability\"\n  }\n}"
+              "raw": "{\n  \"control_mapping\": {\n    \"relationship\": \"partial\",\n    \"notes\": \"Updated: AC-1 partially maps to A.5.1 \u2014 scope differs in organizational applicability\"\n  }\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/control_mappings/{{mapping_id}}",
@@ -2138,7 +2601,7 @@
                 "refresh_credentials"
               ]
             },
-            "description": "Bcrypt the supplied plaintext password into the admin user's password_digest. Idempotent — same value returns 200 unchanged. Requires admin.rotate_credentials permission and SPARC_ADMIN_REFRESH_ENABLED=true.",
+            "description": "Bcrypt the supplied plaintext password into the admin user's password_digest. Idempotent \u2014 same value returns 200 unchanged. Requires admin.rotate_credentials permission and SPARC_ADMIN_REFRESH_ENABLED=true.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"password\": \"new-plaintext-from-secrets-manager\"\n}"
@@ -2218,6 +2681,38 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"peer\": \"exporter-prod\",\n  \"envelope\": {\n    \"alg\": \"HMAC-SHA256-base64url\",\n    \"payload\": \"<base64url-encoded JSON>\",\n    \"signature\": \"<hex HMAC>\",\n    \"key_id\": \"exporter-prod\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Authoritative Source",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authoritative_sources",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authoritative_sources"
+              ]
+            },
+            "description": "Create an authoritative source record (#372).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"authoritative_source\": {\n    \"name\": \"Exporter Prod\",\n    \"url\": \"https://exporter.sparc.example.gov\"\n  }\n}"
             }
           }
         }
@@ -2377,6 +2872,39 @@
               ]
             },
             "description": "Soft-delete an authorization boundary."
+          }
+        },
+        {
+          "name": "Bulk Delete Authorization Boundaries",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "bulk"
+              ]
+            },
+            "description": "Admin-only. Bulk-delete boundaries (#629). Returns per-id deleted/blocked/missing buckets.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [1, 2, 3]\n}"
+            }
           }
         }
       ]
@@ -2871,7 +3399,7 @@
                 "promotion_queue"
               ]
             },
-            "description": "List pending promotions the caller is authorized to approve. Self-filtering — no separate permission gate."
+            "description": "List pending promotions the caller is authorized to approve. Self-filtering \u2014 no separate permission gate."
           }
         }
       ]
@@ -3223,7 +3751,7 @@
       ]
     },
     {
-      "name": "HDF ↔ OSCAL Translations",
+      "name": "HDF \u2194 OSCAL Translations",
       "item": [
         {
           "name": "SAR from HDF",
@@ -3580,6 +4108,62 @@
               ]
             },
             "description": "CMS / SAF CLI JSON export, one record per linked control_id."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Artifacts",
+      "item": [
+        {
+          "name": "Resolve Artifact",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/artifacts/{{artifact_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "artifacts",
+                "{{artifact_uuid}}"
+              ]
+            },
+            "description": "Resolve a stable artifact UUID to its current content + a freshly-signed download URL (#680)."
+          }
+        },
+        {
+          "name": "Resolve Artifact Version",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/artifacts/versions/{{artifact_version_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "artifacts",
+                "versions",
+                "{{artifact_version_uuid}}"
+              ]
+            },
+            "description": "Resolve a specific retained content version by its version UUID (#680)."
           }
         }
       ]

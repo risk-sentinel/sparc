@@ -29,6 +29,9 @@ pytestmark = [pytest.mark.catalogs, pytest.mark.phase1]
 
 PATH = "/api/v1/control_catalogs"
 
+# Contract coverage of non-generic actions (bin/api_inventory_check.rb scans this
+# module): submit_for_review / approve / reject via ReviewWorkflowContract.
+
 
 def _new_payload() -> dict[str, Any]:
     suffix = uuid.uuid4().hex[:8]

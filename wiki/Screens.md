@@ -11,7 +11,7 @@ The application uses a dark sticky navbar (`navbar-dark bg-dark sticky-top`) tha
 | Position | Element | Visibility | Details |
 |----------|---------|------------|---------|
 | Left | SPARC logo | Always | Responsive SVG logo linked to root path |
-| Left | Version badge | Always | Secondary badge rendered dynamically from `SparcConfig::VERSION` (currently **v1.8.6**) |
+| Left | Version badge | Always | Secondary badge rendered dynamically from `SparcConfig::VERSION` (the running app version) |
 | Center-Right | Home | Always | Nav link to `/` |
 | Center-Right | Controls dropdown (blue) | Always | Control Catalogs, Baselines, Mappings |
 | Center-Right | Implementation dropdown (green) | Auth required | System Security Plans, Component Definitions |
