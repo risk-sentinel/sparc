@@ -32,6 +32,7 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `POST` | `/api/v1/authorization_boundaries` | Create a new boundary |
 | `PUT` | `/api/v1/authorization_boundaries/:id` | Update a boundary |
 | `DELETE` | `/api/v1/authorization_boundaries/:id` | Delete a boundary |
+| `DELETE` | `/api/v1/authorization_boundaries/bulk` | Bulk-delete boundaries (admin-only) |
 
 ---
 
@@ -277,6 +278,54 @@ curl -X DELETE "https://sparc.example.com/api/v1/authorization_boundaries/1" \
 | `200` | Boundary deleted successfully |
 | `401` | Unauthorized -- missing or invalid token |
 | `404` | Boundary not found or not accessible |
+
+---
+
+### DELETE Bulk-Delete Boundaries
+
+**Admin-only.** Delete multiple authorization boundaries in one request (#629). Honors the referential-integrity guard (SSP/SAP/SAR/POA&M attached) and returns a per-id partial-success result -- ids that could not be deleted are reported in `blocked`, ids that did not resolve in `missing`.
+
+**Path:** `DELETE /api/v1/authorization_boundaries/bulk`
+
+**Request Body**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ids` | array of integers/slugs | Yes | Identifiers of the boundaries to delete |
+
+**Example Request**
+
+```bash
+curl -X DELETE "https://sparc.example.com/api/v1/authorization_boundaries/bulk" \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{ "ids": [1, 2, 3] }'
+```
+
+**Response Body**
+
+```json
+{
+  "data": {
+    "deleted": [1, 2],
+    "blocked": [3],
+    "missing": []
+  },
+  "meta": {
+    "deleted": 2,
+    "blocked": 1,
+    "missing": 0
+  }
+}
+```
+
+**Status Codes**
+
+| Code | Description |
+|------|-------------|
+| `200` | Bulk delete attempted -- per-id outcomes are in the response body |
+| `401` | Unauthorized -- missing or invalid token |
+| `403` | Forbidden -- caller is not an admin |
 
 ---
 

@@ -34,6 +34,10 @@ pytestmark = [pytest.mark.documents, pytest.mark.phase1]
 PATH = "/api/v1/profile_documents"
 PARAM_KEY = "profile_document"
 
+# Contract coverage of non-generic actions (bin/api_inventory_check.rb scans this
+# module): submit_for_review / approve / reject via ReviewWorkflowContract;
+# baseline_review via TestBaselineReview.
+
 
 def _new_payload() -> dict[str, Any]:
     return make_payload(PARAM_KEY)

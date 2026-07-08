@@ -14,6 +14,7 @@ System Security Plan (SSP) documents capture the security controls implemented f
 | `POST` | `/api/v1/ssp_documents/convert` | Upload and parse a document file into an SSP | `ssp.write` |
 | `PUT` | `/api/v1/ssp_documents/:slug/update_fields` | Bulk-update editable control fields on one SSP | `ssp.write` |
 | `GET` | `/api/v1/ssp_documents/:slug/export` | Export SSP as JSON | `ssp.read` |
+| `POST` | `/api/v1/ssp_documents/:id/populate_from_profile` | Populate an empty SSP from a published profile | `ssp.write` |
 
 ---
 
@@ -516,6 +517,48 @@ The response is the full JSON export of the SSP document, structured by the `Jso
 curl -s \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
   "https://sparc.example.com/api/v1/ssp_documents/acme-cloud-platform-ssp/export" | jq .
+```
+
+---
+
+### POST /api/v1/ssp_documents/:id/populate_from_profile
+
+Populate an existing empty (metadata-only) SSP with a control basis derived from a published profile (#628), so a shell created by `POST /api/v1/ssp_documents` gains controls instead of being a dead end. A published (read-only) SSP is rejected with `422`.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | string | Slug (or numeric id) of the SSP to populate |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `source_profile_id` | string | Yes | Slug or numeric id of a **published** profile to derive controls from |
+
+#### Response Body
+
+Returns the detailed SSP representation (same shape as `GET /api/v1/ssp_documents/:slug`) with the newly populated controls.
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | SSP populated successfully |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks `ssp.write` for the boundary |
+| `404 Not Found` | `Published profile not found` -- the `source_profile_id` did not resolve to a published profile |
+| `422 Unprocessable Entity` | SSP is published and read-only, or the argument was invalid |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{ "source_profile_id": "fedramp-moderate" }' \
+  "https://sparc.example.com/api/v1/ssp_documents/acme-cloud-platform-ssp/populate_from_profile" | jq .
 ```
 
 ---
