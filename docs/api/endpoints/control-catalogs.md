@@ -11,6 +11,9 @@ Control catalogs represent collections of security controls such as NIST SP 800-
 | `POST` | `/api/v1/control_catalogs` | Create a new control catalog | Admin only |
 | `PUT` | `/api/v1/control_catalogs/:id` | Update a control catalog | Admin only |
 | `DELETE` | `/api/v1/control_catalogs/:id` | Delete a control catalog (hard-delete) | Admin only |
+| `POST` | `/api/v1/control_catalogs/:id/submit_for_review` | Submit a catalog for review | Admin or `catalogs.write` |
+| `POST` | `/api/v1/control_catalogs/:id/approve` | Approve a catalog under review | Admin or reviewer |
+| `POST` | `/api/v1/control_catalogs/:id/reject` | Reject a catalog under review | Admin or reviewer |
 
 ---
 
@@ -323,6 +326,164 @@ None.
 curl -s -X DELETE \
   -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
   "https://sparc.example.com/api/v1/control_catalogs/3" | jq .
+```
+
+---
+
+### POST /api/v1/control_catalogs/:id/submit_for_review
+
+Transition a control catalog into the review workflow (#630). Uses the same `DocumentApprovalService` code path as the UI. Requires admin or the `catalogs.write` permission.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | integer/string | Catalog ID or slug |
+
+#### Request Body
+
+None.
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "id": 3,
+    "slug": "nist-800-53-rev5",
+    "name": "NIST SP 800-53 Rev 5",
+    "approval_status": "pending_review",
+    "submitted_by_user_id": 42,
+    "submitted_at": "2026-06-29T12:00:00Z",
+    "approved_by_user_id": null,
+    "approved_at": null,
+    "rejection_reason": null
+  }
+}
+```
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Submitted for review |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks admin / `catalogs.write` |
+| `404 Not Found` | No catalog matches the given ID |
+| `422 Unprocessable Entity` | Invalid transition (e.g., not in a submittable state) |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  "https://sparc.example.com/api/v1/control_catalogs/3/submit_for_review" | jq .
+```
+
+---
+
+### POST /api/v1/control_catalogs/:id/approve
+
+Approve a control catalog that is under review (#630).
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | integer/string | Catalog ID or slug |
+
+#### Request Body
+
+None.
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "id": 3,
+    "slug": "nist-800-53-rev5",
+    "name": "NIST SP 800-53 Rev 5",
+    "approval_status": "approved",
+    "submitted_by_user_id": 42,
+    "submitted_at": "2026-06-29T12:00:00Z",
+    "approved_by_user_id": 7,
+    "approved_at": "2026-06-29T13:00:00Z",
+    "rejection_reason": null
+  }
+}
+```
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Approved |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `404 Not Found` | No catalog matches the given ID |
+| `422 Unprocessable Entity` | Invalid transition (e.g., not currently under review) |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  "https://sparc.example.com/api/v1/control_catalogs/3/approve" | jq .
+```
+
+---
+
+### POST /api/v1/control_catalogs/:id/reject
+
+Reject a control catalog that is under review, optionally supplying a `reason` (#630).
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | integer/string | Catalog ID or slug |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `reason` | string | No | Free-text rejection reason stored on the catalog |
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "id": 3,
+    "slug": "nist-800-53-rev5",
+    "name": "NIST SP 800-53 Rev 5",
+    "approval_status": "rejected",
+    "submitted_by_user_id": 42,
+    "submitted_at": "2026-06-29T12:00:00Z",
+    "approved_by_user_id": null,
+    "approved_at": null,
+    "rejection_reason": "Baseline mappings incomplete"
+  }
+}
+```
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Rejected |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `404 Not Found` | No catalog matches the given ID |
+| `422 Unprocessable Entity` | Invalid transition (e.g., not currently under review) |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{ "reason": "Baseline mappings incomplete" }' \
+  "https://sparc.example.com/api/v1/control_catalogs/3/reject" | jq .
 ```
 
 ---

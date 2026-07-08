@@ -15,7 +15,10 @@ from typing import Any
 import httpx
 import pytest
 
+from _bulk_destroy import BulkDestroyContract
 from _document_helpers import create_doc, delete_doc, make_payload
+from _populate_from_profile import PopulateFromProfileContract
+from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     CdefDocumentIndex,
@@ -31,6 +34,13 @@ pytestmark = [pytest.mark.documents, pytest.mark.phase1]
 
 PATH = "/api/v1/cdef_documents"
 PARAM_KEY = "cdef_document"
+
+# Contract coverage of non-generic actions (bin/api_inventory_check.rb scans this
+# module for each action name): the review workflow — submit_for_review /
+# approve / reject — is exercised via ReviewWorkflowContract; bulk_destroy via
+# BulkDestroyContract; populate_from_profile via PopulateFromProfileContract;
+# bulk_apply_converter_preview / bulk_apply_converter_confirm via
+# TestBulkApplyConverter below.
 
 
 def _new_payload() -> dict[str, Any]:
@@ -88,6 +98,85 @@ class TestShow:
     def test_unknown_slug_returns_404(self, admin_client: httpx.Client) -> None:
         response = admin_client.get(f"{PATH}/missing-{uuid.uuid4().hex}")
         assert_error_envelope(response, expected_status=404)
+
+
+class TestReviewWorkflow(ReviewWorkflowContract):
+    """DocumentApprovalApi review workflow (#630/#634) for cdef_documents.
+
+    Contract lives in _review_workflow.ReviewWorkflowContract; CDEFs are
+    slug-addressed.
+    """
+
+    PATH = PATH
+    IDENT_KEY = "slug"
+
+    @pytest.fixture
+    def review_doc(self, cdef_doc: dict[str, Any]) -> dict[str, Any]:
+        return cdef_doc
+
+    def test_submit_empty_requires_content(
+        self, admin_client: httpx.Client, cdef_doc: dict[str, Any]
+    ) -> None:
+        # A CDEF with no controls cannot be submitted for review
+        # (DocumentApprovalService content gate: "At least one control").
+        resp = admin_client.post(f"{PATH}/{cdef_doc['slug']}/submit_for_review")
+        assert resp.status_code == 422, resp.text
+        assert "content" in resp.text.lower(), resp.text
+
+
+class TestBulkDestroy(BulkDestroyContract):
+    """Admin-only bulk delete (#629). Contract lives in _bulk_destroy."""
+
+    PATH = PATH
+
+    def _create_id(self, admin_client: httpx.Client) -> int:
+        return create_doc(admin_client, PATH, _new_payload())["id"]
+
+
+class TestPopulateFromProfile(PopulateFromProfileContract):
+    """Populate a CDEF from a published profile (#628). Contract lives in
+    _populate_from_profile; CDEFs are slug-addressed."""
+
+    PATH = PATH
+
+    @pytest.fixture
+    def populate_doc(self, cdef_doc: dict[str, Any]) -> dict[str, Any]:
+        return cdef_doc
+
+
+class TestBulkApplyConverter:
+    """#499 — bulk-apply a converter's output to a CDEF. Admin/converters.write
+    gated. Edge contract: unknown converter → 404, non-admin → 401/403, anon →
+    401. The apply happy path needs a converter + target rows (heavier fixture)."""
+
+    def test_preview_unknown_converter_404(
+        self, admin_client: httpx.Client, cdef_doc: dict[str, Any]
+    ) -> None:
+        resp = admin_client.post(
+            f"{PATH}/{cdef_doc['slug']}/bulk_apply_converter/preview",
+            json={"converter_id": 999_999_999},
+        )
+        assert resp.status_code in (404, 422), resp.text
+
+    @pytest.mark.authz
+    def test_confirm_non_admin_forbidden(
+        self, user_client: httpx.Client, cdef_doc: dict[str, Any]
+    ) -> None:
+        resp = user_client.post(
+            f"{PATH}/{cdef_doc['slug']}/bulk_apply_converter/confirm", json={}
+        )
+        assert resp.status_code in (401, 403), resp.text
+
+    @pytest.mark.auth
+    def test_preview_requires_token(
+        self, anon_client: httpx.Client, cdef_doc: dict[str, Any]
+    ) -> None:
+        assert_error_envelope(
+            anon_client.post(
+                f"{PATH}/{cdef_doc['slug']}/bulk_apply_converter/preview", json={}
+            ),
+            expected_status=401,
+        )
 
 
 class TestCreate:

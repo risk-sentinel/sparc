@@ -17,6 +17,7 @@ import httpx
 import pytest
 
 from _document_helpers import create_doc, delete_doc, make_payload
+from _review_workflow import ReviewWorkflowContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     ProfileDocumentIndex,
@@ -33,6 +34,10 @@ pytestmark = [pytest.mark.documents, pytest.mark.phase1]
 PATH = "/api/v1/profile_documents"
 PARAM_KEY = "profile_document"
 
+# Contract coverage of non-generic actions (bin/api_inventory_check.rb scans this
+# module): submit_for_review / approve / reject via ReviewWorkflowContract;
+# baseline_review via TestBaselineReview.
+
 
 def _new_payload() -> dict[str, Any]:
     return make_payload(PARAM_KEY)
@@ -45,6 +50,61 @@ def profile_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield doc
     finally:
         delete_doc(admin_client, PATH, doc["slug"])
+
+
+class TestReviewWorkflow(ReviewWorkflowContract):
+    """DocumentApprovalApi review workflow (#630/#634) for profile_documents.
+
+    Contract lives in _review_workflow.ReviewWorkflowContract; profiles are
+    slug-addressed.
+    """
+
+    PATH = PATH
+    IDENT_KEY = "slug"
+
+    @pytest.fixture
+    def review_doc(self, profile_doc: dict[str, Any]) -> dict[str, Any]:
+        return profile_doc
+
+    def test_submit_empty_requires_content(
+        self, admin_client: httpx.Client, profile_doc: dict[str, Any]
+    ) -> None:
+        # A profile with no linked catalog / selected controls cannot be
+        # submitted for review (DocumentApprovalService content gate).
+        resp = admin_client.post(f"{PATH}/{profile_doc['slug']}/submit_for_review")
+        assert resp.status_code == 422, resp.text
+        assert "content" in resp.text.lower(), resp.text
+
+
+class TestBaselineReview:
+    """#633 — GET /api/v1/profile_documents/:id/baseline_review returns the
+    selected-vs-expected control diff + ODP customization counts."""
+
+    @pytest.mark.happy
+    def test_returns_diff_shape(
+        self, admin_client: httpx.Client, profile_doc: dict[str, Any]
+    ) -> None:
+        resp = admin_client.get(f"{PATH}/{profile_doc['slug']}/baseline_review")
+        assert resp.status_code == 200, resp.text
+        data = resp.json()["data"]
+        for key in (
+            "expected_count",
+            "selected_count",
+            "missing_controls",
+            "extra_controls",
+            "odp_customized_count",
+            "odp_total_count",
+        ):
+            assert key in data, f"baseline_review missing {key!r}: {data}"
+
+    @pytest.mark.auth
+    def test_requires_token(
+        self, anon_client: httpx.Client, profile_doc: dict[str, Any]
+    ) -> None:
+        assert_error_envelope(
+            anon_client.get(f"{PATH}/{profile_doc['slug']}/baseline_review"),
+            expected_status=401,
+        )
 
 
 class TestIndex:

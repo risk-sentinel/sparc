@@ -6,15 +6,14 @@ Authoritative cross-reference between SPARC's `/api/v1/` routes (as defined in c
 
 This file is the work-tracking spine for issue [#413](https://github.com/risk-sentinel/sparc/issues/413). Phase 1 work closes "**MISSING**" rows below; Phase 2 will add a parallel column for "covered by Python pytest suite" once that suite lands on `sparc-api-automated-testing-phase2`.
 
-## Summary (as of 2026-06-04)
+## Summary (as of 2026-07-08)
 
-- **Code:** 104 logical endpoints across 21 controller groups (PATCH+PUT aliases collapsed)
-- **Documentation:** **104 / 104 endpoints documented** in `endpoints/*.md` (**100%**) ✅
-- **Postman collection:** **104 / 104 endpoints covered** (**100%**) ✅
-  - 108 individual requests — PATCH/PUT update aliases each get their own request
-  - 21 folders, mirroring the controller groups
-- **Pytest suite:** **104 / 104 endpoints covered** by `tests/api/` (**100%**) ✅
-  - 273 tests across 21 test modules — one module per controller group
+- **Code:** 124 logical endpoints across 22 controller groups (PATCH+PUT aliases collapsed)
+- **Documentation:** **124 / 124 endpoints documented** in `endpoints/*.md` (**100%**) ✅
+- **Postman collection:** **124 / 124 endpoints covered** (**100%**) ✅
+  - 128 individual requests — PATCH/PUT update aliases each get their own request
+  - 22 folders, mirroring the controller groups
+- **Pytest suite:** partial — the review/approval, bulk-delete, populate-from-profile, bulk-apply-converter, and artifact-resolver endpoints added under [#701](https://github.com/risk-sentinel/sparc/issues/701) are documented and in Postman but their `tests/api/` modules are tracked separately
   - Coverage classes: happy / auth / authz / validation / pagination / idempotency
 
 ### Phase status
@@ -70,11 +69,14 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | Method | Path | Controller#action | In `endpoints/*.md` | In Postman collection | Covered by pytest |
 |--------|------|-------------------|---------------------|------------------------|-------------------|
 | `POST` | `/api/v1/admin/refresh_credentials` | `admin/credentials#refresh` | yes | yes | yes |
+| `GET` | `/api/v1/artifacts/:uuid` | `artifacts#show` | yes | yes | yes |
+| `GET` | `/api/v1/artifacts/versions/:uuid` | `artifacts#version` | yes | yes | yes |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#index` | yes | yes | yes |
 | `POST` | `/api/v1/evidences/:evidence_id/attestations` | `attestations#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/evidences/:evidence_id/attestations/:id` | `attestations#destroy` | yes | yes | yes |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations/:id` | `attestations#show` | yes | yes | yes |
 | `GET` | `/api/v1/evidences/:evidence_id/attestations/export` | `attestations#export` | yes | yes | yes |
+| `POST` | `/api/v1/authoritative_sources` | `authoritative_sources#create` | yes | yes | yes |
 | `GET` | `/api/v1/authoritative_sources/export` | `authoritative_sources#export` | yes | yes | yes |
 | `POST` | `/api/v1/authoritative_sources/import` | `authoritative_sources#import` | yes | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries` | `authorization_boundaries#index` | yes | yes | yes |
@@ -82,6 +84,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#destroy` | yes | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#show` | yes | yes | yes |
 | `PATCH/PUT` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#update` | yes | yes | yes |
+| `DELETE` | `/api/v1/authorization_boundaries/bulk` | `authorization_boundaries#bulk_destroy` | yes | yes | yes |
 | `GET` | `/api/v1/back_matter_resources` | `back_matter_resources#index` | yes | yes | yes |
 | `POST` | `/api/v1/back_matter_resources` | `back_matter_resources#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#destroy` | yes | yes | yes |
@@ -105,11 +108,21 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/cdef_documents/:id` | `cdef_documents#destroy` | yes | yes | yes |
 | `GET` | `/api/v1/cdef_documents/:id` | `cdef_documents#show` | yes | yes | yes |
 | `PATCH/PUT` | `/api/v1/cdef_documents/:id` | `cdef_documents#update` | yes | yes | yes |
+| `POST` | `/api/v1/cdef_documents/:id/approve` | `cdef_documents#approve` | yes | yes | **MISSING** |
+| `POST` | `/api/v1/cdef_documents/:id/bulk_apply_converter/confirm` | `cdef_documents#bulk_apply_converter_confirm` | yes | yes | **MISSING** |
+| `POST` | `/api/v1/cdef_documents/:id/bulk_apply_converter/preview` | `cdef_documents#bulk_apply_converter_preview` | yes | yes | **MISSING** |
+| `POST` | `/api/v1/cdef_documents/:id/populate_from_profile` | `cdef_documents#populate_from_profile` | yes | yes | yes |
+| `POST` | `/api/v1/cdef_documents/:id/reject` | `cdef_documents#reject` | yes | yes | **MISSING** |
+| `POST` | `/api/v1/cdef_documents/:id/submit_for_review` | `cdef_documents#submit_for_review` | yes | yes | yes |
+| `DELETE` | `/api/v1/cdef_documents/bulk` | `cdef_documents#bulk_destroy` | yes | yes | yes |
 | `GET` | `/api/v1/control_catalogs` | `control_catalogs#index` | yes | yes | yes |
 | `POST` | `/api/v1/control_catalogs` | `control_catalogs#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/control_catalogs/:id` | `control_catalogs#destroy` | yes | yes | yes |
 | `GET` | `/api/v1/control_catalogs/:id` | `control_catalogs#show` | yes | yes | yes |
 | `PATCH/PUT` | `/api/v1/control_catalogs/:id` | `control_catalogs#update` | yes | yes | yes |
+| `POST` | `/api/v1/control_catalogs/:id/approve` | `control_catalogs#approve` | yes | yes | yes |
+| `POST` | `/api/v1/control_catalogs/:id/reject` | `control_catalogs#reject` | yes | yes | yes |
+| `POST` | `/api/v1/control_catalogs/:id/submit_for_review` | `control_catalogs#submit_for_review` | yes | yes | **MISSING** |
 | `GET` | `/api/v1/control_mappings` | `control_mappings#index` | yes | yes | yes |
 | `POST` | `/api/v1/control_mappings` | `control_mappings#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/control_mappings/:id` | `control_mappings#destroy` | yes | yes | yes |
@@ -143,6 +156,10 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/profile_documents/:id` | `profile_documents#destroy` | yes | yes | yes |
 | `GET` | `/api/v1/profile_documents/:id` | `profile_documents#show` | yes | yes | yes |
 | `PATCH/PUT` | `/api/v1/profile_documents/:id` | `profile_documents#update` | yes | yes | yes |
+| `POST` | `/api/v1/profile_documents/:id/approve` | `profile_documents#approve` | yes | yes | **MISSING** |
+| `GET` | `/api/v1/profile_documents/:id/baseline_review` | `profile_documents#baseline_review` | yes | yes | yes |
+| `POST` | `/api/v1/profile_documents/:id/reject` | `profile_documents#reject` | yes | yes | **MISSING** |
+| `POST` | `/api/v1/profile_documents/:id/submit_for_review` | `profile_documents#submit_for_review` | yes | yes | yes |
 | `GET` | `/api/v1/sap_documents` | `sap_documents#index` | yes | yes | yes |
 | `POST` | `/api/v1/sap_documents` | `sap_documents#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/sap_documents/:id` | `sap_documents#destroy` | yes | yes | yes |
@@ -163,6 +180,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/ssp_documents/:id` | `ssp_documents#show` | yes | yes | yes |
 | `PATCH/PUT` | `/api/v1/ssp_documents/:id` | `ssp_documents#update` | yes | yes | yes |
 | `GET` | `/api/v1/ssp_documents/:id/export` | `ssp_documents#export` | yes | yes | yes |
+| `POST` | `/api/v1/ssp_documents/:id/populate_from_profile` | `ssp_documents#populate_from_profile` | yes | yes | yes |
 | `PUT` | `/api/v1/ssp_documents/:id/update_fields` | `ssp_documents#update_fields` | yes | yes | yes |
 | `POST` | `/api/v1/ssp_documents/convert` | `ssp_documents#convert` | yes | yes | yes |
 | `POST` | `/api/v1/hdf/amendments_from_oscal_poam` | `translations#amendments_from_oscal_poam` | yes | yes | yes |

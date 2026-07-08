@@ -46,7 +46,8 @@ CONTROLLER_TO_DOC = {
   "federation_peers"         => "federation-peers",
   "translations"             => "translations",
   "sessions"                 => "sessions",
-  "attestations"             => "attestations"
+  "attestations"             => "attestations",
+  "artifacts"                => "artifacts"
 }.freeze
 
 def load_routes
@@ -164,7 +165,8 @@ CONTROLLER_TO_TEST_MODULE = {
   "federation_peers"         => "test_federation_peers.py",
   "translations"             => "test_translations.py",
   "sessions"                 => "test_sessions.py",
-  "attestations"             => "test_attestations.py"
+  "attestations"             => "test_attestations.py",
+  "artifacts"                => "test_artifacts.py"
 }.freeze
 
 def load_pytest_module_texts

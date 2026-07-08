@@ -22,7 +22,11 @@ regression net for that class of bug.
 | `test_authenticated_nav.py` | Cookie-bridge → session; core pages render clean (no 5xx / console / CSP errors) | SA token |
 | `test_accessibility.py` | axe-core WCAG 2.1 A/AA audit, baseline+ratchet (Layer 3, #599) | login: none; core pages: SA token |
 | `test_csp_reporting.py` | CSP `report-uri` present in header; collector accepts reports (204) without auth; tolerates garbage (#528, #650) | none |
+| `test_populate_flow.py` | Empty CDEF/SSP → "Incomplete" badge + "Populate from Profile" card; populate clears badge (#627/#628) | SA token |
+| `test_bulk_delete.py` | Admin bulk-select wiring on CDEF + boundary index; select-all reveals delete bar, CSP-clean (#629) | SA token |
+| `test_review_queue.py` | Submitted (via API) document surfaces in `/review_queue`; page CSP-clean (#630-634) | SA token |
 | `conftest.py` | Base-URL + cookie-bridge fixtures | — |
+| `_api_setup.py` | `/api/v1` helpers to provision fixtures (empty/submitted docs) for the flow tests | — |
 | `helpers.py` | CSP-violation recorder + `assert_no_csp_violations` / `click_and_assert_clean` interaction checks, console collector, same-origin check | — |
 
 ## Running locally
@@ -62,6 +66,24 @@ SPARC_SMOKE_SA_TOKEN=sparc_sa_... \
 Interaction tests assert **zero CSP violations on click** via
 `helpers.click_and_assert_clean` / `assert_no_csp_violations` — the DoD for
 epic #650. `test_csp_reporting.py` confirms the `report-uri` sink is wired.
+
+### Expected results
+
+A healthy instance runs in **~1–4 minutes** (Chromium; adding `--browser
+firefox` roughly doubles it). A number of tests **skip** and that is expected,
+not a failure:
+
+- `no <type>_show record found on this deployment` — the show-page / a11y /
+  inline-handler checks skip when the instance has no sample document of that
+  type to open. Seed one per type to convert these to real coverage.
+- `no a11y baseline for '<page>' yet` — capture with `UPDATE_A11Y_BASELINE=1`
+  and commit `a11y_baseline.json` (see the Accessibility section below).
+- `non-draft / read-only — expand-only check` — intentional; a read-only doc
+  has no editable control to exercise. These stay skipped by design.
+
+A wall of `502/503/504` **failures** across every route is not a code problem —
+it means the deployed instance is unhealthy (e.g. an ECS task recycle). The
+suite is correctly reporting an outage; check the deployment, not the tests.
 
 ## Configuration
 

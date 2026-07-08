@@ -15,6 +15,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _bulk_destroy import BulkDestroyContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 
 
@@ -52,6 +53,15 @@ def boundary(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield b
     finally:
         _delete(admin_client, b["id"])
+
+
+class TestBulkDestroy(BulkDestroyContract):
+    """Admin-only bulk delete (#629). Contract lives in _bulk_destroy."""
+
+    PATH = PATH
+
+    def _create_id(self, admin_client: httpx.Client) -> int:
+        return _create(admin_client)["id"]
 
 
 class TestIndex:

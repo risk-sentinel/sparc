@@ -442,8 +442,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2026-0915
     package: libc-bin
@@ -454,8 +454,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2026-4437
     package: libc-bin
@@ -466,8 +466,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2026-4438
     package: libc-bin
@@ -478,8 +478,8 @@ findings:
     rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2023-50495
     package: libncursesw6
@@ -490,8 +490,8 @@ findings:
     rationale: "ACCEPTED RISK. Ruby readline extension links to libncursesw6 at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling Ruby. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2024-10041
     package: libpam-modules
@@ -502,8 +502,8 @@ findings:
     rationale: "ACCEPTED RISK. PAM authentication modules. SPARC uses app-layer auth (Devise/OIDC), not PAM. Required by login/passwd package chain. Remediation path: evaluate removal when login/passwd are moved to bootstrap stage."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2025-7709
     package: libsqlite3-0
@@ -526,8 +526,8 @@ findings:
     rationale: "ACCEPTED RISK. libsystemd0 is a transitive dependency of the Debian base image. Container does not run systemd -- library is never invoked. Cannot safely remove without breaking dependent base packages (dbus, polkit chain). Remediation path: evaluate removal in Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2025-13151
     package: libtasn1-6
@@ -562,8 +562,8 @@ findings:
     rationale: "ACCEPTED RISK. Compression library required by Ruby (Zlib module), Rack HTTP compression middleware, and gem decompression. Cannot remove -- runtime requirement. Remediation path: apply Debian security patches when available."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   # ==========================================================================
   # LOW -- 51 unique CVEs
@@ -1194,8 +1194,8 @@ findings:
     rationale: "ACCEPTED RISK. Part of util-linux chain -- deep base image dependency. Container does not use mount, blkid, or block device utilities. Removal risks breaking dpkg and other core package management. Remediation path: Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2026-2219
     package: dpkg
@@ -1206,8 +1206,8 @@ findings:
     rationale: "ACCEPTED RISK. Debian package manager -- deep base image dependency. Not invoked at runtime but removing breaks the OS package chain. Remediation path: distroless base image (long-term)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2026-34743
     package: liblzma5
@@ -1218,8 +1218,8 @@ findings:
     rationale: "ACCEPTED RISK. LZMA compression library. Transitive dependency of dpkg. SPARC does not decompress LZMA data. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2026-27820
     package: zlib

@@ -21,6 +21,7 @@ import httpx
 import pytest
 
 from _document_helpers import create_doc, delete_doc, make_payload
+from _populate_from_profile import PopulateFromProfileContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 from schemas import (
     SspDocumentIndex,
@@ -63,6 +64,19 @@ def ssp_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
         yield doc
     finally:
         _delete_ssp(admin_client, doc["slug"])
+
+
+# ── populate from profile (#628) ────────────────────────────────────────────
+
+class TestPopulateFromProfile(PopulateFromProfileContract):
+    """Populate an SSP from a published profile (#628). Contract lives in
+    _populate_from_profile; SSPs are slug-addressed."""
+
+    PATH = PATH
+
+    @pytest.fixture
+    def populate_doc(self, ssp_doc: dict[str, Any]) -> dict[str, Any]:
+        return ssp_doc
 
 
 # ── index ──────────────────────────────────────────────────────────────────
