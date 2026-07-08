@@ -107,6 +107,15 @@ class TestReviewWorkflow(ReviewWorkflowContract):
     def review_doc(self, cdef_doc: dict[str, Any]) -> dict[str, Any]:
         return cdef_doc
 
+    def test_submit_empty_requires_content(
+        self, admin_client: httpx.Client, cdef_doc: dict[str, Any]
+    ) -> None:
+        # A CDEF with no controls cannot be submitted for review
+        # (DocumentApprovalService content gate: "At least one control").
+        resp = admin_client.post(f"{PATH}/{cdef_doc['slug']}/submit_for_review")
+        assert resp.status_code == 422, resp.text
+        assert "content" in resp.text.lower(), resp.text
+
 
 class TestBulkDestroy(BulkDestroyContract):
     """Admin-only bulk delete (#629). Contract lives in _bulk_destroy."""

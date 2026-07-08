@@ -62,6 +62,46 @@ class TestReviewWorkflow(ReviewWorkflowContract):
     def review_doc(self, profile_doc: dict[str, Any]) -> dict[str, Any]:
         return profile_doc
 
+    def test_submit_empty_requires_content(
+        self, admin_client: httpx.Client, profile_doc: dict[str, Any]
+    ) -> None:
+        # A profile with no linked catalog / selected controls cannot be
+        # submitted for review (DocumentApprovalService content gate).
+        resp = admin_client.post(f"{PATH}/{profile_doc['slug']}/submit_for_review")
+        assert resp.status_code == 422, resp.text
+        assert "content" in resp.text.lower(), resp.text
+
+
+class TestBaselineReview:
+    """#633 — GET /api/v1/profile_documents/:id/baseline_review returns the
+    selected-vs-expected control diff + ODP customization counts."""
+
+    @pytest.mark.happy
+    def test_returns_diff_shape(
+        self, admin_client: httpx.Client, profile_doc: dict[str, Any]
+    ) -> None:
+        resp = admin_client.get(f"{PATH}/{profile_doc['slug']}/baseline_review")
+        assert resp.status_code == 200, resp.text
+        data = resp.json()["data"]
+        for key in (
+            "expected_count",
+            "selected_count",
+            "missing_controls",
+            "extra_controls",
+            "odp_customized_count",
+            "odp_total_count",
+        ):
+            assert key in data, f"baseline_review missing {key!r}: {data}"
+
+    @pytest.mark.auth
+    def test_requires_token(
+        self, anon_client: httpx.Client, profile_doc: dict[str, Any]
+    ) -> None:
+        assert_error_envelope(
+            anon_client.get(f"{PATH}/{profile_doc['slug']}/baseline_review"),
+            expected_status=401,
+        )
+
 
 class TestIndex:
     @pytest.mark.happy
