@@ -4,10 +4,11 @@
 signed-in user can approve (`DocumentApprovalService#can_approve?`). Submit has
 no button on the show pages, so we submit via the API and drive the queue in the
 browser:
-- the approver's row exposes Approve + a reject reason field + Reject (admins
-  bypass SoD, so they can act on their own submissions). The full click→approved
-  state transition is deferred: it surfaced a real CSP violation on the flow
-  (#712); the transition contract itself is covered by tests/api (#642).
+- an admin approver rejects from the queue and the row clears (admins bypass
+  SoD, so they can act on their own submissions); Approve is checked to open its
+  CSP-safe confirm modal. Fixing #712 (a Turbo per-request-nonce CSP violation
+  on the action redirect) unblocked the reject transition, which also guards
+  against that regression.
 - a non-admin without approve authority sees the doc filtered OUT — the SoD /
   authority enforcement, exercised with a second identity (SPARC_SMOKE_USER_TOKEN).
 
@@ -75,16 +76,27 @@ def _row(page, name: str):
 class TestReviewActions:
     """Approve/reject from the queue + the SoD/authority filter (#630-634)."""
 
-    def test_approver_row_exposes_approve_and_reject(self, authed_page, submitted_doc):
-        """The approver's queue row exposes the Approve button + a reject reason
-        field + Reject button.
+    # The app overrides Turbo's confirm with a custom modal (#sparc-confirm-modal,
+    # app/javascript/application.js) — not a native dialog — so Approve's
+    # data-turbo-confirm is accepted by clicking the modal's confirm button.
+    CONFIRM_MODAL_OK = "#sparc-confirm-modal-confirm"
 
-        The full state transition (click → approved/rejected → row clears) is
-        NOT asserted here: driving it surfaced a real CSP violation
-        (`script-src-elem inline`) on the approve/reject flow — tracked in #712.
-        The state-transition contract itself is covered by tests/api (#642
-        TestReviewWorkflow). Re-enable the end-to-end assertion once #712 lands.
-        """
+    def test_admin_approve_opens_confirm_modal(self, authed_page, submitted_doc):
+        """Approve is wired + CSP-clean: clicking it opens the custom Turbo
+        confirm modal. The full state transition is asserted via the reject test
+        (same DocumentApprovalActions path) and tests/api (#642); the
+        modal-mediated approve submit is flaky to drive headlessly."""
+        if submitted_doc["submit_status"] != 200:
+            pytest.skip("catalog not submittable on this instance")
+        name = submitted_doc["doc"]["name"]
+        record_csp(authed_page)
+        authed_page.goto("/review_queue")
+        authed_page.wait_for_load_state("networkidle")
+        _row(authed_page, name).get_by_role("button", name="Approve").click()
+        authed_page.locator(self.CONFIRM_MODAL_OK).wait_for(state="visible", timeout=5_000)
+        assert_no_csp_violations(authed_page, during="approve confirm modal")
+
+    def test_admin_rejects_from_queue(self, authed_page, submitted_doc):
         if submitted_doc["submit_status"] != 200:
             pytest.skip("catalog not submittable on this instance")
         name = submitted_doc["doc"]["name"]
@@ -92,10 +104,13 @@ class TestReviewActions:
         authed_page.goto("/review_queue")
         authed_page.wait_for_load_state("networkidle")
         row = _row(authed_page, name)
-        assert row.get_by_role("button", name="Approve").count() == 1, "no Approve control"
-        assert row.get_by_role("textbox").count() == 1, "no reject reason field"
-        assert row.get_by_role("button", name="Reject").count() == 1, "no Reject control"
-        assert_no_csp_violations(authed_page, during="review_queue actions render")
+        row.get_by_role("textbox").fill("needs more detail")  # required reason
+        row.get_by_role("button", name="Reject").click()
+        authed_page.wait_for_load_state("networkidle")
+        assert_no_csp_violations(authed_page, during="reject from queue")
+        authed_page.goto("/review_queue")
+        authed_page.wait_for_load_state("networkidle")
+        assert _row(authed_page, name).count() == 0, f"{name!r} still pending after reject"
 
     def test_non_approver_queue_excludes_others_submissions(
         self, user_authed_page, submitted_doc

@@ -13,7 +13,7 @@
 <% by_severity = summary["by_severity"] || {} %>
 <% last_validated = catalog.metadata_extra&.dig("last_validated_at") %>
 
-<div class="card mb-4 data-quality-card <%= has_warnings ? 'data-quality-card--warnings' : 'data-quality-card--clean' %>">
+<div class="card mb-4 data-quality-card <%= has_warnings ? 'data-quality-card--warnings' : 'data-quality-card--clean' %>" data-controller="details-arrow">
   <details<%= " open" if has_warnings %>>
     <summary class="card-header d-flex align-items-center justify-content-between" style="cursor: pointer; list-style: none;">
       <div class="d-flex align-items-center gap-2">
@@ -102,17 +102,3 @@
     </div>
   </details>
 </div>
-
-<script nonce="<%= content_security_policy_nonce %>">
-  // Toggle arrow on details open/close
-  document.querySelectorAll('.data-quality-card details').forEach(function(details) {
-    var arrow = details.querySelector('.data-quality-arrow');
-    if (arrow) {
-      details.addEventListener('toggle', function() {
-        arrow.innerHTML = details.open ? '&#9660;' : '&#9658;';
-      });
-      // Set initial state
-      arrow.innerHTML = details.open ? '&#9660;' : '&#9658;';
-    }
-  });
-</script>
