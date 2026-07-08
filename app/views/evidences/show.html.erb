@@ -7,7 +7,7 @@
           <span class="badge bg-body-secondary text-body"><%= @evidence.type_label %></span>
           <% badge_class = case @evidence.status
              when "draft" then "bg-secondary"
-             when "collected" then "bg-info"
+             when "collected" then "bg-info text-dark"
              when "reviewed" then "bg-primary"
              when "attested" then "bg-success"
              when "expired" then "bg-danger"
