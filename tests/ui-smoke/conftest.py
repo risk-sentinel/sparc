@@ -19,6 +19,10 @@ BASE_URL = os.environ.get(
     "SPARC_SMOKE_BASE_URL", "https://sparc.risk-sentinel.org"
 ).rstrip("/")
 SA_TOKEN = os.environ.get("SPARC_SMOKE_SA_TOKEN")
+# Optional second (non-admin) identity, used by the review/approval flows that
+# need a submitter distinct from the approver (separation of duties, #643).
+# Tests that need it skip when it's unset.
+USER_TOKEN = os.environ.get("SPARC_SMOKE_USER_TOKEN")
 # Optional override. When unset, the session cookie is auto-detected from the
 # bridge response — Rails derives the name from the app module, which is
 # `_ssp_tpr_manager_session` for SPARC's legacy module name. Auto-detection
@@ -37,19 +41,11 @@ def browser_context_args(browser_context_args):
     return {**browser_context_args, "base_url": BASE_URL}
 
 
-@pytest.fixture(scope="session")
-def session_cookie() -> dict:
-    """Bridge a service-account token to a Rails session cookie (#573).
-
-    Skips authenticated tests when no token is configured so the
-    unauthenticated login-page smoke can still run standalone.
-    """
-    if not SA_TOKEN:
-        pytest.skip("SPARC_SMOKE_SA_TOKEN not set — skipping authenticated smoke")
-
+def _bridge_token_to_cookie(token: str) -> dict:
+    """Exchange a bearer token for a Rails session cookie via #573."""
     resp = httpx.post(
         f"{BASE_URL}/api/v1/sessions/from_token",
-        headers={"Authorization": f"Bearer {SA_TOKEN}"},
+        headers={"Authorization": f"Bearer {token}"},
         timeout=30.0,
     )
     assert resp.status_code == 204, (
@@ -63,26 +59,59 @@ def session_cookie() -> dict:
         session_cookies = [n for n in available if n.endswith("_session")]
         name = (session_cookies or available or [None])[0]
     value = resp.cookies.get(name) if name else None
-    assert value, (
-        f"no session cookie in bridge response; got cookies: {available}"
-    )
+    assert value, f"no session cookie in bridge response; got cookies: {available}"
     return {"name": name, "value": value}
+
+
+def _cookie_spec(cookie: dict, base_url: str) -> dict:
+    return {
+        "name": cookie["name"],
+        "value": cookie["value"],
+        "domain": urlparse(base_url).hostname,
+        "path": "/",
+        "httpOnly": True,
+        "secure": base_url.startswith("https"),
+        "sameSite": "Lax",
+    }
+
+
+@pytest.fixture(scope="session")
+def session_cookie() -> dict:
+    """Bridge the primary service-account token to a Rails session cookie (#573).
+
+    Skips authenticated tests when no token is configured so the
+    unauthenticated login-page smoke can still run standalone.
+    """
+    if not SA_TOKEN:
+        pytest.skip("SPARC_SMOKE_SA_TOKEN not set — skipping authenticated smoke")
+    return _bridge_token_to_cookie(SA_TOKEN)
+
+
+@pytest.fixture(scope="session")
+def user_session_cookie() -> dict:
+    """Bridge the second (non-admin) identity — the submitter in review flows.
+
+    Skips when SPARC_SMOKE_USER_TOKEN is unset, so single-identity runs still
+    work; the two-identity approval flows (#643) require it.
+    """
+    if not USER_TOKEN:
+        pytest.skip("SPARC_SMOKE_USER_TOKEN not set — skipping two-identity flows")
+    return _bridge_token_to_cookie(USER_TOKEN)
 
 
 @pytest.fixture
 def authed_page(context, session_cookie, base_url):
-    """A Playwright page carrying the bridged session cookie."""
-    context.add_cookies(
-        [
-            {
-                "name": session_cookie["name"],
-                "value": session_cookie["value"],
-                "domain": urlparse(base_url).hostname,
-                "path": "/",
-                "httpOnly": True,
-                "secure": base_url.startswith("https"),
-                "sameSite": "Lax",
-            }
-        ]
-    )
+    """A Playwright page carrying the primary (SA) session cookie."""
+    context.add_cookies([_cookie_spec(session_cookie, base_url)])
     return context.new_page()
+
+
+@pytest.fixture
+def user_authed_page(browser, user_session_cookie, base_url):
+    """A second Playwright page on its own context, carrying the non-admin
+    session cookie — for flows that need submitter ≠ approver in one test."""
+    ctx = browser.new_context(base_url=base_url)
+    ctx.add_cookies([_cookie_spec(user_session_cookie, base_url)])
+    page = ctx.new_page()
+    yield page
+    ctx.close()
