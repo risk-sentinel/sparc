@@ -631,27 +631,4 @@
 
 </div><%# end [data-controller="doc-meta inline-edit"] %>
 
-<script nonce="<%= content_security_policy_nonce %>">
-  var hs = document.getElementById('heatmapSection');
-  if (hs) hs.addEventListener('toggle', function() {
-    document.getElementById('heatmapToggleIcon').innerHTML = this.open ? '&#9660;' : '&#9658;';
-  });
-
-  // Toggle arrow icons for card details, assessment context, and other collapsibles
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.card-details').forEach(function(det) {
-      det.addEventListener('toggle', function() {
-        var arrow = det.querySelector('summary .card-arrow');
-        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
-      });
-    });
-    document.querySelectorAll('.control-card details').forEach(function(det) {
-      det.addEventListener('toggle', function() {
-        var arrow = det.querySelector('summary .ctx-arrow');
-        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
-      });
-    });
-  });
-</script>
-
 <% end %><%# end unless completed %>

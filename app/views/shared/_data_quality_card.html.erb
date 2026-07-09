@@ -13,7 +13,7 @@
 <% by_severity = summary["by_severity"] || {} %>
 <% last_validated = catalog.metadata_extra&.dig("last_validated_at") %>
 
-<div class="card mb-4 data-quality-card <%= has_warnings ? 'data-quality-card--warnings' : 'data-quality-card--clean' %>" data-controller="details-arrow">
+<div class="card mb-4 data-quality-card <%= has_warnings ? 'data-quality-card--warnings' : 'data-quality-card--clean' %>">
   <details<%= " open" if has_warnings %>>
     <summary class="card-header d-flex align-items-center justify-content-between" style="cursor: pointer; list-style: none;">
       <div class="d-flex align-items-center gap-2">

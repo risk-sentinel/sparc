@@ -343,17 +343,6 @@
            document: @profile_document,
            resources_path: profile_document_back_matter_resources_path(@profile_document) %>
 
-<script nonce="<%= content_security_policy_nonce %>">
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.card-details').forEach(function(det) {
-      det.addEventListener('toggle', function() {
-        var arrow = det.querySelector('summary .card-arrow');
-        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
-      });
-    });
-  });
-</script>
-
 </div><%# end data-controller wrapper %>
 
 <% end %><%# end unless completed %>
