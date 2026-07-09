@@ -80,4 +80,66 @@ RSpec.describe "Api::V1::Artifacts", type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  # #685 — artifact review-cadence enablement (read API over the version history).
+  describe "GET /api/v1/artifacts/:uuid/versions (#685)" do
+    it "returns the version timeline with the delta between consecutive reviews" do
+      evidence = evidence_with_file
+      # compute_file_hash! mints its own version(s); reset their review dates and
+      # add two with a known 60-day gap so the delta is deterministic.
+      evidence.artifact_versions.update_all(reviewed_at: nil)
+      evidence.artifact_versions.create!(fingerprint: "rev-a", reviewed_at: 90.days.ago)
+      evidence.artifact_versions.create!(fingerprint: "rev-b", reviewed_at: 30.days.ago)
+
+      get api_v1_artifact_version_history_path(uuid: evidence.uuid), headers: admin_headers
+      expect(response).to have_http_status(:ok)
+
+      versions = JSON.parse(response.body)["data"]["versions"]
+      deltas = versions.map { |v| v["review_delta_days"] }.compact
+      expect(deltas).to include(be_within(1).of(60)) # 90d ago -> 30d ago
+    end
+
+    it "requires a token" do
+      evidence = evidence_with_file
+      get api_v1_artifact_version_history_path(uuid: evidence.uuid)
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "404s for an unknown uuid" do
+      get api_v1_artifact_version_history_path(uuid: SecureRandom.uuid), headers: admin_headers
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe "GET /api/v1/artifacts/:uuid/freshness (#685)" do
+    it "computes next-due + overdue from the attestation cadence" do
+      evidence = evidence_with_file
+      # Freshness keys off the LATEST review, so age every version.
+      evidence.artifact_versions.update_all(reviewed_at: 120.days.ago)
+      create(:attestation, evidence: evidence, frequency: "quarterly", status: "passed")
+
+      get api_v1_artifact_freshness_path(uuid: evidence.uuid), headers: admin_headers
+      expect(response).to have_http_status(:ok)
+
+      data = JSON.parse(response.body)["data"]
+      expect(data["review_frequency"]).to eq("quarterly")
+      expect(data["last_reviewed_at"]).to be_present
+      expect(data["overdue"]).to be(true)          # 120d ago + 90d cadence -> 30d overdue
+      expect(data["days_overdue"]).to be >= 29
+    end
+
+    it "is not overdue when there is no fixed cadence" do
+      evidence = evidence_with_file
+      get api_v1_artifact_freshness_path(uuid: evidence.uuid), headers: admin_headers
+      data = JSON.parse(response.body)["data"]
+      expect(data["review_frequency"]).to be_nil
+      expect(data["next_review_due"]).to be_nil
+      expect(data["overdue"]).to be(false)
+    end
+
+    it "404s for an unknown uuid" do
+      get api_v1_artifact_freshness_path(uuid: SecureRandom.uuid), headers: admin_headers
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

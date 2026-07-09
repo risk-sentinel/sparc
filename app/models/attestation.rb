@@ -48,6 +48,20 @@ class Attestation < ApplicationRecord
     "ad_hoc" => "Ad-hoc"
   }.freeze
 
+  # Review cadence → ActiveSupport::Duration, feeding the artifact-freshness
+  # "next review due / overdue" deltas (#685). `ad_hoc` has no interval (nil):
+  # there is no fixed cadence to compute a due date from.
+  FREQUENCY_INTERVALS = {
+    "daily"     => 1.day,
+    "weekly"    => 1.week,
+    "monthly"   => 1.month,
+    "quarterly" => 3.months,
+    "annually"  => 1.year
+  }.freeze
+
+  # The interval for a cadence keyword, or nil (ad_hoc / unknown).
+  def self.interval_for(frequency) = FREQUENCY_INTERVALS[frequency]
+
   def role_label
     ROLE_LABELS[role] || role&.titleize || "Unknown"
   end
