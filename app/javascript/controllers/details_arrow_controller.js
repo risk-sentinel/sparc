@@ -19,7 +19,7 @@ const ARROWS = [
   ".sparc-section-arrow",
 ].join(", ")
 
-export default class extends Controller {
+export default class DetailsArrowController extends Controller {
   connect() {
     this.element.querySelectorAll("details").forEach((details) => {
       const sync = () => {

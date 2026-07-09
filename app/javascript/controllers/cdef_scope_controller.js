@@ -4,7 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 // between boundary-specific and global (#395). Replaces the former inline
 // <script> in _scope_picker — CSP / Turbo-nonce safe (#528). The markup already
 // declared the action + radio targets; this supplies the missing controller.
-export default class extends Controller {
+export default class CdefScopeController extends Controller {
   static targets = ["boundaryRadio", "globalRadio", "wrapper"]
 
   connect() {
