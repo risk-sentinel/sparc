@@ -23,6 +23,8 @@ Authorization: Bearer YOUR_API_TOKEN_HERE
 | `GET` | `.../parameters` | Show parameter schema |
 | `PUT` | `.../parameters` | Bulk update parameters |
 | `GET` | `.../parameters/export` | Export parameters |
+| `POST` | `.../parameters/import/preview` | Dry-run an ODP import file (diff, no writes) |
+| `POST` | `.../parameters/import/confirm` | Apply an ODP import file |
 
 ---
 
@@ -233,6 +235,105 @@ curl -X GET "https://sparc.example.com/api/v1/profile_documents/fedramp-high-bas
 | `401` | Unauthorized -- missing or invalid token |
 | `404` | Profile document not found |
 | `406` | Unsupported format requested |
+
+---
+
+### POST Import ODP File — Preview
+
+**Issue #697.** Controller action `baseline_parameters#import_preview`. Upload an Organization-Defined Parameter (OSCAL `set-parameter`) file and receive a **non-destructive diff** — what would change, unchanged rows, unknown ids, and selection values that aren't an allowed choice. **No writes.** This is the authoritative Catalog/Baseline/Profile ODP layer; downstream documents (CDEF/SSP/SAP/SAR) inherit these values from the upstream profile.
+
+**Request** — `multipart/form-data`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file` | file | Yes | ODP file in **JSON**, **YAML/YML**, or **XML** (round-trips `.../parameters/export`). 5 MB max. |
+| `format` | string | No | Override the format inferred from the filename extension. |
+
+Canonical file shape (JSON):
+
+```json
+{
+  "parameters": [
+    { "param_id": "ac-1_prm_1", "value": "ISSO and System Administrators" },
+    { "param_id": "ac-1_prm_2", "value": "quarterly" }
+  ],
+  "selections": [
+    { "select_id": "ac-2_prm_1", "selected": ["removes", "disables"] }
+  ]
+}
+```
+
+A flat `{ "param_id": "value" }` map is also accepted. A ready-to-edit template is at `spec/fixtures/files/odp/sample_odp.{json,yaml,xml}`.
+
+**Example Request**
+
+```bash
+curl -X POST "https://sparc.example.com/api/v1/profile_documents/fedramp-high-baseline/parameters/import/preview" \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -F "file=@sample_odp.json;type=application/json"
+```
+
+**Response Body**
+
+```json
+{
+  "data": {
+    "profile_id": 42,
+    "profile_slug": "fedramp-high-baseline",
+    "stats": { "total": 3, "changes": 3, "unchanged": 0, "unknown": 0, "invalid": 0 },
+    "rows": [
+      { "param_id": "ac-1_prm_1", "control_id": "ac-1", "kind": "parameter",
+        "current_value": "", "new_value": "ISSO and System Administrators", "status": "change" }
+    ]
+  }
+}
+```
+
+**Status Codes**
+
+| Code | Description |
+|------|-------------|
+| `200` | Diff computed |
+| `401` | Unauthorized -- missing or invalid token |
+| `404` | Profile document not found |
+| `422` | No file provided, unsupported format, or unparseable file |
+
+---
+
+### POST Import ODP File — Confirm
+
+Controller action `baseline_parameters#import_confirm`. Apply the same file **atomically** with partial-success reporting: unknown parameter ids are skipped (reported in `validation_errors`) and selection values outside the allowed choices are dropped (never persisted). Audited (`odp_file_import`). Same request shape as preview.
+
+**Example Request**
+
+```bash
+curl -X POST "https://sparc.example.com/api/v1/profile_documents/fedramp-high-baseline/parameters/import/confirm" \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -F "file=@sample_odp.yaml;type=application/x-yaml"
+```
+
+**Response Body**
+
+```json
+{
+  "data": {
+    "status": "updated",
+    "baseline_id": "fedramp-high-baseline",
+    "parameters_updated": 2,
+    "selections_updated": 1,
+    "validation_errors": []
+  }
+}
+```
+
+**Status Codes**
+
+| Code | Description |
+|------|-------------|
+| `200` | Applied (fully or partially) |
+| `401` | Unauthorized -- missing or invalid token |
+| `404` | Profile document not found |
+| `422` | Nothing could be applied (e.g. every id unknown), or unparseable file |
 
 ---
 

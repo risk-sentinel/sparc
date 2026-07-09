@@ -1,0 +1,9 @@
+{
+  "parameters": [
+    { "param_id": "ac-1_prm_1", "value": "ISSO and System Administrators" },
+    { "param_id": "ac-1_prm_2", "value": "quarterly" }
+  ],
+  "selections": [
+    { "select_id": "ac-2_prm_1", "selected": ["removes", "disables"] }
+  ]
+}

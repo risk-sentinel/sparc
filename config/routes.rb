@@ -473,6 +473,9 @@ Rails.application.routes.draw do
         # Baseline parameter management (#240)
         resource :parameters, only: [ :show, :update ], controller: "baseline_parameters" do
           get :export, on: :member
+          # #697 — bulk ODP file import (JSON/YAML/XML), preview → confirm.
+          post "import/preview", to: "baseline_parameters#import_preview", on: :member, as: :import_preview
+          post "import/confirm", to: "baseline_parameters#import_confirm", on: :member, as: :import_confirm
         end
       end
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ] do

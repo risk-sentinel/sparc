@@ -1,8 +1,9 @@
 """Tests for /api/v1/profile_documents/:slug/parameters.
 
-3 logical endpoints: show (schema), update (bulk), export. All nested
-under a profile document. Tests create their own profile parent so
-they don't depend on seed-data presence.
+5 logical endpoints: show (schema), update (bulk), export, and the #697
+ODP file import preview/confirm. All nested under a profile document.
+Tests create their own profile parent so they don't depend on seed-data
+presence.
 """
 
 from __future__ import annotations
@@ -123,4 +124,61 @@ class TestExport:
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         assert_error_envelope(
             anon_client.get(f"{_path('anything')}/export"), expected_status=401
+        )
+
+
+class TestOdpImport:
+    """#697 — ODP file import (import_preview -> import_confirm), multipart JSON/YAML/XML.
+
+    A freshly-created profile has no catalog, so its parameter schema is empty
+    and any uploaded id is reported as `unknown`. That's enough to exercise the
+    endpoint contract without depending on seeded catalog parameters.
+    """
+
+    _JSON_BODY = (
+        b'{"parameters": [{"param_id": "ac-1_prm_1", "value": "ISSO"}], '
+        b'"selections": []}'
+    )
+
+    def _preview(self, slug: str) -> str:
+        return f"{_path(slug)}/import/preview"
+
+    def _confirm(self, slug: str) -> str:
+        return f"{_path(slug)}/import/confirm"
+
+    @pytest.mark.happy
+    def test_preview_returns_diff_stats(
+        self, admin_client: httpx.Client, profile: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(
+            self._preview(profile["slug"]),
+            files={"file": ("odp.json", self._JSON_BODY, "application/json")},
+        )
+        assert response.status_code == 200, response.text
+        stats = response.json()["data"]["stats"]
+        assert stats["total"] == 1
+
+    @pytest.mark.validation
+    def test_preview_without_file_returns_422(
+        self, admin_client: httpx.Client, profile: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(self._preview(profile["slug"]))
+        assert_error_envelope(response, expected_status=422)
+
+    @pytest.mark.validation
+    def test_confirm_all_unknown_returns_422(
+        self, admin_client: httpx.Client, profile: dict[str, Any]
+    ) -> None:
+        response = admin_client.post(
+            self._confirm(profile["slug"]),
+            files={"file": ("odp.json", self._JSON_BODY, "application/json")},
+        )
+        # Bare profile: the one id is unknown -> nothing applied -> 422.
+        assert response.status_code == 422, response.text
+
+    @pytest.mark.auth
+    def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
+        assert_error_envelope(
+            anon_client.post(f"{_path('anything')}/import/preview"),
+            expected_status=401,
         )

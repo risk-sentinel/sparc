@@ -1,0 +1,14 @@
+# Sample ODP (Organization-Defined Parameter) bulk-import file — issue #697.
+# Upload to POST /api/v1/profile_documents/:id/parameters/import/{preview,confirm}
+# as multipart :file. param_id / select_id must match the baseline's parameters
+# (see GET .../parameters/export for a filled-in template of the current schema).
+parameters:
+  - param_id: ac-1_prm_1
+    value: ISSO and System Administrators
+  - param_id: ac-1_prm_2
+    value: quarterly
+selections:
+  - select_id: ac-2_prm_1
+    selected:
+      - removes
+      - disables

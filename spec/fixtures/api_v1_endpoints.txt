@@ -18,6 +18,8 @@ DELETE /api/v1/sar_documents/:id
 DELETE /api/v1/ssp_documents/:id
 DELETE /api/v1/users/:id
 GET /api/v1/artifacts/:uuid
+GET /api/v1/artifacts/:uuid/freshness
+GET /api/v1/artifacts/:uuid/versions
 GET /api/v1/artifacts/versions/:uuid
 GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
@@ -114,6 +116,8 @@ POST /api/v1/profile_documents
 POST /api/v1/profile_documents/:id/approve
 POST /api/v1/profile_documents/:id/reject
 POST /api/v1/profile_documents/:id/submit_for_review
+POST /api/v1/profile_documents/:profile_document_id/parameters/import/confirm
+POST /api/v1/profile_documents/:profile_document_id/parameters/import/preview
 POST /api/v1/sap_documents
 POST /api/v1/sar_documents
 POST /api/v1/sar_documents/convert
