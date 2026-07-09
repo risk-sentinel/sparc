@@ -19,6 +19,7 @@
   end
 %>
 
+<div data-controller="cdef-scope">
 <div class="form-group mb-3">
   <label class="fw-semibold d-block mb-2">CDEF Scope</label>
 
@@ -48,7 +49,7 @@
 <%# Boundary picker (only relevant when scope = boundary). The TODO below
     tracks the org-admin permission check for global publishing per #395 P2. %>
 <% if boundaries.any? %>
-  <div class="form-group mb-3" id="<%= param_key %>_boundary_picker_wrapper">
+  <div class="form-group mb-3" id="<%= param_key %>_boundary_picker_wrapper" data-cdef-scope-target="wrapper">
     <label for="<%= param_key %>_authorization_boundary_id" class="fw-semibold">
       Authorization Boundary
     </label>
@@ -63,22 +64,4 @@
   </div>
 <% end %>
 
-<%# Lightweight inline JS to disable the boundary picker when Global is chosen.
-    Avoids introducing a Stimulus controller for one toggle. %>
-<script nonce="<%= content_security_policy_nonce %>">
-  (function () {
-    var boundaryRadio = document.getElementById("<%= param_key %>_scope_boundary");
-    var globalRadio   = document.getElementById("<%= param_key %>_scope_global");
-    var wrapper       = document.getElementById("<%= param_key %>_boundary_picker_wrapper");
-    if (!boundaryRadio || !globalRadio || !wrapper) return;
-    var picker = wrapper.querySelector("select");
-    function sync() {
-      var disabled = globalRadio.checked;
-      if (picker) picker.disabled = disabled;
-      wrapper.style.opacity = disabled ? "0.5" : "1";
-    }
-    boundaryRadio.addEventListener("change", sync);
-    globalRadio.addEventListener("change", sync);
-    sync();
-  })();
-</script>
+</div><%# end data-controller="cdef-scope" %>

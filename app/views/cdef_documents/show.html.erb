@@ -491,15 +491,4 @@
 
 </div><%# end data-controller wrapper %>
 
-<script nonce="<%= content_security_policy_nonce %>">
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.card-details').forEach(function(det) {
-      det.addEventListener('toggle', function() {
-        var arrow = det.querySelector('summary .card-arrow');
-        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
-      });
-    });
-  });
-</script>
-
 <% end %><%# end unless completed %>

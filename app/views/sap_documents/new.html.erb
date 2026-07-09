@@ -59,7 +59,7 @@
       <%# Build SSP-to-Profile mapping for auto-population %>
       <% ssp_profile_map = @ssp_documents.each_with_object({}) { |s, h| h[s.id] = s.profile_document_id if s.profile_document_id } %>
 
-      <div class="row row-cols-1 row-cols-md-2 g-3">
+      <div class="row row-cols-1 row-cols-md-2 g-3" data-controller="ssp-profile-sync">
         <div class="col">
           <div class="form-group">
             <label for="sap_document_ssp_document_id">System Security Plan (SSP)</label>
@@ -70,7 +70,8 @@
                   ),
                   { include_blank: "— Select SSP (optional) —" },
                   class: "form-control", id: "ssp-select",
-                  data: { ssp_profile_map: ssp_profile_map.to_json } %>
+                  data: { ssp_profile_map: ssp_profile_map.to_json,
+                          action: "change->ssp-profile-sync#populate" } %>
           </div>
         </div>
         <div class="col">
@@ -82,37 +83,12 @@
                     nil
                   ),
                   { include_blank: "— Select Profile (optional) —" },
-                  class: "form-control", id: "profile-select" %>
+                  class: "form-control", id: "profile-select",
+                  data: { ssp_profile_sync_target: "profile" } %>
           </div>
         </div>
       </div>
 
-      <%# Auto-populate the profile when an SSP is chosen. Wired via
-          addEventListener (not an inline onchange= attribute) so the enforced
-          CSP's script-src-attr does not block it — same pattern as the v1.8.1
-          login fix. See #599 nav sweep (the inline onchange tripped CSP). %>
-      <script nonce="<%= content_security_policy_nonce %>">
-        function autoPopulateProfile(sspSelect) {
-          var profileSelect = document.getElementById("profile-select");
-          if (!profileSelect) return;
-
-          var map = JSON.parse(sspSelect.dataset.sspProfileMap || "{}");
-          var profileId = map[sspSelect.value];
-
-          if (profileId) {
-            profileSelect.value = profileId;
-          }
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-          var sspSelect = document.getElementById("ssp-select");
-          if (sspSelect) {
-            sspSelect.addEventListener("change", function () {
-              autoPopulateProfile(sspSelect);
-            });
-          }
-        });
-      </script>
     </div>
 
     <%# ── Step 3: Assessment Methods ── %>

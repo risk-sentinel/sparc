@@ -1,14 +1,21 @@
 """UI smoke: review queue (#630-634).
 
-/review_queue lists documents submitted for review. Submit-for-review has no
-button on the show pages today, so we submit via the API, then assert the
-document surfaces in the queue and the page is CSP-clean.
+/review_queue lists documents submitted for review, filtered to the ones the
+signed-in user can approve (`DocumentApprovalService#can_approve?`). Submit has
+no button on the show pages, so we submit via the API and drive the queue in the
+browser:
+- an admin approver rejects from the queue and the row clears (admins bypass
+  SoD, so they can act on their own submissions); Approve is checked to open its
+  CSP-safe confirm modal. Fixing #712 (a Turbo per-request-nonce CSP violation
+  on the action redirect) unblocked the reject transition, which also guards
+  against that regression.
+- a non-admin without approve authority sees the doc filtered OUT — the SoD /
+  authority enforcement, exercised with a second identity (SPARC_SMOKE_USER_TOKEN).
 
-Approve/reject happy paths and the separation-of-duties "hidden for your own
-submission" case need a second (approver) identity distinct from the submitter;
-they're tracked as a follow-up once the suite grows a second token.
-
-Selectors verified against app/views/review_queue/index.html.erb.
+Not covered here: the pure separation-of-duties case (an approver-capable
+non-admin blocked on their OWN submission) needs an RBAC permission grant to set
+up, out of scope for the seed. Selectors verified against
+app/views/review_queue/index.html.erb.
 """
 
 from __future__ import annotations
@@ -59,3 +66,66 @@ class TestReviewQueue:
             f"submitted document {name!r} not found in /review_queue"
         )
         assert_no_csp_violations(authed_page, during="review_queue with pending doc")
+
+
+def _row(page, name: str):
+    """The review-queue table row for the document named ``name``."""
+    return page.get_by_role("row").filter(has_text=name)
+
+
+class TestReviewActions:
+    """Approve/reject from the queue + the SoD/authority filter (#630-634)."""
+
+    # The app overrides Turbo's confirm with a custom modal (#sparc-confirm-modal,
+    # app/javascript/application.js) — not a native dialog — so Approve's
+    # data-turbo-confirm is accepted by clicking the modal's confirm button.
+    CONFIRM_MODAL_OK = "#sparc-confirm-modal-confirm"
+
+    def test_admin_approve_opens_confirm_modal(self, authed_page, submitted_doc):
+        """Approve is wired + CSP-clean: clicking it opens the custom Turbo
+        confirm modal. The full state transition is asserted via the reject test
+        (same DocumentApprovalActions path) and tests/api (#642); the
+        modal-mediated approve submit is flaky to drive headlessly."""
+        if submitted_doc["submit_status"] != 200:
+            pytest.skip("catalog not submittable on this instance")
+        name = submitted_doc["doc"]["name"]
+        record_csp(authed_page)
+        authed_page.goto("/review_queue")
+        authed_page.wait_for_load_state("networkidle")
+        _row(authed_page, name).get_by_role("button", name="Approve").click()
+        authed_page.locator(self.CONFIRM_MODAL_OK).wait_for(state="visible", timeout=5_000)
+        assert_no_csp_violations(authed_page, during="approve confirm modal")
+
+    def test_admin_rejects_from_queue(self, authed_page, submitted_doc):
+        if submitted_doc["submit_status"] != 200:
+            pytest.skip("catalog not submittable on this instance")
+        name = submitted_doc["doc"]["name"]
+        record_csp(authed_page)
+        authed_page.goto("/review_queue")
+        authed_page.wait_for_load_state("networkidle")
+        row = _row(authed_page, name)
+        row.get_by_role("textbox").fill("needs more detail")  # required reason
+        row.get_by_role("button", name="Reject").click()
+        authed_page.wait_for_load_state("networkidle")
+        assert_no_csp_violations(authed_page, during="reject from queue")
+        authed_page.goto("/review_queue")
+        authed_page.wait_for_load_state("networkidle")
+        assert _row(authed_page, name).count() == 0, f"{name!r} still pending after reject"
+
+    def test_non_approver_queue_excludes_others_submissions(
+        self, user_authed_page, submitted_doc
+    ):
+        # Two identities: admin submits (submitted_doc uses the SA token); a
+        # non-admin without approve authority views the queue. can_approve?
+        # filters the doc out — SoD + authority enforcement at the queue level.
+        if submitted_doc["submit_status"] != 200:
+            pytest.skip("catalog not submittable on this instance")
+        name = submitted_doc["doc"]["name"]
+        record_csp(user_authed_page)
+        resp = user_authed_page.goto("/review_queue")
+        assert resp and resp.status < 400, f"{resp.status if resp else 'no response'}"
+        user_authed_page.wait_for_load_state("networkidle")
+        assert user_authed_page.get_by_text(name).count() == 0, (
+            f"non-approver should not see {name!r} in their review queue"
+        )
+        assert_no_csp_violations(user_authed_page, during="non-approver review_queue")

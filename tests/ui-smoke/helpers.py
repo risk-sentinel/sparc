@@ -107,3 +107,19 @@ def same_origin(url: str, base_url: str) -> bool:
     if not target.netloc:
         return True
     return target.hostname == urlparse(base_url).hostname
+
+
+def turbo_visit(page, path: str) -> None:
+    """Navigate to `path` via **Turbo Drive** — an in-page fetch + <body> swap
+    with NO document reload — and wait for it to land.
+
+    This is the navigation real users perform (link clicks / form submits), and
+    it is materially different from `page.goto()` (a full document load): Turbo
+    re-executes the new body's inline <script>s by *cloning* them, and cloned
+    scripts LOSE their per-request CSP nonce — tripping a script-src-elem
+    violation under the enforced CSP that a full load never would (#712 / #528).
+    Requires `window.Turbo` (turbo-rails).
+    """
+    page.evaluate("(p) => window.Turbo.visit(p)", path)
+    page.wait_for_url(f"**{path}", timeout=10_000)
+    page.wait_for_load_state("networkidle")

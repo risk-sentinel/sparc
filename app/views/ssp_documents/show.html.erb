@@ -665,24 +665,4 @@
 <%= render "shared/oscal_back_matter_section",
            document: @ssp_document,
            resources_path: ssp_document_back_matter_resources_path(@ssp_document) %>
-
-<script nonce="<%= content_security_policy_nonce %>">
-  // Toggle arrow icons for card details, inherited rows, and catalog guidance
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.card-details').forEach(function(det) {
-      det.addEventListener('toggle', function() {
-        var arrow = det.querySelector('summary .card-arrow');
-        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
-      });
-    });
-    document.querySelectorAll('.control-card details').forEach(function(det) {
-      det.addEventListener('toggle', function() {
-        var arrow = det.querySelector('summary .catalog-arrow');
-        if (arrow) arrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
-        var inhArrow = det.querySelector('summary .inherited-arrow');
-        if (inhArrow) inhArrow.innerHTML = det.open ? '&#9660;' : '&#9658;';
-      });
-    });
-  });
-</script>
 <% end %>
