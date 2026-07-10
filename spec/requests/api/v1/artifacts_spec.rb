@@ -114,9 +114,13 @@ RSpec.describe "Api::V1::Artifacts", type: :request do
   describe "GET /api/v1/artifacts/:uuid/freshness (#685)" do
     it "computes next-due + overdue from the attestation cadence" do
       evidence = evidence_with_file
-      # Freshness keys off the LATEST review, so age every version.
-      evidence.artifact_versions.update_all(reviewed_at: 120.days.ago)
+      # Creating an attestation re-mints a current-dated artifact version
+      # (after_commit reversion), so create it FIRST, then age EVERY version —
+      # freshness keys off the LATEST review.
       create(:attestation, evidence: evidence, frequency: "quarterly", status: "passed")
+      # 1 year ago vs a quarterly (~90d) cadence -> unambiguously overdue by
+      # ~9 months, avoiding calendar-month rounding sensitivity at the boundary.
+      evidence.artifact_versions.update_all(reviewed_at: 1.year.ago)
 
       get api_v1_artifact_freshness_path(uuid: evidence.uuid), headers: admin_headers
       expect(response).to have_http_status(:ok)
@@ -124,8 +128,8 @@ RSpec.describe "Api::V1::Artifacts", type: :request do
       data = JSON.parse(response.body)["data"]
       expect(data["review_frequency"]).to eq("quarterly")
       expect(data["last_reviewed_at"]).to be_present
-      expect(data["overdue"]).to be(true)          # 120d ago + 90d cadence -> 30d overdue
-      expect(data["days_overdue"]).to be >= 29
+      expect(data["overdue"]).to be(true)
+      expect(data["days_overdue"]).to be >= 180 # 1y ago + 3mo cadence -> ~270d overdue
     end
 
     it "is not overdue when there is no fixed cadence" do
