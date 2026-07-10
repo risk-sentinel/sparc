@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "yaml"
+require "nokogiri"
+
 # Issue #697 (P0) — bulk file import of Organization-Defined Parameters
 # (OSCAL `set-parameter` / ODP values) for a baseline/profile, following the
 # CDEF `bulk_apply_converter` preview → confirm pattern.
@@ -161,7 +164,6 @@ class OdpImportService
   private_class_method :parse_json
 
   def self.parse_yaml(content)
-    require "yaml"
     YAML.safe_load(content, permitted_classes: [], aliases: false)
   rescue Psych::SyntaxError => e
     raise ImportError, "Invalid YAML: #{e.message.truncate(120)}"
@@ -176,7 +178,6 @@ class OdpImportService
   # Strict parse; Nokogiri does not resolve external entities by default, so this
   # is not XXE-exposed (SI-10).
   def self.parse_xml(content)
-    require "nokogiri"
     doc = Nokogiri::XML(content, &:strict)
     parameters = []
     selections = []
@@ -214,32 +215,17 @@ class OdpImportService
   # schema, which uses param_id/value), a flat { param_id => value } map, or a
   # bare array of row objects.
   def self.coerce(data)
-    parameters = []
-    selections = []
-
-    if data.is_a?(Hash) && (data["parameters"] || data["selections"] || data[:parameters] || data[:selections])
-      Array(data["parameters"] || data[:parameters]).each do |p|
-        p = p.with_indifferent_access
-        parameters << { param_id: (p[:param_id] || p[:id]).to_s, value: p[:value] }
+    parameters, selections =
+      if canonical_hash?(data)
+        [ coerce_param_list(data["parameters"] || data[:parameters]),
+          coerce_select_list(data["selections"] || data[:selections]) ]
+      elsif data.is_a?(Hash)
+        [ data.map { |k, v| { param_id: k.to_s, value: v } }, [] ]
+      elsif data.is_a?(Array)
+        partition_rows(data)
+      else
+        raise ImportError, "Unrecognized structure — expected an object or array of ODP values"
       end
-      Array(data["selections"] || data[:selections]).each do |s|
-        s = s.with_indifferent_access
-        selections << { select_id: (s[:select_id] || s[:id]).to_s, selected: Array(s[:selected]) }
-      end
-    elsif data.is_a?(Hash)
-      data.each { |k, v| parameters << { param_id: k.to_s, value: v } }
-    elsif data.is_a?(Array)
-      data.each do |row|
-        row = row.with_indifferent_access
-        if row[:select_id] || row[:selected]
-          selections << { select_id: (row[:select_id] || row[:id]).to_s, selected: Array(row[:selected]) }
-        else
-          parameters << { param_id: (row[:param_id] || row[:id]).to_s, value: row[:value] }
-        end
-      end
-    else
-      raise ImportError, "Unrecognized structure — expected an object or array of ODP values"
-    end
 
     {
       parameters: parameters.reject { |p| p[:param_id].blank? },
@@ -247,4 +233,40 @@ class OdpImportService
     }
   end
   private_class_method :coerce
+
+  # True for the canonical { parameters:, selections: } object (string or
+  # symbol keys) — as opposed to a flat map or a bare array of rows.
+  def self.canonical_hash?(data)
+    data.is_a?(Hash) &&
+      (data["parameters"] || data["selections"] || data[:parameters] || data[:selections])
+  end
+  private_class_method :canonical_hash?
+
+  def self.coerce_param_list(list)
+    Array(list).map do |p|
+      p = p.with_indifferent_access
+      { param_id: (p[:param_id] || p[:id]).to_s, value: p[:value] }
+    end
+  end
+  private_class_method :coerce_param_list
+
+  def self.coerce_select_list(list)
+    Array(list).map do |s|
+      s = s.with_indifferent_access
+      { select_id: (s[:select_id] || s[:id]).to_s, selected: Array(s[:selected]) }
+    end
+  end
+  private_class_method :coerce_select_list
+
+  # Split a bare array of row objects into (parameters, selections): a row is a
+  # selection when it carries a select_id or a selected list, else a parameter.
+  def self.partition_rows(rows)
+    params, selects = rows.map(&:with_indifferent_access)
+                          .partition { |row| row[:select_id].nil? && row[:selected].nil? }
+    [
+      params.map { |row| { param_id: (row[:param_id] || row[:id]).to_s, value: row[:value] } },
+      selects.map { |row| { select_id: (row[:select_id] || row[:id]).to_s, selected: Array(row[:selected]) } }
+    ]
+  end
+  private_class_method :partition_rows
 end

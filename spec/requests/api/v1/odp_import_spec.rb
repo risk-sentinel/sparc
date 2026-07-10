@@ -6,6 +6,9 @@ require "rails_helper"
 # baseline/profile: preview (non-destructive diff) → confirm (atomic apply with
 # partial-success). Multipart :file in JSON / YAML / XML.
 RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request do
+  SAMPLE_JSON = "sample_odp.json"
+  JSON_TYPE   = "application/json"
+
   let(:admin)        { create(:user, :admin) }
   let(:api_token)    { ApiToken.generate!(user: admin, name: "Test") }
   let(:auth_headers) { { "Authorization" => "Bearer #{api_token.plaintext_token}" } }
@@ -35,7 +38,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
 
   describe "authentication" do
     it "returns 401 without a token" do
-      post preview_path, params: { file: upload("sample_odp.json", "application/json") }
+      post preview_path, params: { file: upload(SAMPLE_JSON, JSON_TYPE) }
       expect(response).to have_http_status(:unauthorized)
     end
   end
@@ -44,7 +47,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
     it "returns a non-destructive diff and writes nothing" do
       expect {
         post preview_path,
-          params: { file: upload("sample_odp.json", "application/json") }, headers: auth_headers
+          params: { file: upload(SAMPLE_JSON, JSON_TYPE) }, headers: auth_headers
       }.not_to change(ProfileControlField, :count)
 
       expect(response).to have_http_status(:ok)
@@ -71,7 +74,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
       file.write({ parameters: [ { param_id: "zz-9_prm_1", value: "x" } ] }.to_json)
       file.rewind
       post preview_path,
-        params: { file: Rack::Test::UploadedFile.new(file.path, "application/json") },
+        params: { file: Rack::Test::UploadedFile.new(file.path, JSON_TYPE) },
         headers: auth_headers
 
       data = JSON.parse(response.body)["data"]
@@ -86,7 +89,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
       file.write({ selections: [ { select_id: "ac-2_prm_1", selected: [ "teleports" ] } ] }.to_json)
       file.rewind
       post preview_path,
-        params: { file: Rack::Test::UploadedFile.new(file.path, "application/json") },
+        params: { file: Rack::Test::UploadedFile.new(file.path, JSON_TYPE) },
         headers: auth_headers
 
       data = JSON.parse(response.body)["data"]
@@ -107,7 +110,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
     it "applies the parsed values and reports the summary" do
       expect {
         post confirm_path,
-          params: { file: upload("sample_odp.json", "application/json") }, headers: auth_headers
+          params: { file: upload(SAMPLE_JSON, JSON_TYPE) }, headers: auth_headers
       }.to change(ProfileControlField, :count).by(3)
 
       expect(response).to have_http_status(:ok)
@@ -134,7 +137,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
       file.write({ selections: [ { select_id: "ac-2_prm_1", selected: [ "teleports" ] } ] }.to_json)
       file.rewind
       post confirm_path,
-        params: { file: Rack::Test::UploadedFile.new(file.path, "application/json") },
+        params: { file: Rack::Test::UploadedFile.new(file.path, JSON_TYPE) },
         headers: auth_headers
 
       expect(ProfileControlField.find_by(field_name: "parameter:ac-2_prm_1")).to be_nil
@@ -147,7 +150,7 @@ RSpec.describe "Api::V1::BaselineParameters ODP import (#697)", type: :request d
       file.write({ parameters: [ { param_id: "zz-9_prm_1", value: "x" } ] }.to_json)
       file.rewind
       post confirm_path,
-        params: { file: Rack::Test::UploadedFile.new(file.path, "application/json") },
+        params: { file: Rack::Test::UploadedFile.new(file.path, JSON_TYPE) },
         headers: auth_headers
 
       expect(response).to have_http_status(:unprocessable_entity)
