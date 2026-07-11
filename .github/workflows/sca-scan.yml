@@ -1,0 +1,284 @@
+name: SCA scan (Grype + Trivy fs)
+
+# Reusable workflow — Grype (SBOM-driven, primary) + Trivy fs (secondary),
+# reconciled against a per-repo allow-list and gated at a severity threshold.
+#
+# VENDORED from risk-sentinel/container-build-sign/.github/workflows/sca-scan.yml
+# @ v0.1.0 (d7ec024eb4642c57bac57a00ade0c31c73ef23b7). See sbom-source.yml for
+# why this lives in-repo (public repo cannot call an internal repo's reusable
+# workflows). Third-party actions are SHA-pinned to match sparc's convention.
+
+on:
+  workflow_call:
+    inputs:
+      sbom_artifact:
+        description: 'Workflow artifact name to download (matches sbom-source.yml output)'
+        type: string
+        required: true
+      source_path:
+        description: 'Directory Trivy fs walks (should match the path the SBOM was generated from)'
+        type: string
+        default: '.'
+      severity_gate:
+        description: 'Severity at which findings fail the build (CRITICAL|HIGH|MEDIUM|LOW)'
+        type: string
+        default: 'CRITICAL'
+      allowlist_path:
+        description: 'Per-repo allow-list file (missing file = empty allow-list)'
+        type: string
+        default: '.security/sca-allowlist.yaml'
+      secondary_signal:
+        description: 'Run Trivy fs as a second signal alongside Grype'
+        type: boolean
+        default: true
+      fail_on_gating:
+        description: 'Fail the job when un-allow-listed findings are present. Set false for soft-mode introductions or fixture-based smoke tests; callers can still gate themselves on the gating_findings_count output.'
+        type: boolean
+        default: true
+    outputs:
+      gating_findings_count:
+        description: 'Number of findings at/above severity_gate after allow-list reconciliation'
+        value: ${{ jobs.scan.outputs.gating_findings_count }}
+      summary_path:
+        description: 'Path to the rendered markdown summary'
+        value: ${{ jobs.scan.outputs.summary_path }}
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  scan:
+    name: Scan + reconcile
+    runs-on: ubuntu-latest
+    outputs:
+      gating_findings_count: ${{ steps.reconcile.outputs.count }}
+      summary_path: ${{ steps.reconcile.outputs.summary_path }}
+    steps:
+      - name: Checkout consumer source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ inputs.sbom_artifact }}
+          path: sbom-input
+
+      - name: Resolve SBOM file
+        id: sbom
+        run: |
+          SBOM_FILE=$(find sbom-input -maxdepth 2 -name '*.json' | head -n1)
+          if [ -z "$SBOM_FILE" ]; then
+            echo "::error::No JSON SBOM found in artifact '${{ inputs.sbom_artifact }}'"
+            exit 1
+          fi
+          echo "path=$SBOM_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Grype scan (primary, SBOM-driven)
+        id: grype
+        uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+        with:
+          sbom: ${{ steps.sbom.outputs.path }}
+          severity-cutoff: ${{ inputs.severity_gate == 'CRITICAL' && 'critical' || (inputs.severity_gate == 'HIGH' && 'high' || (inputs.severity_gate == 'MEDIUM' && 'medium' || 'low')) }}
+          output-format: json
+          fail-build: false
+          by-cve: true
+
+      - name: Trivy fs scan (secondary signal)
+        if: inputs.secondary_signal
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ inputs.source_path }}
+          format: json
+          output: trivy-fs-results.json
+          severity: ${{ inputs.severity_gate }}
+          exit-code: '0'
+          ignore-unfixed: false
+
+      - name: Reconcile findings against allow-list
+        id: reconcile
+        env:
+          GRYPE_OUTPUT: ${{ steps.grype.outputs.json }}
+          TRIVY_OUTPUT: trivy-fs-results.json
+          ALLOWLIST_PATH: ${{ inputs.allowlist_path }}
+          SEVERITY_GATE: ${{ inputs.severity_gate }}
+          SECONDARY_SIGNAL: ${{ inputs.secondary_signal }}
+          SUMMARY_OUT: sca-summary.md
+        run: |
+          python3 -m pip install --quiet pyyaml
+          python3 <<'PY'
+          import json, os, sys
+          from datetime import date, datetime
+          import yaml
+
+          gate_order = ['UNKNOWN', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+          severity_gate = os.environ['SEVERITY_GATE'].upper()
+          if severity_gate not in gate_order:
+              print(f"::error::severity_gate '{severity_gate}' must be one of {gate_order[1:]}")
+              sys.exit(2)
+          gate_threshold = gate_order.index(severity_gate)
+
+          # --- Load Grype findings -----------------------------------------
+          grype_hits = []
+          grype_path = os.environ.get('GRYPE_OUTPUT', '')
+          if grype_path and os.path.exists(grype_path):
+              with open(grype_path) as f:
+                  grype = json.load(f)
+              for match in grype.get('matches', []):
+                  vuln = match.get('vulnerability', {}) or {}
+                  art = match.get('artifact', {}) or {}
+                  sev = (vuln.get('severity') or 'UNKNOWN').upper()
+                  if sev not in gate_order or gate_order.index(sev) < gate_threshold:
+                      continue
+                  fix = vuln.get('fix', {}) or {}
+                  fixed_versions = ','.join(fix.get('versions', []) or []) or '-'
+                  grype_hits.append({
+                      'scanner': 'grype',
+                      'id': vuln.get('id', '-'),
+                      'severity': sev,
+                      'pkg': art.get('name', '-'),
+                      'version': art.get('version', '-'),
+                      'fixed': fixed_versions,
+                  })
+          else:
+              print(f"::warning::Grype output not found at '{grype_path}' — primary scanner produced no report")
+
+          # --- Load Trivy findings -----------------------------------------
+          trivy_hits = []
+          secondary = os.environ.get('SECONDARY_SIGNAL', 'true').lower() == 'true'
+          trivy_path = os.environ.get('TRIVY_OUTPUT', '')
+          if secondary and trivy_path and os.path.exists(trivy_path):
+              with open(trivy_path) as f:
+                  trivy = json.load(f)
+              for result in trivy.get('Results', []) or []:
+                  for v in result.get('Vulnerabilities', []) or []:
+                      sev = (v.get('Severity') or 'UNKNOWN').upper()
+                      if sev not in gate_order or gate_order.index(sev) < gate_threshold:
+                          continue
+                      trivy_hits.append({
+                          'scanner': 'trivy',
+                          'id': v.get('VulnerabilityID', '-'),
+                          'severity': sev,
+                          'pkg': v.get('PkgName', '-'),
+                          'version': v.get('InstalledVersion', '-'),
+                          'fixed': v.get('FixedVersion') or '-',
+                      })
+
+          all_hits = grype_hits + trivy_hits
+
+          # --- Load allow-list ---------------------------------------------
+          allowed = {}
+          allowlist_path = os.environ['ALLOWLIST_PATH']
+          today = date.today()
+          if os.path.exists(allowlist_path):
+              with open(allowlist_path) as f:
+                  doc = yaml.safe_load(f) or {}
+              for entry in doc.get('cves', []) or []:
+                  cve_id = entry.get('id')
+                  if not cve_id:
+                      print(f"::warning::Allow-list entry missing 'id': {entry}")
+                      continue
+                  exp = entry.get('expires')
+                  if not exp:
+                      print(f"::warning::Allow-list entry {cve_id} missing 'expires' — finding will gate")
+                      continue
+                  if isinstance(exp, date):
+                      exp_date = exp
+                  else:
+                      try:
+                          exp_date = datetime.strptime(str(exp), '%Y-%m-%d').date()
+                      except ValueError:
+                          print(f"::warning::Allow-list entry {cve_id} has invalid 'expires' value '{exp}' — finding will gate")
+                          continue
+                  if exp_date < today:
+                      print(f"::warning::Allow-list entry {cve_id} expired {exp_date} — finding will gate")
+                      continue
+                  allowed[cve_id] = {'reason': entry.get('reason', '').strip(), 'expires': exp_date}
+          else:
+              print(f"::notice::No allow-list at '{allowlist_path}' — proceeding with empty list")
+
+          # --- Reconcile ---------------------------------------------------
+          suppressed = []
+          gating = []
+          for hit in all_hits:
+              if hit['id'] in allowed:
+                  hit['allowed_reason'] = allowed[hit['id']]['reason']
+                  hit['allowed_until'] = str(allowed[hit['id']]['expires'])
+                  suppressed.append(hit)
+              else:
+                  gating.append(hit)
+
+          # --- Render summary ----------------------------------------------
+          summary_out = os.environ['SUMMARY_OUT']
+          lines = []
+          lines.append(f"# SCA scan summary — gate `{severity_gate}`")
+          lines.append("")
+          scanners = ["Grype (SBOM-based)"]
+          if secondary:
+              scanners.append("Trivy (fs)")
+          lines.append(f"- Scanners: {', '.join(scanners)}")
+          lines.append(f"- Allow-list: `{allowlist_path}` ({len(allowed)} active entries)")
+          lines.append(f"- Findings at/above `{severity_gate}`: **{len(all_hits)}** ({len(gating)} gating, {len(suppressed)} allow-listed)")
+          lines.append("")
+          if gating:
+              lines.append(f"## Gating findings ({len(gating)})")
+              lines.append("")
+              lines.append("| Scanner | CVE | Severity | Package | Installed | Fixed |")
+              lines.append("|---|---|---|---|---|---|")
+              for h in gating:
+                  lines.append(f"| {h['scanner']} | {h['id']} | {h['severity']} | {h['pkg']} | {h['version']} | {h['fixed']} |")
+              lines.append("")
+          if suppressed:
+              lines.append("## Allow-listed (suppressed)")
+              lines.append("")
+              lines.append("| Scanner | CVE | Severity | Package | Until | Reason |")
+              lines.append("|---|---|---|---|---|---|")
+              for h in suppressed:
+                  reason = (h['allowed_reason'] or '-').replace('\n', ' ').replace('|', '\\|')
+                  lines.append(f"| {h['scanner']} | {h['id']} | {h['severity']} | {h['pkg']} | {h['allowed_until']} | {reason} |")
+              lines.append("")
+
+          rendered = "\n".join(lines) + "\n"
+          with open(summary_out, 'w') as f:
+              f.write(rendered)
+          step_summary = os.environ.get('GITHUB_STEP_SUMMARY')
+          if step_summary:
+              with open(step_summary, 'a') as f:
+                  f.write(rendered)
+
+          # --- Step outputs ------------------------------------------------
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"count={len(gating)}\n")
+              f.write(f"summary_path={summary_out}\n")
+              f.write(f"fail={'true' if gating else 'false'}\n")
+
+          print(f"Reconciled: {len(gating)} gating, {len(suppressed)} suppressed")
+          PY
+
+      - name: Stage reports for upload
+        if: always()
+        run: |
+          mkdir -p sca-reports
+          [ -f sca-summary.md ] && cp sca-summary.md sca-reports/ || true
+          [ -f trivy-fs-results.json ] && cp trivy-fs-results.json sca-reports/ || true
+          GRYPE_JSON='${{ steps.grype.outputs.json }}'
+          if [ -n "$GRYPE_JSON" ] && [ -f "$GRYPE_JSON" ]; then
+            cp "$GRYPE_JSON" sca-reports/grype-results.json
+          fi
+          ls -la sca-reports/
+
+      - name: Upload scan reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sca-reports
+          path: sca-reports/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Fail on un-allow-listed findings
+        if: steps.reconcile.outputs.fail == 'true' && inputs.fail_on_gating
+        run: |
+          echo "::error::SCA found ${{ steps.reconcile.outputs.count }} un-allow-listed findings at/above ${{ inputs.severity_gate }}"
+          exit 1

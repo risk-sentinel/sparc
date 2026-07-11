@@ -56,15 +56,17 @@ concurrency:
 
 jobs:
   # ── Generate the source CycloneDX SBOM (Syft) ──────────────────
+  # Vendored in-repo (#690-adjacent CI hardening): sparc is public and cannot
+  # call the INTERNAL container-build-sign reusable workflows, so these are local.
   sbom:
-    uses: risk-sentinel/container-build-sign/.github/workflows/sbom-source.yml@d7ec024eb4642c57bac57a00ade0c31c73ef23b7 # v0.1.0
+    uses: ./.github/workflows/sbom-source.yml
     with:
       artifact_name: cyclonedx-sbom
 
   # ── Scan it (Grype primary + Trivy fs secondary), gate CRITICAL ──
   sca:
     needs: sbom
-    uses: risk-sentinel/container-build-sign/.github/workflows/sca-scan.yml@d7ec024eb4642c57bac57a00ade0c31c73ef23b7 # v0.1.0
+    uses: ./.github/workflows/sca-scan.yml
     with:
       sbom_artifact: cyclonedx-sbom
       severity_gate: CRITICAL

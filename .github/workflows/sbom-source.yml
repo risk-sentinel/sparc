@@ -1,0 +1,87 @@
+name: Source SBOM (CycloneDX)
+
+# Reusable workflow — generates a CycloneDX source SBOM with Syft.
+#
+# VENDORED from risk-sentinel/container-build-sign/.github/workflows/sbom-source.yml
+# @ v0.1.0 (d7ec024eb4642c57bac57a00ade0c31c73ef23b7). sparc is now a PUBLIC repo
+# and GitHub does not allow a public repo to call reusable workflows from a
+# private/internal repo (container-build-sign is INTERNAL), so this copy lives
+# in-repo. Third-party actions are SHA-pinned to match sparc's convention.
+# Keep in sync with upstream if the container-build-sign contract changes.
+
+on:
+  workflow_call:
+    inputs:
+      source_path:
+        description: 'Directory to scan'
+        type: string
+        default: '.'
+      artifact_name:
+        description: 'Workflow artifact name for the emitted SBOM'
+        type: string
+        default: 'cyclonedx-sbom'
+      syft_version:
+        description: 'Syft version to install (e.g., v1.44.0). Empty = action default.'
+        type: string
+        default: ''
+      upload_artifact:
+        description: 'Upload the SBOM as a workflow artifact'
+        type: boolean
+        default: true
+    outputs:
+      sbom_path:
+        description: 'Filesystem path to the emitted CycloneDX JSON SBOM'
+        value: ${{ jobs.sbom.outputs.sbom_path }}
+
+permissions:
+  contents: read
+
+jobs:
+  sbom:
+    name: Generate CycloneDX SBOM
+    runs-on: ubuntu-latest
+    outputs:
+      sbom_path: ${{ steps.emit.outputs.sbom_path }}
+    steps:
+      - name: Checkout consumer source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Resolve output path
+        id: emit
+        run: |
+          mkdir -p sbom-output
+          echo "sbom_path=sbom-output/cyclonedx.json" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SBOM (Syft → CycloneDX JSON)
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: ${{ inputs.source_path }}
+          format: cyclonedx-json
+          output-file: ${{ steps.emit.outputs.sbom_path }}
+          upload-artifact: false   # explicit upload below so the artifact has a stable filename
+          syft-version: ${{ inputs.syft_version }}
+
+      - name: Upload SBOM artifact
+        if: inputs.upload_artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: ${{ steps.emit.outputs.sbom_path }}
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Summarize SBOM
+        run: |
+          SBOM='${{ steps.emit.outputs.sbom_path }}'
+          if [ ! -s "$SBOM" ]; then
+            echo "::error::SBOM was not emitted at $SBOM"
+            exit 1
+          fi
+          COMPONENTS=$(jq '.components | length' "$SBOM")
+          {
+            echo "## Source SBOM"
+            echo
+            echo "- Path: \`$SBOM\`"
+            echo "- Format: CycloneDX JSON"
+            echo "- Components detected: **$COMPONENTS**"
+          } >> "$GITHUB_STEP_SUMMARY"
