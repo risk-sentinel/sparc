@@ -475,7 +475,7 @@ API index endpoint) — schedule both **late** and serialize index-view edits to
 
 | Status | Issue | Domain | Files Modified (planned) | Collision Risk |
 | ------ | ----- | ------ | ------------------------ | -------------- |
-| [ ] | **#636** SonarQube → HDF evidence (`saf sonarqube2hdf` / `hdf fetch sonarqube`) | Evidence + CI | new OHDF producer, security-artifact bake-in | **MEDIUM** — **owner-blocked** on the SonarCloud org LOC quota; CI-side. |
+| [x] | **#636** SonarQube → HDF evidence (`hdf fetch sonarqube` / `saf sonarqube2hdf`) — **IMPLEMENTED (PR pending)**. LOC-quota unblocked (public repo → free unlimited). | Evidence + CI | `.github/workflows/sonarqube-hdf.yml` (NEW — **vendored** from container-build-sign's reusable @f866513, #87; hdf-cli strategic + SAF bridge), `.github/workflows/sonarqube-hdf-emit.yml` (NEW — sparc caller → the LOCAL vendored reusable, push-to-main/dispatch only), `docs/compliance/nist-sp800-53-rev5-mapping.md` (SA-11(1), CA-7) | **LOW** — new workflow files + compliance docs. **Twist:** public repo can't `uses:` the INTERNAL reusable, so vendored (same as #718). Cross-repo IAM dep: `SPARC_SONAR_EMIT_ARN` (org secret, provisioned) gates the S3 emit; `SONAR_TOKEN` (org, ALL) required. Fork-safe (no `pull_request` trigger). Validate with `actionlint`. |
 | [ ] | **#447** HDF Amendment translation/UI layer (umbrella) | Evidence + new ScannerFinding domain | wholly new models + UI — gated on customer demand | **HIGH** when activated — needs its own domain lane. Now partially enabled by `poam_from_amendments` (#663). |
 | [ ] | **#422** POAM Scenario B — cross-instance federated POAM visibility | POAM + Federation | gated — stays parked | N/A |
 
