@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "builder"
+require "yaml"
 
 # Extracts, exports, and updates OSCAL parameters and enumerations
 # from a ProfileDocument's associated catalog or resolved baseline.
@@ -122,7 +123,6 @@ class BaselineParameterService
     when :json
       JSON.pretty_generate(schema)
     when :yaml
-      require "yaml"
       schema.deep_stringify_keys.to_yaml
     when :xml
       schema_to_xml(schema)

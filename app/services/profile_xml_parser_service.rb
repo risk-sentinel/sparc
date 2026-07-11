@@ -1,3 +1,5 @@
+require "tempfile"
+
 class ProfileXmlParserService
   include BatchInsertable
   include ProgressTrackable
@@ -155,8 +157,6 @@ class ProfileXmlParserService
 
   # Convert resolved catalog XML to JSON hash and delegate to JSON parser.
   def parse_resolved_via_json(catalog_el, doc)
-    require "tempfile"
-
     # Use Nokogiri + XSLT-free approach: convert XML to JSON hash
     json_hash = xml_catalog_to_json(catalog_el)
     full_data = { "catalog" => json_hash }

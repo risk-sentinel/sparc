@@ -24,6 +24,8 @@
 # Sub-parts (a., 1., (a)) are stored as sibling CatalogControl records under the same family:
 #   ac-1, ac-1a, ac-1a.1, ac-1a.1.(a), ac-1a.1.(b), ac-1b, ac-1c, ac-1c.1, ac-1c.2
 #
+require "yaml"
+
 class CatalogImportService
   include ProgressTrackable
 
@@ -99,7 +101,6 @@ class CatalogImportService
   def detect_format
     if @filename.end_with?(".yaml", ".yml")
       begin
-        require "yaml"
         data = YAML.safe_load(@content, permitted_classes: [ Date, Time ])
         return :oscal_yaml if data.is_a?(Hash) && data.dig("catalog", "groups")
       rescue Psych::SyntaxError
@@ -147,7 +148,6 @@ class CatalogImportService
   def import_oscal_yaml
     update_processing_stage!(:parsing, "Parsing OSCAL YAML catalog...")
 
-    require "yaml"
     data = YAML.safe_load(@content, permitted_classes: [ Date, Time ])
     raise ImportError, "Not a valid OSCAL YAML catalog — missing 'catalog.groups'." unless data.is_a?(Hash) && data.dig("catalog", "groups")
 

@@ -9,6 +9,7 @@
 # Run with: bin/rails db:seed
 
 require_relative "../lib/seed_runner"
+require "json"
 
 SEED_DEMO = ENV.fetch("SPARC_SEED_DEMO", "false").downcase == "true"
 puts SEED_DEMO ? "\n[SPARC] Seeding with DEMO data enabled.\n" : "\n[SPARC] Seeding required data only (set SPARC_SEED_DEMO=true for demo data).\n"
@@ -1749,7 +1750,6 @@ puts "  SAR 2 '#{sar2.name}': #{sar2.sar_controls.count} controls"
 # and store the result as guidance_data on the CatalogControl row.
 # ============================================================
 puts "\nLoading catalog guidance from JSON files..."
-require "json"
 
 CATALOG_GUIDANCE_SOURCES = [
   {

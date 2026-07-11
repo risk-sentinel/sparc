@@ -17,6 +17,9 @@
 #   xml     = service.export(format: :xml)
 #
 # NIST: CA-7 (Continuous Monitoring), PM-6 (Measures of Performance)
+require "yaml"
+require "builder"
+
 class KsiExportService
   attr_reader :boundary
 
@@ -31,7 +34,6 @@ class KsiExportService
     when :json
       JSON.pretty_generate(hash)
     when :yaml
-      require "yaml"
       JSON.parse(hash.to_json).to_yaml
     when :xml
       build_xml(hash)
@@ -170,7 +172,6 @@ class KsiExportService
   end
 
   def build_xml(hash)
-    require "builder"
     xml = Builder::XmlMarkup.new(indent: 2)
     xml.instruct! :xml, version: "1.0", encoding: "UTF-8"
     xml.tag!("ksi-compliance-report", xmlns: "urn:fedramp:20x:ksi:1.0") do
