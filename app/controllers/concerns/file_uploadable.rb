@@ -254,6 +254,8 @@ module FileUploadable
         YAML.safe_load(content, permitted_classes: [ Date, Time ])
       when "xml", "xccdf"
         XmlSecurity.parse(content, strict: true)
+      else
+        nil # other file types skip the structural pre-parse (validated upstream)
       end
     end
   rescue Timeout::Error

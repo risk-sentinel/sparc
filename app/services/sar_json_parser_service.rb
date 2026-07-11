@@ -380,6 +380,7 @@ class SarJsonParserService
     when "not-satisfied", "fail" then "Not Implemented"
     when "partial" then "Partially Implemented"
     when "reviewed" then "Reviewed"
+    else nil # unrecognized OSCAL state → no mapped status
     end
   end
 

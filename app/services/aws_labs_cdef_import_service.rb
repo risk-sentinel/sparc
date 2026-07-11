@@ -75,6 +75,7 @@ class AwsLabsCdefImportService
       when :imported then imported += 1
       when :superseded_and_imported then imported += 1; superseded += 1
       when :skipped_unchanged then skipped_unchanged += 1
+      else nil # import_one only returns the states above
       end
     rescue => e
       @logger.error("[AwsLabsCdefImportService] Failed to import #{candidate[:path]}: #{e.class} #{e.message}")

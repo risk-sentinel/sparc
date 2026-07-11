@@ -101,6 +101,7 @@ class ControlBackMatterLinksController < ApplicationController
     when CdefControl     then @control.cdef_document
     when ProfileControl  then @control.profile_document
     when SspControl      then @control.ssp_document
+    else nil # unknown control type has no owning document
     end
   end
 
@@ -121,6 +122,8 @@ class ControlBackMatterLinksController < ApplicationController
       redirect_to edit_profile_document_profile_control_path(@control.profile_document, @control)
     when SspControl
       redirect_to ssp_document_path(@control.ssp_document)
+    else
+      nil # unknown control type: no redirect target
     end
   end
 end

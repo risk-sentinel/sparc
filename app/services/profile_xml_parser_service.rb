@@ -86,6 +86,7 @@ class ProfileXmlParserService
     when /LOW/i      then "LOW"
     when /MODERATE/i then "MODERATE"
     when /HIGH/i     then "HIGH"
+    else nil # title without a baseline keyword
     end
 
     catalog_ref = profile.at_xpath("import")&.[]("href")

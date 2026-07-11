@@ -143,6 +143,7 @@ class ControlObjectiveExtractorService
     case @document
     when SapDocument then @document.sap_controls
     when SarDocument then @document.sar_controls
+    else nil # only SAP/SAR documents carry control objectives
     end
   end
 

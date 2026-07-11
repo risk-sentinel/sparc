@@ -37,6 +37,8 @@ def extract_block(raw, selector)
     when "}"
       depth -= 1
       return raw[(start + 1)...i] if depth.zero?
+    else
+      nil # non-brace characters don't affect brace depth
     end
     i += 1
   end
@@ -82,6 +84,7 @@ def verdict(ratio, kind)
   case kind
   when :text then ratio >= 4.5 ? "AA" : (ratio >= 3.0 ? "AA-large" : "FAIL")
   when :ui   then ratio >= 3.0 ? "AA" : "FAIL"
+  else nil # unknown verdict kind
   end
 end
 

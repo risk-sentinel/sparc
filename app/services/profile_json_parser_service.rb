@@ -92,6 +92,7 @@ class ProfileJsonParserService
     when /LOW/i      then "LOW"
     when /MODERATE/i then "MODERATE"
     when /HIGH/i     then "HIGH"
+    else nil # title without a baseline keyword
     end
 
     catalog_ref  = imports.first&.dig("href")
@@ -277,6 +278,7 @@ class ProfileJsonParserService
     when /LOW/i      then "LOW"
     when /MODERATE/i then "MODERATE"
     when /HIGH/i     then "HIGH"
+    else nil # title without a baseline keyword
     end
 
     source_profile_href = (metadata["links"] || [])

@@ -107,6 +107,8 @@ class OscalJsonToXmlConverter
       xml.send(safe_element_name(key), value.to_s)
     when NilClass
       # Skip nil values
+    else
+      nil # non-JSON value types produce no element
     end
   end
 

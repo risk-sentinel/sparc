@@ -33,6 +33,7 @@ class LeveragedAuthorization < ApplicationRecord
     when "oscal_with_access" then 1
     when "oscal_no_access"   then 2
     when "legacy"            then 3
+    else nil # crm_type is validated against CRM_TYPES
     end
   end
 

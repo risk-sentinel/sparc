@@ -197,6 +197,8 @@ class KsiExportService
       data.each do |item|
         xml.tag!(singular) { hash_to_xml(xml, item) }
       end
+    else
+      nil # scalars are emitted inline by the parent Hash branch
     end
   end
 end

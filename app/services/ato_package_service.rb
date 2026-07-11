@@ -81,6 +81,8 @@ class AtoPackageService
 
       @ssp = SspWizardService.new(wizard_params.with_indifferent_access).create
       @ssp.update!(authorization_boundary: @ab)
+    else
+      nil # no/unknown ssp_mode: skip this step
     end
   end
 
@@ -102,6 +104,8 @@ class AtoPackageService
         description: @params[:sap_description]
       ).generate
       @sap.update!(authorization_boundary: @ab)
+    else
+      nil # no/unknown sap_mode: skip this step
     end
   end
 
@@ -122,6 +126,8 @@ class AtoPackageService
       }
       @sar = SarWizardService.new(sar_params).create
       @sar.update!(authorization_boundary: @ab)
+    else
+      nil # no/unknown sar_mode: skip this step
     end
   end
 
@@ -140,6 +146,8 @@ class AtoPackageService
         lifecycle_status: "started",
         authorization_boundary: @ab
       )
+    else
+      nil # no/unknown poam_mode: skip this step
     end
   end
 
