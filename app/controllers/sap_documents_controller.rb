@@ -241,7 +241,7 @@ class SapDocumentsController < ApplicationController
 
     if control_ids.empty?
       flash[:error] = "Source associated but no controls found in linked profile/SSP."
-      redirect_to sap_document_path(@sap_document) and return
+      redirect_to(sap_document_path(@sap_document)) && return
     end
 
     # Build per-control assessment-method map (comma-separated). Objectives

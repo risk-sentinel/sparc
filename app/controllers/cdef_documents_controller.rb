@@ -272,7 +272,7 @@ class CdefDocumentsController < ApplicationController
   def attach_profile
     if @cdef_document.cdef_controls.exists?
       flash[:notice] = "This component definition already has controls."
-      redirect_to(cdef_document_path(@cdef_document)) and return
+      redirect_to(cdef_document_path(@cdef_document)) && return
     end
 
     @profiles = ProfileDocument.where(lifecycle_status: "published")
@@ -496,14 +496,14 @@ class CdefDocumentsController < ApplicationController
     return if current_user&.has_permission?("converters.write")
 
     flash[:error] = "Not authorized to bulk-apply converters."
-    redirect_to cdef_document_path(@cdef_document) and return
+    redirect_to(cdef_document_path(@cdef_document)) && return
   end
 
   def refuse_if_aws_labs!
     return unless @cdef_document.aws_labs_source?
 
     flash[:error] = "Bulk-apply is disabled on AWS-Labs-sourced CDEFs. Clone first."
-    redirect_to cdef_document_path(@cdef_document) and return
+    redirect_to(cdef_document_path(@cdef_document)) && return
   end
 
   def control_resource_params
@@ -543,7 +543,7 @@ class CdefDocumentsController < ApplicationController
     # cloned_from_id so refreshes never touch it.
     if @cdef_document.aws_labs_source?
       flash[:error] = "This component definition was imported from AWS Labs and is read-only. Use 'Copy' to create an editable clone."
-      redirect_to cdef_document_path(@cdef_document) and return
+      redirect_to(cdef_document_path(@cdef_document)) && return
     end
 
     return unless @cdef_document.published_lifecycle?

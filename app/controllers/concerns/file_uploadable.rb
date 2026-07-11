@@ -32,7 +32,7 @@ module FileUploadable
     if uploaded_file.nil?
       flash[:error] = "Please select a file to upload"
       set_document_ivar(type_key, document_class.new)
-      render :new and return
+      render(:new) && return
     end
 
     file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)

@@ -171,11 +171,11 @@ class SspDocumentsController < ApplicationController
   def attach_profile
     if @ssp_document.published_lifecycle?
       flash[:error] = "This SSP is published and read-only."
-      redirect_to(ssp_document_path(@ssp_document)) and return
+      redirect_to(ssp_document_path(@ssp_document)) && return
     end
     if @ssp_document.ssp_controls.exists?
       flash[:notice] = "This SSP already has controls."
-      redirect_to(ssp_document_path(@ssp_document)) and return
+      redirect_to(ssp_document_path(@ssp_document)) && return
     end
 
     @profiles = ProfileDocument.where(lifecycle_status: "published")
@@ -189,7 +189,7 @@ class SspDocumentsController < ApplicationController
   def populate_from_profile
     if @ssp_document.published_lifecycle?
       flash[:error] = "This SSP is published and read-only."
-      redirect_to(ssp_document_path(@ssp_document)) and return
+      redirect_to(ssp_document_path(@ssp_document)) && return
     end
 
     profile = ProfileDocument.find_by!(slug: params[:source_profile_id])

@@ -200,7 +200,7 @@ class ProfileDocumentsController < ApplicationController
   def download_resolved_catalog
     if @profile_document.resolved_catalog_json.blank?
       flash[:error] = "No resolved catalog available. Publish the profile first."
-      redirect_to profile_document_path(@profile_document) and return
+      redirect_to(profile_document_path(@profile_document)) && return
     end
 
     json_data = JSON.pretty_generate(@profile_document.resolved_catalog_json)
@@ -227,7 +227,7 @@ class ProfileDocumentsController < ApplicationController
 
     unless source.published_lifecycle?
       flash[:error] = "Only published profiles can be used as a source."
-      redirect_to select_profile_profile_documents_path and return
+      redirect_to(select_profile_profile_documents_path) && return
     end
 
     service = DocumentDuplicationService.new(source)
@@ -248,7 +248,7 @@ class ProfileDocumentsController < ApplicationController
 
     if control_ids.empty?
       flash[:error] = "Please select at least one control"
-      redirect_to select_catalog_profile_documents_path and return
+      redirect_to(select_catalog_profile_documents_path) && return
     end
 
     profile = ProfileDocument.create!(
@@ -287,7 +287,7 @@ class ProfileDocumentsController < ApplicationController
   def manage_controls
     unless @profile_document.control_catalog
       flash[:error] = "Cannot manage controls: no source catalog linked to this profile."
-      redirect_to profile_document_path(@profile_document) and return
+      redirect_to(profile_document_path(@profile_document)) && return
     end
 
     @catalog = @profile_document.control_catalog
@@ -299,7 +299,7 @@ class ProfileDocumentsController < ApplicationController
   def update_controls
     unless @profile_document.control_catalog
       flash[:error] = "Cannot update controls: no source catalog linked."
-      redirect_to profile_document_path(@profile_document) and return
+      redirect_to(profile_document_path(@profile_document)) && return
     end
 
     desired_ids = Array(params[:control_ids]).reject(&:blank?).to_set
