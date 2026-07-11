@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample ODP (Organization-Defined Parameter) bulk-import file — issue #697.
+     Round-trips the GET .../parameters/export?format=xml shape. Upload as
+     multipart :file to POST .../parameters/import/{preview,confirm}. -->
+<baseline-parameters version="1.0.0">
+  <parameters>
+    <parameter param-id="ac-1_prm_1">
+      <value>ISSO and System Administrators</value>
+    </parameter>
+    <parameter param-id="ac-1_prm_2">
+      <value>quarterly</value>
+    </parameter>
+  </parameters>
+  <selections>
+    <selection select-id="ac-2_prm_1">
+      <selected>removes</selected>
+      <selected>disables</selected>
+    </selection>
+  </selections>
+</baseline-parameters>

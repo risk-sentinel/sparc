@@ -46,4 +46,69 @@ class Api::V1::ArtifactsController < Api::V1::BaseController
       }
     }
   end
+
+  # GET /api/v1/artifacts/:uuid/versions — the artifact's content-version
+  # timeline with the review delta between consecutive versions (#685).
+  # Enablement: SPARC exposes the cadence data; the consuming system makes the
+  # compliance judgment.
+  def versions
+    evidence = find_artifact!(params[:uuid])
+    prev_reviewed = nil
+    serialized = evidence.artifact_versions.chronological.map do |v|
+      delta = (((v.reviewed_at - prev_reviewed) / 1.day).round if v.reviewed_at && prev_reviewed)
+      prev_reviewed = v.reviewed_at if v.reviewed_at
+      {
+        version_uuid:      v.uuid,
+        fingerprint:       v.fingerprint,
+        reviewed_at:       v.reviewed_at,
+        superseded_at:     v.superseded_at,
+        current:           v.current?,
+        evidence_status:   v.evidence_status,
+        change_reason:     v.change_reason,
+        review_delta_days: delta
+      }
+    end
+    render json: {
+      data: {
+        uuid:                 evidence.uuid,
+        title:                evidence.title,
+        current_version_uuid: evidence.current_artifact_version&.uuid,
+        linked_control_ids:   evidence.linked_control_ids,
+        versions:             serialized
+      },
+      meta: { count: serialized.size }
+    }
+  end
+
+  # GET /api/v1/artifacts/:uuid/freshness — review-cadence freshness as DATA
+  # (#685, NIST CA-7): last reviewed, the attestation-declared cadence, next
+  # due, overdue. SPARC surfaces this; the consuming GRC system asserts
+  # compliance ("are teams refreshing within the ODP frequency").
+  def freshness
+    evidence = find_artifact!(params[:uuid])
+    last_reviewed = evidence.artifact_versions.maximum(:reviewed_at)
+    # Binding cadence = the shortest declared interval across the attestations.
+    frequency = evidence.attestations
+                        .where.not(frequency: [ nil, "ad_hoc" ])
+                        .map(&:frequency)
+                        .min_by { |f| Attestation.interval_for(f) || Float::INFINITY }
+    interval = Attestation.interval_for(frequency)
+    next_due = (last_reviewed + interval if last_reviewed && interval)
+    overdue  = next_due ? next_due < Time.current : false
+    render json: {
+      data: {
+        uuid:                   evidence.uuid,
+        title:                  evidence.title,
+        linked_control_ids:     evidence.linked_control_ids,
+        last_reviewed_at:       last_reviewed,
+        review_frequency:       frequency,
+        review_frequency_label: (Attestation::FREQUENCY_LABELS[frequency] if frequency),
+        next_review_due:        next_due,
+        overdue:                overdue,
+        days_overdue:           (overdue ? ((Time.current - next_due) / 1.day).ceil : 0),
+        note: "Enablement only: SPARC exposes artifact freshness as data; the " \
+              "compliance assertion is made by the consuming system."
+      }
+    }
+  end
 end
