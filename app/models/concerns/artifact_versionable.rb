@@ -46,6 +46,11 @@ module ArtifactVersionable
   # Mint a new version only when the material fingerprint differs from the
   # current one (idempotent — safe to call from multiple callbacks).
   def record_artifact_version_if_changed(reason: "update")
+    # Never mint during teardown: an attestation destroyed as part of its
+    # evidence's dependent-destroy cascade fires reversion after the parent is
+    # gone (`create` on an unsaved parent → RecordNotSaved). Pre-existing since
+    # #680; surfaced while adding copy-per-version (#686).
+    return if destroyed? || !persisted?
     return unless versionable_artifact?
 
     fingerprint = artifact_fingerprint
@@ -69,15 +74,46 @@ module ArtifactVersionable
         reviewed_at:       material_attestations.maximum(:attested_at) || updated_at,
         change_reason:     reason
       )
-      # Retain this version's content by reference (no copy — #686 tracks the
-      # copy-per-version alternative). Metadata-only versions share the current
-      # blob; a file change introduces a new blob the next version references.
-      version.content.attach(file.blob) if file.attached?
+      attach_version_content(version) if file.attached?
     end
     version
   end
 
   private
+
+  # Retain this version's content. Two modes (#686):
+  #   - reference (default): share the current blob. Metadata-only versions point
+  #     at the same blob as the prior version; a file change already produces a
+  #     new blob the next version references. No duplication.
+  #   - copy-per-version (SPARC_ARTIFACT_COPY_PER_VERSION=true): give this version
+  #     an independent physical copy of the current bytes, so its content can't be
+  #     affected by anything touching a shared blob — the foundation for per-version
+  #     WORM / S3 Object Lock. Costs storage + a download+re-upload per mint.
+  def attach_version_content(version)
+    unless SparcConfig.artifact_copy_per_version?
+      version.content.attach(file.blob)
+      return
+    end
+
+    # Read the source bytes fully into memory and attach an independent copy.
+    # (A streamed tempfile from blob.open is closed before Active Storage's
+    # deferred upload runs → "closed stream".) Evidence artifacts are modest and
+    # this path is opt-in, so the in-memory read is acceptable.
+    blob = file.blob
+    version.content.attach(
+      io: StringIO.new(blob.download), filename: blob.filename.to_s, content_type: blob.content_type
+    )
+  rescue ActiveStorage::FileNotFoundError => e
+    # Source bytes are unavailable — e.g. a spurious mint fired during evidence
+    # teardown (attestation dependent-destroy → reversion) after the blob was
+    # purged. Fall back to a reference attach so a copy-mode mint can never crash
+    # the operation that triggered it; reference-mode has always tolerated this.
+    Rails.logger.warn(
+      "[ArtifactVersion] copy-per-version source unavailable for evidence ##{id}: " \
+      "#{e.message}; referencing blob instead"
+    )
+    version.content.attach(file.blob)
+  end
 
   # Read attestations fresh from the DB so the fingerprint is correct even when
   # called across the attestation→evidence callback boundary (stale caches).

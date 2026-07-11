@@ -138,6 +138,15 @@ module SparcConfig
   def structured_logging? = ENV.fetch("SPARC_STRUCTURED_LOGGING", "false") == "true"
   def log_level           = ENV.fetch("SPARC_LOG_LEVEL", "info")
 
+  # ── Artifact retention (#680/#686) ────────────────────────────────────────
+
+  # When true, each minted ArtifactVersion gets an INDEPENDENT physical copy of
+  # its content instead of sharing the current blob by reference. Off by default:
+  # reference-based retention still resolves every version to its exact bytes with
+  # no duplication. Enable for stronger per-version immutability / WORM (pairs with
+  # S3 Object Lock in sparc-iac), at the cost of storage + a copy on each mint.
+  def artifact_copy_per_version? = ENV.fetch("SPARC_ARTIFACT_COPY_PER_VERSION", "false") == "true"
+
   # ── SMTP / Email ──────────────────────────────────────────────────────────
 
   def enable_smtp?       = ENV.fetch("SPARC_ENABLE_SMTP", "false") == "true"

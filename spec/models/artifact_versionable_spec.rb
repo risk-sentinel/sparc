@@ -106,4 +106,44 @@ RSpec.describe "Evidence artifact versioning (#680)", type: :model do
       expect(oscal["rlinks"].first["href"]).to eq(evidence.oscal_resolver_url)
     end
   end
+
+  # #686 — content retention mode.
+  describe "content retention mode" do
+    context "reference-based (default)" do
+      it "shares one physical blob across metadata-only versions" do
+        attach(evidence, "AAAA")
+        v1 = evidence.current_artifact_version
+
+        create(:attestation, evidence: evidence, attested_at: Time.current, status: "passed")
+        v2 = evidence.reload.current_artifact_version
+
+        expect(v2.file_hash).to eq(v1.file_hash)              # identical bytes...
+        expect(v2.content.blob.id).to eq(v1.content.blob.id)  # ...same physical blob (no copy)
+      end
+    end
+
+    context "copy-per-version (SPARC_ARTIFACT_COPY_PER_VERSION=true)" do
+      before { allow(SparcConfig).to receive(:artifact_copy_per_version?).and_return(true) }
+
+      it "gives each version an independent physical copy of identical bytes" do
+        attach(evidence, "AAAA")
+        v1 = evidence.current_artifact_version
+
+        create(:attestation, evidence: evidence, attested_at: Time.current, status: "passed")
+        v2 = evidence.reload.current_artifact_version
+
+        expect(v2.content.blob.id).not_to eq(v1.content.blob.id)         # independent object
+        expect(v2.content.blob.checksum).to eq(v1.content.blob.checksum) # ...identical bytes
+      end
+
+      it "does not crash evidence deletion when a mint fires mid-teardown" do
+        attach(evidence, "AAAA")
+        create(:attestation, evidence: evidence, attested_at: Time.current, status: "passed")
+
+        # dependent-destroy of the attestation re-fires reversion; the copy path
+        # must degrade (rescue) rather than raise on a purged source blob.
+        expect { evidence.destroy! }.not_to raise_error
+      end
+    end
+  end
 end
