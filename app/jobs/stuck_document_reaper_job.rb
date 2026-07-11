@@ -25,6 +25,8 @@
 # NIST: SI-11 (Error Handling — no silent indefinite-pending state),
 #       AU-3 (every transition is logged with document + reason).
 class StuckDocumentReaperJob < ApplicationJob
+  include ParseFailureNotifiable
+
   queue_as :default
 
   def perform
@@ -91,6 +93,9 @@ class StuckDocumentReaperJob < ApplicationJob
       "[DocumentLifecycle] event=reaped document_type=#{type_key} document_id=#{doc.id} " \
       "job_id=none reason=stalled_no_live_job"
     )
+    # #623 — notify the uploader that their stalled upload was marked failed
+    # (gated on SMTP; no-op otherwise).
+    notify_parse_failure(doc)
   end
 
   # Set of [type_key_string, document_id] for every DocumentConversionJob that

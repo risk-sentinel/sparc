@@ -53,6 +53,12 @@ module FileUploadable
       if document_class.column_names.include?("creation_method") && file_type != "excel"
         attrs[:creation_method] = "oscal_import"
       end
+      # #623 — persist the uploader so the async failure paths (conversion-job
+      # rescue, stuck-document reaper) can notify them. Guarded on the column so
+      # it degrades cleanly for any document type predating the migration.
+      if document_class.column_names.include?("uploaded_by_user_id")
+        attrs[:uploaded_by_user_id] = current_user&.id
+      end
       # Boundary picker (#395 P1): when set, the BoundaryLinkInheritance
       # before_validation callback on each document model auto-fills
       # cross-document FKs (ssp_document_id, sap_document_id, profile_document_id)

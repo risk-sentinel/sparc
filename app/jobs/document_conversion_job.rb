@@ -19,6 +19,8 @@
 # blob so the user can retry / inspect.
 #
 class DocumentConversionJob < ApplicationJob
+  include ParseFailureNotifiable
+
   queue_as :default
 
   # #392: transient S3 / network errors get auto-retried with backoff.
@@ -106,6 +108,8 @@ class DocumentConversionJob < ApplicationJob
       )
       log_lifecycle("failed", document_type_key, document_id, error: e.message)
       Rails.logger.error("#{document_type_key} conversion failed for document #{document_id}: #{e.message}")
+      # #623 — notify the uploader (gated on SMTP; no-op otherwise).
+      notify_parse_failure(document)
     end
   end
 

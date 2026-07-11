@@ -5,6 +5,7 @@ class SarDocument < ApplicationRecord
   include Sluggable
   include Lifecycle
   include SoftDeletable
+  include UploadTrackable
   include BoundaryLinkInheritance
 
   # #557 — belt-and-suspenders for the API-create path. See SspDocument

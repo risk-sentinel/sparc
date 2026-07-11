@@ -5,6 +5,7 @@ class ProfileDocument < ApplicationRecord
   include Sluggable
   include Lifecycle
   include SoftDeletable
+  include UploadTrackable
   include ContentCompleteness
   include Approvable
 
