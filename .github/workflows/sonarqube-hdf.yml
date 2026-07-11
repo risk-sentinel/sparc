@@ -19,6 +19,14 @@ name: SonarQube → HDF (evidence)
 # Two producers behind the `use_saf` toggle:
 #   - hdf-cli (Go, mitre/hdf-libs) — `hdf fetch sonarqube`. STRATEGIC, default.
 #   - SAF CLI (npm @mitre/saf)     — `saf convert sonarqube2hdf`. Bridge/fallback.
+#
+# NIST SP 800-53 Rev 5:
+#   RA-5  Vulnerability Monitoring & Scanning — SAST (SonarCloud) findings are
+#         fetched into the compliance-evidence stream, not siloed in a dashboard.
+#   SA-11 Developer Testing & Evaluation — static-analysis results are retained as
+#         durable OHDF evidence per build/merge.
+#   CA-7  Continuous Monitoring — SonarCloud findings join the Heimdall rollup
+#         alongside InSpec/cinc, checkov, and SCA for ongoing control assessment.
 
 on:
   workflow_call:

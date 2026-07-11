@@ -95,6 +95,7 @@ authentication mode coverage matrix.
 - [x] #466 -- AWS Labs CDEF runtime ingestion (opt-in via `SPARC_AWS_LABS_CDEF_ENABLED`); Solid Queue recurring refresh; read-only AWS rows with copy-to-amend; full Apache 2.0 attribution (NOTICE + LICENSES/ + THIRD_PARTY_NOTICES.md) -- **COMPLETED 2026-05-17** (PR #469)
 - [x] #470 -- Squash 29 accumulated migrations (since 2026-03-19 squash) into single consolidated file + v1.6.1 patch bump -- **COMPLETED 2026-05-17** (PR #471, released as v1.6.1)
 - [x] #472 -- SBOM license tracking + policy gate: Trivy `--scanners license`, consolidated `license-inventory.{json,md}` artifact, merged `sparc-combined-sbom.cdx.json`, `license-policy.yml` + `license-dispositions.yml` (warn-only) -- **COMPLETED 2026-05-17** (PR #474)
+- [x] #636 -- SonarCloud → OHDF evidence: fetch SonarCloud findings post-analysis (`hdf fetch sonarqube` strategic / SAF `sonarqube2hdf` bridge), validate, bake HDF into the security-artifacts stream so SAST joins the Heimdall rollup. **Vendored** in-repo (`sonarqube-hdf.yml` + `sonarqube-hdf-emit.yml`) — public repo can't call the internal container-build-sign reusable. -- **IMPLEMENTED (PR pending)**
 - [x] #473 -- Aggregator hardening -- **COMPLETED 2026-05-17** (PR #476)
 - [x] #475 -- Triage outstanding license action items + LICENSES/ population + baseline dispositions -- **COMPLETED 2026-05-17 / 18** (PRs #477, #478)
 - [x] #479 -- Drop roo-xls (GPL-3.0 transitive); scrub legacy UI references; flip license-policy enforce to true; v1.6.2 bump -- **COMPLETED 2026-05-18** (PR #480)

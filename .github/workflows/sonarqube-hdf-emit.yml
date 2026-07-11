@@ -21,6 +21,9 @@ name: SonarQube HDF emit
 # Producer selection (cross-repo parity): the org Actions variable
 # SONARQUBE_HDF_USE_SAF flips all repos to the SAF CLI bridge in lockstep. Unset /
 # anything-but-"true" -> the strategic Go hdf-cli (`hdf fetch sonarqube`), default.
+#
+# NIST SP 800-53 Rev 5: RA-5 (vulnerability scanning evidence), SA-11 (developer
+# testing/SAST), CA-7 (continuous monitoring rollup). See the reusable for detail.
 
 on:
   push:
