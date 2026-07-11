@@ -79,6 +79,10 @@ jobs:
     permissions:
       contents: read
       id-token: write          # AWS OIDC for the S3 emit (no-op when upload off)
+    env:
+      # Source-prefixed so the artifact/S3 object is traceable to the project it
+      # came from (e.g. sparc-sonarqube-hdf.json) rather than a generic name.
+      HDF_FILE: ${{ inputs.repo_slug }}-sonarqube-hdf.json
     steps:
       - name: Select producer
         id: prod
@@ -121,7 +125,7 @@ jobs:
           SAF_VER: ${{ env.SAF_VERSION }}
         run: |
           set -euo pipefail
-          out=sonarqube-hdf.json
+          out="$HDF_FILE"
           if [ "$TOOL" = "hdf-cli" ]; then
             args=(fetch sonarqube "$out" --url "$URL" --project-key "$KEY" --format hdf)
             [ -n "$ORG" ] && args+=(--organization "$ORG")
@@ -137,18 +141,18 @@ jobs:
       - name: Validate OHDF output
         run: |
           set -euo pipefail
-          test -s sonarqube-hdf.json
+          test -s "$HDF_FILE"
           # Authoritative HDF JSON-schema validation (auto-detects type=results).
           # A clean project (zero open issues) is valid evidence, which schema
           # validation correctly accepts.
-          hdf validate sonarqube-hdf.json -q
+          hdf validate "$HDF_FILE" -q
           echo "OHDF schema-valid."
 
       - name: Upload HDF artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sonarqube-hdf-${{ inputs.repo_slug }}
-          path: sonarqube-hdf.json
+          path: ${{ env.HDF_FILE }}
           if-no-files-found: error
 
       # ── S3 emit (gated on the role being present + assumable) ──────────
@@ -169,7 +173,7 @@ jobs:
           set -euo pipefail
           DATE="$(date -u +%Y-%m-%d)"
           for dest in "sonarqube/${REPO_SLUG}/${DATE}" "sonarqube/${REPO_SLUG}/latest"; do
-            aws s3 cp sonarqube-hdf.json "s3://${BUCKET}/${dest}/" --no-progress
+            aws s3 cp "$HDF_FILE" "s3://${BUCKET}/${dest}/" --no-progress
           done
           echo "Emitted to s3://${BUCKET}/sonarqube/${REPO_SLUG}/{${DATE},latest}/"
 
