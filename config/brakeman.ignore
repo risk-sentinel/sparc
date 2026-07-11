@@ -7,8 +7,16 @@
     {
       "fingerprint": "c11c11d05203d702220c243b2bfca868efe10bf17ec4e9bee1197641e7bf8e72",
       "note": "API mirror of the UI attestations_controller.rb permit list. Same rationale as fingerprint 85a0dc658a70...: Attestation#role/#frequency/#status are bounded by inclusion validators on the model so mass-assignment cannot set arbitrary values."
+    },
+    {
+      "fingerprint": "199675786ba99a935e6d82db70b3ded4dfd64225415eb50a0321fa5c2aa95693",
+      "note": "Admin::ServiceAccountsController#service_account_params permits :admin BY DESIGN. This is the admin-only service-account admin interface (module Admin, admin-gated) and granting admin to a service account is an intentional, documented feature — the 'Grant admin privileges' checkbox (see spec/system/admin_service_account_admin_checkbox_spec.rb), called out in the model header as AC-6 'admin flag is per-SA opt-in, never implicit'. Brakeman flags :admin because it's on its dangerous-key list; the assignment is safe here because it is reachable only by an authenticated admin. Unlike the Attestation permits there is no value-bounding validator (:admin is a boolean); the safety rests on the admin-only namespace + intended capability."
+    },
+    {
+      "fingerprint": "156709226fb5a8cdb1ff381e59aa7c85fd73913ded914eaa137e3677f6299537",
+      "note": "Admin::ServiceAccountsController#service_account_update_params — same permit list and same rationale as fingerprint 199675786ba9...: admin-only, intentional per-SA admin opt-in (AC-6). Not a privilege-escalation vector because the action is reachable only by an authenticated admin."
     }
   ],
-  "updated": "2026-05-06",
+  "updated": "2026-07-11",
   "brakeman_version": "8.0.4"
 }
