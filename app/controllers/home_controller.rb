@@ -24,5 +24,6 @@ class HomeController < ApplicationController
   end
 
   def oscal_overview
+    # Static informational page: renders its template, no data to load.
   end
 end

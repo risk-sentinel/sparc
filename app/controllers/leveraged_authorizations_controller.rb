@@ -30,6 +30,7 @@ class LeveragedAuthorizationsController < ApplicationController
   end
 
   def show
+    # Empty action: renders show.html.erb; @leveraged_authorization is loaded by a before_action.
   end
 
   def destroy
