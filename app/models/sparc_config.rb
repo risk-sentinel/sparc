@@ -88,6 +88,18 @@ module SparcConfig
   # than processing_stuck_minutes to avoid reaping a legitimately long parse.
   def document_reap_minutes = ENV.fetch("SPARC_DOCUMENT_REAP_MINUTES", "10").to_i
 
+  # ── Artifact storage hygiene (#690) ───────────────────────────────────────
+
+  # ArtifactStorageReaperJob is report-only unless this is true. With full
+  # per-version retention + purge-off (#680), storage grows by design, so
+  # destructive cleanup of truly-unreferenced blobs is opt-in and coordinated
+  # with the S3 lifecycle policy (sparc-iac#476).
+  def artifact_reaper_purge? = ENV.fetch("SPARC_ARTIFACT_REAPER_PURGE", "false") == "true"
+
+  # Grace window: never reap a blob younger than this, so an in-flight upload
+  # (blob created before its attachment is saved) is never mistaken for orphaned.
+  def artifact_reaper_min_age_hours = ENV.fetch("SPARC_ARTIFACT_REAPER_MIN_AGE_HOURS", "24").to_i
+
   # ── Authentication Toggles ────────────────────────────────────────────────
   # All default to false — features must be explicitly enabled.
 

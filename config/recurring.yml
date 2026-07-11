@@ -35,3 +35,11 @@ production:
   stuck_document_reaper:
     class: StuckDocumentReaperJob
     schedule: every 5 minutes
+  # #690 — artifact storage-hygiene reaper (orphan blobs + dangling back-matter
+  # hrefs). Report-only unless SPARC_ARTIFACT_REAPER_PURGE=true. Storage state
+  # changes slowly and per-version retention means growth is expected, so this
+  # runs on a multi-day cadence (SPARC_ARTIFACT_REAPER_INTERVAL_DAYS, default 7)
+  # to avoid log/audit noise.
+  artifact_storage_reaper:
+    class: ArtifactStorageReaperJob
+    schedule: every <%= ENV.fetch("SPARC_ARTIFACT_REAPER_INTERVAL_DAYS", "7").to_i.clamp(1, 90) %> days at 4am
