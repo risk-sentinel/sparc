@@ -1,0 +1,59 @@
+name: SonarQube HDF emit
+
+# sparc's caller for the SonarQube → OHDF evidence producer (#636, mirror of
+# sparc-iac#432). Fetches sparc's SonarCloud findings, converts to OASIS Heimdall
+# Data Format (OHDF), and bakes the HDF into the org security-artifacts bucket so
+# SAST (code quality + security) joins the same unified compliance-evidence stream
+# Heimdall aggregates (alongside InSpec/cinc, checkov, SCA). SonarCloud analysis
+# itself runs via the SonarCloud GitHub App (automatic analysis); this runs after
+# merge to main (results are current by then) and on demand — it only FETCHES the
+# results post-analysis.
+#
+# TWIST vs the other three repos: sparc is PUBLIC, so it CANNOT `uses:` the
+# INTERNAL container-build-sign reusable that sparc-iac / sparc-validate /
+# container-build-sign call directly. It instead consumes the VENDORED local copy
+# (.github/workflows/sonarqube-hdf.yml) — same content, kept in sync — exactly as
+# sparc vendored sbom-source/sca-scan in #718.
+#
+# Fork-safety: push-to-main + workflow_dispatch only (no pull_request), so this
+# credential-bearing job never runs for a fork PR (consistent with #720).
+#
+# Producer selection (cross-repo parity): the org Actions variable
+# SONARQUBE_HDF_USE_SAF flips all repos to the SAF CLI bridge in lockstep. Unset /
+# anything-but-"true" -> the strategic Go hdf-cli (`hdf fetch sonarqube`), default.
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      use_saf:
+        description: 'Override: use the SAF CLI bridge instead of hdf-cli for this run.'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write          # AWS OIDC for the S3 emit (passed through to the reusable)
+
+jobs:
+  emit:
+    uses: ./.github/workflows/sonarqube-hdf.yml
+    with:
+      sonar_project_key: risk-sentinel_sparc
+      sonar_organization: risk-sentinel
+      repo_slug: sparc
+      # Default = hdf-cli. The org variable flips every repo to the SAF bridge
+      # together (parity); the workflow_dispatch input overrides for a one-off run.
+      use_saf: ${{ inputs.use_saf || vars.SONARQUBE_HDF_USE_SAF == 'true' }}
+    secrets:
+      # Read-scoped SonarCloud token (org secret; hdf-cli reads it as
+      # SONARQUBE_TOKEN, saf via --auth — the reusable wires both).
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # Dedicated sparc evidence-emit role: OIDC-assumable by this repo,
+      # s3:PutObject scoped to sonarqube/sparc/* in the security bucket. To be
+      # provisioned in sparc-iac (mirrors sparc-validate's VALIDATE_SONAR_EMIT_ARN
+      # / the SCA emit-role pattern). Absent/unauthorized -> the reusable converts
+      # + validates but skips the upload (gated, no failure).
+      S3_EMIT_ROLE_ARN: ${{ secrets.SPARC_SONAR_EMIT_ARN }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}

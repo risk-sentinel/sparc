@@ -1,0 +1,171 @@
+name: SonarQube → HDF (evidence)
+
+# Reusable workflow (#636). Fetches this repo's SonarCloud findings and converts
+# them to OASIS Heimdall Data Format (OHDF), then bakes the HDF into the org
+# security-artifacts bucket so SonarQube findings (code quality + security;
+# `hdf fetch sonarqube` pulls ALL issues, no type filter) join the same unified
+# compliance evidence stream Heimdall aggregates (alongside InSpec/cinc, checkov,
+# SCA).
+#
+# VENDORED from risk-sentinel/container-build-sign/.github/workflows/sonarqube-hdf.yml
+# @ f866513351f6d0678788510c876516eb5ecb9f31 (#87). sparc is PUBLIC and cannot call
+# reusable workflows from the INTERNAL container-build-sign — same constraint as the
+# vendored sbom-source/sca-scan (#718) — so this copy lives in-repo. Kept in sync
+# with upstream by hand; configure-aws-credentials is repinned to sparc's SHA.
+#
+# SonarCloud analysis itself runs via the SonarCloud GitHub App (automatic
+# analysis) — this workflow only FETCHES the results from the API post-analysis.
+#
+# Two producers behind the `use_saf` toggle:
+#   - hdf-cli (Go, mitre/hdf-libs) — `hdf fetch sonarqube`. STRATEGIC, default.
+#   - SAF CLI (npm @mitre/saf)     — `saf convert sonarqube2hdf`. Bridge/fallback.
+
+on:
+  workflow_call:
+    inputs:
+      sonar_host_url:
+        description: 'SonarQube/SonarCloud base URL.'
+        type: string
+        default: 'https://sonarcloud.io'
+      sonar_project_key:
+        description: 'Project key, e.g. risk-sentinel_sparc.'
+        type: string
+        required: true
+      sonar_organization:
+        description: 'SonarCloud organization (omit/empty for self-hosted SonarQube).'
+        type: string
+        default: ''
+      repo_slug:
+        description: 'Short repo name for the S3 prefix: sonarqube/<repo_slug>/{<date>,latest}/.'
+        type: string
+        required: true
+      use_saf:
+        description: 'Use the SAF CLI bridge (saf convert sonarqube2hdf) instead of the strategic Go hdf-cli. Default false = hdf-cli. Callers wire this from an org Actions variable for cross-repo parity.'
+        type: boolean
+        default: false
+      upload:
+        description: 'Upload the HDF to the security-artifacts bucket (needs the emit IAM role). false = convert + validate only.'
+        type: boolean
+        default: true
+    secrets:
+      SONAR_TOKEN:
+        description: 'Read-scoped SonarQube/SonarCloud token. Required (hdf-cli reads it as SONARQUBE_TOKEN; saf via --auth).'
+        required: true
+      S3_EMIT_ROLE_ARN:
+        description: 'IAM role (GitHub OIDC) with s3:PutObject on sonarqube/<repo>/* in the security bucket. Optional — upload is skipped when unset/unassumable.'
+        required: false
+      AWS_REGION:
+        description: 'AWS region for the S3 emit. Optional; defaults to us-east-1.'
+        required: false
+
+# Pinned producers — bump deliberately (keep in sync with the images that bake
+# these tools: ci-runner/sparc-auditor). hdf-cli is the strategic primary.
+env:
+  HDF_CLI_VERSION: v3.3.2
+  SAF_VERSION: '1.6.0'
+  BUCKET: sparc-prod-security-artifacts
+
+jobs:
+  emit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write          # AWS OIDC for the S3 emit (no-op when upload off)
+    steps:
+      - name: Select producer
+        id: prod
+        env:
+          USE_SAF: ${{ inputs.use_saf }}
+        run: |
+          set -euo pipefail
+          if [ "$USE_SAF" = "true" ]; then
+            echo "tool=saf" >> "$GITHUB_OUTPUT"
+            echo "Producer: SAF CLI bridge (saf convert sonarqube2hdf)."
+          else
+            echo "tool=hdf-cli" >> "$GITHUB_OUTPUT"
+            echo "Producer: strategic Go hdf-cli (hdf fetch sonarqube)."
+          fi
+
+      # Always installed: it's the producer on the hdf-cli path AND the schema
+      # validator for BOTH producers' output (`hdf validate`).
+      - name: Install hdf-cli (pinned, checksum-verified)
+        env:
+          VER: ${{ env.HDF_CLI_VERSION }}
+        run: |
+          set -euo pipefail
+          base="https://github.com/mitre/hdf-libs/releases/download/${VER}"
+          tar="hdf_${VER#v}_linux_amd64.tar.gz"
+          curl -sSfL "$base/${tar}" -o "${tar}"
+          curl -sSfL "$base/checksums.txt" -o checksums.txt
+          grep " ${tar}$" checksums.txt | sha256sum -c -
+          tar -xzf "${tar}" hdf
+          install -m 0755 hdf /usr/local/bin/hdf
+          hdf version
+
+      - name: Convert SonarQube results → OHDF
+        env:
+          SONARQUBE_TOKEN: ${{ secrets.SONAR_TOKEN }}   # hdf-cli auth
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}        # saf --auth
+          TOOL: ${{ steps.prod.outputs.tool }}
+          URL: ${{ inputs.sonar_host_url }}
+          KEY: ${{ inputs.sonar_project_key }}
+          ORG: ${{ inputs.sonar_organization }}
+          SAF_VER: ${{ env.SAF_VERSION }}
+        run: |
+          set -euo pipefail
+          out=sonarqube-hdf.json
+          if [ "$TOOL" = "hdf-cli" ]; then
+            args=(fetch sonarqube "$out" --url "$URL" --project-key "$KEY" --format hdf)
+            [ -n "$ORG" ] && args+=(--organization "$ORG")
+            hdf "${args[@]}"
+          else
+            # Bridge: npm @mitre/saf, pinned. Uses the runner's Node (>=20).
+            # saf's sonarqube2hdf takes no --organization flag; the token scopes
+            # the SonarCloud org. (hdf-cli is the org-aware strategic path.)
+            npx --yes "@mitre/saf@${SAF_VER}" convert sonarqube2hdf \
+              -n "$KEY" -u "$URL" --auth "$SONAR_TOKEN" -o "$out"
+          fi
+
+      - name: Validate OHDF output
+        run: |
+          set -euo pipefail
+          test -s sonarqube-hdf.json
+          # Authoritative HDF JSON-schema validation (auto-detects type=results).
+          # A clean project (zero open issues) is valid evidence, which schema
+          # validation correctly accepts.
+          hdf validate sonarqube-hdf.json -q
+          echo "OHDF schema-valid."
+
+      - name: Upload HDF artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sonarqube-hdf-${{ inputs.repo_slug }}
+          path: sonarqube-hdf.json
+          if-no-files-found: error
+
+      # ── S3 emit (gated on the role being present + assumable) ──────────
+      - name: Configure AWS credentials (OIDC)
+        id: aws
+        if: ${{ inputs.upload }}
+        continue-on-error: true     # missing/unassumable role → skip emit, don't fail the run
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
+        with:
+          role-to-assume: ${{ secrets.S3_EMIT_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Emit OHDF to security-artifacts bucket
+        if: ${{ inputs.upload && steps.aws.outcome == 'success' }}
+        env:
+          REPO_SLUG: ${{ inputs.repo_slug }}
+        run: |
+          set -euo pipefail
+          DATE="$(date -u +%Y-%m-%d)"
+          for dest in "sonarqube/${REPO_SLUG}/${DATE}" "sonarqube/${REPO_SLUG}/latest"; do
+            aws s3 cp sonarqube-hdf.json "s3://${BUCKET}/${dest}/" --no-progress
+          done
+          echo "Emitted to s3://${BUCKET}/sonarqube/${REPO_SLUG}/{${DATE},latest}/"
+
+      - name: Note when S3 emit skipped
+        if: ${{ !inputs.upload || steps.aws.outcome != 'success' }}
+        run: |
+          echo "::notice::OHDF converted + validated; S3 emit skipped (upload=${{ inputs.upload }}, aws=${{ steps.aws.outcome }}). The emit IAM role (s3:PutObject on sonarqube/sparc/*) is provisioned in sparc-iac; until then the artifact is the deliverable. See #636."
