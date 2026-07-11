@@ -59,11 +59,10 @@ env:
   # repo is public or GHAS is licensed.
   UPLOAD_TO_CODE_SCANNING: ${{ inputs.upload_to_code_scanning == '' && 'false' || inputs.upload_to_code_scanning }}
 
-permissions:
-  contents: read
-  security-events: write
-  actions: read      # Required for cross-repo artifact access
-  id-token: write    # OIDC for AWS credential assumption (S3 upload, ECR)
+# Permissions are declared per-job (least privilege) rather than workflow-wide,
+# so a job never silently inherits more than it needs (githubactions:S8233/S8264).
+# The scan jobs (brakeman/codeql/semgrep/trivy/grype/secrets) already declare
+# their own `security-events: write`; the 6 jobs below add theirs explicitly.
 
 # ═══════════════════════════════════════════════════════════════════
 # Parallel Scan Jobs (1–9)
@@ -308,6 +307,8 @@ jobs:
   # ── 3. Dependency Audit (bundler-audit) ────────────────────────
   dependency_audit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
@@ -345,6 +346,8 @@ jobs:
   # ── 4. JavaScript Dependency Audit (importmap) ─────────────────
   importmap_audit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
@@ -518,6 +521,8 @@ jobs:
   # and Grype both require JSON; XML input fails parsing silently.
   sbom_generation:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
@@ -809,6 +814,9 @@ jobs:
 
   normalize_hdf:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read           # download SARIF/scan artifacts from earlier jobs
     needs:
       - changes
       - secrets_scan
@@ -1034,6 +1042,9 @@ jobs:
 
   bundle_results:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read           # download prior jobs' result artifacts
     needs: [ changes, normalize_hdf, license_inventory ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
@@ -1326,6 +1337,10 @@ jobs:
 
   publish_for_sparc_iac:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write         # AWS OIDC (S3 evidence emit)
+      actions: read           # download bundled result artifacts
     needs: [ changes, bundle_results ]
     # Fork-safety (public-repo hardening): `github.ref == 'refs/heads/main'` already
     # excludes every pull request (fork or same-repo), so this credential-bearing

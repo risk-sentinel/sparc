@@ -52,11 +52,8 @@ on:
         default: true
         type: boolean
 
-permissions:
-  contents: read
-  id-token: write       # Sigstore OIDC keyless signing + AWS OIDC
-  packages: write        # GHCR (future use)
-  attestations: write    # GitHub artifact attestation
+# Permissions are declared per-job (least privilege) rather than workflow-wide,
+# so a job never silently inherits more than it needs (githubactions:S8233/S8264).
 
 concurrency:
   group: build-sign-publish-${{ github.ref }}
@@ -75,6 +72,8 @@ jobs:
 
   prepare:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read          # checkout only — computes build metadata
     outputs:
       version: ${{ steps.meta.outputs.version }}
       version_stripped: ${{ steps.meta.outputs.version_stripped }}
@@ -129,6 +128,9 @@ jobs:
 
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write         # AWS OIDC (ECR push) + Docker Hub login
     environment: production   # #545 item 3 — the SINGLE release approval gate (required
     # reviewers). Approving here authorizes the whole release; sign-verify-attest has no
     # separate gate and runs after this approved build.
@@ -287,6 +289,9 @@ jobs:
 
   sign-verify-attest:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write         # Sigstore keyless OIDC (cosign sign/verify/attest)
     # No `environment:` gate by design: the single release approval is at
     # build-and-push, and this job runs automatically after that approved build
     # (needs: build-and-push). Secrets are org-level (not env-scoped) and the
