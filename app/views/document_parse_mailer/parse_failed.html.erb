@@ -1,0 +1,18 @@
+<h2 style="color: #dc3545;"><%= @document_type %> Parse Failed</h2>
+
+<p>Your uploaded <strong><%= @document_type %></strong> could not be processed and has been marked <strong>failed</strong>.</p>
+
+<p><strong>Document:</strong> <%= @document.name %><br>
+<strong>File:</strong> <%= @document.try(:original_filename) || "—" %><br>
+<strong>Reason:</strong> <%= @error_message %></p>
+
+<p>The original file has been retained so you can review it. To resolve:</p>
+<ol>
+  <li>Sign in to SPARC</li>
+  <li>Open the document to review the failure details</li>
+  <li>Correct the file and re-upload to retry</li>
+</ol>
+
+<% if @app_url.present? %>
+  <p><%= link_to "Open SPARC", @app_url %></p>
+<% end %>

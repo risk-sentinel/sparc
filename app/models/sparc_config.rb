@@ -88,6 +88,18 @@ module SparcConfig
   # than processing_stuck_minutes to avoid reaping a legitimately long parse.
   def document_reap_minutes = ENV.fetch("SPARC_DOCUMENT_REAP_MINUTES", "10").to_i
 
+  # ── Artifact storage hygiene (#690) ───────────────────────────────────────
+
+  # ArtifactStorageReaperJob is report-only unless this is true. With full
+  # per-version retention + purge-off (#680), storage grows by design, so
+  # destructive cleanup of truly-unreferenced blobs is opt-in and coordinated
+  # with the S3 lifecycle policy (sparc-iac#476).
+  def artifact_reaper_purge? = ENV.fetch("SPARC_ARTIFACT_REAPER_PURGE", "false") == "true"
+
+  # Grace window: never reap a blob younger than this, so an in-flight upload
+  # (blob created before its attachment is saved) is never mistaken for orphaned.
+  def artifact_reaper_min_age_hours = ENV.fetch("SPARC_ARTIFACT_REAPER_MIN_AGE_HOURS", "24").to_i
+
   # ── Authentication Toggles ────────────────────────────────────────────────
   # All default to false — features must be explicitly enabled.
 
@@ -137,6 +149,15 @@ module SparcConfig
   def log_to_stdout?      = ENV.fetch("SPARC_LOG_TO_STDOUT", "false") == "true"
   def structured_logging? = ENV.fetch("SPARC_STRUCTURED_LOGGING", "false") == "true"
   def log_level           = ENV.fetch("SPARC_LOG_LEVEL", "info")
+
+  # ── Artifact retention (#680/#686) ────────────────────────────────────────
+
+  # When true, each minted ArtifactVersion gets an INDEPENDENT physical copy of
+  # its content instead of sharing the current blob by reference. Off by default:
+  # reference-based retention still resolves every version to its exact bytes with
+  # no duplication. Enable for stronger per-version immutability / WORM (pairs with
+  # S3 Object Lock in sparc-iac), at the cost of storage + a copy on each mint.
+  def artifact_copy_per_version? = ENV.fetch("SPARC_ARTIFACT_COPY_PER_VERSION", "false") == "true"
 
   # ── SMTP / Email ──────────────────────────────────────────────────────────
 

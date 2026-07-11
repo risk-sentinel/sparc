@@ -5,6 +5,7 @@ class SapDocument < ApplicationRecord
   include Sluggable
   include Lifecycle
   include SoftDeletable
+  include UploadTrackable
   include BoundaryLinkInheritance
 
   belongs_to :authorization_boundary, optional: true

@@ -3,8 +3,9 @@
 # A single content-version of an evidence artifact (#680). Minted whenever the
 # artifact's *material* state changes (file, attestations, or status). Its
 # `uuid` is the version-aware identity emitted in OSCAL back-matter
-# `resource.uuid`; `content` retains that version's blob by reference (no
-# duplication — copy-per-version is the deferred alternative, #686).
+# `resource.uuid`. By default `content` retains that version's blob by reference
+# (no duplication); with SPARC_ARTIFACT_COPY_PER_VERSION=true each version owns an
+# independent physical copy for per-version WORM/immutability (#686).
 #
 # The logical identity (title + control linkage) lives on the Evidence and is
 # stable; this record is the *version*. Same name+location across documents

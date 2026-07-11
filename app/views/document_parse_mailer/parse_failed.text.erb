@@ -1,0 +1,14 @@
+<%= @document_type %> Parse Failed
+
+Your uploaded <%= @document_type %> could not be processed and has been marked FAILED.
+
+Document: <%= @document.name %>
+File: <%= @document.try(:original_filename) || "—" %>
+Reason: <%= @error_message %>
+
+The original file has been retained so you can review it. To resolve:
+1. Sign in to SPARC
+2. Open the document to review the failure details
+3. Correct the file and re-upload to retry
+
+<% if @app_url.present? %>Open SPARC: <%= @app_url %><% end %>

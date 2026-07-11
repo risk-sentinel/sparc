@@ -5,6 +5,7 @@ class SspDocument < ApplicationRecord
   include Sluggable
   include Lifecycle
   include SoftDeletable
+  include UploadTrackable
   include BoundaryLinkInheritance
   include ContentCompleteness
 

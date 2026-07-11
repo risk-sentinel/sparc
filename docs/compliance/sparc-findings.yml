@@ -220,8 +220,8 @@ findings:
     rationale: "ACCEPTED RISK. Ruby readline extension links to libncursesw6 at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling Ruby. Remediation path: Debian Trixie upgrade."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-27135
     package: libnghttp2-14
@@ -258,8 +258,8 @@ findings:
     rationale: "ACCEPTED RISK. TOCTOU race condition in libcap's cap_set_file() that allows a local unprivileged user with write access to a parent directory to redirect file capability updates. SPARC container runs as non-root UID 1000 with no Linux capabilities granted, no setcap operations performed at runtime, and no shared writable directories. Attack vector requires (a) local shell access with write permissions and (b) ability to invoke setcap on attacker-controlled paths -- neither exists in the container's runtime model. libcap2 is a transitive dependency of base-image utilities and is not invoked by the application. Remediation path: Debian Trixie upgrade or distroless base."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-41989
     package: libgcrypt20
@@ -1340,8 +1340,8 @@ findings:
     rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster precompiled binary (HTTP/2 reverse proxy in front of Puma, on the production request path). thruster 0.1.21 is the latest release (no upstream build on Go >= 1.26.3 exists), so no bump remediates it yet. Mitigations: thruster sits behind ALB/nginx with TLS termination, trusts only AWS-issued certs, and serves a controlled static-asset/upstream set. Risk knowingly accepted with compensating controls; re-evaluate when basecamp/thruster ships on Go >= 1.26.3 (or rebuild in-house)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-33814
     package: thruster (Go binary, stdlib v1.26.2)
@@ -1352,8 +1352,8 @@ findings:
     rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same package, deployment posture, and mitigations as CVE-2026-33811. No upstream thruster release on Go >= 1.26.3."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-39820
     package: thruster (Go binary, stdlib v1.26.2)
@@ -1364,8 +1364,8 @@ findings:
     rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-39823
     package: thruster (Go binary, stdlib v1.26.2)
@@ -1376,8 +1376,8 @@ findings:
     rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-39825
     package: thruster (Go binary, stdlib v1.26.2)
@@ -1388,8 +1388,8 @@ findings:
     rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-39836
     package: thruster (Go binary, stdlib v1.26.2)
@@ -1400,8 +1400,8 @@ findings:
     rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-42499
     package: thruster (Go binary, stdlib v1.26.2)
@@ -1412,8 +1412,8 @@ findings:
     rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: CVE-2026-42504
     package: thruster (Go binary, stdlib v1.26.2)
@@ -1424,8 +1424,8 @@ findings:
     rationale: "ACCEPTED RISK. Go 1.26.2 stdlib CVE in the thruster binary; same basis and mitigations as CVE-2026-33811. Fixed upstream in Go 1.26.4."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-11"
+    next_review_date: "2026-08-10"
 
   - cve_id: GHSA-pp92-crg2-gfv9
     package: oauth2

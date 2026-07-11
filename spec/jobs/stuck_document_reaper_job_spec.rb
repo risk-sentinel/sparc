@@ -37,6 +37,31 @@ RSpec.describe StuckDocumentReaperJob, type: :job do
       expect(doc.error_message).to be_present
     end
 
+    it "notifies the uploader when it reaps their document (SMTP on)" do
+      allow(SparcConfig).to receive(:enable_smtp?).and_return(true)
+      uploader = create(:user, email: "uploader@sparc.local")
+      doc = create(:cdef_document, status: "pending", uploaded_by: uploader)
+      attach_file!(doc)
+      backdate!(doc, threshold + 5)
+      allow_any_instance_of(described_class).to receive(:live_document_keys).and_return(Set.new)
+
+      expect {
+        described_class.perform_now
+      }.to have_enqueued_mail(DocumentParseMailer, :parse_failed)
+    end
+
+    it "does not enqueue a notification when SMTP is disabled" do
+      allow(SparcConfig).to receive(:enable_smtp?).and_return(false)
+      doc = create(:cdef_document, status: "pending", uploaded_by: create(:user))
+      attach_file!(doc)
+      backdate!(doc, threshold + 5)
+      allow_any_instance_of(described_class).to receive(:live_document_keys).and_return(Set.new)
+
+      expect {
+        described_class.perform_now
+      }.not_to have_enqueued_mail(DocumentParseMailer, :parse_failed)
+    end
+
     it "leaves a file-bearing document alone while a live job is still working it" do
       doc = create(:cdef_document, status: "processing")
       attach_file!(doc)

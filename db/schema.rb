@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_11_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -340,6 +340,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.datetime "submitted_at"
     t.bigint "submitted_by_user_id"
     t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_user_id"
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index "((import_metadata ->> 'source_url'::text)), ((import_metadata ->> 'source_sha'::text))", name: "idx_cdef_docs_aws_labs_source_unique", unique: true, where: "((import_metadata ->> 'source_type'::text) = 'aws_labs'::text)"
     t.index ["approval_status"], name: "index_cdef_documents_on_approval_status"
@@ -355,6 +356,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.index ["slug"], name: "index_cdef_documents_on_slug", unique: true
     t.index ["status"], name: "index_cdef_documents_on_status"
     t.index ["submitted_by_user_id"], name: "index_cdef_documents_on_submitted_by_user_id"
+    t.index ["uploaded_by_user_id"], name: "index_cdef_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
   end
 
@@ -699,6 +701,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.string "status", default: "pending"
     t.string "system_id"
     t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_user_id"
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_poam_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_poam_documents_on_created_at"
@@ -707,6 +710,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.index ["slug"], name: "index_poam_documents_on_slug", unique: true
     t.index ["ssp_document_id"], name: "index_poam_documents_on_ssp_document_id"
     t.index ["status"], name: "index_poam_documents_on_status"
+    t.index ["uploaded_by_user_id"], name: "index_poam_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_poam_documents_on_uuid", unique: true
   end
 
@@ -963,6 +967,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.datetime "submitted_at"
     t.bigint "submitted_by_user_id"
     t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_user_id"
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["approval_status"], name: "index_profile_documents_on_approval_status"
     t.index ["approved_by_user_id"], name: "index_profile_documents_on_approved_by_user_id"
@@ -974,6 +979,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.index ["source_profile_id"], name: "index_profile_documents_on_source_profile_id"
     t.index ["status"], name: "index_profile_documents_on_status"
     t.index ["submitted_by_user_id"], name: "index_profile_documents_on_submitted_by_user_id"
+    t.index ["uploaded_by_user_id"], name: "index_profile_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
   end
 
@@ -1066,6 +1072,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.bigint "ssp_document_id"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_user_id"
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sap_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sap_documents_on_created_at"
@@ -1075,6 +1082,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.index ["slug"], name: "index_sap_documents_on_slug", unique: true
     t.index ["ssp_document_id"], name: "index_sap_documents_on_ssp_document_id"
     t.index ["status"], name: "index_sap_documents_on_status"
+    t.index ["uploaded_by_user_id"], name: "index_sap_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_sap_documents_on_uuid", unique: true
   end
 
@@ -1159,6 +1167,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.bigint "ssp_document_id"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_user_id"
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_sar_documents_on_authorization_boundary_id"
     t.index ["created_at"], name: "index_sar_documents_on_created_at"
@@ -1169,6 +1178,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.index ["slug"], name: "index_sar_documents_on_slug", unique: true
     t.index ["ssp_document_id"], name: "index_sar_documents_on_ssp_document_id"
     t.index ["status"], name: "index_sar_documents_on_status"
+    t.index ["uploaded_by_user_id"], name: "index_sar_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_sar_documents_on_uuid", unique: true
   end
 
@@ -1458,12 +1468,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
     t.string "system_name_short"
     t.string "system_status", default: "operational"
     t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_user_id"
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_ssp_documents_on_authorization_boundary_id"
     t.index ["deleted_at"], name: "index_ssp_documents_on_deleted_at"
     t.index ["lifecycle_status"], name: "index_ssp_documents_on_lifecycle_status"
     t.index ["profile_document_id"], name: "index_ssp_documents_on_profile_document_id"
     t.index ["slug"], name: "index_ssp_documents_on_slug", unique: true
+    t.index ["uploaded_by_user_id"], name: "index_ssp_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_ssp_documents_on_uuid", unique: true
   end
 
@@ -1610,6 +1622,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
   add_foreign_key "cdef_documents", "cdef_documents", column: "cloned_from_id"
   add_foreign_key "cdef_documents", "organizations", on_delete: :nullify
   add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify
+  add_foreign_key "cdef_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
   add_foreign_key "control_back_matter_links", "back_matter_resources"
   add_foreign_key "control_families", "control_catalogs"
   add_foreign_key "control_mapping_entries", "control_mappings"
@@ -1629,6 +1642,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
   add_foreign_key "organization_memberships", "users", on_delete: :cascade
   add_foreign_key "poam_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "poam_documents", "ssp_documents", on_delete: :nullify
+  add_foreign_key "poam_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
   add_foreign_key "poam_finding_observations", "poam_findings", on_delete: :cascade
   add_foreign_key "poam_finding_observations", "poam_observations", on_delete: :cascade
   add_foreign_key "poam_finding_risks", "poam_findings", on_delete: :cascade
@@ -1653,12 +1667,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
   add_foreign_key "profile_controls", "profile_documents", on_delete: :cascade
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
   add_foreign_key "profile_documents", "profile_documents", column: "source_profile_id"
+  add_foreign_key "profile_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
   add_foreign_key "sap_control_fields", "sap_controls", on_delete: :cascade
   add_foreign_key "sap_control_objectives", "sap_controls", on_delete: :cascade
   add_foreign_key "sap_controls", "sap_documents", on_delete: :cascade
   add_foreign_key "sap_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "sap_documents", "profile_documents", on_delete: :nullify
   add_foreign_key "sap_documents", "ssp_documents", on_delete: :nullify
+  add_foreign_key "sap_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
   add_foreign_key "sar_control_fields", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_control_objectives", "sar_controls", on_delete: :cascade
   add_foreign_key "sar_controls", "sar_documents", on_delete: :cascade
@@ -1666,6 +1682,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
   add_foreign_key "sar_documents", "profile_documents"
   add_foreign_key "sar_documents", "sap_documents", on_delete: :nullify
   add_foreign_key "sar_documents", "ssp_documents"
+  add_foreign_key "sar_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
   add_foreign_key "sar_finding_observations", "sar_findings", on_delete: :cascade
   add_foreign_key "sar_finding_observations", "sar_observations", on_delete: :cascade
   add_foreign_key "sar_finding_risks", "sar_findings", on_delete: :cascade
@@ -1692,6 +1709,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
   add_foreign_key "ssp_document_cdef_documents", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_documents", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "ssp_documents", "profile_documents", on_delete: :nullify
+  add_foreign_key "ssp_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
   add_foreign_key "ssp_information_types", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_inventory_items", "ssp_documents", on_delete: :cascade
   add_foreign_key "ssp_leveraged_authorizations", "ssp_documents", on_delete: :cascade
