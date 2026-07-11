@@ -22,7 +22,12 @@ module Security
   # Rate-limited per-IP by Rack::Attack ("csp-reports/min/ip", #513).
   #
   # NIST 800-53: SI-4 (Information System Monitoring), SC-18 (Mobile Code).
-  class CspReportsController < ActionController::Base
+  # rubydre:S7905 ("inherit from ApplicationController") is a false positive here:
+  # inheriting ActionController::Base directly is deliberate — see the class
+  # comment above (write-only unauthenticated CSP beacon; no auth/session/CSRF/
+  # browser guard applies; skip_forgery_protection; Rack::Attack rate-limited;
+  # 8 KB read cap). Suppressed inline.
+  class CspReportsController < ActionController::Base # NOSONAR(rubydre:S7905)
     # Browsers post reports with no CSRF token; this is a write-only beacon.
     skip_forgery_protection
 

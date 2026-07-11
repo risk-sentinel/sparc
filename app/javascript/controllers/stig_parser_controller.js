@@ -150,10 +150,15 @@ export default class extends Controller {
   // ── Namespace-aware element selection ────────────────────────────
 
   qsel(el, tag) {
+    // These are XCCDF XML *namespace identifiers* declared by the parsed STIG
+    // document — opaque strings matched against the DOM, never fetched over the
+    // network. They MUST equal the exact literals NIST minted (http, not https),
+    // or getElementsByTagNameNS stops matching. So javascript:S5332 ("use https")
+    // is a false positive here and is suppressed inline.
     const namespaces = [
-      "http://checklists.nist.gov/xccdf/1.2",
-      "http://checklists.nist.gov/xccdf/1.1",
-      "http://checklists.nist.gov/xccdf/1.0"
+      "http://checklists.nist.gov/xccdf/1.2", // NOSONAR(javascript:S5332) XCCDF namespace URI, not a URL
+      "http://checklists.nist.gov/xccdf/1.1", // NOSONAR(javascript:S5332) XCCDF namespace URI, not a URL
+      "http://checklists.nist.gov/xccdf/1.0"  // NOSONAR(javascript:S5332) XCCDF namespace URI, not a URL
     ]
     for (const ns of namespaces) {
       const r = el.getElementsByTagNameNS(ns, tag)
