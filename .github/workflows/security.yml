@@ -1327,6 +1327,9 @@ jobs:
   publish_for_sparc_iac:
     runs-on: ubuntu-latest
     needs: [ changes, bundle_results ]
+    # Fork-safety (public-repo hardening): `github.ref == 'refs/heads/main'` already
+    # excludes every pull request (fork or same-repo), so this credential-bearing
+    # job (SPARC_IAC_DISPATCH_TOKEN / AWS OIDC) can only run on the main branch.
     if: always() && github.ref == 'refs/heads/main' && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     env:
       HAS_DISPATCH_TOKEN: ${{ secrets.SPARC_IAC_DISPATCH_TOKEN != '' }}
@@ -1486,7 +1489,16 @@ jobs:
   pipeline_metrics:
     runs-on: ubuntu-latest
     needs: [ changes, bundle_results ]
-    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
+    # Fork-safety (public-repo hardening): this job assumes an AWS role via OIDC,
+    # so it must never run for a pull request opened from a FORK. GitHub already
+    # withholds secrets/OIDC from fork PRs, but gating the whole credential-bearing
+    # job at the fork boundary makes the policy explicit and defense-in-depth.
+    # (Same-repo PRs, pushes, schedules and dispatches still run.)
+    if: >-
+      always()
+      && (github.event_name != 'pull_request'
+          || github.event.pull_request.head.repo.full_name == github.repository)
+      && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     permissions:
       contents: read
       actions: read
