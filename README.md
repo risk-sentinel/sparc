@@ -1,5 +1,7 @@
 # SPARC — Systematic Policy and Regulatory Compliance
 
+[![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-light.svg)](https://sonarcloud.io/summary/new_code?id=risk-sentinel_sparc)
+
 ![SPARC Logo](docs/images/sparc_logo_clear.png)
 
 ![Home Page](docs/images/sparc_home.jpg)
