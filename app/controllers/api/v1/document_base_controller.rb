@@ -108,7 +108,7 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
     scope = if current_user.admin?
       document_class.all
     else
-      boundary_ids = current_user.authorization_boundaries.pluck(:id)
+      boundary_ids = current_user.authorization_boundaries.ids
       document_class.where(authorization_boundary_id: boundary_ids)
     end
     scope.order(created_at: :desc)

@@ -250,11 +250,6 @@ class SarJsonParserService
     findings_to_link = []
 
     @document.sar_results.each do |result|
-      # Build obs_lookup so a finding can pull data from its related
-      # observation (Checkov emits remarks like "Resource: aws.default"
-      # that we want to surface on the SAR control card).
-      obs_lookup = result.sar_observations.index_by(&:uuid)
-
       result.sar_findings.includes(:sar_observations).each do |finding|
         target = finding.target_data || {}
         target_id = target[TARGET_ID]

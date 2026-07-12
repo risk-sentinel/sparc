@@ -76,7 +76,7 @@ class StuckDocumentReaperJob < ApplicationJob
     )
   end
 
-  def reap_failed(doc, type_key, threshold)
+  def reap_failed(doc, type_key, _threshold)
     message = "Parsing did not complete within #{SparcConfig.document_reap_minutes} minutes " \
               "and no active job was found; marked failed by the stuck-document reaper. Re-upload to retry."
     attrs = { status: "failed" }

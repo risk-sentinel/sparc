@@ -120,7 +120,7 @@ module FileUploadable
     ab_id = params.dig(param_key, :authorization_boundary_id).presence
     return if ab_id.blank?
 
-    sub_boundary_ids = Boundary.where(authorization_boundary_id: ab_id).pluck(:id)
+    sub_boundary_ids = Boundary.where(authorization_boundary_id: ab_id).ids
     sub_boundary_ids.each do |sb_id|
       BoundaryCdefDocument.find_or_create_by!(
         boundary_id: sb_id, cdef_document_id: document.id

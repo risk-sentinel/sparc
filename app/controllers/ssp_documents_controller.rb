@@ -541,7 +541,7 @@ class SspDocumentsController < ApplicationController
 
   def sync_information_types
     incoming = params.dig(:ssp_document, :information_types) || []
-    existing_ids = @ssp_document.ssp_information_types.pluck(:id)
+    existing_ids = @ssp_document.ssp_information_types.ids
     seen_ids = []
 
     incoming.each do |it_params|
@@ -570,7 +570,7 @@ class SspDocumentsController < ApplicationController
 
   def sync_components
     incoming = params.dig(:ssp_document, :components) || []
-    existing_ids = @ssp_document.ssp_components.pluck(:id)
+    existing_ids = @ssp_document.ssp_components.ids
     seen_ids = []
 
     incoming.each do |c_params|
@@ -592,13 +592,13 @@ class SspDocumentsController < ApplicationController
     end
 
     # Preserve "this-system" components that aren't in the form
-    protected_ids = @ssp_document.ssp_components.this_system.pluck(:id)
+    protected_ids = @ssp_document.ssp_components.this_system.ids
     @ssp_document.ssp_components.where.not(id: seen_ids + protected_ids).delete_all
   end
 
   def sync_users
     incoming = params.dig(:ssp_document, :users) || []
-    existing_ids = @ssp_document.ssp_users.pluck(:id)
+    existing_ids = @ssp_document.ssp_users.ids
     seen_ids = []
 
     incoming.each do |u_params|

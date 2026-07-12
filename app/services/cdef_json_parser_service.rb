@@ -126,7 +126,6 @@ class CdefJsonParserService
     return if ir_statements_by_idx.empty?
 
     rows = []
-    now = Time.current
     cdef_controls_by_id = CdefControl.where(id: imported_ids).index_by(&:id)
 
     ir_statements_by_idx.each do |idx, statements|

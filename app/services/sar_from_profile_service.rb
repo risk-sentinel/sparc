@@ -43,7 +43,7 @@ class SarFromProfileService
       }
     )
 
-    imported_ids = build_controls_from_catalog(catalog)
+    build_controls_from_catalog(catalog)
     create_default_result
     create_default_findings
 

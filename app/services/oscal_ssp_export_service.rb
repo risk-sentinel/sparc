@@ -570,7 +570,7 @@ class OscalSspExportService
     statements
   end
 
-  def build_remarks(control, field_map)
+  def build_remarks(_control, field_map)
     parts = []
 
     stated_req = field_map["stated_requirement"]&.field_value

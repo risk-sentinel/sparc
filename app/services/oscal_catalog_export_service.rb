@@ -128,7 +128,7 @@ class OscalCatalogExportService
     props
   end
 
-  def build_control_parts(control, family)
+  def build_control_parts(control, _family)
     parts = []
     guidance = control.guidance_data || {}
 
