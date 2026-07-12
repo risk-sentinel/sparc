@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Auto-dismiss flash notifications after a delay.
 // Close button allows immediate dismissal.
-export default class extends Controller {
+export default class FlashController extends Controller {
   static targets = ["message"]
 
   connect() {

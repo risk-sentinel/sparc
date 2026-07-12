@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus"
 //   check-url  — GET endpoint returning readiness JSON
 //   publish-url — PATCH endpoint to publish the document
 //   csrf-token  — Rails CSRF token for form submission
-export default class extends Controller {
+export default class PublishModalController extends Controller {
   static targets = [
     "modal", "backdrop", "checklist", "fixFields", "publishBtn",
     "creatorName", "contactName", "contactEmail", "contactType"
@@ -108,11 +108,7 @@ export default class extends Controller {
     document.body.style.overflow = "hidden"
 
     // Close on button click
-    const closeWarning = () => {
-      modal.remove()
-      backdrop.remove()
-      document.body.style.overflow = ""
-    }
+    const closeWarning = () => this.dismissModal(modal, backdrop)
 
     modal.querySelector("#prioritization-warning-ok-btn").addEventListener("click", closeWarning)
     backdrop.addEventListener("click", closeWarning)
@@ -166,11 +162,7 @@ export default class extends Controller {
     document.body.appendChild(modal)
     document.body.style.overflow = "hidden"
 
-    const closeWarning = () => {
-      modal.remove()
-      backdrop.remove()
-      document.body.style.overflow = ""
-    }
+    const closeWarning = () => this.dismissModal(modal, backdrop)
 
     modal.querySelector("#parameter-warning-ok-btn").addEventListener("click", closeWarning)
     backdrop.addEventListener("click", closeWarning)
@@ -179,6 +171,13 @@ export default class extends Controller {
   close() {
     this.modalTarget.style.display = "none"
     this.backdropTarget.style.display = "none"
+    document.body.style.overflow = ""
+  }
+
+  // Remove a dynamically-injected warning modal + its backdrop and restore scroll.
+  dismissModal(modal, backdrop) {
+    modal.remove()
+    backdrop.remove()
     document.body.style.overflow = ""
   }
 

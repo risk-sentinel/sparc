@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // handlers shared across every document show page (SSP/SAR/SAP/POAM/CDEF/
 // Profile), which strict CSP (script-src :self, no 'unsafe-inline') silently
 // blocked, leaving the Edit/Cancel buttons inert.
-export default class extends Controller {
+export default class DocMetaController extends Controller {
   static targets = ["view", "edit"]
 
   toggle() {

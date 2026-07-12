@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Persists sidebar collapse section state (expanded/collapsed) across page navigations.
-export default class extends Controller {
+export default class SidebarController extends Controller {
   static SECTIONS_KEY = "sparc_sidebar_sections"
 
   connect() {
@@ -27,7 +27,7 @@ export default class extends Controller {
           el.classList.remove("show")
         }
       })
-    } catch (e) {
+    } catch {
       localStorage.removeItem(this.constructor.SECTIONS_KEY)
     }
   }
@@ -35,7 +35,7 @@ export default class extends Controller {
   saveSectionState(id, expanded) {
     const saved = localStorage.getItem(this.constructor.SECTIONS_KEY)
     let sections = {}
-    try { sections = saved ? JSON.parse(saved) : {} } catch (e) { /* ignore */ }
+    try { sections = saved ? JSON.parse(saved) : {} } catch { /* ignore */ }
     sections[id] = expanded
     localStorage.setItem(this.constructor.SECTIONS_KEY, JSON.stringify(sections))
   }
