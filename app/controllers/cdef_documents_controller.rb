@@ -88,7 +88,7 @@ class CdefDocumentsController < ApplicationController
     audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "json" })
     send_data json_data,
               filename:    "#{@cdef_document.name}_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -100,11 +100,11 @@ class CdefDocumentsController < ApplicationController
       audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@cdef_document.name}_oscal_cdef_#{Date.today}.json",
-                type:        "application/json",
+                type:        JSON_CONTENT_TYPE,
                 disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for CDEF #{@cdef_document.id}: #{result.errors.first(3).join('; ')}")
-      flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+      flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
       redirect_to cdef_document_path(@cdef_document, oscal_validation_failed: 1, oscal_format: "json")
     end
   end
@@ -116,7 +116,7 @@ class CdefDocumentsController < ApplicationController
     audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "oscal_validated" })
     send_data oscal_data,
               filename:    "#{@cdef_document.name}_oscal_component_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -127,7 +127,7 @@ class CdefDocumentsController < ApplicationController
     audit_log("cdef_document_exported", subject: @cdef_document, metadata: { name: @cdef_document.name, format: "oscal_unvalidated" })
     send_data oscal_data,
               filename:    "#{@cdef_document.name}_oscal_component_unvalidated_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -143,7 +143,7 @@ class CdefDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL YAML validation failed for CDEF #{@cdef_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to cdef_document_path(@cdef_document, oscal_validation_failed: 1, oscal_format: "yaml")
   end
 
@@ -159,7 +159,7 @@ class CdefDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL XML validation failed for CDEF #{@cdef_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to cdef_document_path(@cdef_document, oscal_validation_failed: 1, oscal_format: "xml")
   end
 
@@ -272,7 +272,7 @@ class CdefDocumentsController < ApplicationController
   def attach_profile
     if @cdef_document.cdef_controls.exists?
       flash[:notice] = "This component definition already has controls."
-      redirect_to(cdef_document_path(@cdef_document)) and return
+      redirect_to(cdef_document_path(@cdef_document)) && return
     end
 
     @profiles = ProfileDocument.where(lifecycle_status: "published")
@@ -496,14 +496,14 @@ class CdefDocumentsController < ApplicationController
     return if current_user&.has_permission?("converters.write")
 
     flash[:error] = "Not authorized to bulk-apply converters."
-    redirect_to cdef_document_path(@cdef_document) and return
+    redirect_to(cdef_document_path(@cdef_document)) && return
   end
 
   def refuse_if_aws_labs!
     return unless @cdef_document.aws_labs_source?
 
     flash[:error] = "Bulk-apply is disabled on AWS-Labs-sourced CDEFs. Clone first."
-    redirect_to cdef_document_path(@cdef_document) and return
+    redirect_to(cdef_document_path(@cdef_document)) && return
   end
 
   def control_resource_params
@@ -543,7 +543,7 @@ class CdefDocumentsController < ApplicationController
     # cloned_from_id so refreshes never touch it.
     if @cdef_document.aws_labs_source?
       flash[:error] = "This component definition was imported from AWS Labs and is read-only. Use 'Copy' to create an editable clone."
-      redirect_to cdef_document_path(@cdef_document) and return
+      redirect_to(cdef_document_path(@cdef_document)) && return
     end
 
     return unless @cdef_document.published_lifecycle?

@@ -4,6 +4,16 @@
 # Follows the same delegation pattern as PoamXmlParserService.
 #
 class SspXmlParserService
+  # OSCAL element/attribute names reused across the XML→hash walk.
+  RESPONSIBLE_PARTIES     = "responsible-parties".freeze
+  RESPONSIBLE_ROLES       = "responsible-roles".freeze
+  XMLNS_RESPONSIBLE_PARTY = "xmlns:responsible-party".freeze
+  XMLNS_RESPONSIBLE_ROLE  = "xmlns:responsible-role".freeze
+  ROLE_ID                 = "role-id".freeze
+  DATE_AUTHORIZED         = "date-authorized".freeze
+  COMPONENT_UUID          = "component-uuid".freeze
+  PROVIDED_UUID           = "provided-uuid".freeze
+  MEDIA_TYPE              = "media-type".freeze
   include ProgressTrackable
 
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
@@ -56,7 +66,7 @@ class SspXmlParserService
       "last-modified" => text(node, "last-modified"),
       "roles"         => node.xpath("xmlns:role", ns).map { |r| role_to_hash(r) },
       "parties"       => node.xpath("xmlns:party", ns).map { |p| party_to_hash(p) },
-      "responsible-parties" => node.xpath("xmlns:responsible-party", ns).map { |rp| responsible_party_to_hash(rp) }
+      RESPONSIBLE_PARTIES => node.xpath(XMLNS_RESPONSIBLE_PARTY, ns).map { |rp| responsible_party_to_hash(rp) }
     }.compact
   end
 
@@ -74,7 +84,7 @@ class SspXmlParserService
 
   def responsible_party_to_hash(node)
     {
-      "role-id"     => node["role-id"],
+      ROLE_ID     => node[ROLE_ID],
       "party-uuids" => node.xpath("xmlns:party-uuid", ns).map(&:text)
     }.compact
   end
@@ -99,11 +109,11 @@ class SspXmlParserService
       "system-information"      => system_information_to_hash(node.at_xpath("xmlns:system-information", ns)),
       "security-impact-level"   => security_impact_level_to_hash(node.at_xpath("xmlns:security-impact-level", ns)),
       "status"                  => status_to_hash(node.at_xpath("xmlns:status", ns)),
-      "date-authorized"         => text(node, "date-authorized"),
+      DATE_AUTHORIZED         => text(node, DATE_AUTHORIZED),
       "authorization-boundary"  => boundary_to_hash(node.at_xpath("xmlns:authorization-boundary", ns)),
       "network-architecture"    => boundary_to_hash(node.at_xpath("xmlns:network-architecture", ns)),
       "data-flow"               => boundary_to_hash(node.at_xpath("xmlns:data-flow", ns)),
-      "responsible-parties"     => node.xpath("xmlns:responsible-party", ns).map { |rp| responsible_party_to_hash(rp) },
+      RESPONSIBLE_PARTIES     => node.xpath(XMLNS_RESPONSIBLE_PARTY, ns).map { |rp| responsible_party_to_hash(rp) },
       "props"                   => parse_props(node),
       "links"                   => parse_links(node)
     }.compact
@@ -208,7 +218,7 @@ class SspXmlParserService
       "description"       => text(node, "description"),
       "purpose"           => text(node, "purpose"),
       "status"            => status_node ? { "state" => status_node["state"], "remarks" => text(status_node, "remarks") }.compact : nil,
-      "responsible-roles" => node.xpath("xmlns:responsible-role", ns).map { |rr| { "role-id" => rr["role-id"] } },
+      RESPONSIBLE_ROLES => node.xpath(XMLNS_RESPONSIBLE_ROLE, ns).map { |rr| { ROLE_ID => rr[ROLE_ID] } },
       "protocols"         => node.xpath("xmlns:protocol", ns).map { |p| protocol_to_hash(p) },
       "props"             => parse_props(node),
       "links"             => parse_links(node),
@@ -230,7 +240,7 @@ class SspXmlParserService
       "uuid"            => node["uuid"],
       "title"           => text(node, "title"),
       "party-uuid"      => text(node, "party-uuid"),
-      "date-authorized" => text(node, "date-authorized"),
+      DATE_AUTHORIZED => text(node, DATE_AUTHORIZED),
       "props"           => parse_props(node),
       "links"           => parse_links(node),
       "remarks"         => text(node, "remarks")
@@ -241,8 +251,8 @@ class SspXmlParserService
     {
       "uuid"                   => node["uuid"],
       "description"            => text(node, "description"),
-      "implemented-components" => node.xpath("xmlns:implemented-component", ns).map { |ic| { "component-uuid" => ic["component-uuid"] }.compact },
-      "responsible-parties"    => node.xpath("xmlns:responsible-party", ns).map { |rp| responsible_party_to_hash(rp) },
+      "implemented-components" => node.xpath("xmlns:implemented-component", ns).map { |ic| { COMPONENT_UUID => ic[COMPONENT_UUID] }.compact },
+      RESPONSIBLE_PARTIES    => node.xpath(XMLNS_RESPONSIBLE_PARTY, ns).map { |rp| responsible_party_to_hash(rp) },
       "props"                  => parse_props(node),
       "links"                  => parse_links(node),
       "remarks"                => text(node, "remarks")
@@ -266,7 +276,7 @@ class SspXmlParserService
       "props"          => parse_props(node),
       "links"          => parse_links(node),
       "set-parameters" => node.xpath("xmlns:set-parameter", ns).map { |sp| set_parameter_to_hash(sp) },
-      "responsible-roles" => node.xpath("xmlns:responsible-role", ns).map { |rr| { "role-id" => rr["role-id"] } },
+      RESPONSIBLE_ROLES => node.xpath(XMLNS_RESPONSIBLE_ROLE, ns).map { |rr| { ROLE_ID => rr[ROLE_ID] } },
       "statements"     => node.xpath("xmlns:statement", ns).map { |s| statement_to_hash(s) },
       "by-components"  => node.xpath("xmlns:by-component", ns).map { |bc| by_component_to_hash(bc) },
       "remarks"        => text(node, "remarks")
@@ -287,14 +297,14 @@ class SspXmlParserService
   def by_component_to_hash(node)
     impl_status = node.at_xpath("xmlns:implementation-status", ns)
     {
-      "component-uuid"       => node["component-uuid"],
+      COMPONENT_UUID       => node[COMPONENT_UUID],
       "uuid"                 => node["uuid"],
       "description"          => text(node, "description"),
       "implementation-status" => impl_status ? { "state" => impl_status["state"], "remarks" => text(impl_status, "remarks") }.compact : nil,
       "export"               => export_to_hash(node.at_xpath("xmlns:export", ns)),
       "inherited"            => node.xpath("xmlns:inherited", ns).map { |i| inherited_to_hash(i) },
       "satisfied"            => node.xpath("xmlns:satisfied", ns).map { |s| satisfied_to_hash(s) },
-      "responsible-roles"    => node.xpath("xmlns:responsible-role", ns).map { |rr| { "role-id" => rr["role-id"] } },
+      RESPONSIBLE_ROLES    => node.xpath(XMLNS_RESPONSIBLE_ROLE, ns).map { |rr| { ROLE_ID => rr[ROLE_ID] } },
       "set-parameters"       => node.xpath("xmlns:set-parameter", ns).map { |sp| set_parameter_to_hash(sp) },
       "props"                => parse_props(node),
       "links"                => parse_links(node),
@@ -307,14 +317,14 @@ class SspXmlParserService
     {
       "description"      => text(node, "description"),
       "provided"         => node.xpath("xmlns:provided", ns).map { |p| { "uuid" => p["uuid"], "description" => text(p, "description") }.compact },
-      "responsibilities" => node.xpath("xmlns:responsibility", ns).map { |r| { "uuid" => r["uuid"], "provided-uuid" => r["provided-uuid"], "description" => text(r, "description") }.compact }
+      "responsibilities" => node.xpath("xmlns:responsibility", ns).map { |r| { "uuid" => r["uuid"], PROVIDED_UUID => r[PROVIDED_UUID], "description" => text(r, "description") }.compact }
     }.compact
   end
 
   def inherited_to_hash(node)
     {
       "uuid"          => node["uuid"],
-      "provided-uuid" => node["provided-uuid"],
+      PROVIDED_UUID => node[PROVIDED_UUID],
       "description"   => text(node, "description")
     }.compact
   end
@@ -348,7 +358,7 @@ class SspXmlParserService
       "uuid"        => node["uuid"],
       "title"       => text(node, "title"),
       "description" => text(node, "description"),
-      "rlinks"      => node.xpath("xmlns:rlink", ns).map { |rl| { "href" => rl["href"], "media-type" => rl["media-type"] }.compact },
+      "rlinks"      => node.xpath("xmlns:rlink", ns).map { |rl| { "href" => rl["href"], MEDIA_TYPE => rl[MEDIA_TYPE] }.compact },
       "props"       => parse_props(node),
       "remarks"     => text(node, "remarks")
     }.compact
@@ -372,7 +382,7 @@ class SspXmlParserService
 
   def parse_links(node)
     node.xpath("xmlns:link", ns).map do |l|
-      { "href" => l["href"], "rel" => l["rel"], "media-type" => l["media-type"], "text" => l.text.presence }.compact
+      { "href" => l["href"], "rel" => l["rel"], MEDIA_TYPE => l[MEDIA_TYPE], "text" => l.text.presence }.compact
     end
   end
 end

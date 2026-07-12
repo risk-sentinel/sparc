@@ -1,6 +1,8 @@
 class CdefJsonParserService
   include BatchInsertable
   include ProgressTrackable
+
+  CONTROL_ID = "control-id".freeze
   include CciNistResolvable
   include BackMatterPromotable
 
@@ -89,9 +91,9 @@ class CdefJsonParserService
         (ci["implemented-requirements"] || []).each do |ir|
           idx = control_attrs.size
           attrs = {
-            control_id:     ir["control-id"],
-            title:          ir["control-id"],
-            control_family: ir["control-id"].to_s.split("-").first.upcase.presence,
+            control_id:     ir[CONTROL_ID],
+            title:          ir[CONTROL_ID],
+            control_family: ir[CONTROL_ID].to_s.split("-").first.upcase.presence,
             row_order:      row_order
           }
 

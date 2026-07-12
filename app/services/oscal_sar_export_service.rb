@@ -16,6 +16,12 @@ class OscalSarExportService
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
+  # OSCAL prop/element names reused across the export build.
+  TARGET_ID            = "target-id".freeze
+  REVIEWED_CONTROLS    = "reviewed-controls".freeze
+  RELATED_OBSERVATIONS = "related-observations".freeze
+  OBSERVATION_UUID     = "observation-uuid".freeze
+
   def initialize(sar_document)
     @document = sar_document
     eager_load_associations
@@ -151,7 +157,7 @@ class OscalSarExportService
       "description"       => result.description,
       "start"             => result.start_time&.iso8601,
       "end"               => result.end_time&.iso8601,
-      "reviewed-controls" => result.reviewed_controls_data.presence,
+      REVIEWED_CONTROLS => result.reviewed_controls_data.presence,
       "assessment-log"    => build_assessment_log(result.assessment_log_data),
       "attestations"      => result.attestations_data.presence,
       "observations"      => build_observations(result.sar_observations),
@@ -163,7 +169,7 @@ class OscalSarExportService
     }.compact
 
     # Ensure reviewed-controls has at minimum a placeholder if not present
-    entry["reviewed-controls"] ||= {
+    entry[REVIEWED_CONTROLS] ||= {
       "control-selections" => [ { "include-all" => {} } ]
     }
 
@@ -221,7 +227,7 @@ class OscalSarExportService
         "deadline"             => risk.deadline&.iso8601,
         "remediations"         => risk.remediations_data.presence,
         "risk-log"             => risk.risk_log_data.presence,
-        "related-observations" => build_risk_observations(risk),
+        RELATED_OBSERVATIONS => build_risk_observations(risk),
         "props"                => risk.props_data.presence,
         "links"                => risk.links_data.presence,
         "remarks"              => risk.remarks
@@ -232,7 +238,7 @@ class OscalSarExportService
   def build_risk_observations(risk)
     obs_records = risk.sar_risk_observations.to_a
     return nil if obs_records.empty?
-    obs_records.map { |ro| { "observation-uuid" => ro.sar_observation.uuid } }
+    obs_records.map { |ro| { OBSERVATION_UUID => ro.sar_observation.uuid } }
   end
 
   # ── Findings ─────────────────────────────────────────────────────
@@ -247,7 +253,7 @@ class OscalSarExportService
         "target"                        => build_finding_target(finding),
         "implementation-statement-uuid" => finding.implementation_statement_uuid,
         "origins"                       => finding.origins_data.presence,
-        "related-observations"          => build_finding_observations(finding),
+        RELATED_OBSERVATIONS          => build_finding_observations(finding),
         "related-risks"                 => build_finding_risks(finding),
         "props"                         => finding.props_data.presence,
         "links"                         => finding.links_data.presence,
@@ -265,10 +271,10 @@ class OscalSarExportService
     base = (finding.target_data || {}).except("needs_objective_link")
     if finding.ssp_control_statement_id.present? && finding.ssp_control_statement
       base["type"]      = "statement-id"
-      base["target-id"] = finding.ssp_control_statement.statement_id
+      base[TARGET_ID] = finding.ssp_control_statement.statement_id
     elsif finding.sar_control_objective_id.present? && finding.sar_control_objective
       base["type"]      = "objective-id"
-      base["target-id"] = finding.sar_control_objective.objective_id
+      base[TARGET_ID] = finding.sar_control_objective.objective_id
     end
     base.presence
   end
@@ -276,7 +282,7 @@ class OscalSarExportService
   def build_finding_observations(finding)
     obs_records = finding.sar_finding_observations.to_a
     return nil if obs_records.empty?
-    obs_records.map { |fo| { "observation-uuid" => fo.sar_observation.uuid } }
+    obs_records.map { |fo| { OBSERVATION_UUID => fo.sar_observation.uuid } }
   end
 
   def build_finding_risks(finding)
@@ -319,10 +325,10 @@ class OscalSarExportService
         "description"          => "Assessment finding for control #{control.control_id}: #{result_val}",
         "target"               => {
           "type"      => "objective-id",
-          "target-id" => control_id,
+          TARGET_ID => control_id,
           "status"    => { "state" => status_state }
         },
-        "related-observations" => [ { "observation-uuid" => obs_uuid } ]
+        RELATED_OBSERVATIONS => [ { OBSERVATION_UUID => obs_uuid } ]
       }
     end
 
@@ -332,7 +338,7 @@ class OscalSarExportService
       "description"        => "Synthesized from Excel assessment data.",
       "start"              => (@document.assessment_start || @document.created_at || Time.current).iso8601,
       "end"                => (@document.assessment_end || Time.current).iso8601,
-      "reviewed-controls"  => { "control-selections" => [ { "include-all" => {} } ] },
+      REVIEWED_CONTROLS  => { "control-selections" => [ { "include-all" => {} } ] },
       "observations"       => observations.presence,
       "findings"           => findings.presence
     }.compact

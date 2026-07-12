@@ -41,7 +41,7 @@ curl -fsSL "${RELEASE_URL}/checksums.txt"     -o "${TMPDIR}/checksums.txt"
 
 echo "→ verifying SHA-256 against release checksums.txt"
 EXPECTED_SHA="$(awk -v f="${ASSET}" '$2 == f { print $1 }' "${TMPDIR}/checksums.txt")"
-if [ -z "${EXPECTED_SHA}" ]; then
+if [[ -z "${EXPECTED_SHA}" ]]; then
   echo "::error:: ${ASSET} not listed in checksums.txt — release asset missing" >&2
   exit 1
 fi
@@ -52,7 +52,7 @@ else
   ACTUAL_SHA="$(shasum -a 256 "${TMPDIR}/${ASSET}" | awk '{ print $1 }')"
 fi
 
-if [ "${ACTUAL_SHA}" != "${EXPECTED_SHA}" ]; then
+if [[ "${ACTUAL_SHA}" != "${EXPECTED_SHA}" ]]; then
   echo "::error:: SHA-256 mismatch for ${ASSET}" >&2
   echo "  expected: ${EXPECTED_SHA}" >&2
   echo "  actual:   ${ACTUAL_SHA}" >&2
@@ -63,13 +63,13 @@ echo "→ extracting + installing to ${HDF_INSTALL_DIR}/hdf"
 tar -xzf "${TMPDIR}/${ASSET}" -C "${TMPDIR}/"
 
 # Tarball contents include the binary plus auxiliary docs; we only need the binary.
-if [ ! -f "${TMPDIR}/hdf" ]; then
+if [[ ! -f "${TMPDIR}/hdf" ]]; then
   echo "::error:: hdf binary not present in tarball" >&2
   exit 1
 fi
 
 # Use sudo only if the install dir isn't writable by the current user.
-if [ -w "${HDF_INSTALL_DIR}" ] || [ "${EUID:-$(id -u)}" -eq 0 ]; then
+if [[ -w "${HDF_INSTALL_DIR}" ]] || [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
   install -m 0755 "${TMPDIR}/hdf" "${HDF_INSTALL_DIR}/hdf"
 else
   sudo install -m 0755 "${TMPDIR}/hdf" "${HDF_INSTALL_DIR}/hdf"

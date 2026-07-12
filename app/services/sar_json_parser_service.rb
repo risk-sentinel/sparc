@@ -9,6 +9,10 @@ class SarJsonParserService
   include ProgressTrackable
   include BackMatterPromotable
 
+  # OSCAL keys reused across the JSON walk.
+  ASSESSMENT_LOG = "assessment-log".freeze
+  TARGET_ID      = "target-id".freeze
+
   def initialize(document, file_path)
     @document  = document
     @file_path = file_path
@@ -106,7 +110,7 @@ class SarJsonParserService
         start_time:             parse_datetime(result["start"]) || Time.current,
         end_time:               parse_datetime(result["end"]),
         reviewed_controls_data: result["reviewed-controls"] || {},
-        assessment_log_data:    result["assessment-log"].is_a?(Hash) ? (result["assessment-log"]["entries"] || []) : (result["assessment-log"] || []),
+        assessment_log_data:    result[ASSESSMENT_LOG].is_a?(Hash) ? (result[ASSESSMENT_LOG]["entries"] || []) : (result[ASSESSMENT_LOG] || []),
         attestations_data:      result["attestations"] || [],
         props_data:             result["props"] || [],
         links_data:             result["links"] || [],
@@ -201,7 +205,7 @@ class SarJsonParserService
       # here because the SarControl record for the objective's parent
       # control may not exist yet.
       target_data = target.dup
-      if target["type"].to_s.downcase == "objective-id" && target["target-id"].present?
+      if target["type"].to_s.downcase == "objective-id" && target[TARGET_ID].present?
         target_data["needs_objective_link"] = true
       end
 
@@ -253,7 +257,7 @@ class SarJsonParserService
 
       result.sar_findings.includes(:sar_observations).each do |finding|
         target = finding.target_data || {}
-        target_id = target["target-id"]
+        target_id = target[TARGET_ID]
         next if target_id.blank?
 
         ctrl_id, objective_id = split_objective_target(target_id)
@@ -380,6 +384,7 @@ class SarJsonParserService
     when "not-satisfied", "fail" then "Not Implemented"
     when "partial" then "Partially Implemented"
     when "reviewed" then "Reviewed"
+    else nil # unrecognized OSCAL state → no mapped status
     end
   end
 
@@ -541,7 +546,7 @@ class SarJsonParserService
 
     @document.sar_results.each do |result|
       result.sar_findings.where(ssp_control_statement_id: nil).find_each do |finding|
-        target_id = finding.target_data&.dig("target-id")
+        target_id = finding.target_data&.dig(TARGET_ID)
         next if target_id.blank?
         match_id = statements_by_id[target_id]
         finding.update_columns(ssp_control_statement_id: match_id) if match_id

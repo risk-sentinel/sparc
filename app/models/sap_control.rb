@@ -1,4 +1,6 @@
 class SapControl < ApplicationRecord
+  IN_PROGRESS = "in-progress".freeze
+
   belongs_to :sap_document
   has_many :sap_control_fields, dependent: :delete_all
   has_many :sap_control_objectives, dependent: :delete_all
@@ -36,10 +38,10 @@ class SapControl < ApplicationRecord
   def objective_status_rollup(statuses = sap_control_objectives.pluck(:status))
     return "not_assessed" if statuses.empty? || statuses.all?(&:nil?)
     return "failed"       if statuses.include?("failed")
-    return "in-progress"  if statuses.include?("in-progress")
+    return IN_PROGRESS  if statuses.include?(IN_PROGRESS)
     return "pending"      if statuses.any? { |s| %w[pending planned].include?(s) }
     return "passing"      if statuses.all? { |s| %w[passing not_applicable].include?(s) }
-    "in-progress"
+    IN_PROGRESS
   end
 
   def objectives_count

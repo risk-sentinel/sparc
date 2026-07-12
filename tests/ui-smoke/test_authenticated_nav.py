@@ -18,11 +18,9 @@ Requires SPARC_SMOKE_SA_TOKEN; skipped otherwise. Run both browsers:
 
 from __future__ import annotations
 
-import re
-
 import pytest
 
-from helpers import collect_console_errors, csp_violations, record_csp
+from helpers import collect_console_errors, csp_violations, first_show_href, record_csp
 from pages import MUST_EXIST_PAGES, SHOW_PAGES
 
 pytestmark = pytest.mark.authenticated
@@ -86,17 +84,9 @@ def test_navigation_show_page_loads_clean(authed_page, name, index_path, pattern
     )
     authed_page.wait_for_load_state("networkidle")
 
-    rx = re.compile(pattern)
-    href = next(
-        (
-            h
-            for h in authed_page.eval_on_selector_all(
-                "a[href]", "els => els.map(e => e.getAttribute('href'))"
-            )
-            if h and rx.match(h.split("?")[0])
-        ),
-        None,
-    )
+    # SPARC document URLs are slug-based (FriendlyId), not numeric — use the
+    # slug-aware discovery helper rather than the legacy numeric `pattern`.
+    href = first_show_href(authed_page, index_path, index_path)
     if not href:
         pytest.skip(f"no {name} record found on this deployment to validate")
 

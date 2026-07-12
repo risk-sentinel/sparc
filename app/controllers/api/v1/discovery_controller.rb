@@ -9,6 +9,19 @@
 #   PM-5  Information System Inventory — machine-readable API surface catalog
 #
 class Api::V1::DiscoveryController < Api::V1::BaseController
+  # API permission scopes (mirror Role::PERMISSION_KEYS) — referenced across
+  # the endpoint inventory below.
+  SCOPE_SSP_READ  = "ssp.read".freeze
+  SCOPE_SSP_WRITE = "ssp.write".freeze
+  SCOPE_SAR_READ  = "sar.read".freeze
+  SCOPE_SAR_WRITE = "sar.write".freeze
+  SCOPE_CATALOGS_READ  = "catalogs.read".freeze
+  SCOPE_CATALOGS_WRITE = "catalogs.write".freeze
+  SCOPE_PROFILES_READ  = "profiles.read".freeze
+  SCOPE_PROFILES_WRITE = "profiles.write".freeze
+  SCOPE_AB_READ  = "authorization_boundaries.read".freeze
+  SCOPE_AB_WRITE = "authorization_boundaries.write".freeze
+
   # GET /api/v1/available
   def available
     endpoints = scoped_endpoints_for(current_user)
@@ -73,36 +86,36 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
     # --- SSP Documents ---
     { path: "/api/v1/ssp_documents", methods: %w[GET POST],
       description: "System Security Plans",
-      permission_read: "ssp.read", permission_write: "ssp.write", admin_only: false },
+      permission_read: SCOPE_SSP_READ, permission_write: SCOPE_SSP_WRITE, admin_only: false },
     { path: "/api/v1/ssp_documents/:slug", methods: %w[GET PUT DELETE],
       description: "Single SSP document",
-      permission_read: "ssp.read", permission_write: "ssp.write", admin_only: false },
+      permission_read: SCOPE_SSP_READ, permission_write: SCOPE_SSP_WRITE, admin_only: false },
     { path: "/api/v1/ssp_documents/convert", methods: %w[POST],
       description: "Parse Excel file into SSP",
-      permission_read: nil, permission_write: "ssp.write", admin_only: false },
+      permission_read: nil, permission_write: SCOPE_SSP_WRITE, admin_only: false },
     { path: "/api/v1/ssp_documents/:slug/update_fields", methods: %w[PUT],
       description: "Bulk update SSP control fields",
-      permission_read: nil, permission_write: "ssp.write", admin_only: false },
+      permission_read: nil, permission_write: SCOPE_SSP_WRITE, admin_only: false },
     { path: "/api/v1/ssp_documents/:slug/export", methods: %w[GET],
       description: "Export SSP as JSON",
-      permission_read: "ssp.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_SSP_READ, permission_write: nil, admin_only: false },
 
     # --- SAR Documents ---
     { path: "/api/v1/sar_documents", methods: %w[GET POST],
       description: "Security Assessment Results",
-      permission_read: "sar.read", permission_write: "sar.write", admin_only: false },
+      permission_read: SCOPE_SAR_READ, permission_write: SCOPE_SAR_WRITE, admin_only: false },
     { path: "/api/v1/sar_documents/:slug", methods: %w[GET PUT DELETE],
       description: "Single SAR document",
-      permission_read: "sar.read", permission_write: "sar.write", admin_only: false },
+      permission_read: SCOPE_SAR_READ, permission_write: SCOPE_SAR_WRITE, admin_only: false },
     { path: "/api/v1/sar_documents/convert", methods: %w[POST],
       description: "Parse Excel file into SAR",
-      permission_read: nil, permission_write: "sar.write", admin_only: false },
+      permission_read: nil, permission_write: SCOPE_SAR_WRITE, admin_only: false },
     { path: "/api/v1/sar_documents/:slug/update_fields", methods: %w[PUT],
       description: "Bulk update SAR control fields",
-      permission_read: nil, permission_write: "sar.write", admin_only: false },
+      permission_read: nil, permission_write: SCOPE_SAR_WRITE, admin_only: false },
     { path: "/api/v1/sar_documents/:slug/export", methods: %w[GET],
       description: "Export SAR as JSON",
-      permission_read: "sar.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_SAR_READ, permission_write: nil, admin_only: false },
 
     # --- SAP Documents ---
     { path: "/api/v1/sap_documents", methods: %w[GET POST],
@@ -123,26 +136,26 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
     # --- Control Catalogs ---
     { path: "/api/v1/control_catalogs", methods: %w[GET POST],
       description: "NIST and custom control catalogs",
-      permission_read: "catalogs.read", permission_write: "catalogs.write", admin_only: true },
+      permission_read: SCOPE_CATALOGS_READ, permission_write: SCOPE_CATALOGS_WRITE, admin_only: true },
     { path: "/api/v1/control_catalogs/:id", methods: %w[GET PUT DELETE],
       description: "Single control catalog",
-      permission_read: "catalogs.read", permission_write: "catalogs.write", admin_only: true },
+      permission_read: SCOPE_CATALOGS_READ, permission_write: SCOPE_CATALOGS_WRITE, admin_only: true },
 
     # --- Profile Documents ---
     { path: "/api/v1/profile_documents", methods: %w[GET POST],
       description: "Baselines and resolved profiles",
-      permission_read: "profiles.read", permission_write: "profiles.write", admin_only: false },
+      permission_read: SCOPE_PROFILES_READ, permission_write: SCOPE_PROFILES_WRITE, admin_only: false },
     { path: "/api/v1/profile_documents/:slug", methods: %w[GET PUT DELETE],
       description: "Single profile document",
-      permission_read: "profiles.read", permission_write: "profiles.write", admin_only: false },
+      permission_read: SCOPE_PROFILES_READ, permission_write: SCOPE_PROFILES_WRITE, admin_only: false },
 
     # --- Baseline Parameters ---
     { path: "/api/v1/profile_documents/:slug/parameters", methods: %w[GET PUT],
       description: "Baseline parameter and enumeration management",
-      permission_read: "profiles.read", permission_write: "profiles.write", admin_only: false },
+      permission_read: SCOPE_PROFILES_READ, permission_write: SCOPE_PROFILES_WRITE, admin_only: false },
     { path: "/api/v1/profile_documents/:slug/parameters/export", methods: %w[GET],
       description: "Export baseline parameters as JSON, YAML, or XML",
-      permission_read: "profiles.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_PROFILES_READ, permission_write: nil, admin_only: false },
 
     # --- CDEF Documents ---
     { path: "/api/v1/cdef_documents", methods: %w[GET POST],
@@ -163,38 +176,38 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
     # --- KSI Catalog ---
     { path: "/api/v1/ksi_catalog/themes", methods: %w[GET],
       description: "FedRAMP 20x KSI themes",
-      permission_read: "catalogs.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
     { path: "/api/v1/ksi_catalog/indicators", methods: %w[GET],
       description: "FedRAMP 20x Key Security Indicators",
-      permission_read: "catalogs.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
     { path: "/api/v1/ksi_catalog/indicators/:id", methods: %w[GET],
       description: "Single KSI indicator with mapped NIST controls",
-      permission_read: "catalogs.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
     { path: "/api/v1/ksi_catalog/mappings", methods: %w[GET],
       description: "KSI-to-NIST 800-53 control mappings",
-      permission_read: "catalogs.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_CATALOGS_READ, permission_write: nil, admin_only: false },
 
     # --- Authorization Boundaries ---
     { path: "/api/v1/authorization_boundaries", methods: %w[GET POST],
       description: "Authorization boundaries",
-      permission_read: "authorization_boundaries.read", permission_write: "authorization_boundaries.write", admin_only: false },
+      permission_read: SCOPE_AB_READ, permission_write: SCOPE_AB_WRITE, admin_only: false },
     { path: "/api/v1/authorization_boundaries/:id", methods: %w[GET PUT DELETE],
       description: "Single authorization boundary",
-      permission_read: "authorization_boundaries.read", permission_write: "authorization_boundaries.write", admin_only: false },
+      permission_read: SCOPE_AB_READ, permission_write: SCOPE_AB_WRITE, admin_only: false },
 
     # --- KSI Validations ---
     { path: "/api/v1/authorization_boundaries/:id/ksi_validations", methods: %w[GET POST],
       description: "KSI validation records for an authorization boundary",
-      permission_read: "authorization_boundaries.read", permission_write: "authorization_boundaries.write", admin_only: false },
+      permission_read: SCOPE_AB_READ, permission_write: SCOPE_AB_WRITE, admin_only: false },
     { path: "/api/v1/authorization_boundaries/:id/ksi_validations/:vid", methods: %w[GET PUT DELETE],
       description: "Single KSI validation record",
-      permission_read: "authorization_boundaries.read", permission_write: "authorization_boundaries.write", admin_only: false },
+      permission_read: SCOPE_AB_READ, permission_write: SCOPE_AB_WRITE, admin_only: false },
     { path: "/api/v1/authorization_boundaries/:id/ksi_validations/summary", methods: %w[GET],
       description: "KSI validation summary for an authorization boundary",
-      permission_read: "authorization_boundaries.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_AB_READ, permission_write: nil, admin_only: false },
     { path: "/api/v1/authorization_boundaries/:id/ksi_validations/export", methods: %w[GET],
       description: "Export KSI compliance report (JSON, YAML, XML)",
-      permission_read: "authorization_boundaries.read", permission_write: nil, admin_only: false },
+      permission_read: SCOPE_AB_READ, permission_write: nil, admin_only: false },
 
     # --- Users ---
     { path: "/api/v1/users", methods: %w[GET POST],

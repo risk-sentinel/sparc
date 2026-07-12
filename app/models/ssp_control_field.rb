@@ -17,10 +17,12 @@ class SspControlField < ApplicationRecord
     notes,
   ].freeze
 
+  NOT_APPLICABLE = "Not Applicable".freeze
+
   VALID_STATUSES = [
     "Deferred",
     "Implemented",
-    "Not Applicable",
+    NOT_APPLICABLE,
     "Will Not Implement"
   ].freeze
 
@@ -36,14 +38,14 @@ class SspControlField < ApplicationRecord
     "Implemented",
     "Configured",
     "Documented",
-    "Not Applicable"
+    NOT_APPLICABLE
   ].freeze
 
   CONTROL_TYPE_VALUES = [
     "System Specific",
     "Hybrid — partially inherited",
     "Inherited from provider",
-    "Not Applicable"
+    NOT_APPLICABLE
   ].freeze
 
   # Display order for the view mode (editable fields first, then supplemental).

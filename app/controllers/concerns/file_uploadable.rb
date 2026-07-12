@@ -32,7 +32,7 @@ module FileUploadable
     if uploaded_file.nil?
       flash[:error] = "Please select a file to upload"
       set_document_ivar(type_key, document_class.new)
-      render :new and return
+      render(:new) && return
     end
 
     file_type = detect_file_type_from_registry(uploaded_file.original_filename, registry)
@@ -197,11 +197,13 @@ module FileUploadable
   # is allowed for .xml/.xlsx where Marcel commonly can't pin a more
   # specific type, but NOT for .json/.yaml/.xls — those have stable
   # magic bytes when valid, so octet-stream there indicates garbage.
+  TEXT_PLAIN = "text/plain".freeze
+
   EXPECTED_MIME_BY_EXT = {
-    ".json"  => %w[application/json text/plain text/json],
-    ".xml"   => %w[application/xml text/xml application/octet-stream text/plain],
-    ".yaml"  => %w[text/plain text/yaml application/yaml application/x-yaml],
-    ".yml"   => %w[text/plain text/yaml application/yaml application/x-yaml],
+    ".json"  => [ "application/json", TEXT_PLAIN, "text/json" ],
+    ".xml"   => [ "application/xml", "text/xml", "application/octet-stream", TEXT_PLAIN ],
+    ".yaml"  => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml" ],
+    ".yml"   => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml" ],
     ".xlsx"  => %w[application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/zip application/octet-stream],
     ".xls"   => %w[application/vnd.ms-excel application/x-ole-storage]
   }.freeze
@@ -254,6 +256,8 @@ module FileUploadable
         YAML.safe_load(content, permitted_classes: [ Date, Time ])
       when "xml", "xccdf"
         XmlSecurity.parse(content, strict: true)
+      else
+        nil # other file types skip the structural pre-parse (validated upstream)
       end
     end
   rescue Timeout::Error

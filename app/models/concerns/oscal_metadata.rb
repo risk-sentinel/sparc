@@ -75,6 +75,24 @@ module OscalMetadata
   #   default_version: fallback version string (default: "1.0.0")
   #   default_roles: array of default role hashes
   #   default_parties: array of default party hashes
+  # Defensive parse of the `published` value into an ISO-8601 string, or nil.
+  # If the stored value isn't a valid datetime (e.g. legacy "true" bool-string),
+  # return nil rather than emit a value that fails OSCAL metadata.published
+  # schema validation (#584). Extracted to bound #build_oscal_metadata complexity.
+  def oscal_published_timestamp
+    return nil unless respond_to?(:published) && published.present?
+
+    if published.is_a?(String)
+      begin
+        Time.parse(published).iso8601
+      rescue ArgumentError, TypeError
+        nil
+      end
+    else
+      published.iso8601
+    end
+  end
+
   def build_oscal_metadata(default_version: "1.0.0", default_roles: nil, default_parties: nil)
     base = {
       "title"         => name,
@@ -83,23 +101,8 @@ module OscalMetadata
       "last-modified" => updated_at&.iso8601 || Time.current.iso8601
     }
 
-    # Include published timestamp if available. Defensive parse — if
-    # the stored value isn't a valid datetime (e.g. legacy "true"
-    # bool-string), skip rather than emit a value that fails OSCAL
-    # metadata.published schema validation (#584).
-    if respond_to?(:published) && published.present?
-      iso =
-        if published.is_a?(String)
-          begin
-            Time.parse(published).iso8601
-          rescue ArgumentError, TypeError
-            nil
-          end
-        else
-          published.iso8601
-        end
-      base["published"] = iso if iso
-    end
+    iso = oscal_published_timestamp
+    base["published"] = iso if iso
 
     # Allowlist filter: METADATA_EXTRA_KEYS are the OSCAL spec metadata
     # fields. Anything else parked in metadata_extra (#451) — internal

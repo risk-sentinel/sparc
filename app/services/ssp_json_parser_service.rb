@@ -9,6 +9,18 @@ class SspJsonParserService
   include ProgressTrackable
   include BackMatterPromotable
 
+  # OSCAL keys / repeated messages reused across the JSON walk.
+  IMPLEMENTATION_STATUS    = "implementation-status".freeze
+  RESPONSIBLE_ROLES        = "responsible-roles".freeze
+  BY_COMPONENTS            = "by-components".freeze
+  DATE_AUTHORIZED          = "date-authorized".freeze
+  SECURITY_IMPACT_LEVEL    = "security-impact-level".freeze
+  CONFIDENTIALITY_IMPACT   = "confidentiality-impact".freeze
+  INTEGRITY_IMPACT         = "integrity-impact".freeze
+  AVAILABILITY_IMPACT      = "availability-impact".freeze
+  ADJUSTMENT_JUSTIFICATION = "adjustment-justification".freeze
+  NO_DESCRIPTION           = "No description provided.".freeze
+
   def initialize(document, file_path)
     @document  = document
     @file_path = file_path
@@ -77,13 +89,13 @@ class SspJsonParserService
       system_name_short:                  sc["system-name-short"],
       security_sensitivity_level:         sc["security-sensitivity-level"],
       system_status:                      sc.dig("status", "state") || "operational",
-      date_authorized:                    sc["date-authorized"],
+      date_authorized:                    sc[DATE_AUTHORIZED],
       authorization_boundary_description: extract_text(sc.dig("authorization-boundary", "description")),
       network_architecture_description:   extract_text(sc.dig("network-architecture", "description")),
       data_flow_description:              extract_text(sc.dig("data-flow", "description")),
-      security_objective_confidentiality: sc.dig("security-impact-level", "security-objective-confidentiality"),
-      security_objective_integrity:       sc.dig("security-impact-level", "security-objective-integrity"),
-      security_objective_availability:    sc.dig("security-impact-level", "security-objective-availability")
+      security_objective_confidentiality: sc.dig(SECURITY_IMPACT_LEVEL, "security-objective-confidentiality"),
+      security_objective_integrity:       sc.dig(SECURITY_IMPACT_LEVEL, "security-objective-integrity"),
+      security_objective_availability:    sc.dig(SECURITY_IMPACT_LEVEL, "security-objective-availability")
     )
 
     # Update name from system-name if present
@@ -97,16 +109,16 @@ class SspJsonParserService
       @document.ssp_information_types.create!(
         uuid:                              it["uuid"] || SecureRandom.uuid,
         title:                             it["title"] || "Information Type",
-        description:                       extract_text(it["description"]) || "No description provided.",
-        confidentiality_impact_base:       it.dig("confidentiality-impact", "base"),
-        confidentiality_impact_selected:   it.dig("confidentiality-impact", "selected"),
-        confidentiality_impact_adjustment: it.dig("confidentiality-impact", "adjustment-justification"),
-        integrity_impact_base:             it.dig("integrity-impact", "base"),
-        integrity_impact_selected:         it.dig("integrity-impact", "selected"),
-        integrity_impact_adjustment:       it.dig("integrity-impact", "adjustment-justification"),
-        availability_impact_base:          it.dig("availability-impact", "base"),
-        availability_impact_selected:      it.dig("availability-impact", "selected"),
-        availability_impact_adjustment:    it.dig("availability-impact", "adjustment-justification"),
+        description:                       extract_text(it["description"]) || NO_DESCRIPTION,
+        confidentiality_impact_base:       it.dig(CONFIDENTIALITY_IMPACT, "base"),
+        confidentiality_impact_selected:   it.dig(CONFIDENTIALITY_IMPACT, "selected"),
+        confidentiality_impact_adjustment: it.dig(CONFIDENTIALITY_IMPACT, ADJUSTMENT_JUSTIFICATION),
+        integrity_impact_base:             it.dig(INTEGRITY_IMPACT, "base"),
+        integrity_impact_selected:         it.dig(INTEGRITY_IMPACT, "selected"),
+        integrity_impact_adjustment:       it.dig(INTEGRITY_IMPACT, ADJUSTMENT_JUSTIFICATION),
+        availability_impact_base:          it.dig(AVAILABILITY_IMPACT, "base"),
+        availability_impact_selected:      it.dig(AVAILABILITY_IMPACT, "selected"),
+        availability_impact_adjustment:    it.dig(AVAILABILITY_IMPACT, ADJUSTMENT_JUSTIFICATION),
         categorizations_data:              it["categorizations"] || [],
         props_data:                        it["props"] || [],
         links_data:                        it["links"] || []
@@ -134,11 +146,11 @@ class SspJsonParserService
         uuid:                   comp["uuid"],
         component_type:         comp["type"],
         title:                  comp["title"] || "Untitled Component",
-        description:            extract_text(comp["description"]) || "No description provided.",
+        description:            extract_text(comp["description"]) || NO_DESCRIPTION,
         purpose:                comp["purpose"],
         status_state:           status["state"] || "operational",
         status_remarks:         status["remarks"],
-        responsible_roles_data: comp["responsible-roles"] || [],
+        responsible_roles_data: comp[RESPONSIBLE_ROLES] || [],
         protocols_data:         comp["protocols"] || [],
         props_data:             comp["props"] || [],
         links_data:             comp["links"] || [],
@@ -173,7 +185,7 @@ class SspJsonParserService
         uuid:            auth["uuid"] || SecureRandom.uuid,
         title:           auth["title"],
         party_uuid:      auth["party-uuid"],
-        date_authorized: auth["date-authorized"],
+        date_authorized: auth[DATE_AUTHORIZED],
         props_data:      auth["props"] || [],
         links_data:      auth["links"] || [],
         remarks:         auth["remarks"]
@@ -204,7 +216,7 @@ class SspJsonParserService
     # `crm_type.presence` is never nil — explicitly pick based on href
     # resolution. For existing records, keep whatever the user configured.
     la.crm_type          = crm_type if la.new_record?
-    la.date_authorized ||= parse_date(auth["date-authorized"])
+    la.date_authorized ||= parse_date(auth[DATE_AUTHORIZED])
     la.description     ||= extract_text(auth["remarks"])
     la.metadata        = (la.metadata || {}).merge(
       "party_uuid" => auth["party-uuid"],
@@ -243,7 +255,7 @@ class SspJsonParserService
     items.each do |item|
       @document.ssp_inventory_items.create!(
         uuid:                       item["uuid"] || SecureRandom.uuid,
-        description:                extract_text(item["description"]) || "No description provided.",
+        description:                extract_text(item["description"]) || NO_DESCRIPTION,
         implemented_components_data: item["implemented-components"] || [],
         responsible_parties_data:    item["responsible-parties"] || [],
         props_data:                  item["props"] || [],
@@ -265,7 +277,7 @@ class SspJsonParserService
       )
 
       parse_implemented_requirement_props(ctrl, ir)
-      parse_by_components(ctrl, ir["by-components"] || [], component_map)
+      parse_by_components(ctrl, ir[BY_COMPONENTS] || [], component_map)
       parse_statements_as_fields(ctrl, ir)
       parse_remarks_as_field(ctrl, ir)
     end
@@ -292,11 +304,11 @@ class SspJsonParserService
         ssp_component:         component,
         uuid:                  bc["uuid"] || SecureRandom.uuid,
         description:           extract_text(bc["description"]),
-        implementation_status: bc.dig("implementation-status", "state") || bc["implementation-status"],
+        implementation_status: bc.dig(IMPLEMENTATION_STATUS, "state") || bc[IMPLEMENTATION_STATUS],
         export_data:           bc["export"] || {},
         inherited_data:        bc["inherited"] || [],
         satisfied_data:        bc["satisfied"] || [],
-        responsible_roles_data: bc["responsible-roles"] || [],
+        responsible_roles_data: bc[RESPONSIBLE_ROLES] || [],
         set_parameters_data:   bc["set-parameters"] || [],
         props_data:            bc["props"] || [],
         links_data:            bc["links"] || [],
@@ -314,7 +326,7 @@ class SspJsonParserService
       stmt_id = stmt["statement-id"]
       next if stmt_id.blank?
 
-      narrative = stmt["remarks"] || stmt.dig("by-components", 0, "description")
+      narrative = stmt["remarks"] || stmt.dig(BY_COMPONENTS, 0, "description")
       uuid = stmt["uuid"].presence ||
              OscalUuidService.derived(ctrl.uuid, "ssp-statement", stmt_id)
 
@@ -322,22 +334,14 @@ class SspJsonParserService
       # marker when by-components[].satisfied[] or .responsibilities[]
       # are present. The tag lets LeveragedAuthorization#inheritable_statements
       # query-match on set_parameters_data.
-      set_params = Array(stmt["set-parameters"]).dup
-      (stmt["by-components"] || []).each do |bc|
-        if Array(bc["satisfied"]).any?
-          set_params << { "tag" => "provided" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "provided" }
-        end
-        if Array(bc["responsibilities"]).any?
-          set_params << { "tag" => "responsibility" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "responsibility" }
-        end
-      end
+      set_params = statement_set_parameters(stmt)
 
       record = ctrl.ssp_control_statements.create!(
         uuid:                   uuid,
         statement_id:           stmt_id,
         implementation_prose:   narrative,
         remarks:                stmt["remarks"],
-        responsible_roles_data: stmt["responsible-roles"] || [],
+        responsible_roles_data: stmt[RESPONSIBLE_ROLES] || [],
         set_parameters_data:    set_params,
         row_order:              idx
       )
@@ -347,23 +351,45 @@ class SspJsonParserService
       # SSP source). The href carries the source UUID; we defer actual
       # source-record resolution to a second pass in `link_inheritances!`
       # because the source may be imported later in the same run.
-      @pending_inheritance_links ||= []
-      Array(stmt["links"]).each do |link|
-        next unless link.is_a?(Hash)
-        rel = link["rel"]
-        next unless %w[implements inherited].include?(rel)
-        href = link["href"].to_s
-        source_uuid = extract_uuid(href)
-        next if source_uuid.blank?
-
-        @pending_inheritance_links << {
-          target_id: record.id,
-          source_uuid: source_uuid,
-          rel: rel
-        }
-      end
+      queue_inheritance_links(record, stmt)
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
       Rails.logger.warn("[SspJsonParser] skipping statement #{stmt_id}: #{e.message}")
+    end
+  end
+
+  # #396: tag set-parameters with provided/responsibility markers when the
+  # statement's by-components carry satisfied[]/responsibilities[]. Extracted
+  # from #parse_statements_as_fields to bound its cognitive complexity.
+  def statement_set_parameters(stmt)
+    set_params = Array(stmt["set-parameters"]).dup
+    (stmt[BY_COMPONENTS] || []).each do |bc|
+      if Array(bc["satisfied"]).any?
+        set_params << { "tag" => "provided" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "provided" }
+      end
+      if Array(bc["responsibilities"]).any?
+        set_params << { "tag" => "responsibility" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "responsibility" }
+      end
+    end
+    set_params
+  end
+
+  # #396 + #398: queue inheritance links from statements[].links[] for the
+  # second-pass resolution in #link_inheritances!.
+  def queue_inheritance_links(record, stmt)
+    @pending_inheritance_links ||= []
+    Array(stmt["links"]).each do |link|
+      next unless link.is_a?(Hash)
+      rel = link["rel"]
+      next unless %w[implements inherited].include?(rel)
+      href = link["href"].to_s
+      source_uuid = extract_uuid(href)
+      next if source_uuid.blank?
+
+      @pending_inheritance_links << {
+        target_id: record.id,
+        source_uuid: source_uuid,
+        rel: rel
+      }
     end
   end
 
@@ -420,7 +446,7 @@ class SspJsonParserService
 
   def prop_name_to_field(oscal_name)
     {
-      "implementation-status"  => "status",
+      IMPLEMENTATION_STATUS  => "status",
       "control-type"           => "control_application",
       "provided-as"            => "coverage_level",
       "control-origination"    => "control_type",

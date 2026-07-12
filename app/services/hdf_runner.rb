@@ -23,6 +23,7 @@ require "stringio"
 #   SI-2 Flaw Remediation     (amendment apply/verify integrate with the gate)
 #   SA-11 Developer Testing   (validate against schema before persistence)
 class HdfRunner
+  JSON_FLAG = "--json".freeze
   PINNED_VERSION = "3.2.0".freeze
   DEFAULT_BINARY = "hdf".freeze
 
@@ -53,7 +54,7 @@ class HdfRunner
     flags = [ "--max-size", max_size_mb.to_s ]
     flags += [ "--from", from ] if from
     flags += [ "--to",   to   ] if to
-    flags << "--json"
+    flags << JSON_FLAG
     invoke_json("convert", flags, input: input)
   end
 
@@ -66,12 +67,12 @@ class HdfRunner
 
   # Display assessment metadata (generator tool, profile, target, timestamp).
   def info(input)
-    invoke_json("info", [ "--json" ], input: input)
+    invoke_json("info", [ JSON_FLAG ], input: input)
   end
 
   # Pass/fail/error/not-applicable counts.
   def stats(input)
-    invoke_json("stats", [ "--json" ], input: input)
+    invoke_json("stats", [ JSON_FLAG ], input: input)
   end
 
   # Schema-validate an Amendments document. Raises on failure.
@@ -101,7 +102,7 @@ class HdfRunner
 
   # Binary version metadata; cached per instance.
   def version
-    @version ||= invoke_json("version", [ "--json" ])
+    @version ||= invoke_json("version", [ JSON_FLAG ])
   end
 
   # Convenience for callers that want to assert the embedded binary

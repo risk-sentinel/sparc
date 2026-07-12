@@ -5,6 +5,7 @@ class SarDocumentsController < ApplicationController
   include OscalExportable
 
   CONTROLS_PER_PAGE = 50
+  NO_DESCRIPTION = "No description provided.".freeze
 
   before_action :set_sar_document, only: [
     :show, :update, :destroy, :download_json, :download_excel,
@@ -200,7 +201,7 @@ class SarDocumentsController < ApplicationController
 
     send_data json_data,
               filename:    "#{@sar_document.name}_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -224,11 +225,11 @@ class SarDocumentsController < ApplicationController
 
       send_data service.export,
                 filename:    "#{@sar_document.name}_oscal_sar_#{Date.today}.json",
-                type:        "application/json",
+                type:        JSON_CONTENT_TYPE,
                 disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for SAR #{@sar_document.id}: #{result.errors.first(3).join('; ')}")
-      flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+      flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
       redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "json")
     end
   end
@@ -241,7 +242,7 @@ class SarDocumentsController < ApplicationController
 
     send_data oscal_data,
               filename:    "#{@sar_document.name}_oscal_ar_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -253,7 +254,7 @@ class SarDocumentsController < ApplicationController
 
     send_data oscal_data,
               filename:    "#{@sar_document.name}_oscal_ar_unvalidated_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -270,7 +271,7 @@ class SarDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL YAML validation failed for SAR #{@sar_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "yaml")
   end
 
@@ -287,7 +288,7 @@ class SarDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL XML validation failed for SAR #{@sar_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "xml")
   end
 
@@ -516,7 +517,7 @@ class SarDocumentsController < ApplicationController
         record = result.sar_observations.create!(
           uuid: SecureRandom.uuid,
           title: o_params[:title].presence || "Observation",
-          description: o_params[:description].presence || "No description provided.",
+          description: o_params[:description].presence || NO_DESCRIPTION,
           collected: o_params[:collected].present? ? o_params[:collected] : Time.current
         )
         seen_ids << record.id
@@ -556,7 +557,7 @@ class SarDocumentsController < ApplicationController
         result.sar_findings.create!(
           uuid: SecureRandom.uuid,
           title: f_params[:title].presence || "Finding",
-          description: f_params[:description].presence || "No description provided.",
+          description: f_params[:description].presence || NO_DESCRIPTION,
           target_data: target_data
         )
       end
@@ -585,7 +586,7 @@ class SarDocumentsController < ApplicationController
         result.sar_risks.create!(
           uuid: SecureRandom.uuid,
           title: r_params[:title].presence || "Risk",
-          description: r_params[:description].presence || "No description provided.",
+          description: r_params[:description].presence || NO_DESCRIPTION,
           status: r_params[:status].presence || "open"
         )
       end
@@ -689,19 +690,7 @@ class SarDocumentsController < ApplicationController
   # upstream UUID (tracked via resource_data["source_uuid"]). Returns
   # count of newly-created records.
   def copy_back_matter_into_sar(sap_id, ssp_id, profile_id)
-    sources = []
-    if sap_id.present?
-      sap = SapDocument.find_by(id: sap_id)
-      if sap
-        sources << sap
-        sources << SspDocument.find_by(id: sap.ssp_document_id)         if sap.ssp_document_id.present?
-        sources << ProfileDocument.find_by(id: sap.profile_document_id) if sap.profile_document_id.present?
-      end
-    end
-    sources << SspDocument.find_by(id: ssp_id)         if ssp_id.present?
-    sources << ProfileDocument.find_by(id: profile_id) if profile_id.present?
-    sources.compact!
-    sources.uniq!
+    sources = gather_back_matter_sources(sap_id, ssp_id, profile_id)
 
     # source_uuids tracks which upstream UUIDs we've already copied so a
     # second associate_source call doesn't produce duplicates.
@@ -735,6 +724,25 @@ class SarDocumentsController < ApplicationController
     end
 
     copied
+  end
+
+  # Collects the upstream documents whose back-matter should be copied into
+  # the SAR (extracted from #copy_back_matter_into_sar to bound complexity).
+  def gather_back_matter_sources(sap_id, ssp_id, profile_id)
+    sources = []
+    if sap_id.present?
+      sap = SapDocument.find_by(id: sap_id)
+      if sap
+        sources << sap
+        sources << SspDocument.find_by(id: sap.ssp_document_id)         if sap.ssp_document_id.present?
+        sources << ProfileDocument.find_by(id: sap.profile_document_id) if sap.profile_document_id.present?
+      end
+    end
+    sources << SspDocument.find_by(id: ssp_id)         if ssp_id.present?
+    sources << ProfileDocument.find_by(id: profile_id) if profile_id.present?
+    sources.compact!
+    sources.uniq!
+    sources
   end
 
   def set_sar_document

@@ -423,6 +423,7 @@
     "color-contrast::a[href=\"/admin/users/22\"]",
     "select-name::select"
   ],
+  "authoritative_source_new": [],
   "authoritative_sources": [
     "color-contrast::a[href=\"/authoritative_sources/1000\"]",
     "color-contrast::a[href=\"/authoritative_sources/1001\"]",
@@ -829,6 +830,9 @@
   ],
   "authorization_boundaries": [],
   "authorization_boundary_new": [],
+  "authorization_boundary_show": [
+    "color-contrast::.bg-info"
+  ],
   "cdef_index": [
     "color-contrast::tr:nth-child(1) > td:nth-child(2) > .rounded.fw-semibold",
     "color-contrast::tr:nth-child(10) > td:nth-child(2) > .rounded.fw-semibold",
@@ -1362,7 +1366,11 @@
     "color-contrast::tr:nth-child(5) > td:nth-child(3) > code:nth-child(1)",
     "color-contrast::tr:nth-child(5) > td:nth-child(3) > code:nth-child(2)"
   ],
+  "cdef_show": [],
   "control_catalog_new": [],
+  "control_catalog_show": [
+    "nested-interactive::summary"
+  ],
   "control_catalogs": [
     "color-contrast::tr:nth-child(1) > td:nth-child(7) > div > .btn-sm.btn:nth-child(3)",
     "color-contrast::tr:nth-child(10) > td:nth-child(7) > div > .btn-sm.btn:nth-child(3)",
@@ -1471,6 +1479,7 @@
     "color-contrast::.btn-outline-primary",
     "color-contrast::code"
   ],
+  "login": [],
   "password_edit": [],
   "poam_index": [
     "color-contrast::tr:nth-child(2) > td:nth-child(5) > span[title=\"Findings\"]",
@@ -1488,6 +1497,7 @@
     "color-contrast::.col:nth-child(2) > .form-group > .form-text > code",
     "color-contrast::.mt-3 > .form-text > code"
   ],
+  "poam_show": [],
   "profile_edit": [
     "color-contrast::.btn-sm.btn-outline-secondary[href=\"/\"]"
   ],
@@ -1518,7 +1528,9 @@
   "profile_new": [
     "color-contrast::.col:nth-child(2) > .bg-body-secondary.p-3.rounded > .fw-bold"
   ],
+  "profile_show": [],
   "promotion_queue": [],
+  "review_queue": [],
   "sap_index": [
     "color-contrast::tr:nth-child(1) > td:nth-child(2) > .rounded.fw-semibold",
     "color-contrast::tr:nth-child(2) > td:nth-child(2) > .rounded.fw-semibold",
@@ -1528,6 +1540,10 @@
   "sap_new": [
     "color-contrast::.bg-body-secondary.mb-4.rounded-3:nth-child(2) > h3",
     "color-contrast::.bg-body-secondary.mb-4.rounded-3:nth-child(3) > h3",
+    "select-name::#profile-select",
+    "select-name::#ssp-select"
+  ],
+  "sap_show": [
     "select-name::#profile-select",
     "select-name::#ssp-select"
   ],
@@ -1553,6 +1569,11 @@
     "color-contrast::tr:nth-child(3) > td:nth-child(2) > code",
     "color-contrast::tr:nth-child(3) > td:nth-child(3) > code"
   ],
+  "sar_show": [
+    "select-name::#sar_document\\[profile_document_id\\]",
+    "select-name::#sar_document\\[sap_document_id\\]",
+    "select-name::#sar_document\\[ssp_document_id\\]"
+  ],
   "sar_wizard": [],
   "ssp_index": [
     "color-contrast::tr:nth-child(1) > td:nth-child(2) > .sparc-source-excel.sparc-source-badge",
@@ -1570,5 +1591,6 @@
     "meta-refresh::meta[http-equiv=\"refresh\"]"
   ],
   "ssp_new": [],
+  "ssp_show": [],
   "ssp_wizard": []
 }

@@ -19,7 +19,9 @@ class FederationPeersController < ApplicationController
     @peer = FederationPeer.new
   end
 
-  def edit; end
+  def edit
+    # Empty action: renders edit.html.erb; the record is loaded by a set_* before_action.
+  end
 
   def create
     @peer = FederationPeer.new(public_attrs)

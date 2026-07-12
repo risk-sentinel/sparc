@@ -12,6 +12,10 @@ class SapJsonParserService
   include ProgressTrackable
   include BackMatterPromotable
 
+  # OSCAL keys reused across the JSON walk.
+  CONTROL_ID    = "control-id".freeze
+  OSCAL_VERSION = "oscal-version".freeze
+
   def initialize(document, file_path)
     @document = document
     @file_path = file_path
@@ -42,7 +46,7 @@ class SapJsonParserService
     attrs = {}
 
     attrs[:description] = metadata["title"] if @document.description.blank? && metadata["title"].present?
-    attrs[:oscal_version] = metadata["oscal-version"] if metadata["oscal-version"].present?
+    attrs[:oscal_version] = metadata[OSCAL_VERSION] if metadata[OSCAL_VERSION].present?
     attrs[:sap_version] = metadata["version"] if metadata["version"].present?
 
     props = metadata["props"] || []
@@ -50,7 +54,7 @@ class SapJsonParserService
     attrs[:assessment_type] = type_prop["value"] if type_prop
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
-    attrs[:metadata_extra] = metadata.except("title", "version", "oscal-version", "last-modified")
+    attrs[:metadata_extra] = metadata.except("title", "version", OSCAL_VERSION, "last-modified")
 
     attrs[:import_metadata] = {
       "uuid" => plan["uuid"]
@@ -223,7 +227,7 @@ class SapJsonParserService
     selections.each do |sel|
       # Explicit control list
       (sel["include-controls"] || []).each do |ic|
-        ids << ic["control-id"] if ic["control-id"].present?
+        ids << ic[CONTROL_ID] if ic[CONTROL_ID].present?
       end
 
       # include-all: empty hash {} means "all controls" per OSCAL spec.
@@ -242,82 +246,74 @@ class SapJsonParserService
   #    terms-and-conditions prose (LOW/MODERATE/HIGH)
   # 4. Most recent published profile (any baseline)
   # 5. Most recent control catalog
+  # Resolve control ids from the highest-priority available source. Each
+  # resolver sets @matched_source + returns its ids, or nil to fall through.
   def resolve_all_controls(plan, selection = {})
-    # Try linked profile first
-    if @document.profile_document_id.present?
-      profile = ProfileDocument.find_by(id: @document.profile_document_id)
-      ids = profile_control_ids(profile)
-      if ids.any?
-        @matched_source = profile
-        return ids
-      end
-    end
+    resolve_from_linked_profile ||
+      resolve_from_linked_ssp ||
+      resolve_from_baseline_hint(plan, selection) ||
+      resolve_from_recent_profiles ||
+      resolve_from_recent_catalog ||
+      []
+  end
 
-    # Try linked SSP's profile or controls
-    if @document.ssp_document_id.present?
-      ssp = SspDocument.find_by(id: @document.ssp_document_id)
-      if ssp&.profile_document_id.present?
-        profile = ProfileDocument.find_by(id: ssp.profile_document_id)
-        ids = profile_control_ids(profile)
-        if ids.any?
-          @matched_source = profile
-          return ids
-        end
-      end
-      ctrl_ids = ssp&.ssp_controls&.where&.not(control_id: nil)&.pluck(:control_id)&.uniq
-      if ctrl_ids&.any?
-        @matched_source = ssp
-        return ctrl_ids
-      end
-    end
+  # Records the source and returns its ids only when non-empty (else nil so
+  # the caller's || chain falls through to the next source).
+  def matched_source_ids(source, ids)
+    return nil unless ids&.any?
+    @matched_source = source
+    ids
+  end
 
-    # Baseline hint from multiple sources (selection description, SAP title, terms-and-conditions)
+  def resolve_from_linked_profile
+    return nil if @document.profile_document_id.blank?
+    profile = ProfileDocument.find_by(id: @document.profile_document_id)
+    matched_source_ids(profile, profile_control_ids(profile))
+  end
+
+  def resolve_from_linked_ssp
+    return nil if @document.ssp_document_id.blank?
+    ssp = SspDocument.find_by(id: @document.ssp_document_id)
+    if ssp&.profile_document_id.present?
+      profile = ProfileDocument.find_by(id: ssp.profile_document_id)
+      from_profile = matched_source_ids(profile, profile_control_ids(profile))
+      return from_profile if from_profile
+    end
+    ctrl_ids = ssp&.ssp_controls&.where&.not(control_id: nil)&.pluck(:control_id)&.uniq
+    matched_source_ids(ssp, ctrl_ids)
+  end
+
+  def resolve_from_baseline_hint(plan, selection)
     baseline_hint = detect_baseline_hint(plan, selection)
-    if baseline_hint
-      profile = ProfileDocument.where(lifecycle_status: "published")
-                               .where("LOWER(baseline_level) = ?", baseline_hint)
-                               .order(updated_at: :desc).first
-      ids = profile_control_ids(profile)
-      if ids.any?
-        @matched_source = profile
-        return ids
-      end
+    return nil unless baseline_hint
 
-      # Try draft profiles too
-      profile = ProfileDocument.where("LOWER(baseline_level) = ?", baseline_hint)
-                               .order(updated_at: :desc).first
-      ids = profile_control_ids(profile)
-      if ids.any?
-        @matched_source = profile
-        return ids
-      end
-    end
+    profile = ProfileDocument.where(lifecycle_status: "published")
+                             .where("LOWER(baseline_level) = ?", baseline_hint)
+                             .order(updated_at: :desc).first
+    from_published = matched_source_ids(profile, profile_control_ids(profile))
+    return from_published if from_published
 
-    # Most recent published profile (any baseline)
+    # Try draft profiles too
+    profile = ProfileDocument.where("LOWER(baseline_level) = ?", baseline_hint)
+                             .order(updated_at: :desc).first
+    matched_source_ids(profile, profile_control_ids(profile))
+  end
+
+  def resolve_from_recent_profiles
     profile = ProfileDocument.where(lifecycle_status: "published")
                              .order(updated_at: :desc).first
-    ids = profile_control_ids(profile)
-    if ids.any?
-      @matched_source = profile
-      return ids
-    end
+    from_published = matched_source_ids(profile, profile_control_ids(profile))
+    return from_published if from_published
 
-    # Any profile (draft or published)
     profile = ProfileDocument.order(updated_at: :desc).first
-    ids = profile_control_ids(profile)
-    if ids.any?
-      @matched_source = profile
-      return ids
-    end
+    matched_source_ids(profile, profile_control_ids(profile))
+  end
 
-    # Last resort: most recent control catalog (NIST 800-53 etc.)
+  def resolve_from_recent_catalog
     catalog = ControlCatalog.order(updated_at: :desc).first
-    if catalog && catalog.catalog_controls.any?
-      @matched_source = catalog
-      return catalog.catalog_controls.pluck(:control_id)
-    end
-
-    []
+    return nil unless catalog && catalog.catalog_controls.any?
+    @matched_source = catalog
+    catalog.catalog_controls.pluck(:control_id)
   end
 
   def profile_control_ids(profile)
@@ -361,7 +357,7 @@ class SapJsonParserService
       statement_ids = Hash.new { |h, k| h[k] = [] }
       (related["control-selections"] || []).each do |sel|
         (sel["include-controls"] || []).each do |ic|
-          cid = ic["control-id"]
+          cid = ic[CONTROL_ID]
           control_ids << cid
           (ic["statement-ids"] || []).each { |sid| statement_ids[cid] << sid }
         end

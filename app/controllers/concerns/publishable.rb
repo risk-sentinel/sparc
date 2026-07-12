@@ -65,14 +65,14 @@ module Publishable
 
     unless result.valid?
       flash[:error] = "Cannot publish: #{result.errors.join('; ')}"
-      redirect_to config[:redirect_path] and return
+      redirect_to(config[:redirect_path]) && return
     end
 
     # Run any controller-specific pre-publish logic (e.g., Profile resolved catalog)
     hook_result = before_publish_lifecycle(doc)
     if hook_result.is_a?(Hash) && hook_result[:error]
       flash[:error] = hook_result[:error]
-      redirect_to config[:redirect_path] and return
+      redirect_to(config[:redirect_path]) && return
     end
 
     # #627 — final backstop: gate publication on content-completeness, not just
@@ -82,7 +82,7 @@ module Publishable
     # Profile's "no source catalog") take precedence.
     if doc.respond_to?(:content_complete?) && !doc.content_complete?
       flash[:error] = "Cannot publish: document is missing required content — #{doc.content_completeness_gaps.join('; ')}."
-      redirect_to config[:redirect_path] and return
+      redirect_to(config[:redirect_path]) && return
     end
 
     # #630 — review/approval gate. When SPARC_REQUIRE_DOCUMENT_APPROVAL is on,

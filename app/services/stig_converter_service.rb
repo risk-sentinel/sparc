@@ -17,6 +17,9 @@
 class StigConverterService
   class ParseError < StandardError; end
 
+  # STIG vulnerability id (e.g. "V-12345") extracted from XCCDF ids.
+  V_ID_PATTERN = /(V-\d+)/i
+
   CONVERTER_NAME = "DISA STIG SV/V to NIST SP 800-53"
 
   def initialize(xml_content, original_filename = "stig.xml")
@@ -145,7 +148,7 @@ class StigConverterService
         # V-ID from <version> element or Group id
         version_el = rule.at_xpath("version")
         v_id = version_el&.text&.strip || ""
-        v_match = v_id.match(/(V-\d+)/i) || group["id"].to_s.match(/(V-\d+)/i) || rule_id.match(/(V-\d+)/i)
+        v_match = v_id.match(V_ID_PATTERN) || group["id"].to_s.match(V_ID_PATTERN) || rule_id.match(V_ID_PATTERN)
         v_id = v_match ? v_match[1] : ""
 
         # SV-ID from rule id attribute

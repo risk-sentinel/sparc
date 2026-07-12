@@ -9,6 +9,8 @@
 class SapXmlParserService
   include ProgressTrackable
 
+  MEDIA_TYPE = "media-type".freeze
+
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
 
   def initialize(document, file_path)
@@ -197,7 +199,7 @@ class SapXmlParserService
       "uuid"        => node["uuid"],
       "title"       => text(node, "title"),
       "description" => text(node, "description"),
-      "rlinks"      => node.xpath("xmlns:rlink", ns).map { |rl| { "href" => rl["href"], "media-type" => rl["media-type"] }.compact },
+      "rlinks"      => node.xpath("xmlns:rlink", ns).map { |rl| { "href" => rl["href"], MEDIA_TYPE => rl[MEDIA_TYPE] }.compact },
       "props"       => parse_props(node),
       "remarks"     => text(node, "remarks")
     }.compact
@@ -228,7 +230,7 @@ class SapXmlParserService
 
   def parse_links(node)
     node.xpath("xmlns:link", ns).map do |l|
-      { "href" => l["href"], "rel" => l["rel"], "media-type" => l["media-type"], "text" => l.text.presence }.compact
+      { "href" => l["href"], "rel" => l["rel"], MEDIA_TYPE => l[MEDIA_TYPE], "text" => l.text.presence }.compact
     end
   end
 end

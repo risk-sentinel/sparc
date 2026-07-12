@@ -1,40 +1,52 @@
 module ApplicationHelper
+  # Status-color palette (hue-named; the same swatch is reused across the
+  # *_STATUS_COLORS / *_SEVERITY_COLORS maps below).
+  COLOR_GREEN     = "#27ae60".freeze  # success / implemented / passed
+  COLOR_BLUE      = "#3498db".freeze  # info / planned / deferred
+  COLOR_ORANGE    = "#f39c12".freeze  # partial / in-progress
+  COLOR_RED       = "#e74c3c".freeze  # failure / not-implemented
+  COLOR_GRAY      = "#95a5a6".freeze  # not-applicable / none
+  COLOR_GRAY_DARK = "#7f8c8d".freeze  # default fallback
+
+  LABEL_NONE           = "(None)".freeze
+  LABEL_NOT_APPLICABLE = "Not Applicable".freeze
+
   SSP_STATUS_COLORS = {
     # Current schema values
-    "Implemented"              => "#27ae60",
-    "Deferred"                 => "#3498db",
-    "Not Applicable"           => "#95a5a6",
-    "Will Not Implement"       => "#e74c3c",
+    "Implemented"              => COLOR_GREEN,
+    "Deferred"                 => COLOR_BLUE,
+    LABEL_NOT_APPLICABLE           => COLOR_GRAY,
+    "Will Not Implement"       => COLOR_RED,
     # Legacy values kept for backward compatibility with existing data
-    "Partially Implemented"    => "#f39c12",
-    "Planned"                  => "#3498db",
+    "Partially Implemented"    => COLOR_ORANGE,
+    "Planned"                  => COLOR_BLUE,
     "Alternative Implementation" => "#9b59b6",
-    "Not Implemented"          => "#e74c3c"
+    "Not Implemented"          => COLOR_RED
   }.freeze
 
   SAR_STATUS_COLORS = {
     # Result field values
-    "Passed"                => "#27ae60",
-    "Pass"                  => "#27ae60",
-    "Failed"                => "#e74c3c",
+    "Passed"                => COLOR_GREEN,
+    "Pass"                  => COLOR_GREEN,
+    "Failed"                => COLOR_RED,
     # Working Status values
-    "Final Satisfied"       => "#27ae60",
-    "Final - Not Satisfied" => "#e74c3c",
-    "Not Satisfied"         => "#f39c12",
-    "Not Specified"         => "#95a5a6",
+    "Final Satisfied"       => COLOR_GREEN,
+    "Final - Not Satisfied" => COLOR_RED,
+    "Not Satisfied"         => COLOR_ORANGE,
+    "Not Specified"         => COLOR_GRAY,
     # Legacy values
-    "Partial"               => "#f39c12",
-    "Fail"                  => "#e74c3c",
-    "Not Tested"            => "#95a5a6",
-    "Not Applicable"        => "#bdc3c7"
+    "Partial"               => COLOR_ORANGE,
+    "Fail"                  => COLOR_RED,
+    "Not Tested"            => COLOR_GRAY,
+    LABEL_NOT_APPLICABLE        => "#bdc3c7"
   }.freeze
 
   def ssp_status_color(status, _count = 0)
-    SSP_STATUS_COLORS[status] || "#7f8c8d"
+    SSP_STATUS_COLORS[status] || COLOR_GRAY_DARK
   end
 
   def sar_status_color(status, _count = 0)
-    SAR_STATUS_COLORS[status] || "#7f8c8d"
+    SAR_STATUS_COLORS[status] || COLOR_GRAY_DARK
   end
 
   # Semantic variant keys for .sparc-status--<variant> (WORM, #599 Round 2).
@@ -43,7 +55,7 @@ module ApplicationHelper
   SSP_STATUS_VARIANTS = {
     "Implemented"                => "success",
     "Deferred"                   => "info",
-    "Not Applicable"             => "neutral",
+    LABEL_NOT_APPLICABLE             => "neutral",
     "Will Not Implement"         => "danger",
     "Partially Implemented"      => "warning",
     "Planned"                    => "info",
@@ -62,7 +74,7 @@ module ApplicationHelper
     "Partial"               => "warning",
     "Fail"                  => "danger",
     "Not Tested"            => "neutral",
-    "Not Applicable"        => "neutral"
+    LABEL_NOT_APPLICABLE        => "neutral"
   }.freeze
 
   def ssp_status_variant(status, _count = 0)
@@ -74,14 +86,14 @@ module ApplicationHelper
   end
 
   CDEF_SEVERITY_COLORS = {
-    "high"   => "#e74c3c",
-    "medium" => "#f39c12",
-    "low"    => "#3498db",
-    "info"   => "#95a5a6"
+    "high"   => COLOR_RED,
+    "medium" => COLOR_ORANGE,
+    "low"    => COLOR_BLUE,
+    "info"   => COLOR_GRAY
   }.freeze
 
   def cdef_severity_color(severity)
-    CDEF_SEVERITY_COLORS[severity.to_s.downcase] || "#7f8c8d"
+    CDEF_SEVERITY_COLORS[severity.to_s.downcase] || COLOR_GRAY_DARK
   end
 
   CDEF_SEVERITY_VARIANTS = {
@@ -96,17 +108,17 @@ module ApplicationHelper
   end
 
   SAP_METHOD_COLORS = {
-    "examine"   => "#3498db",
-    "interview" => "#f39c12",
-    "test"      => "#e74c3c",
+    "examine"   => COLOR_BLUE,
+    "interview" => COLOR_ORANGE,
+    "test"      => COLOR_RED,
     "multiple"  => "#9b59b6",
-    "(None)"    => "#95a5a6"
+    LABEL_NONE    => COLOR_GRAY
   }.freeze
 
   def sap_method_color(method)
     m = method.to_s
     return SAP_METHOD_COLORS["multiple"] if m.include?(",")
-    SAP_METHOD_COLORS[m] || "#7f8c8d"
+    SAP_METHOD_COLORS[m] || COLOR_GRAY_DARK
   end
 
   SAP_METHOD_VARIANTS = {
@@ -114,7 +126,7 @@ module ApplicationHelper
     "interview" => "warning",
     "test"      => "danger",
     "multiple"  => "purple",
-    "(None)"    => "neutral"
+    LABEL_NONE    => "neutral"
   }.freeze
 
   def sap_method_variant(method)
@@ -127,16 +139,16 @@ module ApplicationHelper
   # secondary "Status by Control Family" heatmap. Mirrors the per-row pill
   # colors in _objectives_table partials so legend and cells match.
   SAP_OBJECTIVE_STATUS_COLORS = {
-    "failed"         => "#e74c3c",
-    "in-progress"    => "#f39c12",
-    "pending"        => "#95a5a6",
-    "passing"        => "#27ae60",
-    "not_applicable" => "#7f8c8d",
+    "failed"         => COLOR_RED,
+    "in-progress"    => COLOR_ORANGE,
+    "pending"        => COLOR_GRAY,
+    "passing"        => COLOR_GREEN,
+    "not_applicable" => COLOR_GRAY_DARK,
     "not_assessed"   => "#bdc3c7"
   }.freeze
 
   def sap_objective_status_color(status)
-    SAP_OBJECTIVE_STATUS_COLORS[status.to_s] || "#7f8c8d"
+    SAP_OBJECTIVE_STATUS_COLORS[status.to_s] || COLOR_GRAY_DARK
   end
   alias_method :sar_objective_status_color, :sap_objective_status_color
 
@@ -155,21 +167,21 @@ module ApplicationHelper
   alias_method :sar_objective_status_variant, :sap_objective_status_variant
 
   PROFILE_PRIORITY_COLORS = {
-    "P1"     => "#e74c3c",
-    "P2"     => "#f39c12",
-    "P3"     => "#3498db",
-    "(None)" => "#95a5a6"
+    "P1"     => COLOR_RED,
+    "P2"     => COLOR_ORANGE,
+    "P3"     => COLOR_BLUE,
+    LABEL_NONE => COLOR_GRAY
   }.freeze
 
   def profile_priority_color(priority)
-    PROFILE_PRIORITY_COLORS[priority.to_s] || "#7f8c8d"
+    PROFILE_PRIORITY_COLORS[priority.to_s] || COLOR_GRAY_DARK
   end
 
   PROFILE_PRIORITY_VARIANTS = {
     "P1"     => "danger",
     "P2"     => "warning",
     "P3"     => "info",
-    "(None)" => "neutral"
+    LABEL_NONE => "neutral"
   }.freeze
 
   def profile_priority_variant(priority)
@@ -177,10 +189,10 @@ module ApplicationHelper
   end
 
   AB_STATUS_COLORS = {
-    "draft"         => "#95a5a6",
-    "active"        => "#3498db",
-    "authorized"    => "#27ae60",
-    "deauthorized"  => "#e74c3c"
+    "draft"         => COLOR_GRAY,
+    "active"        => COLOR_BLUE,
+    "authorized"    => COLOR_GREEN,
+    "deauthorized"  => COLOR_RED
   }.freeze
 
   # Returns the authorization boundaries to display in the navbar.
@@ -196,7 +208,7 @@ module ApplicationHelper
   end
 
   def ab_status_color(status)
-    AB_STATUS_COLORS[status.to_s] || "#7f8c8d"
+    AB_STATUS_COLORS[status.to_s] || COLOR_GRAY_DARK
   end
 
   AB_STATUS_VARIANTS = {

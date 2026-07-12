@@ -77,6 +77,7 @@ class CdefControlField < ApplicationRecord
     case field_name
     when "implementation_status" then IMPLEMENTATION_STATUS_LABELS.to_a
     when "control_origin"        then CONTROL_ORIGIN_LABELS.to_a
+    else nil # non-select fields have no options
     end
   end
 

@@ -85,6 +85,7 @@ class AuthoritativeSourceFederationService
         when :created  then imported << result[:resource]
         when :skipped  then skipped  << result[:reason]
         when :error    then errors   << result[:reason]
+        else nil # upsert_federated_resource only returns the statuses above
         end
       end
     end

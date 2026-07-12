@@ -34,10 +34,10 @@ export default class extends Controller {
 
   // Action: simple two-state toggle — light ↔ dark
   toggle() {
-    const current = document.documentElement.getAttribute("data-bs-theme")
+    const current = document.documentElement.dataset.bsTheme
     const next = current === "dark" ? "light" : "dark"
     localStorage.setItem("sparc-theme", next)
-    document.documentElement.setAttribute("data-bs-theme", next)
+    document.documentElement.dataset.bsTheme = next
     this.updateIcon()
   }
 
@@ -46,10 +46,10 @@ export default class extends Controller {
   applyTheme() {
     const saved = localStorage.getItem("sparc-theme")
     if (saved) {
-      document.documentElement.setAttribute("data-bs-theme", saved)
+      document.documentElement.dataset.bsTheme = saved
     } else {
       const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      document.documentElement.setAttribute("data-bs-theme", systemDark ? "dark" : "light")
+      document.documentElement.dataset.bsTheme = systemDark ? "dark" : "light"
     }
   }
 
@@ -57,7 +57,7 @@ export default class extends Controller {
     // Auto-switch only if the user hasn't manually toggled
     if (!localStorage.getItem("sparc-theme")) {
       const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      document.documentElement.setAttribute("data-bs-theme", systemDark ? "dark" : "light")
+      document.documentElement.dataset.bsTheme = systemDark ? "dark" : "light"
       this.updateIcon()
     }
   }
@@ -65,7 +65,7 @@ export default class extends Controller {
   updateIcon() {
     if (!this.hasIconTarget) return
 
-    const current = document.documentElement.getAttribute("data-bs-theme")
+    const current = document.documentElement.dataset.bsTheme
     if (current === "dark") {
       // Dark mode active — show sun icon (click to switch to light)
       this.iconTarget.textContent = "\u2600\uFE0F"

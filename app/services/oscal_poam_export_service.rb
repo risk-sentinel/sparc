@@ -12,6 +12,11 @@ class OscalPoamExportService
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
+  # OSCAL element names reused across the export build.
+  RELATED_OBSERVATIONS = "related-observations".freeze
+  OBSERVATION_UUID     = "observation-uuid".freeze
+  RISK_UUID            = "risk-uuid".freeze
+
   def initialize(poam_document)
     @document = poam_document
     eager_load_associations
@@ -143,7 +148,7 @@ class OscalPoamExportService
         "deadline"            => risk.deadline&.iso8601,
         "remediations"        => build_remediations(risk),
         "risk-log"            => risk.risk_log_data.presence,
-        "related-observations" => build_risk_observations(risk),
+        RELATED_OBSERVATIONS => build_risk_observations(risk),
         "props"               => risk.props_data.presence,
         "links"               => risk.links_data.presence,
         "remarks"             => risk.remarks
@@ -194,7 +199,7 @@ class OscalPoamExportService
   def build_risk_observations(risk)
     obs_uuids = risk.poam_risk_observations.map { |ro| ro.poam_observation.uuid }
     return nil if obs_uuids.empty?
-    obs_uuids.map { |uuid| { "observation-uuid" => uuid } }
+    obs_uuids.map { |uuid| { OBSERVATION_UUID => uuid } }
   end
 
   # ── Findings ─────────────────────────────────────────────────────
@@ -209,12 +214,12 @@ class OscalPoamExportService
         "target"                        => finding.target_data.presence,
         "implementation-statement-uuid" => finding.implementation_statement_uuid,
         "origins"                       => finding.origins_data.presence,
-        "related-observations"          => finding.poam_finding_observations.map { |fo|
-          { "observation-uuid" => fo.poam_observation_id ? PoamObservation.find(fo.poam_observation_id).uuid : nil }
-        }.select { |o| o["observation-uuid"] }.presence,
+        RELATED_OBSERVATIONS          => finding.poam_finding_observations.map { |fo|
+          { OBSERVATION_UUID => fo.poam_observation_id ? PoamObservation.find(fo.poam_observation_id).uuid : nil }
+        }.select { |o| o[OBSERVATION_UUID] }.presence,
         "related-risks"                 => finding.poam_finding_risks.map { |fr|
-          { "risk-uuid" => fr.poam_risk_id ? PoamRisk.find(fr.poam_risk_id).uuid : nil }
-        }.select { |r| r["risk-uuid"] }.presence,
+          { RISK_UUID => fr.poam_risk_id ? PoamRisk.find(fr.poam_risk_id).uuid : nil }
+        }.select { |r| r[RISK_UUID] }.presence,
         "props"                         => finding.props_data.presence,
         "links"                         => finding.links_data.presence,
         "remarks"                       => finding.remarks
@@ -291,14 +296,14 @@ class OscalPoamExportService
       obs_uuids = item.poam_item_observations.map { |io| io.poam_observation_id }
       if obs_uuids.any?
         obs_records = @observations.select { |o| obs_uuids.include?(o.id) }
-        entry["related-observations"] = obs_records.map { |o| { "observation-uuid" => o.uuid } }
+        entry[RELATED_OBSERVATIONS] = obs_records.map { |o| { OBSERVATION_UUID => o.uuid } }
       end
 
       # Related risks (from join table)
       risk_ids = item.poam_item_risks.map { |ir| ir.poam_risk_id }
       if risk_ids.any?
         risk_records = @risks.select { |r| risk_ids.include?(r.id) }
-        entry["related-risks"] = risk_records.map { |r| { "risk-uuid" => r.uuid } }
+        entry["related-risks"] = risk_records.map { |r| { RISK_UUID => r.uuid } }
       end
 
       # Related findings (from join table)

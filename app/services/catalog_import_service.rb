@@ -24,8 +24,12 @@
 # Sub-parts (a., 1., (a)) are stored as sibling CatalogControl records under the same family:
 #   ac-1, ac-1a, ac-1a.1, ac-1a.1.(a), ac-1a.1.(b), ac-1b, ac-1c, ac-1c.1, ac-1c.2
 #
+require "yaml"
+
 class CatalogImportService
   include ProgressTrackable
+
+  HOW_MANY = "how-many".freeze
 
   class ImportError < StandardError; end
 
@@ -96,46 +100,55 @@ class CatalogImportService
 
   # ── Format detection ────────────────────────────────────────────────────────
 
+  # Detect the source format in priority order: extension-based (YAML → JSON →
+  # XML), then a JSON content-sniff, then a legacy-SCAP fallback. Each detector
+  # returns its format symbol or nil to fall through (extracted to bound
+  # cognitive complexity).
   def detect_format
-    if @filename.end_with?(".yaml", ".yml")
-      begin
-        require "yaml"
-        data = YAML.safe_load(@content, permitted_classes: [ Date, Time ])
-        return :oscal_yaml if data.is_a?(Hash) && data.dig("catalog", "groups")
-      rescue Psych::SyntaxError
-        # fall through
-      end
-    end
+    detect_yaml_format ||
+      detect_json_by_extension ||
+      detect_xml_format ||
+      sniff_json_content ||
+      fallback_format
+  end
 
-    if @filename.end_with?(".json")
-      begin
-        data = JSON.parse(@content)
-        return :oscal_json if data.dig("catalog", "groups")
-      rescue JSON::ParserError
-        # fall through
-      end
-    end
+  def detect_yaml_format
+    return nil unless @filename.end_with?(".yaml", ".yml")
+    data = YAML.safe_load(@content, permitted_classes: [ Date, Time ])
+    :oscal_yaml if data.is_a?(Hash) && data.dig("catalog", "groups")
+  rescue Psych::SyntaxError
+    nil
+  end
 
-    if @filename.end_with?(".xml")
-      # OSCAL XML: <catalog> root element with OSCAL namespace or <group> children
-      return :oscal_xml if @content.include?("csrc.nist.gov/ns/oscal") ||
-                           (@content.include?("<catalog") && @content.include?("<group"))
-      # Legacy SCAP feed: <controls:control> elements
-      return :nist_xml if @content.include?("<controls:control>")
-    end
+  def detect_json_by_extension
+    return nil unless @filename.end_with?(".json")
+    data = JSON.parse(@content)
+    :oscal_json if data.dig("catalog", "groups")
+  rescue JSON::ParserError
+    nil
+  end
 
-    # Content-sniff as fallback
-    if @content.lstrip.start_with?("{")
-      begin
-        data = JSON.parse(@content)
-        return :oscal_json if data.dig("catalog", "groups")
-      rescue JSON::ParserError
-        # fall through
-      end
+  def detect_xml_format
+    return nil unless @filename.end_with?(".xml")
+    # OSCAL XML: <catalog> root element with OSCAL namespace or <group> children
+    if @content.include?("csrc.nist.gov/ns/oscal") ||
+       (@content.include?("<catalog") && @content.include?("<group"))
+      return :oscal_xml
     end
+    # Legacy SCAP feed: <controls:control> elements
+    :nist_xml if @content.include?("<controls:control>")
+  end
 
+  def sniff_json_content
+    return nil unless @content.lstrip.start_with?("{")
+    data = JSON.parse(@content)
+    :oscal_json if data.dig("catalog", "groups")
+  rescue JSON::ParserError
+    nil
+  end
+
+  def fallback_format
     return :nist_xml if @content.include?("<controls:control>")
-
     :unknown
   end
 
@@ -147,7 +160,6 @@ class CatalogImportService
   def import_oscal_yaml
     update_processing_stage!(:parsing, "Parsing OSCAL YAML catalog...")
 
-    require "yaml"
     data = YAML.safe_load(@content, permitted_classes: [ Date, Time ])
     raise ImportError, "Not a valid OSCAL YAML catalog — missing 'catalog.groups'." unless data.is_a?(Hash) && data.dig("catalog", "groups")
 
@@ -358,24 +370,7 @@ class CatalogImportService
     published     = metadata_node&.at_xpath("published")&.text.to_s.strip.presence
 
     # Collect metadata extras (props, links, roles, parties, etc.)
-    metadata_extra = {}
-    metadata_extra["catalog_uuid"] = catalog_node["uuid"] if catalog_node["uuid"].present?
-    metadata_extra["import_format"] = "oscal_xml"
-
-    back_matter = catalog_node.at_xpath("back-matter")
-    if back_matter
-      resources = back_matter.xpath("resource").map do |r|
-        res = { "uuid" => r["uuid"] }
-        title_node = r.at_xpath("title")
-        res["title"] = title_node.text.strip if title_node
-        r.xpath("rlink").each do |rl|
-          res["rlinks"] ||= []
-          res["rlinks"] << { "href" => rl["href"], "media-type" => rl["media-type"] }.compact
-        end
-        res
-      end
-      metadata_extra["back_matter_resources"] = resources if resources.any?
-    end
+    metadata_extra = build_oscal_xml_metadata_extra(catalog_node)
 
     catalog = if @existing_catalog
       target = resolve_import_target(metadata_extra["catalog_uuid"])
@@ -393,6 +388,39 @@ class CatalogImportService
     end
     stats = { catalog: catalog, families: 0, controls: 0, created: 0, updated: 0 }
 
+    import_oscal_xml_groups(groups, catalog, stats)
+
+    stats
+  end
+
+  # Builds the metadata_extra hash for an OSCAL XML catalog (catalog uuid,
+  # import format, back-matter resources). Extracted to bound complexity.
+  def build_oscal_xml_metadata_extra(catalog_node)
+    extra = {}
+    extra["catalog_uuid"] = catalog_node["uuid"] if catalog_node["uuid"].present?
+    extra["import_format"] = "oscal_xml"
+
+    resources = extract_oscal_xml_back_matter(catalog_node.at_xpath("back-matter"))
+    extra["back_matter_resources"] = resources if resources.any?
+    extra
+  end
+
+  def extract_oscal_xml_back_matter(back_matter)
+    return [] unless back_matter
+
+    back_matter.xpath("resource").map do |r|
+      res = { "uuid" => r["uuid"] }
+      title_node = r.at_xpath("title")
+      res["title"] = title_node.text.strip if title_node
+      r.xpath("rlink").each do |rl|
+        res["rlinks"] ||= []
+        res["rlinks"] << { "href" => rl["href"], "media-type" => rl["media-type"] }.compact
+      end
+      res
+    end
+  end
+
+  def import_oscal_xml_groups(groups, catalog, stats)
     groups.each_with_index do |group, idx|
       family_code = group["id"].to_s.upcase
       family_name = group.at_xpath("title")&.text.to_s.strip
@@ -405,8 +433,6 @@ class CatalogImportService
         import_oscal_xml_control(family, ctrl_node, stats)
       end
     end
-
-    stats
   end
 
   def import_oscal_xml_control(family, ctrl_node, stats)
@@ -514,7 +540,7 @@ class CatalogImportService
       select_node = param_node.at_xpath("select")
       if select_node
         sel = {}
-        sel["how-many"] = select_node["how-many"] if select_node["how-many"]
+        sel[HOW_MANY] = select_node[HOW_MANY] if select_node[HOW_MANY]
         sel["choice"] = select_node.xpath("choice").map { |c| c.text.strip }
         entry["select"] = sel
       end

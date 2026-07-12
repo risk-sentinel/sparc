@@ -7,9 +7,9 @@
 #   zip_data = service.generate_zip   # => binary string
 #   summary  = service.validation_summary  # => { ssp: { valid: true, errors: [] }, ... }
 #
-class AtoPackageExportService
-  require "zip"
+require "zip"
 
+class AtoPackageExportService
   EXPORT_SERVICES = {
     ssp:  OscalSspExportService,
     sap:  OscalAssessmentPlanExportService,

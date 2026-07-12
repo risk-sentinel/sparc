@@ -102,7 +102,7 @@ class ProfileDocumentsController < ApplicationController
     audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "json" })
     send_data json_data,
               filename:    "#{@profile_document.name}_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -114,11 +114,11 @@ class ProfileDocumentsController < ApplicationController
       audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@profile_document.name}_oscal_profile_#{Date.today}.json",
-                type:        "application/json",
+                type:        JSON_CONTENT_TYPE,
                 disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for Profile #{@profile_document.id}: #{result.errors.first(3).join('; ')}")
-      flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+      flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
       redirect_to profile_document_path(@profile_document, oscal_validation_failed: 1, oscal_format: "json")
     end
   end
@@ -130,7 +130,7 @@ class ProfileDocumentsController < ApplicationController
     audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal_validated" })
     send_data oscal_data,
               filename:    "#{@profile_document.name}_oscal_profile_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -141,7 +141,7 @@ class ProfileDocumentsController < ApplicationController
     audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal_unvalidated" })
     send_data oscal_data,
               filename:    "#{@profile_document.name}_oscal_profile_unvalidated_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -157,7 +157,7 @@ class ProfileDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL YAML validation failed for Profile #{@profile_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to profile_document_path(@profile_document, oscal_validation_failed: 1, oscal_format: "yaml")
   end
 
@@ -173,7 +173,7 @@ class ProfileDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL XML validation failed for Profile #{@profile_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to profile_document_path(@profile_document, oscal_validation_failed: 1, oscal_format: "xml")
   end
 
@@ -200,7 +200,7 @@ class ProfileDocumentsController < ApplicationController
   def download_resolved_catalog
     if @profile_document.resolved_catalog_json.blank?
       flash[:error] = "No resolved catalog available. Publish the profile first."
-      redirect_to profile_document_path(@profile_document) and return
+      redirect_to(profile_document_path(@profile_document)) && return
     end
 
     json_data = JSON.pretty_generate(@profile_document.resolved_catalog_json)
@@ -208,7 +208,7 @@ class ProfileDocumentsController < ApplicationController
               metadata: { name: @profile_document.name, format: "resolved_catalog" })
     send_data json_data,
               filename:    "#{@profile_document.name}_resolved_catalog_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -227,7 +227,7 @@ class ProfileDocumentsController < ApplicationController
 
     unless source.published_lifecycle?
       flash[:error] = "Only published profiles can be used as a source."
-      redirect_to select_profile_profile_documents_path and return
+      redirect_to(select_profile_profile_documents_path) && return
     end
 
     service = DocumentDuplicationService.new(source)
@@ -248,7 +248,7 @@ class ProfileDocumentsController < ApplicationController
 
     if control_ids.empty?
       flash[:error] = "Please select at least one control"
-      redirect_to select_catalog_profile_documents_path and return
+      redirect_to(select_catalog_profile_documents_path) && return
     end
 
     profile = ProfileDocument.create!(
@@ -287,7 +287,7 @@ class ProfileDocumentsController < ApplicationController
   def manage_controls
     unless @profile_document.control_catalog
       flash[:error] = "Cannot manage controls: no source catalog linked to this profile."
-      redirect_to profile_document_path(@profile_document) and return
+      redirect_to(profile_document_path(@profile_document)) && return
     end
 
     @catalog = @profile_document.control_catalog
@@ -299,7 +299,7 @@ class ProfileDocumentsController < ApplicationController
   def update_controls
     unless @profile_document.control_catalog
       flash[:error] = "Cannot update controls: no source catalog linked."
-      redirect_to profile_document_path(@profile_document) and return
+      redirect_to(profile_document_path(@profile_document)) && return
     end
 
     desired_ids = Array(params[:control_ids]).reject(&:blank?).to_set

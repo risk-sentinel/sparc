@@ -1,5 +1,11 @@
 class ProfileJsonParserService
   include BatchInsertable
+
+  # OSCAL keys / catalog-matching literals reused across the parse.
+  OSCAL_VERSION  = "oscal-version".freeze
+  SOURCE_PROFILE = "source-profile".freeze
+  CATALOG_800_53 = "800-53".freeze
+  REV_PATTERN    = /rev\.?\s*(\d+)/i
   include ProgressTrackable
   include BackMatterPromotable
 
@@ -35,39 +41,7 @@ class ProfileJsonParserService
 
     selected_ids.each do |raw_id|
       # Store the raw OSCAL id directly — it now matches catalog_controls.control_id natively.
-      alter    = alter_map[raw_id]
-      priority = extract_priority(alter)
-
-      attrs = {
-        control_id:     raw_id,
-        title:          nil,
-        priority:       priority,
-        control_family: raw_id.split("-").first.upcase.presence,
-        row_order:      row_order
-      }
-
-      idx = control_attrs.size
-      control_attrs << attrs
-
-      # Store alter data as fields
-      if alter
-        (alter["adds"] || []).each do |add|
-          (add["props"] || []).each do |prop|
-            next if prop["name"] == "priority"
-            field_entries << [ idx, "prop:#{prop['name']}", prop["value"] ]
-          end
-        end
-      end
-
-      # Store matching parameters as fields (raw OSCAL IDs in param keys)
-      param_map.each do |param_id, param_data|
-        next unless param_id.start_with?("#{raw_id}_")
-        values = Array(param_data["values"]).join(", ")
-        field_entries << [ idx, "parameter:#{param_id}", values ] if values.present?
-        label = param_data["label"]
-        field_entries << [ idx, "parameter_label:#{param_id}", label ] if label.present?
-      end
-
+      append_control_entry(raw_id, row_order, alter_map, param_map, control_attrs, field_entries)
       row_order += 1
     end
 
@@ -86,25 +60,68 @@ class ProfileJsonParserService
 
   private
 
+  # Builds one control's attrs + field entries, appending to the shared
+  # accumulators (kept out of #parse to bound its cognitive complexity).
+  def append_control_entry(raw_id, row_order, alter_map, param_map, control_attrs, field_entries)
+    alter = alter_map[raw_id]
+
+    control_attrs << {
+      control_id:     raw_id,
+      title:          nil,
+      priority:       extract_priority(alter),
+      control_family: raw_id.split("-").first.upcase.presence,
+      row_order:      row_order
+    }
+    idx = control_attrs.size - 1
+
+    append_alter_prop_fields(alter, idx, field_entries)
+    append_param_fields(raw_id, idx, param_map, field_entries)
+  end
+
+  # Store alter `adds` props as fields (skipping the priority prop, which is
+  # promoted to a column above).
+  def append_alter_prop_fields(alter, idx, field_entries)
+    return unless alter
+
+    (alter["adds"] || []).each do |add|
+      (add["props"] || []).each do |prop|
+        next if prop["name"] == "priority"
+        field_entries << [ idx, "prop:#{prop['name']}", prop["value"] ]
+      end
+    end
+  end
+
+  # Store matching set-parameters as fields (raw OSCAL IDs in param keys).
+  def append_param_fields(raw_id, idx, param_map, field_entries)
+    param_map.each do |param_id, param_data|
+      next unless param_id.start_with?("#{raw_id}_")
+      values = Array(param_data["values"]).join(", ")
+      field_entries << [ idx, "parameter:#{param_id}", values ] if values.present?
+      label = param_data["label"]
+      field_entries << [ idx, "parameter_label:#{param_id}", label ] if label.present?
+    end
+  end
+
   def update_document_metadata(metadata, imports, profile)
     title = metadata["title"] || ""
     baseline = case title
     when /LOW/i      then "LOW"
     when /MODERATE/i then "MODERATE"
     when /HIGH/i     then "HIGH"
+    else nil # title without a baseline keyword
     end
 
     catalog_ref  = imports.first&.dig("href")
     back_matter  = profile.dig("back-matter", "resources") || []
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
-    metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
+    metadata_extra = metadata.except("title", "version", OSCAL_VERSION, "last-modified")
 
     @document.update!(
       description:     title,
       baseline_level:  baseline,
       profile_version: metadata["version"],
-      oscal_version:   metadata["oscal-version"],
+      oscal_version:   metadata[OSCAL_VERSION],
       metadata_extra:  metadata_extra.presence || {},
       import_metadata: {
         "format"       => "oscal_profile",
@@ -176,11 +193,11 @@ class ProfileJsonParserService
 
     rlink_hrefs.any? do |href|
       # Extract revision indicator from rlink (e.g., "rev4", "rev5")
-      rlink_rev = href[/rev\.?\s*(\d+)/i, 1] || href[/revision[_\s]*(\d+)/i, 1]
-      catalog_rev = catalog_name[/rev\.?\s*(\d+)/i, 1] || catalog_name[/revision[_\s]*(\d+)/i, 1]
+      rlink_rev = href[REV_PATTERN, 1] || href[/revision[_\s]*(\d+)/i, 1]
+      catalog_rev = catalog_name[REV_PATTERN, 1] || catalog_name[/revision[_\s]*(\d+)/i, 1]
 
       # Both must reference 800-53 and have matching revision numbers
-      href.include?("800-53") && catalog_name.include?("800-53") &&
+      href.include?(CATALOG_800_53) && catalog_name.include?(CATALOG_800_53) &&
         rlink_rev.present? && catalog_rev.present? &&
         rlink_rev == catalog_rev
     end
@@ -236,7 +253,7 @@ class ProfileJsonParserService
     links = metadata["links"] || []
 
     props.any? { |p| p["name"] == "resolution-tool" } ||
-      links.any? { |l| l["rel"] == "source-profile" }
+      links.any? { |l| l["rel"] == SOURCE_PROFILE }
   end
 
   # Parse a resolved profile catalog — controls come from groups[], not imports[].
@@ -277,20 +294,21 @@ class ProfileJsonParserService
     when /LOW/i      then "LOW"
     when /MODERATE/i then "MODERATE"
     when /HIGH/i     then "HIGH"
+    else nil # title without a baseline keyword
     end
 
     source_profile_href = (metadata["links"] || [])
-      .find { |l| l["rel"] == "source-profile" }&.dig("href")
+      .find { |l| l["rel"] == SOURCE_PROFILE }&.dig("href")
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
-    metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
+    metadata_extra = metadata.except("title", "version", OSCAL_VERSION, "last-modified")
     metadata_extra["auto_publish"] = true
 
     @document.update!(
       description:     title,
       baseline_level:  baseline,
       profile_version: metadata["version"],
-      oscal_version:   metadata["oscal-version"],
+      oscal_version:   metadata[OSCAL_VERSION],
       metadata_extra:  metadata_extra.presence || {},
       import_metadata: {
         "format"               => "oscal_resolved_profile",
@@ -311,7 +329,7 @@ class ProfileJsonParserService
     return if @document.control_catalog_id.present?
 
     source_href = (metadata["links"] || [])
-      .find { |l| l["rel"] == "source-profile" }&.dig("href")
+      .find { |l| l["rel"] == SOURCE_PROFILE }&.dig("href")
     return unless source_href.present?
 
     href_lower = source_href.downcase
@@ -320,10 +338,10 @@ class ProfileJsonParserService
 
     catalogs.each do |catalog|
       catalog_name = catalog.name.downcase
-      href_rev = href_lower[/rev\.?\s*(\d+)/i, 1]
-      catalog_rev = catalog_name[/rev\.?\s*(\d+)/i, 1]
+      href_rev = href_lower[REV_PATTERN, 1]
+      catalog_rev = catalog_name[REV_PATTERN, 1]
 
-      if href_lower.include?("800-53") && catalog_name.include?("800-53") &&
+      if href_lower.include?(CATALOG_800_53) && catalog_name.include?(CATALOG_800_53) &&
           href_rev.present? && catalog_rev.present? && href_rev == catalog_rev
         @document.update_column(:control_catalog_id, catalog.id)
         return

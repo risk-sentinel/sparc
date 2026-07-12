@@ -1,8 +1,11 @@
+require "tempfile"
+
 class ProfileXmlParserService
   include BatchInsertable
   include ProgressTrackable
 
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
+  OSCAL_VERSION = "oscal-version".freeze
 
   def initialize(profile_document, file_path)
     @document  = profile_document
@@ -86,6 +89,7 @@ class ProfileXmlParserService
     when /LOW/i      then "LOW"
     when /MODERATE/i then "MODERATE"
     when /HIGH/i     then "HIGH"
+    else nil # title without a baseline keyword
     end
 
     catalog_ref = profile.at_xpath("import")&.[]("href")
@@ -98,7 +102,7 @@ class ProfileXmlParserService
       description:     title,
       baseline_level:  baseline,
       profile_version: metadata&.at_xpath("version")&.text,
-      oscal_version:   metadata&.at_xpath("oscal-version")&.text,
+      oscal_version:   metadata&.at_xpath(OSCAL_VERSION)&.text,
       import_metadata: {
         "format"       => "oscal_profile_xml",
         "uuid"         => profile["uuid"],
@@ -154,8 +158,6 @@ class ProfileXmlParserService
 
   # Convert resolved catalog XML to JSON hash and delegate to JSON parser.
   def parse_resolved_via_json(catalog_el, doc)
-    require "tempfile"
-
     # Use Nokogiri + XSLT-free approach: convert XML to JSON hash
     json_hash = xml_catalog_to_json(catalog_el)
     full_data = { "catalog" => json_hash }
@@ -191,7 +193,7 @@ class ProfileXmlParserService
     h["title"] = metadata.at_xpath("title")&.text
     h["last-modified"] = metadata.at_xpath("last-modified")&.text
     h["version"] = metadata.at_xpath("version")&.text
-    h["oscal-version"] = metadata.at_xpath("oscal-version")&.text
+    h[OSCAL_VERSION] = metadata.at_xpath(OSCAL_VERSION)&.text
 
     props = metadata.xpath("prop").map { |p| xml_prop_to_json(p) }
     h["props"] = props if props.any?

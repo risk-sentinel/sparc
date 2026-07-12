@@ -28,7 +28,9 @@ class PoamObservationsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    # Empty action: renders edit.html.erb; the record is loaded by a set_* before_action.
+  end
 
   def update
     if @poam_observation.update(poam_observation_params)

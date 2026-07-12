@@ -7,6 +7,10 @@
 #
 # Can auto-populate defaults from the current user's profile and organization.
 class PublicationValidationService
+  # OSCAL metadata keys reused across the validation checks.
+  RESPONSIBLE_PARTIES = "responsible-parties".freeze
+  PREPARED_BY         = "prepared-by".freeze
+
   Result = Struct.new(:valid?, :errors, :missing_fields, keyword_init: true)
 
   CREATOR_ROLE_IDS = %w[creator prepared-by].freeze
@@ -59,7 +63,7 @@ class PublicationValidationService
       current_metadata: {
         roles: metadata["roles"] || [],
         parties: metadata["parties"] || [],
-        responsible_parties: metadata["responsible-parties"] || []
+        responsible_parties: metadata[RESPONSIBLE_PARTIES] || []
       }
     }
   end
@@ -72,11 +76,11 @@ class PublicationValidationService
     extra = @document.metadata_extra || {}
     roles = extra["roles"] || []
     parties = extra["parties"] || []
-    resp_parties = extra["responsible-parties"] || []
+    resp_parties = extra[RESPONSIBLE_PARTIES] || []
 
     # Add creator role if missing
     unless roles.any? { |r| CREATOR_ROLE_IDS.include?(r["id"]) }
-      roles << { "id" => "prepared-by", "title" => "Prepared By" }
+      roles << { "id" => PREPARED_BY, "title" => "Prepared By" }
     end
 
     # Add contact party if no parties exist
@@ -88,7 +92,7 @@ class PublicationValidationService
     # Add responsible-party if missing
     if resp_parties.empty? && parties.any?
       resp_parties << {
-        "role-id" => "prepared-by",
+        "role-id" => PREPARED_BY,
         "party-uuids" => [ parties.first["uuid"] ]
       }
     end
@@ -96,7 +100,7 @@ class PublicationValidationService
     @document.metadata_extra = extra.merge(
       "roles" => roles,
       "parties" => parties,
-      "responsible-parties" => resp_parties
+      RESPONSIBLE_PARTIES => resp_parties
     )
   end
 
@@ -117,7 +121,7 @@ class PublicationValidationService
   end
 
   def has_responsible_parties?
-    resp = metadata["responsible-parties"] || []
+    resp = metadata[RESPONSIBLE_PARTIES] || []
     resp.any? { |rp| rp["role-id"].present? && rp["party-uuids"].present? }
   end
 

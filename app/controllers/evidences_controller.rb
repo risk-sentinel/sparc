@@ -44,7 +44,9 @@ class EvidencesController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    # Empty action: renders edit.html.erb; the record is loaded by a set_* before_action.
+  end
 
   def update
     if @evidence.update(evidence_params)

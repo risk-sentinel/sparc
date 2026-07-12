@@ -2,6 +2,11 @@ class PoamJsonParserService
   include ProgressTrackable
   include BackMatterPromotable
 
+  # OSCAL element names reused across the JSON walk.
+  OBSERVATION_UUID     = "observation-uuid".freeze
+  RELATED_OBSERVATIONS = "related-observations".freeze
+  RISK_UUID            = "risk-uuid".freeze
+
   def initialize(poam_document, file_path)
     @document  = poam_document
     @file_path = file_path
@@ -124,8 +129,8 @@ class PoamJsonParserService
       end
 
       # Related observations
-      (risk["related-observations"] || []).each do |ro|
-        obs_record = obs_map[ro["observation-uuid"]]
+      (risk[RELATED_OBSERVATIONS] || []).each do |ro|
+        obs_record = obs_map[ro[OBSERVATION_UUID]]
         PoamRiskObservation.create!(poam_risk: record, poam_observation: obs_record) if obs_record
       end
 
@@ -193,8 +198,8 @@ class PoamJsonParserService
       )
 
       # Related observations
-      (finding["related-observations"] || []).each do |ro|
-        obs_record = obs_map[ro["observation-uuid"]]
+      (finding[RELATED_OBSERVATIONS] || []).each do |ro|
+        obs_record = obs_map[ro[OBSERVATION_UUID]]
         PoamFindingObservation.create!(poam_finding: record, poam_observation: obs_record) if obs_record
       end
 
@@ -202,7 +207,7 @@ class PoamJsonParserService
       # alias emitted by some XML→JSON converters).
       finding_risks = finding["related-risks"].presence || finding["associated-risks"] || []
       finding_risks.each do |rr|
-        risk_record = risk_map[rr["risk-uuid"]]
+        risk_record = risk_map[rr[RISK_UUID]]
         PoamFindingRisk.create!(poam_finding: record, poam_risk: risk_record) if risk_record
       end
 
@@ -247,7 +252,7 @@ class PoamJsonParserService
       # <associated-risk>, so XML→JSON converters and some tools (e.g. the
       # Checkov→OSCAL pipeline) emit "associated-risks" in JSON. Accept both.
       item_risks = item["related-risks"].presence || item["associated-risks"] || []
-      item_observations = item["related-observations"] || []
+      item_observations = item[RELATED_OBSERVATIONS] || []
 
       # Synthesize PoamRisk/PoamObservation records for inline references
       # whose UUIDs don't appear in the top-level risks/observations arrays.
@@ -257,7 +262,7 @@ class PoamJsonParserService
       item_observations.each { |ro| synthesize_observation_if_missing(ro, obs_map) }
 
       # Determine primary risk for denormalization (now includes synthesized risks)
-      primary_risk_uuid = item_risks.dig(0, "risk-uuid")
+      primary_risk_uuid = item_risks.dig(0, RISK_UUID)
       primary_risk = risk_map[primary_risk_uuid]
 
       record = @document.poam_items.create!(
@@ -278,13 +283,13 @@ class PoamJsonParserService
 
       # Join: item ↔ risks
       item_risks.each do |rr|
-        risk_record = risk_map[rr["risk-uuid"]]
+        risk_record = risk_map[rr[RISK_UUID]]
         PoamItemRisk.create!(poam_item: record, poam_risk: risk_record) if risk_record
       end
 
       # Join: item ↔ observations
       item_observations.each do |ro|
-        obs_record = obs_map[ro["observation-uuid"]]
+        obs_record = obs_map[ro[OBSERVATION_UUID]]
         PoamItemObservation.create!(poam_item: record, poam_observation: obs_record) if obs_record
       end
 
@@ -299,7 +304,7 @@ class PoamJsonParserService
   # Create a PoamRisk from inline reference data when the top-level risks
   # array doesn't contain a matching entry. Mutates risk_map in place.
   def synthesize_risk_if_missing(ref, risk_map)
-    uuid = ref["risk-uuid"]
+    uuid = ref[RISK_UUID]
     return if uuid.blank? || risk_map.key?(uuid)
     return unless ref["status"].present? || ref["description"].present? || ref["title"].present?
 
@@ -314,7 +319,7 @@ class PoamJsonParserService
   # Create a PoamObservation from inline reference data when the top-level
   # observations array doesn't contain a matching entry.
   def synthesize_observation_if_missing(ref, obs_map)
-    uuid = ref["observation-uuid"]
+    uuid = ref[OBSERVATION_UUID]
     return if uuid.blank? || obs_map.key?(uuid)
     return unless ref["description"].present? || ref["title"].present?
 
