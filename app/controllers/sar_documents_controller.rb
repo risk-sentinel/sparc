@@ -690,19 +690,7 @@ class SarDocumentsController < ApplicationController
   # upstream UUID (tracked via resource_data["source_uuid"]). Returns
   # count of newly-created records.
   def copy_back_matter_into_sar(sap_id, ssp_id, profile_id)
-    sources = []
-    if sap_id.present?
-      sap = SapDocument.find_by(id: sap_id)
-      if sap
-        sources << sap
-        sources << SspDocument.find_by(id: sap.ssp_document_id)         if sap.ssp_document_id.present?
-        sources << ProfileDocument.find_by(id: sap.profile_document_id) if sap.profile_document_id.present?
-      end
-    end
-    sources << SspDocument.find_by(id: ssp_id)         if ssp_id.present?
-    sources << ProfileDocument.find_by(id: profile_id) if profile_id.present?
-    sources.compact!
-    sources.uniq!
+    sources = gather_back_matter_sources(sap_id, ssp_id, profile_id)
 
     # source_uuids tracks which upstream UUIDs we've already copied so a
     # second associate_source call doesn't produce duplicates.
@@ -736,6 +724,25 @@ class SarDocumentsController < ApplicationController
     end
 
     copied
+  end
+
+  # Collects the upstream documents whose back-matter should be copied into
+  # the SAR (extracted from #copy_back_matter_into_sar to bound complexity).
+  def gather_back_matter_sources(sap_id, ssp_id, profile_id)
+    sources = []
+    if sap_id.present?
+      sap = SapDocument.find_by(id: sap_id)
+      if sap
+        sources << sap
+        sources << SspDocument.find_by(id: sap.ssp_document_id)         if sap.ssp_document_id.present?
+        sources << ProfileDocument.find_by(id: sap.profile_document_id) if sap.profile_document_id.present?
+      end
+    end
+    sources << SspDocument.find_by(id: ssp_id)         if ssp_id.present?
+    sources << ProfileDocument.find_by(id: profile_id) if profile_id.present?
+    sources.compact!
+    sources.uniq!
+    sources
   end
 
   def set_sar_document

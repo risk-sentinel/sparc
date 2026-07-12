@@ -41,39 +41,7 @@ class ProfileJsonParserService
 
     selected_ids.each do |raw_id|
       # Store the raw OSCAL id directly — it now matches catalog_controls.control_id natively.
-      alter    = alter_map[raw_id]
-      priority = extract_priority(alter)
-
-      attrs = {
-        control_id:     raw_id,
-        title:          nil,
-        priority:       priority,
-        control_family: raw_id.split("-").first.upcase.presence,
-        row_order:      row_order
-      }
-
-      idx = control_attrs.size
-      control_attrs << attrs
-
-      # Store alter data as fields
-      if alter
-        (alter["adds"] || []).each do |add|
-          (add["props"] || []).each do |prop|
-            next if prop["name"] == "priority"
-            field_entries << [ idx, "prop:#{prop['name']}", prop["value"] ]
-          end
-        end
-      end
-
-      # Store matching parameters as fields (raw OSCAL IDs in param keys)
-      param_map.each do |param_id, param_data|
-        next unless param_id.start_with?("#{raw_id}_")
-        values = Array(param_data["values"]).join(", ")
-        field_entries << [ idx, "parameter:#{param_id}", values ] if values.present?
-        label = param_data["label"]
-        field_entries << [ idx, "parameter_label:#{param_id}", label ] if label.present?
-      end
-
+      append_control_entry(raw_id, row_order, alter_map, param_map, control_attrs, field_entries)
       row_order += 1
     end
 
@@ -91,6 +59,48 @@ class ProfileJsonParserService
   end
 
   private
+
+  # Builds one control's attrs + field entries, appending to the shared
+  # accumulators (kept out of #parse to bound its cognitive complexity).
+  def append_control_entry(raw_id, row_order, alter_map, param_map, control_attrs, field_entries)
+    alter = alter_map[raw_id]
+
+    control_attrs << {
+      control_id:     raw_id,
+      title:          nil,
+      priority:       extract_priority(alter),
+      control_family: raw_id.split("-").first.upcase.presence,
+      row_order:      row_order
+    }
+    idx = control_attrs.size - 1
+
+    append_alter_prop_fields(alter, idx, field_entries)
+    append_param_fields(raw_id, idx, param_map, field_entries)
+  end
+
+  # Store alter `adds` props as fields (skipping the priority prop, which is
+  # promoted to a column above).
+  def append_alter_prop_fields(alter, idx, field_entries)
+    return unless alter
+
+    (alter["adds"] || []).each do |add|
+      (add["props"] || []).each do |prop|
+        next if prop["name"] == "priority"
+        field_entries << [ idx, "prop:#{prop['name']}", prop["value"] ]
+      end
+    end
+  end
+
+  # Store matching set-parameters as fields (raw OSCAL IDs in param keys).
+  def append_param_fields(raw_id, idx, param_map, field_entries)
+    param_map.each do |param_id, param_data|
+      next unless param_id.start_with?("#{raw_id}_")
+      values = Array(param_data["values"]).join(", ")
+      field_entries << [ idx, "parameter:#{param_id}", values ] if values.present?
+      label = param_data["label"]
+      field_entries << [ idx, "parameter_label:#{param_id}", label ] if label.present?
+    end
+  end
 
   def update_document_metadata(metadata, imports, profile)
     title = metadata["title"] || ""
