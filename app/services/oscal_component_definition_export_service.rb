@@ -101,11 +101,24 @@ class OscalComponentDefinitionExportService
     props = build_props(control)
     result["props"] = props if props.any?
 
-    # #393: table-driven statements when records exist (backfilled or
-    # imported); falls back to single field-synthesized statement for
-    # un-backfilled CDEFs (no linked profile) so existing exports work.
+    stmts = build_ir_statements(control, field_map, result["control-id"])
+    result["statements"] = stmts if stmts
+
+    # OSCAL-compliant enhanced fields
+    append_ir_enhanced_props(result, field_map)
+    append_ir_responsible_roles(result, field_map)
+    append_ir_set_parameters(result, field_map)
+    append_ir_links(result, control)
+
+    result
+  end
+
+  # #393: table-driven statements when records exist (backfilled or imported);
+  # falls back to a single field-synthesized statement for un-backfilled CDEFs
+  # (no linked profile) so existing exports work. Returns the array or nil.
+  def build_ir_statements(control, field_map, control_id)
     if control.cdef_control_statements.any?
-      result["statements"] = control.cdef_control_statements.order(:row_order).map do |stmt|
+      return control.cdef_control_statements.order(:row_order).map do |stmt|
         entry = {
           "statement-id" => stmt.statement_id,
           "uuid"         => stmt.uuid,
@@ -114,63 +127,57 @@ class OscalComponentDefinitionExportService
         entry["set-parameters"] = stmt.set_parameters_data if stmt.set_parameters_data.present?
         entry.compact
       end
-    else
-      narrative = field_map["implementation_narrative"]&.field_value
-      if narrative.present?
-        result["statements"] = [ {
-          "statement-id" => "#{result['control-id']}_stmt",
-          "uuid"         => OscalUuidService.derived(control.uuid, "cdef-statement", "default"),
-          "description"  => narrative
-        } ]
-      end
     end
 
-    # OSCAL-compliant enhanced fields
-    impl_status = field_map["implementation_status"]&.field_value
-    if impl_status.present?
+    narrative = field_map["implementation_narrative"]&.field_value
+    return nil if narrative.blank?
+
+    [ {
+      "statement-id" => "#{control_id}_stmt",
+      "uuid"         => OscalUuidService.derived(control.uuid, "cdef-statement", "default"),
+      "description"  => narrative
+    } ]
+  end
+
+  # Append CDEF field-derived props in a stable order (implementation-status,
+  # control-origin, baseline-priority).
+  def append_ir_enhanced_props(result, field_map)
+    {
+      "implementation_status" => "implementation-status",
+      "control_origin"        => "control-origin",
+      "baseline_priority"     => "baseline-priority"
+    }.each do |field_name, prop_name|
+      value = field_map[field_name]&.field_value
+      next if value.blank?
       result["props"] ||= []
-      result["props"] << { "name" => "implementation-status", "value" => impl_status }
+      result["props"] << { "name" => prop_name, "value" => value }
     end
+  end
 
-    control_origin = field_map["control_origin"]&.field_value
-    if control_origin.present?
-      result["props"] ||= []
-      result["props"] << { "name" => "control-origin", "value" => control_origin }
-    end
-
-    baseline_priority = field_map["baseline_priority"]&.field_value
-    if baseline_priority.present?
-      result["props"] ||= []
-      result["props"] << { "name" => "baseline-priority", "value" => baseline_priority }
-    end
-
+  def append_ir_responsible_roles(result, field_map)
     roles = field_map["responsible_roles"]&.field_value
-    if roles.present?
-      result["responsible-roles"] = roles.split(",").map(&:strip).reject(&:blank?).map do |role|
-        { "role-id" => role }
-      end
+    return if roles.blank?
+    result["responsible-roles"] = roles.split(",").map(&:strip).reject(&:blank?).map do |role|
+      { "role-id" => role }
     end
+  end
 
+  def append_ir_set_parameters(result, field_map)
     params = field_map["set_parameters"]&.field_value
-    if params.present?
-      begin
-        parsed = JSON.parse(params)
-        result["set-parameters"] = parsed.map do |param|
-          { "param-id" => param["id"] || param["param-id"], "values" => Array(param["value"] || param["values"]) }
-        end
-      rescue JSON::ParserError
-        # Skip malformed set_parameters
-      end
+    return if params.blank?
+    parsed = JSON.parse(params)
+    result["set-parameters"] = parsed.map do |param|
+      { "param-id" => param["id"] || param["param-id"], "values" => Array(param["value"] || param["values"]) }
     end
+  rescue JSON::ParserError
+    # Skip malformed set_parameters
+  end
 
-    # Back-matter resource links (href="#uuid" references)
-    if control.respond_to?(:back_matter_resources) && control.back_matter_resources.any?
-      result["links"] = control.back_matter_resources.map do |resource|
-        { "href" => "##{resource.uuid}", "rel" => resource.rel.presence || "reference" }
-      end
+  def append_ir_links(result, control)
+    return unless control.respond_to?(:back_matter_resources) && control.back_matter_resources.any?
+    result["links"] = control.back_matter_resources.map do |resource|
+      { "href" => "##{resource.uuid}", "rel" => resource.rel.presence || "reference" }
     end
-
-    result
   end
 
   def normalize_control_id(control, field_map)

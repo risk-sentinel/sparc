@@ -223,21 +223,7 @@ class SapDocumentsController < ApplicationController
     )
 
     # Resolve control IDs from the linked source (priority: profile > SSP profile > SSP controls)
-    control_ids = []
-    if profile_id.present?
-      profile = ProfileDocument.find_by(id: profile_id)
-      control_ids = profile.profile_controls.pluck(:control_id) if profile
-    end
-    if control_ids.empty? && ssp_id.present?
-      ssp = SspDocument.find_by(id: ssp_id)
-      if ssp&.profile_document_id.present?
-        profile = ProfileDocument.find_by(id: ssp.profile_document_id)
-        control_ids = profile.profile_controls.pluck(:control_id) if profile
-      end
-      if control_ids.empty? && ssp
-        control_ids = ssp.ssp_controls.where.not(control_id: nil).pluck(:control_id).uniq
-      end
-    end
+    control_ids = resolve_associated_control_ids(profile_id, ssp_id)
 
     if control_ids.empty?
       flash[:error] = "Source associated but no controls found in linked profile/SSP."
@@ -248,23 +234,8 @@ class SapDocumentsController < ApplicationController
     # come from ControlObjectiveExtractorService below.
     method_map = build_assessment_method_map(profile_id, ssp_id)
 
-    # Replace existing controls + objectives. Wrap in a transaction so a
-    # mid-rebuild failure can't leave the document in a half-rebuilt state.
-    objective_count = 0
-    ApplicationRecord.transaction do
-      @sap_document.sap_controls.delete_all  # cascades to objectives
-      control_ids.each_with_index do |control_id, idx|
-        denormalized_id = control_id.to_s.upcase.gsub(".", " (").then { |s| s.include?("(") ? "#{s})" : s }
-        methods = (method_map[control_id.to_s.downcase] || []).map(&:downcase).uniq
-        @sap_document.sap_controls.create!(
-          control_id: denormalized_id,
-          assessment_method: methods.join(","),
-          assessment_status: "planned",
-          row_order: idx
-        )
-      end
-      objective_count = ControlObjectiveExtractorService.new(@sap_document).backfill!
-    end
+    # Replace existing controls + objectives (transactional — see helper).
+    objective_count = rebuild_sap_controls(control_ids, method_map)
 
     bm_count = copy_back_matter_from_source(profile_id, ssp_id)
 
@@ -281,6 +252,49 @@ class SapDocumentsController < ApplicationController
   rescue StandardError => e
     flash[:error] = "Failed to associate: #{e.message}"
     redirect_to sap_document_path(@sap_document)
+  end
+
+  # Resolve control ids from the associated source in priority order:
+  # linked profile > SSP's profile > SSP's own controls (extracted from
+  # #associate_source to bound cognitive complexity).
+  def resolve_associated_control_ids(profile_id, ssp_id)
+    control_ids = []
+    if profile_id.present?
+      profile = ProfileDocument.find_by(id: profile_id)
+      control_ids = profile.profile_controls.pluck(:control_id) if profile
+    end
+    if control_ids.empty? && ssp_id.present?
+      ssp = SspDocument.find_by(id: ssp_id)
+      if ssp&.profile_document_id.present?
+        profile = ProfileDocument.find_by(id: ssp.profile_document_id)
+        control_ids = profile.profile_controls.pluck(:control_id) if profile
+      end
+      if control_ids.empty? && ssp
+        control_ids = ssp.ssp_controls.where.not(control_id: nil).pluck(:control_id).uniq
+      end
+    end
+    control_ids
+  end
+
+  # Rebuild the SAP's controls + objectives transactionally so a mid-rebuild
+  # failure can't leave the document half-rebuilt. Returns the objective count.
+  def rebuild_sap_controls(control_ids, method_map)
+    objective_count = 0
+    ApplicationRecord.transaction do
+      @sap_document.sap_controls.delete_all  # cascades to objectives
+      control_ids.each_with_index do |control_id, idx|
+        denormalized_id = control_id.to_s.upcase.gsub(".", " (").then { |s| s.include?("(") ? "#{s})" : s }
+        methods = (method_map[control_id.to_s.downcase] || []).map(&:downcase).uniq
+        @sap_document.sap_controls.create!(
+          control_id: denormalized_id,
+          assessment_method: methods.join(","),
+          assessment_status: "planned",
+          row_order: idx
+        )
+      end
+      objective_count = ControlObjectiveExtractorService.new(@sap_document).backfill!
+    end
+    objective_count
   end
 
   # PATCH /sap_documents/:id/update_objective
