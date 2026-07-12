@@ -34,7 +34,7 @@ class SspJsonParserService
   end
 
   def parse_from_hash(data)
-    ssp = data["system-security-plan"] || raise("Invalid OSCAL SSP: missing 'system-security-plan' root key")
+    ssp = data["system-security-plan"] || raise(DocumentParseError, "Invalid OSCAL SSP: missing 'system-security-plan' root key")
 
     update_processing_stage!(:creating_records)
     ActiveRecord::Base.transaction do

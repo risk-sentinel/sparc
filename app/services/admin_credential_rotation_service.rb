@@ -114,7 +114,7 @@ class AdminCredentialRotationService
   end
 
   def push_to_secrets_manager!
-    arn = ENV["SPARC_ADMIN_CREDENTIALS_SECRET_ARN"].presence
+    arn = ENV.fetch("SPARC_ADMIN_CREDENTIALS_SECRET_ARN", nil).presence
     return Result.new(success: false, status_code: :failed_dependency,
                       error: "SPARC_ADMIN_CREDENTIALS_SECRET_ARN is not set") if arn.blank?
 

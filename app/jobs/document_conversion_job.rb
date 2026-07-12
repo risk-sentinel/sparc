@@ -50,11 +50,11 @@ class DocumentConversionJob < ApplicationJob
 
     begin
       unless document.file.attached?
-        raise "Document #{document_id} has no attached file (cannot parse)"
+        raise DocumentParseError, "Document #{document_id} has no attached file (cannot parse)"
       end
 
       parser_class = registry.parser_map.fetch(document.file_type) do
-        raise "Unsupported file type: #{document.file_type}"
+        raise DocumentParseError, "Unsupported file type: #{document.file_type}"
       end
 
       # Pull bytes from Active Storage into a local tempfile, hand the

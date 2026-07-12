@@ -85,8 +85,8 @@ RSpec.describe "About pages", type: :request do
 
     it "renders custom resources from SPARC_RESOURCES env var" do
       custom = [ { "display_text" => "Custom Link", "href" => "https://custom.example.com" } ].to_json
-      allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with("SPARC_RESOURCES").and_return(custom)
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("SPARC_RESOURCES", nil).and_return(custom)
 
       get about_resources_path
       body = response.body

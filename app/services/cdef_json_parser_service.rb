@@ -226,7 +226,7 @@ class CdefJsonParserService
 
   def parse_stigviewer(data)
     stig = data["stigs"]&.first
-    raise "No STIG data found in JSON" unless stig
+    raise DocumentParseError, "No STIG data found in JSON" unless stig
 
     @document.update!(
       cdef_type:       "disa_stig",

@@ -23,7 +23,7 @@ class ProfileXmlParserService
       return parse_resolved_via_json(catalog_el, doc)
     end
 
-    profile = doc.at_xpath("//profile") || raise("Invalid OSCAL Profile XML: missing <profile> element")
+    profile = doc.at_xpath("//profile") || raise(DocumentParseError, "Invalid OSCAL Profile XML: missing <profile> element")
 
     update_document_metadata(profile)
 
@@ -141,10 +141,8 @@ class ProfileXmlParserService
 
   def extract_priority(alter)
     return nil unless alter
-    alter.xpath(".//add/prop[@name='priority']").each do |prop|
-      return prop["value"] || prop.text.strip
-    end
-    nil
+    prop = alter.xpath(".//add/prop[@name='priority']").first
+    prop && (prop["value"] || prop.text.strip)
   end
 
   # Detect whether a <catalog> element is a resolved profile catalog.

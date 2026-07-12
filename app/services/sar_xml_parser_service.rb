@@ -26,7 +26,7 @@ class SarXmlParserService
     doc = XmlSecurity.parse(xml)
     root = doc.at_xpath("xmlns:assessment-results", "xmlns" => OSCAL_NS) ||
            doc.at_xpath("assessment-results") ||
-           raise("Invalid OSCAL Assessment Results XML: missing <assessment-results> root")
+           raise(DocumentParseError, "Invalid OSCAL Assessment Results XML: missing <assessment-results> root")
 
     ar_hash = build_ar_hash(root)
     data = { "assessment-results" => ar_hash }
