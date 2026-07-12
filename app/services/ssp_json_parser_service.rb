@@ -334,15 +334,7 @@ class SspJsonParserService
       # marker when by-components[].satisfied[] or .responsibilities[]
       # are present. The tag lets LeveragedAuthorization#inheritable_statements
       # query-match on set_parameters_data.
-      set_params = Array(stmt["set-parameters"]).dup
-      (stmt[BY_COMPONENTS] || []).each do |bc|
-        if Array(bc["satisfied"]).any?
-          set_params << { "tag" => "provided" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "provided" }
-        end
-        if Array(bc["responsibilities"]).any?
-          set_params << { "tag" => "responsibility" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "responsibility" }
-        end
-      end
+      set_params = statement_set_parameters(stmt)
 
       record = ctrl.ssp_control_statements.create!(
         uuid:                   uuid,
@@ -359,23 +351,45 @@ class SspJsonParserService
       # SSP source). The href carries the source UUID; we defer actual
       # source-record resolution to a second pass in `link_inheritances!`
       # because the source may be imported later in the same run.
-      @pending_inheritance_links ||= []
-      Array(stmt["links"]).each do |link|
-        next unless link.is_a?(Hash)
-        rel = link["rel"]
-        next unless %w[implements inherited].include?(rel)
-        href = link["href"].to_s
-        source_uuid = extract_uuid(href)
-        next if source_uuid.blank?
-
-        @pending_inheritance_links << {
-          target_id: record.id,
-          source_uuid: source_uuid,
-          rel: rel
-        }
-      end
+      queue_inheritance_links(record, stmt)
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
       Rails.logger.warn("[SspJsonParser] skipping statement #{stmt_id}: #{e.message}")
+    end
+  end
+
+  # #396: tag set-parameters with provided/responsibility markers when the
+  # statement's by-components carry satisfied[]/responsibilities[]. Extracted
+  # from #parse_statements_as_fields to bound its cognitive complexity.
+  def statement_set_parameters(stmt)
+    set_params = Array(stmt["set-parameters"]).dup
+    (stmt[BY_COMPONENTS] || []).each do |bc|
+      if Array(bc["satisfied"]).any?
+        set_params << { "tag" => "provided" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "provided" }
+      end
+      if Array(bc["responsibilities"]).any?
+        set_params << { "tag" => "responsibility" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "responsibility" }
+      end
+    end
+    set_params
+  end
+
+  # #396 + #398: queue inheritance links from statements[].links[] for the
+  # second-pass resolution in #link_inheritances!.
+  def queue_inheritance_links(record, stmt)
+    @pending_inheritance_links ||= []
+    Array(stmt["links"]).each do |link|
+      next unless link.is_a?(Hash)
+      rel = link["rel"]
+      next unless %w[implements inherited].include?(rel)
+      href = link["href"].to_s
+      source_uuid = extract_uuid(href)
+      next if source_uuid.blank?
+
+      @pending_inheritance_links << {
+        target_id: record.id,
+        source_uuid: source_uuid,
+        rel: rel
+      }
     end
   end
 
