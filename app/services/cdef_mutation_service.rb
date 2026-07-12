@@ -32,13 +32,15 @@
 class CdefMutationService
   class ValidationError < StandardError; end
 
+  BLOCK_REQUIRED = "block required".freeze
+
   # Wrap a mutation block. Yields the document to the caller; on
   # successful block return, validates that the resulting OSCAL would
   # round-trip cleanly, then commits the transaction.
   #
   # Returns the (reloaded) document.
   def self.apply(cdef_document)
-    raise ArgumentError, "block required" unless block_given?
+    raise ArgumentError, BLOCK_REQUIRED unless block_given?
 
     new(cdef_document).apply { |c| yield c }
   end
@@ -49,7 +51,7 @@ class CdefMutationService
   # CdefDocument; the service validates its post-construction OSCAL
   # representation inside the same transaction.
   def self.build_and_apply
-    raise ArgumentError, "block required" unless block_given?
+    raise ArgumentError, BLOCK_REQUIRED unless block_given?
 
     ActiveRecord::Base.transaction do
       cdef = yield
@@ -68,7 +70,7 @@ class CdefMutationService
   end
 
   def apply
-    raise ArgumentError, "block required" unless block_given?
+    raise ArgumentError, BLOCK_REQUIRED unless block_given?
 
     ActiveRecord::Base.transaction do
       yield(@cdef)

@@ -23,6 +23,8 @@ require "tempfile"
 #   - SR-3 Supply Chain Controls: blob SHA-based integrity verification
 #   - SA-15 Development Process: third-party content lifecycle
 class AwsLabsCdefImportService
+  OSCAL_VERSION = "oscal-version".freeze
+
   Result = Struct.new(
     :discovered, :imported, :skipped_unchanged, :superseded, :errors,
     keyword_init: true
@@ -100,15 +102,15 @@ class AwsLabsCdefImportService
       file = @client.fetch_file(path: entry["path"])
       data = JSON.parse(file[:content])
       meta = data.dig("component-definition", "metadata") || {}
-      next nil if meta["oscal-version"].blank?
-      next nil if @allowed_oscal_versions.any? && !@allowed_oscal_versions.include?(meta["oscal-version"])
+      next nil if meta[OSCAL_VERSION].blank?
+      next nil if @allowed_oscal_versions.any? && !@allowed_oscal_versions.include?(meta[OSCAL_VERSION])
 
       {
         path: file[:path],
         sha: file[:sha],
         html_url: file[:html_url],
         content: file[:content],
-        oscal_version: meta["oscal-version"],
+        oscal_version: meta[OSCAL_VERSION],
         metadata_version: meta["version"].to_s,
         service_dir: service_dir_for(file[:path])
       }

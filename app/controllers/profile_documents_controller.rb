@@ -102,7 +102,7 @@ class ProfileDocumentsController < ApplicationController
     audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "json" })
     send_data json_data,
               filename:    "#{@profile_document.name}_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -114,11 +114,11 @@ class ProfileDocumentsController < ApplicationController
       audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal" })
       send_data service.export,
                 filename:    "#{@profile_document.name}_oscal_profile_#{Date.today}.json",
-                type:        "application/json",
+                type:        JSON_CONTENT_TYPE,
                 disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for Profile #{@profile_document.id}: #{result.errors.first(3).join('; ')}")
-      flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+      flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
       redirect_to profile_document_path(@profile_document, oscal_validation_failed: 1, oscal_format: "json")
     end
   end
@@ -130,7 +130,7 @@ class ProfileDocumentsController < ApplicationController
     audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal_validated" })
     send_data oscal_data,
               filename:    "#{@profile_document.name}_oscal_profile_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -141,7 +141,7 @@ class ProfileDocumentsController < ApplicationController
     audit_log("profile_document_exported", subject: @profile_document, metadata: { name: @profile_document.name, format: "oscal_unvalidated" })
     send_data oscal_data,
               filename:    "#{@profile_document.name}_oscal_profile_unvalidated_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -157,7 +157,7 @@ class ProfileDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL YAML validation failed for Profile #{@profile_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to profile_document_path(@profile_document, oscal_validation_failed: 1, oscal_format: "yaml")
   end
 
@@ -173,7 +173,7 @@ class ProfileDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL XML validation failed for Profile #{@profile_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to profile_document_path(@profile_document, oscal_validation_failed: 1, oscal_format: "xml")
   end
 
@@ -208,7 +208,7 @@ class ProfileDocumentsController < ApplicationController
               metadata: { name: @profile_document.name, format: "resolved_catalog" })
     send_data json_data,
               filename:    "#{@profile_document.name}_resolved_catalog_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 

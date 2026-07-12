@@ -13,6 +13,11 @@ class OscalSchema < ApplicationRecord
   SUPPORTED_VERSIONS = %w[1.1.1 1.1.2 1.1.3 1.2.0 1.2.1].freeze
   DEFAULT_VERSION    = "1.1.2"
 
+  # OSCAL document-type strings reused as map keys + root_keys below.
+  COMPONENT_DEFINITION = "component-definition".freeze
+  ASSESSMENT_PLAN      = "assessment-plan".freeze
+  ASSESSMENT_RESULTS   = "assessment-results".freeze
+
   # Versions where mapping schemas exist (introduced in 1.2.0)
   MAPPING_VERSIONS = %w[1.2.0 1.2.1].freeze
 
@@ -29,20 +34,20 @@ class OscalSchema < ApplicationRecord
   DOCUMENT_TYPE_MAP = {
     "catalog"              => { file: "oscal_catalog_schema.json",            root_key: "catalog" },
     "profile"              => { file: "oscal_profile_schema.json",            root_key: "profile" },
-    "component-definition" => { file: "oscal_component_schema.json",          root_key: "component-definition" },
+    COMPONENT_DEFINITION => { file: "oscal_component_schema.json",          root_key: COMPONENT_DEFINITION },
     "ssp"                  => { file: "oscal_ssp_schema.json",                root_key: "system-security-plan" },
-    "assessment-plan"      => { file: "oscal_assessment-plan_schema.json",    root_key: "assessment-plan" },
-    "assessment-results"   => { file: "oscal_assessment-results_schema.json", root_key: "assessment-results" },
+    ASSESSMENT_PLAN      => { file: "oscal_assessment-plan_schema.json",    root_key: ASSESSMENT_PLAN },
+    ASSESSMENT_RESULTS   => { file: "oscal_assessment-results_schema.json", root_key: ASSESSMENT_RESULTS },
     "poam"                 => { file: "oscal_poam_schema.json",               root_key: "plan-of-action-and-milestones" },
     "mapping"              => { file: "oscal_mapping_schema.json",            root_key: "mapping-collection" }
   }.freeze
 
   # Maps SPARC internal symbols to OSCAL document type strings
   SPARC_TYPE_MAP = {
-    component_definition: "component-definition",
+    component_definition: COMPONENT_DEFINITION,
     ssp:                  "ssp",
-    assessment_plan:      "assessment-plan",
-    assessment_results:   "assessment-results",
+    assessment_plan:      ASSESSMENT_PLAN,
+    assessment_results:   ASSESSMENT_RESULTS,
     poam:                 "poam",
     profile:              "profile",
     catalog:              "catalog",

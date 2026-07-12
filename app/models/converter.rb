@@ -13,6 +13,9 @@
 class Converter < ApplicationRecord
   include Sluggable
 
+  # Strips the numeric control suffix to derive the family (e.g. "AC-2(3)" → "AC").
+  FAMILY_SUFFIX_PATTERN = /-\d+.*/
+
   has_many :converter_entries, dependent: :destroy
 
   before_validation :generate_uuid, on: :create
@@ -70,7 +73,7 @@ class Converter < ApplicationRecord
   def target_families
     converter_entries
       .pluck(:target_id)
-      .map { |t| t.gsub(/-\d+.*/, "").upcase }
+      .map { |t| t.gsub(FAMILY_SUFFIX_PATTERN, "").upcase }
       .uniq
       .sort
   end
@@ -81,8 +84,8 @@ class Converter < ApplicationRecord
       total_entries: entries.size,
       unique_sources: entries.map(&:source_id).uniq.size,
       unique_targets: entries.map(&:target_id).uniq.size,
-      families: entries.map { |e| e.target_id.gsub(/-\d+.*/, "").upcase }.uniq.sort,
-      family_count: entries.map { |e| e.target_id.gsub(/-\d+.*/, "").upcase }.uniq.size
+      families: entries.map { |e| e.target_id.gsub(FAMILY_SUFFIX_PATTERN, "").upcase }.uniq.sort,
+      family_count: entries.map { |e| e.target_id.gsub(FAMILY_SUFFIX_PATTERN, "").upcase }.uniq.size
     }
   end
 

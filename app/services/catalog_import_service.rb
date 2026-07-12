@@ -29,6 +29,8 @@ require "yaml"
 class CatalogImportService
   include ProgressTrackable
 
+  HOW_MANY = "how-many".freeze
+
   class ImportError < StandardError; end
 
   FAMILY_NAME_TO_CODE = {
@@ -514,7 +516,7 @@ class CatalogImportService
       select_node = param_node.at_xpath("select")
       if select_node
         sel = {}
-        sel["how-many"] = select_node["how-many"] if select_node["how-many"]
+        sel[HOW_MANY] = select_node[HOW_MANY] if select_node[HOW_MANY]
         sel["choice"] = select_node.xpath("choice").map { |c| c.text.strip }
         entry["select"] = sel
       end

@@ -11,6 +11,7 @@
 class OscalResolvedProfileCatalogService
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
+  MEDIA_TYPE = "media-type".freeze
 
   def initialize(profile_document)
     @profile = profile_document
@@ -192,7 +193,7 @@ class OscalResolvedProfileCatalogService
       "uuid"        => @profile.uuid,
       "title"       => @profile.name,
       "description" => "Source profile used to generate this resolved catalog",
-      "rlinks"      => [ { "href" => "#{@profile.name.parameterize}.json", "media-type" => "application/json" } ]
+      "rlinks"      => [ { "href" => "#{@profile.name.parameterize}.json", MEDIA_TYPE => "application/json" } ]
     }
 
     # Source catalog resource
@@ -200,7 +201,7 @@ class OscalResolvedProfileCatalogService
       "uuid"        => @catalog.oscal_uuid,
       "title"       => @catalog.name,
       "description" => "Source catalog referenced by the profile",
-      "rlinks"      => [ { "href" => "#{@catalog.name.parameterize}.json", "media-type" => "application/json" } ]
+      "rlinks"      => [ { "href" => "#{@catalog.name.parameterize}.json", MEDIA_TYPE => "application/json" } ]
     }
 
     # SPARC identifying resource
@@ -208,7 +209,7 @@ class OscalResolvedProfileCatalogService
       "uuid"        => SecureRandom.uuid,
       "title"       => "SPARC Document Source",
       "description" => "Managed by SPARC",
-      "rlinks"      => [ { "href" => SparcConfig.app_url, "media-type" => "text/html" } ]
+      "rlinks"      => [ { "href" => SparcConfig.app_url, MEDIA_TYPE => "text/html" } ]
     }
 
     { "resources" => resources }

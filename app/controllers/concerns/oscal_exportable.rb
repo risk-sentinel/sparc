@@ -12,6 +12,12 @@
 module OscalExportable
   extend ActiveSupport::Concern
 
+  # Shared across the including document controllers (resolved via ancestor
+  # constant lookup) to avoid duplicating these literals per controller.
+  JSON_CONTENT_TYPE = "application/json".freeze
+  SCHEMA_VALIDATION_FAILED_FLASH =
+    "OSCAL export failed schema validation. The export modal below has the specifics.".freeze
+
   # Public action — routable as GET validate_oscal_export
   def validate_oscal_export
     doc = oscal_export_document

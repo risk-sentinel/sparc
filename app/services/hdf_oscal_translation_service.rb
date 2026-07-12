@@ -14,6 +14,7 @@
 # translation as authenticated REST endpoints.
 class HdfOscalTranslationService
   OSCAL_POAM = "oscal-poam"
+  BACK_MATTER = "back-matter".freeze
 
   def initialize(runner: HdfRunner.new)
     @runner = runner
@@ -80,11 +81,11 @@ class HdfOscalTranslationService
     return oscal if root_key.nil?
 
     oscal[root_key] ||= {}
-    oscal[root_key]["back-matter"] ||= {}
-    oscal[root_key]["back-matter"]["resources"] ||= []
+    oscal[root_key][BACK_MATTER] ||= {}
+    oscal[root_key][BACK_MATTER]["resources"] ||= []
 
     boundary.evidences.includes(:attestations, :evidence_control_links).find_each do |evidence|
-      oscal[root_key]["back-matter"]["resources"] << build_resource(evidence)
+      oscal[root_key][BACK_MATTER]["resources"] << build_resource(evidence)
     end
 
     oscal

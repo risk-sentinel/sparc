@@ -5,6 +5,7 @@ class SarDocumentsController < ApplicationController
   include OscalExportable
 
   CONTROLS_PER_PAGE = 50
+  NO_DESCRIPTION = "No description provided.".freeze
 
   before_action :set_sar_document, only: [
     :show, :update, :destroy, :download_json, :download_excel,
@@ -200,7 +201,7 @@ class SarDocumentsController < ApplicationController
 
     send_data json_data,
               filename:    "#{@sar_document.name}_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -224,11 +225,11 @@ class SarDocumentsController < ApplicationController
 
       send_data service.export,
                 filename:    "#{@sar_document.name}_oscal_sar_#{Date.today}.json",
-                type:        "application/json",
+                type:        JSON_CONTENT_TYPE,
                 disposition: "attachment"
     else
       Rails.logger.warn("OSCAL validation failed for SAR #{@sar_document.id}: #{result.errors.first(3).join('; ')}")
-      flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+      flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
       redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "json")
     end
   end
@@ -241,7 +242,7 @@ class SarDocumentsController < ApplicationController
 
     send_data oscal_data,
               filename:    "#{@sar_document.name}_oscal_ar_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -253,7 +254,7 @@ class SarDocumentsController < ApplicationController
 
     send_data oscal_data,
               filename:    "#{@sar_document.name}_oscal_ar_unvalidated_#{Date.today}.json",
-              type:        "application/json",
+              type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
   end
 
@@ -270,7 +271,7 @@ class SarDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL YAML validation failed for SAR #{@sar_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "yaml")
   end
 
@@ -287,7 +288,7 @@ class SarDocumentsController < ApplicationController
               disposition: "attachment"
   rescue OscalValidationError => e
     Rails.logger.warn("OSCAL XML validation failed for SAR #{@sar_document.id}: #{e.message.to_s.truncate(300)}")
-    flash[:warning] = "OSCAL export failed schema validation. The export modal below has the specifics."
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
     redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "xml")
   end
 
@@ -516,7 +517,7 @@ class SarDocumentsController < ApplicationController
         record = result.sar_observations.create!(
           uuid: SecureRandom.uuid,
           title: o_params[:title].presence || "Observation",
-          description: o_params[:description].presence || "No description provided.",
+          description: o_params[:description].presence || NO_DESCRIPTION,
           collected: o_params[:collected].present? ? o_params[:collected] : Time.current
         )
         seen_ids << record.id
@@ -556,7 +557,7 @@ class SarDocumentsController < ApplicationController
         result.sar_findings.create!(
           uuid: SecureRandom.uuid,
           title: f_params[:title].presence || "Finding",
-          description: f_params[:description].presence || "No description provided.",
+          description: f_params[:description].presence || NO_DESCRIPTION,
           target_data: target_data
         )
       end
@@ -585,7 +586,7 @@ class SarDocumentsController < ApplicationController
         result.sar_risks.create!(
           uuid: SecureRandom.uuid,
           title: r_params[:title].presence || "Risk",
-          description: r_params[:description].presence || "No description provided.",
+          description: r_params[:description].presence || NO_DESCRIPTION,
           status: r_params[:status].presence || "open"
         )
       end

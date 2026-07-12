@@ -25,6 +25,8 @@
 #   SA-10 Developer Configuration Management (back-matter traceability)
 #
 class Api::V1::BackMatterResourcesController < Api::V1::BaseController
+  SCOPE_BACK_MATTER_WRITE = "back_matter.write".freeze
+
   before_action :set_resource, only: %i[show update destroy link unlink promote
                                          approve_promotion reject_promotion
                                          archive restore changes]
@@ -297,7 +299,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
 
   def authorize_write!
     return if current_user.admin?
-    return if current_user.has_permission?("back_matter.write")
+    return if current_user.has_permission?(SCOPE_BACK_MATTER_WRITE)
 
     raise NotAuthorizedError, "Not authorized to manage back-matter resources"
   end
@@ -305,7 +307,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
   def authorize_promote!
     return if current_user.admin?
     return if current_user.has_permission?("back_matter.promote")
-    return if current_user.has_permission?("back_matter.write")
+    return if current_user.has_permission?(SCOPE_BACK_MATTER_WRITE)
 
     raise NotAuthorizedError, "Not authorized to request promotion"
   end
@@ -322,7 +324,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
   def authorize_bulk_import!
     return if current_user.admin?
     return if current_user.has_permission?("back_matter.bulk_import")
-    return if current_user.has_permission?("back_matter.write")
+    return if current_user.has_permission?(SCOPE_BACK_MATTER_WRITE)
 
     raise NotAuthorizedError, "Not authorized to bulk-import back-matter resources"
   end
@@ -339,7 +341,7 @@ class Api::V1::BackMatterResourcesController < Api::V1::BaseController
   def authorize_archive!
     return if current_user.admin?
     return if current_user.has_permission?("back_matter.archive")
-    return if current_user.has_permission?("back_matter.write")
+    return if current_user.has_permission?(SCOPE_BACK_MATTER_WRITE)
 
     raise NotAuthorizedError, "Not authorized to archive or restore back-matter resources"
   end

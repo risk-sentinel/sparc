@@ -5,6 +5,7 @@ class ProfileXmlParserService
   include ProgressTrackable
 
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
+  OSCAL_VERSION = "oscal-version".freeze
 
   def initialize(profile_document, file_path)
     @document  = profile_document
@@ -101,7 +102,7 @@ class ProfileXmlParserService
       description:     title,
       baseline_level:  baseline,
       profile_version: metadata&.at_xpath("version")&.text,
-      oscal_version:   metadata&.at_xpath("oscal-version")&.text,
+      oscal_version:   metadata&.at_xpath(OSCAL_VERSION)&.text,
       import_metadata: {
         "format"       => "oscal_profile_xml",
         "uuid"         => profile["uuid"],
@@ -192,7 +193,7 @@ class ProfileXmlParserService
     h["title"] = metadata.at_xpath("title")&.text
     h["last-modified"] = metadata.at_xpath("last-modified")&.text
     h["version"] = metadata.at_xpath("version")&.text
-    h["oscal-version"] = metadata.at_xpath("oscal-version")&.text
+    h[OSCAL_VERSION] = metadata.at_xpath(OSCAL_VERSION)&.text
 
     props = metadata.xpath("prop").map { |p| xml_prop_to_json(p) }
     h["props"] = props if props.any?

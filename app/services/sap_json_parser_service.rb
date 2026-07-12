@@ -12,6 +12,10 @@ class SapJsonParserService
   include ProgressTrackable
   include BackMatterPromotable
 
+  # OSCAL keys reused across the JSON walk.
+  CONTROL_ID    = "control-id".freeze
+  OSCAL_VERSION = "oscal-version".freeze
+
   def initialize(document, file_path)
     @document = document
     @file_path = file_path
@@ -42,7 +46,7 @@ class SapJsonParserService
     attrs = {}
 
     attrs[:description] = metadata["title"] if @document.description.blank? && metadata["title"].present?
-    attrs[:oscal_version] = metadata["oscal-version"] if metadata["oscal-version"].present?
+    attrs[:oscal_version] = metadata[OSCAL_VERSION] if metadata[OSCAL_VERSION].present?
     attrs[:sap_version] = metadata["version"] if metadata["version"].present?
 
     props = metadata["props"] || []
@@ -50,7 +54,7 @@ class SapJsonParserService
     attrs[:assessment_type] = type_prop["value"] if type_prop
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
-    attrs[:metadata_extra] = metadata.except("title", "version", "oscal-version", "last-modified")
+    attrs[:metadata_extra] = metadata.except("title", "version", OSCAL_VERSION, "last-modified")
 
     attrs[:import_metadata] = {
       "uuid" => plan["uuid"]
@@ -223,7 +227,7 @@ class SapJsonParserService
     selections.each do |sel|
       # Explicit control list
       (sel["include-controls"] || []).each do |ic|
-        ids << ic["control-id"] if ic["control-id"].present?
+        ids << ic[CONTROL_ID] if ic[CONTROL_ID].present?
       end
 
       # include-all: empty hash {} means "all controls" per OSCAL spec.
@@ -361,7 +365,7 @@ class SapJsonParserService
       statement_ids = Hash.new { |h, k| h[k] = [] }
       (related["control-selections"] || []).each do |sel|
         (sel["include-controls"] || []).each do |ic|
-          cid = ic["control-id"]
+          cid = ic[CONTROL_ID]
           control_ids << cid
           (ic["statement-ids"] || []).each { |sid| statement_ids[cid] << sid }
         end
