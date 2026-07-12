@@ -4,6 +4,15 @@
 class SarXmlParserService
   include ProgressTrackable
 
+  # OSCAL element/attribute names reused across the XML→hash walk.
+  OSCAL_VERSION    = "oscal-version".freeze
+  LAST_MODIFIED    = "last-modified".freeze
+  OBSERVATION_UUID = "observation-uuid".freeze
+  CONTROL_ID       = "control-id".freeze
+  ROLE_ID          = "role-id".freeze
+  MEDIA_TYPE       = "media-type".freeze
+  XMLNS_ORIGIN     = "xmlns:origin".freeze
+
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
 
   def initialize(document, file_path)
@@ -49,8 +58,8 @@ class SarXmlParserService
     {
       "title"         => text(node, "title"),
       "version"       => text(node, "version"),
-      "oscal-version" => text(node, "oscal-version"),
-      "last-modified" => text(node, "last-modified"),
+      OSCAL_VERSION => text(node, OSCAL_VERSION),
+      LAST_MODIFIED => text(node, LAST_MODIFIED),
       "revisions"     => node.xpath("xmlns:revisions/xmlns:revision", ns).map { |r| revision_to_hash(r) }.presence,
       "roles"         => node.xpath("xmlns:role", ns).map { |r| role_to_hash(r) },
       "parties"       => node.xpath("xmlns:party", ns).map { |p| party_to_hash(p) },
@@ -63,8 +72,8 @@ class SarXmlParserService
     {
       "title"         => text(node, "title"),
       "version"       => text(node, "version"),
-      "oscal-version" => text(node, "oscal-version"),
-      "last-modified" => text(node, "last-modified"),
+      OSCAL_VERSION => text(node, OSCAL_VERSION),
+      LAST_MODIFIED => text(node, LAST_MODIFIED),
       "links"         => parse_links(node),
       "remarks"       => text(node, "remarks")
     }.compact
@@ -87,7 +96,7 @@ class SarXmlParserService
 
   def responsible_party_to_hash(node)
     {
-      "role-id"     => node["role-id"],
+      ROLE_ID     => node[ROLE_ID],
       "party-uuids" => node.xpath("xmlns:party-uuid", ns).map(&:text)
     }.compact
   end
@@ -118,7 +127,7 @@ class SarXmlParserService
       "description"       => text(node, "description"),
       "purpose"           => text(node, "purpose"),
       "status"            => status_node ? { "state" => status_node["state"], "remarks" => text(status_node, "remarks") }.compact : nil,
-      "responsible-roles" => node.xpath("xmlns:responsible-role", ns).map { |rr| { "role-id" => rr["role-id"] } },
+      "responsible-roles" => node.xpath("xmlns:responsible-role", ns).map { |rr| { ROLE_ID => rr[ROLE_ID] } },
       "protocols"         => node.xpath("xmlns:protocol", ns).map { |p| { "uuid" => p["uuid"], "name" => p["name"] }.compact },
       "props"             => parse_props(node),
       "links"             => parse_links(node),
@@ -181,8 +190,8 @@ class SarXmlParserService
     {
       "description"      => text(node, "description"),
       "include-all"      => node.at_xpath("xmlns:include-all", ns) ? {} : nil,
-      "include-controls" => node.xpath("xmlns:include-control", ns).map { |c| { "control-id" => c["control-id"] } },
-      "exclude-controls" => node.xpath("xmlns:exclude-control", ns).map { |c| { "control-id" => c["control-id"] } }.presence
+      "include-controls" => node.xpath("xmlns:include-control", ns).map { |c| { CONTROL_ID => c[CONTROL_ID] } },
+      "exclude-controls" => node.xpath("xmlns:exclude-control", ns).map { |c| { CONTROL_ID => c[CONTROL_ID] } }.presence
     }.compact
   end
 
@@ -246,7 +255,7 @@ class SarXmlParserService
       "description"        => text(node, "description"),
       "methods"            => node.xpath("xmlns:method", ns).map(&:text),
       "types"              => node.xpath("xmlns:type", ns).map(&:text),
-      "origins"            => node.xpath("xmlns:origin", ns).map { |o| origin_to_hash(o) },
+      "origins"            => node.xpath(XMLNS_ORIGIN, ns).map { |o| origin_to_hash(o) },
       "subjects"           => node.xpath("xmlns:subject", ns).map { |s| subject_to_hash(s) },
       "relevant-evidence"  => node.xpath("xmlns:relevant-evidence", ns).map { |re| relevant_evidence_to_hash(re) },
       "collected"          => text(node, "collected"),
@@ -293,14 +302,14 @@ class SarXmlParserService
       "description"          => text(node, "description"),
       "statement"            => text(node, "statement"),
       "status"               => text(node, "status"),
-      "origins"              => node.xpath("xmlns:origin", ns).map { |o| origin_to_hash(o) },
+      "origins"              => node.xpath(XMLNS_ORIGIN, ns).map { |o| origin_to_hash(o) },
       "threat-ids"           => node.xpath("xmlns:threat-id", ns).map { |t| { "system" => t["system"], "href" => t["href"], "id" => t.text }.compact },
       "characterizations"    => node.xpath("xmlns:characterization", ns).map { |c| characterization_to_hash(c) },
       "mitigating-factors"   => node.xpath("xmlns:mitigating-factor", ns).map { |m| mitigating_factor_to_hash(m) },
       "deadline"             => text(node, "deadline"),
       "remediations"         => node.xpath("xmlns:remediation", ns).map { |r| remediation_to_hash(r) },
       "risk-log"             => risk_log_to_hash(node.at_xpath("xmlns:risk-log", ns)),
-      "related-observations" => node.xpath("xmlns:related-observation", ns).map { |ro| { "observation-uuid" => ro["observation-uuid"] } },
+      "related-observations" => node.xpath("xmlns:related-observation", ns).map { |ro| { OBSERVATION_UUID => ro[OBSERVATION_UUID] } },
       "props"                => parse_props(node),
       "links"                => parse_links(node),
       "remarks"              => text(node, "remarks")
@@ -309,7 +318,7 @@ class SarXmlParserService
 
   def characterization_to_hash(node)
     {
-      "origin" => origin_to_hash(node.at_xpath("xmlns:origin", ns)),
+      "origin" => origin_to_hash(node.at_xpath(XMLNS_ORIGIN, ns)),
       "facets" => node.xpath("xmlns:facet", ns).map { |f| { "name" => f["name"], "system" => f["system"], "value" => f["value"] }.compact }
     }.compact
   end
@@ -351,8 +360,8 @@ class SarXmlParserService
       "description"                   => text(node, "description"),
       "target"                        => target_to_hash(node.at_xpath("xmlns:target", ns)),
       "implementation-statement-uuid" => node["implementation-statement-uuid"],
-      "origins"                       => node.xpath("xmlns:origin", ns).map { |o| origin_to_hash(o) },
-      "related-observations"          => node.xpath("xmlns:related-observation", ns).map { |ro| { "observation-uuid" => ro["observation-uuid"] } },
+      "origins"                       => node.xpath(XMLNS_ORIGIN, ns).map { |o| origin_to_hash(o) },
+      "related-observations"          => node.xpath("xmlns:related-observation", ns).map { |ro| { OBSERVATION_UUID => ro[OBSERVATION_UUID] } },
       "related-risks"                 => node.xpath("xmlns:associated-risk|xmlns:related-risk", ns).map { |rr| { "risk-uuid" => rr["risk-uuid"] } },
       "props"                         => parse_props(node),
       "links"                         => parse_links(node),
@@ -387,7 +396,7 @@ class SarXmlParserService
       "uuid"        => node["uuid"],
       "title"       => text(node, "title"),
       "description" => text(node, "description"),
-      "rlinks"      => node.xpath("xmlns:rlink", ns).map { |rl| { "href" => rl["href"], "media-type" => rl["media-type"] }.compact },
+      "rlinks"      => node.xpath("xmlns:rlink", ns).map { |rl| { "href" => rl["href"], MEDIA_TYPE => rl[MEDIA_TYPE] }.compact },
       "props"       => parse_props(node),
       "remarks"     => text(node, "remarks")
     }.compact
@@ -411,7 +420,7 @@ class SarXmlParserService
 
   def parse_links(node)
     node.xpath("xmlns:link", ns).map do |l|
-      { "href" => l["href"], "rel" => l["rel"], "media-type" => l["media-type"], "text" => l.text.presence }.compact
+      { "href" => l["href"], "rel" => l["rel"], MEDIA_TYPE => l[MEDIA_TYPE], "text" => l.text.presence }.compact
     end
   end
 end

@@ -17,6 +17,13 @@
 class OscalSspExportService
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
+
+  # OSCAL prop/statement names reused across the export build.
+  DATE_AUTHORIZED       = "date-authorized".freeze
+  RESPONSIBLE_ROLES     = "responsible-roles".freeze
+  IMPLEMENTATION_STATUS = "implementation-status".freeze
+  STATEMENT_ID          = "statement-id".freeze
+  SSP_STATEMENT         = "ssp-statement".freeze
   # Namespace for SPARC-specific OSCAL props (control-type, provided-as, etc.).
   SPARC_NS = "https://sparc.local/ns".freeze
 
@@ -130,7 +137,7 @@ class OscalSspExportService
     sc["system-information"] = build_system_information
     sc["security-impact-level"] = build_security_impact_level if has_security_impact?
     sc["status"] = build_system_status
-    sc["date-authorized"] = @document.date_authorized.iso8601 if @document.date_authorized.present?
+    sc[DATE_AUTHORIZED] = @document.date_authorized.iso8601 if @document.date_authorized.present?
     sc["authorization-boundary"] = build_authorization_boundary
     sc["network-architecture"] = { "description" => @document.network_architecture_description } if @document.network_architecture_description.present?
     sc["data-flow"] = { "description" => @document.data_flow_description } if @document.data_flow_description.present?
@@ -290,7 +297,7 @@ class OscalSspExportService
     }
     entry["purpose"] = comp.purpose if comp.purpose.present?
     entry["status"]  = build_component_status(comp)
-    entry["responsible-roles"] = comp.responsible_roles_data if comp.responsible_roles_data.present?
+    entry[RESPONSIBLE_ROLES] = comp.responsible_roles_data if comp.responsible_roles_data.present?
     entry["protocols"]         = comp.protocols_data if comp.protocols_data.present?
     entry["props"]             = comp.props_data if comp.props_data.present?
     entry["links"]             = comp.links_data if comp.links_data.present?
@@ -309,7 +316,7 @@ class OscalSspExportService
       "uuid"            => la.uuid,
       "title"           => la.title,
       "party-uuid"      => la.party_uuid,
-      "date-authorized" => la.date_authorized&.iso8601
+      DATE_AUTHORIZED => la.date_authorized&.iso8601
     }
     entry["props"]   = la.props_data if la.props_data.present?
     entry["links"]   = la.links_data if la.links_data.present?
@@ -339,7 +346,7 @@ class OscalSspExportService
       "uuid"  => la.uuid,
       "title" => la.name
     }
-    entry["date-authorized"] = la.date_authorized.iso8601 if la.date_authorized
+    entry[DATE_AUTHORIZED] = la.date_authorized.iso8601 if la.date_authorized
     entry["remarks"] = la.description if la.description.present?
 
     leveraged_ssp = la.leveraged_boundary&.ssp_document
@@ -422,16 +429,16 @@ class OscalSspExportService
     entry["description"] = bc.description.presence || "Implementation of this control by #{bc.ssp_component.title}."
 
     if bc.implementation_status.present?
-      entry["implementation-status"] = { "state" => bc.implementation_status }
+      entry[IMPLEMENTATION_STATUS] = { "state" => bc.implementation_status }
       if bc.remarks.present?
-        entry["implementation-status"]["remarks"] = bc.remarks
+        entry[IMPLEMENTATION_STATUS]["remarks"] = bc.remarks
       end
     end
 
     entry["export"]    = bc.export_data if bc.export_data.present?
     entry["inherited"] = bc.inherited_data if bc.inherited_data.present?
     entry["satisfied"] = bc.satisfied_data if bc.satisfied_data.present?
-    entry["responsible-roles"] = bc.responsible_roles_data if bc.responsible_roles_data.present?
+    entry[RESPONSIBLE_ROLES] = bc.responsible_roles_data if bc.responsible_roles_data.present?
     entry["set-parameters"]    = bc.set_parameters_data if bc.set_parameters_data.present?
     entry["props"]  = bc.props_data if bc.props_data.present?
     entry["links"]  = bc.links_data if bc.links_data.present?
@@ -464,7 +471,7 @@ class OscalSspExportService
     props = []
 
     status = field_map["status"]&.field_value
-    props << { "name" => "implementation-status", "value" => status.downcase.gsub(/\s+/, "-") } if status.present?
+    props << { "name" => IMPLEMENTATION_STATUS, "value" => status.downcase.gsub(/\s+/, "-") } if status.present?
 
     type_use = field_map["control_application"]&.field_value
     props << { "name" => "control-type", "ns" => SPARC_NS, "value" => type_use } if type_use.present?
@@ -495,11 +502,11 @@ class OscalSspExportService
   def build_statements_from_table(control)
     control.ssp_control_statements.order(:row_order).map do |stmt|
       entry = {
-        "statement-id" => stmt.statement_id,
+        STATEMENT_ID => stmt.statement_id,
         "uuid"         => stmt.uuid,
         "remarks"      => stmt.implementation_prose.presence || stmt.remarks
       }
-      entry["responsible-roles"] = stmt.responsible_roles_data if stmt.responsible_roles_data.present?
+      entry[RESPONSIBLE_ROLES] = stmt.responsible_roles_data if stmt.responsible_roles_data.present?
       entry["set-parameters"]    = stmt.set_parameters_data    if stmt.set_parameters_data.present?
 
       # #396 + #398: emit inheritance links so the source of the prose
@@ -529,8 +536,8 @@ class OscalSspExportService
     if priv.present?
       stmt_id = "#{control_id}_priv"
       statements << {
-        "statement-id" => stmt_id,
-        "uuid"         => OscalUuidService.derived(control.uuid, "ssp-statement", stmt_id),
+        STATEMENT_ID => stmt_id,
+        "uuid"         => OscalUuidService.derived(control.uuid, SSP_STATEMENT, stmt_id),
         "remarks"      => priv
       }
     end
@@ -539,8 +546,8 @@ class OscalSspExportService
     if pub.present?
       stmt_id = "#{control_id}_pub"
       statements << {
-        "statement-id" => stmt_id,
-        "uuid"         => OscalUuidService.derived(control.uuid, "ssp-statement", stmt_id),
+        STATEMENT_ID => stmt_id,
+        "uuid"         => OscalUuidService.derived(control.uuid, SSP_STATEMENT, stmt_id),
         "remarks"      => pub
       }
     end
@@ -554,8 +561,8 @@ class OscalSspExportService
 
       stmt_id = "#{control_id}_inherited_#{i + 1}"
       statements << {
-        "statement-id" => stmt_id,
-        "uuid"         => OscalUuidService.derived(control.uuid, "ssp-statement", stmt_id),
+        STATEMENT_ID => stmt_id,
+        "uuid"         => OscalUuidService.derived(control.uuid, SSP_STATEMENT, stmt_id),
         "remarks"      => narrative
       }
     end

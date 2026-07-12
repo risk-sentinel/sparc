@@ -1,5 +1,11 @@
 class ProfileJsonParserService
   include BatchInsertable
+
+  # OSCAL keys / catalog-matching literals reused across the parse.
+  OSCAL_VERSION  = "oscal-version".freeze
+  SOURCE_PROFILE = "source-profile".freeze
+  CATALOG_800_53 = "800-53".freeze
+  REV_PATTERN    = /rev\.?\s*(\d+)/i
   include ProgressTrackable
   include BackMatterPromotable
 
@@ -99,13 +105,13 @@ class ProfileJsonParserService
     back_matter  = profile.dig("back-matter", "resources") || []
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
-    metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
+    metadata_extra = metadata.except("title", "version", OSCAL_VERSION, "last-modified")
 
     @document.update!(
       description:     title,
       baseline_level:  baseline,
       profile_version: metadata["version"],
-      oscal_version:   metadata["oscal-version"],
+      oscal_version:   metadata[OSCAL_VERSION],
       metadata_extra:  metadata_extra.presence || {},
       import_metadata: {
         "format"       => "oscal_profile",
@@ -177,11 +183,11 @@ class ProfileJsonParserService
 
     rlink_hrefs.any? do |href|
       # Extract revision indicator from rlink (e.g., "rev4", "rev5")
-      rlink_rev = href[/rev\.?\s*(\d+)/i, 1] || href[/revision[_\s]*(\d+)/i, 1]
-      catalog_rev = catalog_name[/rev\.?\s*(\d+)/i, 1] || catalog_name[/revision[_\s]*(\d+)/i, 1]
+      rlink_rev = href[REV_PATTERN, 1] || href[/revision[_\s]*(\d+)/i, 1]
+      catalog_rev = catalog_name[REV_PATTERN, 1] || catalog_name[/revision[_\s]*(\d+)/i, 1]
 
       # Both must reference 800-53 and have matching revision numbers
-      href.include?("800-53") && catalog_name.include?("800-53") &&
+      href.include?(CATALOG_800_53) && catalog_name.include?(CATALOG_800_53) &&
         rlink_rev.present? && catalog_rev.present? &&
         rlink_rev == catalog_rev
     end
@@ -237,7 +243,7 @@ class ProfileJsonParserService
     links = metadata["links"] || []
 
     props.any? { |p| p["name"] == "resolution-tool" } ||
-      links.any? { |l| l["rel"] == "source-profile" }
+      links.any? { |l| l["rel"] == SOURCE_PROFILE }
   end
 
   # Parse a resolved profile catalog — controls come from groups[], not imports[].
@@ -282,17 +288,17 @@ class ProfileJsonParserService
     end
 
     source_profile_href = (metadata["links"] || [])
-      .find { |l| l["rel"] == "source-profile" }&.dig("href")
+      .find { |l| l["rel"] == SOURCE_PROFILE }&.dig("href")
 
     # Preserve full OSCAL metadata (roles, parties, revisions, etc.)
-    metadata_extra = metadata.except("title", "version", "oscal-version", "last-modified")
+    metadata_extra = metadata.except("title", "version", OSCAL_VERSION, "last-modified")
     metadata_extra["auto_publish"] = true
 
     @document.update!(
       description:     title,
       baseline_level:  baseline,
       profile_version: metadata["version"],
-      oscal_version:   metadata["oscal-version"],
+      oscal_version:   metadata[OSCAL_VERSION],
       metadata_extra:  metadata_extra.presence || {},
       import_metadata: {
         "format"               => "oscal_resolved_profile",
@@ -313,7 +319,7 @@ class ProfileJsonParserService
     return if @document.control_catalog_id.present?
 
     source_href = (metadata["links"] || [])
-      .find { |l| l["rel"] == "source-profile" }&.dig("href")
+      .find { |l| l["rel"] == SOURCE_PROFILE }&.dig("href")
     return unless source_href.present?
 
     href_lower = source_href.downcase
@@ -322,10 +328,10 @@ class ProfileJsonParserService
 
     catalogs.each do |catalog|
       catalog_name = catalog.name.downcase
-      href_rev = href_lower[/rev\.?\s*(\d+)/i, 1]
-      catalog_rev = catalog_name[/rev\.?\s*(\d+)/i, 1]
+      href_rev = href_lower[REV_PATTERN, 1]
+      catalog_rev = catalog_name[REV_PATTERN, 1]
 
-      if href_lower.include?("800-53") && catalog_name.include?("800-53") &&
+      if href_lower.include?(CATALOG_800_53) && catalog_name.include?(CATALOG_800_53) &&
           href_rev.present? && catalog_rev.present? && href_rev == catalog_rev
         @document.update_column(:control_catalog_id, catalog.id)
         return

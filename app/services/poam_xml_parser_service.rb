@@ -3,6 +3,17 @@ class PoamXmlParserService
 
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0"
 
+  # OSCAL element/attribute names reused across the XML→hash walk.
+  OSCAL_VERSION             = "oscal-version".freeze
+  LAST_MODIFIED             = "last-modified".freeze
+  OBSERVATION_UUID          = "observation-uuid".freeze
+  RELATED_OBSERVATIONS      = "related-observations".freeze
+  XMLNS_RELATED_OBSERVATION = "xmlns:related-observation".freeze
+  SUBJECT_UUID              = "subject-uuid".freeze
+  ACTOR_UUID                = "actor-uuid".freeze
+  RISK_UUID                 = "risk-uuid".freeze
+  ROLE_ID                   = "role-id".freeze
+
   def initialize(poam_document, file_path)
     @document  = poam_document
     @file_path = file_path
@@ -54,14 +65,14 @@ class PoamXmlParserService
     {
       "title"         => text(node, "title"),
       "version"       => text(node, "version"),
-      "oscal-version" => text(node, "oscal-version"),
-      "last-modified" => text(node, "last-modified"),
+      OSCAL_VERSION => text(node, OSCAL_VERSION),
+      LAST_MODIFIED => text(node, LAST_MODIFIED),
       "revisions"     => node.xpath("xmlns:revisions/xmlns:revision", "xmlns" => OSCAL_NS).map { |r|
         {
           "title"         => text(r, "title"),
           "version"       => text(r, "version"),
-          "oscal-version" => text(r, "oscal-version"),
-          "last-modified" => text(r, "last-modified")
+          OSCAL_VERSION => text(r, OSCAL_VERSION),
+          LAST_MODIFIED => text(r, LAST_MODIFIED)
         }.compact
       }.presence
     }.compact
@@ -91,7 +102,7 @@ class PoamXmlParserService
       "expires"     => text(node, "expires"),
       "remarks"     => text(node, "remarks"),
       "subjects"    => node.xpath("xmlns:subject", "xmlns" => OSCAL_NS).map { |s|
-        { "subject-uuid" => s["subject-uuid"], "type" => s["type"] }
+        { SUBJECT_UUID => s[SUBJECT_UUID], "type" => s["type"] }
       }.presence,
       "origins"     => parse_origins(node),
       "props"       => parse_props(node),
@@ -111,7 +122,7 @@ class PoamXmlParserService
         {
           "origin" => {
             "actors" => c.xpath("xmlns:origin/xmlns:actor", "xmlns" => OSCAL_NS).map { |a|
-              { "type" => a["type"], "actor-uuid" => a["actor-uuid"] }
+              { "type" => a["type"], ACTOR_UUID => a[ACTOR_UUID] }
             }
           },
           "facets" => c.xpath("xmlns:facet", "xmlns" => OSCAL_NS).map { |f|
@@ -130,8 +141,8 @@ class PoamXmlParserService
       "remediations" => node.xpath("xmlns:response", "xmlns" => OSCAL_NS).map { |r|
         remediation_to_hash(r)
       }.presence,
-      "related-observations" => node.xpath("xmlns:related-observation", "xmlns" => OSCAL_NS).map { |ro|
-        { "observation-uuid" => ro["observation-uuid"] }
+      RELATED_OBSERVATIONS => node.xpath(XMLNS_RELATED_OBSERVATION, "xmlns" => OSCAL_NS).map { |ro|
+        { OBSERVATION_UUID => ro[OBSERVATION_UUID] }
       }.presence,
       "props"       => parse_props(node),
       "links"       => parse_links(node),
@@ -181,10 +192,10 @@ class PoamXmlParserService
       "links"       => parse_links(node),
       "remarks"     => text(node, "remarks"),
       "responsible-roles" => node.xpath("xmlns:responsible-role", "xmlns" => OSCAL_NS).map { |rr|
-        { "role-id" => rr["role-id"] }
+        { ROLE_ID => rr[ROLE_ID] }
       }.presence,
       "subjects"    => node.xpath("xmlns:subject", "xmlns" => OSCAL_NS).map { |s|
-        { "subject-uuid" => s["subject-uuid"], "type" => s["type"] }
+        { SUBJECT_UUID => s[SUBJECT_UUID], "type" => s["type"] }
       }.presence
     }.compact
   end
@@ -197,11 +208,11 @@ class PoamXmlParserService
       "target"      => target_to_hash(node.at_xpath("xmlns:target", "xmlns" => OSCAL_NS)),
       "implementation-statement-uuid" => node.at_xpath("xmlns:implementation-statement-uuid", "xmlns" => OSCAL_NS)&.text&.strip,
       "origins"     => parse_origins(node),
-      "related-observations" => node.xpath("xmlns:related-observation", "xmlns" => OSCAL_NS).map { |ro|
-        { "observation-uuid" => ro["observation-uuid"] }
+      RELATED_OBSERVATIONS => node.xpath(XMLNS_RELATED_OBSERVATION, "xmlns" => OSCAL_NS).map { |ro|
+        { OBSERVATION_UUID => ro[OBSERVATION_UUID] }
       }.presence,
       "related-risks" => node.xpath("xmlns:associated-risk", "xmlns" => OSCAL_NS).map { |rr|
-        { "risk-uuid" => rr["risk-uuid"] }
+        { RISK_UUID => rr[RISK_UUID] }
       }.presence,
       "props"       => parse_props(node),
       "links"       => parse_links(node),
@@ -225,11 +236,11 @@ class PoamXmlParserService
       "title"       => text(node, "title"),
       "description" => text(node, "description"),
       "origins"     => parse_origins(node),
-      "related-observations" => node.xpath("xmlns:related-observation", "xmlns" => OSCAL_NS).map { |ro|
-        { "observation-uuid" => ro["observation-uuid"] }
+      RELATED_OBSERVATIONS => node.xpath(XMLNS_RELATED_OBSERVATION, "xmlns" => OSCAL_NS).map { |ro|
+        { OBSERVATION_UUID => ro[OBSERVATION_UUID] }
       }.presence,
       "related-risks" => node.xpath("xmlns:associated-risk", "xmlns" => OSCAL_NS).map { |rr|
-        { "risk-uuid" => rr["risk-uuid"] }
+        { RISK_UUID => rr[RISK_UUID] }
       }.presence,
       "related-findings" => node.xpath("xmlns:related-finding", "xmlns" => OSCAL_NS).map { |rf|
         { "finding-uuid" => rf["finding-uuid"] }
@@ -253,7 +264,7 @@ class PoamXmlParserService
           "purpose"     => text(c, "purpose"),
           "status"      => comp_status ? { "state" => comp_status["state"], "remarks" => text(comp_status, "remarks") }.compact : nil,
           "responsible-roles" => c.xpath("xmlns:responsible-role", "xmlns" => OSCAL_NS).map { |rr|
-            { "role-id" => rr["role-id"] }
+            { ROLE_ID => rr[ROLE_ID] }
           }.presence,
           "protocols"   => c.xpath("xmlns:protocol", "xmlns" => OSCAL_NS).map { |p|
             { "uuid" => p["uuid"], "name" => p["name"] }.compact
@@ -323,7 +334,7 @@ class PoamXmlParserService
     node.xpath("xmlns:origin", "xmlns" => OSCAL_NS).map { |o|
       {
         "actors" => o.xpath("xmlns:actor", "xmlns" => OSCAL_NS).map { |a|
-          { "type" => a["type"], "actor-uuid" => a["actor-uuid"] }.compact
+          { "type" => a["type"], ACTOR_UUID => a[ACTOR_UUID] }.compact
         }
       }
     }.presence
