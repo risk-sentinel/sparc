@@ -105,7 +105,13 @@ class TestReviewActions:
         authed_page.wait_for_load_state("networkidle")
         row = _row(authed_page, name)
         row.get_by_role("textbox").fill("needs more detail")  # required reason
-        row.get_by_role("button", name="Reject").click()
+        # Wait for the reject POST to actually complete before re-reading the
+        # queue — `networkidle` alone races the form submit (the request may not
+        # have started yet), which flakes the "row gone" assertion.
+        with authed_page.expect_response(
+            lambda r: "/reject" in r.url and r.request.method == "POST"
+        ):
+            row.get_by_role("button", name="Reject").click()
         authed_page.wait_for_load_state("networkidle")
         assert_no_csp_violations(authed_page, during="reject from queue")
         authed_page.goto("/review_queue")

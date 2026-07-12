@@ -17,11 +17,10 @@ Capture/refresh the baseline (needs SPARC_SMOKE_SA_TOKEN for authed pages):
 
 from __future__ import annotations
 
-import re
-
 import pytest
 
 from a11y import assert_no_new_a11y_violations
+from helpers import first_show_href
 from pages import MUST_EXIST_PAGES, SHOW_PAGES
 
 # ── Unauthenticated ────────────────────────────────────────────────────────
@@ -61,17 +60,9 @@ def test_show_page_a11y(authed_page, name, index_path, pattern):
         pytest.skip(f"{name}: index returned HTTP {resp.status}")
     authed_page.wait_for_load_state("networkidle")
 
-    rx = re.compile(pattern)
-    href = next(
-        (
-            h
-            for h in authed_page.eval_on_selector_all(
-                "a[href]", "els => els.map(e => e.getAttribute('href'))"
-            )
-            if h and rx.match(h.split("?")[0])
-        ),
-        None,
-    )
+    # SPARC document URLs are slug-based (FriendlyId), not numeric — use the
+    # slug-aware discovery helper rather than the legacy numeric `pattern`.
+    href = first_show_href(authed_page, index_path, index_path)
     if not href:
         pytest.skip(f"no {name} record found on this deployment to audit")
 
