@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class ControlMappingsController < ApplicationController
+  # #726: index/show join the Controls layer public-read gate
+  # (SPARC_PUBLIC_CATALOGS, secure-by-default). (AC-3)
+  skip_before_action :require_authentication, only: [ :index, :show ]
+  before_action :require_authentication_unless_public_controls, only: [ :index, :show ]
   before_action :authorize_mapping_write!, only: [
     :new, :create, :edit, :update, :destroy, :publish, :deprecate
   ]

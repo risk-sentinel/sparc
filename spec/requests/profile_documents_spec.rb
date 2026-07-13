@@ -13,8 +13,11 @@ RSpec.describe "ProfileDocuments", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "is accessible without authentication" do
-      # ProfileDocumentsController skips require_authentication for index/show
+    it "is accessible without authentication when the control library is public (#726)" do
+      # Baseline reads are gated by SPARC_PUBLIC_CATALOGS (secure-by-default).
+      # With the flag on, guests can read even when auth is enabled.
+      allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+      allow(SparcConfig).to receive(:public_catalogs?).and_return(true)
       allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(nil)
       allow_any_instance_of(ApplicationController).to receive(:signed_in?).and_return(false)
       get profile_documents_path

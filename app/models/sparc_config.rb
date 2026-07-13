@@ -109,6 +109,13 @@ module SparcConfig
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
 
+  # Public visibility of the Controls layer (catalogs, baselines, mappings).
+  # Default false = secure-by-default: when auth is enabled, guests neither
+  # see the Controls nav nor can read those pages. Deployments that front
+  # SPARC with their own network auth (VPN, etc.) and want to share the
+  # control library set SPARC_PUBLIC_CATALOGS=true. See #726. (AC-3)
+  def public_catalogs? = ENV.fetch("SPARC_PUBLIC_CATALOGS", "false") == "true"
+
   # ── Dynamic Roles ────────────────────────────────────────────────────────
   # Configurable role lists for organizations and authorization boundaries.
   # Comma-separated lists via environment variables. Defaults to the
