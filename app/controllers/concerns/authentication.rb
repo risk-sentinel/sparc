@@ -21,7 +21,7 @@ module Authentication
   extend ActiveSupport::Concern
 
   included do
-    helper_method :current_user, :signed_in?
+    helper_method :current_user, :signed_in?, :controls_publicly_accessible?
   end
 
   # ── Current User ──────────────────────────────────────────────────────
@@ -48,6 +48,26 @@ module Authentication
 
     session[:return_to] = request.fullpath if request.get? || request.head?
     redirect_to login_path, warning: "Please sign in to continue."
+  end
+
+  # ── Public Controls Gate (#726) ───────────────────────────────────────
+
+  # Whether the Controls layer (catalogs, baselines, mappings) is visible /
+  # readable for the current request. True when auth is disabled, when a
+  # deployment opts into public sharing (SPARC_PUBLIC_CATALOGS=true), or when
+  # the user is signed in. Both the header nav (visibility) and the
+  # catalog/baseline/mapping read controllers (access) key off this, so the
+  # nav never advertises a page the request cannot reach.
+  #
+  # NIST 800-53: AC-3 Access Enforcement.
+  def controls_publicly_accessible?
+    !SparcConfig.any_auth_enabled? || SparcConfig.public_catalogs? || signed_in?
+  end
+
+  # before_action for the public read actions of the Controls controllers.
+  # Requires authentication unless the control library is configured public.
+  def require_authentication_unless_public_controls
+    require_authentication unless SparcConfig.public_catalogs?
   end
 
   # ── Session Management ────────────────────────────────────────────────

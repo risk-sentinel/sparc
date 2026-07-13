@@ -1,0 +1,20 @@
+<%# Controls Layer dropdown contents (toggle + menu) for the header. The parent
+    <li class="nav-item dropdown"> lives in the layout so this fragment renders
+    only when `controls_publicly_accessible?` (Authentication concern, #726).
+    A real <button> toggle (not <a role="button">) gives native keyboard
+    activation. Shared by the application and login layouts so they can't drift. %>
+<button type="button" class="nav-link dropdown-toggle sparc-nav-btn sparc-nav-controls" data-bs-toggle="dropdown" aria-expanded="false">
+  Controls
+</button>
+<ul class="dropdown-menu sparc-dropdown-menu">
+  <li class="sparc-dropdown-header sparc-dropdown-header-controls">Controls Layer</li>
+  <li><%= link_to control_catalogs_path, class: "dropdown-item" do %>
+    <span class="sparc-dropdown-icon">&#128218;</span> Control Catalogs
+  <% end %></li>
+  <li><%= link_to profile_documents_path, class: "dropdown-item" do %>
+    <span class="sparc-dropdown-icon">&#128203;</span> Baselines
+  <% end %></li>
+  <li><%= link_to control_mappings_path, class: "dropdown-item" do %>
+    <span class="sparc-dropdown-icon">&#128260;</span> Mappings
+  <% end %></li>
+</ul>
