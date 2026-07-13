@@ -26,12 +26,12 @@ gem "roo", "~> 3.0.0"              # .xlsx file parsing (MIT)
 gem "rubyzip", "~> 3.4.0"          # ZIP file handling
 gem "activerecord-import"           # Bulk imports
 gem "caxlsx", "~> 4.5"             # Excel .xlsx generation
-gem "pagy", "~> 43.5"              # Pagination
+gem "pagy", "~> 43.6"              # Pagination
 gem "sidekiq"                       # Background jobs
 gem "redis", "~> 5.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
-gem "aws-sdk-secretsmanager", "~> 1.133"  # Secrets Manager (ECS deployments)
-gem "aws-sdk-rds", "~> 1.316"           # IAM DB auth token generation
+gem "aws-sdk-secretsmanager", "~> 1.134"  # Secrets Manager (ECS deployments)
+gem "aws-sdk-rds", "~> 1.317"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS fix (overrides Ruby 3.4.4 bundled 0.6.0)
 # #620 — pin patched versions of Ruby default gems so Bundler loads them instead
