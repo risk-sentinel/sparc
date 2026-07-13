@@ -20,7 +20,7 @@ class ProfileXmlParserService
     # Detect resolved profile catalogs (XML with <catalog> root + resolution-tool or source-profile)
     catalog_el = doc.at_xpath("//catalog")
     if catalog_el && resolved_profile_catalog_xml?(catalog_el)
-      return parse_resolved_via_json(catalog_el, doc)
+      return parse_resolved_via_json(catalog_el)
     end
 
     profile = doc.at_xpath("//profile") || raise(DocumentParseError, "Invalid OSCAL Profile XML: missing <profile> element")
@@ -155,7 +155,7 @@ class ProfileXmlParserService
   end
 
   # Convert resolved catalog XML to JSON hash and delegate to JSON parser.
-  def parse_resolved_via_json(catalog_el, _doc)
+  def parse_resolved_via_json(catalog_el)
     # Use Nokogiri + XSLT-free approach: convert XML to JSON hash
     json_hash = xml_catalog_to_json(catalog_el)
     full_data = { "catalog" => json_hash }

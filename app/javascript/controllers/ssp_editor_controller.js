@@ -102,7 +102,7 @@ export default class SspEditorController extends Controller {
       const cellValue = row.insertCell(1)
 
       const label = field.field_name
-        .replaceAll(/_/g, " ")
+        .replaceAll("_", " ")
         .replace(/\b\w/g, (l) => l.toUpperCase())
       cellName.append(`${label} `)
       const icon = document.createElement("span")

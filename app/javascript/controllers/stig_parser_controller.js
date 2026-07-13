@@ -297,7 +297,7 @@ export default class StigParserController extends Controller {
       r.ruleId, r.vId, r.svId, r.severity,
       r.ccis.join("|"),
       r.nistControls.join("|"),
-      `"${r.title.replaceAll(/"/g, '""')}"`
+      `"${r.title.replaceAll('"', '""')}"`
     ])
 
     const csv = [header.join(","), ...rows.map(r => r.join(","))].join("\n")

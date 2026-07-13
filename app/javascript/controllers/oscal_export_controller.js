@@ -99,7 +99,7 @@ export default class OscalExportController extends Controller {
     let errorHtml = ""
     if (errors.length > 0) {
       const errorItems = errors.map(e => {
-        const escaped = e.replaceAll(/</g, "&lt;").replaceAll(/>/g, "&gt;")
+        const escaped = e.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
         return `<li style="margin-bottom:0.3rem;">${escaped}</li>`
       }).join("")
       errorHtml = `

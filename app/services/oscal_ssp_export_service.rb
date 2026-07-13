@@ -408,7 +408,7 @@ class OscalSspExportService
     result["statements"] = statements if statements.any?
 
     # Remarks aggregate free-text fields
-    remarks = build_remarks(control, field_map)
+    remarks = build_remarks(field_map)
     result["remarks"] = remarks if remarks.present?
 
     # Back-matter resource links (href="#uuid" references)
@@ -570,7 +570,7 @@ class OscalSspExportService
     statements
   end
 
-  def build_remarks(_control, field_map)
+  def build_remarks(field_map)
     parts = []
 
     stated_req = field_map["stated_requirement"]&.field_value
