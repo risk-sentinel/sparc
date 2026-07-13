@@ -63,3 +63,36 @@ def test_sso_submit_not_blocked_by_csp_form_action(page, context, base_url):
         "CSP form-action blocked the SSO submission (#593 regression): "
         f"{blocked}"
     )
+
+
+def test_controls_dropdown_visibility_matches_access_for_guest(page):
+    """#726: the Controls dropdown (catalogs/baselines/mappings) must not be
+    shown to an unauthenticated guest when those reads are gated (auth enabled,
+    SPARC_PUBLIC_CATALOGS off). When reads are public (auth disabled or the
+    flag on) the dropdown SHOULD show. Nav visibility must match actual access,
+    and the login page must stay CSP-clean either way.
+    """
+    record_csp(page)
+
+    # Probe: does a guest get redirected to /login when reading catalogs?
+    page.goto("/control_catalogs")
+    page.wait_for_load_state("networkidle")
+    gated = "/login" in page.url
+
+    page.goto("/login")
+    page.wait_for_load_state("networkidle")
+    controls = page.locator(".sparc-nav-controls")
+
+    if gated:
+        assert controls.count() == 0, (
+            "Controls dropdown is visible to an unauthenticated guest even "
+            "though catalog reads are gated (#726 regression)"
+        )
+    else:
+        assert controls.count() > 0, (
+            "catalog reads are public but the Controls dropdown is missing "
+            "for a guest (nav should match access)"
+        )
+
+    violations = csp_violations(page)
+    assert violations == [], f"CSP violations on /login: {violations}"

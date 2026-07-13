@@ -21,7 +21,7 @@ module SparcKeyDerivation
   PURPOSE_PREFIX = "sparc:v1:"
   DEFAULT_KEY_LEN = 32
 
-  module_function
+  extend self
 
   # Derive a key for the given purpose. `length` defaults to 32 bytes
   # (256 bits), suitable for HMAC-SHA256 and AES-256 keys.

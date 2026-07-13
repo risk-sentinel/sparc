@@ -98,7 +98,6 @@ class ConvertersController < ApplicationController
   def refresh_cci
     refresh_converter!(
       expected_type: "cci_to_nist",
-      flash_label: "CCI refresh",
       success_message: "CCI refresh started. This may take a minute."
     )
   end
@@ -107,7 +106,6 @@ class ConvertersController < ApplicationController
   def refresh_aws_config
     refresh_converter!(
       expected_type: "aws_config_to_nist",
-      flash_label: "AWS Config refresh",
       success_message: "Re-vendoring MITRE AWS Config → NIST mappings. Status updates auto-refresh below."
     )
   end
@@ -116,7 +114,6 @@ class ConvertersController < ApplicationController
   def refresh_aws_security_hub
     refresh_converter!(
       expected_type: "aws_security_hub_to_nist",
-      flash_label: "AWS Security Hub refresh",
       success_message: "Re-scraping AWS Security Hub user guide. This may take 2–3 minutes."
     )
   end
@@ -197,7 +194,7 @@ class ConvertersController < ApplicationController
   # against re-entrancy, sets status=processing, enqueues the job, and
   # audit-logs. The actual data work happens in the background service
   # selected by ConverterRefreshJob::SERVICE_BY_TYPE.
-  def refresh_converter!(expected_type:, flash_label:, success_message:)
+  def refresh_converter!(expected_type:, success_message:)
     unless @converter.converter_type == expected_type
       redirect_to @converter, flash: { error: "Refresh is only available for #{expected_type} converters." }
       return

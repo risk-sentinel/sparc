@@ -118,10 +118,8 @@ class CdefBulkApplyService
         next if already_on_cdef.include?(target_id)
         next if status == "already_present"
 
-        if status == "needs_disambiguation"
-          # Caller must have explicitly picked this (source_id → target_id)
-          next unless selected_target_ids[source_id] == target_id
-        end
+        # Caller must have explicitly picked this (source_id → target_id)
+        next if status == "needs_disambiguation" && selected_target_ids[source_id] != target_id
 
         c.cdef_controls.create!(
           control_id:     target_id,

@@ -86,7 +86,7 @@
     </div>
   <% elsif @poam_document.authorization_boundary&.ssp_document.present? %>
     <div class="form-group">
-      <label class="fw-semibold">Linked SSP Statement</label>
+      <span class="fw-semibold">Linked SSP Statement</span>
       <div class="text-body-secondary fst-italic" style="font-size: 0.85rem;">
         The boundary's SSP has no implementation statements yet. Backfill statements on the SSP to enable linking.
       </div>
@@ -96,8 +96,8 @@
   <%# ── Associated Entities ── %>
   <% if defined?(@available_risks) && @available_risks&.any? %>
     <div class="form-group">
-      <label class="fw-semibold">Associated Risks</label>
-      <select name="poam_risk_ids[]" multiple class="form-control" style="min-height: 80px;">
+      <label class="fw-semibold" for="poam_risk_ids">Associated Risks</label>
+      <select id="poam_risk_ids" name="poam_risk_ids[]" multiple class="form-control" style="min-height: 80px;">
         <% @available_risks.each do |risk| %>
           <option value="<%= risk.id %>" <%= "selected" if poam_item.poam_risk_ids.include?(risk.id) %>><%= truncate(risk.title.to_s, length: 100) %> (<%= risk.status %>)</option>
         <% end %>
@@ -108,8 +108,8 @@
 
   <% if defined?(@available_observations) && @available_observations&.any? %>
     <div class="form-group">
-      <label class="fw-semibold">Associated Observations</label>
-      <select name="poam_observation_ids[]" multiple class="form-control" style="min-height: 80px;">
+      <label class="fw-semibold" for="poam_observation_ids">Associated Observations</label>
+      <select id="poam_observation_ids" name="poam_observation_ids[]" multiple class="form-control" style="min-height: 80px;">
         <% @available_observations.each do |obs| %>
           <option value="<%= obs.id %>" <%= "selected" if poam_item.poam_observation_ids.include?(obs.id) %>><%= truncate(obs.title.to_s, length: 100) %></option>
         <% end %>
@@ -120,8 +120,8 @@
 
   <% if defined?(@available_findings) && @available_findings&.any? %>
     <div class="form-group">
-      <label class="fw-semibold">Associated Findings</label>
-      <select name="poam_finding_ids[]" multiple class="form-control" style="min-height: 80px;">
+      <label class="fw-semibold" for="poam_finding_ids">Associated Findings</label>
+      <select id="poam_finding_ids" name="poam_finding_ids[]" multiple class="form-control" style="min-height: 80px;">
         <% @available_findings.each do |finding| %>
           <option value="<%= finding.id %>" <%= "selected" if poam_item.poam_finding_ids.include?(finding.id) %>><%= truncate(finding.title.to_s, length: 100) %></option>
         <% end %>

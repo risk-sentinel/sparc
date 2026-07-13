@@ -21,7 +21,7 @@ class PoamJsonParserService
 
   # Allows XML parser to delegate after converting XML→Hash
   def parse_from_hash(data)
-    poam = data["plan-of-action-and-milestones"] || raise("Invalid OSCAL POA&M: missing 'plan-of-action-and-milestones' root key")
+    poam = data["plan-of-action-and-milestones"] || raise(DocumentParseError, "Invalid OSCAL POA&M: missing 'plan-of-action-and-milestones' root key")
 
     update_processing_stage!(:creating_records)
     ActiveRecord::Base.transaction do
@@ -340,12 +340,8 @@ class PoamJsonParserService
 
   def extract_facet(risk, name)
     return nil unless risk
-    (risk["characterizations"] || []).each do |char|
-      (char["facets"] || []).each do |facet|
-        return facet["value"] if facet["name"] == name
-      end
-    end
-    nil
+    Array(risk["characterizations"]).flat_map { |char| Array(char["facets"]) }
+      .find { |facet| facet["name"] == name }&.[]("value")
   end
 
   def extract_due_date(timing)

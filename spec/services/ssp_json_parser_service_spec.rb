@@ -59,7 +59,7 @@ RSpec.describe SspJsonParserService do
     it "raises on missing system-security-plan root key" do
       expect {
         described_class.new(document, nil).parse_from_hash({ "bad" => "data" })
-      }.to raise_error(RuntimeError, /missing 'system-security-plan'/)
+      }.to raise_error(DocumentParseError, /missing 'system-security-plan'/)
     end
 
     it "maps OSCAL prop names to field names" do

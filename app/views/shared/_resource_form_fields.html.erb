@@ -13,15 +13,15 @@
 <div class="d-flex gap-2 align-items-end flex-wrap">
   <div style="flex: 2; min-width: 140px;">
     <label class="form-label small mb-1">Title <span class="text-danger">*</span></label>
-    <input type="text" name="<%= prefix %>[title]" class="form-control form-control-sm" required placeholder="Policy name...">
+    <input type="text" name="<%= prefix %>[title]" class="form-control form-control-sm" required placeholder="Policy name..." aria-label="Title">
   </div>
   <div style="flex: 2; min-width: 140px;">
     <label class="form-label small mb-1">Description</label>
-    <input type="text" name="<%= prefix %>[description]" class="form-control form-control-sm" placeholder="Brief description...">
+    <input type="text" name="<%= prefix %>[description]" class="form-control form-control-sm" placeholder="Brief description..." aria-label="Description">
   </div>
   <div style="flex: 1; min-width: 100px;">
     <label class="form-label small mb-1">Relationship</label>
-    <select name="<%= prefix %>[rel]" class="form-select form-select-sm">
+    <select name="<%= prefix %>[rel]" class="form-select form-select-sm" aria-label="Relationship">
       <% BackMatterResource::REL_VALUES.each do |rv| %>
         <option value="<%= rv %>" <%= "selected" if rv == "reference" %>><%= rv %></option>
       <% end %>
@@ -29,7 +29,7 @@
   </div>
   <div style="flex: 1; min-width: 120px;">
     <label class="form-label small mb-1">Media Type</label>
-    <select name="<%= prefix %>[media_type]" class="form-select form-select-sm">
+    <select name="<%= prefix %>[media_type]" class="form-select form-select-sm" aria-label="Media Type">
       <option value="">— select —</option>
       <% BackMatterResource::MEDIA_TYPE_OPTIONS.each do |label, value| %>
         <option value="<%= value %>"><%= label %></option>
@@ -38,7 +38,7 @@
   </div>
   <div style="flex: 3; min-width: 180px;">
     <label class="form-label small mb-1">Href</label>
-    <input type="text" name="<%= prefix %>[href]" class="form-control form-control-sm" placeholder="https://...">
+    <input type="text" name="<%= prefix %>[href]" class="form-control form-control-sm" placeholder="https://..." aria-label="Href">
   </div>
   <% if show_global %>
     <div style="min-width: 60px;">

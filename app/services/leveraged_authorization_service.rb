@@ -59,7 +59,7 @@ class LeveragedAuthorizationService
 
       addressed_uuids = SspControlStatementInheritance
                           .from_leveraged.active
-                          .where(source_id: responsibility_stmts.pluck(:id))
+                          .where(source_id: responsibility_stmts.ids)
                           .joins(:ssp_control_statement)
                           .where(ssp_control_statements: { ssp_control_id: leveraging_ssp.ssp_controls.select(:id) })
                           .pluck(:source_uuid)

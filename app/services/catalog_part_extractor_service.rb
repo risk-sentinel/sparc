@@ -157,7 +157,6 @@ class CatalogPartExtractorService
 
     rows = []
     now = Time.current
-    fk = klass.name.underscore.split("_").take(1).first.to_sym
     parent_fk = (klass == SspControlStatement) ? :ssp_control_id : :cdef_control_id
     parent_assoc = (klass == SspControlStatement) ? :ssp_controls : :cdef_controls
 

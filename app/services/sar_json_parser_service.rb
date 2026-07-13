@@ -26,7 +26,7 @@ class SarJsonParserService
   end
 
   def parse_from_hash(data)
-    ar = data["assessment-results"] || raise("Invalid OSCAL Assessment Results: missing 'assessment-results' root key")
+    ar = data["assessment-results"] || raise(DocumentParseError, "Invalid OSCAL Assessment Results: missing 'assessment-results' root key")
 
     update_processing_stage!(:creating_records)
     ActiveRecord::Base.transaction do
@@ -250,11 +250,6 @@ class SarJsonParserService
     findings_to_link = []
 
     @document.sar_results.each do |result|
-      # Build obs_lookup so a finding can pull data from its related
-      # observation (Checkov emits remarks like "Resource: aws.default"
-      # that we want to surface on the SAR control card).
-      obs_lookup = result.sar_observations.index_by(&:uuid)
-
       result.sar_findings.includes(:sar_observations).each do |finding|
         target = finding.target_data || {}
         target_id = target[TARGET_ID]
@@ -569,12 +564,8 @@ class SarJsonParserService
 
   def extract_facet(risk, name)
     return nil unless risk
-    (risk["characterizations"] || []).each do |char|
-      (char["facets"] || []).each do |facet|
-        return facet["value"] if facet["name"] == name
-      end
-    end
-    nil
+    Array(risk["characterizations"]).flat_map { |char| Array(char["facets"]) }
+      .find { |facet| facet["name"] == name }&.[]("value")
   end
 
   def parse_datetime(value)

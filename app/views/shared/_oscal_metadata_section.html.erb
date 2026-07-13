@@ -30,19 +30,19 @@
     <%# ── Core Fields ─────────────────────────────────────────── %>
     <div class="row mb-4">
       <div class="col-md-3">
-        <label class="form-label fw-semibold small">OSCAL Version</label>
+        <span class="form-label fw-semibold small">OSCAL Version</span>
         <p class="mb-0"><%= document.oscal_version.presence || "Not set" %></p>
       </div>
       <div class="col-md-3">
-        <label class="form-label fw-semibold small">Document Version</label>
+        <span class="form-label fw-semibold small">Document Version</span>
         <p class="mb-0"><%= document.oscal_document_version.presence || "Not set" %></p>
       </div>
       <div class="col-md-3">
-        <label class="form-label fw-semibold small">Published</label>
+        <span class="form-label fw-semibold small">Published</span>
         <p class="mb-0"><%= document.try(:published).presence || "Not set" %></p>
       </div>
       <div class="col-md-3">
-        <label class="form-label fw-semibold small">Last Modified</label>
+        <span class="form-label fw-semibold small">Last Modified</span>
         <p class="mb-0"><%= document.updated_at.iso8601 %></p>
       </div>
     </div>
@@ -253,22 +253,22 @@
         <%# ── Core fields row ── %>
         <div class="row g-3 mb-3">
           <div class="col-md-3">
-            <label class="form-label small fw-semibold">OSCAL Version</label>
+            <%= f.label :oscal_version, "OSCAL Version", class: "form-label small fw-semibold" %>
             <%= f.text_field :oscal_version, value: document.oscal_version, class: "form-control form-control-sm", placeholder: "1.1.2" %>
           </div>
           <div class="col-md-3">
-            <label class="form-label small fw-semibold">Published Date</label>
+            <%= f.label :published, "Published Date", class: "form-label small fw-semibold" %>
             <%= f.text_field :published, value: document.try(:published), class: "form-control form-control-sm", placeholder: "2024-01-15T00:00:00Z" %>
           </div>
           <div class="col-md-6">
-            <label class="form-label small fw-semibold">Description</label>
+            <%= f.label :description, "Description", class: "form-label small fw-semibold" %>
             <%= f.text_area :description, value: document.description, class: "form-control form-control-sm", rows: 2 %>
           </div>
         </div>
 
         <%# ── Structured Roles Editor ── %>
         <div class="mb-3">
-          <label class="form-label small fw-semibold">Roles</label>
+          <span class="form-label small fw-semibold">Roles</span>
           <div id="roles-editor" data-oscal-metadata-target="rolesEditor">
             <% roles.each_with_index do |role, idx| %>
               <div class="row g-2 mb-2 role-row">
@@ -300,7 +300,7 @@
 
         <%# ── Structured Parties Editor ── %>
         <div class="mb-3">
-          <label class="form-label small fw-semibold">Parties</label>
+          <span class="form-label small fw-semibold">Parties</span>
           <div id="parties-editor" data-oscal-metadata-target="partiesEditor">
             <% parties.each_with_index do |party, idx| %>
               <div class="row g-2 mb-2 party-row">
@@ -335,7 +335,7 @@
 
         <%# ── Structured Revisions Editor ── %>
         <div class="mb-3">
-          <label class="form-label small fw-semibold">Revisions</label>
+          <span class="form-label small fw-semibold">Revisions</span>
           <div id="revisions-editor" data-oscal-metadata-target="revisionsEditor">
             <% revisions.each_with_index do |rev, idx| %>
               <div class="row g-2 mb-2 revision-row">
@@ -371,7 +371,7 @@
 
         <%# ── Remarks Editor ── %>
         <div class="mb-3">
-          <label class="form-label small fw-semibold">Remarks</label>
+          <label for="remarks-editor" class="form-label small fw-semibold">Remarks</label>
           <textarea id="remarks-editor" data-oscal-metadata-target="remarks" class="form-control form-control-sm" rows="3"
                     placeholder="Notes for human readers of the content"><%= remarks %></textarea>
         </div>

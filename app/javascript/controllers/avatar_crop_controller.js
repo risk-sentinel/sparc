@@ -6,7 +6,7 @@ import Cropper from "cropperjs"
 //
 // NIST SP 800-53 SI-10: Validates file type and size client-side
 // before allowing crop. Server-side validation in User model.
-export default class extends Controller {
+export default class AvatarCropController extends Controller {
   static targets = ["input", "cropImage", "preview", "modal", "slider", "form", "dropzone", "currentAvatar"]
   static values = { maxSize: { type: Number, default: 2097152 } } // 2MB
 
@@ -123,7 +123,7 @@ export default class extends Controller {
 
   zoom(event) {
     if (!this.cropper) return
-    const value = parseFloat(event.target.value)
+    const value = Number.parseFloat(event.target.value)
     // Map slider 0-100 to zoom ratio 0-2
     const ratio = value / 50
     this.cropper.zoomTo(ratio)
@@ -144,7 +144,7 @@ export default class extends Controller {
       if (canvas) {
         this.previewTarget.src = canvas.toDataURL("image/png")
       }
-    } catch (e) {
+    } catch {
       // Ignore cross-origin or timing errors
     }
   }

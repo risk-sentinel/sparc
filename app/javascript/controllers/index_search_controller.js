@@ -6,7 +6,7 @@ import { Controller } from "@hotwired/stimulus"
 // Model.search_text scope (the same scope the Api::V1 ?q endpoints use).
 //
 // CSP-safe: wired via a Stimulus data-action, never an inline on* handler.
-export default class extends Controller {
+export default class IndexSearchController extends Controller {
   static targets = ["form"]
   static values = { delay: { type: Number, default: 250 } }
 

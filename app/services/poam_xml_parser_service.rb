@@ -26,7 +26,7 @@ class PoamXmlParserService
     root = doc.at_xpath("//xmlns:plan-of-action-and-milestones", "xmlns" => OSCAL_NS) ||
            doc.root
 
-    raise "Invalid OSCAL POA&M XML" unless root
+    raise DocumentParseError, "Invalid OSCAL POA&M XML" unless root
 
     # Convert XML nodes to intermediate hashes, then use same creation logic as JSON parser
     observations_json = root.xpath("xmlns:observation", "xmlns" => OSCAL_NS).map { |o| observation_to_hash(o) }

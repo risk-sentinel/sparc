@@ -53,30 +53,33 @@
           <h6 class="fw-semibold" style="font-size: 0.9rem; margin-bottom: 0.75rem;">Complete Required Metadata</h6>
 
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Creator / Prepared-by Name</label>
+            <label class="form-label small fw-semibold" for="publish-modal-creator-name">Creator / Prepared-by Name</label>
             <input type="text" class="form-control form-control-sm"
+                   id="publish-modal-creator-name"
                    data-publish-modal-target="creatorName"
                    placeholder="e.g. Jane Doe">
           </div>
 
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Contact Type</label>
-            <select class="form-select form-select-sm" data-publish-modal-target="contactType">
+            <label class="form-label small fw-semibold" for="publish-modal-contact-type">Contact Type</label>
+            <select class="form-select form-select-sm" id="publish-modal-contact-type" data-publish-modal-target="contactType">
               <option value="organization">Organization</option>
               <option value="person">Person</option>
             </select>
           </div>
 
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Contact Name</label>
+            <label class="form-label small fw-semibold" for="publish-modal-contact-name">Contact Name</label>
             <input type="text" class="form-control form-control-sm"
+                   id="publish-modal-contact-name"
                    data-publish-modal-target="contactName"
                    placeholder="e.g. ACME Corp or Jane Doe">
           </div>
 
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Contact Email</label>
+            <label class="form-label small fw-semibold" for="publish-modal-contact-email">Contact Email</label>
             <input type="email" class="form-control form-control-sm"
+                   id="publish-modal-contact-email"
                    data-publish-modal-target="contactEmail"
                    placeholder="e.g. contact@example.com">
           </div>

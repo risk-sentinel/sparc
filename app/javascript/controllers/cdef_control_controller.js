@@ -8,7 +8,7 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Endpoint URLs come from data-*-value attributes (server-generated routes),
 // never interpolated into executable JS. DOM ids preserved from the originals.
-export default class extends Controller {
+export default class CdefControlController extends Controller {
   static values = { updateFieldUrl: String, createUrl: String, unlinkUrl: String }
 
   // ── Inline field editing ──────────────────────────────────────────────

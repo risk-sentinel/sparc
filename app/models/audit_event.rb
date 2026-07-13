@@ -329,10 +329,7 @@ class AuditEvent < ApplicationRecord
 
   # Returns the human-readable category for this event's action.
   def category
-    ACTION_CATEGORIES.each do |cat, actions|
-      return cat if actions.include?(action)
-    end
-    "Other"
+    ACTION_CATEGORIES.find { |_cat, actions| actions.include?(action) }&.first || "Other"
   end
 
   # ── Factory ────────────────────────────────────────────────────────────

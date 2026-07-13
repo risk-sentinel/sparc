@@ -11,7 +11,7 @@ import { Controller } from "@hotwired/stimulus"
 //   #view-<id>     — read view (shown when not editing)
 //   #edit-<id>     — edit form (shown when editing)
 //   #edit-btn-<id> — toggle button (label/colour flips Edit ⇄ Cancel)
-export default class extends Controller {
+export default class InlineEditController extends Controller {
   toggle(event) {
     const id = event.params.id
 

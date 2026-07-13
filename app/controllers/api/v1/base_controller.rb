@@ -12,7 +12,7 @@ class Api::V1::BaseController < ActionController::API
 
   before_action :authenticate_api_token!
 
-  rescue_from ActiveRecord::RecordNotFound do |e|
+  rescue_from ActiveRecord::RecordNotFound do |_e|
     render json: { error: "Not found" }, status: :not_found
   end
 
@@ -20,7 +20,7 @@ class Api::V1::BaseController < ActionController::API
     render json: { error: e.message, details: e.record&.errors&.full_messages }, status: :unprocessable_entity
   end
 
-  rescue_from NotAuthorizedError do |e|
+  rescue_from NotAuthorizedError do |_e|
     render json: { error: "Forbidden" }, status: :forbidden
   end
 

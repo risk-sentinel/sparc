@@ -14,7 +14,7 @@ import { Controller } from "@hotwired/stimulus"
 //   data-oscal-export-fallback-url-param="/ssp_documents/1/download_oscal_unvalidated"
 //   data-oscal-export-format-param="JSON"
 //   data-oscal-export-doc-type-param="SSP"
-export default class extends Controller {
+export default class OscalExportController extends Controller {
 
   // #451 A2: when a controller redirects from a failed validated download
   // (?oscal_validation_failed=1&oscal_format=json|yaml|xml) the show page
@@ -99,7 +99,7 @@ export default class extends Controller {
     let errorHtml = ""
     if (errors.length > 0) {
       const errorItems = errors.map(e => {
-        const escaped = e.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        const escaped = e.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
         return `<li style="margin-bottom:0.3rem;">${escaped}</li>`
       }).join("")
       errorHtml = `

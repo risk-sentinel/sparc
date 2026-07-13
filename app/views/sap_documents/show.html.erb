@@ -118,7 +118,7 @@
         <% next if count == 0 %>
         <div class="sparc-summary-chip summary-chip"
              data-filter-value="<%= filter_val %>"
-             data-action="heatmap-chip#apply"
+             data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
              data-heatmap-chip-filter-param="<%= filter_val %>"
              role="button"
              tabindex="0"
@@ -248,7 +248,7 @@
 <%# ── CONTROL CARDS (grouped by family) ─────────────────────────── %>
 <div id="controlsContainer">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <label class="form-label fw-semibold mb-0"><%= @total_controls %> controls</label>
+    <span class="form-label fw-semibold mb-0"><%= @total_controls %> controls</span>
     <div class="d-flex gap-1">
       <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#expandAll">Expand All</button>
       <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#collapseAll">Collapse All</button>
@@ -366,9 +366,9 @@
               <table class="sparc-field-table">
                 <% field_map.each do |fname, field| %>
                   <tr>
-                    <td class="sparc-field-label">
+                    <th scope="row" class="sparc-field-label">
                       <%= fname.tr("_", " ") %>
-                    </td>
+                    </th>
                     <td class="sparc-field-value">
                       <%= field.field_value %>
                     </td>
@@ -434,7 +434,7 @@
 
       <%= form_with url: sap_document_path(@sap_document, control_id: @control.id), method: :patch, local: true do |f| %>
         <div class="form-group">
-          <label>Assessment Method(s)</label>
+          <span>Assessment Method(s)</span>
           <% selected_methods = @control.assessment_methods %>
           <div class="d-flex gap-3 flex-wrap" style="padding: 0.4rem 0;">
             <% SapControl::ASSESSMENT_METHODS.each do |m| %>
@@ -448,21 +448,21 @@
           <small class="text-body-secondary">Select all methods used to assess this control. Multiple methods are common (e.g., Examine + Interview, or all three).</small>
         </div>
         <div class="form-group">
-          <label>Assessment Status</label>
+          <%= f.label :assessment_status, "Assessment Status" %>
           <%= f.select :assessment_status,
                 options_for_select(SapControl::ASSESSMENT_STATUSES.map { |s| [s.titleize, s] }, @control.assessment_status),
                 {}, class: "form-control", name: "sap_control[assessment_status]" %>
         </div>
         <div class="form-group">
-          <label>Assessor Name</label>
+          <%= f.label :assessor_name, "Assessor Name" %>
           <%= f.text_field :assessor_name, value: default_assessor, class: "form-control", name: "sap_control[assessor_name]" %>
         </div>
         <div class="form-group">
-          <label>Assessment Objective</label>
+          <%= f.label :objective, "Assessment Objective" %>
           <%= f.text_area :objective, value: default_objective, rows: 3, class: "form-control", name: "sap_control[objective]" %>
         </div>
         <div class="form-group">
-          <label>Test Case</label>
+          <%= f.label :test_case, "Test Case" %>
           <%= f.text_area :test_case, value: @control.test_case, rows: 3, class: "form-control", name: "sap_control[test_case]" %>
         </div>
         <div class="d-flex gap-2">
@@ -498,17 +498,17 @@
       <%= form_with url: update_objective_sap_document_path(@sap_document), method: :patch, local: true do |f| %>
         <%= hidden_field_tag :objective_id, obj.id %>
         <div class="form-group mb-3">
-          <label>Status</label>
+          <label for="sap_control_objective_status">Status</label>
           <%= select_tag "sap_control_objective[status]",
                 options_for_select(SapControlObjective::OBJECTIVE_STATUSES.map { |s| [s.humanize, s] }, obj.status),
                 class: "form-control" %>
         </div>
         <div class="form-group mb-3">
-          <label>Assessor Name</label>
+          <label for="sap_control_objective_assessor_name">Assessor Name</label>
           <%= text_field_tag "sap_control_objective[assessor_name]", obj_default_assessor, class: "form-control" %>
         </div>
         <div class="form-group mb-3">
-          <label>Assessor Notes</label>
+          <label for="sap_control_objective_assessor_notes">Assessor Notes</label>
           <%= text_area_tag "sap_control_objective[assessor_notes]", obj.assessor_notes, rows: 4, class: "form-control",
                 placeholder: "Findings, evidence references, or notes for this objective" %>
         </div>

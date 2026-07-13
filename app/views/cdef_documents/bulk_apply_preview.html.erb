@@ -82,7 +82,8 @@
                   <% if row.status == "needs_disambiguation" %>
                     <input type="radio"
                            name="selected_target_ids[<%= row.source_id %>]"
-                           value="<%= row.target_id %>" />
+                           value="<%= row.target_id %>"
+                           aria-label="Select target <%= row.target_id %> for <%= row.source_id %>" />
                   <% end %>
                 </td>
               </tr>

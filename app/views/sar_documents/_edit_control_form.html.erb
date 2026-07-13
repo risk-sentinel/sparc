@@ -31,9 +31,9 @@
       <table style="width: 100%; border-collapse: collapse;">
         <% ctx_rows.each do |lbl, val| %>
           <tr style="border-top: 1px solid var(--bs-border-color);">
-            <td style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top; white-space: nowrap;">
+            <th scope="row" style="width: 26%; padding: 0.38rem 0.5rem 0.38rem 0.75rem; font-size: 0.72rem; font-weight: 400; text-align: left; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-tertiary-color); vertical-align: top; white-space: nowrap;">
               <%= lbl %>
-            </td>
+            </th>
             <td style="padding: 0.38rem 0.75rem 0.38rem 0.5rem; font-size: 0.83rem; color: <%= val.present? ? "var(--bs-secondary-color)" : "var(--bs-tertiary-color)" %>; vertical-align: top; white-space: pre-wrap;">
               <%= val.present? ? val : "&mdash;".html_safe %>
             </td>
@@ -47,7 +47,7 @@
     <% field = field_map[fname] %>
     <% fval  = field&.field_value.to_s %>
     <div class="form-group">
-      <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-secondary-color);">
+      <label for="sar-control-field-<%= fname %>" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-secondary-color);">
         <%= fname.tr("_", " ") %>
         <span class="sparc-heading-implementation" style="font-size: 0.7rem; text-transform: none; letter-spacing: 0; font-weight: 400;">(editable)</span>
       </label>
@@ -55,15 +55,18 @@
         <%= select_tag "fields[#{fname}]",
               options_for_select(SarControlField::RESULT_VALUES, fval),
               include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
+              id: "sar-control-field-#{fname}",
               style: "font-size: 0.875rem;" %>
       <% elsif fname == "working_status" %>
         <%= select_tag "fields[#{fname}]",
               options_for_select(SarControlField::WORKING_STATUS_VALUES, fval),
               include_blank: "&mdash; select &mdash;".html_safe, class: "form-control",
+              id: "sar-control-field-#{fname}",
               style: "font-size: 0.875rem;" %>
       <% else %>
         <%= text_area_tag "fields[#{fname}]", fval,
               class: "form-control", rows: 3,
+              id: "sar-control-field-#{fname}",
               style: "font-size: 0.875rem;" %>
       <% end %>
     </div>

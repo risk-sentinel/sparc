@@ -19,15 +19,15 @@
 
       <div class="row g-3 mb-3">
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Attester Name <span class="text-danger">*</span></label>
+          <%= f.label :attester_name, safe_join(["Attester Name ", content_tag(:span, "*", class: "text-danger")]), class: "form-label fw-semibold" %>
           <%= f.text_field :attester_name, class: "form-control", placeholder: "Full name" %>
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Email</label>
+          <%= f.label :attester_email, "Email", class: "form-label fw-semibold" %>
           <%= f.text_field :attester_email, class: "form-control", placeholder: "email@example.com" %>
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Role</label>
+          <%= f.label :role, "Role", class: "form-label fw-semibold" %>
           <%= f.select :role,
               options_for_select(Attestation::ROLE_LABELS.map { |k, v| [ v, k ] }, @attestation.role),
               { include_blank: "Select role..." }, class: "form-select" %>
@@ -35,7 +35,7 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label fw-semibold">Attestation Statement <span class="text-danger">*</span></label>
+        <%= f.label :statement, safe_join(["Attestation Statement ", content_tag(:span, "*", class: "text-danger")]), class: "form-label fw-semibold" %>
         <%= f.text_area :statement, class: "form-control", rows: 4,
             placeholder: "I attest that the evidence provided is accurate, complete, and represents the current state of the control implementation..." %>
       </div>

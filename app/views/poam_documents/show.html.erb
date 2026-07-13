@@ -383,23 +383,24 @@
           <div class="row row-cols-1 row-cols-md-2 g-3" style="margin-bottom: 0.75rem;">
             <div class="col">
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="fw-semibold" style="font-size: 0.82rem;">Risk Status</label>
+                <label class="fw-semibold" style="font-size: 0.82rem;" for="fields-risk-status-<%= item.id %>">Risk Status</label>
                 <%= select_tag "fields[risk_status]",
                       options_for_select(risk_status_options, item.risk_status),
                       include_blank: "— Select —",
+                      id: "fields-risk-status-#{item.id}",
                       class: "form-control", style: "font-size: 0.88rem;" %>
               </div>
             </div>
           </div>
 
           <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="fw-semibold" style="font-size: 0.82rem;">Internal Notes</label>
-            <textarea name="fields[internal_notes]" class="form-control" rows="3" style="font-size: 0.88rem;" placeholder="Internal tracking notes..."><%= item.internal_notes %></textarea>
+            <label class="fw-semibold" style="font-size: 0.82rem;" for="fields-internal-notes-<%= item.id %>">Internal Notes</label>
+            <textarea id="fields-internal-notes-<%= item.id %>" name="fields[internal_notes]" class="form-control" rows="3" style="font-size: 0.88rem;" placeholder="Internal tracking notes..."><%= item.internal_notes %></textarea>
           </div>
 
           <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="fw-semibold" style="font-size: 0.82rem;">Closure Evidence</label>
-            <textarea name="fields[closure_evidence]" class="form-control" rows="3" style="font-size: 0.88rem;" placeholder="Evidence or documentation for closure..."><%= item.closure_evidence %></textarea>
+            <label class="fw-semibold" style="font-size: 0.82rem;" for="fields-closure-evidence-<%= item.id %>">Closure Evidence</label>
+            <textarea id="fields-closure-evidence-<%= item.id %>" name="fields[closure_evidence]" class="form-control" rows="3" style="font-size: 0.88rem;" placeholder="Evidence or documentation for closure..."><%= item.closure_evidence %></textarea>
           </div>
 
           <div class="d-flex gap-2">

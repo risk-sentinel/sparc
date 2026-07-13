@@ -36,7 +36,7 @@ RSpec.describe SspXmlParserService do
 
       expect {
         described_class.new(document, file.path).parse
-      }.to raise_error(RuntimeError, /missing <system-security-plan>/)
+      }.to raise_error(DocumentParseError, /missing <system-security-plan>/)
     ensure
       file.close
       file.unlink

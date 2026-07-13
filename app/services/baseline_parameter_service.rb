@@ -41,7 +41,6 @@ class BaselineParameterService
     selections = []
 
     raw_params.each do |param|
-      param_id = param["id"]
       control_id = param["_control_id"]
       control_title = param["_control_title"]
 

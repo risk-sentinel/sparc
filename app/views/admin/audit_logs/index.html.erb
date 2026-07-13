@@ -13,8 +13,8 @@
     <%= form_tag admin_audit_logs_path, method: :get do %>
       <div class="row g-2 align-items-end">
         <div class="col-md-3">
-          <label class="form-label small fw-semibold mb-1">Search</label>
-          <input type="text" name="q" value="<%= params[:q] %>" class="form-control form-control-sm"
+          <label for="audit_search" class="form-label small fw-semibold mb-1">Search</label>
+          <input type="text" id="audit_search" name="q" value="<%= params[:q] %>" class="form-control form-control-sm"
                  placeholder="Search actions or metadata...">
         </div>
         <div class="col-md-2">
@@ -45,12 +45,12 @@
           </select>
         </div>
         <div class="col-md-3">
-          <label class="form-label small fw-semibold mb-1">Date Range</label>
+          <span class="form-label small fw-semibold mb-1 d-block">Date Range</span>
           <div class="input-group input-group-sm">
             <input type="date" name="start_date" value="<%= params[:start_date] %>"
-                   class="form-control form-control-sm" placeholder="From">
+                   aria-label="Start date" class="form-control form-control-sm" placeholder="From">
             <input type="date" name="end_date" value="<%= params[:end_date] %>"
-                   class="form-control form-control-sm" placeholder="To">
+                   aria-label="End date" class="form-control form-control-sm" placeholder="To">
           </div>
         </div>
       </div>

@@ -24,7 +24,7 @@ class SapXmlParserService
     doc = XmlSecurity.parse(xml)
     root = doc.at_xpath("xmlns:assessment-plan", "xmlns" => OSCAL_NS) ||
            doc.at_xpath("assessment-plan") ||
-           raise("Invalid OSCAL Assessment Plan XML: missing <assessment-plan> root")
+           raise(DocumentParseError, "Invalid OSCAL Assessment Plan XML: missing <assessment-plan> root")
 
     sap_hash = build_assessment_plan_hash(root)
     data = { "assessment-plan" => sap_hash }
