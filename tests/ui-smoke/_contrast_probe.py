@@ -5,13 +5,14 @@ directly:
 
   SPARC_SMOKE_BASE_URL=... SPARC_SMOKE_SA_TOKEN=... uv run python _contrast_probe.py
 
-Writes /tmp/contrast_clusters.json and prints the top color-pairs.
+Writes a JSON cluster dump to a temp file (path printed) and the top color-pairs.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import tempfile
 from collections import Counter, defaultdict
 from urllib.parse import urlparse
 
@@ -85,7 +86,11 @@ def main():
             "n_pages": len(pair_pages[key]),
             **ex,
         })
-    json.dump(clusters, open("/tmp/contrast_clusters.json", "w"), indent=2)
+    # Secure, non-predictable temp file (was a hardcoded /tmp path — S5443).
+    _fd, _out = tempfile.mkstemp(prefix="contrast_clusters_", suffix=".json")
+    with os.fdopen(_fd, "w") as _fh:
+        json.dump(clusters, _fh, indent=2)
+    print(f"wrote cluster dump: {_out}")
 
     total = sum(pairs.values())
     print(f"total color-contrast nodes: {total} | distinct color-pairs: {len(pairs)}\n")

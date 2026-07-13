@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -46,8 +47,15 @@ def _load_baseline() -> dict:
     return {}
 
 
+# Baseline keys are page identifiers (see pages.py) — constrain `name` to a
+# safe slug so nothing unexpected can flow into the persisted baseline file.
+_NAME_RE = re.compile(r"\A[\w.-]+\Z")
+
+
 def assert_no_new_a11y_violations(page, name: str) -> None:
     """Audit `page` (WCAG 2.1 A/AA); fail on violations not in the baseline."""
+    if not _NAME_RE.match(name):
+        raise ValueError(f"unsafe a11y baseline name: {name!r}")
     response = Axe().run(page, options=_OPTIONS).response
     current = _fingerprints(response)
 
