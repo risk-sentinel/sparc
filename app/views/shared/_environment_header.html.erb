@@ -9,12 +9,11 @@
     NIST 800-53: AC-8 System Use Notification — all-screens rules-of-behavior
     notice; complements the login consent banner (#190). %>
 <% if SparcConfig.header_enabled? %>
-  <div class="sparc-env-header"
-       role="region"
+  <section class="sparc-env-header"
        aria-label="Environment notice"
        data-controller="environment-header"
        data-environment-header-text-color-value="<%= SparcConfig.header_text_color %>"
        data-environment-header-highlight-color-value="<%= SparcConfig.header_highlight_color %>">
     <%= SparcConfig.header_text %>
-  </div>
+  </section>
 <% end %>

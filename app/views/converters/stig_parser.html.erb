@@ -43,6 +43,7 @@
         </span>
       </div>
       <input type="file" accept=".xml" class="d-none"
+             aria-label="STIG XCCDF XML file"
              data-dropzone-target="input"
              data-action="change->dropzone#change">
     </div>
@@ -96,6 +97,7 @@
   <%# Filters %>
   <div class="d-flex gap-2 flex-wrap mb-3 align-items-center">
     <input type="text" placeholder="Search V-ID, SV-ID, CCI, NIST, title&hellip;"
+           aria-label="Search rules"
            class="form-control form-control-sm"
            style="flex: 1 1 250px; min-width: 200px; font-family: monospace; font-size: 0.82rem;"
            data-stig-parser-target="searchInput"
@@ -173,7 +175,7 @@
   <%# Hidden import form %>
   <%= form_with url: import_stig_converters_path, method: :post, multipart: true, local: true,
         data: { stig_parser_target: "importForm" }, class: "d-none" do |f| %>
-    <input type="file" name="stig_file" data-stig-parser-target="importFileInput">
+    <input type="file" name="stig_file" aria-label="STIG file to import" data-stig-parser-target="importFileInput">
   <% end %>
 </div>
 

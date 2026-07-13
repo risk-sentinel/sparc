@@ -112,7 +112,7 @@
             </p>
             <% @cdefs.each do |cdef| %>
               <label class="d-flex align-items-center gap-2 border rounded-2 bg-body" style="padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer;">
-                <%= check_box_tag "cdef_document_ids[]", cdef.id, false, style: "width: 16px; height: 16px;" %>
+                <%= check_box_tag "cdef_document_ids[]", cdef.id, false, style: "width: 16px; height: 16px;", "aria-label": "Include component #{cdef.name}" %>
                 <div>
                   <div class="fw-semibold" style="font-size: 0.88rem;"><%= cdef.name %></div>
                   <div class="text-body-secondary" style="font-size: 0.75rem;">

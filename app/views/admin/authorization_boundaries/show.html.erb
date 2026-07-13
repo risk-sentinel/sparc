@@ -29,14 +29,16 @@
     <div class="card mb-4">
       <div class="card-header fw-semibold">Details</div>
       <div class="card-body">
-        <% if @authorization_boundary.description.present? %>
-          <dt class="small text-body-secondary">Description</dt>
-          <dd><%= @authorization_boundary.description %></dd>
-        <% end %>
-        <% if @authorization_boundary.authorization_boundary_description.present? %>
-          <dt class="small text-body-secondary">Authorization Boundary</dt>
-          <dd><%= @authorization_boundary.authorization_boundary_description %></dd>
-        <% end %>
+        <dl class="mb-0">
+          <% if @authorization_boundary.description.present? %>
+            <dt class="small text-body-secondary">Description</dt>
+            <dd><%= @authorization_boundary.description %></dd>
+          <% end %>
+          <% if @authorization_boundary.authorization_boundary_description.present? %>
+            <dt class="small text-body-secondary">Authorization Boundary</dt>
+            <dd><%= @authorization_boundary.authorization_boundary_description %></dd>
+          <% end %>
+        </dl>
       </div>
     </div>
   <% end %>

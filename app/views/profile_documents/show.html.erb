@@ -137,7 +137,7 @@
         <% next if count == 0 %>
         <div class="summary-chip sparc-summary-chip"
              data-filter-value="<%= pri %>"
-             data-action="heatmap-chip#apply"
+             data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
              data-heatmap-chip-filter-param="<%= pri %>"
              role="button"
              tabindex="0"
@@ -174,7 +174,7 @@
 <%# ── FAMILY-GROUPED CONTROL LIST ──────────────────────────────── %>
 <div id="controlsContainer">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <label class="form-label fw-semibold mb-0"><%= @total_controls %> controls in this profile</label>
+    <span class="form-label fw-semibold mb-0"><%= @total_controls %> controls in this profile</span>
     <div class="d-flex gap-1">
       <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#expandAll">Expand All</button>
       <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#collapseAll">Collapse All</button>
@@ -266,9 +266,9 @@
                           <% label_field = field_map["parameter_label:#{param_id}"] %>
                           <% sel = show_select_meta[param_id] %>
                           <tr>
-                            <td class="sparc-field-label" style="width: 30%; font-family: monospace;">
+                            <th scope="row" class="sparc-field-label" style="width: 30%; font-family: monospace;">
                               <%= param_id %>
-                            </td>
+                            </th>
                             <% if label_field %>
                               <td class="text-body-secondary" style="width: 25%; font-size: 0.82rem;">
                                 <%= label_field.field_value %>
@@ -295,9 +295,9 @@
                     <table class="sparc-field-table">
                       <% prop_fields.each do |fname, field| %>
                         <tr>
-                          <td class="sparc-field-label" style="width: 30%;">
+                          <th scope="row" class="sparc-field-label" style="width: 30%;">
                             <%= fname.delete_prefix("prop:").tr("_", " ") %>
-                          </td>
+                          </th>
                           <td class="sparc-field-value">
                             <%= field.field_value %>
                           </td>

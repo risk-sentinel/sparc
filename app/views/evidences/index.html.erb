@@ -22,25 +22,25 @@
       <div class="card-body py-2">
         <%= form_with url: evidences_path, method: :get, local: true, class: "row g-2 align-items-end" do |f| %>
           <div class="col-md-3">
-            <label class="form-label small fw-semibold mb-1">Search</label>
+            <%= f.label :search, "Search", class: "form-label small fw-semibold mb-1" %>
             <%= f.text_field :search, value: params[:search], class: "form-control form-control-sm", placeholder: "Title, filename..." %>
           </div>
           <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Type</label>
+            <%= f.label :type, "Type", class: "form-label small fw-semibold mb-1" %>
             <%= f.select :type, options_for_select(Evidence::EVIDENCE_TYPE_LABELS.map { |k, v| [ v, k ] }, params[:type]),
                          { include_blank: "All Types" }, class: "form-select form-select-sm" %>
           </div>
           <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Status</label>
+            <%= f.label :status, "Status", class: "form-label small fw-semibold mb-1" %>
             <%= f.select :status, options_for_select(Evidence::STATUS_LABELS.map { |k, v| [ v, k ] }, params[:status]),
                          { include_blank: "All Statuses" }, class: "form-select form-select-sm" %>
           </div>
           <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Control ID</label>
+            <%= f.label :control_id, "Control ID", class: "form-label small fw-semibold mb-1" %>
             <%= f.text_field :control_id, value: params[:control_id], class: "form-control form-control-sm", placeholder: "e.g. AC-01" %>
           </div>
           <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Authorization Boundary</label>
+            <%= f.label :authorization_boundary_id, "Authorization Boundary", class: "form-label small fw-semibold mb-1" %>
             <%= f.select :authorization_boundary_id, options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), params[:authorization_boundary_id]),
                          { include_blank: "All Authorization Boundaries" }, class: "form-select form-select-sm" %>
           </div>

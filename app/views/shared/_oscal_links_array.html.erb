@@ -16,16 +16,20 @@
     <template data-oscal-repeater-target="template">
       <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
         <input type="url" name="<%= param_key %>[links_data][][href]"
+               aria-label="Link href"
                placeholder="https://… or #fragment-uuid"
                class="form-control form-control-sm" style="flex: 2 1 250px;" />
         <input type="text" name="<%= param_key %>[links_data][][rel]"
+               aria-label="Link rel"
                list="oscal-link-rels"
                placeholder="rel (e.g., reference)"
                class="form-control form-control-sm" style="flex: 1 1 140px;" />
         <input type="text" name="<%= param_key %>[links_data][][media_type]"
+               aria-label="Link media type"
                placeholder="media-type (e.g., text/html)"
                class="form-control form-control-sm" style="flex: 1 1 160px;" />
         <input type="text" name="<%= param_key %>[links_data][][text]"
+               aria-label="Link display text"
                placeholder="display text (optional)"
                class="form-control form-control-sm" style="flex: 1 1 160px;" />
         <button type="button" data-action="click->oscal-repeater#remove"
@@ -38,19 +42,23 @@
         <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
           <input type="url" name="<%= param_key %>[links_data][][href]"
                  value="<%= link["href"] %>"
+                 aria-label="Link href"
                  placeholder="https://… or #fragment-uuid"
                  class="form-control form-control-sm" style="flex: 2 1 250px;" />
           <input type="text" name="<%= param_key %>[links_data][][rel]"
                  value="<%= link["rel"] %>"
+                 aria-label="Link rel"
                  list="oscal-link-rels"
                  placeholder="rel"
                  class="form-control form-control-sm" style="flex: 1 1 140px;" />
           <input type="text" name="<%= param_key %>[links_data][][media_type]"
                  value="<%= link["media-type"] %>"
+                 aria-label="Link media type"
                  placeholder="media-type"
                  class="form-control form-control-sm" style="flex: 1 1 160px;" />
           <input type="text" name="<%= param_key %>[links_data][][text]"
                  value="<%= link["text"] %>"
+                 aria-label="Link display text"
                  placeholder="display text"
                  class="form-control form-control-sm" style="flex: 1 1 160px;" />
           <button type="button" data-action="click->oscal-repeater#remove"

@@ -16,7 +16,7 @@
 
   <%= form_with url: update_controls_profile_document_path(@profile_document), method: :patch, local: true do |f| %>
     <div class="mb-4">
-      <label class="form-label fw-semibold">Auto-select by Baseline Level</label>
+      <%= f.label :baseline_level, "Auto-select by Baseline Level", class: "form-label fw-semibold" %>
       <%= f.select :baseline_level,
             ProfileDocument::BASELINE_LEVELS.map { |l| [ l, l ] },
             { include_blank: "Choose baseline level..." },
@@ -26,9 +26,9 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <label class="form-label fw-semibold mb-0">
+      <span class="form-label fw-semibold mb-0">
         <span data-family-selector-target="selectedCount"><%= @existing_control_ids.size %></span> controls selected
-      </label>
+      </span>
       <div class="d-flex gap-1 flex-wrap">
         <button type="button" class="btn btn-sm btn-outline-primary" data-action="click->family-selector#selectAll">Select All</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->family-selector#deselectAll">Deselect All</button>
@@ -48,6 +48,7 @@
           <summary>
             <input type="checkbox" class="form-check-input family-checkbox"
                    data-family="<%= family.code %>"
+                   aria-label="Select all controls in <%= family.code %>"
                    data-action="change->family-selector#toggleFamily"
                    <%= "checked" if checked_count == controls.size %>
             >
