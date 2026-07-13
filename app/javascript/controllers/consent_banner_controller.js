@@ -10,7 +10,7 @@ import { Controller } from "@hotwired/stimulus"
 //     <div data-consent-banner-target="loginCard" class="d-none">...</div>
 //     <div data-consent-banner-target="modal" class="modal fade">...</div>
 //   </div>
-export default class extends Controller {
+export default class ConsentBannerController extends Controller {
   static targets = ["modal", "loginCard", "errorArea"]
 
   connect() {

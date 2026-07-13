@@ -54,7 +54,7 @@ class StuckDocumentReaperJob < ApplicationJob
         # File-bearing: only reap if no live execution is still working it.
         next if live.include?([ type_key.to_s, doc.id ])
 
-        reap_failed(doc, type_key, threshold)
+        reap_failed(doc, type_key)
         failed += 1
       end
     end
@@ -76,7 +76,7 @@ class StuckDocumentReaperJob < ApplicationJob
     )
   end
 
-  def reap_failed(doc, type_key, threshold)
+  def reap_failed(doc, type_key)
     message = "Parsing did not complete within #{SparcConfig.document_reap_minutes} minutes " \
               "and no active job was found; marked failed by the stuck-document reaper. Re-upload to retry."
     attrs = { status: "failed" }

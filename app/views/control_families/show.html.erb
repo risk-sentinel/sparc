@@ -48,13 +48,13 @@
         </label>
         <span class="text-body-secondary" style="font-size: 0.85rem;" data-baseline-editor-target="bulkCount">0 selected</span>
         <div class="vr"></div>
-        <select class="form-select form-select-sm" style="width: auto;" data-baseline-editor-target="bulkLevel">
+        <select class="form-select form-select-sm" style="width: auto;" data-baseline-editor-target="bulkLevel" aria-label="Baseline level">
           <option value="">Level...</option>
           <option value="LOW">LOW</option>
           <option value="MODERATE">MODERATE</option>
           <option value="HIGH">HIGH</option>
         </select>
-        <select class="form-select form-select-sm" style="width: auto;" data-baseline-editor-target="bulkAction">
+        <select class="form-select form-select-sm" style="width: auto;" data-baseline-editor-target="bulkAction" aria-label="Bulk action">
           <option value="add">Add Level</option>
           <option value="remove">Remove Level</option>
           <option value="set">Set to Only This Level</option>
@@ -102,6 +102,7 @@
               <td style="vertical-align: top; padding-top: 0.55rem; display: none;" data-baseline-checkbox-cell>
                 <% if depth == 0 %>
                   <input type="checkbox" class="form-check-input" value="<%= control.id %>"
+                         aria-label="Select control <%= control.control_id %>"
                          data-baseline-editor-target="checkbox"
                          data-action="change->baseline-editor#checkboxChanged">
                 <% end %>

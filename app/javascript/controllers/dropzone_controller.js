@@ -15,7 +15,7 @@ import { Controller } from "@hotwired/stimulus"
  *     ...
  *   </div>
  */
-export default class extends Controller {
+export default class DropzoneController extends Controller {
   static targets = ["input", "zone", "filename", "error", "prompt", "icon", "filesize", "fileList"]
   static values = {
     accept: { type: String, default: "" },
@@ -188,7 +188,7 @@ export default class extends Controller {
   removeFile(event) {
     event.preventDefault()
     event.stopPropagation()
-    const index = parseInt(event.currentTarget.dataset.index)
+    const index = Number.parseInt(event.currentTarget.dataset.index)
     this.selectedFiles.splice(index, 1)
 
     if (this.selectedFiles.length === 0) {

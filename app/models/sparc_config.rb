@@ -21,7 +21,7 @@
 module SparcConfig
   VERSION = "1.10.2"
 
-  module_function
+  extend self
 
   def version = VERSION
 
@@ -47,7 +47,7 @@ module SparcConfig
   # Configurable resources list — JSON array of {display_text, href} objects.
   # Falls back to default FedRAMP/OSCAL/MITRE links when not set.
   def resources
-    raw = ENV["SPARC_RESOURCES"]
+    raw = ENV.fetch("SPARC_RESOURCES", nil)
     if raw.present?
       JSON.parse(raw) rescue default_resources
     else
@@ -247,7 +247,7 @@ module SparcConfig
   end
 
   def userdata_host
-    return ENV["SPARC_USERDATA_HOST"] if ENV["SPARC_USERDATA_HOST"].present?
+    return ENV.fetch("SPARC_USERDATA_HOST", nil) if ENV.fetch("SPARC_USERDATA_HOST", nil).present?
     return nil unless app_uri&.host
     "userdata.#{app_uri.host}"
   end
@@ -413,7 +413,7 @@ module SparcConfig
   def aws_labs_cdef_enabled?     = ENV.fetch("SPARC_AWS_LABS_CDEF_ENABLED", "false") == "true"
   def aws_labs_cdef_repo         = ENV.fetch("SPARC_AWS_LABS_CDEF_REPO", "awslabs/oscal-content-for-aws-services")
   def aws_labs_cdef_branch       = ENV.fetch("SPARC_AWS_LABS_CDEF_BRANCH", "main")
-  def aws_labs_github_token      = ENV["SPARC_AWS_LABS_GITHUB_TOKEN"]
+  def aws_labs_github_token      = ENV.fetch("SPARC_AWS_LABS_GITHUB_TOKEN", nil)
 
   # AWS Labs CDEFs change on the order of weeks, not days. Default the
   # recurring refresh to every 7 days so audit logs and runtime traffic stay
@@ -428,7 +428,7 @@ module SparcConfig
   # When unset, defaults to the OSCAL versions SPARC's loaded schemas
   # already support — so the import only pulls CDEFs we can validate.
   def aws_labs_oscal_versions
-    raw = ENV["SPARC_AWS_LABS_OSCAL_VERSIONS"]
+    raw = ENV.fetch("SPARC_AWS_LABS_OSCAL_VERSIONS", nil)
     if raw.present?
       raw.split(",").map(&:strip).reject(&:blank?)
     elsif defined?(OscalSchema) && OscalSchema.table_exists?

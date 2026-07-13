@@ -14,7 +14,7 @@ import { Controller } from "@hotwired/stimulus"
 //   initial-filter   — pre-applied status/severity filter from URL
 //   url-sync         — "true" to push filters into the URL
 //   container-id     — ID of the controls container element (default: "controlsContainer")
-export default class extends Controller {
+export default class HeatmapController extends Controller {
   static targets = ["badge", "chip", "banner", "bannerLabel"]
   static values = {
     filterKey: { type: String, default: "status" },

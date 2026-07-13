@@ -24,7 +24,7 @@ class ProfileJsonParserService
       return parse_resolved_catalog(data["catalog"], data)
     end
 
-    profile = data["profile"] || raise("Invalid OSCAL Profile: missing 'profile' root key")
+    profile = data["profile"] || raise(DocumentParseError, "Invalid OSCAL Profile: missing 'profile' root key")
     metadata = profile["metadata"] || {}
     imports  = profile["imports"] || []
     modify   = profile["modify"] || {}
@@ -177,10 +177,10 @@ class ProfileJsonParserService
         rlinks = resource["rlinks"] || []
         rlink_hrefs = rlinks.map { |rl| rl["href"].to_s.downcase }
 
-        catalogs.each do |catalog|
-          next unless catalog_rlinks_match?(rlink_hrefs, catalog)
+        catalog = catalogs.find { |c| catalog_rlinks_match?(rlink_hrefs, c) }
+        if catalog
           @document.update_column(:control_catalog_id, catalog.id)
-          return
+          nil
         end
       end
     end
@@ -229,12 +229,8 @@ class ProfileJsonParserService
 
   def extract_priority(alter)
     return nil unless alter
-    (alter["adds"] || []).each do |add|
-      (add["props"] || []).each do |prop|
-        return prop["value"] if prop["name"] == "priority"
-      end
-    end
-    nil
+    Array(alter["adds"]).flat_map { |add| Array(add["props"]) }
+      .find { |prop| prop["name"] == "priority" }&.[]("value")
   end
 
   # ── Resolved Profile Catalog Support ─────────────────────────────────
@@ -336,16 +332,15 @@ class ProfileJsonParserService
     catalogs = ControlCatalog.all
     return if catalogs.none?
 
-    catalogs.each do |catalog|
-      catalog_name = catalog.name.downcase
-      href_rev = href_lower[REV_PATTERN, 1]
-      catalog_rev = catalog_name[REV_PATTERN, 1]
-
-      if href_lower.include?(CATALOG_800_53) && catalog_name.include?(CATALOG_800_53) &&
-          href_rev.present? && catalog_rev.present? && href_rev == catalog_rev
-        @document.update_column(:control_catalog_id, catalog.id)
-        return
-      end
+    href_rev = href_lower[REV_PATTERN, 1]
+    catalog = catalogs.find do |c|
+      catalog_rev = c.name.downcase[REV_PATTERN, 1]
+      href_lower.include?(CATALOG_800_53) && c.name.downcase.include?(CATALOG_800_53) &&
+        href_rev.present? && catalog_rev.present? && href_rev == catalog_rev
+    end
+    if catalog
+      @document.update_column(:control_catalog_id, catalog.id)
+      return
     end
 
     # Fall back to back-matter matching — #583 reads from promoted

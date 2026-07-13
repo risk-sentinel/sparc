@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 // Client-side search/filter for converter entry tables.
 // Filters rows by matching search text against source_id, target_id,
 // category, and remarks columns.
-export default class extends Controller {
+export default class ConverterSearchController extends Controller {
   static targets = ["searchInput", "row", "count", "addRow"]
 
   connect() {

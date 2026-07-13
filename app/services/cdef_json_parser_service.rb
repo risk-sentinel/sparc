@@ -126,7 +126,6 @@ class CdefJsonParserService
     return if ir_statements_by_idx.empty?
 
     rows = []
-    now = Time.current
     cdef_controls_by_id = CdefControl.where(id: imported_ids).index_by(&:id)
 
     ir_statements_by_idx.each do |idx, statements|
@@ -227,7 +226,7 @@ class CdefJsonParserService
 
   def parse_stigviewer(data)
     stig = data["stigs"]&.first
-    raise "No STIG data found in JSON" unless stig
+    raise DocumentParseError, "No STIG data found in JSON" unless stig
 
     @document.update!(
       cdef_type:       "disa_stig",

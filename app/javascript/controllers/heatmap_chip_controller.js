@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // onclick handlers (SSP/SAP/CDEF/Profile) — which built a CustomEvent inline and
 // were blocked by strict CSP. The filter value is passed as a Stimulus action
 // param (data-heatmap-chip-filter-param) instead of being interpolated into JS.
-export default class extends Controller {
+export default class HeatmapChipController extends Controller {
   apply(event) {
     const section = document.getElementById("heatmapSection")
     if (section) {

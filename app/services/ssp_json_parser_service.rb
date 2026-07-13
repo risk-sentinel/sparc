@@ -34,7 +34,7 @@ class SspJsonParserService
   end
 
   def parse_from_hash(data)
-    ssp = data["system-security-plan"] || raise("Invalid OSCAL SSP: missing 'system-security-plan' root key")
+    ssp = data["system-security-plan"] || raise(DocumentParseError, "Invalid OSCAL SSP: missing 'system-security-plan' root key")
 
     update_processing_stage!(:creating_records)
     ActiveRecord::Base.transaction do
@@ -363,12 +363,8 @@ class SspJsonParserService
   def statement_set_parameters(stmt)
     set_params = Array(stmt["set-parameters"]).dup
     (stmt[BY_COMPONENTS] || []).each do |bc|
-      if Array(bc["satisfied"]).any?
-        set_params << { "tag" => "provided" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "provided" }
-      end
-      if Array(bc["responsibilities"]).any?
-        set_params << { "tag" => "responsibility" } unless set_params.any? { |p| p.is_a?(Hash) && p["tag"] == "responsibility" }
-      end
+      set_params << { "tag" => "provided" } if Array(bc["satisfied"]).any? && set_params.none? { |p| p.is_a?(Hash) && p["tag"] == "provided" }
+      set_params << { "tag" => "responsibility" } if Array(bc["responsibilities"]).any? && set_params.none? { |p| p.is_a?(Hash) && p["tag"] == "responsibility" }
     end
     set_params
   end

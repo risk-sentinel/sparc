@@ -12,7 +12,7 @@ import { Controller } from "@hotwired/stimulus"
 // that re-emitted onclick attributes (an injection-shaped pattern). New rows
 // now come from inert <template> elements, so no markup is ever assembled
 // from strings.
-export default class extends Controller {
+export default class OscalMetadataController extends Controller {
   static targets = [
     "body", "icon",
     "rolesEditor", "partiesEditor", "revisionsEditor",
@@ -80,7 +80,7 @@ export default class extends Controller {
             if (advanced[key].length === 0) delete advanced[key]
           }
         })
-      } catch (e) {
+      } catch {
         if (event) event.preventDefault()
         alert("Invalid JSON in advanced metadata editor. Please fix the JSON syntax before saving.")
         return

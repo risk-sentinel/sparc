@@ -52,7 +52,7 @@
     </div>
     <div class="col">
       <div class="form-group">
-        <label class="fw-semibold">Baseline Impact</label>
+        <span class="fw-semibold">Baseline Impact</span>
         <div class="d-flex gap-3 mt-1" style="padding-top: 0.35rem;">
           <% CatalogControl::BASELINE_LEVELS.each do |level| %>
             <label class="form-check mb-0">
@@ -218,7 +218,7 @@
           <h6 class="fw-semibold small">Link Existing Resource</h6>
           <%= form_with url: link_resource_catalog_control_path(catalog_control), method: :post, local: true, class: "d-flex gap-2 align-items-end" do %>
             <div class="flex-grow-1">
-              <select name="back_matter_resource_id" class="form-select form-select-sm">
+              <select name="back_matter_resource_id" aria-label="Back-matter resource" class="form-select form-select-sm">
                 <option value="">Select a resource...</option>
                 <% available.each do |r| %>
                   <option value="<%= r.id %>"><%= r.title %> (<%= r.uuid.truncate(12) %>)</option>

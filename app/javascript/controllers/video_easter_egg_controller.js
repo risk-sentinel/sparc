@@ -18,7 +18,7 @@ import { Controller } from "@hotwired/stimulus"
 //       <source src="/videos/sparc_intro.mp4" type="video/mp4">
 //     </video>
 //   </div>
-export default class extends Controller {
+export default class VideoEasterEggController extends Controller {
   static targets = ["overlay", "video"]
 
   play(event) {

@@ -230,7 +230,7 @@ class OscalSchemaValidationService
   def load_schema_from_disk
     Rails.logger.warn("[OscalSchemaValidation] Falling back to disk schema for #{@model_type}")
     schema_path = SCHEMA_DIR.join(@config[:file])
-    raise "OSCAL schema file not found: #{schema_path}" unless File.exist?(schema_path)
+    raise OscalValidationError, "OSCAL schema file not found: #{schema_path}" unless File.exist?(schema_path)
 
     raw = JSON.parse(File.read(schema_path))
     OscalSchema.preprocess_schema(raw)

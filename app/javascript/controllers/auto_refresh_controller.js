@@ -14,7 +14,7 @@ import { Controller } from "@hotwired/stimulus"
 //
 //   <div data-controller="auto-refresh"
 //        data-auto-refresh-interval-value="10000" hidden></div>
-export default class extends Controller {
+export default class AutoRefreshController extends Controller {
   static values = { interval: { type: Number, default: 10000 } }
 
   connect() {

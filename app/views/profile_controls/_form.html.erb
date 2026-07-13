@@ -8,17 +8,17 @@
   <% end %>
 
   <div class="form-group">
-    <label>Control ID <span class="sparc-required">*</span></label>
+    <%= f.label :control_id do %>Control ID <span class="sparc-required">*</span><% end %>
     <%= f.text_field :control_id, class: "form-control", placeholder: "e.g. AC-1, SI-3(1)" %>
   </div>
 
   <div class="form-group">
-    <label>Title</label>
+    <%= f.label :title, "Title" %>
     <%= f.text_field :title, class: "form-control", placeholder: "Control title" %>
   </div>
 
   <div class="form-group">
-    <label>Priority</label>
+    <%= f.label :priority, "Priority" %>
     <%= f.select :priority,
           options_for_select([["P1", "P1"], ["P2", "P2"], ["P3", "P3"]], profile_control.priority),
           { include_blank: "-- select --" },
@@ -115,11 +115,12 @@
   <% ProfileControlField::EDITABLE_FIELDS.each do |fname| %>
     <% field = profile_control.profile_control_fields.find { |pcf| pcf.field_name == fname } %>
     <div class="form-group">
-      <label>
+      <label for="profile-control-field-<%= fname %>">
         <%= fname.tr("_", " ").titleize %>
         <span style="color: var(--bs-success); font-size: 0.75rem; font-weight: 400;">(editable)</span>
       </label>
       <%= text_area_tag "fields[#{fname}]", field&.field_value.to_s,
+            id: "profile-control-field-#{fname}",
             class: "form-control", rows: 3 %>
     </div>
   <% end %>
@@ -181,7 +182,7 @@
           <h6 class="fw-semibold small">Link Existing Resource</h6>
           <%= form_with url: link_resource_profile_document_profile_control_path(profile_document, profile_control), method: :post, local: true, class: "d-flex gap-2 align-items-end" do %>
             <div class="flex-grow-1">
-              <select name="back_matter_resource_id" class="form-select form-select-sm">
+              <select name="back_matter_resource_id" class="form-select form-select-sm" aria-label="Select a resource to link">
                 <option value="">Select a resource...</option>
                 <% available.each do |r| %>
                   <option value="<%= r.id %>"><%= r.title %> (<%= r.uuid.truncate(12) %>)</option>

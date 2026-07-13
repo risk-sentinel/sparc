@@ -40,12 +40,13 @@
     <% selected_methods = Array(poam_observation.methods_data) %>
     <div class="d-flex gap-3 flex-wrap">
       <% %w[EXAMINE INTERVIEW TEST UNKNOWN].each do |method| %>
-        <label class="form-check form-check-inline">
+        <div class="form-check form-check-inline">
           <%= check_box_tag "poam_observation[methods_data][]", method,
                             selected_methods.include?(method),
+                            id: "poam_observation_method_#{method.downcase}",
                             class: "form-check-input" %>
-          <span class="form-check-label"><%= method %></span>
-        </label>
+          <label class="form-check-label" for="poam_observation_method_<%= method.downcase %>"><%= method %></label>
+        </div>
       <% end %>
     </div>
   </div>

@@ -47,7 +47,7 @@ class SarExcelExportService
   private
 
   def default_headers
-    SarExcelParserService::COLUMN_MAP.map { |normalized, config|
+    SarExcelParserService::COLUMN_MAP.map { |normalized, _config|
       # Restore original casing from the normalized key
       normalized.split.map(&:capitalize).join(" ")
     }

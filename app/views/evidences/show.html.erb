@@ -32,10 +32,10 @@
         <h6 class="fw-semibold">Details</h6>
         <table class="table table-sm">
           <tbody>
-            <tr><td class="fw-semibold" style="width: 160px;">Description</td><td><%= @evidence.description.presence || "N/A" %></td></tr>
-            <tr><td class="fw-semibold">Collected At</td><td><%= @evidence.collected_at&.strftime("%Y-%m-%d %H:%M UTC") || "N/A" %></td></tr>
-            <tr><td class="fw-semibold">Collected By</td><td><%= @evidence.collected_by.presence || "N/A" %></td></tr>
-            <tr><td class="fw-semibold">Source</td><td><%= @evidence.source.presence || "N/A" %></td></tr>
+            <tr><th scope="row" class="fw-semibold" style="width: 160px; text-align: left;">Description</th><td><%= @evidence.description.presence || "N/A" %></td></tr>
+            <tr><th scope="row" class="fw-semibold" style="text-align: left;">Collected At</th><td><%= @evidence.collected_at&.strftime("%Y-%m-%d %H:%M UTC") || "N/A" %></td></tr>
+            <tr><th scope="row" class="fw-semibold" style="text-align: left;">Collected By</th><td><%= @evidence.collected_by.presence || "N/A" %></td></tr>
+            <tr><th scope="row" class="fw-semibold" style="text-align: left;">Source</th><td><%= @evidence.source.presence || "N/A" %></td></tr>
           </tbody>
         </table>
       </div>
@@ -44,11 +44,11 @@
         <% if @evidence.file.attached? %>
           <table class="table table-sm">
             <tbody>
-              <tr><td class="fw-semibold" style="width: 160px;">Filename</td><td><%= @evidence.original_filename || @evidence.file.filename %></td></tr>
-              <tr><td class="fw-semibold">Content Type</td><td><%= @evidence.file_content_type || @evidence.file.content_type %></td></tr>
-              <tr><td class="fw-semibold">Size</td><td><%= number_to_human_size(@evidence.file_size || @evidence.file.byte_size) %></td></tr>
+              <tr><th scope="row" class="fw-semibold" style="width: 160px; text-align: left;">Filename</th><td><%= @evidence.original_filename || @evidence.file.filename %></td></tr>
+              <tr><th scope="row" class="fw-semibold" style="text-align: left;">Content Type</th><td><%= @evidence.file_content_type || @evidence.file.content_type %></td></tr>
+              <tr><th scope="row" class="fw-semibold" style="text-align: left;">Size</th><td><%= number_to_human_size(@evidence.file_size || @evidence.file.byte_size) %></td></tr>
               <tr>
-                <td class="fw-semibold">SHA-256 Hash</td>
+                <th scope="row" class="fw-semibold" style="text-align: left;">SHA-256 Hash</th>
                 <td>
                   <% if @evidence.file_hash.present? %>
                     <code class="small text-break"><%= @evidence.file_hash %></code>

@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // nonce'd <script> global (toggleEditResource) that strict CSP — script-src
 // :self, no 'unsafe-inline' — silently blocked, leaving the Edit/Cancel
 // buttons inert across every doc type that renders this partial.
-export default class extends Controller {
+export default class OscalBackMatterController extends Controller {
   static targets = ["body", "icon"]
 
   toggle() {

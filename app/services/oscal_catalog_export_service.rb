@@ -84,16 +84,16 @@ class OscalCatalogExportService
     enh_by_parent = enhancements.group_by { |c| c.control_id.sub(/\.\d+\z/, "") }
 
     base_controls.map do |control|
-      ctrl_hash = build_control(control, family)
+      ctrl_hash = build_control(control)
       children = enh_by_parent[control.control_id]
       if children.present?
-        ctrl_hash["controls"] = children.map { |enh| build_control(enh, family) }
+        ctrl_hash["controls"] = children.map { |enh| build_control(enh) }
       end
       ctrl_hash
     end
   end
 
-  def build_control(control, family)
+  def build_control(control)
     result = {
       "id"    => control.control_id,
       "class" => "SP800-53",
@@ -105,7 +105,7 @@ class OscalCatalogExportService
     props = build_control_props(control)
     result["props"] = props if props.any?
 
-    parts = build_control_parts(control, family)
+    parts = build_control_parts(control)
     result["parts"] = parts if parts.any?
 
     result
@@ -128,7 +128,7 @@ class OscalCatalogExportService
     props
   end
 
-  def build_control_parts(control, family)
+  def build_control_parts(control)
     parts = []
     guidance = control.guidance_data || {}
 

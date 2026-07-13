@@ -33,7 +33,7 @@ class CdefToSspInheritanceService
       cdef_stmt_ids = CdefControlStatement
                         .joins(:cdef_control)
                         .where(cdef_controls: { cdef_document_id: cdef_document.id })
-                        .pluck(:id)
+                        .ids
 
       # `preload` instead of `includes` avoids EagerLoadPolymorphicError
       # on the polymorphic `source` association.

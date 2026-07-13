@@ -12,6 +12,7 @@
     <%= form_tag admin_organizations_path, method: :get, class: "row g-2 align-items-end" do %>
       <div class="col-md-5">
         <input type="text" name="q" value="<%= params[:q] %>" class="form-control form-control-sm"
+               aria-label="Search organizations"
                placeholder="Search by name, contact, or email...">
       </div>
       <div class="col-md-3">

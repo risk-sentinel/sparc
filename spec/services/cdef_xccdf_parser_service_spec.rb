@@ -169,7 +169,7 @@ RSpec.describe CdefXccdfParserService do
       document = create(:cdef_document, file_type: "xccdf", status: "processing")
       service = described_class.new(document, tmp.path)
 
-      expect { service.parse }.to raise_error(RuntimeError, /Unrecognized XML format/)
+      expect { service.parse }.to raise_error(DocumentParseError, /Unrecognized XML format/)
     ensure
       tmp&.unlink
     end

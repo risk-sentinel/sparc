@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus"
 // insertAdjacentHTML string concatenation (an injection-shaped pattern).
 // New rows now clone inert <template> elements, so no markup is ever
 // assembled from strings.
-export default class extends Controller {
+export default class SspEnrichController extends Controller {
   static targets = [
     "infoTypesContainer", "componentsContainer", "usersContainer",
     "infoTypeTemplate", "componentTemplate", "userTemplate"

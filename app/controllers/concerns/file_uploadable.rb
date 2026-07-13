@@ -22,6 +22,13 @@
 module FileUploadable
   extend ActiveSupport::Concern
 
+  # Raised when an upload is rejected up-front (unsupported type, executable
+  # content, or a structural pre-parse failure). Caught by the controller's
+  # `rescue StandardError` and surfaced as a redirect-to-form flash -- the
+  # behavior-preserving replacement for the former bare `raise "..."`
+  # RuntimeErrors (SonarCloud rubydre:S7815).
+  class UploadRejectedError < StandardError; end
+
   private
 
   def handle_file_upload(type_key, param_key:)
@@ -120,7 +127,7 @@ module FileUploadable
     ab_id = params.dig(param_key, :authorization_boundary_id).presence
     return if ab_id.blank?
 
-    sub_boundary_ids = Boundary.where(authorization_boundary_id: ab_id).pluck(:id)
+    sub_boundary_ids = Boundary.where(authorization_boundary_id: ab_id).ids
     sub_boundary_ids.each do |sb_id|
       BoundaryCdefDocument.find_or_create_by!(
         boundary_id: sb_id, cdef_document_id: document.id
@@ -136,7 +143,7 @@ module FileUploadable
     ext = File.extname(filename).downcase
     registry.allowed_extensions.fetch(ext) do
       accepted = registry.allowed_extensions.keys.join(", ")
-      raise "Unsupported file type. Accepted: #{accepted}"
+      raise UploadRejectedError, "Unsupported file type. Accepted: #{accepted}"
     end
   end
 
@@ -163,7 +170,7 @@ module FileUploadable
     header = File.binread(uploaded_file.path, 32)
     EXECUTABLE_MAGIC_BYTES.each do |signature, description|
       next unless header.start_with?(signature)
-      raise "File rejected: detected #{description}. Executable content is not permitted as an upload."
+      raise UploadRejectedError, "File rejected: detected #{description}. Executable content is not permitted as an upload."
     end
   end
 
@@ -261,13 +268,13 @@ module FileUploadable
       end
     end
   rescue Timeout::Error
-    raise "File rejected: structural parse exceeded #{STRUCTURAL_PARSE_TIMEOUT_SECONDS}s (file may be malformed or excessively complex)."
+    raise UploadRejectedError, "File rejected: structural parse exceeded #{STRUCTURAL_PARSE_TIMEOUT_SECONDS}s (file may be malformed or excessively complex)."
   rescue JSON::ParserError => e
-    raise "File rejected: not valid JSON (#{e.message.to_s[0, 150]})."
+    raise UploadRejectedError, "File rejected: not valid JSON (#{e.message.to_s[0, 150]})."
   rescue Psych::SyntaxError => e
-    raise "File rejected: not valid YAML (#{e.message.to_s[0, 150]})."
+    raise UploadRejectedError, "File rejected: not valid YAML (#{e.message.to_s[0, 150]})."
   rescue Nokogiri::XML::SyntaxError => e
-    raise "File rejected: not valid XML (#{e.message.to_s[0, 150]})."
+    raise UploadRejectedError, "File rejected: not valid XML (#{e.message.to_s[0, 150]})."
   end
 
   # Handle multi-file upload — creates one document per file, enqueues one job each.

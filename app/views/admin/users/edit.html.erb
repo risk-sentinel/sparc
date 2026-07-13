@@ -78,7 +78,8 @@
                       <td><span class="badge text-bg-info"><%= ur.role.display_name %></span></td>
                       <td>
                         <input type="checkbox" name="user[keep_authorization_boundary_role_ids][]"
-                               value="<%= ur.id %>" checked class="form-check-input">
+                               value="<%= ur.id %>" checked class="form-check-input"
+                               aria-label="Keep <%= ur.role.display_name %> role on <%= ur.authorization_boundary&.name || "Unknown" %>">
                       </td>
                     </tr>
                   <% end %>

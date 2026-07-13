@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // handlers (SSP/SAP/Profile) blocked by strict CSP. The match selector is
 // overridable per page via data-family-toggle-selector-value (Profile scopes to
 // direct children with "> details").
-export default class extends Controller {
+export default class FamilyToggleController extends Controller {
   static values = {
     selector: { type: String, default: "#controlsContainer details.sparc-family-group" }
   }
