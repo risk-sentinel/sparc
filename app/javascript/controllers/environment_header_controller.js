@@ -14,7 +14,7 @@ import { Controller } from "@hotwired/stimulus"
 //   <div data-controller="environment-header"
 //        data-environment-header-text-color-value="#ffffff"
 //        data-environment-header-highlight-color-value="#1f6fa5">…</div>
-export default class extends Controller {
+export default class EnvironmentHeaderController extends Controller {
   static values = { textColor: String, highlightColor: String }
 
   connect() {

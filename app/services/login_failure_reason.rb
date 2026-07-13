@@ -35,7 +35,7 @@ module LoginFailureReason
     other
   ].freeze
 
-  module_function
+  extend self
 
   def classify(user:, password:)
     return "unknown_email"     if user.nil?

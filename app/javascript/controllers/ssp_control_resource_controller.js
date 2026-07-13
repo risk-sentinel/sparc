@@ -8,7 +8,7 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Endpoint URLs come from data-*-value attributes (server-generated routes),
 // never interpolated into executable JS. DOM ids preserved from the originals.
-export default class extends Controller {
+export default class SspControlResourceController extends Controller {
   static values = { createUrl: String, unlinkUrl: String }
 
   // Show/hide the inline "add reference" form for a control row.

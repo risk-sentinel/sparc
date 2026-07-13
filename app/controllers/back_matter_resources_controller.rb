@@ -71,11 +71,11 @@ class BackMatterResourcesController < ApplicationController
   }.freeze
 
   def set_document
-    PARENT_PARAMS.each do |param_key, klass|
-      if params[param_key].present?
-        @document = klass.find_by!(slug: params[param_key])
-        return
-      end
+    found = PARENT_PARAMS.find { |param_key, _klass| params[param_key].present? }
+    if found
+      param_key, klass = found
+      @document = klass.find_by!(slug: params[param_key])
+      return
     end
 
     raise ActiveRecord::RecordNotFound, "No parent document found"
@@ -125,7 +125,7 @@ class BackMatterResourcesController < ApplicationController
     when PoamDocument     then poam_document_path(@document)
     when ProfileDocument  then profile_document_path(@document)
     when ControlCatalog   then control_catalog_path(@document)
-    else raise "Unknown document type: #{@document.class}"
+    else raise ArgumentError, "Unknown document type: #{@document.class}"
     end
   end
 end

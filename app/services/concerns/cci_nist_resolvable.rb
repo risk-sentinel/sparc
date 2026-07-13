@@ -84,12 +84,7 @@ module CciNistResolvable
   def resolve_nist_from_ccis(ccis)
     return nil if ccis.blank?
 
-    ccis.each do |cci|
-      nist = cci_to_nist_lookup[cci.to_s.upcase]
-      return nist if nist.present?
-    end
-
-    nil
+    ccis.filter_map { |cci| cci_to_nist_lookup[cci.to_s.upcase].presence }.first
   end
 
   def cci_to_nist_lookup

@@ -25,7 +25,7 @@ class ConverterRefreshJob < ApplicationJob
 
     service_name = SERVICE_BY_TYPE[converter.converter_type]
     unless service_name
-      raise "No refresh service registered for converter_type=#{converter.converter_type}"
+      raise KeyError, "No refresh service registered for converter_type=#{converter.converter_type}"
     end
 
     service_class = service_name.constantize

@@ -83,19 +83,19 @@
                   <td colspan="7">
                     <%= form_with(model: resource, url: [document, resource], method: :patch, class: "row g-2 align-items-end") do |f| %>
                       <div class="col-md-2">
-                        <label class="form-label small">Title</label>
+                        <%= f.label :title, "Title", class: "form-label small" %>
                         <%= f.text_field :title, class: "form-control form-control-sm" %>
                       </div>
                       <div class="col-md-3">
-                        <label class="form-label small">Description</label>
+                        <%= f.label :description, "Description", class: "form-label small" %>
                         <%= f.text_field :description, class: "form-control form-control-sm" %>
                       </div>
                       <div class="col-md-2">
-                        <label class="form-label small">Href</label>
+                        <%= f.label :href, "Href", class: "form-label small" %>
                         <%= f.text_field :href, class: "form-control form-control-sm", placeholder: "https://..." %>
                       </div>
                       <div class="col-md-2">
-                        <label class="form-label small">Media Type</label>
+                        <%= f.label :media_type, "Media Type", class: "form-label small" %>
                         <%= f.text_field :media_type, class: "form-control form-control-sm", placeholder: "application/pdf" %>
                       </div>
                       <div class="col-md-3">
@@ -181,31 +181,31 @@
         <%= form_with(model: BackMatterResource.new, url: resources_path, method: :post) do |f| %>
           <div class="d-flex gap-2 align-items-end flex-wrap">
             <div style="flex: 2; min-width: 140px;">
-              <label class="form-label small mb-1">Title <span class="text-danger">*</span></label>
+              <%= f.label :title, class: "form-label small mb-1" do %>Title <span class="text-danger">*</span><% end %>
               <%= f.text_field :title, class: "form-control form-control-sm", required: true, placeholder: "Security Policy" %>
             </div>
             <div style="flex: 2; min-width: 140px;">
-              <label class="form-label small mb-1">Description</label>
+              <%= f.label :description, "Description", class: "form-label small mb-1" %>
               <%= f.text_field :description, class: "form-control form-control-sm", placeholder: "Brief description..." %>
             </div>
             <div style="flex: 1; min-width: 100px;">
-              <label class="form-label small mb-1">Relationship</label>
+              <%= f.label :rel, "Relationship", class: "form-label small mb-1" %>
               <%= f.select :rel, BackMatterResource::REL_VALUES.map { |v| [v, v] },
                     { selected: "reference" }, class: "form-select form-select-sm" %>
             </div>
             <div style="flex: 1; min-width: 120px;">
-              <label class="form-label small mb-1">Media Type</label>
+              <%= f.label :media_type, "Media Type", class: "form-label small mb-1" %>
               <%= f.select :media_type, BackMatterResource::MEDIA_TYPE_OPTIONS,
                     { include_blank: "— select —" }, class: "form-select form-select-sm" %>
             </div>
             <div style="flex: 3; min-width: 180px;">
-              <label class="form-label small mb-1">Href</label>
+              <%= f.label :href, "Href", class: "form-label small mb-1" %>
               <%= f.text_field :href, class: "form-control form-control-sm", placeholder: "https://..." %>
             </div>
             <% if doc_controls.any? %>
               <div style="flex: 1; min-width: 120px;">
-                <label class="form-label small mb-1">Control</label>
-                <select name="link_to_control" class="form-select form-select-sm">
+                <label class="form-label small mb-1" for="link_to_control">Control</label>
+                <select name="link_to_control" id="link_to_control" class="form-select form-select-sm">
                   <option value="">— none —</option>
                   <% doc_controls.each do |label, value| %>
                     <option value="<%= value %>"><%= label %></option>
@@ -214,7 +214,7 @@
               </div>
             <% end %>
             <div style="min-width: 60px;">
-              <label class="form-check-label small d-block mb-1">
+              <label class="form-check-label small d-block mb-1" for="back_matter_resource_globally_available">
                 <%= f.check_box :globally_available, class: "form-check-input" %> Global
               </label>
             </div>

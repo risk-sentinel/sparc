@@ -132,9 +132,9 @@
   <% if @converter.status == "processing" %>
     <div data-controller="auto-refresh" data-auto-refresh-interval-value="3000" hidden></div>
     <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
-      <div class="spinner-border spinner-border-sm me-2" role="status">
+      <output class="spinner-border spinner-border-sm me-2">
         <span class="visually-hidden">Loading...</span>
-      </div>
+      </output>
       <div>
         <strong>CCI refresh in progress</strong>
         <% if refresh_message.present? %>
@@ -250,6 +250,7 @@
         <input type="text"
                class="form-control form-control-sm"
                style="max-width: 400px;"
+               aria-label="Search mapping entries"
                placeholder="Search source, target, category, remarks..."
                data-converter-search-target="searchInput"
                data-action="input->converter-search#filter">

@@ -14,7 +14,7 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Actions:
 //   theme#toggle — flip between light and dark
-export default class extends Controller {
+export default class ThemeController extends Controller {
   static targets = ["icon"]
 
   connect() {

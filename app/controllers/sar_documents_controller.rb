@@ -465,7 +465,7 @@ class SarDocumentsController < ApplicationController
 
   def sync_results
     incoming = params.dig(:sar_document, :results) || []
-    existing_ids = @sar_document.sar_results.pluck(:id)
+    existing_ids = @sar_document.sar_results.ids
     seen_ids = []
 
     incoming.each_with_index do |r_params, idx|

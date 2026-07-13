@@ -145,7 +145,7 @@
         <% next if count == 0 %>
         <div class="summary-chip sparc-summary-chip"
              data-filter-value="<%= sev %>"
-             data-action="heatmap-chip#apply"
+             data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
              data-heatmap-chip-filter-param="<%= sev %>"
              role="button"
              tabindex="0"
@@ -457,14 +457,14 @@
         <%= hidden_field_tag :statement_id, stmt.id %>
 
         <div class="form-group mb-3">
-          <label class="fw-semibold">Implementation Prose</label>
+          <%= label_tag "cdef_control_statement[implementation_prose]", "Implementation Prose", class: "fw-semibold" %>
           <%= text_area_tag "cdef_control_statement[implementation_prose]",
                 stmt.implementation_prose, rows: 6, class: "form-control",
                 placeholder: "Describe how this component implements the catalog statement..." %>
         </div>
 
         <div class="form-group mb-3">
-          <label class="fw-semibold">Remarks</label>
+          <%= label_tag "cdef_control_statement[remarks]", "Remarks", class: "fw-semibold" %>
           <%= text_area_tag "cdef_control_statement[remarks]", stmt.remarks, rows: 2, class: "form-control" %>
         </div>
 

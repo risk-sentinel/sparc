@@ -14,7 +14,7 @@ import { Controller } from "@hotwired/stimulus"
 // Values:
 //   catalog-url  — base URL for catalog JSON (e.g., "/control_catalogs")
 //   mode         — "dynamic" (default) or "server-rendered"
-export default class extends Controller {
+export default class FamilySelectorController extends Controller {
   static targets = [
     "catalogSelect",
     "baselineSelect",

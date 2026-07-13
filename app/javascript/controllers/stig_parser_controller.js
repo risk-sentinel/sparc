@@ -10,7 +10,7 @@ import { Controller } from "@hotwired/stimulus"
  * The "Import to SPARC" action submits the file server-side for
  * persistent storage as a Converter.
  */
-export default class extends Controller {
+export default class StigParserController extends Controller {
   static targets = [
     "resultsSection", "summaryTotal", "summaryHigh", "summaryMedium",
     "summaryLow", "summaryCci", "benchmarkTitle", "severityFilter",
@@ -236,8 +236,7 @@ export default class extends Controller {
     }
 
     const rows = filtered.map((r, i) => {
-      const sevClass = r.severity === "high" ? "high" : r.severity === "medium" ? "medium" : "low"
-      const sevLabel = r.severity === "high" ? "HIGH" : r.severity === "medium" ? "MED" : "LOW"
+      const [sevClass, sevLabel] = { high: [ "high", "HIGH" ], medium: [ "medium", "MED" ] }[r.severity] || [ "low", "LOW" ]
 
       const cciBadges = r.ccis.length
         ? r.ccis.map(c => `<span class="sparc-stig-cci">${this.escapeHtml(c)}</span>`).join("")
@@ -273,6 +272,8 @@ export default class extends Controller {
     const rule = this.rules.find(r => r.ruleId === ruleId)
     if (!rule) return
 
+    const descEllipsis = rule.desc && rule.desc.length >= 300 ? "&hellip;" : ""
+
     const detailRow = document.createElement("tr")
     detailRow.classList.add("sparc-stig-detail")
     detailRow.innerHTML = `
@@ -281,7 +282,7 @@ export default class extends Controller {
         <div style="font-family: monospace; font-size: 0.82rem; margin-bottom: 0.75rem;">${this.escapeHtml(rule.ruleId)}</div>
         ${rule.desc ? `
           <div class="sparc-stig-detail__label">DESCRIPTION</div>
-          <div style="font-size: 0.85rem; line-height: 1.6; max-width: 760px;">${this.escapeHtml(rule.desc)}${rule.desc.length >= 300 ? "&hellip;" : ""}</div>
+          <div style="font-size: 0.85rem; line-height: 1.6; max-width: 760px;">${this.escapeHtml(rule.desc)}${descEllipsis}</div>
         ` : ""}
       </td>`
     tr.after(detailRow)
@@ -296,7 +297,7 @@ export default class extends Controller {
       r.ruleId, r.vId, r.svId, r.severity,
       r.ccis.join("|"),
       r.nistControls.join("|"),
-      `"${r.title.replace(/"/g, '""')}"`
+      `"${r.title.replaceAll('"', '""')}"`
     ])
 
     const csv = [header.join(","), ...rows.map(r => r.join(","))].join("\n")

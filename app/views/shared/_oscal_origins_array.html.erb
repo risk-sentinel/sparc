@@ -27,12 +27,14 @@
       <template data-oscal-repeater-target="template">
         <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
           <select name="<%= param_key %>[origins_data][][actor_type]"
+                  aria-label="Actor type"
                   class="form-select form-select-sm" style="flex: 0 0 110px;">
             <option value="party">party</option>
             <option value="tool">tool</option>
             <option value="other">other</option>
           </select>
           <select name="<%= param_key %>[origins_data][][actor_uuid]"
+                  aria-label="Actor party"
                   class="form-select form-select-sm" style="flex: 1 1 220px;">
             <option value="">— Select party —</option>
             <% parties.each do |p| %>
@@ -40,6 +42,7 @@
             <% end %>
           </select>
           <input type="text" name="<%= param_key %>[origins_data][][role_id]"
+                 aria-label="Role ID"
                  placeholder="role-id (optional)"
                  class="form-control form-control-sm" style="flex: 1 1 140px;" />
           <button type="button" data-action="click->oscal-repeater#remove"
@@ -52,12 +55,14 @@
           <% actor = (origin["actors"] || []).first || {} %>
           <div class="repeater-row d-flex gap-2 mb-2 flex-wrap">
             <select name="<%= param_key %>[origins_data][][actor_type]"
+                    aria-label="Actor type"
                     class="form-select form-select-sm" style="flex: 0 0 110px;">
               <% %w[party tool other].each do |t| %>
                 <option value="<%= t %>" <%= "selected" if actor["type"] == t %>><%= t %></option>
               <% end %>
             </select>
             <select name="<%= param_key %>[origins_data][][actor_uuid]"
+                    aria-label="Actor party"
                     class="form-select form-select-sm" style="flex: 1 1 220px;">
               <option value="">— Select party —</option>
               <% parties.each do |p| %>
@@ -66,6 +71,7 @@
             </select>
             <input type="text" name="<%= param_key %>[origins_data][][role_id]"
                    value="<%= actor["role-id"] %>"
+                   aria-label="Role ID"
                    placeholder="role-id (optional)"
                    class="form-control form-control-sm" style="flex: 1 1 140px;" />
             <button type="button" data-action="click->oscal-repeater#remove"

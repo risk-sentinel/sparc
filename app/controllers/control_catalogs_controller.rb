@@ -3,6 +3,8 @@ class ControlCatalogsController < ApplicationController
   include OscalExportable
   include DocumentApprovalActions
   skip_before_action :require_authentication, only: [ :index, :show, :baseline_controls ]
+  # #726: public reads are gated by SPARC_PUBLIC_CATALOGS (secure-by-default). (AC-3)
+  before_action :require_authentication_unless_public_controls, only: [ :index, :show, :baseline_controls ]
 
   before_action :set_control_catalog, only: [
     :show, :edit, :update, :destroy, :update_metadata,

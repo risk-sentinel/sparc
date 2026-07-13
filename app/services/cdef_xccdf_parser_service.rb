@@ -29,7 +29,7 @@ class CdefXccdfParserService
         parse_xccdf(doc)
       end
     else
-      raise "Unrecognized XML format: expected <Benchmark> (XCCDF) or <component-definition> (OSCAL)"
+      raise DocumentParseError, "Unrecognized XML format: expected <Benchmark> (XCCDF) or <component-definition> (OSCAL)"
     end
   end
 

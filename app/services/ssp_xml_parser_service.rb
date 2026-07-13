@@ -29,7 +29,7 @@ class SspXmlParserService
     doc = XmlSecurity.parse(xml)
     root = doc.at_xpath("xmlns:system-security-plan", "xmlns" => OSCAL_NS) ||
            doc.at_xpath("system-security-plan") ||
-           raise("Invalid OSCAL SSP XML: missing <system-security-plan> root")
+           raise(DocumentParseError, "Invalid OSCAL SSP XML: missing <system-security-plan> root")
 
     ssp_hash = build_ssp_hash(root)
     data = { "system-security-plan" => ssp_hash }

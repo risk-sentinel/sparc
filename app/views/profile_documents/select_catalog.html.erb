@@ -7,19 +7,19 @@
   <% if @catalogs.any? %>
     <%= form_with url: create_from_catalog_profile_documents_path, method: :post, local: true do |f| %>
       <div class="mb-4">
-        <label class="form-label fw-semibold">Profile Name</label>
+        <%= f.label :profile_name, "Profile Name", class: "form-label fw-semibold" %>
         <%= f.text_field :profile_name, class: "form-control", placeholder: "e.g., My Custom Baseline" %>
       </div>
 
       <div class="mb-4">
-        <label class="form-label fw-semibold">Baseline Level</label>
+        <%= f.label :baseline_level, "Baseline Level", class: "form-label fw-semibold" %>
         <%= f.select :baseline_level, ProfileDocument::BASELINE_LEVELS.map { |l| [ l, l ] },
               { include_blank: "Select level (optional)" }, class: "form-select",
               data: { family_selector_target: "baselineSelect", action: "change->family-selector#baselineChanged" } %>
       </div>
 
       <div class="mb-4">
-        <label class="form-label fw-semibold">Select Catalog</label>
+        <%= f.label :catalog_id, "Select Catalog", class: "form-label fw-semibold" %>
         <%= f.select :catalog_id, @catalogs.map { |c| [ "#{c.name} (#{c.total_controls} controls)", c.slug ] },
               { include_blank: "Choose a catalog..." }, class: "form-select",
               data: { family_selector_target: "catalogSelect", action: "change->family-selector#catalogChanged" } %>
@@ -27,7 +27,7 @@
 
       <div style="display: none;" data-family-selector-target="controlsSection">
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <label class="form-label fw-semibold mb-0">Select Controls</label>
+          <span class="form-label fw-semibold mb-0">Select Controls</span>
           <div class="d-flex gap-1 flex-wrap">
             <button type="button" class="btn btn-sm btn-outline-primary" data-action="click->family-selector#selectAll">Select All</button>
             <button type="button" class="btn btn-sm btn-outline-secondary" data-action="click->family-selector#deselectAll">Deselect All</button>

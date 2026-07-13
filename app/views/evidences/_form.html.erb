@@ -16,11 +16,11 @@
 
       <div class="row g-3 mb-3">
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+          <%= f.label :title, class: "form-label fw-semibold" do %>Title <span class="text-danger">*</span><% end %>
           <%= f.text_field :title, class: "form-control", placeholder: "e.g. AC-1 Policy Document Screenshot" %>
         </div>
         <div class="col-md-3">
-          <label class="form-label fw-semibold">Evidence Type <span class="text-danger">*</span></label>
+          <%= f.label :evidence_type, class: "form-label fw-semibold" do %>Evidence Type <span class="text-danger">*</span><% end %>
           <%= f.select :evidence_type,
               options_for_select(Evidence::EVIDENCE_TYPE_LABELS.map { |k, v| [ v, k ] }, @evidence.evidence_type),
               {}, class: "form-select" %>

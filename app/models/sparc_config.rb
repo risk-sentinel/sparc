@@ -21,7 +21,7 @@
 module SparcConfig
   VERSION = "1.10.2"
 
-  module_function
+  extend self
 
   def version = VERSION
 
@@ -47,7 +47,7 @@ module SparcConfig
   # Configurable resources list — JSON array of {display_text, href} objects.
   # Falls back to default FedRAMP/OSCAL/MITRE links when not set.
   def resources
-    raw = ENV["SPARC_RESOURCES"]
+    raw = ENV.fetch("SPARC_RESOURCES", nil)
     if raw.present?
       JSON.parse(raw) rescue default_resources
     else
@@ -108,6 +108,13 @@ module SparcConfig
   def enable_ldap?         = ENV.fetch("SPARC_ENABLE_LDAP", "false") == "true"
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
+
+  # Public visibility of the Controls layer (catalogs, baselines, mappings).
+  # Default false = secure-by-default: when auth is enabled, guests neither
+  # see the Controls nav nor can read those pages. Deployments that front
+  # SPARC with their own network auth (VPN, etc.) and want to share the
+  # control library set SPARC_PUBLIC_CATALOGS=true. See #726. (AC-3)
+  def public_catalogs? = ENV.fetch("SPARC_PUBLIC_CATALOGS", "false") == "true"
 
   # ── Dynamic Roles ────────────────────────────────────────────────────────
   # Configurable role lists for organizations and authorization boundaries.
@@ -247,7 +254,7 @@ module SparcConfig
   end
 
   def userdata_host
-    return ENV["SPARC_USERDATA_HOST"] if ENV["SPARC_USERDATA_HOST"].present?
+    return ENV.fetch("SPARC_USERDATA_HOST", nil) if ENV.fetch("SPARC_USERDATA_HOST", nil).present?
     return nil unless app_uri&.host
     "userdata.#{app_uri.host}"
   end
@@ -413,7 +420,7 @@ module SparcConfig
   def aws_labs_cdef_enabled?     = ENV.fetch("SPARC_AWS_LABS_CDEF_ENABLED", "false") == "true"
   def aws_labs_cdef_repo         = ENV.fetch("SPARC_AWS_LABS_CDEF_REPO", "awslabs/oscal-content-for-aws-services")
   def aws_labs_cdef_branch       = ENV.fetch("SPARC_AWS_LABS_CDEF_BRANCH", "main")
-  def aws_labs_github_token      = ENV["SPARC_AWS_LABS_GITHUB_TOKEN"]
+  def aws_labs_github_token      = ENV.fetch("SPARC_AWS_LABS_GITHUB_TOKEN", nil)
 
   # AWS Labs CDEFs change on the order of weeks, not days. Default the
   # recurring refresh to every 7 days so audit logs and runtime traffic stay
@@ -428,7 +435,7 @@ module SparcConfig
   # When unset, defaults to the OSCAL versions SPARC's loaded schemas
   # already support — so the import only pulls CDEFs we can validate.
   def aws_labs_oscal_versions
-    raw = ENV["SPARC_AWS_LABS_OSCAL_VERSIONS"]
+    raw = ENV.fetch("SPARC_AWS_LABS_OSCAL_VERSIONS", nil)
     if raw.present?
       raw.split(",").map(&:strip).reject(&:blank?)
     elsif defined?(OscalSchema) && OscalSchema.table_exists?

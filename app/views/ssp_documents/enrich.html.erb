@@ -19,15 +19,15 @@
       <div style="padding: 1rem 1.25rem;">
         <div class="row row-cols-1 row-cols-md-2 g-3" style="gap: 0.75rem 1.25rem;">
           <div class="form-group">
-            <label>Description</label>
+            <%= f.label :description, "Description" %>
             <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "System description..." %>
           </div>
           <div class="form-group">
-            <label>Short Name</label>
+            <%= f.label :system_name_short, "Short Name" %>
             <%= f.text_field :system_name_short, class: "form-control", placeholder: "e.g., ACME" %>
           </div>
           <div class="form-group">
-            <label>System ID</label>
+            <%= f.label :system_id, "System ID" %>
             <%= f.text_field :system_id, class: "form-control", placeholder: "e.g., system-uuid" %>
           </div>
           <div class="form-group">
@@ -53,28 +53,28 @@
       <div style="padding: 1rem 1.25rem;">
         <div class="row row-cols-1 row-cols-md-2 g-3">
           <div class="form-group">
-            <label>Security Sensitivity Level</label>
+            <%= f.label :security_sensitivity_level, "Security Sensitivity Level" %>
             <%= f.select :security_sensitivity_level,
                   [["Low (FIPS 199)", "fips-199-low"], ["Moderate (FIPS 199)", "fips-199-moderate"], ["High (FIPS 199)", "fips-199-high"]],
                   { include_blank: "-- Select --" },
                   { class: "form-control" } %>
           </div>
           <div class="form-group">
-            <label>Confidentiality Objective</label>
+            <%= f.label :security_objective_confidentiality, "Confidentiality Objective" %>
             <%= f.select :security_objective_confidentiality,
                   [["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]],
                   { include_blank: "-- Select --" },
                   { class: "form-control" } %>
           </div>
           <div class="form-group">
-            <label>Integrity Objective</label>
+            <%= f.label :security_objective_integrity, "Integrity Objective" %>
             <%= f.select :security_objective_integrity,
                   [["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]],
                   { include_blank: "-- Select --" },
                   { class: "form-control" } %>
           </div>
           <div class="form-group">
-            <label>Availability Objective</label>
+            <%= f.label :security_objective_availability, "Availability Objective" %>
             <%= f.select :security_objective_availability,
                   [["Low", "fips-199-low"], ["Moderate", "fips-199-moderate"], ["High", "fips-199-high"]],
                   { include_blank: "-- Select --" },
@@ -91,17 +91,17 @@
       </summary>
       <div style="padding: 1rem 1.25rem;">
         <div class="form-group">
-          <label>Authorization Boundary</label>
+          <%= f.label :authorization_boundary_description, "Authorization Boundary" %>
           <%= f.text_area :authorization_boundary_description, class: "form-control", rows: 3,
                 placeholder: "Describe the authorization boundary..." %>
         </div>
         <div class="form-group">
-          <label>Network Architecture</label>
+          <%= f.label :network_architecture_description, "Network Architecture" %>
           <%= f.text_area :network_architecture_description, class: "form-control", rows: 3,
                 placeholder: "Describe the network architecture..." %>
         </div>
         <div class="form-group">
-          <label>Data Flow</label>
+          <%= f.label :data_flow_description, "Data Flow" %>
           <%= f.text_area :data_flow_description, class: "form-control", rows: 3,
                 placeholder: "Describe the data flow..." %>
         </div>
@@ -119,16 +119,16 @@
             <input type="hidden" name="ssp_document[information_types][][id]" value="<%= it.id %>">
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="ssp_document[information_types][][title]" value="<%= it.title %>" class="form-control" style="font-size: 0.85rem;">
+                <div style="font-size: 0.75rem;">Title</div>
+                <input type="text" name="ssp_document[information_types][][title]" value="<%= it.title %>" aria-label="Information Type Title" class="form-control" style="font-size: 0.85rem;">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="ssp_document[information_types][][description]" value="<%= it.description %>" class="form-control" style="font-size: 0.85rem;">
+                <div style="font-size: 0.75rem;">Description</div>
+                <input type="text" name="ssp_document[information_types][][description]" value="<%= it.description %>" aria-label="Information Type Description" class="form-control" style="font-size: 0.85rem;">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Confidentiality (Base)</label>
-                <select name="ssp_document[information_types][][confidentiality_impact_base]" class="form-control" style="font-size: 0.85rem;">
+                <div style="font-size: 0.75rem;">Confidentiality (Base)</div>
+                <select name="ssp_document[information_types][][confidentiality_impact_base]" aria-label="Confidentiality (Base)" class="form-control" style="font-size: 0.85rem;">
                   <option value="">--</option>
                   <% %w[fips-199-low fips-199-moderate fips-199-high].each do |v| %>
                     <option value="<%= v %>" <%= "selected" if it.confidentiality_impact_base == v %>><%= v.split("-").last.capitalize %></option>
@@ -136,8 +136,8 @@
                 </select>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Integrity (Base)</label>
-                <select name="ssp_document[information_types][][integrity_impact_base]" class="form-control" style="font-size: 0.85rem;">
+                <div style="font-size: 0.75rem;">Integrity (Base)</div>
+                <select name="ssp_document[information_types][][integrity_impact_base]" aria-label="Integrity (Base)" class="form-control" style="font-size: 0.85rem;">
                   <option value="">--</option>
                   <% %w[fips-199-low fips-199-moderate fips-199-high].each do |v| %>
                     <option value="<%= v %>" <%= "selected" if it.integrity_impact_base == v %>><%= v.split("-").last.capitalize %></option>
@@ -151,16 +151,16 @@
           <div class="info-type-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="ssp_document[information_types][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Information Type">
+                <div style="font-size: 0.75rem;">Title</div>
+                <input type="text" name="ssp_document[information_types][][title]" aria-label="Information Type Title" class="form-control" style="font-size: 0.85rem;" placeholder="Information Type">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="ssp_document[information_types][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Description">
+                <div style="font-size: 0.75rem;">Description</div>
+                <input type="text" name="ssp_document[information_types][][description]" aria-label="Information Type Description" class="form-control" style="font-size: 0.85rem;" placeholder="Description">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Confidentiality (Base)</label>
-                <select name="ssp_document[information_types][][confidentiality_impact_base]" class="form-control" style="font-size: 0.85rem;">
+                <div style="font-size: 0.75rem;">Confidentiality (Base)</div>
+                <select name="ssp_document[information_types][][confidentiality_impact_base]" aria-label="Confidentiality (Base)" class="form-control" style="font-size: 0.85rem;">
                   <option value="">--</option>
                   <option value="fips-199-low">Low</option>
                   <option value="fips-199-moderate">Moderate</option>
@@ -168,8 +168,8 @@
                 </select>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Integrity (Base)</label>
-                <select name="ssp_document[information_types][][integrity_impact_base]" class="form-control" style="font-size: 0.85rem;">
+                <div style="font-size: 0.75rem;">Integrity (Base)</div>
+                <select name="ssp_document[information_types][][integrity_impact_base]" aria-label="Integrity (Base)" class="form-control" style="font-size: 0.85rem;">
                   <option value="">--</option>
                   <option value="fips-199-low">Low</option>
                   <option value="fips-199-moderate">Moderate</option>

@@ -77,7 +77,6 @@ class ServiceAccountNotificationJob < ApplicationJob
   # Active service accounts approaching inactivity threshold (within 7 days).
   def send_inactivity_warnings
     threshold = SparcConfig.sa_inactivity_days
-    warning_start = (threshold - 7).days.ago
     count = 0
 
     active_service_accounts.find_each do |sa|

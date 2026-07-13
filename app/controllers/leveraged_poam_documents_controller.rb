@@ -53,7 +53,7 @@ class LeveragedPoamDocumentsController < ApplicationController
   def accessible_boundary_ids
     # Conservatively scope to all boundaries the user has any role on.
     # Falls back to instance-admin = all boundaries.
-    return AuthorizationBoundary.pluck(:id) if current_user.admin?
+    return AuthorizationBoundary.ids if current_user.admin?
 
     UserRole.where(user_id: current_user.id)
             .where.not(authorization_boundary_id: nil)

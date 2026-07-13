@@ -13,7 +13,7 @@ import { Controller } from "@hotwired/stimulus"
 // DOM ids, same show/hide logic. The dynamic step name is passed via a
 // Stimulus action param (data-ato-wizard-mode-param) rather than interpolated
 // into executable JS.
-export default class extends Controller {
+export default class AtoWizardController extends Controller {
   // Mirrors the original toggleMode(stepName): read the checked radio in the
   // step's group, write the hidden _mode field, then show only the relevant
   // panel for the selected mode.

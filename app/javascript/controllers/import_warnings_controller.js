@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus"
 //        data-import-warnings-acknowledge-url-value="/control_catalogs/1/acknowledge_warnings">
 //     <div data-import-warnings-target="modal" class="modal fade">...</div>
 //   </div>
-export default class extends Controller {
+export default class ImportWarningsController extends Controller {
   static targets = ["modal"]
   static values = { acknowledgeUrl: String }
 

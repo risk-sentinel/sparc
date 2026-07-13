@@ -8,7 +8,7 @@ import { Controller } from "@hotwired/stimulus"
 // Values:
 //   update-url  — URL for single-control PATCH (update_baseline)
 //   bulk-url    — URL for multi-control PATCH (bulk_update_baselines)
-export default class extends Controller {
+export default class BaselineEditorController extends Controller {
   static targets = [
     "checkbox",
     "selectAll",
@@ -145,7 +145,7 @@ export default class extends Controller {
   bulkApply() {
     const controlIds = this.checkboxTargets
       .filter(cb => cb.checked)
-      .map(cb => parseInt(cb.value, 10))
+      .map(cb => Number.parseInt(cb.value, 10))
 
     if (controlIds.length === 0) {
       alert("No controls selected")
@@ -190,7 +190,7 @@ export default class extends Controller {
   bulkClear() {
     const controlIds = this.checkboxTargets
       .filter(cb => cb.checked)
-      .map(cb => parseInt(cb.value, 10))
+      .map(cb => Number.parseInt(cb.value, 10))
 
     if (controlIds.length === 0) {
       alert("No controls selected")

@@ -254,7 +254,7 @@
 <%# ── CONTROL CARDS ───────────────────────────────────────────────── %>
 <div id="controlsContainer">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <label class="form-label fw-semibold mb-0"><%= total_controls %> controls</label>
+    <span class="form-label fw-semibold mb-0"><%= total_controls %> controls</span>
     <div class="d-flex gap-1">
       <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#expandAll">Expand All</button>
       <button type="button" class="btn btn-sm btn-outline-info" data-action="family-toggle#collapseAll">Collapse All</button>
@@ -346,10 +346,10 @@
               <% display_fields.each do |field| %>
                 <% next if field.field_value.blank? %>
                 <tr>
-                  <td class="sparc-field-label">
+                  <th scope="row" class="sparc-field-label" style="font-weight: 400; text-align: left;">
                     <%= field.field_name.tr("_", " ") %>
                     <% if field.editable %><span class="sparc-editable-indicator">✎</span><% end %>
-                  </td>
+                  </th>
                   <td class="sparc-field-value">
                     <% if field.field_name == "status" %>
                       <span class="sparc-status-pill sparc-status--<%= ssp_status_variant(field.field_value) %>" style="font-size: 0.75rem; font-weight: 600;"><%= field.field_value %></span>
@@ -387,10 +387,10 @@
                       <table class="sparc-field-table">
                         <% stmt_fields.each do |field| %>
                           <tr>
-                            <td class="sparc-field-label">
+                            <th scope="row" class="sparc-field-label" style="font-weight: 400; text-align: left;">
                               <%= field.field_name.tr("_", " ") %>
                               <% if field.editable %><span class="sparc-editable-indicator">✎</span><% end %>
-                            </td>
+                            </th>
                             <td class="sparc-field-value">
                               <%= field.field_value %>
                             </td>
@@ -418,9 +418,9 @@
                     <% display_val = fval.is_a?(Array) ? fval.join(", ") : fval.to_s %>
                     <% next if display_val.blank? %>
                     <tr>
-                      <td class="sparc-field-label" style="color: var(--sparc-purple);">
+                      <th scope="row" class="sparc-field-label" style="color: var(--sparc-purple); font-weight: 400; text-align: left;">
                         <%= fname.tr("_", " ") %>
-                      </td>
+                      </th>
                       <td class="sparc-field-value" style="line-height: 1.5;">
                         <%= display_val %>
                       </td>
@@ -444,38 +444,39 @@
             <% SspControlField::EDITABLE_FIELDS.each do |fname| %>
               <% field = field_map[fname] %>
               <% fval  = field&.field_value.to_s %>
+              <% field_id = "ssp_field_#{control.id}_#{fname}" %>
               <div class="form-group">
-                <label class="sparc-edit-label">
+                <label class="sparc-edit-label" for="<%= field_id %>">
                   <%= fname.tr("_", " ") %>
                   <span class="sparc-edit-editable-hint">(editable)</span>
                 </label>
                 <% if fname == "status" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::VALID_STATUSES, fval),
-                        include_blank: "— select —", class: "form-control",
+                        include_blank: "— select —", class: "form-control", id: field_id,
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "control_application" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::CONTROL_APPLICATION_VALUES, fval),
-                        include_blank: "— select —", class: "form-control",
+                        include_blank: "— select —", class: "form-control", id: field_id,
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "coverage_level" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::COVERAGE_LEVEL_VALUES, fval),
-                        include_blank: "— select —", class: "form-control",
+                        include_blank: "— select —", class: "form-control", id: field_id,
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "control_type" %>
                   <%= select_tag "fields[#{fname}]",
                         options_for_select(SspControlField::CONTROL_TYPE_VALUES, fval),
-                        include_blank: "— select —", class: "form-control",
+                        include_blank: "— select —", class: "form-control", id: field_id,
                         style: "font-size: 0.875rem;" %>
                 <% elsif fname == "expected_completion" %>
                   <%= text_field_tag "fields[#{fname}]", fval,
-                        class: "form-control", placeholder: "YYYY-MM-DD",
+                        class: "form-control", placeholder: "YYYY-MM-DD", id: field_id,
                         style: "font-size: 0.875rem;" %>
                 <% else %>
                   <%= text_area_tag "fields[#{fname}]", fval,
-                        class: "form-control", rows: 3,
+                        class: "form-control", rows: 3, id: field_id,
                         style: "font-size: 0.875rem;" %>
                 <% end %>
               </div>
@@ -492,19 +493,19 @@
                 </summary>
                 <% if stated_req.present? %>
                   <div class="form-group" style="margin-top: 0.5rem;">
-                    <label class="sparc-edit-label" style="color: var(--bs-tertiary-color);">
+                    <span class="sparc-edit-label" style="color: var(--bs-tertiary-color); display: block; margin-bottom: 0.5rem; font-weight: 600;">
                       Stated Requirement
                       <span class="sparc-edit-readonly-hint">(read-only)</span>
-                    </label>
+                    </span>
                     <p class="sparc-readonly-value"><%= stated_req %></p>
                   </div>
                 <% end %>
                 <% ro_fields.each do |field| %>
                   <div class="form-group" style="margin-top: 0.5rem;">
-                    <label class="sparc-edit-label" style="color: var(--bs-tertiary-color);">
+                    <span class="sparc-edit-label" style="color: var(--bs-tertiary-color); display: block; margin-bottom: 0.5rem; font-weight: 600;">
                       <%= field.field_name.tr("_", " ") %>
                       <span class="sparc-edit-readonly-hint">(read-only)</span>
-                    </label>
+                    </span>
                     <p class="sparc-readonly-value"><%= field.field_value %></p>
                   </div>
                 <% end %>
@@ -634,15 +635,15 @@
         <%= hidden_field_tag :statement_id, stmt.id %>
 
         <div class="form-group mb-3">
-          <label class="fw-semibold">Implementation Prose</label>
+          <label class="fw-semibold" for="ssp_control_statement_implementation_prose">Implementation Prose</label>
           <%= text_area_tag "ssp_control_statement[implementation_prose]",
-                stmt.implementation_prose, rows: 6, class: "form-control",
+                stmt.implementation_prose, rows: 6, class: "form-control", id: "ssp_control_statement_implementation_prose",
                 placeholder: "Describe how this system implements this catalog statement..." %>
         </div>
 
         <div class="form-group mb-3">
-          <label class="fw-semibold">Remarks</label>
-          <%= text_area_tag "ssp_control_statement[remarks]", stmt.remarks, rows: 2, class: "form-control" %>
+          <label class="fw-semibold" for="ssp_control_statement_remarks">Remarks</label>
+          <%= text_area_tag "ssp_control_statement[remarks]", stmt.remarks, rows: 2, class: "form-control", id: "ssp_control_statement_remarks" %>
         </div>
 
         <div class="d-flex gap-2">

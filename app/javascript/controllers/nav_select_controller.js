@@ -4,7 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 // Replaces the inline onchange="if(this.value) window.location=this.value;"
 // handler, which strict CSP (script-src :self, no 'unsafe-inline') silently
 // blocked, leaving the filter <select> inert.
-export default class extends Controller {
+export default class NavSelectController extends Controller {
   go(event) {
     if (event.target.value) window.location = event.target.value
   }

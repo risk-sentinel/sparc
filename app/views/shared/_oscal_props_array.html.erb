@@ -15,10 +15,13 @@
     <template data-oscal-repeater-target="template">
       <div class="repeater-row d-flex gap-2 mb-2">
         <input type="text" name="<%= param_key %>[props_data][][name]"
+               aria-label="Property name"
                placeholder="name (e.g., severity)" class="form-control form-control-sm" />
         <input type="text" name="<%= param_key %>[props_data][][value]"
+               aria-label="Property value"
                placeholder="value" class="form-control form-control-sm" />
         <input type="text" name="<%= param_key %>[props_data][][class]"
+               aria-label="Property class"
                placeholder="class (optional)" class="form-control form-control-sm" />
         <button type="button" data-action="click->oscal-repeater#remove"
                 class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>
@@ -30,12 +33,15 @@
         <div class="repeater-row d-flex gap-2 mb-2">
           <input type="text" name="<%= param_key %>[props_data][][name]"
                  value="<%= prop["name"] %>"
+                 aria-label="Property name"
                  placeholder="name" class="form-control form-control-sm" />
           <input type="text" name="<%= param_key %>[props_data][][value]"
                  value="<%= prop["value"] %>"
+                 aria-label="Property value"
                  placeholder="value" class="form-control form-control-sm" />
           <input type="text" name="<%= param_key %>[props_data][][class]"
                  value="<%= prop["class"] %>"
+                 aria-label="Property class"
                  placeholder="class (optional)" class="form-control form-control-sm" />
           <button type="button" data-action="click->oscal-repeater#remove"
                   class="btn btn-sm btn-outline-danger" aria-label="Remove">×</button>

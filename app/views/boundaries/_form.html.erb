@@ -16,7 +16,7 @@
 
   <% if @cdef_documents.any? %>
     <div class="mb-3">
-      <label class="form-label fw-semibold">Components (CDEFs)</label>
+      <span class="form-label fw-semibold d-block">Components (CDEFs)</span>
       <% @cdef_documents.each do |cdef| %>
         <div class="form-check">
           <%= check_box_tag "boundary[cdef_document_ids][]", cdef.id,

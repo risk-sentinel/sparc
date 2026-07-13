@@ -12,7 +12,7 @@ import { Controller } from "@hotwired/stimulus"
 // (data-ssp-editor-*-value) rather than interpolated into executable JS, and
 // table rows are built with createElement/textContent — never innerHTML that
 // re-emits markup.
-export default class extends Controller {
+export default class SspEditorController extends Controller {
   static targets = [
     "documentSelector", "recordSelector",
     "notification", "navigationContainer", "legend",
@@ -102,7 +102,7 @@ export default class extends Controller {
       const cellValue = row.insertCell(1)
 
       const label = field.field_name
-        .replace(/_/g, " ")
+        .replaceAll("_", " ")
         .replace(/\b\w/g, (l) => l.toUpperCase())
       cellName.append(`${label} `)
       const icon = document.createElement("span")
@@ -164,7 +164,7 @@ export default class extends Controller {
   }
 
   selectRecord(event) {
-    this.currentIndex = parseInt(event.target.value)
+    this.currentIndex = Number.parseInt(event.target.value)
     this.#displayRecord(this.currentIndex)
   }
 
