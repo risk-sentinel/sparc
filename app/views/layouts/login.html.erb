@@ -53,7 +53,9 @@
 
             <%# ── Controls Layer (catalogs/baselines/mappings) — gated by #726 ── %>
             <% if controls_publicly_accessible? %>
-              <%= render "shared/controls_nav" %>
+              <li class="nav-item dropdown">
+                <%= render "shared/controls_nav" %>
+              </li>
             <% end %>
 
             <%# ── Resources ── %>
