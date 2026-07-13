@@ -57,7 +57,7 @@ def assert_no_new_a11y_violations(page, name: str) -> None:
         # Union with any existing entry so running multiple browsers accumulates.
         merged = sorted(set(baseline.get(name, [])) | set(current))
         baseline[name] = merged
-        BASELINE_PATH.write_text(
+        BASELINE_PATH.write_text(  # NOSONAR(python:S2083) BASELINE_PATH is a fixed module constant, not user-controlled
             json.dumps(baseline, indent=2, sort_keys=True) + "\n"
         )
         return

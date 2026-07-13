@@ -43,6 +43,14 @@ COPY test_*.py ./
 # Re-sync to register the local package (cheap; the dep layer is cached).
 RUN uv sync --frozen --extra dev
 
+# Drop privileges: run the test suite as a non-root user (docker:S6471).
+# The base uv/bookworm-slim image otherwise defaults to root. /app (incl. the
+# uv .venv) is chowned so the non-root user can run pytest and write caches.
+RUN groupadd --system --gid 1000 tester \
+    && useradd tester --uid 1000 --gid 1000 --create-home --shell /bin/bash \
+    && chown -R tester:tester /app
+USER 1000:1000
+
 # Default to running the full suite. Override the entrypoint at run-time
 # to scope to a marker or a single module (see header comments above).
 ENV PATH="/app/.venv/bin:$PATH"
