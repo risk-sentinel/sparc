@@ -273,13 +273,13 @@
             <% roles.each_with_index do |role, idx| %>
               <div class="row g-2 mb-2 role-row">
                 <div class="col-md-3">
-                  <input type="text" class="form-control form-control-sm" placeholder="Role ID (e.g. prepared-by)" data-field="id" value="<%= role["id"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="Role ID (e.g. prepared-by)" data-field="id" value="<%= role["id"] %>" aria-label="Role ID">
                 </div>
                 <div class="col-md-4">
-                  <input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title" value="<%= role["title"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title" value="<%= role["title"] %>" aria-label="Role Title">
                 </div>
                 <div class="col-md-4">
-                  <input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description" value="<%= role["description"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description" value="<%= role["description"] %>" aria-label="Role Description">
                 </div>
                 <div class="col-md-1">
                   <button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button>
@@ -289,9 +289,9 @@
           </div>
           <template data-oscal-metadata-target="roleTemplate">
             <div class="row g-2 mb-2 role-row">
-              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Role ID (e.g. prepared-by)" data-field="id"></div>
-              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title"></div>
-              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description"></div>
+              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Role ID (e.g. prepared-by)" data-field="id" aria-label="Role ID"></div>
+              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title" aria-label="Role Title"></div>
+              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Description" data-field="description" aria-label="Role Description"></div>
               <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
             </div>
           </template>
@@ -305,16 +305,16 @@
             <% parties.each_with_index do |party, idx| %>
               <div class="row g-2 mb-2 party-row">
                 <div class="col-md-4">
-                  <input type="text" class="form-control form-control-sm" placeholder="Name" data-field="name" value="<%= party["name"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="Name" data-field="name" value="<%= party["name"] %>" aria-label="Party Name">
                 </div>
                 <div class="col-md-2">
-                  <select class="form-select form-select-sm" data-field="type">
+                  <select class="form-select form-select-sm" data-field="type" aria-label="Party Type">
                     <option value="organization" <%= "selected" if party["type"] == "organization" %>>Organization</option>
                     <option value="person" <%= "selected" if party["type"] == "person" %>>Person</option>
                   </select>
                 </div>
                 <div class="col-md-5">
-                  <input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid" value="<%= party["uuid"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid" value="<%= party["uuid"] %>" aria-label="Party UUID">
                 </div>
                 <div class="col-md-1">
                   <button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button>
@@ -324,9 +324,9 @@
           </div>
           <template data-oscal-metadata-target="partyTemplate">
             <div class="row g-2 mb-2 party-row">
-              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Name" data-field="name"></div>
-              <div class="col-md-2"><select class="form-select form-select-sm" data-field="type"><option value="organization">Organization</option><option value="person">Person</option></select></div>
-              <div class="col-md-5"><input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid"></div>
+              <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="Name" data-field="name" aria-label="Party Name"></div>
+              <div class="col-md-2"><select class="form-select form-select-sm" data-field="type" aria-label="Party Type"><option value="organization">Organization</option><option value="person">Person</option></select></div>
+              <div class="col-md-5"><input type="text" class="form-control form-control-sm" placeholder="UUID (auto-generated if blank)" data-field="uuid" aria-label="Party UUID"></div>
               <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
             </div>
           </template>
@@ -340,16 +340,16 @@
             <% revisions.each_with_index do |rev, idx| %>
               <div class="row g-2 mb-2 revision-row">
                 <div class="col-md-2">
-                  <input type="text" class="form-control form-control-sm" placeholder="Version" data-field="version" value="<%= rev["version"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="Version" data-field="version" value="<%= rev["version"] %>" aria-label="Revision Version">
                 </div>
                 <div class="col-md-3">
-                  <input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title" value="<%= rev["title"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title" value="<%= rev["title"] %>" aria-label="Revision Title">
                 </div>
                 <div class="col-md-3">
-                  <input type="text" class="form-control form-control-sm" placeholder="Published (ISO 8601)" data-field="published" value="<%= rev["published"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="Published (ISO 8601)" data-field="published" value="<%= rev["published"] %>" aria-label="Revision Published">
                 </div>
                 <div class="col-md-3">
-                  <input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified" value="<%= rev["last-modified"] %>">
+                  <input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified" value="<%= rev["last-modified"] %>" aria-label="Revision Last Modified">
                 </div>
                 <div class="col-md-1">
                   <button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button>
@@ -359,10 +359,10 @@
           </div>
           <template data-oscal-metadata-target="revisionTemplate">
             <div class="row g-2 mb-2 revision-row">
-              <div class="col-md-2"><input type="text" class="form-control form-control-sm" placeholder="Version" data-field="version"></div>
-              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title"></div>
-              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Published (ISO 8601)" data-field="published"></div>
-              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified"></div>
+              <div class="col-md-2"><input type="text" class="form-control form-control-sm" placeholder="Version" data-field="version" aria-label="Revision Version"></div>
+              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Title" data-field="title" aria-label="Revision Title"></div>
+              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Published (ISO 8601)" data-field="published" aria-label="Revision Published"></div>
+              <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Last Modified (ISO 8601)" data-field="last-modified" aria-label="Revision Last Modified"></div>
               <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm" data-action="oscal-metadata#removeRow">x</button></div>
             </div>
           </template>
@@ -394,6 +394,7 @@
                     name="<%= param_key %>[metadata_extra_json]"
                     class="form-control form-control-sm font-monospace mt-2"
                     rows="12"
+                    aria-label="Advanced OSCAL Metadata JSON"
           ><%= JSON.pretty_generate(advanced_template) %></textarea>
           <div class="form-text">
             Edit OSCAL metadata fields as JSON. Fields with <code>null</code> values are excluded from export.

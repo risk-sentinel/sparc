@@ -26,7 +26,7 @@
               {}, class: "form-select" %>
         </div>
         <div class="col-md-3">
-          <label class="form-label fw-semibold">Status</label>
+          <%= f.label :status, "Status", class: "form-label fw-semibold" %>
           <%= f.select :status,
               options_for_select(Evidence::STATUS_LABELS.map { |k, v| [ v, k ] }, @evidence.status),
               {}, class: "form-select" %>
@@ -34,37 +34,37 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label fw-semibold">Description</label>
+        <%= f.label :description, "Description", class: "form-label fw-semibold" %>
         <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Describe the evidence and its relevance to the control(s)..." %>
       </div>
 
       <div class="row g-3 mb-3">
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Collected By</label>
+          <%= f.label :collected_by, "Collected By", class: "form-label fw-semibold" %>
           <%= f.text_field :collected_by, class: "form-control", placeholder: "Name or system" %>
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Collection Date</label>
+          <%= f.label :collected_at, "Collection Date", class: "form-label fw-semibold" %>
           <%= f.datetime_local_field :collected_at, class: "form-control", value: @evidence.collected_at&.strftime("%Y-%m-%dT%H:%M") %>
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Source</label>
+          <%= f.label :source, "Source", class: "form-label fw-semibold" %>
           <%= f.text_field :source, class: "form-control", placeholder: "e.g. InSpec, Vulcan, Manual" %>
         </div>
       </div>
 
       <div class="row g-3 mb-3">
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Authorization Boundary</label>
+          <%= f.label :authorization_boundary_id, "Authorization Boundary", class: "form-label fw-semibold" %>
           <%= f.select :authorization_boundary_id,
               options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), @evidence.authorization_boundary_id),
               { include_blank: "None" }, class: "form-select" %>
         </div>
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Control IDs</label>
+          <label class="form-label fw-semibold" for="evidence_control_ids">Control IDs</label>
           <%= text_field_tag "evidence[control_ids]",
               @evidence.evidence_control_links.pluck(:control_id).join(", "),
-              class: "form-control", placeholder: "e.g. AC-01, AC-02, IA-05 (comma-separated)" %>
+              id: "evidence_control_ids", class: "form-control", placeholder: "e.g. AC-01, AC-02, IA-05 (comma-separated)" %>
           <div class="form-text">Comma-separated list of control IDs to link this evidence to.</div>
         </div>
       </div>

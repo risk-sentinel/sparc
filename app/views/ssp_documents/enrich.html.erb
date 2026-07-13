@@ -191,25 +191,25 @@
         Components (<%= @components.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="components-container" data-ssp-enrich-target="componentsContainer">
-        <% @components.reject { |c| c.component_type == "this-system" }.each do |comp| %>
+        <% @components.reject { |c| c.component_type == "this-system" }.each_with_index do |comp, comp_idx| %>
           <div class="component-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
             <input type="hidden" name="ssp_document[components][][id]" value="<%= comp.id %>">
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="ssp_document[components][][title]" value="<%= comp.title %>" class="form-control" style="font-size: 0.85rem;">
+                <label for="ssp-component-<%= comp_idx %>-title" style="font-size: 0.75rem;">Title</label>
+                <input type="text" id="ssp-component-<%= comp_idx %>-title" name="ssp_document[components][][title]" value="<%= comp.title %>" class="form-control" style="font-size: 0.85rem;">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Type</label>
-                <select name="ssp_document[components][][component_type]" class="form-control" style="font-size: 0.85rem;">
+                <label for="ssp-component-<%= comp_idx %>-type" style="font-size: 0.75rem;">Type</label>
+                <select id="ssp-component-<%= comp_idx %>-type" name="ssp_document[components][][component_type]" class="form-control" style="font-size: 0.85rem;">
                   <% SspComponent::COMPONENT_TYPES.reject { |t| t == "this-system" }.each do |t| %>
                     <option value="<%= t %>" <%= "selected" if comp.component_type == t %>><%= t.titleize %></option>
                   <% end %>
                 </select>
               </div>
               <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="ssp_document[components][][description]" value="<%= comp.description %>" class="form-control" style="font-size: 0.85rem;">
+                <label for="ssp-component-<%= comp_idx %>-description" style="font-size: 0.75rem;">Description</label>
+                <input type="text" id="ssp-component-<%= comp_idx %>-description" name="ssp_document[components][][description]" value="<%= comp.description %>" class="form-control" style="font-size: 0.85rem;">
               </div>
             </div>
           </div>
@@ -218,12 +218,12 @@
           <div class="component-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="ssp_document[components][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Component name">
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Title</span>
+                <input type="text" name="ssp_document[components][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Component name" aria-label="Component Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Type</label>
-                <select name="ssp_document[components][][component_type]" class="form-control" style="font-size: 0.85rem;">
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Type</span>
+                <select name="ssp_document[components][][component_type]" class="form-control" style="font-size: 0.85rem;" aria-label="Component Type">
                   <option value="software">Software</option>
                   <option value="hardware">Hardware</option>
                   <option value="service">Service</option>
@@ -236,8 +236,8 @@
                 </select>
               </div>
               <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="ssp_document[components][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Component description">
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Description</span>
+                <input type="text" name="ssp_document[components][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Component description" aria-label="Component Description">
               </div>
             </div>
           </div>
@@ -254,17 +254,17 @@
         System Users (<%= @users.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="users-container" data-ssp-enrich-target="usersContainer">
-        <% @users.each do |user| %>
+        <% @users.each_with_index do |user, user_idx| %>
           <div class="user-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
             <input type="hidden" name="ssp_document[users][][id]" value="<%= user.id %>">
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="ssp_document[users][][title]" value="<%= user.title %>" class="form-control" style="font-size: 0.85rem;">
+                <label for="ssp-user-<%= user_idx %>-title" style="font-size: 0.75rem;">Title</label>
+                <input type="text" id="ssp-user-<%= user_idx %>-title" name="ssp_document[users][][title]" value="<%= user.title %>" class="form-control" style="font-size: 0.85rem;">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="ssp_document[users][][description]" value="<%= user.description %>" class="form-control" style="font-size: 0.85rem;">
+                <label for="ssp-user-<%= user_idx %>-description" style="font-size: 0.75rem;">Description</label>
+                <input type="text" id="ssp-user-<%= user_idx %>-description" name="ssp_document[users][][description]" value="<%= user.description %>" class="form-control" style="font-size: 0.85rem;">
               </div>
             </div>
           </div>
@@ -273,12 +273,12 @@
           <div class="user-entry" style="border: 1px solid var(--bs-border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bs-body-bg);">
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="ssp_document[users][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="User title">
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Title</span>
+                <input type="text" name="ssp_document[users][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="User title" aria-label="User Title">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="ssp_document[users][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Description">
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Description</span>
+                <input type="text" name="ssp_document[users][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Description" aria-label="User Description">
               </div>
             </div>
           </div>
