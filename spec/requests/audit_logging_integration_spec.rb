@@ -61,7 +61,7 @@ RSpec.describe "Audit logging integration", type: :request do
     it "logs evidence_created on create" do
       expect {
         post evidences_path, params: {
-          evidence: { title: "Test Evidence", description: "Test", evidence_type: "test_result" }
+          evidence: { title: "Test Evidence", description: "Test", source: "Test", evidence_type: "test_result" }
         }
       }.to change(AuditEvent.where(action: "evidence_created"), :count).by(1)
     end
