@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "Evidences", type: :request do
-  let(:user) { create(:user) }
+  let(:user) { create(:user, :admin) }
 
   before { sign_in_as(user) }
 
@@ -57,7 +57,8 @@ RSpec.describe "Evidences", type: :request do
             title: "New Evidence",
             evidence_type: "artifact",
             status: "draft",
-            description: "A test evidence item"
+            description: "A test evidence item",
+            source: "Unit test"
           }
         }
       }.to change(Evidence, :count).by(1)
