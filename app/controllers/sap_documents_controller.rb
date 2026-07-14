@@ -2,6 +2,8 @@ class SapDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
   include OscalExportable
+  include BoundaryScopedDocument
+  boundary_scoped SapDocument, read: "sap.read", write: "sap.write"
 
   before_action :set_sap_document, only: %i[
     show edit update destroy download_json download_oscal
@@ -10,11 +12,14 @@ class SapDocumentsController < ApplicationController
     update_metadata publish publish_check associate_source update_objective
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective ]
+  # #738: boundary-scoped access (AC-3)
+  before_action :authorize_document_read!, only: [ :show, :edit, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :status, :publish_check ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :associate_source, :update_objective, :publish ]
 
   METHOD_ORDER = %w[examine interview test].freeze
 
   def index
-    @sap_documents = SapDocument.order(created_at: :desc)
+    @sap_documents = boundary_scoped_relation(SapDocument).order(created_at: :desc)
     @total_count = @sap_documents.count
     @controls_count = SapControl.count
     @completed_count = @sap_documents.where(status: "completed").count

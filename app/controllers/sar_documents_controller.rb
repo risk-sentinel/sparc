@@ -3,6 +3,8 @@ class SarDocumentsController < ApplicationController
   include Pagy::Method
   include Publishable
   include OscalExportable
+  include BoundaryScopedDocument
+  boundary_scoped SarDocument, read: "sar.read", write: "sar.write"
 
   CONTROLS_PER_PAGE = 50
   NO_DESCRIPTION = "No description provided.".freeze
@@ -15,11 +17,14 @@ class SarDocumentsController < ApplicationController
     :publish, :publish_check, :update_objective, :associate_source
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :update_objective, :associate_source ]
+  # #738: boundary-scoped access (AC-3)
+  before_action :authorize_document_read!, only: [ :show, :download_json, :download_excel, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :enrich, :edit_control, :status, :publish_check ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :create_from_ssp, :update, :update_enrich, :update_metadata, :associate_source, :update_objective, :publish, :destroy ]
 
   helper_method :filter_params
 
   def index
-    @sar_documents = SarDocument.order(created_at: :desc)
+    @sar_documents = boundary_scoped_relation(SarDocument).order(created_at: :desc)
     @total_count = @sar_documents.count
     @controls_count = SarControl.count
     @completed_count = @sar_documents.where(status: "completed").count

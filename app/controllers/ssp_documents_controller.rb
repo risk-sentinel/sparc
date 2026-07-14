@@ -2,6 +2,8 @@ class SspDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
   include OscalExportable
+  include BoundaryScopedDocument
+  boundary_scoped SspDocument, read: "ssp.read", write: "ssp.write"
 
   before_action :set_ssp_document, only: [
     :show, :edit, :update, :destroy,
@@ -15,9 +17,12 @@ class SspDocumentsController < ApplicationController
     :attach_profile, :populate_from_profile
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement ]
+  # #738: boundary-scoped access (AC-3)
+  before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile ]
 
   def index
-    @ssp_documents = SspDocument.order(created_at: :desc)
+    @ssp_documents = boundary_scoped_relation(SspDocument).order(created_at: :desc)
     @total_count = @ssp_documents.count
     @controls_count = SspControl.count
     @completed_count = @ssp_documents.where(status: "completed").count

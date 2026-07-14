@@ -2,6 +2,8 @@ class PoamDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
   include OscalExportable
+  include BoundaryScopedDocument
+  boundary_scoped PoamDocument, read: "poam.read", write: "poam.write"
 
   before_action :set_poam_document, only: %i[
     show destroy download_json download_oscal
@@ -10,12 +12,15 @@ class PoamDocumentsController < ApplicationController
     update_metadata status update publish publish_check
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish ]
+  # #738: boundary-scoped access (AC-3)
+  before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :status, :publish_check ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :update_metadata, :publish ]
 
   RISK_STATUS_ORDER = %w[open investigating remediating deviation-requested deviation-approved closed].freeze
   IMPACT_ORDER      = %w[high medium low].freeze
 
   def index
-    @poam_documents = PoamDocument.order(created_at: :desc)
+    @poam_documents = boundary_scoped_relation(PoamDocument).order(created_at: :desc)
     @total_count = @poam_documents.count
     @items_count = PoamItem.count
     @completed_count = @poam_documents.where(status: "completed").count
