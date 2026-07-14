@@ -58,20 +58,20 @@
             <input type="hidden" name="sar_document[results][][id]" value="<%= result.id %>">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="sar_document[results][][title]" value="<%= result.title %>" class="form-control" style="font-size: 0.85rem;" aria-label="Result Title">
+                <label for="sar-result-<%= idx %>-title" style="font-size: 0.75rem;">Title</label>
+                <input type="text" id="sar-result-<%= idx %>-title" name="sar_document[results][][title]" value="<%= result.title %>" class="form-control" style="font-size: 0.85rem;" aria-label="Result Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="sar_document[results][][description]" value="<%= result.description %>" class="form-control" style="font-size: 0.85rem;" aria-label="Result Description">
+                <label for="sar-result-<%= idx %>-description" style="font-size: 0.75rem;">Description</label>
+                <input type="text" id="sar-result-<%= idx %>-description" name="sar_document[results][][description]" value="<%= result.description %>" class="form-control" style="font-size: 0.85rem;" aria-label="Result Description">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Start Time</label>
-                <input type="datetime-local" name="sar_document[results][][start_time]" value="<%= result.start_time&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;" required aria-label="Result Start Time">
+                <label for="sar-result-<%= idx %>-start-time" style="font-size: 0.75rem;">Start Time</label>
+                <input type="datetime-local" id="sar-result-<%= idx %>-start-time" name="sar_document[results][][start_time]" value="<%= result.start_time&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;" required aria-label="Result Start Time">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">End Time</label>
-                <input type="datetime-local" name="sar_document[results][][end_time]" value="<%= result.end_time&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;" aria-label="Result End Time">
+                <label for="sar-result-<%= idx %>-end-time" style="font-size: 0.75rem;">End Time</label>
+                <input type="datetime-local" id="sar-result-<%= idx %>-end-time" name="sar_document[results][][end_time]" value="<%= result.end_time&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;" aria-label="Result End Time">
               </div>
             </div>
             <div style="font-size: 0.72rem; color: var(--sparc-text-faint); margin-top: 0.5rem;">
@@ -85,19 +85,19 @@
           <div class="result-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Title</span>
                 <input type="text" name="sar_document[results][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Assessment Result" aria-label="Result Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Description</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Description</span>
                 <input type="text" name="sar_document[results][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Description" aria-label="Result Description">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Start Time</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Start Time</span>
                 <input type="datetime-local" name="sar_document[results][][start_time]" class="form-control" style="font-size: 0.85rem;" required aria-label="Result Start Time">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">End Time</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">End Time</span>
                 <input type="datetime-local" name="sar_document[results][][end_time]" class="form-control" style="font-size: 0.85rem;" aria-label="Result End Time">
               </div>
             </div>
@@ -115,22 +115,22 @@
         Observations (<%= @observations.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="observations-container" data-sar-enrich-target="observationsContainer">
-        <% @observations.each do |obs| %>
+        <% @observations.each_with_index do |obs, idx| %>
           <div class="observation-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <input type="hidden" name="sar_document[observations][][id]" value="<%= obs.id %>">
             <input type="hidden" name="sar_document[observations][][sar_result_id]" value="<%= obs.sar_result_id %>">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="sar_document[observations][][title]" value="<%= obs.title %>" class="form-control" style="font-size: 0.85rem;" aria-label="Observation Title">
+                <label for="sar-observation-<%= idx %>-title" style="font-size: 0.75rem;">Title</label>
+                <input type="text" id="sar-observation-<%= idx %>-title" name="sar_document[observations][][title]" value="<%= obs.title %>" class="form-control" style="font-size: 0.85rem;" aria-label="Observation Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Collected</label>
-                <input type="datetime-local" name="sar_document[observations][][collected]" value="<%= obs.collected&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;" aria-label="Observation Collected">
+                <label for="sar-observation-<%= idx %>-collected" style="font-size: 0.75rem;">Collected</label>
+                <input type="datetime-local" id="sar-observation-<%= idx %>-collected" name="sar_document[observations][][collected]" value="<%= obs.collected&.strftime('%Y-%m-%dT%H:%M') %>" class="form-control" style="font-size: 0.85rem;" aria-label="Observation Collected">
               </div>
               <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="sar_document[observations][][description]" value="<%= obs.description %>" class="form-control" style="font-size: 0.85rem;" aria-label="Observation Description">
+                <label for="sar-observation-<%= idx %>-description" style="font-size: 0.75rem;">Description</label>
+                <input type="text" id="sar-observation-<%= idx %>-description" name="sar_document[observations][][description]" value="<%= obs.description %>" class="form-control" style="font-size: 0.85rem;" aria-label="Observation Description">
               </div>
             </div>
           </div>
@@ -139,15 +139,15 @@
           <div class="observation-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Title</span>
                 <input type="text" name="sar_document[observations][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Observation title" aria-label="Observation Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Collected</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Collected</span>
                 <input type="datetime-local" name="sar_document[observations][][collected]" class="form-control" style="font-size: 0.85rem;" aria-label="Observation Collected">
               </div>
               <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                <label style="font-size: 0.75rem;">Description</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Description</span>
                 <input type="text" name="sar_document[observations][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="What was observed" aria-label="Observation Description">
               </div>
             </div>
@@ -165,7 +165,7 @@
         Findings (<%= @findings.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="findings-container" data-sar-enrich-target="findingsContainer">
-        <% @findings.each do |finding| %>
+        <% @findings.each_with_index do |finding, idx| %>
           <div class="finding-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <input type="hidden" name="sar_document[findings][][id]" value="<%= finding.id %>">
             <input type="hidden" name="sar_document[findings][][sar_result_id]" value="<%= finding.sar_result_id %>">
@@ -179,23 +179,23 @@
             <% end %>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="sar_document[findings][][title]" value="<%= finding.title %>" class="form-control" style="font-size: 0.85rem;" aria-label="Finding Title">
+                <label for="sar-finding-<%= idx %>-title" style="font-size: 0.75rem;">Title</label>
+                <input type="text" id="sar-finding-<%= idx %>-title" name="sar_document[findings][][title]" value="<%= finding.title %>" class="form-control" style="font-size: 0.85rem;" aria-label="Finding Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Target Control ID</label>
-                <input type="text" name="sar_document[findings][][target_control_id]" value="<%= finding.target_data&.dig('target-id') %>" class="form-control" style="font-size: 0.85rem;" placeholder="e.g., ac-2" aria-label="Finding Target Control ID">
+                <label for="sar-finding-<%= idx %>-target-control-id" style="font-size: 0.75rem;">Target Control ID</label>
+                <input type="text" id="sar-finding-<%= idx %>-target-control-id" name="sar_document[findings][][target_control_id]" value="<%= finding.target_data&.dig('target-id') %>" class="form-control" style="font-size: 0.85rem;" placeholder="e.g., ac-2" aria-label="Finding Target Control ID">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Status</label>
-                <select name="sar_document[findings][][target_status]" class="form-control" style="font-size: 0.85rem;" aria-label="Finding Status">
+                <label for="sar-finding-<%= idx %>-status" style="font-size: 0.75rem;">Status</label>
+                <select id="sar-finding-<%= idx %>-status" name="sar_document[findings][][target_status]" class="form-control" style="font-size: 0.85rem;" aria-label="Finding Status">
                   <option value="satisfied" <%= 'selected' if finding.target_data&.dig('status', 'state') == 'satisfied' %>>Satisfied</option>
                   <option value="not-satisfied" <%= 'selected' if finding.target_data&.dig('status', 'state') == 'not-satisfied' %>>Not Satisfied</option>
                 </select>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="sar_document[findings][][description]" value="<%= finding.description %>" class="form-control" style="font-size: 0.85rem;" aria-label="Finding Description">
+                <label for="sar-finding-<%= idx %>-description" style="font-size: 0.75rem;">Description</label>
+                <input type="text" id="sar-finding-<%= idx %>-description" name="sar_document[findings][][description]" value="<%= finding.description %>" class="form-control" style="font-size: 0.85rem;" aria-label="Finding Description">
               </div>
             </div>
           </div>
@@ -204,22 +204,22 @@
           <div class="finding-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Title</span>
                 <input type="text" name="sar_document[findings][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Finding title" aria-label="Finding Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Target Control ID</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Target Control ID</span>
                 <input type="text" name="sar_document[findings][][target_control_id]" class="form-control" style="font-size: 0.85rem;" placeholder="e.g., ac-2" aria-label="Finding Target Control ID">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Status</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Status</span>
                 <select name="sar_document[findings][][target_status]" class="form-control" style="font-size: 0.85rem;" aria-label="Finding Status">
                   <option value="satisfied">Satisfied</option>
                   <option value="not-satisfied" selected>Not Satisfied</option>
                 </select>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.75rem;">Description</label>
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Description</span>
                 <input type="text" name="sar_document[findings][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Finding description" aria-label="Finding Description">
               </div>
             </div>
@@ -237,26 +237,26 @@
         Risks (<%= @risks.count %>)
       </summary>
       <div style="padding: 1rem 1.25rem;" id="risks-container" data-sar-enrich-target="risksContainer">
-        <% @risks.each do |risk| %>
+        <% @risks.each_with_index do |risk, idx| %>
           <div class="risk-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <input type="hidden" name="sar_document[risks][][id]" value="<%= risk.id %>">
             <input type="hidden" name="sar_document[risks][][sar_result_id]" value="<%= risk.sar_result_id %>">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="sar_document[risks][][title]" value="<%= risk.title %>" class="form-control" style="font-size: 0.85rem;" aria-label="Risk Title">
+                <label for="sar-risk-<%= idx %>-title" style="font-size: 0.75rem;">Title</label>
+                <input type="text" id="sar-risk-<%= idx %>-title" name="sar_document[risks][][title]" value="<%= risk.title %>" class="form-control" style="font-size: 0.85rem;" aria-label="Risk Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Status</label>
-                <select name="sar_document[risks][][status]" class="form-control" style="font-size: 0.85rem;" aria-label="Risk Status">
+                <label for="sar-risk-<%= idx %>-status" style="font-size: 0.75rem;">Status</label>
+                <select id="sar-risk-<%= idx %>-status" name="sar_document[risks][][status]" class="form-control" style="font-size: 0.85rem;" aria-label="Risk Status">
                   <% SarRisk::STATUSES.each do |s| %>
                     <option value="<%= s %>" <%= 'selected' if risk.status == s %>><%= s.titleize %></option>
                   <% end %>
                 </select>
               </div>
               <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="sar_document[risks][][description]" value="<%= risk.description %>" class="form-control" style="font-size: 0.85rem;" aria-label="Risk Description">
+                <label for="sar-risk-<%= idx %>-description" style="font-size: 0.75rem;">Description</label>
+                <input type="text" id="sar-risk-<%= idx %>-description" name="sar_document[risks][][description]" value="<%= risk.description %>" class="form-control" style="font-size: 0.85rem;" aria-label="Risk Description">
               </div>
             </div>
           </div>
@@ -265,12 +265,12 @@
           <div class="risk-entry" style="border: 1px solid var(--sparc-border-soft); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--sparc-surface);">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Title</label>
-                <input type="text" name="sar_document[risks][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Risk title">
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Title</span>
+                <input type="text" name="sar_document[risks][][title]" class="form-control" style="font-size: 0.85rem;" placeholder="Risk title" aria-label="Risk Title">
               </div>
               <div class="form-group" style="margin-bottom: 0.25rem;">
-                <label style="font-size: 0.75rem;">Status</label>
-                <select name="sar_document[risks][][status]" class="form-control" style="font-size: 0.85rem;">
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Status</span>
+                <select name="sar_document[risks][][status]" class="form-control" style="font-size: 0.85rem;" aria-label="Risk Status">
                   <option value="open" selected>Open</option>
                   <option value="investigating">Investigating</option>
                   <option value="remediating">Remediating</option>
@@ -280,8 +280,8 @@
                 </select>
               </div>
               <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                <label style="font-size: 0.75rem;">Description</label>
-                <input type="text" name="sar_document[risks][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Risk description">
+                <span style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.75rem;">Description</span>
+                <input type="text" name="sar_document[risks][][description]" class="form-control" style="font-size: 0.85rem;" placeholder="Risk description" aria-label="Risk Description">
               </div>
             </div>
           </div>
