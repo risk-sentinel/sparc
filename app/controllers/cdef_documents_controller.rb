@@ -15,6 +15,8 @@ class CdefDocumentsController < ApplicationController
   # authoritative-upstream-content operation alongside DISA CCI / STIG
   # refreshes — gated on `converters.write` or admin.
   before_action :authorize_converter_write!, only: [ :refresh_aws_labs ]
+  # #738: CDEF is global (no boundary); mutations require cdef.write (instance-level). (AC-3)
+  before_action :authorize_cdef_write!, only: %i[create destroy update_field update_metadata copy create_from_profile populate_from_profile update_statement create_control_resource link_control_resource unlink_control_resource publish submit_for_review]
 
   SEVERITY_ORDER = %w[high medium low info].freeze
 
@@ -535,6 +537,10 @@ class CdefDocumentsController < ApplicationController
   # (`converters.write` or admin).
   def authorize_converter_write!
     authorize_permission!("converters.write")
+  end
+
+  def authorize_cdef_write!
+    authorize_permission!("cdef.write")
   end
 
   def ensure_editable!

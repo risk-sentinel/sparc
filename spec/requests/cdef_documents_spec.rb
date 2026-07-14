@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "CdefDocuments", type: :request do
-  let(:user) { create(:user) }
+  let(:user) { create(:user, :admin) }
 
   before { sign_in_as(user) }
 
@@ -417,7 +417,7 @@ RSpec.describe "CdefDocuments", type: :request do
     end
 
     it "is admin-only — a non-admin cannot bulk delete" do
-      sign_in_as(user)
+      sign_in_as(create(:user))
       cdef = create(:cdef_document)
 
       delete bulk_destroy_cdef_documents_path, params: { ids: [ cdef.id ] }
