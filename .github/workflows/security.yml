@@ -574,7 +574,7 @@ jobs:
       contents: read
       security-events: write
     env:
-      GRYPE_VERSION: v0.91.0
+      GRYPE_VERSION: v0.115.0
       # Ramp: start at critical only so the first PR's findings don't
       # block merge. Bump to high once baseline is triaged.
       GRYPE_FAIL_ON: critical
