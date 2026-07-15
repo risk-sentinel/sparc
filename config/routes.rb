@@ -77,6 +77,8 @@ Rails.application.routes.draw do
       patch :update_enrich
       # #737: pull system users from authorization-boundary members
       post :import_boundary_users
+      # #737: import system components from linked / org-wide component definitions
+      post :import_cdef_components
       post :create_control_resource
       post :link_control_resource
       delete :unlink_control_resource

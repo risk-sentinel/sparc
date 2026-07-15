@@ -29,4 +29,26 @@ RSpec.describe "SSP enrich imports (#737)", type: :request do
       expect(ssp.ssp_users.where(title: "Jane AO").count).to eq(1)
     end
   end
+  describe "POST /ssp_documents/:id/import_cdef_components" do
+    let(:boundary) { create(:authorization_boundary) }
+    let(:ssp) { create(:ssp_document, authorization_boundary: boundary) }
+    let(:cdef) { create(:cdef_document, name: "Auth Service CDEF") }
+
+    it "imports selected component definitions as SSP components linked to the CDEF" do
+      expect {
+        post import_cdef_components_ssp_document_path(ssp), params: { cdef_ids: [ cdef.id ] }
+      }.to change { ssp.ssp_components.count }.by(1)
+      comp = ssp.ssp_components.find_by(cdef_document_id: cdef.id)
+      expect(comp.title).to eq("Auth Service CDEF")
+      expect(response).to redirect_to(enrich_ssp_document_path(ssp))
+    end
+
+    it "does not re-import a CDEF already linked to a component" do
+      ssp.ssp_components.create!(uuid: SecureRandom.uuid, component_type: "software",
+                                 title: "x", description: "x", cdef_document_id: cdef.id)
+      expect {
+        post import_cdef_components_ssp_document_path(ssp), params: { cdef_ids: [ cdef.id ] }
+      }.not_to change { ssp.ssp_components.count }
+    end
+  end
 end

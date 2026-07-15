@@ -14,12 +14,12 @@ class SspDocumentsController < ApplicationController
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement,
-    :attach_profile, :populate_from_profile, :import_boundary_users
+    :attach_profile, :populate_from_profile, :import_boundary_users, :import_cdef_components
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :import_cdef_components ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components ]
 
   def index
     @ssp_documents = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -221,6 +221,31 @@ class SspDocumentsController < ApplicationController
     @info_types       = @ssp_document.ssp_information_types.order(:title)
     # #737: canonical sources offered for import on the enrich form.
     @boundary_members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
+    @imported_cdef_ids = @ssp_document.ssp_components.pluck(:cdef_document_id).compact
+    @boundary_cdefs = (@ssp_document.authorization_boundary&.cdef_documents&.distinct&.order(:name) || []).to_a
+    org = @ssp_document.authorization_boundary&.organization
+    @org_cdefs = org ? CdefDocument.globally_available_in(org).where.not(id: @boundary_cdefs.map(&:id)).order(:name).to_a : []
+  end
+
+  # #737: import selected component definitions (boundary or org-wide) as SSP components.
+  def import_cdef_components
+    cdef_ids = Array(params[:cdef_ids]).reject(&:blank?).map(&:to_i)
+    already = @ssp_document.ssp_components.pluck(:cdef_document_id).compact
+    added = 0
+    CdefDocument.where(id: cdef_ids).find_each do |cdef|
+      next if already.include?(cdef.id)
+
+      @ssp_document.ssp_components.create!(
+        uuid: SecureRandom.uuid,
+        component_type: "software",
+        title: cdef.name,
+        description: cdef.description.presence || cdef.name,
+        status_state: "operational",
+        cdef_document_id: cdef.id
+      )
+      added += 1
+    end
+    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{added} system component(s) from component definitions."
   end
 
   # #737: import authorization-boundary members as SSP system users.
