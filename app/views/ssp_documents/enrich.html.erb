@@ -34,20 +34,22 @@
               <div class="small text-body-secondary">Boundary component definitions (suggested)</div>
               <% @boundary_cdefs.each do |cdef| %>
                 <% done = @imported_cdef_ids.include?(cdef.id) %>
-                <label class="d-block small">
-                  <%= check_box_tag "cdef_ids[]", cdef.id, !done, disabled: done %>
-                  <%= cdef.name %><%= " — already imported".html_safe if done %>
-                </label>
+                <% cb_id = "bcdef_#{cdef.id}" %>
+                <div class="d-block small">
+                  <%= check_box_tag "cdef_ids[]", cdef.id, !done, id: cb_id, disabled: done %>
+                  <label for="<%= cb_id %>"><%= cdef.name %><%= " — already imported".html_safe if done %></label>
+                </div>
               <% end %>
             <% end %>
             <% if @org_cdefs.any? %>
               <div class="small text-body-secondary mt-2">Organization-wide component definitions</div>
               <% @org_cdefs.each do |cdef| %>
                 <% done = @imported_cdef_ids.include?(cdef.id) %>
-                <label class="d-block small">
-                  <%= check_box_tag "cdef_ids[]", cdef.id, false, disabled: done %>
-                  <%= cdef.name %><%= " — already imported".html_safe if done %>
-                </label>
+                <% cb_id = "ocdef_#{cdef.id}" %>
+                <div class="d-block small">
+                  <%= check_box_tag "cdef_ids[]", cdef.id, false, id: cb_id, disabled: done %>
+                  <label for="<%= cb_id %>"><%= cdef.name %><%= " — already imported".html_safe if done %></label>
+                </div>
               <% end %>
             <% end %>
             <%= submit_tag "Import selected components", class: "btn btn-outline-primary btn-sm mt-2" %>
@@ -63,10 +65,11 @@
           <div class="mt-2 ms-2">
             <div class="small text-body-secondary">Globally-available / reusable resources</div>
             <% @reusable_back_matter.each do |r| %>
-              <label class="d-block small">
-                <%= check_box_tag "back_matter_ids[]", r.id, false %>
-                <%= r.title %><% if r.rel.present? %> <span class="text-body-tertiary">(<%= r.rel %>)</span><% end %>
-              </label>
+              <% cb_id = "bm_#{r.id}" %>
+              <div class="d-block small">
+                <%= check_box_tag "back_matter_ids[]", r.id, false, id: cb_id %>
+                <label for="<%= cb_id %>"><%= r.title %><% if r.rel.present? %> <span class="text-body-tertiary">(<%= r.rel %>)</span><% end %></label>
+              </div>
             <% end %>
             <%= submit_tag "Link selected back matter", class: "btn btn-outline-primary btn-sm mt-2" %>
           </div>
