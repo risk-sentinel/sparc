@@ -626,12 +626,23 @@ jobs:
             | sh -s -- -b /usr/local/bin "${GRYPE_VERSION}"
           grype version
 
+      # NOTE: shell ($(...)) is NOT evaluated in a cache `key:` — only ${{ }}
+      # expressions are. Compute the ISO week in a step and reference it via
+      # ${{ steps... }} so the key actually rotates (a literal $(date) froze the
+      # DB indefinitely, leaving Grype scanning weeks-stale vuln data).
+      - name: Compute Grype DB cache week
+        id: grype-db-key
+        run: echo "week=$(date +%Y%U)" >> "$GITHUB_OUTPUT"
+
       - name: Cache Grype vulnerability DB
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: ~/.cache/grype/db
-          # Weekly key — DB updates daily but weekly cache balances freshness vs hit rate
-          key: grype-db-${{ runner.os }}-${{ env.GRYPE_VERSION }}-$(date +%Y%U)
+          # Weekly key — DB updates daily but weekly cache balances freshness vs hit rate.
+          # restore-keys falls back to the most recent prior DB on a new-week miss.
+          key: grype-db-${{ runner.os }}-${{ env.GRYPE_VERSION }}-${{ steps.grype-db-key.outputs.week }}
+          restore-keys: |
+            grype-db-${{ runner.os }}-${{ env.GRYPE_VERSION }}-
 
       - name: Download Ruby SBOM (sbom_generation)
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
