@@ -55,6 +55,24 @@
         </details>
       <% end %>
     <% end %>
+    <%# Link existing (reusable) back-matter resources onto this SSP %>
+    <% if @reusable_back_matter.any? %>
+      <%= form_with url: import_back_matter_ssp_document_path(@ssp_document), method: :post do %>
+        <details>
+          <summary class="small fw-semibold" style="cursor: pointer;">Link existing back matter (<%= @reusable_back_matter.size %> reusable)</summary>
+          <div class="mt-2 ms-2">
+            <div class="small text-body-secondary">Globally-available / reusable resources</div>
+            <% @reusable_back_matter.each do |r| %>
+              <label class="d-block small">
+                <%= check_box_tag "back_matter_ids[]", r.id, false %>
+                <%= r.title %><% if r.rel.present? %> <span class="text-body-tertiary">(<%= r.rel %>)</span><% end %>
+              </label>
+            <% end %>
+            <%= submit_tag "Link selected back matter", class: "btn btn-outline-primary btn-sm mt-2" %>
+          </div>
+        </details>
+      <% end %>
+    <% end %>
   </div>
 
   <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch, local: true, html: { data: { controller: "ssp-enrich" } } do |f| %>

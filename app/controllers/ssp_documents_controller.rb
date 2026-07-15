@@ -14,12 +14,12 @@ class SspDocumentsController < ApplicationController
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement,
-    :attach_profile, :populate_from_profile, :import_boundary_users, :import_cdef_components
+    :attach_profile, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :import_cdef_components ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :import_cdef_components, :import_back_matter ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter ]
 
   def index
     @ssp_documents = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -225,6 +225,29 @@ class SspDocumentsController < ApplicationController
     @boundary_cdefs = (@ssp_document.authorization_boundary&.cdef_documents&.distinct&.order(:name) || []).to_a
     org = @ssp_document.authorization_boundary&.organization
     @org_cdefs = org ? CdefDocument.globally_available_in(org).where.not(id: @boundary_cdefs.map(&:id)).order(:name).to_a : []
+    @ssp_back_matter_titles = BackMatterResource.where(resourceable: @ssp_document).pluck(:title).map(&:to_s)
+    @reusable_back_matter = BackMatterResource.globally_available
+      .where.not(resourceable_type: "SspDocument", resourceable_id: @ssp_document.id)
+      .order(:title).to_a.reject { |r| @ssp_back_matter_titles.include?(r.title.to_s) }
+  end
+
+  # #737: link existing reusable (globally-available) back-matter resources by
+  # copying them onto this SSP as managed resources so they export with it.
+  def import_back_matter
+    ids = Array(params[:back_matter_ids]).reject(&:blank?).map(&:to_i)
+    own_titles = BackMatterResource.where(resourceable: @ssp_document).pluck(:title).map(&:to_s)
+    added = 0
+    BackMatterResource.where(id: ids).find_each do |src|
+      next if own_titles.include?(src.title.to_s)
+
+      BackMatterResource.create!(
+        resourceable: @ssp_document, source: "managed", uuid: SecureRandom.uuid,
+        title: src.title, description: src.description, rel: src.rel,
+        media_type: src.media_type, href: src.href
+      )
+      added += 1
+    end
+    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Linked #{added} existing back-matter resource(s) onto this SSP."
   end
 
   # #737: import selected component definitions (boundary or org-wide) as SSP components.

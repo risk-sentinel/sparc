@@ -51,4 +51,29 @@ RSpec.describe "SSP enrich imports (#737)", type: :request do
       }.not_to change { ssp.ssp_components.count }
     end
   end
+  describe "POST /ssp_documents/:id/import_back_matter" do
+    let(:ssp) { create(:ssp_document) }
+    let(:other) { create(:ssp_document) }
+    let!(:reusable) do
+      BackMatterResource.create!(resourceable: other, source: "managed", uuid: SecureRandom.uuid,
+                                 globally_available: true, title: "Org Policy PDF", rel: "reference")
+    end
+
+    it "copies a selected reusable resource onto this SSP as a managed resource" do
+      expect {
+        post import_back_matter_ssp_document_path(ssp), params: { back_matter_ids: [ reusable.id ] }
+      }.to change { BackMatterResource.where(resourceable: ssp).count }.by(1)
+      copy = BackMatterResource.where(resourceable: ssp).last
+      expect(copy.title).to eq("Org Policy PDF")
+      expect(copy.source).to eq("managed")
+      expect(copy.id).not_to eq(reusable.id)
+    end
+
+    it "does not duplicate a resource already present by title" do
+      BackMatterResource.create!(resourceable: ssp, source: "managed", uuid: SecureRandom.uuid, title: "Org Policy PDF")
+      expect {
+        post import_back_matter_ssp_document_path(ssp), params: { back_matter_ids: [ reusable.id ] }
+      }.not_to change { BackMatterResource.where(resourceable: ssp).count }
+    end
+  end
 end
