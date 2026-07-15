@@ -91,7 +91,8 @@ class AuthoritativeSourceFetchService
       title:         @resource.title.presence || filename,
       evidence_type: "policy_document",
       status:        "collected",
-      description:   "Auto-fetched from #{uri}"
+      description:   "Auto-fetched from #{uri}",
+      source:        uri.to_s
     )
     evidence.save!
     evidence.file.attach(

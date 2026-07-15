@@ -1,11 +1,17 @@
 class EvidencesController < ApplicationController
+  include BoundaryScopedDocument
+  boundary_scoped Evidence, read: "evidence.read", write: "evidence.write"
+
   before_action :set_evidence, only: [ :show, :edit, :update, :destroy ]
+  # #738: boundary-scoped access. show = read; edit/update/destroy/create = write.
+  before_action :authorize_document_read!, only: [ :show ]
+  before_action :authorize_document_write!, only: [ :edit, :update, :destroy, :create ]
 
   def index
-    @total_count = Evidence.count
-    @link_count = EvidenceControlLink.count
+    @evidences = boundary_scoped_relation(Evidence).order(created_at: :desc)
+    @total_count = @evidences.count
+    @link_count = EvidenceControlLink.where(evidence_id: boundary_scoped_relation(Evidence).select(:id)).count
 
-    @evidences = Evidence.order(created_at: :desc)
     @evidences = @evidences.where(evidence_type: params[:type]) if params[:type].present?
     @evidences = @evidences.where(status: params[:status]) if params[:status].present?
     @evidences = @evidences.where(authorization_boundary_id: params[:authorization_boundary_id]) if params[:authorization_boundary_id].present?
@@ -32,7 +38,9 @@ class EvidencesController < ApplicationController
 
   def create
     @evidence = Evidence.new(evidence_params)
-    @evidence.collected_at ||= Time.current
+    # #738: collection provenance is system-recorded (UTC, no DST drift), not self-asserted.
+    @evidence.collected_at = Time.current.utc
+    @evidence.collected_by = current_user&.display_name.presence || current_user&.email
 
     if @evidence.save
       audit_log("evidence_created", subject: @evidence, metadata: { title: @evidence.title })
@@ -73,9 +81,10 @@ class EvidencesController < ApplicationController
   end
 
   def evidence_params
+    # collected_at / collected_by are set by the server on create (#738), never user-supplied.
     params.require(:evidence).permit(
       :title, :description, :evidence_type, :status,
-      :collected_at, :collected_by, :source, :authorization_boundary_id, :file
+      :source, :authorization_boundary_id, :file
     )
   end
 

@@ -9,6 +9,75 @@
     <%= link_to "Back to SSP", ssp_document_path(@ssp_document), class: "btn btn-secondary", style: "flex-shrink: 0;" %>
   </div>
 
+  <%# ── #737: import components/users/back matter from canonical SPARC sources ── %>
+  <div class="card bg-body-tertiary border-0 mb-3" style="padding: 0.75rem 1rem;">
+    <div class="fw-semibold small text-body-secondary mb-2">Import from canonical sources</div>
+
+    <%# System users from authorization-boundary members %>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+      <% if @boundary_members.any? %>
+        <%= button_to "Add #{@boundary_members.size} boundary member(s) as system users",
+              import_boundary_users_ssp_document_path(@ssp_document), method: :post,
+              class: "btn btn-outline-primary btn-sm", form: { style: "display:inline;" } %>
+      <% else %>
+        <span class="text-body-tertiary small fst-italic">No authorization-boundary members available to import as users.</span>
+      <% end %>
+    </div>
+
+    <%# System components from component definitions (boundary first, then org-wide) %>
+    <% if @boundary_cdefs.any? || @org_cdefs.any? %>
+      <%= form_with url: import_cdef_components_ssp_document_path(@ssp_document), method: :post do %>
+        <details<%= " open".html_safe if @ssp_document.ssp_components.where.not(component_type: "this-system").none? %>>
+          <summary class="small fw-semibold" style="cursor: pointer;">Import system components from component definitions (<%= @boundary_cdefs.size + @org_cdefs.size %>)</summary>
+          <div class="mt-2 ms-2">
+            <% if @boundary_cdefs.any? %>
+              <div class="small text-body-secondary">Boundary component definitions (suggested)</div>
+              <% @boundary_cdefs.each do |cdef| %>
+                <% done = @imported_cdef_ids.include?(cdef.id) %>
+                <% cb_id = "bcdef_#{cdef.id}" %>
+                <div class="d-block small">
+                  <%= check_box_tag "cdef_ids[]", cdef.id, !done, id: cb_id, disabled: done %>
+                  <label for="<%= cb_id %>"><%= cdef.name %><%= " — already imported".html_safe if done %></label>
+                </div>
+              <% end %>
+            <% end %>
+            <% if @org_cdefs.any? %>
+              <div class="small text-body-secondary mt-2">Organization-wide component definitions</div>
+              <% @org_cdefs.each do |cdef| %>
+                <% done = @imported_cdef_ids.include?(cdef.id) %>
+                <% cb_id = "ocdef_#{cdef.id}" %>
+                <div class="d-block small">
+                  <%= check_box_tag "cdef_ids[]", cdef.id, false, id: cb_id, disabled: done %>
+                  <label for="<%= cb_id %>"><%= cdef.name %><%= " — already imported".html_safe if done %></label>
+                </div>
+              <% end %>
+            <% end %>
+            <%= submit_tag "Import selected components", class: "btn btn-outline-primary btn-sm mt-2" %>
+          </div>
+        </details>
+      <% end %>
+    <% end %>
+    <%# Link existing (reusable) back-matter resources onto this SSP %>
+    <% if @reusable_back_matter.any? %>
+      <%= form_with url: import_back_matter_ssp_document_path(@ssp_document), method: :post do %>
+        <details>
+          <summary class="small fw-semibold" style="cursor: pointer;">Link existing back matter (<%= @reusable_back_matter.size %> reusable)</summary>
+          <div class="mt-2 ms-2">
+            <div class="small text-body-secondary">Globally-available / reusable resources</div>
+            <% @reusable_back_matter.each do |r| %>
+              <% cb_id = "bm_#{r.id}" %>
+              <div class="d-block small">
+                <%= check_box_tag "back_matter_ids[]", r.id, false, id: cb_id %>
+                <label for="<%= cb_id %>"><%= r.title %><% if r.rel.present? %> <span class="text-body-tertiary">(<%= r.rel %>)</span><% end %></label>
+              </div>
+            <% end %>
+            <%= submit_tag "Link selected back matter", class: "btn btn-outline-primary btn-sm mt-2" %>
+          </div>
+        </details>
+      <% end %>
+    <% end %>
+  </div>
+
   <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch, local: true, html: { data: { controller: "ssp-enrich" } } do |f| %>
 
     <%# ── System Information ── %>

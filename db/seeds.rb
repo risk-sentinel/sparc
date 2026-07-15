@@ -2373,6 +2373,32 @@ sample_evidences.each do |attrs|
   end
 end
 
+# #738 ui-smoke fixtures — deterministic proof of boundary-scoped Evidence access.
+# "Smoke Restricted Boundary" intentionally has NO members, so its evidence is
+# inaccessible to any non-admin identity; the global one is visible to all.
+smoke_org = Organization.find_by(name: SparcConfig.org_name)
+smoke_restricted_boundary = AuthorizationBoundary.find_or_create_by!(name: "Smoke Restricted Boundary") do |b|
+  b.description = "ui-smoke fixture (#738): has NO members — do not add any. Its evidence must stay inaccessible to non-admins."
+  b.status = "draft"
+end
+smoke_restricted_boundary.update!(organization: smoke_org) if smoke_org && smoke_restricted_boundary.organization_id.nil?
+
+Evidence.find_or_create_by!(title: "SMOKE RESTRICTED EVIDENCE") do |e|
+  e.assign_attributes(
+    evidence_type: "artifact", status: "collected", source: "ui-smoke fixture",
+    description: "Boundary-scoped fixture — only admins / members of Smoke Restricted Boundary may see it (#738).",
+    collected_by: "seed", collected_at: Time.current.utc, authorization_boundary: smoke_restricted_boundary
+  )
+end
+Evidence.find_or_create_by!(title: "SMOKE GLOBAL EVIDENCE") do |e|
+  e.assign_attributes(
+    evidence_type: "artifact", status: "collected", source: "ui-smoke fixture",
+    description: "Global (nil-boundary) fixture — visible to all authenticated users (#738).",
+    collected_by: "seed", collected_at: Time.current.utc, authorization_boundary: nil
+  )
+end
+puts "  Seeded #738 boundary-scoping smoke fixtures (restricted + global evidence)."
+
 # Add sample attestations to attested evidence
 Evidence.where(status: "attested").each do |evidence|
   next if evidence.attestations.any?

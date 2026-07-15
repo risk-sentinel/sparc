@@ -23,6 +23,13 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   the UI is a thin client over it (shared service where practical). Add a
   request spec for the endpoint (happy path + auth/authorization). The UI is
   never the only way to perform a mutation.
+- **Local smoke + API check concludes any application-code change** — before
+  pushing work that touches application code (`app/`, `lib/`, `config/`, `db/`,
+  views, assets, migrations), run BOTH the full `tests/api` endpoint suite and
+  the `tests/ui-smoke` Playwright suite against a freshly-running local
+  container (Chrome, zero CSP violations), authenticated with a locally-minted
+  `ApiToken`. Green `rspec` alone is **not** sufficient — it never exercises the
+  running image, routing, or CSP. **CI-only or docs-only changes are exempt.**
 
 ---
 
@@ -57,12 +64,18 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
     not targeted specs). Targeted specs during development are fine, but the
     full suite **must pass** before pushing. Also run `bundle exec rubocop`
     on modified files.
-11. **Commit / push changes**
+11. **Local smoke + API check** (application-code changes only — skip for
+    CI-only or docs-only work) — boot the container (`docker compose up`), seed
+    demo data (`SPARC_SEED_DEMO=true`), mint an `ApiToken`, then run **both**
+    the full `tests/api` endpoint suite **and** the `tests/ui-smoke` Playwright
+    suite against `localhost` (Chrome, zero CSP violations). This catches
+    boot/zeitwerk, routing, and CSP regressions the rspec suite cannot.
+12. **Commit / push changes**
     - Reference the issue in all commit messages
-12. **Wait for user testing**
+13. **Wait for user testing**
     - Functional testing
     - Review regression report(s)
-13. **Create a PR**
+14. **Create a PR**
     - Reference the issue so it will auto-close on merge
     - Wait for the PR to be merged by the owner before moving forward
 

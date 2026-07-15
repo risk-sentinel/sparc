@@ -2,6 +2,8 @@ class SspDocumentsController < ApplicationController
   include FileUploadable
   include Publishable
   include OscalExportable
+  include BoundaryScopedDocument
+  boundary_scoped SspDocument, read: "ssp.read", write: "ssp.write"
 
   before_action :set_ssp_document, only: [
     :show, :edit, :update, :destroy,
@@ -12,12 +14,15 @@ class SspDocumentsController < ApplicationController
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement,
-    :attach_profile, :populate_from_profile
+    :attach_profile, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users, :import_cdef_components, :import_back_matter ]
+  # #738: boundary-scoped access (AC-3)
+  before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter ]
 
   def index
-    @ssp_documents = SspDocument.order(created_at: :desc)
+    @ssp_documents = boundary_scoped_relation(SspDocument).order(created_at: :desc)
     @total_count = @ssp_documents.count
     @controls_count = SspControl.count
     @completed_count = @ssp_documents.where(status: "completed").count
@@ -211,9 +216,80 @@ class SspDocumentsController < ApplicationController
   # ── Enrichment (uplift legacy SSPs) ──────────────────────────────
 
   def enrich
-    @components  = @ssp_document.ssp_components.order(:title)
-    @users       = @ssp_document.ssp_users.order(:title)
-    @info_types  = @ssp_document.ssp_information_types.order(:title)
+    @components       = @ssp_document.ssp_components.order(:title)
+    @users            = @ssp_document.ssp_users.order(:title)
+    @info_types       = @ssp_document.ssp_information_types.order(:title)
+    # #737: canonical sources offered for import on the enrich form.
+    @boundary_members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
+    @imported_cdef_ids = @ssp_document.ssp_components.pluck(:cdef_document_id).compact
+    @boundary_cdefs = (@ssp_document.authorization_boundary&.cdef_documents&.distinct&.order(:name) || []).to_a
+    org = @ssp_document.authorization_boundary&.organization
+    @org_cdefs = org ? CdefDocument.globally_available_in(org).where.not(id: @boundary_cdefs.map(&:id)).order(:name).to_a : []
+    @ssp_back_matter_titles = BackMatterResource.where(resourceable: @ssp_document).pluck(:title).map(&:to_s)
+    @reusable_back_matter = BackMatterResource.globally_available
+      .where.not(resourceable_type: "SspDocument", resourceable_id: @ssp_document.id)
+      .order(:title).to_a.reject { |r| @ssp_back_matter_titles.include?(r.title.to_s) }
+  end
+
+  # #737: link existing reusable (globally-available) back-matter resources by
+  # copying them onto this SSP as managed resources so they export with it.
+  def import_back_matter
+    ids = Array(params[:back_matter_ids]).reject(&:blank?).map(&:to_i)
+    own_titles = BackMatterResource.where(resourceable: @ssp_document).pluck(:title).map(&:to_s)
+    added = 0
+    BackMatterResource.where(id: ids).find_each do |src|
+      next if own_titles.include?(src.title.to_s)
+
+      BackMatterResource.create!(
+        resourceable: @ssp_document, source: "managed", uuid: SecureRandom.uuid,
+        title: src.title, description: src.description, rel: src.rel,
+        media_type: src.media_type, href: src.href
+      )
+      added += 1
+    end
+    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Linked #{added} existing back-matter resource(s) onto this SSP."
+  end
+
+  # #737: import selected component definitions (boundary or org-wide) as SSP components.
+  def import_cdef_components
+    cdef_ids = Array(params[:cdef_ids]).reject(&:blank?).map(&:to_i)
+    already = @ssp_document.ssp_components.pluck(:cdef_document_id).compact
+    added = 0
+    CdefDocument.where(id: cdef_ids).find_each do |cdef|
+      next if already.include?(cdef.id)
+
+      @ssp_document.ssp_components.create!(
+        uuid: SecureRandom.uuid,
+        component_type: "software",
+        title: cdef.name,
+        description: cdef.description.presence || cdef.name,
+        status_state: "operational",
+        cdef_document_id: cdef.id
+      )
+      added += 1
+    end
+    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{added} system component(s) from component definitions."
+  end
+
+  # #737: import authorization-boundary members as SSP system users.
+  def import_boundary_users
+    members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
+    existing = @ssp_document.ssp_users.pluck(:title).map(&:to_s)
+    added = 0
+    members.each do |m|
+      name = m.user_name.presence || m.user_email.presence
+      next if name.blank? || existing.include?(name)
+
+      @ssp_document.ssp_users.create!(
+        uuid: SecureRandom.uuid,
+        title: name,
+        short_name: name.to_s.split.first,
+        description: "Imported from authorization-boundary member (role: #{m.role}).",
+        role_ids_data: [ m.role ].compact
+      )
+      added += 1
+    end
+    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{added} system user(s) from boundary members."
   end
 
   def update_enrich

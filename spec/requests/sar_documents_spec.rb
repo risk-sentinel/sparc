@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "SarDocuments", type: :request do
-  let(:user) { create(:user) }
+  let(:user) { create(:user, :admin) }
 
   before { sign_in_as(user) }
 

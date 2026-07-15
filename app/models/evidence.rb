@@ -14,6 +14,8 @@ class Evidence < ApplicationRecord
   validates :title, presence: true
   validates :evidence_type, presence: true
   validates :status, presence: true
+  validates :description, presence: true  # #738: evidence must carry a description
+  validates :source, presence: true       # #738: evidence must record its source
 
   # Stable, immutable OSCAL back-matter href (#680). Resolves via the
   # /artifacts/:uuid resolver to a freshly-signed download URL, so the
