@@ -14,12 +14,12 @@ class SspDocumentsController < ApplicationController
     :create_control_resource, :link_control_resource, :unlink_control_resource,
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement,
-    :attach_profile, :populate_from_profile
+    :attach_profile, :populate_from_profile, :import_boundary_users
   ]
-  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement ]
+  before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :import_boundary_users ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile ]
+  before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users ]
 
   def index
     @ssp_documents = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -216,9 +216,32 @@ class SspDocumentsController < ApplicationController
   # ── Enrichment (uplift legacy SSPs) ──────────────────────────────
 
   def enrich
-    @components  = @ssp_document.ssp_components.order(:title)
-    @users       = @ssp_document.ssp_users.order(:title)
-    @info_types  = @ssp_document.ssp_information_types.order(:title)
+    @components       = @ssp_document.ssp_components.order(:title)
+    @users            = @ssp_document.ssp_users.order(:title)
+    @info_types       = @ssp_document.ssp_information_types.order(:title)
+    # #737: canonical sources offered for import on the enrich form.
+    @boundary_members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
+  end
+
+  # #737: import authorization-boundary members as SSP system users.
+  def import_boundary_users
+    members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
+    existing = @ssp_document.ssp_users.pluck(:title).map(&:to_s)
+    added = 0
+    members.each do |m|
+      name = m.user_name.presence || m.user_email.presence
+      next if name.blank? || existing.include?(name)
+
+      @ssp_document.ssp_users.create!(
+        uuid: SecureRandom.uuid,
+        title: name,
+        short_name: name.to_s.split.first,
+        description: "Imported from authorization-boundary member (role: #{m.role}).",
+        role_ids_data: [ m.role ].compact
+      )
+      added += 1
+    end
+    redirect_to enrich_ssp_document_path(@ssp_document), notice: "Imported #{added} system user(s) from boundary members."
   end
 
   def update_enrich

@@ -75,6 +75,8 @@ Rails.application.routes.draw do
       get :status
       get :enrich
       patch :update_enrich
+      # #737: pull system users from authorization-boundary members
+      post :import_boundary_users
       post :create_control_resource
       post :link_control_resource
       delete :unlink_control_resource

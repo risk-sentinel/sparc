@@ -9,6 +9,20 @@
     <%= link_to "Back to SSP", ssp_document_path(@ssp_document), class: "btn btn-secondary", style: "flex-shrink: 0;" %>
   </div>
 
+  <%# ── #737: import components/users/back matter from canonical SPARC sources ── %>
+  <div class="card bg-body-tertiary border-0 mb-3" style="padding: 0.75rem 1rem;">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="fw-semibold small text-body-secondary">Import from canonical sources:</span>
+      <% if @boundary_members.any? %>
+        <%= button_to "Add #{@boundary_members.size} boundary member(s) as system users",
+              import_boundary_users_ssp_document_path(@ssp_document), method: :post,
+              class: "btn btn-outline-primary btn-sm", form: { style: "display:inline;" } %>
+      <% else %>
+        <span class="text-body-tertiary small fst-italic">No authorization-boundary members available to import.</span>
+      <% end %>
+    </div>
+  </div>
+
   <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch, local: true, html: { data: { controller: "ssp-enrich" } } do |f| %>
 
     <%# ── System Information ── %>
