@@ -40,6 +40,8 @@ gem "zlib", ">= 3.2.3"             # CVE-2026-27820 (overrides bundled 3.2.1)
 gem "net-imap", ">= 0.6.4"         # CVE-2026-42257/42258 (CRITICAL) + 42245/42246 (overrides bundled 0.5.8)
 gem "erb", ">= 6.0.4"             # CVE-2026-41316 (overrides bundled 4.0.4)
 gem "oauth2", ">= 2.0.22"          # GHSA-pp92-crg2-gfv9 (bumps transitive 2.0.18)
+gem "websocket-driver", ">= 0.8.2"  # CVE-2026-54463/54464/54465 + GHSA-2x63-gw47-w4mm DoS (bumps transitive 0.8.0)
+gem "crass", ">= 1.0.7"            # GHSA-6jxj/6wmf/8vfg/wwpr ReDoS/stack-overflow (bumps transitive 1.0.6)
 gem "dotenv-rails", require: false, groups: [ :development, :test ]
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
