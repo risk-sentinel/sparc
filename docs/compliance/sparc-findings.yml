@@ -90,6 +90,30 @@ findings:
     discovery_date: "2026-06-21"
     next_review_date: "2026-07-21"
 
+  - cve_id: CVE-2026-13221
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Perl through 5.43.9 produces silently incorrect regex matches when an alternation of >65535 fixed-string branches is compiled into a trie in Perl_study_chunk: the 16-bit delta field overflows and the trie's match table is corrupted. Triggering it requires a perl program to compile such a regex. SPARC invokes no perl at all -- it is a Ruby/Rails app and every regex/parse is Ruby/Onigmo, never perl. perl is a transitive dependency of the ruby:3.4.4-slim base image only; no application code path shells out to perl. Debian Bookworm ships no fixed perl. Same present-but-unreachable basis as CVE-2026-8376 (also Perl_study_chunk). Container runs non-root (UID 1000), no interactive shell. Remediation candidate on Debian Trixie/distroless migration (#742 UBI9)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-15"
+    next_review_date: "2026-08-14"
+
+  - cve_id: CVE-2026-57433
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Storable before 3.41 (a perl core module) has a signed 32-bit integer overflow in retrieve_hook_common: an SX_HOOK record item count of I32_MAX wraps av_extend to a negative value, so a crafted blob passed to Storable thaw/retrieve corrupts memory. Reaching it requires perl code to deserialize an attacker-controlled Storable blob. SPARC invokes no perl and never uses Perl's Storable: all (de)serialization is Ruby (Marshal, JSON, OSCAL/Excel parsers). perl is a transitive dependency of the ruby:3.4.4-slim base image only; no application code path shells out to perl. Debian Bookworm ships no fixed perl. Same present-but-unreachable basis as the existing perl entries. Container runs non-root (UID 1000), no interactive shell. Remediation candidate on Debian Trixie/distroless migration (#742 UBI9)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-15"
+    next_review_date: "2026-08-14"
+
   # --------------------------------------------------------------------------
   # thruster (Go HTTP/2 reverse proxy) transitive Go-module CVEs — discovered
   # by Grype 2026-06-04 (newly published advisories against an unchanged
