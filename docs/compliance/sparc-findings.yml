@@ -115,6 +115,43 @@ findings:
     next_review_date: "2026-08-14"
 
   # --------------------------------------------------------------------------
+  # glibc (base-image core) — surfaced once Grype was bumped to v0.115.0 and
+  # could hydrate the current DB (v0.91.0 was stuck on an 8-week-stale DB).
+  # No patched libc6 in Debian Bookworm (wont-fix); retired by #742 (UBI9).
+  # --------------------------------------------------------------------------
+  - cve_id: CVE-2026-5450
+    package: libc6
+    installed_version: "2.36-9+deb12u14"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). One-byte heap buffer overflow in the GNU C Library (glibc 2.7-2.43) scanf-family functions when called with a %mc (malloc'd character match) conversion and an explicit field width > 1024. Reaching it requires C code to call scanf/sscanf/fscanf with the POSIX %mc allocating modifier and a >1024 width on attacker-influenced input. SPARC is a Ruby/Rails app and never calls the glibc scanf family with %mc: Ruby's own String#scanf is a pure-Ruby stdlib implementation, and no application or gem code path invokes C scanf with a malloc'd-char conversion on untrusted input. glibc is a core base-image (ruby:3.4.4-slim / Debian Bookworm) dependency that cannot be removed. Debian marked this wont-fix for Bookworm (no patched libc6). Container runs non-root (UID 1000), no interactive shell. Remediation candidate on a base-image point release or the Debian Trixie/distroless migration (#742 UBI9)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-15"
+    next_review_date: "2026-08-14"
+
+  - cve_id: CVE-2026-5450
+    package: libc-bin
+    installed_version: "2.36-9+deb12u14"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Same glibc scanf %mc one-byte heap overflow as the libc6 entry above (CVE-2026-5450); libc-bin is the glibc binary-utilities package built from the same source. SPARC (Ruby/Rails) never invokes the glibc scanf family with a %mc allocating conversion on untrusted input. Base-image core dependency, Debian wont-fix. Remediation on base-image update / #742 (UBI9)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-15"
+    next_review_date: "2026-08-14"
+
+  # NOTE: nokogiri criticals (GHSA-fr52-4hqw-p27f / cr5j-953j-xw5p /
+  # qxcg-xjjg-66mj / 353f-x4gh-cqq8) are NOT dispositioned here — they were
+  # grype false positives caused by cdxgen emitting a phantom version-less
+  # `pkg:gem/nokogiri` component. Fixed properly at the source: the SBOM
+  # generation step in security.yml now strips empty-version components, so
+  # grype evaluates nokogiri against its real (1.19.4) versioned variants and
+  # no longer flags the already-patched advisories. No disposition needed.
+
+  # --------------------------------------------------------------------------
   # thruster (Go HTTP/2 reverse proxy) transitive Go-module CVEs — discovered
   # by Grype 2026-06-04 (newly published advisories against an unchanged
   # image; see #612). thruster 0.1.21 is the latest gem, so no bump remediates

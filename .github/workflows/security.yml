@@ -546,6 +546,15 @@ jobs:
           FETCH_LICENSE: 'true'
         run: |
           npx --yes @cyclonedx/cdxgen@11 -t ruby -o sbom-ruby.cdx.json .
+          # cdxgen emits a phantom version-less component for gems that appear
+          # under multiple platforms in Gemfile.lock (e.g. precompiled nokogiri's
+          # 7 "-<platform>" variants also produce a bare `pkg:gem/nokogiri` with an
+          # empty version). Grype can't apply version constraints to a version-less
+          # component, so it matches EVERY historical advisory against it — pure
+          # false positives. Drop empty-version components; the same gems remain
+          # present with real, resolvable versions on their platform variants.
+          jq '.components |= map(select(.version != null and .version != ""))' \
+            sbom-ruby.cdx.json > sbom-ruby.clean.json && mv sbom-ruby.clean.json sbom-ruby.cdx.json
           echo "--- SBOM head ---"
           head -c 300 sbom-ruby.cdx.json
           echo
@@ -574,7 +583,7 @@ jobs:
       contents: read
       security-events: write
     env:
-      GRYPE_VERSION: v0.91.0
+      GRYPE_VERSION: v0.115.0
       # Ramp: start at critical only so the first PR's findings don't
       # block merge. Bump to high once baseline is triaged.
       GRYPE_FAIL_ON: critical
