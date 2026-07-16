@@ -169,15 +169,18 @@ jobs:
         if: ${{ inputs.upload && steps.aws.outcome == 'success' }}
         env:
           REPO_SLUG: ${{ inputs.repo_slug }}
+          # Canonical evidence layout (#741): <boundary>/<date|latest>/<repo>/<source>/
+          # boundary defaults to 'sparc'; IAM prefix scope provisioned in sparc-iac#537.
+          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY || 'sparc' }}
         run: |
           set -euo pipefail
           DATE="$(date -u +%Y-%m-%d)"
-          for dest in "sonarqube/${REPO_SLUG}/${DATE}" "sonarqube/${REPO_SLUG}/latest"; do
-            aws s3 cp "$HDF_FILE" "s3://${BUCKET}/${dest}/" --no-progress
+          for when in "${DATE}" latest; do
+            aws s3 cp "$HDF_FILE" "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO_SLUG}/sonarqube/" --no-progress
           done
-          echo "Emitted to s3://${BUCKET}/sonarqube/${REPO_SLUG}/{${DATE},latest}/"
+          echo "Emitted to s3://${BUCKET}/${BOUNDARY}/{${DATE},latest}/${REPO_SLUG}/sonarqube/"
 
       - name: Note when S3 emit skipped
         if: ${{ !inputs.upload || steps.aws.outcome != 'success' }}
         run: |
-          echo "::notice::OHDF converted + validated; S3 emit skipped (upload=${{ inputs.upload }}, aws=${{ steps.aws.outcome }}). The emit IAM role (s3:PutObject on sonarqube/sparc/*) is provisioned in sparc-iac; until then the artifact is the deliverable. See #636."
+          echo "::notice::OHDF converted + validated; S3 emit skipped (upload=${{ inputs.upload }}, aws=${{ steps.aws.outcome }}). The emit IAM role (s3:PutObject on the canonical <boundary>/*/sparc/sonarqube/* prefix) is provisioned in sparc-iac#537; until then the artifact is the deliverable. See #636."
