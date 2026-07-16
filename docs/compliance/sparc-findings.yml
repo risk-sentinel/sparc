@@ -143,62 +143,13 @@ findings:
     discovery_date: "2026-07-15"
     next_review_date: "2026-08-14"
 
-  # --------------------------------------------------------------------------
-  # nokogiri — ALREADY PATCHED false positives (Grype v0.115.0 tool artifact).
-  # SPARC ships nokogiri 1.19.4 (see Gemfile.lock), newer than every fix version
-  # below. Grype cannot apply the version constraints because the CycloneDX ruby
-  # SBOM (cdxgen) emits the platform-specific gem (nokogiri 1.19.4-<platform>)
-  # with an empty parseable version (artifact.version == ''), so it conservatively
-  # matches these ancient (2016/2019) advisories. Verified installed > fixed.
-  # Follow-up: fix the ruby SBOM version emission so the constraints apply.
-  # --------------------------------------------------------------------------
-  - cve_id: GHSA-fr52-4hqw-p27f
-    package: nokogiri
-    installed_version: "1.19.4"
-    fixed_version: "1.7.1"
-    severity: CRITICAL
-    disposition: false_positive
-    rationale: "FALSE POSITIVE (already patched). GHSA-fr52-4hqw-p27f (CVE-2016-4658) — libxml2 XPointer range namespace-node handling — was fixed in nokogiri 1.7.1. SPARC ships nokogiri 1.19.4 (Gemfile.lock), far newer, so the fix is present. Grype mis-reports it because the CycloneDX ruby SBOM (cdxgen) emits the platform-specific gem without a version Grype can parse (artifact.version == ''), so the '<1.7.1' constraint cannot be excluded. No remediation needed; SBOM version-emission gap tracked as follow-up."
-    nist_control: si-2
-    reviewed_by: "@clem-field"
-    discovery_date: "2026-07-15"
-    next_review_date: "2026-08-14"
-
-  - cve_id: GHSA-cr5j-953j-xw5p
-    package: nokogiri
-    installed_version: "1.19.4"
-    fixed_version: "1.10.4"
-    severity: CRITICAL
-    disposition: false_positive
-    rationale: "FALSE POSITIVE (already patched). GHSA-cr5j-953j-xw5p (CVE-2019-5477) — command injection via Nokogiri's Rexical-generated lexer — was fixed in nokogiri 1.10.4. SPARC ships 1.19.4, so the fix is present. Grype over-matches because the cdxgen ruby SBOM records the platform-specific gem with an empty version (artifact.version == ''), preventing the '<1.10.4' constraint from excluding it. No remediation needed; SBOM version-emission gap tracked as follow-up."
-    nist_control: si-2
-    reviewed_by: "@clem-field"
-    discovery_date: "2026-07-15"
-    next_review_date: "2026-08-14"
-
-  - cve_id: GHSA-qxcg-xjjg-66mj
-    package: nokogiri
-    installed_version: "1.19.4"
-    fixed_version: "1.10.3"
-    severity: CRITICAL
-    disposition: false_positive
-    rationale: "FALSE POSITIVE (already patched). GHSA-qxcg-xjjg-66mj (CVE-2019-11068) — libxslt protection-mechanism bypass — was fixed in nokogiri 1.10.3. SPARC ships 1.19.4, so the fix is present. Grype over-matches because the cdxgen ruby SBOM records the platform-specific gem with an empty version (artifact.version == ''), preventing the '<1.10.3' constraint from excluding it. No remediation needed; SBOM version-emission gap tracked as follow-up."
-    nist_control: si-2
-    reviewed_by: "@clem-field"
-    discovery_date: "2026-07-15"
-    next_review_date: "2026-08-14"
-
-  - cve_id: GHSA-353f-x4gh-cqq8
-    package: nokogiri
-    installed_version: "1.19.4"
-    fixed_version: "1.18.9"
-    severity: CRITICAL
-    disposition: false_positive
-    rationale: "FALSE POSITIVE (already patched). GHSA-353f-x4gh-cqq8 — nokogiri 1.18.9 patched vendored libxml2 to resolve multiple CVEs. SPARC ships nokogiri 1.19.4 (> 1.18.9), so the patched libxml2 is present. Grype over-matches because the cdxgen ruby SBOM records the platform-specific gem with an empty version (artifact.version == ''), preventing the '<1.18.9' constraint from excluding it. No remediation needed; SBOM version-emission gap tracked as follow-up."
-    nist_control: si-2
-    reviewed_by: "@clem-field"
-    discovery_date: "2026-07-15"
-    next_review_date: "2026-08-14"
+  # NOTE: nokogiri criticals (GHSA-fr52-4hqw-p27f / cr5j-953j-xw5p /
+  # qxcg-xjjg-66mj / 353f-x4gh-cqq8) are NOT dispositioned here — they were
+  # grype false positives caused by cdxgen emitting a phantom version-less
+  # `pkg:gem/nokogiri` component. Fixed properly at the source: the SBOM
+  # generation step in security.yml now strips empty-version components, so
+  # grype evaluates nokogiri against its real (1.19.4) versioned variants and
+  # no longer flags the already-patched advisories. No disposition needed.
 
   # --------------------------------------------------------------------------
   # thruster (Go HTTP/2 reverse proxy) transitive Go-module CVEs — discovered
