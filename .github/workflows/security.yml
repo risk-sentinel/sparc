@@ -1482,18 +1482,25 @@ jobs:
         if: env.HAS_DISPATCH_TOKEN == 'true'
         env:
           COMPLIANCE_S3_BUCKET: ${{ secrets.COMPLIANCE_S3_BUCKET }}
+          # Canonical evidence layout (#741): <boundary>/<date|latest>/<repo>/<source>/
+          # boundary defaults to 'sparc'; IAM prefix scope provisioned in sparc-iac#537.
+          # The archive's own subdirs (hdf/ sarif/ asff/ sbom/ grype/) are the <source>
+          # groupings under <repo>/. Per-commit traceability rides the dispatch git_sha.
+          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY || 'sparc' }}
         run: |
           DATE=$(date -u +%Y-%m-%d)
-          SHA=${GITHUB_SHA::7}
-          PREFIX="${DATE}/${SHA}/app"
+          REPO=sparc
           BUCKET="${COMPLIANCE_S3_BUCKET}"
           if [ -z "$BUCKET" ]; then
             echo "::warning::COMPLIANCE_S3_BUCKET not set — skipping S3 upload"
             exit 0
           fi
-          aws s3 sync sparc-compliance/ "s3://${BUCKET}/${PREFIX}/" --no-progress
+          for when in "${DATE}" latest; do
+            aws s3 sync sparc-compliance/ "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO}/" --no-progress
+          done
+          PREFIX="${BOUNDARY}/${DATE}/${REPO}"
           echo "## S3 Upload" >> $GITHUB_STEP_SUMMARY
-          echo "Uploaded to \`s3://${BUCKET}/${PREFIX}/\`" >> $GITHUB_STEP_SUMMARY
+          echo "Uploaded to \`s3://${BUCKET}/${PREFIX}/\` (+ latest/)" >> $GITHUB_STEP_SUMMARY
           echo "S3_PREFIX=${PREFIX}" >> $GITHUB_ENV
 
       - name: Notify sparc-iac via repository_dispatch

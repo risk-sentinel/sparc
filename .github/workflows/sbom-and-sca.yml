@@ -1,9 +1,9 @@
 # SBOM + SCA — source-dependency supply-chain pipeline for the sparc Rails app.
 #
 # Producer side of the org-wide SCA rollup (umbrella risk-sentinel/container-build-sign#12,
-# this repo's issue #616). Hub-and-spoke: every repo emits a CycloneDX SBOM to
-# s3://<security-artifacts-bucket>/sca/<repo>/ and a central reader
-# (OWASP Dependency-Track) aggregates sca/*/latest/.
+# this repo's issue #616). Hub-and-spoke: every repo emits a CycloneDX SBOM to the
+# canonical evidence layout s3://<bucket>/<boundary>/<date|latest>/<repo>/sca/ (#741)
+# and a central reader (OWASP Dependency-Track) aggregates <boundary>/latest/*/sca/.
 #
 # Pipeline (v0.1.0 contract — see container-build-sign docs/dev/sbom_sca_pipeline.md):
 #   sbom  → reusable sbom-source.yml : Syft → CycloneDX JSON over the source tree
@@ -11,15 +11,16 @@
 #                                      package-lock.json — JS deps ship via importmap).
 #   sca   → reusable sca-scan.yml    : Grype (SBOM-driven) + Trivy fs, reconciled
 #                                      against .security/sca-allowlist.yaml, gate=CRITICAL.
-#   emit  → push the CycloneDX to S3 : sca/sparc/<YYYY-MM-DD>/sparc.cdx.json + latest/.
+#   emit  → push the CycloneDX to S3 : <boundary>/<YYYY-MM-DD|latest>/sparc/sca/sparc.cdx.json.
 #
 # The app *image* SBOM is attested separately (cosign attest --type cyclonedx in
 # build-sign-publish.yml on release tags), so it already joins the image-side rollup.
 #
 # Graceful degrade: the emit job is skipped on pull_request events and whenever the
 # SPARC_APP_CI_ARN OIDC secret is unset (the SBOM is still produced as a workflow
-# artifact). That role (s3:PutObject on sca/sparc/*) is provisioned in sparc-iac#480
-# — sparc's own least-privilege CI role, replacing the borrowed SCA_EMIT role.
+# artifact). That role (s3:PutObject) is sparc's own least-privilege CI role
+# (sparc-iac#480), re-scoped to the canonical <boundary>/*/sparc/sca/* prefix in
+# sparc-iac#537 — replacing the borrowed SCA_EMIT role.
 #
 # NIST SP 800-53 Rev 5:
 #   SR-3 / SR-4  Supply Chain Controls & Provenance — signed-build CI emits a
@@ -82,12 +83,16 @@ jobs:
       id-token: write          # AWS OIDC: S3 write
     env:
       BUCKET: ${{ secrets.COMPLIANCE_S3_BUCKET }}
-      PREFIX: sca/sparc
+      # Canonical evidence layout (#741): <boundary>/<date|latest>/<repo>/<source>/
+      # boundary defaults to 'sparc'; the matching IAM prefix scope
+      # (s3:PutObject on <boundary>/*/sparc/*) is provisioned in sparc-iac#537.
+      BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY || 'sparc' }}
+      REPO: sparc
+      SOURCE: sca
       # Mapped from the secret so step-level `if:` can gate on presence
       # (the secrets context isn't allowed directly in `if:`).
-      # #480 — sparc's own least-privilege role (s3:PutObject on sca/sparc/*),
-      # replacing the borrowed container-build-sign SCA_EMIT role that didn't
-      # trust repo:risk-sentinel/sparc (assume-role was failing → artifact-only).
+      # #480 — sparc's own least-privilege role (s3:PutObject), re-scoped to the
+      # canonical <boundary>/*/sparc/sca/* prefix in sparc-iac#537.
       ROLE_ARN: ${{ secrets.SPARC_APP_CI_ARN }}
     steps:
       - name: Download SBOM artifact
@@ -123,10 +128,11 @@ jobs:
         run: |
           set -eo pipefail
           DATE=$(date -u +%F)
-          for dest in "${PREFIX}/${DATE}" "${PREFIX}/latest"; do
-            aws s3 cp sparc.cdx.json "s3://${BUCKET}/${dest}/sparc.cdx.json" --no-progress
+          for when in "${DATE}" latest; do
+            aws s3 cp sparc.cdx.json \
+              "s3://${BUCKET}/${BOUNDARY}/${when}/${REPO}/${SOURCE}/sparc.cdx.json" --no-progress
           done
-          echo "Emitted to s3://${BUCKET}/${PREFIX}/{${DATE},latest}/sparc.cdx.json"
+          echo "Emitted to s3://${BUCKET}/${BOUNDARY}/{${DATE},latest}/${REPO}/${SOURCE}/sparc.cdx.json"
 
       - name: Note when emit was skipped
         if: ${{ steps.aws.outcome != 'success' }}
