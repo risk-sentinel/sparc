@@ -332,9 +332,14 @@ jobs:
 
       # ── Sign images (keyless OIDC) ──
 
+      # --registry-referrers-mode=legacy (#742): cosign 3.x (pinned #679) defaults
+      # to OCI 1.1 referrers. ECR surfaces those; Docker Hub's UI only lists tags,
+      # so the .sig/.att became invisible there from ~v1.9.1 on. Legacy mode writes
+      # the sha256-<digest>.sig / .att TAGS Docker Hub reliably stores and displays.
+      # ECR keeps OCI 1.1 referrers below (native support). Verify/attest match.
       - name: Sign Docker Hub image
         run: |
-          cosign sign --yes \
+          cosign sign --yes --registry-referrers-mode=legacy \
             risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
         env:
           COSIGN_EXPERIMENTAL: "1"
@@ -350,15 +355,14 @@ jobs:
 
       # ── Verify signatures ──
 
-      # cosign 3.x stores signatures as OCI 1.1 referrers; Docker Hub's
-      # Referrers API is eventually consistent, so an immediate verify after
-      # sign can transiently fail with "no signatures found" even though the
-      # signature is present and verifies seconds later (#679, from
-      # container-build-sign#103). Retry with backoff to ride out propagation.
+      # Docker Hub signatures are written in legacy tag mode above, so verify in
+      # the same mode (else cosign looks for OCI 1.1 referrers and finds nothing).
+      # Retry with backoff to ride out any registry propagation lag (#679, from
+      # container-build-sign#103).
       - name: Verify Docker Hub signature
         run: |
           for attempt in $(seq 1 8); do
-            if cosign verify \
+            if cosign verify --registry-referrers-mode=legacy \
               --certificate-identity-regexp="https://github.com/risk-sentinel/sparc/" \
               --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
               "risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}"; then
@@ -401,7 +405,7 @@ jobs:
       - name: Attest SBOM to Docker Hub
         run: |
           VERSION="${{ needs.prepare.outputs.version_stripped }}"
-          cosign attest --yes \
+          cosign attest --yes --registry-referrers-mode=legacy \
             --predicate sparc-sbom-${VERSION}.cdx.json \
             --type cyclonedx \
             risksentinel/sparc@${{ needs.build-and-push.outputs.digest }}
@@ -460,7 +464,9 @@ jobs:
           ### Verify Locally
 
           \`\`\`bash
-          cosign verify \\
+          # Docker Hub stores the signature as a legacy tag (Docker Hub does not
+          # surface OCI 1.1 referrers); pass --registry-referrers-mode=legacy.
+          cosign verify --registry-referrers-mode=legacy \\
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\
             --certificate-identity-regexp="github.com/risk-sentinel/sparc" \\
             risksentinel/sparc:${VERSION}
