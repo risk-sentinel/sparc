@@ -1,0 +1,64 @@
+# syntax=docker/dockerfile:1
+# ── #742 UBI9 PROTOTYPE — NOT production. ────────────────────────────────
+# Tests the hypothesis: build sparc on registry.access.redhat.com/ubi9/ubi-minimal
+# with Ruby + jemalloc compiled from source, native gems building cleanly, and the
+# recurring Debian perl/glibc/OS CVE treadmill retired. Scan the runtime image and
+# compare against the Debian base.
+ARG RUBY_VERSION=3.4.4
+ARG RUBY_MAJOR=3.4
+ARG JEMALLOC_VERSION=5.3.0
+ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal:9.7
+
+# ── builder: toolchain + Ruby/jemalloc from source + gems ────────────────
+FROM ${UBI_IMAGE} AS builder
+ARG RUBY_VERSION
+ARG RUBY_MAJOR
+ARG JEMALLOC_VERSION
+
+RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
+      gcc gcc-c++ make git tar gzip bzip2 xz findutils which \
+      openssl-devel zlib-devel libyaml-devel libffi-devel readline-devel \
+      gdbm-devel ncurses-devel pkgconf-pkg-config postgresql-devel nodejs \
+    && microdnf clean all
+
+# jemalloc from source -> /usr/local/lib/libjemalloc.so.2 (LD_PRELOAD'd at runtime)
+RUN curl -sSfL "https://github.com/jemalloc/jemalloc/releases/download/${JEMALLOC_VERSION}/jemalloc-${JEMALLOC_VERSION}.tar.bz2" -o /tmp/jemalloc.tar.bz2 \
+    && mkdir -p /tmp/jemalloc && tar -xjf /tmp/jemalloc.tar.bz2 -C /tmp/jemalloc --strip-components=1 \
+    && cd /tmp/jemalloc && ./configure --prefix=/usr/local && make -j"$(nproc)" && make install \
+    && rm -rf /tmp/jemalloc*
+
+# Ruby from source -> /usr/local
+RUN curl -sSfL "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_VERSION}.tar.gz" -o /tmp/ruby.tar.gz \
+    && mkdir -p /tmp/ruby && tar -xzf /tmp/ruby.tar.gz -C /tmp/ruby --strip-components=1 \
+    && cd /tmp/ruby && ./configure --prefix=/usr/local --enable-shared --disable-install-doc \
+    && make -j"$(nproc)" && make install && rm -rf /tmp/ruby*
+
+ENV PATH=/usr/local/bin:$PATH \
+    BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_DEPLOYMENT=1 \
+    BUNDLE_WITHOUT="development test"
+
+WORKDIR /rails
+COPY Gemfile Gemfile.lock ./
+RUN ruby -v && gem install bundler --no-document && bundle install
+
+# ── runtime: ubi-minimal + runtime libs + compiled ruby/jemalloc + gems ──
+FROM ${UBI_IMAGE} AS runtime
+RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
+      openssl-libs zlib libyaml libffi readline gdbm-libs ncurses-libs \
+      libpq tzdata shadow-utils \
+    && microdnf clean all
+
+COPY --from=builder /usr/local /usr/local
+ENV PATH=/usr/local/bin:$PATH \
+    BUNDLE_PATH=/usr/local/bundle \
+    LD_PRELOAD=/usr/local/lib/libjemalloc.so.2 \
+    MALLOC_ARENA_MAX=2 \
+    RAILS_ENV=production
+
+RUN groupadd --system --gid 1000 rails \
+    && useradd rails --uid 1000 --gid 1000 --create-home --shell /sbin/nologin
+WORKDIR /rails
+USER 1000:1000
+# Smoke: Ruby runs, jemalloc is preloaded, bundler sees the gems.
+CMD ["ruby", "-v"]
