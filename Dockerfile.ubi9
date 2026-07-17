@@ -50,8 +50,13 @@ RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
     && microdnf clean all
 
 COPY --from=builder /usr/local /usr/local
+# Gemfile/Gemfile.lock only (from the builder's WORKDIR) so `bundle exec` can
+# resolve the installed bundle for the load smoke — the real app image adds /rails.
+COPY --from=builder /rails/Gemfile /rails/Gemfile.lock /rails/
 ENV PATH=/usr/local/bin:$PATH \
     BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_DEPLOYMENT=1 \
+    BUNDLE_WITHOUT="development test" \
     LD_PRELOAD=/usr/local/lib/libjemalloc.so.2 \
     MALLOC_ARENA_MAX=2 \
     RAILS_ENV=production

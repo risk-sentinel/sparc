@@ -1,0 +1,109 @@
+name: UBI9 Prototype Validation (#742)
+
+# ── EXPERIMENT (#742), manual-only. ──────────────────────────────────────
+# End-to-end validation of the UBI9 base-image migration hypothesis:
+#   1. Ruby + jemalloc compile from source on ubi9/ubi-minimal (real RH CDN,
+#      which the local sandbox can't reach).
+#   2. Native gems (pg / nokogiri / websocket-driver) build + LOAD.
+#   3. The Debian perl/glibc/OS CVE treadmill is retired (Grype scan).
+# Non-gating: reports to the run summary + uploads the scan; never fails the
+# repo's required checks. ROLLBACK = delete this file + Dockerfile.ubi9
+# (branch experiment/742_ubi9_prototype).
+
+on:
+  # Runs on push to the experiment branch (so it validates now without needing to
+  # live on the default branch). workflow_dispatch is kept for manual re-runs if
+  # this is ever promoted to main. ROLLBACK = delete the branch / this file.
+  push:
+    branches: [ 'experiment/742_ubi9_prototype' ]
+  workflow_dispatch:
+    inputs:
+      report_severity:
+        description: 'Severity floor to highlight in the summary (informational).'
+        type: choice
+        options: [critical, high]
+        default: critical
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ubi9-proto-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRYPE_VERSION: v0.115.0
+  IMAGE: sparc:ubi9-proto
+
+jobs:
+  build-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Build UBI9 runtime image (Ruby + jemalloc from source)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: Dockerfile.ubi9
+          target: runtime
+          load: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke — Ruby, jemalloc, native gems load
+        run: |
+          set -euo pipefail
+          {
+            echo "## UBI9 prototype smoke"
+            echo '```'
+            echo "base: $(docker run --rm "${IMAGE}" cat /etc/redhat-release)"
+            echo "ruby: $(docker run --rm "${IMAGE}" ruby -v)"
+            echo "jemalloc: $(docker run --rm "${IMAGE}" sh -c 'ls -l "$LD_PRELOAD" >/dev/null 2>&1 && echo preloaded @ "$LD_PRELOAD"')"
+            echo "gems: $(docker run --rm "${IMAGE}" bundle exec ruby -e 'require "pg"; require "nokogiri"; require "websocket-driver"; puts "pg+nokogiri #{Nokogiri::VERSION}+websocket-driver load OK"')"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Install Grype (pinned)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
+            | sh -s -- -b /usr/local/bin "${GRYPE_VERSION}"
+          grype version
+
+      - name: Scan UBI9 image (informational, non-gating)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          grype "${IMAGE}" -o json > grype-ubi9.json
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, collections
+          d = json.load(open("grype-ubi9.json"))
+          sev = collections.Counter()
+          treadmill = []
+          for m in d.get("matches", []):
+              s = m["vulnerability"].get("severity", "?"); sev[s] += 1
+              pn = m.get("artifact", {}).get("name", "")
+              if any(x in pn for x in ("perl", "glibc", "libc6", "libc-bin", "gnutls")) and s in ("Critical", "High"):
+                  treadmill.append(f"{s} {m['vulnerability']['id']} {pn}")
+          print("## UBI9 image Grype scan")
+          print("```")
+          print("severity:", dict(sev))
+          print(f"perl/glibc/gnutls crit+high: {len(treadmill)}")
+          for t in sorted(set(treadmill)): print(" ", t)
+          print("```")
+          print("_Compare: Debian ruby:3.4.4-slim base = 15 Critical / 77 High, 41 perl/glibc/gnutls crit+high._")
+          PY
+
+      - name: Upload Grype scan
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: ubi9-grype-scan
+          path: grype-ubi9.json
+          if-no-files-found: warn
