@@ -88,6 +88,5 @@ services:
         condition: service_started
     ports:
       - "3443:3443"
-    command: >-
-      caddy reverse-proxy --from https://localhost:3443 --to web:3000
-      --internal-certs
+    volumes:
+      - ./dev/ubi9/Caddyfile:/etc/caddy/Caddyfile:ro
