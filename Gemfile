@@ -59,8 +59,11 @@ gem "omniauth_openid_connect", "~> 0.8"        # Generic OIDC (Okta, Keycloak, E
 gem "net-ldap", "~> 0.19"                      # LDAP authentication
 gem "jwt", "~> 3.2"                            # JWT decoding for OIDC API token validation
 
-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem "tzinfo-data", platforms: %i[ mswin mingw jruby ]
+# Bundle the IANA tz database (pure Ruby) so TZInfo needs no system zoneinfo.
+# Not just Windows/JRuby: minimal Linux base images ship no usable
+# /usr/share/zoneinfo tab files either (e.g. UBI9 minimal, #742), so make it
+# unconditional. Harmless on Debian — TZInfo just prefers the gem data source.
+gem "tzinfo-data"
 
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"

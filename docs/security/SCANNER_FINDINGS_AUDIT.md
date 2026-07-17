@@ -1,7 +1,18 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-05-23 (#525, v1.7.0 sprint)
-**Cadence:** every major SPARC release, or whenever a new suppression is added.
+**Last reviewed:** 2026-07-17 (v1.12.0 — UBI9 base-image migration, #742)
+**Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
+or whenever a new suppression is added.
+
+> **v1.12.0 base-image migration (#742):** the production image moved from
+> Debian `ruby:3.4.4-slim` to Red Hat **UBI9 minimal**. This retired the entire
+> Debian perl/glibc/libgnutls CVE-disposition treadmill: the full UBI9 app image
+> scans **0 Critical** (Debian base was 15). The 26 Debian OS entries were pruned
+> from `docs/compliance/sparc-findings.yml` (91 findings remain), with the prior
+> Debian set preserved for rollback as `sparc-findings.debian.yml`. Residual UBI9
+> Highs (gnutls/curl/libpq/glib2/libacl — Red Hat-backported; erb/net-imap
+> default-gem shadows) are non-gating (`--fail-on critical`). See
+> `docs/dev/ubi9_migration_findings.md` for the scan comparison + A/B evidence.
 
 This document consolidates the state of every static-analysis and dependency-scanner suppression across SPARC's CI matrix. Goal: a pen-tester or operator asking "what's hiding behind the green CI badge?" gets a single readable answer.
 

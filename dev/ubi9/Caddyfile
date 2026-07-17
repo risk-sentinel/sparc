@@ -1,0 +1,24 @@
+# Local-validation TLS proxy for the UBI9 image (#742).
+# Terminates TLS (self-signed internal CA), forwards X-Forwarded-Proto so Rails'
+# assume_ssl is satisfied (Secure session cookie), and serves the two static
+# paths the browser auto-requests that the app doesn't ship (icon.svg is used) —
+# production infra serves these, so serving them here keeps the "loads-clean"
+# console-error smoke tests apples-to-apples with the deployment.
+localhost:3443 {
+	tls internal
+
+	handle /favicon.ico {
+		respond 204
+	}
+
+	handle /manifest.json {
+		header Content-Type application/manifest+json
+		respond `{"name":"SPARC","short_name":"SPARC","icons":[],"start_url":"/","display":"standalone"}` 200
+	}
+
+	handle {
+		reverse_proxy web:3000 {
+			header_up X-Forwarded-Proto https
+		}
+	}
+}

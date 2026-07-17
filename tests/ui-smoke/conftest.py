@@ -38,7 +38,10 @@ def base_url() -> str:
 @pytest.fixture
 def browser_context_args(browser_context_args):
     """Resolve relative page.goto() paths against the target deployment."""
-    return {**browser_context_args, "base_url": BASE_URL}
+    args = {**browser_context_args, "base_url": BASE_URL}
+    if os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1":
+        args["ignore_https_errors"] = True
+    return args
 
 
 def _bridge_token_to_cookie(token: str) -> dict:
@@ -47,6 +50,7 @@ def _bridge_token_to_cookie(token: str) -> dict:
         f"{BASE_URL}/api/v1/sessions/from_token",
         headers={"Authorization": f"Bearer {token}"},
         timeout=30.0,
+        verify=os.environ.get("SPARC_SMOKE_INSECURE_TLS") != "1",
     )
     assert resp.status_code == 204, (
         f"cookie-bridge POST /api/v1/sessions/from_token returned "
@@ -110,7 +114,8 @@ def authed_page(context, session_cookie, base_url):
 def user_authed_page(browser, user_session_cookie, base_url):
     """A second Playwright page on its own context, carrying the non-admin
     session cookie — for flows that need submitter ≠ approver in one test."""
-    ctx = browser.new_context(base_url=base_url)
+    extra = {"ignore_https_errors": True} if os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1" else {}
+    ctx = browser.new_context(base_url=base_url, **extra)
     ctx.add_cookies([_cookie_spec(user_session_cookie, base_url)])
     page = ctx.new_page()
     yield page

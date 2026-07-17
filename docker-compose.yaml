@@ -28,7 +28,9 @@ services:
       retries: 5
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile_debian   # dev stays on Debian (apt + runtime bundle); prod ships UBI9 ./Dockerfile
     user: root
     # Runtime apt deps for native gem extensions. zlib1g-dev is required to
     # compile the `zlib` gem added in #620 (CVE-2026-27820); without the header
@@ -61,7 +63,9 @@ services:
       # SSL_DEV: "true"              # Uncomment to enable HTTPS on port 3443
 
   sidekiq:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile_debian
     user: root
     # zlib1g-dev: see the web service — needed to compile the `zlib` gem (#620) (#561).
     command: bash -c "apt-get update -qq && apt-get install --no-install-recommends -y build-essential libpq-dev zlib1g-dev > /dev/null 2>&1; bundle install --quiet && bundle exec sidekiq"
