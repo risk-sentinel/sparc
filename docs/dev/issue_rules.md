@@ -30,6 +30,13 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   container (Chrome, zero CSP violations), authenticated with a locally-minted
   `ApiToken`. Green `rspec` alone is **not** sufficient — it never exercises the
   running image, routing, or CSP. **CI-only or docs-only changes are exempt.**
+- **Refresh the scanner-findings audit on every release** — cutting a release
+  (VERSION bump + tag) MUST update `docs/security/SCANNER_FINDINGS_AUDIT.md` in
+  the same release PR: re-run `bundle-audit` + Trivy + Grype, refresh the
+  **Last reviewed** date/version line, reconcile the finding counts and the
+  `sparc-findings.yml` / `.trivyignore` suppression inventory, and confirm every
+  suppression's review date is within 90 days (bump or clear stale ones). This
+  keeps the audit in cadence with the shipped image instead of drifting.
 
 ---
 

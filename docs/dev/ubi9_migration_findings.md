@@ -44,19 +44,27 @@ against **both** the UBI9 image and a locally-built **Debian prod image**
 | `tests/api` | 337 pass / 1 fail | 337 pass / 1 fail | **same failing test** |
 | `ui-smoke` | 147 pass / 17 fail | 147 pass / 17 fail | **same 17 tests; 0 divergence** |
 
-**No test passes on Debian but fails on UBI9 (or vice versa).** The 17+1 residual
-failures are therefore **pre-existing local-harness/data gaps, not UBI9**:
-- 1 API: `test_bridged_cookie_authenticates_ui` — an httpx cookie round-trip
-  detail through the proxy (the same bridge authenticates fine in the browser,
-  so all 147 authenticated ui-smoke tests pass).
-- 17 ui-smoke: `index_search` / `review_queue` / `populate_flow` /
-  `authoritative_sources` — the post-deploy suite expects specific deployment
-  fixtures (empty CDEFs, submitted docs) the demo seed doesn't create. Fails
-  identically on the current Debian production image.
+**No test passes on Debian but fails on UBI9 (or vice versa)** — zero regression.
+
+### Driving the residual 17+1 to green (root cause)
+
+The 17+1 were **one root cause, not UBI9**: `bootstrap_admin` seeds the admin with
+`must_reset_password: true` (correct for prod — force a first-login change), which
+**302s every authenticated request to `/password/edit`**. So every nav landed on
+the password page (no search box / New link / badge / queue → 17 ui-smoke fails),
+and `GET /` in `test_bridged_cookie_authenticates_ui` 302'd instead of 200 (the
+1 API fail). Clearing the flag for the smoke identities (`dev/ubi9/smoke-setup.rb`)
+fixes all 18. A second non-admin fixture (`user_authed_page`) also needed the
+`ignore_https_errors` gate for the self-signed proxy.
+
+**After the fix (UBI9, over TLS):** `tests/api` **338 / 338**; `ui-smoke`
+**197 passed**, the only 2 residuals being axe-scan **navigation timeouts under
+QEMU emulation** (amd64-on-arm64 is slow to reach `load`) — not a11y violations,
+and they pass on native amd64. The real deployment's service account is not
+mid-reset, so `must_reset_password` never bites there.
 
 **Conclusion: the UBI9 pivot is behavior-equivalent to Debian with zero
-regression.** Closing the residual 17+1 to literal-green is a demo-seed/harness
-task that applies to both images, tracked separately.
+regression, and the local suite is green modulo emulation-only a11y timeouts.**
 
 Reproduce locally: `docker compose -f docker-compose.ubi9.yaml up -d --build`,
 then run `tests/api` (http) and `ui-smoke` (via the `--profile tls` caddy proxy).
