@@ -68,7 +68,7 @@ jobs:
           # Native gems must LOAD (pg, websocket-driver = C extensions; note the
           # require path is websocket/driver, not the gem name websocket-driver).
           gems=$(docker run --rm "${IMAGE}" bundle exec ruby -e \
-            'require "pg"; require "nokogiri"; require "websocket/driver"; puts "pg + nokogiri #{Nokogiri::VERSION} + websocket-driver #{WebSocket::Driver::VERSION} load OK"')
+            'require "pg"; require "nokogiri"; require "websocket/driver"; puts "native gems (pg + nokogiri + websocket-driver, all C-ext) load OK"')
           {
             echo "## UBI9 prototype smoke"
             echo '```'
