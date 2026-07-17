@@ -15,10 +15,14 @@ ARG RUBY_VERSION
 ARG RUBY_MAJOR
 ARG JEMALLOC_VERSION
 
+# Required -devel for a Rails-capable Ruby: openssl (TLS), zlib (compression),
+# libyaml (psych/YAML), libffi (fiddle), plus libpq for the pg gem. readline /
+# gdbm / ncurses are NOT in the UBI9 repos and are optional — Ruby 3.4 uses the
+# pure-Ruby reline for irb, and Rails needs none of gdbm/curses.
 RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
-      gcc gcc-c++ make git tar gzip bzip2 xz findutils which \
-      openssl-devel zlib-devel libyaml-devel libffi-devel readline-devel \
-      gdbm-devel ncurses-devel pkgconf-pkg-config postgresql-devel nodejs \
+      gcc gcc-c++ make git tar gzip bzip2 xz findutils \
+      openssl-devel zlib-devel libyaml-devel libffi-devel \
+      pkgconf-pkg-config postgresql-devel \
     && microdnf clean all
 
 # jemalloc from source -> /usr/local/lib/libjemalloc.so.2 (LD_PRELOAD'd at runtime)
@@ -44,9 +48,10 @@ RUN ruby -v && gem install bundler --no-document && bundle install
 
 # ── runtime: ubi-minimal + runtime libs + compiled ruby/jemalloc + gems ──
 FROM ${UBI_IMAGE} AS runtime
+# Runtime shared libs the compiled Ruby + pg link against (matches the builder's
+# -devel set; readline/gdbm/ncurses omitted since Ruby was built without them).
 RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
-      openssl-libs zlib libyaml libffi readline gdbm-libs ncurses-libs \
-      libpq tzdata shadow-utils \
+      openssl-libs zlib libyaml libffi libpq tzdata shadow-utils \
     && microdnf clean all
 
 COPY --from=builder /usr/local /usr/local
