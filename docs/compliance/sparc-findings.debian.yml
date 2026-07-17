@@ -1,11 +1,8 @@
 # sparc-findings.yml -- SPARC container image CVE disposition tracking
 #
-# Tracks all Trivy/Grype container scan findings against the production Docker
-# image — Red Hat UBI9 minimal (ubi9/ubi-minimal) as of v1.12.0 (#742). Each
-# finding is triaged, dispositioned, and documented for the FedRAMP package.
-# The prior Debian (ruby:3.4.4-slim) disposition set is preserved for rollback
-# as sparc-findings.debian.yml; the Debian perl/glibc/libgnutls entries were
-# pruned here because those packages don't exist on UBI9.
+# Tracks all Trivy container scan findings against the production Docker
+# image (ruby:3.4.4-slim / Debian Bookworm 12.13). Each finding is triaged,
+# dispositioned, and documented for the FedRAMP authorization package.
 #
 # Disposition workflow: discovered -> triaged -> accepted/deferred/remediated
 #
@@ -44,6 +41,107 @@ findings:
   # CRITICAL_ALLOWED_DISPOSITIONS in bin/sparc_findings_to_hdf_amendments.rb.
   # Review cadence: 30 days regardless of disposition.
   # ==========================================================================
+
+  - cve_id: CVE-2026-33845
+    package: libgnutls30
+    installed_version: "3.7.9-2+deb12u6"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. GnuTLS DTLS handshake parsing flaw -- malformed fragments with zero length and non-zero offset cause integer underflow during reassembly, leading to out-of-bounds read (info disclosure or DoS). SPARC does NOT use DTLS in any code path and does NOT invoke libgnutls30: (a) no DTLS sockets are bound, (b) Rails/Puma uses TLS over TCP via libssl3 (OpenSSL), not GnuTLS, (c) outbound connections (PostgreSQL, Redis, S3, OIDC) are TCP-TLS only via OpenSSL. libgnutls30 is a transitive dependency of base-image apt/curl utilities removed via Dockerfile hardening (#342) -- present in image inventory but not loaded by the application. Attack vector requires a remote DTLS peer; surface is not reachable. Severity classification (CRITICAL) reflects upstream CVSS in the abstract, not effective risk in SPARC's deployment context. Remediation candidate when Debian Bookworm publishes a fix or on Trixie/distroless migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-8376
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. Heap buffer overflow in Perl_study_chunk (regcomp_study.c) when compiling a regex with a repeated fixed string -- the vulnerable size check is reached ONLY on 32-bit builds. SPARC ships exclusively as 64-bit container images (linux/amd64 and linux/arm64, ruby:3.4.4-slim); the 32-bit code path is unreachable. Debian has marked this won't-fix for Bookworm. perl is a transitive dependency of the ruby:slim base image, not invoked by the Rails application (all parsing/regex is Ruby/Onigmo, not perl). No 32-bit artifact is built or deployed. Remediation candidate on Debian Trixie/distroless migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-29"
+    next_review_date: "2026-06-28"
+
+  - cve_id: CVE-2026-42496
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Archive::Tar before 3.08 extracts symlinks whose targets escape the extraction directory (_make_special_file passes the tar linkname to symlink() without containment), enabling path traversal when extracting an attacker-controlled tar. SPARC never invokes perl's Archive::Tar: all archive/upload handling is Ruby (Marcel magic-byte sniffing, Rubyzip, OSCAL/Excel parsers) and no application code path shells out to perl tar/Archive::Tar. perl is a transitive dependency of the ruby:slim base image only. No fixed Debian perl package exists yet. Container runs as non-root (UID 1000) with no interactive shell. Remediation candidate when Debian ships a patched perl or on Trixie/distroless migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-29"
+    next_review_date: "2026-06-28"
+
+  - cve_id: CVE-2026-12087
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Out-of-bounds heap read in the perl Socket module's pack_ip_mreq_source() (Socket.xs): the length check validates the preceding multiaddr argument's byte count instead of the source argument, so a source shorter than 4 bytes passes validation and the fixed-size copy into imr_sourceaddr reads up to 3 bytes of adjacent heap (info disclosure; CVSS 9.1 from CISA-ADP). Reaching it requires a perl program to call Socket::pack_ip_mreq_source() -- the IP_ADD_SOURCE_MEMBERSHIP source-specific multicast helper -- with an attacker-influenced short source address. SPARC invokes no perl at all: it is a Ruby/Rails app where every socket/multicast/network operation is handled by Ruby (Puma, Ruby's Socket, net/http) and OpenSSL, never perl's Socket module, and SPARC performs no IP multicast group joins anywhere. perl is a transitive dependency of the ruby:3.4.4-slim base image only and no application code path shells out to perl. Container runs as non-root (UID 1000) with no interactive shell. Debian Bookworm ships no fixed perl (only libsocket-perl 2.041-1 is fixed in sid; the perl source package remains unfixed). Same present-but-unreachable basis as the other perl entries above. Remediation candidate when Debian ships a patched perl or on Trixie/distroless migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-21"
+    next_review_date: "2026-07-21"
+
+  - cve_id: CVE-2026-13221
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Perl through 5.43.9 produces silently incorrect regex matches when an alternation of >65535 fixed-string branches is compiled into a trie in Perl_study_chunk: the 16-bit delta field overflows and the trie's match table is corrupted. Triggering it requires a perl program to compile such a regex. SPARC invokes no perl at all -- it is a Ruby/Rails app and every regex/parse is Ruby/Onigmo, never perl. perl is a transitive dependency of the ruby:3.4.4-slim base image only; no application code path shells out to perl. Debian Bookworm ships no fixed perl. Same present-but-unreachable basis as CVE-2026-8376 (also Perl_study_chunk). Container runs non-root (UID 1000), no interactive shell. Remediation candidate on Debian Trixie/distroless migration (#742 UBI9)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-15"
+    next_review_date: "2026-08-14"
+
+  - cve_id: CVE-2026-57433
+    package: perl
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Storable before 3.41 (a perl core module) has a signed 32-bit integer overflow in retrieve_hook_common: an SX_HOOK record item count of I32_MAX wraps av_extend to a negative value, so a crafted blob passed to Storable thaw/retrieve corrupts memory. Reaching it requires perl code to deserialize an attacker-controlled Storable blob. SPARC invokes no perl and never uses Perl's Storable: all (de)serialization is Ruby (Marshal, JSON, OSCAL/Excel parsers). perl is a transitive dependency of the ruby:3.4.4-slim base image only; no application code path shells out to perl. Debian Bookworm ships no fixed perl. Same present-but-unreachable basis as the existing perl entries. Container runs non-root (UID 1000), no interactive shell. Remediation candidate on Debian Trixie/distroless migration (#742 UBI9)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-15"
+    next_review_date: "2026-08-14"
+
+  # --------------------------------------------------------------------------
+  # glibc (base-image core) — surfaced once Grype was bumped to v0.115.0 and
+  # could hydrate the current DB (v0.91.0 was stuck on an 8-week-stale DB).
+  # No patched libc6 in Debian Bookworm (wont-fix); retired by #742 (UBI9).
+  # --------------------------------------------------------------------------
+  - cve_id: CVE-2026-5450
+    package: libc6
+    installed_version: "2.36-9+deb12u14"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). One-byte heap buffer overflow in the GNU C Library (glibc 2.7-2.43) scanf-family functions when called with a %mc (malloc'd character match) conversion and an explicit field width > 1024. Reaching it requires C code to call scanf/sscanf/fscanf with the POSIX %mc allocating modifier and a >1024 width on attacker-influenced input. SPARC is a Ruby/Rails app and never calls the glibc scanf family with %mc: Ruby's own String#scanf is a pure-Ruby stdlib implementation, and no application or gem code path invokes C scanf with a malloc'd-char conversion on untrusted input. glibc is a core base-image (ruby:3.4.4-slim / Debian Bookworm) dependency that cannot be removed. Debian marked this wont-fix for Bookworm (no patched libc6). Container runs non-root (UID 1000), no interactive shell. Remediation candidate on a base-image point release or the Debian Trixie/distroless migration (#742 UBI9)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-15"
+    next_review_date: "2026-08-14"
+
+  - cve_id: CVE-2026-5450
+    package: libc-bin
+    installed_version: "2.36-9+deb12u14"
+    fixed_version: "none"
+    severity: CRITICAL
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (unreachable). Same glibc scanf %mc one-byte heap overflow as the libc6 entry above (CVE-2026-5450); libc-bin is the glibc binary-utilities package built from the same source. SPARC (Ruby/Rails) never invokes the glibc scanf family with a %mc allocating conversion on untrusted input. Base-image core dependency, Debian wont-fix. Remediation on base-image update / #742 (UBI9)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-15"
+    next_review_date: "2026-08-14"
 
   # NOTE: nokogiri criticals (GHSA-fr52-4hqw-p27f / cr5j-953j-xw5p /
   # qxcg-xjjg-66mj / 353f-x4gh-cqq8) are NOT dispositioned here — they were
@@ -162,6 +260,18 @@ findings:
   # HIGH -- 13 unique CVEs (4 existing + 9 new this PR)
   # ==========================================================================
 
+  - cve_id: CVE-2026-4046
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. glibc iconv vulnerability triggered only by IBM1390/IBM1399 character set conversions. SPARC exclusively uses UTF-8 encoding -- all file parser services enforce force_encoding('UTF-8'). No iconv calls, no IBM EBCDIC character set operations, no character set conversion in the application. Debian slim base image does not ship IBM charset locale data. Vulnerable code path is unreachable."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
   - cve_id: CVE-2025-69720
     package: libncursesw6
     installed_version: "6.4-4"
@@ -219,6 +329,18 @@ findings:
     severity: HIGH
     disposition: false_positive
     rationale: "FALSE POSITIVE. Heap buffer overflow in libgcrypt's gcry_pk_decrypt via crafted ECDH ciphertext. SPARC does NOT use libgcrypt: all application-layer cryptography goes through OpenSSL (libssl3) via Rails encrypted credentials, JWT RS256 verification, ActiveSupport::KeyGenerator (HKDF), and the Ruby openssl extension. ECDH operations specifically are not invoked anywhere in SPARC. libgcrypt20 is a transitive dependency of base-image apt/curl utilities (removed via #342 Dockerfile hardening but library files remain in image inventory). Vulnerable code path is not loaded. Remediation path: monitor Debian patch availability; eliminate via distroless base."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-06-05"
+
+  - cve_id: CVE-2026-33846
+    package: libgnutls30
+    installed_version: "3.7.9-2+deb12u6"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. Heap buffer overflow in GnuTLS DTLS handshake fragment reassembly (merge_handshake_packet). Same surface as CVE-2026-33845 -- SPARC does NOT use DTLS or GnuTLS in any code path. TLS is via OpenSSL (libssl3); libgnutls30 is a transitive dep of base-image apt/curl utilities. Attack vector requires a remote DTLS peer; surface is not reachable. See CVE-2026-33845 rationale for full deployment context."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
@@ -371,6 +493,54 @@ findings:
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
     next_review_date: "2026-07-05"
+
+  - cve_id: CVE-2025-15281
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
+
+  - cve_id: CVE-2026-0915
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
+
+  - cve_id: CVE-2026-4437
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
+
+  - cve_id: CVE-2026-4438
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: MEDIUM
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-07-08"
+    next_review_date: "2026-08-07"
 
   - cve_id: CVE-2023-50495
     package: libncursesw6
@@ -688,6 +858,78 @@ findings:
     discovery_date: "2026-05-06"
     next_review_date: "2026-09-03"
 
+  - cve_id: CVE-2010-4756
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
+
+  - cve_id: CVE-2018-20796
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
+
+  - cve_id: CVE-2019-1010023
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
+
+  - cve_id: CVE-2019-1010024
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
+
+  - cve_id: CVE-2019-1010025
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
+
+  - cve_id: CVE-2019-9192
+    package: libc-bin
+    installed_version: "2.36-9+deb12u13"
+    fixed_version: "none"
+    severity: LOW
+    disposition: accepted
+    rationale: "ACCEPTED RISK. glibc is the fundamental C runtime library -- every process in the container links to it. Cannot be removed. No fix available in Debian Bookworm. Remediation path: upgrade base image to Debian Trixie (tracked in separate issue)."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
+
   - cve_id: CVE-2018-6829
     package: libgcrypt20
     installed_version: "1.10.1-3"
@@ -815,6 +1057,30 @@ findings:
     severity: LOW
     disposition: accepted
     rationale: "ACCEPTED RISK. Ruby readline extension links to libncursesw6 at compile time. Removing ncurses may cause the Ruby binary to fail on startup. No interactive terminal attached in production -- ncurses code paths are not exercised. Cannot safely remove without recompiling Ruby. Remediation path: Debian Trixie upgrade."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
+
+  - cve_id: CVE-2011-4116
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: remediated
+    rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-05-06"
+    next_review_date: "2026-09-03"
+
+  - cve_id: CVE-2023-31486
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: LOW
+    disposition: remediated
+    rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
@@ -1073,6 +1339,54 @@ findings:
     severity: HIGH
     disposition: false_positive
     rationale: "FALSE POSITIVE (default-gem shadow). net-imap 0.5.8 HIGH CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 bundled and loaded, 0.5.8 default gem not activated, no Net::IMAP usage in SPARC."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-42497
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. libperl5.36 HIGH CVE with no Debian fix. perl is a transitive base-image dependency (apt/curl utilities removed via #342 hardening); SPARC executes no perl code -- all parsing/regex is Ruby/Onigmo. Same present-but-unreachable basis as the existing perl entries (CVE-2026-8376, CVE-2026-42496). Remediation candidate on distroless/Trixie migration."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-48959
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. libperl5.36 HIGH CVE, no Debian fix. perl unused by SPARC; same basis as CVE-2026-42497 and the existing perl false_positives."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-48962
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. libperl5.36 HIGH CVE, no Debian fix. perl unused by SPARC; same basis as CVE-2026-42497."
+    nist_control: si-2
+    reviewed_by: "@clem-field"
+    discovery_date: "2026-06-10"
+    next_review_date: "2026-07-10"
+
+  - cve_id: CVE-2026-9538
+    package: libperl5.36
+    installed_version: "5.36.0-7+deb12u3"
+    fixed_version: "none"
+    severity: HIGH
+    disposition: false_positive
+    rationale: "FALSE POSITIVE. libperl5.36 HIGH CVE, no Debian fix. perl unused by SPARC; same basis as CVE-2026-42497."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-10"

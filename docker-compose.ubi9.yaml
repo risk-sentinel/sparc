@@ -1,0 +1,92 @@
+# docker-compose.ubi9.yaml — local validation of the #742 UBI9 prototype image.
+#
+# Builds Dockerfile (the production image) + postgres/redis, and runs it
+# prod-style but with FORCE_SSL disabled + static files served so the existing
+# tests/api + ui-smoke suites can hit it over http://localhost:3000.
+#
+#   docker compose -f docker-compose.ubi9.yaml up -d --build
+#   # then: mint ApiTokens, run tests/api + ui-smoke against localhost:3000
+#
+# NOTE: the image is built linux/amd64 — the aarch64 UBI9 baseos metadata on
+# cdn-ubi.redhat.com is currently broken (empty package index), so on Apple
+# Silicon this builds + runs under emulation (slower, but functional).
+#
+# assume_ssl is hardcoded true in production.rb, so the session cookie is marked
+# Secure. Bearer-token API flows (tests/api) work over http; authenticated
+# ui-smoke (session cookie) needs the TLS proxy profile (`caddy`, below).
+name: sparc-ubi9
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ssp_tpr_manager_production
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+    volumes:
+      # Local-validation only: force disk storage (prod hardcodes S3). See file.
+      - ./dev/ubi9/zzz_local_storage.rb:/rails/config/initializers/zzz_local_storage.rb:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env          # reuse the dev SPARC_ENABLE_* auth flags
+    environment:
+      RAILS_ENV: production
+      # Production database.yml reads SPARC_DB_* (not DATABASE_URL); connect all
+      # four DBs (primary/cache/queue/cable) to the postgres service as superuser
+      # so db:prepare can create them.
+      SPARC_DB_HOST: db
+      SPARC_DB_PORT: "5432"
+      SPARC_DB_NAME: ssp_tpr_manager_production
+      SPARC_DB_USER: postgres
+      SPARC_DB_PASSWORD: password
+      REDIS_URL: redis://redis:6379/0
+      # Prod defaults Active Storage to S3; use local disk here so seeds that
+      # attach files don't reach for AWS/IMDS. AWS_REGION is a harmless fallback.
+      ACTIVE_STORAGE_SERVICE: local
+      AWS_REGION: us-east-1
+      # Prod enables Rack::Attack; disable for the test suite's rapid-fire writes
+      # (dev/test run with it off too). Orthogonal to UBI9.
+      SPARC_RATE_LIMITING_ENABLED: "false"
+      # Local-only dummy — NEVER a production secret.
+      SECRET_KEY_BASE: "ubi9-local-validation-not-for-production-0123456789abcdef0123456789abcdef"
+      FORCE_SSL: "false"
+      RAILS_SERVE_STATIC_FILES: "true"
+      SPARC_SEED_DEMO: "true"
+
+  # Optional TLS-terminating reverse proxy so authenticated ui-smoke (which needs
+  # the Secure session cookie) can run over https://localhost:3443.
+  #   docker compose -f docker-compose.ubi9.yaml --profile tls up -d
+  caddy:
+    image: caddy:2-alpine
+    profiles: [ "tls" ]
+    depends_on:
+      web:
+        condition: service_started
+    ports:
+      - "3443:3443"
+    volumes:
+      - ./dev/ubi9/Caddyfile:/etc/caddy/Caddyfile:ro
