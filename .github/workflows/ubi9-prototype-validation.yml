@@ -60,13 +60,22 @@ jobs:
       - name: Smoke — Ruby, jemalloc, native gems load
         run: |
           set -euo pipefail
+          # Each docker run is its own command so a real failure trips `set -e`
+          # (an `echo "$(...)"` would swallow a non-zero exit).
+          base=$(docker run --rm "${IMAGE}" cat /etc/redhat-release)
+          ruby=$(docker run --rm "${IMAGE}" ruby -v)
+          docker run --rm "${IMAGE}" sh -c '[ -e "$LD_PRELOAD" ]'   # jemalloc lib present
+          # Native gems must LOAD (pg, websocket-driver = C extensions; note the
+          # require path is websocket/driver, not the gem name websocket-driver).
+          gems=$(docker run --rm "${IMAGE}" bundle exec ruby -e \
+            'require "pg"; require "nokogiri"; require "websocket/driver"; puts "pg + nokogiri #{Nokogiri::VERSION} + websocket-driver #{WebSocket::Driver::VERSION} load OK"')
           {
             echo "## UBI9 prototype smoke"
             echo '```'
-            echo "base: $(docker run --rm "${IMAGE}" cat /etc/redhat-release)"
-            echo "ruby: $(docker run --rm "${IMAGE}" ruby -v)"
-            echo "jemalloc: $(docker run --rm "${IMAGE}" sh -c 'ls -l "$LD_PRELOAD" >/dev/null 2>&1 && echo preloaded @ "$LD_PRELOAD"')"
-            echo "gems: $(docker run --rm "${IMAGE}" bundle exec ruby -e 'require "pg"; require "nokogiri"; require "websocket-driver"; puts "pg+nokogiri #{Nokogiri::VERSION}+websocket-driver load OK"')"
+            echo "base: ${base}"
+            echo "ruby: ${ruby}"
+            echo "jemalloc: preloaded @ /usr/local/lib/libjemalloc.so.2"
+            echo "gems: ${gems}"
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
