@@ -60,7 +60,9 @@ class TestAdminCreateUser:
             authed_page.fill(PASSWORD, pw)
             authed_page.fill(CONFIRM, pw)
             authed_page.click('input[type="submit"]')
-            authed_page.wait_for_url("**/admin/users/*", timeout=10_000)
+            # Redirect lands on the show page /admin/users/<id> — require digits
+            # so we don't match the /admin/users/new we started on.
+            authed_page.wait_for_url(re.compile(r"/admin/users/\d+"), timeout=10_000)
             assert_no_csp_violations(authed_page, during="admin create user submit")
             m = re.search(r"/admin/users/(\d+)", authed_page.url)
             assert m, f"expected redirect to show page, got {authed_page.url}"
