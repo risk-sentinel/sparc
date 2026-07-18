@@ -26,6 +26,31 @@ module Admin
       @audit_events = AuditEvent.for_user(@user).recent.limit(50)
     end
 
+    # Admin-initiated account creation. Self-service registration is gated off
+    # (SPARC_ENABLE_USER_REGISTRATION); this is the admin path to provision
+    # accounts (e.g. local-login DAST test users). NIST AC-2.
+    def new
+      @user = User.new(status: "active")
+      @instance_roles = Role.where(scope: "instance").sorted
+    end
+
+    def create
+      # Thin client over the same provisioning contract as the API
+      # (Api::V1::UsersController#create) — privilege-safe :admin/:status.
+      @user = UserProvisioningService.new(actor: current_user).build(params.require(:user))
+      if @user.save
+        sync_instance_roles
+        audit_log("user_created", subject: @user,
+          metadata: { target_user_id: @user.id, target_email: @user.email, uuid: @user.uuid,
+                      admin: @user.admin?, status: @user.status })
+        redirect_to admin_user_path(@user), success: "User created."
+      else
+        @instance_roles = Role.where(scope: "instance").sorted
+        flash.now[:error] = @user.errors.full_messages.to_sentence
+        render :new, status: :unprocessable_entity
+      end
+    end
+
     def edit
       @instance_roles = Role.where(scope: "instance").sorted
       @authorization_boundary_roles_data = @user.user_roles.includes(:role, :authorization_boundary).where.not(authorization_boundary_id: nil)
