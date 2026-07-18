@@ -53,7 +53,13 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
 8. **Update project documentation:**
    - `docs/dev/Implemenation_plan.md` — mark issue complete, update phase status
    - `docs/dev/Developer_Collision_Avoidance_Plan.md` — update file lists, status
-   - `docs/dev/release_notes.md` — add entry at top of file (stacked)
+   - **Public-facing changes → update the GitHub wiki** (source under `wiki/`): if a
+     user, operator, or integrator would read it (new/changed feature, screen, route,
+     env var, role/permission, config), update the relevant wiki page in the same PR.
+     The wiki is the canonical public documentation and must stay current.
+   - **Release notes → the GitHub Release** for the shipping version (canonical);
+     the wiki Changelog gets a concise linked entry. Do **not** maintain a stacked
+     in-repo release-notes file.
    - Regression testing — add/update specs as appropriate
 9. **Compliance artifact review** — if the issue touches security-critical
    code (authentication, authorization, audit, session management, crypto,
@@ -211,6 +217,6 @@ In OSCAL CDEFs, use the `remarks` field to note configuration dependencies:
 
 - `docs/dev/Implemenation_plan.md` — phased roadmap and issue tracking
 - `docs/dev/Developer_Collision_Avoidance_Plan.md` — domain ownership and hot files
-- `docs/dev/release_notes.md` — stacked release notes
+- [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) — canonical release notes (the wiki Changelog is a concise index; `docs/dev/release_notes.md` is a frozen pre-Releases archive)
 - `docs/compliance/README.md` — compliance documentation guide
 - `docs/compliance/nist-sp800-53-rev5-mapping.md` — central NIST control mapping

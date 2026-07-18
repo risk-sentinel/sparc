@@ -1,19 +1,20 @@
 # Configuration Reference
 
-SPARC is configured via environment variables prefixed with `SPARC_`. All authentication features default to **disabled** (whitelist approach). See [docs/ENVIRONMENT_VARIABLES.md](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md) for the canonical reference.
+SPARC is configured via environment variables — most prefixed with `SPARC_`. All authentication features default to **disabled** (whitelist approach); enable one or more to activate the login page. This page (current for **v1.12.1**) is a curated operator/consumer reference. For the exhaustive list of every variable, including advanced deployment options, see [docs/ENVIRONMENT_VARIABLES.md](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md).
 
 ## Application
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SECRET_KEY_BASE` | (required) | Rails secret key for session encryption |
+| `SECRET_KEY_BASE` | (required in prod) | Rails secret key for session/cookie encryption (`bin/rails secret`) |
 | `RAILS_ENV` | `development` | Rails environment (development, test, production) |
-| `RAILS_MAX_THREADS` | `3` | Puma thread count |
-| `SPARC_APP_URL` | `http://localhost:3000` | Application base URL |
+| `RAILS_MAX_THREADS` | `5` | Puma thread pool + DB connection pool size |
+| `FORCE_SSL` | `true` (prod) | Enforce HTTPS redirects + HSTS header |
+| `SPARC_APP_URL` | `http://localhost:3000` | Application base public URL (used in emails, links, redirects) |
 | `SPARC_APP_NAME` | `SPARC` | Application display name |
-| `SPARC_CONTACT_EMAIL` | (none) | Contact email shown in UI |
-| `SPARC_WELCOME_TEXT` | (none) | Custom welcome text for login page |
-| `FORCE_SSL` | `true` (prod) | Enforce HTTPS redirects |
+| `SPARC_WELCOME_TEXT` | `Welcome to SPARC` | Custom welcome text on the login page |
+| `SPARC_CONTACT_EMAIL` | (none) | Support/admin contact email shown in UI |
+| `SPARC_RESOURCES` | (built-in defaults) | JSON array of external resource links for the Resources page |
 
 ## Database
 
@@ -21,39 +22,55 @@ SPARC is configured via environment variables prefixed with `SPARC_`. All authen
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | (none) | Full PostgreSQL connection URL |
+| `DATABASE_URL` | (none) | Full PostgreSQL connection URL (preferred) |
 | `SPARC_DB_HOST` | `localhost` | Database host |
 | `SPARC_DB_PORT` | `5432` | Database port |
 | `SPARC_DB_NAME` | `sparc` | Database name |
 | `SPARC_DB_USER` | (none) | Database user |
-| `SPARC_DB_PASSWORD` | (none) | Database password |
-| `SPARC_DB_SSLMODE` | (none) | PostgreSQL SSL mode |
+| `SPARC_DB_PASSWORD` | (none) | Database password (use a secrets manager in prod) |
+| `SPARC_DB_SSLMODE` | `prefer` | PostgreSQL SSL mode (disable, prefer, require, verify-full) |
 
 ## Authentication
 
-All auth features default to **disabled**. Set any of the following to `true` to enable.
+All auth features default to **disabled**. Enable one or more to activate `/login`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SPARC_ENABLE_LOCAL_LOGIN` | `false` | Enable email/password login |
+| `SPARC_ENABLE_EMAIL_CONFIRMATION` | `false` | Require email confirmation for new local accounts |
 | `SPARC_ENABLE_OIDC` | `false` | Enable OpenID Connect SSO |
 | `SPARC_ENABLE_LDAP` | `false` | Enable LDAP directory login |
-| `SPARC_ENABLE_USER_REGISTRATION` | `false` | Allow self-service registration |
-| `SPARC_SESSION_TIMEOUT_MINUTES` | `60` | Session inactivity timeout |
+| `SPARC_ENABLE_USER_REGISTRATION` | `false` | Allow self-service registration (usually `false` in prod) |
+| `SPARC_SESSION_TIMEOUT_MINUTES` | `60` | Session inactivity timeout (minutes) |
+| `SPARC_ADMIN_EMAIL` | `admin@sparc.local` | Email for the bootstrapped admin account |
+| `SPARC_PUBLIC_CATALOGS` | `false` | Make the Controls layer (catalogs, baselines, mappings) publicly readable without signing in. Secure-by-default off; enable only when SPARC is fronted by your own network auth (e.g. VPN) |
+
+> **Admin password rotation** is an operational concern managed via your secrets manager (AWS Secrets Manager on ECS), not a value you set as consumer config. See the deployment/rotation docs.
 
 ## OIDC / SSO
 
-Requires `SPARC_ENABLE_OIDC=true`. Compatible with Okta, Keycloak, Entra ID, Auth0.
+Requires `SPARC_ENABLE_OIDC=true`. Provider-agnostic — compatible with Okta, Keycloak, Entra ID, Auth0. See [docs/OKTA_DEV_SETUP.md](https://github.com/risk-sentinel/sparc/blob/main/docs/OKTA_DEV_SETUP.md) for an Okta walkthrough.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_OIDC_ISSUER_URL` | (required) | OIDC issuer URL (auto-discovers .well-known) |
+| `SPARC_OIDC_ISSUER_URL` | (required) | OIDC issuer URL (auto-discovers `.well-known/openid-configuration`) |
 | `SPARC_OIDC_CLIENT_ID` | (required) | OIDC client ID |
 | `SPARC_OIDC_CLIENT_SECRET` | (required) | OIDC client secret |
-| `SPARC_OIDC_REDIRECT_URI` | (auto) | Callback URL (auto-generated from APP_URL) |
-| `SPARC_OIDC_SCOPES` | `openid profile email` | OIDC scopes to request |
-| `SPARC_OIDC_PROVIDER_TITLE` | `SSO` | Button text on login page |
-| `SPARC_OIDC_FORCE_MFA` | `false` | Require MFA via ACR/amr claims |
+| `SPARC_OIDC_REDIRECT_URI` | (auto) | Callback URL (auto-derived from `SPARC_APP_URL`) |
+| `SPARC_OIDC_SCOPES` | `openid profile email` | Space-separated OIDC scopes |
+| `SPARC_OIDC_PROVIDER_TITLE` | `SSO` | Login-button/tab display name |
+| `SPARC_OIDC_FORCE_MFA` | `false` | Require MFA via ACR/amr claim validation |
+
+### API Authentication Mode
+
+Controls which auth method the REST API accepts (mutually exclusive).
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_API_AUTH` | `local` | API auth mode: `local`, `oidc`, or `hybrid` |
+| `SPARC_API_OIDC_AUDIENCE` | `SPARC_OIDC_CLIENT_ID` | Expected `aud` claim in OIDC JWTs (oidc/hybrid only) |
+
+`hybrid` is recommended for production: humans authenticate via OIDC JWT (MFA enforced by IdP), CI/CD pipelines use SPARC service-account tokens.
 
 ## LDAP
 
@@ -71,24 +88,49 @@ Requires `SPARC_ENABLE_LDAP=true`.
 
 ## OAuth Providers
 
-Auto-enabled when client ID is present (no separate enable flag needed).
+Auto-enabled when the client ID is present (no separate enable flag needed).
 
 ### GitHub
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_GITHUB_CLIENT_ID` | (none) | GitHub OAuth app client ID |
+| `SPARC_GITHUB_CLIENT_ID` | (none) | GitHub OAuth app client ID (auto-enables when set) |
 | `SPARC_GITHUB_CLIENT_SECRET` | (none) | GitHub OAuth app client secret |
 
 ### GitLab
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_GITLAB_CLIENT_ID` | (none) | GitLab OAuth app client ID |
-| `SPARC_GITLAB_CLIENT_SECRET` | (none) | GitLab OAuth app client secret |
+| `SPARC_GITLAB_CLIENT_ID` | (none) | GitLab application ID (auto-enables when set) |
+| `SPARC_GITLAB_CLIENT_SECRET` | (none) | GitLab application secret |
 | `SPARC_GITLAB_SITE` | `https://gitlab.com` | GitLab instance URL (for self-hosted) |
 
+## Consent Banner & Environment Header
+
+### Login Consent Banner
+
+Shows a mandatory consent/warning modal before login options appear. The banner HTML is loaded from the file at `SPARC_BANNER_MESSAGE` (resolved against `Rails.root`) and sanitized for XSS. Sample files live in `docs/banners/`.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_BANNER_ENABLED` | `false` | Show the mandatory consent banner on the login page |
+| `SPARC_BANNER_MESSAGE` | (none) | File path to the banner HTML body (required if enabled) |
+
+### Environment / Rules-of-Behavior Header (NIST AC-8)
+
+Shows a configurable header bar on **every screen** describing the deployment environment and its rules of behavior (e.g. `PRODUCTION — Authorized use only`). Default-off: an empty/unset `SPARC_HEADER_TEXT` renders no header. Text is escaped plain text (full UTF-8 supported). Maps to NIST **AC-8 (System Use Notification)**.
+
+> Colors are operator-defined and **contrast is not enforced** — you are responsible for readable contrast. Values are validated against a strict hex/`rgb()` grammar; a malformed value falls back to the default. Built-in defaults pass WCAG AA.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_HEADER_TEXT` | (none) | Short environment/rules text shown on all screens; empty hides the header |
+| `SPARC_HEADER_TEXT_COLOR` | `#ffffff` | Header text color (hex or `rgb()`/`rgba()`); invalid falls back to default |
+| `SPARC_HEADER_HIGHLIGHT_COLOR` | `#1f6fa5` | Header highlight/background color; invalid falls back to default |
+
 ## Email / SMTP
+
+Required for registration confirmation, password resets, and notifications.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -105,39 +147,142 @@ Auto-enabled when client ID is present (no separate enable flag needed).
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_LOG_TO_STDOUT` | `true` (prod) | Log to STDOUT (for container logs) |
-| `SPARC_STRUCTURED_LOGGING` | `false` | Enable structured JSON log format |
-| `SPARC_LOG_LEVEL` | `info` | Log level (debug, info, warn, error, fatal) |
+| `SPARC_LOG_TO_STDOUT` | `false` (`true` in prod) | Log to STDOUT (for container logs) |
+| `SPARC_STRUCTURED_LOGGING` | `false` | Emit JSON logs (CloudWatch/ELK/Splunk friendly) |
+| `SPARC_LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
 
-## Storage
+## Storage & Uploads
+
+By default SPARC stores uploads on local disk. Set `ACTIVE_STORAGE_SERVICE=amazon` to use S3.
+
+> **Production S3 access uses the ECS task IAM role** — no static AWS keys are configured as app environment variables. Grant the task role S3 permissions on your bucket via your deployment infrastructure.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ACTIVE_STORAGE_SERVICE` | `local` | Storage backend (local or amazon) |
-| `AWS_ACCESS_KEY_ID` | (none) | AWS access key (for S3 storage) |
-| `AWS_SECRET_ACCESS_KEY` | (none) | AWS secret key |
-| `AWS_REGION` | (none) | AWS region |
-| `AWS_BUCKET` | (none) | S3 bucket name |
+| `ACTIVE_STORAGE_SERVICE` | `local` | Storage backend (`local` or `amazon`) |
+| `SPARC_PERSIST_S3_BLOB` | `true` (retain) | Keep the original upload blob after a successful parse so exported documents keep durable back-matter artifacts. Set `false` to purge-after-parse |
+| `SPARC_MAX_UPLOAD_MB` | `50` | Max upload size (MB) for all document types; also caps uncompressed zip totals (zip-bomb defense) |
+| `SPARC_MAX_AVATAR_MB` | `2` | Max user-avatar upload size (MB), separate from document uploads |
+
+Align your reverse-proxy body cap to roughly `SPARC_MAX_UPLOAD_MB + 10 MB` so the proxy fails fast on oversized requests.
+
+### Cookieless User-Data Subdomain
+
+User-uploaded blobs are served from a separate cookieless hostname so injected scripts can never read the SPARC session cookie.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_USERDATA_HOST` | (derived) | Override hostname for serving ActiveStorage blobs; when unset, derived as `userdata.<host>` from `SPARC_APP_URL`. Most operators don't need to set this |
+
+## Rate Limiting
+
+Rack::Attack throttle thresholds. Defaults are conservative; tighten for high-security tenants. Throttled requests get HTTP `429` with `Retry-After`.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_RATE_LIMITING_ENABLED` | `true` | Master kill switch for all throttles (set `false` for emergency triage) |
+| `SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP` | `30` | Per-IP cap on upload endpoints |
+| `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` | `100` | Per-user cap on upload endpoints |
+| `SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE` | `300` | Per-token cap on `/api/v1` write methods |
+| `SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN` | `5` | Per-IP cap on login failures (credential-stuffing defense) |
+| `SPARC_RATE_LIMIT_SAFELIST_CIDRS` | `127.0.0.1,::1` | CIDRs that bypass all throttles (health checks, NLB targets) |
+
+## Document Lifecycle & Workflow
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_REQUIRE_DOCUMENT_APPROVAL` | `false` | Require documents to pass an approval workflow before finalization |
+| `SPARC_INACTIVITY_DAYS` | `30` | Days of user inactivity before an account is auto-deactivated |
+| `SPARC_PASSWORD_EXPIRY_DAYS` | `30` | Days before a local-auth password expires (SSO users exempt) |
+| `SPARC_SA_INACTIVITY_DAYS` | `90` | Days of inactivity before a service account is auto-disabled |
+| `SPARC_PROCESSING_STUCK_MINUTES` | `5` | Minutes after which a stuck document stops auto-refreshing its show page |
+
+## Artifact Retention
+
+Controls automatic cleanup of orphaned upload artifacts and per-version copies.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_ARTIFACT_REAPER_ENABLED` | `true` | Enable the recurring artifact-reaper job that prunes orphaned blobs |
+| `SPARC_ARTIFACT_REAPER_INTERVAL_DAYS` | `7` | How often the artifact-reaper job runs |
+| `SPARC_ARTIFACT_COPY_PER_VERSION` | `true` | Keep a distinct artifact copy per document version for durable back-matter |
+
+## Dynamic Roles
+
+Comma-separated lists overriding the built-in defaults. Set these **before** inviting members — existing assignments are not migrated.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_ORGANIZATION_ROLES` | (built-in agency roles) | Role names available to organization members (plus the always-present "Org Admin") |
+| `SPARC_AUTH_BOUNDARY_ROLES` | (built-in ATO roles) | Role names available to authorization-boundary members |
+
+## OSCAL Organization Metadata
+
+Default values embedded in generated OSCAL exports (SSP, SAR, CDEF). Empty values are omitted from exports.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_ORG_NAME` | `Default Organization` | Organization name in OSCAL metadata |
+| `SPARC_ORG_DESCRIPTION` | (none) | Organization description |
+| `SPARC_ORG_ADDRESS` | (none) | Organization address |
+| `SPARC_ORG_CONTACT_PERSON` | (none) | Primary contact person |
+| `SPARC_ORG_CONTACT_EMAIL` | (none) | Primary contact email |
+
+## HDF Normalization
+
+Controls how Heimdall Data Format (HDF) inputs are normalized during SAR/POAM conversion.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_HDF_NORMALIZE_BASELINES` | (enabled) | Inject an empty `baselines` array when SAR conversion requires it (hdf-cli 3.2.0 contract) |
+| `SPARC_HDF_ALLOWED_VERSIONS` | (built-in set) | Comma-separated list of accepted HDF schema versions |
+
+## DISA CCI Catalog Retrieval
+
+Source URL and revision set used when SPARC fetches the DISA CCI list for NIST 800-53 mapping. Override the URL for air-gapped or mirror environments.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_DISA_CCI_URL` | DISA cyber.mil ZIP URL | Source URL for the DISA CCI list ZIP |
+| `SPARC_CCI_REVS` | `4,5` | Comma-separated NIST 800-53 revisions to extract from the CCI list |
+
+## AWS Labs CDEF Ingestion
+
+Runtime ingestion of OSCAL Component Definitions from [`awslabs/oscal-content-for-aws-services`](https://github.com/awslabs/oscal-content-for-aws-services). Off by default so air-gapped tenants are unaffected. Imported CDEFs are read-only; users click "Copy for editing" to amend.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_AWS_LABS_CDEF_ENABLED` | `false` | Master switch for AWS Labs CDEF ingestion |
+| `SPARC_AWS_LABS_CDEF_REPO` | `awslabs/oscal-content-for-aws-services` | Override source repo (internal fork/mirror) |
+| `SPARC_AWS_LABS_CDEF_BRANCH` | `main` | Pin to a tag or branch for reproducibility |
+| `SPARC_AWS_LABS_OSCAL_VERSIONS` | (auto-detect) | CSV of OSCAL spec versions to ingest |
+| `SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS` | `7` | How often the recurring refresh job runs (clamped 1..90) |
+| `SPARC_AWS_LABS_GITHUB_TOKEN` | (unset) | Optional GitHub PAT (`contents:read`) to raise the API rate limit 60→5000/hr |
 
 ## Redis / Background Jobs
 
+**Solid Queue is the default background-job backend and needs no Redis.** Redis (with the optional Sidekiq adapter) is only required if you explicitly opt into Sidekiq.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL (required only when using the optional Sidekiq adapter; Solid Queue is the default and needs no Redis) |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL — required **only** when using the optional Sidekiq adapter |
+| `SOLID_QUEUE_IN_PUMA` | (unset) | Run Solid Queue in-process with Puma (single-server deploys) |
+| `JOB_CONCURRENCY` | `1` | Number of Solid Queue worker processes |
 
 ## Docker Compose Defaults
 
-Development `docker-compose.yaml` uses offset ports to avoid conflicts with local services:
+Development `docker-compose.yaml` uses offset host ports to avoid conflicts with local services:
 
 | Service | Container Port | Host Port |
 |---------|---------------|-----------|
 | PostgreSQL | 5432 | **5433** |
-| Redis | 6379 | **6380** |
+| Redis (optional) | 6379 | **6380** |
 | Web | 3000 | 3000 |
+
+> The Redis container ships in the Compose file for convenience but is only exercised when you opt into the Sidekiq adapter; the default Solid Queue backend does not use it.
 
 ## Related
 
-- [docs/ENVIRONMENT_VARIABLES.md](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md) -- Canonical reference
-- [docs/AUTHENTICATION.md](https://github.com/risk-sentinel/sparc/blob/main/docs/AUTHENTICATION.md) -- Auth provider setup guide
-- [docs/OKTA_DEV_SETUP.md](https://github.com/risk-sentinel/sparc/blob/main/docs/OKTA_DEV_SETUP.md) -- Okta OIDC configuration walkthrough
-- [Issue #38](https://github.com/risk-sentinel/sparc/issues/38) -- Environment variables configuration reference
+- [docs/ENVIRONMENT_VARIABLES.md](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md) — Exhaustive canonical reference (all variables, including advanced deployment options)
+- [docs/AUTHENTICATION.md](https://github.com/risk-sentinel/sparc/blob/main/docs/AUTHENTICATION.md) — Auth provider setup guide
+- [docs/OKTA_DEV_SETUP.md](https://github.com/risk-sentinel/sparc/blob/main/docs/OKTA_DEV_SETUP.md) — Okta OIDC configuration walkthrough

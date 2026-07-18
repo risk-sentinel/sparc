@@ -2,6 +2,8 @@
 
 This page provides a comprehensive inventory of every screen in the SPARC application, organized by the OSCAL layer structure. Each section includes route paths, access requirements, and key UI elements.
 
+_Current as of app version **v1.12.1**. Routes are authoritative per `config/routes.rb`; the version badge in the navbar renders dynamically from `SparcConfig::VERSION`._
+
 ---
 
 ## Navigation Structure
@@ -13,10 +15,11 @@ The application uses a dark sticky navbar (`navbar-dark bg-dark sticky-top`) tha
 | Left | SPARC logo | Always | Responsive SVG logo linked to root path |
 | Left | Version badge | Always | Secondary badge rendered dynamically from `SparcConfig::VERSION` (the running app version) |
 | Center-Right | Home | Always | Nav link to `/` |
-| Center-Right | Controls dropdown (blue) | Always | Control Catalogs, Baselines, Mappings |
+| Center-Right | Controls dropdown (blue) | Always | Control Catalogs, Baselines, Mappings, Converters |
 | Center-Right | Implementation dropdown (green) | Auth required | System Security Plans, Component Definitions |
 | Center-Right | Assessment dropdown (orange) | Auth required | Assessment Plans, Assessment Results, Evidence, POA&Ms |
 | Center-Right | Authorization Boundaries | Auth required | Standalone nav link |
+| Center-Right | Trust Store / workflow | Auth required | Authoritative Sources, Review Queue, Promotion Queue, Federation Peers (surfaced per role/config) |
 | Right | Theme toggle | Always | Light/dark mode button, persisted via `localStorage` key `sparc-theme` |
 | Right | User menu | Signed in | Avatar/initials, display name, dropdown with Profile, Change Password, Admin section (Instance Admin only), Sign Out |
 | Right | Login button | Not signed in | `btn-outline-info` button linking to `/login` |
@@ -40,6 +43,7 @@ The application uses a dark sticky navbar (`navbar-dark bg-dark sticky-top`) tha
 | Control Catalogs | `/control_catalogs` | Book |
 | Baselines | `/profile_documents` | Clipboard |
 | Mappings | `/control_mappings` | Arrows |
+| Converters | `/converters` | Refresh |
 
 ### Implementation Dropdown Items
 
@@ -310,6 +314,36 @@ Action buttons: Edit, Publish (for draft/not-complete status), Deprecate (for co
 
 **Relationship types** (per NIST IR 8477): equal, equivalent, subset, superset, intersects.
 
+#### Converters List
+
+| | |
+|---|---|
+| **Route** | `GET /converters` |
+| **Controller** | `ConvertersController#index` |
+| **Auth** | Public (view); `converters.write` permission for mutations |
+
+Lists rule-to-NIST converter registries (e.g. DISA CCI, AWS Config, AWS Security Hub) with name, source, entry count, and last-refresh timestamp. Buttons: "New", "Import" (`/converters/import`), and the STIG parser (`/converters/stig_parser`).
+
+#### Converter Detail
+
+| | |
+|---|---|
+| **Route** | `GET /converters/:id` |
+| **Controller** | `ConvertersController#show` |
+| **Auth** | Public (view); `converters.write` for mutations |
+
+Shows the converter's mapping entries (source rule ID → NIST control IDs). Actions include Export (`GET export`), and refresh buttons that pull the latest upstream mappings: Refresh CCI (`POST refresh_cci`), Refresh AWS Config (`POST refresh_aws_config`, #494), Refresh AWS Security Hub (`POST refresh_aws_security_hub`, #494). Nested entry add/remove via `converter_entries` (`POST/DELETE /converters/:id/entries`) rendered as inline form rows.
+
+#### Converter Create / Edit / Import / STIG Parser
+
+| | |
+|---|---|
+| **Routes** | `GET /converters/new`, `GET /converters/:id/edit`, `GET /converters/import` (`POST do_import`), `GET /converters/stig_parser` (`POST import_stig`) |
+| **Controller** | `ConvertersController#new`, `#edit`, `#import`, `#stig_parser` |
+| **Auth** | `converters.write` |
+
+Metadata form (name, source, description); import form accepting converter definition files; STIG parser upload that extracts rule → control mappings from a DISA STIG XCCDF file.
+
 ---
 
 ### Implementation Layer (auth required)
@@ -555,6 +589,12 @@ File preview, linked controls, and attestation list. Actions: Edit, Delete. Nest
 
 Form fields: attester name, date, role, attestation statement. Scoped within an evidence record.
 
+---
+
+### POA&M Layer (auth required)
+
+Plans of Action & Milestones. The `PoamDocument` carries a rich set of OSCAL-extensibility child entities (#423), each with its own nested admin CRUD UI, plus a leveraging-side read-only view of leveraged-system POA&Ms (#415).
+
 #### POA&M List
 
 | | |
@@ -573,17 +613,77 @@ Summary tiles with document and item counts. Lists all POA&M documents with name
 | **Controller** | `PoamDocumentsController#show` |
 | **Auth** | Required |
 
-Items displayed with pagination. Filter options for risk status and impact level. Heatmap visualization of risk distribution. Editable metadata via inline toggle. Export buttons: OSCAL (validated/unvalidated), JSON. Nested POA&M item creation.
+Items displayed with pagination. Filter options for risk status and impact level. Heatmap visualization of risk distribution. Editable metadata via inline toggle. Publish/publish-check actions. Export buttons: OSCAL (validated/unvalidated), JSON, YAML, XML. Sections for each child-entity type (items, risks, remediations, observations, findings, local components) with "New" buttons linking to the nested forms below. Nested back-matter resource management.
 
 #### POA&M Item Create / Edit
 
 | | |
 |---|---|
-| **Routes** | `GET /poam_documents/:poam_document_id/poam_items/new`, `GET /poam_documents/:poam_document_id/poam_items/:id/edit` |
+| **Routes** | `GET /poam_documents/:poam_document_id/poam_items/new`, `.../poam_items/:id/edit` |
 | **Controller** | `PoamItemsController#new`, `#edit` |
 | **Auth** | Required |
 
 Form fields: risk ID, finding source, status, impact level, remediation plan, scheduled completion date, milestones.
+
+#### POA&M Risk Create / Edit
+
+| | |
+|---|---|
+| **Routes** | `GET /poam_documents/:poam_document_id/poam_risks/new`, `.../poam_risks/:id/edit` |
+| **Controller** | `PoamRisksController#new`, `#edit` |
+| **Auth** | Required |
+
+OSCAL `risk` form: title, description, statement, status, deadline, threat/characterization fields.
+
+#### POA&M Remediation Create / Edit (with nested Milestones)
+
+| | |
+|---|---|
+| **Routes** | `GET /poam_documents/:poam_document_id/poam_remediations/new`, `.../poam_remediations/:id/edit`; nested `.../poam_remediations/:poam_remediation_id/poam_milestones/new`, `.../poam_milestones/:id/edit` |
+| **Controller** | `PoamRemediationsController`, `PoamMilestonesController` |
+| **Auth** | Required |
+
+OSCAL `response` (remediation) form: lifecycle, title, description, remarks. Milestones are nested under a remediation with their own new/edit forms (title, description, target date).
+
+#### POA&M Observation Create / Edit
+
+| | |
+|---|---|
+| **Routes** | `GET /poam_documents/:poam_document_id/poam_observations/new`, `.../poam_observations/:id/edit` |
+| **Controller** | `PoamObservationsController#new`, `#edit` |
+| **Auth** | Required |
+
+OSCAL `observation` form: title, description, methods, collected/expires timestamps.
+
+#### POA&M Finding Create / Edit
+
+| | |
+|---|---|
+| **Routes** | `GET /poam_documents/:poam_document_id/poam_findings/new`, `.../poam_findings/:id/edit` |
+| **Controller** | `PoamFindingsController#new`, `#edit` |
+| **Auth** | Required |
+
+OSCAL `finding` form: title, description, target/objective status, related-observation and related-risk references.
+
+#### POA&M Local Component Create / Edit
+
+| | |
+|---|---|
+| **Routes** | `GET /poam_documents/:poam_document_id/poam_local_components/new`, `.../poam_local_components/:id/edit` |
+| **Controller** | `PoamLocalComponentsController#new`, `#edit` |
+| **Auth** | Required |
+
+OSCAL `local-definitions` component form: type, title, description, status — components referenced by the POA&M but not defined in a linked SSP.
+
+#### Leveraged POA&M Documents (read-only)
+
+| | |
+|---|---|
+| **Routes** | `GET /leveraged_poam_documents`, `GET /leveraged_poam_documents/:id` |
+| **Controller** | `LeveragedPoamDocumentsController#index`, `#show` |
+| **Auth** | Required |
+
+Leveraging-side read-only view of POA&Ms inherited from a leveraged (underlying) system (#415, Scenario A). Index lists inherited POA&Ms; detail shows their items without edit controls, since the leveraging system does not own them.
 
 ---
 
@@ -631,6 +731,26 @@ Form fields: name, description, environment classification.
 | **Auth** | Required |
 
 Add, edit, or remove team members with role assignment via dropdown.
+
+#### ATO Package Wizard
+
+| | |
+|---|---|
+| **Routes** | `GET /authorization_boundaries/:id/ato_wizard`, `POST .../create_ato_package`, `GET .../download_ato_package` |
+| **Controller** | `AuthorizationBoundariesController#ato_wizard`, `#create_ato_package`, `#download_ato_package` |
+| **Auth** | Required |
+
+Assembles an Authorization-to-Operate package (bundled SSP/SAP/SAR/POA&M/evidence artifacts) for the boundary, then offers it as a downloadable archive.
+
+#### Leveraged Authorizations
+
+| | |
+|---|---|
+| **Routes** | `GET /authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/new`, `.../leveraged_authorizations/:id` (show), `POST .../leveraged_authorizations/:id/populate` |
+| **Controller** | `LeveragedAuthorizationsController#new`, `#show` |
+| **Auth** | Required |
+
+Records a leveraged (inherited) authorization on the leveraging boundary (#396). New form captures the leveraged system name/ID and party; the detail view shows the leveraged authorization with a "Populate" action that pulls inherited controls/components from the underlying system. Created on the leveraging boundary, not the leveraged one.
 
 ---
 
@@ -770,11 +890,11 @@ Full event metadata display: timestamp, user, action, category, subject type and
 
 | | |
 |---|---|
-| **Routes** | `GET /admin/organizations`, `…/new`, `…/:id/edit` (no destroy) |
+| **Routes** | `GET /admin/organizations`, `…/new`, `…/:id`, `…/:id/edit` (no destroy); member ops `PATCH deactivate`/`reactivate`, `POST add_member`, `DELETE remove_member` |
 | **Controller** | `Admin::OrganizationsController` |
 | **Auth** | Instance Admin |
 
-Manage organization entities (UUID-based audit traceability) for multi-org instances. Create and edit only — organizations are never hard-deleted.
+Manage organization entities (UUID-based audit traceability) for multi-org instances. Create/edit/detail plus soft deactivate/reactivate and member add/remove — organizations are never hard-deleted.
 
 #### Service Accounts & API Tokens
 
@@ -798,6 +918,116 @@ Status view for **deferred data migrations** (v1.8.3) — migrations that regist
 
 ---
 
+### Trust Store & Document Workflow (auth required)
+
+The trust store holds authoritative back-matter sources and drives the document review/approval and cross-instance federation workflows.
+
+#### Authoritative Sources
+
+| | |
+|---|---|
+| **Routes** | `GET /authoritative_sources`, `GET /authoritative_sources/:id`, `GET /authoritative_sources/new`, `POST /authoritative_sources` |
+| **Controller** | `AuthoritativeSourcesController#index`, `#show`, `#new`, `#create` |
+| **Auth** | Required (any authenticated user may add a source, #646) |
+
+Library of authoritative back-matter resources (#372) usable across documents. Sources are org/boundary-scoped by default and become instance-wide via the promotion approval workflow. Index lists sources with scope; detail shows the resource and its usages; new/create adds a source.
+
+#### Review Queue
+
+| | |
+|---|---|
+| **Route** | `GET /review_queue` |
+| **Controller** | `ReviewQueueController#index` |
+| **Auth** | Required (reviewer permission) |
+
+Consolidated queue of trust-store documents (Control Catalog, Baseline/Profile, CDEF) submitted for review (#630). Each row links to the underlying document's approve/reject actions (`POST submit_for_review`, `POST approve`, `POST reject` on the respective document controllers).
+
+#### Promotion Queue
+
+| | |
+|---|---|
+| **Routes** | `GET /promotion_queue`, `POST /promotion_queue/:id/approve`, `POST /promotion_queue/:id/reject` |
+| **Controller** | `PromotionQueueController#index` |
+| **Auth** | Required (approver permission) |
+
+Queue of back-matter resources requesting promotion from org/boundary scope to instance-wide authoritative scope (#372). Approve/Reject actions per row.
+
+#### Federation Peers
+
+| | |
+|---|---|
+| **Routes** | `GET /federation_peers`, `GET /federation_peers/:id`, `GET /federation_peers/new`, `GET /federation_peers/:id/edit`, `POST /federation_peers/:id/sync` |
+| **Controller** | `FederationPeersController` |
+| **Auth** | Required (admin/federation permission) |
+
+Manage trusted peer SPARC instances for cross-instance authoritative-source sharing (#372). List/detail/create/edit peers (name, base URL, shared-secret config); the per-peer "Sync" action exchanges HMAC-signed authoritative-source bundles with the peer.
+
+---
+
+### Artifacts & Back-Matter (auth required)
+
+Durable OSCAL back-matter and evidence artifacts. Documents carry nested back-matter resources; the artifact resolver serves stable-UUID downloads.
+
+#### Artifact Resolver
+
+| | |
+|---|---|
+| **Routes** | `GET /artifacts/:uuid`, `GET /artifacts/versions/:uuid` |
+| **Controller** | `ArtifactsController#show`, `#version` |
+| **Auth** | Required |
+
+No HTML screen — resolves a stable back-matter UUID to a freshly-signed download and returns a 302 redirect (#680). `versions/:uuid` resolves a specific retained content version. Referenced by durable OSCAL back-matter `href` values so links survive slug/content changes.
+
+#### Back-Matter Resources (nested)
+
+| | |
+|---|---|
+| **Routes** | `POST/PATCH/DELETE /<document>/:id/back_matter_resources/...` on `ssp_documents`, `sar_documents`, `sap_documents`, `poam_documents`, `profile_documents`, `cdef_documents`, `control_catalogs` |
+| **Controller** | `BackMatterResourcesController` |
+| **Auth** | Required (document write permission) |
+
+Attach, edit, or remove OSCAL back-matter resources on a parent document, rendered as inline forms within the document detail page (no standalone index). Reusable resources can be linked from the trust store rather than re-uploaded.
+
+#### Control Back-Matter Links (nested)
+
+| | |
+|---|---|
+| **Routes** | `POST/DELETE /control_catalogs/.../catalog_controls/:catalog_control_id/control_back_matter_links/...`, and `POST/DELETE /profile_documents/:profile_document_id/profile_controls/:profile_control_id/control_back_matter_links/...` (plus a `link_resource` member action) |
+| **Controller** | `ControlBackMatterLinksController` |
+| **Auth** | Required (write permission) |
+
+Inline controls (within a catalog control or profile control edit view) for linking existing back-matter resources to an individual control, or unlinking them.
+
+#### Evidence
+
+Evidence list/detail and attestation screens are documented under the **Assessment Layer** above (`/evidences`, `/evidences/:evidence_id/attestations`).
+
+---
+
+### Informational / About (public)
+
+#### About Pages
+
+| | |
+|---|---|
+| **Routes** | `GET /about`, `GET /about/api`, `GET /about/quickstart`, `GET /about/resources` |
+| **Controller** | `AboutController#index`, `#api_docs`, `#quickstart`, `#resources` |
+| **Auth** | Public |
+
+Static informational pages: project overview (`/about`), REST API documentation (`/about/api`), a getting-started quickstart (`/about/quickstart`), and external OSCAL/NIST resource links (`/about/resources`).
+
+#### OSCAL Overview
+
+| | |
+|---|---|
+| **Route** | `GET /oscal-overview` |
+| **Controller** | `HomeController#oscal_overview` |
+| **Auth** | Public |
+
+Standalone page explaining the OSCAL layer model (also embedded as a partial on the login page).
+
+---
+
 ### REST API Endpoints
 
 The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-only endpoints.
@@ -817,6 +1047,59 @@ The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-o
 | `POST` | `/api/v1/sar_documents/convert` | Upload document file, queue async parsing |
 | `PUT` | `/api/v1/sar_documents/:id/update_fields` | Bulk update control fields (JSON body) |
 | `GET` | `/api/v1/sar_documents/:id/export` | Export SAR document as JSON |
+
+#### Document CRUD API
+
+`index/show/create/update/destroy` JSON CRUD is exposed for the document types below. UI screens are thin clients over these endpoints (API-first).
+
+| Resource | Base path |
+|----------|-----------|
+| SSP documents | `/api/v1/ssp_documents` (+ `POST populate_from_profile`) |
+| SAR documents | `/api/v1/sar_documents` |
+| SAP documents | `/api/v1/sap_documents` |
+| POA&M documents | `/api/v1/poam_documents` |
+| Control catalogs | `/api/v1/control_catalogs` (+ review workflow) |
+| Baselines/profiles | `/api/v1/profile_documents` (+ review workflow, nested `parameters`) |
+| CDEF documents | `/api/v1/cdef_documents` (+ `DELETE bulk`, bulk-apply-converter, review workflow) |
+| Control mappings | `/api/v1/control_mappings` |
+| Users | `/api/v1/users` |
+| Authorization boundaries | `/api/v1/authorization_boundaries` (+ `DELETE bulk`, nested `ksi_validations`) |
+| Federation peers | `/api/v1/federation_peers` (+ `POST :id/sync`) |
+
+#### Trust Store / Federation API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| various | `/api/v1/back_matter_resources` | Back-matter CRUD + `link`/`unlink`/`promote`/`approve_promotion`/`reject_promotion`/`archive`/`restore`/`changes`, plus `promotion_queue` and `bulk` (#375/#372) |
+| `POST` | `/api/v1/authoritative_sources` | Add a library source (#646) |
+| `GET/POST` | `/api/v1/authoritative_sources/export|import` | Signed-bundle federation exchange (peer via `peer` param, #372) |
+
+#### KSI Catalog & Validation API (#107)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/ksi_catalog/themes|indicators|indicators/:id|mappings` | Read-only FedRAMP 20x KSI catalog |
+| various | `/api/v1/authorization_boundaries/:id/ksi_validations` | Per-boundary KSI validation tracking CRUD + `summary`/`export` |
+
+#### Translation Bridge API (#449)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/oscal/sar_from_hdf` | HDF → OSCAL SAR |
+| `POST` | `/api/v1/oscal/poam_from_hdf` | HDF → OSCAL POA&M |
+| `POST` | `/api/v1/oscal/poam_from_amendments` | HDF amendments → OSCAL POA&M (#663) |
+| `POST` | `/api/v1/hdf/amendments_from_oscal_poam` | OSCAL POA&M → HDF amendments |
+
+#### Evidence, Artifacts, Discovery & Session Bridge API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| various | `/api/v1/evidences/:evidence_id/attestations` | Attestation records + `export` (CMS schema, #440) |
+| `GET` | `/api/v1/artifacts/:uuid` | Durable UUID → signed download URL (#680) |
+| `GET` | `/api/v1/artifacts/:uuid/versions|freshness` | Version timeline + review-cadence freshness data (#685) |
+| `GET` | `/api/v1/available` | API discovery / endpoint listing (#250) |
+| `POST` | `/api/v1/sessions/from_token` | Bearer-token → Rails session cookie bridge for UI test runners (#573) |
+| `POST` | `/api/v1/admin/refresh_credentials` | Admin password rotation receiver (sparc-iac, #403) |
 
 ---
 
@@ -889,3 +1172,13 @@ Fixed-position overlay in the top-right corner. Managed by a `flash` Stimulus co
 | Issue #85 | Dark mode |
 | Issue #87 | Responsive SPARC logo |
 | PR #121 | Audit log with CSV export |
+| Issue #423 | POA&M child entities (risks, remediations, milestones, observations, findings, local components) |
+| Issue #415 | Leveraged-system POA&M inheritance (read-only leveraged POA&M views) |
+| Issue #396 | Leveraged authorizations on the leveraging boundary |
+| Issue #372 | Authoritative back-matter library + federation peers |
+| Issue #646 | Any authenticated user can add an authoritative source |
+| Issues #630–#634 | Review queue + document approval workflow (Catalog/Profile/CDEF) |
+| Issue #680 / #685 | Durable artifact resolver + review-cadence freshness |
+| Issue #494 / #499 | AWS Config / Security Hub converters + bulk-apply |
+| Issue #107 | FedRAMP 20x KSI catalog + validation tracking |
+| Issue #449 | HDF ↔ OSCAL translation bridge |

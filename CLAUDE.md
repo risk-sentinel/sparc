@@ -95,14 +95,19 @@ Uses RSpec with FactoryBot and Faker. Specs live under `spec/` with `spec/models
 
 Uses `rubocop-rails-omakase` (Rails default style guide) with no custom overrides.
 
-## Developer Docs
+## Documentation
 
-Developer documentation lives in `docs/dev/`:
+Documentation has three homes — put changes in the right one:
+
+- **Public documentation → the GitHub wiki** (source under `wiki/`, mirrored via `wiki/PUSH_TO_WIKI.sh`). The wiki is the **canonical, kept-current** home for product usage, configuration, architecture, RBAC, screens, integrations, and the changelog. **When a change is public-facing (a user, operator, or integrator would read it), update the wiki.** `docs/MAP.md` indexes the in-repo docs and links out to the wiki.
+- **Release notes → [GitHub Releases](https://github.com/risk-sentinel/sparc/releases)** (single source of truth; the wiki Changelog is a concise index that links to each release).
+- **In-repo `docs/`** — technical reference that ships next to the code (`docs/api/`, `docs/data_mapping/`, `docs/ENVIRONMENT_VARIABLES.md`), artifacts consumed by CI (`docs/compliance/`, `docs/hdf/`), and **internal** development docs under `docs/dev/` (see `docs/dev/README.md`).
+
+### Developer Docs (internal, `docs/dev/`)
 
 - `docs/dev/issue_rules.md` — **mandatory** issue process workflow, hard guardrails, compliance artifact update requirements, authentication mode coverage matrix
 - `docs/dev/Implemenation_plan.md` — phased roadmap and issue tracking
 - `docs/dev/Developer_Collision_Avoidance_Plan.md` — domain ownership, hot files, migration coordination
-- `docs/dev/release_notes.md` — stacked release notes
 
 ## Compliance Documentation
 
