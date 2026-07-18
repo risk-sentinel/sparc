@@ -1934,10 +1934,10 @@ end # if SEED_DEMO (ssp/sar)
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("roles") do
 # ── Role Seeding ──────────────────────────────────────────────────────────
-# Roles from docs/groups_users/groups_users.md
+# Roles documented in the RBAC wiki page (wiki/RBAC.md)
 puts "\nSeeding roles..."
 
-# Default permission hashes aligned with docs/groups_users/groups_users.md
+# Default permission hashes aligned with the RBAC wiki page (wiki/RBAC.md)
 PERM_ALL_READ = Role::PERMISSION_KEYS.select { |k| k.end_with?(".read") }
                                       .each_with_object({}) { |k, h| h[k] = true }.freeze
 

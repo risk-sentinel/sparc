@@ -4,7 +4,7 @@
 # (global) or authorization boundary-scoped. Instance Admin is NOT a role —
 # it's the users.admin boolean column.
 #
-# Seeded roles come from docs/groups_users/groups_users.md:
+# Seeded roles are documented in the RBAC wiki page (wiki/RBAC.md):
 #   Instance (10): policy_manager, global_viewer, senior_accountable_official,
 #                  senior_agency_official_privacy, head_of_agency, risk_executive,
 #                  cio, chief_acquisition_officer, fedramp_pmo, jab

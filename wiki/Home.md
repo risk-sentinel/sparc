@@ -24,11 +24,17 @@ First-15-minutes setup — Docker quick start, seeding the NIST catalogs, first 
 ### [Role-Based Access Control (RBAC)](RBAC)
 29 roles aligned with NIST SP 800-37 Rev. 2 and OSCAL standards, granular permission keys, instance vs. authorization-boundary scoping, and the Instance Admin bypass flag.
 
+### [Data Isolation](Data-Isolation)
+How SPARC organizes and isolates data — Organization → Authorization Boundary → OSCAL artifacts — and the boundary-scoped access model (NIST AC-3).
+
 ### [Screens & UI](Screens)
 Complete inventory of every page in the application — Controls Layer, Implementation Layer, Assessment Layer, Authorization Boundary Management, Evidence, Federation, and Admin.
 
 ### [Core Functions & Features](Core-Functions)
 OSCAL import/export/validation, the document processing pipeline, SSP/SAR wizards, control mapping, converters (CCI / AWS), KSI validations, the HDF ↔ OSCAL bridge, authoritative-source federation, and audit logging.
+
+### [Framework Mapping](Framework-Mapping)
+How SPARC maps external frameworks — DISA STIG, CIS Benchmarks, CCI, SCAP/OVAL — to NIST SP 800-53 via OSCAL, and the roadmap for expanding coverage.
 
 ### [Architecture](Architecture)
 Domain model hierarchy, database schema, the service layer, and background-job architecture.

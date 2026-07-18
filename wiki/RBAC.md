@@ -6,6 +6,8 @@ _Reflects SPARC **v1.12.1**. Authoritative source: `app/models/role.rb` (permiss
 
 SPARC implements a granular Role-Based Access Control system with **29 roles** aligned with [NIST SP 800-37 Rev. 2](https://csrc.nist.gov/publications/detail/sp/800-37/rev-2/final) (Risk Management Framework). The system is designed to mirror real-world security authorization workflows, ensuring that each user in the compliance lifecycle has precisely the access they need and nothing more.
 
+The role taxonomy is grounded in the NIST RMF and aligns with **OSCAL (Open Security Controls Assessment Language) responsible-party definitions**. OSCAL does not define its own role taxonomy; instead it relies on standard RMF roles referenced in OSCAL metadata (`party` and `role` elements across Catalogs, Profiles, SSPs, Assessment Plans, SARs, and POA&Ms). The 29 roles represent the complete canonical set for OSCAL implementation, drawn from NIST SP 800-37 Rev. 2, OSCAL documentation, and FedRAMP-specific guidance (including FedRAMP Rev. 5 baselines and FedRAMP 20x automation). All roles are seeded via `db/seeds.rb` and manageable in the admin UI at `/admin/roles`.
+
 Authorization is enforced through **three layers**, evaluated in order:
 
 | Layer | Mechanism | Scope |
@@ -290,6 +292,268 @@ No authorization-boundary-scoped role is granted `converters.*` or `back_matter.
 
 ---
 
+## OSCAL Model and Role Mapping
+
+Because SPARC roles align with OSCAL responsible-party definitions, each OSCAL model has a set of roles primarily responsible for authoring and maintaining it. This mapping describes editorial responsibility and typical workflow ownership; it is a narrative complement to the permission matrices above, not an independent enforcement layer.
+
+| OSCAL Model | Primary Responsible Roles | Key Activities |
+|-------------|---------------------------|----------------|
+| **Catalog** | Policy Manager, Common Control Provider, FedRAMP PMO | Define and maintain baseline controls |
+| **Profile** | Policy Manager, Common Control Provider | Tailor baselines for specific environments |
+| **System Security Plan (SSP)** | System Owner, ISSO, ISSM, CSP | Document control implementation |
+| **Assessment Plan (SAP)** | Assessor / 3PAO, ISSO | Plan security assessments |
+| **Assessment Results (SAR)** | Assessor / 3PAO, AO, Evidence Integration Engineer | Report assessment findings |
+| **POA&M** | ISSO, System Owner, AO, CSP | Track remediation of findings |
+| **Component Definition** | Component Supplier, System Architect, System Owner, Vendor Dependency Manager | Document reusable component controls |
+
+---
+
+## Structural Relationships
+
+The following diagrams show how users, roles, authorization boundaries, projects, and artifacts relate. **Instance-scoped roles** operate at the global level over shared Catalogs and Profiles; **authorization-boundary-scoped roles** (the "project personnel") operate within a specific authorization boundary over that boundary's SSP, SAP, SAR, POA&Ms, CDEFs, and evidence. A single project has a single SSP, SAP, and SAR but may carry multiple POA&Ms, and its authorization boundaries contain components documented via CDEFs. Published Profiles are reusable across projects.
+
+### Roles, Users, and Artifacts
+
+```mermaid
+graph TD
+    subgraph "Instance / Global Level (App-Wide Roles)"
+        IA[Instance Admin Full access - can do anything]
+        PM[Policy Manager Catalogs & Profiles CRUD]
+        GV[Global Viewer Read-only on Catalogs & Profiles]
+        SAO_I[Senior Accountable Official Risk oversight]
+        SAOP_I[SAOP Privacy oversight]
+        HOA[Head of Agency / CEO Ultimate accountability]
+        RE[Risk Executive Risk tolerance & strategy]
+        CIO_I[CIO IT security program oversight]
+        CAO[Chief Acquisition Officer Supply chain security]
+        FPMO[FedRAMP PMO Program oversight]
+        JAB_I[JAB P-ATO reviews]
+
+        IA -->|full override| MC[Master Catalog]
+        IA -->|full override| P[Profiles]
+        IA -->|full access| ALL_PROJECTS[All Projects & Artifacts]
+
+        PM -->|CRUD + tailor + publish| MC
+        PM -->|CRUD + tailor + publish| P
+
+        GV -->|read only| MC
+        GV -->|read only| P
+
+        SAO_I -->|read only| MC & P
+        SAOP_I -->|read only| MC & P
+        HOA -->|read only| MC & P
+        RE -->|read only| MC & P
+        CIO_I -->|read only| MC & P
+        CAO -->|read only| MC & P
+        FPMO -->|read only| MC & P
+        JAB_I -->|read only| MC & P
+    end
+
+    subgraph Boundary_Level
+        AO["Authorizing Official (AO) Accepts risk & authorizes operation"]
+        AAO["Agency AO Agency-specific ATOs"]
+        SO["System Owner (SO / ISO) Owns system, implements controls"]
+        CISO["CISO Org-wide oversight, policy, risk advice"]
+        ISSM_P["ISSM Oversees security posture"]
+        ISSO["ISSO Day-to-day security operations"]
+        CSP_P["Cloud Service Provider Builds auth packages"]
+        ASS["Assessor / 3PAO Independent assessment"]
+        CCP["Common Control Provider Inherited controls"]
+        SAE["System Architect / Engineer Security design"]
+        CSUP["Component Supplier Component documentation"]
+        SYSOP["System Operator / Admin Operational controls"]
+        IOW["Information Owner / Steward Data governance"]
+        VDM["Vendor Dependency Manager Supply chain"]
+        SOLEV["Solution Evaluator OSCAL compliance"]
+        PMem["Team Member General contributor"]
+        SME["SPARC SME Broad R/W on artifacts"]
+        EIE["Evidence Integration Engineer Evidence & SAR"]
+        VO["View Only Read-only access"]
+
+        PersonnelGroup["Boundary Personnel Group All boundary-scoped roles"]
+
+        PersonnelGroup -->|roles & responsibilities| SSP[System Security Plan]
+        PersonnelGroup -->|roles & responsibilities| SAP[Assessment Plan]
+        PersonnelGroup -->|roles & responsibilities| SAR[Assessment Results]
+        PersonnelGroup -->|roles & responsibilities| POAM[POA&Ms]
+
+        AO -.->|authorizes / accepts risk| SSP
+        AO -.->|reviews / decides on| SAR
+        AO -.->|approves remediations| POAM
+
+        SO -.->|owns & implements| SSP
+        SO -.->|coordinates with| ISSO
+
+        CISO -.->|oversight & guidance| SSP
+        ISSM_P -.->|oversees posture| SSP
+        ISSM_P -.->|coordinates| ISSO
+
+        ISSO -.->|maintains security| SSP
+        ISSO -.->|coordinates assessment| SAP
+        ISSO -.->|tracks findings| POAM
+
+        CSP_P -.->|builds package| SSP
+        CSP_P -.->|manages| POAM
+        CSP_P -.->|provides| CDEF[Component Defs]
+
+        ASS -->|full R/W| SAP
+        ASS -->|full R/W| SAR
+
+        CCP -.->|documents common controls| SSP & CDEF
+        SAE -.->|designs & documents| SSP & CDEF
+        CSUP -.->|supplies components| CDEF
+        VDM -.->|tracks vendors| CDEF
+
+        SME -->|full R/W| SSP & SAP & SAR & POAM & CDEF
+        EIE -->|full R/W| E[Evidence]
+        EIE -->|full R/W| SAR
+
+        IA -.->|app-level override| SSP & SAP & SAR & POAM
+    end
+
+    MC -.->|source for| P
+    P -.->|reusable across projects| ProjP[Project-specific Profile]
+
+    classDef admin fill:#ffcccc,stroke:#990000,stroke-width:2px
+    classDef policy fill:#ccffcc,stroke:#006600,stroke-width:2px
+    classDef viewer fill:#e6f3ff,stroke:#0066cc,stroke-width:2px
+    classDef rmf fill:#fff0f5,stroke:#c71585,stroke-width:2px
+    classDef project fill:#fffacd,stroke:#8b8000,stroke-width:2px
+    classDef assessor fill:#ffe4e1,stroke:#c71585,stroke-width:2px
+    classDef fedramp fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+
+    class IA admin
+    class PM policy
+    class GV viewer
+    class AO,AAO,SO,CISO,ISSM_P,ISSO rmf
+    class PMem,VO,SME,EIE project
+    class ASS assessor
+    class CSP_P,FPMO,JAB_I fedramp
+    class SAO_I,SAOP_I,HOA,RE,CIO_I,CAO viewer
+    class CCP,SAE,CSUP,SYSOP,IOW,VDM,SOLEV project
+```
+
+### Projects, Boundaries, and Profile Reuse
+
+```mermaid
+graph TD
+    subgraph "Shared / Enterprise Level"
+        MC[Master Catalog e.g. NIST SP 800-53 Rev. 5 OSCAL]
+        P1[Profile: FedRAMP Moderate]
+        P2[Profile: DoD IL4 Baseline]
+        P3[Profile: Custom Org Baseline]
+
+        MC -->|import / select / tailor| P1
+        MC -->|import / select / tailor| P2
+        MC -->|import / select / tailor| P3
+    end
+
+    subgraph "Project A - e.g. Cloud Web App"
+        BoundaryA1[Boundary: Production Env]
+        BoundaryA2[Boundary: Dev / Test Env]
+
+        SSP_A[System Security Plan Single per Project]
+        SAP_A[Assessment Plan Single per Project]
+        SAR_A[Assessment Results / SAR Single per Project]
+
+        POAM_A1[POA&M #1 e.g. Initial Findings]
+        POAM_A2[POA&M #2 e.g. Continuous Monitoring]
+
+        PersonnelA["Boundary Personnel
+        • Authorizing Official (AO)
+        • Agency AO
+        • System Owner (SO / ISO)
+        • CISO (oversight)
+        • ISSM
+        • ISSO
+        • Cloud Service Provider (CSP)
+        • Assessors / 3PAO
+        • Common Control Provider
+        • System Architect / Engineer
+        • Component Supplier
+        • System Operator / Admin
+        • Information Owner / Steward
+        • Vendor Dependency Manager
+        • Solution Evaluator
+        • Team Members
+        • SPARC SMEs
+        • Evidence Engineers
+        • View Only"]
+
+        BoundaryA1 -->|contains many| C1[Component: Web Server via CDEF]
+        BoundaryA1 -->|contains many| C2[Component: Database via CDEF]
+        BoundaryA1 -->|contains many| C3[Component: Firewall via CDEF]
+
+        BoundaryA2 -->|contains many| C4[Component: CI/CD Pipeline]
+        BoundaryA2 -->|contains many| C5[Component: Logging Service]
+
+        P1 -.->|satisfies baseline| SSP_A
+        P2 -.->|satisfies baseline| SSP_A
+
+        C1 -.->|implements / inherits| SSP_A
+        C2 -.->|implements / inherits| SSP_A
+        C3 -.->|implements / inherits| SSP_A
+        C4 -.->|implements / inherits| SSP_A
+        C5 -.->|implements / inherits| SSP_A
+
+        SSP_A -->|defines scope & objectives| SAP_A
+        SAP_A -->|executes assessment| SAR_A
+        SAR_A -->|generates findings| POAM_A1
+        SAR_A -->|generates findings| POAM_A2
+
+        PersonnelA -.->|roles & responsibilities| SSP_A
+        PersonnelA -.->|roles & responsibilities| SAP_A
+        PersonnelA -.->|roles & responsibilities| SAR_A
+        PersonnelA -.->|roles & responsibilities| POAM_Ax[All POA&Ms]
+    end
+
+    subgraph "Project B - e.g. Internal Tool Suite"
+        BoundaryB1[Boundary: Single Prod Boundary]
+        SSP_B[System Security Plan Single]
+        SAP_B[Assessment Plan Single]
+        SAR_B[Assessment Results Single]
+        POAM_B1[POA&M #1]
+        POAM_B2[POA&M #2]
+
+        PersonnelB["Boundary Personnel
+        • AO / Agency AO
+        • SO / ISO
+        • CISO / ISSM / ISSO
+        • CSP
+        • Assessors / 3PAO
+        • System Architect / Component Supplier
+        • System Operator / Info Owner
+        • Vendor Dependency Mgr / Solution Evaluator
+        • Team Members / SMEs
+        • Evidence Engineers / View Only"]
+
+        BoundaryB1 -->|contains many| C6[Component: App Server via CDEF]
+        BoundaryB1 -->|contains many| C7[Component: Auth Service via CDEF]
+
+        P3 -.->|satisfies baseline| SSP_B
+
+        C6 -.->|implements| SSP_B
+        C7 -.->|implements| SSP_B
+
+        SSP_B --> SAP_B --> SAR_B --> POAM_B1
+        SSP_B --> SAP_B --> SAR_B --> POAM_B2
+
+        PersonnelB -.-> SSP_B & SAP_B & SAR_B & POAM_Bx[POA&Ms]
+    end
+
+    P1 -.->|reusable across projects| ProjectA
+    P1 -.->|reusable across projects| ProjectB
+    P2 -.->|reusable across projects| ProjectA
+    P3 -.->|reusable across projects| ProjectB
+
+    classDef shared fill:#e6f3ff,stroke:#0066cc,stroke-width:2px
+    classDef project fill:#f0fff0,stroke:#228b22,stroke-width:2px
+    class MC,P1,P2,P3 shared
+    class ProjectA,ProjectB,BoundaryA1,BoundaryA2,BoundaryB1 project
+```
+
+---
+
 ## Authorization Enforcement
 
 ### Controller Methods
@@ -335,4 +599,15 @@ For most controller actions, `authorize_permission!` is the preferred method bec
 | PR #115 | RBAC enforcement, summary tiles, full role coverage |
 | Issue #96 | Added SPARC SME and Evidence Integration Engineer roles |
 | Issue #99 | Restricted catalog/baseline edit to Policy Manager and Admin |
-| `docs/groups_users.md` | Foundation RBAC reference document |
+| Legacy `docs/groups_users/` | Foundation RBAC reference, since consolidated into this page |
+
+---
+
+## Sources and References
+
+- NIST SP 800-37 Rev. 2 — Risk Management Framework for Information Systems and Organizations
+- NIST OSCAL Documentation — https://pages.nist.gov/OSCAL/
+- FedRAMP Authorization Package Template Instructions (Rev. 5) and OSCAL Roadmap
+- FedRAMP OSCAL Resources — https://www.fedramp.gov/oscal/
+- FedRAMP 20x — https://www.fedramp.gov/20x/
+- NIST RMF Roles Crosswalk (Appendix D of SP 800-37 Rev. 2)

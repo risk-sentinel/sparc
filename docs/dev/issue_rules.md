@@ -53,7 +53,13 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
 8. **Update project documentation:**
    - `docs/dev/Implemenation_plan.md` — mark issue complete, update phase status
    - `docs/dev/Developer_Collision_Avoidance_Plan.md` — update file lists, status
-   - `docs/dev/release_notes.md` — add entry at top of file (stacked)
+   - **Public-facing changes → update the GitHub wiki** (source under `wiki/`): if a
+     user, operator, or integrator would read it (new/changed feature, screen, route,
+     env var, role/permission, config), update the relevant wiki page in the same PR.
+     The wiki is the canonical public documentation and must stay current.
+   - **Release notes → the GitHub Release** for the shipping version (canonical);
+     the wiki Changelog gets a concise linked entry. Do **not** maintain a stacked
+     in-repo release-notes file.
    - Regression testing — add/update specs as appropriate
 9. **Compliance artifact review** — if the issue touches security-critical
    code (authentication, authorization, audit, session management, crypto,

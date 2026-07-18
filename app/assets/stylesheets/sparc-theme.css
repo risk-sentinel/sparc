@@ -231,7 +231,7 @@
    above never reach them and the small variants fail WCAG 2.1 AA 4.5:1 on the
    #f5f5f5 body. Re-point resting text/border at the darkened --sparc-* tokens
    (each verified >=4.95:1 on #f5f5f5); hover keeps Bootstrap's white-on-fill.
-   WCAG 2.1 AA (SC 1.4.3) — see #599 a11y sweep / docs/dev/a11y_worm_refactor_plan.md */
+   WCAG 2.1 AA (SC 1.4.3) — see #599 a11y sweep / docs/dev/a11y_audit.md */
 .btn-outline-primary {
   --bs-btn-color: var(--sparc-primary);
   --bs-btn-border-color: var(--sparc-primary);
