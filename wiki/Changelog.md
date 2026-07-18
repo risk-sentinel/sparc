@@ -16,6 +16,10 @@ Migrates the production image from Debian `ruby:slim` to **Red Hat UBI9** (Iron 
 
 Security release. Enforces **boundary-scoped access** across SSP, SAR, SAP, POA&M, Evidence, and CDEF — authenticated users only see and act on documents in the authorization boundaries they can access; global (nil-boundary) documents remain open. The web UI now enforces the same rules as the API via `BoundaryScopedDocument` (NIST AC-3) ([#738](https://github.com/risk-sentinel/sparc/issues/738), [#739](https://github.com/risk-sentinel/sparc/issues/739)). Adds evidence validity guards (system-recorded UTC provenance), SSP metadata enrichment sourced from canonical SPARC locations ([#737](https://github.com/risk-sentinel/sparc/issues/737)), and supply-chain/scan tooling hardening ([#743](https://github.com/risk-sentinel/sparc/issues/743)). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.11.1).
 
+## v1.11.0 -- Public-Surface Hardening + SonarCloud Remediation + Accessibility (2026-07-13)
+
+Public-surface hardening plus the SonarCloud code-quality remediation and a large accessibility pass; no database migrations. **One behavior change** (opt-out via config): the **Controls layer is now gated behind authentication, secure-by-default** — Control Catalogs, Baselines, and Mappings are no longer public. A new `SPARC_PUBLIC_CATALOGS` flag (default `false`) lets deployments that front SPARC with their own network auth opt back into public sharing (#726, NIST AC-3). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.11.0).
+
 ## v1.10.2 -- ODP Tooling, Artifact Lifecycle & CSP Hardening (2026-07-11)
 
 Feature + hardening release. Adds **bulk ODP (Organization-Defined Parameter) import** for baselines/profiles — upload values as JSON / YAML / XML and preview a non-destructive diff (changed / unchanged / unknown / invalid) before applying, via `POST /api/v1/profile_documents/:id/parameters/import/{preview,confirm}`. Includes artifact-lifecycle and CSP hardening. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.10.2).
@@ -35,6 +39,10 @@ Cleanup on v1.9.0. Restores OSCAL POA&M generation under hdf-cli 3.2.0 via the n
 ## v1.9.0 -- Document Review & Approval Workflow (2026-06-26)
 
 Minor release. Adds a **document review & approval workflow** — a new `Approvable` model, review queue, and `BaselineReviewService` / `DocumentApprovalService`, gated by `SPARC_REQUIRE_DOCUMENT_APPROVAL` (default off, so existing publish flows are unchanged until an org opts in) ([#640](https://github.com/risk-sentinel/sparc/issues/640), #630–634). Also adds **authoritative sources & federation** — add/import an authoritative source, plus a release-validation gate (API-coverage + nav CSP sweep) ([#657](https://github.com/risk-sentinel/sparc/issues/657), [#646](https://github.com/risk-sentinel/sparc/issues/646)). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.9.0).
+
+## v1.8.10 -- Container CVE Baseline, SCA SBOM Producer & API Pending Fix (2026-06-11)
+
+First release since v1.8.6. Bundles a **container CVE-baseline remediation** (openssl patch, Ruby default-gem CVE pins, oauth2 bump; #621), an **org-wide SCA SBOM producer** that emits CycloneDX to S3 on push-to-main + daily via the shared container-build-sign workflows (#619), and a fix for **API-created documents stuck in `pending`** — metadata-only API creates now resolve to `completed`, with a new `StuckDocumentReaperJob` failing genuinely-stalled parses (#618). [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.8.10).
 
 ## v1.8.6 -- UI Accessibility (WCAG 2.1 AA) + UI Test Net (2026-06-03)
 

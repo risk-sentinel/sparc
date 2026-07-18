@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD013 MD024 MD060 -->
 
-# SPARC Release Notes
+# SPARC Release Notes — FROZEN ARCHIVE
+
+> ⚠️ **This file is a frozen historical archive and is no longer maintained.**
+> **Release notes are now published on [GitHub Releases](https://github.com/risk-sentinel/sparc/releases)**
+> (the single canonical source; the wiki
+> [Changelog](https://github.com/risk-sentinel/sparc/wiki/Changelog) is a concise index).
+> Do **not** add new entries here.
+>
+> This archive covers the early pre-Releases era (through ~v1.2.5, April 2026).
+> A few early versions (**v1.1.0, v1.2.0, v1.2.4, v1.2.5**) currently exist only
+> here and not yet on GitHub Releases; it is retained until those are backfilled.
 
 ---
 

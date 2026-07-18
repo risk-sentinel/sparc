@@ -39,8 +39,8 @@ by NIST family
 - **Inline Field Editing** — Edit implementation details directly in the browser
 - **Authentication & SSO** — Local login, GitHub/GitLab OAuth, OIDC (Okta/Keycloak/
 Entra ID), and LDAP
-- **Role-Based Access** — 29 NIST RMF roles with project-level scoping and admin
-UI
+- **Role-Based Access** — 29 NIST RMF roles with instance and authorization-boundary
+scoping, boundary-scoped document access (AC-3), and an admin UI
 - **Background Processing** — Async job processing for large files via Solid Queue
 (database-backed; Sidekiq + Redis optional)
 - **RESTful API** — Programmatic access at `/api/v1/`
@@ -171,35 +171,30 @@ variables with defaults.
 
 ## Documentation
 
-> 📑 **Full index:** [**docs/MAP.md**](docs/MAP.md) — a categorized, navigable
-> inventory of every document under `docs/`, with start-here pathways per
-> audience (operator, API integrator, contributor, security reviewer, compliance
-> author). The curated highlights below are the most-used entries.
+📖 **Public documentation lives in the [SPARC Wiki](https://github.com/risk-sentinel/sparc/wiki)** —
+the canonical, kept-current home for product docs:
+
+| | | |
+|---|---|---|
+| [Getting Started](https://github.com/risk-sentinel/sparc/wiki/Getting-Started) | [Configuration](https://github.com/risk-sentinel/sparc/wiki/Configuration) | [Architecture](https://github.com/risk-sentinel/sparc/wiki/Architecture) |
+| [RBAC](https://github.com/risk-sentinel/sparc/wiki/RBAC) | [Data Isolation](https://github.com/risk-sentinel/sparc/wiki/Data-Isolation) | [Screens](https://github.com/risk-sentinel/sparc/wiki/Screens) |
+| [Core Functions](https://github.com/risk-sentinel/sparc/wiki/Core-Functions) | [Framework Mapping](https://github.com/risk-sentinel/sparc/wiki/Framework-Mapping) | [Integrations](https://github.com/risk-sentinel/sparc/wiki/Integrations) |
+
+📦 **Release notes:** [GitHub Releases](https://github.com/risk-sentinel/sparc/releases)
+(the wiki [Changelog](https://github.com/risk-sentinel/sparc/wiki/Changelog) is a concise index).
+
+### In-repo reference
+
+Technical reference that ships next to the code — indexed in [**docs/MAP.md**](docs/MAP.md):
 
 | Topic | Link |
 | ------- | ------ |
-| **User & Operations** | |
-| Authentication & Authorization | [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) |
-| Admin Credential Rotation | [docs/ADMIN_CREDENTIAL_ROTATION.md](docs/ADMIN_CREDENTIAL_ROTATION.md) |
-| Okta Developer Setup | [docs/OKTA_DEV_SETUP.md](docs/OKTA_DEV_SETUP.md) |
-| Environment Variables | [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) |
-| Docker Deployment | [docs/DOCKER.md](docs/DOCKER.md) |
-| REST API | [docs/API.md](docs/API.md) |
-| Technology Stack | [docs/TECH_STACK.md](docs/TECH_STACK.md) |
-| SSP Schema | [docs/ssp-columns.md](docs/ssp-columns.md) |
-| SAR Schema | [docs/sar-columns.md](docs/sar-columns.md) |
-| Catalog Schema | [docs/catalog-schema.md](docs/catalog-schema.md) |
-| Local Dev with puma-dev | [docs/puma-dev.md](docs/puma-dev.md) |
-| Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
-| **Compliance (FedRAMP / NIST)** | |
-| Compliance Overview | [docs/compliance/README.md](docs/compliance/README.md) |
-| NIST 800-53 Rev 5 Control Mapping | [docs/compliance/nist-sp800-53-rev5-mapping.md](docs/compliance/nist-sp800-53-rev5-mapping.md) |
-| OSCAL CDEFs (Application Controls) | [docs/compliance/oscal/cdefs/](docs/compliance/oscal/cdefs/) |
-| **Developer** | |
-| Issue Process & Rules | [docs/dev/issue_rules.md](docs/dev/issue_rules.md) |
-| Implementation Plan & Roadmap | [docs/dev/Implemenation_plan.md](docs/dev/Implemenation_plan.md) |
-| Collision Avoidance Plan | [docs/dev/Developer_Collision_Avoidance_Plan.md](docs/dev/Developer_Collision_Avoidance_Plan.md) |
-| Release Notes | [docs/dev/release_notes.md](docs/dev/release_notes.md) |
+| Environment variables (exhaustive) | [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) |
+| REST API (per-endpoint + Postman) | [docs/API.md](docs/API.md) · [docs/api/](docs/api/) |
+| OSCAL field mappings & schemas | [docs/oscal-data-mapping.md](docs/oscal-data-mapping.md) · [docs/data_mapping/](docs/data_mapping/) · [docs/catalog-schema.md](docs/catalog-schema.md) |
+| Production security & hardening | [docs/PRODUCTION_SECURITY.md](docs/PRODUCTION_SECURITY.md) · [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) |
+| Compliance artifacts | [docs/compliance/README.md](docs/compliance/README.md) · [NIST 800-53 mapping](docs/compliance/nist-sp800-53-rev5-mapping.md) · [OSCAL CDEFs](docs/compliance/oscal/cdefs/) |
+| Contributing (internal dev docs) | [docs/dev/issue_rules.md](docs/dev/issue_rules.md) · [docs/dev/README.md](docs/dev/README.md) |
 
 ---
 

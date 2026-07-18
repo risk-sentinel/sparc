@@ -217,6 +217,6 @@ In OSCAL CDEFs, use the `remarks` field to note configuration dependencies:
 
 - `docs/dev/Implemenation_plan.md` — phased roadmap and issue tracking
 - `docs/dev/Developer_Collision_Avoidance_Plan.md` — domain ownership and hot files
-- `docs/dev/release_notes.md` — stacked release notes
+- [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) — canonical release notes (the wiki Changelog is a concise index; `docs/dev/release_notes.md` is a frozen pre-Releases archive)
 - `docs/compliance/README.md` — compliance documentation guide
 - `docs/compliance/nist-sp800-53-rev5-mapping.md` — central NIST control mapping
