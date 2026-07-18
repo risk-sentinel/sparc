@@ -10,8 +10,10 @@ ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
 ARG HDF_LIBS_VERSION=3.2.0
 # Digest-pinned manifest-list (multi-arch) for reproducibility (#742 / folded #639
-# pinning policy). Bump deliberately via Dependabot/Renovate when RH ships a patch.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal:9.7@sha256:907b68736aa798b2d38255b7aa070b2a70acb90803864a40f05d0ec47556ddd0
+# pinning policy). Currently ubi-minimal 9.7. Digest-only (no version tag) so the
+# reference is unambiguous (SonarQube docker:S6596 — don't pin tag AND digest).
+# Bump deliberately via Dependabot/Renovate when RH ships a patch.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:907b68736aa798b2d38255b7aa070b2a70acb90803864a40f05d0ec47556ddd0
 
 # ── builder: toolchain + Ruby/jemalloc from source + hdf-cli + gems + assets ──
 FROM ${UBI_IMAGE} AS builder
@@ -45,7 +47,14 @@ RUN curl -sSfL "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_V
 COPY bin/install-hdf.sh /tmp/install-hdf.sh
 RUN HDF_LIBS_VERSION="${HDF_LIBS_VERSION}" HDF_INSTALL_DIR=/usr/local/bin /tmp/install-hdf.sh
 
+# LANG/LC_ALL (#750): UBI9 minimal ships no locale, so with LANG unset Ruby's
+# Encoding.default_external falls back to US-ASCII — ERB then reads templates as
+# ASCII-8BIT and any non-ASCII byte (e.g. the login layout's box-drawing chars)
+# raises Encoding::CompatibilityError at render (500 on every full-layout page).
+# glibc 2.34 provides the built-in C.UTF-8 locale (no glibc-langpack-* needed).
 ENV PATH=/usr/local/bin:$PATH \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     BUNDLE_PATH=/usr/local/bundle \
     BUNDLE_DEPLOYMENT=1 \
     BUNDLE_WITHOUT="development test"
@@ -74,12 +83,20 @@ RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
 COPY --from=builder /usr/local /usr/local
 ENV PATH=/usr/local/bin:$PATH \
     RAILS_ENV=production \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     BUNDLE_DEPLOYMENT=1 \
     BUNDLE_PATH=/usr/local/bundle \
     BUNDLE_WITHOUT="development test" \
     BUNDLE_IGNORE_CONFIGURED_GROUPS_WITHOUT=true \
     LD_PRELOAD=/usr/local/lib/libjemalloc.so.2 \
     MALLOC_ARENA_MAX=2
+
+# #750 guard: fail the build if the runtime ever loses its UTF-8 default encoding
+# again (base-image locale regression). This exact assertion would have caught the
+# v1.12.0 login 500 at build time instead of in production.
+RUN ruby -e 'raise unless Encoding.default_external == Encoding::UTF_8' \
+    || { echo "::error::default_external is not UTF-8 (is LANG set?) - see #750"; exit 1; }
 
 WORKDIR /rails
 COPY --from=builder /rails /rails
