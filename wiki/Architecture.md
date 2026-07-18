@@ -1,5 +1,7 @@
 # Architecture
 
+> Reflects SPARC **v1.12.1**.
+
 ## Overview
 
 SPARC follows a Rails monolith architecture with Hotwire (Turbo + Stimulus) for interactive frontend behavior, **Solid Queue** for background job processing (Sidekiq + Redis remain available as an optional adapter), and PostgreSQL with JSONB columns for flexible schema storage. The domain model is organized around OSCAL document types, each following a consistent three-level hierarchy.
@@ -8,121 +10,96 @@ SPARC follows a Rails monolith architecture with Hotwire (Turbo + Stimulus) for 
 
 ## Core Model Hierarchy
 
+Each document type follows a consistent three-level `*Document → *Control → *ControlField` hierarchy. POA&M is the exception: it decomposes into items, risks, observations, and findings.
+
+```mermaid
+flowchart LR
+    Document["*Document<br/>name · metadata · status"]
+    Control["*Control<br/>control_id_str · title · status"]
+    Field["*ControlField<br/>field_name · field_value · editable"]
+
+    Document -->|"1 : *"| Control
+    Control -->|"1 : *"| Field
 ```
-+------------------+       +------------------+       +------------------+
-|   *Document      | 1---* |   *Control       | 1---* |  *ControlField   |
-+------------------+       +------------------+       +------------------+
-| - name           |       | - control_id_str |       | - field_name     |
-| - metadata       |       | - title          |       | - field_value    |
-| - status         |       | - status         |       | - editable       |
-+------------------+       +------------------+       +------------------+
 
-Concrete implementations:
+**Concrete implementations** (all follow the pattern above):
 
-  SspDocument  ------>  SspControl  ------>  SspControlField
-  SarDocument  ------>  SarControl  ------>  SarControlField
-  CdefDocument ------>  CdefControl ------>  CdefControlField
-  SapDocument  ------>  SapControl  ------>  SapControlField
-  ProfileDocument -->  ProfileControl -->  ProfileControlField
+```mermaid
+flowchart LR
+    subgraph SSP
+        SspDocument --> SspControl --> SspControlField
+    end
+    subgraph SAR
+        SarDocument --> SarControl --> SarControlField
+    end
+    subgraph CDEF
+        CdefDocument --> CdefControl --> CdefControlField
+    end
+    subgraph SAP
+        SapDocument --> SapControl --> SapControlField
+    end
+    subgraph Profile
+        ProfileDocument --> ProfileControl --> ProfileControlField
+    end
+```
 
-Special case:
+**Special case — POA&M** decomposes rather than following the three-level pattern:
 
-  PoamDocument ------>  PoamItem
-                         |------>  PoamRisk
-                         |------>  PoamObservation
-                         |------>  PoamFinding
+```mermaid
+flowchart LR
+    PoamDocument --> PoamItem
+    PoamDocument --> PoamRisk
+    PoamDocument --> PoamObservation
+    PoamDocument --> PoamFinding
 ```
 
 ---
 
-## ASCII Relationship Diagram
+## Relationship Diagram
 
+**Catalog → documents.** A `ControlCatalog` organizes families and controls that the document-level controls reference:
+
+```mermaid
+flowchart TB
+    ControlCatalog -->|"1 : *"| ControlFamily
+    ControlFamily -->|"1 : *"| CatalogControl
+
+    CatalogControl -. reference .-> SspControl
+    CatalogControl -. reference .-> SarControl
+    CatalogControl -. reference .-> CdefControl
+
+    SspControl -->|"* : 1"| SspDocument
+    SarControl -->|"* : 1"| SarDocument
+    CdefControl -->|"* : 1"| CdefDocument
+
+    SspDocument -->|"1 : *"| SspComponent
+    SspDocument -->|"1 : *"| SspUser
+    SspDocument -->|"1 : *"| SspInformationType
+    SspDocument -->|"1 : *"| SspLeveragedAuthorization
+    SspDocument -->|"1 : *"| SspInventoryItem
+    SspComponent -->|"joins SspControl ↔ SspComponent"| SspByComponent
 ```
-                          +------------------+
-                          |   ControlCatalog |
-                          +--------+---------+
-                                   | 1
-                                   | *
-                          +--------+---------+
-                          |  ControlFamily   |
-                          +--------+---------+
-                                   | 1
-                                   | *
-                          +--------+---------+
-                          |  CatalogControl  |
-                          +------------------+
-                                   ^
-                                   | (reference)
-     +-----------------------------+-----------------------------+
-     |                             |                             |
-+----+------+               +-----+-----+               +-------+----+
-|SspControl |               |SarControl |               |CdefControl |
-+----+------+               +-----+-----+               +-------+----+
-     | *                          | *                          | *
-     | 1                          | 1                          | 1
-+----+--------+             +-----+-------+             +------+--------+
-|SspDocument  |             |SarDocument  |             |CdefDocument   |
-+----+--------+             +-----+-------+             +---------------+
-     |
-     | 1
-     +------------+------------+--------------+--------------+
-     | *           | *          | *             | *            | *
-+----+------+ +----+----+ +----+--------+ +----+--------+ +---+----------+
-|SspComponent| |SspUser  | |SspInfoType  | |SspLevAuth   | |SspInventory  |
-+----+------+ +---------+ +-------------+ +-------------+ |    Item      |
-     |                                                     +--------------+
-     | *
-+----+--------+
-|SspByComponent|  (joins SspControl <-> SspComponent)
-+-------------+
 
+**Users, roles & authorization boundaries.** RBAC is `User`—`UserRole`—`Role`, where `UserRole` is optionally scoped to an `AuthorizationBoundary`:
 
-+---------+       +----------+       +--------------------+
-|  User   | 1---* | UserRole | *---1 |       Role         |
-+---------+       +----+-----+       +--------------------+
-| email   |       | authorization    | name               |
-| admin   |       | _boundary_id     | permissions (JSONB) |
-+---------+       | (optional)       +--------------------+
-     | 1          +----------+
-     | *                | *
-+----+------+           | 0..1
-| Identity  |     +-----+-------------------+
-+-----------+     | AuthorizationBoundary   |
-| provider  |     +-------------------------+
-| uid       |     | name                    |
-| auth_data |     | status                  |
-+-----------+     +-------------------------+
+```mermaid
+flowchart TB
+    User["User<br/>email · admin"] -->|"1 : *"| UserRole["UserRole<br/>authorization_boundary_id (optional)"]
+    Role["Role<br/>name · permissions (JSONB)"] -->|"1 : *"| UserRole
+    User -->|"1 : *"| Identity["Identity<br/>provider · uid · auth_data"]
+    UserRole -.->|"0..1 scope"| AuthorizationBoundary["AuthorizationBoundary<br/>name · status"]
+```
 
+**Evidence, mappings & audit.** Evidence links polymorphically to any document type; mappings relate catalogs; `AuditEvent` is an immutable log:
 
-+------------+       +---------------------+
-|  Evidence  | 1---* | EvidenceControlLink  |  (polymorphic to any document type)
-+-----+------+       +---------------------+
-      | 1
-      | *
-+-----+--------+
-| Attestation  |
-+--------------+
+```mermaid
+flowchart TB
+    Evidence -->|"1 : * (polymorphic)"| EvidenceControlLink
+    Evidence -->|"1 : *"| Attestation
 
+    ControlMapping["ControlMapping<br/>source_catalog_id · target_catalog_id"] -->|"1 : *"| ControlMappingEntry["ControlMappingEntry<br/>source · target · relationship"]
 
-+--------------------+       +----------------------+
-| ControlMapping     | 1---* | ControlMappingEntry  |
-+--------------------+       +----------------------+
-| source_catalog_id  |       | source_control       |
-| target_catalog_id  |       | target_control       |
-+--------------------+       | relationship         |
-                              +----------------------+
-
-+-------------+
-| AuditEvent  |  (immutable log)
-+-------------+
-| action      |
-| category    |
-| subject_type|  (polymorphic)
-| subject_id  |
-| metadata    |  (JSONB)
-| user_id     |
-| ip_address  |
-+-------------+
+    AuditEvent["AuditEvent (immutable log)<br/>action · category · subject_type/id (polymorphic)<br/>metadata (JSONB) · user_id · ip_address"]
 ```
 
 ---
@@ -180,19 +157,44 @@ Junction tables connect results to observations, findings, and risks in many-to-
 
 ## User & Auth System
 
-```
-Authentication Flow:
+### Entity relationships
 
-  Login Request
-       |
-       v
-  +--- Local? ---> bcrypt verify ---> Session
-  |
-  +--- OAuth? ---> GitHub/GitLab callback ---> Identity lookup ---> Session
-  |
-  +--- OIDC? ----> Provider redirect ---> ID token validation ---> Session
-  |
-  +--- LDAP? ----> LdapAuthService (bind-and-search) ---> Session
+```mermaid
+erDiagram
+    USER ||--o{ USER_ROLE : has
+    ROLE ||--o{ USER_ROLE : grants
+    AUTHORIZATION_BOUNDARY ||--o{ USER_ROLE : "scopes (optional)"
+    USER ||--o{ IDENTITY : "has (OAuth/OIDC/LDAP)"
+
+    USER {
+        string email
+        boolean admin
+        boolean must_reset_password
+    }
+    ROLE {
+        string name
+        jsonb permissions
+    }
+    IDENTITY {
+        string provider
+        string uid
+        jsonb auth_data
+    }
+    AUTHORIZATION_BOUNDARY {
+        string name
+        string status
+    }
+```
+
+### Authentication flow
+
+```mermaid
+flowchart LR
+    Login["Login Request"]
+    Login -->|Local| Bcrypt["bcrypt verify"] --> Session
+    Login -->|OAuth| OAuthCB["GitHub/GitLab callback → Identity lookup"] --> Session
+    Login -->|OIDC| OIDC["Provider redirect → ID-token validation"] --> Session
+    Login -->|LDAP| LDAP["LdapAuthService (bind-and-search)"] --> Session
 ```
 
 - `User` holds core profile, `admin` flag, sign-in tracking, and `must_reset_password`
@@ -258,7 +260,7 @@ auto-detects the format via `OscalFormatDetectionService`, and
 | `AuditCsvExportService` | CSV | Audit-log export for compliance reporting |
 | `AtoPackageExportService` / `AtoPackageService` | Bundle | Assembles a complete ATO package |
 | `CmsAttestationExportService` | CMS format | CMS attestation export (#440) |
-| `KsiExportService` | JSON/CSV | FedRAMP 20x KSI validation export |
+| `KsiExportService` | JSON/CSV | FedRAMP 20x KSI validation export (backed by the `KsiValidation` model) |
 | `OscalExportFormatService`, `OscalResolvedProfileCatalogService` | — | Shared format helpers / resolved-profile catalog generation |
 
 ### Validation
@@ -278,6 +280,9 @@ auto-detects the format via `OscalFormatDetectionService`, and
 | `FrameworkMappingGeneratorService` | Generates STIG/CIS/CCI → OSCAL framework mappings |
 | `SspFromProfileService`, `SarFromProfileService`, `SarFromSspService`, `CdefFromProfileService` | Derive one document type from another |
 | `CdefToSspInheritanceService` | Pull CDEF implementations into an SSP as provider statements |
+| `OdpImportService` | Bulk file import of Organization-Defined Parameters (OSCAL `set-parameter`) onto a baseline/profile (#697) |
+| `BaselineReviewService` | Compares a profile's control selection & ODP values against the expected baseline for reviewer sign-off (#633) |
+| `DocumentApprovalService` | `draft → pending_review → approved/rejected` review workflow for trust-store docs (Catalog, Profile, Baseline, CDEF) (#630) |
 
 ### CDEF Mutation & Baseline
 
@@ -293,8 +298,10 @@ auto-detects the format via `OscalFormatDetectionService`, and
 |---------|---------|
 | `BackMatterBuilderService`, `BackMatterBulkImportService` | Build / bulk-import OSCAL back-matter resources |
 | `BackMatterResourcePromotionService`, `BackMatterAudit` | Promote stash → first-class resources with audit trail |
-| `AuthoritativeSourceFederationService`, `AuthoritativeSourceFetchService` | Authoritative-source library exchange & fetch |
+| `AuthoritativeSourceCreator`, `AuthoritativeSourceFederationService`, `AuthoritativeSourceFetchService` | Authoritative-source library creation, exchange & fetch |
 | `FederationBundleSigningService`, `FederationPeerReencryptionService` | HMAC-signed bundle exchange between SPARC instances |
+
+Durable OSCAL back-matter URIs (#680) are served by the `ArtifactsController` route family (`GET /artifacts/:uuid`, `/artifacts/versions/:uuid`, `/artifacts/:uuid/versions`, `/artifacts/:uuid/freshness`) rather than a service object: a stable UUID resolves to a signed Active Storage / S3 redirect, decoupling `href` values from mutable slugs.
 
 ### Converters & External Ingestion
 
@@ -316,10 +323,11 @@ auto-detects the format via `OscalFormatDetectionService`, and
 
 ### Utilities
 
-`DocumentDuplicationService`, `DashboardAggregationService`, `DataMappingSchema`,
-`OscalMetadataInheritanceService`, `OscalUuidService`, `ControlIdNormalizer`,
-`ControlObjectiveExtractorService`, `ProfilePriorityAssignmentService`,
-`BoundaryMetadataSyncService`, `LeveragedAuthorizationService`,
+`DocumentDuplicationService`, `BulkDestroyService`, `DashboardAggregationService`,
+`DataMappingSchema`, `OscalMetadataInheritanceService`, `OscalUuidService`,
+`ControlIdNormalizer`, `ControlObjectiveExtractorService`,
+`ProfilePriorityAssignmentService`, `BoundaryMetadataSyncService`,
+`LeveragedAuthorizationService`,
 `DeferredDataMigrationRunner` (runs deferred data migrations post-boot, v1.8.3).
 
 ---

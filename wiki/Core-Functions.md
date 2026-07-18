@@ -28,6 +28,7 @@ This page documents every major subsystem and feature in SPARC, the Systematic a
 20. [Authoritative Sources & Federation](#20-authoritative-sources--federation)
 21. [Leveraged Authorizations](#21-leveraged-authorizations)
 22. [Organizations & Service Accounts](#22-organizations--service-accounts)
+23. [Document Review & Approval Workflow](#23-document-review--approval-workflow)
 
 ---
 
@@ -1056,3 +1057,17 @@ Admin-namespace features for tenant and automation identity management.
 - **API session bridge:** `POST /api/v1/sessions/from_token` exchanges a service-account Bearer token (or OIDC JWT) for a Rails session cookie, enabling headless UI test automation (#573, v1.8.4).
 
 See [RBAC](RBAC) for how service accounts and roles interact, and [Configuration](Configuration) for the `SPARC_API_AUTH` modes (token / jwt / hybrid).
+
+---
+
+## 23. Document Review & Approval Workflow
+
+An optional review-and-approval gate for documents and baselines, added in **v1.9.0** (#640, #630–634). Off by default so existing publish flows are unchanged until an org opts in via `SPARC_REQUIRE_DOCUMENT_APPROVAL`.
+
+- **`Approvable` model concern** — makes a document type reviewable: it carries an approval state and transitions through submit → review → approve/reject.
+- **Review queue** (`review_queue`) — reviewers see documents awaiting their decision; **promotion queue** (`promotion_queue`) tracks items moving toward a published/authoritative state.
+- **Services:** `DocumentApprovalService` drives the approve/reject transitions with audit events; `BaselineReviewService` handles baseline/profile review specifically.
+- **Permission-gated** — approval actions require the corresponding `*.approve` permission keys (`catalogs.approve`, `profiles.approve`, `cdef.approve`, and the `back_matter.approve_promotion` gate for back-matter promotion). See [RBAC](RBAC).
+- **Configuration:** `SPARC_REQUIRE_DOCUMENT_APPROVAL` (default off). When enabled, publishing requires an approved review.
+
+See [Screens](Screens) for the review/promotion queue UI and [RBAC](RBAC) for the approval permission keys.

@@ -1,5 +1,7 @@
 # Role-Based Access Control (RBAC)
 
+_Reflects SPARC **v1.12.1**. Authoritative source: `app/models/role.rb` (permission keys) and the role seeds in `db/seeds.rb`._
+
 ## Overview
 
 SPARC implements a granular Role-Based Access Control system with **29 roles** aligned with [NIST SP 800-37 Rev. 2](https://csrc.nist.gov/publications/detail/sp/800-37/rev-2/final) (Risk Management Framework). The system is designed to mirror real-world security authorization workflows, ensuring that each user in the compliance lifecycle has precisely the access they need and nothing more.
@@ -45,21 +47,48 @@ A single user can hold:
 
 ## Permission Keys
 
-SPARC defines **20 permission keys** across 10 resource areas. Each key controls either read or write access to a specific resource type.
+SPARC defines **34 permission keys** across 13 resource areas (`Role::PERMISSION_KEYS` in `app/models/role.rb`). Each key is a `resource.action` string and controls a specific operation on a resource type. Permissions are stored as a JSONB `"resource.action" => boolean` hash on each `Role`.
 
-| Resource | Read Key | Write Key |
-|----------|----------|-----------|
-| Catalogs | `catalogs.read` | `catalogs.write` |
-| Profiles | `profiles.read` | `profiles.write` |
-| Authorization Boundaries | `authorization_boundaries.read` | `authorization_boundaries.write` |
-| Authorization Boundary Members | -- | `authorization_boundaries.manage_members` |
-| SSP | `ssp.read` | `ssp.write` |
-| SAR | `sar.read` | `sar.write` |
-| SAP | `sap.read` | `sap.write` |
-| POA&M | `poam.read` | `poam.write` |
-| CDEF | `cdef.read` | `cdef.write` |
-| Evidence | `evidence.read` | `evidence.write` |
-| Mappings | `mappings.read` | `mappings.write` |
+| Key | Description |
+|-----|-------------|
+| `catalogs.read` | View control catalogs |
+| `catalogs.write` | Create / edit control catalogs |
+| `catalogs.approve` | Approve / publish a control catalog |
+| `profiles.read` | View baselines / profiles |
+| `profiles.write` | Create / edit baselines / profiles |
+| `profiles.approve` | Approve / publish a baseline / profile |
+| `authorization_boundaries.read` | View authorization boundaries |
+| `authorization_boundaries.write` | Create / edit authorization boundaries |
+| `authorization_boundaries.manage_members` | Add / remove members and assign roles within a boundary |
+| `ssp.read` | View System Security Plans |
+| `ssp.write` | Create / edit System Security Plans |
+| `sar.read` | View Security Assessment Results |
+| `sar.write` | Create / edit Security Assessment Results |
+| `sap.read` | View Security Assessment Plans |
+| `sap.write` | Create / edit Security Assessment Plans |
+| `poam.read` | View POA&Ms |
+| `poam.write` | Create / edit POA&Ms |
+| `cdef.read` | View Component Definitions |
+| `cdef.write` | Create / edit Component Definitions |
+| `cdef.approve` | Approve / publish a Component Definition |
+| `evidence.read` | View evidence artifacts |
+| `evidence.write` | Upload / edit / link evidence artifacts |
+| `mappings.read` | View control mappings |
+| `mappings.write` | Create / edit control mappings |
+| `converters.read` | View / run OSCAL and HDF converter tooling |
+| `converters.write` | Configure / manage converter definitions |
+| `back_matter.read` | View back-matter resources |
+| `back_matter.write` | Create / edit back-matter resources |
+| `back_matter.promote` | Promote a back-matter resource to the next version / boundary |
+| `back_matter.approve_promotion` | Approve a pending back-matter promotion |
+| `back_matter.archive` | Archive a back-matter resource |
+| `back_matter.bulk_import` | Bulk-import back-matter resources |
+| `back_matter.federate` | Federate back-matter resources across authorization boundaries / peers |
+| `admin.rotate_credentials` | Rotate instance credentials / master secrets |
+
+**Resource groups** (`Role::RESOURCE_LABELS`): Control Catalogs, Baselines / Profiles, Authorization Boundaries, System Security Plans, Security Assessment Results, Security Assessment Plans, POA&Ms, Component Definitions, Evidence, Control Mappings, Converters, Back-Matter Resources, Instance Administration.
+
+> **Note on seeded assignments.** The permission *keys* above are the full set the platform can enforce. The **default role seeds do not yet grant** the approval, back-matter write/promote/approve/archive/bulk-import/federate, `converters.write`, or `admin.rotate_credentials` keys to any role — those are reserved for the Instance Admin bypass and future role tailoring, or must be granted explicitly via the Admin > Roles interface. The only new keys picked up by the default seeds are `converters.read` and `back_matter.read`, which are included in the all-read permission set used by the broad read-only roles (see matrices below).
 
 ---
 
@@ -134,18 +163,20 @@ Provisional Authority to Operate (P-ATO) reviews. Read access to all resources f
 
 ### Instance-Scoped Permission Matrix
 
-| Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings |
-|------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|
-| Policy Manager | R/W | R/W | R | R | R | R | R | R | R | R/W |
-| Global Viewer | R | R | R | R | R | R | R | R | R | R |
-| Senior Accountable Official | R | R | R | R | R | R | R | R | R | R |
-| SAOP | R | R | R | R | R | R | R | R | R | R |
-| Head of Agency / CEO | R | R | R | R | R | R | R | R | R | R |
-| Risk Executive | R | R | R | R | R | R | R | R | R | R |
-| CIO | R | R | R | R | R | R | R | R | R | R |
-| Chief Acquisition Officer | R | R | R | - | - | - | - | R | R | R |
-| FedRAMP PMO | R | R | R | R | R | R | R | R | R | R |
-| JAB | R | R | R | R | R | R | R | R | R | R |
+Columns cover the resources the default seeds touch. The approval / back-matter-write / promotion / `converters.write` / `admin.rotate_credentials` keys are not granted by any seed and are omitted. `Conv` = Converters, `Back` = Back-Matter Resources.
+
+| Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings | Conv | Back |
+|------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|------|------|
+| Policy Manager | R/W | R/W | R | R | R | R | R | R | R | R/W | R | R |
+| Global Viewer | R | R | R | R | R | R | R | R | R | R | R | R |
+| Senior Accountable Official | R | R | R | R | R | R | R | R | R | R | - | - |
+| SAOP | R | R | R | R | R | R | R | R | R | R | - | - |
+| Head of Agency / CEO | R | R | R | R | R | R | R | R | R | R | R | R |
+| Risk Executive | R | R | R | R | R | R | R | R | R | R | R | R |
+| CIO | R | R | R | R | R | R | R | R | R | R | R | R |
+| Chief Acquisition Officer | R | R | R | - | - | - | - | R | R | R | - | - |
+| FedRAMP PMO | R | R | R | R | R | R | R | R | R | R | R | R |
+| JAB | R | R | R | R | R | R | R | R | R | R | R | R |
 
 ---
 
@@ -232,6 +263,8 @@ Read-only authorization boundary access for stakeholders who need visibility but
 ---
 
 ### Authorization-Boundary-Scoped Permission Matrix
+
+No authorization-boundary-scoped role is granted `converters.*` or `back_matter.*` in the default seeds, so those columns are omitted here; the columns match the instance-scoped matrix.
 
 | Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings |
 |------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|
