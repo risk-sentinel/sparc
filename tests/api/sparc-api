@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+#
+# sparc-api — helper CLI for the SPARC API contract suite + ad-hoc API ops.
+#
+# Manages tests/api/.env (base URL + tokens), validates tokens immediately,
+# and wraps the pytest suite. Resolves .env relative to this script, so your
+# current directory never matters. Tokens are always redacted in output.
+#
+# Usage:
+#   ./sparc-api target <prod|local|URL>     Set the instance under test
+#   ./sparc-api set-token admin <token>     Save + validate the admin token
+#   ./sparc-api set-token user  <token>     Save + validate the read-level token
+#   ./sparc-api doctor                      Preflight: URL reachable? tokens auth?
+#   ./sparc-api show                        Print config (tokens redacted)
+#   ./sparc-api create-users [N]            Create N active local-login test users
+#   ./sparc-api test [pytest args...]       Run the contract suite (uv run pytest)
+#
+# Token tips:
+#   - Pass the token as an argument, OR omit it for a hidden prompt.
+#   - Tokens live only in the gitignored .env; rotate them when done.
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.env"
+AVAIL="/api/v1/available"   # cheap admin-authenticated endpoint used for preflight
+
+# ── .env helpers ────────────────────────────────────────────────────────────
+get_env() {
+  [ -f "$ENV_FILE" ] || return 0
+  local v; v="$(grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2-)"
+  # strip surrounding quotes (match python-dotenv) so `KEY="val"` == `KEY=val`
+  v="${v%\"}"; v="${v#\"}"; v="${v%\'}"; v="${v#\'}"
+  printf '%s' "$v"
+}
+
+set_env() {
+  local key="$1" val="$2" tmp
+  [ -f "$ENV_FILE" ] || : > "$ENV_FILE"
+  if grep -qE "^$key=" "$ENV_FILE"; then
+    tmp="$(mktemp)"
+    # value used verbatim; SPARC tokens are [A-Za-z0-9_] so no sed-delimiter clash
+    sed "s|^$key=.*|$key=$val|" "$ENV_FILE" > "$tmp" && mv "$tmp" "$ENV_FILE"
+  else
+    printf '%s=%s\n' "$key" "$val" >> "$ENV_FILE"
+  fi
+}
+
+base_url() { get_env SPARC_TEST_BASE_URL; }
+
+redact() { local t="${1:-}"; [ -n "$t" ] && printf '%s…%s (len %s)' "${t:0:12}" "${t: -4}" "${#t}" || printf '<empty>'; }
+
+# status_code <path> [token]  → prints HTTP code (000 on connection failure)
+status_code() {
+  local url="$1" tok="${2:-}" args=(-sS -o /dev/null -w '%{http_code}' --max-time 20)
+  [ -n "$tok" ] && args+=(-H "Authorization: Bearer $tok")
+  curl "${args[@]}" "$url" 2>/dev/null || printf '000'
+}
+
+need_url()   { local u; u="$(base_url)"; [ -n "$u" ] || { echo "✗ no target set — run: $0 target prod"; exit 1; }; printf '%s' "$u"; }
+need_admin() { local t; t="$(get_env SPARC_TEST_ADMIN_TOKEN)"; [ -n "$t" ] || { echo "✗ no admin token — run: $0 set-token admin <token>"; exit 1; }; printf '%s' "$t"; }
+
+# ── commands ────────────────────────────────────────────────────────────────
+cmd_target() {
+  local t="${1:-}"
+  case "$t" in
+    prod)  t="https://sparc.risk-sentinel.org" ;;
+    local) t="http://localhost:3000" ;;
+    "")    echo "usage: $0 target <prod|local|URL>"; exit 1 ;;
+  esac
+  set_env SPARC_TEST_BASE_URL "$t"
+  echo "target → $t"
+  echo -n "reachable: "; local st; st="$(status_code "$t$AVAIL")"; echo "$st (no-auth; 401 is expected here)"
+}
+
+cmd_set_token() {
+  local which="${1:-}" tok="${2:-}" key
+  case "$which" in
+    admin) key=SPARC_TEST_ADMIN_TOKEN ;;
+    user)  key=SPARC_TEST_USER_TOKEN ;;
+    *) echo "usage: $0 set-token <admin|user> [token]"; exit 1 ;;
+  esac
+  if [ -z "$tok" ]; then read -r -s -p "Paste $which token (hidden): " tok; echo; fi
+  [ -n "$tok" ] || { echo "✗ empty token — nothing saved"; exit 1; }
+  set_env "$key" "$tok"
+  echo "$which token saved → $(redact "$tok")"
+  local url; url="$(base_url)"
+  if [ -n "$url" ]; then
+    local st; st="$(status_code "$url$AVAIL" "$tok")"
+    if [ "$st" = 200 ]; then echo "  ✓ authenticates against $url ($st)"
+    else echo "  ✗ rejected ($st) against $url — wrong token, wrong target, or lacks the needed role"; fi
+  else
+    echo "  (set a target to validate: $0 target prod)"
+  fi
+}
+
+cmd_doctor() {
+  local url; url="$(base_url)"
+  echo "env:    $ENV_FILE"
+  echo "target: ${url:-<unset>}"
+  [ -n "$url" ] || { echo "✗ NOT READY — run: $0 target prod"; exit 1; }
+  echo "reachable (no-auth): $(status_code "$url$AVAIL")"
+  local a u sa su
+  a="$(get_env SPARC_TEST_ADMIN_TOKEN)"; u="$(get_env SPARC_TEST_USER_TOKEN)"
+  sa="$(status_code "$url$AVAIL" "$a")"; su="$(status_code "$url$AVAIL" "$u")"
+  echo "admin token: $(redact "$a")   auth: ${a:+$sa}${a:+""}"; [ -n "$a" ] || echo "   (admin token empty)"
+  echo "user  token: $(redact "$u")   auth: ${u:+$su}${u:+""}"; [ -n "$u" ] || echo "   (user token empty)"
+  echo
+  if [ "$sa" = 200 ] && [ "$su" = 200 ]; then
+    echo "READY ✓ — both tokens authenticate. Run: $0 test"
+  else
+    echo "NOT READY ✗ — fix with: $0 set-token admin <tok>   and/or   $0 set-token user <tok>"
+    [ "$sa" = 200 ] || echo "   admin token → $sa (need 200)"
+    [ "$su" = 200 ] || echo "   user  token → $su (need 200)"
+    exit 1
+  fi
+}
+
+cmd_show() {
+  echo "env: $ENV_FILE"
+  [ -f "$ENV_FILE" ] && sed -E 's/(TOKEN=).+/\1<redacted>/' "$ENV_FILE" || echo "(no .env yet)"
+}
+
+cmd_create_users() {
+  local count="${1:-2}" url tok
+  url="$(need_url)"; tok="$(need_admin)"
+  echo "Creating $count active local-login test user(s) on $url"
+  echo "(save these passwords — shown once)"
+  local n pw email resp
+  for n in $(seq 1 "$count"); do
+    pw="DastTest-$(openssl rand -hex 12)"
+    email="dast-test-${n}@example.com"
+    resp="$(curl -sS -X POST "$url/api/v1/users" \
+      -H "Authorization: Bearer $tok" -H 'Content-Type: application/json' \
+      -d "{\"user\":{\"email\":\"$email\",\"password\":\"$pw\",\"password_confirmation\":\"$pw\",\"first_name\":\"DAST\",\"last_name\":\"Test $n\",\"status\":\"active\"}}" 2>/dev/null)"
+    echo "== $email =="
+    echo "$resp" | python3 -m json.tool 2>/dev/null || echo "$resp"
+    echo "   password: $pw"
+  done
+}
+
+cmd_test() {
+  command -v uv >/dev/null || { echo "✗ uv not found on PATH"; exit 1; }
+  cd "$SCRIPT_DIR"
+  echo "Running contract suite against $(base_url) …"
+  exec uv run pytest "$@"
+}
+
+usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+
+case "${1:-}" in
+  target)       shift; cmd_target "$@" ;;
+  set-token)    shift; cmd_set_token "$@" ;;
+  doctor)       shift; cmd_doctor "$@" ;;
+  show)         shift; cmd_show "$@" ;;
+  create-users) shift; cmd_create_users "$@" ;;
+  test)         shift; cmd_test "$@" ;;
+  ""|-h|--help|help) usage ;;
+  *) echo "unknown command: $1"; echo; usage; exit 1 ;;
+esac

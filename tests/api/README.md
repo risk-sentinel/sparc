@@ -8,6 +8,25 @@ The coverage spine is [`docs/api/INVENTORY.md`](../../docs/api/INVENTORY.md). Ev
 
 The suite is managed with [uv](https://docs.astral.sh/uv/) for reproducible dependency resolution and fast cold installs. `uv.lock` is committed; running `uv sync` produces a venv that exactly matches the lockfile and the version CI runs against.
 
+### The `sparc-api` helper (recommended)
+
+`./sparc-api` wraps configuration and running so you don't hand-edit `.env` or juggle exported tokens (which don't persist across shells). It reads/writes `tests/api/.env` **relative to itself** (so your current directory never matters), strips surrounding quotes (dotenv-parity), **validates tokens on the spot**, and redacts tokens in all output.
+
+```bash
+cd tests/api
+./sparc-api target prod                 # or: target local | target <url>
+./sparc-api set-token admin <token>     # saves to .env and validates immediately
+./sparc-api set-token user  <token>     # a read-level (non-admin) token
+./sparc-api doctor                      # preflight: URL reachable? both tokens auth?
+./sparc-api test                        # runs the suite (uv run pytest); args pass through
+```
+
+Also: `./sparc-api show` (config, tokens redacted) and `./sparc-api create-users [N]` (create N active local-login test users via the admin token).
+
+> ⚠️ The **user token must be a genuine non-admin**. If it carries admin / `*.write` / `*.approve` permissions, the authorization-gate tests (`test_non_admin_*`) fail — the "non-admin" can perform admin actions. `doctor` confirms the tokens authenticate; a quick `GET /api/v1/users` returning **403** confirms the user token is non-admin.
+
+The manual steps below still work if you prefer them.
+
 ### 1. Install
 
 Either run natively with uv, or use the container — both produce identical environments.
