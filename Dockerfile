@@ -10,8 +10,10 @@ ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
 ARG HDF_LIBS_VERSION=3.2.0
 # Digest-pinned manifest-list (multi-arch) for reproducibility (#742 / folded #639
-# pinning policy). Bump deliberately via Dependabot/Renovate when RH ships a patch.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal:9.7@sha256:907b68736aa798b2d38255b7aa070b2a70acb90803864a40f05d0ec47556ddd0
+# pinning policy). Currently ubi-minimal 9.7. Digest-only (no version tag) so the
+# reference is unambiguous (SonarQube docker:S6596 — don't pin tag AND digest).
+# Bump deliberately via Dependabot/Renovate when RH ships a patch.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:907b68736aa798b2d38255b7aa070b2a70acb90803864a40f05d0ec47556ddd0
 
 # ── builder: toolchain + Ruby/jemalloc from source + hdf-cli + gems + assets ──
 FROM ${UBI_IMAGE} AS builder
@@ -93,7 +95,8 @@ ENV PATH=/usr/local/bin:$PATH \
 # #750 guard: fail the build if the runtime ever loses its UTF-8 default encoding
 # again (base-image locale regression). This exact assertion would have caught the
 # v1.12.0 login 500 at build time instead of in production.
-RUN ruby -e 'raise "default_external=#{Encoding.default_external} (expected UTF-8; is LANG set?)" unless Encoding.default_external == Encoding::UTF_8'
+RUN ruby -e 'raise unless Encoding.default_external == Encoding::UTF_8' \
+    || { echo "::error::default_external is not UTF-8 (is LANG set?) - see #750"; exit 1; }
 
 WORKDIR /rails
 COPY --from=builder /rails /rails
