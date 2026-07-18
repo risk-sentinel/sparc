@@ -35,6 +35,14 @@ on:
         required: false
       SPARC_ECR_REGISTRY:
         required: false
+      # #748 — cross-repo release notify. PAT / fine-grained token with
+      # issues:write on risk-sentinel/sparc-iac (GITHUB_TOKEN cannot open
+      # issues in another repo). Org secret PROJECT_TOKEN already carries
+      # this scope (container-build-sign files pin-bump issues in sparc-iac
+      # with it). Required only when the notify-consumers job runs (real
+      # release, not a dry run); declared here so workflow_call validates.
+      PROJECT_TOKEN:
+        required: false
     outputs:
       digest:
         description: 'Multi-platform image manifest digest'
@@ -466,3 +474,79 @@ jobs:
             risksentinel/sparc:${VERSION}
           \`\`\`
           EOF
+
+  # ── Notify consumers: pin-bump issue to sparc-iac (#748) ──────
+  # Final stage of the end-to-end publication schema: once the image is
+  # built, signed, and attested, tell the deploy repo a new version exists.
+  # Modeled on container-build-sign's notify-consumers job. Cross-repo
+  # lockstep is "part of done" — if the issue can't be filed, the release
+  # FAILS loudly rather than shipping green while sparc-iac drifts behind.
+  notify-consumers:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read          # files the issue via PROJECT_TOKEN, not GITHUB_TOKEN
+    needs: [ prepare, build-and-push, sign-verify-attest ]
+    if: needs.prepare.outputs.dry_run != 'true'
+    steps:
+      - name: File pin-bump issue in sparc-iac
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          CONSUMER_REPO: risk-sentinel/sparc-iac
+          IMAGE_REF: risksentinel/sparc
+          VERSION: ${{ needs.prepare.outputs.version }}
+          DIGEST: ${{ needs.build-and-push.outputs.digest }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::secrets.PROJECT_TOKEN is unset — cannot file the pin-bump issue in ${CONSUMER_REPO}. Cross-repo lockstep (#748) requires it on a real release."
+            exit 1
+          fi
+
+          BODY=$(cat <<EOF
+          ## New sparc image published — pin bump available
+
+          A new version of \`${IMAGE_REF}\` has been built, signed, and attested.
+
+          | Field | Value |
+          |-------|-------|
+          | Tag | \`${VERSION}\` |
+          | Digest | \`${DIGEST}\` |
+          | Publish run | ${RUN_URL} |
+
+          ### Verify the signature
+
+          \`\`\`bash
+          cosign verify \\
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\
+            --certificate-identity-regexp="github.com/risk-sentinel/sparc" \\
+            ${IMAGE_REF}@${DIGEST}
+          \`\`\`
+
+          ### Bump the pin
+
+          Update the sparc image reference to pin against the digest above, then deploy on your own cadence.
+
+          ---
+
+          Filed automatically by \`risk-sentinel/sparc\` on release (#748).
+          EOF
+          )
+
+          echo "Filing pin-bump issue in ${CONSUMER_REPO} for ${VERSION}…"
+          if gh issue create \
+               --repo "$CONSUMER_REPO" \
+               --title "chore: bump sparc image pin to ${VERSION}" \
+               --body "$BODY"; then
+            echo "✓ pin-bump issue filed in ${CONSUMER_REPO}"
+          else
+            echo "::error::Failed to file pin-bump issue in ${CONSUMER_REPO} — cross-repo lockstep (#748) incomplete"
+            exit 1
+          fi
+
+      - name: Notify summary
+        run: |
+          {
+            echo "## Consumer Notification"
+            echo ""
+            echo "Filed pin-bump issue in \`risk-sentinel/sparc-iac\` for \`${{ needs.prepare.outputs.version }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
