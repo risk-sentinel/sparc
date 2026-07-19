@@ -44,11 +44,6 @@ Detailed field-level mapping documentation for each document type:
 - [`docs/data_mapping/baseline_resolved_profile.md`](data_mapping/baseline_resolved_profile.md) -- Profile resolution and baselines
 - [`docs/data_mapping/catalogs.md`](data_mapping/catalogs.md) -- Catalog structure and import
 
-Additional column references for tabular imports:
-
-- [`docs/ssp-columns.md`](ssp-columns.md) -- SSP column definitions
-- [`docs/sar-columns.md`](sar-columns.md) -- SAR column definitions
-
 ## 4. Three-Level Model Architecture
 
 Every document type (except POA&M and Catalog) follows the same three-level structure:
