@@ -33,6 +33,41 @@ required. In development they execute in-process; to run a dedicated worker,
 start `bin/jobs` in a separate terminal. Sidekiq + Redis remain supported as an
 optional alternative.
 
+### hdf-cli (HDF ↔ OSCAL translation bridge)
+
+The translation endpoints shell out to the MITRE **hdf-libs** CLI. The Docker
+image bakes it in, so this is only needed for local development against the
+bridge — everything else runs without it.
+
+```bash
+sudo bin/install-hdf.sh          # installs the pinned version to /usr/local/bin
+hdf version                      # confirm
+```
+
+`bin/install-hdf.sh` is the single source of truth for provisioning, shared by
+the `Dockerfile` and CI. It downloads the release tarball, **verifies SHA-256
+against the release `checksums.txt`**, and refuses to install on mismatch. It
+defaults to the version SPARC pins (`HdfRunner::PINNED_VERSION`); override with
+`HDF_LIBS_VERSION=x.y.z` to test another build, or `HDF_INSTALL_DIR=...` to
+install somewhere other than `/usr/local/bin` (no `sudo` needed for a writable
+directory):
+
+```bash
+HDF_LIBS_VERSION=3.4.1 HDF_INSTALL_DIR="$PWD/tmp/hdfbin" bin/install-hdf.sh
+```
+
+> **If `hdf version` still reports the old version after installing**, another
+> copy is winning on `PATH`. A previous `go install` of hdf-libs leaves a binary
+> in `$GOBIN` (usually `~/go/bin`), which commonly precedes `/usr/local/bin`.
+> The installer now detects this and prints the fix. Check with `which hdf`, then
+> either install over the copy that wins
+> (`HDF_INSTALL_DIR="$(dirname "$(command -v hdf)")" bin/install-hdf.sh`) or
+> remove it (`rm "$(command -v hdf)" && hash -r`).
+
+SPARC only asserts the version when you ask it to: set
+`SPARC_HDF_ALLOWED_VERSIONS` to refuse translations on an uncertified build.
+Unset (default), it accepts whatever binary is present.
+
 ---
 
 ## Authentication Setup

@@ -24,7 +24,7 @@ require "stringio"
 #   SA-11 Developer Testing   (validate against schema before persistence)
 class HdfRunner
   JSON_FLAG = "--json".freeze
-  PINNED_VERSION = "3.2.0".freeze
+  PINNED_VERSION = "3.4.1".freeze
   DEFAULT_BINARY = "hdf".freeze
 
   class Error < StandardError
