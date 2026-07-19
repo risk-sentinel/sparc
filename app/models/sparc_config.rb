@@ -215,17 +215,18 @@ module SparcConfig
   def require_document_approval? = ENV.fetch("SPARC_REQUIRE_DOCUMENT_APPROVAL", "false") == "true"
 
   # ── HDF / OSCAL translation (#449, #648) ─────────────────────────────────
-  # hdf-cli 3.2.0 made a top-level `baselines` field REQUIRED for the
-  # hdf→oscal-sar conversion, which rejects standard scanner HDF that has no
-  # such field (upstream mitre/hdf-libs#104). When true (default), HdfRunner
-  # injects an empty `baselines: []` before converting so standard HDF works
-  # again. Set false for strict pass-through (no input mutation).
-  def hdf_normalize_baselines? = ENV.fetch("SPARC_HDF_NORMALIZE_BASELINES", "true") == "true"
+  # SPARC_HDF_NORMALIZE_BASELINES was removed in #764. It injected an empty
+  # `baselines: []` to work around hdf-cli 3.2.0 requiring that field for
+  # hdf→oscal-sar (upstream mitre/hdf-libs#104). Fixed upstream in 3.3.1, so
+  # from the 3.4.1 pin the injection is not merely unnecessary — it is the only
+  # thing that lets non-HDF input through: garbage converts at exit 0 with the
+  # field injected and is correctly rejected without it. Removing it restores
+  # the "garbage in → 422" contract.
 
   # Allowlist of certified hdf-cli tool versions for the translation surface.
   # Empty (default) = accept whatever version is baked into the image (chosen
   # at build via the HDF_LIBS_VERSION Docker build arg). When set (e.g.
-  # "3.2.0,3.3.0"), the translation endpoints refuse to run on an
+  # "3.4.1,3.4.0"), the translation endpoints refuse to run on an
   # uncertified hdf-cli build.
   def hdf_allowed_versions
     ENV.fetch("SPARC_HDF_ALLOWED_VERSIONS", "").split(",").map(&:strip).reject(&:empty?)

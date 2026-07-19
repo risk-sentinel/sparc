@@ -11,7 +11,7 @@ RSpec.describe HdfRunner do
     let(:baselines_key)   { "baselines" }
     let(:results_type)    { "results" }
     let(:oscal_sar)    { "oscal-sar" }
-    let(:version_json) { '{"version":"3.2.0"}' }
+    let(:version_json) { '{"version":"3.4.1"}' }
 
     def stub_open3(stdout: "", stderr: "", success: true, exit_code: 0)
       status = instance_double(Process::Status, success?: success, exitstatus: exit_code)
@@ -65,7 +65,13 @@ RSpec.describe HdfRunner do
       end
     end
 
-    describe "#convert baselines normalization (#648)" do
+    # #648 added a `baselines: []` injection to work around hdf-cli 3.2.0
+    # requiring that field for hdf->oscal-sar (mitre/hdf-libs#104). Fixed
+    # upstream in 3.3.1 and removed in #764: from the 3.4.1 pin the injection
+    # was the only thing letting non-HDF input through -- garbage converts at
+    # exit 0 with the field injected, and is correctly rejected without it.
+    # These specs pin the absence of mutation so it can't be reintroduced.
+    describe "#convert input pass-through (#764)" do
       def capture_input_content(stdout: "{}")
         captured = nil
         status = instance_double(Process::Status, success?: true, exitstatus: 0)
@@ -77,45 +83,29 @@ RSpec.describe HdfRunner do
         captured
       end
 
-      it "injects empty baselines for oscal-sar when the field is missing" do
+      it "does not add baselines for oscal-sar when the field is missing" do
         content = capture_input_content do
           runner.convert(StringIO.new('{"version":1,"profiles":[]}'), from: "hdf", to: oscal_sar)
         end
-        expect(JSON.parse(content)).to include(baselines_key => [])
+        expect(JSON.parse(content)).not_to have_key(baselines_key)
       end
 
-      it "leaves input untouched when baselines already present" do
+      it "passes the document through byte-for-byte" do
+        original = '{"version":1,"profiles":[],"statistics":{}}'
+        content = capture_input_content do
+          runner.convert(StringIO.new(original), from: "hdf", to: oscal_sar)
+        end
+        expect(content).to eq(original)
+      end
+
+      it "leaves an existing baselines field untouched" do
         content = capture_input_content do
           runner.convert(StringIO.new('{"profiles":[],"baselines":[{"x":1}]}'), from: "hdf", to: oscal_sar)
         end
         expect(JSON.parse(content)[baselines_key]).to eq([ { "x" => 1 } ])
       end
-
-      it "does not inject for non-HDF JSON lacking a profiles key" do
-        # Without the `profiles` gate, hdf-cli 3.2.0 would convert
-        # `{...,"baselines":[]}` garbage into a degenerate SAR (exit 0),
-        # silently accepting non-HDF input. See #648.
-        content = capture_input_content do
-          runner.convert(StringIO.new('{"not":"hdf"}'), from: "hdf", to: oscal_sar)
-        end
-        expect(JSON.parse(content)).not_to have_key(baselines_key)
-      end
-
-      it "does not inject for non-oscal-sar conversions" do
-        content = capture_input_content do
-          runner.convert(StringIO.new('{"profiles":[]}'), from: "oscal-poam")
-        end
-        expect(JSON.parse(content)).not_to have_key(baselines_key)
-      end
-
-      it "does not inject when normalization is disabled" do
-        allow(SparcConfig).to receive(:hdf_normalize_baselines?).and_return(false)
-        content = capture_input_content do
-          runner.convert(StringIO.new('{"profiles":[]}'), from: "hdf", to: oscal_sar)
-        end
-        expect(JSON.parse(content)).not_to have_key(baselines_key)
-      end
     end
+
 
     describe "#convert version allowlist (SPARC_HDF_ALLOWED_VERSIONS)" do
       it "refuses to run when the hdf-cli version is not allowlisted" do
@@ -127,7 +117,7 @@ RSpec.describe HdfRunner do
       end
 
       it "runs when the version is allowlisted" do
-        allow(SparcConfig).to receive(:hdf_allowed_versions).and_return([ "3.2.0" ])
+        allow(SparcConfig).to receive(:hdf_allowed_versions).and_return([ "3.4.1" ])
         stub_open3(stdout: version_json)
         expect { runner.convert(scan_path, to: "hdf") }.not_to raise_error
       end

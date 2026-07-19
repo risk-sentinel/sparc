@@ -50,7 +50,6 @@ class HdfRunner
   # @return [Hash] parsed JSON
   def convert(input, from: nil, to: nil, max_size_mb: 50)
     ensure_allowed_version!
-    input = inject_baselines_if_needed(input, to)
     flags = [ "--max-size", max_size_mb.to_s ]
     flags += [ "--from", from ] if from
     flags += [ "--to",   to   ] if to
@@ -58,7 +57,12 @@ class HdfRunner
     invoke_json("convert", flags, input: input)
   end
 
-  # Validate input against the v3.2.0 schema. Raises on mismatch.
+  # Validate input against the bundled hdf-cli schema. Raises on mismatch.
+  #
+  # NOTE: `hdf validate --type results` still requires a top-level `baselines`
+  # field even on 3.4.1, while the oscal-sar converter no longer does — the
+  # validator and the converter disagree upstream. Don't reach for this as a
+  # pre-flight check on scanner HDF; it will reject input that converts fine.
   # @param type [String] "results" | "baseline" | "amendments" | etc.
   def validate(input, type: "results")
     invoke("validate", [ "--type", type, "--quiet" ], input: input)
@@ -118,52 +122,6 @@ class HdfRunner
   end
 
   private
-
-  # hdf-cli 3.2.0 made a top-level `baselines` field required for the
-  # hdf→oscal-sar conversion; standard scanner HDF (InSpec exec-json, SARIF→hdf,
-  # etc.) has no such field, so the converter 422s with "missing baselines
-  # field" (upstream mitre/hdf-libs#104). When normalization is enabled, inject
-  # an empty `baselines: []` so the conversion proceeds.
-  #
-  # Gated on the doc looking like HDF — i.e. having a top-level `profiles` array
-  # (the defining HDF results structure). Without this gate we'd inject into ANY
-  # JSON object, and hdf-cli 3.2.0 happily turns `{"anything","baselines":[]}`
-  # into a degenerate SAR (exit 0) — silently converting non-HDF garbage that
-  # should be rejected. Requiring `profiles` keeps the "garbage in → 422" contract
-  # while still fixing real scanner HDF. Only touches oscal-sar, only when
-  # baselines is missing, only for JSON input.
-  def inject_baselines_if_needed(input, to)
-    return input unless to == "oscal-sar"
-    return input unless SparcConfig.hdf_normalize_baselines?
-
-    raw = read_input_content(input)
-    return input if raw.nil?
-
-    doc = JSON.parse(raw)
-    return input unless doc.is_a?(Hash) && doc.key?("profiles") && !doc.key?("baselines")
-
-    doc["baselines"] = []
-    StringIO.new(JSON.generate(doc))
-  rescue JSON::ParserError
-    input # not JSON (or unreadable) — let hdf-cli handle the original
-  end
-
-  # Read input content without consuming it for the caller. Strings are
-  # treated as paths; IO/path-like are read and rewound.
-  def read_input_content(input)
-    case input
-    when String
-      File.exist?(input) ? File.read(input) : nil
-    else
-      if input.respond_to?(:read)
-        content = input.read
-        input.rewind if input.respond_to?(:rewind)
-        content
-      elsif input.respond_to?(:path)
-        File.read(input.path)
-      end
-    end
-  end
 
   # Refuse to run translations on an uncertified hdf-cli build when the
   # operator has pinned an allowlist (SPARC_HDF_ALLOWED_VERSIONS). No-op when

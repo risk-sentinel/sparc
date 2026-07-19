@@ -234,8 +234,7 @@ Controls how Heimdall Data Format (HDF) inputs are normalized during SAR/POAM co
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_HDF_NORMALIZE_BASELINES` | (enabled) | Inject an empty `baselines` array when SAR conversion requires it (hdf-cli 3.2.0 contract) |
-| `SPARC_HDF_ALLOWED_VERSIONS` | (built-in set) | Comma-separated list of accepted HDF schema versions |
+| `SPARC_HDF_ALLOWED_VERSIONS` | (accept bundled) | Comma-separated list of accepted hdf-cli versions; unset accepts whatever the image bakes |
 
 ## DISA CCI Catalog Retrieval
 
