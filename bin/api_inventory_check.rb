@@ -47,7 +47,9 @@ CONTROLLER_TO_DOC = {
   "translations"             => "translations",
   "sessions"                 => "sessions",
   "attestations"             => "attestations",
-  "artifacts"                => "artifacts"
+  "artifacts"                => "artifacts",
+  "evidences"                => "evidences",
+  "evidence_control_links"   => "evidence-control-links"
 }.freeze
 
 def load_routes
@@ -166,7 +168,11 @@ CONTROLLER_TO_TEST_MODULE = {
   "translations"             => "test_translations.py",
   "sessions"                 => "test_sessions.py",
   "attestations"             => "test_attestations.py",
-  "artifacts"                => "test_artifacts.py"
+  "artifacts"                => "test_artifacts.py",
+  "evidences"                => "test_evidences.py",
+  # Control-link coverage lives in test_evidences.py::TestControlLinks rather
+  # than a module of its own — the two controllers are one API surface.
+  "evidence_control_links"   => "test_evidences.py"
 }.freeze
 
 def load_pytest_module_texts

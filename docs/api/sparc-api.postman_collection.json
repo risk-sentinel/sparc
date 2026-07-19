@@ -3962,6 +3962,393 @@
       ]
     },
     {
+      "name": "Evidence",
+      "item": [
+        {
+          "name": "List Evidence",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences?items=25",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences"
+              ]
+            },
+            "description": "List evidence, boundary-scoped and paginated (#756). Filters: type, status, control_id, q."
+          }
+        },
+        {
+          "name": "Show Evidence",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}"
+              ]
+            },
+            "description": "Show one evidence record by numeric id or slug (#756)."
+          }
+        },
+        {
+          "name": "Create Evidence (JSON, metadata only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences"
+              ]
+            },
+            "description": "Create evidence without a file (#756). collected_at/collected_by are server-recorded.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evidence\": {\n    \"title\": \"Q3 Vulnerability Scan\",\n    \"description\": \"Authenticated scan of the production VPC.\",\n    \"source\": \"https://scanner.example.com/runs/8821\",\n    \"evidence_type\": \"scan_result\",\n    \"status\": \"collected\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create Evidence (multipart, with file)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences"
+              ]
+            },
+            "description": "Create evidence with a file upload (#756). Executable content is rejected with 422.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "evidence[title]",
+                  "value": "Q3 Vulnerability Scan",
+                  "type": "text"
+                },
+                {
+                  "key": "evidence[description]",
+                  "value": "Authenticated scan of the production VPC.",
+                  "type": "text"
+                },
+                {
+                  "key": "evidence[source]",
+                  "value": "https://scanner.example.com/runs/8821",
+                  "type": "text"
+                },
+                {
+                  "key": "evidence[evidence_type]",
+                  "value": "scan_result",
+                  "type": "text"
+                },
+                {
+                  "key": "evidence[status]",
+                  "value": "collected",
+                  "type": "text"
+                },
+                {
+                  "key": "evidence[file]",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Evidence",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}"
+              ]
+            },
+            "description": "Update evidence (#756). Supplying control_ids replaces existing links.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evidence\": {\n    \"status\": \"reviewed\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Evidence (PUT alias)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}"
+              ]
+            },
+            "description": "PUT alias for update (#756).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evidence\": {\n    \"status\": \"reviewed\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Evidence",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}"
+              ]
+            },
+            "description": "Delete evidence (#756). Audit-logged; cascades to control links and attestations."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Evidence Control Links",
+      "item": [
+        {
+          "name": "List Control Links",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/control_links",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "control_links"
+              ]
+            },
+            "description": "List control links for an evidence record (#756)."
+          }
+        },
+        {
+          "name": "Create Control Link (document-scoped)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/control_links",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "control_links"
+              ]
+            },
+            "description": "Link evidence to a control on a document (#756). Supplying document_type + document_id creates the managed BackMatterResource that appears in OSCAL back-matter.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"control_link\": {\n    \"control_id\": \"AC-2\",\n    \"document_type\": \"SspDocument\",\n    \"document_id\": 1\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create Control Link (bare)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/control_links",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "control_links"
+              ]
+            },
+            "description": "Link evidence to a control with no document scope (#756). Traceability only \u2014 does NOT appear in OSCAL back-matter.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"control_link\": {\n    \"control_id\": \"AC-2\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Control Link",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/evidences/{{evidence_id}}/control_links/{{control_link_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evidences",
+                "{{evidence_id}}",
+                "control_links",
+                "{{control_link_id}}"
+              ]
+            },
+            "description": "Unlink a control (#756). Removing the last document-scoped link tears down the BackMatterResource."
+          }
+        }
+      ]
+    },
+    {
       "name": "Attestations",
       "item": [
         {

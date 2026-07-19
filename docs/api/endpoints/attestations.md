@@ -4,9 +4,10 @@ REST API for evidence **attestations** (#440) — periodic-review records signed
 
 All endpoints are nested under a specific **evidence** record.
 
-> **Note:** SPARC does not (currently) expose an Evidence-creation API — Evidence
-> is created through the UI or seeded. API callers therefore operate on an
-> existing `:evidence_id`.
+> **Note:** Evidence itself is managed through the [Evidence API](evidences.md)
+> (#756). Create an evidence record there first, then attest against the
+> returned id or slug. Before #756 there was no evidence-creation endpoint and
+> callers had to operate on a UI-created or seeded record.
 
 ## Base URL
 
