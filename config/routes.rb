@@ -435,14 +435,17 @@ Rails.application.routes.draw do
       resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ]
       resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ]
 
-      # Evidence attestations (#440 — periodic-review records + CMS schema export).
-      # API surface mirrors the UI nesting (`/evidences/:evidence_id/attestations`).
-      resources :evidences, only: [] do
+      # Evidence CRUD (#756 — file upload + Control/CDEF association) plus
+      # attestations (#440 — periodic-review records + CMS schema export).
+      # API surface mirrors the UI nesting (`/evidences/:evidence_id/...`).
+      resources :evidences, only: [ :index, :show, :create, :update, :destroy ] do
         resources :attestations, only: [ :index, :show, :create, :destroy ] do
           collection do
             get :export
           end
         end
+        resources :control_links, only: [ :index, :create, :destroy ],
+                  controller: "evidence_control_links"
       end
 
       # Durable artifact resolver (#680) — stable UUID → signed download URL;
