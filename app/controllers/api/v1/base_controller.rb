@@ -24,6 +24,15 @@ class Api::V1::BaseController < ActionController::API
     render json: { error: "Forbidden" }, status: :forbidden
   end
 
+  # Without this, a payload missing its root key (e.g. `{}` instead of
+  # `{"evidence": {...}}`) escapes `params.require` uncaught and Rails
+  # renders its default HTML error page — from a JSON API. Every controller
+  # here using `params.require` was affected. 400 per docs/api/errors.md:
+  # "Returned when a required parameter is missing."
+  rescue_from ActionController::ParameterMissing do |e|
+    render json: { error: "Missing required parameter: #{e.param}" }, status: :bad_request
+  end
+
   private
 
   # Resolve pagination size from request params (?items=N or ?per_page=N),

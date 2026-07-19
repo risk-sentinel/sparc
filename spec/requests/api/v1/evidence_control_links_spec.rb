@@ -57,6 +57,15 @@ RSpec.describe "Api::V1::EvidenceControlLinks", type: :request do
       expect(JSON.parse(response.body)["data"]["control_id"]).to eq("AC-2")
     end
 
+    it "returns a JSON 400 (not an HTML page) when the root key is absent" do
+      post api_v1_evidence_control_links_path(evidence_id: evidence.id),
+           params: {}, headers: admin_headers
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response.media_type).to eq("application/json")
+      expect(JSON.parse(response.body)["error"]).to match(/Missing required parameter/)
+    end
+
     it "rejects a control_link with no control_id" do
       post api_v1_evidence_control_links_path(evidence_id: evidence.id),
            params: { control_link: { control_id: "" } }, headers: admin_headers

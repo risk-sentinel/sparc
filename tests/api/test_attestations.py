@@ -31,14 +31,20 @@ def _attestations_path(evidence_id: str | int) -> str:
 
 
 def _new_attestation_payload() -> dict[str, Any]:
+    # attested_at is required (Attestation validates presence) and status is
+    # bounded to Attestation::STATUSES == %w[passed failed]. This payload
+    # previously sent status="current" and omitted attested_at — it never
+    # failed because the lifecycle skipped by default until #756 gave the
+    # suite a way to create its own evidence.
     return {
         "attestation": {
             "attester_name": "Phase2 Reviewer",
             "attester_email": "phase2@example.com",
             "role": "isso",
             "statement": "Evidence reviewed and accurate as of this test run.",
+            "attested_at": "2026-01-01T00:00:00Z",
             "frequency": "quarterly",
-            "status": "current",
+            "status": "passed",
         }
     }
 
@@ -153,5 +159,20 @@ class TestLifecycle:
     def test_invalid_payload_returns_422(
         self, admin_client: httpx.Client, evidence_id: str
     ) -> None:
-        response = admin_client.post(_attestations_path(evidence_id), json={"attestation": {}})
+        """An attestation present but empty fails model validation -> 422."""
+        response = admin_client.post(
+            _attestations_path(evidence_id), json={"attestation": {"attester_name": ""}}
+        )
         assert_error_envelope(response, expected_status=422)
+
+    @pytest.mark.validation
+    def test_missing_root_key_returns_400(
+        self, admin_client: httpx.Client, evidence_id: str
+    ) -> None:
+        """A payload with no `attestation` key is malformed, not unprocessable.
+
+        Previously escaped `params.require` uncaught and returned Rails' HTML
+        error page from a JSON endpoint. 400 per docs/api/errors.md.
+        """
+        response = admin_client.post(_attestations_path(evidence_id), json={})
+        assert_error_envelope(response, expected_status=400)

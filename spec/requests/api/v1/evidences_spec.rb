@@ -141,6 +141,14 @@ RSpec.describe "Api::V1::Evidences", type: :request do
       expect(evidence.collected_at).to be_within(1.minute).of(Time.current)
     end
 
+    it "returns a JSON 400 (not an HTML page) when the root key is absent" do
+      post api_v1_evidences_path, params: {}, headers: admin_headers
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response.media_type).to eq("application/json")
+      expect(JSON.parse(response.body)["error"]).to match(/Missing required parameter/)
+    end
+
     it "returns 422 with details when required fields are missing" do
       post api_v1_evidences_path, params: { evidence: { title: "No source or description" } },
            headers: admin_headers
