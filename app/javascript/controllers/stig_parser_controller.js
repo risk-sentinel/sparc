@@ -1,5 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
+// Upper bound on how much of a rule <description> is fed to the tag-strip
+// regex. The displayed description is truncated to 300 chars regardless, so
+// this only caps pathological input. See the use site for the measurements.
+const DESC_SCAN_LIMIT = 5000
+
 /**
  * Client-side STIG XCCDF parser for instant preview and analysis.
  *
@@ -131,7 +136,17 @@ export default class StigParserController extends Controller {
       // Title and description
       const title = this.qsel(rule, "title")[0]?.textContent?.trim() || ""
       const descRaw = this.qsel(rule, "description")[0]?.textContent?.trim() || ""
-      const desc = descRaw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300)
+      // Bound the input before the tag-strip. `<[^>]+>` is O(n^2) on a long
+      // run of '<' with no closing '>' (measured: 20k chars ~157ms, 50k
+      // ~950ms), which a hostile STIG file could use to freeze the tab.
+      // The result is truncated to 300 chars anyway, so capping the input
+      // costs nothing. (javascript:S8786)
+      const desc = descRaw
+        .slice(0, DESC_SCAN_LIMIT)
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 300)
 
       this.rules.push({ ruleId, svId, vId, severity, ccis, nistControls, title, desc })
     }
