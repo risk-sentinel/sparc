@@ -1,0 +1,58 @@
+{
+  "platform": {
+    "name": "test-target",
+    "release": "1.0.0",
+    "target_id": ""
+  },
+  "version": "5.22.3",
+  "statistics": {
+    "duration": 0.5
+  },
+  "profiles": [
+    {
+      "name": "sparc-sample-profile",
+      "version": "1.0.0",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "title": "SPARC sample HDF profile",
+      "maintainer": "SPARC",
+      "summary": "Minimal HDF results fixture for API translation tests (#413/#610)",
+      "license": "Apache-2.0",
+      "copyright": "SPARC",
+      "copyright_email": "",
+      "supports": [],
+      "attributes": [],
+      "depends": [],
+      "groups": [],
+      "controls": [
+        {
+          "id": "SPARC-AC-3",
+          "title": "Access enforcement is configured",
+          "desc": "The information system enforces approved authorizations for logical access.",
+          "impact": 0.5,
+          "refs": [],
+          "tags": {
+            "nist": [
+              "AC-3"
+            ],
+            "severity": "medium"
+          },
+          "code": "",
+          "source_location": {
+            "ref": "sparc-sample-profile",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "failed",
+              "code_desc": "Access control policy should be enforced",
+              "message": "expected access enforcement to be enabled",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "baselines": []
+}

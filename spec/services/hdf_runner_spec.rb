@@ -204,17 +204,46 @@ RSpec.describe HdfRunner do
     end
 
     let(:runner) { described_class.new(binary: binary) }
+    let(:hdf_results_fixture) do
+      File.expand_path("../../spec/fixtures/files/hdf/sample-results.hdf.json", __dir__)
+    end
 
-    it "returns version metadata" do
-      v = runner.version
-      expect(v).to be_a(Hash)
-      expect(v.values.join(" ")).to include(HdfRunner::PINNED_VERSION)
+    # Accept any allowlisted version when SPARC_HDF_ALLOWED_VERSIONS is set,
+    # else require the pin. CI bakes HDF_LIBS_VERSION so it still asserts
+    # exactly; a developer mid-upgrade gets an actionable message instead of a
+    # bare mismatch. The previous exact-only assert failed confusingly whenever
+    # a local binary drifted from the pin, which is how a stale local hdf got
+    # mis-attributed to unrelated work (#764).
+    it "reports an accepted version" do
+      reported = runner.version["version"] || runner.version["Version"]
+      allowed  = SparcConfig.hdf_allowed_versions.presence || [ HdfRunner::PINNED_VERSION ]
+
+      expect(allowed).to include(reported),
+        "local hdf reports #{reported.inspect}, expected one of #{allowed.inspect}. " \
+        "Upgrade with `sudo bin/install-hdf.sh` (check `which hdf` — a `go install` " \
+        "build in $GOBIN can shadow it), or set SPARC_HDF_ALLOWED_VERSIONS=#{reported}."
     end
 
     it "validates a known-good HDF results fixture" do
-      fixture = File.expand_path("../../spec/fixtures/files/hdf/sample-results.hdf.json", __dir__)
-      skip "fixture missing: #{fixture}" unless File.exist?(fixture)
-      expect(runner.validate(fixture, type: "results")).to be true
+      expect(runner.validate(hdf_results_fixture, type: "results")).to be true
+    end
+
+    # Pins an upstream divergence that is easy to trip over: as of 3.4.1 the
+    # oscal-sar converter no longer requires a top-level `baselines` field
+    # (fixed in 3.3.1, mitre/hdf-libs#104) but `validate --type results` still
+    # does. So real scanner HDF converts fine yet fails validation — meaning
+    # `validate` must NOT be used as a pre-flight check on the translation
+    # path. If upstream ever reconciles the two, this spec fails and tells us.
+    it "converts baseline-less scanner HDF that `validate` still rejects" do
+      baseline_less = File.expand_path(
+        "../../tests/api/fixtures/sample.hdf.json", __dir__
+      )
+      skip "fixture missing: #{baseline_less}" unless File.exist?(baseline_less)
+      expect(JSON.parse(File.read(baseline_less))).not_to have_key("baselines")
+
+      expect { runner.convert(baseline_less, from: "hdf", to: "oscal-sar") }.not_to raise_error
+      expect { runner.validate(baseline_less, type: "results") }
+        .to raise_error(HdfRunner::Error)
     end
 
     private
