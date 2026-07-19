@@ -68,7 +68,7 @@ SPARC is configured via environment variables with sensible defaults. No configu
 is required for local development.
 
 - **Full reference:** [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md)
-- **Production hardening guide:** [docs/PRODUCTION_SECURITY.md](docs/PRODUCTION_SECURITY.md)
+- **Production hardening guide:** [docs/PRODUCTION_SECURITY.md](docs/PRODUCTION_SECURITY.md) —
 operator-facing checklist of every security-relevant env var, deployment-layer requirement,
 and hardening verification steps
 - **Quick start templates:** `.env.example` (development), `.env.production.example`
