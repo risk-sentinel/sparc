@@ -463,7 +463,7 @@ def main(argv)
     sboms: existing_sboms,
     policy: policy || {},
     dispositions: dispositions,
-    git_sha: args[:git_sha] || ENV["GITHUB_SHA"]
+    git_sha: args[:git_sha] || ENV.fetch("GITHUB_SHA", nil)
   )
   report = builder.build
 

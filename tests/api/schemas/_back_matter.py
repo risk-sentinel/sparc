@@ -11,8 +11,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from .base import BackMatterResource, STRICT
-
+from .base import STRICT, BackMatterResource
 
 # Index alias — same compact shape as the embedded form.
 BackMatterResourceIndex = BackMatterResource

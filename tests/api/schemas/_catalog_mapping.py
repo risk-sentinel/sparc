@@ -12,8 +12,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from .base import BackMatterResource, STRICT
-
+from .base import STRICT, BackMatterResource
 
 # ── ControlCatalog ─────────────────────────────────────────────────────
 

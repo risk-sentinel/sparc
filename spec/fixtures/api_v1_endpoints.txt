@@ -10,6 +10,8 @@ DELETE /api/v1/cdef_documents/bulk
 DELETE /api/v1/control_catalogs/:id
 DELETE /api/v1/control_mappings/:id
 DELETE /api/v1/evidences/:evidence_id/attestations/:id
+DELETE /api/v1/evidences/:evidence_id/control_links/:id
+DELETE /api/v1/evidences/:id
 DELETE /api/v1/federation_peers/:id
 DELETE /api/v1/poam_documents/:id
 DELETE /api/v1/profile_documents/:id
@@ -39,9 +41,12 @@ GET /api/v1/control_catalogs
 GET /api/v1/control_catalogs/:id
 GET /api/v1/control_mappings
 GET /api/v1/control_mappings/:id
+GET /api/v1/evidences
 GET /api/v1/evidences/:evidence_id/attestations
 GET /api/v1/evidences/:evidence_id/attestations/:id
 GET /api/v1/evidences/:evidence_id/attestations/export
+GET /api/v1/evidences/:evidence_id/control_links
+GET /api/v1/evidences/:id
 GET /api/v1/federation_peers
 GET /api/v1/federation_peers/:id
 GET /api/v1/ksi_catalog/indicators
@@ -71,6 +76,7 @@ PATCH /api/v1/back_matter_resources/:id
 PATCH /api/v1/cdef_documents/:id
 PATCH /api/v1/control_catalogs/:id
 PATCH /api/v1/control_mappings/:id
+PATCH /api/v1/evidences/:id
 PATCH /api/v1/federation_peers/:id
 PATCH /api/v1/poam_documents/:id
 PATCH /api/v1/profile_documents/:id
@@ -104,7 +110,9 @@ POST /api/v1/control_catalogs/:id/approve
 POST /api/v1/control_catalogs/:id/reject
 POST /api/v1/control_catalogs/:id/submit_for_review
 POST /api/v1/control_mappings
+POST /api/v1/evidences
 POST /api/v1/evidences/:evidence_id/attestations
+POST /api/v1/evidences/:evidence_id/control_links
 POST /api/v1/federation_peers
 POST /api/v1/federation_peers/:id/sync
 POST /api/v1/hdf/amendments_from_oscal_poam
@@ -132,6 +140,7 @@ PUT /api/v1/back_matter_resources/:id
 PUT /api/v1/cdef_documents/:id
 PUT /api/v1/control_catalogs/:id
 PUT /api/v1/control_mappings/:id
+PUT /api/v1/evidences/:id
 PUT /api/v1/federation_peers/:id
 PUT /api/v1/poam_documents/:id
 PUT /api/v1/profile_documents/:id

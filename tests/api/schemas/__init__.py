@@ -27,15 +27,13 @@ Usage:
     validate_index_response(response, CdefDocumentIndex)
 """
 
-from .base import (
-    BackMatterResource,
-    DocumentBase,
-    Meta,
-    PaginatedEnvelope,
-    ShowEnvelope,
-    Source,
+from ._back_matter import BackMatterResourceIndex, BackMatterResourceShow
+from ._catalog_mapping import (
+    ControlCatalogIndex,
+    ControlCatalogShow,
+    ControlMappingIndex,
+    ControlMappingShow,
 )
-from .cdef import CdefDocumentIndex, CdefDocumentShow
 from ._documents import (
     BoundaryScopedDocument,
     PoamDocumentIndex,
@@ -47,14 +45,6 @@ from ._documents import (
     SspDocumentIndex,
     SspDocumentShow,
 )
-from ._profile import ProfileDocumentIndex, ProfileDocumentShow
-from ._catalog_mapping import (
-    ControlCatalogIndex,
-    ControlCatalogShow,
-    ControlMappingIndex,
-    ControlMappingShow,
-)
-from ._back_matter import BackMatterResourceIndex, BackMatterResourceShow
 from ._federation import (
     FederationPeerIndex,
     FederationPeerShow,
@@ -64,6 +54,16 @@ from ._helpers import (
     validate_index_response,
     validate_show_response,
 )
+from ._profile import ProfileDocumentIndex, ProfileDocumentShow
+from .base import (
+    BackMatterResource,
+    DocumentBase,
+    Meta,
+    PaginatedEnvelope,
+    ShowEnvelope,
+    Source,
+)
+from .cdef import CdefDocumentIndex, CdefDocumentShow
 
 __all__ = [
     # Base

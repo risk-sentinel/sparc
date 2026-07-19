@@ -44,8 +44,13 @@ Rails.application.configure do
   # at the top of this file would raise NameError during
   # assets:precompile / Docker build. The SparcConfig accessors still
   # exist for app code; this duplication is intentional and minimal.
-  userdata_host = ENV["SPARC_USERDATA_HOST"].presence
-  app_url_env   = ENV["SPARC_APP_URL"].presence
+  # Both are OPTIONAL — an explicit nil default is required here. A
+  # no-default ENV.fetch would raise KeyError at boot on every deployment
+  # that doesn't set them, and the nil path is the documented fallback
+  # (see the rescue below). rubydre:S7865 wants the access to be explicit,
+  # not to make these variables mandatory.
+  userdata_host = ENV.fetch("SPARC_USERDATA_HOST", nil).presence
+  app_url_env   = ENV.fetch("SPARC_APP_URL", nil).presence
   if userdata_host.nil? && app_url_env
     begin
       app_uri       = URI.parse(app_url_env)

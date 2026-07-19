@@ -18,7 +18,6 @@ import pytest
 from _bulk_destroy import BulkDestroyContract
 from conftest import assert_error_envelope, assert_paginated_envelope
 
-
 pytestmark = [pytest.mark.boundaries, pytest.mark.phase1]
 
 

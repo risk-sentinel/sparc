@@ -17,7 +17,6 @@ import pytest
 
 from conftest import assert_error_envelope
 
-
 pytestmark = [pytest.mark.baselines, pytest.mark.phase1]
 
 

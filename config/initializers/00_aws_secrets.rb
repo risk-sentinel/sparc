@@ -21,7 +21,10 @@ if ENV["SPARC_AWS_SECRETS_ENABLED"] == "true"
   require "aws-sdk-secretsmanager"
   require "json"
 
-  secret_arn = ENV["SPARC_APP_CONFIG_SECRET_ARN"]
+  # Explicit nil default: the blank? check below raises a specific,
+  # actionable message. A no-default ENV.fetch would pre-empt it with an
+  # opaque KeyError.
+  secret_arn = ENV.fetch("SPARC_APP_CONFIG_SECRET_ARN", nil)
 
   if secret_arn.blank?
     raise <<~MSG

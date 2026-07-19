@@ -26,7 +26,6 @@ from schemas import (
     validate_show_response,
 )
 
-
 pytestmark = [pytest.mark.federation, pytest.mark.phase2]
 
 

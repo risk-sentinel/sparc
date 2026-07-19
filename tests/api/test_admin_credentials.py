@@ -19,7 +19,6 @@ import pytest
 
 from conftest import assert_error_envelope
 
-
 pytestmark = [pytest.mark.admin, pytest.mark.phase2]
 
 
@@ -35,14 +34,22 @@ GATED_STATUS_OK = (503,)
 class TestRefreshCredentials:
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
-        response = anon_client.post(PATH, json={"password": "anything"})  # NOSONAR(python:S2068) fake payload; tests auth rejects before credential check
+        response = anon_client.post(
+            PATH,
+            json={"password": "anything"},  # NOSONAR(python:S2068) fake payload
+        )
+        # Not a real credential — auth is rejected before the value is ever read.
         # The auth check fires before the feature-flag check, so 401
         # is the expected response regardless of SPARC_ADMIN_REFRESH_ENABLED.
         assert_error_envelope(response, expected_status=401)
 
     @pytest.mark.authz
     def test_non_admin_token_returns_403(self, user_client: httpx.Client) -> None:
-        response = user_client.post(PATH, json={"password": "anything"})  # NOSONAR(python:S2068) fake payload; tests authz rejects before credential check
+        response = user_client.post(
+            PATH,
+            json={"password": "anything"},  # NOSONAR(python:S2068) fake payload
+        )
+        # Not a real credential — authz is rejected before the value is ever read.
         # If feature-flagged off, the order is: auth -> permission -> flag.
         # 403 (permission) or 503 (gated) are both correct rejections.
         assert response.status_code in (403, 503), response.text

@@ -150,6 +150,14 @@
                      data-heatmap-target="badge"
                      data-family="<%= family %>"
                      data-<%= fkey %>="<%= s %>"
+                     <%# Keyboard activation is handled by the delegated
+                         handleKeydown listener on the heatmap controller
+                         element, which matches this data-action and calls
+                         click(). Do NOT add keydown.enter/keydown.space here:
+                         both paths would fire and the double invocation
+                         toggles the filter straight back off.
+                         (Sonar Web:MouseEventWithoutKeyboardEquivalentCheck
+                         flags this — it can't see the JS-side handler.) %>
                      data-action="click->heatmap#filterByCell"
                      role="button"
                      tabindex="0"

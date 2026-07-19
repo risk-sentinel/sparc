@@ -7,21 +7,16 @@ the actual offending payload + which field drifted, rather than a bare
 
 from __future__ import annotations
 
-import json
-from typing import Type, TypeVar
-
 import httpx
 import pytest
 from pydantic import BaseModel, ValidationError
 
 from .base import PaginatedEnvelope, ShowEnvelope
 
-ItemT = TypeVar("ItemT", bound=BaseModel)
 
-
-def validate_index_response(
+def validate_index_response[ItemT: BaseModel](
     response: httpx.Response,
-    item_model: Type[ItemT],
+    item_model: type[ItemT],
 ) -> PaginatedEnvelope[ItemT]:
     """Assert that ``response`` is a paginated list of ``item_model`` rows.
 
@@ -39,9 +34,9 @@ def validate_index_response(
         pytest.fail(_format_drift(exc, response, expected=item_model.__name__))
 
 
-def validate_show_response(
+def validate_show_response[ItemT: BaseModel](
     response: httpx.Response,
-    model: Type[ItemT],
+    model: type[ItemT],
 ) -> ShowEnvelope[ItemT]:
     """Assert that ``response`` is `{data: <model>}`.
 
@@ -55,12 +50,12 @@ def validate_show_response(
         pytest.fail(_format_drift(exc, response, expected=model.__name__))
 
 
-def assert_create_round_trip(
+def assert_create_round_trip[ItemT: BaseModel](
     client: httpx.Client,
     path: str,
     payload: dict,
     param_key: str,
-    show_model: Type[ItemT],
+    show_model: type[ItemT],
     *,
     ignore_fields: set[str] | None = None,
     identifier: str = "slug",

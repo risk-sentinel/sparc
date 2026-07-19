@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -98,10 +98,7 @@ class DocumentBase(BaseModel):
 
 # ── Envelope models ────────────────────────────────────────────────────
 
-ItemT = TypeVar("ItemT", bound=BaseModel)
-
-
-class PaginatedEnvelope(BaseModel, Generic[ItemT]):
+class PaginatedEnvelope[ItemT: BaseModel](BaseModel):
     """Standard list-endpoint envelope: `{data: [...], meta: {...}}`.
 
     Parameterize with the per-resource Index model:
@@ -115,7 +112,7 @@ class PaginatedEnvelope(BaseModel, Generic[ItemT]):
     meta: Meta
 
 
-class ShowEnvelope(BaseModel, Generic[ItemT]):
+class ShowEnvelope[ItemT: BaseModel](BaseModel):
     """Standard single-resource envelope: `{data: {...}}`."""
 
     model_config = STRICT

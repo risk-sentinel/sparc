@@ -31,7 +31,6 @@ from schemas import (
     validate_show_response,
 )
 
-
 pytestmark = [pytest.mark.documents, pytest.mark.phase1]
 
 
@@ -125,7 +124,9 @@ class TestShow:
         assert_error_envelope(response, expected_status=401)
 
     def test_unknown_slug_returns_404(self, admin_client: httpx.Client) -> None:
-        response = admin_client.get(f"{PATH}/this-slug-definitely-does-not-exist-{uuid.uuid4().hex}")
+        response = admin_client.get(
+            f"{PATH}/this-slug-definitely-does-not-exist-{uuid.uuid4().hex}"
+        )
         assert_error_envelope(response, expected_status=404)
 
 
@@ -153,7 +154,6 @@ class TestCreate:
     @pytest.mark.happy
     def test_create_round_trip_rich_payload(self, admin_client: httpx.Client) -> None:
         """#433 slice 3 — exercise type-specific SSP fields beyond name/description."""
-        suffix = uuid.uuid4().hex[:8]
         payload = make_payload(
             PARAM_KEY,
             {
