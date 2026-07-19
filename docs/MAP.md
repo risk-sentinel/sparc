@@ -59,9 +59,7 @@ CDEFs, and control catalogs — with a REST API and OSCAL v1.1.2 import/export.
 | Doc | Purpose |
 |---|---|
 | [oscal-data-mapping.md](oscal-data-mapping.md) | How SPARC's domain model maps to OSCAL |
-| [catalog-schema.md](catalog-schema.md) | Control-catalog schema |
 | [data_mapping/](data_mapping/) | Per-document OSCAL field maps (SSP/SAR/SAP/POA&M/CDEF/catalogs, metadata & back-matter, baseline→resolved-profile, control mapping) |
-| [ssp-columns.md](ssp-columns.md) · [sar-columns.md](sar-columns.md) | Spreadsheet column references (SSP / SAR import) |
 
 ### REST API
 
