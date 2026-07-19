@@ -4,16 +4,15 @@ Endpoints, nested under an evidence record:
   - index, show, create, destroy
   - export (CMS / SAF CLI shape, collection)
 
-SPARC has no Evidence-creation API (evidence is created in the UI or
-seeded), so the full create -> show -> index -> export -> destroy lifecycle
-runs only when an existing evidence id is supplied via the optional
-SPARC_TEST_EVIDENCE_ID env var. Contract coverage (auth / authz / not-found)
-runs unconditionally.
+The lifecycle creates its own evidence through the Evidence API (#756).
+Before that API existed this suite depended on an externally-supplied
+SPARC_TEST_EVIDENCE_ID and skipped by default; that env var is no longer
+read. Contract coverage (auth / authz / not-found) runs unconditionally.
 """
 
 from __future__ import annotations
 
-import os
+from collections.abc import Iterator
 from typing import Any
 
 import httpx
@@ -23,7 +22,7 @@ from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.attestations, pytest.mark.phase2]
 
-_EVIDENCE_ID = os.environ.get("SPARC_TEST_EVIDENCE_ID")
+_EVIDENCES = "/api/v1/evidences"
 _MISSING_EVIDENCE = "99999999"
 
 
@@ -45,13 +44,26 @@ def _new_attestation_payload() -> dict[str, Any]:
 
 
 @pytest.fixture
-def evidence_id() -> str:
-    if not _EVIDENCE_ID:
-        pytest.skip(
-            "Set SPARC_TEST_EVIDENCE_ID to an existing evidence id to run the "
-            "attestation lifecycle (SPARC has no evidence-creation API)."
-        )
-    return _EVIDENCE_ID
+def evidence_id(admin_client: httpx.Client) -> Iterator[str]:
+    """Create a throwaway evidence record for the lifecycle, then remove it."""
+    created = admin_client.post(
+        _EVIDENCES,
+        json={
+            "evidence": {
+                "title": "Attestation lifecycle evidence",
+                "description": "Created by the attestation contract suite.",
+                "evidence_type": "artifact",
+                "status": "draft",
+                "source": "https://example.com/contract-suite",
+            }
+        },
+    )
+    assert created.status_code == 201, created.text
+    evidence = created.json()["data"]
+    try:
+        yield str(evidence["id"])
+    finally:
+        admin_client.delete(f"{_EVIDENCES}/{evidence['id']}")
 
 
 # ── Contract coverage (always runs) ───────────────────────────────────────
@@ -99,13 +111,13 @@ class TestAuthz:
         # A user without evidence.write may not create. Tolerate 401/403/404
         # depending on whether the (test) evidence exists.
         response = user_client.post(
-            _attestations_path(_EVIDENCE_ID or _MISSING_EVIDENCE),
+            _attestations_path(_MISSING_EVIDENCE),
             json=_new_attestation_payload(),
         )
         assert response.status_code in (401, 403, 404), response.text
 
 
-# ── Full lifecycle (requires SPARC_TEST_EVIDENCE_ID) ──────────────────────
+# ── Full lifecycle ────────────────────────────────────────────────────────
 
 class TestLifecycle:
     @pytest.mark.happy
