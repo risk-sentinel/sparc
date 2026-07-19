@@ -24,7 +24,7 @@ require "tempfile"
 require "shellwords"
 
 BASE_URL = ENV.fetch("SPARC_BASE_URL", "https://sparc.risk-sentinel.org").chomp("/")
-COOKIE   = ENV["SPARC_SESSION_COOKIE"]
+COOKIE   = ENV.fetch("SPARC_SESSION_COOKIE", nil)
 OUTPUT   = File.expand_path("../docs/dev/a11y_audit.md", __dir__)
 
 DEFAULT_PAGES = [
