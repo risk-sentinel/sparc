@@ -28,7 +28,6 @@ from schemas import (
     validate_show_response,
 )
 
-
 pytestmark = [pytest.mark.documents, pytest.mark.phase1]
 
 

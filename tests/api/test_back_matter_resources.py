@@ -30,7 +30,6 @@ from schemas import (
     validate_show_response,
 )
 
-
 pytestmark = [pytest.mark.back_matter, pytest.mark.phase1]
 
 

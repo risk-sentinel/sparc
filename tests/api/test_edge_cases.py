@@ -24,8 +24,6 @@ import httpx
 import pytest
 
 from _document_helpers import create_doc, delete_doc, make_payload
-from conftest import assert_error_envelope
-
 
 # Resources whose Index endpoint goes through the shared `paginate()`
 # helper. Each tuple: (path, payload_factory, identifier_field).

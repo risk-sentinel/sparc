@@ -18,8 +18,7 @@ from typing import Any
 import httpx
 import pytest
 
-from conftest import assert_error_envelope, assert_paginated_envelope
-
+from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.users, pytest.mark.phase1]
 

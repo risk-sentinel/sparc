@@ -20,7 +20,6 @@ from schemas import (
     validate_index_response,
 )
 
-
 pytestmark = [pytest.mark.catalogs, pytest.mark.phase1]
 
 
