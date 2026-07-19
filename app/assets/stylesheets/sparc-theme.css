@@ -1194,6 +1194,11 @@ a.link-purple { color: var(--sparc-purple); }
   color: var(--bs-tertiary-color);
   vertical-align: top;
   white-space: nowrap;
+  /* Rendered as <th scope="row"> for key/value tables (Web:S5256). Reset the
+     UA defaults so the semantic change is invisible: <th> would otherwise
+     come out bold and centered. No-op on the <td> uses of this class. */
+  font-weight: 400;
+  text-align: left;
 }
 
 .sparc-field-label-padded {

@@ -150,7 +150,10 @@
                      data-heatmap-target="badge"
                      data-family="<%= family %>"
                      data-<%= fkey %>="<%= s %>"
-                     data-action="click->heatmap#filterByCell"
+                     <%# div + role=button needs explicit keyboard actions —
+                         Enter/Space don't fire click on a non-button element.
+                         Web:MouseEventWithoutKeyboardEquivalentCheck %>
+                     data-action="click->heatmap#filterByCell keydown.enter->heatmap#filterByCell keydown.space->heatmap#filterByCell"
                      role="button"
                      tabindex="0"
                      aria-label="<%= family %> <%= s %>: <%= count %> controls"

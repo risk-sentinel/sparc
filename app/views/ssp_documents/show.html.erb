@@ -121,7 +121,10 @@
              role="button"
              tabindex="0"
              title="Click to filter: <%= status %>"
-             data-action="heatmap-chip#apply"
+             <%# Matches the CDEF/Profile/SAP chips: a bare action defaults to
+                 click, which a div never receives from the keyboard.
+                 Web:MouseEventWithoutKeyboardEquivalentCheck %>
+             data-action="click->heatmap-chip#apply keydown.enter->heatmap-chip#apply keydown.space->heatmap-chip#apply"
              data-heatmap-chip-filter-param="<%= status %>"
              style="border-left: 3px solid <%= ssp_status_color(status) %>;">
           <div class="sparc-chip-count"><%= count %></div>
