@@ -114,3 +114,10 @@ def published_profile_slug() -> Any | None:
 def delete_doc(resource: str, ident: Any) -> None:
     with _client() as c:
         c.delete(f"/api/v1/{resource}/{ident}")
+
+
+def deactivate_user(user_id: Any) -> None:
+    """Cleanup for users created by the admin-create smoke. DELETE deactivates
+    (soft) — the only teardown the API offers — mirroring the API suite."""
+    with _client() as c:
+        c.delete(f"/api/v1/users/{user_id}")

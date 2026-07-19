@@ -1,0 +1,91 @@
+<div class="row justify-content-center my-4">
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 fw-bold mb-0">New User</h1>
+      <%= link_to "Cancel", admin_users_path, class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+
+    <p class="text-body-secondary small mb-4">
+      Admin-initiated account creation. Self-service registration stays disabled;
+      use this to provision accounts (e.g. local-login test users for DAST).
+      Authorization-boundary roles are assigned after creation from the user's
+      <strong>Edit</strong> page.
+    </p>
+
+    <div class="card">
+      <div class="card-body p-4">
+        <%= form_with model: @user, url: admin_users_path, method: :post, local: true do |f| %>
+          <div class="mb-3">
+            <%= f.label :email, class: "form-label fw-semibold small" %>
+            <%= f.email_field :email, class: "form-control", required: true, autocomplete: "off" %>
+            <div class="form-text">The identity anchor — cannot be changed after creation.</div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= f.label :first_name, class: "form-label fw-semibold small" %>
+              <%= f.text_field :first_name, class: "form-control" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :last_name, class: "form-label fw-semibold small" %>
+              <%= f.text_field :last_name, class: "form-control" %>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :display_name, class: "form-label fw-semibold small" %>
+            <%= f.text_field :display_name, class: "form-control" %>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= f.label :password, class: "form-label fw-semibold small" %>
+              <%= f.password_field :password, class: "form-control", required: true, autocomplete: "new-password" %>
+              <div class="form-text">At least 12 characters (NIST 800-63B). No complexity rules.</div>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :password_confirmation, "Confirm password", class: "form-label fw-semibold small" %>
+              <%= f.password_field :password_confirmation, class: "form-control", required: true, autocomplete: "new-password" %>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :status, "Initial status", class: "form-label fw-semibold small" %>
+            <%= f.select :status, options_for_select(%w[active suspended deactivated], @user.status || "active"),
+                  {}, class: "form-select" %>
+          </div>
+
+          <div class="mb-3 form-check">
+            <%= f.check_box :admin, class: "form-check-input" %>
+            <%= f.label :admin, "Instance Admin", class: "form-check-label fw-semibold" %>
+            <div class="form-text">Admins bypass all role checks and can manage users.</div>
+          </div>
+
+          <hr>
+          <h5 class="fw-semibold mb-3">Instance Roles <span class="text-body-secondary fw-normal small">(optional)</span></h5>
+
+          <div class="row g-2 mb-4">
+            <% @instance_roles.each do |role| %>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input type="checkbox" name="user[role_ids][]" value="<%= role.id %>"
+                         id="role_<%= role.id %>" class="form-check-input">
+                  <label for="role_<%= role.id %>" class="form-check-label">
+                    <strong><%= role.display_name %></strong>
+                    <% if role.description.present? %>
+                      <br><small class="text-body-secondary"><%= role.description %></small>
+                    <% end %>
+                  </label>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="d-grid">
+            <%= f.submit "Create User", class: "btn btn-primary fw-semibold" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

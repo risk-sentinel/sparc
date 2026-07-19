@@ -37,6 +37,7 @@ class AuditEvent < ApplicationRecord
     authorization_boundary_member_removed
     project_member_added
     project_member_removed
+    user_created
     user_suspended
     user_reactivated
     user_deactivated
@@ -214,7 +215,7 @@ class AuditEvent < ApplicationRecord
     "Authentication" => %w[login_success login_failure logout password_change
                             api_session_bridged api_session_bridge_failed],
     "Authorization" => %w[authorization_failure],
-    "User Management" => %w[user_suspended user_reactivated user_deactivated
+    "User Management" => %w[user_created user_suspended user_reactivated user_deactivated
                             user_auto_deactivated user_password_expired admin_bootstrap
                             admin_password_reset admin_credential_synced_from_env
                             admin_credential_rotated sparc_hash_rotated

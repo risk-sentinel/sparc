@@ -17,6 +17,11 @@
 #   AC-6 Least Privilege (service accounts cannot be admin)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class User < ApplicationRecord
+  # Lifecycle statuses (AC-2). Single source of truth for the inclusion
+  # validation and for privilege-safe status assignment in
+  # UserProvisioningService.
+  STATUSES = %w[active suspended deactivated].freeze
+
   # Allow password_digest to be null for OIDC-only users
   has_secure_password validations: false
 
@@ -57,7 +62,7 @@ class User < ApplicationRecord
   validates :password_confirmation, presence: { message: "can't be blank" },
                                     if: -> { password.present? }
 
-  validates :status, inclusion: { in: %w[active suspended deactivated] }
+  validates :status, inclusion: { in: STATUSES }
 
   # AC-2: Service accounts must have a human owner
   validates :owner_id, presence: { message: "is required for service accounts" }, if: :service_account?
