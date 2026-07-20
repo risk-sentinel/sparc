@@ -28,7 +28,10 @@ RSpec.describe "Admin::Organizations boundary assignment", type: :request do
     expect(response).to redirect_to(admin_organization_path(org))
     expect(boundary.reload.organization).to eq(org)
     follow_redirect!
-    expect(response.body).to include("associated with #{org.name}")
+    # The flash echoes the org name HTML-escaped, so a Faker name with a special
+    # char (e.g. "O'Connell" -> "O&#39;Connell") won't match the raw string.
+    # Assert the escaped form so the check is robust across RSpec/Faker seeds.
+    expect(response.body).to include("associated with #{CGI.escapeHTML(org.name)}")
   end
 
   it "moves a boundary from another org and reports the move (instance admin)" do
