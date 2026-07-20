@@ -18,6 +18,8 @@ import os
 import httpx
 import pytest
 
+from helpers import smoke_tls_verify
+
 BASE_URL = os.environ.get(
     "SPARC_SMOKE_BASE_URL", "https://sparc.risk-sentinel.org"
 ).rstrip("/")
@@ -37,7 +39,7 @@ REPORT = {
 
 def test_report_uri_present_in_csp_header():
     """The enforced CSP must advertise the report-uri so violations are sent."""
-    resp = httpx.get(f"{BASE_URL}/login", timeout=30.0)
+    resp = httpx.get(f"{BASE_URL}/login", timeout=30.0, verify=smoke_tls_verify())
     csp = resp.headers.get("content-security-policy", "")
     assert "report-uri" in csp, f"no report-uri in CSP header: {csp!r}"
     assert "/security/csp-violations" in csp
@@ -50,6 +52,7 @@ def test_collector_accepts_report_without_auth():
         content=json.dumps(REPORT),
         headers={"Content-Type": "application/csp-report"},
         timeout=30.0,
+        verify=smoke_tls_verify(),
     )
     assert resp.status_code == 204, f"expected 204, got {resp.status_code}: {resp.text[:200]}"
 
@@ -61,5 +64,6 @@ def test_collector_tolerates_garbage():
         content="not-json{{{",
         headers={"Content-Type": "application/csp-report"},
         timeout=30.0,
+        verify=smoke_tls_verify(),
     )
     assert resp.status_code == 204

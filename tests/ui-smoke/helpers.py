@@ -2,7 +2,32 @@
 
 from __future__ import annotations
 
+import os
 from urllib.parse import urlparse
+
+
+def smoke_tls_verify():
+    """TLS-verification setting for the suite's raw httpx calls.
+
+    Mirrors the Playwright side (conftest ignore_https_errors) so every
+    transport in the suite trusts the target the same way:
+
+    - ``SPARC_SMOKE_INSECURE_TLS=1`` -> ``False``: the *insecure pass*, trusting
+      a self-signed cert (the local UBI9 prod stack behind caddy on :3443).
+    - else ``SPARC_SMOKE_CA_BUNDLE=<path>`` -> that path: the *secure pass*
+      against the local stack, verifying the served chain against caddy's real
+      root CA. Proves the chain is genuinely valid, not bypassed (and previews
+      the #774 custom-CA trust path). NOTE: this covers the httpx transport only.
+      Playwright's Chromium uses the OS trust store and does NOT honor
+      NODE_EXTRA_CA_CERTS for a local private CA, so browser page navigations
+      still hit ERR_CERT_AUTHORITY_INVALID under a self-signed local CA — run
+      the browser layer via the insecure pass locally, or secure against a
+      public-CA endpoint.
+    - else ``True``: default public-CA verification (e.g. a real deployment).
+    """
+    if os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1":
+        return False
+    return os.environ.get("SPARC_SMOKE_CA_BUNDLE") or True
 
 # JS injected before any document script runs. Records CSP violations into a
 # window-global so a test can read them after interacting with the page. This
