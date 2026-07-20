@@ -27,9 +27,9 @@
 # nothing (and returns 0) when the source is empty/missing.
 sparc_collect_ca_files() {
     local src="$1"
-    if [ -f "$src" ]; then
+    if [[ -f "$src" ]]; then
         printf '%s\n' "$src"
-    elif [ -d "$src" ]; then
+    elif [[ -d "$src" ]]; then
         find "$src" -type f \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) 2>/dev/null | sort
     fi
     return 0
@@ -40,14 +40,14 @@ sparc_collect_ca_files() {
 # it is always safe to call. Written to survive `set -euo pipefail`.
 sparc_setup_ca_trust() {
     local src="${SPARC_EXTRA_CA_CERTS:-}"
-    if [ -z "$src" ] && [ -d /rails/certs ]; then
+    if [[ -z "$src" && -d /rails/certs ]]; then
         src=/rails/certs
     fi
-    [ -n "$src" ] || return 0
+    [[ -n "$src" ]] || return 0
 
     local files
     files="$(sparc_collect_ca_files "$src")"
-    if [ -z "$files" ]; then
+    if [[ -z "$files" ]]; then
         echo "[ca-trust] no PEM/CRT files under ${src} — using system trust store only"
         return 0
     fi
@@ -58,12 +58,12 @@ sparc_setup_ca_trust() {
 
     # System CAs first, then custom — append, never replace.
     {
-        if [ -f "$sys_bundle" ]; then
+        if [[ -f "$sys_bundle" ]]; then
             cat "$sys_bundle"
             echo
         fi
         while IFS= read -r f; do
-            [ -n "$f" ] || continue
+            [[ -n "$f" ]] || continue
             echo "# sparc custom CA: ${f}"
             cat "$f"
             echo
