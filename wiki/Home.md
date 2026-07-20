@@ -21,6 +21,9 @@ Welcome to the official SPARC wiki. SPARC is a Rails 8.1 application for managin
 ### [Getting Started](Getting-Started)
 First-15-minutes setup — Docker quick start, seeding the NIST catalogs, first login, and where to go next.
 
+### [User Guides](User-Guides)
+Task-oriented how-to guides, one per area of the UI — the OSCAL document lifecycle (SSP, SAP, SAR, POA&M), control catalogs and baselines, authorization boundaries, the trust store, and administration. Where [Screens & UI](Screens) is the reference inventory, these guides walk you through getting things done.
+
 ### [Role-Based Access Control (RBAC)](RBAC)
 29 roles aligned with NIST SP 800-37 Rev. 2 and OSCAL standards, granular permission keys, instance vs. authorization-boundary scoping, and the Instance Admin bypass flag.
 

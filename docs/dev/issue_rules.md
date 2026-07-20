@@ -67,6 +67,13 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
      user, operator, or integrator would read it (new/changed feature, screen, route,
      env var, role/permission, config), update the relevant wiki page in the same PR.
      The wiki is the canonical public documentation and must stay current.
+   - **Functional or screen changes → update the relevant User Guide.** Any new
+     or changed screen, route, workflow, field, or permission that an end user
+     interacts with **must** update the matching `wiki/User-Guide-*.md` page (and
+     its cross-links / the `wiki/User-Guides.md` index) in the same PR. The User
+     Guides are the task-oriented end-user documentation; `wiki/Screens.md`
+     remains the element-level reference. See the authoring template at
+     `docs/dev/user_guide_template.md`.
    - **Release notes → the GitHub Release** for the shipping version (canonical);
      the wiki Changelog gets a concise linked entry. Do **not** maintain a stacked
      in-repo release-notes file.
