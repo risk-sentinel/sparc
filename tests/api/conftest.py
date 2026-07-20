@@ -80,11 +80,17 @@ def _build_client(base_url: str, token: str | None = None) -> httpx.Client:
     headers = {"Accept": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    # SPARC_TEST_INSECURE_TLS=1 disables cert verification, for running against a
+    # prod-parity local stack behind a self-signed TLS proxy (docker-compose.ubi9
+    # + caddy on https://localhost:3443). Mirrors the ui-smoke suite's
+    # SPARC_SMOKE_INSECURE_TLS. Never set against a real deployment.
+    verify = os.environ.get("SPARC_TEST_INSECURE_TLS") != "1"
     return httpx.Client(
         base_url=base_url,
         headers=headers,
         timeout=httpx.Timeout(connect=5.0, read=30.0, write=10.0, pool=5.0),
         follow_redirects=False,
+        verify=verify,
     )
 
 

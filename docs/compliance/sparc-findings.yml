@@ -72,7 +72,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-04"
-    next_review_date: "2026-07-04"
+    next_review_date: "2026-08-19"
 
   - cve_id: GO-2026-5006
     package: golang.org/x/crypto
@@ -84,7 +84,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-04"
-    next_review_date: "2026-07-04"
+    next_review_date: "2026-08-19"
 
   - cve_id: GO-2026-5017
     package: golang.org/x/crypto
@@ -96,7 +96,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-04"
-    next_review_date: "2026-07-04"
+    next_review_date: "2026-08-19"
 
   - cve_id: GO-2026-5019
     package: golang.org/x/crypto
@@ -108,7 +108,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-04"
-    next_review_date: "2026-07-04"
+    next_review_date: "2026-08-19"
 
   - cve_id: GO-2026-5020
     package: golang.org/x/crypto
@@ -120,7 +120,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-04"
-    next_review_date: "2026-07-04"
+    next_review_date: "2026-08-19"
 
   - cve_id: GO-2026-5021
     package: golang.org/x/crypto
@@ -132,7 +132,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-04"
-    next_review_date: "2026-07-04"
+    next_review_date: "2026-08-19"
 
   - cve_id: GO-2026-5023
     package: golang.org/x/crypto
@@ -144,7 +144,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-04"
-    next_review_date: "2026-07-04"
+    next_review_date: "2026-08-19"
 
   - cve_id: GO-2026-5026
     package: golang.org/x/net
@@ -156,7 +156,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-04"
-    next_review_date: "2026-07-04"
+    next_review_date: "2026-08-19"
 
   # ==========================================================================
   # HIGH -- 13 unique CVEs (4 existing + 9 new this PR)
@@ -184,7 +184,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-29111
     package: libsystemd0
@@ -196,7 +196,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    next_review_date: "2026-08-19"
 
   # ── New entries -- 2026-05-06 scan delta (#244 baseline expansion) ────
 
@@ -222,7 +222,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
-    next_review_date: "2026-06-05"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-41316
     package: erb (base-image-bundled stdlib, version 4.0.4)
@@ -234,7 +234,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-42246
     package: net-imap (base-image-bundled stdlib, version 0.5.8)
@@ -246,55 +246,55 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-32280
     package: thruster (Go binary, stdlib v1.26.1)
     installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
     fixed_version: ">= Go 1.26.2"
     severity: HIGH
-    disposition: remediated
-    rationale: "REMEDIATED. Go crypto/x509 chain-building DoS in the thruster Go stdlib. Fixed in Go 1.26.2; the thruster gem bumped 0.1.20 -> 0.1.21 (Go stdlib 1.26.1 -> 1.26.2), so this CVE no longer appears in the container scan. Superseded by the Go-1.26.2 thruster findings (CVE-2026-33811 etc.) which are tracked separately as accepted risk."
+    disposition: deferred
+    rationale: "DEFERRED to hdf-libs (#776). Go stdlib v1.26.1 CVE carried by the hdf-cli binary (mitre/hdf-libs 3.4.1, #764); fixed in Go 1.25.9/1.26.2. SPARC installs hdf-cli verbatim (SHA-256 verified) and cannot recompile it — remediation requires an upstream hdf-libs build on Go>=1.26.2. Prior remediated label referenced the removed thruster binary (#639) and is stale. hdf-cli runs as a short-lived subprocess on operator files, not a TLS server, so the crypto/x509/tls path is not reached. Tracked: #776."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-32281
     package: thruster (Go binary, stdlib v1.26.1)
     installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
     fixed_version: ">= Go 1.26.2"
     severity: HIGH
-    disposition: remediated
-    rationale: "REMEDIATED. Go crypto/x509 policy-mapping validation DoS. Fixed in Go 1.26.2 via the thruster 0.1.20 -> 0.1.21 bump; no longer in the scan."
+    disposition: deferred
+    rationale: "DEFERRED to hdf-libs (#776). Go stdlib v1.26.1 CVE carried by the hdf-cli binary (mitre/hdf-libs 3.4.1, #764); fixed in Go 1.25.9/1.26.2. SPARC installs hdf-cli verbatim (SHA-256 verified) and cannot recompile it — remediation requires an upstream hdf-libs build on Go>=1.26.2. Prior remediated label referenced the removed thruster binary (#639) and is stale. hdf-cli runs as a short-lived subprocess on operator files, not a TLS server, so the crypto/x509/tls path is not reached. Tracked: #776."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-32283
     package: thruster (Go binary, stdlib v1.26.1)
     installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
     fixed_version: ">= Go 1.26.2"
     severity: HIGH
-    disposition: remediated
-    rationale: "REMEDIATED. Go TLS 1.3 key-update deadlock DoS. Fixed in Go 1.26.2 via the thruster 0.1.20 -> 0.1.21 bump; no longer in the scan."
+    disposition: deferred
+    rationale: "DEFERRED to hdf-libs (#776). Go stdlib v1.26.1 CVE carried by the hdf-cli binary (mitre/hdf-libs 3.4.1, #764); fixed in Go 1.25.9/1.26.2. SPARC installs hdf-cli verbatim (SHA-256 verified) and cannot recompile it — remediation requires an upstream hdf-libs build on Go>=1.26.2. Prior remediated label referenced the removed thruster binary (#639) and is stale. hdf-cli runs as a short-lived subprocess on operator files, not a TLS server, so the crypto/x509/tls path is not reached. Tracked: #776."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-33810
     package: thruster (Go binary, stdlib v1.26.1)
     installed_version: "thruster 0.1.21 / Go stdlib v1.26.2"
     fixed_version: ">= Go 1.26.2"
     severity: HIGH
-    disposition: remediated
-    rationale: "REMEDIATED. Go crypto/x509 wildcard DNS SAN excluded-constraint case-mismatch. Fixed in Go 1.26.2 via the thruster 0.1.20 -> 0.1.21 bump; no longer in the scan."
+    disposition: deferred
+    rationale: "DEFERRED to hdf-libs (#776). Go stdlib v1.26.1 CVE carried by the hdf-cli binary (mitre/hdf-libs 3.4.1, #764); fixed in Go 1.25.9/1.26.2. SPARC installs hdf-cli verbatim (SHA-256 verified) and cannot recompile it — remediation requires an upstream hdf-libs build on Go>=1.26.2. Prior remediated label referenced the removed thruster binary (#639) and is stale. hdf-cli runs as a short-lived subprocess on operator files, not a TLS server, so the crypto/x509/tls path is not reached. Tracked: #776."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-08-19"
 
   # ==========================================================================
   # MEDIUM -- 17 unique CVEs
@@ -310,67 +310,67 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-1965
     package: curl
     installed_version: "7.88.1-10+deb12u14"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: remediated
-    rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
+    disposition: accepted
+    rationale: "ACCEPTED (re-triaged v1.12.2, #770). Present in the UBI9 image scan with NO upstream fix (Red Hat: not-fixed). Prior remediated label was stale. curl-minimal/libcurl-minimal base package. Mitigating controls apply: non-root container (UID 1000), no inbound network service reaching this path, reverse-proxy TLS boundary, egress whitelisting, continuous Trivy/Grype scanning (AC-4/CM-6/SC-7/SI-2). Re-review each release; remediate when Red Hat ships a fix."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-09-18"
 
   - cve_id: CVE-2026-3783
     package: curl
     installed_version: "7.88.1-10+deb12u14"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: remediated
-    rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
+    disposition: accepted
+    rationale: "ACCEPTED (re-triaged v1.12.2, #770). Present in the UBI9 image scan with NO upstream fix (Red Hat: not-fixed). Prior remediated label was stale. curl-minimal/libcurl-minimal base package. Mitigating controls apply: non-root container (UID 1000), no inbound network service reaching this path, reverse-proxy TLS boundary, egress whitelisting, continuous Trivy/Grype scanning (AC-4/CM-6/SC-7/SI-2). Re-review each release; remediate when Red Hat ships a fix."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-09-18"
 
   - cve_id: CVE-2026-3784
     package: curl
     installed_version: "7.88.1-10+deb12u14"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: remediated
-    rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
+    disposition: accepted
+    rationale: "ACCEPTED (re-triaged v1.12.2, #770). Present in the UBI9 image scan with NO upstream fix (Red Hat: not-fixed). Prior remediated label was stale. curl-minimal/libcurl-minimal base package. Mitigating controls apply: non-root container (UID 1000), no inbound network service reaching this path, reverse-proxy TLS boundary, egress whitelisting, continuous Trivy/Grype scanning (AC-4/CM-6/SC-7/SI-2). Re-review each release; remediate when Red Hat ships a fix."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-09-18"
 
   - cve_id: CVE-2025-30258
     package: dirmngr
     installed_version: "2.2.40-1.1+deb12u2"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: remediated
-    rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
+    disposition: accepted
+    rationale: "ACCEPTED (re-triaged v1.12.2, #770). Present in the UBI9 image scan with NO upstream fix (Red Hat: not-fixed). Prior remediated label was stale. gnupg2 base package. Mitigating controls apply: non-root container (UID 1000), no inbound network service reaching this path, reverse-proxy TLS boundary, egress whitelisting, continuous Trivy/Grype scanning (AC-4/CM-6/SC-7/SI-2). Re-review each release; remediate when Red Hat ships a fix."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-09-18"
 
   - cve_id: CVE-2025-68972
     package: dirmngr
     installed_version: "2.2.40-1.1+deb12u2"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: remediated
-    rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
+    disposition: accepted
+    rationale: "ACCEPTED (re-triaged v1.12.2, #770). Present in the UBI9 image scan with NO upstream fix (Red Hat: not-fixed). Prior remediated label was stale. gnupg2 base package. Mitigating controls apply: non-root container (UID 1000), no inbound network service reaching this path, reverse-proxy TLS boundary, egress whitelisting, continuous Trivy/Grype scanning (AC-4/CM-6/SC-7/SI-2). Re-review each release; remediate when Red Hat ships a fix."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-09-18"
 
   - cve_id: CVE-2023-50495
     package: libncursesw6
@@ -406,7 +406,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-4105
     package: libsystemd0
@@ -425,12 +425,12 @@ findings:
     installed_version: "4.19.0-2+deb12u1"
     fixed_version: "none"
     severity: MEDIUM
-    disposition: remediated
-    rationale: "REMEDIATED. Package removed from production image via Dockerfile hardening (#342). Bootstrap stage isolates APT tools -- curl, gnupg, perl, and all transitive dependencies no longer present in the runtime container."
+    disposition: deferred
+    rationale: "DEFERRED (re-triaged v1.12.2, #770). libtasn1 CVE present in the UBI9 image; fix available in 4.16.0-10.el9_8 (Red Hat). Remediates on the next UBI9 base-image refresh (#742 lineage). Prior remediated label was stale. Mitigating controls apply (non-root, no inbound path, SC-7 boundary)."
     nist_control: si-2
     reviewed_by: "@clem-field"
-    discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    discovery_date: "2026-07-20"
+    next_review_date: "2026-09-18"
 
   - cve_id: CVE-2025-58767
     package: rexml
@@ -442,7 +442,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-05-06"
-    next_review_date: "2026-07-05"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-27171
     package: zlib1g
@@ -1026,7 +1026,7 @@ findings:
     nist_control: ra-5
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-10"
-    next_review_date: "2026-07-05"
+    next_review_date: "2026-08-19"
 
   # ══════════════════════════════════════════════════════════════════════════
   # 2026-06-10 rebuild rescan delta (#620)
@@ -1052,7 +1052,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-42258
     package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
@@ -1064,7 +1064,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-42245
     package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
@@ -1076,7 +1076,7 @@ findings:
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    next_review_date: "2026-08-19"
 
   - cve_id: CVE-2026-33811
     package: thruster (Go binary, stdlib v1.26.2)
@@ -1179,12 +1179,12 @@ findings:
     installed_version: "2.0.18 -> 2.0.22"
     fixed_version: ">= 2.0.22"
     severity: HIGH
-    disposition: remediated
-    rationale: "REMEDIATED. oauth2 gem advisory; SPARC's bundled oauth2 was bumped 2.0.18 -> 2.0.22 in the Gemfile (#620). oauth2 is a real (non-default) bundled dependency, so the patched version fully replaces the vulnerable one -- no longer present in the scan."
+    disposition: false_positive
+    rationale: "FALSE POSITIVE (re-triaged v1.12.2, #770). The runtime gem is oauth2 2.0.25 (patched; advisory fixed in >=2.0.22 via #767). Trivy trips on an ORPHANED oauth2-2.0.18.gemspec left in usr/local/bundle/.../specifications by a cached build layer (bundle install does not prune old gemspecs) — the 2.0.18 code is not loaded. Not a real exposure. Follow-up: add bundle clean --force to the image build to drop orphaned gemspecs."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-06-10"
-    next_review_date: "2026-07-10"
+    next_review_date: "2026-08-19"
 
 # POA&M reference: Accepted findings are included in the FedRAMP package
 # via Trivy HDF -> OSCAL SAR -> POA&M. The sparc-iac compliance workflow

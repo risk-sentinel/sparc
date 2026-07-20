@@ -9,6 +9,8 @@ cookie, so headless runners can drive the UI authenticated. On success:
 
 from __future__ import annotations
 
+import os
+
 import httpx
 import pytest
 
@@ -48,6 +50,8 @@ class TestFromToken:
             cookies={SESSION_COOKIE: cookie},
             follow_redirects=False,
             timeout=30.0,
+            # Match _build_client: allow a self-signed prod-parity TLS proxy.
+            verify=os.environ.get("SPARC_TEST_INSECURE_TLS") != "1",
         ) as cookie_client:
             home = cookie_client.get("/")
             # Authenticated: a real page, not a 302 bounce to the login form.

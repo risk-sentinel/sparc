@@ -23,13 +23,23 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   the UI is a thin client over it (shared service where practical). Add a
   request spec for the endpoint (happy path + auth/authorization). The UI is
   never the only way to perform a mutation.
-- **Local smoke + API check concludes any application-code change** — before
-  pushing work that touches application code (`app/`, `lib/`, `config/`, `db/`,
-  views, assets, migrations), run BOTH the full `tests/api` endpoint suite and
-  the `tests/ui-smoke` Playwright suite against a freshly-running local
-  container (Chrome, zero CSP violations), authenticated with a locally-minted
-  `ApiToken`. Green `rspec` alone is **not** sufficient — it never exercises the
-  running image, routing, or CSP. **CI-only or docs-only changes are exempt.**
+- **Local smoke + API check concludes any application-code change — against the
+  PROD (UBI9) image** — before pushing work that touches application code
+  (`app/`, `lib/`, `config/`, `db/`, views, assets, migrations), run BOTH the
+  full `tests/api` endpoint suite and the `tests/ui-smoke` Playwright suite
+  against a freshly-running local container (Chrome, zero CSP violations),
+  authenticated with a locally-minted `ApiToken`. **The container MUST be the
+  production UBI9 image — bring the stack up with
+  `docker compose -f docker-compose.ubi9.yaml up --build -d` (builds
+  `./Dockerfile`, self-seeds `SPARC_SEED_DEMO=true`), NOT the default
+  `docker compose up` (which builds the Debian `Dockerfile_debian` dev image).**
+  Prod ships UBI9 (`.github/workflows/build-sign-publish.yml`); the Debian
+  default is a dev convenience only. Base-image drift hides prod-only bugs — this
+  burned us in #750 (UBI9's missing UTF-8 locale 500'd every page; Debian's
+  implicit `LANG=C.UTF-8` masked it in dev). Debian `docker compose up` is fine
+  for fast inner-loop checks, never for the release/pre-push gate. Green `rspec`
+  alone is **not** sufficient — it never exercises the running image, routing, or
+  CSP. **CI-only or docs-only changes are exempt.**
 - **Refresh the scanner-findings audit on every release** — cutting a release
   (VERSION bump + tag) MUST update `docs/security/SCANNER_FINDINGS_AUDIT.md` in
   the same release PR: re-run `bundle-audit` + Trivy + Grype, refresh the
@@ -78,11 +88,17 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
     full suite **must pass** before pushing. Also run `bundle exec rubocop`
     on modified files.
 11. **Local smoke + API check** (application-code changes only — skip for
-    CI-only or docs-only work) — boot the container (`docker compose up`), seed
-    demo data (`SPARC_SEED_DEMO=true`), mint an `ApiToken`, then run **both**
-    the full `tests/api` endpoint suite **and** the `tests/ui-smoke` Playwright
-    suite against `localhost` (Chrome, zero CSP violations). This catches
-    boot/zeitwerk, routing, and CSP regressions the rspec suite cannot.
+    CI-only or docs-only work) — boot the **production UBI9 image**
+    (`docker compose -f docker-compose.ubi9.yaml up --build -d`, which builds
+    `./Dockerfile` and self-seeds `SPARC_SEED_DEMO=true`), mint an `ApiToken`,
+    then run **both** the full `tests/api` endpoint suite **and** the
+    `tests/ui-smoke` Playwright suite against `localhost` (Chrome, zero CSP
+    violations). **Do NOT use the default `docker compose up`** — that builds the
+    Debian dev image (`Dockerfile_debian`), which is not what ships and hides
+    OS-layer / locale / native-lib regressions (see #750). This catches
+    boot/zeitwerk, routing, CSP, and prod-base regressions the rspec suite
+    cannot. CVE-disposition reviews (`sparc-findings.yml` / `.trivyignore`) and
+    Trivy/Grype scans must likewise target the UBI9 image.
 12. **Commit / push changes**
     - Reference the issue in all commit messages
 13. **Wait for user testing**
