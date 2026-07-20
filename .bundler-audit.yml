@@ -15,7 +15,8 @@
 #   - Cannot be bumped independently: rubocop constrains mcp `~> 0.6`, and the fix
 #     is 0.23.0. Clears when rubocop's own dependency moves; tracked, not forced.
 #
-#   Reviewed: 2026-07-20 (v1.12.2). Next review: v1.12.3 or 90 days.
+#   Reviewed: 2026-07-20 (v1.12.3). Next review: v1.13.0 or 90 days. bundle-audit
+#   clean at v1.12.3 (no gem changes in the outbound-TLS cluster #773–775).
 ignore:
   - GHSA-52jp-gj8w-j6xh  # mcp: unbounded session retention (server transport)
   - GHSA-5p9g-j988-pcwv  # mcp: SSE session poisoning (server transport)
