@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import pytest
 
+from _api_setup import create_boundary, delete_doc
 from helpers import assert_no_csp_violations, first_show_href, record_csp
 
 BOUNDARIES = "/authorization_boundaries"
@@ -27,6 +28,18 @@ def _first_boundary(page) -> str:
     if not href:
         pytest.skip("no authorization boundary seeded — run the demo seed")
     return href
+
+
+@pytest.fixture
+def unassigned_boundary():
+    """An org-less boundary (fresh API-created boundaries have no organization),
+    so the admin org screen's association form has something to offer. Cleaned up
+    after the test."""
+    b = create_boundary()
+    try:
+        yield b
+    finally:
+        delete_doc("authorization_boundaries", b["slug"])
 
 
 class TestBoundaryShow:
@@ -54,7 +67,8 @@ class TestBoundaryShow:
         )
 
         add.first.click()
-        authed_page.wait_for_load_state("networkidle")
+        # Turbo Drive navigation — wait for the evidence form URL, not networkidle.
+        authed_page.wait_for_url("**/evidences/new**")
         # The evidence form's boundary select should land pre-selected.
         selected = authed_page.locator("select#evidence_authorization_boundary_id option[selected]")
         assert selected.count() >= 1, "boundary was not pre-selected on the evidence form"
@@ -101,8 +115,8 @@ class TestEnvironmentForm:
 
 
 class TestAdminOrgAssociation:
-    def test_associate_boundary_form_present(self, authed_page):
-        """Bug 6 — the admin organization screen exposes boundary association."""
+    def test_associate_boundary_form_lists_an_unassigned_boundary(self, authed_page, unassigned_boundary):
+        """Bug 6 — the admin org screen offers an unassigned boundary to associate."""
         record_csp(authed_page)
         href = first_show_href(authed_page, "/admin/organizations", "/admin/organizations")
         if not href:
@@ -114,4 +128,8 @@ class TestAdminOrgAssociation:
         assert authed_page.get_by_text("Associate a boundary").count() >= 1, (
             "associate-boundary control missing from the admin org screen"
         )
-        assert_no_csp_violations(authed_page, during="admin org show render")
+        # The fresh unassigned boundary appears as an option in the picker.
+        picker = authed_page.locator("select#assign_boundary_select")
+        assert picker.count() == 1
+        assert unassigned_boundary["name"] in picker.inner_text()
+        assert_no_csp_violations(authed_page, during="admin org association render")
