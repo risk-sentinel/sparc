@@ -11,7 +11,7 @@
 
   <div class="mb-3">
     <%= f.label :environment, class: "form-label fw-semibold" %>
-    <%= f.select :environment, Boundary::ENVIRONMENTS.map { |e| [ e.titleize, e ] }, {}, class: "form-select" %>
+    <%= f.select :environment, SparcConfig.environments.map { |e| [ "#{e[:name]} (#{e[:code]})", e[:value] ] }, {}, class: "form-select" %>
   </div>
 
   <% if @cdef_documents.any? %>

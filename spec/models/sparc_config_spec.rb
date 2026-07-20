@@ -196,5 +196,42 @@ RSpec.describe SparcConfig do
         end
       end
     end
+
+    describe ".environments (#770)" do
+      after { ENV.delete("SPARC_ENVIRONMENTS_LIST") }
+
+      it "defaults to the six standard environments with codes" do
+        ENV.delete("SPARC_ENVIRONMENTS_LIST")
+        names = SparcConfig.environments.map { |e| e[:name] }
+        codes = SparcConfig.environments.map { |e| e[:code] }
+        expect(names).to eq([ "Development", "Test", "Staging",
+                             "User Acceptance Testing", "Quality Assurance", "Production" ])
+        expect(codes).to eq(%w[DEV TEST STAG UAT QA PROD])
+      end
+
+      it "slugs the name into the stored value, round-tripping legacy values" do
+        expect(SparcConfig.environment_values).to include(
+          "development", "test", "staging", "production", "user_acceptance_testing"
+        )
+      end
+
+      it "parses a custom Name:CODE list from the env var" do
+        ENV["SPARC_ENVIRONMENTS_LIST"] = "Sandbox:SBX, Production:PROD"
+        expect(SparcConfig.environments).to eq([
+          { name: "Sandbox", code: "SBX", value: "sandbox" },
+          { name: "Production", code: "PROD", value: "production" }
+        ])
+      end
+
+      it "defaults a missing code to the name" do
+        ENV["SPARC_ENVIRONMENTS_LIST"] = "Lab"
+        expect(SparcConfig.environments.first).to eq({ name: "Lab", code: "Lab", value: "lab" })
+      end
+
+      it "labels a value as 'Name (CODE)', falling back to a titleized slug" do
+        expect(SparcConfig.environment_label("quality_assurance")).to eq("Quality Assurance (QA)")
+        expect(SparcConfig.environment_label("legacy_value")).to eq("Legacy Value")
+      end
+    end
   end
 end
