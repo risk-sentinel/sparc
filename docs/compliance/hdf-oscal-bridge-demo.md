@@ -40,7 +40,7 @@ export SPARC_TOKEN="your-bearer-token"
 export SPARC_URL="https://sparc.example.com"
 
 # 2. (For the local sanity check)
-hdf version  # 3.2.0 or compatible
+hdf version  # 3.4.1 or compatible
 ```
 
 ## Demo 1 — HDF results → OSCAL SAR
@@ -171,7 +171,7 @@ the boundary id for forensic traceability.
 
 ```bash
 # One-time: install hdf binary into your shell's PATH
-HDF_LIBS_VERSION=3.2.0 bin/install-hdf.sh
+bin/install-hdf.sh   # installs the pinned version (3.4.1)
 
 # Verify
 hdf version
@@ -191,5 +191,5 @@ curl -fsSL -X POST "http://localhost:3000/api/v1/oscal/sar_from_hdf" \
 - Issue [#449](https://github.com/risk-sentinel/sparc/issues/449) — umbrella for this slice
 - Issue [#447](https://github.com/risk-sentinel/sparc/issues/447) — Plan B / future expansion (hosted multi-reviewer disposition workflow)
 - [MITRE hdf-libs](https://github.com/mitre/hdf-libs) — Apache 2.0
-- [HDF Amendments schema v3.2.0](https://mitre.github.io/hdf-libs/schemas/hdf-amendments/v3.2.0/)
+- [HDF Amendments schema v3.4.0](https://mitre.github.io/hdf-libs/schemas/hdf-amendments/v3.4.0/)
 - NIST SP 800-53 mapping: CA-7, RA-3, SI-2 — see `docs/compliance/nist-sp800-53-rev5-mapping.md`

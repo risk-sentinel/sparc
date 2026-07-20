@@ -226,5 +226,31 @@ RSpec.describe "Api::V1::Translations", type: :request do
              headers: auth_headers.merge(json_ct)
       }.to change { AuditEvent.where(action: "translation_oscal_poam_to_hdf_amendments").count }.by(1)
     end
+
+    # #764 — hdf-cli 3.4.1 stopped fabricating expiry dates for POA&M items
+    # with no derivable deadline and fails loud instead. 3.3.2 exited 0 by
+    # inventing conversion-time + 1 year, so this is a correction, but it is a
+    # NEW exit-1 path whose fix lies entirely in the caller's input. It must
+    # not read as a generic bridge failure.
+    it "422s with an actionable message when the POA&M carries no deadline" do
+      allow(translation_service).to receive(:oscal_poam_to_hdf_amendments).and_raise(
+        HdfRunner::Error.new(
+          'hdf convert failed (exit 1): conversion failed: oscal-poam conversion failed: ' \
+          'poam-item "Remediate finding": no related risk carries a usable deadline; ' \
+          "a POA&M requires a time commitment",
+          command: "hdf convert ...",
+          exit_code: 1,
+          stderr: "no related risk carries a usable deadline\n"
+        )
+      )
+      post api_v1_amendments_from_oscal_poam_path,
+           params: poam_payload,
+           headers: auth_headers.merge(json_ct)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      body = JSON.parse(response.body)
+      expect(body["error"]).to eq("POA&M is missing a remediation deadline")
+      expect(body["note"]).to include("risks[].deadline")
+    end
   end
 end

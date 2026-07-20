@@ -11,12 +11,27 @@
       "identifier-type": "https://ietf.org/rfc/rfc4122",
       "id": "66666666-7777-4888-8999-aaaaaaaaaaaa"
     },
+    "risks": [
+      {
+        "uuid": "cccccccc-dddd-4eee-8fff-000000000001",
+        "title": "Unremediated scanner finding",
+        "description": "Risk backing the POA&M item, carrying the remediation deadline.",
+        "statement": "The finding remains open until remediated or formally accepted.",
+        "status": "open",
+        "deadline": "2027-06-30T00:00:00Z"
+      }
+    ],
     "poam-items": [
       {
         "uuid": "99999999-8888-4777-8666-555555555555",
         "title": "Remediate finding from scanner HDF",
         "description": "Minimal POA&M item used to exercise the OSCAL POAM -> HDF Amendments converter.",
-        "related-findings": []
+        "related-findings": [],
+        "related-risks": [
+          {
+            "risk-uuid": "cccccccc-dddd-4eee-8fff-000000000001"
+          }
+        ]
       }
     ]
   }
