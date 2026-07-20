@@ -1,6 +1,6 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-07-17 (v1.12.0 — UBI9 base-image migration, #742)
+**Last reviewed:** 2026-07-20 (v1.12.2 — Evidence API, hdf-cli 3.4.1, boundary/org management)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
 
@@ -25,7 +25,7 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 | Brakeman | 0 | any finding fails | (no ignore file present) |
 | CodeQL | 0 | default rule set | (no `.github/codeql/codeql-config.yml`) |
 | Rubocop | 0 (style-only via `rubocop-rails-omakase`) | `cops_to_omit` from omakase | `.rubocop.yml` |
-| Bundler-audit / dependency-audit | 0 — "No vulnerabilities found" as of 2026-05-23 | any vulnerable gem fails | `Gemfile.lock` |
+| Bundler-audit / dependency-audit | 5 (all `mcp`, dev-only transitive) | any vulnerable gem fails | `Gemfile.lock` + `.bundler-audit.yml` |
 | Secrets scan | 0 | any secret fails | (no ignore file present) |
 | Trivy filesystem | 0 CVEs + 1 misconfig (DS-0002, dev tooling) | CRITICAL + HIGH + MEDIUM | `.trivyignore` |
 | Trivy container | 9 CVEs (all classified) | CRITICAL + HIGH | `.trivyignore` |
@@ -59,9 +59,11 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 ### Bundler-audit / dependency-audit
 
 - **Covers:** known CVEs in declared gem dependencies (queries `ruby-advisory-db`).
-- **Suppressions:** none. No bundle-audit ignore markers.
-- **Current state (as of 2026-05-23):** `bundle exec bundle-audit check --update` returns "No vulnerabilities found" against 1,131 advisories in the latest ruby-advisory-db.
-- **If a CVE shows up later:** preferred response is `bundle update <gem>` to clear it. If the upstream patch isn't available, document the CVE here with classification (DISPUTED / MITIGATED / FALSE POSITIVE / ACCEPTED RISK) following the same template as the `.trivyignore` entries.
+- **Suppressions:** 5 advisories on `mcp`, all ACCEPTED RISK — see `.bundler-audit.yml` (auto-loaded by bundler-audit 0.9.3, so CI's `bundle-audit check` honors it).
+- **Current state (as of 2026-07-20, v1.12.2):** `bundle exec bundle-audit check --update` returns "No vulnerabilities found" with the ignore config applied; raw (no config) reports only the 5 `mcp` entries below.
+- **`mcp` — ACCEPTED RISK (dev-only, unreachable):** `mcp` is a **transitive, development/CI-only** dependency (`rubocop 1.85+ → mcp ~> 0.6`, pulled via `gem "rubocop-rails-omakase", require: false`). It is never loaded in the production image or at runtime. All 5 advisories (`GHSA-52jp-gj8w-j6xh`, `GHSA-5p9g-j988-pcwv`, `GHSA-7683-3w9x-ch42`, `GHSA-h669-8m4g-r2hc`, `GHSA-rjr6-rcgv-9m7m`) are in the MCP **server** StreamableHTTPTransport / SSE path — SPARC runs no MCP server and never instantiates that transport, so the vulnerable code is unreachable. All are fixed in `>= 0.23.0`, but rubocop constrains `~> 0.6`; the finding clears when rubocop's own dependency advances (tracked, not forced). Re-review each release.
+- **Resolved since last audit:** `rails-html-sanitizer` 1.7.0 → **1.7.1** (GHSA-cj75-f6xr-r4g7, XSS) via the #767 dependency bump — a real advisory on a gem SPARC uses for HTML sanitization, now cleared.
+- **If a CVE shows up later:** preferred response is `bundle update <gem>` to clear it (as done for rails-html-sanitizer). If the upstream patch isn't reachable, document it here with classification (DISPUTED / MITIGATED / FALSE POSITIVE / ACCEPTED RISK) and add a rationale'd `.bundler-audit.yml` entry with a review date.
 
 ### Secrets scan
 
