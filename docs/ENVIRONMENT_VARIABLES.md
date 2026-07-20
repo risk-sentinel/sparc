@@ -199,6 +199,8 @@ an Okta-specific configuration guide.
 | SPARC_LDAP_BIND_PASSWORD | Bind password (use secrets manager in prod) | (none) | `ldap-service-password` | Yes (if enabled) |
 | SPARC_LDAP_BASE | Search base DN | (none) | `ou=people,dc=example,dc=com` | Yes (if enabled) |
 | SPARC_LDAP_ATTRIBUTE | User lookup attribute | uid | `sAMAccountName` | No |
+| SPARC_LDAP_CA_FILE | PEM CA file used to verify the directory server certificate for `start_tls`/`simple_tls`. Omit to trust the container/system CA store (add a private CA there via the custom-CA trust mechanism). | (none) | `/etc/sparc/ldap-ca.pem` | No |
+| SPARC_LDAP_TLS_VERIFY | Verify the directory server's TLS certificate. **Leave `true`.** Setting `false` encrypts but does **not** authenticate the server — vulnerable to an active man-in-the-middle; a warning is logged on every connection. Only for legacy internal directories that cannot present a trusted cert. | true | `false` | No |
 
 ---
 
