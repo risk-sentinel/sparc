@@ -4,11 +4,18 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.12.2 -- Evidence API + Reliability Fixes (2026-07-18)
+## v1.12.2 -- Evidence API, hdf-cli 3.4.1, Boundary/Organization Management (2026-07-20)
 
-Adds a first-class **Evidence API** ([#756](https://github.com/risk-sentinel/sparc/issues/756)): evidence can now be created, updated, file-uploaded, and associated with controls entirely over REST, closing the gap where evidence was UI-only and the API could attest against records it had no way to create. Control links that carry a document scope drive **OSCAL back-matter** emission, referencing the artifact by its durable `/artifacts/:uuid` resolver URL. Uploads accept arbitrary artifact content and are guarded by an executable-signature deny-list plus the upload size cap (NIST SI-10); `collected_at` / `collected_by` remain system-recorded (AU-10). See [API Reference §Evidence](API-Reference#evidence-v1122).
+A feature + fix patch release bundling eight PRs. Highlights:
 
-Also clears the actionable half of the SonarCloud reliability backlog ([#762](https://github.com/risk-sentinel/sparc/issues/762)) — 9 fixes, with 13 findings triaged as false positives and 2 as won't-fix. Notable user-visible fixes: SSP summary chips are now operable by keyboard, pressing Space on a filter chip no longer scrolls the page, and CDEF field tables expose proper row headers to assistive technology. A quadratic regex in the client-side STIG parser is bounded, so a malformed STIG file can no longer stall the browser tab. Two API-contract bugs surfaced by the expanded test suite are fixed: a payload missing its root key returned an HTML error page from the JSON API (now a JSON `400`), and unvalidated `ENV[]` reads are now explicit. [Release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.12.2).
+- **Evidence API** ([#756](https://github.com/risk-sentinel/sparc/issues/756)) — evidence is fully manageable over REST (create, update, file-upload, associate with controls); document-scoped control links drive **OSCAL back-matter** via the durable `/artifacts/:uuid` resolver. Uploads guarded by an executable-signature deny-list + size cap (SI-10); `collected_at`/`collected_by` server-recorded (AU-10). See [API Reference §Evidence](API-Reference#evidence-v1122).
+- **hdf-cli 3.2.0 → 3.4.1** ([#764](https://github.com/risk-sentinel/sparc/issues/764)) — moves the HDF↔OSCAL bridge off two silent data-corruption defects (fabricated POA&M expiry dates; conversion-time-stamped SARs) and drops the obsolete `baselines` injection. POA&M inputs to the amendments path now require `risks[].deadline`.
+- **Boundary & organization management** ([#770](https://github.com/risk-sentinel/sparc/issues/770)) — configurable environments (`SPARC_ENVIRONMENTS_LIST`, six RMF defaults); a unified boundary Personnel Roster (admin-assigned + legacy memberships, AC-3); organization↔boundary association with an org-admin/instance-admin authorization matrix (AC-3/AC-6); and three UI fixes (CDEF filter on the environment form, uniform clickable Artifact Summary tiles, boundary-scoped artifact management). See [RBAC](RBAC#organization--boundary-assignment) and [Configuration](Configuration).
+- **SonarCloud reliability** ([#762](https://github.com/risk-sentinel/sparc/issues/762)) — 9 fixes (keyboard-operable summary chips, no page-scroll on Space, table row headers, bounded STIG-parser regex); remaining findings triaged FP/won't-fix.
+- **Admin: Create User** ([#755](https://github.com/risk-sentinel/sparc/issues/755)) over the shared provisioning service.
+- **Security & deps** — `rails-html-sanitizer` 1.7.1 remediates an XSS advisory (GHSA-cj75-f6xr-r4g7, [#767](https://github.com/risk-sentinel/sparc/pull/767)); the scanner-findings audit was reconciled against the UBI9 prod image ([#777](https://github.com/risk-sentinel/sparc/pull/777)); GH Actions + AWS SDK bumps ([#768](https://github.com/risk-sentinel/sparc/pull/768)/[#769](https://github.com/risk-sentinel/sparc/pull/769)).
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.12.2).
 
 ## v1.12.1 -- UBI9 UTF-8 Locale Hotfix (2026-07-18)
 
