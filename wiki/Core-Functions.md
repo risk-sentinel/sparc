@@ -2,6 +2,10 @@
 
 This page documents every major subsystem and feature in SPARC, the Systematic and Regulatory Compliance platform for NIST 800-53 compliance management.
 
+> **Looking for how-to instructions?** This page describes how features work
+> internally. For step-by-step, task-oriented walkthroughs, see the
+> [User Guides](User-Guides).
+
 ---
 
 ## Table of Contents

@@ -21,6 +21,7 @@ CDEFs, and control catalogs — with a REST API and OSCAL v1.1.2 import/export.
 | Topic | Wiki page |
 |---|---|
 | Getting started | [Getting Started](https://github.com/risk-sentinel/sparc/wiki/Getting-Started) |
+| User guides (how-to) | [User Guides](https://github.com/risk-sentinel/sparc/wiki/User-Guides) |
 | Configuration (env vars) | [Configuration](https://github.com/risk-sentinel/sparc/wiki/Configuration) |
 | Architecture (mermaid) | [Architecture](https://github.com/risk-sentinel/sparc/wiki/Architecture) |
 | Roles & permissions | [RBAC](https://github.com/risk-sentinel/sparc/wiki/RBAC) · [Data Isolation](https://github.com/risk-sentinel/sparc/wiki/Data-Isolation) |

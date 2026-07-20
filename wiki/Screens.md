@@ -4,6 +4,10 @@ This page provides a comprehensive inventory of every screen in the SPARC applic
 
 _Current as of app version **v1.12.1**. Routes are authoritative per `config/routes.rb`; the version badge in the navbar renders dynamically from `SparcConfig::VERSION`._
 
+> **Looking for how-to instructions?** This page is a reference inventory. For
+> step-by-step, task-oriented walkthroughs of each area, see the
+> [User Guides](User-Guides).
+
 ---
 
 ## Navigation Structure
