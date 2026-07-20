@@ -25,18 +25,37 @@
 class Api::V1::TranslationsController < Api::V1::BaseController
   rescue_from HdfRunner::Error do |e|
     # A "no converter found" failure means the bundled hdf-cli doesn't support
-    # this translation path — currently raw hdf→oscal-poam, which 3.2.0 removed:
-    # POA&M is now produced from an HDF *amendments* doc (hdf-amendments →
-    # oscal-poam), not from raw scanner HDF (verified against the 3.2.0 convert
-    # catalog; see docs/dev/hdf-libs-3.2.0-upstream-report.md, mitre/hdf-libs#104).
+    # this translation path — currently raw hdf→oscal-poam, which 3.2.0 removed
+    # and which upstream has confirmed is permanent by design rather than an
+    # oversight ("a POA&M is not so much a 'result set' as it is a 'document
+    # enhancing a result set'" — mitre/hdf-libs#104). POA&M is produced from an
+    # HDF *amendments* doc (hdf-amendments → oscal-poam), not from raw scanner
+    # HDF. Re-verified against the 3.4.1 convert catalog (#764).
+    #
+    # Match only the stable literal. The follow-on line hdf-cli emits ("The
+    # 'hdf' format can convert to: …") is map-iteration ordered and therefore
+    # non-deterministic — never match on it.
+    #
     # Surface a clear 501 rather than a generic 422 so callers can distinguish
     # "unsupported path" from "bad input".
     if e.message.include?("no converter found")
       render json: {
         error: "Translation path not available in the bundled hdf-cli",
         details: e.message,
-        note: "hdf-cli 3.2.0 removed the direct hdf→oscal-poam converter; OSCAL POA&M is now sourced from hdf-amendments. Tracked upstream: https://github.com/mitre/hdf-libs/issues/104"
+        note: "The direct hdf→oscal-poam converter was removed in hdf-cli 3.2.0 and is permanent by design; OSCAL POA&M is sourced from hdf-amendments. See https://github.com/mitre/hdf-libs/issues/104"
       }, status: :not_implemented
+
+    # 3.4.1 (#764) stopped fabricating expiry dates for POA&M items lacking a
+    # deadline and now fails loud instead. That is a correction — 3.3.2 exited 0
+    # by inventing conversion-time + 1 year — but it is a NEW exit-1 path, and
+    # the fix is entirely in the caller's input. Surface it distinctly so the
+    # response says what to add rather than burying it in a generic 422.
+    elsif e.message.include?("no related risk carries a usable deadline")
+      render json: {
+        error: "POA&M is missing a remediation deadline",
+        details: e.message,
+        note: "Every poam-item needs a related risk carrying a deadline. Populate risks[].deadline in the source OSCAL POA&M. Prior to hdf-cli 3.4.1 this succeeded with a fabricated date."
+      }, status: :unprocessable_entity
     else
       render json: {
         error: "hdf-libs translation failed",

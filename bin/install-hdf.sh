@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-HDF_LIBS_VERSION="${HDF_LIBS_VERSION:-3.2.0}"
+HDF_LIBS_VERSION="${HDF_LIBS_VERSION:-3.4.1}"
 HDF_INSTALL_DIR="${HDF_INSTALL_DIR:-/usr/local/bin}"
 
 # Detect platform
@@ -77,3 +77,20 @@ fi
 
 echo "→ installed: ${HDF_INSTALL_DIR}/hdf"
 "${HDF_INSTALL_DIR}/hdf" version || true
+
+# Warn when the freshly-installed binary is NOT the one PATH resolves. A prior
+# `go install github.com/mitre/hdf-libs/...` drops an hdf into $GOBIN
+# (~/go/bin), which commonly precedes /usr/local/bin — so this script appears
+# to succeed while `hdf` keeps resolving to the older build. The symptom is a
+# confusing version-mismatch spec failure that looks unrelated to whatever you
+# were working on, so fail loudly here instead.
+RESOLVED="$(command -v hdf || true)"
+if [[ -n "${RESOLVED}" && "${RESOLVED}" != "${HDF_INSTALL_DIR}/hdf" ]]; then
+  echo ""
+  echo "::warning:: PATH resolves 'hdf' to ${RESOLVED}, not the copy just installed."
+  echo "  ${RESOLVED} reports: $("${RESOLVED}" version 2>/dev/null | head -1)"
+  echo "  Most often a leftover 'go install' build in \$GOBIN shadowing this one."
+  echo "  Fix by installing over the copy that wins:"
+  echo "    HDF_LIBS_VERSION=${HDF_LIBS_VERSION} HDF_INSTALL_DIR=\"$(dirname "${RESOLVED}")\" bin/install-hdf.sh"
+  echo "  Or remove the shadowing copy:  rm ${RESOLVED} && hash -r"
+fi

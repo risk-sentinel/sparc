@@ -65,10 +65,13 @@ def _post_raw(client: httpx.Client, path: str, body: bytes) -> httpx.Response:
 class TestSarFromHdf:
     @pytest.mark.happy
     def test_raw_body_returns_oscal_sar(self, admin_client: httpx.Client) -> None:
-        # #648 regression: sample.hdf.json is standard scanner HDF with NO
-        # top-level `baselines` field — exactly the shape hdf-cli 3.2.0 rejects
-        # ("missing baselines field") absent SPARC's injection. A 200 here
-        # proves the baselines normalization is working end-to-end.
+        # sample.hdf.json is standard scanner HDF with NO top-level `baselines`
+        # field. hdf-cli 3.2.0 rejected that shape ("missing baselines field"),
+        # which #648 worked around by injecting an empty array. Upstream fixed
+        # it in 3.3.1 and #764 removed the injection, so a 200 here now proves
+        # the UPSTREAM fix holds on the pinned binary — not that SPARC is
+        # mutating the input. Keep the fixture baseline-less or the assertion
+        # stops testing anything.
         assert "baselines" not in json.loads(_hdf_bytes()), "fixture must stay baseline-less"
         response = _post_raw(admin_client, SAR_PATH, _hdf_bytes())
         assert response.status_code == 200, response.text
@@ -165,7 +168,19 @@ class TestAmendmentsFromOscalPoam:
         # proves the round-trip the controller guards with `hdf amend verify`.
         response = _post_raw(admin_client, AMENDMENTS_PATH, _oscal_poam_bytes())
         assert response.status_code == 200, response.text
-        assert isinstance(response.json(), dict)
+        body = response.json()
+        assert isinstance(body, dict)
+
+        # #764: the converter must carry the SOURCE deadline through, not a
+        # fabricated one. hdf-cli 3.3.2 and earlier emitted conversion
+        # wall-clock + 1 year here; 3.4.1 extracts risks[].deadline. Asserting
+        # the exact value is what would catch a regression back to invention.
+        overrides = body.get("overrides") or []
+        assert overrides, f"expected at least one override, got: {body}"
+        assert overrides[0]["expiresAt"] == "2027-06-30T00:00:00Z", (
+            "expiresAt must equal the fixture's risks[].deadline, not a "
+            f"generated date: {overrides[0].get('expiresAt')}"
+        )
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
@@ -177,6 +192,29 @@ class TestAmendmentsFromOscalPoam:
     def test_garbage_payload_returns_422(self, admin_client: httpx.Client) -> None:
         response = _post_raw(admin_client, AMENDMENTS_PATH, b'{"not": "an oscal poam"}')
         assert_error_envelope(response, expected_status=422)
+
+    @pytest.mark.validation
+    def test_poam_without_deadline_returns_actionable_422(
+        self, admin_client: httpx.Client
+    ) -> None:
+        """#764: a POA&M with no risks[].deadline must fail with a specific message.
+
+        hdf-cli 3.4.1 stopped fabricating expiry dates and fails loud instead.
+        That is a correction — 3.3.2 exited 0 by inventing conversion-time + 1
+        year — but it is a NEW exit-1 path, and the fix is entirely in the
+        caller's input. The response must say what to add rather than reading
+        as a generic bridge failure.
+        """
+        poam = json.loads(_oscal_poam_bytes())
+        # Strip the deadline the fixture carries, leave everything else intact.
+        for risk in poam["plan-of-action-and-milestones"].get("risks", []):
+            risk.pop("deadline", None)
+
+        response = _post_raw(admin_client, AMENDMENTS_PATH, json.dumps(poam).encode())
+        assert response.status_code == 422, response.text
+        body = response.json()
+        assert body["error"] == "POA&M is missing a remediation deadline", body
+        assert "risks[].deadline" in body.get("note", ""), body
 
 
 class TestBoundaryEnrichment:
