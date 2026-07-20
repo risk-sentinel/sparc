@@ -22,6 +22,7 @@ v1.7.0 hardening checklist) see [PRODUCTION_SECURITY.md](PRODUCTION_SECURITY.md)
 | SECRET_KEY_BASE | Rails session/cookie encryption key (generate with `bin/rails secret`) | (auto in dev) | `a1b2c3d4e5f6...` | Yes (prod) |
 | FORCE_SSL | Force HTTPS redirect and Strict-Transport-Security header | true (prod) | `true` | No |
 | RAILS_MAX_THREADS | Thread pool size for Puma and database connection pool | 5 | `10` | No |
+| SPARC_EXTRA_CA_CERTS | Path (file or directory of `.crt`/`.pem`/`.cer`) to custom/private CA certificates the container should trust for **outbound** TLS — LDAPS, OIDC behind a private CA, a corporate TLS-intercepting proxy, or DoD-PKI endpoints. Appended to the system trust store into a combined bundle at startup (public CAs stay trusted); covers all Ruby OpenSSL clients incl. the LDAP default store. See `certs/README.md`. Alternatively bake CAs in at build time via `certs/`. (#774) | (none) | `/rails/certs` | No |
 
 ---
 
