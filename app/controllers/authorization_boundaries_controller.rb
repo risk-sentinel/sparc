@@ -17,9 +17,12 @@ class AuthorizationBoundariesController < ApplicationController
   end
 
   def show
-    @boundaries  = @authorization_boundary.boundaries.includes(:cdef_documents).order(:name)
-    @memberships = @authorization_boundary.authorization_boundary_memberships.order(:role, :user_name)
-    @summary     = @authorization_boundary.artifact_summary
+    @boundaries = @authorization_boundary.boundaries.includes(:cdef_documents).order(:name)
+    # #770 bug 3 — unified roster so personnel added via admin (user_roles) are
+    # visible here alongside legacy memberships. AC-3: reflects the full set of
+    # subjects granted access to this boundary regardless of assignment path.
+    @personnel = @authorization_boundary.personnel_roster
+    @summary   = @authorization_boundary.artifact_summary
   end
 
   def new

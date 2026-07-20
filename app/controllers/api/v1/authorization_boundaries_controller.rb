@@ -131,7 +131,10 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       summary = ab.artifact_summary
       data[:artifact_summary] = summary
       data[:organization] = ab.organization&.name
-      data[:members_count] = ab.authorization_boundary_memberships.count
+      # #770 bug 3 — count the full roster (canonical user_roles + legacy
+      # memberships), matching what the boundary screen now shows. members_count
+      # previously reflected only legacy memberships.
+      data[:members_count] = ab.personnel_roster.size
       data[:environments] = ab.boundaries.map { |b|
         { name: b.name, environment: b.environment, components: b.cdef_documents.count }
       }
