@@ -11,6 +11,94 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
   let(:user) { create(:user) }
   let(:ab) { create(:authorization_boundary) }
 
+  # #770 bug 4 — Artifact Summary tiles are uniform and clickable. The POA&M
+  # tile previously omitted the shared font-size and had no link.
+  describe "GET /authorization_boundaries/:id (Artifact Summary tiles)" do
+    before { sign_in_as(user) }
+
+    it "renders every artifact tile as a link, POA&M included" do
+      get authorization_boundary_path(ab)
+      expect(response).to have_http_status(:ok)
+
+      # All four tiles carry the clickable wrapper class.
+      link_count = response.body.scan("sparc-hero-tile-link").size
+      expect(link_count).to be >= 4
+
+      # The POA&M tile links to the POA&M index (was a bare, unlinked count).
+      expect(response.body).to include("href=\"#{poam_documents_path}\"")
+    end
+
+    it "sizes the POA&M count consistently with the other tiles" do
+      get authorization_boundary_path(ab)
+      # Every hero-tile-count now carries the 1rem override; none inherits 2rem.
+      counts = response.body.scan(/sparc-hero-tile-count[^>]*>/)
+      expect(counts).to be_present
+      expect(counts).to all(include("font-size: 1rem"))
+    end
+  end
+
+  # #770 bug 3 — personnel assigned via admin (user_roles) must appear on the
+  # boundary screen's roster, which previously read only legacy memberships.
+  describe "GET /authorization_boundaries/:id (Personnel Roster)" do
+    before { sign_in_as(user) }
+
+    it "shows an admin-assigned member (user_role), not just legacy memberships" do
+      member = create(:user, email: "admin-added@example.com", first_name: "Ada", last_name: "Assigned")
+      role = create(:role, :authorization_boundary_scoped, display_name: "System Owner")
+      create(:user_role, user: member, role: role, authorization_boundary: ab)
+
+      get authorization_boundary_path(ab)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("admin-added@example.com")
+      expect(response.body).to include("System Owner")
+    end
+
+    it "still shows legacy memberships with their edit/remove controls" do
+      create(:authorization_boundary_membership, authorization_boundary: ab,
+             user_name: "Legacy Member", user_email: "legacy@example.com")
+
+      get authorization_boundary_path(ab)
+
+      expect(response.body).to include("Legacy Member")
+      expect(response.body).to include(edit_authorization_boundary_membership_path(
+        ab, ab.authorization_boundary_memberships.first
+      ))
+    end
+  end
+
+  # #770 bug 5 — boundary-scoped artifacts (evidence) surfaced on the screen.
+  describe "GET /authorization_boundaries/:id (Artifacts card)" do
+    before { sign_in_as(user) }
+
+    it "lists evidence tied to the boundary with a pre-scoped Add link" do
+      create(:evidence, authorization_boundary: ab, title: "Scan Result Q3")
+      get authorization_boundary_path(ab)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Scan Result Q3")
+      expect(response.body).to include(new_evidence_path(authorization_boundary_id: ab.id))
+    end
+
+    it "shows an empty state when the boundary has no artifacts" do
+      get authorization_boundary_path(ab)
+      expect(response.body).to include("No artifacts attached")
+    end
+  end
+
+  describe "GET /evidences/new (boundary pre-scoping, #770 bug 5)" do
+    before { sign_in_as(user) }
+
+    it "pre-selects the authorization boundary from the query param" do
+      get new_evidence_path(authorization_boundary_id: ab.id)
+      expect(response).to have_http_status(:ok)
+      # The boundary select renders the scoped boundary as the selected option.
+      expect(response.body).to match(
+        %r{<option selected(?:="selected")? value="#{ab.id}">#{Regexp.escape(ab.name)}</option>}
+      )
+    end
+  end
+
   describe "GET /authorization_boundaries/:id/ato_wizard" do
     before { sign_in_as(user) }
 

@@ -107,6 +107,34 @@
         </tbody>
       </table>
     </div>
+    <%# #770 bug 6 — associate a boundary with this organization. Options label
+        a boundary's current org so a move is visible; moving is confirmed. %>
+    <div class="card-footer">
+      <% if @assignable_boundaries.any? %>
+        <%= form_tag assign_boundary_admin_organization_path(@organization), method: :post,
+              class: "row g-2 align-items-end",
+              data: { turbo_confirm: "Associate this boundary with #{@organization.name}? If it belongs to another organization it will be moved." } do %>
+          <div class="col-sm">
+            <label for="assign_boundary_select" class="form-label small mb-1">Associate a boundary</label>
+            <%= select_tag :authorization_boundary_id,
+                  options_for_select(@assignable_boundaries.map { |ab|
+                    label = ab.organization ? "#{ab.name} — currently in #{ab.organization.name}" : ab.name
+                    [ label, ab.id ]
+                  }),
+                  include_blank: "Select a boundary…", class: "form-select form-select-sm",
+                  id: "assign_boundary_select" %>
+          </div>
+          <div class="col-sm-auto">
+            <%= submit_tag "Associate", class: "btn btn-sm btn-primary" %>
+          </div>
+        <% end %>
+        <p class="text-body-secondary small mb-0 mt-2">
+          Boundaries already in another organization will be <strong>moved</strong> here. Only instance admins can move a boundary between organizations.
+        </p>
+      <% else %>
+        <p class="text-body-secondary small mb-0">No boundaries available to associate.</p>
+      <% end %>
+    </div>
   </div>
 
   <%# ── Add Member Form ──────────────────────────────────── %>

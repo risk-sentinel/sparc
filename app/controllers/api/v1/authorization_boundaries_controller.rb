@@ -10,10 +10,12 @@
 # DELETE /api/v1/authorization_boundaries/:id      — delete
 #
 class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
-  before_action :set_boundary, only: [ :show, :update, :destroy ]
+  before_action :set_boundary, only: [ :show, :update, :destroy, :assign_organization ]
   before_action :authorize_boundary_read!, only: [ :show ]
   before_action :authorize_boundary_write!, only: [ :create, :update ]
   before_action :authorize_admin!, only: [ :destroy, :bulk_destroy ]
+  # assign_organization intentionally omits the generic write gate: its
+  # authorization is the org-admin matrix in BoundaryOrganizationAssigner (#770).
 
   # GET /api/v1/authorization_boundaries
   def index
@@ -55,6 +57,28 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
 
     audit_log("api_authorization_boundary_updated", subject: @boundary, metadata: { name: @boundary.name })
     render json: { data: serialize_boundary(@boundary) }
+  end
+
+  # PATCH /api/v1/authorization_boundaries/:id/organization
+  #
+  # #770 bug 6 — assign, move, or clear the boundary's organization. Enforces
+  # the org-admin authorization matrix via BoundaryOrganizationAssigner:
+  # instance admin may assign/move/clear; a non-admin org_admin may attach an
+  # UNASSIGNED boundary into their own org only. AC-3 / AC-6.
+  #
+  # Body: { organization_id: <id or null> }
+  def assign_organization
+    organization = params[:organization_id].present? ? Organization.find(params[:organization_id]) : nil
+
+    BoundaryOrganizationAssigner.new(
+      boundary: @boundary, organization: organization, actor: current_user
+    ).call
+
+    audit_log("api_authorization_boundary_org_assigned", subject: @boundary,
+              metadata: { organization_id: organization&.id })
+    render json: { data: serialize_boundary(@boundary) }
+  rescue BoundaryOrganizationAssigner::MoveRequiresAdminError => e
+    render json: { error: e.message }, status: :forbidden
   end
 
   # DELETE /api/v1/authorization_boundaries/bulk
@@ -131,7 +155,12 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       summary = ab.artifact_summary
       data[:artifact_summary] = summary
       data[:organization] = ab.organization&.name
-      data[:members_count] = ab.authorization_boundary_memberships.count
+      # #770 bug 3 — count the full roster (canonical user_roles + legacy
+      # memberships), matching what the boundary screen now shows. members_count
+      # previously reflected only legacy memberships.
+      data[:members_count] = ab.personnel_roster.size
+      # #770 bug 5 — boundary-scoped evidence artifacts (OSCAL back-matter source).
+      data[:evidences_count] = ab.evidences.count
       data[:environments] = ab.boundaries.map { |b|
         { name: b.name, environment: b.environment, components: b.cdef_documents.count }
       }

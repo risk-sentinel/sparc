@@ -72,6 +72,7 @@ GET /api/v1/users
 GET /api/v1/users/:id
 PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PATCH /api/v1/authorization_boundaries/:id
+PATCH /api/v1/authorization_boundaries/:id/organization
 PATCH /api/v1/back_matter_resources/:id
 PATCH /api/v1/cdef_documents/:id
 PATCH /api/v1/control_catalogs/:id

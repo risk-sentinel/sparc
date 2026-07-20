@@ -212,6 +212,17 @@ class User < ApplicationRecord
               .exists?
   end
 
+  # #770 bug 6 — org-admin membership on a specific organization. This is the
+  # "appropriate permissions" lever for org-scoped actions (e.g. attaching an
+  # unassigned boundary): SPARC has no org-scoped permission catalog, so the
+  # `org_admin` OrganizationMembership role is the gate. Instance admins are
+  # checked separately by the caller. NIST AC-6 (least privilege).
+  def org_admin_of?(organization)
+    return false if organization.nil?
+
+    organization_memberships.exists?(organization_id: organization.id, role: "org_admin")
+  end
+
   # ── Display ─────────────────────────────────────────────────────────────
 
   def display_label
