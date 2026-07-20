@@ -100,6 +100,37 @@ class AuthorizationBoundary < ApplicationRecord
     authorization_boundary_memberships.order(:role, :user_name).group_by(&:role)
   end
 
+  # #770 bug 3 — unified personnel roster.
+  #
+  # Personnel live in two systems on the same boundary (AC-3 access records):
+  #   - user_roles: canonical Role-catalog assignments. The admin screen's
+  #     "Add Member" writes here.
+  #   - authorization_boundary_memberships: legacy string-role personnel. The
+  #     boundary screen's own "Add Member" writes here.
+  #
+  # The boundary screen previously read only the legacy table, so anyone added
+  # through admin was invisible here. This normalizes both into one list so the
+  # roster reflects every assignment regardless of where it was made. Canonical
+  # (user_role) entries are managed in admin and render read-only here; legacy
+  # entries keep their inline edit/remove.
+  PersonnelEntry = Struct.new(:name, :email, :role_label, :source, :membership, keyword_init: true)
+
+  def personnel_roster
+    canonical = user_roles.includes(:user, :role).map do |ur|
+      PersonnelEntry.new(
+        name: ur.user.display_label, email: ur.user.email,
+        role_label: ur.role.display_name, source: :assigned, membership: nil
+      )
+    end
+    legacy = authorization_boundary_memberships.order(:role, :user_name).map do |m|
+      PersonnelEntry.new(
+        name: m.user_name, email: m.user_email,
+        role_label: m.role_label, source: :membership, membership: m
+      )
+    end
+    (canonical + legacy).sort_by { |e| [ e.role_label.to_s, e.name.to_s ] }
+  end
+
   private
 
   # #629 — referential-integrity guard. A boundary cannot be deleted while it

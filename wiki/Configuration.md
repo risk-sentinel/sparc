@@ -215,6 +215,7 @@ Comma-separated lists overriding the built-in defaults. Set these **before** inv
 |----------|---------|-------------|
 | `SPARC_ORGANIZATION_ROLES` | (built-in agency roles) | Role names available to organization members (plus the always-present "Org Admin") |
 | `SPARC_AUTH_BOUNDARY_ROLES` | (built-in ATO roles) | Role names available to authorization-boundary members |
+| `SPARC_ENVIRONMENTS_LIST` | DEV, TEST, STAG, UAT, QA, PROD | Selectable environments for boundaries as `Name:CODE` pairs, e.g. `Development:DEV,Production:PROD` |
 
 ## OSCAL Organization Metadata
 

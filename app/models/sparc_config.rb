@@ -131,6 +131,39 @@ module SparcConfig
     roles.presence || AuthorizationBoundaryMembership::DEFAULT_ROLES
   end
 
+  # ── Environments (#770) ──────────────────────────────────────────────────
+  # The selectable set of deployment environments a Boundary can be tagged
+  # with. Configurable via SPARC_ENVIRONMENTS_LIST as comma-separated
+  # "Name:CODE" pairs (e.g. "Development:DEV,Production:PROD"); falls back to
+  # the six standard RMF environments when unset. A missing ":CODE" defaults
+  # the code to the name.
+  #
+  # Returns [{ name:, code:, value: }], where `value` is the stored token
+  # (name parameterized with underscores). `value` is what persists on
+  # boundaries.environment, so the legacy enum values production/development/
+  # staging/test round-trip unchanged (their slugs equal their names).
+  DEFAULT_ENVIRONMENTS = [
+    "Development:DEV", "Test:TEST", "Staging:STAG",
+    "User Acceptance Testing:UAT", "Quality Assurance:QA", "Production:PROD"
+  ].freeze
+
+  def environments
+    raw = ENV.fetch("SPARC_ENVIRONMENTS_LIST", "").split(",").map(&:strip).reject(&:blank?)
+    (raw.presence || DEFAULT_ENVIRONMENTS).map do |entry|
+      name, code = entry.split(":", 2).map(&:strip)
+      { name: name, code: code.presence || name, value: name.parameterize(separator: "_") }
+    end
+  end
+
+  # Stored tokens for validation (boundaries.environment inclusion).
+  def environment_values = environments.map { |e| e[:value] }
+
+  # value => "Name (CODE)" for display in dropdowns and badges.
+  def environment_label(value)
+    env = environments.find { |e| e[:value] == value }
+    env ? "#{env[:name]} (#{env[:code]})" : value.to_s.titleize
+  end
+
   # ── OIDC / OAuth2 ────────────────────────────────────────────────────────
 
   def oidc_issuer_url    = ENV.fetch("SPARC_OIDC_ISSUER_URL", nil)

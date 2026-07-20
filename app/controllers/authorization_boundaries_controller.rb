@@ -17,9 +17,16 @@ class AuthorizationBoundariesController < ApplicationController
   end
 
   def show
-    @boundaries  = @authorization_boundary.boundaries.includes(:cdef_documents).order(:name)
-    @memberships = @authorization_boundary.authorization_boundary_memberships.order(:role, :user_name)
-    @summary     = @authorization_boundary.artifact_summary
+    @boundaries = @authorization_boundary.boundaries.includes(:cdef_documents).order(:name)
+    # #770 bug 3 — unified roster so personnel added via admin (user_roles) are
+    # visible here alongside legacy memberships. AC-3: reflects the full set of
+    # subjects granted access to this boundary regardless of assignment path.
+    @personnel = @authorization_boundary.personnel_roster
+    @summary   = @authorization_boundary.artifact_summary
+    # #770 bug 5 — boundary-scoped evidence artifacts (already the source of
+    # OSCAL back-matter via evidence -> back_matter_resource), surfaced here so
+    # they can be managed from the boundary screen.
+    @evidences = @authorization_boundary.evidences.order(created_at: :desc)
   end
 
   def new
