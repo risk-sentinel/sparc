@@ -8,7 +8,7 @@ module Admin
     include Pagy::Method
 
     before_action :authorize_admin!
-    before_action :set_organization, only: [ :show, :edit, :update, :deactivate, :reactivate, :add_member, :remove_member ]
+    before_action :set_organization, only: [ :show, :edit, :update, :deactivate, :reactivate, :assign_boundary, :add_member, :remove_member ]
 
     ORGS_PER_PAGE = 25
 
@@ -28,6 +28,12 @@ module Admin
       @memberships = @organization.organization_memberships.includes(:user).order(:role, "users.email")
       @authorization_boundaries = @organization.authorization_boundaries.order(:name)
       @available_users = User.active.order(:email)
+      # #770 bug 6 — boundaries not already in this org, offered for association.
+      # Each option shows its current org so the admin sees when a pick is a move.
+      @assignable_boundaries = AuthorizationBoundary.includes(:organization)
+                                 .where.not(organization_id: @organization.id)
+                                 .or(AuthorizationBoundary.where(organization_id: nil))
+                                 .order(:name)
     end
 
     def new
@@ -74,6 +80,30 @@ module Admin
       audit_log("organization_reactivated", subject: @organization,
         metadata: { organization_id: @organization.id, uuid: @organization.uuid, name: @organization.name })
       redirect_to admin_organization_path(@organization), success: "Organization reactivated."
+    end
+
+    # #770 bug 6 — associate an authorization boundary with this organization.
+    # This screen is instance-admin-only (authorize_admin!), so the assigner
+    # permits assign AND move here; the cross-org move is confirmed in the UI.
+    # The same authorization matrix is enforced for non-admins via the API
+    # (BoundaryOrganizationAssigner) so the rules live in one place. AC-3.
+    def assign_boundary
+      boundary = AuthorizationBoundary.find(params[:authorization_boundary_id])
+      previous_org = boundary.organization
+
+      BoundaryOrganizationAssigner.new(
+        boundary: boundary, organization: @organization, actor: current_user
+      ).call
+
+      audit_log("organization_boundary_assigned", subject: @organization,
+        metadata: { organization_id: @organization.id, authorization_boundary_id: boundary.id,
+                    moved_from_organization_id: previous_org&.id })
+      moved = previous_org && previous_org != @organization
+      msg = moved ? "'#{boundary.name}' moved from #{previous_org.name} to #{@organization.name}." \
+                  : "'#{boundary.name}' associated with #{@organization.name}."
+      redirect_to admin_organization_path(@organization), success: msg
+    rescue ActiveRecord::RecordNotFound
+      redirect_to admin_organization_path(@organization), error: "Boundary not found."
     end
 
     def add_member

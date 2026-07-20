@@ -370,6 +370,7 @@ Rails.application.routes.draw do
       member do
         patch :deactivate
         patch :reactivate
+        post :assign_boundary    # #770 bug 6 — associate a boundary with this org
         post :add_member
         delete :remove_member
       end
@@ -551,6 +552,12 @@ Rails.application.routes.draw do
       # CRUD API endpoints (#95)
       resources :users, only: [ :index, :show, :create, :update, :destroy ]
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
+        # #770 bug 6 — assign/move/clear the boundary's organization, enforcing
+        # the org-admin authorization matrix (instance admin may move; org_admin
+        # may attach an unassigned boundary only).
+        member do
+          patch "organization", to: "authorization_boundaries#assign_organization"
+        end
         collection do
           # #629 — admin-only bulk delete; ids[] body, partial-success result.
           delete "bulk", to: "authorization_boundaries#bulk_destroy"

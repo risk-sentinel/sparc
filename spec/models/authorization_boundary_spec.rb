@@ -57,6 +57,42 @@ RSpec.describe AuthorizationBoundary, type: :model do
     end
   end
 
+  # #770 bug 3 — the roster must reflect BOTH personnel systems.
+  describe "#personnel_roster" do
+    let(:ab) { create(:authorization_boundary) }
+
+    it "includes canonical user_role assignments (admin-added)" do
+      user = create(:user, email: "canonical@example.com")
+      role = create(:role, :authorization_boundary_scoped, display_name: "System Owner")
+      create(:user_role, user: user, role: role, authorization_boundary: ab)
+
+      entry = ab.personnel_roster.find { |p| p.email == "canonical@example.com" }
+      expect(entry).to be_present
+      expect(entry.role_label).to eq("System Owner")
+      expect(entry.source).to eq(:assigned)
+    end
+
+    it "includes legacy memberships (boundary-screen-added)" do
+      create(:authorization_boundary_membership, authorization_boundary: ab,
+             user_name: "Legacy Person", role: "isso")
+
+      entry = ab.personnel_roster.find { |p| p.name == "Legacy Person" }
+      expect(entry).to be_present
+      expect(entry.source).to eq(:membership)
+      expect(entry.membership).to be_present
+    end
+
+    it "unifies both sources in one list" do
+      create(:user_role, user: create(:user), role: create(:role, :authorization_boundary_scoped),
+             authorization_boundary: ab)
+      create(:authorization_boundary_membership, authorization_boundary: ab)
+
+      roster = ab.personnel_roster
+      expect(roster.size).to eq(2)
+      expect(roster.map(&:source)).to contain_exactly(:assigned, :membership)
+    end
+  end
+
   # #629 — referential-integrity guard: only assessment/authorization docs block.
   describe "#destroy referential guard" do
     it "blocks deletion when an SSP is attached" do
