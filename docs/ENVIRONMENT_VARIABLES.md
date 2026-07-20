@@ -230,6 +230,7 @@ needs a custom title set (e.g., agency-specific role names).
 | --- | --- | --- | --- | --- |
 | SPARC_ORGANIZATION_ROLES | Comma-separated list of role names available to organization members (in addition to the always-present "Org Admin" system role) | Head of Agency, Senior Accountable Official, CIO, CISO, Risk Executive, Chief Acquisition Officer, Senior Agency Official for Privacy, Member | `Director, Officer, Member` | No |
 | SPARC_AUTH_BOUNDARY_ROLES | Comma-separated list of role names available to authorization-boundary members | Assessor / 3PAO, Authorizing Official (AO), CISO, ISSO, Team Member, System Owner (SO), View Only | `Assessor, AO, ISSO, Owner, Viewer` | No |
+| SPARC_ENVIRONMENTS_LIST | Selectable deployment environments for boundaries, as comma-separated `Name:CODE` pairs. A missing `:CODE` defaults to the name. The stored value is the name slug, so the legacy set (production/development/staging/test) round-trips (#770) | Development (DEV), Test (TEST), Staging (STAG), User Acceptance Testing (UAT), Quality Assurance (QA), Production (PROD) | `Sandbox:SBX, Production:PROD` | No |
 
 > Set these BEFORE inviting members — existing role assignments are not
 > automatically migrated to a new role list. Removing a role name that

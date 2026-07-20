@@ -33,6 +33,17 @@ Instance Admin is a **boolean column on the User model**, not a role. It provide
 
 ---
 
+## Organization ↔ Boundary Assignment
+
+Authorization boundaries can be associated with an organization. Who may change that association:
+
+- **Attaching an _unassigned_ boundary** to an organization requires the **Org Admin** role (`org_admin` organization membership) on that target organization — or Instance Admin.
+- **Moving a boundary between organizations** (it already belongs to a different org) is **Instance Admin only**. The admin organization screen surfaces this with a confirmation and a note; non-admin attempts are refused.
+
+Both surfaces — the admin organization screen and the API (`PATCH /api/v1/authorization_boundaries/:id/organization`) — enforce the same rule through a single authorization service, so they cannot drift. Personnel assigned to a boundary through the admin screen (canonical `user_roles`) and through the boundary screen (legacy memberships) are both shown on the boundary's Personnel Roster. (#770)
+
+---
+
 ## Role Scoping
 
 SPARC roles are divided into two categories based on their scope:
