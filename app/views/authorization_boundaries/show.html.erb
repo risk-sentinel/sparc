@@ -47,48 +47,40 @@
 <div class="card mb-4">
   <div class="card-body">
     <h4 class="mb-3">Artifact Summary</h4>
+    <%# #770 bug 4 — every tile is the same size and a clickable link. Single
+        artifacts (SSP/SAP/SAR) link to the document when present, else to the
+        index to add one; POA&Ms (many) show a count and link to the index. %>
     <div class="row row-cols-2 row-cols-md-4 g-3">
+      <% single_artifacts = [
+           { label: "SSP", doc: @authorization_boundary.ssp_document, index: ssp_documents_path },
+           { label: "SAP", doc: @authorization_boundary.sap_document, index: sap_documents_path },
+           { label: "SAR", doc: @authorization_boundary.sar_document, index: sar_documents_path }
+         ] %>
+      <% single_artifacts.each do |a| %>
+        <div class="col">
+          <%= link_to (a[:doc] ? polymorphic_path(a[:doc]) : a[:index]),
+                class: "sparc-hero-tile-link d-block text-decoration-none" do %>
+            <div class="sparc-hero-tile">
+              <div class="sparc-hero-tile-label"><%= a[:label] %></div>
+              <div class="sparc-hero-tile-count" style="font-size: 1rem;">
+                <% if a[:doc] %>
+                  <%= a[:doc].name %>
+                <% else %>
+                  <span class="text-body-secondary">Add…</span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
       <div class="col">
-        <div class="sparc-hero-tile">
-          <div class="sparc-hero-tile-label">SSP</div>
-          <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-            <% if @authorization_boundary.ssp_document %>
-              <%= link_to @authorization_boundary.ssp_document.name, ssp_document_path(@authorization_boundary.ssp_document) %>
-            <% else %>
-              <span class="text-body-secondary">None</span>
-            <% end %>
+        <%= link_to poam_documents_path,
+              class: "sparc-hero-tile-link d-block text-decoration-none" do %>
+          <div class="sparc-hero-tile">
+            <div class="sparc-hero-tile-label">POA&amp;Ms</div>
+            <div class="sparc-hero-tile-count" style="font-size: 1rem;"><%= @summary[:poam_count] %></div>
           </div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="sparc-hero-tile">
-          <div class="sparc-hero-tile-label">SAP</div>
-          <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-            <% if @authorization_boundary.sap_document %>
-              <%= link_to @authorization_boundary.sap_document.name, sap_document_path(@authorization_boundary.sap_document) %>
-            <% else %>
-              <span class="text-body-secondary">None</span>
-            <% end %>
-          </div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="sparc-hero-tile">
-          <div class="sparc-hero-tile-label">SAR</div>
-          <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-            <% if @authorization_boundary.sar_document %>
-              <%= link_to @authorization_boundary.sar_document.name, sar_document_path(@authorization_boundary.sar_document) %>
-            <% else %>
-              <span class="text-body-secondary">None</span>
-            <% end %>
-          </div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="sparc-hero-tile">
-          <div class="sparc-hero-tile-label">POA&amp;Ms</div>
-          <div class="sparc-hero-tile-count"><%= @summary[:poam_count] %></div>
-        </div>
+        <% end %>
       </div>
     </div>
   </div>

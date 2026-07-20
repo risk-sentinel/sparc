@@ -1573,6 +1573,17 @@ a.link-purple { color: var(--sparc-purple); }
   text-align: center;
 }
 
+/* #770 bug 4 — clickable artifact-summary tiles. Inherit color so the tile
+   content isn't recolored as a link, and lift slightly on hover to signal
+   the whole tile navigates. */
+.sparc-hero-tile-link {
+  color: inherit;
+}
+
+.sparc-hero-tile-link:hover .sparc-hero-tile {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 .sparc-hero-tile-count {
   font-size: 2rem;
   font-weight: 700;
