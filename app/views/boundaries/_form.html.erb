@@ -15,16 +15,28 @@
   </div>
 
   <% if @cdef_documents.any? %>
-    <div class="mb-3">
+    <div class="mb-3" data-controller="checkbox-filter">
       <span class="form-label fw-semibold d-block">Components (CDEFs)</span>
-      <% @cdef_documents.each do |cdef| %>
-        <div class="form-check">
-          <%= check_box_tag "boundary[cdef_document_ids][]", cdef.id,
-              boundary.cdef_document_ids.include?(cdef.id),
-              class: "form-check-input", id: "cdef_#{cdef.id}" %>
-          <%= label_tag "cdef_#{cdef.id}", cdef.name, class: "form-check-label" %>
+      <%# #770 bug 2 — filter the CDEF picker; no filter existed here before. %>
+      <input type="text" class="form-control form-control-sm mb-2"
+             placeholder="Filter components…"
+             aria-label="Filter components by name"
+             data-checkbox-filter-target="input"
+             data-action="input->checkbox-filter#filter">
+      <div class="border rounded p-2" style="max-height: 16rem; overflow-y: auto;">
+        <% @cdef_documents.each do |cdef| %>
+          <div class="form-check" data-checkbox-filter-target="item">
+            <%= check_box_tag "boundary[cdef_document_ids][]", cdef.id,
+                boundary.cdef_document_ids.include?(cdef.id),
+                class: "form-check-input", id: "cdef_#{cdef.id}" %>
+            <%= label_tag "cdef_#{cdef.id}", cdef.name, class: "form-check-label" %>
+          </div>
+        <% end %>
+        <div class="text-body-secondary small px-1 py-2" hidden
+             data-checkbox-filter-target="empty">
+          No components match your filter.
         </div>
-      <% end %>
+      </div>
     </div>
   <% end %>
 
