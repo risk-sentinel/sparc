@@ -23,7 +23,7 @@ namespace :mappings do
     source_url = ENV["MITRE_TS_URL"] || AwsSecurityHub::MitreMappingPorter::UPSTREAM_TS_URL
 
     puts "Fetching: #{source_url}"
-    ts_text = Net::HTTP.get(URI(source_url))
+    ts_text = SparcHttp.get(source_url)  # proxy-aware (#775)
     if ts_text.nil? || ts_text.empty?
       abort "Empty response from #{source_url}"
     end
@@ -55,7 +55,7 @@ namespace :mappings do
       uri = URI(url)
       req = Net::HTTP::Get.new(uri)
       req["User-Agent"] = user_agent
-      res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+      res = SparcHttp.start(uri) do |http|  # proxy-aware (#775)
         http.read_timeout = 30
         http.request(req)
       end

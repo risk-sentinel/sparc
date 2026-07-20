@@ -102,7 +102,7 @@ class AwsSecurityHubRefreshService
     uri = URI(url)
     req = Net::HTTP::Get.new(uri)
     req["User-Agent"] = @user_agent
-    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+    res = SparcHttp.start(uri) do |http|  # proxy-aware (#775)
       http.read_timeout = 30
       http.request(req)
     end

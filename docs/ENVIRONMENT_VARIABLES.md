@@ -23,6 +23,8 @@ v1.7.0 hardening checklist) see [PRODUCTION_SECURITY.md](PRODUCTION_SECURITY.md)
 | FORCE_SSL | Force HTTPS redirect and Strict-Transport-Security header | true (prod) | `true` | No |
 | RAILS_MAX_THREADS | Thread pool size for Puma and database connection pool | 5 | `10` | No |
 | SPARC_EXTRA_CA_CERTS | Path (file or directory of `.crt`/`.pem`/`.cer`) to custom/private CA certificates the container should trust for **outbound** TLS — LDAPS, OIDC behind a private CA, a corporate TLS-intercepting proxy, or DoD-PKI endpoints. Appended to the system trust store into a combined bundle at startup (public CAs stay trusted); covers all Ruby OpenSSL clients incl. the LDAP default store. See `certs/README.md`. Alternatively bake CAs in at build time via `certs/`. (#774) | (none) | `/rails/certs` | No |
+| HTTPS_PROXY / HTTP_PROXY | Egress proxy for SPARC's **outbound** HTTP(S) calls (OIDC discovery/JWKS, federation sync, external-content refreshers). Honored **scheme-strictly** (#775): `HTTPS_PROXY` is used for `https://` requests — all of SPARC's outbound calls — and `HTTP_PROXY` only for `http://`. Set `HTTPS_PROXY` for a standard TLS egress proxy. Lowercase (`https_proxy`) also works. | (none) | `http://egress-proxy.internal:8080` | No |
+| NO_PROXY | Comma-separated hosts/domains that bypass the proxy (e.g. internal federation peers on a trusted network). Honored for all outbound calls. Lowercase (`no_proxy`) also works. | (none) | `.internal,10.0.0.0/8,localhost` | No |
 
 ---
 

@@ -185,13 +185,13 @@ module ApiAuthentication
     # Use Rails.cache for multi-process safety (Puma workers, Sidekiq)
     Rails.cache.fetch(cache_key, expires_in: 1.hour) do
       discovery_url = "#{issuer_url.chomp('/')}/.well-known/openid-configuration"
-      discovery_response = Net::HTTP.get(URI(discovery_url))
+      discovery_response = SparcHttp.get(discovery_url)  # proxy-aware (#775)
       discovery = JSON.parse(discovery_response)
       jwks_uri = discovery["jwks_uri"]
 
       return nil if jwks_uri.blank?
 
-      jwks_response = Net::HTTP.get(URI(jwks_uri))
+      jwks_response = SparcHttp.get(jwks_uri)  # proxy-aware (#775)
       jwks_data = JSON.parse(jwks_response)
       JWT::JWK::Set.new(jwks_data)
     end

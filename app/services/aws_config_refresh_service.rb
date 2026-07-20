@@ -84,7 +84,7 @@ class AwsConfigRefreshService
   def fetch_mitre_source
     require Rails.root.join("lib/aws_security_hub/mitre_mapping_porter")
     url = ENV["MITRE_TS_URL"] || AwsSecurityHub::MitreMappingPorter::UPSTREAM_TS_URL
-    body = Net::HTTP.get(URI(url))
+    body = SparcHttp.get(url)  # proxy-aware (#775)
     raise Error, "Empty response from #{url}" if body.nil? || body.empty?
     body
   rescue SocketError, Timeout::Error => e

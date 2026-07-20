@@ -51,9 +51,10 @@ RSpec.describe "API v1 OIDC JWT decode", type: :request do
     allow(SparcConfig).to receive(:oidc_issuer_url).and_return(issuer_url)
     allow(SparcConfig).to receive(:oidc_client_id).and_return(audience)
 
-    allow(Net::HTTP).to receive(:get).with(URI(discovery_url))
+    # OIDC discovery/JWKS now flow through the proxy-aware SparcHttp client (#775).
+    allow(SparcHttp).to receive(:get).with(discovery_url)
                                      .and_return({ jwks_uri: jwks_url }.to_json)
-    allow(Net::HTTP).to receive(:get).with(URI(jwks_url))
+    allow(SparcHttp).to receive(:get).with(jwks_url)
                                      .and_return(jwks_payload.to_json)
 
     Rails.cache.clear
