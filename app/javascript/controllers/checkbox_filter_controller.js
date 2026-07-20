@@ -15,7 +15,7 @@ import { Controller } from "@hotwired/stimulus"
 //     <div data-checkbox-filter-target="item">…checkbox + label…</div>
 //     <div hidden data-checkbox-filter-target="empty">No matches.</div>
 //   </div>
-export default class extends Controller {
+export default class CheckboxFilterController extends Controller {
   static targets = ["input", "item", "empty"]
 
   filter() {
