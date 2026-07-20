@@ -185,6 +185,48 @@
   </div>
 </div>
 
+<%# ── Boundary Artifacts (back-matter) ─────────────────────── %>
+<%# #770 bug 5 — evidence artifacts tied to this boundary. They already flow
+    into OSCAL back-matter (evidence -> back_matter_resource); this surfaces
+    add/list on the boundary screen. %>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Artifacts</h4>
+      <%= link_to "Add Artifact",
+            new_evidence_path(authorization_boundary_id: @authorization_boundary.id),
+            class: "btn btn-success btn-sm" %>
+    </div>
+
+    <% if @evidences.any? %>
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>File</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @evidences.each do |ev| %>
+            <tr>
+              <td><%= link_to ev.title, evidence_path(ev) %></td>
+              <td><span class="badge bg-secondary"><%= ev.type_label %></span></td>
+              <td><span class="badge bg-primary"><%= ev.status_label %></span></td>
+              <td class="text-body-secondary">
+                <%= ev.file.attached? ? (ev.original_filename.presence || "attached") : "—" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-body-secondary text-center mb-0">No artifacts attached. Add evidence to include it in this boundary's OSCAL back-matter.</p>
+    <% end %>
+  </div>
+</div>
+
 <%# #395 P3: per-document metadata sync status (green / yellow / red dots) %>
 <%= render "metadata_sync_status", boundary: @authorization_boundary %>
 

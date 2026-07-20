@@ -67,6 +67,38 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
     end
   end
 
+  # #770 bug 5 — boundary-scoped artifacts (evidence) surfaced on the screen.
+  describe "GET /authorization_boundaries/:id (Artifacts card)" do
+    before { sign_in_as(user) }
+
+    it "lists evidence tied to the boundary with a pre-scoped Add link" do
+      create(:evidence, authorization_boundary: ab, title: "Scan Result Q3")
+      get authorization_boundary_path(ab)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Scan Result Q3")
+      expect(response.body).to include(new_evidence_path(authorization_boundary_id: ab.id))
+    end
+
+    it "shows an empty state when the boundary has no artifacts" do
+      get authorization_boundary_path(ab)
+      expect(response.body).to include("No artifacts attached")
+    end
+  end
+
+  describe "GET /evidences/new (boundary pre-scoping, #770 bug 5)" do
+    before { sign_in_as(user) }
+
+    it "pre-selects the authorization boundary from the query param" do
+      get new_evidence_path(authorization_boundary_id: ab.id)
+      expect(response).to have_http_status(:ok)
+      # The boundary select renders the scoped boundary as the selected option.
+      expect(response.body).to match(
+        %r{<option selected(?:="selected")? value="#{ab.id}">#{Regexp.escape(ab.name)}</option>}
+      )
+    end
+  end
+
   describe "GET /authorization_boundaries/:id/ato_wizard" do
     before { sign_in_as(user) }
 

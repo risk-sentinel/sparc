@@ -33,7 +33,9 @@ class EvidencesController < ApplicationController
   end
 
   def new
-    @evidence = Evidence.new
+    # #770 bug 5 — allow pre-scoping to a boundary so "Add Artifact" from the
+    # Authorization Boundary screen lands on a form already tied to it.
+    @evidence = Evidence.new(authorization_boundary_id: params[:authorization_boundary_id])
   end
 
   def create

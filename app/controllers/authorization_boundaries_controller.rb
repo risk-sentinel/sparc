@@ -23,6 +23,10 @@ class AuthorizationBoundariesController < ApplicationController
     # subjects granted access to this boundary regardless of assignment path.
     @personnel = @authorization_boundary.personnel_roster
     @summary   = @authorization_boundary.artifact_summary
+    # #770 bug 5 — boundary-scoped evidence artifacts (already the source of
+    # OSCAL back-matter via evidence -> back_matter_resource), surfaced here so
+    # they can be managed from the boundary screen.
+    @evidences = @authorization_boundary.evidences.order(created_at: :desc)
   end
 
   def new

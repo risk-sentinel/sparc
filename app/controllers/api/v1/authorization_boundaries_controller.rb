@@ -159,6 +159,8 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       # memberships), matching what the boundary screen now shows. members_count
       # previously reflected only legacy memberships.
       data[:members_count] = ab.personnel_roster.size
+      # #770 bug 5 — boundary-scoped evidence artifacts (OSCAL back-matter source).
+      data[:evidences_count] = ab.evidences.count
       data[:environments] = ab.boundaries.map { |b|
         { name: b.name, environment: b.environment, components: b.cdef_documents.count }
       }
