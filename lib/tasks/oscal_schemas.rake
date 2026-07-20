@@ -8,7 +8,7 @@ namespace :oscal do
     raise "redirect loop (>#{MAX_REDIRECTS}) for #{url}" if depth > MAX_REDIRECTS
 
     uri = URI(url)
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
+    response = SparcHttp.start(uri) do |http|  # proxy-aware (#775)
       http.request(Net::HTTP::Get.new(uri.request_uri))
     end
 

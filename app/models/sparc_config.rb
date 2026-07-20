@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.12.2"
+  VERSION = "1.12.3"
 
   extend self
 
@@ -183,6 +183,15 @@ module SparcConfig
   def ldap_bind_password = ENV.fetch("SPARC_LDAP_BIND_PASSWORD", nil)
   def ldap_base       = ENV.fetch("SPARC_LDAP_BASE", nil)
   def ldap_attribute  = ENV.fetch("SPARC_LDAP_ATTRIBUTE", "uid")
+
+  # LDAP TLS trust (NIST SC-8 / IA-2). Server-cert verification is ON by
+  # default; the connection trusts the container/system CA store (see the
+  # custom-CA container-trust mechanism, #774). SPARC_LDAP_CA_FILE points at a
+  # directory CA without baking it into the image; SPARC_LDAP_TLS_VERIFY=false
+  # disables verification for legacy internal directories (insecure — logs a
+  # warning on every connection).
+  def ldap_ca_file     = ENV.fetch("SPARC_LDAP_CA_FILE", nil)
+  def ldap_tls_verify? = ENV.fetch("SPARC_LDAP_TLS_VERIFY", "true") == "true"
 
   # ── Logging ───────────────────────────────────────────────────────────────
 

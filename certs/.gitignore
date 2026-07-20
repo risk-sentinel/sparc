@@ -1,0 +1,7 @@
+# Never commit real CA certificates to this public repo (#774). Operators add
+# their custom/private CAs at build or run time in their own environment; see
+# README.md. Only the README and .gitkeep are tracked.
+*.crt
+*.pem
+*.cer
+!.gitkeep

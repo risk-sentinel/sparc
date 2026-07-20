@@ -121,7 +121,7 @@ namespace :licenses do
 
   def http_get(url)
     uri = URI(url)
-    Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+    SparcHttp.start(uri) do |http|  # proxy-aware (#775)
       http.read_timeout = 30
       response = http.get(uri.request_uri)
       raise "HTTP #{response.code}" unless response.code.to_i == 200

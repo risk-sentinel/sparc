@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Custom/private-CA trust (#774), runtime mechanism: fold any operator-supplied
+# CAs (SPARC_EXTRA_CA_CERTS, or a /rails/certs mount) into a combined bundle and
+# export SSL_CERT_FILE. Runs before anything makes an outbound TLS call, and for
+# every command (web/console/jobs), not just the server. Non-root-safe.
+# shellcheck source=bin/lib/ca-trust.sh
+source "$(dirname "$0")/lib/ca-trust.sh"
+sparc_setup_ca_trust
+
 # Verify jemalloc is active (set via Dockerfile ENV, see issue #380)
 if [ -n "${LD_PRELOAD:-}" ]; then
     echo "jemalloc: active (LD_PRELOAD=$LD_PRELOAD)"

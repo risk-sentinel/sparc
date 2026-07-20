@@ -77,8 +77,20 @@ FROM ${UBI_IMAGE} AS runtime
 # Runtime shared libs the compiled Ruby + pg link against, plus the client tools
 # the entrypoint needs: pg_isready (postgresql) and bash (docker-entrypoint).
 RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
-      openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash postgresql \
+      openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash postgresql ca-certificates \
     && microdnf clean all
+
+# Custom/private-CA trust (#774), mechanism 1 — build-time bake-in. Drop PEM/CRT
+# files into ./certs/ (empty by default; corporate proxy / DoD-PKI / internal
+# CAs) and they are folded into the system trust store here, trusted by ALL
+# outbound TLS clients (Ruby OpenSSL, RestClient, AWS SDK, and the #773 LDAP
+# default store). Non-cert files (README, .gitkeep) are stripped before
+# update-ca-trust. Mechanism 2 (runtime volume mount, no rebuild) lives in
+# bin/lib/ca-trust.sh. Runs as root here — the runtime user (UID 1000) cannot.
+COPY certs/ /etc/pki/ca-trust/source/anchors/sparc-custom/
+RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
+      ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
+    update-ca-trust
 
 COPY --from=builder /usr/local /usr/local
 ENV PATH=/usr/local/bin:$PATH \

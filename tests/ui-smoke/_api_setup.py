@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 
 from conftest import BASE_URL, SA_TOKEN
+from helpers import smoke_tls_verify
 
 
 def _client() -> httpx.Client:
@@ -29,6 +30,7 @@ def _client() -> httpx.Client:
         },
         timeout=httpx.Timeout(connect=5.0, read=30.0, write=10.0, pool=5.0),
         follow_redirects=False,
+        verify=smoke_tls_verify(),
     )
 
 

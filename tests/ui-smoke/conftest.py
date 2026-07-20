@@ -15,6 +15,8 @@ from urllib.parse import urlparse
 import httpx
 import pytest
 
+from helpers import smoke_tls_verify
+
 BASE_URL = os.environ.get(
     "SPARC_SMOKE_BASE_URL", "https://sparc.risk-sentinel.org"
 ).rstrip("/")
@@ -50,7 +52,7 @@ def _bridge_token_to_cookie(token: str) -> dict:
         f"{BASE_URL}/api/v1/sessions/from_token",
         headers={"Authorization": f"Bearer {token}"},
         timeout=30.0,
-        verify=os.environ.get("SPARC_SMOKE_INSECURE_TLS") != "1",
+        verify=smoke_tls_verify(),
     )
     assert resp.status_code == 204, (
         f"cookie-bridge POST /api/v1/sessions/from_token returned "

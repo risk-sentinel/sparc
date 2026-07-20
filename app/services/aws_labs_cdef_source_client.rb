@@ -116,7 +116,7 @@ class AwsLabsCdefSourceClient
     request["Authorization"] = "Bearer #{@token}" if @token
     headers.each { |k, v| request[k] = v }
 
-    Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+    SparcHttp.start(uri) do |http|  # proxy-aware (#775)
       http.read_timeout = 30
       http.open_timeout = 10
       http.request(request)
@@ -127,7 +127,7 @@ class AwsLabsCdefSourceClient
   # response inlines a download_url instead of content. Fetch raw from there.
   def fetch_raw(url)
     uri = URI(url)
-    Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+    SparcHttp.start(uri) do |http|  # proxy-aware (#775)
       http.read_timeout = 30
       response = http.get(uri.request_uri)
       raise Error, "Raw fetch failed: #{response.code}" unless response.code.to_i == 200

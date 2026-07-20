@@ -68,9 +68,8 @@ class AuthoritativeSourceFetchService
     request["Accept"]     = "*/*"
     request["User-Agent"] = "SPARC-AuthoritativeSourceFetch/1.0"
 
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: true,
-                                                    open_timeout: CONNECT_TIMEOUT,
-                                                    read_timeout: READ_TIMEOUT) do |http|
+    response = SparcHttp.start(uri, open_timeout: CONNECT_TIMEOUT,  # proxy-aware (#775)
+                                    read_timeout: READ_TIMEOUT) do |http|
       http.request(request)
     end
 

@@ -22,6 +22,9 @@ v1.7.0 hardening checklist) see [PRODUCTION_SECURITY.md](PRODUCTION_SECURITY.md)
 | SECRET_KEY_BASE | Rails session/cookie encryption key (generate with `bin/rails secret`) | (auto in dev) | `a1b2c3d4e5f6...` | Yes (prod) |
 | FORCE_SSL | Force HTTPS redirect and Strict-Transport-Security header | true (prod) | `true` | No |
 | RAILS_MAX_THREADS | Thread pool size for Puma and database connection pool | 5 | `10` | No |
+| SPARC_EXTRA_CA_CERTS | Path (file or directory of `.crt`/`.pem`/`.cer`) to custom/private CA certificates the container should trust for **outbound** TLS — LDAPS, OIDC behind a private CA, a corporate TLS-intercepting proxy, or DoD-PKI endpoints. Appended to the system trust store into a combined bundle at startup (public CAs stay trusted); covers all Ruby OpenSSL clients incl. the LDAP default store. See `certs/README.md`. Alternatively bake CAs in at build time via `certs/`. (#774) | (none) | `/rails/certs` | No |
+| HTTPS_PROXY / HTTP_PROXY | Egress proxy for SPARC's **outbound** HTTP(S) calls (OIDC discovery/JWKS, federation sync, external-content refreshers). Honored **scheme-strictly** (#775): `HTTPS_PROXY` is used for `https://` requests — all of SPARC's outbound calls — and `HTTP_PROXY` only for `http://`. Set `HTTPS_PROXY` for a standard TLS egress proxy. Lowercase (`https_proxy`) also works. | (none) | `http://egress-proxy.internal:8080` | No |
+| NO_PROXY | Comma-separated hosts/domains that bypass the proxy (e.g. internal federation peers on a trusted network). Honored for all outbound calls. Lowercase (`no_proxy`) also works. | (none) | `.internal,10.0.0.0/8,localhost` | No |
 
 ---
 
@@ -199,6 +202,8 @@ an Okta-specific configuration guide.
 | SPARC_LDAP_BIND_PASSWORD | Bind password (use secrets manager in prod) | (none) | `ldap-service-password` | Yes (if enabled) |
 | SPARC_LDAP_BASE | Search base DN | (none) | `ou=people,dc=example,dc=com` | Yes (if enabled) |
 | SPARC_LDAP_ATTRIBUTE | User lookup attribute | uid | `sAMAccountName` | No |
+| SPARC_LDAP_CA_FILE | PEM CA file used to verify the directory server certificate for `start_tls`/`simple_tls`. Omit to trust the container/system CA store (add a private CA there via the custom-CA trust mechanism). | (none) | `/etc/sparc/ldap-ca.pem` | No |
+| SPARC_LDAP_TLS_VERIFY | Verify the directory server's TLS certificate. **Leave `true`.** Setting `false` encrypts but does **not** authenticate the server — vulnerable to an active man-in-the-middle; a warning is logged on every connection. Only for legacy internal directories that cannot present a trusted cert. | true | `false` | No |
 
 ---
 

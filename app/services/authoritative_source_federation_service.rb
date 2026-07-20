@@ -195,8 +195,7 @@ class AuthoritativeSourceFederationService
     request["Authorization"] = "Bearer #{peer.service_token}"
     request["Accept"]        = "application/json"
 
-    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
-                                        open_timeout: 10, read_timeout: 30) do |http|
+    SparcHttp.start(uri, open_timeout: 10, read_timeout: 30) do |http|  # proxy-aware (#775)
       http.request(request)
     end
   end

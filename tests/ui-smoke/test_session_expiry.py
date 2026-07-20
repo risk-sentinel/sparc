@@ -17,7 +17,7 @@ import os
 
 import httpx
 
-from helpers import assert_no_csp_violations, record_csp
+from helpers import assert_no_csp_violations, record_csp, smoke_tls_verify
 
 BASE_URL = os.environ.get(
     "SPARC_SMOKE_BASE_URL", "https://sparc.risk-sentinel.org"
@@ -26,7 +26,7 @@ BASE_URL = os.environ.get(
 
 def test_login_is_no_store():
     """/login must be uncacheable so a stale strict-CSP copy can't be restored."""
-    resp = httpx.get(f"{BASE_URL}/login", timeout=30.0)
+    resp = httpx.get(f"{BASE_URL}/login", timeout=30.0, verify=smoke_tls_verify())
     cache_control = resp.headers.get("cache-control", "")
     assert "no-store" in cache_control, f"login Cache-Control was {cache_control!r}"
 
