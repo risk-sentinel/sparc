@@ -15,10 +15,12 @@
 # proxying is explicitly disabled (p_addr = nil) so Net::HTTP does not fall back
 # to its http_proxy-only :ENV behavior.
 #
-# TLS is verified (VERIFY_PEER) for https. Combined with the container custom-CA
-# trust (#774), a re-signing MITM egress proxy is fully supported end to end:
-# calls route THROUGH it (proxy env) and its re-signed certs are TRUSTED
-# (SSL_CERT_FILE / system store).
+# TLS is ALWAYS verified (VERIFY_PEER) for https — never disabled here. Where an
+# operator runs a sanctioned TLS-inspecting egress proxy (or a private PKI), pair
+# this with the container custom-CA trust (#774): calls route THROUGH the proxy
+# (proxy env) and verify against the CA the operator EXPLICITLY installed
+# (SSL_CERT_FILE / system store). An interceptor whose CA is not trusted is still
+# rejected — this widens operator-controlled trust, it does not weaken verification.
 #
 # NIST SC-8 (transmission) / AC-4 (controlled egress via the mandated proxy).
 module SparcHttp

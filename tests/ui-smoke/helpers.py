@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import ssl
 from urllib.parse import urlparse
 
 
@@ -27,7 +28,11 @@ def smoke_tls_verify():
     """
     if os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1":
         return False
-    return os.environ.get("SPARC_SMOKE_CA_BUNDLE") or True
+    ca = os.environ.get("SPARC_SMOKE_CA_BUNDLE")
+    if ca:
+        # An SSLContext (not a bare path string, which httpx has deprecated).
+        return ssl.create_default_context(cafile=ca)
+    return True
 
 # JS injected before any document script runs. Records CSP violations into a
 # window-global so a test can read them after interacting with the page. This
