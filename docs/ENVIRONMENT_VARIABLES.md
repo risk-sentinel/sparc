@@ -182,6 +182,9 @@ an Okta-specific configuration guide.
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_ENABLE_OIDC | Enable OIDC-based SSO login | false | `true` | No |
+| SPARC_FIDO2_ENABLED | Enable FIDO2/WebAuthn security-key sign-in (passwordless; key + PIN = app-native MFA). Adds "Security Keys" enrollment + a "Sign in with a security key" option. (#779) | false | `true` | No |
+| SPARC_FIDO2_RP_NAME | WebAuthn relying-party display name shown by the authenticator. | SPARC | `Acme SPARC` | No |
+| SPARC_FIDO2_RP_ID | WebAuthn RP ID (domain). Defaults to the host of `SPARC_APP_URL`; set only to scope credentials to a parent domain. Must match the browser origin. | (host of SPARC_APP_URL) | `sparc.example.com` | No |
 | SPARC_OIDC_ISSUER_URL | OIDC Issuer URL (used for auto-discovery of .well-known/openid-configuration) | (none) | `https://login.microsoftonline.com/{tenant-id}/v2.0` | Yes (if enabled) |
 | SPARC_OIDC_CLIENT_ID | Client ID registered with the IdP | (none) | `0oa123abc456def789ghi` | Yes (if enabled) |
 | SPARC_OIDC_CLIENT_SECRET | Client secret (keep secret; use vault/env secret in prod) | (none) | `super-long-random-secret-string` | Yes (if enabled) |

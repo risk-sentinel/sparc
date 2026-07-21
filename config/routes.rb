@@ -355,6 +355,7 @@ Rails.application.routes.draw do
         patch :suspend
         patch :reactivate
         patch :deactivate
+        delete :reset_security_keys   # revoke all of a user's FIDO2 keys (#779 lockout recovery)
       end
       resources :api_tokens, only: [ :create, :destroy ], controller: "api_tokens"
     end
