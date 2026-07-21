@@ -73,8 +73,14 @@ class WebauthnSessionsController < ApplicationController
     head :not_found unless SparcConfig.fido2_enabled?
   end
 
+  # The WebAuthn assertion JSON from the browser. Permit its exact structure
+  # (verified cryptographically by #verify, not mass-assigned).
   def credential_param
-    params.require(:credential).permit!.to_h
+    params.require(:credential).permit(
+      :id, :rawId, :type, :authenticatorAttachment,
+      response: [ :attestationObject, :clientDataJSON, :authenticatorData, :signature, :userHandle ],
+      clientExtensionResults: {}
+    ).to_h
   end
 
   # Empty for usernameless/discoverable login; the user's registered keys when an

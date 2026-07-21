@@ -75,10 +75,14 @@ class WebauthnCredentialsController < ApplicationController
     head :not_found unless SparcConfig.fido2_enabled?
   end
 
-  # The WebAuthn credential JSON from the browser is validated cryptographically
-  # by #verify, so permitting the nested structure wholesale is safe here.
+  # The WebAuthn PublicKeyCredential JSON from the browser. Permit its exact
+  # structure (it is verified cryptographically by #verify, not mass-assigned).
   def credential_param
-    params.require(:credential).permit!.to_h
+    params.require(:credential).permit(
+      :id, :rawId, :type, :authenticatorAttachment,
+      response: [ :attestationObject, :clientDataJSON, :authenticatorData, :signature, :userHandle ],
+      clientExtensionResults: {}
+    ).to_h
   end
 
   def display_name_for(user)
