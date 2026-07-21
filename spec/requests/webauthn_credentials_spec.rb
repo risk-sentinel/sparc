@@ -14,6 +14,7 @@ RSpec.describe "WebauthnCredentials", type: :request do
 
   before do
     allow(SparcConfig).to receive(:fido2_enabled?).and_return(true)
+    allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
     sign_in_as(user)
   end
 
@@ -71,6 +72,13 @@ RSpec.describe "WebauthnCredentials", type: :request do
       get webauthn_credentials_path, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.map { |c| c["label"] }).to include("Backup key")
+    end
+
+    it "renders the management page with the enrolled keys" do
+      enroll!(nickname: "Desk key")
+      get webauthn_credentials_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Security keys").and include("Desk key")
     end
   end
 

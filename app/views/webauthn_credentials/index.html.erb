@@ -1,0 +1,59 @@
+<% content_for :title, "Security keys" %>
+
+<div class="container py-4" style="max-width: 720px;"
+     data-controller="webauthn"
+     data-webauthn-options-url-value="<%= registration_options_webauthn_credentials_path %>"
+     data-webauthn-create-url-value="<%= webauthn_credentials_path %>">
+
+  <h1 class="h3 mb-1">Security keys</h1>
+  <p class="text-body-secondary">
+    Register a FIDO2 security key (e.g. a YubiKey) with a PIN. Once enrolled, you
+    can sign in with the key and its PIN alone — no password.
+  </p>
+
+  <div class="card mt-4">
+    <div class="card-header">Your keys</div>
+    <ul class="list-group list-group-flush">
+      <% if @credentials.any? %>
+        <% @credentials.each do |credential| %>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold"><%= credential.label %></div>
+              <small class="text-body-secondary">
+                <% if credential.last_used_at %>
+                  Last used <%= time_ago_in_words(credential.last_used_at) %> ago
+                <% else %>
+                  Never used
+                <% end %>
+                · added <%= credential.created_at.to_date.to_fs(:long) %>
+              </small>
+            </div>
+            <%= button_to "Remove", webauthn_credential_path(credential), method: :delete,
+                  class: "btn btn-outline-danger btn-sm",
+                  form: { data: { turbo_confirm: "Remove this security key? You will no longer be able to sign in with it." } } %>
+          </li>
+        <% end %>
+      <% else %>
+        <li class="list-group-item text-body-secondary">No security keys yet.</li>
+      <% end %>
+    </ul>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header">Add a security key</div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label for="webauthn-nickname" class="form-label">Name (optional)</label>
+        <input type="text" id="webauthn-nickname" class="form-control" placeholder="e.g. Work YubiKey"
+               maxlength="60" data-webauthn-target="nickname">
+        <div class="form-text">A label to help you recognize this key later.</div>
+      </div>
+      <button type="button" class="btn btn-primary"
+              data-webauthn-target="submit"
+              data-action="webauthn#register">
+        Add security key
+      </button>
+      <div class="alert" role="status" hidden data-webauthn-target="status"></div>
+    </div>
+  </div>
+</div>
