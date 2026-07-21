@@ -26,6 +26,10 @@ Rails.application.routes.draw do
     post :registration_options, on: :collection
   end
 
+  # Passwordless FIDO2 sign-in — the security key + PIN is the login (#779)
+  post "session/webauthn/options", to: "webauthn_sessions#options", as: :webauthn_authentication_options
+  post "session/webauthn",         to: "webauthn_sessions#create",  as: :webauthn_session
+
   # User profile (avatar upload)
   resource :profile, only: [ :edit ] do
     patch :update_avatar, on: :member

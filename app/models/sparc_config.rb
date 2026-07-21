@@ -492,7 +492,7 @@ module SparcConfig
   # ── Convenience ───────────────────────────────────────────────────────────
 
   def any_auth_enabled?
-    enable_local_login? || enable_oidc? || enable_ldap? || github_enabled? || gitlab_enabled?
+    enable_local_login? || enable_oidc? || enable_ldap? || github_enabled? || gitlab_enabled? || fido2_enabled?
   end
 
   # Extract hostname from app_url for mailer configuration

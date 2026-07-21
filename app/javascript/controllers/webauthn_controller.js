@@ -6,8 +6,11 @@ import { Controller } from "@hotwired/stimulus"
 // speaks binary (ArrayBuffer); the server speaks base64url, so we translate at
 // the boundary.
 export default class extends Controller {
-  static targets = ["nickname", "status", "submit"]
-  static values = { optionsUrl: String, createUrl: String }
+  static targets = ["nickname", "status", "submit", "email"]
+  static values = {
+    optionsUrl: String, createUrl: String,       // enrollment
+    authOptionsUrl: String, authUrl: String       // sign-in
+  }
 
   async register(event) {
     event.preventDefault()
@@ -40,6 +43,35 @@ export default class extends Controller {
     }
   }
 
+  // Passwordless sign-in: the security key + PIN is the login.
+  async login(event) {
+    event.preventDefault()
+
+    if (!window.PublicKeyCredential) {
+      this.setStatus("This browser does not support security keys.", "danger")
+      return
+    }
+
+    this.submitTarget.disabled = true
+    this.setStatus("Touch your security key and enter its PIN when prompted…", "info")
+
+    try {
+      const email = this.hasEmailTarget ? this.emailTarget.value : ""
+      const options = await this.postJSON(this.authOptionsUrlValue, email ? { email } : null)
+      const assertion = await navigator.credentials.get({
+        publicKey: this.decodeRequestOptions(options)
+      })
+
+      const result = await this.postJSON(this.authUrlValue, { credential: this.encodeAssertion(assertion) })
+      if (result.error) throw new Error(result.error)
+
+      window.location.assign(result.redirect_to || "/")
+    } catch (error) {
+      this.submitTarget.disabled = false
+      this.setStatus(this.friendlyError(error), "danger")
+    }
+  }
+
   // ── ceremony translation ────────────────────────────────────────────────
 
   decodeCreationOptions(options) {
@@ -53,6 +85,33 @@ export default class extends Controller {
       }))
     }
     return publicKey
+  }
+
+  decodeRequestOptions(options) {
+    const publicKey = { ...options }
+    publicKey.challenge = this.base64urlToBuffer(options.challenge)
+    if (Array.isArray(options.allowCredentials)) {
+      publicKey.allowCredentials = options.allowCredentials.map((c) => ({
+        ...c,
+        id: this.base64urlToBuffer(c.id)
+      }))
+    }
+    return publicKey
+  }
+
+  encodeAssertion(assertion) {
+    return {
+      type: assertion.type,
+      id: assertion.id,
+      rawId: this.bufferToBase64url(assertion.rawId),
+      clientExtensionResults: assertion.getClientExtensionResults?.() ?? {},
+      response: {
+        authenticatorData: this.bufferToBase64url(assertion.response.authenticatorData),
+        clientDataJSON: this.bufferToBase64url(assertion.response.clientDataJSON),
+        signature: this.bufferToBase64url(assertion.response.signature),
+        userHandle: assertion.response.userHandle ? this.bufferToBase64url(assertion.response.userHandle) : null
+      }
+    }
   }
 
   encodeCredential(credential) {
