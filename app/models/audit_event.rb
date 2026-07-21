@@ -27,6 +27,8 @@ class AuditEvent < ApplicationRecord
     login_failure
     logout
     password_change
+    webauthn_key_registered
+    webauthn_key_revoked
     authorization_failure
     role_grant
     role_revoke
@@ -213,6 +215,7 @@ class AuditEvent < ApplicationRecord
   # ── Categories (for admin UI grouping) ─────────────────────────────────
   ACTION_CATEGORIES = {
     "Authentication" => %w[login_success login_failure logout password_change
+                            webauthn_key_registered webauthn_key_revoked
                             api_session_bridged api_session_bridge_failed],
     "Authorization" => %w[authorization_failure],
     "User Management" => %w[user_created user_suspended user_reactivated user_deactivated

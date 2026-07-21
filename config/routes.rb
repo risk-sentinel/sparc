@@ -21,6 +21,11 @@ Rails.application.routes.draw do
   # Password change (forced reset for bootstrapped admin)
   resource :password, only: [ :edit, :update ]
 
+  # FIDO2 security keys — enroll (WebAuthn attestation ceremony), list, revoke (#779)
+  resources :webauthn_credentials, only: [ :index, :create, :destroy ] do
+    post :registration_options, on: :collection
+  end
+
   # User profile (avatar upload)
   resource :profile, only: [ :edit ] do
     patch :update_avatar, on: :member
