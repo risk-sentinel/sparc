@@ -75,6 +75,8 @@ services:
       SECRET_KEY_BASE: "ubi9-local-validation-not-for-production-0123456789abcdef0123456789abcdef"
       FORCE_SSL: "false"
       RAILS_SERVE_STATIC_FILES: "true"
+      SPARC_FIDO2_ENABLED: "true"
+      SPARC_APP_URL: "https://localhost:3443"
       SPARC_SEED_DEMO: "true"
 
   # Optional TLS-terminating reverse proxy so authenticated ui-smoke (which needs
