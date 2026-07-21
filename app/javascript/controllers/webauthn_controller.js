@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // No inline JS — wired via data-action (CSP has no 'unsafe-inline'). The browser
 // speaks binary (ArrayBuffer); the server speaks base64url, so we translate at
 // the boundary.
-export default class extends Controller {
+export default class WebauthnController extends Controller {
   static targets = ["nickname", "status", "submit", "email"]
   static values = {
     optionsUrl: String, createUrl: String,       // enrollment
@@ -160,17 +160,19 @@ export default class extends Controller {
   }
 
   base64urlToBuffer(value) {
-    const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=")
+    const base64 = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(value.length / 4) * 4, "=")
     const binary = atob(base64)
     const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.codePointAt(i)
     return bytes.buffer
   }
 
   bufferToBase64url(buffer) {
     const bytes = new Uint8Array(buffer)
     let binary = ""
-    for (const byte of bytes) binary += String.fromCharCode(byte)
-    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+    for (const byte of bytes) binary += String.fromCodePoint(byte)
+    // base64 padding "=" only ever appears trailing, so a plain removal is safe
+    // (avoids a backtracking regex).
+    return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")
   }
 }

@@ -15,7 +15,8 @@ origin = ENV.fetch("SPARC_APP_URL", "http://localhost:3000")
 WebAuthn.configure do |config|
   config.allowed_origins = [ origin ]
   config.rp_name = ENV.fetch("SPARC_FIDO2_RP_NAME", "SPARC")
-  config.rp_id = ENV["SPARC_FIDO2_RP_ID"].presence if ENV["SPARC_FIDO2_RP_ID"].present?
+  rp_id = ENV.fetch("SPARC_FIDO2_RP_ID", nil).presence
+  config.rp_id = rp_id if rp_id
   # Give the ceremony room for PIN/biometric entry.
   config.credential_options_timeout = 120_000
 end
