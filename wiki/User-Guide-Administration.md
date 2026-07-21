@@ -56,6 +56,10 @@ flowchart TD
    **assign roles** — both instance roles and boundary-specific roles.
 5. Use **Suspend** / **Reactivate** from the list to disable or restore an
    account.
+6. If a user has lost their security key, open their profile and click **Reset
+   security keys** to revoke all of their FIDO2 keys (the only recovery path —
+   there are no self-service codes). They must then re-enroll. See
+   [Security Keys & Smart Cards](User-Guide-Security-Keys).
 
 ## How to create and assign roles
 

@@ -78,6 +78,7 @@ flowchart LR
 | Guide | Covers |
 |---|---|
 | [Trust Store](User-Guide-Trust-Store) | Authoritative sources, review & promotion queues, federation |
+| [Security Keys & Smart Cards](User-Guide-Security-Keys) | Enroll a FIDO2 key or CAC/PIV; passwordless sign-in |
 | [Administration](User-Guide-Administration) | Users, roles/permissions, service accounts, audit log |
 
 ---
