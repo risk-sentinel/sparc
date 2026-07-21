@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.12.3"
+  VERSION = "1.13.0"
 
   extend self
 
@@ -107,6 +107,18 @@ module SparcConfig
   def enable_oidc?         = ENV.fetch("SPARC_ENABLE_OIDC", "false") == "true"
   def enable_ldap?         = ENV.fetch("SPARC_ENABLE_LDAP", "false") == "true"
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
+  def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true"  # WebAuthn security keys (#779)
+
+  # PIV / CAC smart-card auth (#779, Track B). The mTLS handshake + DoD PKI
+  # validation + revocation happen at the proxy/ALB (sparc-iac); SPARC consumes
+  # the *validated* client cert it forwards. piv_cert_header carries the PEM;
+  # piv_verify_header must equal piv_verify_success or SPARC rejects (fail-closed
+  # — never trust a cert the proxy didn't verify, and the proxy strips any
+  # client-supplied copies of these headers).
+  def enable_piv?          = ENV.fetch("SPARC_ENABLE_PIV", "false") == "true"
+  def piv_cert_header      = ENV.fetch("SPARC_PIV_CERT_HEADER", "X-SSL-Client-Cert")
+  def piv_verify_header    = ENV.fetch("SPARC_PIV_VERIFY_HEADER", "X-SSL-Client-Verify")
+  def piv_verify_success   = ENV.fetch("SPARC_PIV_VERIFY_SUCCESS", "SUCCESS")
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
 
   # Public visibility of the Controls layer (catalogs, baselines, mappings).
@@ -491,7 +503,7 @@ module SparcConfig
   # ── Convenience ───────────────────────────────────────────────────────────
 
   def any_auth_enabled?
-    enable_local_login? || enable_oidc? || enable_ldap? || github_enabled? || gitlab_enabled?
+    enable_local_login? || enable_oidc? || enable_ldap? || github_enabled? || gitlab_enabled? || fido2_enabled? || enable_piv?
   end
 
   # Extract hostname from app_url for mailer configuration

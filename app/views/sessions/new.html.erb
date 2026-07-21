@@ -112,6 +112,32 @@
     <% panel_index += 1 %>
   <% end %>
 
+  <%# ── FIDO2 security key (passwordless — the key + PIN is the login) ── %>
+  <% if SparcConfig.fido2_enabled? %>
+    <div class="d-flex align-items-center my-2 text-body-tertiary">
+      <hr class="flex-grow-1 m-0"><span class="px-3">or</span><hr class="flex-grow-1 m-0">
+    </div>
+    <div data-controller="webauthn"
+         data-webauthn-auth-options-url-value="<%= webauthn_authentication_options_path %>"
+         data-webauthn-auth-url-value="<%= webauthn_session_path %>">
+      <button type="button" class="btn btn-outline-primary btn-sm w-100 fw-semibold"
+              data-webauthn-target="submit"
+              data-action="webauthn#login">
+        Sign in with a security key
+      </button>
+      <output class="alert mt-2 small d-block" hidden data-webauthn-target="status"></output>
+    </div>
+  <% end %>
+
+  <%# ── PIV / CAC smart-card (cert + PIN, validated by the gateway) ── %>
+  <% if SparcConfig.enable_piv? %>
+    <div class="d-flex align-items-center my-2 text-body-tertiary">
+      <hr class="flex-grow-1 m-0"><span class="px-3">or</span><hr class="flex-grow-1 m-0">
+    </div>
+    <%= link_to "Sign in with your CAC / smart card", piv_session_path,
+          class: "btn btn-outline-secondary btn-sm w-100 fw-semibold", data: { turbo: false } %>
+  <% end %>
+
   <%# ── SSO Buttons (GitHub / GitLab) ───────────────────── %>
   <% if SparcConfig.github_enabled? || SparcConfig.gitlab_enabled? %>
     <div class="d-flex align-items-center my-2 text-body-tertiary">

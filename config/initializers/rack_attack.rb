@@ -78,8 +78,9 @@ end
 
 def rack_attack_login_failure_request?(req)
   return false unless req.request_method == "POST"
-  # Local login form posts to /login; failed OIDC callbacks land on /auth/failure.
-  req.path == "/login" || req.path == "/auth/failure"
+  # Local login form posts to /login; failed OIDC callbacks land on /auth/failure;
+  # passwordless FIDO2 sign-in posts to /session/webauthn (#779).
+  req.path == "/login" || req.path == "/auth/failure" || req.path == "/session/webauthn"
 end
 
 def rack_attack_csp_report_request?(req)

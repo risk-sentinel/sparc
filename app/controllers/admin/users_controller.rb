@@ -7,7 +7,7 @@ module Admin
     include Pagy::Method
 
     before_action :authorize_admin!
-    before_action :set_user, only: [ :show, :edit, :update, :suspend, :reactivate, :deactivate ]
+    before_action :set_user, only: [ :show, :edit, :update, :suspend, :reactivate, :deactivate, :reset_security_keys ]
 
     USERS_PER_PAGE = 25
 
@@ -80,6 +80,16 @@ module Admin
       audit_log("user_suspended", subject: @user,
         metadata: { target_user_id: @user.id, target_email: @user.email, uuid: @user.uuid })
       redirect_to admin_user_path(@user), success: "User suspended."
+    end
+
+    # Lockout recovery (#779): revoke all of a user's FIDO2 security keys so they
+    # can re-enroll. The only recovery path — there are no self-service codes.
+    def reset_security_keys
+      count = @user.webauthn_credentials.destroy_all.size
+      audit_log("admin_webauthn_reset", subject: @user,
+        metadata: { target_user_id: @user.id, target_email: @user.email, keys_removed: count })
+      redirect_to admin_user_path(@user),
+        success: "Removed #{count} security #{'key'.pluralize(count)}. The user must re-enroll to sign in with a key."
     end
 
     def reactivate

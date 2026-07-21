@@ -27,6 +27,11 @@
           </div>
         <% end %>
       <% end %>
+      <% if SparcConfig.fido2_enabled? && @user.webauthn_registered? %>
+        <%= button_to "Reset security keys", reset_security_keys_admin_user_path(@user), method: :delete,
+              class: "btn btn-sm btn-outline-danger",
+              data: { turbo_confirm: "Remove all of #{@user.email}'s security keys? They will need to re-enroll to sign in with a key." } %>
+      <% end %>
       <%= link_to "Back to Users", admin_users_path, class: "btn btn-sm btn-outline-secondary" %>
     </div>
   </div>

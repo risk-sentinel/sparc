@@ -7,6 +7,7 @@
 **Getting Started**
 * [Getting Started](Getting-Started)
 * [Configuration Reference](Configuration)
+* [Authentication and MFA](Authentication-and-MFA)
 
 ---
 
@@ -23,6 +24,7 @@
 * [POA&M](User-Guide-POAM)
 * [Evidence & Attestations](User-Guide-Evidence-and-Attestations)
 * [Trust Store](User-Guide-Trust-Store)
+* [Security Keys & Smart Cards](User-Guide-Security-Keys)
 * [Administration](User-Guide-Administration)
 
 ---

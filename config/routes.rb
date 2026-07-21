@@ -21,6 +21,18 @@ Rails.application.routes.draw do
   # Password change (forced reset for bootstrapped admin)
   resource :password, only: [ :edit, :update ]
 
+  # FIDO2 security keys — enroll (WebAuthn attestation ceremony), list, revoke (#779)
+  resources :webauthn_credentials, only: [ :index, :create, :destroy ] do
+    post :registration_options, on: :collection
+  end
+
+  # Passwordless FIDO2 sign-in — the security key + PIN is the login (#779)
+  post "session/webauthn/options", to: "webauthn_sessions#options", as: :webauthn_authentication_options
+  post "session/webauthn",         to: "webauthn_sessions#create",  as: :webauthn_session
+
+  # PIV / CAC smart-card sign-in — the proxy-validated client cert is the login (#779)
+  get "auth/piv", to: "piv_sessions#create", as: :piv_session
+
   # User profile (avatar upload)
   resource :profile, only: [ :edit ] do
     patch :update_avatar, on: :member
@@ -346,6 +358,7 @@ Rails.application.routes.draw do
         patch :suspend
         patch :reactivate
         patch :deactivate
+        delete :reset_security_keys   # revoke all of a user's FIDO2 keys (#779 lockout recovery)
       end
       resources :api_tokens, only: [ :create, :destroy ], controller: "api_tokens"
     end

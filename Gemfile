@@ -58,6 +58,16 @@ gem "omniauth-gitlab", "~> 4.0"                # GitLab OAuth
 gem "omniauth_openid_connect", "~> 0.8"        # Generic OIDC (Okta, Keycloak, Entra ID)
 gem "net-ldap", "~> 0.19"                      # LDAP authentication
 gem "jwt", "~> 3.2"                            # JWT decoding for OIDC API token validation
+gem "webauthn", "~> 3.1"                       # FIDO2/WebAuthn passwordless + 2FA (#779)
+# Pin the openssl *gem* (the thin Ruby binding, NOT the OpenSSL C library) to the
+# 3.x line — which is exactly what the UBI9 prod image already ships (Ruby 3.4.4's
+# default) and what production's OpenSSL 3.x library expects. This is NOT a
+# downgrade: prod's crypto/TLS engine is the OpenSSL 3.x *library* regardless of
+# this pin. Without it, webauthn's loose `openssl > 2.0` lets bundler grab the new
+# 4.x gem, whose native ext drops OpenSSL 1.1.1 support and segfaults on dev boxes
+# whose Ruby links 1.1.1 — so the pin also keeps dev/prod at the same gem. `~> 3.3`
+# still admits all 3.x security patches. (#779)
+gem "openssl", "~> 3.3"
 
 # Bundle the IANA tz database (pure Ruby) so TZInfo needs no system zoneinfo.
 # Not just Windows/JRuby: minimal Linux base images ship no usable

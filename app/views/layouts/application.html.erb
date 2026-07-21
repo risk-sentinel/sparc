@@ -229,6 +229,9 @@
                     <% end %>
                     <li><%= link_to "Profile", edit_profile_path, class: "dropdown-item" %></li>
                     <li><%= link_to "Change Password", edit_password_path, class: "dropdown-item" %></li>
+                    <% if SparcConfig.fido2_enabled? %>
+                      <li><%= link_to "Security Keys", webauthn_credentials_path, class: "dropdown-item" %></li>
+                    <% end %>
                     <li><hr class="dropdown-divider"></li>
                     <li><%= button_to "Sign Out", logout_path, method: :delete, class: "dropdown-item" %></li>
                   </ul>

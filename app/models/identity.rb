@@ -10,7 +10,7 @@ class Identity < ApplicationRecord
   validates :provider, presence: true
   validates :uid, presence: true, uniqueness: { scope: :provider }
 
-  PROVIDERS = %w[github gitlab oidc ldap].freeze
+  PROVIDERS = %w[github gitlab oidc ldap piv].freeze
   validates :provider, inclusion: { in: PROVIDERS }
 
   scope :for_provider, ->(provider) { where(provider: provider) }

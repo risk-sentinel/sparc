@@ -27,6 +27,8 @@ class AuditEvent < ApplicationRecord
     login_failure
     logout
     password_change
+    webauthn_key_registered
+    webauthn_key_revoked
     authorization_failure
     role_grant
     role_revoke
@@ -45,6 +47,7 @@ class AuditEvent < ApplicationRecord
     user_password_expired
     admin_bootstrap
     admin_password_reset
+    admin_webauthn_reset
     admin_credential_synced_from_env
     admin_credential_rotated
     sparc_hash_rotated
@@ -213,11 +216,12 @@ class AuditEvent < ApplicationRecord
   # ── Categories (for admin UI grouping) ─────────────────────────────────
   ACTION_CATEGORIES = {
     "Authentication" => %w[login_success login_failure logout password_change
+                            webauthn_key_registered webauthn_key_revoked
                             api_session_bridged api_session_bridge_failed],
     "Authorization" => %w[authorization_failure],
     "User Management" => %w[user_created user_suspended user_reactivated user_deactivated
                             user_auto_deactivated user_password_expired admin_bootstrap
-                            admin_password_reset admin_credential_synced_from_env
+                            admin_password_reset admin_webauthn_reset admin_credential_synced_from_env
                             admin_credential_rotated sparc_hash_rotated
                             api_user_created api_user_updated api_user_deactivated],
     "Auth Boundary Admin" => %w[api_authorization_boundary_created
