@@ -1,6 +1,6 @@
 # Role-Based Access Control (RBAC)
 
-_Reflects SPARC **v1.12.1**. Authoritative source: `app/models/role.rb` (permission keys) and the role seeds in `db/seeds.rb`._
+_Reflects SPARC **v1.13.0**. Authoritative source: `app/models/role.rb` (permission keys) and the role seeds in `db/seeds.rb`._
 
 ## Overview
 
