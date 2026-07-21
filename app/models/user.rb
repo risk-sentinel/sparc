@@ -30,6 +30,7 @@ class User < ApplicationRecord
   limit_attachment_size :avatar, max: -> { SparcConfig.max_avatar_bytes }
 
   has_many :identities, dependent: :destroy
+  has_many :webauthn_credentials, dependent: :destroy   # FIDO2 security keys (#779)
   has_many :user_roles, dependent: :destroy
   has_many :roles, through: :user_roles
   has_many :authorization_boundaries, -> { distinct }, through: :user_roles
@@ -246,6 +247,21 @@ class User < ApplicationRecord
       last_sign_in_ip: ip_address,
       sign_in_count: sign_in_count + 1
     )
+  end
+
+  # Whether this user can authenticate with a security key (#779).
+  def webauthn_registered?
+    webauthn_credentials.exists?
+  end
+
+  # The stable WebAuthn user handle — the userHandle a discoverable credential
+  # returns at usernameless login. Generated lazily on first enrollment and never
+  # changed thereafter (rotating it would orphan every registered key).
+  def webauthn_handle
+    return webauthn_id if webauthn_id.present?
+
+    update!(webauthn_id: WebAuthn.generate_user_id)
+    webauthn_id
   end
 
   private

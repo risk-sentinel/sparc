@@ -107,6 +107,7 @@ module SparcConfig
   def enable_oidc?         = ENV.fetch("SPARC_ENABLE_OIDC", "false") == "true"
   def enable_ldap?         = ENV.fetch("SPARC_ENABLE_LDAP", "false") == "true"
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
+  def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true"  # WebAuthn security keys (#779)
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
 
   # Public visibility of the Controls layer (catalogs, baselines, mappings).
