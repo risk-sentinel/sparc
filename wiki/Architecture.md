@@ -1,6 +1,6 @@
 # Architecture
 
-> Reflects SPARC **v1.12.1**.
+> Reflects SPARC **v1.13.0**.
 
 ## Overview
 
@@ -164,7 +164,8 @@ erDiagram
     USER ||--o{ USER_ROLE : has
     ROLE ||--o{ USER_ROLE : grants
     AUTHORIZATION_BOUNDARY ||--o{ USER_ROLE : "scopes (optional)"
-    USER ||--o{ IDENTITY : "has (OAuth/OIDC/LDAP)"
+    USER ||--o{ IDENTITY : "has (OAuth/OIDC/LDAP/PIV)"
+    USER ||--o{ WEBAUTHN_CREDENTIAL : "has (FIDO2 keys)"
 
     USER {
         string email
@@ -195,10 +196,14 @@ flowchart LR
     Login -->|OAuth| OAuthCB["GitHub/GitLab callback → Identity lookup"] --> Session
     Login -->|OIDC| OIDC["Provider redirect → ID-token validation"] --> Session
     Login -->|LDAP| LDAP["LdapAuthService (bind-and-search)"] --> Session
+    Login -->|FIDO2| WebAuthn["WebAuthn assertion (key + PIN) → WebauthnCredential"] --> Session
+    Login -->|PIV/CAC| PIV["Gateway-verified client cert → PivAuthService (EDIPI/email)"] --> Session
 ```
 
 - `User` holds core profile, `admin` flag, sign-in tracking, and `must_reset_password`
-- `Identity` stores OAuth/OIDC/LDAP provider data (`provider`, `uid`, `auth_data` JSONB)
+- `Identity` stores OAuth/OIDC/LDAP/PIV provider data (`provider`, `uid`, `auth_data` JSONB)
+- `WebauthnCredential` stores registered FIDO2 security keys — passwordless, phishing-resistant MFA (possession + PIN in one ceremony); recovery is an admin key-reset. See [Authentication and MFA](Authentication-and-MFA) (#779, v1.13.0)
+- **PIV/CAC** maps a gateway-validated client certificate (EDIPI / email) to a `User`; the mTLS handshake + DoD PKI validation happen at the ALB/nginx gateway and SPARC fails closed on an unverified cert → NIST IA-2(12)
 - `UserRole` assigns a `Role` to a `User`, optionally scoped to an `AuthorizationBoundary`
 - `Role` contains a `permissions` JSONB field with 20 boolean permission keys
 

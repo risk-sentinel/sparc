@@ -5,7 +5,7 @@ from an enterprise down through individual authorization boundaries and the
 OSCAL artifacts that document each system. This is the canonical reference
 for anyone building **multi-system environments** in SPARC.
 
-*Current as of app version v1.12.1.*
+*Current as of app version v1.13.0.*
 
 ## The hierarchy
 

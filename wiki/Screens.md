@@ -2,7 +2,7 @@
 
 This page provides a comprehensive inventory of every screen in the SPARC application, organized by the OSCAL layer structure. Each section includes route paths, access requirements, and key UI elements.
 
-_Current as of app version **v1.12.1**. Routes are authoritative per `config/routes.rb`; the version badge in the navbar renders dynamically from `SparcConfig::VERSION`._
+_Current as of app version **v1.13.0**. Routes are authoritative per `config/routes.rb`; the version badge in the navbar renders dynamically from `SparcConfig::VERSION`._
 
 > **Looking for how-to instructions?** This page is a reference inventory. For
 > step-by-step, task-oriented walkthroughs of each area, see the
@@ -100,8 +100,20 @@ The login page uses a tabbed interface that adapts based on enabled authenticati
 - **OIDC tab** (if `SPARC_ENABLE_OIDC`): Single SSO button labeled with the configured provider title. Uses a POST form to `/auth/oidc`.
 - **LDAP tab** (if `SPARC_ENABLE_LDAP`): Username/password form with hidden `auth_method=ldap` field.
 - **SSO Buttons** (GitHub/GitLab): Shown below the tabs when either `SparcConfig.github_enabled?` or `SparcConfig.gitlab_enabled?` returns true. POST forms to `/auth/github` and `/auth/gitlab`.
+- **Security key button** (if `SparcConfig.fido2_enabled?`): "Sign in with a security key" — triggers a WebAuthn assertion (key + PIN) via the `webauthn` Stimulus controller; POST to `/session/webauthn` (options at `/session/webauthn/options`). Passwordless. (#779)
+- **CAC / PIV button** (if `SparcConfig.enable_piv?`): "Sign in with your CAC / smart card" — `GET /auth/piv`, mapping the gateway-forwarded validated client certificate to a user. (#779)
 - **OSCAL Overview section**: Rendered via the `sessions/_oscal_overview` partial below the login form.
 - **No Auth State**: If no authentication methods are configured, displays a message directing to `ENVIRONMENT_VARIABLES.md`.
+
+#### Security Keys (FIDO2 management)
+
+| | |
+|---|---|
+| **Route** | `GET /webauthn_credentials`, `POST /webauthn_credentials/registration_options`, `POST /webauthn_credentials`, `DELETE /webauthn_credentials/:id` |
+| **Controller** | `WebauthnCredentialsController` |
+| **Auth** | Signed-in users; only present when `SPARC_FIDO2_ENABLED=true` (returns 404 otherwise) |
+
+Reached from the account menu (**Security Keys**). Enroll a FIDO2 key (optional nickname → browser prompt → key + PIN), view registered keys, and remove one. Admins reset a locked-out user's keys from the user admin page (`DELETE /admin/users/:id/reset_security_keys`). See [User Guide: Security Keys](User-Guide-Security-Keys) and [Authentication and MFA](Authentication-and-MFA).
 
 #### Registration Page
 

@@ -4,6 +4,26 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.13.0 -- FIDO2 + PIV Authentication (App-Native MFA) (2026-07-21)
+
+SPARC's first **app-native multi-factor authentication** — phishing-resistant and DoD-ready. A FIDO2 security key or a CAC/PIV smart card + PIN is now a complete, single-step login.
+
+- **FIDO2 / WebAuthn passwordless sign-in** ([#779](https://github.com/risk-sentinel/sparc/issues/779)) — register a security key (YubiKey, Feitian, Token2, platform authenticators) with a PIN and sign in with no password; possession + knowledge in one ceremony satisfies MFA on its own. Authenticator-agnostic, usernameless with an email-first fallback; lockout recovery is an admin key-reset (no self-service codes by design). Enable with `SPARC_FIDO2_ENABLED`. See [Authentication and MFA](Authentication-and-MFA) and [User Guide: Security Keys](User-Guide-Security-Keys).
+- **PIV / CAC smart-card sign-in** ([#779](https://github.com/risk-sentinel/sparc/issues/779)) — accepts a DoD PIV/CAC certificate, delivering **NIST IA-2(12) "Acceptance of PIV Credentials"**. The mTLS handshake + DoD PKI validation happen at the gateway (ALB/nginx, [sparc-iac#559](https://github.com/risk-sentinel/sparc-iac/issues/559)); SPARC consumes the validated cert, maps the EDIPI/email to a user, and fails closed unless the gateway attests verification. Enable with `SPARC_ENABLE_PIV`.
+- **FIDO U2F** — covered for free via WebAuthn back-compat (non-resident second factor).
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.13.0).
+
+## v1.12.3 -- Outbound-TLS Trust: LDAP Verify, Custom-CA, Proxy Egress (2026-07-20)
+
+Hardening release. SPARC can now run in a locked-down enterprise or DoD environment (private CAs, a mandated TLS egress proxy, a verified LDAPS directory) **without weakening any verification** — closing the three gaps found by the v1.12.2 outbound-TLS audit.
+
+- **LDAP verifies the directory server certificate** ([#773](https://github.com/risk-sentinel/sparc/issues/773)) — `simple_tls`/`start_tls` now verify with `VERIFY_PEER` by default (previously `VERIFY_NONE`, leaving bind credentials MITM-open). Supply the directory CA via `SPARC_LDAP_CA_FILE` or the container trust store; `SPARC_LDAP_TLS_VERIFY=false` is an env-gated, loudly-logged opt-out for legacy internal directories.
+- **Custom / private-CA container trust** ([#774](https://github.com/risk-sentinel/sparc/issues/774)) — trust a private, corporate-proxy, or DoD-PKI CA via a runtime mount (`SPARC_EXTRA_CA_CERTS`, default `/rails/certs`) or a build-time bake (`certs/` → `update-ca-trust`). Folds into the OpenSSL trust store so **every** outbound client benefits (Net::HTTP, AWS SDK, and the LDAP default store); public CAs stay trusted.
+- **Proxy-aware outbound HTTP** ([#775](https://github.com/risk-sentinel/sparc/issues/775)) — all outbound calls honor `HTTPS_PROXY`/`HTTP_PROXY`/`NO_PROXY` scheme-strictly via a shared `SparcHttp` client.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.12.3).
+
 ## v1.12.2 -- Evidence API, hdf-cli 3.4.1, Boundary/Organization Management (2026-07-20)
 
 A feature + fix patch release bundling eight PRs. Highlights:

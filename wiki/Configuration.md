@@ -1,6 +1,6 @@
 # Configuration Reference
 
-SPARC is configured via environment variables — most prefixed with `SPARC_`. All authentication features default to **disabled** (whitelist approach); enable one or more to activate the login page. This page (current for **v1.12.1**) is a curated operator/consumer reference. For the exhaustive list of every variable, including advanced deployment options, see [docs/ENVIRONMENT_VARIABLES.md](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md).
+SPARC is configured via environment variables — most prefixed with `SPARC_`. All authentication features default to **disabled** (whitelist approach); enable one or more to activate the login page. This page (current for **v1.13.0**) is a curated operator/consumer reference. For the exhaustive list of every variable, including advanced deployment options, see [docs/ENVIRONMENT_VARIABLES.md](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md).
 
 ## Application
 
@@ -40,12 +40,16 @@ All auth features default to **disabled**. Enable one or more to activate `/logi
 | `SPARC_ENABLE_EMAIL_CONFIRMATION` | `false` | Require email confirmation for new local accounts |
 | `SPARC_ENABLE_OIDC` | `false` | Enable OpenID Connect SSO |
 | `SPARC_ENABLE_LDAP` | `false` | Enable LDAP directory login |
+| `SPARC_FIDO2_ENABLED` | `false` | Enable FIDO2/WebAuthn security-key sign-in (passwordless; key + PIN = app-native MFA). Adds a **Security Keys** enrollment page + a "Sign in with a security key" option (#779) |
+| `SPARC_ENABLE_PIV` | `false` | Enable PIV / CAC smart-card sign-in (cert + PIN → NIST IA-2(12)). The mTLS + DoD-PKI validation happen at the proxy/ALB; SPARC consumes the forwarded validated cert and fails closed. Only enable behind a correctly-configured mTLS gateway (#779) |
 | `SPARC_ENABLE_USER_REGISTRATION` | `false` | Allow self-service registration (usually `false` in prod) |
 | `SPARC_SESSION_TIMEOUT_MINUTES` | `60` | Session inactivity timeout (minutes) |
 | `SPARC_ADMIN_EMAIL` | `admin@sparc.local` | Email for the bootstrapped admin account |
 | `SPARC_PUBLIC_CATALOGS` | `false` | Make the Controls layer (catalogs, baselines, mappings) publicly readable without signing in. Secure-by-default off; enable only when SPARC is fronted by your own network auth (e.g. VPN) |
 
 > **Admin password rotation** is an operational concern managed via your secrets manager (AWS Secrets Manager on ECS), not a value you set as consumer config. See the deployment/rotation docs.
+
+> **FIDO2 & PIV/CAC** have a dedicated operator guide — see [Authentication and MFA](Authentication-and-MFA) for the WebAuthn RP-ID/origin, the PIV forwarded-cert header contract, and mTLS gateway requirements ([sparc-iac#559](https://github.com/risk-sentinel/sparc-iac/issues/559)).
 
 ## OIDC / SSO
 
@@ -85,6 +89,18 @@ Requires `SPARC_ENABLE_LDAP=true`.
 | `SPARC_LDAP_BIND_PASSWORD` | (required) | Service account password |
 | `SPARC_LDAP_BASE` | (required) | Search base DN |
 | `SPARC_LDAP_ATTRIBUTE` | `uid` | User lookup attribute |
+| `SPARC_LDAP_CA_FILE` | (none) | PEM CA file to verify the directory server certificate; omit to trust the container/system CA store (add a private CA via `SPARC_EXTRA_CA_CERTS`) (#773) |
+| `SPARC_LDAP_TLS_VERIFY` | `true` | Verify the directory server's TLS certificate. **Leave `true`** — `false` encrypts but does not authenticate the server (MITM-open) and is logged loudly on every connection (#773) |
+
+## Outbound TLS Trust & Egress Proxy
+
+For locked-down enterprise or DoD environments (private CAs, a mandated TLS egress proxy). Outbound TLS verification stays **on**; these only add trust or routing (#774, #775).
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPARC_EXTRA_CA_CERTS` | (none) | Path (file, or directory of `.crt`/`.pem`/`.cer`) to custom/private CA certs to trust for **outbound** TLS — LDAPS, OIDC behind a private CA, a TLS-intercepting proxy, or DoD-PKI endpoints. Appended to the system bundle at startup so every outbound client benefits (public CAs stay trusted). Or bake CAs in at build time via `certs/` |
+| `HTTPS_PROXY` / `HTTP_PROXY` | (none) | Egress proxy for outbound HTTP(S) (OIDC discovery/JWKS, federation sync, content refreshers). Honored scheme-strictly — `HTTPS_PROXY` for `https://`. Lowercase also works |
+| `NO_PROXY` | (none) | Comma-separated hosts/domains that bypass the proxy (e.g. internal federation peers). Lowercase also works |
 
 ## OAuth Providers
 
