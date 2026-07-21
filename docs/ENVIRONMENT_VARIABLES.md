@@ -185,6 +185,10 @@ an Okta-specific configuration guide.
 | SPARC_FIDO2_ENABLED | Enable FIDO2/WebAuthn security-key sign-in (passwordless; key + PIN = app-native MFA). Adds "Security Keys" enrollment + a "Sign in with a security key" option. (#779) | false | `true` | No |
 | SPARC_FIDO2_RP_NAME | WebAuthn relying-party display name shown by the authenticator. | SPARC | `Acme SPARC` | No |
 | SPARC_FIDO2_RP_ID | WebAuthn RP ID (domain). Defaults to the host of `SPARC_APP_URL`; set only to scope credentials to a parent domain. Must match the browser origin. | (host of SPARC_APP_URL) | `sparc.example.com` | No |
+| SPARC_ENABLE_PIV | Enable PIV / CAC smart-card sign-in (cert + PIN). The mTLS + DoD-PKI validation happens at the proxy/ALB (see sparc-iac); SPARC consumes the forwarded validated cert. **Only enable behind a correctly-configured mTLS gateway** that sets the verify header and strips client-supplied copies. (#779) | false | `true` | No |
+| SPARC_PIV_CERT_HEADER | Header carrying the forwarded (PEM, possibly URL-encoded) client cert. | X-SSL-Client-Cert | `X-Amzn-Mtls-Clientcert` | No |
+| SPARC_PIV_VERIFY_HEADER | Header carrying the gateway's mTLS verification result. SPARC fails closed unless it equals `SPARC_PIV_VERIFY_SUCCESS`. | X-SSL-Client-Verify | `X-SSL-Client-Verify` | No |
+| SPARC_PIV_VERIFY_SUCCESS | The success value SPARC requires in the verify header. | SUCCESS | `SUCCESS` | No |
 | SPARC_OIDC_ISSUER_URL | OIDC Issuer URL (used for auto-discovery of .well-known/openid-configuration) | (none) | `https://login.microsoftonline.com/{tenant-id}/v2.0` | Yes (if enabled) |
 | SPARC_OIDC_CLIENT_ID | Client ID registered with the IdP | (none) | `0oa123abc456def789ghi` | Yes (if enabled) |
 | SPARC_OIDC_CLIENT_SECRET | Client secret (keep secret; use vault/env secret in prod) | (none) | `super-long-random-secret-string` | Yes (if enabled) |

@@ -30,6 +30,9 @@ Rails.application.routes.draw do
   post "session/webauthn/options", to: "webauthn_sessions#options", as: :webauthn_authentication_options
   post "session/webauthn",         to: "webauthn_sessions#create",  as: :webauthn_session
 
+  # PIV / CAC smart-card sign-in — the proxy-validated client cert is the login (#779)
+  get "auth/piv", to: "piv_sessions#create", as: :piv_session
+
   # User profile (avatar upload)
   resource :profile, only: [ :edit ] do
     patch :update_avatar, on: :member
