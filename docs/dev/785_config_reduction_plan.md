@@ -178,7 +178,7 @@ RSpec already runs; it needs a path to (or a checked-in copy of) the task-defini
 | `SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS` | `7` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
 | `SPARC_AWS_LABS_CDEF_REPO` | `awslabs/oscal-content-for-aws-serv…` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
 | `SPARC_AWS_LABS_OSCAL_VERSIONS` | `` | Not required | Supported — stays in `.env.example` + docs | none | Optional; `""` is a no-op |
-| `SPARC_AWS_REGION` | `us-east-1` | Not required | Supported — override retained | route 1 duplicate read | **Its one real purpose:** point SPARC's AWS SDK clients (Secrets Manager, RDS IAM auth, credential rotation) at a *different* region than the S3 bucket, since `storage.yml` uses plain `AWS_REGION`. Only useful in split-region deployments; both are `us-east-1` here |
+| `SPARC_AWS_REGION` | `us-east-1` | Not required | **Deprecate (Pass 2)** | keep as silent alias for `AWS_REGION` | ⚠️ No demonstrated value. Every read site is the identical chain `SPARC_AWS_REGION`→`AWS_REGION`→`us-east-1`. The only scenario it enables (SDK clients in a different region than the S3 bucket) is theoretical — no real deployment needs it |
 | `SPARC_CCI_REVS` | `4,5` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
 | `SPARC_ENABLE_USER_REGISTRATION` | `false` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
 | `SPARC_GITLAB_CLIENT_ID` | `` | Not required | Supported — stays in `.env.example` + docs | none | Optional; `""` is a no-op |
@@ -324,13 +324,13 @@ Because "not required" is not "deleted":
 |---|---|
 | `SPARC_MAX_UPLOAD_MB` → 100 | ✅ applied |
 | `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` → 250 | ✅ applied |
-| Other three rate limits → prod values | ✅ applied |
+| Other three rate limits → prod values | ↩︎ **reverted — not approved.** `API_WRITES_PER_MINUTE`, `LOGIN_FAILURES_PER_MIN`, `UPLOADS_PER_5MIN_PER_IP` are back at their shipped defaults |
 | `SPARC_OIDC_FORCE_MFA` → default true | ✅ applied |
 | `SPARC_ADMIN_REFRESH_ENABLED` → default true | ✅ applied (+ accessor, controller routed) |
 | `SPARC_BANNER_ENABLED` ⟸ `SPARC_BANNER_MESSAGE` | ✅ applied |
 | `RAILS_SERVE_STATIC_FILES` → drop, document proxy | ✅ decided, doc pending |
 | `SPARC_API_AUTH` → default hybrid | ❌ **not safe** — see Inference safety rule |
-| `SPARC_AWS_REGION` — what is it for? | ✅ answered: split-region SDK clients only |
+| `SPARC_AWS_REGION` — what is it for? | ⚠️ **No demonstrated value.** See below — candidate for deprecation, not retention |
 
 Full suite green after these changes: **2985 examples, 0 failures**; rubocop clean.
 
@@ -342,3 +342,31 @@ Full suite green after these changes: **2985 examples, 0 failures**; rubocop cle
 | 2 | `SPARC_REQUIRE_DOCUMENT_APPROVAL` — bump default to `true`? | Bump |
 | 3 | Verify SMTP port 465 + STARTTLS before deriving TLS mode | Verify first |
 | 4 | Adopt the four-tier documentation split? | Yes — biggest perception win |
+
+---
+
+## `SPARC_AWS_REGION` — reassessed, and it does not earn its place
+
+An earlier draft justified this variable as enabling "split-region" deployments. That
+justification does not hold up:
+
+- All four read sites use the **identical** chain `SPARC_AWS_REGION` → `AWS_REGION` →
+  `us-east-1` (`sparc_config.rb:468`, `admin_credential_rotation_service.rb:122`,
+  `00_aws_secrets.rb:38`, `aws_db_auth.rb:25`).
+- The only behaviour it can produce that `AWS_REGION` alone cannot is running the Secrets
+  Manager / RDS-IAM / rotation SDK clients in a *different* region from the S3 bucket.
+- No real deployment needs that, and none is planned.
+
+**Recommendation: deprecate in Pass 2.** Keep it as a silent alias for `AWS_REGION` so
+existing configurations do not break, remove it from the documented vocabulary, and route
+the three duplicated fallback chains through a single accessor.
+
+### Note on S3 and regions
+
+S3 **bucket names** are globally unique, but buckets are regional resources and the SDK
+still needs a region to resolve an endpoint — `Aws::S3::Client.new` without one raises
+`Aws::Errors::MissingRegionError`. `config/storage.yml:11` is `region: <%= ENV['AWS_REGION'] %>`.
+
+So `AWS_REGION` is genuinely load-bearing for Active Storage and must stay (it is
+Terraform-injected in any case). It is `SPARC_AWS_REGION`, the SPARC-specific override,
+that has no demonstrated purpose.

@@ -342,10 +342,10 @@ module SparcConfig
   # NLB targets, etc. Loopback addresses are safelisted by default for
   # development convenience.
   def rate_limiting_enabled?               = ENV.fetch("SPARC_RATE_LIMITING_ENABLED", "true") == "true"
-  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "60").to_i
+  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "30").to_i
   def rate_limit_uploads_per_hour_per_user = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER", "250").to_i
-  def rate_limit_api_writes_per_minute     = ENV.fetch("SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE", "600").to_i
-  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "3").to_i
+  def rate_limit_api_writes_per_minute     = ENV.fetch("SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE", "300").to_i
+  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "5").to_i
   # CSP violation report beacons (#528, epic #650). Per-IP cap so a misbehaving
   # or hostile client can't flood the log sink. Generous default — a page with
   # several violations fires a burst legitimately.
