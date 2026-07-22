@@ -252,7 +252,7 @@ module SparcConfig
   # the cost of that choice instead of burying it in a format-specific knob.
   # Avatar stays separate (small images shouldn't compete with document caps).
 
-  def max_upload_mb     = ENV.fetch("SPARC_MAX_UPLOAD_MB", "50").to_i
+  def max_upload_mb     = ENV.fetch("SPARC_MAX_UPLOAD_MB", "100").to_i
   def max_avatar_mb     = ENV.fetch("SPARC_MAX_AVATAR_MB", "2").to_i
   def max_upload_bytes  = max_upload_mb * 1.megabyte
   def max_avatar_bytes  = max_avatar_mb * 1.megabyte
