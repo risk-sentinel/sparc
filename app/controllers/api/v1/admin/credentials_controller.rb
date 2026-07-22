@@ -87,11 +87,11 @@ class Api::V1::Admin::CredentialsController < Api::V1::BaseController
   end
 
   def require_feature_enabled!
-    return if ENV["SPARC_ADMIN_REFRESH_ENABLED"].to_s.downcase == "true"
+    return if SparcConfig.admin_refresh_enabled?
 
     render json: {
       error: "Admin credential refresh endpoint is disabled. " \
-             "Set SPARC_ADMIN_REFRESH_ENABLED=true to enable."
+             "Unset SPARC_ADMIN_REFRESH_ENABLED (defaults on) or set it to true."
     }, status: :service_unavailable
   end
 

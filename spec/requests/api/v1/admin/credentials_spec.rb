@@ -93,8 +93,17 @@ RSpec.describe "Api::V1::Admin::Credentials", type: :request do
       expect(response).to have_http_status(:forbidden)
     end
 
-    it "returns 503 when SPARC_ADMIN_REFRESH_ENABLED is not set" do
+    # #785 — flipped to default-on. The endpoint is already gated by an admin
+    # Bearer token plus the admin.rotate_credentials permission, so the env flag
+    # was a third lock on a door that already has two. Opting out is explicit.
+    it "is enabled when SPARC_ADMIN_REFRESH_ENABLED is not set" do
       ENV.delete("SPARC_ADMIN_REFRESH_ENABLED")
+      post path, params: { password: "Brand-New-Password-99" }, headers: auth_headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "returns 503 when SPARC_ADMIN_REFRESH_ENABLED is explicitly false" do
+      ENV["SPARC_ADMIN_REFRESH_ENABLED"] = "false"
       post path, params: { password: "Brand-New-Password-99" }, headers: auth_headers, as: :json
       expect(response).to have_http_status(:service_unavailable)
       expect(JSON.parse(response.body)["error"]).to match(/disabled/i)

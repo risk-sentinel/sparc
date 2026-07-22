@@ -184,7 +184,10 @@ module SparcConfig
   def oidc_redirect_uri  = ENV.fetch("SPARC_OIDC_REDIRECT_URI", nil)
   def oidc_scopes        = ENV.fetch("SPARC_OIDC_SCOPES", "openid profile email")
   def oidc_provider_title = ENV.fetch("SPARC_OIDC_PROVIDER_TITLE", "SSO")
-  def oidc_force_mfa?    = ENV.fetch("SPARC_OIDC_FORCE_MFA", "false") == "true"
+  # #785 — defaults true. Only consulted on the OIDC path, so a true default is
+  # inert for deployments that don't use OIDC, and security-positive for those
+  # that do. Set explicitly to "false" to opt out.
+  def oidc_force_mfa?    = ENV.fetch("SPARC_OIDC_FORCE_MFA", "true") == "true"
 
   # ── LDAP ──────────────────────────────────────────────────────────────────
 
@@ -233,10 +236,23 @@ module SparcConfig
 
   # ── API Authentication Mode ─────────────────────────────────────────────
   # Controls which auth method the REST API accepts:
-  #   local  — SPARC-issued Bearer tokens only (default)
+  #   local  — SPARC-issued Bearer tokens only
   #   oidc   — OIDC/Okta JWT tokens only
   #   hybrid — JWTs for humans + SPARC tokens for service accounts
+  #
+  # #785 — deliberately NOT defaulted or inferred, and that decision is
+  # load-bearing. Defaulting to "hybrid" breaks every non-OIDC install
+  # (api_auth.rb raises at boot without an issuer). Inferring it from the
+  # issuer's presence is worse: it silently changes API auth semantics for any
+  # deployment that has OIDC configured but still issues SPARC tokens to humans,
+  # who then get 401s on upgrade. Measured — that inference failed 338 specs.
+  # This variable stays explicit.
   def api_auth_mode = ENV.fetch("SPARC_API_AUTH", "local")
+
+  # #785 — defaults true. The endpoint is already gated by an admin token plus
+  # the admin.rotate_credentials permission, so the env flag was a third lock on
+  # a door that already has two. Set explicitly to "false" to disable outright.
+  def admin_refresh_enabled? = ENV.fetch("SPARC_ADMIN_REFRESH_ENABLED", "true").downcase == "true"
 
   API_AUTH_MODES = %w[local oidc hybrid].freeze
 
@@ -326,10 +342,10 @@ module SparcConfig
   # NLB targets, etc. Loopback addresses are safelisted by default for
   # development convenience.
   def rate_limiting_enabled?               = ENV.fetch("SPARC_RATE_LIMITING_ENABLED", "true") == "true"
-  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "30").to_i
-  def rate_limit_uploads_per_hour_per_user = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER", "100").to_i
-  def rate_limit_api_writes_per_minute     = ENV.fetch("SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE", "300").to_i
-  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "5").to_i
+  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "60").to_i
+  def rate_limit_uploads_per_hour_per_user = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER", "250").to_i
+  def rate_limit_api_writes_per_minute     = ENV.fetch("SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE", "600").to_i
+  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "3").to_i
   # CSP violation report beacons (#528, epic #650). Per-IP cap so a misbehaving
   # or hostile client can't flood the log sink. Generous default — a page with
   # several violations fires a burst legitimately.
@@ -341,8 +357,17 @@ module SparcConfig
 
   # ── Consent Banner ──────────────────────────────────────────────────────
 
-  def banner_enabled?     = ENV.fetch("SPARC_BANNER_ENABLED", "false") == "true"
-  def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil)
+  # #785 — inferred from the banner message. A banner with no message renders
+  # nothing, and a message that is never shown is a configuration mistake, so
+  # presence of the message IS the switch. Explicit "false" still forces it off.
+  def banner_enabled?
+    raw = ENV["SPARC_BANNER_ENABLED"]
+    return raw == "true" if raw.present?
+
+    banner_message_path.present?
+  end
+
+  def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil).presence
 
   # ── Environment / Rules Header (#682) ─────────────────────────────────────
   # Operator-configurable header bar shown on EVERY screen describing the
