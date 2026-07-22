@@ -34,7 +34,12 @@ module SparcConfig
   def db_name     = ENV.fetch("SPARC_DB_NAME", "sparc")
   def db_user     = ENV.fetch("SPARC_DB_USER", nil)
   def db_password = ENV.fetch("SPARC_DB_PASSWORD", nil)
-  def db_sslmode  = ENV.fetch("SPARC_DB_SSLMODE", "prefer")
+  # #785 — production defaults to "require"; other environments keep "prefer"
+  # so local/dev Postgres without TLS still connects.
+  # ⚠️ Currently INERT: nothing reads this accessor. config/database.yml has no
+  # sslmode key, so DB TLS is governed by DATABASE_URL's query string, not here.
+  # Wiring it up (or confirming DATABASE_URL carries sslmode) is open work.
+  def db_sslmode = ENV.fetch("SPARC_DB_SSLMODE") { Rails.env.production? ? "require" : "prefer" }
 
   # ── Application ───────────────────────────────────────────────────────────
 
@@ -104,7 +109,17 @@ module SparcConfig
   # All default to false — features must be explicitly enabled.
 
   def enable_local_login?  = ENV.fetch("SPARC_ENABLE_LOCAL_LOGIN", "false") == "true"
-  def enable_oidc?         = ENV.fetch("SPARC_ENABLE_OIDC", "false") == "true"
+
+  # #785 — inferred from the credential. Configuring an OIDC client ID is an
+  # unambiguous statement of intent, and the inference can only turn ON a
+  # provider the operator already set up. Explicit "false" still forces it off.
+  def enable_oidc?
+    raw = ENV["SPARC_ENABLE_OIDC"]
+    return raw == "true" if raw.present?
+
+    oidc_client_id.present?
+  end
+
   def enable_ldap?         = ENV.fetch("SPARC_ENABLE_LDAP", "false") == "true"
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
   def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true"  # WebAuthn security keys (#779)
@@ -210,8 +225,15 @@ module SparcConfig
 
   # ── Logging ───────────────────────────────────────────────────────────────
 
-  def log_to_stdout?      = ENV.fetch("SPARC_LOG_TO_STDOUT", "false") == "true"
-  def structured_logging? = ENV.fetch("SPARC_STRUCTURED_LOGGING", "false") == "true"
+  # #785 — defaults true in production, matching what production.rb actually
+  # does (it sets config.logger to STDOUT unconditionally at :92).
+  # ⚠️ Currently INERT: nothing reads this accessor.
+  def log_to_stdout? = ENV.fetch("SPARC_LOG_TO_STDOUT") { Rails.env.production?.to_s } == "true"
+  # #785 — defaults true in production.
+  # ⚠️ Currently INERT, and more so than the others: nothing reads this accessor
+  # AND no structured/JSON log formatter exists anywhere in the codebase. Until
+  # one is implemented this reports an intent, not a behaviour.
+  def structured_logging? = ENV.fetch("SPARC_STRUCTURED_LOGGING") { Rails.env.production?.to_s } == "true"
   def log_level           = ENV.fetch("SPARC_LOG_LEVEL", "info")
 
   # ── Artifact retention (#680/#686) ────────────────────────────────────────
@@ -225,7 +247,17 @@ module SparcConfig
 
   # ── SMTP / Email ──────────────────────────────────────────────────────────
 
-  def enable_smtp?       = ENV.fetch("SPARC_ENABLE_SMTP", "false") == "true"
+  # #785 — inferred from the server address. Same rule as OIDC: it can only turn
+  # ON delivery the operator already configured. Explicit "false" forces it off.
+  # NOTE: production.rb builds smtp_settings at boot (pre-autoload) and cannot
+  # call this accessor, so it repeats the same inference inline. Keep them in step.
+  def enable_smtp?
+    raw = ENV["SPARC_ENABLE_SMTP"]
+    return raw == "true" if raw.present?
+
+    smtp_address.present?
+  end
+
   def smtp_address       = ENV.fetch("SPARC_SMTP_ADDRESS", nil)
   def smtp_port          = ENV.fetch("SPARC_SMTP_PORT", "587").to_i
   def smtp_username      = ENV.fetch("SPARC_SMTP_USERNAME", nil)
@@ -282,7 +314,9 @@ module SparcConfig
   # (Catalog, Profile, Baseline, CDEF) must be `approved` before they can be
   # published. Default false: the approval workflow is available but not
   # enforced, so existing publish flows are unchanged until an org enables it.
-  def require_document_approval? = ENV.fetch("SPARC_REQUIRE_DOCUMENT_APPROVAL", "false") == "true"
+  # #785 — defaults true. A publish gate that is off by default is the wrong
+  # default for a compliance tool; deployments that want free publishing opt out.
+  def require_document_approval? = ENV.fetch("SPARC_REQUIRE_DOCUMENT_APPROVAL", "true") == "true"
 
   # ── HDF / OSCAL translation (#449, #648) ─────────────────────────────────
   # SPARC_HDF_NORMALIZE_BASELINES was removed in #764. It injected an empty
@@ -342,10 +376,10 @@ module SparcConfig
   # NLB targets, etc. Loopback addresses are safelisted by default for
   # development convenience.
   def rate_limiting_enabled?               = ENV.fetch("SPARC_RATE_LIMITING_ENABLED", "true") == "true"
-  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "30").to_i
+  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "60").to_i
   def rate_limit_uploads_per_hour_per_user = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER", "250").to_i
   def rate_limit_api_writes_per_minute     = ENV.fetch("SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE", "300").to_i
-  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "5").to_i
+  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "3").to_i
   # CSP violation report beacons (#528, epic #650). Per-IP cap so a misbehaving
   # or hostile client can't flood the log sink. Generous default — a page with
   # several violations fires a burst legitimately.

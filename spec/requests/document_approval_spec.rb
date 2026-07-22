@@ -68,8 +68,10 @@ RSpec.describe "Document approval workflow", type: :request do
     end
   end
 
-  describe "publish is unaffected when the flag is off (default)" do
+  # #785 — the gate now defaults ON, so this case must disable it explicitly.
+  describe "publish is unaffected when the flag is off" do
     it "publishes a non-approved catalog (gate disabled)" do
+      allow(SparcConfig).to receive(:require_document_approval?).and_return(false)
       catalog = create(:control_catalog, lifecycle_status: "in_progress", metadata_extra: valid_metadata)
       sign_in_as(admin)
       patch publish_control_catalog_path(catalog)

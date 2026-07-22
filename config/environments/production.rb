@@ -114,9 +114,15 @@ Rails.application.configure do
                    .split(":").first
   config.action_mailer.default_url_options = { host: mailer_host }
 
-  # SMTP delivery — enabled via SPARC_ENABLE_SMTP=true.
+  # SMTP delivery — inferred from SPARC_SMTP_ADDRESS being set (#785); an
+  # explicit SPARC_ENABLE_SMTP still wins either way.
+  # This runs pre-autoload so it cannot call SparcConfig.enable_smtp? — the
+  # inference is duplicated deliberately. Keep the two in step.
   # See docs/ENVIRONMENT_VARIABLES.md for all SPARC_SMTP_* variables.
-  if ENV["SPARC_ENABLE_SMTP"] == "true"
+  raw_enable_smtp = ENV["SPARC_ENABLE_SMTP"]
+  smtp_enabled    = raw_enable_smtp.present? ? raw_enable_smtp == "true" : ENV["SPARC_SMTP_ADDRESS"].present?
+
+  if smtp_enabled
     config.action_mailer.raise_delivery_errors = true
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
