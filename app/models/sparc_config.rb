@@ -160,6 +160,35 @@ module SparcConfig
   def piv_cert_header      = ENV.fetch("SPARC_PIV_CERT_HEADER", "X-SSL-Client-Cert")
   def piv_verify_header    = ENV.fetch("SPARC_PIV_VERIFY_HEADER", "X-SSL-Client-Verify")
   def piv_verify_success   = ENV.fetch("SPARC_PIV_VERIFY_SUCCESS", "SUCCESS")
+
+  # #790 — PIV identity mapping is configurable so non-DoD PKI is a supported
+  # deployment rather than an accident of the email fallback. All defaults
+  # preserve the DoD-shaped behaviour shipped in #779.
+  #
+  # SPARC_PIV_IDENTITY_SOURCE selects which certificate field yields the primary
+  # identifier matched against a provisioned PIV Identity (provider "piv"):
+  #   edipi_cn   (default) — the DoD EDIPI, last dotted segment of the Subject CN
+  #   upn        — the PIV UPN (otherName OID 1.3.6.1.4.1.311.20.2.3)
+  #   email      — the rfc822Name SAN
+  #   subject_cn — the whole Subject CN string
+  PIV_IDENTITY_SOURCES = %w[edipi_cn upn email subject_cn].freeze
+
+  def piv_identity_source
+    src = ENV.fetch("SPARC_PIV_IDENTITY_SOURCE", "edipi_cn").downcase
+    PIV_IDENTITY_SOURCES.include?(src) ? src : "edipi_cn"
+  end
+
+  # Optional regex applied to the raw source value to extract the identifier.
+  # Unset ⇒ a source-appropriate default (edipi_cn validates a 10-digit segment).
+  # Non-DoD identifiers set this to match their own uid shape.
+  def piv_uid_pattern = ENV.fetch("SPARC_PIV_UID_PATTERN", nil).presence
+
+  # When true (default), a cert with no matching PIV Identity falls back to
+  # matching its rfc822Name against User.email. A high-assurance deployment sets
+  # this false to require an explicit PIV-Identity mapping and refuse email
+  # matches — the email path is only as strong as the proxy's trust boundary.
+  def piv_allow_email_match? = ENV.fetch("SPARC_PIV_ALLOW_EMAIL_MATCH", "true") == "true"
+
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
 
   # Public visibility of the Controls layer (catalogs, baselines, mappings).
