@@ -106,27 +106,37 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
-# Production configuration supports both DATABASE_URL (preferred) and
-# individual SPARC_DB_* variables as fallbacks. DATABASE_URL always takes
-# priority per Rails convention when set.
-# See docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
+# #785 Pass 2 — DATABASE_URL is the single source for all four databases.
+#
+# Rails merges DATABASE_URL into `primary` only, so the cache/queue/cable
+# secondaries are derived from it via DbUrl (lib/db_url/config.rb), using Rails'
+# own resolver. SPARC_DB_* remains a fully supported fallback for when
+# DATABASE_URL is unset — this reduces what must be SET, not what works. The
+# derived database name gets the _cache/_queue/_cable suffix as before.
+#
+# Only inline <%= %> expressions here, no <% %> statement block: this file must
+# stay parseable as raw YAML (#788). All logic lives in DbUrl, required from
+# config/application.rb so the constant exists when this renders.
+#
+# DATABASE_URL always wins when present (Rails convention). See
+# docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
 production:
   primary: &primary_production
     <<: *default
-    database: <%= ENV.fetch("SPARC_DB_NAME", "ssp_tpr_manager_production") %>
-    username: <%= ENV.fetch("SPARC_DB_USER", "ssp_tpr_manager") %>
-    password: <%= ENV["SPARC_DB_PASSWORD"] || ENV["SSP_TPR_MANAGER_DATABASE_PASSWORD"] %>
-    host: <%= ENV.fetch("SPARC_DB_HOST", "localhost") %>
-    port: <%= ENV.fetch("SPARC_DB_PORT", 5432) %>
+    database: <%= DbUrl.database %>
+    username: <%= DbUrl.username %>
+    password: <%= DbUrl.password %>
+    host: <%= DbUrl.host %>
+    port: <%= DbUrl.port %>
   cache:
     <<: *primary_production
-    database: <%= ENV.fetch("SPARC_DB_NAME", "ssp_tpr_manager_production") %>_cache
+    database: <%= DbUrl.cache_database %>
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: <%= ENV.fetch("SPARC_DB_NAME", "ssp_tpr_manager_production") %>_queue
+    database: <%= DbUrl.queue_database %>
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: <%= ENV.fetch("SPARC_DB_NAME", "ssp_tpr_manager_production") %>_cable
+    database: <%= DbUrl.cable_database %>
     migrations_paths: db/cable_migrate

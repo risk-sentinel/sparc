@@ -569,7 +569,14 @@ module SparcConfig
   def aws_iam_db_auth_enabled?      = ENV.fetch("SPARC_AWS_IAM_DB_AUTH", "false") == "true"
   def app_config_secret_arn         = ENV.fetch("SPARC_APP_CONFIG_SECRET_ARN", nil)
   def admin_credentials_secret_arn  = ENV.fetch("SPARC_ADMIN_CREDENTIALS_SECRET_ARN", nil)
-  def aws_region                    = ENV.fetch("SPARC_AWS_REGION", ENV.fetch("AWS_REGION", "us-east-1"))
+  # #785 Pass 2 — SPARC_AWS_REGION is a DEPRECATED alias for AWS_REGION. The only
+  # behaviour it can add is running SPARC's own SDK clients (Secrets Manager,
+  # RDS-IAM, credential rotation) in a different region from the S3 bucket, which
+  # no deployment needs. Kept as a silent alias so existing configs don't break;
+  # dropped from the documented vocabulary. Prefer AWS_REGION (Terraform-injected).
+  def aws_region = ENV.fetch("SPARC_AWS_REGION", nil).presence ||
+                   ENV.fetch("AWS_REGION", nil).presence ||
+                   "us-east-1"
 
   # ── AWS Labs CDEF Fetch (#466) ────────────────────────────────────────────
   # Runtime ingestion of OSCAL Component Definitions from

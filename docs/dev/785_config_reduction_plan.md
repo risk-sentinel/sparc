@@ -1,13 +1,12 @@
 # #785 — Configuration Reduction Plan
 
-> **STATUS — Pass 1 COMPLETE, shipped in v1.13.1 on branch `785-config-reduction`.**
-> Read **"Pass 1 — complete"** at the end for the final state; it is authoritative where
-> anything earlier disagrees. Sections above it were written while the work was in flight
-> and are kept for the reasoning, not the status. Pass 2 has not started.
+> **STATUS — Pass 1 shipped (v1.13.1, PR #789 merged). Pass 2 IN PROGRESS on branch
+> `785-config-pass2`.** The authoritative state is the **"Pass 2 — record"** section at the
+> very end; earlier sections are kept for reasoning, not status.
 >
-> Suite: **3009 examples, 0 failures, 10 pending**. Rubocop clean. `VERSION` = 1.13.1.
+> Suite: **3023 examples, 0 failures, 10 pending**. Rubocop clean.
 > Outstanding elsewhere: **sparc-iac#566** (server-side `rds.force_ssl=1`) and the
-> task-definition trim itself.
+> task-definition trim itself. Follow-ups: **#788** (YAML linter), **#790** (PIV parser).
 
 **Status:** plan agreed 2026-07-22. Supersedes the earlier "config manifest + registry"
 design, which was **rejected** — it added a second source of truth duplicating the 120
@@ -621,3 +620,65 @@ Collapse `SPARC_DB_*` → `DATABASE_URL` (needs `database.yml` ERB to derive
 cache/queue/cable — see the verified finding above), derive `SPARC_FIDO2_RP_ID` /
 `RP_NAME`, deprecate `SPARC_AWS_REGION`, and the sparc-iac task-definition trim
 (sparc-iac#566 covers layer 1 of the TLS work; the trim itself is separate).
+
+---
+
+# Pass 2 — record
+
+Branch `785-config-pass2`, off main after PR #789 merged (v1.13.1). Same discipline as
+Pass 1: nothing lands without verification, and the highest-risk change is proven against a
+live container, not just a test harness.
+
+## `SPARC_DB_*` → `DATABASE_URL` (the load-bearing change)
+
+`database.yml` now derives **all four** databases from `DATABASE_URL`, with `SPARC_DB_*`
+kept as a fully supported fallback. This is the change that could have bricked production —
+Rails merges `DATABASE_URL` into `primary` only, so the cache/queue/cable secondaries had
+to be derived explicitly or they would silently repoint at `localhost` with no password.
+
+| Decision | Why |
+|---|---|
+| Parse with Rails' own `ActiveRecord::…::ConnectionUrlResolver` | Guarantees the secondaries decode **identically** to how Rails resolves `primary` — same percent-decoding of passwords. Hand-rolled URI parsing would risk the secondaries authenticating with a wrong password on any special-char password. Proven with a `%40`→`@` case |
+| All logic in `lib/db_url/config.rb`, `database.yml` uses inline `<%= DbUrl.* %>` only | A first draft used a multi-line `<% %>` block and **broke raw-YAML parseability** — the exact regression class #788 exists for, caught by the Pass 1 spec. Helper required from `application.rb` (the logging-formatter pattern) so `DbUrl` exists when `database.yml` renders |
+| `SPARC_DB_*` stays a fallback, not removed | "Not required" ≠ "deleted." Existing deployments that set `SPARC_DB_*` keep working unchanged |
+
+**Proof — live UBI9 container, `DATABASE_URL` only, no `SPARC_DB_*`** (`docker-compose.dburl.yaml`):
+
+```
+primary  host=db db=ssp_tpr_manager_production        user=postgres
+cache    host=db db=ssp_tpr_manager_production_cache  user=postgres
+queue    host=db db=ssp_tpr_manager_production_queue  user=postgres
+cable    host=db db=ssp_tpr_manager_production_cable  user=postgres
+```
+
+All four created and connected from one URL; **`tests/api` 363 passed** in this mode, which
+exercises the secondaries for real (SolidQueue→queue, SolidCache→cache). The `SPARC_DB_*`
+fallback path (base compose) still boots — backward-compat confirmed.
+
+`spec/lib/db_url_config_spec.rb` (13 examples) pins: URL derivation, special-char password
+decode, secondary suffixes, DATABASE_URL-wins-over-`SPARC_DB_*`, the `SPARC_DB_*` fallback,
+the legacy `SSP_TPR_MANAGER_DATABASE_PASSWORD` alias, malformed-URL resilience, and
+raw-YAML parseability of all four databases.
+
+## FIDO2 RP derivation
+
+- `SPARC_FIDO2_RP_NAME` now defaults to `SPARC_APP_NAME` (was a hardcoded `"SPARC"`), so a
+  branded instance gets a matching security-key prompt for free. Explicit override retained.
+- `SPARC_FIDO2_RP_ID` needed **no change** — the WebAuthn gem already derives it from the
+  origin host, so it was already not-required. Documented in `webauthn.rb`.
+
+## `SPARC_AWS_REGION` deprecation
+
+Now a **silent alias** for `AWS_REGION` (`SPARC_AWS_REGION` → `AWS_REGION` → `us-east-1`,
+each `.presence`-guarded). The one app-layer stray read (`admin_credential_rotation_service`)
+is routed through `SparcConfig.aws_region`; the two pre-autoload initializers
+(`00_aws_secrets`, `aws_db_auth`) keep inline `ENV` reads (they cannot call `SparcConfig`).
+To be removed from the documented vocabulary in the docs update.
+
+## Still open in Pass 2
+
+- Docs: mark `SPARC_AWS_REGION` deprecated in `ENVIRONMENT_VARIABLES.md`; note that
+  `SPARC_FIDO2_RP_NAME`/`_RP_ID` are derived.
+- `DB_CREDENTIALS` secret in the task def overlaps `DATABASE_URL` — a **sparc-iac** concern
+  (secrets delivery), out of app scope; flag for the trim.
+- SMTP port-465-vs-STARTTLS (carried from Pass 1) — still needs prod delivery confirmation.

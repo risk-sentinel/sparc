@@ -8,6 +8,11 @@ require "rails/all"
 # top of the file rather than inside that block. (sonar rubydre:S7816)
 require_relative "../lib/logging/sparc_json_formatter"
 
+# #785 Pass 2 — DbUrl derives all four databases from DATABASE_URL. Required here
+# so the constant exists by the time config/database.yml renders (database.yml
+# must stay raw-YAML-parseable, so it cannot `<% require %>` the helper itself).
+require_relative "../lib/db_url/config"
+
 # Skip dotenv in production/containers
 if Rails.env.development? || Rails.env.test?
   begin
@@ -32,7 +37,10 @@ module SspTprManager
     # `logging` is ignored because config/application.rb requires the formatter
     # directly, before autoloading exists — letting Zeitwerk also manage it would
     # be a double definition.
-    config.autoload_lib(ignore: %w[assets tasks logging])
+    # `db_url` is ignored because config/database.yml requires it directly, before
+    # autoloading exists (#785 Pass 2). `logging` for the same reason (the JSON
+    # formatter). Letting Zeitwerk also manage either would be a double definition.
+    config.autoload_lib(ignore: %w[assets tasks logging db_url])
 
     # ── Log destination and format (#785) ────────────────────────────────────
     # Applied here, in application.rb, so it covers EVERY environment. It used

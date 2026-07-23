@@ -55,9 +55,11 @@ services:
     env_file: .env          # reuse the dev SPARC_ENABLE_* auth flags
     environment:
       RAILS_ENV: production
-      # Production database.yml reads SPARC_DB_* (not DATABASE_URL); connect all
-      # four DBs (primary/cache/queue/cable) to the postgres service as superuser
-      # so db:prepare can create them.
+      # #785 Pass 2 — database.yml now prefers DATABASE_URL and derives all four
+      # DBs (primary + cache/queue/cable) from it, falling back to SPARC_DB_*.
+      # This stack exercises the FALLBACK path (SPARC_DB_*); the DATABASE_URL path
+      # is proven separately (docker-compose.dburl.yaml override). Connect as the
+      # postgres superuser so db:prepare can create all four databases.
       SPARC_DB_HOST: db
       SPARC_DB_PORT: "5432"
       SPARC_DB_NAME: ssp_tpr_manager_production
