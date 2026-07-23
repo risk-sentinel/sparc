@@ -140,7 +140,20 @@ RSpec.describe "database.yml TLS floor" do
     end
   end
 
-  it "omits sslrootcert entirely when unset rather than emitting a blank" do
-    expect(resolve("production")["primary"]).not_to have_key("sslrootcert")
+  it "leaves sslrootcert nil when unset, which Rails drops before connecting" do
+    # The key is emitted unconditionally so the file stays valid raw YAML (an
+    # ERB `if` would put a bare `<% %>` line into the mapping). A nil value is
+    # harmless: postgresql_adapter.rb does `conn_params = @config.compact`, so
+    # it never reaches libpq.
+    expect(resolve("production")["primary"]["sslrootcert"]).to be_nil
+  end
+
+  it "keeps config/database.yml parseable as raw YAML" do
+    # Editors and YAML tooling parse this file WITHOUT rendering ERB first. An
+    # unquoted ternary containing a `:` breaks them, which is exactly what
+    # happened when the TLS floor was first added.
+    expect {
+      YAML.load_file(Rails.root.join("config/database.yml"), aliases: true)
+    }.not_to raise_error
   end
 end

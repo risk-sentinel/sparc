@@ -76,6 +76,32 @@ cp corporate-root-ca.pem certs/
 docker build -t sparc:custom .
 ```
 
+## SPARC tells you at boot
+
+You do not have to go looking. In production SPARC probes **every** database
+(primary, cache, queue, cable) at startup and reports the measured state — it asks
+`pg_stat_ssl`, it does not just repeat the configuration back at you:
+
+```
+[SPARC] Database TLS: 4/4 connections encrypted and server-authenticated (sslmode=verify-full, TLSv1.3).
+```
+
+If you are encrypted but not authenticating the server — the `require` case, which is
+**not** sufficient for FedRAMP High — it says so:
+
+```
+[SPARC] DATABASE TLS: all 4 connections encrypted (TLSv1.3), but the server is NOT
+AUTHENTICATED. sslmode=require stops eavesdropping, not impersonation. Set
+SPARC_DB_SSLMODE=verify-full for FedRAMP High.
+```
+
+And if anything is connecting in plaintext, that is logged at **error** level naming the
+affected databases.
+
+The check warns and never raises: a transient database problem, or an RDS parameter-group
+change in flight, must not turn into a boot outage. Set `SPARC_SKIP_DB_TLS_CHECK=true` to
+suppress it entirely (not recommended).
+
 ## Verifying — do not take it on trust
 
 Ask the **server**, not the client, whether the session is encrypted:
@@ -120,5 +146,6 @@ that does not depend on every client being configured correctly.
 |---|---|---|
 | `SPARC_DB_SSLMODE` | `require` in production, `prefer` otherwise | `prefer`, `require`, `verify-ca`, `verify-full` |
 | `SPARC_DB_SSLROOTCERT` | `/etc/pki/sparc/rds-global-bundle.pem` (set in the image) | Path to the CA bundle libpq verifies against. Only consulted by the `verify-*` modes |
+| `SPARC_SKIP_DB_TLS_CHECK` | `false` | Suppress the boot-time posture check. Not recommended |
 
 Both apply to all four databases.

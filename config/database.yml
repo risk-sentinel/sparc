@@ -33,10 +33,19 @@ default: &default
   #
   # Production floors at `require` so an unset variable can never silently
   # downgrade; set SPARC_DB_SSLMODE=verify-full once the CA bundle is present.
-  sslmode: <%= ENV.fetch("SPARC_DB_SSLMODE") { ENV["RAILS_ENV"] == "production" ? "require" : "prefer" } %>
-<% if ENV["SPARC_DB_SSLROOTCERT"].to_s != "" %>
-  sslrootcert: <%= ENV["SPARC_DB_SSLROOTCERT"] %>
-<% end %>
+  #
+  # Both values are QUOTED so this file still parses as raw YAML: the ternary
+  # below contains a `:`, which an unquoted scalar would read as a mapping
+  # separator. Editors and YAML tooling parse database.yml without rendering
+  # ERB first, so keeping it valid matters.
+  sslmode: "<%= ENV.fetch('SPARC_DB_SSLMODE') { ENV['RAILS_ENV'] == 'production' ? 'require' : 'prefer' } %>"
+
+  # Emitted unconditionally rather than wrapped in an ERB `if`, which would put
+  # a bare `<% %>` line into the mapping and break YAML parsing. Safe because
+  # Rails compacts the config before connecting
+  # (postgresql_adapter.rb: `conn_params = @config.compact`), so an empty value
+  # is dropped rather than passed to libpq. Only the verify-* modes consult it.
+  sslrootcert: <%= ENV['SPARC_DB_SSLROOTCERT'] %>
 
 
 development:
