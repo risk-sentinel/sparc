@@ -103,7 +103,7 @@ auto-merges it over `database.yml` values).
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | DATABASE_URL | Full PostgreSQL connection URI (preferred method) | (none) | `postgres://user:pass@host:5432/sparc_prod` | Yes (if no individual vars) |
-| SPARC_DB_HOST | Database host (fallback if DATABASE_URL not set) | localhost | `db.example.com` | No |
+| SPARC_DB_HOST | Database host. **Fallback only** — `DATABASE_URL` is preferred and, since #785 Pass 2, derives all four databases (primary + cache/queue/cable). Set the `SPARC_DB_*` block only when not using `DATABASE_URL`. | localhost | `db.example.com` | No |
 | SPARC_DB_PORT | Database port | 5432 | `5433` | No |
 | SPARC_DB_NAME | Database name | sparc | `sparc_production` | No |
 | SPARC_DB_USER | Database username | (none) | `sparc_app` | No |
@@ -250,7 +250,7 @@ an Okta-specific configuration guide.
 | --- | --- | --- | --- | --- |
 | SPARC_ENABLE_OIDC | Enable OIDC-based SSO login | false | `true` | No |
 | SPARC_FIDO2_ENABLED | Enable FIDO2/WebAuthn security-key sign-in (passwordless; key + PIN = app-native MFA). Adds "Security Keys" enrollment + a "Sign in with a security key" option. (#779) | false | `true` | No |
-| SPARC_FIDO2_RP_NAME | WebAuthn relying-party display name shown by the authenticator. | SPARC | `Acme SPARC` | No |
+| SPARC_FIDO2_RP_NAME | WebAuthn relying-party display name shown by the authenticator. **Derives from `SPARC_APP_NAME`** (#785 Pass 2) — set only to override. | `SPARC_APP_NAME` (default `SPARC`) | `Acme SPARC` | No |
 | SPARC_FIDO2_RP_ID | WebAuthn RP ID (domain). Defaults to the host of `SPARC_APP_URL`; set only to scope credentials to a parent domain. Must match the browser origin. | (host of SPARC_APP_URL) | `sparc.example.com` | No |
 | SPARC_ENABLE_PIV | Enable PIV / CAC smart-card sign-in (cert + PIN). The mTLS + DoD-PKI validation happens at the proxy/ALB (see sparc-iac); SPARC consumes the forwarded validated cert. **Only enable behind a correctly-configured mTLS gateway** that sets the verify header and strips client-supplied copies. (#779) | false | `true` | No |
 | SPARC_PIV_CERT_HEADER | Header carrying the forwarded (PEM, possibly URL-encoded) client cert. | X-SSL-Client-Cert | `X-Amzn-Mtls-Clientcert` | No |
@@ -584,7 +584,7 @@ When `SPARC_AWS_SECRETS_ENABLED=true`, the `00_aws_secrets.rb` initializer:
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_AWS_IAM_DB_AUTH | Use IAM auth tokens instead of static DB passwords | `false` | `true` | No |
-| SPARC_AWS_REGION | AWS region for IAM auth and Secrets Manager | `AWS_REGION` or `us-east-1` | `us-gov-west-1` | When IAM DB auth enabled |
+| SPARC_AWS_REGION | **Deprecated alias for `AWS_REGION`** (#785 Pass 2). Kept working so existing configs don't break; prefer `AWS_REGION`. Only differs from `AWS_REGION` in the theoretical split-region case (SPARC's SDK clients in a different region than the S3 bucket), which nothing needs | `AWS_REGION` or `us-east-1` | — | No — use `AWS_REGION` |
 
 ### Prerequisites
 

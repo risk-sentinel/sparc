@@ -14,7 +14,16 @@ origin = ENV.fetch("SPARC_APP_URL", "http://localhost:3000")
 
 WebAuthn.configure do |config|
   config.allowed_origins = [ origin ]
-  config.rp_name = ENV.fetch("SPARC_FIDO2_RP_NAME", "SPARC")
+
+  # #785 Pass 2 — rp_name derives from SPARC_APP_NAME so an operator who has
+  # branded the instance gets a matching security-key prompt for free.
+  # SPARC_FIDO2_RP_NAME still overrides. (Pre-autoload, so ENV not SparcConfig.)
+  config.rp_name = ENV.fetch("SPARC_FIDO2_RP_NAME", nil).presence ||
+                   ENV.fetch("SPARC_APP_NAME", "SPARC")
+
+  # rp_id is left unset unless explicitly overridden: the WebAuthn gem derives it
+  # from the origin host (see the comment above), so SPARC_FIDO2_RP_ID is already
+  # not-required. Set it only to scope credentials to a parent domain.
   rp_id = ENV.fetch("SPARC_FIDO2_RP_ID", nil).presence
   config.rp_id = rp_id if rp_id
   # Give the ceremony room for PIN/biometric entry.

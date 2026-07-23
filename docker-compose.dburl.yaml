@@ -1,0 +1,19 @@
+# #785 Pass 2 verification — proves database.yml derives ALL FOUR databases from
+# a single DATABASE_URL, with NO SPARC_DB_* set. This is the Pass-2 target path.
+#
+#   docker compose -f docker-compose.ubi9.yaml -f docker-compose.dburl.yaml up -d
+#
+# The base file sets SPARC_DB_* (the fallback path); this override replaces them
+# with one DATABASE_URL so the derivation in lib/db_url/config.rb is exercised
+# end to end against a real container. sslmode=prefer because the plain postgres
+# service speaks no TLS (see the base file's note).
+services:
+  web:
+    environment:
+      DATABASE_URL: "postgresql://postgres:password@db:5432/ssp_tpr_manager_production?sslmode=prefer"
+      # Null out the base file's SPARC_DB_* so ONLY DATABASE_URL is in play.
+      SPARC_DB_HOST: ""
+      SPARC_DB_PORT: ""
+      SPARC_DB_NAME: ""
+      SPARC_DB_USER: ""
+      SPARC_DB_PASSWORD: ""

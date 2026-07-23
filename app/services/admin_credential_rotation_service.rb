@@ -119,8 +119,10 @@ class AdminCredentialRotationService
                       error: "SPARC_ADMIN_CREDENTIALS_SECRET_ARN is not set") if arn.blank?
 
     require "aws-sdk-secretsmanager"
-    region = ENV.fetch("SPARC_AWS_REGION", ENV.fetch("AWS_REGION", "us-east-1"))
-    client = Aws::SecretsManager::Client.new(region: region)
+    # #785 Pass 2 — through the accessor rather than duplicating the fallback
+    # chain. (The 00_aws_secrets / aws_db_auth initializers keep their inline
+    # ENV reads — they run pre-autoload and cannot call SparcConfig.)
+    client = Aws::SecretsManager::Client.new(region: SparcConfig.aws_region)
 
     put_response = client.put_secret_value(
       secret_id:      arn,
