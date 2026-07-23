@@ -551,3 +551,55 @@ outlier, not the rule. Recommendation: keep a single policy of explicit TLS ever
 - `bin/test-db-tls` — 11 examples, 0 failures.
 - Rubocop clean.
 - `VERSION` bumped to **1.13.1** in the same PR, per convention.
+
+---
+
+## Pass 1 — complete (v1.13.1)
+
+| Item | Outcome |
+|---|---|
+| `SPARC_DISA_CCI_URL=""` defect | ✅ Fixed — blank treated as unset. The DoD CCI fetch was broken in prod |
+| `SPARC_API_OIDC_AUDIENCE=""` defect | ✅ Fixed — fallback to `oidc_client_id` now fires |
+| `ACTIVE_STORAGE_SERVICE` unwired | ✅ Wired. `production.rb` hardcoded `:amazon`; on-prem/air-gap can now select `:local` |
+| `SPARC_ADMIN_EMAIL` accessor | ✅ Added — `admin@sparc.local` literal removed from 4 call sites |
+| `SPARC_ORG_CONTACT_EMAIL` | ✅ Consolidated into `SPARC_CONTACT_EMAIL`, deprecating alias retained |
+| `SPARC_OIDC_REDIRECT_URI` | ✅ Derived from `SPARC_APP_URL` |
+| `SPARC_AUTHORITATIVE_FETCH_ENABLED` | ✅ Accessor added, service routed — **found by the drift check** |
+| Drift check | ✅ `spec/config/task_definition_drift_spec.rb` |
+| Four-tier docs | ✅ `ENVIRONMENT_VARIABLES.md` + `.env.example` |
+
+**One variable name retired programme-wide** (`SPARC_ORG_CONTACT_EMAIL`), and it still
+works as an alias. Nothing lost capability; two things *gained* it
+(`ACTIVE_STORAGE_SERVICE`, `SPARC_STRUCTURED_LOGGING`).
+
+### The drift check
+
+Reads the real task definition, compares against the real compiled defaults by calling
+the accessors with the variable unset. No second source of truth — a default changed in
+code is picked up automatically. Reports three things: entries restating a default,
+entries set to `""` over a real default, and variables nothing reads any more.
+
+It is an **on-demand audit**, not a default-suite spec:
+
+```bash
+SPARC_DRIFT_CHECK=1 bundle exec rspec spec/config
+```
+
+It reports work pending in a *sibling* repo (trimming the task definition), so failing
+our suite over sparc-iac's backlog would be reporting someone else's to-do list as our
+breakage. Wiring it into CI is a follow-up once the trim lands.
+
+**Current audit: 15 redundant entries** — including `SPARC_MAX_UPLOAD_MB=100`,
+`SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP=60` and
+`SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN=3`, which became redundant *because of the
+default bumps made in this release*. The check earning its keep on day one.
+
+It also found `SPARC_AUTHORITATIVE_FETCH_ENABLED` reading raw `ENV` with no accessor —
+a gap that inspection had missed.
+
+### Remaining (Pass 2, not started)
+
+Collapse `SPARC_DB_*` → `DATABASE_URL` (needs `database.yml` ERB to derive
+cache/queue/cable — see the verified finding above), derive `SPARC_FIDO2_RP_ID` /
+`RP_NAME`, deprecate `SPARC_AWS_REGION`, and the sparc-iac task-definition trim
+(sparc-iac#566 covers layer 1 of the TLS work; the trim itself is separate).
