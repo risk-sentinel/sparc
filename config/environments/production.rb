@@ -87,9 +87,17 @@ Rails.application.configure do
     redirect: { exclude: ->(request) { request.path == "/up" } }
   }
 
-  # Log to STDOUT with the current request id as a default log tag.
+  # Tag every line with the request id so a single request can be followed
+  # across many lines. With SPARC_STRUCTURED_LOGGING on, the JSON formatter
+  # emits this as a `request_id` FIELD rather than a text prefix, which is what
+  # makes it queryable in CloudWatch/ELK/Splunk.
   config.log_tags = [ :request_id ]
-  config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
+
+  # NOTE: the logger itself is configured in config/application.rb (#785) so
+  # that SPARC_LOG_TO_STDOUT and SPARC_STRUCTURED_LOGGING apply to every
+  # environment. It used to be hardcoded here, which is why the former was
+  # silently ignored. Do not reintroduce a `config.logger =` line here — it
+  # would run after application.rb and override the operator's setting.
 
   # Configurable via SPARC_LOG_LEVEL (preferred) or RAILS_LOG_LEVEL (legacy fallback).
   config.log_level = ENV.fetch("SPARC_LOG_LEVEL", ENV.fetch("RAILS_LOG_LEVEL", "info"))

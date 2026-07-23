@@ -440,3 +440,114 @@ Pass 1 remainder: fix the two `""` defects, wire `ACTIVE_STORAGE_SERVICE`, add t
 `SPARC_ADMIN_EMAIL` accessor, consolidate `SPARC_ORG_CONTACT_EMAIL`, derive
 `SPARC_OIDC_REDIRECT_URI`, build the drift check, restructure `.env.example` and
 `ENVIRONMENT_VARIABLES.md` into the four tiers. Pass 2 in full. No `sparc-iac` change made.
+
+---
+
+# v1.13.1 — logging + DB TLS work (items 2, 3, 4)
+
+Scope agreed 2026-07-22. Shipped on `785-config-reduction` as part of **v1.13.1**.
+
+## Item 2 — `SPARC_LOG_TO_STDOUT`: proven, then fixed
+
+Measured against the running UBI9 **production** image:
+
+| Proof | Result |
+|---|---|
+| Container emits to stdout | ✅ Puma boot, SolidQueue, ActiveJob all visible via `docker logs` |
+| Request logs are traced | ✅ `[7ba21cc6-…] Started GET "/" … Completed 302 in 27ms` |
+| **Was the flag honoured?** | ❌ **No.** `SPARC_LOG_TO_STDOUT=false` still logged to stdout |
+
+Containers were getting what they need in production, but only by accident of an
+unconditional `config.logger = …STDOUT` line in `production.rb`. Two consequences: the
+variable was a lie, and **any non-production container wrote to a file inside the image**,
+invisible to `docker logs` and CloudWatch.
+
+Fixed by moving log destination and format into `config/application.rb`, so it applies to
+every environment. Verified after the fix: `true` → line appears, `false` → line does not.
+
+## Item 3 — `SPARC_STRUCTURED_LOGGING`: the promise is now real
+
+Documented since the first version of `ENVIRONMENT_VARIABLES.md` as *"Output logs in JSON
+format (CloudWatch, ELK, Splunk friendly)"*, and never implemented — no formatter existed
+and nothing read the variable.
+
+`lib/logging/sparc_json_formatter.rb` implements it. The key property is that
+`request_id` is emitted as a **field**, not a text prefix, which is what makes a request
+traceable by query rather than by grep:
+
+```json
+{"ts":"2026-07-23T00:26:16.427Z","level":"WARN","msg":"hello-json","request_id":"req-abc123"}
+```
+
+NIST AU-3 (content of audit records). Distinct from the `AuditEvent` model, which remains
+the system of record for security-relevant user actions; this is operational logging.
+
+10 specs pin the contract, including that the formatter **never raises** — a logger that
+throws takes the process with it, so serialisation failure degrades to a valid record.
+
+## Item 4 — Database TLS: all four layers
+
+| Layer | State |
+|---|---|
+| 1. `rds.force_ssl=1` parameter group | **Filed as sparc-iac#566** — no server-side enforcement exists today |
+| 2. `sslmode` floor for all four databases | ✅ Shipped |
+| 3. RDS CA bundle baked into the image | ✅ Shipped |
+| 4. Both-directions proof | ✅ Shipped |
+
+**The finding that justified the work:** `DATABASE_URL` carries `?sslmode=require`, but
+Rails merges it into `primary` **only**. Cache, queue and cable negotiated on libpq's
+default. Measured in the running production image: `pg_stat_ssl` reported **`ssl=false`**.
+
+Layer 2 puts `sslmode` in `database.yml`'s `default:` anchor so every database inherits it.
+
+Layer 3 bakes the AWS RDS global bundle (108 certs) to
+`/etc/pki/sparc/rds-global-bundle.pem`. **libpq ignores `SSL_CERT_FILE`**, so the v1.12.3
+runtime CA mechanism — which covers Net::HTTP, the AWS SDK and LDAP — does not reach
+Postgres. On RDS, `verify-full` is now a one-variable change.
+
+Layer 4 (`bin/test-db-tls`, `spec/security/database_tls_spec.rb`) proves both directions
+with real handshakes against live TLS and plaintext-only servers — 11 examples:
+
+```
+accepts:  verify-full + correct CA + matching host  -> TLS 1.3
+          sslmode=require                           -> TLS 1.3
+refuses:  require against a plaintext-only server
+          verify-full with no CA / wrong CA / hostname mismatch
+control:  prefer downgrades, proving the harness detects a downgrade
+```
+
+### Guidance for customers
+
+`docs/DATABASE_TLS.md`. The headline for operators: **`require` is not sufficient for
+FedRAMP High** — it encrypts but does not authenticate the server, so it will complete a
+handshake with any host that answers. `verify-full` is the target.
+
+One correction to an earlier assumption, stated plainly in the guide so operators do not
+rebuild unnecessarily: **a rebuild is NOT required to use a private CA for the database.**
+libpq reads `sslrootcert` from a path, so mounting a PEM and setting
+`SPARC_DB_SSLROOTCERT` is enough. Rebuilding via `certs/` is only needed to change the
+*system* trust store used by outbound HTTPS and LDAP.
+
+### On the "APP→APP no SSL, APP→non-APP explicit SSL" model
+
+Reasonable in principle, but SPARC has almost no APP→APP surface — every dependency is a
+network service reached across the VPC:
+
+| Hop | Transport today |
+|---|---|
+| App → Postgres (RDS) | Was the **only** unencrypted hop; now floored at `require` |
+| App → Redis (ElastiCache) | Already TLS — `transit_encryption_enabled = true` |
+| App → S3 | HTTPS |
+| App → OIDC / LDAP / SMTP / GitHub | TLS, hardened in v1.12.3 |
+
+RDS is a separate managed service, not an in-boundary process, so the carve-out would not
+apply to it anyway — and the infra **already** encrypts the Redis hop. The database was the
+outlier, not the rule. Recommendation: keep a single policy of explicit TLS everywhere.
+
+## Verification
+
+- Full suite **3006 examples, 0 failures, 7 pending** (the pending ones are the TLS
+  handshake specs, which skip without live servers).
+- `bin/test-db-tls` — 11 examples, 0 failures.
+- Rubocop clean.
+- `VERSION` bumped to **1.13.1** in the same PR, per convention.
