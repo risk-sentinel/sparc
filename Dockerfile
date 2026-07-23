@@ -47,17 +47,17 @@ RUN curl -sSfL "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_V
 # not in the runtime stage, because runtime deliberately carries no curl and
 # only `openssl-libs` (shared libraries, no CLI). Adding either to runtime just
 # to download a file would enlarge the production image and its CVE surface.
-# Validated by content rather than the openssl CLI for the same reason.
-ARG RDS_CA_BUNDLE_URL=https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-# --proto '=https' --tlsv1.2: the URL is an ARG, so pin the protocol here rather
-# than trusting the value. An override cannot downgrade the trust-anchor fetch to
-# plaintext, and curl will not follow a redirect off https. (sonar docker:S6506)
-RUN curl -sSfL --retry 3 --proto '=https' --tlsv1.2 "${RDS_CA_BUNDLE_URL}" -o /tmp/rds-global-bundle.pem \
-    && grep -q "BEGIN CERTIFICATE" /tmp/rds-global-bundle.pem \
+#
+# ADD (not RUN curl) is the native fetch instruction and needs no shell tool
+# (sonar docker:S7026). The URL is a literal https:// source, not an ARG, so the
+# scheme is fixed at build time — there is no dynamic value that could resolve to
+# plaintext (sonar docker:S6506). To build against a mirror, edit this line.
+ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /tmp/rds-global-bundle.pem
+# Validated in a separate step — a silently absent, empty, or non-PEM bundle
+# would otherwise surface as a production boot error, a far worse place to find
+# it. Content check (not the openssl CLI) because the runtime image has neither.
+RUN grep -q "BEGIN CERTIFICATE" /tmp/rds-global-bundle.pem \
     && test "$(grep -c 'BEGIN CERTIFICATE' /tmp/rds-global-bundle.pem)" -gt 50
-# Fails the build loudly if the bundle is unreachable, empty, or not a PEM chain.
-# A silently absent trust anchor would surface as a production boot error, which
-# is a far worse place to discover it.
 
 # hdf-cli (Go static binary), SHA-256 verified — same script the Debian image uses.
 COPY bin/install-hdf.sh /tmp/install-hdf.sh
