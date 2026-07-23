@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# #785 — stand up a TLS-enabled and a plaintext-only Postgres, then run the
+# database TLS suite against both. Proves BOTH directions with real handshakes:
+# that a secured connection is accepted, and that an insecure one is refused
+# rather than silently downgraded.
+#
+# Usage:  bin/test-db-tls
+#
+# NIST 800-53 SC-8 / SC-8(1). See spec/security/database_tls_spec.rb.
+set -euo pipefail
+
+WORK="${TMPDIR:-/tmp}/sparc-db-tls"
+TLS_PORT="${SPARC_DB_TLS_PORT:-5434}"
+PLAIN_PORT="${SPARC_DB_PLAIN_PORT:-5435}"
+
+cleanup() {
+  echo "==> cleaning up"
+  docker rm -f sparc-pg-tls sparc-pg-plain >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+echo "==> generating a self-signed server certificate (CN=localhost)"
+mkdir -p "$WORK"
+if [ ! -f "$WORK/server.key" ]; then
+  openssl req -new -x509 -days 365 -nodes -text \
+    -out "$WORK/server.crt" -keyout "$WORK/server.key" \
+    -subj "/CN=localhost" 2>/dev/null
+fi
+chmod 600 "$WORK/server.key"
+# Postgres refuses a key readable by group/other, and runs as uid 999 in the
+# official image, so the file must be owned by that uid inside the container.
+docker run --rm -v "$WORK":/w alpine sh -c 'chown 999:999 /w/server.key /w/server.crt'
+
+cleanup
+
+echo "==> starting TLS Postgres on :$TLS_PORT"
+docker run -d --name sparc-pg-tls -e POSTGRES_PASSWORD=secret -p "$TLS_PORT":5432 \
+  -v "$WORK/server.crt":/var/lib/postgresql/server.crt:ro \
+  -v "$WORK/server.key":/var/lib/postgresql/server.key:ro \
+  postgres:15 -c ssl=on \
+  -c ssl_cert_file=/var/lib/postgresql/server.crt \
+  -c ssl_key_file=/var/lib/postgresql/server.key >/dev/null
+
+echo "==> starting plaintext-only Postgres on :$PLAIN_PORT"
+docker run -d --name sparc-pg-plain -e POSTGRES_PASSWORD=secret \
+  -p "$PLAIN_PORT":5432 postgres:15 -c ssl=off >/dev/null
+
+echo "==> waiting for both to accept connections"
+for i in $(seq 1 30); do
+  if docker exec sparc-pg-tls pg_isready -q 2>/dev/null && \
+     docker exec sparc-pg-plain pg_isready -q 2>/dev/null; then
+    break
+  fi
+  [ "$i" = "30" ] && { echo "!! Postgres did not become ready"; exit 1; }
+  sleep 1
+done
+
+echo "==> running the TLS suite"
+SPARC_DB_TLS_TEST=1 \
+SPARC_DB_TLS_PORT="$TLS_PORT" \
+SPARC_DB_PLAIN_PORT="$PLAIN_PORT" \
+SPARC_DB_TLS_CA="$WORK/server.crt" \
+  bundle exec rspec spec/security/database_tls_spec.rb "$@"

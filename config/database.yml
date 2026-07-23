@@ -19,6 +19,25 @@ default: &default
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
+  # ── Transport security (#785, NIST SC-8 / SC-8(1), FedRAMP High) ──────────
+  # This lives in `default:` deliberately so it is inherited by EVERY database —
+  # primary AND the cache/queue/cable secondaries. DATABASE_URL only ever applies
+  # to `primary` (activerecord database_configurations.rb: `url ||= ENV["DATABASE_URL"]
+  # if name == "primary"`), so without a floor here the three Solid* databases
+  # would negotiate on libpq's default and could fall back to plaintext.
+  #
+  #   prefer      — opportunistic; falls back to plaintext. Dev/test default.
+  #   require     — refuses plaintext, but does NOT authenticate the server.
+  #   verify-full — refuses plaintext AND verifies the cert chain + hostname.
+  #                 Requires sslrootcert. This is the FedRAMP High target.
+  #
+  # Production floors at `require` so an unset variable can never silently
+  # downgrade; set SPARC_DB_SSLMODE=verify-full once the CA bundle is present.
+  sslmode: <%= ENV.fetch("SPARC_DB_SSLMODE") { ENV["RAILS_ENV"] == "production" ? "require" : "prefer" } %>
+<% if ENV["SPARC_DB_SSLROOTCERT"].to_s != "" %>
+  sslrootcert: <%= ENV["SPARC_DB_SSLROOTCERT"] %>
+<% end %>
+
 
 development:
   <<: *default

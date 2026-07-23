@@ -34,12 +34,18 @@ module SparcConfig
   def db_name     = ENV.fetch("SPARC_DB_NAME", "sparc")
   def db_user     = ENV.fetch("SPARC_DB_USER", nil)
   def db_password = ENV.fetch("SPARC_DB_PASSWORD", nil)
-  # #785 — production defaults to "require"; other environments keep "prefer"
-  # so local/dev Postgres without TLS still connects.
-  # ⚠️ Currently INERT: nothing reads this accessor. config/database.yml has no
-  # sslmode key, so DB TLS is governed by DATABASE_URL's query string, not here.
-  # Wiring it up (or confirming DATABASE_URL carries sslmode) is open work.
-  def db_sslmode = ENV.fetch("SPARC_DB_SSLMODE") { Rails.env.production? ? "require" : "prefer" }
+  # #785 — NOW WIRED. config/database.yml `default:` sets sslmode from this same
+  # variable, so it is inherited by every database (primary + cache/queue/cable).
+  # database.yml is parsed pre-autoload and cannot call this accessor, so the
+  # fallback logic is duplicated there. Keep the two in step.
+  #   prefer / require / verify-full — see the comment in config/database.yml.
+  # NIST SC-8, SC-8(1).
+  def db_sslmode    = ENV.fetch("SPARC_DB_SSLMODE") { Rails.env.production? ? "require" : "prefer" }
+  def db_sslrootcert = ENV.fetch("SPARC_DB_SSLROOTCERT", nil).presence
+
+  # True when the configured mode actually authenticates the server, not merely
+  # encrypts. `require` stops plaintext but not an impostor; only verify-* do.
+  def db_tls_verified? = %w[verify-ca verify-full].include?(db_sslmode)
 
   # ── Application ───────────────────────────────────────────────────────────
 
