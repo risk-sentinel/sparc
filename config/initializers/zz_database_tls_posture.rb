@@ -69,10 +69,30 @@ Rails.application.config.after_initialize do
 
     next if results.empty?
 
+    # Three states, not two. A probe that could not connect proves NOTHING about
+    # encryption, and must never be folded in with the encrypted ones — an
+    # earlier version did exactly that and cheerfully reported "all 4
+    # connections encrypted" when all four probes had in fact failed. A security
+    # diagnostic that claims safety it did not measure is worse than no
+    # diagnostic at all.
     unencrypted = results.select { |_, v| v == false }.keys
-    ciphers     = results.values.grep(String).uniq
+    undetermined = results.select { |_, v| v.is_a?(String) && v.start_with?("unknown") }.keys
+    ciphers = results.values.grep(String).reject { |v| v.start_with?("unknown") }.uniq
 
-    if unencrypted.any?
+    if undetermined.any? && unencrypted.empty? && ciphers.empty?
+      Rails.logger.warn(
+        "[SPARC] DATABASE TLS: could NOT be determined for any of #{results.size} " \
+        "connections (#{undetermined.join(', ')}). This is not a clean bill of health — " \
+        "the probe could not connect. Verify the database is reachable and see " \
+        "docs/DATABASE_TLS.md."
+      )
+    elsif undetermined.any?
+      Rails.logger.warn(
+        "[SPARC] DATABASE TLS: #{undetermined.size} of #{results.size} connections could " \
+        "not be probed (#{undetermined.join(', ')}); the rest report #{ciphers.join(', ')}. " \
+        "Treat the unprobed ones as unverified."
+      )
+    elsif unencrypted.any?
       Rails.logger.error(
         "[SPARC] ⚠️  DATABASE TLS: #{unencrypted.size} of #{results.size} connections are " \
         "NOT ENCRYPTED (#{unencrypted.join(', ')}) despite sslmode=#{mode}. Data in transit " \

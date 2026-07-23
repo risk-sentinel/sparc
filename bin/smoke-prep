@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Prepare a freshly-seeded local instance for tests/api and authenticated
+# tests/ui-smoke, and print the environment exports both suites need.
+#
+#   bin/smoke-prep                       # against docker-compose.ubi9.yaml
+#   eval "$(bin/smoke-prep --quiet)"     # export straight into your shell
+#
+# Why this exists: a freshly-seeded admin has `must_reset_password? == true`, and
+# authentication.rb redirects EVERY authenticated request to /password/edit until
+# it is cleared. The failure looks like broken auth rather than an unrotated
+# password — the token bridge returns HTTP 302 where the suites expect 200 — and
+# it has cost debugging time more than once. `password_expired?` is false and
+# `must_change_password` is nil in that state, which sends you down the wrong path.
+#
+# It also mints two tokens, because the API authz tests are meaningless unless the
+# second identity is genuinely NOT an admin (~28 tests silently pass otherwise).
+set -euo pipefail
+
+COMPOSE_FILE="${SPARC_COMPOSE_FILE:-docker-compose.ubi9.yaml}"
+SERVICE="${SPARC_COMPOSE_SERVICE:-web}"
+QUIET=0
+[ "${1:-}" = "--quiet" ] && QUIET=1
+
+say() { [ "$QUIET" = "1" ] || echo "$@" >&2; }
+
+say "==> preparing identities via $COMPOSE_FILE ($SERVICE)"
+
+OUTPUT=$(docker compose -f "$COMPOSE_FILE" exec -T "$SERVICE" bin/rails runner '
+  ADMIN_PW = "Sm0ke-Admin-Pass-9!"
+  USER_PW  = "Sm0ke-User-Pass-9!"
+
+  admin = User.find_by(admin: true) || User.first
+  abort("no users found — run db:seed first") unless admin
+
+  # A genuinely non-admin second identity. Without this the API authorization
+  # tests pass vacuously.
+  user = User.find_or_create_by!(email: "smoke-user@sparc.local") do |u|
+    u.password = USER_PW
+    u.password_confirmation = USER_PW
+    u.name = "Smoke User" if u.respond_to?(:name=)
+    u.admin = false
+  end
+  user.update!(admin: false)
+
+  # Clear the bootstrap password gate for BOTH identities, or every authenticated
+  # request 302s to /password/edit.
+  [[admin, ADMIN_PW], [user, USER_PW]].each do |u, pw|
+    u.password = pw
+    u.password_confirmation = pw
+    u.must_reset_password = false if u.respond_to?(:must_reset_password=)
+    u.password_changed_at  = Time.current if u.respond_to?(:password_changed_at=)
+    u.save!
+    u.reload
+    if u.must_reset_password? || u.password_expired?
+      abort("could not clear the password gate for #{u.email}")
+    end
+  end
+
+  admin_token = ApiToken.generate!(user: admin, name: "smoke-admin-#{Time.now.to_i}")
+  user_token  = ApiToken.generate!(user: user,  name: "smoke-user-#{Time.now.to_i}")
+
+  puts "ADMIN_EMAIL=#{admin.email}"
+  puts "ADMIN_TOKEN=#{admin_token.plaintext_token}"
+  puts "USER_TOKEN=#{user_token.plaintext_token}"
+  puts "USER_IS_ADMIN=#{user.admin}"
+' 2>/dev/null | tr -d '\r')
+
+ADMIN_TOKEN=$(printf '%s\n' "$OUTPUT" | sed -n 's/^ADMIN_TOKEN=//p')
+USER_TOKEN=$(printf '%s\n' "$OUTPUT" | sed -n 's/^USER_TOKEN=//p')
+USER_IS_ADMIN=$(printf '%s\n' "$OUTPUT" | sed -n 's/^USER_IS_ADMIN=//p')
+
+if [ -z "$ADMIN_TOKEN" ] || [ -z "$USER_TOKEN" ]; then
+  echo "!! failed to mint tokens. Raw output:" >&2
+  printf '%s\n' "$OUTPUT" >&2
+  exit 1
+fi
+
+if [ "$USER_IS_ADMIN" != "false" ]; then
+  echo "!! the second identity is an admin — API authz tests would pass vacuously" >&2
+  exit 1
+fi
+
+say "==> password gate cleared for both identities; tokens minted"
+say "==> paste these, or use: eval \"\$(bin/smoke-prep --quiet)\""
+
+cat <<EOF
+export SPARC_TEST_BASE_URL=${SPARC_TEST_BASE_URL:-http://localhost:3000}
+export SPARC_TEST_ADMIN_TOKEN=$ADMIN_TOKEN
+export SPARC_TEST_USER_TOKEN=$USER_TOKEN
+export SPARC_SMOKE_BASE_URL=${SPARC_SMOKE_BASE_URL:-https://localhost:3443}
+export SPARC_SMOKE_INSECURE_TLS=1
+export SPARC_SMOKE_SA_TOKEN=$ADMIN_TOKEN
+export SPARC_SMOKE_USER_TOKEN=$USER_TOKEN
+EOF
+
+say ""
+say "Then run the FULL suites (never a subset):"
+say "  (cd tests/api      && uv run pytest -q)"
+say "  (cd tests/ui-smoke && uv run pytest -q --browser chromium)"
+say ""
+say "The ui-smoke suite needs the TLS endpoint:"
+say "  docker compose -f $COMPOSE_FILE --profile tls up -d caddy"

@@ -43,6 +43,19 @@ RUN curl -sSfL "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_V
     && cd /tmp/ruby && ./configure --prefix=/usr/local --enable-shared --disable-install-doc \
     && make -j"$(nproc)" && make install && rm -rf /tmp/ruby*
 
+# AWS RDS global CA bundle (#785, NIST SC-8(1)) — fetched HERE in the builder,
+# not in the runtime stage, because runtime deliberately carries no curl and
+# only `openssl-libs` (shared libraries, no CLI). Adding either to runtime just
+# to download a file would enlarge the production image and its CVE surface.
+# Validated by content rather than the openssl CLI for the same reason.
+ARG RDS_CA_BUNDLE_URL=https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+RUN curl -sSfL --retry 3 "${RDS_CA_BUNDLE_URL}" -o /tmp/rds-global-bundle.pem \
+    && grep -q "BEGIN CERTIFICATE" /tmp/rds-global-bundle.pem \
+    && test "$(grep -c 'BEGIN CERTIFICATE' /tmp/rds-global-bundle.pem)" -gt 50
+# Fails the build loudly if the bundle is unreachable, empty, or not a PEM chain.
+# A silently absent trust anchor would surface as a production boot error, which
+# is a far worse place to discover it.
+
 # hdf-cli (Go static binary), SHA-256 verified — same script the Debian image uses.
 COPY bin/install-hdf.sh /tmp/install-hdf.sh
 RUN HDF_LIBS_VERSION="${HDF_LIBS_VERSION}" HDF_INSTALL_DIR=/usr/local/bin /tmp/install-hdf.sh
@@ -99,17 +112,14 @@ RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
 # CA bundle in at a fixed path so `SPARC_DB_SSLMODE=verify-full` works on RDS
 # with no further operator action.
 #
+# Copied from the builder, which fetched and validated it — runtime carries no
+# curl and no openssl CLI, and should not gain either just to download a file.
+#
 # Non-AWS / private-CA deployments do NOT need to rebuild: point
 # SPARC_DB_SSLROOTCERT at a mounted PEM instead. Rebuilding (by adding to
 # ./certs/) is only required to change the SYSTEM trust store.
-ARG RDS_CA_BUNDLE_URL=https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-RUN mkdir -p /etc/pki/sparc \
-    && curl -sSfL --retry 3 "${RDS_CA_BUNDLE_URL}" -o /etc/pki/sparc/rds-global-bundle.pem \
-    && openssl x509 -in /etc/pki/sparc/rds-global-bundle.pem -noout -subject >/dev/null \
-    && chmod 0444 /etc/pki/sparc/rds-global-bundle.pem
-# Fails the build loudly if the bundle is unreachable or not a valid certificate
-# — a silently absent trust anchor would downgrade verify-full to a boot error
-# in production, which is a far worse place to discover it.
+COPY --from=builder /tmp/rds-global-bundle.pem /etc/pki/sparc/rds-global-bundle.pem
+RUN chmod 0444 /etc/pki/sparc/rds-global-bundle.pem
 
 COPY --from=builder /usr/local /usr/local
 ENV PATH=/usr/local/bin:$PATH \
