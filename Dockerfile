@@ -92,6 +92,25 @@ RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
       ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
     update-ca-trust
 
+# ── Database TLS trust (#785, NIST SC-8(1)) ──────────────────────────────────
+# libpq does NOT honour SSL_CERT_FILE, so the runtime CA mechanism above (which
+# covers every Ruby OpenSSL client) does not reach Postgres. Postgres verifies
+# against `sslrootcert` and nothing else. We therefore bake the AWS RDS global
+# CA bundle in at a fixed path so `SPARC_DB_SSLMODE=verify-full` works on RDS
+# with no further operator action.
+#
+# Non-AWS / private-CA deployments do NOT need to rebuild: point
+# SPARC_DB_SSLROOTCERT at a mounted PEM instead. Rebuilding (by adding to
+# ./certs/) is only required to change the SYSTEM trust store.
+ARG RDS_CA_BUNDLE_URL=https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+RUN mkdir -p /etc/pki/sparc \
+    && curl -sSfL --retry 3 "${RDS_CA_BUNDLE_URL}" -o /etc/pki/sparc/rds-global-bundle.pem \
+    && openssl x509 -in /etc/pki/sparc/rds-global-bundle.pem -noout -subject >/dev/null \
+    && chmod 0444 /etc/pki/sparc/rds-global-bundle.pem
+# Fails the build loudly if the bundle is unreachable or not a valid certificate
+# — a silently absent trust anchor would downgrade verify-full to a boot error
+# in production, which is a far worse place to discover it.
+
 COPY --from=builder /usr/local /usr/local
 ENV PATH=/usr/local/bin:$PATH \
     RAILS_ENV=production \
@@ -102,7 +121,8 @@ ENV PATH=/usr/local/bin:$PATH \
     BUNDLE_WITHOUT="development test" \
     BUNDLE_IGNORE_CONFIGURED_GROUPS_WITHOUT=true \
     LD_PRELOAD=/usr/local/lib/libjemalloc.so.2 \
-    MALLOC_ARENA_MAX=2
+    MALLOC_ARENA_MAX=2 \
+    SPARC_DB_SSLROOTCERT=/etc/pki/sparc/rds-global-bundle.pem
 
 # #750 guard: fail the build if the runtime ever loses its UTF-8 default encoding
 # again (base-image locale regression). This exact assertion would have caught the
