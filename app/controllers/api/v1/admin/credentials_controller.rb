@@ -35,7 +35,7 @@ class Api::V1::Admin::CredentialsController < Api::V1::BaseController
       return
     end
 
-    admin = User.find_by(email: ENV.fetch("SPARC_ADMIN_EMAIL", "admin@sparc.local").downcase.strip)
+    admin = User.find_by(email: SparcConfig.admin_email.downcase.strip)
     unless admin
       render json: { error: "Admin user not found" }, status: :not_found
       return

@@ -51,8 +51,18 @@ module SparcConfig
 
   def app_url       = ENV.fetch("SPARC_APP_URL", "http://localhost:3000")
   def app_name      = ENV.fetch("SPARC_APP_NAME", "SPARC")
-  def contact_email = ENV.fetch("SPARC_CONTACT_EMAIL", nil)
+  # #785 — SPARC has exactly TWO email identities, because they serve different
+  # functions: `admin_email` is the instance administrator account, and
+  # `contact_email` is where users are pointed for support.
+  def contact_email = ENV["SPARC_CONTACT_EMAIL"].presence
   def support_email = contact_email
+
+  # The instance admin account. Previously the `admin@sparc.local` literal was
+  # duplicated across four call sites (two controllers/services and two rake
+  # tasks), so changing it meant finding all four.
+  DEFAULT_ADMIN_EMAIL = "admin@sparc.local"
+
+  def admin_email = ENV["SPARC_ADMIN_EMAIL"].presence || DEFAULT_ADMIN_EMAIL
   def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
 
   # Configurable resources list — JSON array of {display_text, href} objects.
@@ -80,7 +90,12 @@ module SparcConfig
   def org_description    = ENV.fetch("SPARC_ORG_DESCRIPTION", nil)
   def org_address        = ENV.fetch("SPARC_ORG_ADDRESS", nil)
   def org_contact_person = ENV.fetch("SPARC_ORG_CONTACT_PERSON", nil)
-  def org_contact_email  = ENV.fetch("SPARC_ORG_CONTACT_EMAIL", nil)
+  # #785 — CONSOLIDATED. SPARC_ORG_CONTACT_EMAIL is the one variable name being
+  # retired across this whole programme: it duplicated SPARC_CONTACT_EMAIL (the
+  # prod task definition set both to the identical value) for no benefit. The
+  # name still works as a deprecating alias so no existing config breaks; when
+  # unset it falls back to the support address. Prefer SPARC_CONTACT_EMAIL.
+  def org_contact_email = ENV["SPARC_ORG_CONTACT_EMAIL"].presence || contact_email
 
   # ── User Lifecycle ───────────────────────────────────────────────────────
 
@@ -127,6 +142,11 @@ module SparcConfig
   end
 
   def enable_ldap?         = ENV.fetch("SPARC_ENABLE_LDAP", "false") == "true"
+
+  # #785 — was read raw in authoritative_source_fetch_service.rb. Outbound
+  # content fetching stays explicit (never inferred): an air-gapped deployment
+  # must be able to guarantee no egress.
+  def authoritative_fetch_enabled? = ENV["SPARC_AUTHORITATIVE_FETCH_ENABLED"].to_s.downcase == "true"
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
   def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true"  # WebAuthn security keys (#779)
 
@@ -202,7 +222,21 @@ module SparcConfig
   def oidc_issuer_url    = ENV.fetch("SPARC_OIDC_ISSUER_URL", nil)
   def oidc_client_id     = ENV.fetch("SPARC_OIDC_CLIENT_ID", nil)
   def oidc_client_secret = ENV.fetch("SPARC_OIDC_CLIENT_SECRET", nil)
-  def oidc_redirect_uri  = ENV.fetch("SPARC_OIDC_REDIRECT_URI", nil)
+  # #785 — derived. The redirect URI is OUR callback URL, not the IdP's, so it
+  # is fully determined by app_url plus a fixed path. The derivation already
+  # existed, inline at the omniauth.rb call site; it belongs here so every
+  # consumer gets it. Blank is treated as unset (the prod task definition's
+  # habit of setting "" would otherwise defeat the fallback).
+  OIDC_CALLBACK_PATH = "/auth/oidc/callback"
+
+  def oidc_redirect_uri
+    ENV["SPARC_OIDC_REDIRECT_URI"].presence || "#{app_url.chomp('/')}#{OIDC_CALLBACK_PATH}"
+  end
+
+  # #785 — was read raw in api_authentication.rb with the same blank-string
+  # trap: the fallback to oidc_client_id never fired when the variable was
+  # set-but-empty, which is exactly how prod had it.
+  def api_oidc_audience = ENV["SPARC_API_OIDC_AUDIENCE"].presence || oidc_client_id
   def oidc_scopes        = ENV.fetch("SPARC_OIDC_SCOPES", "openid profile email")
   def oidc_provider_title = ENV.fetch("SPARC_OIDC_PROVIDER_TITLE", "SSO")
   # #785 — defaults true. Only consulted on the OIDC path, so a true default is
@@ -505,8 +539,13 @@ module SparcConfig
   # URL for the official DISA CCI XML ZIP archive.
   # Override with SPARC_DISA_CCI_URL for air-gapped or mirror environments.
 
+  # #785 — `.presence ||` rather than ENV.fetch's default, because an empty
+  # string is not nil: `ENV.fetch(k, default)` returns "" when the variable is
+  # set-but-blank, so the default never fires. The prod task definition set
+  # SPARC_DISA_CCI_URL="" and silently broke this fetch. Treat blank as unset.
   def disa_cci_url
-    ENV.fetch("SPARC_DISA_CCI_URL", "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CCI_List.zip")
+    ENV["SPARC_DISA_CCI_URL"].presence ||
+      "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CCI_List.zip"
   end
 
   # Comma-separated list of NIST SP 800-53 revision numbers to include

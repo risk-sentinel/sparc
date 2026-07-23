@@ -57,7 +57,7 @@ class AdminCredentialRotationService
     @plaintext               = plaintext
     @actor                   = actor
     @source                  = source
-    @admin_email             = admin_email || ENV.fetch("SPARC_ADMIN_EMAIL", "admin@sparc.local")
+    @admin_email             = admin_email || SparcConfig.admin_email
     @push_to_secrets_manager = push_to_secrets_manager
     @version_id              = nil
   end

@@ -162,5 +162,12 @@ Rails.application.configure do
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
-  config.active_storage.service = :amazon
+  # #785 — ACTIVE_STORAGE_SERVICE is now WIRED. It was documented and set in the
+  # production task definition, but nothing read it: this line hardcoded :amazon,
+  # so an operator selecting a backend was silently ignored. On-prem and
+  # air-gapped installs need :local and previously had no way to get it.
+  #
+  # Read from ENV directly — this file is evaluated pre-autoload and cannot call
+  # SparcConfig. The value must name a service defined in config/storage.yml.
+  config.active_storage.service = ENV["ACTIVE_STORAGE_SERVICE"].presence&.to_sym || :amazon
 end
