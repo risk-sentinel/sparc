@@ -1,5 +1,14 @@
 # #785 — Configuration Reduction Plan
 
+> **STATUS — Pass 1 COMPLETE, shipped in v1.13.1 on branch `785-config-reduction`.**
+> Read **"Pass 1 — complete"** at the end for the final state; it is authoritative where
+> anything earlier disagrees. Sections above it were written while the work was in flight
+> and are kept for the reasoning, not the status. Pass 2 has not started.
+>
+> Suite: **3009 examples, 0 failures, 10 pending**. Rubocop clean. `VERSION` = 1.13.1.
+> Outstanding elsewhere: **sparc-iac#566** (server-side `rds.force_ssl=1`) and the
+> task-definition trim itself.
+
 **Status:** plan agreed 2026-07-22. Supersedes the earlier "config manifest + registry"
 design, which was **rejected** — it added a second source of truth duplicating the 120
 accessors already in `app/models/sparc_config.rb` (the tell: it needed a
@@ -78,10 +87,17 @@ not `nil`, so `ENV.fetch(key, fallback)` returns `""` and the fallback never fir
 
 Fix by treating empty as unset at these read sites, not by removing the variables.
 
-**One capability gap — `ACTIVE_STORAGE_SERVICE` is not wired.** Nothing in the repo reads
-it; `production.rb:151` hardcodes `config.active_storage.service = :amazon`. The right
-response is to **make the variable functional**, not to drop it: non-AWS and air-gapped
-installs need `:local`. Setting it today silently does nothing.
+**One capability gap — `ACTIVE_STORAGE_SERVICE` was not wired.** ✅ *Fixed in v1.13.1.*
+Nothing in the repo read it; `production.rb` hardcoded
+`config.active_storage.service = :amazon`, so setting the variable silently did nothing.
+
+The variable names a service from `config/storage.yml` (`local`/`test` → Disk, `amazon` →
+S3) and selects where **every uploaded blob** goes: SSP/SAR/CDEF/SAP/POAM/Profile document
+files, `Evidence` files, `ArtifactVersion` content (#680), and user avatars.
+
+The right response was to **make the variable functional**, not to drop it. On ECS the
+container filesystem is ephemeral, so production must stay on `amazon` — but a non-AWS or
+air-gapped install needs `:local` and previously had no way to ask for it.
 
 `HTTP_PORT` and `RAILS_SERVE_STATIC_FILES` are likewise unread. `HTTP_PORT` is a leftover
 (`PORT` is the real one). `RAILS_SERVE_STATIC_FILES` is a standard Rails knob we simply do
@@ -95,8 +111,9 @@ default, and **flags entries that merely restate a default**. That is what stops
 re-growing to 97, and it works across both repos without a second source of truth. It
 reports redundancy; it never asserts that a variable should not exist.
 
-Open: which repo hosts it. Lean is `sparc` — that is where the defaults change and where
-RSpec already runs; it needs a path to (or a checked-in copy of) the task-definition JSON.
+**Resolved:** it lives in `sparc` (`spec/config/task_definition_drift_spec.rb`), reading the
+sibling checkout, and runs as an on-demand audit rather than a default-suite spec. See
+"Pass 1 — complete" below.
 
 ---
 
@@ -107,7 +124,7 @@ RSpec already runs; it needs a path to (or a checked-in copy of) the task-defini
 | Variable | Set today | Task-def action | App-side | Code change | Note |
 |---|---|---|---|---|---|
 | `RAILS_ENV` | `production` | **Required** | Framework | none | Framework |
-| `SPARC_ADMIN_EMAIL` | `sparc.admin@risk-sentinel.info` | **Required** | Supported — stays in `.env.example` + docs | add accessor | Canonical **admin** email; kills `admin@sparc.local` literal dup'd in 3 files |
+| `SPARC_ADMIN_EMAIL` | `sparc.admin@risk-sentinel.info` | **Required** | Supported — override retained | accessor added ✅ **done** | Canonical **admin** email; kills `admin@sparc.local` literal dup'd in 3 files |
 | `SPARC_APP_URL` | `https://sparc.risk-sentinel.org` | **Required** | Supported — stays in `.env.example` + docs | none | Tier-0; also the source for derived redirect URI + FIDO2 RP ID |
 | `SPARC_CONTACT_EMAIL` | `support.sparc@risk-sentinel.info` | **Required** | Supported — stays in `.env.example` + docs | none | Canonical **support** email (absorbs `ORG_CONTACT_EMAIL`) |
 | `SPARC_OIDC_CLIENT_ID` | `0oa10sfxwbg3ygUxh698` | **Required** | Supported — stays in `.env.example` + docs | none | Credential; becomes the OIDC on-switch |
@@ -132,26 +149,26 @@ RSpec already runs; it needs a path to (or a checked-in copy of) the task-defini
 | `PORT` | `${rails_port}` | TF-injected | Supported — stays in `.env.example` + docs | none | Infra-derived by Terraform |
 | `REDIS_URL` | `${redis_url}` | TF-injected | Supported — stays in `.env.example` + docs | none | Infra-derived by Terraform |
 | `SPARC_ADMIN_CREDENTIALS_SECRET_ARN` | `${admin_credentials_secret_arn}` | TF-injected | Supported — stays in `.env.example` + docs | none | Infra-derived by Terraform |
-| `SPARC_API_OIDC_AUDIENCE` | `` | **Fix defect** | Supported — stays in `.env.example` + docs | guard: treat `""` as unset | ⚠️ Read site already derives from `oidc_client_id`; `""` is non-nil so the fallback never fires |
-| `SPARC_DISA_CCI_URL` | `` | **Fix defect** | Supported — stays in `.env.example` + docs | guard: treat `""` as unset | ⚠️ `""` overrides the working DoD CCI URL default — fetch is broken today |
-| `ACTIVE_STORAGE_SERVICE` | `amazon` | **Wire up** | Supported — stays in `.env.example` + docs | make `production.rb` read it | ⚠️ `production.rb:151` hardcodes `:amazon`. Non-AWS/on-prem installs need `:local` — **wire it, don't drop it** |
-| `RAILS_SERVE_STATIC_FILES` | `false` | Not required | Not a SPARC var | **drop; document proxy requirement** ✅ decided | SPARC requires a reverse proxy / CDN for static assets — document that rather than implement the knob |
+| `SPARC_API_OIDC_AUDIENCE` | `` | **Fix defect** | Supported — override retained | blank treated as unset ✅ **done** | ⚠️ Read site already derives from `oidc_client_id`; `""` is non-nil so the fallback never fires |
+| `SPARC_DISA_CCI_URL` | `` | **Fix defect** | Supported — override retained | blank treated as unset ✅ **done** | ⚠️ `""` overrides the working DoD CCI URL default — fetch is broken today |
+| `ACTIVE_STORAGE_SERVICE` | `amazon` | Keep — deployment-specific | **Gained function** | `production.rb` now reads it ✅ **done** | Selects the Active Storage backend for every uploaded blob (documents, evidence, artifact versions, avatars). Was hardcoded `:amazon`, so on-prem/air-gap could not select `:local`. ECS filesystems are ephemeral, so prod must stay `amazon` |
+| `RAILS_SERVE_STATIC_FILES` | `false` | Not required | Not a SPARC var | dropped; proxy requirement documented ✅ **done** | SPARC requires a reverse proxy / CDN for static assets — document that rather than implement the knob |
 | `SPARC_ADMIN_REFRESH_ENABLED` | `true` | Not required (bump default) | Supported — override retained | `false` → `true` ✅ done, accessor added | Endpoint already gated by admin token + `admin.rotate_credentials`; the flag was a third lock |
 | `SPARC_API_AUTH` | `hybrid` | **Required** | Supported | **none — stays explicit** | ⚠️ Cannot be defaulted or inferred. `hybrid` raises at boot without an issuer; inferring from issuer presence changed API auth semantics and **failed 338 specs**. See "Inference safety rule" |
 | `SPARC_OIDC_FORCE_MFA` | `true` | Not required (bump default) | Supported — override retained | `false` → `true` ✅ done | Only consulted on the OIDC path, so inert when OIDC is off |
 | `SPARC_REQUIRE_DOCUMENT_APPROVAL` | `true` | Not required (bump default) | Supported — override retained | `false` → `true` ✅ **done** | ⚠️ Behaviour change on upgrade: documents that used to publish freely now need approval. 18 specs encoded the old default |
-| `SPARC_DB_SSLMODE` | `require` | Not required (bump default) | Supported — override retained | prod → `require` ✅ **done** | ⚠️ **INERT** — zero consumers; `database.yml` has no `sslmode` key |
-| `SPARC_LOG_TO_STDOUT` | `true` | Not required (bump default) | Supported — override retained | prod → `true` ✅ **done** | ⚠️ **INERT** — zero consumers; `production.rb:92` logs to STDOUT unconditionally |
+| `SPARC_DB_SSLMODE` | `require` | Not required (bump default) | **Gained function** | prod → `require`, wired into `database.yml` ✅ **done** | Now applies to **all four** databases. Was inert (no `sslmode` key existed). See DB TLS section |
+| `SPARC_LOG_TO_STDOUT` | `true` | Not required (bump default) | **Gained function** | prod → `true`, honoured in every env ✅ **done** | Was inert — proven by setting it to `false` and still getting stdout. Now read in `application.rb` |
 | `SPARC_MAX_UPLOAD_MB` | `100` | Not required (bump default) | Supported — stays in `.env.example` + docs | `50` → `100` ✅ done | Tuning knob — override retained |
 | `SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE` | `600` | Keep — deployment-specific | Supported | **none — not approved** | Left at the shipped default of 300; prod continues to set it |
 | `SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN` | `3` | Not required (bump default) | Supported — override retained | `5` → `3` ✅ **done** | Tightening |
 | `SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP` | `60` | Not required (bump default) | Supported — override retained | `30` → `60` ✅ **done** | Override retained |
 | `SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER` | `500` | Not required (bump default) | Supported — override retained | `100` → **`250`** ✅ done | 250 chosen over the prod value of 500 |
-| `SPARC_STRUCTURED_LOGGING` | `true` | Not required (bump default) | Supported — override retained | prod → `true` ✅ **done** | ⚠️ **INERT** — zero consumers AND no structured formatter exists anywhere |
+| `SPARC_STRUCTURED_LOGGING` | `true` | Not required (bump default) | **Gained function** | prod → `true`, JSON formatter implemented ✅ **done** | Was a documented promise with no implementation. `lib/logging/sparc_json_formatter.rb` |
 | `SPARC_ENABLE_OIDC` | `true` | Not required (inferred) | Supported — override retained | infer from `SPARC_OIDC_CLIENT_ID` ✅ **done** | Explicit `false` still forces off |
 | `SPARC_ENABLE_SMTP` | `true` | Not required (inferred) | Supported — override retained | infer from `SPARC_SMTP_ADDRESS` ✅ **done** | Inference duplicated inline in `production.rb` (boot, pre-autoload) — keep in step |
-| `SPARC_OIDC_REDIRECT_URI` | `https://sparc.risk-sentinel.org/au…` | Not required (derived) | Supported — stays in `.env.example` + docs | derive from `SPARC_APP_URL` + `/auth/oidc/callback` | Our URL, not the IdP's. Override retained |
-| `SPARC_ORG_CONTACT_EMAIL` | `support.sparc@risk-sentinel.info` | Retire — consolidated | → `SPARC_CONTACT_EMAIL` | alias w/ deprecation warning | Identical value in prod today. Final state = 2 emails: admin + support |
+| `SPARC_OIDC_REDIRECT_URI` | `https://sparc.risk-sentinel.org/au…` | Not required (derived) | Supported — override retained | derived from `SPARC_APP_URL` ✅ **done** | Our URL, not the IdP's. Override retained |
+| `SPARC_ORG_CONTACT_EMAIL` | `support.sparc@risk-sentinel.info` | Retire — consolidated | → `SPARC_CONTACT_EMAIL` | deprecating alias ✅ **done** | Identical value in prod today. Final state = 2 emails: admin + support |
 | `SPARC_DB_HOST` | `${db_host}` | Pass 2 — consolidate | Supported — stays in `.env.example` + docs | `database.yml` ERB derives cache/queue/cable from `DATABASE_URL` | ⚠️ **Load-bearing**: Rails merges `DATABASE_URL` into **primary only**; secondaries derive names from `SPARC_DB_NAME` |
 | `SPARC_DB_NAME` | `${db_name}` | Pass 2 — consolidate | Supported — stays in `.env.example` + docs | `database.yml` ERB derives cache/queue/cable from `DATABASE_URL` | ⚠️ **Load-bearing**: Rails merges `DATABASE_URL` into **primary only**; secondaries derive names from `SPARC_DB_NAME` |
 | `SPARC_DB_PASSWORD` | `${db_password}` | Pass 2 — consolidate | Supported — stays in `.env.example` + docs | `database.yml` ERB derives cache/queue/cable from `DATABASE_URL` | ⚠️ **Load-bearing**: Rails merges `DATABASE_URL` into **primary only**; secondaries derive names from `SPARC_DB_NAME` |
@@ -172,7 +189,7 @@ RSpec already runs; it needs a path to (or a checked-in copy of) the task-defini
 | `SPARC_APP_NAME` | `SPARC` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
 | `SPARC_ARTIFACT_COPY_PER_VERSION` | `false` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
 | `SPARC_ARTIFACT_REAPER_PURGE` | `false` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
-| `SPARC_AUTHORITATIVE_FETCH_ENABLED` | `false` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
+| `SPARC_AUTHORITATIVE_FETCH_ENABLED` | `false` | Not required | Supported — override retained | accessor added, service routed ✅ **done** | Value equals the shipped default. Was reading raw `ENV` — **found by the drift check** |
 | `SPARC_AWS_IAM_DB_AUTH` | `false` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
 | `SPARC_AWS_LABS_CDEF_BRANCH` | `main` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
 | `SPARC_AWS_LABS_CDEF_REFRESH_INTERVAL_DAYS` | `7` | Not required | Supported — stays in `.env.example` + docs | none | Value equals the shipped default |
@@ -328,20 +345,21 @@ Because "not required" is not "deleted":
 | `SPARC_OIDC_FORCE_MFA` → default true | ✅ applied |
 | `SPARC_ADMIN_REFRESH_ENABLED` → default true | ✅ applied (+ accessor, controller routed) |
 | `SPARC_BANNER_ENABLED` ⟸ `SPARC_BANNER_MESSAGE` | ✅ applied |
-| `RAILS_SERVE_STATIC_FILES` → drop, document proxy | ✅ decided, doc pending |
+| `RAILS_SERVE_STATIC_FILES` → drop, document proxy | ✅ applied — documented in `ENVIRONMENT_VARIABLES.md` and `.env.example` |
 | `SPARC_API_AUTH` → default hybrid | ❌ **not safe** — see Inference safety rule |
 | `SPARC_AWS_REGION` — what is it for? | ⚠️ **No demonstrated value.** See below — candidate for deprecation, not retention |
 
-Full suite green after these changes: **2985 examples, 0 failures**; rubocop clean.
+Suite at that point: 2985 examples, 0 failures. **Final state for v1.13.1: 3009 examples, 0 failures, 10 pending.**
 
 ## Remaining open
 
-| # | Decision | Recommendation |
+| # | Decision | Outcome |
 |---|---|---|
-| 1 | Drift-check home: `sparc` or `sparc-iac`? | `sparc` |
-| 2 | Wire up or drop the three INERT vars (`DB_SSLMODE`, `LOG_TO_STDOUT`, `STRUCTURED_LOGGING`) | Decide per var — see record |
-| 3 | Verify SMTP port 465 + STARTTLS before deriving TLS mode | Verify first |
-| 4 | Adopt the four-tier documentation split? | Yes — biggest perception win |
+| 1 | Drift-check home: `sparc` or `sparc-iac`? | ✅ **Resolved** — `sparc`, as an on-demand audit |
+| 2 | Wire up or drop the three INERT vars | ✅ **Resolved** — all three wired |
+| 3 | Verify SMTP port 465 + STARTTLS before deriving TLS mode | ⏳ **Still open** — needs confirmation that mail delivers in prod |
+| 4 | Adopt the four-tier documentation split? | ✅ **Resolved** — applied to both docs |
+| 5 | Hard-fail the drift check in CI once the task definition is trimmed? | ⏳ **Still open** |
 
 ---
 
@@ -396,7 +414,7 @@ what was done, and how it was verified. Nothing lands here without explicit appr
 | 12 | `SPARC_LOG_TO_STDOUT` prod default → `true` | ✅ explicit | applied — **inert, see below** |
 | 13 | `SPARC_STRUCTURED_LOGGING` prod default → `true` | ✅ explicit | applied — **inert, see below** |
 
-Final state: **2985 examples, 0 failures**; rubocop clean.
+Suite at that point: 2985 examples, 0 failures. **Final v1.13.1 state: 3009 examples, 0 failures, 10 pending; rubocop clean across 739 files.**
 
 ## Rejected or reverted
 
@@ -413,33 +431,34 @@ Final state: **2985 examples, 0 failures**; rubocop clean.
 | Finding | Impact |
 |---|---|
 | `DATABASE_URL` is merged for `primary` **only** (activerecord 8.1.3) | `SPARC_DB_*` is load-bearing for cache/queue/cable; one-DB-var needs `database.yml` ERB work (Pass 2) |
-| `SPARC_DISA_CCI_URL=""` overrides a working default | Live defect — DoD CCI fetch broken in prod |
-| `SPARC_API_OIDC_AUDIENCE=""` defeats its own fallback | Live defect |
-| `ACTIVE_STORAGE_SERVICE` unread; `production.rb:151` hardcodes `:amazon` | Capability gap — wire it up, don't drop it |
-| `HTTP_PORT`, `RAILS_SERVE_STATIC_FILES` unread | Drop; document that SPARC requires a proxy |
+| `SPARC_DISA_CCI_URL=""` overrides a working default | Live defect — DoD CCI fetch broken in prod. ✅ **Fixed** |
+| `SPARC_API_OIDC_AUDIENCE=""` defeats its own fallback | Live defect. ✅ **Fixed** |
+| `ACTIVE_STORAGE_SERVICE` unread; `production.rb` hardcoded `:amazon` | Capability gap — wired up, not dropped. ✅ **Fixed** |
+| `HTTP_PORT`, `RAILS_SERVE_STATIC_FILES` unread | Drop; proxy requirement documented. ✅ **Done** |
 | `SPARC_AWS_REGION` justification withdrawn | No demonstrated value; deprecate in Pass 2 as a silent alias |
-| **`DB_SSLMODE`, `LOG_TO_STDOUT`, `STRUCTURED_LOGGING` have zero consumers** | Their defaults were bumped as instructed but change no behaviour. See below |
+| **`DB_SSLMODE`, `LOG_TO_STDOUT`, `STRUCTURED_LOGGING` had zero consumers** | Defaults were bumped but changed no behaviour. ✅ **All three now wired** — see the v1.13.1 section |
 | SMTP port `465` set alongside `STARTTLS_AUTO=true`, no `tls:` key | Flagged, unverified — confirm mail delivers before acting |
 
-## ⚠️ Three variables whose defaults are now set but inert
+## Three variables that were inert — all now wired
 
-Bumping these was approved and has been done, but none of the three is read anywhere:
+At the time their defaults were bumped, none of these three was read by anything, so the
+bump changed no behaviour. **All three were subsequently wired up in v1.13.1** and are now
+load-bearing:
 
-| Variable | Why inert | Real fix |
+| Variable | Was inert because | Now |
 |---|---|---|
-| `SPARC_DB_SSLMODE` | `config/database.yml` has no `sslmode` key. DB TLS is whatever `DATABASE_URL`'s query string says | Confirm `DATABASE_URL` carries `sslmode=require`, or wire the accessor into `database.yml`. **Until then TLS enforcement on the DB connection is unverified** |
-| `SPARC_LOG_TO_STDOUT` | `production.rb:92` sets `config.logger` to STDOUT unconditionally | Either wire the accessor in, or drop the variable |
-| `SPARC_STRUCTURED_LOGGING` | No structured/JSON formatter exists anywhere in the codebase | Implement structured logging, or drop the variable |
+| `SPARC_DB_SSLMODE` | `config/database.yml` had no `sslmode` key at all | ✅ Set in the `default:` anchor, so **all four** databases inherit it. Production floors at `require` |
+| `SPARC_LOG_TO_STDOUT` | `production.rb` set the logger to STDOUT unconditionally | ✅ Read in `application.rb`, honoured in every environment. Proven: `false` no longer logs to stdout |
+| `SPARC_STRUCTURED_LOGGING` | No structured formatter existed anywhere | ✅ `lib/logging/sparc_json_formatter.rb` implements it |
 
-The `SPARC_DB_SSLMODE` one is the only one with a security dimension and should be resolved
-before the task-definition trim removes the line.
+`SPARC_DB_SSLMODE` was the one with a security dimension. It is resolved on the app side;
+server-side enforcement (`rds.force_ssl=1`) is **sparc-iac#566** and still outstanding.
 
-## Not yet started
+## Status at that point (superseded)
 
-Pass 1 remainder: fix the two `""` defects, wire `ACTIVE_STORAGE_SERVICE`, add the
-`SPARC_ADMIN_EMAIL` accessor, consolidate `SPARC_ORG_CONTACT_EMAIL`, derive
-`SPARC_OIDC_REDIRECT_URI`, build the drift check, restructure `.env.example` and
-`ENVIRONMENT_VARIABLES.md` into the four tiers. Pass 2 in full. No `sparc-iac` change made.
+The section above was written mid-flight. See **"Pass 1 — complete"** at the end of this
+document for the final state — every Pass 1 item listed there as outstanding has since
+shipped.
 
 ---
 
@@ -546,8 +565,7 @@ outlier, not the rule. Recommendation: keep a single policy of explicit TLS ever
 
 ## Verification
 
-- Full suite **3006 examples, 0 failures, 7 pending** (the pending ones are the TLS
-  handshake specs, which skip without live servers).
+- Suite at that point: 3006 examples, 0 failures, 7 pending. **Final v1.13.1 state: 3009 / 0 / 10.**
 - `bin/test-db-tls` — 11 examples, 0 failures.
 - Rubocop clean.
 - `VERSION` bumped to **1.13.1** in the same PR, per convention.
