@@ -30,7 +30,9 @@ module DbUrl
   DEFAULT_NAME = "ssp_tpr_manager_production"
   DEFAULT_USER = "ssp_tpr_manager"
 
-  module_function
+  # `extend self` (matching SparcConfig) rather than `module_function`, so the
+  # methods are the module's public API — database.yml calls DbUrl.database etc.
+  extend self
 
   # Components of DATABASE_URL, or {} when it is unset or unparseable. Not
   # memoized: ENV can differ between the assets:precompile build and runtime,
