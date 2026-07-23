@@ -7,6 +7,10 @@ RSpec.describe "Publication workflow", type: :request do
 
   before { sign_in_as(user) }
 
+  # #785 — these specs cover publication mechanics, not the approval gate.
+  # The gate now defaults ON, so pin it off rather than depend on the default.
+  before { allow(SparcConfig).to receive(:require_document_approval?).and_return(false) }
+
   # Valid metadata that passes PublicationValidationService
   let(:valid_metadata) do
     party_uuid = SecureRandom.uuid

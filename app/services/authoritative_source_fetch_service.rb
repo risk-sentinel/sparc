@@ -28,7 +28,7 @@ class AuthoritativeSourceFetchService
   end
 
   def self.enabled?
-    ENV["SPARC_AUTHORITATIVE_FETCH_ENABLED"].to_s.downcase == "true"
+    SparcConfig.authoritative_fetch_enabled?
   end
 
   def self.call(resource:, actor:)

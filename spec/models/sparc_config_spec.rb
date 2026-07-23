@@ -29,9 +29,11 @@ RSpec.describe SparcConfig do
       ENV["SPARC_MAX_AVATAR_MB"] = old_av
     end
 
-    it "defaults max_upload_mb to 50" do
+    # #785 — raised 50 → 100 so the prod task definition need not set it.
+    # The variable remains a supported override.
+    it "defaults max_upload_mb to 100" do
       ENV.delete("SPARC_MAX_UPLOAD_MB")
-      expect(SparcConfig.max_upload_mb).to eq(50)
+      expect(SparcConfig.max_upload_mb).to eq(100)
     end
 
     it "converts max_upload_mb to bytes via 1.megabyte" do

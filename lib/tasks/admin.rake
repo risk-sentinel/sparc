@@ -24,7 +24,7 @@ namespace :sparc do
       next
     end
 
-    email = ENV.fetch("SPARC_ADMIN_EMAIL", "admin@sparc.local")
+    email = SparcConfig.admin_email
     desired_password = ENV["SPARC_ADMIN_PASSWORD"].presence
     admin = User.find_or_initialize_by(email: email.downcase.strip)
 
@@ -146,7 +146,7 @@ namespace :sparc do
 
   desc "Regenerate admin password (destructive — use only when needed)"
   task reset_admin_password: :environment do
-    email = ENV.fetch("SPARC_ADMIN_EMAIL", "admin@sparc.local")
+    email = SparcConfig.admin_email
     admin = User.find_by(email: email.downcase.strip)
 
     unless admin

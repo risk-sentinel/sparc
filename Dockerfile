@@ -43,6 +43,22 @@ RUN curl -sSfL "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_V
     && cd /tmp/ruby && ./configure --prefix=/usr/local --enable-shared --disable-install-doc \
     && make -j"$(nproc)" && make install && rm -rf /tmp/ruby*
 
+# AWS RDS global CA bundle (#785, NIST SC-8(1)) — fetched HERE in the builder,
+# not in the runtime stage, because runtime deliberately carries no curl and
+# only `openssl-libs` (shared libraries, no CLI). Adding either to runtime just
+# to download a file would enlarge the production image and its CVE surface.
+#
+# ADD (not RUN curl) is the native fetch instruction and needs no shell tool
+# (sonar docker:S7026). The URL is a literal https:// source, not an ARG, so the
+# scheme is fixed at build time — there is no dynamic value that could resolve to
+# plaintext (sonar docker:S6506). To build against a mirror, edit this line.
+ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /tmp/rds-global-bundle.pem
+# Validated in a separate step — a silently absent, empty, or non-PEM bundle
+# would otherwise surface as a production boot error, a far worse place to find
+# it. Content check (not the openssl CLI) because the runtime image has neither.
+RUN grep -q "BEGIN CERTIFICATE" /tmp/rds-global-bundle.pem \
+    && test "$(grep -c 'BEGIN CERTIFICATE' /tmp/rds-global-bundle.pem)" -gt 50
+
 # hdf-cli (Go static binary), SHA-256 verified — same script the Debian image uses.
 COPY bin/install-hdf.sh /tmp/install-hdf.sh
 RUN HDF_LIBS_VERSION="${HDF_LIBS_VERSION}" HDF_INSTALL_DIR=/usr/local/bin /tmp/install-hdf.sh
@@ -92,6 +108,22 @@ RUN find /etc/pki/ca-trust/source/anchors/sparc-custom/ -type f \
       ! \( -name '*.crt' -o -name '*.pem' -o -name '*.cer' \) -delete 2>/dev/null || true; \
     update-ca-trust
 
+# ── Database TLS trust (#785, NIST SC-8(1)) ──────────────────────────────────
+# libpq does NOT honour SSL_CERT_FILE, so the runtime CA mechanism above (which
+# covers every Ruby OpenSSL client) does not reach Postgres. Postgres verifies
+# against `sslrootcert` and nothing else. We therefore bake the AWS RDS global
+# CA bundle in at a fixed path so `SPARC_DB_SSLMODE=verify-full` works on RDS
+# with no further operator action.
+#
+# Copied from the builder, which fetched and validated it — runtime carries no
+# curl and no openssl CLI, and should not gain either just to download a file.
+#
+# Non-AWS / private-CA deployments do NOT need to rebuild: point
+# SPARC_DB_SSLROOTCERT at a mounted PEM instead. Rebuilding (by adding to
+# ./certs/) is only required to change the SYSTEM trust store.
+COPY --from=builder /tmp/rds-global-bundle.pem /etc/pki/sparc/rds-global-bundle.pem
+RUN chmod 0444 /etc/pki/sparc/rds-global-bundle.pem
+
 COPY --from=builder /usr/local /usr/local
 ENV PATH=/usr/local/bin:$PATH \
     RAILS_ENV=production \
@@ -102,7 +134,8 @@ ENV PATH=/usr/local/bin:$PATH \
     BUNDLE_WITHOUT="development test" \
     BUNDLE_IGNORE_CONFIGURED_GROUPS_WITHOUT=true \
     LD_PRELOAD=/usr/local/lib/libjemalloc.so.2 \
-    MALLOC_ARENA_MAX=2
+    MALLOC_ARENA_MAX=2 \
+    SPARC_DB_SSLROOTCERT=/etc/pki/sparc/rds-global-bundle.pem
 
 # #750 guard: fail the build if the runtime ever loses its UTF-8 default encoding
 # again (base-image locale regression). This exact assertion would have caught the

@@ -87,9 +87,17 @@ Rails.application.configure do
     redirect: { exclude: ->(request) { request.path == "/up" } }
   }
 
-  # Log to STDOUT with the current request id as a default log tag.
+  # Tag every line with the request id so a single request can be followed
+  # across many lines. With SPARC_STRUCTURED_LOGGING on, the JSON formatter
+  # emits this as a `request_id` FIELD rather than a text prefix, which is what
+  # makes it queryable in CloudWatch/ELK/Splunk.
   config.log_tags = [ :request_id ]
-  config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
+
+  # NOTE: the logger itself is configured in config/application.rb (#785) so
+  # that SPARC_LOG_TO_STDOUT and SPARC_STRUCTURED_LOGGING apply to every
+  # environment. It used to be hardcoded here, which is why the former was
+  # silently ignored. Do not reintroduce a `config.logger =` line here — it
+  # would run after application.rb and override the operator's setting.
 
   # Configurable via SPARC_LOG_LEVEL (preferred) or RAILS_LOG_LEVEL (legacy fallback).
   config.log_level = ENV.fetch("SPARC_LOG_LEVEL", ENV.fetch("RAILS_LOG_LEVEL", "info"))
@@ -114,9 +122,15 @@ Rails.application.configure do
                    .split(":").first
   config.action_mailer.default_url_options = { host: mailer_host }
 
-  # SMTP delivery — enabled via SPARC_ENABLE_SMTP=true.
+  # SMTP delivery — inferred from SPARC_SMTP_ADDRESS being set (#785); an
+  # explicit SPARC_ENABLE_SMTP still wins either way.
+  # This runs pre-autoload so it cannot call SparcConfig.enable_smtp? — the
+  # inference is duplicated deliberately. Keep the two in step.
   # See docs/ENVIRONMENT_VARIABLES.md for all SPARC_SMTP_* variables.
-  if ENV["SPARC_ENABLE_SMTP"] == "true"
+  raw_enable_smtp = ENV.fetch("SPARC_ENABLE_SMTP", nil)
+  smtp_enabled    = raw_enable_smtp.present? ? raw_enable_smtp == "true" : ENV.fetch("SPARC_SMTP_ADDRESS", nil).present?
+
+  if smtp_enabled
     config.action_mailer.raise_delivery_errors = true
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
@@ -148,5 +162,12 @@ Rails.application.configure do
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
-  config.active_storage.service = :amazon
+  # #785 — ACTIVE_STORAGE_SERVICE is now WIRED. It was documented and set in the
+  # production task definition, but nothing read it: this line hardcoded :amazon,
+  # so an operator selecting a backend was silently ignored. On-prem and
+  # air-gapped installs need :local and previously had no way to get it.
+  #
+  # Read from ENV directly — this file is evaluated pre-autoload and cannot call
+  # SparcConfig. The value must name a service defined in config/storage.yml.
+  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", nil).presence&.to_sym || :amazon
 end

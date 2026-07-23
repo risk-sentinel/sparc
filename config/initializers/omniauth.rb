@@ -33,7 +33,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
              client_options: {
                identifier: SparcConfig.oidc_client_id,
                secret: SparcConfig.oidc_client_secret,
-               redirect_uri: SparcConfig.oidc_redirect_uri || "#{SparcConfig.app_url}/auth/oidc/callback"
+               redirect_uri: SparcConfig.oidc_redirect_uri
              }
   end
 

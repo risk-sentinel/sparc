@@ -15,6 +15,71 @@ v1.7.0 hardening checklist) see [PRODUCTION_SECURITY.md](PRODUCTION_SECURITY.md)
 
 ---
 
+## Start here — you do not have to set most of this
+
+This document lists every variable SPARC understands, which makes it look far
+larger than the job actually is. **Almost every variable has a working default.**
+The list below is long because it is a complete reference, not a checklist.
+
+The variables fall into four groups, and only the first is something a customer
+would recognise as "configuration":
+
+### Tier 1 — Product configuration (you decide these)
+
+This is the real list. Roughly a dozen entries.
+
+| Variable | Why you set it |
+|---|---|
+| `SPARC_APP_URL` | Your public URL. Also derives the OIDC redirect URI and FIDO2 RP ID |
+| `SECRET_KEY_BASE` | Rails master secret |
+| `SPARC_HASH` | Per-instance master secret (≥32 chars) |
+| `DATABASE_URL` | Your database |
+| `SPARC_ADMIN_EMAIL` | The instance administrator account |
+| `SPARC_CONTACT_EMAIL` | Where users are pointed for support |
+| **One auth block** | `SPARC_ENABLE_LOCAL_LOGIN=true`, or OIDC / LDAP / FIDO2 / PIV credentials |
+| `SPARC_ORG_NAME`, `SPARC_ORG_DESCRIPTION` | Organisation metadata for OSCAL exports |
+| `SPARC_HEADER_TEXT`, `SPARC_BANNER_MESSAGE` | Environment banner and consent text, if you want them |
+
+Configuring a block is usually enough to switch it on: setting
+`SPARC_OIDC_CLIENT_ID` enables OIDC, `SPARC_SMTP_ADDRESS` enables mail, and
+`SPARC_BANNER_MESSAGE` enables the banner. The matching `SPARC_ENABLE_*` flag is
+only needed to force something **off**.
+
+### Tier 2 — Infrastructure (your platform decides these)
+
+`DATABASE_URL`, `REDIS_URL`, `AWS_BUCKET`, `AWS_REGION`, secret ARNs. In a
+managed deployment these are rendered by Terraform or your orchestrator; they
+are not authored by hand.
+
+### Tier 3 — Deploy plumbing (set once, then forget)
+
+`SPARC_RUN_SEEDS`, `SPARC_SEED_MODE`, `SOLID_QUEUE_IN_PUMA`,
+`SPARC_SKIP_DEFERRED_DATA_MIGRATIONS`, `PORT`, `RAILS_ENV`. Operational
+mechanics rather than product settings.
+
+### Tier 4 — Internal tuning (you will probably never touch these)
+
+`SPARC_PROCESSING_STUCK_MINUTES`, `SPARC_DOCUMENT_REAP_MINUTES`,
+`SPARC_ARTIFACT_REAPER_MIN_AGE_HOURS`, `SCRAPE_THROTTLE_SECONDS`, the
+`SPARC_RATE_LIMIT_*` family, upload size caps. The shipped defaults are the
+supported values; these exist so support can adjust behaviour without a release.
+They remain fully supported overrides.
+
+### A note on defaults
+
+**"Not required" is not "unavailable."** A variable whose default already suits
+you simply does not need to appear in your configuration. It keeps working as an
+override the moment you set it. Setting a variable to the same value as its
+default achieves nothing except making your configuration longer — and setting
+one to an empty string is worse than leaving it out, because `""` is not "unset"
+and will override a real default.
+
+> **Deployment prerequisite:** SPARC expects to run behind a reverse proxy or CDN
+> that serves static assets and terminates TLS. It does not serve static files
+> itself (`RAILS_SERVE_STATIC_FILES` is not implemented).
+
+---
+
 ## System Configuration
 
 | Variable | Description | Default | Example | Required? |
@@ -43,7 +108,9 @@ auto-merges it over `database.yml` values).
 | SPARC_DB_NAME | Database name | sparc | `sparc_production` | No |
 | SPARC_DB_USER | Database username | (none) | `sparc_app` | No |
 | SPARC_DB_PASSWORD | Database password (use secrets manager in prod) | (none) | `super-secure-pass-123` | No |
-| SPARC_DB_SSLMODE | SSL mode for connection (disable, prefer, require, verify-full) | prefer | `require` | No |
+| SPARC_DB_SSLMODE | TLS mode, applied to **all four** databases (primary + cache/queue/cable). `require` refuses plaintext but does NOT authenticate the server; `verify-full` also verifies the certificate chain and hostname and is the FedRAMP High target. See [DATABASE_TLS.md](DATABASE_TLS.md) | **require** (prod), prefer (dev/test) | `verify-full` | No |
+| SPARC_SKIP_DB_TLS_CHECK | Suppress the boot-time database TLS posture check (production only). Not recommended — the check warns and never raises | false | `true` | No |
+| SPARC_DB_SSLROOTCERT | CA bundle libpq verifies against. Only consulted by the `verify-*` modes. libpq ignores `SSL_CERT_FILE`, so the database needs its own trust anchor | `/etc/pki/sparc/rds-global-bundle.pem` (baked into the image) | `/rails/certs/my-ca.pem` | No |
 
 ---
 
@@ -264,6 +331,17 @@ exports omit empty values rather than write blanks.
 | SPARC_ORG_ADDRESS | Organization address embedded in OSCAL metadata | (none) | `1600 Pennsylvania Ave NW, Washington, DC 20500` | No |
 | SPARC_ORG_CONTACT_PERSON | Primary contact person embedded in OSCAL metadata | (none) | `Jane Doe` | No |
 | SPARC_ORG_CONTACT_EMAIL | Primary contact email embedded in OSCAL metadata | (none) | `compliance@acme.gov` | No |
+
+---
+
+## Deprecations (v1.13.1)
+
+| Variable | Status | Do this instead |
+|---|---|---|
+| `SPARC_ORG_CONTACT_EMAIL` | **Deprecated alias** — still honoured | Use `SPARC_CONTACT_EMAIL`. SPARC has two email identities: `SPARC_ADMIN_EMAIL` (the administrator account) and `SPARC_CONTACT_EMAIL` (support). When unset, the org contact falls back to the support address |
+| `SPARC_AWS_REGION` | Redundant in every known deployment | Use `AWS_REGION`. The accessor already falls back `SPARC_AWS_REGION` → `AWS_REGION` → `us-east-1`, and only a split-region deployment could tell the difference |
+| `RAILS_SERVE_STATIC_FILES` | **Not implemented** | Put a reverse proxy or CDN in front of SPARC |
+| `HTTP_PORT` | **Not read** | Use `PORT` |
 
 ---
 

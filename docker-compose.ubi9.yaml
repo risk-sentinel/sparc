@@ -62,6 +62,14 @@ services:
       SPARC_DB_PORT: "5432"
       SPARC_DB_NAME: ssp_tpr_manager_production
       SPARC_DB_USER: postgres
+      # #785 — production floors sslmode at `require`, and the plain postgres:15
+      # service here speaks no TLS, so without this override the stack cannot
+      # boot: "server does not support SSL, but SSL was required". That refusal
+      # is the floor working correctly; this is a local harness, not a
+      # deployment. Real deployments must give SPARC a TLS-capable database —
+      # see docs/DATABASE_TLS.md. To exercise the real posture locally, use
+      # bin/test-db-tls, which stands up a TLS-enabled Postgres.
+      SPARC_DB_SSLMODE: prefer
       SPARC_DB_PASSWORD: password
       REDIS_URL: redis://redis:6379/0
       # Prod defaults Active Storage to S3; use local disk here so seeds that

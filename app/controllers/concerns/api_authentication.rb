@@ -153,7 +153,7 @@ module ApiAuthentication
 
   def decode_oidc_jwt(token_string)
     issuer_url = SparcConfig.oidc_issuer_url
-    audience = ENV.fetch("SPARC_API_OIDC_AUDIENCE", SparcConfig.oidc_client_id)
+    audience = SparcConfig.api_oidc_audience
 
     jwks = fetch_oidc_jwks(issuer_url)
     return nil if jwks.nil?

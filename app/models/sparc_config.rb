@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.13.0"
+  VERSION = "1.13.1"
 
   extend self
 
@@ -34,14 +34,35 @@ module SparcConfig
   def db_name     = ENV.fetch("SPARC_DB_NAME", "sparc")
   def db_user     = ENV.fetch("SPARC_DB_USER", nil)
   def db_password = ENV.fetch("SPARC_DB_PASSWORD", nil)
-  def db_sslmode  = ENV.fetch("SPARC_DB_SSLMODE", "prefer")
+  # #785 — NOW WIRED. config/database.yml `default:` sets sslmode from this same
+  # variable, so it is inherited by every database (primary + cache/queue/cable).
+  # database.yml is parsed pre-autoload and cannot call this accessor, so the
+  # fallback logic is duplicated there. Keep the two in step.
+  #   prefer / require / verify-full — see the comment in config/database.yml.
+  # NIST SC-8, SC-8(1).
+  def db_sslmode    = ENV.fetch("SPARC_DB_SSLMODE") { Rails.env.production? ? "require" : "prefer" }
+  def db_sslrootcert = ENV.fetch("SPARC_DB_SSLROOTCERT", nil).presence
+
+  # True when the configured mode actually authenticates the server, not merely
+  # encrypts. `require` stops plaintext but not an impostor; only verify-* do.
+  def db_tls_verified? = %w[verify-ca verify-full].include?(db_sslmode)
 
   # ── Application ───────────────────────────────────────────────────────────
 
   def app_url       = ENV.fetch("SPARC_APP_URL", "http://localhost:3000")
   def app_name      = ENV.fetch("SPARC_APP_NAME", "SPARC")
-  def contact_email = ENV.fetch("SPARC_CONTACT_EMAIL", nil)
+  # #785 — SPARC has exactly TWO email identities, because they serve different
+  # functions: `admin_email` is the instance administrator account, and
+  # `contact_email` is where users are pointed for support.
+  def contact_email = ENV.fetch("SPARC_CONTACT_EMAIL", nil).presence
   def support_email = contact_email
+
+  # The instance admin account. Previously the `admin@sparc.local` literal was
+  # duplicated across four call sites (two controllers/services and two rake
+  # tasks), so changing it meant finding all four.
+  DEFAULT_ADMIN_EMAIL = "admin@sparc.local"
+
+  def admin_email = ENV.fetch("SPARC_ADMIN_EMAIL", nil).presence || DEFAULT_ADMIN_EMAIL
   def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
 
   # Configurable resources list — JSON array of {display_text, href} objects.
@@ -69,7 +90,12 @@ module SparcConfig
   def org_description    = ENV.fetch("SPARC_ORG_DESCRIPTION", nil)
   def org_address        = ENV.fetch("SPARC_ORG_ADDRESS", nil)
   def org_contact_person = ENV.fetch("SPARC_ORG_CONTACT_PERSON", nil)
-  def org_contact_email  = ENV.fetch("SPARC_ORG_CONTACT_EMAIL", nil)
+  # #785 — CONSOLIDATED. SPARC_ORG_CONTACT_EMAIL is the one variable name being
+  # retired across this whole programme: it duplicated SPARC_CONTACT_EMAIL (the
+  # prod task definition set both to the identical value) for no benefit. The
+  # name still works as a deprecating alias so no existing config breaks; when
+  # unset it falls back to the support address. Prefer SPARC_CONTACT_EMAIL.
+  def org_contact_email = ENV.fetch("SPARC_ORG_CONTACT_EMAIL", nil).presence || contact_email
 
   # ── User Lifecycle ───────────────────────────────────────────────────────
 
@@ -104,8 +130,23 @@ module SparcConfig
   # All default to false — features must be explicitly enabled.
 
   def enable_local_login?  = ENV.fetch("SPARC_ENABLE_LOCAL_LOGIN", "false") == "true"
-  def enable_oidc?         = ENV.fetch("SPARC_ENABLE_OIDC", "false") == "true"
+
+  # #785 — inferred from the credential. Configuring an OIDC client ID is an
+  # unambiguous statement of intent, and the inference can only turn ON a
+  # provider the operator already set up. Explicit "false" still forces it off.
+  def enable_oidc?
+    raw = ENV.fetch("SPARC_ENABLE_OIDC", nil)
+    return raw == "true" if raw.present?
+
+    oidc_client_id.present?
+  end
+
   def enable_ldap?         = ENV.fetch("SPARC_ENABLE_LDAP", "false") == "true"
+
+  # #785 — was read raw in authoritative_source_fetch_service.rb. Outbound
+  # content fetching stays explicit (never inferred): an air-gapped deployment
+  # must be able to guarantee no egress.
+  def authoritative_fetch_enabled? = ENV.fetch("SPARC_AUTHORITATIVE_FETCH_ENABLED", nil).to_s.downcase == "true"
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
   def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true"  # WebAuthn security keys (#779)
 
@@ -181,10 +222,27 @@ module SparcConfig
   def oidc_issuer_url    = ENV.fetch("SPARC_OIDC_ISSUER_URL", nil)
   def oidc_client_id     = ENV.fetch("SPARC_OIDC_CLIENT_ID", nil)
   def oidc_client_secret = ENV.fetch("SPARC_OIDC_CLIENT_SECRET", nil)
-  def oidc_redirect_uri  = ENV.fetch("SPARC_OIDC_REDIRECT_URI", nil)
+  # #785 — derived. The redirect URI is OUR callback URL, not the IdP's, so it
+  # is fully determined by app_url plus a fixed path. The derivation already
+  # existed, inline at the omniauth.rb call site; it belongs here so every
+  # consumer gets it. Blank is treated as unset (the prod task definition's
+  # habit of setting "" would otherwise defeat the fallback).
+  OIDC_CALLBACK_PATH = "/auth/oidc/callback"
+
+  def oidc_redirect_uri
+    ENV.fetch("SPARC_OIDC_REDIRECT_URI", nil).presence || "#{app_url.chomp('/')}#{OIDC_CALLBACK_PATH}"
+  end
+
+  # #785 — was read raw in api_authentication.rb with the same blank-string
+  # trap: the fallback to oidc_client_id never fired when the variable was
+  # set-but-empty, which is exactly how prod had it.
+  def api_oidc_audience = ENV.fetch("SPARC_API_OIDC_AUDIENCE", nil).presence || oidc_client_id
   def oidc_scopes        = ENV.fetch("SPARC_OIDC_SCOPES", "openid profile email")
   def oidc_provider_title = ENV.fetch("SPARC_OIDC_PROVIDER_TITLE", "SSO")
-  def oidc_force_mfa?    = ENV.fetch("SPARC_OIDC_FORCE_MFA", "false") == "true"
+  # #785 — defaults true. Only consulted on the OIDC path, so a true default is
+  # inert for deployments that don't use OIDC, and security-positive for those
+  # that do. Set explicitly to "false" to opt out.
+  def oidc_force_mfa?    = ENV.fetch("SPARC_OIDC_FORCE_MFA", "true") == "true"
 
   # ── LDAP ──────────────────────────────────────────────────────────────────
 
@@ -207,8 +265,15 @@ module SparcConfig
 
   # ── Logging ───────────────────────────────────────────────────────────────
 
-  def log_to_stdout?      = ENV.fetch("SPARC_LOG_TO_STDOUT", "false") == "true"
-  def structured_logging? = ENV.fetch("SPARC_STRUCTURED_LOGGING", "false") == "true"
+  # #785 — defaults true in production, matching what production.rb actually
+  # does (it sets config.logger to STDOUT unconditionally at :92).
+  # ⚠️ Currently INERT: nothing reads this accessor.
+  def log_to_stdout? = ENV.fetch("SPARC_LOG_TO_STDOUT") { Rails.env.production?.to_s } == "true"
+  # #785 — defaults true in production.
+  # ⚠️ Currently INERT, and more so than the others: nothing reads this accessor
+  # AND no structured/JSON log formatter exists anywhere in the codebase. Until
+  # one is implemented this reports an intent, not a behaviour.
+  def structured_logging? = ENV.fetch("SPARC_STRUCTURED_LOGGING") { Rails.env.production?.to_s } == "true"
   def log_level           = ENV.fetch("SPARC_LOG_LEVEL", "info")
 
   # ── Artifact retention (#680/#686) ────────────────────────────────────────
@@ -222,7 +287,17 @@ module SparcConfig
 
   # ── SMTP / Email ──────────────────────────────────────────────────────────
 
-  def enable_smtp?       = ENV.fetch("SPARC_ENABLE_SMTP", "false") == "true"
+  # #785 — inferred from the server address. Same rule as OIDC: it can only turn
+  # ON delivery the operator already configured. Explicit "false" forces it off.
+  # NOTE: production.rb builds smtp_settings at boot (pre-autoload) and cannot
+  # call this accessor, so it repeats the same inference inline. Keep them in step.
+  def enable_smtp?
+    raw = ENV.fetch("SPARC_ENABLE_SMTP", nil)
+    return raw == "true" if raw.present?
+
+    smtp_address.present?
+  end
+
   def smtp_address       = ENV.fetch("SPARC_SMTP_ADDRESS", nil)
   def smtp_port          = ENV.fetch("SPARC_SMTP_PORT", "587").to_i
   def smtp_username      = ENV.fetch("SPARC_SMTP_USERNAME", nil)
@@ -233,10 +308,23 @@ module SparcConfig
 
   # ── API Authentication Mode ─────────────────────────────────────────────
   # Controls which auth method the REST API accepts:
-  #   local  — SPARC-issued Bearer tokens only (default)
+  #   local  — SPARC-issued Bearer tokens only
   #   oidc   — OIDC/Okta JWT tokens only
   #   hybrid — JWTs for humans + SPARC tokens for service accounts
+  #
+  # #785 — deliberately NOT defaulted or inferred, and that decision is
+  # load-bearing. Defaulting to "hybrid" breaks every non-OIDC install
+  # (api_auth.rb raises at boot without an issuer). Inferring it from the
+  # issuer's presence is worse: it silently changes API auth semantics for any
+  # deployment that has OIDC configured but still issues SPARC tokens to humans,
+  # who then get 401s on upgrade. Measured — that inference failed 338 specs.
+  # This variable stays explicit.
   def api_auth_mode = ENV.fetch("SPARC_API_AUTH", "local")
+
+  # #785 — defaults true. The endpoint is already gated by an admin token plus
+  # the admin.rotate_credentials permission, so the env flag was a third lock on
+  # a door that already has two. Set explicitly to "false" to disable outright.
+  def admin_refresh_enabled? = ENV.fetch("SPARC_ADMIN_REFRESH_ENABLED", "true").downcase == "true"
 
   API_AUTH_MODES = %w[local oidc hybrid].freeze
 
@@ -252,7 +340,7 @@ module SparcConfig
   # the cost of that choice instead of burying it in a format-specific knob.
   # Avatar stays separate (small images shouldn't compete with document caps).
 
-  def max_upload_mb     = ENV.fetch("SPARC_MAX_UPLOAD_MB", "50").to_i
+  def max_upload_mb     = ENV.fetch("SPARC_MAX_UPLOAD_MB", "100").to_i
   def max_avatar_mb     = ENV.fetch("SPARC_MAX_AVATAR_MB", "2").to_i
   def max_upload_bytes  = max_upload_mb * 1.megabyte
   def max_avatar_bytes  = max_avatar_mb * 1.megabyte
@@ -266,7 +354,9 @@ module SparcConfig
   # (Catalog, Profile, Baseline, CDEF) must be `approved` before they can be
   # published. Default false: the approval workflow is available but not
   # enforced, so existing publish flows are unchanged until an org enables it.
-  def require_document_approval? = ENV.fetch("SPARC_REQUIRE_DOCUMENT_APPROVAL", "false") == "true"
+  # #785 — defaults true. A publish gate that is off by default is the wrong
+  # default for a compliance tool; deployments that want free publishing opt out.
+  def require_document_approval? = ENV.fetch("SPARC_REQUIRE_DOCUMENT_APPROVAL", "true") == "true"
 
   # ── HDF / OSCAL translation (#449, #648) ─────────────────────────────────
   # SPARC_HDF_NORMALIZE_BASELINES was removed in #764. It injected an empty
@@ -326,10 +416,10 @@ module SparcConfig
   # NLB targets, etc. Loopback addresses are safelisted by default for
   # development convenience.
   def rate_limiting_enabled?               = ENV.fetch("SPARC_RATE_LIMITING_ENABLED", "true") == "true"
-  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "30").to_i
-  def rate_limit_uploads_per_hour_per_user = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER", "100").to_i
+  def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "60").to_i
+  def rate_limit_uploads_per_hour_per_user = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER", "250").to_i
   def rate_limit_api_writes_per_minute     = ENV.fetch("SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE", "300").to_i
-  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "5").to_i
+  def rate_limit_login_failures_per_minute = ENV.fetch("SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN", "3").to_i
   # CSP violation report beacons (#528, epic #650). Per-IP cap so a misbehaving
   # or hostile client can't flood the log sink. Generous default — a page with
   # several violations fires a burst legitimately.
@@ -341,8 +431,17 @@ module SparcConfig
 
   # ── Consent Banner ──────────────────────────────────────────────────────
 
-  def banner_enabled?     = ENV.fetch("SPARC_BANNER_ENABLED", "false") == "true"
-  def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil)
+  # #785 — inferred from the banner message. A banner with no message renders
+  # nothing, and a message that is never shown is a configuration mistake, so
+  # presence of the message IS the switch. Explicit "false" still forces it off.
+  def banner_enabled?
+    raw = ENV.fetch("SPARC_BANNER_ENABLED", nil)
+    return raw == "true" if raw.present?
+
+    banner_message_path.present?
+  end
+
+  def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil).presence
 
   # ── Environment / Rules Header (#682) ─────────────────────────────────────
   # Operator-configurable header bar shown on EVERY screen describing the
@@ -440,8 +539,13 @@ module SparcConfig
   # URL for the official DISA CCI XML ZIP archive.
   # Override with SPARC_DISA_CCI_URL for air-gapped or mirror environments.
 
+  # #785 — `.presence ||` rather than ENV.fetch's default, because an empty
+  # string is not nil: `ENV.fetch(k, default)` returns "" when the variable is
+  # set-but-blank, so the default never fires. The prod task definition set
+  # SPARC_DISA_CCI_URL="" and silently broke this fetch. Treat blank as unset.
   def disa_cci_url
-    ENV.fetch("SPARC_DISA_CCI_URL", "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CCI_List.zip")
+    ENV.fetch("SPARC_DISA_CCI_URL", nil).presence ||
+      "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CCI_List.zip"
   end
 
   # Comma-separated list of NIST SP 800-53 revision numbers to include
