@@ -49,7 +49,10 @@ RUN curl -sSfL "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_V
 # to download a file would enlarge the production image and its CVE surface.
 # Validated by content rather than the openssl CLI for the same reason.
 ARG RDS_CA_BUNDLE_URL=https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-RUN curl -sSfL --retry 3 "${RDS_CA_BUNDLE_URL}" -o /tmp/rds-global-bundle.pem \
+# --proto '=https' --tlsv1.2: the URL is an ARG, so pin the protocol here rather
+# than trusting the value. An override cannot downgrade the trust-anchor fetch to
+# plaintext, and curl will not follow a redirect off https. (sonar docker:S6506)
+RUN curl -sSfL --retry 3 --proto '=https' --tlsv1.2 "${RDS_CA_BUNDLE_URL}" -o /tmp/rds-global-bundle.pem \
     && grep -q "BEGIN CERTIFICATE" /tmp/rds-global-bundle.pem \
     && test "$(grep -c 'BEGIN CERTIFICATE' /tmp/rds-global-bundle.pem)" -gt 50
 # Fails the build loudly if the bundle is unreachable, empty, or not a PEM chain.

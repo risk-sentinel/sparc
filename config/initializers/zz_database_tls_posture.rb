@@ -28,14 +28,14 @@
 #
 # NIST 800-53: SC-8, SC-8(1), SC-13.
 
+require "pg"
+
 Rails.application.config.after_initialize do
   # Nothing to prove against a local dev/test Postgres with no TLS at all.
   next unless Rails.env.production?
-  next if ENV["SPARC_SKIP_DB_TLS_CHECK"] == "true"
+  next if ENV.fetch("SPARC_SKIP_DB_TLS_CHECK", nil) == "true"
 
   begin
-    require "pg"
-
     mode     = SparcConfig.db_sslmode
     verified = SparcConfig.db_tls_verified?
     results  = {}

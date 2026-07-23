@@ -127,8 +127,8 @@ Rails.application.configure do
   # This runs pre-autoload so it cannot call SparcConfig.enable_smtp? — the
   # inference is duplicated deliberately. Keep the two in step.
   # See docs/ENVIRONMENT_VARIABLES.md for all SPARC_SMTP_* variables.
-  raw_enable_smtp = ENV["SPARC_ENABLE_SMTP"]
-  smtp_enabled    = raw_enable_smtp.present? ? raw_enable_smtp == "true" : ENV["SPARC_SMTP_ADDRESS"].present?
+  raw_enable_smtp = ENV.fetch("SPARC_ENABLE_SMTP", nil)
+  smtp_enabled    = raw_enable_smtp.present? ? raw_enable_smtp == "true" : ENV.fetch("SPARC_SMTP_ADDRESS", nil).present?
 
   if smtp_enabled
     config.action_mailer.raise_delivery_errors = true
@@ -169,5 +169,5 @@ Rails.application.configure do
   #
   # Read from ENV directly — this file is evaluated pre-autoload and cannot call
   # SparcConfig. The value must name a service defined in config/storage.yml.
-  config.active_storage.service = ENV["ACTIVE_STORAGE_SERVICE"].presence&.to_sym || :amazon
+  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", nil).presence&.to_sym || :amazon
 end

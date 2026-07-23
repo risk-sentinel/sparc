@@ -54,7 +54,7 @@ module SparcConfig
   # #785 — SPARC has exactly TWO email identities, because they serve different
   # functions: `admin_email` is the instance administrator account, and
   # `contact_email` is where users are pointed for support.
-  def contact_email = ENV["SPARC_CONTACT_EMAIL"].presence
+  def contact_email = ENV.fetch("SPARC_CONTACT_EMAIL", nil).presence
   def support_email = contact_email
 
   # The instance admin account. Previously the `admin@sparc.local` literal was
@@ -62,7 +62,7 @@ module SparcConfig
   # tasks), so changing it meant finding all four.
   DEFAULT_ADMIN_EMAIL = "admin@sparc.local"
 
-  def admin_email = ENV["SPARC_ADMIN_EMAIL"].presence || DEFAULT_ADMIN_EMAIL
+  def admin_email = ENV.fetch("SPARC_ADMIN_EMAIL", nil).presence || DEFAULT_ADMIN_EMAIL
   def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
 
   # Configurable resources list — JSON array of {display_text, href} objects.
@@ -95,7 +95,7 @@ module SparcConfig
   # prod task definition set both to the identical value) for no benefit. The
   # name still works as a deprecating alias so no existing config breaks; when
   # unset it falls back to the support address. Prefer SPARC_CONTACT_EMAIL.
-  def org_contact_email = ENV["SPARC_ORG_CONTACT_EMAIL"].presence || contact_email
+  def org_contact_email = ENV.fetch("SPARC_ORG_CONTACT_EMAIL", nil).presence || contact_email
 
   # ── User Lifecycle ───────────────────────────────────────────────────────
 
@@ -135,7 +135,7 @@ module SparcConfig
   # unambiguous statement of intent, and the inference can only turn ON a
   # provider the operator already set up. Explicit "false" still forces it off.
   def enable_oidc?
-    raw = ENV["SPARC_ENABLE_OIDC"]
+    raw = ENV.fetch("SPARC_ENABLE_OIDC", nil)
     return raw == "true" if raw.present?
 
     oidc_client_id.present?
@@ -146,7 +146,7 @@ module SparcConfig
   # #785 — was read raw in authoritative_source_fetch_service.rb. Outbound
   # content fetching stays explicit (never inferred): an air-gapped deployment
   # must be able to guarantee no egress.
-  def authoritative_fetch_enabled? = ENV["SPARC_AUTHORITATIVE_FETCH_ENABLED"].to_s.downcase == "true"
+  def authoritative_fetch_enabled? = ENV.fetch("SPARC_AUTHORITATIVE_FETCH_ENABLED", nil).to_s.downcase == "true"
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
   def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true"  # WebAuthn security keys (#779)
 
@@ -230,13 +230,13 @@ module SparcConfig
   OIDC_CALLBACK_PATH = "/auth/oidc/callback"
 
   def oidc_redirect_uri
-    ENV["SPARC_OIDC_REDIRECT_URI"].presence || "#{app_url.chomp('/')}#{OIDC_CALLBACK_PATH}"
+    ENV.fetch("SPARC_OIDC_REDIRECT_URI", nil).presence || "#{app_url.chomp('/')}#{OIDC_CALLBACK_PATH}"
   end
 
   # #785 — was read raw in api_authentication.rb with the same blank-string
   # trap: the fallback to oidc_client_id never fired when the variable was
   # set-but-empty, which is exactly how prod had it.
-  def api_oidc_audience = ENV["SPARC_API_OIDC_AUDIENCE"].presence || oidc_client_id
+  def api_oidc_audience = ENV.fetch("SPARC_API_OIDC_AUDIENCE", nil).presence || oidc_client_id
   def oidc_scopes        = ENV.fetch("SPARC_OIDC_SCOPES", "openid profile email")
   def oidc_provider_title = ENV.fetch("SPARC_OIDC_PROVIDER_TITLE", "SSO")
   # #785 — defaults true. Only consulted on the OIDC path, so a true default is
@@ -292,7 +292,7 @@ module SparcConfig
   # NOTE: production.rb builds smtp_settings at boot (pre-autoload) and cannot
   # call this accessor, so it repeats the same inference inline. Keep them in step.
   def enable_smtp?
-    raw = ENV["SPARC_ENABLE_SMTP"]
+    raw = ENV.fetch("SPARC_ENABLE_SMTP", nil)
     return raw == "true" if raw.present?
 
     smtp_address.present?
@@ -435,7 +435,7 @@ module SparcConfig
   # nothing, and a message that is never shown is a configuration mistake, so
   # presence of the message IS the switch. Explicit "false" still forces it off.
   def banner_enabled?
-    raw = ENV["SPARC_BANNER_ENABLED"]
+    raw = ENV.fetch("SPARC_BANNER_ENABLED", nil)
     return raw == "true" if raw.present?
 
     banner_message_path.present?
@@ -544,7 +544,7 @@ module SparcConfig
   # set-but-blank, so the default never fires. The prod task definition set
   # SPARC_DISA_CCI_URL="" and silently broke this fetch. Treat blank as unset.
   def disa_cci_url
-    ENV["SPARC_DISA_CCI_URL"].presence ||
+    ENV.fetch("SPARC_DISA_CCI_URL", nil).presence ||
       "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CCI_List.zip"
   end
 

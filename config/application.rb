@@ -2,6 +2,12 @@ require_relative "boot"
 
 require "rails/all"
 
+# #785 — the JSON log formatter lives outside the Zeitwerk-managed lib/ tree
+# (see the `logging` entry in the autoload ignore list below) and is wired up in
+# the Application config block, before autoloading exists. Required here at the
+# top of the file rather than inside that block. (sonar rubydre:S7816)
+require_relative "../lib/logging/sparc_json_formatter"
+
 # Skip dotenv in production/containers
 if Rails.env.development? || Rails.env.test?
   begin
@@ -44,7 +50,6 @@ module SspTprManager
       base = ActiveSupport::Logger.new($stdout)
 
       if structured
-        require_relative "../lib/logging/sparc_json_formatter"
         base.formatter = Logging::SparcJsonFormatter.new
       else
         base.formatter = ActiveSupport::Logger::SimpleFormatter.new
