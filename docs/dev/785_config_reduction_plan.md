@@ -651,8 +651,18 @@ queue    host=db db=ssp_tpr_manager_production_queue  user=postgres
 cable    host=db db=ssp_tpr_manager_production_cable  user=postgres
 ```
 
-All four created and connected from one URL; **`tests/api` 363 passed** in this mode, which
-exercises the secondaries for real (SolidQueue→queue, SolidCache→cache). The `SPARC_DB_*`
+All four created and connected from one URL. FULL suites run against this container, in
+DATABASE_URL mode, on the Pass-2 UBI9 image:
+
+| Suite | Result |
+|---|---|
+| `tests/api` | **363 passed, 6 skipped** — exercises the secondaries for real (SolidQueue→queue, SolidCache→cache) |
+| `tests/ui-smoke` (chromium) | **219 passed, 16 skipped, 0 failed** |
+| `bin/test-db-tls` | **12 passed** (the 7 rspec-pending TLS handshakes) |
+| `SPARC_DRIFT_CHECK=1` audit | runs; reports 15 redundant task-def lines by design (the 3 rspec-pending drift specs) |
+
+Every ui-smoke/api skip is a data-fixture gap (no `ProfileDocument` seeded — a known
+follow-up) or an explicit env opt-in (FIDO2, TLS-verify). Zero failures. The `SPARC_DB_*`
 fallback path (base compose) still boots — backward-compat confirmed.
 
 `spec/lib/db_url_config_spec.rb` (13 examples) pins: URL derivation, special-char password
