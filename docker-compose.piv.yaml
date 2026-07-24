@@ -1,0 +1,27 @@
+# #790 — local PIV/CAC end-to-end harness. Puts an nginx mTLS proxy in front of
+# the web container, reproducing the production gateway contract so the full
+# flow (verified cert → forwarded headers → SPARC parse → user mapping →
+# session) can be proven locally. Driven by bin/test-piv.
+#
+#   SPARC_PIV_CERT_DIR=./tmp/piv-certs \
+#     docker compose -f docker-compose.ubi9.yaml -f docker-compose.piv.yaml up -d
+services:
+  web:
+    environment:
+      # Turn PIV on and use the nginx-convention header names (SPARC's defaults,
+      # set explicitly here for clarity).
+      SPARC_ENABLE_PIV: "true"
+      SPARC_PIV_CERT_HEADER: "X-SSL-Client-Cert"
+      SPARC_PIV_VERIFY_HEADER: "X-SSL-Client-Verify"
+      SPARC_PIV_VERIFY_SUCCESS: "SUCCESS"
+
+  piv-proxy:
+    image: nginx:1.27-alpine
+    depends_on:
+      web:
+        condition: service_started
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./dev/piv/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${SPARC_PIV_CERT_DIR:-./tmp/piv-certs}:/etc/nginx/certs:ro
