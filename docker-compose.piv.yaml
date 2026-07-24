@@ -1,23 +1,37 @@
-# #790 — local PIV/CAC end-to-end harness. Puts an nginx mTLS proxy in front of
-# the web container, reproducing the production gateway contract so the full
-# flow (verified cert → forwarded headers → SPARC parse → user mapping →
-# session) can be proven locally. Driven by bin/test-piv.
+# #790 — PIV/CAC mTLS gateway, a first-class part of the dev/smoke stack so the
+# end-to-end PIV proof runs by default and anyone can inherit it. Bring it up
+# alongside the app:
 #
-#   SPARC_PIV_CERT_DIR=./tmp/piv-certs \
-#     docker compose -f docker-compose.ubi9.yaml -f docker-compose.piv.yaml up -d
+#   docker compose -f docker-compose.ubi9.yaml -f docker-compose.piv.yaml \
+#     --profile tls up -d
+#
+# The certgen init container mints the CA + software-PIV certificate on `up`
+# (idempotent), so there is no manual cert step — the gateway just works. The
+# certs land in a host-visible dir (default ./tmp/piv-certs) so the smoke suite
+# can present the software card. Then `bin/smoke-piv-setup` provisions the
+# matching user + PIV identity and exports the env the PIV smoke test reads.
 services:
   web:
     environment:
-      # Turn PIV on and use the nginx-convention header names (SPARC's defaults,
-      # set explicitly here for clarity).
+      # PIV on, using the nginx-convention header names (SPARC's defaults).
       SPARC_ENABLE_PIV: "true"
       SPARC_PIV_CERT_HEADER: "X-SSL-Client-Cert"
       SPARC_PIV_VERIFY_HEADER: "X-SSL-Client-Verify"
       SPARC_PIV_VERIFY_SUCCESS: "SUCCESS"
 
+  # Mints the CA + software-PIV certificate once, into the shared cert dir.
+  piv-certgen:
+    image: alpine:3.20
+    volumes:
+      - ./dev/piv/gen-software-piv.sh:/gen-software-piv.sh:ro
+      - ${SPARC_PIV_CERT_DIR:-./tmp/piv-certs}:/certs
+    command: sh -c "apk add --no-cache openssl >/dev/null && sh /gen-software-piv.sh /certs"
+
   piv-proxy:
     image: nginx:1.27-alpine
     depends_on:
+      piv-certgen:
+        condition: service_completed_successfully
       web:
         condition: service_started
     ports:
