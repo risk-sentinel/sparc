@@ -22,6 +22,10 @@ requires authentication and a role with SSP permissions — see [RBAC](RBAC).
 
 ---
 
+![A System Security Plan detail view showing system characteristics, control implementations, and status](images/ssp_show.png)
+
+*A System Security Plan (SSP) detail view.*
+
 ## At a glance
 
 ```mermaid

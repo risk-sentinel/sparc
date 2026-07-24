@@ -20,6 +20,10 @@ SPARC. Viewing converters is public on most instances; mutations require the
 
 ---
 
+![The Converters screen showing available format converters for importing and normalizing external data](images/converters.png)
+
+*The Converters screen — build and run format converters (DISA, CCI, SCAP, CIS → NIST).*
+
 ## At a glance
 
 ```mermaid

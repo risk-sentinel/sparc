@@ -23,6 +23,10 @@ also see [Administration](User-Guide-Administration).
 
 ---
 
+![The Security Keys screen showing registered FIDO2 and PIV credentials with options to add or remove keys](images/security_keys.png)
+
+*The Security Keys screen — register and manage FIDO2 security keys and PIV / CAC smart cards.*
+
 ## At a glance
 
 ```mermaid

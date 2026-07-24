@@ -20,6 +20,10 @@ requires authentication and a role with SAP permissions — see [RBAC](RBAC).
 
 ---
 
+![A Security Assessment Plan detail view showing plan metadata, assessment scope, and associated controls](images/sap_show.png)
+
+*A Security Assessment Plan (SAP) detail view.*
+
 ## At a glance
 
 ```mermaid

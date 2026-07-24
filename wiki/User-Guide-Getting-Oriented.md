@@ -22,6 +22,10 @@ the dashboard; what you can create or edit depends on your assigned roles — se
 
 ## Signing in
 
+![The SPARC Login page showing the welcome panel and the authentication method tabs](images/login.png)
+
+*The Login page — the authentication tabs shown depend on what the instance has enabled.*
+
 1. Open your SPARC instance. If you are not signed in you land on the **Login**
    page (`/login`).
 2. Pick the tab for your authentication method — **Local Login**, **OIDC/SSO**,
@@ -37,6 +41,10 @@ model — the same content is always available at *About → OSCAL Overview*
 ---
 
 ## The dashboard
+
+![The SPARC Home dashboard showing statistics tiles for each compliance layer and quick-action cards](images/dashboard.png)
+
+*The SPARC dashboard — live counts grouped by layer (Controls, Implementation, Assessment, Enterprise) with quick-action cards.*
 
 After signing in you land on the **Home** dashboard (`/`), which has three
 parts:
