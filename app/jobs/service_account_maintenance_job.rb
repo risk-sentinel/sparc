@@ -4,7 +4,7 @@
 #
 # Checks two conditions and auto-disables service accounts:
 # 1. Token expiry — all tokens have expired (no active tokens remaining)
-# 2. Inactivity — no API call within SPARC_SA_INACTIVITY_DAYS (default 90)
+# 2. Inactivity — no API call within SPARC_INACTIVITY_DAYS (default 30, unified #785 Pass 2.1)
 #
 # Runs via Solid Queue recurring schedule (config/recurring.yml).
 # Disabled accounts can be re-enabled by an admin via the Service Accounts UI.
@@ -55,7 +55,7 @@ class ServiceAccountMaintenanceJob < ApplicationJob
   # Uses max(api_tokens.last_used_at) as the activity baseline; falls back to created_at
   # for accounts that have never been used.
   def disable_inactive_accounts
-    threshold = SparcConfig.sa_inactivity_days
+    threshold = SparcConfig.inactivity_days  # #785 Pass 2.1 — unified inactivity window
     cutoff = threshold.days.ago
     count = 0
 

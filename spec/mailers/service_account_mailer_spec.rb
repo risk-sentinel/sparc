@@ -71,7 +71,7 @@ RSpec.describe ServiceAccountMailer, type: :mailer do
     let(:mail) { described_class.inactivity_warning(service_account, inactive_days: 83) }
 
     before do
-      allow(SparcConfig).to receive(:sa_inactivity_days).and_return(90)
+      allow(SparcConfig).to receive(:inactivity_days).and_return(90)
     end
 
     it "sends to owner only" do

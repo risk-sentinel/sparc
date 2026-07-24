@@ -288,7 +288,7 @@ policies. These settings apply to all users unless noted otherwise.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_INACTIVITY_DAYS | Number of days of inactivity (no sign-in) before a user account is automatically deactivated by `InactivityCheckJob`. Applies to all users. | 30 | `90` | No |
+| SPARC_INACTIVITY_DAYS | Days of inactivity before an account is auto-deactivated. **Applies to ALL accounts — human and service (#785 Pass 2.1).** | 30 | `90` | No |
 | SPARC_PASSWORD_EXPIRY_DAYS | Number of days before a local-auth user's password expires and must be reset. OAuth/SSO-only users are exempt. | 30 | `90` | No |
 | SPARC_PROCESSING_STUCK_MINUTES | Minutes after which a document stuck in pending/processing stops auto-refreshing on its show page (#548). Without this guard, documents whose parsing job never ran trap the browser in a 3-second refresh loop. | 5 | `10` | No |
 
@@ -395,11 +395,13 @@ notifications, etc.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| ACTIVE_STORAGE_SERVICE | Active Storage backend (local or amazon) | local | `amazon` | No |
+| SPARC_STORAGE_URL | **Preferred (#785 Pass 2.1).** One variable for object storage; the scheme picks the provider. `s3://bucket` (region from `AWS_REGION`), `s3://bucket?region=us-east-1`, or unset → local disk. Collapses `ACTIVE_STORAGE_SERVICE` + `AWS_BUCKET`. See [OBJECT_STORAGE.md](OBJECT_STORAGE.md). | (unset → local) | `s3://sparc-uploads?region=us-east-1` | No (but see next row) |
+| SPARC_ALLOW_LOCAL_STORAGE | Acknowledge running on **local disk in production**. Production hard-fails at boot on local disk (ECS/EKS ephemeral-FS data-loss guard); set `true` only for single-node / mounted-volume deployments that really use durable local storage. | false | `true` | No |
+| ACTIVE_STORAGE_SERVICE | **Legacy fallback** — used only when `SPARC_STORAGE_URL` is unset. Active Storage backend (local or amazon). | local | `amazon` | No |
 | AWS_ACCESS_KEY_ID | AWS access key for S3 storage | (none) | `AKIA...` | Yes (if amazon) |
 | AWS_SECRET_ACCESS_KEY | AWS secret key for S3 storage | (none) | `wJalr...` | Yes (if amazon) |
 | AWS_REGION | AWS region for S3 bucket | (none) | `us-east-1` | Yes (if amazon) |
-| AWS_BUCKET | S3 bucket name for file uploads | (none) | `sparc-uploads` | Yes (if amazon) |
+| AWS_BUCKET | **Legacy fallback** for `SPARC_STORAGE_URL`. S3 bucket name for file uploads. | (none) | `sparc-uploads` | Yes (if amazon and no SPARC_STORAGE_URL) |
 | SPARC_PERSIST_S3_BLOB | Keep the original upload blob after a successful parse. **As of #680 the blob is RETAINED by default** so a referenced artifact never disappears out from under an exported document (durable back-matter). Set to `false` to restore the old purge-after-parse behavior (#392). Failed parses always retain the blob regardless. | true (retain) | `false` | No |
 
 ---
@@ -466,7 +468,7 @@ Rack::Attack throttle thresholds. Counters live in `Rails.cache` (`solid_cache` 
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_RATE_LIMITING_ENABLED | Master kill switch for all throttles. Set `false` during emergency triage. | `true` | `false` | No |
+| ~~SPARC_RATE_LIMITING_ENABLED~~ | **Removed (#785 Pass 2.1)** — rate limiting is now unconditional (best practice). The per-limit `SPARC_RATE_LIMIT_*` tuning knobs remain. | — | — | — |
 | SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP | Per-IP cap on upload endpoints (document creates + avatar + evidence). Defends against bulk-upload abuse. | `30` | `60` | No |
 | SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER | Per-authenticated-user cap on upload endpoints. Stops a compromised account from filling storage. | `100` | `500` | No |
 | SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE | Per-Bearer-token cap on `/api/v1` write methods (POST/PUT/PATCH/DELETE). Protects mass-import API consumers from runaway scripts. | `300` | `600` | No |
@@ -529,7 +531,7 @@ See `docs/development-https.md` for full setup guide.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_SA_INACTIVITY_DAYS | Days of inactivity before a service account is auto-disabled by the daily maintenance job | `90` | `30` | No |
+| ~~SPARC_SA_INACTIVITY_DAYS~~ | **Retired (#785 Pass 2.1)** — service accounts now use the same window as human accounts (`SPARC_INACTIVITY_DAYS`, default 30), aligning expiration regardless of owner. Note: the SA window was 90 days; it is now 30. | — | use `SPARC_INACTIVITY_DAYS` | — |
 
 The `ServiceAccountMaintenanceJob` runs daily (3 AM, production) and auto-disables service accounts with all-expired tokens or exceeding the inactivity threshold. Disabled accounts can be re-enabled by an admin.
 

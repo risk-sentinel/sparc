@@ -162,22 +162,15 @@ RSpec.describe "Rack::Attack initializer (#513)" do
     end
   end
 
-  describe "operator kill switch" do
-    it "exposes SparcConfig.rate_limiting_enabled? for the initializer" do
-      expect(SparcConfig).to respond_to(:rate_limiting_enabled?)
+  describe "unconditional rate limiting (#785 Pass 2.1)" do
+    # The SPARC_RATE_LIMITING_ENABLED kill switch was removed — rate limiting is
+    # always on outside test as a best practice. The accessor no longer exists.
+    it "no longer exposes the removed rate_limiting_enabled? toggle" do
+      expect(SparcConfig).not_to respond_to(:rate_limiting_enabled?)
     end
 
-    it "defaults to true" do
-      ENV.delete("SPARC_RATE_LIMITING_ENABLED")
-      expect(SparcConfig.rate_limiting_enabled?).to be true
-    end
-
-    it "is false when SPARC_RATE_LIMITING_ENABLED=false" do
-      original = ENV["SPARC_RATE_LIMITING_ENABLED"]
-      ENV["SPARC_RATE_LIMITING_ENABLED"] = "false"
-      expect(SparcConfig.rate_limiting_enabled?).to be false
-    ensure
-      ENV["SPARC_RATE_LIMITING_ENABLED"] = original
+    it "enables Rack::Attack in every environment except test" do
+      expect(!Rails.env.test?).to be(Rails.env.production? || Rails.env.development?)
     end
   end
 end
