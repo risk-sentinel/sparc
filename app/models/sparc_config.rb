@@ -415,7 +415,10 @@ module SparcConfig
   # CIDRs bypass all throttles — used for internal health-check IPs,
   # NLB targets, etc. Loopback addresses are safelisted by default for
   # development convenience.
-  def rate_limiting_enabled?               = ENV.fetch("SPARC_RATE_LIMITING_ENABLED", "true") == "true"
+  # #785 Pass 2.1 — rate limiting is now UNCONDITIONAL (best practice); the
+  # SPARC_RATE_LIMITING_ENABLED on/off toggle was removed. The per-limit
+  # SPARC_RATE_LIMIT_* tuning knobs below stay. rack_attack.rb enables Rack::Attack
+  # in every environment except test.
   def rate_limit_uploads_per_5min_per_ip   = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_5MIN_PER_IP", "60").to_i
   def rate_limit_uploads_per_hour_per_user = ENV.fetch("SPARC_RATE_LIMIT_UPLOADS_PER_HOUR_PER_USER", "250").to_i
   def rate_limit_api_writes_per_minute     = ENV.fetch("SPARC_RATE_LIMIT_API_WRITES_PER_MINUTE", "300").to_i
@@ -558,7 +561,13 @@ module SparcConfig
 
   # ── Service Account Lifecycle ────────────────────────────────────────────
 
-  def sa_inactivity_days = ENV.fetch("SPARC_SA_INACTIVITY_DAYS", "90").to_i
+  # #785 Pass 2.1 — service-account inactivity now uses the SAME window as human
+  # accounts (SPARC_INACTIVITY_DAYS), aligning account expiration regardless of
+  # owner. SPARC_SA_INACTIVITY_DAYS is retired; `sa_inactivity_days` remains as a
+  # deprecated alias so nothing breaks, and resolves to inactivity_days.
+  # NOTE behaviour change: the SA window was 90 days, now defaults to 30. Raise
+  # SPARC_INACTIVITY_DAYS to lengthen both.
+  def sa_inactivity_days = inactivity_days
 
   # ── AWS Secrets Manager ──────────────────────────────────────────────────
   # Two-secret strategy aligned with sparc-iac #22:

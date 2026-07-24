@@ -13,6 +13,11 @@ require_relative "../lib/logging/sparc_json_formatter"
 # must stay raw-YAML-parseable, so it cannot `<% require %>` the helper itself).
 require_relative "../lib/db_url/config"
 
+# #785 Pass 2.1 — StorageUrl derives the object-storage backend from
+# SPARC_STORAGE_URL. Required here so the constant exists when config/storage.yml
+# renders (same pre-autoload reason as DbUrl).
+require_relative "../lib/storage_url/config"
+
 # Skip dotenv in production/containers
 if Rails.env.development? || Rails.env.test?
   begin
@@ -40,7 +45,7 @@ module SspTprManager
     # `db_url` is ignored because config/database.yml requires it directly, before
     # autoloading exists (#785 Pass 2). `logging` for the same reason (the JSON
     # formatter). Letting Zeitwerk also manage either would be a double definition.
-    config.autoload_lib(ignore: %w[assets tasks logging db_url])
+    config.autoload_lib(ignore: %w[assets tasks logging db_url storage_url])
 
     # ── Log destination and format (#785) ────────────────────────────────────
     # Applied here, in application.rb, so it covers EVERY environment. It used

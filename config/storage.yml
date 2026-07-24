@@ -8,8 +8,11 @@ test:
 
 amazon:
   service: S3
-  region: <%= ENV['AWS_REGION'] %>
-  bucket: <%= ENV['AWS_BUCKET'] %>
+  # #785 Pass 2.1 — derived from SPARC_STORAGE_URL (s3://bucket?region=...),
+  # falling back to AWS_REGION / AWS_BUCKET. StorageUrl is required in
+  # application.rb so it exists when this renders.
+  region: <%= StorageUrl.region %>
+  bucket: <%= StorageUrl.bucket %>
   # No access_key_id/secret_access_key — AWS SDK uses IAM task role on ECS,
   # instance profile on EC2, or ~/.aws/credentials for local dev.
 

@@ -78,6 +78,11 @@ services:
       # attach files don't reach for AWS/IMDS. AWS_REGION is a harmless fallback.
       ACTIVE_STORAGE_SERVICE: local
       AWS_REGION: us-east-1
+      # #785 Pass 2.1 — production hard-fails on local-disk storage (ephemeral-FS
+      # data-loss guard). This is a local harness with a persistent bind, so
+      # acknowledge it. Real deployments give SPARC an S3 bucket via
+      # SPARC_STORAGE_URL — see docs/OBJECT_STORAGE.md.
+      SPARC_ALLOW_LOCAL_STORAGE: "true"
       # Prod enables Rack::Attack; disable for the test suite's rapid-fire writes
       # (dev/test run with it off too). Orthogonal to UBI9.
       SPARC_RATE_LIMITING_ENABLED: "false"

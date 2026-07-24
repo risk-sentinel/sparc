@@ -32,9 +32,10 @@ Rack::Attack.cache.store = Rails.cache
 # assets:precompile / Docker build (autoload not ready yet). At request
 # time SparcConfig is always resolvable; the throttle lambdas below
 # already rely on the same lazy resolution.
-Rails.application.config.after_initialize do
-  Rack::Attack.enabled = !Rails.env.test? && SparcConfig.rate_limiting_enabled?
-end
+# #785 Pass 2.1 — rate limiting is unconditional (best practice); the
+# SPARC_RATE_LIMITING_ENABLED toggle was removed. Still disabled in test so the
+# suite isn't throttled.
+Rack::Attack.enabled = !Rails.env.test?
 
 # ── Safelists ──────────────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ RSpec.describe ServiceAccountNotificationJob, type: :job do
     allow(SparcConfig).to receive(:enable_smtp?).and_return(true)
     allow(SparcConfig).to receive(:smtp_from_address).and_return("noreply@sparc.test")
     allow(SparcConfig).to receive(:app_host).and_return("sparc.test")
-    allow(SparcConfig).to receive(:sa_inactivity_days).and_return(90)
+    allow(SparcConfig).to receive(:inactivity_days).and_return(90)
   end
 
   def create_sa_with_token(expires_at: nil, last_used_at: nil)
