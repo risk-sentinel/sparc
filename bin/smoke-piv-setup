@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# #790 — provision the PIV smoke test's user + identity, and print the env the
+# suite needs. The certs are minted by the compose certgen init container; the
+# only thing that can't be compose-native is provisioning app/DB state, so it
+# lives here.
+#
+#   eval "$(bin/smoke-piv-setup --quiet)"
+#   (cd tests/ui-smoke && uv run pytest test_piv_mtls.py)
+#
+# Requires the PIV stack to be up:
+#   docker compose -f docker-compose.ubi9.yaml -f docker-compose.piv.yaml \
+#     --profile tls up -d
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+COMPOSE_FILES=(-f docker-compose.ubi9.yaml -f docker-compose.piv.yaml)
+SERVICE="${SPARC_COMPOSE_SERVICE:-web}"
+CERT_DIR="${SPARC_PIV_CERT_DIR:-$ROOT/tmp/piv-certs}"
+PROXY_URL="${SPARC_SMOKE_PIV_PROXY_URL:-https://localhost:8443}"
+EDIPI="1234567890"
+PIV_EMAIL="john.doe@mail.mil"
+QUIET=0
+[ "${1:-}" = "--quiet" ] && QUIET=1
+say() { [ "$QUIET" = "1" ] || echo "$@" >&2; }
+
+say "==> provisioning PIV identities — DoD (uid ${EDIPI}) and Non-DoD (uid 8842)"
+# Provision BOTH so either ceremony leg works without re-provisioning: the DoD
+# CAC (EDIPI in CN) and the corporate cert (CN employee-8842 → uid 8842 via
+# subject_cn + pattern).
+docker compose "${COMPOSE_FILES[@]}" exec -T "$SERVICE" bin/rails runner "
+  def provision(email, uid)
+    u = User.find_or_create_by!(email: email) do |x|
+      x.password = 'Piv-Smoke-Pass-9!'
+      x.password_confirmation = 'Piv-Smoke-Pass-9!'
+      x.name = email.split('@').first if x.respond_to?(:name=)
+    end
+    u.update!(status: 'active') if u.respond_to?(:status)
+    u.update!(must_reset_password: false) if u.respond_to?(:must_reset_password)
+    Identity.find_or_create_by!(provider: 'piv', uid: uid) { |i| i.user = u }
+  end
+  provision('${PIV_EMAIL}', '${EDIPI}')   # DoD CAC
+  provision('jane.smith@corp.example', '8842')  # Non-DoD corporate
+  puts 'piv-provisioned'
+" 2>/dev/null | grep -q piv-provisioned || { echo "!! provisioning failed" >&2; exit 1; }
+
+say "==> ready. Certs in ${CERT_DIR}, proxy ${PROXY_URL}"
+cat <<EOF
+export SPARC_SMOKE_PIV_PROXY_URL=${PROXY_URL}
+export SPARC_SMOKE_PIV_CERT_DIR=${CERT_DIR}
+EOF
