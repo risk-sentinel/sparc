@@ -1,0 +1,15 @@
+# #790 — the NON-DoD PIV leg. Reconfigures the web container's identity mapping
+# for a self-issued / corporate PKI: map on the whole Subject CN, extracting the
+# uid with a pattern (no EDIPI, no UPN). Layer it on top of the PIV stack:
+#
+#   docker compose -f docker-compose.ubi9.yaml -f docker-compose.piv.yaml \
+#     -f docker-compose.piv-nondod.yaml --profile tls up -d
+#
+# This is a distinct stack shape from the DoD leg (SPARC_PIV_IDENTITY_SOURCE is a
+# per-container setting), so DoD and Non-DoD are separate ceremony legs. Pair
+# with SPARC_SMOKE_PIV_MODE=nondod so the smoke suite presents the corporate card.
+services:
+  web:
+    environment:
+      SPARC_PIV_IDENTITY_SOURCE: "subject_cn"
+      SPARC_PIV_UID_PATTERN: "employee-(\\d+)"
