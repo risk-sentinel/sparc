@@ -4,6 +4,20 @@ namespace :oscal do
   # redirects, so wrap it. Aborts after MAX_REDIRECTS to prevent loops.
   MAX_REDIRECTS = 5
 
+  # Diagnostic output for the bundle/seed tasks, routed through an overridable
+  # IO. The failure-path specs deliberately exercise the error branches
+  # (checksum mismatch, missing file, no-network), and the task's own ✗/FAILED
+  # logging used to flood the test log — indistinguishable from a real failure
+  # (#747). Specs set Thread.current[:oscal_task_io] to capture it; real
+  # `bin/rails oscal:*` runs keep writing to $stdout unchanged.
+  def oscal_out
+    Thread.current[:oscal_task_io] || $stdout
+  end
+
+  def oscal_log(message = "")
+    oscal_out.puts(message)
+  end
+
   def fetch_following_redirects(url, depth = 0)
     raise "redirect loop (>#{MAX_REDIRECTS}) for #{url}" if depth > MAX_REDIRECTS
 
@@ -58,13 +72,13 @@ namespace :oscal do
             fetch_following_redirects(url)
           rescue StandardError => e
             failures << "#{label}: #{e.message}"
-            puts "  ✗ #{label}: #{e.message}"
+            oscal_log "  ✗ #{label}: #{e.message}"
             nil
           end
 
         if body.nil? && !failures.last&.include?(label)
           failures << "#{label}: empty body from #{url}"
-          puts "  ✗ #{label}: empty body"
+          oscal_log "  ✗ #{label}: empty body"
         end
 
         next if body.nil?
@@ -73,7 +87,7 @@ namespace :oscal do
           JSON.parse(body)
         rescue JSON::ParserError => e
           failures << "#{label}: malformed JSON — #{e.message}"
-          puts "  ✗ #{label}: malformed JSON"
+          oscal_log "  ✗ #{label}: malformed JSON"
           next
         end
 
@@ -90,7 +104,7 @@ namespace :oscal do
           "source_url"    => url,
           "size"          => body.bytesize
         }
-        puts "  ✓ #{label} → v#{version}/#{config[:file]} (#{body.bytesize} bytes, sha256:#{sha256[0..15]}…)"
+        oscal_log "  ✓ #{label} → v#{version}/#{config[:file]} (#{body.bytesize} bytes, sha256:#{sha256[0..15]}…)"
       end
     end
 
@@ -104,15 +118,19 @@ namespace :oscal do
     manifest_path = bundle_dir.join("manifest.json")
     File.write(manifest_path, JSON.pretty_generate(manifest) + "\n")
 
-    puts ""
-    puts "Bundle written to lib/oscal_schemas_bundle/"
-    puts "  Schemas:  #{entries.size}"
-    puts "  Manifest: manifest.json"
+    oscal_log ""
+    oscal_log "Bundle written to lib/oscal_schemas_bundle/"
+    oscal_log "  Schemas:  #{entries.size}"
+    oscal_log "  Manifest: manifest.json"
 
     if failures.any?
-      puts ""
-      puts "::error::OSCAL schema bundle failed (#{failures.size} entries):"
-      failures.each { |f| puts "  - #{f}" }
+      oscal_log ""
+      # ::error:: is a GitHub Actions annotation; only prefix it when actually
+      # running under Actions, so local/rspec runs don't show an alarming
+      # literal "::error::" line (#747).
+      annotation = ENV["GITHUB_ACTIONS"] ? "::error::" : ""
+      oscal_log "#{annotation}OSCAL schema bundle failed (#{failures.size} entries):"
+      failures.each { |f| oscal_log "  - #{f}" }
       exit 1
     end
   end
@@ -142,10 +160,10 @@ namespace :oscal do
     manifest = JSON.parse(File.read(manifest_path))
     stats = { loaded: 0, checksum_failed: 0, skipped: 0, missing: 0 }
 
-    puts "OSCAL schema seed — bundle source (#{manifest_path.to_s.delete_prefix(Rails.root.to_s + '/')})"
-    puts "  Generated: #{manifest['generated_at']}"
-    puts "  Versions:  #{manifest['supported_versions'].join(', ')}"
-    puts ""
+    oscal_log "OSCAL schema seed — bundle source (#{manifest_path.to_s.delete_prefix(Rails.root.to_s + '/')})"
+    oscal_log "  Generated: #{manifest['generated_at']}"
+    oscal_log "  Versions:  #{manifest['supported_versions'].join(', ')}"
+    oscal_log ""
 
     manifest["schemas"].each do |entry|
       label     = "#{entry['document_type']} v#{entry['version']}"
@@ -153,7 +171,7 @@ namespace :oscal do
 
       unless file_path.exist?
         stats[:missing] += 1
-        puts "  ✗ #{label}: bundle file missing — #{entry['file']}"
+        oscal_log "  ✗ #{label}: bundle file missing — #{entry['file']}"
         next
       end
 
@@ -162,7 +180,7 @@ namespace :oscal do
 
       if actual_sha != entry["sha256"]
         stats[:checksum_failed] += 1
-        puts "  ✗ #{label}: SHA-256 mismatch (manifest=#{entry['sha256'][0..15]}…, actual=#{actual_sha[0..15]}…)"
+        oscal_log "  ✗ #{label}: SHA-256 mismatch (manifest=#{entry['sha256'][0..15]}…, actual=#{actual_sha[0..15]}…)"
         next
       end
 
@@ -184,19 +202,23 @@ namespace :oscal do
       )
       schema.save!
       stats[:loaded] += 1
-      puts "  ✓ #{label} (sha256:#{actual_sha[0..15]}…)"
+      oscal_log "  ✓ #{label} (sha256:#{actual_sha[0..15]}…)"
     end
 
-    puts ""
-    puts "OSCAL schema seed complete (bundle):"
-    puts "  Loaded:           #{stats[:loaded]}"
-    puts "  Checksum failed:  #{stats[:checksum_failed]}"
-    puts "  Missing files:    #{stats[:missing]}"
-    puts "  Total in DB:      #{OscalSchema.count}"
+    oscal_log ""
+    oscal_log "OSCAL schema seed complete (bundle):"
+    oscal_log "  Loaded:           #{stats[:loaded]}"
+    oscal_log "  Checksum failed:  #{stats[:checksum_failed]}"
+    oscal_log "  Missing files:    #{stats[:missing]}"
+    oscal_log "  Total in DB:      #{OscalSchema.count}"
 
     if stats[:checksum_failed] > 0 || stats[:missing] > 0
-      abort "OSCAL schema seed FAILED — bundle integrity check did not pass. " \
-            "Re-run `bin/rails oscal:bundle_schemas` to refresh from NIST GitHub."
+      # Route through oscal_log (not abort, which writes to $stderr regardless)
+      # so the failure-path specs capture the message instead of printing it,
+      # while still exiting non-zero for real seed runs (#747).
+      oscal_log "OSCAL schema seed FAILED — bundle integrity check did not pass. " \
+                "Re-run `bin/rails oscal:bundle_schemas` to refresh from NIST GitHub."
+      exit 1
     end
   end
 
@@ -212,7 +234,7 @@ namespace :oscal do
 
     stats = { downloaded: 0, disk_fallback: 0, skipped: 0, errors: 0 }
 
-    puts "OSCAL schema seed — network source (no bundle present)"
+    oscal_log "OSCAL schema seed — network source (no bundle present)"
 
     OscalSchema::SUPPORTED_VERSIONS.each do |version|
       OscalSchema::DOCUMENT_TYPE_MAP.each do |doc_type, config|
@@ -228,10 +250,10 @@ namespace :oscal do
         begin
           body = fetch_following_redirects(source_url)
           raw_json = JSON.parse(body)
-          puts "  ✓ Downloaded #{label}"
+          oscal_log "  ✓ Downloaded #{label}"
           stats[:downloaded] += 1
         rescue StandardError => e
-          puts "  ✗ Download failed for #{label}: #{e.message} — trying disk fallback"
+          oscal_log "  ✗ Download failed for #{label}: #{e.message} — trying disk fallback"
         end
 
         if raw_json.nil?
@@ -239,10 +261,10 @@ namespace :oscal do
           if File.exist?(disk_path)
             raw_json = JSON.parse(File.read(disk_path))
             source_url = "file://#{disk_path}"
-            puts "  ↩ Disk fallback for #{label}: #{config[:file]}"
+            oscal_log "  ↩ Disk fallback for #{label}: #{config[:file]}"
             stats[:disk_fallback] += 1
           else
-            puts "  ✗ No disk fallback for #{label} — skipping"
+            oscal_log "  ✗ No disk fallback for #{label} — skipping"
             stats[:errors] += 1
             next
           end
@@ -269,12 +291,12 @@ namespace :oscal do
     end
 
     total = OscalSchema.count
-    puts ""
-    puts "OSCAL schema seed complete (network):"
-    puts "  Downloaded:    #{stats[:downloaded]}"
-    puts "  Disk fallback: #{stats[:disk_fallback]}"
-    puts "  Skipped:       #{stats[:skipped]}"
-    puts "  Errors:        #{stats[:errors]}"
-    puts "  Total in DB:   #{total}"
+    oscal_log ""
+    oscal_log "OSCAL schema seed complete (network):"
+    oscal_log "  Downloaded:    #{stats[:downloaded]}"
+    oscal_log "  Disk fallback: #{stats[:disk_fallback]}"
+    oscal_log "  Skipped:       #{stats[:skipped]}"
+    oscal_log "  Errors:        #{stats[:errors]}"
+    oscal_log "  Total in DB:   #{total}"
   end
 end
