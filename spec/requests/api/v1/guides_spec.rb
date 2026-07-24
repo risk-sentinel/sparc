@@ -8,6 +8,11 @@ RSpec.describe "Api::V1::Guides", type: :request do
   let(:token)   { ApiToken.generate!(user: user, name: "Guides Token") }
   let(:headers) { { "Authorization" => "Bearer #{token.plaintext_token}" } }
 
+  # CI has no SPARC_ENABLE_* vars, so the app runs in open mode where the API
+  # skips token auth — enable auth to exercise the 401 path (see discovery_spec
+  # and feedback_local_env_vs_ci_drift).
+  before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
   describe "GET /api/v1/guides" do
     it "returns the list of guides (slug, title, summary)" do
       get "/api/v1/guides", headers: headers
