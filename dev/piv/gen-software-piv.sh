@@ -41,7 +41,7 @@ openssl x509 -req -in "$OUT/server.csr" -CA "$OUT/ca.crt" -CAkey "$OUT/ca.key" \
   -CAcreateserial -days 3650 -out "$OUT/server.crt" \
   -extfile "$OUT/server-ext.cnf" 2>/dev/null
 
-echo "==> software-PIV client cert (DoD CN + UPN + email SAN)"
+echo "==> DoD software-PIV client cert (CAC shape: DoD CN + UPN + email SAN)"
 printf 'subjectAltName=email:john.doe@mail.mil,otherName:%s;UTF8:%s@mil' "$UPN_OID" "$EDIPI" > "$OUT/client-ext.cnf"
 openssl req -newkey rsa:2048 -nodes \
   -keyout "$OUT/client.key" -out "$OUT/client.csr" \
@@ -50,6 +50,17 @@ openssl x509 -req -in "$OUT/client.csr" -CA "$OUT/ca.crt" -CAkey "$OUT/ca.key" \
   -CAcreateserial -days 3650 -out "$OUT/client.crt" \
   -extfile "$OUT/client-ext.cnf" 2>/dev/null
 
+echo "==> NON-DoD software-PIV client cert (corporate shape: CN=employee-8842)"
+# No EDIPI, no UPN — a self-issued PKI that maps on the CN via
+# SPARC_PIV_IDENTITY_SOURCE=subject_cn + SPARC_PIV_UID_PATTERN=employee-(\d+) -> 8842.
+printf 'subjectAltName=email:jane.smith@corp.example' > "$OUT/client-nondod-ext.cnf"
+openssl req -newkey rsa:2048 -nodes \
+  -keyout "$OUT/client-nondod.key" -out "$OUT/client-nondod.csr" \
+  -subj "/CN=employee-8842" 2>/dev/null
+openssl x509 -req -in "$OUT/client-nondod.csr" -CA "$OUT/ca.crt" -CAkey "$OUT/ca.key" \
+  -CAcreateserial -days 3650 -out "$OUT/client-nondod.crt" \
+  -extfile "$OUT/client-nondod-ext.cnf" 2>/dev/null
+
 # Postgres/nginx run as non-root and refuse group/world-readable keys.
 chmod 0644 "$OUT"/*.crt
 chmod 0600 "$OUT"/*.key
@@ -57,4 +68,5 @@ rm -f "$OUT"/*.csr "$OUT"/*.srl "$OUT"/*-ext.cnf
 
 echo "==> generated in $OUT:"
 ls -1 "$OUT" | sed 's/^/    /'
-echo "    (EDIPI in CN: ${EDIPI}; UPN: ${EDIPI}@mil; email: john.doe@mail.mil)"
+echo "    DoD    : CN EDIPI ${EDIPI}, UPN ${EDIPI}@mil, email john.doe@mail.mil"
+echo "    Non-DoD: CN employee-8842 (uid 8842 via subject_cn + pattern), email jane.smith@corp.example"

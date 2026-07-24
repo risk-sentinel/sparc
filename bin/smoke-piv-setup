@@ -25,16 +25,23 @@ QUIET=0
 [ "${1:-}" = "--quiet" ] && QUIET=1
 say() { [ "$QUIET" = "1" ] || echo "$@" >&2; }
 
-say "==> provisioning PIV user + identity (uid = EDIPI ${EDIPI})"
+say "==> provisioning PIV identities — DoD (uid ${EDIPI}) and Non-DoD (uid 8842)"
+# Provision BOTH so either ceremony leg works without re-provisioning: the DoD
+# CAC (EDIPI in CN) and the corporate cert (CN employee-8842 → uid 8842 via
+# subject_cn + pattern).
 docker compose "${COMPOSE_FILES[@]}" exec -T "$SERVICE" bin/rails runner "
-  u = User.find_or_create_by!(email: '${PIV_EMAIL}') do |x|
-    x.password = 'Piv-Smoke-Pass-9!'
-    x.password_confirmation = 'Piv-Smoke-Pass-9!'
-    x.name = 'John Doe' if x.respond_to?(:name=)
+  def provision(email, uid)
+    u = User.find_or_create_by!(email: email) do |x|
+      x.password = 'Piv-Smoke-Pass-9!'
+      x.password_confirmation = 'Piv-Smoke-Pass-9!'
+      x.name = email.split('@').first if x.respond_to?(:name=)
+    end
+    u.update!(status: 'active') if u.respond_to?(:status)
+    u.update!(must_reset_password: false) if u.respond_to?(:must_reset_password)
+    Identity.find_or_create_by!(provider: 'piv', uid: uid) { |i| i.user = u }
   end
-  u.update!(status: 'active') if u.respond_to?(:status)
-  u.update!(must_reset_password: false) if u.respond_to?(:must_reset_password)
-  Identity.find_or_create_by!(provider: 'piv', uid: '${EDIPI}') { |i| i.user = u }
+  provision('${PIV_EMAIL}', '${EDIPI}')   # DoD CAC
+  provision('jane.smith@corp.example', '8842')  # Non-DoD corporate
   puts 'piv-provisioned'
 " 2>/dev/null | grep -q piv-provisioned || { echo "!! provisioning failed" >&2; exit 1; }
 

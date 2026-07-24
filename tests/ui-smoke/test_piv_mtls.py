@@ -29,6 +29,11 @@ import pytest
 
 PROXY = os.environ.get("SPARC_SMOKE_PIV_PROXY_URL")
 CERT_DIR = os.environ.get("SPARC_SMOKE_PIV_CERT_DIR")
+# Which card this stack is configured for. The DoD leg runs the default
+# edipi_cn source with a CAC-shaped cert; the Non-DoD leg runs subject_cn +
+# SPARC_PIV_UID_PATTERN with a corporate cert. They are separate stack shapes
+# (SPARC_PIV_IDENTITY_SOURCE is per-container), hence separate ceremony legs.
+MODE = os.environ.get("SPARC_SMOKE_PIV_MODE", "dod").lower()
 
 pytestmark = pytest.mark.skipif(
     not PROXY or not CERT_DIR,
@@ -39,7 +44,10 @@ pytestmark = pytest.mark.skipif(
 
 def _paths():
     d = Path(CERT_DIR)
-    return d / "ca.crt", d / "client.crt", d / "client.key"
+    # The valid card for the leg under test. Both are signed by the same test CA,
+    # so the gateway trusts both; only the app-side identity mapping differs.
+    client = "client-nondod" if MODE == "nondod" else "client"
+    return d / "ca.crt", d / f"{client}.crt", d / f"{client}.key"
 
 
 def _ssl_context(*, present_cert: bool) -> ssl.SSLContext:
@@ -67,6 +75,9 @@ def _redirect_target(resp: httpx.Response) -> str:
 
 def test_valid_software_piv_establishes_a_session():
     """A verified card signs in: redirected somewhere OTHER than /login.
+
+    Runs for whichever leg the stack is configured for (DoD edipi_cn, or Non-DoD
+    subject_cn + pattern) — same end-to-end flow, different identity mapping.
 
     The redirect target is the discriminator, not the cookie — Rails sets a
     session cookie on the failure path too (to carry the flash), so a cookie
