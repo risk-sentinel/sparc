@@ -49,6 +49,8 @@ GET /api/v1/evidences/:evidence_id/control_links
 GET /api/v1/evidences/:id
 GET /api/v1/federation_peers
 GET /api/v1/federation_peers/:id
+GET /api/v1/guides
+GET /api/v1/guides/:slug
 GET /api/v1/ksi_catalog/indicators
 GET /api/v1/ksi_catalog/indicators/:id
 GET /api/v1/ksi_catalog/mappings

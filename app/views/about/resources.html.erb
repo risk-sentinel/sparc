@@ -37,6 +37,20 @@
       </div>
     </section>
 
+    <hr class="my-4">
+
+    <!-- In-app User Guides (#784) -->
+    <section class="mb-5 text-center">
+      <h2 class="text-primary mb-3">User Guides</h2>
+      <p class="text-body-secondary">
+        Task-oriented, in-app job aids for every major screen and OSCAL document type —
+        bundled with this deployment, no external site required.
+      </p>
+      <%= link_to help_path, class: "btn btn-primary" do %>
+        &#128214; Open the Help Center
+      <% end %>
+    </section>
+
     <% if SparcConfig.support_email.present? %>
       <hr class="my-4">
       <section class="text-center">

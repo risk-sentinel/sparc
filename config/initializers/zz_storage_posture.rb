@@ -18,6 +18,12 @@
 # handling and retention).
 
 Rails.application.config.after_initialize do
+  # `assets:precompile` boots the app in the production environment purely to
+  # build assets (Rails signals that build context with SECRET_KEY_BASE_DUMMY).
+  # There is no deployment to protect and no storage wired there, so skip the
+  # runtime posture check — otherwise this hard fail aborts the image build,
+  # which is exactly what `docker compose up --build` hit. See #785.
+  next if ENV["SECRET_KEY_BASE_DUMMY"].present?
   next unless Rails.env.production?
 
   local   = StorageUrl.local?

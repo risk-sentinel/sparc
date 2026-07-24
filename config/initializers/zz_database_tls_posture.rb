@@ -31,6 +31,10 @@
 require "pg"
 
 Rails.application.config.after_initialize do
+  # `assets:precompile` boots in production env just to build assets (Rails
+  # marks that build context with SECRET_KEY_BASE_DUMMY); the database isn't
+  # reachable there, so skip the probe rather than emit a misleading warning.
+  next if ENV["SECRET_KEY_BASE_DUMMY"].present?
   # Nothing to prove against a local dev/test Postgres with no TLS at all.
   next unless Rails.env.production?
   next if ENV.fetch("SPARC_SKIP_DB_TLS_CHECK", nil) == "true"

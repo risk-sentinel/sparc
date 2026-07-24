@@ -1,4 +1,41 @@
 module ApplicationHelper
+  # #784 — per-screen contextual help. Maps a controller (controller_path, so
+  # namespaced admin controllers work) to the slug of the User Guide that best
+  # covers it. Keys must stay in sync with wiki/User-Guide-*.md filenames; the
+  # "?" nav link falls back to the Help Center index when a screen isn't mapped.
+  CONTEXTUAL_GUIDE = {
+    "home"                     => "getting-oriented",
+    "ssp_documents"            => "system-security-plans",
+    "sar_documents"            => "assessment-results",
+    "sap_documents"            => "assessment-plans",
+    "poam_documents"           => "poam",
+    "cdef_documents"           => "component-definitions",
+    "profile_documents"        => "control-catalogs-and-baselines",
+    "control_catalogs"         => "control-catalogs-and-baselines",
+    "control_mappings"         => "control-catalogs-and-baselines",
+    "converters"               => "converters-and-imports",
+    "authorization_boundaries" => "authorization-boundaries",
+    "evidences"                => "evidence-and-attestations",
+    "authoritative_sources"    => "trust-store",
+    "promotion_queue"          => "trust-store",
+    "webauthn_credentials"     => "security-keys",
+    "admin/users"              => "administration",
+    "admin/roles"              => "administration",
+    "admin/service_accounts"   => "administration",
+    "admin/organizations"      => "administration"
+  }.freeze
+
+  # Slug of the guide most relevant to the current screen, or nil.
+  def contextual_help_slug
+    CONTEXTUAL_GUIDE[controller_path] || CONTEXTUAL_GUIDE[controller_name]
+  end
+
+  # Deep-link to the contextual guide, falling back to the Help Center index.
+  def contextual_help_path
+    slug = contextual_help_slug
+    slug ? help_guide_path(slug) : help_path
+  end
+
   # Status-color palette (hue-named; the same swatch is reused across the
   # *_STATUS_COLORS / *_SEVERITY_COLORS maps below).
   COLOR_GREEN     = "#27ae60".freeze  # success / implemented / passed

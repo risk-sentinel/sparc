@@ -82,6 +82,10 @@ class Api::V1::DiscoveryController < Api::V1::BaseController
     { path: "/api/v1/sessions/from_token", methods: %w[POST],
       description: "Exchange a Bearer API token for a Rails session cookie (UI test automation)",
       permission_read: nil, permission_write: nil, admin_only: false },
+    # NOTE: /api/v1/guides (#784) is intentionally omitted here — discovery
+    # advertises the scoped compliance-data surface (PM-5 inventory), and the
+    # permission-free help endpoints would otherwise dilute the least-privilege
+    # view a no-permission caller sees. The guides API is documented separately.
 
     # --- SSP Documents ---
     { path: "/api/v1/ssp_documents", methods: %w[GET POST],

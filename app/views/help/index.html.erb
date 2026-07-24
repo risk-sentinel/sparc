@@ -1,0 +1,47 @@
+<% content_for :title, "Help & User Guides" %>
+<div class="container py-4" data-controller="guide-search">
+
+  <div class="text-center mb-4">
+    <h1 class="fw-bold">Help &amp; User Guides</h1>
+    <p class="text-body-secondary mb-0">
+      Task-oriented job aids for every major screen and OSCAL document type — bundled with
+      this deployment (version <%= SparcConfig::VERSION %>).
+    </p>
+  </div>
+
+  <div class="row justify-content-center mb-4">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="input-group">
+        <span class="input-group-text" aria-hidden="true">&#128269;</span>
+        <input type="search"
+               class="form-control"
+               placeholder="Search guides…"
+               aria-label="Search guides"
+               autocomplete="off"
+               data-guide-search-target="query"
+               data-action="input->guide-search#filter">
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" data-guide-search-target="list">
+    <% @guides.each do |guide| %>
+      <div class="col"
+           data-guide-search-target="card"
+           data-guide-title="<%= guide.title.downcase %>"
+           data-guide-summary="<%= guide.summary.to_s.downcase %>">
+        <%= link_to help_guide_path(guide.slug), class: "card h-100 sparc-card text-decoration-none border-start border-3 border-primary sparc-guide-card" do %>
+          <div class="card-body">
+            <h5 class="card-title text-primary mb-2"><%= guide.title %></h5>
+            <p class="card-text text-body-secondary small mb-0"><%= truncate(guide.summary, length: 160) %></p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <p class="text-body-secondary text-center mt-4 d-none" data-guide-search-target="empty">
+    No guides match your search.
+  </p>
+
+</div>

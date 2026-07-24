@@ -9,6 +9,15 @@ Rails.application.routes.draw do
   get "about/quickstart", to: "about#quickstart",  as: :about_quickstart
   get "about/resources", to: "about#resources",   as: :about_resources
 
+  # ── In-app Help Center / User Guides (#784) ───────────────────────────
+  # The image route is declared BEFORE the :slug show route so "images" is
+  # not swallowed as a guide slug.
+  get "help",                  to: "help#index",  as: :help
+  get "help/images/:filename", to: "help#image",  as: :help_image,
+      constraints: { filename: /[\w\-.]+\.(?:png|jpe?g|gif|svg|webp)/i }
+  get "help/:slug",            to: "help#show",    as: :help_guide,
+      constraints: { slug: /[a-z0-9-]+/ }
+
   # ── Authentication ────────────────────────────────────────────────────
   get    "login",  to: "sessions#new",     as: :login
   post   "login",  to: "sessions#create"
@@ -415,6 +424,10 @@ Rails.application.routes.draw do
     namespace :v1 do
       # API discovery (#250)
       get "available", to: "discovery#available"
+
+      # In-app User Guides (#784) — read-only help content, versioned with
+      # the deployment. Backs the Help Center; also lets integrators pull docs.
+      resources :guides, only: [ :index, :show ], param: :slug
 
       # #573 — Bearer-token → Rails session cookie bridge. Lets a
       # test runner (Playwright/etc.) acquire a valid session cookie

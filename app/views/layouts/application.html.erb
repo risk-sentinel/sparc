@@ -181,6 +181,14 @@
                     title: "OSCAL Document Relationship Overview" %>
             </li>
 
+            <%# ── Contextual Help (#784) — deep-links to the guide for this screen ── %>
+            <% if !SparcConfig.any_auth_enabled? || signed_in? %>
+              <li class="nav-item d-none d-lg-block">
+                <%= link_to contextual_help_path, class: "nav-link sparc-nav-btn",
+                      title: "Help & User Guides" do %>&#10067;<% end %>
+              </li>
+            <% end %>
+
             <%# ── Separator ── %>
             <li class="nav-item d-none d-lg-block">
               <span class="sparc-nav-separator"></span>

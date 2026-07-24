@@ -38,6 +38,8 @@ INDEX_PAGES = [
     ("about", "/about"),
     ("about_api", "/about/api"),
     ("about_resources", "/about/resources"),
+    ("help", "/help"),
+    ("help_guide", "/help/getting-oriented"),
 ]
 
 # ── Admin pages ────────────────────────────────────────────────────────────
