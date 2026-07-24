@@ -78,9 +78,18 @@ OUT_DIR = Path(__file__).resolve().parents[2] / "wiki" / "images"
 VIEWPORT = {"width": 1440, "height": 900}
 DEVICE_SCALE = 2
 
-# A few screens are unbounded-tall or noisy at full height; capture just the
-# viewport ("above the fold") so the guide image stays a usable hero shot.
-VIEWPORT_ONLY = {"dashboard", "control_catalogs"}
+# A few screens are unbounded-tall (long reference/detail pages) and make poor
+# guide images at full height. Crop them to a top snippet — a fixed viewport
+# height, captured NOT full-page — so the reader sees a representative "top
+# section" instead of scrolling through the whole screen. Height is in CSS px.
+CROP_HEIGHTS = {
+    "dashboard": 900,                     # above-the-fold hero
+    "control_catalogs": 900,
+    "about": 1100,                        # intro + first section
+    "about_api": 1500,                    # a couple of endpoint samples
+    "admin_roles": 1000,                  # the top section of the role catalog
+    "authorization_boundary_show": 1500,  # status + summary + environments
+}
 
 
 def _settle(page) -> None:
@@ -122,7 +131,13 @@ def _shoot(page, label: str, path: str, out_dir: Path) -> bool:
         print(f"  ✗ {label:32s} {path}  bounced to /login (auth?)")
         return False
     _settle(page)
-    page.screenshot(path=str(dest), full_page=(label not in VIEWPORT_ONLY))
+    crop = CROP_HEIGHTS.get(label)
+    if crop:
+        page.set_viewport_size({"width": VIEWPORT["width"], "height": crop})
+        page.screenshot(path=str(dest), full_page=False)
+        page.set_viewport_size(VIEWPORT)  # restore for the next page
+    else:
+        page.screenshot(path=str(dest), full_page=True)
     kb = dest.stat().st_size // 1024
     print(f"  ✓ {label:32s} {path}  -> {dest.name} ({kb} KB)")
     return True
@@ -130,7 +145,12 @@ def _shoot(page, label: str, path: str, out_dir: Path) -> bool:
 
 def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"Capturing screenshots from {BASE_URL} -> {OUT_DIR}")
+    # Optional label filter: `python capture_screenshots.py about about_api`
+    # re-captures only those pages (leaving the rest untouched).
+    only = set(sys.argv[1:])
+    keep = (lambda label: label in only) if only else (lambda label: True)
+    print(f"Capturing screenshots from {BASE_URL} -> {OUT_DIR}"
+          + (f"  [only: {', '.join(sorted(only))}]" if only else ""))
 
     ok = 0
     fail = 0
@@ -150,6 +170,8 @@ def main() -> int:
         page = ctx.new_page()
         print("\nPublic pages:")
         for label, path in page_inventory.PUBLIC_PAGES:
+            if not keep(label):
+                continue
             if _shoot(page, label, path, OUT_DIR):
                 ok += 1
             else:
@@ -166,6 +188,8 @@ def main() -> int:
 
         print("\nAuthenticated pages:")
         for label, path in page_inventory.MUST_EXIST_PAGES:
+            if not keep(label):
+                continue
             if _shoot(page, label, path, OUT_DIR):
                 ok += 1
             else:
@@ -174,6 +198,8 @@ def main() -> int:
         # ── Show pages: discovered at runtime from each index ───────────────
         print("\nShow pages (runtime-discovered):")
         for label, index_path, _regex in page_inventory.SHOW_PAGES:
+            if not keep(label):
+                continue
             href = _first_show_href(page, index_path, index_path)
             if not href:
                 print(f"  – {label:32s} no record on this deployment — skipped")
