@@ -2265,3 +2265,62 @@ a.link-purple { color: var(--sparc-purple); }
   line-height: 1.3;
   word-break: break-word;
 }
+
+/* ── Help Center / User Guides (#784) ──────────────────────────────────────
+   In-app rendering of the wiki User Guides. Cards on the index; typographic
+   polish for the rendered Markdown body (headings, lists, tables, images,
+   Mermaid) so guides match SPARC styling and stay readable in light + dark. */
+.sparc-guide-card {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.sparc-guide-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12);
+}
+
+.sparc-guide-content {
+  line-height: 1.65;
+}
+.sparc-guide-content h1 { font-size: 1.9rem; font-weight: 700; margin-bottom: 1rem; }
+.sparc-guide-content h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+.sparc-guide-content h3 { font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+.sparc-guide-content p,
+.sparc-guide-content ul,
+.sparc-guide-content ol { margin-bottom: 1rem; }
+.sparc-guide-content li { margin-bottom: 0.25rem; }
+.sparc-guide-content code {
+  background: var(--bs-secondary-bg);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+.sparc-guide-content pre {
+  background: var(--bs-secondary-bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+.sparc-guide-content pre code { background: none; padding: 0; }
+.sparc-guide-content blockquote {
+  border-left: 4px solid var(--bs-primary);
+  padding: 0.25rem 0 0.25rem 1rem;
+  margin: 0 0 1rem 0;
+  color: var(--bs-secondary-color);
+}
+.sparc-guide-img {
+  display: block;
+  max-width: 100%;
+  margin: 1rem auto;
+}
+.sparc-guide-content .mermaid {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+.sparc-guide-content .table-responsive { margin-bottom: 1rem; }

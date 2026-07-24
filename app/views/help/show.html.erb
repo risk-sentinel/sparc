@@ -1,0 +1,21 @@
+<% content_for :title, @guide.title %>
+<div class="container py-4">
+
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to "Help", help_path, class: "text-decoration-none" %></li>
+      <li class="breadcrumb-item active" aria-current="page"><%= @guide.title %></li>
+    </ol>
+  </nav>
+
+  <div class="sparc-card p-4 p-md-5">
+    <div class="sparc-guide-content">
+      <%= @guide.html.html_safe %>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <%= link_to "← All guides", help_path, class: "btn btn-outline-secondary btn-sm" %>
+  </div>
+
+</div>

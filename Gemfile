@@ -96,6 +96,14 @@ gem "kamal", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.0"
 
+# #784 — render the in-app User Guides (Help Center) from the wiki Markdown
+# sources at request time. kramdown + its GFM parser are PURE RUBY (no native
+# extension), so they add zero build risk to the UBI9 image, unlike C/Rust
+# markdown gems. Nokogiri (already present transitively via Rails) does the
+# post-render pass (image/link rewrite, Mermaid fences, Bootstrap tables).
+gem "kramdown", "~> 2.5"
+gem "kramdown-parser-gfm", "~> 1.1"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri mswin mingw ], require: false

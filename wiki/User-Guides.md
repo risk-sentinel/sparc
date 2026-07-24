@@ -15,6 +15,13 @@ component definitions they build on.
 in, then [User Guide: Getting Oriented](User-Guide-Getting-Oriented) for a tour
 of the interface.
 
+> **These guides ship inside the app.** From **v1.13.1**, every SPARC deployment
+> bundles this exact set of guides as an in-app **Help Center** — open it from
+> the **Help & Guides** section in the left sidebar, the **?** button in the top
+> navigation (which deep-links to the guide for the screen you're on), or the
+> **Resources** page. The in-app guides render the same Markdown you see here, so
+> the wiki and the shipped documentation never drift (#784).
+
 ---
 
 ## The compliance lifecycle in SPARC

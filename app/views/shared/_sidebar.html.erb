@@ -131,5 +131,26 @@
       </div>
     </div>
 
+    <%# ── Help & Guides (#784) ── %>
+    <div class="sparc-sidebar-section border-top border-secondary">
+      <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarHelp" aria-expanded="false">
+        <span class="sparc-sidebar-icon">&#10067;</span> Help &amp; Guides
+      </button>
+      <div class="collapse" id="sidebarHelp">
+        <ul class="sparc-sidebar-leaves">
+          <li>
+            <%= link_to help_path, class: "sparc-sidebar-leaf" do %>
+              <span class="sparc-sidebar-dot" style="background: #3498db;"></span> Help Center
+            <% end %>
+          </li>
+          <li>
+            <%= link_to help_guide_path("getting-oriented"), class: "sparc-sidebar-leaf" do %>
+              <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> Getting Oriented
+            <% end %>
+          </li>
+        </ul>
+      </div>
+    </div>
+
   </div>
 </nav>
