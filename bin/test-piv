@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# #790 — end-to-end PIV/CAC proof, BOTH the DoD and Non-DoD identity-mapping
+# legs, through a real nginx mTLS gateway with software-PIV certificates.
+# Proves what the unit specs cannot: the header contract with a real gateway,
+# the trust-boundary strip, and that BOTH a DoD CAC and a corporate PKI actually
+# sign a user in — not just parse correctly in isolation.
+#
+#   bin/test-piv
+#
+# NIST 800-53 IA-2 / IA-2(12). See docs/PIV_IDENTITY_MAPPING.md.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+BASE="docker-compose.ubi9.yaml"
+PIV="docker-compose.piv.yaml"
+NONDOD="docker-compose.piv-nondod.yaml"
+CERTS="$ROOT/tmp/piv-certs"
+export SPARC_PIV_CERT_DIR="$CERTS"
+PROXY="https://localhost:8443"
+EDIPI="1234567890"
+
+pass=0; fail=0
+check() { if [ "$2" = "$3" ]; then echo "  [PASS] $1"; pass=$((pass + 1)); else echo "  [FAIL] $1 (expected $2, got $3)"; fail=$((fail + 1)); fi; }
+
+# curl the PIV endpoint and return the redirect Location. $1 = extra curl args.
+piv_location() {
+  curl -sk -D - -o /dev/null --cacert "$CERTS/ca.crt" "$@" "$PROXY/auth/piv" \
+    | tr -d '\r' | awk 'tolower($1)=="location:"{print $2}'
+}
+
+cleanup() { echo "==> tearing down"; docker compose -f "$BASE" -f "$PIV" -f "$NONDOD" down -v >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+
+wait_app() {
+  for i in $(seq 1 60); do
+    code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ 2>/dev/null || echo 000)
+    { [ "$code" = "302" ] || [ "$code" = "200" ]; } && return 0
+    sleep 5
+  done
+  echo "!! app never served"; exit 1
+}
+
+echo "==> generating CA + DoD and Non-DoD software-PIV certs"
+bash dev/piv/gen-software-piv.sh "$CERTS" >/dev/null
+
+echo "==> bringing up web + db + nginx PIV proxy (DoD config)"
+docker compose -f "$BASE" -f "$PIV" up -d >/dev/null
+wait_app
+for i in $(seq 1 30); do curl -sk -o /dev/null "$PROXY/login" 2>/dev/null && break; sleep 2; done
+
+echo "==> provisioning both identities (DoD uid ${EDIPI}, Non-DoD uid 8842)"
+docker compose -f "$BASE" -f "$PIV" exec -T web bin/rails runner "
+  def prov(e,u); x=User.find_or_create_by!(email:e){|r| r.password=r.password_confirmation='Piv-Test-Pass-9!'; r.name=e.split('@').first if r.respond_to?(:name=)}; x.update!(status:'active') if x.respond_to?(:status); x.update!(must_reset_password:false) if x.respond_to?(:must_reset_password); Identity.find_or_create_by!(provider:'piv',uid:u){|i| i.user=x}; end
+  prov('john.doe@mail.mil','${EDIPI}'); prov('jane.smith@corp.example','8842'); puts 'ok'
+" 2>/dev/null | grep -q ok || { echo "!! provisioning failed"; exit 1; }
+
+echo
+echo "LEG 2 — DoD (edipi_cn): CAC card must sign in"
+loc=$(piv_location --cert "$CERTS/client.crt" --key "$CERTS/client.key")
+echo "    → ${loc:-<none>}"
+check "DoD CAC (EDIPI in CN) signs in" "yes" "$([ -n "$loc" ] && ! echo "$loc" | grep -q /login && echo yes || echo no)"
+
+echo
+echo "NEGATIVE (shared) — fail-closed + trust boundary"
+check "no client cert rejected to /login" "yes" "$(echo "$(piv_location)" | grep -q /login && echo yes || echo no)"
+loc_forged=$(piv_location -H "X-SSL-Client-Verify: SUCCESS" -H "X-SSL-Client-Cert: forged")
+check "forged verify header stripped and rejected" "yes" "$(echo "$loc_forged" | grep -q /login && echo yes || echo no)"
+
+echo
+echo "==> reconfiguring web for the Non-DoD leg (subject_cn + uid pattern)"
+docker compose -f "$BASE" -f "$PIV" -f "$NONDOD" up -d web >/dev/null
+wait_app
+
+echo
+echo "LEG 3 — Non-DoD (subject_cn + pattern): corporate card must sign in"
+loc_nd=$(piv_location --cert "$CERTS/client-nondod.crt" --key "$CERTS/client-nondod.key")
+echo "    → ${loc_nd:-<none>}"
+check "corporate cert (CN employee-8842 → uid 8842) signs in" "yes" "$([ -n "$loc_nd" ] && ! echo "$loc_nd" | grep -q /login && echo yes || echo no)"
+
+echo
+echo "==> ${pass} passed, ${fail} failed"
+[ "$fail" -eq 0 ]
