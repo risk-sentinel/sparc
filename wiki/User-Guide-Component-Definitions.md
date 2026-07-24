@@ -24,6 +24,10 @@ with CDEF permissions — see [RBAC](RBAC).
 
 ---
 
+![A Component Definition detail view showing the component, its implemented controls, and control statements](images/cdef_show.png)
+
+*A Component Definition (CDEF) detail view.*
+
 ## At a glance
 
 ```mermaid

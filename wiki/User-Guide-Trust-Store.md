@@ -26,6 +26,10 @@ managing federation require specific permissions — see [RBAC](RBAC).
 
 ---
 
+![The Authoritative Sources screen listing trusted federation sources and their scope](images/authoritative_sources.png)
+
+*The Authoritative Sources / Trust Store — trusted sources SPARC will accept federated content from.*
+
 ## At a glance
 
 ```mermaid

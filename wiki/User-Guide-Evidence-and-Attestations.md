@@ -21,6 +21,10 @@ evidence permissions — see [RBAC](RBAC).
 
 ---
 
+![The Evidence index listing uploaded evidence artifacts with their scope and linked controls](images/evidences.png)
+
+*The Evidence index — evidence artifacts and attestations scoped to boundaries and controls.*
+
 ## At a glance
 
 ```mermaid

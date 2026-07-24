@@ -23,6 +23,10 @@ requires the appropriate role — see [RBAC](RBAC).
 
 ---
 
+![The Control Catalogs index listing available NIST catalogs and baselines with control counts](images/control_catalogs.png)
+
+*The Control Catalogs index — NIST catalogs and baselines available in the instance.*
+
 ## At a glance
 
 ```mermaid

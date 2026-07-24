@@ -21,6 +21,10 @@ This guide covers the day-to-day admin tasks.
 
 ---
 
+![The Admin Users screen listing SPARC user accounts with their roles, status, and management actions](images/admin_users.png)
+
+*Admin → Users: manage accounts, assign roles, and control account status.*
+
 ## At a glance
 
 ```mermaid

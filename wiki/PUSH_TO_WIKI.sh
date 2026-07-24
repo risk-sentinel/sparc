@@ -21,6 +21,15 @@ git clone "$REPO_URL" "$WIKI_DIR"
 echo "Copying wiki pages..."
 cp wiki/*.md "$WIKI_DIR/"
 
+# Publish image assets (#781). GitHub wikis render images committed into the
+# wiki repo when referenced by a relative path, e.g. `![alt](images/foo.png)`.
+# The capture step (tests/ui-smoke/capture_screenshots.py) writes PNGs here.
+if [ -d wiki/images ]; then
+  echo "Copying wiki images..."
+  mkdir -p "$WIKI_DIR/images"
+  cp -r wiki/images/. "$WIKI_DIR/images/"
+fi
+
 cd "$WIKI_DIR"
 git add -A
 git commit -m "Update wiki from main repo wiki/ directory" || echo "No changes to commit"

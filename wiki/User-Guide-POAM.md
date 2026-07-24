@@ -21,6 +21,10 @@ permissions — see [RBAC](RBAC).
 
 ---
 
+![A Plan of Action and Milestones detail view showing POA&M items, milestones, and remediation status](images/poam_show.png)
+
+*A Plan of Action & Milestones (POA&M) detail view.*
+
 ## At a glance
 
 ```mermaid

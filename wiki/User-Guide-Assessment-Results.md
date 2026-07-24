@@ -20,6 +20,10 @@ authentication and a role with SAR permissions — see [RBAC](RBAC).
 
 ---
 
+![A Security Assessment Results detail view showing findings, observations, and control assessment outcomes](images/sar_show.png)
+
+*A Security Assessment Results (SAR) detail view.*
+
 ## At a glance
 
 ```mermaid

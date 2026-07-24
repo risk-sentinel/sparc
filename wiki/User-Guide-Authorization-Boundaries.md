@@ -21,6 +21,10 @@ see [RBAC](RBAC). Instance Admins can also manage boundaries under
 
 ---
 
+![An Authorization Boundary detail view showing status, environments and components, a personnel roster, and attached artifacts](images/authorization_boundary_show.png)
+
+*An Authorization Boundary / ATO package — environments, personnel roster, artifacts, and document metadata sync.*
+
 ## At a glance
 
 ```mermaid
