@@ -84,7 +84,6 @@ RSpec.describe "ECS task definition drift", :drift do
     "SPARC_WELCOME_TEXT" => :welcome_text,
     "SPARC_INACTIVITY_DAYS" => :inactivity_days,
     "SPARC_PASSWORD_EXPIRY_DAYS" => :password_expiry_days,
-    "SPARC_SA_INACTIVITY_DAYS" => :sa_inactivity_days,
     "SPARC_SESSION_TIMEOUT_MINUTES" => :session_timeout,
     "SPARC_PROCESSING_STUCK_MINUTES" => :processing_stuck_minutes,
     "SPARC_MAX_UPLOAD_MB" => :max_upload_mb,

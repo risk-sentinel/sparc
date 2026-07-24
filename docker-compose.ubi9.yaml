@@ -78,9 +78,17 @@ services:
       # attach files don't reach for AWS/IMDS. AWS_REGION is a harmless fallback.
       ACTIVE_STORAGE_SERVICE: local
       AWS_REGION: us-east-1
-      # Prod enables Rack::Attack; disable for the test suite's rapid-fire writes
-      # (dev/test run with it off too). Orthogonal to UBI9.
-      SPARC_RATE_LIMITING_ENABLED: "false"
+      # #785 Pass 2.1 — production hard-fails on local-disk storage (ephemeral-FS
+      # data-loss guard). This is a local harness with a persistent bind, so
+      # acknowledge it. Real deployments give SPARC an S3 bucket via
+      # SPARC_STORAGE_URL — see docs/OBJECT_STORAGE.md.
+      SPARC_ALLOW_LOCAL_STORAGE: "true"
+      # #785 Pass 2.1 — rate limiting is now unconditional (the on/off toggle was
+      # removed). The smoke/api suite fires rapid-fire writes, so SAFELIST its
+      # source rather than disable throttling — the same mechanism a real
+      # deployment uses for health-check / NLB / monitoring IPs. Covers the
+      # Docker Desktop host gateway (192.168.65.x) and the compose bridge.
+      SPARC_RATE_LIMIT_SAFELIST_CIDRS: "192.168.0.0/16,172.16.0.0/12,10.0.0.0/8,127.0.0.1,::1"
       # Local-only dummy — NEVER a production secret.
       SECRET_KEY_BASE: "ubi9-local-validation-not-for-production-0123456789abcdef0123456789abcdef"
       FORCE_SSL: "false"

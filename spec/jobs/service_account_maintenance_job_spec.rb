@@ -90,10 +90,13 @@ RSpec.describe ServiceAccountMaintenanceJob, type: :job do
       end
 
       it "does NOT disable SA used within threshold" do
+        # #785 Pass 2.1 — the SA inactivity window is now the unified
+        # SPARC_INACTIVITY_DAYS (default 30), not the old 90. 10 days ago is
+        # comfortably within it; 30.days.ago would now sit on the boundary.
         sa = create_service_account(
           name: "active-sa",
           token_expires_at: 1.year.from_now,
-          last_used_at: 30.days.ago
+          last_used_at: 10.days.ago
         )
 
         described_class.perform_now

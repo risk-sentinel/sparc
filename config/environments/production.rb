@@ -162,12 +162,11 @@ Rails.application.configure do
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
-  # #785 — ACTIVE_STORAGE_SERVICE is now WIRED. It was documented and set in the
-  # production task definition, but nothing read it: this line hardcoded :amazon,
-  # so an operator selecting a backend was silently ignored. On-prem and
-  # air-gapped installs need :local and previously had no way to get it.
-  #
-  # Read from ENV directly — this file is evaluated pre-autoload and cannot call
-  # SparcConfig. The value must name a service defined in config/storage.yml.
-  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", nil).presence&.to_sym || :amazon
+  # #785 Pass 2.1 — object-storage backend from SPARC_STORAGE_URL (scheme →
+  # provider), falling back to the legacy ACTIVE_STORAGE_SERVICE, else :local.
+  # StorageUrl is required in application.rb (pre-autoload). A production instance
+  # that resolves to :local is caught by config/initializers/zz_storage_posture.rb
+  # — on ECS/EKS the container filesystem is ephemeral and uploads are lost on
+  # redeploy, so that is a hard-fail unless SPARC_ALLOW_LOCAL_STORAGE=true.
+  config.active_storage.service = StorageUrl.service
 end

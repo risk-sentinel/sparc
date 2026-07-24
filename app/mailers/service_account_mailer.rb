@@ -58,7 +58,7 @@ class ServiceAccountMailer < ApplicationMailer
 
     @service_account = service_account
     @inactive_days = inactive_days
-    @threshold = SparcConfig.sa_inactivity_days
+    @threshold = SparcConfig.inactivity_days  # #785 Pass 2.1 — unified inactivity window
     @owner = service_account.owner
     @admin_url = admin_service_accounts_url(host: SparcConfig.app_host)
 
