@@ -175,10 +175,12 @@ class OdpImportService
   #     <parameters><parameter param-id="ac-1_prm_1"><value>ISSO</value></parameter></parameters>
   #     <selections><selection select-id="ac-2_prm_1"><selected>removes</selected></selection></selections>
   #   </baseline-parameters>
-  # Strict parse; Nokogiri does not resolve external entities by default, so this
-  # is not XXE-exposed (SI-10).
+  # Parse via the hardened wrapper (#804): strict well-formedness PLUS `.nonet`,
+  # so an external DTD/entity reference is neither substituted (no NOENT → no
+  # XXE) nor fetched over the network (`.nonet` → no SSRF/DoS round-trip). Closes
+  # the last raw-Nokogiri XML upload path. SI-10.
   def self.parse_xml(content)
-    doc = Nokogiri::XML(content, &:strict)
+    doc = XmlSecurity.parse(content, strict: true)
     parameters = []
     selections = []
 
