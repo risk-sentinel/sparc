@@ -30,7 +30,7 @@ RSpec.describe "Database TLS enforcement", :db_tls do
   end
 
   def connect(**opts)
-    PG.connect(user: "postgres", password: "secret", dbname: "postgres",
+    PG.connect(user: "postgres", password: "secret", dbname: "postgres",  # gitleaks:allow
                connect_timeout: 5, **opts)
   end
 

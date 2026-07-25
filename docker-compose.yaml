@@ -5,7 +5,7 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: password  # gitleaks:allow
       POSTGRES_DB: ssp_tpr_manager_development
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -54,7 +54,7 @@ services:
     env_file: .env
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development
+      DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development  # gitleaks:allow
       REDIS_URL: redis://redis:6379/0
       ACTIVE_STORAGE_SERVICE: local
       DOCKERIZED: "true"
@@ -83,7 +83,7 @@ services:
     env_file: .env
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development
+      DATABASE_URL: postgresql://postgres:password@db:5432/ssp_tpr_manager_development  # gitleaks:allow
       REDIS_URL: redis://redis:6379/0
       BUNDLE_DEPLOYMENT: ""           # override Dockerfile frozen-install setting
       BUNDLE_WITHOUT: "development test"

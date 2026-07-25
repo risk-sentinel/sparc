@@ -48,6 +48,17 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   suppression's review date is within 90 days (bump or clear stale ones). This
   keeps the audit in cadence with the shipped image instead of drifting.
 
+- **Never commit real secrets; keep test credentials scanner-clean.** Real
+  secrets live only in gitignored `.env` files or the CI/deploy secret store —
+  never in tracked code, compose files, or workflows. Test/local/CI credentials
+  MUST be obvious throwaways (e.g. `postgres:password@`, `Initial-Pwd-1234`) and,
+  when a secret scanner flags one, cleared by **either** an inline
+  `# gitleaks:allow` comment on the line **or** an allowlist entry in
+  `.gitleaks.toml` — both are honored by the GitHub scan and GitLab Secret
+  Detection, so forks/clones stay green. `.gitleaks.toml` extends the full
+  gitleaks default ruleset; do not narrow it, and never allowlist a value that
+  isn't a verified throwaway.
+
 ---
 
 ## Workflow Steps

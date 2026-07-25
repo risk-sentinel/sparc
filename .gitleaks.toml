@@ -1,8 +1,17 @@
 title = "SPARC Gitleaks Configuration"
 
+# ── Extend the upstream default ruleset ───────────────────────────────────
+# CRITICAL: without this, the custom [[rules]] below REPLACE gitleaks' built-in
+# ruleset, so the scanner was blind to real AWS keys, private keys, DB URIs,
+# etc. — it only ever looked for sparc_* tokens. `useDefault = true` runs the
+# full default ruleset AND the SPARC custom rules. The [allowlist] below then
+# clears the known-safe test/example/generated content so the scan stays green
+# without hiding real secrets. NIST 800-53: IA-5 (Authenticator Management).
+[extend]
+  useDefault = true
+
 # ── Custom Rules ──────────────────────────────────────────────────────────
 # Detect SPARC-issued tokens that may have been accidentally committed.
-# NIST 800-53: IA-5 (Authenticator Management)
 
 [[rules]]
   id = "sparc-api-token"
@@ -17,13 +26,48 @@ title = "SPARC Gitleaks Configuration"
   tags = ["token", "sparc", "service-account"]
 
 # ── Global Allowlist ──────────────────────────────────────────────────────
-
+# Everything here is verified test/example/generated content — NOT real
+# secrets. Regexes match against the whole line (regexTarget = "line") so a
+# throwaway connection string is cleared while a real one (whose password is
+# not one of the disposable words) would still fire.
 [allowlist]
-  description = "Global allowlist"
+  description = "Known-safe test/example/generated content — no real secrets"
+  regexTarget = "line"
+
   paths = [
+    # Documented example env files (placeholders only).
     '''\.env\.example$''',
     '''\.env\.production\.example$''',
+    # Test fixtures: STIG/XCCDF content carries GRUB2_PASSWORD hashes etc.
     '''spec/fixtures/''',
+    # API docs use placeholder Bearer tokens in curl examples.
+    '''docs/api/''',
+    '''docs/API\.md$''',
+    # Third-party + generated/gitignored dirs (only present on a --no-git run).
     '''vendor/''',
     '''node_modules/''',
+    '''(^|/)(log|tmp|coverage)/''',
+    '''\.venv/''',
+    '''\.egg-info/''',
+  ]
+
+  regexes = [
+    # ── Throwaway local / CI database credentials ──
+    # Disposable Postgres/Redis stacks (docker-compose*, ci.yml). The password
+    # is one of a small set of obvious throwaways; a real one would not match.
+    '''(postgres(ql)?|redis|mysql)://[^@\s"'`]*:(password|postgres|p|pass|mypass|secret|s3cr[^@]*)@''',
+    '''(POSTGRES_PASSWORD|SPARC_DB_PASSWORD|PGPASSWORD):\s*["']?(password|postgres|secret)\b''',
+    # Connection-string examples in comments / docs tables.
+    '''(myuser:mypass|user:pass)@''',
+    # ── Placeholder tokens in docs / views ──
+    '''Bearer sparc_(your_token|abc123)''',
+    # ── Deterministic test-only passwords in specs ──
+    '''(Initial|Rotated|Actor)-Pwd-\d+''',
+    '''(SecurePassword123|NewSecurePass456|Sup3rSecure!Pw)''',
+    # ── Non-secret constants / test strings flagged by generic rules ──
+    '''TOKEN_PURPOSE\s*=\s*["']cdef_bulk_apply''',
+    '''phase2-test-signing-secret''',
+    '''token_expires_at:''',
+    # Local-validation dummy SECRET_KEY_BASE (explicitly not-for-production).
+    '''ubi9-local-validation-not-for-production''',
   ]

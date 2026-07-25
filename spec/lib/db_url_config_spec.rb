@@ -22,7 +22,7 @@ RSpec.describe DbUrl do
       # %40 is an encoded '@' — a real special character in a password. It must
       # decode the same way Rails decodes it for `primary`, or the secondaries
       # authenticate with the wrong password.
-      ENV["DATABASE_URL"] = "postgresql://appuser:s3cr%40t@db.internal:5433/sparc_prod?sslmode=require"
+      ENV["DATABASE_URL"] = "postgresql://appuser:s3cr%40t@db.internal:5433/sparc_prod?sslmode=require"  # gitleaks:allow
     end
 
     it "derives every component from the URL" do
@@ -122,7 +122,7 @@ RSpec.describe "database.yml DATABASE_URL derivation" do
   end
 
   it "points all four production databases at the DATABASE_URL host" do
-    prod = resolve("production", "DATABASE_URL" => "postgresql://u:p@dbhost:5433/mydb")
+    prod = resolve("production", "DATABASE_URL" => "postgresql://u:p@dbhost:5433/mydb")  # gitleaks:allow
     %w[primary cache queue cable].each do |name|
       expect(prod[name]["host"]).to eq("dbhost"), "#{name} not derived from DATABASE_URL"
       expect(prod[name]["username"]).to eq("u")
@@ -130,7 +130,7 @@ RSpec.describe "database.yml DATABASE_URL derivation" do
   end
 
   it "gives the secondaries suffixed database names off the DATABASE_URL name" do
-    prod = resolve("production", "DATABASE_URL" => "postgresql://u:p@h/mydb")
+    prod = resolve("production", "DATABASE_URL" => "postgresql://u:p@h/mydb")  # gitleaks:allow
     expect(prod["primary"]["database"]).to eq("mydb")
     expect(prod["cache"]["database"]).to eq("mydb_cache")
     expect(prod["queue"]["database"]).to eq("mydb_queue")
