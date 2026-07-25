@@ -595,7 +595,13 @@ Rails.application.routes.draw do
             get :export
           end
         end
+        # HDF Amendment triage (#447) — ingest scanner output + list findings.
+        resources :scan_runs, only: [ :index, :show, :create ]
+        resources :scanner_findings, only: [ :index ]
       end
+
+      # HDF Amendment triage (#447) — flat show of a single finding by uuid.
+      resources :scanner_findings, only: [ :show ]
 
       # HDF ↔ OSCAL translation bridge (#449). Stateless — does not persist
       # tenant state; SPARC is the translation engine, not the source of
