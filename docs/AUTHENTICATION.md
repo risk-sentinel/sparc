@@ -139,6 +139,11 @@ The WebAuthn relying-party ID is derived from the app URL (`SPARC_APP_URL`).
 Enrollment and day-to-day use are covered in the wiki **Security Keys & Smart
 Cards** User Guide and the in-app Help Center (`/help`).
 
+> **Enrolling an external key on a Mac:** the browser offers the built-in
+> platform authenticator (Touch ID) first. To register an external key such as a
+> YubiKey, choose **More options / "Use a different device" → Security key** in
+> the browser dialog. This is browser/OS behavior, not a SPARC setting.
+
 ### PIV / CAC (Smart Card)
 
 Smart-card authentication (federal PIV / DoD CAC) via a **mutual-TLS gateway**
