@@ -2,6 +2,7 @@ require "rails_helper"
 require "rake"
 require "fileutils"
 require "tmpdir"
+require "stringio"
 
 # Specs for the bundle-and-seed flow added in #453. Avoid hitting NIST
 # GitHub: WebMock-style stubbing isn't enabled here, so we use a
@@ -20,6 +21,18 @@ RSpec.describe "lib/tasks/oscal_schemas.rake", type: :task do
     bundle_task.reenable
     seed_task.reenable
     OscalSchema.delete_all
+  end
+
+  # #747 — capture the task's own diagnostic output so the failure-path examples
+  # (checksum mismatch, missing file, no-network) don't flood the test log with
+  # alarming ✗/FAILED lines. Assert against `task_output` where the diagnostic
+  # itself is the behavior under test.
+  let(:task_output) { StringIO.new }
+  around do |example|
+    Thread.current[:oscal_task_io] = task_output
+    example.run
+  ensure
+    Thread.current[:oscal_task_io] = nil
   end
 
   describe "oscal:seed_schemas — bundle path" do
@@ -76,17 +89,19 @@ RSpec.describe "lib/tasks/oscal_schemas.rake", type: :task do
       schema_file = bundle_dir.join("v1.1.2", "oscal_ssp_schema.json")
       File.write(schema_file, '{"tampered":true}')
 
-      expect {
-        seed_task.invoke
-      }.to raise_error(SystemExit, /bundle integrity check did not pass/)
+      expect { seed_task.invoke }.to raise_error(SystemExit)
+      # The failure message now travels through the captured task IO (#747),
+      # not the SystemExit itself, so nothing hits the console.
+      expect(task_output.string).to match(/bundle integrity check did not pass/)
+      expect(task_output.string).to match(/SHA-256 mismatch/)
       expect(OscalSchema.count).to eq(0)
     end
 
     it "fails loud when a manifest entry's bundle file is missing" do
       File.delete(bundle_dir.join("v1.1.2", "oscal_ssp_schema.json"))
-      expect {
-        seed_task.invoke
-      }.to raise_error(SystemExit, /bundle integrity check did not pass/)
+      expect { seed_task.invoke }.to raise_error(SystemExit)
+      expect(task_output.string).to match(/bundle file missing/)
+      expect(task_output.string).to match(/bundle integrity check did not pass/)
     end
   end
 
