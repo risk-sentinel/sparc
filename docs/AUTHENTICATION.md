@@ -187,6 +187,39 @@ See **`docs/PIV_IDENTITY_MAPPING.md`** for the full identity-mapping contract
 (including the non-DoD private-CA `subject_cn` + pattern case) and the mTLS
 gateway requirements.
 
+## Enforcing strong authentication
+
+Two independent, app-layer gates let an org *require* phishing-resistant auth —
+enforcement lives in SPARC, not the gateway, so it works even on a single mTLS
+listener. Both exempt the **break-glass bootstrap admin** (`SPARC_ADMIN_EMAIL`)
+and **service accounts**.
+
+| Variable | Effect |
+|----------|--------|
+| `SPARC_REQUIRE_FIDO2` | `off` \| `local` \| `all` — force **security-key enrollment** (#802). |
+| `SPARC_REQUIRE_AUTH_METHODS` | CSV allowlist of accepted **login methods**; empty = no restriction (#805). |
+
+**`SPARC_REQUIRE_AUTH_METHODS` (#805)** restricts *which method may hold a
+session*. A signed-in user whose method isn't on the list is bounced to `/login`
+to re-authenticate with an accepted one. Tokens (aliases in parentheses):
+`local`, `ldap`, `piv`, `webauthn` (`fido2`), `oidc` (= the `openid_connect`
+provider), `github`, `gitlab`, `sso` (= any of github/gitlab/openid_connect).
+
+Example — **require OIDC or PIV** for everyone but the break-glass admin, on a
+single-listener `optional` mTLS gateway (no dedicated PIV host needed):
+
+```
+SPARC_ENABLE_OIDC=true        # + your OIDC config
+SPARC_ENABLE_PIV=true         # + the mTLS gateway (sparc-iac)
+SPARC_ENABLE_LOCAL_LOGIN=true # kept on ONLY so break-glass can use it
+SPARC_REQUIRE_AUTH_METHODS=oidc,piv
+```
+
+Every human then signs in with OIDC or their PIV smart card; local password is
+denied for everyone except `SPARC_ADMIN_EMAIL`. `SPARC_REQUIRE_FIDO2` and
+`SPARC_REQUIRE_AUTH_METHODS` are independent — using both is unusual (one forces
+key *enrollment*, the other restricts *login method*); pick the model that fits.
+
 ---
 
 ## Roles
