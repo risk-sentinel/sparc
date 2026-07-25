@@ -116,7 +116,8 @@ def authed_page(context, session_cookie, base_url):
 def user_authed_page(browser, user_session_cookie, base_url):
     """A second Playwright page on its own context, carrying the non-admin
     session cookie — for flows that need submitter ≠ approver in one test."""
-    extra = {"ignore_https_errors": True} if os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1" else {}
+    insecure = os.environ.get("SPARC_SMOKE_INSECURE_TLS") == "1"
+    extra = {"ignore_https_errors": True} if insecure else {}
     ctx = browser.new_context(base_url=base_url, **extra)
     ctx.add_cookies([_cookie_spec(user_session_cookie, base_url)])
     page = ctx.new_page()

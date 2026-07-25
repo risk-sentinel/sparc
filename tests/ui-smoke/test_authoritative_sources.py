@@ -16,7 +16,6 @@ import pytest
 
 from helpers import assert_no_csp_violations, record_csp
 
-
 pytestmark = pytest.mark.authenticated
 
 INDEX = "/authoritative_sources"
@@ -73,7 +72,9 @@ def test_cancel_returns_to_index(authed_page):
     _open_add_form(authed_page)
 
     authed_page.get_by_role("link", name="Cancel").click()
-    authed_page.wait_for_url(lambda u: u.split("?")[0].rstrip("/").endswith("/authoritative_sources"))
+    authed_page.wait_for_url(
+        lambda u: u.split("?")[0].rstrip("/").endswith("/authoritative_sources")
+    )
     assert_no_csp_violations(authed_page, during="cancel add")
 
 

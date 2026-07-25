@@ -35,9 +35,9 @@ from playwright.sync_api import sync_playwright
 
 # Reuse the suite's own modules (run from tests/ui-smoke/, as the suite does).
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pages as page_inventory  # noqa: E402
 from conftest import _bridge_token_to_cookie, _cookie_spec  # noqa: E402
 from helpers import RESERVED_SEGMENTS  # noqa: E402
-import pages as page_inventory  # noqa: E402
 
 
 def _first_show_href(page, index_path: str, prefix: str):

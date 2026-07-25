@@ -58,6 +58,12 @@ flowchart LR
 5. When your browser prompts, **insert/tap your key and enter its PIN**.
 6. The key appears in *Your keys*. You're done — you can now sign in with it.
 
+> **On a Mac (or any device with a built-in authenticator):** the browser's
+> dialog offers **Touch ID / this device** *first*. To enroll an external key
+> like a **YubiKey**, choose **More options** (Chrome/Edge) or **Other options →
+> Security key** (Safari), then insert/tap your key. If you only see a Touch ID
+> prompt, look for the small **"More choices"/"Use a different device"** link.
+
 > **Tip:** enroll a **second** key as a backup and keep it somewhere safe. If you
 > lose your only key, you'll need an administrator to reset it.
 
@@ -95,6 +101,7 @@ flowchart LR
 | Symptom | Likely cause | What to do |
 |---|---|---|
 | "This browser does not support security keys" | Unsupported/old browser (e.g. Safari) | Use Chrome, Edge, or Firefox |
+| The browser prompts for **Touch ID / a passkey**, not my YubiKey | On a Mac the built-in authenticator is offered first | Choose **More options / Use a different device → Security key**, then insert/tap your external key |
 | Enrollment or sign-in was "cancelled or timed out" | The prompt was dismissed, or took too long | Click the button again and complete the PIN prompt promptly |
 | "This security key is already registered" | The key is already enrolled on your account | Use it to sign in, or enroll a different key |
 | Lost your only key | — | Ask an administrator to **reset your security keys**, then re-enroll |

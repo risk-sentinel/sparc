@@ -123,6 +123,48 @@ See [OKTA_DEV_SETUP.md](OKTA_DEV_SETUP.md) for a step-by-step Okta configuration
 | `SPARC_LDAP_BASE` | User search base DN | (none) |
 | `SPARC_LDAP_ATTRIBUTE` | User lookup attribute | `uid` |
 
+### FIDO2 / WebAuthn (Security Keys)
+
+App-native, phishing-resistant MFA (NIST IA-2(1), IA-2(2)), shipped in v1.13.0
+(#779). Users enroll a hardware security key (e.g. YubiKey) or platform
+authenticator from the **Security Keys** page; key + PIN gives phishing-resistant
+authentication. Supports email-first and usernameless flows; account recovery is
+by admin reset.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SPARC_FIDO2_ENABLED` | Enable FIDO2 / WebAuthn security-key enrollment + login | `false` |
+
+The WebAuthn relying-party ID is derived from the app URL (`SPARC_APP_URL`).
+Enrollment and day-to-day use are covered in the wiki **Security Keys & Smart
+Cards** User Guide and the in-app Help Center (`/help`).
+
+> **Enrolling an external key on a Mac:** the browser offers the built-in
+> platform authenticator (Touch ID) first. To register an external key such as a
+> YubiKey, choose **More options / "Use a different device" → Security key** in
+> the browser dialog. This is browser/OS behavior, not a SPARC setting.
+
+### PIV / CAC (Smart Card)
+
+Smart-card authentication (federal PIV / DoD CAC) via a **mutual-TLS gateway**
+that terminates the client-certificate handshake and forwards the validated
+certificate to SPARC — the trust boundary is the gateway, not the app. Extended
+in v1.13.1 (#790) to make identity extraction configurable, including the
+non-DoD private-CA case.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SPARC_ENABLE_PIV` | Enable PIV/CAC smart-card authentication | `false` |
+| `SPARC_PIV_IDENTITY_SOURCE` | Certificate field yielding the user identity: `edipi_cn`, `upn`, `email`, `subject_cn` | `edipi_cn` |
+| `SPARC_PIV_UID_PATTERN` | Regex to extract the UID for `subject_cn` (non-DoD) | (none) |
+| `SPARC_PIV_ALLOW_EMAIL_MATCH` | Fall back to matching the cert email to a user | `true` |
+| `SPARC_PIV_CERT_HEADER` | Header carrying the forwarded client cert | `X-SSL-Client-Cert` |
+| `SPARC_PIV_VERIFY_HEADER` | Header carrying the gateway's verify result | `X-SSL-Client-Verify` |
+
+See **`docs/PIV_IDENTITY_MAPPING.md`** for the full identity-mapping contract
+(including the non-DoD private-CA `subject_cn` + pattern case) and the mTLS
+gateway requirements.
+
 ---
 
 ## Roles

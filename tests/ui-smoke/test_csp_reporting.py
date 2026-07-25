@@ -16,7 +16,6 @@ import json
 import os
 
 import httpx
-import pytest
 
 from helpers import smoke_tls_verify
 

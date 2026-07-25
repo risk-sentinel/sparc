@@ -49,3 +49,11 @@ addopts = "-ra --strict-markers"
 markers = [
     "authenticated: test requires SPARC_SMOKE_SA_TOKEN (cookie-bridge auth)",
 ]
+
+# #763 — match tests/api so both Python suites lint under one ruleset in CI.
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
