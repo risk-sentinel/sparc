@@ -595,9 +595,11 @@ Rails.application.routes.draw do
             get :export
           end
         end
-        # HDF Amendment triage (#447) — ingest scanner output + list findings.
+        # HDF Amendment triage (#447) — ingest scanner output + list findings,
+        # and export the boundary's dispositions as an HDF Amendments artefact.
         resources :scan_runs, only: [ :index, :show, :create ]
         resources :scanner_findings, only: [ :index ]
+        resource :hdf_amendments, only: [ :show ], controller: "hdf_amendments"
       end
 
       # HDF Amendment triage (#447) — flat show of a single finding by uuid,
