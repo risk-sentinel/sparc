@@ -31,7 +31,9 @@ class TestAdminCreateUser:
     def test_index_has_new_user_button(self, authed_page):
         record_csp(authed_page)
         resp = authed_page.goto("/admin/users")
-        assert resp and resp.status < 400, f"admin users index: {resp.status if resp else 'no response'}"
+        assert resp and resp.status < 400, (
+            f"admin users index: {resp.status if resp else 'no response'}"
+        )
         if authed_page.locator(NEW_LINK).count() == 0:
             pytest.skip("New User button not rendered (non-admin session or auth disabled)")
         assert_no_csp_violations(authed_page, during="admin users index")
@@ -39,7 +41,9 @@ class TestAdminCreateUser:
     def test_new_page_loads(self, authed_page):
         record_csp(authed_page)
         resp = authed_page.goto("/admin/users/new")
-        assert resp and resp.status < 400, f"admin users new: {resp.status if resp else 'no response'}"
+        assert resp and resp.status < 400, (
+            f"admin users new: {resp.status if resp else 'no response'}"
+        )
         if authed_page.locator(EMAIL).count() == 0:
             pytest.skip("create-user form not rendered (non-admin session or auth disabled)")
         assert authed_page.locator(PASSWORD).count() > 0, "password field missing"

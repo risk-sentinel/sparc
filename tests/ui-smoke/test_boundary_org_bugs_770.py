@@ -115,7 +115,9 @@ class TestEnvironmentForm:
 
 
 class TestAdminOrgAssociation:
-    def test_associate_boundary_form_lists_an_unassigned_boundary(self, authed_page, unassigned_boundary):
+    def test_associate_boundary_form_lists_an_unassigned_boundary(
+        self, authed_page, unassigned_boundary
+    ):
         """Bug 6 — the admin org screen offers an unassigned boundary to associate."""
         record_csp(authed_page)
         href = first_show_href(authed_page, "/admin/organizations", "/admin/organizations")

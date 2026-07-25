@@ -61,7 +61,9 @@ def test_enroll_then_passwordless_login(context, authed_page, base_url):
     # so poll it directly — independent of any pre-existing DB state.
     credentials = []
     for _ in range(20):
-        credentials = cdp.send("WebAuthn.getCredentials", {"authenticatorId": authenticator_id})["credentials"]
+        credentials = cdp.send(
+            "WebAuthn.getCredentials", {"authenticatorId": authenticator_id}
+        )["credentials"]
         if credentials:
             break
         authed_page.wait_for_timeout(500)

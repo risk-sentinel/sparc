@@ -26,7 +26,9 @@ def _restricted_href(admin_page) -> str:
     admin_page.wait_for_load_state("networkidle")
     link = admin_page.get_by_role("link", name=RESTRICTED_TITLE)
     if link.count() == 0:
-        pytest.skip(f"seed fixture '{RESTRICTED_TITLE}' missing — run the demo seed (SPARC_SEED_DEMO=true)")
+        pytest.skip(
+            f"seed fixture '{RESTRICTED_TITLE}' missing — run the demo seed (SPARC_SEED_DEMO=true)"
+        )
     href = link.first.get_attribute("href")
     assert href, "restricted evidence link has no href"
     return href
@@ -54,7 +56,9 @@ def test_non_admin_direct_show_of_out_of_boundary_is_blocked(user_authed_page, a
     resp = user_authed_page.goto(href)
     user_authed_page.wait_for_load_state("networkidle")
 
-    assert resp is None or resp.status < 500, f"server error on a blocked show ({resp.status if resp else '?'})"
+    assert resp is None or resp.status < 500, (
+        f"server error on a blocked show ({resp.status if resp else '?'})"
+    )
     assert RESTRICTED_TITLE not in user_authed_page.content(), (
         "#738 regression: out-of-boundary evidence content leaked to a non-admin"
     )
