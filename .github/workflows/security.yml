@@ -343,6 +343,30 @@ jobs:
           path: bundler-audit-results.json
           retention-days: 90
 
+  # ── 3b. Findings review-date freshness (#778) ──────────────────
+  # Fail when a security-finding disposition's review date has lapsed. The
+  # sparc-findings.yml dispositions and .trivyignore review dates are FedRAMP
+  # evidence with an issue_rules review cadence, but nothing machine-checked it,
+  # so it drifted silently — the v1.12.2 audit (#770) found 31 overdue
+  # next_review_dates, none flagged by CI. Runs on every trigger (incl. the
+  # weekly schedule) so time-based lapse is caught even without a code change.
+  # Stdlib-only Ruby; no bundle install needed.
+  findings_freshness:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@003a5c4d8d6321bd302e38f6f0ec593f77f06600 # v1
+        with:
+          ruby-version: .ruby-version
+
+      - name: Check security-finding review-date freshness
+        run: ruby scripts/ci/check_findings_freshness.rb
+
   # ── 4. JavaScript Dependency Audit (importmap) ─────────────────
   importmap_audit:
     runs-on: ubuntu-latest
