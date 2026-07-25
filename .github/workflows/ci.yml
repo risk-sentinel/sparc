@@ -105,13 +105,15 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
 
+      # ruff is in the `dev` optional-dependency group; --extra dev installs it
+      # (the locked version) in CI's fresh env.
       - name: Lint tests/api (ruff)
         working-directory: tests/api
-        run: uv run ruff check --output-format github .
+        run: uv run --extra dev ruff check --output-format github .
 
       - name: Lint tests/ui-smoke (ruff)
         working-directory: tests/ui-smoke
-        run: uv run ruff check --output-format github .
+        run: uv run --extra dev ruff check --output-format github .
 
   test:
     runs-on: ubuntu-latest
