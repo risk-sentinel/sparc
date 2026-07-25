@@ -58,7 +58,7 @@ class Api::V1::SessionsController < ApplicationController
       return
     end
 
-    start_session(@current_user, ip_address: request.remote_ip)
+    start_session(@current_user, ip_address: request.remote_ip, provider: "api_token")
     audit_bridge_success!
 
     head :no_content

@@ -55,7 +55,7 @@ class WebauthnSessionsController < ApplicationController
     return failure(user, "Your account is not active. Contact an administrator.") unless user.active?
 
     credential.record_use!(assertion.sign_count)
-    start_session(user, ip_address: request.remote_ip)
+    start_session(user, ip_address: request.remote_ip, provider: "webauthn")
     AuditEvent.log(
       user: user, action: "login_success", provider: "webauthn",
       ip_address: request.remote_ip, user_agent: request.user_agent,

@@ -250,6 +250,7 @@ an Okta-specific configuration guide.
 | --- | --- | --- | --- | --- |
 | SPARC_ENABLE_OIDC | Enable OIDC-based SSO login | false | `true` | No |
 | SPARC_FIDO2_ENABLED | Enable FIDO2/WebAuthn security-key sign-in (passwordless; key + PIN = app-native MFA). Adds "Security Keys" enrollment + a "Sign in with a security key" option. (#779) | false | `true` | No |
+| SPARC_REQUIRE_FIDO2 | **Mandatory** security-key enrollment gate: `off` \| `local` \| `all`. `local`/`all` also enable FIDO2 (one variable — no separate `SPARC_FIDO2_ENABLED` needed). Forces a keyless user to enroll before proceeding; the break-glass admin (`SPARC_ADMIN_EMAIL`) and service accounts are always exempt. `true`→`all`, `false`→`off`. (#802) | off | `all` | No |
 | SPARC_FIDO2_RP_NAME | WebAuthn relying-party display name shown by the authenticator. **Derives from `SPARC_APP_NAME`** (#785 Pass 2) — set only to override. | `SPARC_APP_NAME` (default `SPARC`) | `Acme SPARC` | No |
 | SPARC_FIDO2_RP_ID | WebAuthn RP ID (domain). Defaults to the host of `SPARC_APP_URL`; set only to scope credentials to a parent domain. Must match the browser origin. | (host of SPARC_APP_URL) | `sparc.example.com` | No |
 | SPARC_ENABLE_PIV | Enable PIV / CAC smart-card sign-in (cert + PIN). The mTLS + DoD-PKI validation happens at the proxy/ALB (see sparc-iac); SPARC consumes the forwarded validated cert. **Only enable behind a correctly-configured mTLS gateway** that sets the verify header and strips client-supplied copies. (#779) | false | `true` | No |

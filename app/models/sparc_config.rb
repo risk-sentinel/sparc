@@ -19,7 +19,7 @@
 #   IA-5 Authenticator Management (SPARC_PASSWORD_EXPIRY_DAYS)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 module SparcConfig
-  VERSION = "1.13.1"
+  VERSION = "1.13.2"
 
   extend self
 
@@ -148,7 +148,31 @@ module SparcConfig
   # must be able to guarantee no egress.
   def authoritative_fetch_enabled? = ENV.fetch("SPARC_AUTHORITATIVE_FETCH_ENABLED", nil).to_s.downcase == "true"
   def enable_registration? = ENV.fetch("SPARC_ENABLE_USER_REGISTRATION", "false") == "true"
-  def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true"  # WebAuthn security keys (#779)
+  # WebAuthn security keys (#779). Enabled explicitly via SPARC_FIDO2_ENABLED,
+  # OR inferred from SPARC_REQUIRE_FIDO2 (#802): requiring a key necessarily
+  # enables the feature, so operators set ONE variable, not two (the same
+  # infer-enable-from-config pattern as #785). This also removes the lockout
+  # footgun — a required key always has a reachable enrollment page.
+  def fido2_enabled?       = ENV.fetch("SPARC_FIDO2_ENABLED", "false") == "true" || require_fido2?
+
+  # #802 — mandatory FIDO2 enrollment gate. Forces users to register a security
+  # key on first login (org-wide hardware-key rollout, no external IdP needed).
+  # ONE variable controls both enablement and scope:
+  #   off   (default) — opt-in only (enabled solely if SPARC_FIDO2_ENABLED=true).
+  #   local — enable FIDO2 AND require it for users who signed in via local login.
+  #   all   — enable FIDO2 AND require it for every human user, any auth method.
+  # `true` aliases `all` and `false` aliases `off`. The break-glass bootstrap
+  # admin (admin_email) and service accounts are always exempt (see the gate in
+  # concerns/authentication.rb). NIST IA-2(1)/(2), IA-2(8).
+  REQUIRE_FIDO2_MODES = %w[off local all].freeze
+  def require_fido2_mode
+    mode = ENV.fetch("SPARC_REQUIRE_FIDO2", "off").downcase
+    mode = "all" if mode == "true"
+    mode = "off" if mode == "false"
+    REQUIRE_FIDO2_MODES.include?(mode) ? mode : "off"
+  end
+
+  def require_fido2?       = require_fido2_mode != "off"
 
   # PIV / CAC smart-card auth (#779, Track B). The mTLS handshake + DoD PKI
   # validation + revocation happen at the proxy/ALB (sparc-iac); SPARC consumes

@@ -61,7 +61,7 @@ class OmniauthCallbacksController < ApplicationController
     identity.save!
     identity.touch_last_used!
 
-    start_session(user, ip_address: request.remote_ip)
+    start_session(user, ip_address: request.remote_ip, provider: auth.provider.to_s)
 
     AuditEvent.log(
       user: user,
