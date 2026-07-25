@@ -1,0 +1,22 @@
+# YAML lint config (#788).
+#
+# Permissive-but-useful: extend the `relaxed` preset so style nits (line length,
+# indentation, comments spacing) are warnings that DON'T fail CI, while genuine
+# SYNTAX ERRORS and DUPLICATE KEYS still fail. yamllint parses YAML *without*
+# rendering ERB, so it catches the class of bug that shipped a broken
+# config/database.yml undetected — an unquoted ERB ternary whose `:` a YAML
+# parser reads as a mapping separator. The app booted (Rails renders ERB before
+# parsing), but every editor, IDE, and YAML tool that reads the raw file choked.
+#
+# Adoptable first step per the issue: start permissive, catch the real errors.
+extends: relaxed
+
+yaml-files:
+  - "*.yaml"
+  - "*.yml"
+
+ignore: |
+  vendor/
+  tmp/
+  node_modules/
+  coverage/

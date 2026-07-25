@@ -496,6 +496,7 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
           DIGEST: ${{ needs.build-and-push.outputs.digest }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.version }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "::error::secrets.PROJECT_TOKEN is unset — cannot file the pin-bump issue in ${CONSUMER_REPO}. Cross-repo lockstep (#748) requires it on a real release."
@@ -511,7 +512,13 @@ jobs:
           |-------|-------|
           | Tag | \`${VERSION}\` |
           | Digest | \`${DIGEST}\` |
+          | Release notes | ${RELEASE_URL} |
           | Publish run | ${RUN_URL} |
+
+          > ⚠️ **Before you deploy:** review the release notes above for **new or changed
+          > environment variables, config, or known issues** — a pin bump can carry
+          > deployment-relevant changes, not just a new digest (see #750). Skipping this
+          > is how the \`LANG=C.UTF-8\` / \`SPARC_HEADER_TEXT\` incident reached prod.
 
           ### Verify the signature
 
