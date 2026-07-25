@@ -219,6 +219,17 @@ export button). New routes/pages get Playwright ui-smoke coverage per convention
   end-to-end demo (upload → triage → export → `hdf amend apply` → `saf validate
   threshold`). VERSION bump in this same PR.
 
+## 9b. Successor epic — #809 (v1.14.0)
+
+#447 is the **export** direction (tenant triages → SPARC emits Amendments for
+their CI). The reverse direction — consumers **send** SPARC HDF evidence *with*
+amendments and SPARC **aggregates** it into their SSP / SAP / SAR / POA&M at the
+appropriate function, plus packaging the aggregated result back to the customer —
+is tracked separately in **#809**, targeted at **v1.14.0**. Out of scope here, but
+the persistence layer in this PR (`ScanRun` / `ScannerFinding` / `FindingDisposition`
+/ `RiskAssessment`, boundary-scoped) is designed so #809 can consume it without a
+schema rewrite.
+
 ## 9. NIST controls touched
 CA-7 (continuous monitoring), RA-3 (risk assessment), RA-5 (vuln scanning),
 SI-2 (flaw remediation), SA-11 (developer testing), AU-12 (audit on disposition),
