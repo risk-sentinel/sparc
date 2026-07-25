@@ -10,7 +10,7 @@
 services:
   web:
     environment:
-      DATABASE_URL: "postgresql://postgres:password@db:5432/ssp_tpr_manager_production?sslmode=prefer"
+      DATABASE_URL: "postgresql://postgres:password@db:5432/ssp_tpr_manager_production?sslmode=prefer"  # gitleaks:allow
       # Null out the base file's SPARC_DB_* so ONLY DATABASE_URL is in play.
       SPARC_DB_HOST: ""
       SPARC_DB_PORT: ""

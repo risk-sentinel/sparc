@@ -20,7 +20,7 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: password  # gitleaks:allow
       POSTGRES_DB: ssp_tpr_manager_production
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
@@ -72,7 +72,7 @@ services:
       # see docs/DATABASE_TLS.md. To exercise the real posture locally, use
       # bin/test-db-tls, which stands up a TLS-enabled Postgres.
       SPARC_DB_SSLMODE: prefer
-      SPARC_DB_PASSWORD: password
+      SPARC_DB_PASSWORD: password  # gitleaks:allow
       REDIS_URL: redis://redis:6379/0
       # Prod defaults Active Storage to S3; use local disk here so seeds that
       # attach files don't reach for AWS/IMDS. AWS_REGION is a harmless fallback.
@@ -90,7 +90,7 @@ services:
       # Docker Desktop host gateway (192.168.65.x) and the compose bridge.
       SPARC_RATE_LIMIT_SAFELIST_CIDRS: "192.168.0.0/16,172.16.0.0/12,10.0.0.0/8,127.0.0.1,::1"
       # Local-only dummy — NEVER a production secret.
-      SECRET_KEY_BASE: "ubi9-local-validation-not-for-production-0123456789abcdef0123456789abcdef"
+      SECRET_KEY_BASE: "ubi9-local-validation-not-for-production-0123456789abcdef0123456789abcdef"  # gitleaks:allow
       FORCE_SSL: "false"
       RAILS_SERVE_STATIC_FILES: "true"
       SPARC_FIDO2_ENABLED: "true"
