@@ -600,8 +600,12 @@ Rails.application.routes.draw do
         resources :scanner_findings, only: [ :index ]
       end
 
-      # HDF Amendment triage (#447) — flat show of a single finding by uuid.
-      resources :scanner_findings, only: [ :show ]
+      # HDF Amendment triage (#447) — flat show of a single finding by uuid,
+      # with its one disposition (create acts as upsert; keyed by boundary+control).
+      resources :scanner_findings, only: [ :show ] do
+        resource :disposition, only: [ :show, :create, :destroy ],
+                 controller: "finding_dispositions"
+      end
 
       # HDF ↔ OSCAL translation bridge (#449). Stateless — does not persist
       # tenant state; SPARC is the translation engine, not the source of
