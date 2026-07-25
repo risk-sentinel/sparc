@@ -69,6 +69,23 @@ RSpec.describe "PivSessions", type: :request do
     end
   end
 
+  context "#804 issuer acceptance filter (defense-in-depth)" do
+    let!(:user) { create(:user, email: "john.doe@mil") }
+
+    it "rejects a verified cert whose issuer is not on the accepted list" do
+      allow(SparcConfig).to receive(:piv_accepted_issuers).and_return([ "ACME Corp PIV CA" ])
+      expect { get piv_session_path, headers: piv_headers(dod_cert) }
+        .to change { AuditEvent.where(action: "login_failure", provider: "piv").count }.by(1)
+      expect(response).to redirect_to(login_path)
+    end
+
+    it "signs in when the cert issuer matches the accepted list" do
+      allow(SparcConfig).to receive(:piv_accepted_issuers).and_return([ "DOE.JOHN" ])
+      get piv_session_path, headers: piv_headers(dod_cert)
+      expect(response).to redirect_to(root_path)
+    end
+  end
+
   it "404s when PIV is disabled" do
     allow(SparcConfig).to receive(:enable_piv?).and_return(false)
     get piv_session_path, headers: piv_headers(dod_cert)

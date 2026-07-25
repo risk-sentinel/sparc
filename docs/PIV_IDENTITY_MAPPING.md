@@ -79,6 +79,23 @@ SPARC_PIV_ALLOW_EMAIL_MATCH=false
 With this set, only a provisioned `provider: "piv"` identity authenticates; a cert whose
 only link to an account is a shared email address is rejected.
 
+## Optional: restrict which certs are accepted (#804)
+
+Trust of the client cert lives at the **gateway** — it validates the CA chain (against your
+org's, likely self-signed, CA). As **defense-in-depth**, SPARC can additionally require the
+forwarded cert to come from a known **issuer** and/or carry a known **certificate-policy
+OID**, so a cert from an unexpected issuer/policy is rejected even if the gateway trust store
+is broader than intended:
+
+```
+SPARC_PIV_ACCEPTED_ISSUERS=ACME Corp PIV CA        # CSV; case-insensitive substring of issuer DN
+SPARC_PIV_ACCEPTED_POLICY_OIDS=2.16.840.1.101.3.2.1.3.13   # CSV of certificate-policy OIDs
+```
+
+Both empty (default) = accept whatever the gateway forwarded (no behaviour change). When set,
+a non-matching cert is rejected fail-closed and audited as a `login_failure`. This is **not**
+a substitute for gateway CA trust — it's a second, narrower allowlist on top of it.
+
 ## What a certificate must carry
 
 | Source | Required in the cert |
