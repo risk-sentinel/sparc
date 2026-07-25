@@ -133,11 +133,33 @@ by admin reset.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SPARC_FIDO2_ENABLED` | Enable FIDO2 / WebAuthn security-key enrollment + login | `false` |
+| `SPARC_FIDO2_ENABLED` | Enable FIDO2 / WebAuthn security-key enrollment + login (opt-in) | `false` |
+| `SPARC_REQUIRE_FIDO2` | **Mandatory** enrollment gate: `off` \| `local` \| `all`. Setting `local`/`all` also enables FIDO2 (one variable). | `off` |
 
 The WebAuthn relying-party ID is derived from the app URL (`SPARC_APP_URL`).
 Enrollment and day-to-day use are covered in the wiki **Security Keys & Smart
 Cards** User Guide and the in-app Help Center (`/help`).
+
+**Mandatory enrollment (#802).** By default FIDO2 is opt-in. Set
+`SPARC_REQUIRE_FIDO2` to force registration on first login — the org-wide
+hardware-key rollout case, no external IdP required:
+
+- `local` — require a key for users who signed in via **local email/password**
+  (OIDC/LDAP/PIV sessions rely on their own MFA and are exempt).
+- `all` — require a key for **every human user**, regardless of auth method.
+
+`local`/`all` also enable FIDO2, so you set one variable, not two (`true`→`all`,
+`false`→`off`). A gated user is redirected to the Security Keys page and cannot
+reach anything else until they enroll. **Always exempt:** the break-glass
+bootstrap admin (`SPARC_ADMIN_EMAIL`, a shared/role account) and **service
+accounts** (humanless — they authenticate by API token, never a key).
+
+> **Provenance / org-issued-key restriction is out of scope here.** The gate
+> forces enrollment of *a* key but does not verify the authenticator's
+> attestation certificate, so any FIDO2 authenticator is accepted (identified by
+> its credential + PIN, not a manufacturer cert chain). Restricting enrollment to
+> specific/approved keys (WebAuthn `attestation: direct` + a trust store) is a
+> separate capability. For X.509 smart-card trust, use **PIV / CAC** below.
 
 > **Enrolling an external key on a Mac:** the browser offers the built-in
 > platform authenticator (Touch ID) first. To register an external key such as a

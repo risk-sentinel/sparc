@@ -73,11 +73,16 @@ module Authentication
   # ── Session Management ────────────────────────────────────────────────
 
   # Start a new authenticated session. Resets session first to prevent
-  # session fixation attacks.
-  def start_session(user, ip_address: nil)
+  # session fixation attacks. `provider` records HOW the user authenticated
+  # ("local", "ldap", "oidc", "piv", "webauthn", …) so the mandatory-FIDO2 gate
+  # can scope `local` mode to local-password sessions (#802). Defaults to
+  # "local" — the strict default, so a caller that forgets to pass it errs
+  # toward gating rather than exempting.
+  def start_session(user, ip_address: nil, provider: "local")
     reset_session
     session[:user_id] = user.id
     session[:last_active_at] = Time.current.to_i
+    session[:auth_provider] = provider.to_s
     user.record_sign_in!(ip_address: ip_address)
   end
 
@@ -122,5 +127,53 @@ module Authentication
     elsif current_user.password_expired?
       redirect_to edit_password_path, warning: "Your password has expired. Please set a new password to continue."
     end
+  end
+
+  # ── Mandatory FIDO2 Enrollment Gate (#802) ────────────────────────────
+  #
+  # When SPARC_REQUIRE_FIDO2 is on, force a signed-in user with no registered
+  # security key to the enrollment page before they can reach anything else —
+  # org-wide mandatory hardware-key MFA, not opt-in. Mirrors check_password_reset
+  # (runs after it, so a required password change happens first).
+  #
+  # Always exempt:
+  #   - the enrollment/escape routes (or you build a redirect loop),
+  #   - the break-glass bootstrap admin (SparcConfig.admin_email) — a shared
+  #     local account fronted by an external role-checkout/PAM flow; no single
+  #     person's key belongs on it,
+  #   - service accounts (humanless — they authenticate by API token, never a key).
+  # In `local` mode, only local-password sessions are gated (OIDC/LDAP/PIV rely
+  # on their own MFA). NIST IA-2(1)/(2), IA-2(8).
+  def check_webauthn_enrollment
+    return unless SparcConfig.require_fido2?
+    return unless signed_in?
+    return if webauthn_gate_exempt_route?
+    return if webauthn_gate_exempt_user?(current_user)
+    return if current_user.webauthn_registered?
+
+    redirect_to webauthn_credentials_path,
+                warning: "Your organization requires a security key. Register one to continue."
+  end
+
+  private
+
+  # The enrollment endpoints themselves, plus logout and the password flow, must
+  # stay reachable — otherwise the gate loops or traps a user mid-password-reset.
+  def webauthn_gate_exempt_route?
+    %w[webauthn_credentials sessions passwords].include?(controller_name)
+  end
+
+  def webauthn_gate_exempt_user?(user)
+    return true if user.service_account?
+    return true if user.email.to_s.casecmp?(SparcConfig.admin_email.to_s)
+    # `local` mode gates only local-password sessions; `all` gates everyone.
+    return true if SparcConfig.require_fido2_mode == "local" && current_auth_provider != "local"
+
+    false
+  end
+
+  # How the current session authenticated (set by start_session, #802).
+  def current_auth_provider
+    session[:auth_provider].to_s
   end
 end

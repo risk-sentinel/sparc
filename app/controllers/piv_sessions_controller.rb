@@ -30,7 +30,7 @@ class PivSessionsController < ApplicationController
     user = PivAuthService.find_user(identity)
     return failure(user, identity, "This smart card is not linked to an active SPARC account.") if user.nil?
 
-    start_session(user, ip_address: request.remote_ip)
+    start_session(user, ip_address: request.remote_ip, provider: "piv")
     AuditEvent.log(
       user: user, action: "login_success", provider: "piv",
       ip_address: request.remote_ip, user_agent: request.user_agent,

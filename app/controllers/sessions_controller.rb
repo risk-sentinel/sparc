@@ -211,7 +211,7 @@ class SessionsController < ApplicationController
       identity.update!(user: user) unless identity.user_id == user.id
       identity.touch_last_used!
 
-      start_session(user, ip_address: request.remote_ip)
+      start_session(user, ip_address: request.remote_ip, provider: "ldap")
       AuditEvent.log(
         user: user,
         action: "login_success",

@@ -87,6 +87,52 @@ flowchart LR
 
 ---
 
+## For administrators: rolling out security keys
+
+These are **operator/deployment settings** (environment variables), not in-app
+toggles — set them where your deployment manages configuration (e.g. the ECS
+task definition / sparc-iac).
+
+### Make security keys available (opt-in)
+
+```
+SPARC_FIDO2_ENABLED=true
+```
+
+Users can now enroll from *Account menu → Security Keys* and sign in with a key,
+but enrollment is voluntary.
+
+### Require security keys (mandatory enrollment)
+
+To force every applicable user to register a key **on first login** before they
+can use anything else — an org-wide hardware-key mandate, no external IdP needed:
+
+```
+SPARC_REQUIRE_FIDO2=all      # every human user, any sign-in method
+# or
+SPARC_REQUIRE_FIDO2=local    # only users who sign in with local email/password
+                             # (OIDC / LDAP / PIV users rely on their IdP's MFA)
+```
+
+Notes:
+
+- Setting `local` or `all` **also enables FIDO2** — you do not also need
+  `SPARC_FIDO2_ENABLED`. (`off` is the default; `true`→`all`, `false`→`off`.)
+- A user with no key is redirected to the Security Keys page and cannot reach
+  anything else until they enroll.
+- **Always exempt:** the break-glass bootstrap admin account
+  (`SPARC_ADMIN_EMAIL`, typically shared via a role-checkout/PAM flow) and
+  **service accounts** (which authenticate by API token, not a key). Human
+  administrators are **not** exempt — they must enroll.
+- After an admin resets a user's keys, that user is re-prompted to enroll on next
+  login.
+
+<!-- ATTESTATION-RESTRICTION: the "only org-issued keys may enroll" setup
+     (SPARC_FIDO2_ALLOWED_AAGUIDS / attestation trust) is documented with that
+     feature (#802 follow-on) once it ships. -->
+
+---
+
 ## Tips & best practices
 
 - Always keep at least one **backup** key or an alternate sign-in method.
