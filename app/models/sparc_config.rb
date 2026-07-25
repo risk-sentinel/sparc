@@ -174,6 +174,25 @@ module SparcConfig
 
   def require_fido2?       = require_fido2_mode != "off"
 
+  # #805 — restrict WHICH login methods may hold a session (phishing-resistant
+  # enforcement, app-layer). CSV allowlist; EMPTY (default) = no restriction, any
+  # method is fine. When set, a signed-in user whose session was established by a
+  # method NOT in the list is bounced back to /login to re-authenticate with an
+  # accepted method. Enforcement lives here, not at the mTLS gateway, so "require
+  # OIDC or PIV" works on a single-listener `optional` gateway (no dedicated PIV
+  # host). The break-glass bootstrap admin (admin_email) and service accounts are
+  # exempt — see the gate in concerns/authentication.rb.
+  #
+  # Tokens (matched case-insensitively, with aliases): local, ldap, piv,
+  # webauthn (alias fido2), oidc (= the openid_connect provider), github, gitlab,
+  # sso (= any of github/gitlab/openid_connect). e.g. SPARC_REQUIRE_AUTH_METHODS="oidc,piv".
+  # NIST IA-2, IA-2(1)/(2), IA-2(8).
+  def required_auth_methods
+    ENV.fetch("SPARC_REQUIRE_AUTH_METHODS", "").downcase.split(",").map(&:strip).reject(&:empty?).uniq
+  end
+
+  def require_auth_methods? = required_auth_methods.any?
+
   # PIV / CAC smart-card auth (#779, Track B). The mTLS handshake + DoD PKI
   # validation + revocation happen at the proxy/ALB (sparc-iac); SPARC consumes
   # the *validated* client cert it forwards. piv_cert_header carries the PEM;

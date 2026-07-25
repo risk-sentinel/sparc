@@ -13,6 +13,7 @@ class ApplicationController < ActionController::Base
   before_action :check_session_timeout
   before_action :check_password_reset
   before_action :check_webauthn_enrollment  # #802 — mandatory FIDO2 enrollment gate
+  before_action :check_required_auth_method # #805 — require OIDC/PIV (phishing-resistant) auth
 
   # Convert SSP/SAR control IDs (from Excel: "AC-1", "AC-01", "AC-2(1)")
   # to the OSCAL canonical format used by catalogs:

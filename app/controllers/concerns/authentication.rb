@@ -155,6 +155,27 @@ module Authentication
                 warning: "Your organization requires a security key. Register one to continue."
   end
 
+  # ── Required Auth-Method Gate (#805) ──────────────────────────────────
+  #
+  # When SPARC_REQUIRE_AUTH_METHODS is set, a signed-in user whose session was
+  # established by a method NOT in the allowlist is bounced back to /login to
+  # re-authenticate with an accepted method — "require OIDC or PIV" (phishing-
+  # resistant), enforced in the app so it works on a single-listener `optional`
+  # mTLS gateway. Same exemptions as #802 (break-glass admin + service accounts):
+  # local login stays available to the break-glass account even when everyone
+  # else is forced onto OIDC/PIV. NIST IA-2, IA-2(1)/(2), IA-2(8).
+  def check_required_auth_method
+    return unless SparcConfig.require_auth_methods?
+    return unless signed_in?
+    return if auth_gate_exempt_user?(current_user)
+    return if auth_method_accepted?(current_auth_provider, SparcConfig.required_auth_methods)
+
+    end_session # deny the non-accepted session; force re-auth via an allowed method
+    redirect_to login_path, status: :see_other,
+                warning: "Your organization requires signing in with: " \
+                         "#{SparcConfig.required_auth_methods.join(', ')}. Please use one of those methods."
+  end
+
   private
 
   # The enrollment endpoints themselves, plus logout and the password flow, must
@@ -164,12 +185,34 @@ module Authentication
   end
 
   def webauthn_gate_exempt_user?(user)
-    return true if user.service_account?
-    return true if user.email.to_s.casecmp?(SparcConfig.admin_email.to_s)
+    return true if auth_gate_exempt_user?(user)
     # `local` mode gates only local-password sessions; `all` gates everyone.
     return true if SparcConfig.require_fido2_mode == "local" && current_auth_provider != "local"
 
     false
+  end
+
+  # Shared exemptions for the auth gates (#802/#805): the break-glass bootstrap
+  # admin (a shared local account fronted by an external role-checkout/PAM flow)
+  # and service accounts (humanless — they authenticate by API token).
+  def auth_gate_exempt_user?(user)
+    user.service_account? || user.email.to_s.casecmp?(SparcConfig.admin_email.to_s)
+  end
+
+  # True if `provider` satisfies any token in the `allowed` allowlist (#805).
+  # Providers carry aliases so an operator can write "oidc" / "sso" / "fido2".
+  def auth_method_accepted?(provider, allowed)
+    (provider_tokens(provider) & allowed).any?
+  end
+
+  def provider_tokens(provider)
+    case provider
+    when "openid_connect" then %w[openid_connect oidc sso]
+    when "github"         then %w[github sso oauth]
+    when "gitlab"         then %w[gitlab sso oauth]
+    when "webauthn"       then %w[webauthn fido2]
+    else                       [ provider ] # local, ldap, piv, api_token
+    end
   end
 
   # How the current session authenticated (set by start_session, #802).

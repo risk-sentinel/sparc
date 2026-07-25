@@ -127,6 +127,30 @@ Notes:
 - After an admin resets a user's keys, that user is re-prompted to enroll on next
   login.
 
+### Require a strong login method (OIDC or PIV)
+
+Separately from *enrolling a key*, you can require users to **sign in** only with
+a phishing-resistant method — e.g. OIDC (your SSO/IdP) or a PIV/CAC smart card —
+and forbid plain local passwords:
+
+```
+SPARC_REQUIRE_AUTH_METHODS=oidc,piv
+```
+
+- Any signed-in user whose method isn't on the list is sent back to the login
+  page to re-authenticate with an accepted one. Empty (default) = no restriction.
+- Tokens: `local`, `ldap`, `piv`, `webauthn` (`fido2`), `oidc`, `github`,
+  `gitlab`, `sso` (any SSO). Example above = "OIDC or PIV only."
+- **Break-glass admin (`SPARC_ADMIN_EMAIL`) and service accounts are exempt** —
+  keep `SPARC_ENABLE_LOCAL_LOGIN=true` so the break-glass account still works;
+  everyone else is forced onto OIDC/PIV.
+- This is enforced in the app, so it works even on a single-listener mTLS gateway
+  (no dedicated PIV host needed just to enforce). PIV must still be *available* —
+  that requires the mTLS gateway (deployment/sparc-iac side).
+
+This is independent of *mandatory enrollment* above: one forces registering a
+key, the other restricts the login method. Pick the model your org needs.
+
 <!-- ATTESTATION-RESTRICTION: the "only org-issued keys may enroll" setup
      (SPARC_FIDO2_ALLOWED_AAGUIDS / attestation trust) is documented with that
      feature (#802 follow-on) once it ships. -->
