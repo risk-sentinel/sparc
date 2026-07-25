@@ -61,6 +61,19 @@ class PivAuthService
       nil
     end
 
+    # #804 — OPTIONAL defense-in-depth: accept the (already gateway-validated)
+    # cert only if it matches the configured org issuer(s) and/or policy OID(s).
+    # Both allowlists empty (default) → accept anything the gateway forwarded.
+    # Fail-closed: an unparseable cert is not accepted.
+    def cert_accepted?(cert_pem)
+      return false if cert_pem.blank?
+
+      cert = OpenSSL::X509::Certificate.new(cert_pem)
+      issuer_accepted?(cert) && policy_accepted?(cert)
+    rescue OpenSSL::X509::CertificateError, OpenSSL::OpenSSLError
+      false
+    end
+
     # Resolve a parsed Identity to an active SPARC user, or nil.
     def find_user(identity)
       return nil if identity.nil?
@@ -111,6 +124,41 @@ class PivAuthService
 
     def subject_cn(cert)
       cert.subject.to_a.find { |name, _, _| name == "CN" }&.at(1)
+    end
+
+    # ── #804 acceptance filter (defense-in-depth) ────────────────────────────
+    def issuer_accepted?(cert)
+      allowed = SparcConfig.piv_accepted_issuers
+      return true if allowed.empty?
+
+      dn = cert.issuer.to_s.downcase
+      allowed.any? { |a| dn.include?(a.downcase) }
+    end
+
+    def policy_accepted?(cert)
+      allowed = SparcConfig.piv_accepted_policy_oids
+      return true if allowed.empty?
+
+      (cert_policy_oids(cert) & allowed).any?
+    end
+
+    # policyIdentifier OIDs from the certificatePolicies extension, parsed from
+    # the ASN.1 (robust — the text rendering varies by OpenSSL/registration).
+    # certificatePolicies ::= SEQUENCE OF PolicyInformation, and
+    # PolicyInformation ::= SEQUENCE { policyIdentifier OBJECT IDENTIFIER, ... }.
+    def cert_policy_oids(cert)
+      ext = cert.extensions.find { |e| e.oid == "certificatePolicies" }
+      return [] unless ext
+
+      octet = OpenSSL::ASN1.decode(ext.to_der).value.find { |v| v.is_a?(OpenSSL::ASN1::OctetString) }
+      return [] unless octet
+
+      OpenSSL::ASN1.decode(octet.value).value.filter_map do |policy_info|
+        id = Array(policy_info.value).first
+        id.oid if id.is_a?(OpenSSL::ASN1::ObjectId)
+      end
+    rescue OpenSSL::ASN1::ASN1Error
+      []
     end
 
     # ── SAN fields ──────────────────────────────────────────────────────────

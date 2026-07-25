@@ -182,6 +182,16 @@ non-DoD private-CA case.
 | `SPARC_PIV_ALLOW_EMAIL_MATCH` | Fall back to matching the cert email to a user | `true` |
 | `SPARC_PIV_CERT_HEADER` | Header carrying the forwarded client cert | `X-SSL-Client-Cert` |
 | `SPARC_PIV_VERIFY_HEADER` | Header carrying the gateway's verify result | `X-SSL-Client-Verify` |
+| `SPARC_PIV_ACCEPTED_ISSUERS` | Optional (#804): CSV of issuer DNs (substring match) the cert must come from. Empty = accept any gateway-validated cert | (none) |
+| `SPARC_PIV_ACCEPTED_POLICY_OIDS` | Optional (#804): CSV of certificate-policy OIDs the cert must carry. Empty = no policy check | (none) |
+
+**Optional issuer/policy filter (#804).** Trust of the client cert lives at the
+mTLS gateway (it validates the CA chain). `SPARC_PIV_ACCEPTED_ISSUERS` /
+`SPARC_PIV_ACCEPTED_POLICY_OIDS` are an *additional, app-side* acceptance check —
+defense-in-depth so a cert from an unexpected issuer/policy can't authenticate
+even if the gateway trust store is broader than intended. Both empty (default) =
+accept whatever the gateway forwarded; when set, the cert must match (fail-closed,
+audited). Trust of *which CA to accept* still belongs at the gateway.
 
 See **`docs/PIV_IDENTITY_MAPPING.md`** for the full identity-mapping contract
 (including the non-DoD private-CA `subject_cn` + pattern case) and the mTLS

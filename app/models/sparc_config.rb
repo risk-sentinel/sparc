@@ -232,6 +232,23 @@ module SparcConfig
   # matches — the email path is only as strong as the proxy's trust boundary.
   def piv_allow_email_match? = ENV.fetch("SPARC_PIV_ALLOW_EMAIL_MATCH", "true") == "true"
 
+  # #804 — OPTIONAL app-side acceptance filter on the gateway-forwarded PIV cert
+  # (defense-in-depth). The mTLS gateway already validates the CA chain; these
+  # let SPARC additionally require the cert to come from a known org **issuer**
+  # and/or carry a known org **certificate-policy OID**, so a cert from an
+  # unexpected issuer can't authenticate even if the gateway trust store is
+  # broader than intended. Both are CSV allowlists; EMPTY (default) = accept
+  # whatever the gateway forwarded (no behavior change). Issuer entries match as
+  # a case-insensitive substring of the cert's issuer DN (a distinctive CA CN or
+  # a full DN both work). NIST IA-5(2), IA-2(12).
+  def piv_accepted_issuers
+    ENV.fetch("SPARC_PIV_ACCEPTED_ISSUERS", "").split(",").map(&:strip).reject(&:empty?)
+  end
+
+  def piv_accepted_policy_oids
+    ENV.fetch("SPARC_PIV_ACCEPTED_POLICY_OIDS", "").split(",").map(&:strip).reject(&:empty?)
+  end
+
   def session_timeout      = ENV.fetch("SPARC_SESSION_TIMEOUT_MINUTES", "60").to_i
 
   # Public visibility of the Controls layer (catalogs, baselines, mappings).

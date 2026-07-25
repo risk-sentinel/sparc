@@ -27,6 +27,12 @@ class PivSessionsController < ApplicationController
     identity = PivAuthService.parse(client_cert_pem)
     return failure(nil, identity, "No smart card certificate was presented.") if identity.nil?
 
+    # #804 — optional org issuer/policy acceptance filter (defense-in-depth on top
+    # of the gateway's CA validation). No-op unless SPARC_PIV_ACCEPTED_* are set.
+    unless PivAuthService.cert_accepted?(client_cert_pem)
+      return failure(nil, identity, "This smart card certificate is not from an accepted issuer.")
+    end
+
     user = PivAuthService.find_user(identity)
     return failure(user, identity, "This smart card is not linked to an active SPARC account.") if user.nil?
 

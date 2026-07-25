@@ -10,21 +10,25 @@ RSpec.describe PivAuthService do
   # Build a self-signed cert with a given CN and SAN. Nothing here validates
   # trust — the proxy does that upstream — so a self-signed cert is a faithful
   # stand-in for "a cert the proxy already verified".
-  def build_cert(cn:, san: nil)
+  def build_cert(cn:, san: nil, issuer_cn: nil, policy_oid: nil)
     key = OpenSSL::PKey::RSA.new(2048)
     cert = OpenSSL::X509::Certificate.new
     cert.subject = OpenSSL::X509::Name.parse("/CN=#{cn}")
-    cert.issuer = cert.subject
+    cert.issuer = issuer_cn ? OpenSSL::X509::Name.parse("/CN=#{issuer_cn}") : cert.subject
     cert.public_key = key.public_key
     cert.serial = 1
     cert.version = 2
     cert.not_before = Time.now - 3600
     cert.not_after  = Time.now + 3600
-    if san
-      ef = OpenSSL::X509::ExtensionFactory.new
-      ef.subject_certificate = cert
-      ef.issuer_certificate = cert
-      cert.add_extension(ef.create_extension("subjectAltName", san))
+    ef = OpenSSL::X509::ExtensionFactory.new
+    ef.subject_certificate = cert
+    ef.issuer_certificate = cert
+    cert.add_extension(ef.create_extension("subjectAltName", san)) if san
+    if policy_oid
+      # Build certificatePolicies via raw ASN.1 — create_extension won't accept an
+      # arbitrary policy OID. SEQUENCE OF PolicyInformation{ policyIdentifier }.
+      policies = OpenSSL::ASN1::Sequence.new([ OpenSSL::ASN1::Sequence.new([ OpenSSL::ASN1::ObjectId.new(policy_oid) ]) ])
+      cert.add_extension(OpenSSL::X509::Extension.new("certificatePolicies", policies.to_der, false))
     end
     cert.sign(key, OpenSSL::Digest.new("SHA256"))
     cert.to_pem
@@ -166,6 +170,58 @@ RSpec.describe PivAuthService do
     it "rejects an unprovisioned identity (no PIV Identity, no matching email)" do
       id = PivAuthService::Identity.new(uid: "9999999999", email: "nobody@nowhere.test", subject: "x")
       expect(described_class.find_user(id)).to be_nil
+    end
+  end
+
+  describe ".cert_accepted? — #804 issuer/policy filter (defense-in-depth)" do
+    let(:pol) { "1.3.6.1.4.1.99999.1.1" }
+
+    it "accepts any cert when no filter is configured (default, no behavior change)" do
+      expect(described_class.cert_accepted?(build_cert(cn: "USER.1234567890"))).to be(true)
+    end
+
+    it "accepts a cert whose issuer DN matches an accepted issuer (substring)" do
+      pem = build_cert(cn: "USER.1234567890", issuer_cn: "ACME Corp PIV CA")
+      with_env("SPARC_PIV_ACCEPTED_ISSUERS" => "ACME Corp PIV CA") do
+        expect(described_class.cert_accepted?(pem)).to be(true)
+      end
+    end
+
+    it "rejects a cert from an issuer not on the allowlist" do
+      pem = build_cert(cn: "USER.1234567890", issuer_cn: "Rogue CA")
+      with_env("SPARC_PIV_ACCEPTED_ISSUERS" => "ACME Corp PIV CA") do
+        expect(described_class.cert_accepted?(pem)).to be(false)
+      end
+    end
+
+    it "accepts a cert carrying an accepted certificate-policy OID" do
+      pem = build_cert(cn: "USER.1", policy_oid: pol)
+      with_env("SPARC_PIV_ACCEPTED_POLICY_OIDS" => pol) do
+        expect(described_class.cert_accepted?(pem)).to be(true)
+      end
+    end
+
+    it "rejects a cert missing the accepted policy OID" do
+      pem = build_cert(cn: "USER.1", policy_oid: "1.3.6.1.4.1.99999.9.9")
+      with_env("SPARC_PIV_ACCEPTED_POLICY_OIDS" => pol) do
+        expect(described_class.cert_accepted?(pem)).to be(false)
+      end
+    end
+
+    it "requires BOTH when issuer and policy are configured" do
+      good = build_cert(cn: "USER.1", issuer_cn: "ACME PIV CA", policy_oid: pol)
+      bad  = build_cert(cn: "USER.1", issuer_cn: "ACME PIV CA", policy_oid: "1.3.6.1.4.1.99999.9.9")
+      with_env("SPARC_PIV_ACCEPTED_ISSUERS" => "ACME PIV CA", "SPARC_PIV_ACCEPTED_POLICY_OIDS" => pol) do
+        expect(described_class.cert_accepted?(good)).to be(true)
+        expect(described_class.cert_accepted?(bad)).to be(false)
+      end
+    end
+
+    it "fails closed on a blank or garbage cert" do
+      with_env("SPARC_PIV_ACCEPTED_ISSUERS" => "ACME PIV CA") do
+        expect(described_class.cert_accepted?("")).to be(false)
+        expect(described_class.cert_accepted?("not a certificate")).to be(false)
+      end
     end
   end
 end

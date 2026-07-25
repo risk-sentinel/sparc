@@ -151,9 +151,22 @@ SPARC_REQUIRE_AUTH_METHODS=oidc,piv
 This is independent of *mandatory enrollment* above: one forces registering a
 key, the other restricts the login method. Pick the model your org needs.
 
-<!-- ATTESTATION-RESTRICTION: the "only org-issued keys may enroll" setup
-     (SPARC_FIDO2_ALLOWED_AAGUIDS / attestation trust) is documented with that
-     feature (#802 follow-on) once it ships. -->
+### Restrict PIV/CAC to org-issued certificates (optional)
+
+For smart-card (PIV/CAC) login, the mTLS gateway already validates each cert
+against your CA. As **defense-in-depth**, SPARC can additionally require the cert
+to come from a known org **issuer** and/or carry a known **certificate-policy
+OID** — so a cert from an unexpected issuer can't sign in even if the gateway
+trust store is broader than intended:
+
+```
+SPARC_PIV_ACCEPTED_ISSUERS=ACME Corp PIV CA      # issuer DN (substring match)
+SPARC_PIV_ACCEPTED_POLICY_OIDS=2.16.840.1.101.3.2.1.3.13
+```
+
+Both empty (default) = accept any cert the gateway forwarded (no change). When
+set, a non-matching cert is rejected and audited. This does **not** decide *which
+CA to trust* — that stays at the gateway; it's an extra app-side allowlist.
 
 ---
 
