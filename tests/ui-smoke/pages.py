@@ -12,6 +12,9 @@ and may legitimately be absent on a given deployment.
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 # ── Public (unauthenticated) ───────────────────────────────────────────────
 PUBLIC_PAGES = [
     ("login", "/login"),
@@ -39,7 +42,6 @@ INDEX_PAGES = [
     ("about_api", "/about/api"),
     ("about_resources", "/about/resources"),
     ("help", "/help"),
-    ("help_guide", "/help/getting-oriented"),
 ]
 
 # ── Admin pages ────────────────────────────────────────────────────────────
@@ -74,8 +76,25 @@ FORM_PAGES = [
     ("password_edit", "/password/edit"),
 ]
 
+# ── In-app User Guide pages (#796) ──────────────────────────────────────────
+# Every guide reachable from /help (and now the sidebar's Help & Guides menu),
+# sourced from wiki/User-Guide-*.md so nav + a11y coverage never drifts from the
+# shipped guides. Slug logic mirrors UserGuideLibrary#slug_for.
+_WIKI_DIR = Path(__file__).resolve().parents[2] / "wiki"
+
+
+def _guide_slug(filename: str) -> str:
+    stem = filename[len("User-Guide-"):].removesuffix(".md").lower()
+    return re.sub(r"[^a-z0-9]+", "-", stem).strip("-")
+
+
+HELP_GUIDE_PAGES = sorted(
+    (f"help_{_guide_slug(p.name)}", f"/help/{_guide_slug(p.name)}")
+    for p in _WIKI_DIR.glob("User-Guide-*.md")
+)
+
 # All authenticated pages that MUST load (hard-fail on 4xx/5xx/login-bounce).
-MUST_EXIST_PAGES = INDEX_PAGES + ADMIN_PAGES + FORM_PAGES
+MUST_EXIST_PAGES = INDEX_PAGES + ADMIN_PAGES + FORM_PAGES + HELP_GUIDE_PAGES
 
 # ── Show pages — discovered at runtime from each index ──────────────────────
 # (label, index_path, href_regex). Absent records skip (not fail), since the

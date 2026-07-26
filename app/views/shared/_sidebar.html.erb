@@ -144,16 +144,26 @@
       </button>
       <div class="collapse" id="sidebarHelp">
         <ul class="sparc-sidebar-leaves">
-          <li>
-            <%= link_to help_path, class: "sparc-sidebar-leaf" do %>
-              <span class="sparc-sidebar-dot" style="background: #3498db;"></span> Help Center
-            <% end %>
-          </li>
+          <%# #796 — Getting Oriented pinned first, then the Help Center index, %>
+          <%# then every guide for fast navigation (sourced from wiki/User-Guide-*). %>
           <li>
             <%= link_to help_guide_path("getting-oriented"), class: "sparc-sidebar-leaf" do %>
               <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> Getting Oriented
             <% end %>
           </li>
+          <li>
+            <%= link_to help_path, class: "sparc-sidebar-leaf" do %>
+              <span class="sparc-sidebar-dot" style="background: #3498db;"></span> Help Center
+            <% end %>
+          </li>
+          <% sidebar_help_guides.each do |guide| %>
+            <% next if guide.slug == "getting-oriented" %>
+            <li>
+              <%= link_to help_guide_path(guide.slug), class: "sparc-sidebar-leaf" do %>
+                <span class="sparc-sidebar-dot" style="background: #9b59b6;"></span> <%= guide.title %>
+              <% end %>
+            </li>
+          <% end %>
         </ul>
       </div>
     </div>

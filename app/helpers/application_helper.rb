@@ -15,6 +15,7 @@ module ApplicationHelper
     "control_mappings"         => "control-catalogs-and-baselines",
     "converters"               => "converters-and-imports",
     "authorization_boundaries" => "authorization-boundaries",
+    "hdf_triage"               => "hdf-amendment-triage",
     "evidences"                => "evidence-and-attestations",
     "authoritative_sources"    => "trust-store",
     "promotion_queue"          => "trust-store",
@@ -34,6 +35,12 @@ module ApplicationHelper
   def contextual_help_path
     slug = contextual_help_slug
     slug ? help_guide_path(slug) : help_path
+  end
+
+  # #796 — every User Guide, for the sidebar "Help & Guides" menu (sorted by
+  # title). Memoized per request; the sidebar renders once per page.
+  def sidebar_help_guides
+    @sidebar_help_guides ||= UserGuideLibrary.all
   end
 
   # Status-color palette (hue-named; the same swatch is reused across the
