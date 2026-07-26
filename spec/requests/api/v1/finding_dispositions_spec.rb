@@ -111,4 +111,34 @@ RSpec.describe "Api::V1::FindingDispositions", type: :request do
       expect(FindingDisposition.where(authorization_boundary: boundary, control_id: "CVE-1")).to be_empty
     end
   end
+
+  describe "approval flow (#809)" do
+    before { create(:finding_disposition, authorization_boundary: boundary, control_id: "CVE-1", kind: "poam") }
+
+    it "approves the disposition (records approver)" do
+      post approve_api_v1_scanner_finding_disposition_path(finding.uuid), headers: admin_headers
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)["data"]
+      expect(data["approval_status"]).to eq("approved")
+      expect(data["approved_by"]).to be_present
+    end
+
+    it "rejects the disposition" do
+      post reject_api_v1_scanner_finding_disposition_path(finding.uuid), headers: admin_headers
+      expect(JSON.parse(response.body)["data"]["approval_status"]).to eq("rejected")
+    end
+
+    it "forbids a member without amendment.approve" do
+      post approve_api_v1_scanner_finding_disposition_path(finding.uuid), headers: member_headers
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "re-creating a disposition resets approval to draft" do
+      post approve_api_v1_scanner_finding_disposition_path(finding.uuid), headers: admin_headers
+      post disposition_path, params: { kind: "poam", reason: "changed",
+                                       linked_subject_type: "PoamFinding", linked_subject_id: create(:poam_finding).id },
+           headers: admin_headers
+      expect(JSON.parse(response.body)["data"]["approval_status"]).to eq("draft")
+    end
+  end
 end

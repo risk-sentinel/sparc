@@ -629,7 +629,11 @@ Rails.application.routes.draw do
       # with its one disposition (create acts as upsert; keyed by boundary+control).
       resources :scanner_findings, only: [ :show ] do
         resource :disposition, only: [ :show, :create, :destroy ],
-                 controller: "finding_dispositions"
+                 controller: "finding_dispositions" do
+          # #809 — amendment approval flow.
+          post :approve
+          post :reject
+        end
       end
 
       # HDF ↔ OSCAL translation bridge (#449). Stateless — does not persist

@@ -148,6 +148,8 @@ POST /api/v1/sar_documents/:id/fields/import/confirm
 POST /api/v1/sar_documents/:id/fields/import/preview
 POST /api/v1/sar_documents/convert
 POST /api/v1/scanner_findings/:scanner_finding_id/disposition
+POST /api/v1/scanner_findings/:scanner_finding_id/disposition/approve
+POST /api/v1/scanner_findings/:scanner_finding_id/disposition/reject
 POST /api/v1/sessions/from_token
 POST /api/v1/ssp_documents
 POST /api/v1/ssp_documents/:id/fields/import/confirm
