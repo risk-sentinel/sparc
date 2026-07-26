@@ -67,6 +67,12 @@ Rails.application.routes.draw do
       get  :ato_wizard
       post :create_ato_package
       get  :download_ato_package
+      # #447 — HDF Amendment triage UI (thin client over the triage services).
+      get    :triage,              to: "hdf_triage#show"
+      post   "triage/ingest",      to: "hdf_triage#ingest",            as: :triage_ingest
+      post   "triage/disposition", to: "hdf_triage#disposition",       as: :triage_disposition
+      delete "triage/disposition", to: "hdf_triage#clear_disposition", as: :triage_clear_disposition
+      get    "triage/amendments",  to: "hdf_triage#amendments",        as: :triage_amendments
     end
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
     resources :memberships,
