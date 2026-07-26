@@ -18,9 +18,11 @@ Related surfaces:
 ## Authentication & authorization
 
 All endpoints require a Bearer token. Access is boundary-scoped and reuses the
-evidence permissions: `evidence.read` to view findings/dispositions and export,
-`evidence.write` to ingest scans and set/clear dispositions. Instance admins
-bypass. The `:authorization_boundary_id` segment accepts a numeric id or slug;
+evidence permissions: `evidence.read` to view findings/dispositions, export, and
+download the signed package; `evidence.write` to ingest scans, set/clear
+dispositions, and aggregate. **Approving/rejecting** an amendment additionally
+requires admin or the `amendment.approve` permission. Instance admins bypass. The
+`:authorization_boundary_id` segment accepts a numeric id or slug;
 finding/disposition segments use the finding **uuid**.
 
 ## Ingest a scan
@@ -30,9 +32,16 @@ POST /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 ```
 
 Multipart (`file=@scan.hdf.json`) or a raw HDF JSON body. Accepts a single HDF
-results document or a `saf convert` bundle (array of HDF docs). Idempotent by
-`(boundary, control_id)`: a fresh scan updates existing findings and preserves
-their dispositions.
+results document or a `saf convert` bundle (array of HDF docs). Findings are kept
+per-scan-run as history (`current` flag) with a re-occurrence lifecycle; a fresh
+scan supersedes the prior current findings and preserves their dispositions.
+
+Optional params tie the scan to what it assessed (#811):
+
+| Param | Notes |
+|---|---|
+| `cdef_document_id` | the component/target this scan assessed (id or slug); omit for boundary-wide scans |
+| `scanner_scope` | `target` (default) or `boundary` |
 
 ```bash
 curl -X POST -H "Authorization: Bearer $TOKEN" \
@@ -51,8 +60,12 @@ GET /api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings
 GET /api/v1/scanner_findings/:uuid
 ```
 
-`scanner_findings` is the triage worklist (filter `status=failed`). Each finding
-surfaces its current `disposition_kind` (or null).
+`scanner_findings` is the triage worklist (filter `status=failed`). It returns the
+**current** scan by default; add `include_history=true` for superseded rows.
+Additional filters: `lifecycle=new|carried_forward|re_failed|expired|superseded`,
+`cdef_document_id=…`. Each finding surfaces its `lifecycle_status`, `current`,
+`component_ref`, `cdef_document_id`, `source_location`, and its current
+`disposition_kind` + `disposition_approval` (or null).
 
 ## Set / clear a disposition
 
@@ -81,6 +94,54 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 Enforced rules (`422` on violation): the linked type must match the kind; `waiver`
 / `operationalRequirement` need an *Authorizing Official* attestation; CRITICAL
 findings cannot be waived, downgraded, or marked operational (remediate or POA&M).
+
+A new disposition starts `approval_status=draft` and SPARC computes its
+`valid_until` from the boundary profile's ODP (else the admin Remediation
+Timelines SLA table); an active POA&M for the control means no expiry.
+
+## Approve / reject an amendment (#809)
+
+```
+POST /api/v1/scanner_findings/:uuid/disposition/approve
+POST /api/v1/scanner_findings/:uuid/disposition/reject
+```
+
+Requires admin or `amendment.approve`. A disposition only suppresses its finding
+during aggregation/export once **approved** and within its `valid_until` window.
+Returns the disposition with `approval_status`, `approved_by`, `approved_at`.
+
+## Aggregate into SSP / SAP / SAR / POA&M (#809)
+
+```
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/aggregate[?async=true]
+```
+
+Maps current findings to controls via their HDF `tags.nist`, writes a
+non-destructive `hdf_scan_result` annotation on matching SSP/SAP/SAR controls, and
+opens POA&M items for un-suppressed failures. Synchronous by default (`200` with a
+per-document count summary); `?async=true` enqueues `AggregateFindingsJob` (`202`).
+Requires `evidence.write`.
+
+## Download the signed package (#809)
+
+```
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package
+```
+
+An HMAC-SHA256 signed bundle (amendments + findings summary + dispositions summary)
+keyed from `SPARC_HASH` — tamper-evident and provably from this instance. Returns
+`{ payload, encoded_payload, signature, algorithm }`. Requires `evidence.read`.
+
+## Remediation Timelines (admin)
+
+```
+GET /api/v1/admin/remediation_timelines
+PUT /api/v1/admin/remediation_timelines
+```
+
+Admin-only. The SLA fallback grid of baseline (Low/Moderate/High) × NIST
+criticality (Critical/High/Moderate/Low/Informational/Unknown) → days, used to
+compute amendment validity when the boundary profile carries no ODP.
 
 ## Export amendments
 

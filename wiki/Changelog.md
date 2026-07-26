@@ -4,6 +4,17 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.15.0 -- HDF Aggregation: Re-occurrence Lifecycle + Amendment Approval + Document Aggregation (2026-07-26)
+
+Extends HDF triage from a per-scan worklist into an audit-ready, ATO-integrated flow. Scans are tied to the component they assessed, kept as history with a re-occurrence lifecycle, gated by an approval + ODP-validity flow, and folded into the boundary's assessment documents.
+
+- **Audit-ready scan history + re-occurrence lifecycle** ([#811](https://github.com/risk-sentinel/sparc/issues/811)) — each ingest records its **Target / CDEF** and **Scope** (target-specific vs boundary-wide), and findings are kept per-scan-run as history (`current` flag) rather than overwritten. Every finding carries a lifecycle status — new / carried_forward / **re_failed** (failing again at worse severity) / expired / superseded — computed against the prior current scan. The triage board defaults to the current scan with an *Include history* toggle, a Component column, lifecycle badges, and a re-failed banner.
+- **Amendment approval + ODP validity** ([#809](https://github.com/risk-sentinel/sparc/issues/809)) — a disposition is a proposed amendment that only suppresses a finding once **approved** (by an admin or a role granted the new `amendment.approve` permission) *and* within its **validity window**. The window comes from the boundary profile's ODP, else a new admin **Remediation Timelines** SLA table (baseline × NIST criticality → days); an active POA&M for the control means no expiry. Amendments record both decider and approver.
+- **Aggregate into SSP / SAP / SAR / POA&M** ([#809](https://github.com/risk-sentinel/sparc/issues/809)) — an **Aggregate** action (sync or async job) maps findings to controls via their HDF `tags.nist`, writes a non-destructive `hdf_scan_result` annotation on SSP/SAP/SAR controls, and opens POA&M items for un-suppressed failures.
+- **Signed HDF package export** ([#809](https://github.com/risk-sentinel/sparc/issues/809)) — a single HMAC-SHA256 signed bundle (amendments + findings + dispositions), keyed from `SPARC_HASH`, that a consumer can archive or feed downstream. Full `Api::V1` surface for every new action. See [User Guide: HDF Amendment Triage](User-Guide-HDF-Amendment-Triage).
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.15.0).
+
 ## v1.14.0 -- HDF Amendment Triage (Scanner Finding Disposition) (2026-07-25)
 
 Turn raw scanner output into auditable disposition decisions. SPARC becomes the translation engine + human-in-the-loop UI between a tenant's scanners and their CI security gate.
