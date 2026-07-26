@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_25_130300) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_26_120300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -571,6 +571,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_130300) do
   end
 
   create_table "finding_dispositions", force: :cascade do |t|
+    t.string "approval_status", default: "draft", null: false
+    t.datetime "approved_at"
+    t.string "approved_by"
     t.bigint "authorization_boundary_id", null: false
     t.string "control_id", null: false
     t.datetime "created_at", null: false
@@ -584,6 +587,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_130300) do
     t.string "signature_hash"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.datetime "valid_until"
+    t.index ["approval_status"], name: "index_finding_dispositions_on_approval_status"
     t.index ["authorization_boundary_id", "control_id"], name: "index_finding_dispositions_on_boundary_and_control", unique: true
     t.index ["authorization_boundary_id"], name: "index_finding_dispositions_on_authorization_boundary_id"
     t.index ["linked_subject_type", "linked_subject_id"], name: "idx_on_linked_subject_type_linked_subject_id_8ff38b2546"
@@ -1003,6 +1008,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_130300) do
     t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
   end
 
+  create_table "remediation_timelines", force: :cascade do |t|
+    t.string "baseline_level", null: false
+    t.datetime "created_at", null: false
+    t.string "criticality", null: false
+    t.integer "days", null: false
+    t.datetime "updated_at", null: false
+    t.string "updated_by"
+    t.index ["baseline_level", "criticality"], name: "index_remediation_timelines_on_baseline_level_and_criticality", unique: true
+  end
+
   create_table "risk_assessments", force: :cascade do |t|
     t.string "adjusted_severity", null: false
     t.datetime "assessed_at", null: false
@@ -1357,6 +1372,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_130300) do
 
   create_table "scan_runs", force: :cascade do |t|
     t.bigint "authorization_boundary_id", null: false
+    t.bigint "cdef_document_id"
     t.datetime "created_at", null: false
     t.string "created_by"
     t.integer "failed_count", default: 0, null: false
@@ -1365,32 +1381,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_130300) do
     t.integer "passed_count", default: 0, null: false
     t.string "raw_hdf_digest"
     t.string "scanner", null: false
+    t.string "scanner_scope", default: "target", null: false
     t.string "scanner_version"
     t.integer "skipped_count", default: 0, null: false
     t.string "source_filename"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_scan_runs_on_authorization_boundary_id"
+    t.index ["cdef_document_id"], name: "index_scan_runs_on_cdef_document_id"
     t.index ["raw_hdf_digest"], name: "index_scan_runs_on_raw_hdf_digest"
     t.index ["uuid"], name: "index_scan_runs_on_uuid", unique: true
   end
 
   create_table "scanner_findings", force: :cascade do |t|
     t.bigint "authorization_boundary_id", null: false
+    t.bigint "cdef_document_id"
+    t.string "component_ref"
     t.string "control_id", null: false
     t.datetime "created_at", null: false
+    t.boolean "current", default: true, null: false
     t.text "description"
+    t.string "lifecycle_status", default: "new", null: false
     t.jsonb "raw_hdf", default: {}, null: false
     t.bigint "scan_run_id", null: false
     t.string "scanner"
     t.string "severity"
+    t.string "source_location"
     t.string "status", null: false
     t.text "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
-    t.index ["authorization_boundary_id", "control_id"], name: "index_scanner_findings_on_boundary_and_control", unique: true
+    t.index ["authorization_boundary_id", "control_id"], name: "index_scanner_findings_current_boundary_control", unique: true, where: "current"
+    t.index ["authorization_boundary_id", "current"], name: "idx_on_authorization_boundary_id_current_807d25a470"
     t.index ["authorization_boundary_id", "status"], name: "index_scanner_findings_on_authorization_boundary_id_and_status"
     t.index ["authorization_boundary_id"], name: "index_scanner_findings_on_authorization_boundary_id"
+    t.index ["cdef_document_id"], name: "index_scanner_findings_on_cdef_document_id"
     t.index ["scan_run_id"], name: "index_scanner_findings_on_scan_run_id"
     t.index ["uuid"], name: "index_scanner_findings_on_uuid", unique: true
   end
@@ -1796,7 +1821,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_130300) do
   add_foreign_key "sar_risk_observations", "sar_risks", on_delete: :cascade
   add_foreign_key "sar_risks", "sar_results", on_delete: :cascade
   add_foreign_key "scan_runs", "authorization_boundaries"
+  add_foreign_key "scan_runs", "cdef_documents", on_delete: :nullify
   add_foreign_key "scanner_findings", "authorization_boundaries"
+  add_foreign_key "scanner_findings", "cdef_documents", on_delete: :nullify
   add_foreign_key "scanner_findings", "scan_runs"
   add_foreign_key "ssp_by_components", "ssp_components", on_delete: :cascade
   add_foreign_key "ssp_by_components", "ssp_controls", on_delete: :cascade

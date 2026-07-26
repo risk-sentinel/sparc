@@ -21,5 +21,15 @@ FactoryBot.define do
     trait :critical do
       severity { "CRITICAL" }
     end
+
+    # #811 — a retained history row from a prior scan (not the current finding).
+    trait :history do
+      current { false }
+      lifecycle_status { "superseded" }
+    end
+
+    trait :re_failed do
+      lifecycle_status { "re_failed" }
+    end
   end
 end

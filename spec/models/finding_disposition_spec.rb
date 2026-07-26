@@ -75,4 +75,29 @@ RSpec.describe FindingDisposition do
       expect(described_class.active).to contain_exactly(active)
     end
   end
+
+  describe "approval (#809)" do
+    it "defaults to draft and is not applicable until approved" do
+      d = create(:finding_disposition, kind: "poam")
+      expect(d.approval_status).to eq("draft")
+      expect(d).not_to be_approved
+      expect(d).not_to be_applicable
+    end
+
+    it "is applicable when approved and within its validity window" do
+      d = create(:finding_disposition, kind: "poam", approval_status: "approved",
+                 approved_by: "ao@corp.io", approved_at: Time.current, valid_until: 30.days.from_now)
+      expect(d).to be_applicable
+    end
+
+    it "is not applicable once valid_until has passed" do
+      d = create(:finding_disposition, kind: "poam", approval_status: "approved",
+                 approved_by: "ao@corp.io", valid_until: 1.day.ago)
+      expect(d).not_to be_applicable
+    end
+
+    it "rejects an unknown approval_status" do
+      expect(build(:finding_disposition, kind: "poam", approval_status: "maybe")).not_to be_valid
+    end
+  end
 end
