@@ -81,6 +81,12 @@ def main() -> int:
             page.wait_for_load_state("networkidle")
             page.goto(triage, wait_until="networkidle")
 
+        # Expand the sidebar boundary tree so the new "Amendments" nav entry
+        # (between SSP and SAP) is visible in the shot.
+        page.evaluate(
+            "document.querySelectorAll('.sparc-sidebar .collapse')"
+            ".forEach(el => el.classList.add('show'))"
+        )
         page.wait_for_timeout(400)
         page.screenshot(path=str(OUT), full_page=True)
         kb = OUT.stat().st_size // 1024

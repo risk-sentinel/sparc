@@ -21,8 +21,14 @@ trapped in SPARC that you can't reconstruct from your own inputs.
 ## Where it lives
 
 Every triage flow is scoped to an **Authorization Boundary** (the system you're
-assessing). Open a boundary and click **HDF Triage** in the header, or go
-straight to `…/authorization_boundaries/<your-boundary>/triage`.
+assessing). Reach it three ways:
+
+- The left **sidebar** — under each boundary, **Amendments** sits between **SSP**
+  and **SAP**.
+- The **Amendments** button on the boundary's page header.
+- The **Amendments** button on any POA&M page (jumps to that POA&M's boundary).
+
+Or go straight to `…/authorization_boundaries/<your-boundary>/triage`.
 
 You need the `evidence.read` permission on the boundary to view triage, and
 `evidence.write` to ingest scans or set dispositions.

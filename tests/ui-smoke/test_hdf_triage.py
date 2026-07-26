@@ -44,7 +44,9 @@ def _open_triage(page, base_url):
     if not href:
         return False
     page.goto(f"{base_url}{href}", wait_until="networkidle")
-    link = page.get_by_role("link", name="HDF Triage")
+    # The header button (class .btn) — distinct from the sidebar "Amendments"
+    # leaf links (.sparc-sidebar-leaf), which also read "Amendments".
+    link = page.locator("a.btn", has_text="Amendments")
     if link.count() == 0:
         return False
     link.first.click()

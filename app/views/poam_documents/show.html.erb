@@ -88,6 +88,12 @@
             download_xml_path: download_xml_poam_document_path(@poam_document),
             fallback_json_path: download_oscal_unvalidated_poam_document_path(@poam_document),
             document_type: "POA&M" %>
+      <%# #447 — jump to HDF Amendment triage for this POA&M's boundary. %>
+      <% if @poam_document.authorization_boundary %>
+        <%= link_to "Amendments",
+              triage_authorization_boundary_path(@poam_document.authorization_boundary),
+              class: "sparc-btn-oscal" %>
+      <% end %>
       <%= link_to "&#8592; All POA&Ms".html_safe, poam_documents_path, class: "sparc-btn-ghost-muted" %>
     </div>
   </div>

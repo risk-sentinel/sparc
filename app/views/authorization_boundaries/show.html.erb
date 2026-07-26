@@ -6,7 +6,7 @@
             ato_wizard_authorization_boundary_path(@authorization_boundary),
             class: "btn btn-success btn-sm" %>
       <%# #447 — HDF Amendment triage for scanner findings on this boundary. %>
-      <%= link_to "HDF Triage",
+      <%= link_to "Amendments",
             triage_authorization_boundary_path(@authorization_boundary),
             class: "btn btn-outline-info btn-sm" %>
       <% has_documents = @authorization_boundary.ssp_document.present? ||
