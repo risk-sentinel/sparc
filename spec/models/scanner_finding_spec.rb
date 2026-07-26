@@ -31,9 +31,11 @@ RSpec.describe ScannerFinding do
   end
 
   it "scopes to failed findings" do
-    create(:scanner_finding, :passed)
-    failed = create(:scanner_finding, :failed)
-    expect(ScannerFinding.failed).to contain_exactly(failed)
+    boundary = create(:authorization_boundary)
+    run = create(:scan_run, authorization_boundary: boundary)
+    create(:scanner_finding, :passed, scan_run: run, authorization_boundary: boundary)
+    failed = create(:scanner_finding, :failed, scan_run: run, authorization_boundary: boundary)
+    expect(boundary.scanner_findings.failed).to contain_exactly(failed)
   end
 
   describe "#disposition" do

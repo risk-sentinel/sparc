@@ -79,6 +79,7 @@ flowchart LR
 | [Assessment Results (SAR)](User-Guide-Assessment-Results) | Record pass/fail outcomes, findings |
 | [POA&M](User-Guide-POAM) | Track findings, risks, remediations, milestones |
 | [Evidence & Attestations](User-Guide-Evidence-and-Attestations) | Upload evidence, attach attestations |
+| [HDF Amendment Triage](User-Guide-HDF-Amendment-Triage) | Ingest scanner findings, triage into dispositions, export HDF Amendments for CI |
 
 ### Trust store & administration
 

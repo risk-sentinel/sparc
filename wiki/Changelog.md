@@ -4,6 +4,15 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.14.0 -- HDF Amendment Triage (Scanner Finding Disposition) (2026-07-25)
+
+Turn raw scanner output into auditable disposition decisions. SPARC becomes the translation engine + human-in-the-loop UI between a tenant's scanners and their CI security gate.
+
+- **HDF ingest + triage + amendments export** ([#447](https://github.com/risk-sentinel/sparc/issues/447)) — upload scanner findings in Heimdall Data Format (single scan or a `saf convert` bundle), triage each failed control into one of the seven HDF v3.4.0 override kinds (falsePositive / waiver / poam / vendorDependency / inherited / riskAdjustment / operationalRequirement) with an evidence / POA&M / attestation / risk-assessment linkage and provenance hash, then export a deterministic per-boundary **HDF Amendments** document your CI applies with `hdf amend apply` before its `saf validate threshold` gate. Ingest is idempotent by `(boundary, control_id)` so dispositions survive re-scans; the export validates itself via `hdf amend verify`. The #244 severity policy is enforced (no waiver/downgrade on CRITICAL). New models `ScanRun` / `ScannerFinding` / `FindingDisposition` / `RiskAssessment`; full `Api::V1` surface + a boundary-scoped triage UI. See [User Guide: HDF Amendment Triage](User-Guide-HDF-Amendment-Triage).
+- **Follow-on** — aggregating consumer HDF evidence + amendments into SSP / SAP / SAR / POA&M is tracked in [#809](https://github.com/risk-sentinel/sparc/issues/809).
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.14.0).
+
 ## v1.13.0 -- FIDO2 + PIV Authentication (App-Native MFA) (2026-07-21)
 
 SPARC's first **app-native multi-factor authentication** — phishing-resistant and DoD-ready. A FIDO2 security key or a CAC/PIV smart card + PIN is now a complete, single-step login.
