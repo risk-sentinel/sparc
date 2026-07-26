@@ -1,6 +1,6 @@
 # Role-Based Access Control (RBAC)
 
-_Reflects SPARC **v1.13.0**. Authoritative source: `app/models/role.rb` (permission keys) and the role seeds in `db/seeds.rb`._
+_Reflects SPARC **v1.15.0**. Authoritative source: `app/models/role.rb` (permission keys) and the role seeds in `db/seeds.rb`._
 
 ## Overview
 
@@ -60,7 +60,7 @@ A single user can hold:
 
 ## Permission Keys
 
-SPARC defines **34 permission keys** across 13 resource areas (`Role::PERMISSION_KEYS` in `app/models/role.rb`). Each key is a `resource.action` string and controls a specific operation on a resource type. Permissions are stored as a JSONB `"resource.action" => boolean` hash on each `Role`.
+SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION_KEYS` in `app/models/role.rb`). Each key is a `resource.action` string and controls a specific operation on a resource type. Permissions are stored as a JSONB `"resource.action" => boolean` hash on each `Role`.
 
 | Key | Description |
 |-----|-------------|
@@ -97,11 +97,16 @@ SPARC defines **34 permission keys** across 13 resource areas (`Role::PERMISSION
 | `back_matter.archive` | Archive a back-matter resource |
 | `back_matter.bulk_import` | Bulk-import back-matter resources |
 | `back_matter.federate` | Federate back-matter resources across authorization boundaries / peers |
+| `amendment.approve` | Approve / reject an HDF Amendment (a scanner-finding disposition) so it suppresses its finding |
 | `admin.rotate_credentials` | Rotate instance credentials / master secrets |
 
-**Resource groups** (`Role::RESOURCE_LABELS`): Control Catalogs, Baselines / Profiles, Authorization Boundaries, System Security Plans, Security Assessment Results, Security Assessment Plans, POA&Ms, Component Definitions, Evidence, Control Mappings, Converters, Back-Matter Resources, Instance Administration.
+**Resource groups** (`Role::RESOURCE_LABELS`): Control Catalogs, Baselines / Profiles, Authorization Boundaries, System Security Plans, Security Assessment Results, Security Assessment Plans, POA&Ms, Component Definitions, Evidence, Control Mappings, Converters, Back-Matter Resources, HDF Amendments, Instance Administration.
 
-> **Note on seeded assignments.** The permission *keys* above are the full set the platform can enforce. The **default role seeds do not yet grant** the approval, back-matter write/promote/approve/archive/bulk-import/federate, `converters.write`, or `admin.rotate_credentials` keys to any role — those are reserved for the Instance Admin bypass and future role tailoring, or must be granted explicitly via the Admin > Roles interface. The only new keys picked up by the default seeds are `converters.read` and `back_matter.read`, which are included in the all-read permission set used by the broad read-only roles (see matrices below).
+### `amendment.approve` (#809)
+
+Triaging a scanner finding (`evidence.write`) and *approving* the resulting amendment are deliberately separate acts — the approval is what makes a disposition suppress its finding during aggregation and export, for the length of its validity window. `amendment.approve` is granted by default to the **Authorizing Official**, **Agency Authorizing Official**, and **ISSM** role seeds (the roles that accept residual risk), and Instance Admins bypass it. Any other role can be granted the key from **Admin → Roles**. See [User Guide: HDF Amendment Triage](User-Guide-HDF-Amendment-Triage).
+
+> **Note on seeded assignments.** The permission *keys* above are the full set the platform can enforce. The **default role seeds do not yet grant** the catalog/profile/CDEF approval, back-matter write/promote/approve/archive/bulk-import/federate, `converters.write`, or `admin.rotate_credentials` keys to any role — those are reserved for the Instance Admin bypass and future role tailoring, or must be granted explicitly via the Admin > Roles interface. The only new keys picked up by the default seeds are `converters.read` and `back_matter.read`, which are included in the all-read permission set used by the broad read-only roles (see matrices below).
 
 ---
 
@@ -277,29 +282,29 @@ Read-only authorization boundary access for stakeholders who need visibility but
 
 ### Authorization-Boundary-Scoped Permission Matrix
 
-No authorization-boundary-scoped role is granted `converters.*` or `back_matter.*` in the default seeds, so those columns are omitted here; the columns match the instance-scoped matrix.
+No authorization-boundary-scoped role is granted `converters.*` or `back_matter.*` in the default seeds, so those columns are omitted here; the columns otherwise match the instance-scoped matrix. **Amd** = `amendment.approve` (#809).
 
-| Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings |
-|------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|
-| Authorizing Official (AO) | - | - | R | R | R | R | R/W | R | R | R |
-| Agency Authorizing Official | - | - | R | R | R | R | R/W | R | R | R |
-| System Owner (SO/ISO) | - | - | R | R/W | R | R | R/W | R/W | R/W | R |
-| CISO | R | R | R | R | R | R | R | R | R | R |
-| ISSM | - | - | R | R/W | R | R | R/W | R | R/W | R |
-| ISSO | - | - | R | R/W | R/W | R/W | R/W | R | R/W | R |
-| CSP | - | - | R | R/W | R | R | R/W | R/W | R/W | R |
-| Assessor / 3PAO | - | - | R | R | R/W | R/W | R | R | R | R |
-| Common Control Provider | - | - | R | R/W | - | - | - | R/W | R/W | - |
-| System Architect / Engineer | - | - | R | R/W | - | - | - | R/W | R | - |
-| Component Supplier / Product Engineer | - | - | R | - | - | - | - | R/W | R/W | - |
-| System Operator / Administrator | - | - | R | R | - | - | R | R | R/W | - |
-| Information Owner / Steward | - | - | R | R | - | - | - | R | R | - |
-| Vendor Dependency Manager | - | - | R | R | - | - | - | R/W | R/W | - |
-| Solution Evaluator | - | - | R | R | R | - | - | R | R | - |
-| Team Member | - | R | R | R/W | - | - | R/W | R/W | R/W | - |
-| SPARC SME | R | R | R | R/W | R/W | R/W | R/W | R/W | R/W | R |
-| Evidence Integration Engineer | R | R | R | R | R/W | R | R | R | R/W | R |
-| View Only | - | - | R | R | R | - | R | R | R | - |
+| Role | Catalogs | Profiles | Auth Boundaries | SSP | SAR | SAP | POA&M | CDEF | Evidence | Mappings | Amd |
+|------|----------|----------|-----------------|-----|-----|-----|-------|------|----------|----------|-----|
+| Authorizing Official (AO) | - | - | R | R | R | R | R/W | R | R | R | ✓ |
+| Agency Authorizing Official | - | - | R | R | R | R | R/W | R | R | R | ✓ |
+| System Owner (SO/ISO) | - | - | R | R/W | R | R | R/W | R/W | R/W | R | - |
+| CISO | R | R | R | R | R | R | R | R | R | R | - |
+| ISSM | - | - | R | R/W | R | R | R/W | R | R/W | R | ✓ |
+| ISSO | - | - | R | R/W | R/W | R/W | R/W | R | R/W | R | - |
+| CSP | - | - | R | R/W | R | R | R/W | R/W | R/W | R | - |
+| Assessor / 3PAO | - | - | R | R | R/W | R/W | R | R | R | R | - |
+| Common Control Provider | - | - | R | R/W | - | - | - | R/W | R/W | - | - |
+| System Architect / Engineer | - | - | R | R/W | - | - | - | R/W | R | - | - |
+| Component Supplier / Product Engineer | - | - | R | - | - | - | - | R/W | R/W | - | - |
+| System Operator / Administrator | - | - | R | R | - | - | R | R | R/W | - | - |
+| Information Owner / Steward | - | - | R | R | - | - | - | R | R | - | - |
+| Vendor Dependency Manager | - | - | R | R | - | - | - | R/W | R/W | - | - |
+| Solution Evaluator | - | - | R | R | R | - | - | R | R | - | - |
+| Team Member | - | R | R | R/W | - | - | R/W | R/W | R/W | - | - |
+| SPARC SME | R | R | R | R/W | R/W | R/W | R/W | R/W | R/W | R | - |
+| Evidence Integration Engineer | R | R | R | R | R/W | R | R | R | R/W | R | - |
+| View Only | - | - | R | R | R | - | R | R | R | - | - |
 
 ---
 

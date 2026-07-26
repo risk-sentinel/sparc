@@ -1997,10 +1997,13 @@ PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
   "catalogs.write" => true, "profiles.write" => true, "mappings.write" => true
 ).freeze
 
+# #809 — the Authorizing Official accepts residual risk, so approving an HDF
+# amendment (which suppresses a finding for its validity window) is an AO act.
 PERM_AO = {
   "authorization_boundaries.read" => true, "ssp.read" => true, "sar.read" => true,
   "sap.read" => true, "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true, "evidence.read" => true, "mappings.read" => true
+  "cdef.read" => true, "evidence.read" => true, "mappings.read" => true,
+  "amendment.approve" => true
 }.freeze
 
 PERM_SO_ISO = {
@@ -2101,7 +2104,8 @@ PERM_ISSM = {
   "poam.read" => true, "poam.write" => true,
   "cdef.read" => true,
   "evidence.read" => true, "evidence.write" => true,
-  "mappings.read" => true
+  "mappings.read" => true,
+  "amendment.approve" => true # #809 — ISSM reviews/approves amendments on the AO's behalf
 }.freeze
 
 PERM_CSP = {

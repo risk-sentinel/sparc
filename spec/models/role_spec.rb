@@ -74,5 +74,19 @@ RSpec.describe Role, type: :model do
     it "groups permissions by resource" do
       expect(Role::PERMISSION_GROUPS.keys).to include("ssp", "catalogs", "authorization_boundaries")
     end
+
+    # #809 — amendment.approve is enforced by the triage controllers; it must be
+    # in the canonical list or assign_permissions can never grant it via the UI.
+    it "registers amendment.approve so it is assignable from Admin > Roles" do
+      expect(Role::PERMISSION_KEYS).to include("amendment.approve")
+
+      assignable = Role.new
+      assignable.assign_permissions("amendment.approve" => "1")
+      expect(assignable.permissions["amendment.approve"]).to be true
+    end
+
+    it "labels every resource group" do
+      expect(Role::PERMISSION_GROUPS.keys - Role::RESOURCE_LABELS.keys).to be_empty
+    end
   end
 end
