@@ -75,10 +75,20 @@ flowchart LR
 
 ### How to sign in with your CAC / PIV smart card
 
-1. Insert your smart card into its reader before opening SPARC.
+1. **Insert your smart card into its reader before opening SPARC** — the card is
+   presented when the secure connection is established at page load, so insert it
+   first. (If your organization only shows the button when a card is detected and
+   you inserted it after the page loaded, reload the login page.)
 2. On the login page, click **Sign in with your CAC / smart card**.
 3. Select your certificate if asked, and **enter your card PIN**.
 4. You're signed in.
+
+> **Operators:** by default the **Sign in with your CAC / smart card** button is
+> always shown when PIV is enabled. Set `SPARC_PIV_LOGIN_REQUIRES_CERT=true` to
+> show it **only when the gateway has forwarded a verified card certificate** on
+> the login request — a cleaner flow once your mTLS gateway is forwarding the
+> verify header. It hides the button only; the browser may still prompt for a
+> certificate at connection time.
 
 ### How to remove a security key
 
