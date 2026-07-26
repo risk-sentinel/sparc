@@ -1,0 +1,16 @@
+{
+  "controls": {
+    "AC-1": {
+      "status": "Implemented",
+      "control_application": "Hybrid",
+      "coverage_level": "Implemented",
+      "implementation_statement": "Access control policy is documented and enforced via IAM.",
+      "responsible_entities": "System Owner; ISSO",
+      "notes": "Reviewed 2026-Q3."
+    },
+    "AC-2": {
+      "status": "Deferred",
+      "notes": "Automated account review tracked in POA&M-014."
+    }
+  }
+}

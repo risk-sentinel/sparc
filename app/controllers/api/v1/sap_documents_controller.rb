@@ -16,6 +16,18 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::SapDocumentsController < Api::V1::DocumentBaseController
+  include FieldImportable
+
+  # #716 — re-declare with the FULL list: re-registering an inherited before_action
+  # updates its :only conditions rather than adding a second callback, so these
+  # must include the parent's actions ([:show, :update, :destroy] / [:create,
+  # :update, :destroy]) or they'd be dropped for SAP CRUD.
+  before_action :set_document, only: [ :show, :update, :destroy, :import_fields_preview, :import_fields_confirm ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :import_fields_preview, :import_fields_confirm ]
+
+  # #716 — FieldImportable hook.
+  def field_import_document = @document
+
   private
 
   def document_class = SapDocument

@@ -67,6 +67,17 @@ class CdefControlField < ApplicationRecord
 
   before_validation :set_editable_flag
 
+  # #716 — controlled vocabularies per editable field, for bulk field-import
+  # validation. nil ⇒ free text. (severity is a control attribute, not a field.)
+  ALLOWED_VALUES = {
+    "implementation_status" => IMPLEMENTATION_STATUS_VALUES,
+    "control_origin"        => CONTROL_ORIGIN_VALUES
+  }.freeze
+
+  def self.allowed_values(field_name)
+    ALLOWED_VALUES[field_name.to_s]
+  end
+
   # Returns true if this field type uses a dropdown selector
   def select_field?
     %w[implementation_status control_origin].include?(field_name)

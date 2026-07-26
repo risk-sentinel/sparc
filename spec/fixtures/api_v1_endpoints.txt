@@ -114,6 +114,8 @@ POST /api/v1/cdef_documents
 POST /api/v1/cdef_documents/:id/approve
 POST /api/v1/cdef_documents/:id/bulk_apply_converter/confirm
 POST /api/v1/cdef_documents/:id/bulk_apply_converter/preview
+POST /api/v1/cdef_documents/:id/fields/import/confirm
+POST /api/v1/cdef_documents/:id/fields/import/preview
 POST /api/v1/cdef_documents/:id/populate_from_profile
 POST /api/v1/cdef_documents/:id/reject
 POST /api/v1/cdef_documents/:id/submit_for_review
@@ -139,11 +141,17 @@ POST /api/v1/profile_documents/:id/submit_for_review
 POST /api/v1/profile_documents/:profile_document_id/parameters/import/confirm
 POST /api/v1/profile_documents/:profile_document_id/parameters/import/preview
 POST /api/v1/sap_documents
+POST /api/v1/sap_documents/:id/fields/import/confirm
+POST /api/v1/sap_documents/:id/fields/import/preview
 POST /api/v1/sar_documents
+POST /api/v1/sar_documents/:id/fields/import/confirm
+POST /api/v1/sar_documents/:id/fields/import/preview
 POST /api/v1/sar_documents/convert
 POST /api/v1/scanner_findings/:scanner_finding_id/disposition
 POST /api/v1/sessions/from_token
 POST /api/v1/ssp_documents
+POST /api/v1/ssp_documents/:id/fields/import/confirm
+POST /api/v1/ssp_documents/:id/fields/import/preview
 POST /api/v1/ssp_documents/:id/populate_from_profile
 POST /api/v1/ssp_documents/convert
 POST /api/v1/users
@@ -157,6 +165,7 @@ PUT /api/v1/evidences/:id
 PUT /api/v1/federation_peers/:id
 PUT /api/v1/poam_documents/:id
 PUT /api/v1/profile_documents/:id
+PUT /api/v1/profile_documents/:id/controls
 PUT /api/v1/profile_documents/:profile_document_id/parameters
 PUT /api/v1/sap_documents/:id
 PUT /api/v1/sar_documents/:id

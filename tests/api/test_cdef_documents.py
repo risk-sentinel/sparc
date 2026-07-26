@@ -19,7 +19,7 @@ from _bulk_destroy import BulkDestroyContract
 from _document_helpers import create_doc, delete_doc, make_payload
 from _populate_from_profile import PopulateFromProfileContract
 from _review_workflow import ReviewWorkflowContract
-from conftest import assert_error_envelope, assert_paginated_envelope
+from conftest import assert_error_envelope, assert_paginated_envelope, published_profile
 from schemas import (
     CdefDocumentIndex,
     CdefDocumentShow,
@@ -110,7 +110,20 @@ class TestReviewWorkflow(ReviewWorkflowContract):
     IDENT_KEY = "slug"
 
     @pytest.fixture
-    def review_doc(self, cdef_doc: dict[str, Any]) -> dict[str, Any]:
+    def review_doc(self, admin_client: httpx.Client, cdef_doc: dict[str, Any]) -> dict[str, Any]:
+        # #757 — a CDEF needs >=1 control to submit_for_review. Populate it from
+        # a published profile (the seeded resolved baseline) so the submit ->
+        # approve/reject contract runs. If no published profile exists, fall back
+        # to the bare CDEF: the two content-gated tests then skip via
+        # _submit_or_skip (documented), while the three auth / no-submit contract
+        # tests still run — don't skip the whole fixture.
+        profile = published_profile(admin_client)
+        if profile:
+            resp = admin_client.post(
+                f"{PATH}/{cdef_doc['slug']}/populate_from_profile",
+                json={"source_profile_id": profile},
+            )
+            assert resp.status_code == 200, resp.text
         return cdef_doc
 
     def test_submit_empty_requires_content(

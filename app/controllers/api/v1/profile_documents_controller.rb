@@ -21,8 +21,8 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # gate at all). Run authorize BEFORE set_profile so a non-admin
   # without the permission gets 403, not 404 leaking existence.
   include DocumentApprovalApi
-  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review ]
-  before_action :set_profile, only: [ :show, :update, :destroy, :submit_for_review, :approve, :reject, :baseline_review ]
+  before_action :authorize_profiles_write!, only: [ :create, :update, :destroy, :submit_for_review, :update_controls ]
+  before_action :set_profile, only: [ :show, :update, :destroy, :submit_for_review, :approve, :reject, :baseline_review, :update_controls ]
 
   # GET /api/v1/profile_documents
   def index
@@ -49,6 +49,19 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # #633 — selected vs expected controls + ODP customization for reviewer sign-off.
   def baseline_review
     render json: { data: BaselineReviewService.new(@profile).review.to_h }
+  end
+
+  # PUT /api/v1/profile_documents/:id/controls
+  # #757 — select/deselect baseline controls from the linked catalog (the API
+  # equivalent of the UI baseline builder). Body: { control_ids: ["AC-1", ...] }.
+  def update_controls
+    result = ProfileControlSelectionService.new(@profile).update(params[:control_ids])
+    audit_log("profile_controls_bulk_updated", subject: @profile,
+              metadata: { added: result.added, removed: result.removed })
+    render json: { data: { added: result.added, removed: result.removed,
+                           controls_count: @profile.profile_controls.count } }
+  rescue ProfileControlSelectionService::SelectionError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   # POST /api/v1/profile_documents
@@ -132,6 +145,9 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
       data[:control_catalog_id] = profile.control_catalog_id
       data[:catalog_name] = profile.control_catalog&.name
       data[:controls_count] = profile.profile_controls.count
+      # #757 — the selected baseline control ids, so consumers can see/verify
+      # the selection and drive the control-selection API (PUT .../controls).
+      data[:control_ids] = profile.profile_controls.order(:row_order).pluck(:control_id)
     end
 
     append_oscal_fields(data, profile, detailed: detailed)

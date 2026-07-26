@@ -30,6 +30,17 @@ class SarControlField < ApplicationRecord
   before_validation :set_editable_flag
   after_save :sync_cached_result, if: -> { field_name == "result" }
 
+  # #716 — controlled vocabularies per editable field, for bulk field-import
+  # validation. nil ⇒ free text.
+  ALLOWED_VALUES = {
+    "result"         => RESULT_VALUES,
+    "working_status" => WORKING_STATUS_VALUES
+  }.freeze
+
+  def self.allowed_values(field_name)
+    ALLOWED_VALUES[field_name.to_s]
+  end
+
   private
 
   def set_editable_flag

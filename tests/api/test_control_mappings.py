@@ -88,42 +88,62 @@ class TestCreate:
     def test_create_round_trip(self, admin_client: httpx.Client) -> None:
         """#433 slice 4 — fields sent on Create must come back from Show.
 
-        Mappings require source / target catalog ids on this instance —
-        we pull two existing catalogs to satisfy the validation, then
-        verify the round-trip. Skips cleanly if fewer than 2 catalogs
-        exist (which would be an unusual test instance).
+        Mappings require source / target catalog ids. #740: this test used to
+        borrow data[0]/data[1] from the live catalog list, which is mutable —
+        test_control_catalogs.py (runs alphabetically first, same DB) creates
+        and destroys catalogs, so the borrowed id could be gone by create time
+        ("Source catalog must exist"). Make the test hermetic: create two
+        dedicated catalogs it owns, and tear them down.
         """
-        catalogs = admin_client.get("/api/v1/control_catalogs", params={"items": 2}).json()
-        if len(catalogs.get("data", [])) < 2:
-            pytest.skip("need at least 2 control catalogs to exercise mapping round-trip")
-        source_id = catalogs["data"][0]["id"]
-        target_id = catalogs["data"][1]["id"]
-
-        suffix = uuid.uuid4().hex[:8]
-        payload = {
-            "control_mapping": {
-                "name": f"phase2-mapping-rt-{suffix}",
-                "description": "round-trip created by #433 slice 4",
-                "status": "draft",
-                "method_type": "human",
-                "source_catalog_id": source_id,
-                "target_catalog_id": target_id,
+        source = self._create_catalog(admin_client)
+        target = self._create_catalog(admin_client)
+        try:
+            suffix = uuid.uuid4().hex[:8]
+            payload = {
+                "control_mapping": {
+                    "name": f"phase2-mapping-rt-{suffix}",
+                    "description": "round-trip created by #433 slice 4",
+                    "status": "draft",
+                    "method_type": "human",
+                    "source_catalog_id": source["id"],
+                    "target_catalog_id": target["id"],
+                }
             }
-        }
-        # source/target catalog ids come back as nested objects
-        # (source_catalog / target_catalog), not mirrored as top-level
-        # ids — so they live in ignore_fields.
-        # ControlMapping show uses slug (same pattern as catalogs — the
-        # controller does `find_by!(slug: params[:id])`).
-        assert_create_round_trip(
-            admin_client,
-            PATH,
-            payload,
-            "control_mapping",
-            ControlMappingShow,
-            identifier="slug",
-            ignore_fields={"source_catalog_id", "target_catalog_id"},
+            # source/target catalog ids come back as nested objects
+            # (source_catalog / target_catalog), not mirrored as top-level
+            # ids — so they live in ignore_fields.
+            # ControlMapping show uses slug (same pattern as catalogs — the
+            # controller does `find_by!(slug: params[:id])`).
+            assert_create_round_trip(
+                admin_client,
+                PATH,
+                payload,
+                "control_mapping",
+                ControlMappingShow,
+                identifier="slug",
+                ignore_fields={"source_catalog_id", "target_catalog_id"},
+            )
+        finally:
+            for catalog in (source, target):
+                admin_client.delete(f"/api/v1/control_catalogs/{catalog['id']}")
+
+    @staticmethod
+    def _create_catalog(client: httpx.Client) -> dict[str, Any]:
+        """Create a dedicated catalog owned by this test (hermetic, #740)."""
+        suffix = uuid.uuid4().hex[:8]
+        response = client.post(
+            "/api/v1/control_catalogs",
+            json={
+                "control_catalog": {
+                    "name": f"mapping-rt-catalog-{suffix}",
+                    "description": "hermetic fixture for control-mapping round-trip (#740)",
+                    "version": "0.0.1",
+                    "source": "test-740",
+                }
+            },
         )
+        assert response.status_code in (200, 201), response.text
+        return response.json().get("data") or response.json()
 
     @pytest.mark.authz
     def test_non_admin_returns_403(self, user_client: httpx.Client) -> None:

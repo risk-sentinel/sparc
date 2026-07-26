@@ -17,9 +17,15 @@
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
   include DocumentApprovalApi
-  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile, :submit_for_review, :approve, :reject ]
+  include FieldImportable
+  before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm ]
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
+  # #716 — field import is a bulk mutation; gate it like bulk-apply (converters.write).
+  before_action :authorize_bulk_apply!, only: [ :import_fields_preview, :import_fields_confirm ]
+
+  # #716 — FieldImportable hook (CDEF loads into @cdef).
+  def field_import_document = @cdef
 
   # GET /api/v1/cdef_documents
   def index

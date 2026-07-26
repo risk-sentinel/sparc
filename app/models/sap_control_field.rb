@@ -27,6 +27,12 @@ class SapControlField < ApplicationRecord
 
   before_validation :set_editable_flag
 
+  # #716 — SAP editable fields are free text (no controlled vocabularies yet);
+  # nil ⇒ free text. Present for a uniform field-import interface.
+  def self.allowed_values(_field_name)
+    nil
+  end
+
   private
 
   def set_editable_flag

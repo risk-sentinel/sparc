@@ -14,7 +14,7 @@ class SspControlField < ApplicationRecord
     implementation_statement
     implementation_summary
     expected_completion
-    notes,
+    notes
   ].freeze
 
   NOT_APPLICABLE = "Not Applicable".freeze
@@ -64,10 +64,23 @@ class SspControlField < ApplicationRecord
     class
     priority
     control_owner
-    stated_requirement,
+    stated_requirement
   ].freeze
 
   before_validation :set_editable_flag
+
+  # #716 — controlled vocabularies per editable field, for bulk field-import
+  # validation. nil ⇒ free text. Model owns its vocabulary.
+  ALLOWED_VALUES = {
+    "status"              => VALID_STATUSES,
+    "control_application" => CONTROL_APPLICATION_VALUES,
+    "coverage_level"      => COVERAGE_LEVEL_VALUES,
+    "control_type"        => CONTROL_TYPE_VALUES
+  }.freeze
+
+  def self.allowed_values(field_name)
+    ALLOWED_VALUES[field_name.to_s]
+  end
 
   private
 

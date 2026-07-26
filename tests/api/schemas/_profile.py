@@ -41,5 +41,6 @@ class ProfileDocumentShow(ProfileDocumentIndex):
     catalog_name: str | None = None
     control_catalog_id: int | None = None
     controls_count: Annotated[int, Field(ge=0)]
+    control_ids: list[str] = Field(default_factory=list)  # #757
     oscal_metadata: dict = Field(default_factory=dict)
     back_matter_resources: list[BackMatterResource] = Field(default_factory=list)

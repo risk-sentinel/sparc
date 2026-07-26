@@ -22,9 +22,14 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
-  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :populate_from_profile ]
+  include FieldImportable
+
+  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :populate_from_profile, :import_fields_preview, :import_fields_confirm ]
   before_action :authorize_document_read!, only: [ :show, :export ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields, :populate_from_profile ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields, :populate_from_profile, :import_fields_preview, :import_fields_confirm ]
+
+  # #716 — FieldImportable hook: the loaded, write-authorized document.
+  def field_import_document = @document
 
   # POST /api/v1/ssp_documents/convert
   def convert
