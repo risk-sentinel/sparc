@@ -16,6 +16,7 @@ module SeedRunner
     "admin_user"           => "1.1.0",
     "fedramp_20x_ksi"      => "1.0.0",
     "nist_rev4_rev5_mapping" => "1.0.0",
+    "remediation_timelines"  => "1.0.0",
     "converters"           => "1.4.0",
     "demo_organization"    => "1.0.0",
     "demo_auth_boundary"   => "1.0.0",

@@ -1967,6 +1967,21 @@ end
 end # if SEED_DEMO (published profile)
 
 # ══════════════════════════════════════════════════════════════════════
+# REQUIRED: Remediation-timeline (SLA) defaults (#809)
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("remediation_timelines") do
+  RemediationTimeline::DEFAULTS.each do |baseline, crits|
+    crits.each do |criticality, days|
+      rt = RemediationTimeline.find_or_initialize_by(baseline_level: baseline, criticality: criticality)
+      rt.days ||= days
+      rt.updated_by ||= "seed"
+      rt.save!
+    end
+  end
+  puts "  Verified #{RemediationTimeline.count} remediation-timeline SLA rows."
+end
+
+# ══════════════════════════════════════════════════════════════════════
 # REQUIRED: Roles
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("roles") do

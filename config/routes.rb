@@ -385,6 +385,9 @@ Rails.application.routes.draw do
       end
     end
     resources :roles
+    # #809 — remediation-timeline (SLA) grid: days to remediate by baseline × criticality.
+    get   "remediation_timelines", to: "remediation_timelines#index", as: :remediation_timelines
+    patch "remediation_timelines", to: "remediation_timelines#update"
     resources :audit_logs, only: [ :index, :show ]
     # v1.8.3 — deferred data migration status
     resources :data_migrations, only: [ :index ]
@@ -652,6 +655,9 @@ Rails.application.routes.draw do
       # from the sparc-iac rotation Lambda. See sparc-iac#197.
       namespace :admin do
         post "refresh_credentials", to: "credentials#refresh"
+        # #809 — remediation-timeline (SLA) table management.
+        get "remediation_timelines", to: "remediation_timelines#index"
+        put "remediation_timelines", to: "remediation_timelines#update"
       end
     end
   end
