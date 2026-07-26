@@ -43,6 +43,23 @@ module ApplicationHelper
     @sidebar_help_guides ||= UserGuideLibrary.all
   end
 
+  # #808 — true when the gateway forwarded a verified client cert on THIS
+  # request (login page). Same header + success check piv_sessions#create uses,
+  # so "button shown" ⟺ "the gateway would accept the cert". The cert is
+  # presented at the TLS handshake, so this reflects page-load connection state.
+  def piv_certificate_present?
+    request.headers[SparcConfig.piv_verify_header].to_s.strip
+           .casecmp?(SparcConfig.piv_verify_success)
+  end
+
+  # #808 — whether to render the PIV/CAC login button. Always shown when PIV is
+  # enabled, unless SPARC_PIV_LOGIN_REQUIRES_CERT gates it on a present cert.
+  def show_piv_login_button?
+    return false unless SparcConfig.enable_piv?
+
+    piv_certificate_present? || !SparcConfig.piv_login_requires_cert?
+  end
+
   # Status-color palette (hue-named; the same swatch is reused across the
   # *_STATUS_COLORS / *_SEVERITY_COLORS maps below).
   COLOR_GREEN     = "#27ae60".freeze  # success / implemented / passed

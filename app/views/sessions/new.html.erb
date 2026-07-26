@@ -130,7 +130,9 @@
   <% end %>
 
   <%# ── PIV / CAC smart-card (cert + PIN, validated by the gateway) ── %>
-  <% if SparcConfig.enable_piv? %>
+  <%# #808 — with SPARC_PIV_LOGIN_REQUIRES_CERT, show only when a verified cert %>
+  <%# was forwarded on this login request; default keeps the always-show button. %>
+  <% if show_piv_login_button? %>
     <div class="d-flex align-items-center my-2 text-body-tertiary">
       <hr class="flex-grow-1 m-0"><span class="px-3">or</span><hr class="flex-grow-1 m-0">
     </div>

@@ -204,6 +204,12 @@ module SparcConfig
   def piv_verify_header    = ENV.fetch("SPARC_PIV_VERIFY_HEADER", "X-SSL-Client-Verify")
   def piv_verify_success   = ENV.fetch("SPARC_PIV_VERIFY_SUCCESS", "SUCCESS")
 
+  # #808 — when true, the login page shows the PIV/CAC button ONLY if the gateway
+  # forwarded a verified client cert on the login request. Default false keeps
+  # today's always-show (when PIV is enabled), so the button can't silently
+  # vanish before the gateway is forwarding the verify header.
+  def piv_login_requires_cert? = ENV.fetch("SPARC_PIV_LOGIN_REQUIRES_CERT", "false") == "true"
+
   # #790 — PIV identity mapping is configurable so non-DoD PKI is a supported
   # deployment rather than an accident of the email fallback. All defaults
   # preserve the DoD-shaped behaviour shipped in #779.
