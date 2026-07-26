@@ -1930,6 +1930,43 @@ end # SeedRunner demo_ssp_sar
 end # if SEED_DEMO (ssp/sar)
 
 # ══════════════════════════════════════════════════════════════════════
+# DEMO: A published baseline profile (#757)
+# ══════════════════════════════════════════════════════════════════════
+# Gives the instance a published ProfileDocument with a resolved catalog, so the
+# populate-from-profile flow (SSP/SAR/SAP/CDEF) and the review/approval contract
+# have a real control basis to work from — previously there was none, which
+# forced the API contract suite to skip those paths.
+if SEED_DEMO
+SeedRunner.run_section("demo_published_profile") do
+  catalog = ControlCatalog.where("name LIKE ?", "%Rev 5%").first || ControlCatalog.first
+  if catalog.nil? || catalog.catalog_controls.empty?
+    puts "  Skipping demo published profile — no catalog with controls available."
+  else
+    profile = ProfileDocument.find_or_create_by!(name: "Demo LOW Baseline") do |p|
+      p.description     = "Seeded demo baseline: a small published profile providing a " \
+                          "control basis for populate-from-profile and review flows (#757)."
+      p.control_catalog = catalog
+      p.baseline_level  = "low"
+      p.status          = "completed"
+    end
+
+    if profile.profile_controls.empty?
+      control_ids = catalog.catalog_controls.order(:control_id).limit(10).pluck(:control_id)
+      ProfileControlSelectionService.new(profile).update(control_ids)
+    end
+
+    if profile.lifecycle_status != "published"
+      resolved = OscalResolvedProfileCatalogService.new(profile).export
+      profile.update!(resolved_catalog_json: JSON.parse(resolved), lifecycle_status: "published")
+    end
+
+    puts "  Published demo profile '#{profile.name}' — #{profile.profile_controls.count} controls, " \
+         "lifecycle=#{profile.lifecycle_status}."
+  end
+end
+end # if SEED_DEMO (published profile)
+
+# ══════════════════════════════════════════════════════════════════════
 # REQUIRED: Roles
 # ══════════════════════════════════════════════════════════════════════
 SeedRunner.run_section("roles") do

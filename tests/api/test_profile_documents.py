@@ -18,7 +18,7 @@ import pytest
 
 from _document_helpers import create_doc, delete_doc, make_payload
 from _review_workflow import ReviewWorkflowContract
-from conftest import assert_error_envelope, assert_paginated_envelope
+from conftest import assert_error_envelope, assert_paginated_envelope, published_profile
 from schemas import (
     ProfileDocumentIndex,
     ProfileDocumentShow,
@@ -57,20 +57,38 @@ class TestReviewWorkflow(ReviewWorkflowContract):
     Contract lives in _review_workflow.ReviewWorkflowContract; profiles are
     slug-addressed.
 
-    #757 note: the two content-gated tests (submit->approve / submit->reject)
-    skip for profiles by design. Unlike CDEF (which populate_from_profile off the
-    seeded published baseline), a profile's baseline controls are built in the UI
-    baseline builder or imported from a resolved-profile file via an async
-    DocumentConversionJob — there is no synchronous API to seed them, so profile
-    review is genuinely not exercisable from the API contract suite. The other
-    three contract tests (auth/no-submit) run normally.
+    #757: profile baseline controls are now selectable via the API
+    (PUT .../controls, ProfileControlSelectionService). The review_doc fixture
+    links the seeded published baseline's catalog and selects a couple of its
+    controls so the submit -> approve/reject contract runs. If no published
+    profile exists to source a catalog + control ids, it falls back to the bare
+    profile (the two content tests then skip; the three auth/no-submit tests
+    still run).
     """
 
     PATH = PATH
     IDENT_KEY = "slug"
 
     @pytest.fixture
-    def review_doc(self, profile_doc: dict[str, Any]) -> dict[str, Any]:
+    def review_doc(self, admin_client: httpx.Client, profile_doc: dict[str, Any]) -> dict[str, Any]:
+        source_slug = published_profile(admin_client)
+        if source_slug is None:
+            return profile_doc  # no catalog/control basis -> content tests skip
+
+        source = admin_client.get(f"{PATH}/{source_slug}").json()["data"]
+        catalog_id = source.get("control_catalog_id")
+        control_ids = (source.get("control_ids") or [])[:2]
+        if not catalog_id or not control_ids:
+            return profile_doc
+
+        admin_client.patch(
+            f"{PATH}/{profile_doc['slug']}",
+            json={"profile_document": {"control_catalog_id": catalog_id}},
+        )
+        resp = admin_client.put(
+            f"{PATH}/{profile_doc['slug']}/controls", json={"control_ids": control_ids}
+        )
+        assert resp.status_code == 200, resp.text
         return profile_doc
 
     def test_submit_empty_requires_content(
