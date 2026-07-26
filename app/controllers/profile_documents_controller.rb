@@ -299,51 +299,13 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def update_controls
-    unless @profile_document.control_catalog
-      flash[:error] = "Cannot update controls: no source catalog linked."
-      redirect_to(profile_document_path(@profile_document)) && return
-    end
-
-    desired_ids = Array(params[:control_ids]).reject(&:blank?).to_set
-    existing_ids = @profile_document.profile_controls.pluck(:control_id).to_set
-
-    to_add    = desired_ids - existing_ids
-    to_remove = existing_ids - desired_ids
-
-    ActiveRecord::Base.transaction do
-      if to_remove.any?
-        @profile_document.profile_controls.where(control_id: to_remove.to_a).delete_all
-      end
-
-      if to_add.any?
-        catalog_controls = @profile_document.control_catalog
-                            .catalog_controls
-                            .where(control_id: to_add.to_a)
-                            .includes(:control_family)
-        max_order = @profile_document.profile_controls.maximum(:row_order) || 0
-
-        catalog_controls.each_with_index do |cc, idx|
-          pc = @profile_document.profile_controls.create!(
-            control_id: cc.control_id,
-            title: cc.title,
-            control_family: cc.control_family&.code || cc.family_code,
-            priority: ProfilePriorityAssignmentService.assign(cc),
-            row_order: max_order + idx + 1
-          )
-
-          cc.effective_params_list.each do |param|
-            label = param["label"].to_s
-            pc.profile_control_fields.create!(field_name: "parameter:#{param['id']}", field_value: label)
-            pc.profile_control_fields.create!(field_name: "parameter_label:#{param['id']}", field_value: label)
-          end
-        end
-      end
-    end
-
-    @profile_document.regenerate_oscal_uuid!
+    result = ProfileControlSelectionService.new(@profile_document).update(params[:control_ids])
     audit_log("profile_controls_bulk_updated", subject: @profile_document,
-              metadata: { added: to_add.size, removed: to_remove.size })
-    flash[:success] = "Controls updated: #{to_add.size} added, #{to_remove.size} removed"
+              metadata: { added: result.added, removed: result.removed })
+    flash[:success] = "Controls updated: #{result.added} added, #{result.removed} removed"
+    redirect_to profile_document_path(@profile_document)
+  rescue ProfileControlSelectionService::SelectionError => e
+    flash[:error] = e.message
     redirect_to profile_document_path(@profile_document)
   end
 

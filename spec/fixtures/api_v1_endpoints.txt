@@ -165,6 +165,7 @@ PUT /api/v1/evidences/:id
 PUT /api/v1/federation_peers/:id
 PUT /api/v1/poam_documents/:id
 PUT /api/v1/profile_documents/:id
+PUT /api/v1/profile_documents/:id/controls
 PUT /api/v1/profile_documents/:profile_document_id/parameters
 PUT /api/v1/sap_documents/:id
 PUT /api/v1/sar_documents/:id

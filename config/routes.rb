@@ -523,6 +523,8 @@ Rails.application.routes.draw do
           post :reject, to: "profile_documents#reject"
           # #633 — baseline diff (selected vs expected controls + ODP values).
           get :baseline_review, to: "profile_documents#baseline_review"
+          # #757 — select/deselect baseline controls from the linked catalog.
+          put :controls, to: "profile_documents#update_controls", as: :controls
         end
         # Baseline parameter management (#240)
         resource :parameters, only: [ :show, :update ], controller: "baseline_parameters" do
