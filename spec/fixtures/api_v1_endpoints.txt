@@ -101,6 +101,7 @@ POST /api/v1/admin/refresh_credentials
 POST /api/v1/authoritative_sources
 POST /api/v1/authoritative_sources/import
 POST /api/v1/authorization_boundaries
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/aggregate
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 POST /api/v1/back_matter_resources

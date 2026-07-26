@@ -626,6 +626,8 @@ Rails.application.routes.draw do
         resources :scan_runs, only: [ :index, :show, :create ]
         resources :scanner_findings, only: [ :index ]
         resource :hdf_amendments, only: [ :show ], controller: "hdf_amendments"
+        # #809 — aggregate findings into SSP/SAP/SAR/POA&M (sync, or ?async=true).
+        post :aggregate, to: "aggregations#create"
       end
 
       # HDF Amendment triage (#447) — flat show of a single finding by uuid,
