@@ -56,6 +56,14 @@ class TestReviewWorkflow(ReviewWorkflowContract):
 
     Contract lives in _review_workflow.ReviewWorkflowContract; profiles are
     slug-addressed.
+
+    #757 note: the two content-gated tests (submit->approve / submit->reject)
+    skip for profiles by design. Unlike CDEF (which populate_from_profile off the
+    seeded published baseline), a profile's baseline controls are built in the UI
+    baseline builder or imported from a resolved-profile file via an async
+    DocumentConversionJob — there is no synchronous API to seed them, so profile
+    review is genuinely not exercisable from the API contract suite. The other
+    three contract tests (auth/no-submit) run normally.
     """
 
     PATH = PATH

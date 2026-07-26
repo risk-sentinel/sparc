@@ -41,18 +41,24 @@ class ReviewWorkflowContract:
         return doc[self.IDENT_KEY]
 
     def _submit_or_skip(self, admin_client: httpx.Client, ident: Any) -> httpx.Response:
-        """Submit for review, or skip if the doc type requires content first.
+        """Submit for review, or skip if the doc type can't be given content here.
 
-        Some document types (CDEF, profile) reject submission of an empty
-        document with 422 "missing required content: ... At least one control"
-        — they need a linked catalog / imported controls, which a bare create
-        fixture doesn't provision. Others (control catalog) submit while empty.
-        Skip the content-gated types rather than fail, so the submit -> approve
-        /reject contract still runs wherever a doc is actually submittable.
+        Content-gated types reject an empty document with 422 "missing required
+        content: ... At least one control". #757 provisions that content where an
+        API path exists — CDEF fixtures populate_from_profile off the seeded
+        published baseline, so their submit -> approve/reject contract now runs.
+        The remaining skip is **profile**: a profile's baseline controls are
+        built in the UI baseline builder or imported from a resolved-profile file
+        via an async DocumentConversionJob — there is no synchronous API to seed
+        them, so profile review stays documented-skipped (see the note on
+        test_profile_documents.TestReviewWorkflow). Control catalogs submit empty.
         """
         submit = admin_client.post(f"{self.PATH}/{ident}/submit_for_review")
         if submit.status_code == 422 and "content" in submit.text.lower():
-            pytest.skip("doc type requires content to submit; none provisioned")
+            pytest.skip(
+                "content-gated type not provisionable via the synchronous API "
+                "(profile baselines are UI/async-import only) — see #757"
+            )
         assert submit.status_code == 200, submit.text
         return submit
 

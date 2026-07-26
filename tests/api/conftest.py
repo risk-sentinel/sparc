@@ -148,6 +148,22 @@ def post_from_token(client: httpx.Client, path: str = "/api/v1/sessions/from_tok
     return response
 
 
+# ── Content provisioning helper (#757) ────────────────────────────────────
+
+# Slug/id of any published profile on the instance, else None. Content-gated
+# review fixtures (CDEF) source real controls by populating from a published
+# profile — the seeded resolved baseline — so the submit -> approve/reject
+# contract runs instead of skipping.
+def published_profile(client: httpx.Client) -> Any | None:
+    resp = client.get("/api/v1/profile_documents", params={"items": 100})
+    if resp.status_code != 200:
+        return None
+    for item in resp.json().get("data", []):
+        if (item.get("lifecycle_status") or item.get("status")) == "published":
+            return item.get("slug") or item.get("id")
+    return None
+
+
 # ── Smoke test the instance is reachable ─────────────────────────────────
 
 @pytest.fixture(scope="session", autouse=True)
