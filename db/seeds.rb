@@ -1993,6 +1993,12 @@ puts "\nSeeding roles..."
 PERM_ALL_READ = Role::PERMISSION_KEYS.select { |k| k.end_with?(".read") }
                                       .each_with_object({}) { |k, h| h[k] = true }.freeze
 
+# Permission keys that recur across most role defaults below. Named once so the
+# role hashes reference a constant instead of repeating the literal (ruby:S1192).
+K_CDEF_READ     = "cdef.read"
+K_EVIDENCE_READ = "evidence.read"
+K_MAPPINGS_READ = "mappings.read"
+
 PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
   "catalogs.write" => true, "profiles.write" => true, "mappings.write" => true
 ).freeze
@@ -2002,23 +2008,23 @@ PERM_POLICY_MANAGER = PERM_ALL_READ.merge(
 PERM_AO = {
   "authorization_boundaries.read" => true, "ssp.read" => true, "sar.read" => true,
   "sap.read" => true, "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true, "evidence.read" => true, "mappings.read" => true,
+  K_CDEF_READ => true, K_EVIDENCE_READ => true, K_MAPPINGS_READ => true,
   "amendment.approve" => true
 }.freeze
 
 PERM_SO_ISO = {
   "authorization_boundaries.read" => true, "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sap.read" => true, "poam.read" => true,
-  "poam.write" => true, "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true, "mappings.read" => true
+  "poam.write" => true, K_CDEF_READ => true, "cdef.write" => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true, K_MAPPINGS_READ => true
 }.freeze
 
 PERM_CISO = {
   "catalogs.read" => true, "profiles.read" => true,
   "authorization_boundaries.read" => true, "ssp.read" => true,
   "sar.read" => true, "sap.read" => true,
-  "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
-  "mappings.read" => true
+  "poam.read" => true, K_CDEF_READ => true, K_EVIDENCE_READ => true,
+  K_MAPPINGS_READ => true
 }.freeze
 
 PERM_ISSO = {
@@ -2026,46 +2032,46 @@ PERM_ISSO = {
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true, "sap.write" => true,
   "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true, "evidence.read" => true, "evidence.write" => true,
-  "mappings.read" => true
+  K_CDEF_READ => true, K_EVIDENCE_READ => true, "evidence.write" => true,
+  K_MAPPINGS_READ => true
 }.freeze
 
 PERM_TEAM_MEMBER = {
   "authorization_boundaries.read" => true, "profiles.read" => true,
   "ssp.read" => true, "ssp.write" => true,
   "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true
+  K_CDEF_READ => true, "cdef.write" => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true
 }.freeze
 
 PERM_ASSESSOR = {
   "authorization_boundaries.read" => true, "ssp.read" => true,
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true, "sap.write" => true,
-  "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
-  "mappings.read" => true
+  "poam.read" => true, K_CDEF_READ => true, K_EVIDENCE_READ => true,
+  K_MAPPINGS_READ => true
 }.freeze
 
 PERM_VIEW_ONLY = {
   "authorization_boundaries.read" => true, "ssp.read" => true,
   "sar.read" => true, "poam.read" => true,
-  "cdef.read" => true, "evidence.read" => true
+  K_CDEF_READ => true, K_EVIDENCE_READ => true
 }.freeze
 
 PERM_SAO = PERM_CISO.dup.freeze  # Senior Accountable Official — oversight role
 
 PERM_COMMON_CONTROL = {
   "authorization_boundaries.read" => true, "ssp.read" => true, "ssp.write" => true,
-  "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true
+  K_CDEF_READ => true, "cdef.write" => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true
 }.freeze
 
 PERM_SAOP = {
   "catalogs.read" => true, "profiles.read" => true,
   "authorization_boundaries.read" => true, "ssp.read" => true,
   "sar.read" => true, "sap.read" => true,
-  "poam.read" => true, "cdef.read" => true, "evidence.read" => true,
-  "mappings.read" => true
+  "poam.read" => true, K_CDEF_READ => true, K_EVIDENCE_READ => true,
+  K_MAPPINGS_READ => true
 }.freeze
 
 PERM_SPARC_SME = {
@@ -2075,9 +2081,9 @@ PERM_SPARC_SME = {
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true, "sap.write" => true,
   "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true,
-  "mappings.read" => true
+  K_CDEF_READ => true, "cdef.write" => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true,
+  K_MAPPINGS_READ => true
 }.freeze
 
 PERM_EVIDENCE_ENGINEER = {
@@ -2087,14 +2093,14 @@ PERM_EVIDENCE_ENGINEER = {
   "sar.read" => true, "sar.write" => true,
   "sap.read" => true,
   "poam.read" => true,
-  "cdef.read" => true,
-  "evidence.read" => true, "evidence.write" => true,
-  "mappings.read" => true
+  K_CDEF_READ => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true,
+  K_MAPPINGS_READ => true
 }.freeze
 
 PERM_CHIEF_ACQUISITION_OFFICER = {
   "catalogs.read" => true, "profiles.read" => true, "authorization_boundaries.read" => true,
-  "cdef.read" => true, "evidence.read" => true, "mappings.read" => true
+  K_CDEF_READ => true, K_EVIDENCE_READ => true, K_MAPPINGS_READ => true
 }.freeze
 
 PERM_ISSM = {
@@ -2102,9 +2108,9 @@ PERM_ISSM = {
   "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sap.read" => true,
   "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true,
-  "evidence.read" => true, "evidence.write" => true,
-  "mappings.read" => true,
+  K_CDEF_READ => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true,
+  K_MAPPINGS_READ => true,
   "amendment.approve" => true # #809 — ISSM reviews/approves amendments on the AO's behalf
 }.freeze
 
@@ -2113,47 +2119,47 @@ PERM_CSP = {
   "ssp.read" => true, "ssp.write" => true,
   "sar.read" => true, "sap.read" => true,
   "poam.read" => true, "poam.write" => true,
-  "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true,
-  "mappings.read" => true
+  K_CDEF_READ => true, "cdef.write" => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true,
+  K_MAPPINGS_READ => true
 }.freeze
 
 PERM_SYSTEM_ARCHITECT = {
   "authorization_boundaries.read" => true,
   "ssp.read" => true, "ssp.write" => true,
-  "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true
+  K_CDEF_READ => true, "cdef.write" => true,
+  K_EVIDENCE_READ => true
 }.freeze
 
 PERM_COMPONENT_SUPPLIER = {
   "authorization_boundaries.read" => true,
-  "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true
+  K_CDEF_READ => true, "cdef.write" => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true
 }.freeze
 
 PERM_SYSTEM_OPERATOR = {
   "authorization_boundaries.read" => true,
   "ssp.read" => true, "poam.read" => true,
-  "cdef.read" => true,
-  "evidence.read" => true, "evidence.write" => true
+  K_CDEF_READ => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true
 }.freeze
 
 PERM_INFO_OWNER = {
   "authorization_boundaries.read" => true,
-  "ssp.read" => true, "cdef.read" => true,
-  "evidence.read" => true
+  "ssp.read" => true, K_CDEF_READ => true,
+  K_EVIDENCE_READ => true
 }.freeze
 
 PERM_SOLUTION_EVALUATOR = {
   "authorization_boundaries.read" => true,
   "ssp.read" => true, "sar.read" => true,
-  "cdef.read" => true, "evidence.read" => true
+  K_CDEF_READ => true, K_EVIDENCE_READ => true
 }.freeze
 
 PERM_VENDOR_DEPENDENCY = {
   "authorization_boundaries.read" => true, "ssp.read" => true,
-  "cdef.read" => true, "cdef.write" => true,
-  "evidence.read" => true, "evidence.write" => true
+  K_CDEF_READ => true, "cdef.write" => true,
+  K_EVIDENCE_READ => true, "evidence.write" => true
 }.freeze
 
 SPARC_ROLES = [
