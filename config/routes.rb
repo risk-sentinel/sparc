@@ -642,9 +642,10 @@ Rails.application.routes.draw do
       resources :scanner_findings, only: [ :show ] do
         resource :disposition, only: [ :show, :create, :destroy ],
                  controller: "finding_dispositions" do
-          # #809 — amendment approval flow.
-          post :approve
-          post :reject
+          # #809 — amendment approval flow. Mapped explicitly (rather than relying
+          # on Rails inferring the action) so the target is unambiguous.
+          post :approve, to: "finding_dispositions#approve"
+          post :reject,  to: "finding_dispositions#reject"
         end
       end
 

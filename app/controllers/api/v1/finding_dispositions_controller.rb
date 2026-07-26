@@ -10,6 +10,8 @@
 # NIST 800-53: IA-2 (token auth), AC-3/AC-6 (boundary-scoped RBAC),
 # SI-2 (flaw remediation), AU-12 (audit), AU-10 (signature provenance).
 class Api::V1::FindingDispositionsController < Api::V1::BaseController
+  NOT_FOUND_BODY = { error: "Not found" }.freeze
+
   before_action :set_finding
   before_action :authorize_read!,    only: %i[show]
   before_action :authorize_write!,   only: %i[create destroy]
@@ -18,7 +20,7 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
   # GET .../disposition
   def show
     disposition = current_disposition
-    return render json: { error: "Not found" }, status: :not_found if disposition.nil?
+    return render json: NOT_FOUND_BODY, status: :not_found if disposition.nil?
 
     render json: { data: serialize(disposition) }
   end
@@ -45,7 +47,7 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
   # DELETE .../disposition
   def destroy
     disposition = current_disposition
-    return render json: { error: "Not found" }, status: :not_found if disposition.nil?
+    return render json: NOT_FOUND_BODY, status: :not_found if disposition.nil?
 
     audit_log("finding_disposition_cleared", subject: disposition,
               metadata: { control_id: disposition.control_id, kind: disposition.kind })
@@ -56,7 +58,7 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
   # POST .../disposition/approve  (#809)
   def approve
     disposition = current_disposition
-    return render json: { error: "Not found" }, status: :not_found if disposition.nil?
+    return render json: NOT_FOUND_BODY, status: :not_found if disposition.nil?
 
     FindingDispositionService.approve(disposition, approved_by: actor)
     audit_log("finding_disposition_approved", subject: disposition,
@@ -67,7 +69,7 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
   # POST .../disposition/reject  (#809)
   def reject
     disposition = current_disposition
-    return render json: { error: "Not found" }, status: :not_found if disposition.nil?
+    return render json: NOT_FOUND_BODY, status: :not_found if disposition.nil?
 
     FindingDispositionService.reject(disposition, approved_by: actor)
     audit_log("finding_disposition_rejected", subject: disposition,

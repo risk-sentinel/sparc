@@ -131,14 +131,14 @@ class HdfIngestService
     end
   end
 
+  # HDF tag keys that can carry component identity, in preference order.
+  COMPONENT_REF_TAGS = %w[component purl package image_digest package_name].freeze
+
   # #811 — component identity (purl / image digest / hostname) from HDF tags.
   def component_ref_for(ctrl)
     tags = ctrl["tags"].is_a?(Hash) ? ctrl["tags"] : {}
-    %w[component purl package image_digest package_name].each do |k|
-      v = tags[k]
-      return v.to_s if v.present?
-    end
-    nil
+    key = COMPONENT_REF_TAGS.find { |k| tags[k].present? }
+    tags[key].to_s if key
   end
 
   # #811 — the source file / location the finding points at.
