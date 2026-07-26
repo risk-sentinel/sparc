@@ -89,13 +89,35 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
   describe "GET /evidences/new (boundary pre-scoping, #770 bug 5)" do
     before { sign_in_as(user) }
 
+    # Assert on the parsed DOM, not the raw HTML. `options_for_select` escapes the
+    # option text, so a boundary named "Schiller, O'Hara and Abbott ATO" renders as
+    # "Schiller, O&#39;Hara and Abbott ATO". The previous regex compared the raw
+    # name against the escaped body, so this spec failed whenever Faker happened to
+    # generate a name containing ' & < > or " — an intermittent CI failure that had
+    # nothing to do with the code under test. Nokogiri decodes the entities for us.
+    def selected_boundary_option
+      Nokogiri::HTML(response.body)
+              .at_css("select#evidence_authorization_boundary_id option[selected]")
+    end
+
     it "pre-selects the authorization boundary from the query param" do
       get new_evidence_path(authorization_boundary_id: ab.id)
       expect(response).to have_http_status(:ok)
-      # The boundary select renders the scoped boundary as the selected option.
-      expect(response.body).to match(
-        %r{<option selected(?:="selected")? value="#{ab.id}">#{Regexp.escape(ab.name)}</option>}
-      )
+
+      option = selected_boundary_option
+      expect(option).to be_present
+      expect(option["value"]).to eq(ab.id.to_s)
+      expect(option.text).to eq(ab.name)
+    end
+
+    it "pre-selects a boundary whose name contains HTML-escapable characters" do
+      tricky = create(:authorization_boundary, name: %q(Schiller, O'Hara & Abbott <ATO>))
+      get new_evidence_path(authorization_boundary_id: tricky.id)
+      expect(response).to have_http_status(:ok)
+
+      option = selected_boundary_option
+      expect(option["value"]).to eq(tricky.id.to_s)
+      expect(option.text).to eq(tricky.name)
     end
   end
 
