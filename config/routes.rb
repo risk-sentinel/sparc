@@ -452,6 +452,9 @@ Rails.application.routes.draw do
           get :export
           # #628 — populate an existing empty SSP from a published profile.
           post :populate_from_profile
+          # #716 — bulk editable-field file import (preview → confirm).
+          post "fields/import/preview", to: "ssp_documents#import_fields_preview", as: :import_fields_preview
+          post "fields/import/confirm", to: "ssp_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
 
@@ -462,10 +465,19 @@ Rails.application.routes.draw do
         member do
           put :update_fields
           get :export
+          # #716 — bulk editable-field file import (preview → confirm).
+          post "fields/import/preview", to: "sar_documents#import_fields_preview", as: :import_fields_preview
+          post "fields/import/confirm", to: "sar_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
 
-      resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ]
+      resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          # #716 — bulk editable-field file import (preview → confirm).
+          post "fields/import/preview", to: "sap_documents#import_fields_preview", as: :import_fields_preview
+          post "fields/import/confirm", to: "sap_documents#import_fields_confirm", as: :import_fields_confirm
+        end
+      end
       resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ]
 
       # Evidence CRUD (#756 — file upload + Control/CDEF association) plus
@@ -536,6 +548,9 @@ Rails.application.routes.draw do
           post :submit_for_review, to: "cdef_documents#submit_for_review"
           post :approve, to: "cdef_documents#approve"
           post :reject, to: "cdef_documents#reject"
+          # #716 — bulk editable-field file import (preview → confirm).
+          post "fields/import/preview", to: "cdef_documents#import_fields_preview", as: :import_fields_preview
+          post "fields/import/confirm", to: "cdef_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
       resources :control_mappings, only: [ :index, :show, :create, :update, :destroy ]

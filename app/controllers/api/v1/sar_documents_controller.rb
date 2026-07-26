@@ -21,9 +21,14 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::SarDocumentsController < Api::V1::DocumentBaseController
-  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export ]
+  include FieldImportable
+
+  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :import_fields_preview, :import_fields_confirm ]
   before_action :authorize_document_read!, only: [ :show, :export ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields, :import_fields_preview, :import_fields_confirm ]
+
+  # #716 — FieldImportable hook.
+  def field_import_document = @document
 
   # POST /api/v1/sar_documents/convert
   def convert
