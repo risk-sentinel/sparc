@@ -32,10 +32,13 @@ class Api::V1::ScanRunsController < Api::V1::BaseController
 
   # POST .../scan_runs
   def create
+    content = read_upload
     run = HdfIngestService.new(@boundary).ingest(
-      read_upload,
+      content,
       source_filename: @source_filename,
-      created_by: current_user&.display_name.presence || current_user&.email
+      created_by: current_user&.display_name.presence || current_user&.email,
+      cdef_document: resolve_cdef(params[:cdef_document_id]),
+      scanner_scope: params[:scanner_scope].presence || "target"
     )
     audit_log("scan_run_ingested", subject: run,
               metadata: { scanner: run.scanner, findings: run.finding_count, failed: run.failed_count })
@@ -54,6 +57,13 @@ class Api::V1::ScanRunsController < Api::V1::BaseController
       else
         AuthorizationBoundary.find_by!(slug: key)
       end
+  end
+
+  # #811 — resolve the optional target/CDEF by slug or id (nil-safe).
+  def resolve_cdef(key)
+    return nil if key.blank?
+
+    key.to_s.match?(/\A\d+\z/) ? CdefDocument.find_by(id: key) : CdefDocument.find_by(slug: key)
   end
 
   # Multipart `file` param, else the raw request body. `raw_post` is memoized by
@@ -80,11 +90,14 @@ class Api::V1::ScanRunsController < Api::V1::BaseController
       passed_count: run.passed_count,
       failed_count: run.failed_count,
       skipped_count: run.skipped_count,
+      cdef_document_id: run.cdef_document_id,
+      scanner_scope: run.scanner_scope,
       created_at: run.created_at.utc.iso8601
     }
     if detailed
       data[:source_filename] = run.source_filename
       data[:raw_hdf_digest] = run.raw_hdf_digest
+      data[:file_attached] = run.file.attached?
       data[:created_by] = run.created_by
     end
     data
