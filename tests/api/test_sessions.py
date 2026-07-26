@@ -14,7 +14,7 @@ import os
 import httpx
 import pytest
 
-from conftest import assert_error_envelope
+from conftest import assert_error_envelope, post_from_token
 
 pytestmark = [pytest.mark.sessions, pytest.mark.phase2]
 
@@ -27,7 +27,7 @@ SESSION_COOKIE = "_ssp_tpr_manager_session"
 class TestFromToken:
     @pytest.mark.happy
     def test_valid_token_sets_session_cookie(self, admin_client: httpx.Client) -> None:
-        response = admin_client.post(FROM_TOKEN_PATH)
+        response = post_from_token(admin_client)
         assert response.status_code == 204, response.text
         # A Set-Cookie for the Rails session must be present.
         set_cookie = response.headers.get("set-cookie", "")
@@ -39,7 +39,7 @@ class TestFromToken:
     ) -> None:
         # The cookie returned by the bridge should authenticate a UI request
         # (no redirect to /login).
-        bridge = admin_client.post(FROM_TOKEN_PATH)
+        bridge = post_from_token(admin_client)
         assert bridge.status_code == 204, bridge.text
         cookie = bridge.cookies.get(SESSION_COOKIE)
         if not cookie:
@@ -59,17 +59,14 @@ class TestFromToken:
 
     @pytest.mark.auth
     def test_missing_token_returns_401(self, anon_client: httpx.Client) -> None:
-        response = anon_client.post(FROM_TOKEN_PATH)
+        response = post_from_token(anon_client)
         assert_error_envelope(response, expected_status=401)
         assert SESSION_COOKIE not in response.headers.get("set-cookie", "")
 
     @pytest.mark.auth
     def test_bad_token_returns_401(self, bad_token_client: httpx.Client) -> None:
-        response = bad_token_client.post(FROM_TOKEN_PATH)
-        # /sessions/from_token is rate-limited per IP; a full-suite run can
-        # saturate the bucket and return 429 before this test. Skip on 429 —
-        # it's environment state leakage, not a contract failure (#644).
-        if response.status_code == 429:
-            pytest.skip("rate-limited (429) — bucket saturated by prior tests")
+        # #758 — post_from_token paces around the per-IP rate limit so the
+        # 401 contract is verified on a full run instead of skipping on 429.
+        response = post_from_token(bad_token_client)
         assert response.status_code == 401, response.text
         assert SESSION_COOKIE not in response.headers.get("set-cookie", "")

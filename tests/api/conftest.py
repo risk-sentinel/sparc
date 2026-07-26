@@ -25,6 +25,7 @@ treat what they find as an opaque list and assert on shape, not content.
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -123,6 +124,28 @@ def bad_token_client(base_url: str) -> Iterator[httpx.Client]:
     """
     with _build_client(base_url, token="sparc_invalid_token_for_test") as client:
         yield client
+
+
+# ── Rate-limit pacing (#758) ──────────────────────────────────────────────
+
+# POST /api/v1/sessions/from_token is rate-limited per IP. A full-suite run can
+# saturate the bucket before the auth-contract assertions run, turning a real
+# 204/401 into a 429 (which the tests used to skip). Wait out the throttle —
+# honoring Retry-After — so the contract is actually verified. This paces the
+# TEST client only; it does not touch the server's rate-limit protection.
+def post_from_token(client: httpx.Client, path: str = "/api/v1/sessions/from_token",
+                    *, max_attempts: int = 6, cap_seconds: float = 10.0) -> httpx.Response:
+    delay = 1.0
+    response = client.post(path)
+    attempts = 1
+    while response.status_code == 429 and attempts < max_attempts:
+        retry_after = response.headers.get("retry-after", "")
+        wait = float(retry_after) if retry_after.isdigit() else delay
+        time.sleep(min(wait, cap_seconds))
+        delay = min(delay * 2, cap_seconds)
+        response = client.post(path)
+        attempts += 1
+    return response
 
 
 # ── Smoke test the instance is reachable ─────────────────────────────────
