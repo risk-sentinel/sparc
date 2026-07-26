@@ -48,6 +48,12 @@
                         <% end %>
                       </li>
                       <li>
+                        <%# #447 — HDF Amendment triage for this boundary's scanner findings. %>
+                        <%= link_to triage_authorization_boundary_path(ab), class: "sparc-sidebar-leaf" do %>
+                          <span class="sparc-sidebar-dot" style="background: #d35400;"></span> Amendments
+                        <% end %>
+                      </li>
+                      <li>
                         <%= link_to sap_documents_path(authorization_boundary_id: ab.id), class: "sparc-sidebar-leaf" do %>
                           <span class="sparc-sidebar-dot" style="background: #e67e22;"></span> SAP
                         <% end %>

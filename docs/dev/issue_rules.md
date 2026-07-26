@@ -81,10 +81,23 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
    - **Functional or screen changes → update the relevant User Guide.** Any new
      or changed screen, route, workflow, field, or permission that an end user
      interacts with **must** update the matching `wiki/User-Guide-*.md` page (and
-     its cross-links / the `wiki/User-Guides.md` index) in the same PR. The User
-     Guides are the task-oriented end-user documentation; `wiki/Screens.md`
+     its cross-links / the `wiki/User-Guides.md` index **and** `wiki/_Sidebar.md`)
+     in the same PR. A brand-new feature area gets its own `wiki/User-Guide-*.md`.
+     The User Guides are the task-oriented end-user documentation; `wiki/Screens.md`
      remains the element-level reference. See the authoring template at
      `docs/dev/user_guide_template.md`.
+     - **Screenshots (required, captured from Chrome).** Every new or materially
+       changed screen a guide describes **must** include a current screenshot
+       under `wiki/images/`, referenced as `images/<name>.png`. Screenshots are
+       captured from **Google Chrome** (not headless Chromium — it is not rich
+       enough; see #781), driven against a seeded local instance. Refresh them
+       when the screen changes so the guide never drifts from the running UI.
+     - **In-app rendering is automatic — verify it.** The in-app Help Center
+       (#784, `UserGuideLibrary` + `HelpController`) discovers every
+       `wiki/User-Guide-*.md` and serves `wiki/images/` at `/help/images/*`, so a
+       new guide and its screenshots surface in the app with no extra wiring.
+       Confirm the guide renders at `/help/<slug>` (slug = filename minus the
+       `User-Guide-` prefix, kebab-cased) and its images load, in the same PR.
    - **Release notes → the GitHub Release** for the shipping version (canonical);
      the wiki Changelog gets a concise linked entry. Do **not** maintain a stacked
      in-repo release-notes file.

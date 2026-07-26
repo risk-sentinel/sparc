@@ -20,6 +20,12 @@ class AuthorizationBoundary < ApplicationRecord
   has_many :evidences, dependent: :nullify
   has_many :ksi_validations, dependent: :destroy
 
+  # #447 — HDF Amendment triage layer, boundary-scoped.
+  has_many :scan_runs, dependent: :destroy
+  has_many :scanner_findings, dependent: :destroy
+  has_many :finding_dispositions, dependent: :destroy
+  has_many :risk_assessments, dependent: :destroy
+
   # #396: boundary-level leveraged-authorization graph. `leveraging_relationships`
   # = this boundary leverages other systems. `leveraged_relationships` = other
   # boundaries leverage this one (downstream consumers).
