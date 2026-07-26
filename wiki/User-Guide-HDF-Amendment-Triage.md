@@ -31,9 +31,10 @@ assessing). Reach it three ways:
 Or go straight to `…/authorization_boundaries/<your-boundary>/triage`.
 
 You need the `evidence.read` permission on the boundary to view triage, and
-`evidence.write` to ingest scans or set dispositions.
+`evidence.write` to ingest scans or set dispositions. Approving an amendment is a
+separate permission — see [Approval and validity](#approval-and-validity-809).
 
-![The HDF Amendment Triage screen: an ingest form, recent scan runs, and the findings table with per-finding disposition controls.](images/hdf-triage.png)
+![The HDF Amendment Triage screen: an ingest form with Target/CDEF and Scope selectors, a recent-scan-runs panel, status/severity/lifecycle/target filters with an Include history toggle, and the findings table showing Component, Lifecycle, and Disposition columns alongside the Aggregate and Download Package actions.](images/hdf-triage.png)
 
 ---
 
@@ -143,7 +144,11 @@ A disposition is a proposed **amendment**. It only suppresses a finding once it 
 
 Once the window lapses, the finding returns to the board as **Expired** and must
 be re-decided. Instance Admins provision the fallback table under
-**Admin → Remediation Timelines**.
+**Admin → Remediation Timelines**. The grid ships with sensible defaults — set it
+to your organization's actual remediation policy, because these values decide how
+long an amendment keeps suppressing a finding.
+
+![Admin → Remediation Timelines: a grid of remediation days with a row per profile baseline (Low, Moderate, High) and a column per NIST criticality (Critical, High, Moderate, Low, Informational, Unknown), each cell an editable day count with its own Save button.](images/remediation-timelines.png)
 
 ---
 
