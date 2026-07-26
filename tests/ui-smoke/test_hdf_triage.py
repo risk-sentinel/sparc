@@ -124,11 +124,15 @@ def test_aggregate_action(authed_page, base_url):
         page.get_by_role("button", name="Upload & Ingest").click()
         page.wait_for_load_state("networkidle")
 
-    page.once("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="Aggregate into documents").click()
-    page.wait_for_load_state("networkidle")
+    # turbo_confirm renders SPARC's CSP-safe Bootstrap modal (not a native dialog).
+    confirm = page.locator("#sparc-confirm-modal-confirm")
+    confirm.wait_for(state="visible", timeout=5000)
+    confirm.click()
 
-    assert "Aggregated into documents" in page.content(), "aggregation summary flash not shown"
+    # The action redirects back with a success flash (rendered top-right).
+    page.get_by_text("Aggregated into documents").wait_for(timeout=10000)
+
     assert_no_csp_violations(page, during="HDF triage aggregate action")
 
 

@@ -49,12 +49,12 @@ RSpec.describe "HdfTriage", type: :request do
     it "redirects with an alert when no file is chosen" do
       post triage_ingest_authorization_boundary_path(boundary)
       expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
-      expect(flash[:alert]).to match(/Choose an HDF file/)
+      expect(flash[:error]).to match(/Choose an HDF file/)
     end
 
     it "redirects with an alert on malformed HDF" do
       post triage_ingest_authorization_boundary_path(boundary), params: { file: hdf_upload("{ bad") }
-      expect(flash[:alert]).to match(/Ingest failed/)
+      expect(flash[:error]).to match(/Ingest failed/)
     end
   end
 
@@ -76,7 +76,7 @@ RSpec.describe "HdfTriage", type: :request do
       post triage_disposition_authorization_boundary_path(boundary),
            params: { finding_uuid: finding.uuid, kind: "poam", reason: "x",
                      linked_subject_type: "Evidence", linked_subject_id: create(:evidence).id }
-      expect(flash[:alert]).to match(/must link a PoamFinding/)
+      expect(flash[:error]).to match(/must link a PoamFinding/)
     end
   end
 
@@ -173,7 +173,7 @@ RSpec.describe "HdfTriage", type: :request do
       create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
       post triage_aggregate_authorization_boundary_path(boundary)
       expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
-      expect(flash[:notice]).to match(/Aggregated into documents/)
+      expect(flash[:success]).to match(/Aggregated into documents/)
     end
   end
 

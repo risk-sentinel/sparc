@@ -46,7 +46,7 @@ class HdfTriageController < ApplicationController
 
   def ingest
     file = params[:file]
-    return redirect_to(triage_path, alert: "Choose an HDF file to upload.") if file.blank?
+    return redirect_to(triage_path, error: "Choose an HDF file to upload.") if file.blank?
 
     # #811 — record which target/CDEF this scan belongs to and whether it is a
     # boundary-wide scan (e.g. AWS Config) or target-specific (trivy, secrets…).
@@ -56,9 +56,9 @@ class HdfTriageController < ApplicationController
       scanner_scope: params[:scanner_scope].presence || "target"
     )
     redirect_to triage_path,
-                notice: "Ingested #{run.finding_count} findings (#{run.failed_count} failed) from #{run.scanner}."
+                success: "Ingested #{run.finding_count} findings (#{run.failed_count} failed) from #{run.scanner}."
   rescue HdfIngestService::IngestError => e
-    redirect_to triage_path, alert: "Ingest failed: #{e.message}"
+    redirect_to triage_path, error: "Ingest failed: #{e.message}"
   end
 
   # #809 — approve/reject a disposition (an amendment). Approval + validity window
@@ -66,25 +66,25 @@ class HdfTriageController < ApplicationController
   def approve_disposition
     disp = @boundary.finding_dispositions.find_by!(uuid: params[:disposition_uuid])
     FindingDispositionService.approve(disp, approved_by: actor)
-    redirect_to triage_path, notice: "Approved amendment for #{disp.control_id}."
+    redirect_to triage_path, success: "Approved amendment for #{disp.control_id}."
   rescue FindingDispositionService::DispositionError => e
-    redirect_to triage_path, alert: "Approval failed: #{e.message}"
+    redirect_to triage_path, error: "Approval failed: #{e.message}"
   end
 
   def reject_disposition
     disp = @boundary.finding_dispositions.find_by!(uuid: params[:disposition_uuid])
     FindingDispositionService.reject(disp, approved_by: actor)
-    redirect_to triage_path, notice: "Rejected amendment for #{disp.control_id}."
+    redirect_to triage_path, success: "Rejected amendment for #{disp.control_id}."
   rescue FindingDispositionService::DispositionError => e
-    redirect_to triage_path, alert: "Rejection failed: #{e.message}"
+    redirect_to triage_path, error: "Rejection failed: #{e.message}"
   end
 
   # #809 — aggregate current findings/dispositions into SSP/SAP/SAR/POA&M.
   def aggregate
     result = HdfAggregationService.new(@boundary).aggregate
     redirect_to triage_path,
-                notice: "Aggregated into documents — SSP #{result.ssp}, SAP #{result.sap}, " \
-                        "SAR #{result.sar}, POA&M #{result.poam}."
+                success: "Aggregated into documents — SSP #{result.ssp}, SAP #{result.sap}, " \
+                         "SAR #{result.sar}, POA&M #{result.poam}."
   end
 
   # #809 — download the signed HDF package (amendments + findings + dispositions).
@@ -102,14 +102,14 @@ class HdfTriageController < ApplicationController
       kind: params[:kind].to_s, reason: params[:reason].to_s, decided_by: actor,
       linked_subject: subject, expiration: params[:expiration].presence
     )
-    redirect_to triage_path, notice: "Disposition saved for #{finding.control_id}."
+    redirect_to triage_path, success: "Disposition saved for #{finding.control_id}."
   rescue FindingDispositionService::DispositionError => e
-    redirect_to triage_path, alert: "Disposition failed: #{e.message}"
+    redirect_to triage_path, error: "Disposition failed: #{e.message}"
   end
 
   def clear_disposition
     @boundary.finding_dispositions.find_by(control_id: params[:control_id])&.destroy
-    redirect_to triage_path, notice: "Disposition cleared."
+    redirect_to triage_path, success: "Disposition cleared."
   end
 
   # Convenience download. The authoritative, hdf-verified artefact is the API
