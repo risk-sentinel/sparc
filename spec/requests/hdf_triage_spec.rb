@@ -89,6 +89,65 @@ RSpec.describe "HdfTriage", type: :request do
     end
   end
 
+  describe "POST triage/ingest with a target/CDEF (#811)" do
+    it "records the CDEF and scanner scope on the run" do
+      cdef = create(:cdef_document)
+      post triage_ingest_authorization_boundary_path(boundary),
+           params: { file: hdf_upload, cdef_document_id: cdef.id, scanner_scope: "boundary" }
+      run = boundary.scan_runs.order(:created_at).last
+      expect(run.cdef_document_id).to eq(cdef.id)
+      expect(run.scanner_scope).to eq("boundary")
+    end
+  end
+
+  describe "history toggle (#811)" do
+    it "hides superseded findings by default and shows them with include_history" do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary,
+             control_id: "OLD-1", current: false, lifecycle_status: "superseded")
+      get triage_authorization_boundary_path(boundary)
+      expect(response.body).not_to include("OLD-1")
+      get triage_authorization_boundary_path(boundary), params: { include_history: "true" }
+      expect(response.body).to include("OLD-1")
+    end
+  end
+
+  describe "approve / reject disposition (#809)" do
+    let!(:finding) do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
+    end
+    let!(:disp) { create(:finding_disposition, authorization_boundary: boundary, control_id: "CVE-1", kind: "poam") }
+
+    it "approves an amendment" do
+      post triage_approve_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(disp.reload.approval_status).to eq("approved")
+    end
+
+    it "rejects an amendment" do
+      post triage_reject_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
+      expect(disp.reload.approval_status).to eq("rejected")
+    end
+  end
+
+  describe "POST triage/aggregate (#809)" do
+    it "aggregates and redirects with a summary" do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
+      post triage_aggregate_authorization_boundary_path(boundary)
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(flash[:notice]).to match(/Aggregated into documents/)
+    end
+  end
+
+  describe "GET triage/package (#809)" do
+    it "downloads the signed package JSON" do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
+      get triage_package_authorization_boundary_path(boundary)
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("application/json")
+      expect(JSON.parse(response.body)["signature"]).to be_present
+    end
+  end
+
   describe "GET triage/amendments" do
     it "downloads the Amendments JSON" do
       create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")

@@ -72,7 +72,12 @@ Rails.application.routes.draw do
       post   "triage/ingest",      to: "hdf_triage#ingest",            as: :triage_ingest
       post   "triage/disposition", to: "hdf_triage#disposition",       as: :triage_disposition
       delete "triage/disposition", to: "hdf_triage#clear_disposition", as: :triage_clear_disposition
+      # #809 — approve/reject an amendment disposition; aggregate findings; signed package.
+      post   "triage/disposition/approve", to: "hdf_triage#approve_disposition", as: :triage_approve_disposition
+      post   "triage/disposition/reject",  to: "hdf_triage#reject_disposition",  as: :triage_reject_disposition
+      post   "triage/aggregate",   to: "hdf_triage#aggregate",         as: :triage_aggregate
       get    "triage/amendments",  to: "hdf_triage#amendments",        as: :triage_amendments
+      get    "triage/package",     to: "hdf_triage#package",           as: :triage_package
     end
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
     resources :memberships,

@@ -5,13 +5,25 @@
     <h1 class="h3 mb-0">HDF Amendment Triage</h1>
     <p class="text-muted mb-0"><%= @boundary.name %></p>
   </div>
-  <div>
+  <div class="d-flex gap-2">
+    <%= button_to "Aggregate into documents", triage_aggregate_authorization_boundary_path(@boundary),
+          method: :post, class: "btn btn-outline-primary btn-sm",
+          form: { data: { turbo_confirm: "Aggregate current findings into this boundary's SSP, SAP, SAR and POA&M?" } } %>
+    <%= link_to "Download Package", triage_package_authorization_boundary_path(@boundary),
+          class: "btn btn-outline-dark btn-sm", data: { turbo: false } %>
     <%= link_to "Download Amendments", triage_amendments_authorization_boundary_path(@boundary),
           class: "btn btn-outline-success btn-sm", data: { turbo: false } %>
     <%= link_to "Back to Boundary", authorization_boundary_path(@boundary),
           class: "btn btn-outline-primary btn-sm" %>
   </div>
 </div>
+
+<% if @re_failed_count.positive? %>
+  <div class="alert alert-danger py-2" role="alert" id="re-failed-alert">
+    <strong><%= @re_failed_count %></strong> finding<%= "s" if @re_failed_count != 1 %>
+    <strong>re-failed</strong> at a worse severity since the prior scan — review before amending.
+  </div>
+<% end %>
 
 <div class="row g-3 mb-4">
   <div class="col-md-6">
@@ -22,6 +34,21 @@
               multipart: true, data: { turbo: false } do |f| %>
           <div class="mb-2">
             <%= f.file_field :file, accept: "application/json,.json", class: "form-control", required: true %>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col">
+              <%= label_tag :cdef_document_id, "Target / CDEF", class: "form-label small mb-0" %>
+              <%= select_tag :cdef_document_id,
+                    options_for_select([ [ "Boundary-wide (no CDEF)", "" ] ] +
+                      @cdef_documents.map { |c| [ c.name, c.id ] }),
+                    class: "form-select form-select-sm" %>
+            </div>
+            <div class="col">
+              <%= label_tag :scanner_scope, "Scope", class: "form-label small mb-0" %>
+              <%= select_tag :scanner_scope,
+                    options_for_select(@scanner_scopes.map { |s| [ s.titleize, s ] }, "target"),
+                    class: "form-select form-select-sm" %>
+            </div>
           </div>
           <%= f.submit "Upload & Ingest", class: "btn btn-primary btn-sm" %>
           <span class="text-muted small ms-2">HDF results JSON or a saf-convert bundle.</span>
@@ -36,13 +63,14 @@
       <div class="card-body p-0">
         <% if @scan_runs.any? %>
           <table class="table table-sm mb-0">
-            <thead><tr><th>Scanner</th><th>Ingested</th><th>Findings</th><th>Failed</th></tr></thead>
+            <thead><tr><th>Scanner</th><th>Target/CDEF</th><th>Scope</th><th>Ingested</th><th>Failed</th></tr></thead>
             <tbody>
               <% @scan_runs.each do |run| %>
                 <tr>
                   <td><%= run.scanner %></td>
+                  <td><%= run.cdef_document&.name || "—" %></td>
+                  <td><span class="badge bg-secondary"><%= run.scanner_scope %></span></td>
                   <td><%= run.ingested_at&.strftime("%Y-%m-%d %H:%M") %></td>
-                  <td><%= run.finding_count %></td>
                   <td><span class="badge bg-<%= run.failed_count.positive? ? "danger" : "secondary" %>"><%= run.failed_count %></span></td>
                 </tr>
               <% end %>
@@ -71,6 +99,22 @@
           class: "form-select form-select-sm" %>
   </div>
   <div class="col-auto">
+    <%= label_tag :lifecycle, "Lifecycle", class: "form-label small mb-0" %>
+    <%= select_tag :lifecycle,
+          options_for_select([ [ "All", "" ] ] + @lifecycle_statuses.map { |s| [ s.titleize, s ] }, params[:lifecycle]),
+          class: "form-select form-select-sm" %>
+  </div>
+  <div class="col-auto">
+    <%= label_tag :cdef_document_id, "Target/CDEF", class: "form-label small mb-0" %>
+    <%= select_tag :cdef_document_id,
+          options_for_select([ [ "All", "" ] ] + @cdef_documents.map { |c| [ c.name, c.id ] }, params[:cdef_document_id]),
+          class: "form-select form-select-sm" %>
+  </div>
+  <div class="col-auto form-check mb-1 ms-2">
+    <%= check_box_tag :include_history, "true", @include_history, class: "form-check-input" %>
+    <%= label_tag :include_history, "Include history", class: "form-check-label small" %>
+  </div>
+  <div class="col-auto">
     <%= f.submit "Filter", class: "btn btn-outline-secondary btn-sm" %>
   </div>
 <% end %>
@@ -78,28 +122,51 @@
 <div class="card">
   <div class="card-header d-flex justify-content-between">
     <span>Findings</span>
-    <span class="text-muted small"><%= @findings.count %> shown</span>
+    <span class="text-muted small"><%= @findings.count %> shown<%= " (incl. history)" if @include_history %></span>
   </div>
   <div class="table-responsive">
     <table class="table table-sm align-middle mb-0" id="hdf-findings-table">
       <thead>
-        <tr><th>Control</th><th>Severity</th><th>Status</th><th>Disposition</th><th>Triage</th></tr>
+        <tr><th>Control</th><th>Component</th><th>Severity</th><th>Status</th><th>Lifecycle</th><th>Disposition</th><th>Triage</th></tr>
       </thead>
       <tbody>
         <% if @findings.none? %>
-          <tr><td colspan="5" class="text-muted p-3">No findings match the current filter.</td></tr>
+          <tr><td colspan="7" class="text-muted p-3">No findings match the current filter.</td></tr>
         <% end %>
         <% @findings.each do |finding| %>
           <% disp = @dispositions_by_control[finding.control_id] %>
-          <tr>
+          <tr class="<%= "text-muted" unless finding.current %>">
             <td><code><%= finding.control_id %></code><div class="small text-muted"><%= truncate(finding.title, length: 60) %></div></td>
+            <td>
+              <% if finding.component_ref.present? %>
+                <span class="small"><%= finding.component_ref %></span>
+              <% else %>
+                <span class="text-muted small">—</span>
+              <% end %>
+              <% if finding.cdef_document_id.present? %>
+                <div class="small text-muted"><%= finding.cdef_document&.name %></div>
+              <% end %>
+            </td>
             <td><span class="badge bg-secondary"><%= finding.severity %></span></td>
             <td><span class="badge bg-<%= finding.status == "failed" ? "danger" : "success" %>"><%= finding.status %></span></td>
+            <td><span class="badge bg-<%= lifecycle_badge_class(finding.lifecycle_status) %>"><%= finding.lifecycle_status.titleize %></span></td>
             <td>
               <% if disp %>
                 <span class="badge bg-info text-dark"><%= disp.kind %></span>
-                <%= button_to "Clear", triage_clear_disposition_authorization_boundary_path(@boundary, control_id: finding.control_id),
-                      method: :delete, class: "btn btn-link btn-sm p-0 ms-1", data: { turbo: false } %>
+                <span class="badge bg-<%= approval_badge_class(disp.approval_status) %>"><%= disp.approval_status %></span>
+                <% if disp.valid_until.present? %>
+                  <div class="small text-muted">valid to <%= disp.valid_until.to_date %></div>
+                <% end %>
+                <div class="mt-1">
+                  <% if @can_approve && disp.approval_status == "draft" %>
+                    <%= button_to "Approve", triage_approve_disposition_authorization_boundary_path(@boundary, disposition_uuid: disp.uuid),
+                          method: :post, class: "btn btn-success btn-sm py-0", form: { data: { turbo: false }, class: "d-inline" } %>
+                    <%= button_to "Reject", triage_reject_disposition_authorization_boundary_path(@boundary, disposition_uuid: disp.uuid),
+                          method: :post, class: "btn btn-outline-danger btn-sm py-0", form: { data: { turbo: false }, class: "d-inline" } %>
+                  <% end %>
+                  <%= button_to "Clear", triage_clear_disposition_authorization_boundary_path(@boundary, control_id: finding.control_id),
+                        method: :delete, class: "btn btn-link btn-sm p-0 ms-1", data: { turbo: false } %>
+                </div>
               <% else %>
                 <span class="text-muted small">—</span>
               <% end %>
@@ -150,6 +217,7 @@
 
 <div class="mt-3 text-muted small" data-hdf-triage-linkage="<%= @linkage.to_json %>">
   Dispositions export to an HDF Amendments document your CI applies with
-  <code>hdf amend apply</code>. Waivers and operational requirements require an
-  expiration and an Authorizing Official attestation.
+  <code>hdf amend apply</code>. Amendments must be <strong>approved</strong> and within
+  their ODP validity window to suppress a finding during aggregation. Waivers and
+  operational requirements require an expiration and an Authorizing Official attestation.
 </div>

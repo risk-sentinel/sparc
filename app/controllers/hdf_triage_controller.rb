@@ -14,30 +14,81 @@
 # CA-7 (continuous monitoring), SI-2 (flaw remediation), AU-12 (audit).
 class HdfTriageController < ApplicationController
   before_action :set_boundary
-  before_action :authorize_read!,  only: %i[show amendments]
-  before_action :authorize_write!, only: %i[ingest disposition clear_disposition]
+  before_action :authorize_read!,  only: %i[show amendments package]
+  before_action :authorize_write!,
+    only: %i[ingest disposition clear_disposition approve_disposition reject_disposition aggregate]
 
   def show
+    # #811 — findings carry history; the triage board shows the CURRENT scan by
+    # default, with an opt-in toggle to include superseded rows for audit.
+    @include_history = params[:include_history] == "true"
     @findings = @boundary.scanner_findings.order(:control_id)
+    @findings = @findings.current unless @include_history
     @findings = @findings.where(status: params[:status]) if params[:status].present?
     @findings = @findings.where(severity: params[:severity].to_s.upcase) if params[:severity].present?
+    @findings = @findings.where(lifecycle_status: params[:lifecycle]) if params[:lifecycle].present?
+    @findings = @findings.where(cdef_document_id: params[:cdef_document_id]) if params[:cdef_document_id].present?
     @scan_runs = @boundary.scan_runs.recent.limit(10)
     @dispositions_by_control = @boundary.finding_dispositions.index_by(&:control_id)
     @kinds = FindingDisposition::KINDS
     @linkage = FindingDispositionService::LINKAGE
+    @cdef_documents = @boundary.respond_to?(:cdef_documents) ? @boundary.cdef_documents.order(:name) : CdefDocument.order(:name)
+    @scanner_scopes = ScanRun::SCANNER_SCOPES
+    @lifecycle_statuses = ScannerFinding::LIFECYCLE_STATUSES
+    @re_failed_count = @boundary.scanner_findings.current.where(lifecycle_status: "re_failed").count
+    @can_approve = current_user&.admin? ||
+                   current_user&.has_permission?("amendment.approve", authorization_boundary_id: @boundary.id)
   end
 
   def ingest
     file = params[:file]
     return redirect_to(triage_path, alert: "Choose an HDF file to upload.") if file.blank?
 
+    # #811 — record which target/CDEF this scan belongs to and whether it is a
+    # boundary-wide scan (e.g. AWS Config) or target-specific (trivy, secrets…).
     run = HdfIngestService.new(@boundary).ingest(
-      file.read, source_filename: file.original_filename, created_by: actor
+      file.read, source_filename: file.original_filename, created_by: actor,
+      cdef_document: resolve_cdef(params[:cdef_document_id]),
+      scanner_scope: params[:scanner_scope].presence || "target"
     )
     redirect_to triage_path,
                 notice: "Ingested #{run.finding_count} findings (#{run.failed_count} failed) from #{run.scanner}."
   rescue HdfIngestService::IngestError => e
     redirect_to triage_path, alert: "Ingest failed: #{e.message}"
+  end
+
+  # #809 — approve/reject a disposition (an amendment). Approval + validity window
+  # gate whether the disposition suppresses a finding during aggregation/export.
+  def approve_disposition
+    disp = @boundary.finding_dispositions.find_by!(uuid: params[:disposition_uuid])
+    FindingDispositionService.approve(disp, approved_by: actor)
+    redirect_to triage_path, notice: "Approved amendment for #{disp.control_id}."
+  rescue FindingDispositionService::DispositionError => e
+    redirect_to triage_path, alert: "Approval failed: #{e.message}"
+  end
+
+  def reject_disposition
+    disp = @boundary.finding_dispositions.find_by!(uuid: params[:disposition_uuid])
+    FindingDispositionService.reject(disp, approved_by: actor)
+    redirect_to triage_path, notice: "Rejected amendment for #{disp.control_id}."
+  rescue FindingDispositionService::DispositionError => e
+    redirect_to triage_path, alert: "Rejection failed: #{e.message}"
+  end
+
+  # #809 — aggregate current findings/dispositions into SSP/SAP/SAR/POA&M.
+  def aggregate
+    result = HdfAggregationService.new(@boundary).aggregate
+    redirect_to triage_path,
+                notice: "Aggregated into documents — SSP #{result.ssp}, SAP #{result.sap}, " \
+                        "SAR #{result.sar}, POA&M #{result.poam}."
+  end
+
+  # #809 — download the signed HDF package (amendments + findings + dispositions).
+  def package
+    bundle = HdfPackageService.new(@boundary).build
+    send_data JSON.pretty_generate(bundle),
+              filename: "#{@boundary.slug || @boundary.uuid}-hdf-package.json",
+              type: "application/json", disposition: "attachment"
   end
 
   def disposition
@@ -86,6 +137,16 @@ class HdfTriageController < ApplicationController
 
   def actor
     current_user&.display_name.presence || current_user&.email
+  end
+
+  def resolve_cdef(key)
+    return nil if key.blank?
+
+    if key.to_s.match?(/\A\d+\z/)
+      CdefDocument.find_by(id: key)
+    else
+      CdefDocument.find_by(slug: key) || CdefDocument.find_by(name: key)
+    end
   end
 
   def authorize_read!
