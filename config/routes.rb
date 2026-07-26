@@ -628,6 +628,8 @@ Rails.application.routes.draw do
         resource :hdf_amendments, only: [ :show ], controller: "hdf_amendments"
         # #809 — aggregate findings into SSP/SAP/SAR/POA&M (sync, or ?async=true).
         post :aggregate, to: "aggregations#create"
+        # #809 — signed package (amendments + findings + dispositions) for the consumer.
+        resource :hdf_package, only: [ :show ], controller: "hdf_packages"
       end
 
       # HDF Amendment triage (#447) — flat show of a single finding by uuid,

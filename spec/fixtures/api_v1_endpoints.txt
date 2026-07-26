@@ -29,6 +29,7 @@ GET /api/v1/artifacts/versions/:uuid
 GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export
