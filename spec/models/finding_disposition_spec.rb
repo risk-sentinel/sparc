@@ -90,6 +90,22 @@ RSpec.describe FindingDisposition do
       expect(d).to be_applicable
     end
 
+    # Two independent clocks: the decision's own `expiration` and the computed
+    # ODP window. A lapsed waiver must stop suppressing even when the ODP window
+    # is still open (or absent), or aggregation skips the POA&M item it owes.
+    it "is not applicable once its own expiration has passed, whatever valid_until says" do
+      lapsed = create(:finding_disposition, :waiver, approval_status: "approved",
+                      approved_by: "ao@corp.io", approved_at: Time.current,
+                      expiration: 1.day.ago, valid_until: 30.days.from_now)
+      expect(lapsed).to be_expired
+      expect(lapsed).not_to be_applicable
+
+      no_window = create(:finding_disposition, :waiver, control_id: "CVE-NOWINDOW",
+                         approval_status: "approved", approved_by: "ao@corp.io",
+                         approved_at: Time.current, expiration: 1.day.ago, valid_until: nil)
+      expect(no_window).not_to be_applicable
+    end
+
     it "is not applicable once valid_until has passed" do
       d = create(:finding_disposition, kind: "poam", approval_status: "approved",
                  approved_by: "ao@corp.io", valid_until: 1.day.ago)

@@ -39,6 +39,18 @@ RSpec.describe HdfAggregationService do
     expect(poam.poam_findings.pluck(:title)).to contain_exactly("HDF: CVE-1")
   end
 
+  it "opens a POA&M item once a suppressing waiver has expired" do
+    poam = create(:poam_document, authorization_boundary: boundary)
+    failed_finding(nist: [ "AC-2" ], control_id: "CVE-LAPSED")
+    create(:finding_disposition, :waiver, authorization_boundary: boundary,
+           control_id: "CVE-LAPSED", approval_status: "approved", approved_by: "ao",
+           expiration: 1.day.ago, valid_until: 30.days.from_now)
+
+    result = described_class.new(boundary).aggregate
+    expect(result.poam).to eq(1)
+    expect(poam.poam_findings.pluck(:title)).to contain_exactly("HDF: CVE-LAPSED")
+  end
+
   it "is idempotent (upserts, no duplicates on re-run)" do
     ssp = create(:ssp_document, authorization_boundary: boundary)
     create(:ssp_control, ssp_document: ssp, control_id: "AC-2")

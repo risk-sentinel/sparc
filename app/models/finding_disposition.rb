@@ -49,10 +49,16 @@ class FindingDisposition < ApplicationRecord
 
   def approved? = approval_status == "approved"
 
-  # #809 — the amendment is applied only when approved AND within its validity
-  # window (ODP timeline / active POA&M, computed into valid_until).
+  # #809 — the amendment is applied only when approved AND still in force. Two
+  # independent clocks can stop it, and BOTH must be checked here: `expiration`
+  # is the decision's own expiry (mandatory on waiver / operationalRequirement),
+  # while `valid_until` is the computed ODP remediation window (nil when an
+  # active POA&M backs it). The export path filters expiration via the `active`
+  # scope; aggregation and packaging come through here, so omitting `expired?`
+  # would let a lapsed waiver keep suppressing its finding and silently skip
+  # opening the POA&M item it should have opened.
   def applicable?
-    approved? && (valid_until.nil? || valid_until > Time.current)
+    approved? && !expired? && (valid_until.nil? || valid_until > Time.current)
   end
 
   # The HDF status this disposition amends the finding to.

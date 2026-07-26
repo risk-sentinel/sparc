@@ -15,8 +15,12 @@
 class HdfTriageController < ApplicationController
   before_action :set_boundary
   before_action :authorize_read!,  only: %i[show amendments package]
-  before_action :authorize_write!,
-    only: %i[ingest disposition clear_disposition approve_disposition reject_disposition aggregate]
+  before_action :authorize_write!, only: %i[ingest disposition clear_disposition aggregate]
+  # #809 — approving an amendment is a SEPARATE authority from triaging one, and
+  # it has to be enforced on the action, not just by hiding the button: the view's
+  # @can_approve only controls rendering, so gating these on evidence.write would
+  # let any triager approve their own amendment by POSTing the route directly.
+  before_action :authorize_approve!, only: %i[approve_disposition reject_disposition]
 
   def show
     # #811 — findings carry history; the triage board shows the CURRENT scan by
@@ -155,5 +159,11 @@ class HdfTriageController < ApplicationController
 
   def authorize_write!
     authorize_permission!("evidence.write", authorization_boundary_id: @boundary.id)
+  end
+
+  # Mirrors Api::V1::FindingDispositionsController#authorize_approve! — admin, or
+  # a role the Instance Admin granted `amendment.approve`.
+  def authorize_approve!
+    authorize_permission!("amendment.approve", authorization_boundary_id: @boundary.id)
   end
 end

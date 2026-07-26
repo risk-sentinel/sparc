@@ -127,6 +127,45 @@ RSpec.describe "HdfTriage", type: :request do
       post triage_reject_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
       expect(disp.reload.approval_status).to eq("rejected")
     end
+
+    # Separation of duties: triaging and approving are distinct authorities, and
+    # the enforcement has to live on the action. Hiding the button is not a
+    # control — a triager can POST the route directly.
+    context "as a triager holding evidence.write but not amendment.approve" do
+      let(:triager_role) do
+        create(:role, :authorization_boundary_scoped,
+               permissions: { "evidence.read" => true, "evidence.write" => true })
+      end
+      let(:triager) do
+        u = create(:user)
+        create(:user_role, user: u, role: triager_role, authorization_boundary: boundary)
+        u
+      end
+
+      before do
+        allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+        sign_in_as(triager)
+      end
+
+      it "can still set a disposition" do
+        post triage_disposition_authorization_boundary_path(
+          boundary, finding_uuid: finding.uuid, kind: "poam", reason: "tracked",
+          linked_subject_type: "PoamFinding", linked_subject_id: create(:poam_finding).id
+        )
+        expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      end
+
+      it "cannot approve an amendment" do
+        post triage_approve_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
+        expect(response).not_to redirect_to(triage_authorization_boundary_path(boundary))
+        expect(disp.reload.approval_status).to eq("draft")
+      end
+
+      it "cannot reject an amendment" do
+        post triage_reject_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
+        expect(disp.reload.approval_status).to eq("draft")
+      end
+    end
   end
 
   describe "POST triage/aggregate (#809)" do
