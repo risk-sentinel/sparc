@@ -134,7 +134,9 @@ class TestShow:
 
 class TestCreate:
     @pytest.mark.happy
-    def test_admin_creates_document(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
+    def test_admin_creates_document(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         payload = _new_payload(seeded_boundary_id)
         response = admin_client.post(PATH, json=payload)
         assert response.status_code in (200, 201), response.text
@@ -152,7 +154,9 @@ class TestCreate:
         )
 
     @pytest.mark.happy
-    def test_create_round_trip_rich_payload(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
+    def test_create_round_trip_rich_payload(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         """#433 slice 3 — exercise type-specific SSP fields beyond name/description."""
         payload = make_payload(
             PARAM_KEY,
@@ -183,7 +187,9 @@ class TestCreate:
         assert response.status_code in (401, 403), response.text
 
     @pytest.mark.validation
-    def test_missing_name_returns_422(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
+    def test_missing_name_returns_422(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         payload = {PARAM_KEY: {"authorization_boundary_id": seeded_boundary_id}}
         response = admin_client.post(PATH, json=payload)
         assert_error_envelope(response, expected_status=422)
@@ -226,7 +232,9 @@ class TestUpdate:
 
 class TestDestroy:
     @pytest.mark.happy
-    def test_admin_destroys_document(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
+    def test_admin_destroys_document(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         # Don't use the ssp_doc fixture because we want to assert the
         # delete actually happened (fixture would also try to delete on
         # teardown and produce a confusing 404).

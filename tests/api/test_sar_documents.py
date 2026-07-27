@@ -97,7 +97,9 @@ class TestShow:
 
 class TestCreate:
     @pytest.mark.happy
-    def test_admin_creates_document(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
+    def test_admin_creates_document(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         payload = _new_payload(seeded_boundary_id)
         response = admin_client.post(PATH, json=payload)
         assert response.status_code in (200, 201), response.text
@@ -118,12 +120,16 @@ class TestCreate:
         )
 
     @pytest.mark.authz
-    def test_non_admin_without_write_returns_403(self, user_client: httpx.Client, seeded_boundary_id: int) -> None:
+    def test_non_admin_without_write_returns_403(
+        self, user_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         response = user_client.post(PATH, json=_new_payload(seeded_boundary_id))
         assert response.status_code in (401, 403), response.text
 
     @pytest.mark.validation
-    def test_missing_name_returns_422(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
+    def test_missing_name_returns_422(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         payload = {PARAM_KEY: {"authorization_boundary_id": seeded_boundary_id}}
         response = admin_client.post(PATH, json=payload)
         assert_error_envelope(response, expected_status=422)
@@ -167,7 +173,9 @@ class TestUpdate:
 
 class TestDestroy:
     @pytest.mark.happy
-    def test_admin_destroys_document(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
+    def test_admin_destroys_document(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         doc = create_doc(admin_client, PATH, _new_payload(seeded_boundary_id))
         response = admin_client.delete(f"{PATH}/{doc['slug']}")
         assert response.status_code == 200, response.text

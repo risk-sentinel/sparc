@@ -220,7 +220,10 @@ class TestBoundaryScopedReads:
         suffix = uuid.uuid4().hex[:8]
         payload = make_payload(
             "ssp_document",
-            {"authorization_boundary_id": seeded_boundary_id, "name": f"show-isolation-probe-{suffix}"},
+            {
+                "authorization_boundary_id": seeded_boundary_id,
+                "name": f"show-isolation-probe-{suffix}",
+            },
         )
         created = create_doc(admin_client, self.PATH, payload)
 
