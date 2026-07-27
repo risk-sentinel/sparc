@@ -121,4 +121,172 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         "the profile schema accepted a catalog document"
     end
   end
+
+  # ── Stage 3 — baselines selected FROM the stage 1 catalog ────────────────
+  #
+  # These are the NIST SP 800-53 rev5 Low/Moderate/High baselines, which ship
+  # as fixtures. They are NOT FedRAMP's baselines: FedRAMP's rev5 profiles live
+  # in GSA/fedramp-automation, which returns 404 (checked authenticated and
+  # anonymous, both orgs), so they cannot be committed as fixtures. Calling a
+  # NIST baseline "FedRAMP" would be a lie about this spec's own coverage — see
+  # decision D1 in docs/dev/817_oscal_e2e_design.md.
+  describe "Stage 3 — baselines and profile resolution" do
+    BASELINES = {
+      "LOW" => "NIST_SP-800-53_rev5_LOW-baseline_profile.json",
+      "MODERATE" => "NIST_SP-800-53_rev5_MODERATE-baseline_profile.json",
+      "HIGH" => "NIST_SP-800-53_rev5_HIGH-baseline_profile.json"
+    }.freeze
+
+    # Control ids the fixture baseline selects, straight from the OSCAL profile.
+    def baseline_control_ids(filename)
+      data = JSON.parse(Rails.root.join("spec/fixtures/files/profiles", filename).read)
+      data.dig("profile", "imports")
+          .flat_map { |i| i["include-controls"] || [] }
+          .flat_map { |i| i["with-ids"] || [] }
+    end
+
+    def build_baseline(level)
+      profile = create(:profile_document, name: "NIST rev5 #{level}", baseline_level: level,
+                                          control_catalog: catalog)
+      ProfileControlSelectionService.new(profile).update(baseline_control_ids(BASELINES.fetch(level)))
+      profile.reload
+    end
+
+    it "selects each baseline's controls out of the imported catalog" do
+      BASELINES.each_key do |level|
+        profile = build_baseline(level)
+        requested = baseline_control_ids(BASELINES.fetch(level))
+
+        # Selection resolves against the catalog, so a control the baseline
+        # names but the catalog lacks is silently dropped. Assert the overlap
+        # is total — a partial selection is a broken seam between stages 1 and 3.
+        missing = requested - profile.profile_controls.pluck(:control_id)
+        expect(missing).to be_empty,
+          "#{level}: #{missing.size} baseline controls absent from the catalog — #{missing.first(5).inspect}"
+      end
+    end
+
+    it "produces cumulative baselines — LOW ⊂ MODERATE ⊂ HIGH" do
+      # A genuine property of the 800-53 baselines, and a strong signal that
+      # selection is driven by the profile rather than by chance: each level
+      # must be a strict superset of the one below it.
+      low = baseline_control_ids(BASELINES["LOW"]).to_set
+      moderate = baseline_control_ids(BASELINES["MODERATE"]).to_set
+      high = baseline_control_ids(BASELINES["HIGH"]).to_set
+
+      expect(low).to be < moderate, "LOW is not a strict subset of MODERATE"
+      expect(moderate).to be < high, "MODERATE is not a strict subset of HIGH"
+      expect([ low.size, moderate.size, high.size ]).to eq([ 149, 287, 370 ])
+    end
+
+    it "exports each baseline as a schema-valid OSCAL profile (JSON + YAML)" do
+      BASELINES.each_key do |level|
+        profile = build_baseline(level)
+        json = OscalProfileExportService.new(profile).export
+
+        expect_valid_json_and_yaml(json, model_type: :profile, label: "Stage 3 #{level} profile")
+      end
+    end
+
+    it "resolves each baseline into a schema-valid OSCAL catalog" do
+      # Profile resolution is the seam that matters most here: the resolved
+      # output is a CATALOG, so it must satisfy the catalog schema, not the
+      # profile schema it came from.
+      BASELINES.each_key do |level|
+        profile = build_baseline(level)
+        json = OscalResolvedProfileCatalogService.new(profile).export
+
+        expect_valid_json_and_yaml(json, model_type: :catalog, label: "Stage 3 #{level} resolved")
+      end
+    end
+
+    it "carries every selected control into the resolved catalog" do
+      profile = build_baseline("LOW")
+      selected = profile.profile_controls.pluck(:control_id).to_set
+
+      data = JSON.parse(OscalResolvedProfileCatalogService.new(profile).export)
+      resolved = (data.dig("catalog", "groups") || [])
+                 .flat_map { |g| g["controls"] || [] }
+                 .map { |c| c["id"] }.to_set
+
+      expect(selected - resolved).to be_empty,
+        "resolution dropped #{(selected - resolved).size} controls the profile selected"
+    end
+
+    it "REJECTS a profile with no import — a baseline that selects nothing" do
+      profile = create(:profile_document, name: "empty", baseline_level: "LOW",
+                                          control_catalog: catalog)
+      json = OscalProfileExportService.new(profile).export_unvalidated
+
+      expect_rejected_by_schema(json, model_type: :profile, label: "Stage 3 empty profile") do |data|
+        data["profile"]["imports"] = []
+      end
+    end
+  end
+
+  # ── Stage 2 — SPARC organization-defined parameters ──────────────────────
+  #
+  # Sequenced after stage 3 in the file because ODPs are applied TO a baseline,
+  # so the baseline has to exist first. The pipeline order is unchanged.
+  describe "Stage 2 — organization-defined parameters" do
+    let(:profile) do
+      p = create(:profile_document, name: "ODP target", baseline_level: "LOW",
+                                    control_catalog: catalog)
+      ids = JSON.parse(Rails.root.join(
+        "spec/fixtures/files/profiles/NIST_SP-800-53_rev5_LOW-baseline_profile.json"
+      ).read).dig("profile", "imports").flat_map { |i| i["include-controls"] || [] }
+        .flat_map { |i| i["with-ids"] || [] }
+      ProfileControlSelectionService.new(p).update(ids)
+      p.reload
+    end
+
+    # #817 requires the ODP importer exercised on every format it accepts.
+    # The three fixtures carry the SAME parameters, so a per-format difference
+    # can only be a parser fault.
+    %w[json yaml xml].each do |format|
+      it "imports organization-defined parameters from #{format.upcase}" do
+        content = Rails.root.join("spec/fixtures/files/odp/sample_odp.#{format}").read
+        payload = OdpImportService.parse(content: content, format: format)
+
+        expect(payload[:parameters]).to be_present,
+          "#{format}: parsed no parameters out of the ODP fixture"
+
+        result = OdpImportService.new(profile).apply(payload)
+        expect(result).to be_present
+      end
+    end
+
+    it "previews without writing, so an operator sees the diff first" do
+      content = Rails.root.join("spec/fixtures/files/odp/sample_odp.json").read
+      payload = OdpImportService.parse(content: content, format: "json")
+
+      fields = -> { ProfileControlField.where(profile_control_id: profile.profile_controls.select(:id))
+                                       .order(:id).pluck(:id, :field_value) }
+      before_values = fields.call
+      preview = OdpImportService.new(profile).preview(payload)
+
+      expect(preview[:rows]).to be_present
+      expect(preview[:stats]).to include(:total)
+      expect(fields.call).to eq(before_values),
+        "preview wrote to the database — it must be non-destructive"
+    end
+
+    it "REJECTS an unsupported ODP format" do
+      expect {
+        OdpImportService.parse(content: "irrelevant", format: "docx")
+      }.to raise_error(OdpImportService::ImportError, /Unsupported format/)
+    end
+
+    it "REJECTS an empty ODP file" do
+      expect {
+        OdpImportService.parse(content: "   ", format: "json")
+      }.to raise_error(OdpImportService::ImportError, /Empty file/)
+    end
+
+    it "REJECTS malformed JSON rather than importing nothing silently" do
+      expect {
+        OdpImportService.parse(content: "{not json", format: "json")
+      }.to raise_error(OdpImportService::ImportError)
+    end
+  end
 end

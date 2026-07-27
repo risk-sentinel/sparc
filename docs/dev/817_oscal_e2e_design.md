@@ -45,14 +45,23 @@ bundled schemas in `lib/oscal_schemas` (JSON) and `lib/oscal_xsd_schemas` (XSD).
 Each slice is one commit on the shared testing branch and leaves the suite
 green.
 
-| Slice | Content |
-|---|---|
-| **S1** | ECS boundary fixtures — the 19 sparc-iac `AWS/CDEF/ECS/` CDEFs, sanitized and committed, plus invalid variants and a spec that keeps them sanitized |
-| **S2** | Stages 1–3 — catalog import → ODPs → 3 baselines → profile resolution, each exported and schema-validated in JSON/YAML/XML, each with a reject case |
-| **S3** | Stage 4 — the full ECS CDEF set imported (JSON/YAML/XML/XCCDF) and assembled into a boundary |
-| **S4** | Stage 5 — SSP, SAP, Evidence, Amendments, SAR, POA&M; HDF and XCCDF/SCAP ingestion for the assessment side |
-| **S5** | Stage 6 — ATO package assembly + export, round-trip semantic equivalence, `samples/` demo output |
-| **S6** | Negative matrix sweep — confirm every stage has an explicit reject assertion; unsupported format/type combinations rejected deliberately rather than crashing |
+| Slice | Content | Status |
+|---|---|---|
+| **S1** | ECS boundary fixtures — the 19 sparc-iac `AWS/CDEF/ECS/` CDEFs, sanitized and committed, plus a re-runnable sanitizer | **done** (`fff647b3`) |
+| **S2** | Stages 1–3 — catalog import → ODPs → 3 baselines → profile resolution, each exported and schema-validated, each with reject cases | **done** — 21 examples, 0 failures, 1 pending (#827) |
+| **S3** | Stage 4 — the full ECS CDEF set imported (JSON/YAML/XML/XCCDF) and assembled into a boundary | next |
+| **S4** | Stage 5 — SSP, SAP, Evidence, Amendments, SAR, POA&M; HDF and XCCDF/SCAP ingestion for the assessment side | |
+| **S5** | Stage 6 — ATO package assembly + export, round-trip semantic equivalence, `samples/` demo output | blocked by #829 |
+| **S6** | Negative matrix sweep — confirm every stage has an explicit reject assertion; unsupported format/type combinations rejected deliberately rather than crashing | |
+
+**S2 coverage as built:** catalog completeness (20 families, >2000 controls, no
+empty family), JSON/YAML schema validity, XML well-formedness, XSD validity
+(pending #827), payload survival; baseline selection resolving fully against the
+catalog, cumulative LOW ⊂ MODERATE ⊂ HIGH (149/287/370), profile export validity,
+resolution to a valid *catalog*, control carry-through; ODP import from JSON,
+YAML **and** XML, non-destructive preview; plus reject cases for missing
+metadata, non-UUID ids, wrong model type, empty imports, unsupported format,
+empty file and malformed JSON.
 
 ### Cost control
 
@@ -69,14 +78,18 @@ and the subset generation must be a committed script so it is reproducible.
 
 ## Decisions
 
-**D1 — Which "FedRAMP" baselines?** The repo ships NIST rev5 L/M/H baseline
-profiles, not FedRAMP's. FedRAMP's rev5 baselines live in GSA/fedramp-automation
-and are US-Government public-domain, so they *can* be committed as fixtures.
-**Decision: commit the real FedRAMP rev5 L/M/H baseline profiles as fixtures if
-they can be retrieved; otherwise author FedRAMP-shaped profiles over the NIST
-baselines and label them explicitly as test-authored.** A test that silently
-calls a NIST baseline "FedRAMP" would be lying about its own coverage. Whichever
-path is taken gets stated in the fixture README.
+**D1 — Which "FedRAMP" baselines? → RESOLVED: NIST rev5 L/M/H, labelled as
+such.** FedRAMP's rev5 baselines live in `GSA/fedramp-automation`, which returns
+**404** — checked anonymously and authenticated, and under `FedRAMP/` as well —
+so they cannot be retrieved and committed as fixtures. The repo already ships
+the **NIST** rev5 Low/Moderate/High baseline profiles, and stage 3 uses those,
+naming them NIST throughout.
+
+The spec says so in a comment at the point of use, because the failure mode here
+is a *documentation* one: a test that silently calls a NIST baseline "FedRAMP"
+lies about its own coverage, and the lie is invisible in a green run. If the
+FedRAMP profiles become retrievable, swapping the fixtures is a one-line change
+per level — the selection is driven entirely by the profile's `with-ids`.
 
 **D2 — Fixture provenance.** sparc-iac CDEFs are already generalized
 (`arn:aws:...:<region>:<account>:...` placeholders, synthetic UUIDs, no real
@@ -94,13 +107,24 @@ schema-valid output because required OSCAL content is missing, the fix is the
 fixture or the seed, never a fallback in the exporter. This is the #816 lesson
 (`risk/statement`, `finding/target`) and it is non-negotiable.
 
-## Gaps found while surveying
+## Bugs found
 
 Filed as their own issues; **not** fixed on this branch.
 
-| Gap | Detail |
-|---|---|
-| ATO package export is JSON-only | `AtoPackageExportService::EXPORT_SERVICES` bundles `.json` members and validates JSON only. #817 asks for the assembled package in all three serializations, which the service cannot currently produce. |
+| # | Found by | Detail |
+|---|---|---|
+| **#827** | Stage 1, XML validation | **Every OSCAL XML export is schema-invalid.** `OscalJsonToXmlConverter` emits children in JSON key order; the OSCAL XSD is an `xs:sequence` with a mandated order. `download_xml` is user-facing on seven document types. Undetected because no spec ever called `validate_xml` against a real export. |
+| **#828** | Surveying `AtoPackageExportService` | **The ATO package silently omits documents whose export fails while the manifest still lists them** — verified: a raising SSP export yields an archive containing only `manifest.json`, whose document list still names `ssp.json`. Also ships `export_unvalidated` bytes. |
+| **#829** | Surveying `AtoPackageExportService` | ATO package export is **JSON-only**, so #817's all-three-serializations requirement cannot be met. Blocked by #827 for the XML half. |
+
+### On the `pending` marker
+
+Stage 1's XSD assertion is marked `pending` against #827 rather than deleted or
+softened. RSpec runs a pending example, expects it to fail, and **fails the
+suite if it passes** — so the marker cannot outlive the bug, and the evidence
+(the full XSD error list) stays visible in every run. Well-formedness and
+payload survival are asserted separately and pass, so only XSD conformance is
+deferred.
 
 ## Acceptance mapping
 
