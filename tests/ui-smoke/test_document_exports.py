@@ -159,7 +159,9 @@ def test_xml_download_control_is_wired(authed_page, base_url):
     assert toggle.count() > 0, "Export OSCAL control missing from the catalog screen"
     toggle.click()
 
-    xml_item = page.locator("a.dropdown-item[data-oscal-export-download-url-param*='download_xml']").first
+    xml_item = page.locator(
+        "a.dropdown-item[data-oscal-export-download-url-param*='download_xml']"
+    ).first
     assert xml_item.count() > 0, "XML item missing from the Export OSCAL menu"
 
     with page.expect_download(timeout=90000) as dl:
