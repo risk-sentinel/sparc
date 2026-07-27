@@ -473,7 +473,13 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         statement: "An untested incident response plan is unproven under load: response times, " \
                    "escalation paths and contact accuracy remain unverified, so the organization " \
                    "cannot demonstrate it can contain an incident within its stated objectives.",
-        status: "remediating", likelihood: "low", impact: "medium"
+        status: "remediating", likelihood: "low", impact: "medium",
+        # A POA&M is a time commitment, so a risk without a deadline is an
+        # incomplete one. hdf-cli 3.4.1 enforces this: 3.3.2 silently invented
+        # "conversion time + 1 year", 3.4.1 fails loud instead (#764). The
+        # deadline is authored here for the same reason risk/statement is —
+        # it is substantive content, not something a tool should invent.
+        deadline: Time.zone.parse("2026-10-01T00:00:00Z")
       )
       finding = PoamFinding.create!(
         poam_document: poam, title: "Finding: IR exercise overdue",
@@ -589,13 +595,40 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
                                                          label: "Stage 5 HDF -> SAR")
       end
 
-      it "cannot convert HDF straight to POA&M — the converter is gone upstream" do
-        # Pinned so the behaviour is visible rather than surprising: hdf-cli
-        # removed hdf -> oscal-poam in 3.2.0. #831 covers the endpoint still
-        # advertising the target.
+      # OSCAL POA&M is sourced from HDF **Amendments**, not from raw HDF: the
+      # direct hdf -> oscal-poam converter was removed in 3.2.0 by design
+      # (mitre/hdf-libs#104). These two examples pin BOTH halves of that
+      # contract, so neither the removal nor the replacement can regress
+      # unnoticed.
+      it "refuses raw HDF -> POA&M, which is removed upstream by design" do
         expect {
           HdfOscalTranslationService.new.hdf_to_oscal_poam(hdf_fixture)
         }.to raise_error(HdfRunner::Error, /no converter found/)
+      end
+
+      it "produces a POA&M from HDF Amendments — the supported route" do
+        # Round-trip through the pair, starting from SPARC'S OWN export: an
+        # OSCAL POA&M converts to HDF Amendments, and those amendments convert
+        # back to an OSCAL POA&M. Both directions run, so a regression in
+        # either converter surfaces here — and starting from our export means
+        # this also proves what SPARC emits is consumable by the toolchain,
+        # which a canned fixture could not.
+        service = HdfOscalTranslationService.new
+
+        amendments = Tempfile.create([ "sparc-poam-", ".json" ]) do |src|
+          src.write(OscalPoamExportService.new(authored_poam).export)
+          src.flush
+          service.oscal_poam_to_hdf_amendments(src.path)
+        end
+        expect(amendments).to be_present
+
+        Tempfile.create([ "amendments-", ".json" ]) do |f|
+          f.write(JSON.generate(amendments))
+          f.flush
+
+          round_tripped = service.oscal_poam_from_hdf_amendments(f.path)
+          expect(round_tripped).to have_key("plan-of-action-and-milestones")
+        end
       end
 
       it "merges boundary evidence into OSCAL back-matter" do

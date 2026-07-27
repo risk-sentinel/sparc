@@ -25,6 +25,19 @@ Four defects, all reproducible from a 40-line synthetic HDF input:
 | 3 | `results[].risks[].characterizations[]` | missing required `origin` |
 | 4 | `results[].findings[].props[]` | `value: ""` violates the non-empty string datatype |
 
+### Scope — what this report is *not* about
+
+To avoid conflating this with the 3.2.0 report: **the POA&M story is not in
+dispute here.** The removal of the direct `hdf → oscal-poam` converter in 3.2.0
+is understood to be permanent and by design, with OSCAL POA&M sourced from HDF
+**Amendments** (`hdf convert --from hdf-amendments --to oscal-poam`, see
+mitre/hdf-libs#104). We have verified that route works end to end on 3.4.1,
+including the round trip back through `oscal-poam → hdf-amendments`.
+
+Likewise, 3.4.1's refusal to convert a POA&M item whose risks carry no deadline
+is a **correction we support** — 3.3.2 silently invented "conversion time + one
+year", which was worse. This report concerns `hdf → oscal-sar` only.
+
 ## Environment
 
 | | |
