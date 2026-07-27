@@ -140,20 +140,33 @@ def test_catalog_xml_export_is_well_formed_oscal(authed_page, base_url):
 
 
 def test_xml_download_control_is_wired(authed_page, base_url):
-    """The UI control actually triggers a download (not just renders a link)."""
+    """The real user path: open Export OSCAL, click XML, get a parseable file.
+
+    The control is NOT a plain link — it is a dropdown item driven by Stimulus
+    (`click->oscal-export#download`), which validates first and then downloads or
+    falls back. An href-based selector matched nothing and skipped silently,
+    which is how a 500 on this exact button went unnoticed. Driving the dropdown
+    exercises the validate-then-download flow a customer actually performs.
+    """
     page = authed_page
     href = first_show_href(page, "/control_catalogs", "/control_catalogs")
     if not href:
         pytest.skip("no control catalog on this instance")
 
     page.goto(f"{base_url}{href}", wait_until="networkidle")
-    link = page.locator("a[href$='download_xml']").first
-    if link.count() == 0:
-        pytest.skip("no XML download control on this screen")
 
-    with page.expect_download(timeout=60000) as dl:
-        link.click()
+    toggle = page.get_by_role("button", name="Export OSCAL").first
+    assert toggle.count() > 0, "Export OSCAL control missing from the catalog screen"
+    toggle.click()
+
+    xml_item = page.locator("a.dropdown-item[data-oscal-export-download-url-param*='download_xml']").first
+    assert xml_item.count() > 0, "XML item missing from the Export OSCAL menu"
+
+    with page.expect_download(timeout=90000) as dl:
+        xml_item.click()
+
     path = dl.value.path()
     assert path, "download produced no file"
     with open(path, "rb") as fh:
-        ET.fromstring(fh.read().decode("utf-8"))
+        root = ET.fromstring(fh.read().decode("utf-8"))
+    assert root is not None
