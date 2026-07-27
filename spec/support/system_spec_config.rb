@@ -129,5 +129,20 @@ RSpec.configure do |config|
   config.after(:each, type: :system) do |example|
     snapshot = example.metadata[:_sparc_env_snapshot] || {}
     snapshot.each { |k, v| v.nil? ? ENV.delete(k) : ENV[k] = v }
+
+    # #824 — consent acceptance is remembered in sessionStorage so the banner
+    # stops re-firing on every load (it was interposing between the
+    # card-bearing request and /auth/piv, making PIV login impossible).
+    #
+    # Capybara's reset clears COOKIES but not sessionStorage, and the browser
+    # is reused across examples. Without this, the first spec to accept consent
+    # would suppress the banner for every later spec — silently disabling the
+    # "login is blocked until Proceed" coverage rather than failing it, which
+    # is the worst way for a test to break.
+    begin
+      Capybara.current_session.execute_script("window.sessionStorage.clear()")
+    rescue StandardError
+      nil # no browser session for this example, or already torn down
+    end
   end
 end

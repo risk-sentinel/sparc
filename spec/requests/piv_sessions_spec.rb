@@ -69,6 +69,60 @@ RSpec.describe "PivSessions", type: :request do
     end
   end
 
+  # #824 — the end-to-end half of the fix. A user holding a working card was
+  # told "No smart card certificate was presented" while the gateway was
+  # forwarding it and attesting verify=SUCCESS; the PEM had simply lost its
+  # newlines in transit. These drive the real request path, not just the parser.
+  describe "a gateway that mangles the forwarded PEM (#824)" do
+    let!(:user) { create(:user, email: "john.doe@mil") }
+
+    def last_failure_metadata
+      AuditEvent.where(action: "login_failure", provider: "piv").order(:id).last.metadata
+    end
+
+    it "signs the user in when newlines were folded to spaces" do
+      get piv_session_path, headers: piv_headers(dod_cert.gsub("\n", " "))
+      expect(response).to redirect_to(root_path)
+    end
+
+    it "signs the user in when the PEM arrives URL-encoded" do
+      get piv_session_path, headers: piv_headers(CGI.escape(dod_cert))
+      expect(response).to redirect_to(root_path)
+    end
+
+    it "signs the user in from bare base64 DER with no PEM markers" do
+      body = dod_cert.lines[1..-2].join.gsub(/\s+/, "")
+      get piv_session_path, headers: piv_headers(body)
+      expect(response).to redirect_to(root_path)
+    end
+
+    context "when the certificate genuinely is not there" do
+      it "reports it as ABSENT, and records that zero bytes arrived" do
+        get piv_session_path, headers: piv_headers("")
+
+        expect(flash[:error]).to eq("No smart card certificate was presented.")
+        expect(last_failure_metadata["cert_bytes"]).to eq(0)
+      end
+    end
+
+    context "when a certificate arrives but cannot be read" do
+      it "reports it as UNREADABLE — a different fault from absent" do
+        get piv_session_path, headers: piv_headers("A" * 500)
+
+        expect(flash[:error]).to eq("Your smart card certificate could not be read.")
+        expect(last_failure_metadata["cert_bytes"]).to eq(500)
+      end
+    end
+
+    it "never writes the certificate itself into the audit metadata" do
+      get piv_session_path, headers: piv_headers(dod_cert(cn: "NOBODY.9999999999", email: "ghost@mil"))
+
+      serialized = last_failure_metadata.to_json
+      expect(serialized).not_to include("BEGIN CERTIFICATE")
+      expect(serialized).not_to include("MII") # base64 DER prefix
+    end
+  end
+
   context "#804 issuer acceptance filter (defense-in-depth)" do
     let!(:user) { create(:user, email: "john.doe@mil") }
 
