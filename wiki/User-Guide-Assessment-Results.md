@@ -1,4 +1,4 @@
-# User Guide: Assessment Results (SAR)
+# User Guide: Security Assessment Results (SAR)
 
 An **Assessment Results** document records *what the assessment found* — the
 pass/fail result and findings for each control that was tested. In OSCAL it is
@@ -22,7 +22,7 @@ authentication and a role with SAR permissions — see [RBAC](RBAC).
 
 ![A Security Assessment Results detail view showing findings, observations, and control assessment outcomes](images/sar_show.png)
 
-*A Security Assessment Results (SAR) detail view.*
+*A Security Security Assessment Results (SAR) detail view.*
 
 ## At a glance
 
@@ -122,7 +122,7 @@ On the detail page use **Download OSCAL** (the `assessment-results` document) or
 ## Related guides
 
 - [User Guides index](User-Guides)
-- [Assessment Plans (SAP)](User-Guide-Assessment-Plans) — the input to results.
+- [Security Assessment Plan (SAP)](User-Guide-Assessment-Plans) — the input to results.
 - [POA&M](User-Guide-POAM) — where open findings are tracked to closure.
 - [Evidence & Attestations](User-Guide-Evidence-and-Attestations)
 - [Screens & UI](Screens) — exhaustive element-level reference.

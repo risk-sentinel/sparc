@@ -126,10 +126,21 @@ class OscalProfileExportService
       ctrl.profile_control_fields.each do |field|
         next unless field.field_name.start_with?("parameter:")
         param_id = field.field_name.delete_prefix("parameter:")
-        params << {
-          "param-id" => param_id,
-          "values"   => field.field_value.split(", ")
-        }
+        # A set-parameter states "this ODP is tailored to these values". OSCAL
+        # requires at least one value, and ProfileControlSelectionService creates
+        # a parameter field for EVERY ODP the control exposes — blank whenever
+        # the catalog param carries no label. Emitting "values": [] therefore
+        # asserted a tailoring the author never made AND made the whole profile
+        # fail schema validation, so any profile containing such a control could
+        # not be exported at all.
+        #
+        # Omitting an untailored parameter invents nothing; it drops an assertion
+        # that was never made. (Contrast poam risk/statement, which is REQUIRED
+        # substantive content and must never be synthesised — see that exporter.)
+        values = field.field_value.to_s.split(", ").map(&:strip).reject(&:blank?)
+        next if values.empty?
+
+        params << { "param-id" => param_id, "values" => values }
       end
     end
     params

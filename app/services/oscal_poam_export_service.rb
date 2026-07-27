@@ -139,6 +139,10 @@ class OscalPoamExportService
         "uuid"                => risk.uuid,
         "title"               => risk.title,
         "description"         => risk.description,
+        # `statement` is REQUIRED by OSCAL and is substantive risk content. Never
+        # synthesise it from another field or a placeholder — that yields a POA&M
+        # that passes schema validation while misrepresenting the risk. If it is
+        # missing, validation must fail so the author supplies it.
         "statement"           => risk.statement,
         "status"              => risk.status,
         "origins"             => risk.origins_data.presence,

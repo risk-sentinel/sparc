@@ -16,6 +16,8 @@ class SspDocument < ApplicationRecord
 
   belongs_to :authorization_boundary, optional: true
 
+  include BoundaryReferenceValidation
+
   # #395 P2: inherit profile_document_id from the boundary's profile when
   # not user-provided. Runs before_validation; nil-result is a no-op.
   inherits_from_boundary(

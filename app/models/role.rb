@@ -64,6 +64,7 @@ class Role < ApplicationRecord
     back_matter.archive
     back_matter.bulk_import
     back_matter.federate
+    amendment.approve
     admin.rotate_credentials
   ].freeze
 
@@ -84,6 +85,7 @@ class Role < ApplicationRecord
     "mappings" => "Control Mappings",
     "converters" => "Converters",
     "back_matter" => "Back-Matter Resources",
+    "amendment" => "HDF Amendments",
     "admin" => "Instance Administration"
   }.freeze
 

@@ -1,0 +1,44 @@
+<% content_for :title, "Remediation Timelines" %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">Remediation Timelines</h1>
+    <p class="text-muted mb-0">Days to remediate by profile baseline × NIST criticality. Used to
+      validate amendments when a control has no profile ODP remediation value (#809).</p>
+  </div>
+  <%= link_to "Admin", admin_users_path, class: "btn btn-outline-secondary btn-sm" %>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0" id="remediation-timelines-grid">
+      <thead>
+        <tr>
+          <th>Baseline \ Criticality</th>
+          <% RemediationTimeline::CRITICALITIES.each do |c| %><th class="text-center"><%= c %></th><% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% RemediationTimeline::BASELINE_LEVELS.each do |baseline| %>
+          <tr>
+            <th class="text-nowrap"><%= baseline %></th>
+            <% RemediationTimeline::CRITICALITIES.each do |criticality| %>
+              <% cell = @grid[baseline][criticality] %>
+              <td class="text-center">
+                <%= form_with url: admin_remediation_timelines_path, method: :patch,
+                      data: { turbo: false }, class: "d-inline-flex align-items-center gap-1" do %>
+                  <%= hidden_field_tag :baseline_level, baseline %>
+                  <%= hidden_field_tag :criticality, criticality %>
+                  <%= number_field_tag :days, cell[:days], min: 0, class: "form-control form-control-sm",
+                        style: "width: 5rem;", "aria-label": "#{baseline} #{criticality} days" %>
+                  <%= submit_tag "Save", class: "btn btn-outline-primary btn-sm" %>
+                <% end %>
+                <% unless cell[:provisioned] %><div class="small text-body-tertiary">default</div><% end %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

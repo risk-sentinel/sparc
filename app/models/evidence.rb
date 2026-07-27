@@ -7,6 +7,8 @@ class Evidence < ApplicationRecord
   limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }
 
   belongs_to :authorization_boundary, optional: true
+
+  include BoundaryReferenceValidation
   has_many :evidence_control_links, dependent: :destroy
   has_many :attestations, dependent: :destroy
   has_many :ksi_validations

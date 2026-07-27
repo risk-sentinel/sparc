@@ -14,6 +14,8 @@ class SarDocument < ApplicationRecord
 
   belongs_to :authorization_boundary, optional: true
 
+  include BoundaryReferenceValidation
+
   has_many :sar_controls, dependent: :delete_all
   include AttachmentSizeLimit
 

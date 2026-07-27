@@ -84,23 +84,60 @@ RSpec.describe HdfIngestService do
       end
     end
 
-    describe "idempotent re-ingest" do
-      it "updates the finding for (boundary, control_id) rather than duplicating" do
+    describe "re-ingest — history + lifecycle (#811)" do
+      it "keeps one CURRENT finding and retains the prior as history" do
         ingest(hdf_doc([ control("CVE-1", status: "failed") ]))
         run2 = ingest(hdf_doc([ control("CVE-1", status: "passed") ]))
 
-        expect(boundary.scanner_findings.where(control_id: "CVE-1").count).to eq(1)
-        finding = boundary.scanner_findings.find_by(control_id: "CVE-1")
-        expect(finding.status).to eq("passed")
-        expect(finding.scan_run_id).to eq(run2.id) # repointed to the latest run
+        all = boundary.scanner_findings.where(control_id: "CVE-1")
+        expect(all.count).to eq(2)                       # history retained
+        expect(all.current.count).to eq(1)               # exactly one current
+        current = all.current.first
+        expect(current.status).to eq("passed")
+        expect(current.scan_run_id).to eq(run2.id)
+        expect(all.where(current: false).first.lifecycle_status).to eq("superseded")
+      end
+
+      it "marks re_failed when a dispositioned finding worsens (severity up)" do
+        ingest(hdf_doc([ control("CVE-1", status: "failed", severity: "HIGH") ]))
+        create(:finding_disposition, authorization_boundary: boundary, control_id: "CVE-1", kind: "poam")
+        ingest(hdf_doc([ control("CVE-1", status: "failed", severity: "CRITICAL") ])) # worsened
+        expect(boundary.scanner_findings.current.find_by(control_id: "CVE-1").lifecycle_status).to eq("re_failed")
+      end
+
+      it "marks carried_forward when a still-failing finding keeps its disposition" do
+        ingest(hdf_doc([ control("CVE-1", status: "failed", severity: "HIGH") ]))
+        create(:finding_disposition, :waiver, authorization_boundary: boundary, control_id: "CVE-1",
+               expiration: 90.days.from_now)
+        # same status + severity as prior → no worsening → carried forward
+        ingest(hdf_doc([ control("CVE-1", status: "failed", severity: "HIGH") ]))
+        expect(boundary.scanner_findings.current.find_by(control_id: "CVE-1").lifecycle_status).to eq("carried_forward")
+      end
+
+      it "marks expired when the disposition has expired" do
+        ingest(hdf_doc([ control("CVE-1", status: "failed") ]))
+        create(:finding_disposition, :waiver, authorization_boundary: boundary, control_id: "CVE-1",
+               expiration: 1.day.ago)
+        ingest(hdf_doc([ control("CVE-1", status: "failed") ]))
+        expect(boundary.scanner_findings.current.find_by(control_id: "CVE-1").lifecycle_status).to eq("expired")
       end
 
       it "preserves a disposition attached to the (boundary, control_id)" do
         ingest(hdf_doc([ control("CVE-1", status: "failed") ]))
         disp = create(:finding_disposition, authorization_boundary: boundary, control_id: "CVE-1")
         ingest(hdf_doc([ control("CVE-1", status: "failed") ]))
+        expect(boundary.scanner_findings.current.find_by(control_id: "CVE-1").disposition).to eq(disp)
+      end
+    end
 
-        expect(boundary.scanner_findings.find_by(control_id: "CVE-1").disposition).to eq(disp)
+    describe "target / file (#811)" do
+      it "records the target CDEF, scanner scope, and persists the scan file" do
+        cdef = create(:cdef_document)
+        run = ingest(hdf_doc([ control("CVE-1") ]), cdef_document: cdef, scanner_scope: "boundary")
+        expect(run.cdef_document).to eq(cdef)
+        expect(run.scanner_scope).to eq("boundary")
+        expect(run.file).to be_attached
+        expect(boundary.scanner_findings.current.first.cdef_document).to eq(cdef)
       end
     end
 

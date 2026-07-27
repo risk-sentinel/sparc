@@ -26,7 +26,7 @@ RSpec.describe "CdefDocuments bulk-apply UI", type: :request do
       get bulk_apply_cdef_document_path(cdef)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Bulk Apply Converter")
-      expect(response.body).to include(converter.name)
+      expect(response.body).to include(html_text(converter.name))
     end
 
     it "redirects with error when CDEF is AWS-Labs-sourced" do

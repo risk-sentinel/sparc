@@ -15,11 +15,15 @@ class Api::V1::ScannerFindingsController < Api::V1::BaseController
   before_action :set_finding,  only: %i[show]
   before_action :authorize_read!
 
-  # GET .../scanner_findings
+  # GET .../scanner_findings — the triage worklist (current findings by default).
   def index
     scope = @boundary.scanner_findings
+    scope = scope.current unless params[:include_history] == "true" # #811 — history excluded by default
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where(severity: params[:severity].to_s.upcase) if params[:severity].present?
+    scope = scope.where(lifecycle_status: params[:lifecycle]) if params[:lifecycle].present?
+    scope = scope.where(cdef_document_id: params[:cdef_document_id]) if params[:cdef_document_id].present?
+    scope = scope.where(component_ref: params[:component_ref]) if params[:component_ref].present?
     scope = scope.order(:control_id)
 
     result = paginate(scope)
@@ -60,11 +64,17 @@ class Api::V1::ScannerFindingsController < Api::V1::BaseController
       scanner: finding.scanner,
       authorization_boundary_id: finding.authorization_boundary_id,
       scan_run_id: finding.scan_run_id,
+      cdef_document_id: finding.cdef_document_id,
+      component_ref: finding.component_ref,
+      lifecycle_status: finding.lifecycle_status,
+      current: finding.current,
       disposition_kind: disposition&.kind,
+      disposition_approval: disposition&.approval_status,
       created_at: finding.created_at.utc.iso8601
     }
     if detailed
       data[:description] = finding.description
+      data[:source_location] = finding.source_location
       data[:raw_hdf] = finding.raw_hdf
       data[:updated_at] = finding.updated_at.utc.iso8601
     end

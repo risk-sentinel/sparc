@@ -12,10 +12,11 @@ module SeedRunner
   CURRENT_VERSIONS = {
     "nist_rev5_catalog"    => "2.0.0",
     "nist_rev4_catalog"    => "2.0.0",
-    "roles"                => "1.0.0",
+    "roles"                => "1.1.0",
     "admin_user"           => "1.1.0",
     "fedramp_20x_ksi"      => "1.0.0",
     "nist_rev4_rev5_mapping" => "1.0.0",
+    "remediation_timelines"  => "1.0.0",
     "converters"           => "1.4.0",
     "demo_organization"    => "1.0.0",
     "demo_auth_boundary"   => "1.0.0",
@@ -23,7 +24,7 @@ module SeedRunner
     "demo_published_profile" => "1.0.0",
     "demo_catalog_guidance" => "1.0.0",
     "demo_evidence"        => "1.1.0",  # #738 boundary-scoping smoke fixtures
-    "demo_sample_artifacts" => "1.0.0",
+    "demo_sample_artifacts" => "1.1.0",
     "oscal_schemas"         => "1.0.0"
   }.freeze
 

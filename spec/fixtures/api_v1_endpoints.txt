@@ -21,6 +21,7 @@ DELETE /api/v1/sar_documents/:id
 DELETE /api/v1/scanner_findings/:scanner_finding_id/disposition
 DELETE /api/v1/ssp_documents/:id
 DELETE /api/v1/users/:id
+GET /api/v1/admin/remediation_timelines
 GET /api/v1/artifacts/:uuid
 GET /api/v1/artifacts/:uuid/freshness
 GET /api/v1/artifacts/:uuid/versions
@@ -28,6 +29,7 @@ GET /api/v1/artifacts/versions/:uuid
 GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export
@@ -100,6 +102,7 @@ POST /api/v1/admin/refresh_credentials
 POST /api/v1/authoritative_sources
 POST /api/v1/authoritative_sources/import
 POST /api/v1/authorization_boundaries
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/aggregate
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 POST /api/v1/back_matter_resources
@@ -148,6 +151,8 @@ POST /api/v1/sar_documents/:id/fields/import/confirm
 POST /api/v1/sar_documents/:id/fields/import/preview
 POST /api/v1/sar_documents/convert
 POST /api/v1/scanner_findings/:scanner_finding_id/disposition
+POST /api/v1/scanner_findings/:scanner_finding_id/disposition/approve
+POST /api/v1/scanner_findings/:scanner_finding_id/disposition/reject
 POST /api/v1/sessions/from_token
 POST /api/v1/ssp_documents
 POST /api/v1/ssp_documents/:id/fields/import/confirm
@@ -155,6 +160,7 @@ POST /api/v1/ssp_documents/:id/fields/import/preview
 POST /api/v1/ssp_documents/:id/populate_from_profile
 POST /api/v1/ssp_documents/convert
 POST /api/v1/users
+PUT /api/v1/admin/remediation_timelines
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PUT /api/v1/authorization_boundaries/:id
 PUT /api/v1/back_matter_resources/:id

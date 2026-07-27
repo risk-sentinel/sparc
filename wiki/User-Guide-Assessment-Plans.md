@@ -1,4 +1,4 @@
-# User Guide: Assessment Plans (SAP)
+# User Guide: Security Assessment Plan (SAP)
 
 An **Assessment Plan** describes *how* the controls in a system will be assessed
 — the methods, scope, and objectives — before the assessment happens. In OSCAL
@@ -95,5 +95,5 @@ On the detail page use **Export OSCAL** (validated / unvalidated) or **JSON**.
 - [User Guides index](User-Guides)
 - [System Security Plans (SSP)](User-Guide-System-Security-Plans) — the input to
   the plan.
-- [Assessment Results (SAR)](User-Guide-Assessment-Results) — the next step.
+- [Security Assessment Results (SAR)](User-Guide-Assessment-Results) — the next step.
 - [Screens & UI](Screens) — exhaustive element-level reference.

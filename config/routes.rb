@@ -15,6 +15,10 @@ Rails.application.routes.draw do
   get "help",                  to: "help#index",  as: :help
   get "help/images/:filename", to: "help#image",  as: :help_image,
       constraints: { filename: /[\w\-.]+\.(?:png|jpe?g|gif|svg|webp)/i }
+  # The guide slug derives from the wiki filename, so renaming
+  # User-Guide-Trust-Store.md -> User-Guide-Compliance-Library.md moved the URL.
+  # Keep the old link working for bookmarks and anything already published.
+  get "help/trust-store", to: redirect("/help/compliance-library")
   get "help/:slug",            to: "help#show",    as: :help_guide,
       constraints: { slug: /[a-z0-9-]+/ }
 
@@ -72,7 +76,12 @@ Rails.application.routes.draw do
       post   "triage/ingest",      to: "hdf_triage#ingest",            as: :triage_ingest
       post   "triage/disposition", to: "hdf_triage#disposition",       as: :triage_disposition
       delete "triage/disposition", to: "hdf_triage#clear_disposition", as: :triage_clear_disposition
+      # #809 — approve/reject an amendment disposition; aggregate findings; signed package.
+      post   "triage/disposition/approve", to: "hdf_triage#approve_disposition", as: :triage_approve_disposition
+      post   "triage/disposition/reject",  to: "hdf_triage#reject_disposition",  as: :triage_reject_disposition
+      post   "triage/aggregate",   to: "hdf_triage#aggregate",         as: :triage_aggregate
       get    "triage/amendments",  to: "hdf_triage#amendments",        as: :triage_amendments
+      get    "triage/package",     to: "hdf_triage#package",           as: :triage_package
     end
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
     resources :memberships,
@@ -385,6 +394,9 @@ Rails.application.routes.draw do
       end
     end
     resources :roles
+    # #809 — remediation-timeline (SLA) grid: days to remediate by baseline × criticality.
+    get   "remediation_timelines", to: "remediation_timelines#index", as: :remediation_timelines
+    patch "remediation_timelines", to: "remediation_timelines#update"
     resources :audit_logs, only: [ :index, :show ]
     # v1.8.3 — deferred data migration status
     resources :data_migrations, only: [ :index ]
@@ -623,13 +635,22 @@ Rails.application.routes.draw do
         resources :scan_runs, only: [ :index, :show, :create ]
         resources :scanner_findings, only: [ :index ]
         resource :hdf_amendments, only: [ :show ], controller: "hdf_amendments"
+        # #809 — aggregate findings into SSP/SAP/SAR/POA&M (sync, or ?async=true).
+        post :aggregate, to: "aggregations#create"
+        # #809 — signed package (amendments + findings + dispositions) for the consumer.
+        resource :hdf_package, only: [ :show ], controller: "hdf_packages"
       end
 
       # HDF Amendment triage (#447) — flat show of a single finding by uuid,
       # with its one disposition (create acts as upsert; keyed by boundary+control).
       resources :scanner_findings, only: [ :show ] do
         resource :disposition, only: [ :show, :create, :destroy ],
-                 controller: "finding_dispositions"
+                 controller: "finding_dispositions" do
+          # #809 — amendment approval flow. Mapped explicitly (rather than relying
+          # on Rails inferring the action) so the target is unambiguous.
+          post :approve, to: "finding_dispositions#approve"
+          post :reject,  to: "finding_dispositions#reject"
+        end
       end
 
       # HDF ↔ OSCAL translation bridge (#449). Stateless — does not persist
@@ -648,6 +669,9 @@ Rails.application.routes.draw do
       # from the sparc-iac rotation Lambda. See sparc-iac#197.
       namespace :admin do
         post "refresh_credentials", to: "credentials#refresh"
+        # #809 — remediation-timeline (SLA) table management.
+        get "remediation_timelines", to: "remediation_timelines#index"
+        put "remediation_timelines", to: "remediation_timelines#update"
       end
     end
   end

@@ -10,6 +10,8 @@ class SapDocument < ApplicationRecord
 
   belongs_to :authorization_boundary, optional: true
 
+  include BoundaryReferenceValidation
+
   include AttachmentSizeLimit
 
   has_many :sap_controls, dependent: :delete_all

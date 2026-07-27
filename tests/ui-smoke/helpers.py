@@ -121,7 +121,13 @@ def first_show_href(page, index_path: str, prefix: str):
     ):
         if not h:
             continue
-        path = h.split("?")[0]
+        # Strip BOTH the query and the fragment. Dropping only the query let
+        # "/poam_documents/new#upload-poam" through as a segment of
+        # "new#upload-poam", which is not in RESERVED_SEGMENTS — so the *new*
+        # page was returned as though it were a document show page. Every caller
+        # then exercised the wrong screen (and, for exports, a 404 error page)
+        # while appearing to pass.
+        path = h.split("?")[0].split("#")[0]
         if not path.startswith(prefix + "/"):
             continue
         seg = path[len(prefix) + 1:]

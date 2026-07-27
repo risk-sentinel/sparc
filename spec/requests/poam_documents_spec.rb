@@ -165,8 +165,8 @@ RSpec.describe "PoamDocuments", type: :request do
       expect(response.body).to include("Linked SSP")
       expect(response.body).to include("Other Boundary SSP")
       # optgroup labels carry the boundary names (HTML-escaped on render)
-      expect(response.body).to include(CGI.escapeHTML(boundary.name))
-      expect(response.body).to include(CGI.escapeHTML(ssp_other_boundary.name))
+      expect(response.body).to include(html_text(boundary.name))
+      expect(response.body).to include(html_text(ssp_other_boundary.name))
     end
   end
 

@@ -161,6 +161,25 @@
                     <li><%= link_to authorization_boundaries_path, class: "dropdown-item" do %>
                       <span class="sparc-dropdown-icon">&#128203;</span> View All Boundaries
                     <% end %></li>
+                    <%# Compliance Library (#372) — these screens lived ONLY in the
+                        sidebar, so there was no dropdown route to Authoritative
+                        Sources and nothing signalling it belongs to the Compliance
+                        Library. Mirrors the sidebar group so both surfaces agree.
+                        This whole dropdown is already inside `if signed_in?`. %>
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="sparc-dropdown-header sparc-dropdown-header-boundaries">Compliance Library</li>
+                    <li><%= link_to authoritative_sources_path, class: "dropdown-item" do %>
+                      <span class="sparc-dropdown-icon">&#128220;</span> Authoritative Sources
+                    <% end %></li>
+                    <li><%= link_to promotion_queue_index_path, class: "dropdown-item" do %>
+                      <span class="sparc-dropdown-icon">&#11014;</span> Promotion Queue
+                    <% end %></li>
+                    <li><%= link_to leveraged_poam_documents_path, class: "dropdown-item" do %>
+                      <span class="sparc-dropdown-icon">&#128203;</span> Leveraged POA&amp;Ms
+                    <% end %></li>
+                    <li><%= link_to federation_peers_path, class: "dropdown-item" do %>
+                      <span class="sparc-dropdown-icon">&#128279;</span> Federation Peers
+                    <% end %></li>
                   </ul>
                 </li>
               <% else %>
@@ -232,6 +251,7 @@
                       <li><%= link_to "Service Accounts", admin_service_accounts_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Auth Boundaries", admin_authorization_boundaries_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Organizations", admin_organizations_path, class: "dropdown-item" %></li>
+                      <li><%= link_to "Remediation Timelines", admin_remediation_timelines_path, class: "dropdown-item" %></li>
                       <li><%= link_to "Audit Log", admin_audit_logs_path, class: "dropdown-item" %></li>
                       <li><hr class="dropdown-divider"></li>
                     <% end %>

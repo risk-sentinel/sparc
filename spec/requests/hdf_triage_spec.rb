@@ -49,12 +49,12 @@ RSpec.describe "HdfTriage", type: :request do
     it "redirects with an alert when no file is chosen" do
       post triage_ingest_authorization_boundary_path(boundary)
       expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
-      expect(flash[:alert]).to match(/Choose an HDF file/)
+      expect(flash[:error]).to match(/Choose an HDF file/)
     end
 
     it "redirects with an alert on malformed HDF" do
       post triage_ingest_authorization_boundary_path(boundary), params: { file: hdf_upload("{ bad") }
-      expect(flash[:alert]).to match(/Ingest failed/)
+      expect(flash[:error]).to match(/Ingest failed/)
     end
   end
 
@@ -76,7 +76,7 @@ RSpec.describe "HdfTriage", type: :request do
       post triage_disposition_authorization_boundary_path(boundary),
            params: { finding_uuid: finding.uuid, kind: "poam", reason: "x",
                      linked_subject_type: "Evidence", linked_subject_id: create(:evidence).id }
-      expect(flash[:alert]).to match(/must link a PoamFinding/)
+      expect(flash[:error]).to match(/must link a PoamFinding/)
     end
   end
 
@@ -86,6 +86,104 @@ RSpec.describe "HdfTriage", type: :request do
       delete triage_clear_disposition_authorization_boundary_path(boundary, control_id: "CVE-1")
       expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
       expect(boundary.finding_dispositions.where(control_id: "CVE-1")).to be_empty
+    end
+  end
+
+  describe "POST triage/ingest with a target/CDEF (#811)" do
+    it "records the CDEF and scanner scope on the run" do
+      cdef = create(:cdef_document)
+      post triage_ingest_authorization_boundary_path(boundary),
+           params: { file: hdf_upload, cdef_document_id: cdef.id, scanner_scope: "boundary" }
+      run = boundary.scan_runs.order(:created_at).last
+      expect(run.cdef_document_id).to eq(cdef.id)
+      expect(run.scanner_scope).to eq("boundary")
+    end
+  end
+
+  describe "history toggle (#811)" do
+    it "hides superseded findings by default and shows them with include_history" do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary,
+             control_id: "OLD-1", current: false, lifecycle_status: "superseded")
+      get triage_authorization_boundary_path(boundary)
+      expect(response.body).not_to include("OLD-1")
+      get triage_authorization_boundary_path(boundary), params: { include_history: "true" }
+      expect(response.body).to include("OLD-1")
+    end
+  end
+
+  describe "approve / reject disposition (#809)" do
+    let!(:finding) do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
+    end
+    let!(:disp) { create(:finding_disposition, authorization_boundary: boundary, control_id: "CVE-1", kind: "poam") }
+
+    it "approves an amendment" do
+      post triage_approve_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(disp.reload.approval_status).to eq("approved")
+    end
+
+    it "rejects an amendment" do
+      post triage_reject_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
+      expect(disp.reload.approval_status).to eq("rejected")
+    end
+
+    # Separation of duties: triaging and approving are distinct authorities, and
+    # the enforcement has to live on the action. Hiding the button is not a
+    # control — a triager can POST the route directly.
+    context "as a triager holding evidence.write but not amendment.approve" do
+      let(:triager_role) do
+        create(:role, :authorization_boundary_scoped,
+               permissions: { "evidence.read" => true, "evidence.write" => true })
+      end
+      let(:triager) do
+        u = create(:user)
+        create(:user_role, user: u, role: triager_role, authorization_boundary: boundary)
+        u
+      end
+
+      before do
+        allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+        sign_in_as(triager)
+      end
+
+      it "can still set a disposition" do
+        post triage_disposition_authorization_boundary_path(
+          boundary, finding_uuid: finding.uuid, kind: "poam", reason: "tracked",
+          linked_subject_type: "PoamFinding", linked_subject_id: create(:poam_finding).id
+        )
+        expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      end
+
+      it "cannot approve an amendment" do
+        post triage_approve_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
+        expect(response).not_to redirect_to(triage_authorization_boundary_path(boundary))
+        expect(disp.reload.approval_status).to eq("draft")
+      end
+
+      it "cannot reject an amendment" do
+        post triage_reject_disposition_authorization_boundary_path(boundary, disposition_uuid: disp.uuid)
+        expect(disp.reload.approval_status).to eq("draft")
+      end
+    end
+  end
+
+  describe "POST triage/aggregate (#809)" do
+    it "aggregates and redirects with a summary" do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
+      post triage_aggregate_authorization_boundary_path(boundary)
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(flash[:success]).to match(/Aggregated into documents/)
+    end
+  end
+
+  describe "GET triage/package (#809)" do
+    it "downloads the signed package JSON" do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
+      get triage_package_authorization_boundary_path(boundary)
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("application/json")
+      expect(JSON.parse(response.body)["signature"]).to be_present
     end
   end
 

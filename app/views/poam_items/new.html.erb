@@ -1,6 +1,12 @@
 <div class="card">
   <div class="mb-4">
-    <%= link_to "&#8592; Back to #{@poam_document.name}".html_safe, poam_document_path(@poam_document), class: "text-primary", style: "text-decoration: none; font-size: 0.88rem;" %>
+    <%# The document name is user-supplied, so it must NOT sit inside an
+        html_safe string — that disabled escaping and allowed stored XSS.
+        Block form emits the arrow entity from the template and lets ERB
+        escape the name. %>
+    <%= link_to poam_document_path(@poam_document), class: "text-primary", style: "text-decoration: none; font-size: 0.88rem;" do %>
+      &#8592; Back to <%= @poam_document.name %>
+    <% end %>
   </div>
   <h2 class="mb-4">Add POA&amp;M Item</h2>
   <%= render "form", poam_item: @poam_item, poam_document: @poam_document %>

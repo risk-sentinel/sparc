@@ -32,7 +32,10 @@ from helpers import first_show_href  # noqa: E402
 
 BASE_URL = os.environ.get("SPARC_SMOKE_BASE_URL", "http://localhost:3000").rstrip("/")
 SA_TOKEN = os.environ.get("SPARC_SMOKE_SA_TOKEN")
-OUT = Path(__file__).resolve().parents[2] / "wiki" / "images" / "hdf-triage.png"
+IMAGES = Path(__file__).resolve().parents[2] / "wiki" / "images"
+OUT = IMAGES / "hdf-triage.png"
+# #809 — the admin SLA grid the guide points at for amendment validity.
+OUT_TIMELINES = IMAGES / "remediation-timelines.png"
 VIEWPORT = {"width": 1440, "height": 1000}
 
 # A small, realistic set of failed findings so the screenshot shows the worklist.
@@ -91,8 +94,22 @@ def main() -> int:
         page.screenshot(path=str(OUT), full_page=True)
         kb = OUT.stat().st_size // 1024
         print(f"wrote {OUT} ({kb} KB)")
+
+        _capture_remediation_timelines(page)
         browser.close()
     return 0
+
+
+def _capture_remediation_timelines(page) -> None:
+    """#809 — Admin > Remediation Timelines, the SLA fallback the guide cites."""
+    page.goto(f"{BASE_URL}/admin/remediation_timelines", wait_until="networkidle")
+    if page.locator("#remediation-timelines-grid").count() == 0:
+        print("remediation timelines grid not reachable; skipping that shot")
+        return
+    page.wait_for_timeout(300)
+    page.screenshot(path=str(OUT_TIMELINES), full_page=True)
+    kb = OUT_TIMELINES.stat().st_size // 1024
+    print(f"wrote {OUT_TIMELINES} ({kb} KB)")
 
 
 if __name__ == "__main__":

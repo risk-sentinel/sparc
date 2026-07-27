@@ -72,11 +72,29 @@ class FindingDispositionService
       kind: kind, reason: reason, decided_by: decided_by,
       linked_subject: linked_subject, expiration: expiration, decided_at: Time.current
     )
+    # Editing a disposition resets its approval; it must be re-approved.
+    disposition.assign_attributes(approval_status: "draft", approved_by: nil, approved_at: nil)
+    disposition.valid_until = AmendmentValidityService.new(disposition).valid_until # #809 ODP window
     disposition.signature_hash = signature_for(disposition)
     disposition.save!
     disposition
   rescue ActiveRecord::RecordInvalid => e
     raise DispositionError, e.record.errors.full_messages.to_sentence
+  end
+
+  # #809 — approve/reject the amendment. Approver is bound into the signature.
+  def self.approve(disposition, approved_by:)
+    disposition.update!(
+      approval_status: "approved", approved_by: approved_by, approved_at: Time.current
+    )
+    disposition
+  end
+
+  def self.reject(disposition, approved_by:)
+    disposition.update!(
+      approval_status: "rejected", approved_by: approved_by, approved_at: Time.current
+    )
+    disposition
   end
 
   private
