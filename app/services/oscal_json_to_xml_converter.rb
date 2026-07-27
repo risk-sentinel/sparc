@@ -12,6 +12,31 @@
 class OscalJsonToXmlConverter
   OSCAL_NS = "http://csrc.nist.gov/ns/oscal/1.0".freeze
 
+  # XSD element-ordering table (#827).
+  #
+  # OSCAL JSON has no key-order requirement, but every OSCAL XML assembly is an
+  # `xs:sequence` with a MANDATED child order. Emitting children in JSON
+  # insertion order therefore produced XML that no OSCAL XSD would accept — for
+  # example <metadata> needs title, published, last-modified, version,
+  # oscal-version..., and <param> needs prop, link, label, usage... regardless
+  # of how the exporter happened to build the hash.
+  #
+  # The order is PER PARENT, not global: `prop` is the 8th child of <metadata>
+  # but the 1st of <param>, so a single name-to-rank map would be wrong. The
+  # table is keyed by the parent's XSD type and carries a child-name-to-type map
+  # so the walk can track its position in the schema as it descends.
+  #
+  # Generated from lib/oscal_xsd_schemas/ — the same XSDs
+  # OscalSchemaValidationService validates against, so the ordering used to
+  # write the XML cannot disagree with the ordering used to check it. See
+  # scripts/generate_oscal_element_order.rb; drift is caught by
+  # spec/lib/oscal_element_order_spec.rb.
+  ELEMENT_ORDER_PATH = Rails.root.join("lib/oscal_element_order.json").freeze
+
+  def self.element_order
+    @element_order ||= JSON.parse(ELEMENT_ORDER_PATH.read).freeze
+  end
+
   ROOT_ELEMENTS = {
     ssp:                  "system-security-plan",
     assessment_results:   "assessment-results",
@@ -59,10 +84,13 @@ class OscalJsonToXmlConverter
     root_data = @data[@root_key]
     raise ArgumentError, "Missing root key '#{@root_key}' in data" unless root_data.is_a?(Hash)
 
+    root_type = self.class.element_order.dig("roots", @root_key)
+    root_entry = type_entry(root_type)
+
     builder = Nokogiri::XML::Builder.new(encoding: "UTF-8") do |xml|
-      attrs = extract_attributes(root_data).merge("xmlns" => OSCAL_NS)
+      attrs = extract_attributes(root_data, root_entry).merge("xmlns" => OSCAL_NS)
       xml.send(safe_element_name(@root_key), attrs) do
-        hash_children_to_xml(xml, root_data)
+        hash_children_to_xml(xml, root_data, root_type)
       end
     end
 
@@ -71,60 +99,195 @@ class OscalJsonToXmlConverter
 
   private
 
+  def type_entry(name)
+    name && self.class.element_order.dig("types", name)
+  end
+
   # Extract attribute-eligible key/value pairs from a hash.
-  def extract_attributes(hash)
-    attrs = {}
-    hash.each do |key, value|
-      attrs[key] = value.to_s if ATTRIBUTE_KEYS.include?(key) && scalar?(value)
+  #
+  # Which keys are attributes is a PER-TYPE fact: `name` is an attribute of
+  # <prop> but a child element of <party>, and `start`/`end` are attributes only
+  # on <port-range>. When the schema type is known its attribute list decides;
+  # ATTRIBUTE_KEYS remains the fallback for hashes the schema does not describe.
+  def extract_attributes(hash, entry = nil)
+    allowed = entry && entry["attributes"]
+
+    hash.each_with_object({}) do |(key, value), attrs|
+      next unless scalar?(value)
+      next unless allowed ? allowed.include?(key) : ATTRIBUTE_KEYS.include?(key)
+
+      attrs[key] = value.to_s
     end
-    attrs
   end
 
-  # Render only the non-attribute children of a hash.
-  def hash_children_to_xml(xml, hash)
-    hash.each do |key, value|
-      next if ATTRIBUTE_KEYS.include?(key) && scalar?(value)
-      value_to_xml(xml, key, value)
+  # Render only the non-attribute children of a hash, in XSD sequence order.
+  #
+  # `type_name` is the parent's XSD type. When it is unknown — an OSCAL
+  # extension, or a key the schema does not define — ordering is skipped for
+  # that hash and insertion order is kept. Unknown keys are NEVER dropped:
+  # emitting them out of order still round-trips the data, whereas discarding
+  # them would lose it silently.
+  def hash_children_to_xml(xml, hash, type_name = nil)
+    entry = type_entry(type_name)
+
+    ordered_children(hash, entry).each do |key, value|
+      emit_child(xml, key, value, entry)
     end
   end
 
-  # Dispatch based on value type.
-  def value_to_xml(xml, key, value)
-    case value
-    when Hash
-      attrs = extract_attributes(value)
-      if value.keys.all? { |k| ATTRIBUTE_KEYS.include?(k) && scalar?(value[k]) }
-        # All children are attributes — self-closing element
-        xml.send(safe_element_name(key), attrs)
-      else
-        xml.send(safe_element_name(key), attrs) do
-          hash_children_to_xml(xml, value)
-        end
-      end
-    when Array
-      value.each { |item| value_to_xml(xml, singularize_key(key, item), item) }
-    when String
-      if key == "description" || key == "remarks" || contains_markup?(value)
-        # OSCAL markup-multiline: wrap text in <p> elements
-        xml.send(safe_element_name(key)) do
-          value.split("\n").reject(&:blank?).each do |para|
-            xml.p para.strip
-          end
-        end
-      else
-        xml.send(safe_element_name(key), value)
-      end
-    when Numeric, TrueClass, FalseClass
-      xml.send(safe_element_name(key), value.to_s)
-    when NilClass
-      # Skip nil values
+  # Sort by the child's position in the parent's `xs:sequence`. Keys the schema
+  # does not know sort last, and the original index breaks ties so the result is
+  # stable — Ruby's sort_by is not.
+  def ordered_children(hash, entry)
+    attrs = extract_attributes(hash, entry)
+    children = hash.reject { |key, _value| attrs.key?(key) }
+    order = entry && entry["order"]
+    return children.to_a if order.blank?
+
+    children.each_with_index
+            .sort_by { |(key, value), index| [ order.index(element_name_for(key, value, entry)) || order.size, index ] }
+            .map(&:first)
+  end
+
+  # The element name this key will actually be emitted as.
+  #
+  # Most OSCAL JSON arrays repeat a singular element in XML (`controls` =>
+  # <control>...), but some are GROUPED behind a real wrapper element the schema
+  # declares (`revisions` => <revisions><revision/></revisions>).
+  #
+  # NAMING and GROUPING are separate questions. If the schema declares the key
+  # itself, that is the element's name — whether it then wraps its items
+  # (`revisions`) or simply repeats (`satisfied`, `include-controls`) is decided
+  # by `wrapper?` at emit time.
+  def element_name_for(key, value, entry)
+    return key unless value.is_a?(Array)
+
+    order = entry && entry["order"]
+    return key if order&.include?(key)
+
+    mapped = PLURAL_TO_SINGULAR[key]
+    return mapped if mapped && (order.nil? || order.include?(mapped))
+
+    # Fall back to the schema rather than to the hand-written plural map: if a
+    # naive singular of this key is a child the parent actually declares, that
+    # is the element name. This is why `email-addresses` and
+    # `control-implementations` convert correctly without being listed.
+    derived = order && naive_singulars(key).find { |candidate| order.include?(candidate) }
+    return derived if derived
+
+    # Last, OSCAL's own JSON-to-XML group names, for the cases where the two
+    # differ outright: `remediations` is <response>, `related-risks` is
+    # <associated-risk>. Only accepted when the parent really declares it.
+    aliased = order && Array(self.class.element_order.dig("json_aliases", key))
+                       .find { |candidate| order.include?(candidate) }
+
+    aliased || mapped || key
+  end
+
+  def naive_singulars(key)
+    [ key.sub(/ies\z/, "y"), key.sub(/es\z/, ""), key.sub(/s\z/, "") ].uniq
+  end
+
+  def wrapper?(parent_entry, key)
+    return false unless parent_entry
+
+    type_entry(parent_entry.dig("children", key))&.key?("wraps") || false
+  end
+
+  def emit_child(xml, key, value, parent_entry)
+    element = element_name_for(key, value, parent_entry)
+    entry = type_entry(parent_entry&.dig("children", element))
+
+    if value.is_a?(Array) && element == key && wrapper?(parent_entry, key)
+      emit_grouped(xml, element, value, entry)
+    elsif value.is_a?(Array)
+      value.each { |item| emit_element(xml, element, item, entry) }
     else
-      nil # non-JSON value types produce no element
+      emit_element(xml, element, value, entry)
+    end
+  end
+
+  # A GROUPED array: one wrapper element containing the repeated child the
+  # wrapper's own type declares.
+  def emit_grouped(xml, element, items, entry)
+    item_name = entry&.dig("wraps") || singularize_key(element, items.first)
+    item_entry = type_entry(entry&.dig("children", item_name))
+
+    xml.send(safe_element_name(element)) do
+      items.each { |item| emit_element(xml, item_name, item, item_entry) }
+    end
+  end
+
+  def emit_element(xml, name, value, entry)
+    return if value.nil?
+
+    if entry&.dig("markup")
+      emit_markup(xml, name, value, entry)
+    elsif value.is_a?(Hash)
+      emit_hash_element(xml, name, value, entry)
+    elsif value.is_a?(Array)
+      value.each { |item| emit_element(xml, name, item, entry) }
+    elsif scalar?(value)
+      emit_scalar(xml, name, value, entry)
+    end
+  end
+
+  # OSCAL prose. In JSON the prose of an element that also carries attributes
+  # sits under the conventional key `prose`; elsewhere the value is the string
+  # itself.
+  #
+  # markup-line (<title>) takes the text directly and REJECTS a <p> child;
+  # markup-multiline (<description>, <remarks>) requires one. Emitting the
+  # wrong one is invalid either way, so the schema decides.
+  def emit_markup(xml, name, value, entry)
+    attrs = value.is_a?(Hash) ? extract_attributes(value, entry) : {}
+    text  = value.is_a?(Hash) ? value["prose"] : value
+
+    return xml.send(safe_element_name(name), text.to_s, attrs) if entry&.dig("markup") == "line"
+
+    xml.send(safe_element_name(name), attrs) do
+      text.to_s.split("\n").reject(&:blank?).each { |para| xml.p para.strip }
+    end
+  end
+
+  def emit_scalar(xml, name, value, entry)
+    # Fallback for prose the schema does not type for us: without an entry we
+    # cannot know an element is markup, so keep the original key heuristic.
+    if entry.nil? && value.is_a?(String) && (name == "description" || name == "remarks" || contains_markup?(value))
+      return emit_markup(xml, name, value, nil)
+    end
+
+    xml.send(safe_element_name(name), value.to_s)
+  end
+
+  def emit_hash_element(xml, name, hash, entry)
+    attrs = extract_attributes(hash, entry)
+    remaining = hash.reject { |key, _| attrs.key?(key) }
+
+    # `xs:simpleContent`: attributes PLUS a text value. The one non-attribute
+    # key supplies the text, e.g. {"scheme": ..., "identifier": "x"} =>
+    # <document-id scheme="...">x</document-id>.
+    if entry&.dig("text")
+      text = remaining.values.find { |v| scalar?(v) }
+      return xml.send(safe_element_name(name), text.to_s, attrs) if text
+    end
+
+    if remaining.empty?
+      xml.send(safe_element_name(name), attrs)
+    else
+      xml.send(safe_element_name(name), attrs) do
+        ordered_children(hash, entry).each { |key, value| emit_child(xml, key, value, entry) }
+      end
     end
   end
 
   # OSCAL JSON arrays use plural keys, but XML repeats the singular element.
-  # Handle known OSCAL plurals; fallback to the key as-is.
+  #
+  # NOT the authority since #827 — `element_name_for` resolves names against the
+  # parent's schema first, and only consults this map for hashes the schema does
+  # not describe. Entries that disagree with the schema are simply not used
+  # (`remediations` is listed here as `remediation` but converts to <response>),
+  # so do not add to it to fix a conversion: regenerate the ordering table.
   PLURAL_TO_SINGULAR = {
     "roles"                     => "role",
     "parties"                   => "party",

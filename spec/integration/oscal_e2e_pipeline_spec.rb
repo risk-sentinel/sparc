@@ -77,10 +77,6 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
     end
 
     it "round-trips to XSD-valid OSCAL XML" do
-      pending "#827 — OscalJsonToXmlConverter emits JSON key order instead of " \
-              "the OSCAL XSD element sequence, so every XML export is " \
-              "schema-invalid. Remove this marker when #827 lands."
-
       json = OscalCatalogExportService.new(catalog).export
       expect_valid_xml(json, model_type: :catalog, label: "Stage 1 catalog")
     end
@@ -737,6 +733,48 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       end
     end
 
+    # #827. Every OSCAL model has a `download_xml` route, and before #827 every
+    # one of them emitted schema-invalid XML: the converter walked the parsed
+    # JSON in insertion order while each XSD assembly is an `xs:sequence` with a
+    # mandated child order. Catalog alone is not enough coverage — the defect
+    # was in shared traversal code, and the models differ in which parts of it
+    # they exercise (grouped arrays, simpleContent fields, markup-line versus
+    # markup-multiline prose, elements renamed between JSON and XML).
+    it "converts every model to XSD-valid OSCAL XML" do
+      invalid = MODEL_FIXTURES.filter_map do |model, path|
+        xml = OscalExportFormatService.to_xml(fixture_json(path), model)
+        result = OscalSchemaValidationService.validate_xml(model, xml)
+
+        "#{model}: #{Array(result.errors).first(3).join('; ')}" unless result.valid?
+      end
+
+      expect(invalid).to be_empty,
+        "these models did not produce XSD-valid XML:\n  #{invalid.join("\n  ")}"
+    end
+
+    # The negative for the assertion above. The XSD is the only thing standing
+    # behind it, so if it accepted anything well-formed, "converts every model
+    # to XSD-valid XML" would pass no matter what the converter emitted. Damage
+    # ONLY the element order — content, attributes and namespaces stay valid —
+    # so nothing but the sequence rule can be doing the rejecting.
+    it "REJECTS XML whose elements are well-formed but out of sequence" do
+      xml = OscalExportFormatService.to_xml(fixture_json(MODEL_FIXTURES[:catalog]), :catalog)
+      expect(OscalSchemaValidationService.validate_xml(:catalog, xml).valid?).to be(true),
+        "precondition failed: the catalog fixture must convert to valid XML first"
+
+      doc = Nokogiri::XML(xml)
+      metadata = doc.at_xpath("//*[local-name()='metadata']")
+      title = metadata.at_xpath("./*[local-name()='title']")
+      last_modified = metadata.at_xpath("./*[local-name()='last-modified']")
+      title.add_previous_sibling(last_modified.dup)
+      last_modified.remove
+
+      result = OscalSchemaValidationService.validate_xml(:catalog, doc.to_xml)
+
+      expect(result.valid?).to be(false),
+        "the XSD accepted <metadata> with last-modified before title — it is not enforcing sequence order"
+    end
+
     it "REJECTS every document validated as a model it is not" do
       # 7 models × 6 wrong schemas = 42 combinations. A validator that ignored
       # its model_type argument, or defaulted to a permissive schema, would
@@ -782,7 +820,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       # The distinction matters: a raised exception surfaces to an API caller
       # as a 500, an invalid result as a 422. #817 asks for deliberate
       # rejection, which means the former is a bug even though both "fail".
-      [ "not json at all", "{unclosed", '{"catalog": ', " " ].each do |payload|
+      [ "not json at all", "{unclosed", '{"catalog": ', "\u0000" ].each do |payload|
         expect {
           OscalSchemaValidationService.validate_json(:catalog, payload)
         }.not_to raise_error, "validator crashed instead of rejecting: #{payload.inspect}"
