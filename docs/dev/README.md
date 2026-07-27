@@ -33,5 +33,6 @@ development. See [`issue_rules.md`](issue_rules.md) for the full doc-update proc
 | [`hdf-libs-3.2.0-upstream-report.md`](hdf-libs-3.2.0-upstream-report.md) | hdf-cli 3.2.0 upstream contract report |
 | [`447_hdf_amendment_design.md`](447_hdf_amendment_design.md) | #447 HDF Amendment triage/UI epic — design pass (reconciled to hdf-cli 3.4.1 / schema v3.4.0) |
 | [`809_811_hdf_aggregation_design.md`](809_811_hdf_aggregation_design.md) | #809+#811 HDF aggregation + scan/CDEF association + re-occurrence lifecycle — design pass (decisions resolved) |
+| [`tls_verification_testing.md`](tls_verification_testing.md) | **Standard** for TLS/MITM testing — both-directions (positive + negative) proof with a real handshake |
 | [`a11y_audit.md`](a11y_audit.md) | Accessibility (WCAG 2.1 AA) audit record |
 | [`admin_credential_rotation.md`](admin_credential_rotation.md) | Admin-credential rotation (operational/engineering reference) |
