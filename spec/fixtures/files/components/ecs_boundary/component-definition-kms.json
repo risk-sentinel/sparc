@@ -1,0 +1,83 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000015",
+    "metadata": {
+      "title": "SPARC ECS KMS Customer-Managed Keys Component Definition",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "b1c2d3e4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "b1c2d3e4-2222-4000-a000-000000000014",
+        "type": "service",
+        "title": "AWS KMS Customer-Managed Keys (FedRAMP/DoD)",
+        "description": "Three-tier KMS CMK architecture for FedRAMP Moderate/High and DoD IL4/IL5 compliance. Data key (EBS, RDS, ElastiCache, S3), Secrets key (Secrets Manager), and Logs key (CloudWatch). Key policies enforce separation of duties and restrict usage to specific AWS service principals. Enabled via enable_cmk=true. Deployed via Terraform (AWS/EC2/modules/kms/). SPARC houses SAP, SAR, POAM, resolved profiles, and validation data requiring CMK-level encryption controls. <!-- UPDATE: Insert KMS key ARNs, aliases, and account ID for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["b1c2d3e4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "b1c2d3e4-3333-4000-a000-000000000014",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for KMS customer-managed keys",
+            "implemented-requirements": [
+              {
+                "uuid": "b1c2d3e4-4444-4000-a000-000000000140",
+                "control-id": "sc-12",
+                "description": "Cryptographic Key Establishment and Management: Three customer-managed KMS keys are provisioned with distinct scopes: data tier (EBS volumes, RDS, ElastiCache, S3), secrets tier (Secrets Manager), and logs tier (CloudWatch). Each key has automatic annual rotation enabled. Key deletion requires a 30-day waiting period (configurable 7-30 days), preventing accidental key destruction that would render encrypted data irrecoverable. Key policies restrict usage to specific AWS service principals via kms:ViaService conditions. Reference: DISA SRG-APP-000514, FedRAMP SC-12.",
+                "remarks": "Terraform resources: aws_kms_key.data, aws_kms_key.secrets, aws_kms_key.logs with enable_key_rotation=true, deletion_window_in_days=30."
+              },
+              {
+                "uuid": "b1c2d3e4-4444-4000-a000-000000000141",
+                "control-id": "sc-12.1",
+                "description": "Cryptographic Key Establishment and Management | Availability: KMS keys are regional resources backed by FIPS 140-2 Level 3 validated HSMs. Key material cannot be exported. Automatic key rotation creates new cryptographic material annually while retaining old material for decryption of existing data. The 30-day deletion window provides recovery time if a key is scheduled for deletion. Multi-region keys are disabled to maintain key locality within the deployment region. Reference: FedRAMP SC-12(1).",
+                "remarks": "AWS KMS uses FIPS 140-2 Level 3 HSMs. multi_region=false ensures keys stay in the deployment region."
+              },
+              {
+                "uuid": "b1c2d3e4-4444-4000-a000-000000000142",
+                "control-id": "sc-13",
+                "description": "Cryptographic Protection: All KMS keys use AES-256-GCM symmetric encryption via AWS KMS HSMs. Key policies enforce that cryptographic operations (Encrypt, Decrypt, ReEncrypt, GenerateDataKey) can only be performed by authorized AWS service principals from the deployment account. The kms:CallerAccount condition prevents cross-account usage. The kms:ViaService condition restricts each key to its designated services only. Reference: DISA SRG-APP-000179, FedRAMP SC-13.",
+                "remarks": "Key policies use StringEquals conditions for kms:ViaService and kms:CallerAccount. Logs key uses ArnLike condition for CloudWatch service principal."
+              },
+              {
+                "uuid": "b1c2d3e4-4444-4000-a000-000000000143",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: CMKs provide organization-controlled encryption for all data at rest across the stack. The data key encrypts EBS volumes (OS + app data), RDS storage and Performance Insights, ElastiCache at-rest data, and S3 objects. The secrets key encrypts all Secrets Manager values (DB credentials, SECRET_KEY_BASE, OIDC/LDAP/SMTP secrets). The logs key encrypts CloudWatch log groups (VPC flow logs, application logs). This tiered approach ensures SPARC compliance data (SAP, SAR, POAM, profiles, validation) is protected with customer-controlled keys. Reference: DISA SRG-APP-000231, FedRAMP SC-28(1).",
+                "remarks": "Three keys by data classification: data (compute/storage), secrets (credentials/config), logs (audit trails). All wired via kms_key_arn variables."
+              },
+              {
+                "uuid": "b1c2d3e4-4444-4000-a000-000000000144",
+                "control-id": "ac-3",
+                "description": "Access Enforcement: KMS key policies enforce least-privilege access. Only the root account has full key management (kms:*). Service principals can only perform cryptographic operations (Encrypt, Decrypt, GenerateDataKey) and only when the request originates from a specific AWS service (kms:ViaService) within the same account (kms:CallerAccount). No IAM users or roles have direct key usage permissions — access is mediated through service-level grants. This prevents unauthorized decryption of SPARC compliance data. Reference: DISA SRG-APP-000033, FedRAMP AC-3.",
+                "remarks": "Key policies use Condition blocks to restrict access. No AdministratorAccess or broad IAM policies can bypass the key policy constraints."
+              },
+              {
+                "uuid": "b1c2d3e4-4444-4000-a000-000000000145",
+                "control-id": "au-2",
+                "description": "Event Logging: All KMS key usage (Encrypt, Decrypt, GenerateDataKey, CreateGrant, ScheduleKeyDeletion) is logged in AWS CloudTrail. This provides a complete audit trail of which principal accessed which key, when, and for what operation. Key policy changes are tracked as management events. Combined with the tiered key architecture, CloudTrail logs can distinguish between data access, secrets access, and log access patterns. Reference: DISA SRG-APP-000089, FedRAMP AU-2.",
+                "remarks": "CloudTrail must be enabled in the account. KMS API calls are logged as management events by default."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

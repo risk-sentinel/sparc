@@ -1,0 +1,71 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000008",
+    "metadata": {
+      "title": "SPARC ACM Certificate Component Definition",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000008",
+        "type": "service",
+        "title": "AWS Certificate Manager (ACM)",
+        "description": "ACM-provisioned TLS certificate with DNS validation via Route 53. Automatic renewal managed by AWS. Deployed conditionally via Terraform (AWS/ECS/modules/acm/) when create_certificate = true. <!-- UPDATE: Insert certificate ARN, domain name, and hosted zone for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000008",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for ACM",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000070",
+                "control-id": "sc-8",
+                "description": "Transmission Confidentiality and Integrity: ACM provisions and manages X.509 TLS certificates used by the ALB to encrypt all client-facing traffic. Certificates are validated via DNS (Route 53 CNAME records), proving domain ownership. ACM handles automatic renewal before expiration, preventing certificate lapses. Reference: DISA SRG-NET-000062, CIS AWS 2.1.",
+                "remarks": "Terraform resources: aws_acm_certificate.main (DNS validation), aws_route53_record.validation, aws_acm_certificate_validation.main."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000071",
+                "control-id": "sc-8.1",
+                "description": "Transmission Confidentiality and Integrity | Cryptographic Protection: ACM certificates use RSA 2048-bit keys minimum. Private keys are generated and stored within AWS Hardware Security Modules (HSMs) — they cannot be exported or accessed directly. Certificate lifecycle (issuance, renewal, revocation) is fully managed by AWS. Reference: DISA SRG-APP-000014.",
+                "remarks": "ACM private keys never leave AWS HSMs. The create_before_destroy lifecycle ensures zero-downtime certificate rotation."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000072",
+                "control-id": "ia-5.2",
+                "description": "Authenticator Management | PKI-Based Authentication: DNS validation proves domain ownership by requiring a specific CNAME record in the Route 53 hosted zone. This ensures only authorized domain owners can provision certificates. AWS validates the DNS record before issuing the certificate, and re-validates during each automatic renewal cycle. Reference: DISA SRG-APP-000177.",
+                "remarks": "Validation records are managed as Terraform resources (aws_route53_record.validation), ensuring they persist for automatic renewal."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000073",
+                "control-id": "sc-17",
+                "description": "Public Key Infrastructure Certificates: ACM certificates are issued by the Amazon Trust Services CA, which is trusted by all major browsers and operating systems. Certificate transparency logging is enabled by default, publishing all issued certificates to public CT logs for auditability. Subject Alternative Names (SANs) are configurable. Reference: DISA SRG-APP-000514.",
+                "remarks": "SANs are configurable via the certificate_san variable. ACM certificates appear in Certificate Transparency logs."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

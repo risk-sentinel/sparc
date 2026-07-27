@@ -1,0 +1,89 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000006",
+    "metadata": {
+      "title": "SPARC Route 53 DNS Component Definition",
+      "last-modified": "2026-03-19T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000006",
+        "type": "service",
+        "title": "AWS Route 53 DNS",
+        "description": "Route 53 A record alias pointing the application domain to the ALB. Uses an existing hosted zone. Deployed conditionally via Terraform (AWS/ECS/modules/route53/) when hosted_zone_id and domain_name are provided. <!-- UPDATE: Insert hosted zone ID, domain name, and ALB DNS name for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000006",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for Route 53 DNS",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000050",
+                "control-id": "sc-20",
+                "description": "Secure Name/Address Resolution Service (Authoritative Source): Route 53 provides authoritative DNS resolution for the application domain. Route 53 supports DNSSEC signing for hosted zones, enabling cryptographic validation of DNS responses to prevent spoofing and cache poisoning. The A record alias maps the user-facing domain directly to the ALB, ensuring clients resolve to the correct endpoint. Reference: DISA SRG-NET-000131, CIS AWS 2.7.",
+                "remarks": "Terraform resource: aws_route53_record.app (A record alias). Consider enabling DNSSEC signing on the hosted zone for full SC-20 compliance."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000051",
+                "control-id": "sc-21",
+                "description": "Secure Name/Address Resolution Service (Recursive or Caching Resolver): Route 53 Resolver provides recursive DNS resolution for resources within the VPC. DNS queries from ECS tasks in private subnets are resolved through the VPC DNS resolver (AmazonProvidedDNS), which validates responses and prevents DNS-based attacks within the network boundary. Reference: DISA SRG-NET-000132.",
+                "remarks": "VPC DNS support is enabled (enable_dns_support = true) in the networking module. Private subnet resources use the VPC resolver for both internal and external name resolution."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000052",
+                "control-id": "sc-22",
+                "description": "Architecture and Provisioning for Name/Address Resolution Service: Route 53 is a globally distributed, highly available DNS service with a 100% uptime SLA. DNS resolution is fault-tolerant by design — Route 53 operates across multiple AWS edge locations worldwide. The alias record uses evaluate_target_health = true, ensuring DNS only resolves to healthy ALB endpoints. Reference: DISA SRG-NET-000133.",
+                "remarks": "Terraform resource: aws_route53_record.app with alias evaluate_target_health = true. Route 53 provides built-in DDoS protection for DNS queries via AWS Shield."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000053",
+                "control-id": "sc-7",
+                "description": "Boundary Protection: The DNS record serves as the entry point to the application boundary. Only the ALB endpoint is exposed via DNS — no internal resources (ECS tasks, RDS instances) have public DNS records. The alias record routes traffic exclusively to the ALB, which enforces the network boundary via security groups and TLS termination. Reference: DISA SRG-NET-000364.",
+                "remarks": "The Route 53 module is conditionally deployed only when hosted_zone_id and domain_name are provided, allowing ALB-only deployments without DNS."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000054",
+                "control-id": "au-2",
+                "description": "Event Logging: Route 53 supports DNS query logging, which can be enabled to log all DNS queries received for the hosted zone to CloudWatch Logs. This provides visibility into DNS resolution patterns, potential reconnaissance activity, and anomalous query volumes. DNS query logs include timestamp, hosted zone, query name, query type, response code, and source IP. Reference: DISA SRG-APP-000089.",
+                "remarks": "DNS query logging is not provisioned by this module. To enable, configure aws_route53_query_log on the hosted zone and send to a CloudWatch log group."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000055",
+                "control-id": "sc-8",
+                "description": "Transmission Confidentiality and Integrity: The DNS alias record directs clients to the ALB, which enforces HTTPS. While standard DNS queries are unencrypted, Route 53 supports DNS-over-HTTPS (DoH) via Route 53 Resolver endpoints for internal resolution. The end-to-end flow is: DNS resolution (Route 53) → HTTPS connection (ALB with TLS 1.3) → application. Reference: DISA SRG-NET-000062.",
+                "remarks": "DNS resolution itself is not encrypted by default. For sensitive environments, consider Route 53 Resolver with DoH endpoints and DNSSEC signing."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000056",
+                "control-id": "cp-9",
+                "description": "System Backup: Route 53 hosted zone configuration is managed as code in Terraform, providing version-controlled backup of all DNS records. The Terraform state file captures the current DNS configuration. Route 53 itself is a managed service with built-in redundancy — zone data is replicated across multiple AWS locations. Reference: DISA SRG-APP-000065.",
+                "remarks": "DNS configuration is recoverable via terraform apply from the IaC repository. No additional backup mechanism is required for Route 53 zone data."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

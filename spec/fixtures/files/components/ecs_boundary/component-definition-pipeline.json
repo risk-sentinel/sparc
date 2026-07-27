@@ -1,0 +1,97 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000016",
+    "metadata": {
+      "title": "SPARC CI/CD Pipeline Component Definition",
+      "last-modified": "2026-03-26T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000016",
+        "type": "service",
+        "title": "GitHub Actions CI/CD Pipeline with Security Scanning",
+        "description": "Automated CI/CD pipeline using GitHub Actions with integrated security scanning: Semgrep (SAST), TruffleHog (secrets), pip-audit (SCA), Checkov (IaC), and SAF CLI for HDF conversion. Scan results are converted to OSCAL Assessment Results and bundled into FedRAMP authorization packages. Threshold-based security gate blocks merges/deploys on policy violations. Deployed via .github/workflows/ (compliance.yml, plan-on-push.yml, deploy.yml).",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000016",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for CI/CD pipeline security scanning",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000001",
+                "control-id": "sa-11",
+                "description": "The CI/CD pipeline performs automated security testing on every pull request and merge to main. Semgrep runs static analysis on Python scripts, Checkov validates Terraform configurations, pip-audit checks dependencies for known vulnerabilities, and TruffleHog scans for leaked secrets. All findings are converted to HDF via MITRE SAF CLI and then to OSCAL Assessment Results for compliance evidence."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000002",
+                "control-id": "si-3",
+                "description": "Semgrep SAST scanning detects injection vulnerabilities, cross-site scripting, path traversal, and other malicious code patterns in Python scripts that handle security data (OSCAL assembly, Checkov analysis, compliance packaging). Findings block merges via the security gate when thresholds are exceeded."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000003",
+                "control-id": "si-7",
+                "description": "TruffleHog scans the full repository for leaked credentials, API keys, and secrets on every compliance run. Zero tolerance threshold (max: 0) blocks merges if secrets are detected. Checkov validates infrastructure configurations have not drifted from security baselines."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000004",
+                "control-id": "si-2",
+                "description": "pip-audit scans Python dependency manifests (requirements.txt) against the Python Packaging Advisory Database for known vulnerabilities. Findings are reported in SARIF format, converted to HDF, and included in OSCAL Assessment Results for continuous flaw tracking."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000005",
+                "control-id": "si-10",
+                "description": "Semgrep enforces input validation rules on Python scripts that process external data (Checkov JSON, YAML baselines, OSCAL documents). Rules detect command injection, path traversal, and unsafe deserialization patterns."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000006",
+                "control-id": "ia-5",
+                "description": "TruffleHog detects leaked authenticators (passwords, API keys, tokens, private keys) across the entire repository history. Zero-tolerance policy ensures no credentials are committed to version control. Scan results converted to HDF via dedicated trufflehog2hdf converter."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000007",
+                "control-id": "cm-6",
+                "description": "Checkov validates Terraform configurations against CIS Benchmarks, NIST 800-53, and DISA STIG controls. A disposition-tracked baseline (checkov-baseline.yml) records accepted risks with reviewer, rationale, and review schedule. Threshold-based gate (threshold.yml) enforces minimum pass rates per deployment pattern."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000008",
+                "control-id": "sa-15",
+                "description": "The development pipeline enforces security gates before code can be merged or deployed. threshold.yml defines per-pattern pass rates and finding limits. checkov_diff.py evaluates scan results against thresholds and blocks PRs that introduce new findings or regressions. Strict mode applies additional constraints for production deployments."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000009",
+                "control-id": "au-2",
+                "description": "All security scan results are archived as OSCAL Assessment Results in S3 (sparc-prod-security-artifacts) with date-prefixed paths. Trend JSON tracks finding counts over time. GitHub Actions step summaries provide immediate visibility. CloudTrail monitors API access to admin secrets."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-016000000010",
+                "control-id": "cm-8",
+                "description": "The pipeline generates and consumes Software Bills of Materials (SBOMs) in CycloneDX format. Application container SBOMs are produced by the SPARC app CI pipeline and converted to HDF via cyclonedx_sbom2hdf for inclusion in OSCAL Assessment Results and FedRAMP authorization packages."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

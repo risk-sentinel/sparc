@@ -1,0 +1,107 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000004",
+    "metadata": {
+      "title": "SPARC RDS PostgreSQL Component Definition",
+      "last-modified": "2026-04-06T00:00:00Z",
+      "version": "2.2.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000004",
+        "type": "service",
+        "title": "AWS RDS PostgreSQL",
+        "description": "RDS PostgreSQL instance with encrypted storage, auto-generated credentials stored in AWS Secrets Manager, deployed in private subnets with security group restricting access to ECS tasks only. Deployed via Terraform (AWS/ECS/modules/rds/). <!-- UPDATE: Insert RDS instance ARN, endpoint, Secrets Manager secret ARN, and database name for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000004",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for RDS PostgreSQL",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000030",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: RDS storage encryption is enabled (storage_encrypted = true), using AWS-managed KMS keys to encrypt all data, logs, backups, and snapshots at rest. This ensures data confidentiality even if physical storage media is compromised. Reference: DISA SRG-APP-000231, CIS AWS 2.3.1.",
+                "remarks": "Terraform resource: aws_db_instance.main with storage_encrypted = true. Consider using a customer-managed KMS key (kms_key_id) for additional control."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000031",
+                "control-id": "ia-5",
+                "description": "Authenticator Management: Database master credentials are generated using Terraform's random_password resource (32 characters, no storage in tfvars or state files beyond initial creation). Credentials are immediately stored in AWS Secrets Manager as a JSON object containing username, password, host, port, and dbname. Secrets Manager provides automatic encryption, access auditing, and rotation capability. The rotation Lambda function is configured with an SQS dead letter queue to capture failed rotation attempts, ensuring credential rotation failures are not silently lost. Reference: DISA SRG-APP-000175, CIS AWS 2.3.",
+                "remarks": "Terraform resources: random_password.db, aws_secretsmanager_secret.db, aws_secretsmanager_secret_version.db, aws_sqs_queue.rotation_dlq. Password is 32 characters with special=false for broad database compatibility."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000032",
+                "control-id": "ia-5.1",
+                "description": "Authenticator Management | Password-Based Authentication: The database password is a 32-character randomly generated string, exceeding minimum complexity requirements. The password is never exposed in Terraform variable files, plan output, or application configuration — it flows directly from random_password to Secrets Manager to ECS task injection. Reference: DISA SRG-APP-000166.",
+                "remarks": "Consider enabling Secrets Manager automatic rotation for periodic credential refresh."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000033",
+                "control-id": "ac-3",
+                "description": "Access Enforcement: The RDS security group restricts network access to PostgreSQL port 5432 from the ECS security group only. No public accessibility is configured. The database is deployed in private subnets with no internet gateway route. Database-level access control is enforced via PostgreSQL's native role and privilege system. Reference: DISA SRG-APP-000033.",
+                "remarks": "Terraform resource: aws_security_group.rds (in networking module) with ingress from aws_security_group.ecs only."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000034",
+                "control-id": "cp-9",
+                "description": "System Backup: RDS automated backups are explicitly configured with a 7-day retention period (backup_retention_period = 7), ensuring point-in-time recovery within a one-week window. Deletion protection is enabled (deletion_protection=true) preventing accidental instance destruction. For production, final snapshots are created on instance deletion (db_skip_final_snapshot = false in prod tfvars). Backups are encrypted with the same KMS key as the instance. Multi-AZ deployment is available (db_multi_az variable) for high availability. Reference: DISA SRG-APP-000065, CIS AWS 2.3.2.",
+                "remarks": "Terraform resource: aws_db_instance.main with backup_retention_period = 7. deletion_protection=true by default. Configure backup_window for specific maintenance scheduling requirements."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000035",
+                "control-id": "mp-6",
+                "description": "Media Sanitization: RDS encrypted storage ensures that when instances are decommissioned, the underlying storage is cryptographically erased — data cannot be recovered without the KMS key. AWS handles physical media sanitization per their data center security practices (SOC 2, FedRAMP). Reference: DISA SRG-APP-000516.",
+                "remarks": "All RDS storage, backups, and snapshots inherit encryption from storage_encrypted = true."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000036",
+                "control-id": "sc-7",
+                "description": "Boundary Protection: The RDS instance is deployed in a DB subnet group spanning private subnets only. The RDS security group permits inbound connections exclusively from the ECS security group on port 5432. No public IP is assigned and no internet gateway route exists for the private subnets. Reference: DISA SRG-NET-000364.",
+                "remarks": "Terraform resources: aws_db_subnet_group.main (private subnets), aws_security_group.rds (ECS-only ingress)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000037",
+                "control-id": "au-2",
+                "description": "Event Logging: RDS PostgreSQL and upgrade logs are exported to CloudWatch Logs (enabled_cloudwatch_logs_exports=[postgresql,upgrade]), providing database query logs and version upgrade audit trails. Enhanced Monitoring is enabled at 60-second intervals with a dedicated IAM role, providing OS-level metrics (CPU, memory, swap, I/O) for the database instance. Performance Insights is enabled for query-level performance analysis and wait event tracking. Reference: DISA SRG-APP-000089, CIS AWS 2.3.3.",
+                "remarks": "Terraform resources: monitoring_interval=60, monitoring_role_arn, performance_insights_enabled=true, enabled_cloudwatch_logs_exports."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000038",
+                "control-id": "si-2",
+                "description": "Flaw Remediation: Auto minor version upgrade is enabled (auto_minor_version_upgrade=true), ensuring the RDS instance automatically receives security patches and bug fixes during maintenance windows. This reduces the window of exposure to known PostgreSQL vulnerabilities without requiring manual intervention. Reference: DISA SRG-APP-000456.",
+                "remarks": "Terraform resource: aws_db_instance.main with auto_minor_version_upgrade=true. Major version upgrades still require manual action."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000039",
+                "control-id": "ia-2",
+                "description": "Identification and Authentication: IAM database authentication is enabled (iam_database_authentication_enabled=true), allowing ECS tasks to authenticate to PostgreSQL using IAM credentials instead of password-only authentication. This provides token-based, time-limited database access that integrates with AWS IAM policies and CloudTrail audit logging. Reference: DISA SRG-APP-000148.",
+                "remarks": "Terraform resource: aws_db_instance.main with iam_database_authentication_enabled=true. Application can use IAM auth tokens or Secrets Manager credentials."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

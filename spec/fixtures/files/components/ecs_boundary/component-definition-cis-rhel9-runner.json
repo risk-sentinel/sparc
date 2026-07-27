@@ -1,0 +1,89 @@
+{
+  "component-definition": {
+    "uuid": "c9d8e7f6-1111-4000-a000-000000000351",
+    "metadata": {
+      "title": "SPARC cis-rhel-9 Exec-Validation Test Instance Component Definition",
+      "last-modified": "2026-06-05T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "c9d8e7f6-0001-4000-a000-000000000351",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "c9d8e7f6-2222-4000-a000-000000000351",
+        "type": "service",
+        "title": "cis-rhel-9 Exec-Validation Test Instance",
+        "description": "RHEL-9 (arm64), SSM-only EC2 test instance used to exec-validate the cis-rhel-9 cinc-auditor profile against a real RHEL-9 host (#351). Provisioned as a scale-to-0 Auto Scaling Group (min=0/max=1/desired=0) in a private subnet with NAT egress; brought up on demand and scaled back to 0 by an on-instance systemd timer at 21:00 America/Chicago. Hardening mirrors the db-scanner runner: IMDSv2 enforced, encrypted gp3 root volume, detailed monitoring, egress-only security group, no SSH/key pair/public IP. Test-only — not part of the production compliance-scan matrix. Deployed via Terraform (AWS/ECS/modules/cis_rhel9_runner/). <!-- UPDATE: Insert ASG name, AMI ID, instance profile ARN, and security group ID for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["c9d8e7f6-0001-4000-a000-000000000351"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "c9d8e7f6-3333-4000-a000-000000000351",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for the cis-rhel-9 exec-validation test instance",
+            "implemented-requirements": [
+              {
+                "uuid": "c9d8e7f6-4444-4000-a000-000000000351",
+                "control-id": "cm-2",
+                "description": "Baseline Configuration: The instance baseline is defined declaratively by a Terraform launch template (RHEL-9 arm64 AMI resolved from Red Hat's published images or a pinned ID) plus a version-controlled user-data script that installs the SSM agent, cinc-auditor, Node.js, and the MITRE SAF CLI, sets the host timezone, and registers the 9pm self-off timer. Changes require updating the launch template/user-data and re-launching. Reference: DISA SRG-APP-000133.",
+                "remarks": "Terraform resources: aws_launch_template.rhel9 (image_id, user_data), data.aws_ami.rhel9, aws_autoscaling_group.rhel9. user_data.sh.tftpl is version-controlled."
+              },
+              {
+                "uuid": "c9d8e7f6-4444-4000-a000-000000000352",
+                "control-id": "cm-7",
+                "description": "Least Functionality: RHEL-9 minimal install; only the test toolchain (cinc-auditor, Node.js, SAF CLI, git) is added at boot. IMDSv2 is enforced (http_tokens = required, http_put_response_hop_limit = 1) to block SSRF-based credential theft. No inbound network access and no SSH server are configured. Reference: DISA SRG-APP-000141, CIS AWS EC2 4.1.",
+                "remarks": "Terraform resources: aws_launch_template.rhel9 metadata_options (http_tokens=required, hop_limit=1); aws_security_group.rhel9 (no ingress)."
+              },
+              {
+                "uuid": "c9d8e7f6-4444-4000-a000-000000000357",
+                "control-id": "cm-8",
+                "description": "System Component Inventory — Scan Provenance: The instance role is granted read-only ec2:DescribeInstances + ec2:DescribeTags so the cis-rhel-9 v0.2.0 inventory control can self-enrich each scan with authoritative component-inventory provenance (instance ID, AMI ID, type, tags) drawn from the EC2 control plane rather than only host-reported IMDS values. These EC2 Describe actions have no resource-level scoping (Resource=*, per #377); they are non-mutating reads with no write or data-plane access. The enrichment degrades gracefully when absent, so the grant affects provenance completeness only, not scan correctness. Reference: NIST SP 800-53 CM-8, DISA SRG-APP-000516.",
+                "remarks": "Terraform resources: aws_iam_role_policy.cis_rhel9_instance InventoryEnrichment statement (modules/iam/cis_rhel9_runner.tf). Read-only ec2:Describe*; CKV_AWS_356 does not fire (non-restrictable actions)."
+              },
+              {
+                "uuid": "c9d8e7f6-4444-4000-a000-000000000353",
+                "control-id": "ac-17",
+                "description": "Remote Access: Administrative access is exclusively via AWS Systems Manager Session Manager — no SSH key pair is provisioned, no port 22 ingress exists, and no public IP is assigned (the instance runs in a private subnet). SSM provides encrypted, IAM-authenticated, fully audited shell access. Reference: DISA SRG-NET-000015, CIS AWS 5.2.",
+                "remarks": "Terraform resources: instance role attachment of AmazonSSMManagedInstanceCore (modules/iam/cis_rhel9_runner.tf); aws_security_group.rhel9 (egress-only); aws_autoscaling_group.rhel9 in private_subnet_ids. No aws_key_pair, no associate_public_ip_address."
+              },
+              {
+                "uuid": "c9d8e7f6-4444-4000-a000-000000000354",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: The instance root EBS volume is encrypted (gp3, encrypted = true, delete_on_termination = true). Reference: DISA SRG-APP-000231, CIS AWS 2.2.1.",
+                "remarks": "Terraform resources: aws_launch_template.rhel9 block_device_mappings.ebs (encrypted=true, volume_type=gp3)."
+              },
+              {
+                "uuid": "c9d8e7f6-4444-4000-a000-000000000355",
+                "control-id": "sc-7",
+                "description": "Boundary Protection: The instance security group has no ingress rules and egress restricted to TCP 443 (SSM, GitHub, cinc omnitruck, npm registry, S3 via NAT, autoscaling API) and TCP 80 (RHEL package repos). It runs in a private subnet reaching the internet only via the shared NAT gateway. Reference: DISA SRG-NET-000019.",
+                "remarks": "Terraform resources: aws_security_group.rhel9, aws_security_group_rule.rhel9_egress_https, aws_security_group_rule.rhel9_egress_http; ASG vpc_zone_identifier = private_subnet_ids."
+              },
+              {
+                "uuid": "c9d8e7f6-4444-4000-a000-000000000356",
+                "control-id": "au-2",
+                "description": "Event Logging: Detailed (1-minute) CloudWatch instance monitoring is enabled. Bootstrap output is captured to /var/log/cis-rhel9-bootstrap.log with explicit SUCCESS/FAILED markers, and the on-instance auto-off action logs to /var/log/cis-rhel9-autooff.log. SSM Session Manager records session activity. Reference: DISA SRG-APP-000089.",
+                "remarks": "Terraform resources: aws_launch_template.rhel9 monitoring.enabled = true; user_data.sh.tftpl logging + markers; SSM session logging via AmazonSSMManagedInstanceCore."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "component-definition": {
+    "uuid": "1928ace9-f241-4da1-9cc1-34a2159efc24",
+    "metadata": {
+      "title": "AWS Config Continuous Compliance Component Definition",
+      "last-modified": "2026-04-16T19:34:02Z",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ],
+      "revisions": [
+        {
+          "title": "AWS Config Continuous Compliance Component Definition (superseded)",
+          "version": "1.0.0",
+          "oscal-version": "1.2.1",
+          "props": [
+            {
+              "name": "previous-uuid",
+              "ns": "https://example.com/ns/oscal",
+              "value": "6ae492ac-c68b-5ee8-bfb1-6906d2cb18d0"
+            }
+          ],
+          "last-modified": "2026-03-27T11:40:43Z"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "596fd555-075e-5477-9205-80bce00805f5",
+        "type": "service",
+        "title": "AWS Config with NIST 800-53 Compliance Rules",
+        "description": "AWS Config configuration recorder with periodic recording (24-hour snapshots), 10 managed security rules, and optional NIST 800-53 Rev 5 conformance pack (130 rules). Configuration history stored in S3 security artifacts bucket. Provides continuous compliance monitoring and drift detection for all AWS resources. Deployed via Terraform (AWS/config/).",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": [
+              "a1b2c3d4-0001-4000-a000-000000000001"
+            ]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "48f6d266-5398-5f74-8d6a-59ab7ffb17da",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 controls validated by AWS Config managed rules and conformance pack",
+            "implemented-requirements": [
+              {
+                "uuid": "ee0428f8-0b46-5861-8d4f-9a5696dc091d",
+                "control-id": "ac-17",
+                "description": "Config rule restricted-ssh validates that no security groups allow unrestricted SSH access (0.0.0.0/0 on port 22)."
+              },
+              {
+                "uuid": "e46a3cb2-b3d7-5d65-a28a-db06d739a240",
+                "control-id": "ac-6",
+                "description": "Config rule iam-no-inline-policy validates that IAM follows least privilege via managed policies rather than inline policies that are harder to audit."
+              },
+              {
+                "uuid": "ec8409df-9cac-5990-9c62-d9af3f43aa9d",
+                "control-id": "au-2",
+                "description": "Config rules verify that audit mechanisms are active: cloudtrail-enabled validates CloudTrail recording, vpc-flow-logs-enabled validates VPC flow log capture."
+              },
+              {
+                "uuid": "4f3b9004-567c-580b-91c5-0279d33e095e",
+                "control-id": "au-6",
+                "description": "AWS Config provides a review mechanism for configuration changes. Config timeline shows who changed what and when, supporting audit log review."
+              },
+              {
+                "uuid": "b0b8e9af-0090-5d00-9d11-30378350e8e7",
+                "control-id": "ca-7",
+                "description": "AWS Config provides continuous monitoring of compliance posture. Rules evaluate resources periodically (configurable: 1h to 24h) and report compliance status. Conformance pack aggregates results across NIST 800-53 controls."
+              },
+              {
+                "uuid": "ff0b4d11-644b-5dd3-befc-57d2145b0a5f",
+                "control-id": "cm-2",
+                "description": "AWS Config records baseline configurations for all resources. Configuration snapshots stored in S3 with versioning for historical comparison. Periodic recording captures drift from established baselines."
+              },
+              {
+                "uuid": "1817f4a3-02b3-559c-8127-b9862f6802e6",
+                "control-id": "cm-3",
+                "description": "AWS Config detects and logs all resource configuration changes. Change history available via Config timeline. SNS notifications can alert on non-compliant changes."
+              },
+              {
+                "uuid": "a07fc2c1-293a-5da7-8df4-bc257b96dcf2",
+                "control-id": "cm-6",
+                "description": "AWS Config managed rules evaluate resource configurations against security standards. 10 core rules check encryption, access controls, logging, and authentication. NIST 800-53 conformance pack (optional) adds 130 rules."
+              },
+              {
+                "uuid": "a6f3ef01-5917-53cd-a16e-0aa2ebdd78e2",
+                "control-id": "cm-7",
+                "description": "Config rules validate that only necessary services and ports are enabled. restricted-ssh rule ensures no unrestricted SSH access. iam-no-inline-policy enforces least-function principle."
+              },
+              {
+                "uuid": "e54d643f-2e04-550e-88df-29bf9c309252",
+                "control-id": "cm-8",
+                "description": "AWS Config maintains a complete inventory of all AWS resources in the account with configuration details, relationships, and change history."
+              },
+              {
+                "uuid": "1f8cc89c-def3-5263-bc9d-431ae7f8a361",
+                "control-id": "cp-10",
+                "description": "AWS Config recording and S3 delivery channel ensure configuration history is preserved for system recovery. Multi-AZ validation supports information system recovery."
+              },
+              {
+                "uuid": "fcc08796-e5ce-5d95-b459-4e0248b7cc02",
+                "control-id": "cp-9",
+                "description": "Config rule rds-multi-az-support validates that RDS instances are deployed in Multi-AZ configuration for system backup and recovery."
+              },
+              {
+                "uuid": "57feffb2-500a-599f-ac92-7776633c9e5c",
+                "control-id": "ia-2",
+                "description": "Config rule root-account-mfa-enabled validates that the AWS root account has multi-factor authentication enabled."
+              },
+              {
+                "uuid": "a73d2744-7908-59f1-9067-86a611fe2e58",
+                "control-id": "ia-5",
+                "description": "Config rule secretsmanager-rotation-enabled-check validates that Secrets Manager secrets have automatic rotation configured."
+              },
+              {
+                "uuid": "5054a867-b466-518f-b94e-24c558bba6c6",
+                "control-id": "sc-28",
+                "description": "Config rules encrypted-volumes and rds-storage-encrypted continuously verify that data-at-rest encryption is enabled on EBS and RDS resources."
+              },
+              {
+                "uuid": "ab2101b6-60cd-58ea-8572-696c44e919f5",
+                "control-id": "sc-8",
+                "description": "Config rule s3-bucket-ssl-requests-only verifies that S3 buckets require HTTPS for all requests, protecting data in transit."
+              },
+              {
+                "uuid": "c6f2f017-8606-5dc2-8e16-861947c31584",
+                "control-id": "si-4",
+                "description": "AWS Config monitors system configuration for security-relevant changes. VPC flow logs, CloudTrail, and Config together provide comprehensive monitoring coverage."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

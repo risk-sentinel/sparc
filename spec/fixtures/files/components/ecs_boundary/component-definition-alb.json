@@ -1,0 +1,90 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000002",
+    "metadata": {
+      "title": "SPARC Application Load Balancer Component Definition",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "version": "2.1.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000002",
+        "type": "service",
+        "title": "AWS Application Load Balancer",
+        "description": "Public-facing ALB with HTTPS listener (ACM certificate), HTTP-to-HTTPS redirect, and IP-type target group for ECS Fargate tasks. Deployed via Terraform (AWS/ECS/modules/alb/). <!-- UPDATE: Insert ALB ARN, DNS name, ACM certificate ARN, and domain name for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": [
+              "a1b2c3d4-0001-4000-a000-000000000001"
+            ]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000002",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for ALB",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000010",
+                "control-id": "sc-8",
+                "description": "Transmission Confidentiality and Integrity: All external client traffic is encrypted via TLS. The HTTPS listener on port 443 uses an ACM-managed certificate with TLS 1.3 policy (ELBSecurityPolicy-TLS13-1-2-2021-06). HTTP requests on port 80 receive a 301 redirect to HTTPS, ensuring no unencrypted client communication. Reference: DISA SRG-NET-000062, CIS AWS 2.1.2.",
+                "remarks": "Terraform resources: aws_lb_listener.https (TLS termination), aws_lb_listener.http_redirect (301 redirect). TLS policy enforces TLS 1.2 minimum with TLS 1.3 preferred."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000011",
+                "control-id": "sc-8.1",
+                "description": "Transmission Confidentiality and Integrity | Cryptographic Protection: ALB uses AWS Certificate Manager (ACM) for TLS certificate provisioning and automatic rotation. The ssl_policy ELBSecurityPolicy-TLS13-1-2-2021-06 enforces strong cipher suites and disables deprecated protocols (SSLv3, TLS 1.0, TLS 1.1). Reference: DISA SRG-APP-000014.",
+                "remarks": "Certificate ARN is provided via the certificate_arn variable. ACM handles certificate renewal automatically."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000012",
+                "control-id": "sc-5",
+                "description": "Denial-of-Service Protection: AWS ALB provides built-in DDoS protection via AWS Shield Standard (included at no cost). The ALB distributes incoming traffic across multiple ECS tasks in private subnets, preventing single-point-of-failure. Consider adding AWS WAF for application-layer protection. Reference: CIS AWS 6.1.",
+                "remarks": "For enhanced protection, attach AWS WAF WebACL and enable AWS Shield Advanced."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000013",
+                "control-id": "ac-17",
+                "description": "Remote Access: The ALB serves as the sole ingress point for remote user access to the application. All remote sessions are encrypted via TLS. The ALB security group restricts inbound traffic to ports 80 and 443 only. Backend ECS tasks are not directly accessible from the internet. Reference: DISA SRG-NET-000015.",
+                "remarks": "ALB is deployed in public subnets; ECS tasks are in private subnets with no public IP."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000014",
+                "control-id": "si-10",
+                "description": "Information Input Validation: ALB health checks validate application availability by checking the /nginx-health endpoint on the NGINX sidecar container. This lightweight endpoint returns HTTP 200 without proxying to Rails, verifying that the reverse proxy layer is functional. Unhealthy targets are automatically removed from the target group rotation. The ALB routes to the NGINX container (port 8080), which then proxies to Rails (port 3000 on localhost).",
+                "remarks": "Health check settings: interval=30s, healthy_threshold=3, unhealthy_threshold=3, timeout=5s, matcher=200, path=/nginx-health. ALB target group uses IP type (Fargate requirement) and targets the NGINX container."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000015",
+                "control-id": "sc-7",
+                "description": "Boundary Protection: The ALB drops invalid HTTP headers (drop_invalid_header_fields=true), preventing header injection attacks from reaching backend services. Deletion protection is enabled (enable_deletion_protection=true), preventing accidental or unauthorized removal of the network boundary. Access logging is configurable via an S3 bucket for forensic analysis of all requests. Reference: DISA SRG-NET-000364. AWS WAFv2 (SC-7 edge inspection, #578): a regional web ACL is associated with the ALB and inspects every inbound request before it reaches the backend. AWS-managed rule groups block known-bad inputs (incl. Log4Shell / CVE-2021-44228) and known-malicious source IPs (Amazon IP-reputation list) immediately; the CommonRuleSet and SQLi groups run in COUNT mode first for false-positive review, then flip to BLOCK (waf_block_mode). A rate-based rule throttles L7 floods per source IP.",
+                "remarks": "Terraform resource: aws_lb.main with drop_invalid_header_fields=true, enable_deletion_protection=true, access_logs block."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000016",
+                "control-id": "si-4",
+                "description": "Information System Monitoring: the ALB WAFv2 web ACL emits sampled request logs and per-rule CloudWatch metrics (#578). WAF logs are delivered to a dedicated CMK-encrypted CloudWatch log group (aws-waf-logs-*, 365-day retention) with Authorization and Cookie headers redacted. Blocked/counted matches are visible for detection and false-positive review, and a blocked-request metric supports alerting."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

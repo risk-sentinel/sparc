@@ -1,0 +1,140 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000009",
+    "metadata": {
+      "title": "SPARC S3 Storage Component Definition",
+      "last-modified": "2026-07-06T00:00:00Z",
+      "version": "1.2.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000009",
+        "type": "service",
+        "title": "AWS S3 Bucket (ActiveStorage)",
+        "description": "Encrypted S3 bucket for SPARC ActiveStorage file uploads with versioning, public access block, and CORS configuration. Deployed via Terraform (AWS/ECS/modules/s3/). <!-- UPDATE: Insert bucket name, ARN, and region for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000009",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for S3",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000080",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: S3 bucket uses AWS KMS server-side encryption (SSE-KMS) with bucket key enabled for all stored objects. Every uploaded file is automatically encrypted before being written to disk. Encryption is enforced — unencrypted uploads are rejected. Reference: DISA SRG-APP-000231, CIS AWS 2.1.1.",
+                "remarks": "Terraform resource: aws_s3_bucket_server_side_encryption_configuration.uploads with sse_algorithm = aws:kms."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000081",
+                "control-id": "ac-3",
+                "description": "Access Enforcement: The S3 bucket blocks all public access via aws_s3_bucket_public_access_block (block_public_acls, block_public_policy, ignore_public_acls, restrict_public_buckets all set to true). Only the ECS task role has IAM permissions to read/write objects (s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket). No bucket policy allows external access. Reference: DISA SRG-APP-000033, CIS AWS 2.1.5.",
+                "remarks": "Terraform resources: aws_s3_bucket_public_access_block.uploads, aws_iam_role_policy.task_s3 (in IAM module)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000082",
+                "control-id": "cp-9",
+                "description": "System Backup: S3 versioning is enabled, retaining all previous versions of uploaded files. This provides point-in-time recovery for uploaded artifacts and protects against accidental deletion or overwrites. A lifecycle rule automatically expires noncurrent object versions after 90 days, balancing retention requirements with storage cost management. Combined with S3's 99.999999999% durability, this ensures data protection for SPARC uploads. Reference: DISA SRG-APP-000065, CIS AWS 2.1.3.",
+                "remarks": "Terraform resources: aws_s3_bucket_versioning.uploads with status = Enabled, aws_s3_bucket_lifecycle_configuration.uploads with noncurrent_version_expiration days = 90."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000083",
+                "control-id": "au-2",
+                "description": "Event Logging: CloudTrail S3 data event selectors are configured in the CloudWatch module to log all object-level API calls (GetObject, PutObject, DeleteObject) for S3 buckets, providing a complete audit trail of data access and modification. Reference: DISA SRG-APP-000089, CIS AWS 2.1.4, CIS AWS 3.10.",
+                "remarks": "CloudTrail S3 data events are provisioned in the CloudWatch module via aws_cloudtrail event_selector with data_resource type AWS::S3::Object."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000084",
+                "control-id": "mp-6",
+                "description": "Media Sanitization: KMS-encrypted S3 objects are cryptographically erased when deleted — data cannot be recovered without the KMS key. S3 versioning provides soft-delete capability via delete markers. A lifecycle rule permanently expires noncurrent object versions after 90 days, ensuring old data is automatically purged. Reference: DISA SRG-APP-000516.",
+                "remarks": "Terraform resource: aws_s3_bucket_lifecycle_configuration.uploads with noncurrent_version_expiration days = 90."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000085",
+                "control-id": "sc-8",
+                "description": "Transmission Confidentiality and Integrity: An S3 bucket policy enforces SSL/TLS for all bucket access by denying any request where aws:SecureTransport is false. This ensures all data in transit to and from the S3 bucket is encrypted, preventing interception of uploaded files and application data. The same SSL-only policy is applied to the logging module's artifacts bucket. Reference: DISA SRG-APP-000439, CIS AWS 2.1.2.",
+                "remarks": "Terraform resources: aws_s3_bucket_policy.uploads_ssl_only (S3 module), aws_s3_bucket_policy.artifacts_ssl_only (logging module). Both use Condition: {Bool: {aws:SecureTransport: false}} with Effect: Deny."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-00000000000a",
+        "type": "service",
+        "title": "AWS S3 Bucket (Audit Logs — WORM)",
+        "description": "Audit-immutable S3 bucket segregating tamper-sensitive, service-written audit logs (CloudTrail, AWS Config history, ALB access logs, S3 server access logs) from the CI-writable evidence bucket. Only AWS log-delivery service principals may write; a deny-delete bucket policy makes stored audit records write-once-read-many (WORM) for their 1-year retention window. Deployed via Terraform (AWS/ECS/modules/logging/audit_logs.tf). Introduced in #484. <!-- UPDATE: Insert bucket name (sparc-<env>-audit-logs), ARN, and region for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-00000000000a",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for the audit-immutable logs bucket",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-0000000000a0",
+                "control-id": "au-9",
+                "description": "Protection of Audit Information: Audit records (CloudTrail, AWS Config history, ALB and S3 access logs) are written to a dedicated bucket physically separated from the CI-writable evidence bucket, so a compromised CI/deploy role cannot reach the audit trail. A bucket policy denies s3:DeleteObject and s3:DeleteObjectVersion to every principal (Effect: Deny, Principal: *), making stored audit records tamper-proof (WORM) — no human or automation identity can alter or erase them. s3:PutBucketVersioning is likewise denied so versioning cannot be silently suspended to defeat the protection. Reference: DISA SRG-APP-000119, SRG-APP-000120, CIS AWS 3.x.",
+                "remarks": "Terraform resources: aws_s3_bucket.audit_logs, aws_s3_bucket_policy.audit_logs (statement DenyAuditObjectDeletion). Lifecycle expiration is an internal S3 action unaffected by the deny-delete policy, so 365-day retention still auto-purges."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-0000000000a1",
+                "control-id": "au-9.2",
+                "description": "Store on Separate Physical Systems or Components: Audit information is stored in a distinct S3 bucket (sparc-<env>-audit-logs) separate from the systems that generate it and from the CI-writable evidence bucket, providing storage segregation. Write access is restricted to the AWS log-delivery service principals (cloudtrail.amazonaws.com, delivery.logs.amazonaws.com, logging.s3.amazonaws.com, and the ELB service account); the Config delivery role writes via identity-based permissions. Reference: DISA SRG-APP-000125.",
+                "remarks": "Terraform resource: aws_s3_bucket_policy.audit_logs (Allow statements scoped per-service to prefix-specific paths: cloudtrail/, alb-logs/, s3-access-logs/)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-0000000000a2",
+                "control-id": "au-11",
+                "description": "Audit Record Retention: A lifecycle configuration retains audit records for 1 year (365-day expiration) then automatically purges them, and expires noncurrent object versions after 90 days. This bounds storage cost while satisfying the retention window. A cost-benefit analysis determined that cold-storage tiering is counterproductive for this workload (hundreds of thousands of small objects where per-object transition and minimum-object-size overhead exceed any storage saving), so records remain in S3 Standard until expiration. Reference: DISA SRG-APP-000516.",
+                "remarks": "Terraform resource: aws_s3_bucket_lifecycle_configuration.audit_logs (expiration days = 365, noncurrent_version_expiration noncurrent_days = 90)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-0000000000a3",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: The audit-logs bucket uses AWS KMS server-side encryption (SSE-KMS) with bucket key enabled for all stored objects, matching the evidence bucket. All CloudTrail, Config, ALB, and S3 access-log objects are encrypted at rest. Reference: DISA SRG-APP-000231, CIS AWS 2.1.1.",
+                "remarks": "Terraform resource: aws_s3_bucket_server_side_encryption_configuration.audit_logs with sse_algorithm = aws:kms, bucket_key_enabled = true."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-0000000000a4",
+                "control-id": "sc-8",
+                "description": "Transmission Confidentiality and Integrity: A bucket policy denies any request where aws:SecureTransport is false, enforcing SSL/TLS for all access to the audit-logs bucket. Reference: DISA SRG-APP-000439, CIS AWS 2.1.2.",
+                "remarks": "Terraform resource: aws_s3_bucket_policy.audit_logs (statement DenyNonSSLRequests) with Condition: {Bool: {aws:SecureTransport: false}}, Effect: Deny."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-0000000000a5",
+                "control-id": "ac-3",
+                "description": "Access Enforcement: The audit-logs bucket blocks all public access via aws_s3_bucket_public_access_block (block_public_acls, block_public_policy, ignore_public_acls, restrict_public_buckets all true). Combined with the WORM deny-delete policy and per-service scoped write grants, no principal outside the AWS log-delivery services can create, and no principal at all can delete, audit objects. Reference: DISA SRG-APP-000033.",
+                "remarks": "Terraform resource: aws_s3_bucket_public_access_block.audit_logs."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

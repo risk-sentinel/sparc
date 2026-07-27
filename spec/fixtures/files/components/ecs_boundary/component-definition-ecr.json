@@ -1,0 +1,77 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000007",
+    "metadata": {
+      "title": "SPARC ECR Component Definition",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "version": "2.0.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000007",
+        "type": "service",
+        "title": "AWS Elastic Container Registry (ECR)",
+        "description": "Private ECR repositories managed via Terraform (AWS/ECS/modules/ecr/): the Rails application image ({project}-{env}) and the NGINX reverse proxy sidecar ({project}-{env}-nginx), plus two org-adopted standalone-app repositories — vulcan and heimdall2 (unprefixed; published by example-org/container-build-sign, #387). All have scan-on-push, lifecycle policies, AES-256 encryption, and immutable tags. <!-- UPDATE: Insert ECR repository URLs and ARNs for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000007",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for ECR",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000060",
+                "control-id": "si-3",
+                "description": "Malicious Code Protection: ECR scan-on-push is enabled (scan_on_push = true) on every managed repository — the application image, the NGINX sidecar, and the adopted vulcan and heimdall2 repos — automatically scanning each pushed image for known CVEs using the Amazon Inspector scanning engine. Scan findings are available via the ECR console and API, enabling CI/CD pipelines to gate deployments on vulnerability severity. Each image is scanned independently. Reference: DISA SRG-APP-000277, CIS AWS 2.1.",
+                "remarks": "Terraform resources: aws_ecr_repository.main (app), aws_ecr_repository.nginx (sidecar), aws_ecr_repository.vulcan, aws_ecr_repository.heimdall2 — all with image_scanning_configuration.scan_on_push = true. vulcan/heimdall2 were pre-existing MUTABLE/no-scan repos brought under management and hardened in #387."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000061",
+                "control-id": "cm-2",
+                "description": "Baseline Configuration: Image tag immutability is set to IMMUTABLE on every managed repository (app, NGINX sidecar, vulcan, heimdall2), preventing tags from being overwritten. This ensures a given image tag always refers to the same artifact — underpinning the digest-pin / cosign-signature provenance the deploy path relies on. Lifecycle policies on each repo retain the last N images, creating a traceable image history. Reference: DISA SRG-APP-000133.",
+                "remarks": "Terraform resources: aws_ecr_repository.main, .nginx, .vulcan, .heimdall2 — all with image_tag_mutability = IMMUTABLE and a lifecycle policy. vulcan/heimdall2 were flipped MUTABLE→IMMUTABLE in place (not ForceNew) when imported in #387."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000062",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: ECR repositories use AES-256 server-side encryption for all stored images. Container layers and manifests are encrypted at rest in the AWS-managed storage backend. Reference: DISA SRG-APP-000231.",
+                "remarks": "Terraform resource: aws_ecr_repository.main with encryption_configuration.encryption_type = AES256. Consider KMS CMK for additional control."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000063",
+                "control-id": "ac-3",
+                "description": "Access Enforcement: ECR repository access is controlled via IAM policies. Only the ECS task execution role has permission to pull images (via AmazonECSTaskExecutionRolePolicy). Push access should be restricted to CI/CD pipeline roles. No public access is configured. Reference: DISA SRG-APP-000033.",
+                "remarks": "ECR is a private repository. Image pull is authorized via the ECS execution role. Configure repository policies to restrict push access."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000064",
+                "control-id": "si-2",
+                "description": "Flaw Remediation: Scan-on-push findings highlight known vulnerabilities in container images, enabling remediation before or during deployment. The lifecycle policy automatically expires old images, reducing the attack surface from unpatched historical versions. Reference: DISA SRG-APP-000456.",
+                "remarks": "Integrate ECR scan findings with CI/CD pipelines to prevent deployment of images with critical/high vulnerabilities."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

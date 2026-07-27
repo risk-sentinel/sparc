@@ -1,0 +1,101 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000014",
+    "metadata": {
+      "title": "SPARC CloudWatch Monitoring Component Definition",
+      "last-modified": "2026-04-18T00:00:00Z",
+      "version": "1.2.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000014",
+        "type": "service",
+        "title": "AWS CloudWatch (Monitoring, Logging, Alarms)",
+        "description": "Centralized monitoring with VPC flow logs, metric alarms across all infrastructure tiers (ECS, ALB, RDS, ElastiCache), log-derived application metrics (NGINX 5xx, Rails errors), and an auto-generated operations dashboard. Deployed via Terraform (AWS/ECS/modules/cloudwatch/). <!-- UPDATE: Insert dashboard URL, log group ARNs, and alarm ARNs for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000014",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for CloudWatch monitoring",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000130",
+                "control-id": "au-2",
+                "description": "Event Logging: VPC flow logs capture all network traffic (ACCEPT, REJECT) within the VPC at 60-second aggregation intervals, stored in a dedicated CloudWatch log group (/vpc/{project}-{env}/flow-logs) with configurable retention. Combined with ECS container logs (NGINX access/error, Rails application), this provides comprehensive logging across network and application layers. Log metric filters extract NGINX 5xx counts and Rails ERROR counts into custom CloudWatch metrics for real-time monitoring. CloudTrail S3 data event selectors log all object-level API activity for S3 buckets, providing audit records of data access and modification. Reference: DISA SRG-APP-000089, CIS AWS 3.7, CIS AWS 3.10.",
+                "remarks": "Terraform resources: aws_flow_log.main, aws_cloudwatch_log_group.vpc_flow, aws_cloudwatch_log_metric_filter.nginx_5xx, aws_cloudwatch_log_metric_filter.rails_error, aws_cloudtrail event_selector for S3 data events."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000131",
+                "control-id": "au-6",
+                "description": "Audit Record Review, Analysis, and Reporting: The CloudWatch dashboard ({project}-{env}-dashboard) provides a unified view of infrastructure health: ECS CPU/memory, ALB request count/latency/HTTP error breakdown (2xx/4xx/5xx), RDS CPU/connections, Redis CPU/memory, ALB healthy/unhealthy targets, and application error rates from log metric filters. The dashboard enables rapid triage during incidents and serves as the primary operational review tool. Reference: DISA SRG-APP-000100.",
+                "remarks": "Terraform resource: aws_cloudwatch_dashboard.main. Dashboard includes 8 widgets covering all infrastructure tiers and application-level metrics."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000132",
+                "control-id": "si-4",
+                "description": "System Monitoring: 14 CloudWatch alarms provide continuous automated monitoring across all infrastructure tiers: ECS (CPU high, memory high), ALB (5xx errors, latency high, unhealthy targets), RDS (CPU high, storage low, connections high), ElastiCache (CPU high, memory high), application (NGINX 5xx rate, Rails error rate), and security (app-secrets access, app-secrets modification). All alarms use configurable thresholds and treat missing data as not-breaching. A Lambda function subscribed to the CloudTrail log group delivers identity-enriched SNS notifications (principal ARN, source IP, event name, secret ID) for both access and modification events on app-secrets, bypassing a known CloudTrail-to-EventBridge delivery gap. Reference: DISA SRG-APP-000029, CIS AWS 4.1.",
+                "remarks": "Alarms use 5-minute periods. Security alarms (secret access/modification) fire on any single event (threshold >= 1) and auto-reset after 300s. The Lambda notification function (secret-alert) provides who/what/when forensic detail that the basic CloudWatch alarm cannot."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000133",
+                "control-id": "au-5",
+                "description": "Response to Audit Logging Process Failures: CloudWatch alarms trigger SNS notifications when infrastructure components show signs of degradation that could affect logging: ECS CPU/memory exhaustion (containers may stop logging), ALB unhealthy targets (traffic routing failures), and RDS storage exhaustion (audit log storage). VPC flow log delivery failures would trigger CloudWatch delivery error metrics. Reference: DISA SRG-APP-000109.",
+                "remarks": "The RDS storage-low alarm (rds_free_storage_threshold) specifically guards against disk exhaustion that would halt database audit logging."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000134",
+                "control-id": "au-12",
+                "description": "Audit Record Generation: VPC flow logs generate audit records for all network connections within the VPC, capturing source/destination IPs, ports, protocol, packet/byte counts, action (accept/reject), and account/interface metadata. Flow logs are generated by the VPC service itself — they cannot be disabled by workloads. The IAM role for flow log delivery uses a scoped policy allowing only log write operations. CloudTrail is configured with an S3 data event selector that logs all object-level API activity (GetObject, PutObject, DeleteObject) across S3 buckets, providing a complete audit trail of data access and modification. Reference: DISA SRG-APP-000492, CIS AWS 3.7, CIS AWS 3.10.",
+                "remarks": "Terraform resources: aws_flow_log.main (traffic_type=ALL, max_aggregation_interval=60), aws_iam_role.flow_log with scoped log-write policy, aws_cloudtrail event_selector with data_resource type AWS::S3::Object."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000135",
+                "control-id": "ir-4",
+                "description": "Incident Handling: The monitoring stack provides the telemetry foundation for incident response: CloudWatch alarms for automated detection, SNS notifications for immediate awareness, the operations dashboard for impact assessment and triage, VPC flow logs for network forensics, and application log metric filters for error correlation. Alarms cover all common failure modes: compute exhaustion, application errors, database issues, cache failures, and network health. Reference: DISA SRG-APP-000268.",
+                "remarks": "The dashboard provides a single-pane-of-glass view during incident response. VPC flow logs provide post-incident network forensics capability."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000136",
+                "control-id": "sc-7",
+                "description": "Boundary Protection: VPC flow logs monitor all traffic crossing network boundaries within the VPC, including traffic between security groups (ALB→ECS, ECS→RDS, ECS→Redis). Rejected traffic is logged, providing visibility into unauthorized access attempts. Flow logs capture traffic that security groups deny, enabling detection of reconnaissance and lateral movement attempts. Reference: DISA SRG-NET-000364.",
+                "remarks": "Flow logs capture ALL traffic types (accept + reject). Log group retention is configurable (default 30 days) for compliance requirements."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000138",
+                "control-id": "ir-5",
+                "description": "Incident Monitoring: A Lambda function subscribed to the CloudTrail log group monitors app-secrets for both access (GetSecretValue) and modification (PutSecretValue, UpdateSecret, DeleteSecret, RotateSecret, etc.) events. On detection, it publishes an identity-enriched SNS notification containing the IAM principal ARN, source IP address, operation name, secret ID, and timestamp. This provides immediate, actionable forensic context for security personnel without requiring manual CloudTrail log review. The CI role (sparc-iac-github-actions) and Terraform user-agent are excluded to suppress routine infrastructure operations. Reference: DISA SRG-APP-000268.",
+                "remarks": "Terraform resources: aws_lambda_function.secret_alert, aws_cloudwatch_log_subscription_filter.secret_alert. Replaces non-functional EventBridge path (issue #156). Reserved concurrency = 5, X-Ray tracing enabled, KMS-encrypted environment variables."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000137",
+                "control-id": "si-5",
+                "description": "Security Alerts, Advisories, and Directives: All 13 CloudWatch alarms are configured with insufficient_data_actions in addition to alarm_actions and ok_actions, ensuring SNS notifications are triggered when metric data becomes unavailable. This prevents silent monitoring gaps — operators are alerted when alarms enter the INSUFFICIENT_DATA state, which may indicate a logging pipeline failure, a stopped resource, or a configuration issue requiring investigation. Reference: DISA SRG-APP-000516.",
+                "remarks": "Terraform resources: all aws_cloudwatch_metric_alarm resources include insufficient_data_actions = [aws_sns_topic.alerts.arn]. This complements alarm_actions and ok_actions for full state-transition coverage."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

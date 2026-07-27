@@ -1,0 +1,97 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000020",
+    "metadata": {
+      "title": "SPARC SES Email Component Definition",
+      "last-modified": "2026-07-12T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000020",
+        "type": "service",
+        "title": "AWS SES Email (example.com receive/forward + send-as)",
+        "description": "Native-AWS email handling for example.com (#528): SES domain identity with Easy DKIM and a custom MAIL FROM domain; Route53 records (MX, SPF, DKIM, DMARC); an SES receipt rule that stores inbound mail for sparc.admin@/sparc.support@ to an encrypted S3 bucket and invokes a python3.12 forwarder Lambda that re-sends to the operators' personal addresses; and an IAM SMTP user for authenticated send-as from mail clients. Deployed via Terraform (AWS/ECS/modules/ses_email/, AWS/ECS/modules/lambda/ses_forwarder.py, AWS/IAM/ses_smtp.tf). <!-- UPDATE: Insert the verified domain, forward destinations, and SMTP username for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": [
+              "a1b2c3d4-0001-4000-a000-000000000001"
+            ]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000020",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for SES email",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000201",
+                "control-id": "sc-8",
+                "description": "Transmission Confidentiality and Integrity: Outbound mail is DKIM-signed (SES Easy DKIM, 3 published CNAME keys) and SPF-authorized (v=spf1 include:amazonses.com -all), and SES transmits over TLS. A custom MAIL FROM subdomain (mail.example.com) aligns the bounce/return path. The inbound S3 bucket policy additionally denies any request not made over TLS (aws:SecureTransport=false), so at-rest mail can only be read/written over an encrypted channel. These mechanisms protect the authenticity and integrity of email in transit and let receivers detect spoofing/tampering. Reference: DISA SRG-APP-000439.",
+                "remarks": "Terraform: aws_ses_domain_dkim.domain, aws_ses_domain_mail_from.domain, aws_route53_record.dkim/spf/mail_from_spf; aws_s3_bucket_policy.inbound (DenyInsecureTransport statement)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000202",
+                "control-id": "si-8",
+                "description": "Spam Protection: The SES receipt rule enables built-in spam and virus scanning (scan_enabled = true) on inbound mail before it is stored or forwarded, and a DMARC record (p=none monitor mode initially, with aggregate rua reporting) provides domain-based message authentication reporting to detect and progressively enforce against spoofed mail. Reference: DISA SRG-APP-000261.",
+                "remarks": "Terraform: aws_ses_receipt_rule.forward (scan_enabled=true), aws_route53_record.dmarc (v=DMARC1; p=none; rua=...; fo=1)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000203",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: Raw inbound messages are written to a dedicated S3 bucket (sparc-prod-ses-inbound) with SSE-S3 (AES256) server-side encryption enabled by default, versioning enabled, and public access fully blocked. Messages are lifecycle-expired after 30 days, minimizing the at-rest retention window for transient mail content. Reference: DISA SRG-APP-000231.",
+                "remarks": "Terraform: aws_s3_bucket.inbound + aws_s3_bucket_server_side_encryption_configuration (AES256) + aws_s3_bucket_versioning + aws_s3_bucket_public_access_block + aws_s3_bucket_lifecycle_configuration (30d)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000204",
+                "control-id": "ac-3",
+                "description": "Access Enforcement: The inbound S3 bucket policy allows s3:PutObject only for the SES service principal and only from this AWS account (aws:SourceAccount condition), preventing writes from any other principal. The receipt rule matches only the two intended recipient addresses. The forwarder Lambda's invoke permission is granted only to the SES service principal scoped to this account. When the forwarder reads a stored message it passes ExpectedBucketOwner (this account) on the S3 GetObject, so a bucket-ownership swap (confused-deputy) cannot redirect the read. Reference: DISA SRG-APP-000033.",
+                "remarks": "Terraform: aws_s3_bucket_policy.inbound (ses.amazonaws.com + aws:SourceAccount), aws_ses_receipt_rule.forward (recipients list), aws_lambda_permission.ses_forwarder (principal ses.amazonaws.com, source_account); ses_forwarder.py s3.get_object(ExpectedBucketOwner=EXPECTED_BUCKET_OWNER)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000205",
+                "control-id": "ac-6",
+                "description": "Least Privilege: The forwarder Lambda execution role grants only s3:GetObject on the inbound bucket, ses:SendRawEmail, and its own CloudWatch Logs stream. The SMTP send-as IAM user grants only ses:SendRawEmail. Neither identity has broader mail, storage, or account access. IAM identities are declared centrally in AWS/IAM/ per the repository IAM-locality rule. Reference: DISA SRG-APP-000342.",
+                "remarks": "Terraform: aws_iam_role.ses_forwarder + aws_iam_role_policy.ses_forwarder (AWS/IAM/lambda.tf); aws_iam_user.ses_smtp + aws_iam_user_policy.ses_smtp (AWS/IAM/ses_smtp.tf)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000206",
+                "control-id": "ia-5",
+                "description": "Authenticator Management: Send-as from operator mail clients uses SES SMTP credentials derived from a dedicated single-purpose IAM user (sparc-prod-ses-smtp). SES SMTP has no OIDC/role credential path, so a long-lived IAM access key is required; the v4-derived SMTP password is surfaced only as a sensitive Terraform output for one-time client configuration and is not stored in code. Reference: DISA SRG-APP-000176.",
+                "remarks": "Terraform: aws_iam_access_key.ses_smtp (ses_smtp_password_v4 sensitive output). Rotate by tainting the access key. Long-lived key accepted in checkov-baseline.yml (CKV_AWS_273/40) — SES SMTP has no role path."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000207",
+                "control-id": "au-2",
+                "description": "Event Logging: The forwarder Lambda logs each forwarded message (SES messageId, recipients, destinations) to a dedicated CloudWatch log group with 365-day retention and active X-Ray tracing, providing an audit trail of mail-forwarding activity. The inbound S3 bucket additionally emits S3 server access logs to the WORM audit bucket (same immutable sink as the uploads/evidence buckets, #484), recording every read/write of stored mail. Reference: DISA SRG-APP-000089.",
+                "remarks": "Terraform: aws_cloudwatch_log_group.ses_forwarder (retention_in_days=365), aws_lambda_function.ses_forwarder (tracing_config Active); aws_s3_bucket_logging.inbound → ${name_prefix}-audit-logs (AllowS3AccessLogging grant in modules/logging/audit_logs.tf)."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000208",
+                "control-id": "cm-6",
+                "description": "Configuration Settings: Email authentication posture is codified as Route53 DNS records under Terraform control — apex SPF (-all hard fail), Easy DKIM CNAMEs, and a DMARC record. Route53 remains the sole DNS authority; all records are declared in AWS/ECS/modules/ses_email/ and applied via CI, giving a single reviewable source of truth for the domain's mail configuration. Reference: DISA SRG-APP-000516.",
+                "remarks": "Terraform: aws_route53_record.spf/dkim/dmarc/inbound_mx/mail_from_mx in AWS/ECS/modules/ses_email/main.tf. DMARC starts at p=none (monitor); tighten to quarantine/reject after alignment is confirmed via rua reports."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
