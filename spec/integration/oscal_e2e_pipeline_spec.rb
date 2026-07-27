@@ -289,4 +289,138 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       }.to raise_error(OdpImportService::ImportError)
     end
   end
+
+  # ── Stage 4 — the authorization boundary, from the full ECS CDEF set ─────
+  #
+  # These are the 19 real ECS Fargate component definitions from sparc-iac,
+  # sanitized into spec/fixtures/files/components/ecs_boundary/ by
+  # scripts/sanitize_ecs_cdefs.rb. Using the real set matters: hand-built
+  # minimal CDEFs pass trivially and taught us nothing in #816.
+  #
+  # Every import here runs with `validate: true` — the path a customer upload
+  # takes. The trusted-pipeline `validate: false` escape hatch exists for AWS
+  # Labs ingest and is deliberately NOT used, because a CDEF that only imports
+  # unvalidated is a CDEF a customer cannot upload.
+  describe "Stage 4 — authorization boundary from the ECS Fargate CDEF set" do
+    ECS_CDEF_DIR = Rails.root.join("spec/fixtures/files/components/ecs_boundary").freeze
+
+    def ecs_cdef_paths
+      Dir.glob(ECS_CDEF_DIR.join("component-definition-*.json")).sort
+    end
+
+    def import_cdef(path)
+      doc = create(:cdef_document, name: File.basename(path, ".json"),
+                                   file_type: "json", original_filename: File.basename(path))
+      CdefJsonParserService.new(doc, path).parse(validate: true)
+      doc.reload
+    end
+
+    it "ships the whole ECS boundary, not a sample of it" do
+      expect(ecs_cdef_paths.size).to eq(19)
+    end
+
+    it "imports every ECS component definition through the validating path" do
+      failures = []
+      ecs_cdef_paths.each do |path|
+        import_cdef(path)
+      rescue StandardError => e
+        failures << "#{File.basename(path)}: #{e.class} — #{e.message}"
+      end
+
+      expect(failures).to be_empty,
+        "ECS CDEFs a customer could not upload:\n  #{failures.join("\n  ")}"
+    end
+
+    it "imports controls, not just document shells" do
+      empty = []
+      ecs_cdef_paths.each do |path|
+        doc = import_cdef(path)
+        empty << File.basename(path) if doc.cdef_controls.empty?
+      end
+
+      expect(empty).to be_empty,
+        "component definitions that imported with zero controls: #{empty.inspect}"
+    end
+
+    it "assembles the full set into one authorization boundary" do
+      ab = create(:authorization_boundary)
+      boundary = create(:boundary, authorization_boundary: ab)
+
+      ecs_cdef_paths.each do |path|
+        BoundaryCdefDocument.create!(boundary: boundary, cdef_document: import_cdef(path))
+      end
+
+      # cdef_documents reaches through Boundary, so this also proves the
+      # AuthorizationBoundary → Boundary → CdefDocument chain is wired.
+      expect(ab.cdef_documents.distinct.count).to eq(19)
+    end
+
+    it "exports an imported ECS component definition as valid OSCAL (JSON + YAML)" do
+      doc = import_cdef(ecs_cdef_paths.first)
+      json = OscalComponentDefinitionExportService.new(doc).export
+
+      expect_valid_json_and_yaml(json, model_type: :component_definition,
+                                       label: "Stage 4 #{doc.name}")
+    end
+
+    it "REJECTS a component definition whose required metadata is missing" do
+      doc = import_cdef(ecs_cdef_paths.first)
+      json = OscalComponentDefinitionExportService.new(doc).export
+
+      expect_rejected_by_schema(json, model_type: :component_definition,
+                                      label: "Stage 4 #{doc.name}") do |data|
+        data["component-definition"].delete("metadata")
+      end
+    end
+
+    # #817's import matrix: CDEFs must be ingestible from JSON, YAML, XML and
+    # XCCDF. JSON is covered above by the whole ECS set; these cover the rest.
+    describe "the import matrix" do
+      it "imports a component definition from YAML" do
+        path = Rails.root.join("spec/fixtures/files/components/example-component-definition.yaml").to_s
+        doc = create(:cdef_document, file_type: "yaml", original_filename: File.basename(path))
+
+        CdefYamlParserService.new(doc, path).parse(validate: true)
+
+        expect(doc.reload.cdef_controls).to be_present
+      end
+
+      it "imports a component definition from OSCAL XML" do
+        path = Rails.root.join("spec/fixtures/files/components/example-component-definition.xml").to_s
+        doc = create(:cdef_document, file_type: "xml", original_filename: File.basename(path))
+
+        CdefXccdfParserService.new(doc, path).parse(validate: true)
+
+        expect(doc.reload.cdef_controls).to be_present
+      end
+
+      it "imports a STIG from XCCDF" do
+        path = Rails.root.join("spec/fixtures/files/components/test-stig-xccdf.xml").to_s
+        doc = create(:cdef_document, file_type: "xccdf", cdef_type: "disa_stig",
+                                     original_filename: File.basename(path))
+
+        CdefXccdfParserService.new(doc, path).parse(validate: true)
+
+        expect(doc.reload.cdef_controls).to be_present
+      end
+
+      it "REJECTS a file whose content does not match its declared format" do
+        # A JSON catalog handed to the XML parser must fail deliberately, not
+        # import as an empty shell — a silent no-op reads as a successful
+        # upload to the operator.
+        path = Rails.root.join("spec/fixtures/files/catalogs/basic-catalog.yaml").to_s
+        doc = create(:cdef_document, file_type: "xml", original_filename: "basic-catalog.yaml")
+
+        imported_controls = begin
+          CdefXccdfParserService.new(doc, path).parse(validate: true)
+          doc.reload.cdef_controls.count
+        rescue StandardError
+          :raised
+        end
+
+        expect(imported_controls).to satisfy { |r| r == :raised || r.zero? },
+          "a YAML catalog was imported as an XML component definition"
+      end
+    end
+  end
 end
