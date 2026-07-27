@@ -31,7 +31,7 @@ RSpec.describe "Admin::Organizations boundary assignment", type: :request do
     # The flash echoes the org name HTML-escaped, so a Faker name with a special
     # char (e.g. "O'Connell" -> "O&#39;Connell") won't match the raw string.
     # Assert the escaped form so the check is robust across RSpec/Faker seeds.
-    expect(response.body).to include("associated with #{CGI.escapeHTML(org.name)}")
+    expect(response.body).to include("associated with #{html_text(org.name)}")
   end
 
   it "moves a boundary from another org and reports the move (instance admin)" do
@@ -49,6 +49,6 @@ RSpec.describe "Admin::Organizations boundary assignment", type: :request do
     already = create(:authorization_boundary, organization: org, name: "Already Here")
     get admin_organization_path(org)
     # It appears in the linked table, but not as an assignable option row.
-    expect(response.body).not_to include("#{already.name} — currently in")
+    expect(response.body).not_to include("#{html_text(already.name)} — currently in")
   end
 end

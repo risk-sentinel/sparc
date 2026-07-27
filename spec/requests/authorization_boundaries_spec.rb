@@ -131,7 +131,7 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
 
     it "renders the ATO wizard page" do
       get ato_wizard_authorization_boundary_path(ab)
-      expect(response.body).to include(ERB::Util.html_escape(ab.name))
+      expect(response.body).to include(html_text(ab.name))
     end
   end
 

@@ -35,7 +35,7 @@ RSpec.describe "Admin::AuditLogs", type: :request do
 
       get admin_audit_logs_path, params: { user_id: admin.id }
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(admin.email)
+      expect(response.body).to include(html_text(admin.email))
     end
 
     it "filters by category" do

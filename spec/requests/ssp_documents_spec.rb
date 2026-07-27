@@ -150,8 +150,8 @@ RSpec.describe "SspDocuments", type: :request do
       unpublished = create(:profile_document, lifecycle_status: "in_progress")
 
       get select_profile_ssp_documents_path
-      expect(response.body).to include(published.name)
-      expect(response.body).not_to include(unpublished.name)
+      expect(response.body).to include(html_text(published.name))
+      expect(response.body).not_to include(html_text(unpublished.name))
     end
   end
 

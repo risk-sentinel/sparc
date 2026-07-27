@@ -97,7 +97,7 @@ RSpec.describe "Document approval workflow", type: :request do
 
       get review_queue_index_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(catalog.name)
+      expect(response.body).to include(html_text(catalog.name))
     end
   end
 end
