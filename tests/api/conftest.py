@@ -195,6 +195,41 @@ def _instance_is_alive(admin_client: httpx.Client) -> None:
         )
 
 
+@pytest.fixture(scope="session")
+def seeded_boundary_id(admin_client: httpx.Client) -> int:
+    """Id of a real AuthorizationBoundary on the instance under test (#823).
+
+    Document payloads used to hardcode ``authorization_boundary_id: 1`` on the
+    assumption that "1 is the standard seed value". That only holds on a freshly
+    seeded database. On any long-lived instance the ids have drifted, every
+    create fails, and the suite reports failures that look like application bugs
+    but are fixture bugs — during #816 verification these cost real time to rule
+    out.
+
+    Discovering the id keeps the suite runnable anywhere, including the deployed
+    runner in #711. If the instance genuinely has no boundary we exit with a
+    clear prerequisite message rather than letting a 4xx surface mid-test as a
+    mystery failure.
+    """
+    response = admin_client.get("/api/v1/authorization_boundaries")
+    if not response.is_success:
+        pytest.exit(
+            f"Could not list authorization boundaries "
+            f"({response.status_code}): {response.text[:200]}",
+            returncode=2,
+        )
+
+    records = response.json().get("data") or []
+    if not records:
+        pytest.exit(
+            "The instance under test has no AuthorizationBoundary, which the "
+            "document tests require. Seed one (SPARC_SEED_DEMO=true bin/rails "
+            "db:seed) and re-run.",
+            returncode=2,
+        )
+    return records[0]["id"]
+
+
 # ── Session janitor: sweep orphaned test resources (#635) ─────────────────
 
 # Every resource the suite creates is named with this prefix

@@ -40,13 +40,13 @@ PARAM_KEY = "ssp_document"
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
-def _new_payload(boundary_id: int = 1) -> dict[str, Any]:
+def _new_payload(boundary_id: int) -> dict[str, Any]:
     """Boundary id 1 is the standard seed value in dev/test SPARC instances."""
     return make_payload(PARAM_KEY, {"authorization_boundary_id": boundary_id})
 
 
-def _create_ssp(client: httpx.Client) -> dict[str, Any]:
-    return create_doc(client, PATH, _new_payload())
+def _create_ssp(client: httpx.Client, seeded_boundary_id: int) -> dict[str, Any]:
+    return create_doc(client, PATH, _new_payload(seeded_boundary_id))
 
 
 def _delete_ssp(client: httpx.Client, slug: str) -> None:
@@ -56,9 +56,9 @@ def _delete_ssp(client: httpx.Client, slug: str) -> None:
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def ssp_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
+def ssp_doc(admin_client: httpx.Client, seeded_boundary_id: int) -> Iterator[dict[str, Any]]:
     """Create an SSP, hand it to the test, delete on teardown."""
-    doc = _create_ssp(admin_client)
+    doc = _create_ssp(admin_client, seeded_boundary_id)
     try:
         yield doc
     finally:
@@ -134,8 +134,10 @@ class TestShow:
 
 class TestCreate:
     @pytest.mark.happy
-    def test_admin_creates_document(self, admin_client: httpx.Client) -> None:
-        payload = _new_payload()
+    def test_admin_creates_document(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
+        payload = _new_payload(seeded_boundary_id)
         response = admin_client.post(PATH, json=payload)
         assert response.status_code in (200, 201), response.text
         body = response.json()
@@ -145,19 +147,21 @@ class TestCreate:
         _delete_ssp(admin_client, body["data"]["slug"])
 
     @pytest.mark.happy
-    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+    def test_create_round_trip(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
         """#433 slice 3 — fields sent on Create must come back from Show."""
         assert_create_round_trip(
-            admin_client, PATH, _new_payload(), PARAM_KEY, SspDocumentShow
+            admin_client, PATH, _new_payload(seeded_boundary_id), PARAM_KEY, SspDocumentShow
         )
 
     @pytest.mark.happy
-    def test_create_round_trip_rich_payload(self, admin_client: httpx.Client) -> None:
+    def test_create_round_trip_rich_payload(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         """#433 slice 3 — exercise type-specific SSP fields beyond name/description."""
         payload = make_payload(
             PARAM_KEY,
             {
-                "authorization_boundary_id": 1,
+                "authorization_boundary_id": seeded_boundary_id,
                 "ssp_version": "2.1.0",
                 "system_status": "operational",
                 "security_sensitivity_level": "moderate",
@@ -168,23 +172,25 @@ class TestCreate:
         )
 
     @pytest.mark.auth
-    def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
-        response = anon_client.post(PATH, json=_new_payload())
+    def test_no_token_returns_401(self, anon_client: httpx.Client, seeded_boundary_id: int) -> None:
+        response = anon_client.post(PATH, json=_new_payload(seeded_boundary_id))
         assert_error_envelope(response, expected_status=401)
 
     @pytest.mark.authz
     def test_non_admin_without_write_returns_403(
         self, user_client: httpx.Client
-    ) -> None:
-        response = user_client.post(PATH, json=_new_payload())
+    , seeded_boundary_id: int) -> None:
+        response = user_client.post(PATH, json=_new_payload(seeded_boundary_id))
         # 403 expected; some configurations may also return 401 if the
         # test user has zero permissions at all. Both are valid signals
         # that the unauthorized create was rejected.
         assert response.status_code in (401, 403), response.text
 
     @pytest.mark.validation
-    def test_missing_name_returns_422(self, admin_client: httpx.Client) -> None:
-        payload = {PARAM_KEY: {"authorization_boundary_id": 1}}
+    def test_missing_name_returns_422(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
+        payload = {PARAM_KEY: {"authorization_boundary_id": seeded_boundary_id}}
         response = admin_client.post(PATH, json=payload)
         assert_error_envelope(response, expected_status=422)
 
@@ -226,11 +232,13 @@ class TestUpdate:
 
 class TestDestroy:
     @pytest.mark.happy
-    def test_admin_destroys_document(self, admin_client: httpx.Client) -> None:
+    def test_admin_destroys_document(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
         # Don't use the ssp_doc fixture because we want to assert the
         # delete actually happened (fixture would also try to delete on
         # teardown and produce a confusing 404).
-        doc = _create_ssp(admin_client)
+        doc = _create_ssp(admin_client, seeded_boundary_id)
 
         response = admin_client.delete(f"{PATH}/{doc['slug']}")
         assert response.status_code == 200, response.text

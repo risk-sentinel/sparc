@@ -1,0 +1,107 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000003",
+    "metadata": {
+      "title": "SPARC ECS Fargate Component Definition",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "version": "2.2.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000003",
+        "type": "service",
+        "title": "AWS ECS Fargate",
+        "description": "ECS cluster with Fargate launch type running a two-container sidecar pattern: NGINX reverse proxy (ALB-facing, port 8080) and Rails/Puma application server (internal, port 3000). Both containers share the same network namespace via awsvpc mode. Task definition injects DATABASE_URL, REDIS_URL, S3 config as environment variables, and DB_CREDENTIALS + APP_SECRETS from Secrets Manager. Deployed via Terraform (AWS/ECS/modules/ecs_fargate/). <!-- UPDATE: Insert cluster ARN, service ARN, task definition ARN, container image URLs, and log group name for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000003",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for ECS Fargate",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000020",
+                "control-id": "au-2",
+                "description": "Event Logging: Both containers (NGINX and Rails) are configured with the awslogs log driver, streaming all stdout/stderr to a shared CloudWatch Log Group (/ecs/{project}-{env}) with 365-day retention. NGINX logs use the 'nginx' stream prefix; Rails logs use the 'rails' stream prefix, enabling independent log analysis. ECS Container Insights is enabled on the cluster, providing automated CPU, memory, network, and storage metrics per task and service. NGINX access logs capture client IP, request method, URI, status, response time. Rails logs capture application events, errors, and structured output (when SPARC_STRUCTURED_LOGGING=true). Reference: DISA SRG-APP-000089, CIS AWS 3.1.",
+                "remarks": "Terraform resources: aws_cloudwatch_log_group.ecs (retention_in_days=365), aws_ecs_cluster.main (containerInsights=enabled), container_definitions[*].logConfiguration. Stream prefixes: 'nginx' and 'rails'."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000021",
+                "control-id": "au-3",
+                "description": "Content of Audit Records: CloudWatch Logs capture distinct streams for each container. NGINX access log format includes: remote_addr, remote_user, time_local, request, status, body_bytes_sent, http_referer, http_user_agent, x_forwarded_for, and request_time — providing who, what, when, and outcome for every HTTP request. Rails structured logging adds application-level context (user actions, data access, errors). Combined with CloudTrail API logging, this provides comprehensive audit records. Reference: DISA SRG-APP-000095.",
+                "remarks": "NGINX log format is configured in nginx/nginx.conf. Rails structured logging is enabled via SPARC_STRUCTURED_LOGGING=true in the secrets module."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000022",
+                "control-id": "cm-2",
+                "description": "Baseline Configuration: The ECS task definition is the immutable baseline for the application runtime, specifying two containers (NGINX + Rails) with exact image URLs and tags, CPU/memory allocation, port mappings, environment variables, secrets injection, dependency ordering, and logging configuration. Container images use IMMUTABLE tags in ECR, ensuring a given tag always resolves to the same artifact. Changes require a new task definition revision. Reference: DISA SRG-APP-000133.",
+                "remarks": "Task definition is managed as code in Terraform. NGINX container depends on Rails container (dependsOn: START). Both images are versioned via ECR with immutable tags."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000023",
+                "control-id": "cm-7",
+                "description": "Least Functionality: Fargate tasks run in AWS-managed Firecracker micro-VMs with no SSH access, no host OS, and no ability to modify the underlying compute. Both containers have read-only root filesystems (readonlyRootFilesystem=true), preventing runtime filesystem modification. The NGINX container runs as non-root (nginx user) with a minimal Alpine base. The Rails container only exposes port 3000 on localhost (not reachable from outside the task). RAILS_SERVE_STATIC_FILES=false since NGINX handles static assets. No unnecessary services or packages are present on the compute layer. Reference: DISA SRG-APP-000141, CIS AWS ECS 5.1.",
+                "remarks": "readonlyRootFilesystem=true on both containers. NGINX Dockerfile uses non-root user. Rails is not directly accessible. Fargate abstracts the host entirely."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000024",
+                "control-id": "si-3",
+                "description": "Malicious Code Protection: Fargate runs containers in isolated Firecracker micro-VMs with per-task kernel isolation. Both the NGINX and Rails container images are scanned on push to ECR (scan_on_push = true). The NGINX image is built from a minimal Alpine base (nginx:1.27-alpine) with only the required configuration files. Image tag immutability prevents unauthorized image replacement. Reference: DISA SRG-APP-000277.",
+                "remarks": "ECR scan-on-push covers both app and nginx repositories. NGINX Dockerfile copies only nginx.conf and conf.d/default.conf — no application code."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000025",
+                "control-id": "ac-3",
+                "description": "Access Enforcement: ECS tasks run under two scoped IAM roles: the execution role (ECR image pull for both repos, CloudWatch log write, Secrets Manager read for DB and app secrets) and the task role (S3 bucket access for ActiveStorage uploads). Both roles follow least-privilege principles. The task role has only s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket on the specific upload bucket. Reference: DISA SRG-APP-000033, CIS AWS 1.16.",
+                "remarks": "IAM roles are defined in the iam module. Execution role: AmazonECSTaskExecutionRolePolicy + scoped Secrets Manager policy. Task role: scoped S3 policy."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000026",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: Two Secrets Manager secrets are injected at runtime: DB_CREDENTIALS (database connection details) and APP_SECRETS (SECRET_KEY_BASE, OIDC client secrets, LDAP bind password, SMTP password, and all SPARC configuration). DATABASE_URL and REDIS_URL are injected as environment variables. No credentials are stored in task definitions, images, or source code. Secrets Manager encrypts all values at rest with AWS KMS. Reference: DISA SRG-APP-000231.",
+                "remarks": "Terraform resources: secrets block in container_definitions referencing module.rds.db_secret_arn and module.secrets.app_secret_arn."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000027",
+                "control-id": "sc-7",
+                "description": "Boundary Protection: The sidecar architecture provides defense in depth. External traffic enters through NGINX on port 8080 (ALB-facing). Rails/Puma on port 3000 is only accessible via localhost within the task — it has no external port mapping. NGINX enforces request buffering, size limits (client_max_body_size 100m), and proper header forwarding (X-Forwarded-For/Proto/Port). Dotfiles and hidden paths are denied at the NGINX layer. Reference: DISA SRG-NET-000364.",
+                "remarks": "NGINX conf.d/default.conf proxies to 127.0.0.1:3000. Rails port 3000 is not in the ECS service load_balancer block — only NGINX port 8080 is registered with the ALB target group."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000028",
+                "control-id": "sc-5",
+                "description": "Denial-of-Service Protection: ECS auto-scaling (enable_autoscaling=true) automatically adjusts task count based on CPU utilization and ALB request count per target. Scale-out responds to traffic spikes within 300 seconds; scale-in has a 600-second cooldown to prevent flapping. Minimum task count ensures baseline capacity. Combined with ALB distribution and AWS Shield Standard, this provides layered DoS mitigation. Reference: DISA SRG-NET-000362.",
+                "remarks": "Terraform resources: aws_appautoscaling_target.ecs, aws_appautoscaling_policy.cpu (target: 70%), aws_appautoscaling_policy.requests (target: 1000/target). Conditional on enable_autoscaling variable."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000029",
+                "control-id": "cp-2",
+                "description": "Contingency Planning: Auto-scaling maintains service availability during demand spikes and infrastructure failures. If a task fails health checks, ECS replaces it automatically. The auto-scaler ensures minimum capacity (autoscaling_min_tasks) is always maintained. When RDS Proxy is enabled (enable_rds_proxy=true), database connections are multiplexed through a managed proxy that handles connection draining during scaling events and automatic failover for Multi-AZ deployments. Reference: DISA SRG-APP-000141.",
+                "remarks": "Auto-scaling: aws_appautoscaling_target.ecs with min/max capacity. RDS Proxy: aws_db_proxy.main with connection pooling and IAM auth. Both conditional on their respective enable variables."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -136,7 +136,7 @@
     "back-matter": {
       "resources": [
         {
-          "uuid": "test-resource-uuid",
+          "uuid": "11111111-2222-4333-8444-555555555555",
           "title": "NIST SP 800-53 Rev 5",
           "rlinks": [
             {

@@ -263,6 +263,7 @@ In OSCAL CDEFs, use the `remarks` field to note configuration dependencies:
 ## References
 
 - `docs/dev/Implemenation_plan.md` — phased roadmap and issue tracking
+- `docs/dev/tls_verification_testing.md` — **required** standard for any TLS/MITM surface: prove BOTH directions (untrusted rejected, trusted accepted) with a real handshake, negative test first
 - `docs/dev/Developer_Collision_Avoidance_Plan.md` — domain ownership and hot files
 - [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) — canonical release notes (the wiki Changelog is a concise index)
 - `docs/compliance/README.md` — compliance documentation guide

@@ -178,7 +178,7 @@ class TestBoundaryScopedReads:
 
     def test_non_admin_index_returns_only_visible_documents(
         self, admin_client: httpx.Client, user_client: httpx.Client
-    ) -> None:
+    , seeded_boundary_id: int) -> None:
         """Non-admin user's index call returns only documents in
         boundaries they have access to. With our test SA having no
         boundary memberships, the expected result is an empty list
@@ -190,7 +190,7 @@ class TestBoundaryScopedReads:
         suffix = uuid.uuid4().hex[:8]
         payload = make_payload(
             "ssp_document",
-            {"authorization_boundary_id": 1, "name": f"isolation-probe-{suffix}"},
+            {"authorization_boundary_id": seeded_boundary_id, "name": f"isolation-probe-{suffix}"},
         )
         created = create_doc(admin_client, self.PATH, payload)
 
@@ -213,14 +213,17 @@ class TestBoundaryScopedReads:
 
     def test_non_admin_show_returns_404_or_403_for_other_boundary(
         self, admin_client: httpx.Client, user_client: httpx.Client
-    ) -> None:
+    , seeded_boundary_id: int) -> None:
         """Direct GET of a document in another boundary returns 404 or
         403 — never 200. Catches a controller that forgot to apply
         the scoping filter on `show`."""
         suffix = uuid.uuid4().hex[:8]
         payload = make_payload(
             "ssp_document",
-            {"authorization_boundary_id": 1, "name": f"show-isolation-probe-{suffix}"},
+            {
+                "authorization_boundary_id": seeded_boundary_id,
+                "name": f"show-isolation-probe-{suffix}",
+            },
         )
         created = create_doc(admin_client, self.PATH, payload)
 

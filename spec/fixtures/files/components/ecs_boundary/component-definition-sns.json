@@ -1,0 +1,71 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000013",
+    "metadata": {
+      "title": "SPARC SNS Notifications Component Definition",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "version": "1.1.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000013",
+        "type": "service",
+        "title": "AWS SNS (Alarm Notifications)",
+        "description": "SNS topic for CloudWatch alarm notifications with email subscriptions and a topic policy allowing CloudWatch to publish. Deployed via Terraform (AWS/ECS/modules/sns/). <!-- UPDATE: Insert SNS topic ARN and subscriber email addresses for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000013",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for SNS",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000120",
+                "control-id": "ir-6",
+                "description": "Incident Reporting: SNS delivers CloudWatch alarm notifications to configured email recipients, enabling timely incident awareness and response. Alarms cover infrastructure health (ECS CPU/memory, ALB 5xx/latency/unhealthy targets, RDS CPU/storage/connections, Redis CPU/memory) and application errors (NGINX 5xx rate, Rails error rate). Email delivery provides an out-of-band notification channel independent of the monitored application. Reference: DISA SRG-APP-000279.",
+                "remarks": "Terraform resources: aws_sns_topic.alarms, aws_sns_topic_subscription.email. Multiple email recipients supported via alarm_emails list variable."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000121",
+                "control-id": "si-4",
+                "description": "System Monitoring: SNS is the notification backbone for the monitoring stack. All 12 CloudWatch alarms publish to the SNS topic when thresholds are breached or when alarms return to OK state. This provides continuous monitoring coverage across all infrastructure tiers: compute (ECS), networking (ALB), data (RDS, Redis), and application (log-derived metrics). Reference: DISA SRG-APP-000029, CIS AWS 4.1.",
+                "remarks": "SNS topic policy explicitly allows cloudwatch.amazonaws.com to publish. Both alarm and ok actions route to the same topic."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000122",
+                "control-id": "ac-3",
+                "description": "Access Enforcement: The SNS topic policy restricts publish access to the CloudWatch service principal only. Email subscription requires manual confirmation (opt-in), preventing unauthorized notification delivery. Topic management requires IAM permissions on the SNS ARN. Reference: DISA SRG-APP-000033.",
+                "remarks": "Terraform resource: aws_sns_topic_policy.alarms with principal cloudwatch.amazonaws.com."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000123",
+                "control-id": "sc-28",
+                "description": "Protection of Information at Rest: The SNS topic is encrypted using AWS-managed KMS key (kms_master_key_id=alias/aws/sns). All messages published to the topic (alarm notifications containing infrastructure metrics and alert details) are encrypted at rest before delivery. Reference: DISA SRG-APP-000231.",
+                "remarks": "Terraform resource: aws_sns_topic.alarms with kms_master_key_id = alias/aws/sns."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

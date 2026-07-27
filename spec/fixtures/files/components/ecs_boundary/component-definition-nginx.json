@@ -1,0 +1,89 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000012",
+    "metadata": {
+      "title": "SPARC NGINX Reverse Proxy Component Definition",
+      "last-modified": "2026-03-20T00:00:00Z",
+      "version": "1.1.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000012",
+        "type": "software",
+        "title": "NGINX Reverse Proxy (ECS Sidecar)",
+        "description": "NGINX reverse proxy running as a sidecar container in the ECS Fargate task definition. Listens on port 8080 (ALB-facing) and proxies to Rails/Puma on 127.0.0.1:3000. Built from nginx:1.27-alpine with custom configuration. Provides request buffering, gzip compression, header forwarding, static asset serving, and a lightweight health check endpoint. Configuration defined in AWS/ECS/nginx/. <!-- UPDATE: Insert NGINX image URL, container name, and ALB target group for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000012",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for NGINX reverse proxy",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000110",
+                "control-id": "sc-7",
+                "description": "Boundary Protection: NGINX serves as the application-layer boundary between the ALB and Rails. It accepts connections only on port 8080 from the ALB and forwards to Rails on 127.0.0.1:3000 (not network-accessible). NGINX denies access to dotfiles and hidden paths (location ~ /\\.). The client_max_body_size directive (100m) limits request body size, preventing oversized upload attacks. NGINX enforces proxy timeouts (connect: 60s, send: 60s, read: 60s). Reference: DISA SRG-NET-000364, SRG-APP-000141.",
+                "remarks": "Configuration: nginx/conf.d/default.conf. Dotfile denial, body size limits, and timeout enforcement are in the server block."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000111",
+                "control-id": "sc-8",
+                "description": "Transmission Confidentiality and Integrity: NGINX forwards security-relevant headers from the ALB to Rails: X-Forwarded-Proto (ensures Rails knows the original protocol is HTTPS), X-Forwarded-For (preserves client IP through the proxy chain), X-Real-IP (direct client address), and X-Forwarded-Port. Rails uses X-Forwarded-Proto to enforce FORCE_SSL=true. Internal traffic between NGINX and Rails is on localhost (127.0.0.1) within the same Fargate task — no network traversal. Reference: DISA SRG-NET-000062.",
+                "remarks": "Header configuration in conf.d/default.conf proxy_set_header directives. TLS termination happens at the ALB; NGINX receives plaintext from the ALB."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000112",
+                "control-id": "au-2",
+                "description": "Event Logging: NGINX access logs capture every HTTP request in a structured format: remote_addr, remote_user, time_local, request (method + URI + protocol), status, body_bytes_sent, http_referer, http_user_agent, x_forwarded_for, and request_time (rt=). Error logs capture NGINX-level errors at warn level. Both streams are sent to CloudWatch Logs via the awslogs driver with 'nginx' stream prefix, separate from Rails application logs ('rails' prefix). The /nginx-health endpoint has access_log off to reduce noise. Reference: DISA SRG-APP-000089.",
+                "remarks": "Log format defined in nginx/nginx.conf. Health check logging is suppressed to avoid polluting audit logs with ALB health check traffic."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000113",
+                "control-id": "cm-2",
+                "description": "Baseline Configuration: The NGINX configuration is baked into a Docker image built from nginx:1.27-alpine with only two configuration files (nginx.conf and conf.d/default.conf). The image is stored in a dedicated ECR repository ({project}-{env}-nginx) with immutable tags, ensuring reproducible deployments. Configuration changes require building and pushing a new image, creating a verifiable audit trail. Reference: DISA SRG-APP-000133.",
+                "remarks": "Dockerfile: AWS/ECS/nginx/Dockerfile. Configuration files: nginx/nginx.conf, nginx/conf.d/default.conf. ECR repo has scan-on-push and lifecycle policies."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000114",
+                "control-id": "cm-7",
+                "description": "Least Functionality: The NGINX container uses a minimal Alpine base image with only the NGINX binary and required libraries. Default configuration is removed and replaced with the SPARC-specific proxy configuration. The container runs as the non-root 'nginx' user with a read-only root filesystem (readonlyRootFilesystem=true), preventing any runtime filesystem modification. PID file is written to /tmp (writable without root). Only port 8080 is exposed. No additional modules, plugins, or services are installed. Reference: DISA SRG-APP-000141.",
+                "remarks": "readonlyRootFilesystem=true in task definition. Dockerfile runs as nginx user. Only two config files are copied. No build tools or unnecessary binaries."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000115",
+                "control-id": "si-10",
+                "description": "Information Input Validation: NGINX provides a dedicated health check endpoint (/nginx-health) that returns HTTP 200 with a plain text response without proxying to Rails. This allows the ALB to verify NGINX availability independently. The ALB target group health check is configured to hit /nginx-health, ensuring the reverse proxy layer is functional before routing traffic. Unhealthy tasks (where NGINX is down) are automatically deregistered. Reference: DISA SRG-APP-000251.",
+                "remarks": "Health check in conf.d/default.conf: location /nginx-health returns 200. ALB health_check_path defaults to /nginx-health."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000116",
+                "control-id": "sc-5",
+                "description": "Denial-of-Service Protection: NGINX provides request buffering (proxy_buffering on, proxy_buffer_size 8k, proxy_buffers 16 8k) to protect Rails from slow clients. The client_max_body_size 100m limit prevents oversized request attacks. Proxy timeouts (60s connect/send/read) prevent connection exhaustion. Gzip compression reduces bandwidth consumption. Combined with ALB connection limits and AWS Shield Standard, this provides layered DoS protection. Reference: DISA SRG-NET-000362.",
+                "remarks": "Buffering, body size limits, and timeouts in conf.d/default.conf. Gzip configuration in nginx.conf."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

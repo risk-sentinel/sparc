@@ -33,15 +33,15 @@ PARAM_KEY = "sar_document"
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
-def _new_payload(boundary_id: int = 1) -> dict[str, Any]:
+def _new_payload(boundary_id: int) -> dict[str, Any]:
     return make_payload(PARAM_KEY, {"authorization_boundary_id": boundary_id})
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def sar_doc(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
-    doc = create_doc(admin_client, PATH, _new_payload())
+def sar_doc(admin_client: httpx.Client, seeded_boundary_id: int) -> Iterator[dict[str, Any]]:
+    doc = create_doc(admin_client, PATH, _new_payload(seeded_boundary_id))
     try:
         yield doc
     finally:
@@ -97,34 +97,40 @@ class TestShow:
 
 class TestCreate:
     @pytest.mark.happy
-    def test_admin_creates_document(self, admin_client: httpx.Client) -> None:
-        payload = _new_payload()
+    def test_admin_creates_document(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
+        payload = _new_payload(seeded_boundary_id)
         response = admin_client.post(PATH, json=payload)
         assert response.status_code in (200, 201), response.text
         slug = response.json()["data"]["slug"]
         delete_doc(admin_client, PATH, slug)
 
     @pytest.mark.happy
-    def test_create_round_trip(self, admin_client: httpx.Client) -> None:
+    def test_create_round_trip(self, admin_client: httpx.Client, seeded_boundary_id: int) -> None:
         """#433 slice 3 — fields sent on Create must come back from Show."""
         assert_create_round_trip(
-            admin_client, PATH, _new_payload(), PARAM_KEY, SarDocumentShow
+            admin_client, PATH, _new_payload(seeded_boundary_id), PARAM_KEY, SarDocumentShow
         )
 
     @pytest.mark.auth
-    def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
+    def test_no_token_returns_401(self, anon_client: httpx.Client, seeded_boundary_id: int) -> None:
         assert_error_envelope(
-            anon_client.post(PATH, json=_new_payload()), expected_status=401
+            anon_client.post(PATH, json=_new_payload(seeded_boundary_id)), expected_status=401
         )
 
     @pytest.mark.authz
-    def test_non_admin_without_write_returns_403(self, user_client: httpx.Client) -> None:
-        response = user_client.post(PATH, json=_new_payload())
+    def test_non_admin_without_write_returns_403(
+        self, user_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
+        response = user_client.post(PATH, json=_new_payload(seeded_boundary_id))
         assert response.status_code in (401, 403), response.text
 
     @pytest.mark.validation
-    def test_missing_name_returns_422(self, admin_client: httpx.Client) -> None:
-        payload = {PARAM_KEY: {"authorization_boundary_id": 1}}
+    def test_missing_name_returns_422(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
+        payload = {PARAM_KEY: {"authorization_boundary_id": seeded_boundary_id}}
         response = admin_client.post(PATH, json=payload)
         assert_error_envelope(response, expected_status=422)
 
@@ -167,8 +173,10 @@ class TestUpdate:
 
 class TestDestroy:
     @pytest.mark.happy
-    def test_admin_destroys_document(self, admin_client: httpx.Client) -> None:
-        doc = create_doc(admin_client, PATH, _new_payload())
+    def test_admin_destroys_document(
+        self, admin_client: httpx.Client, seeded_boundary_id: int
+    ) -> None:
+        doc = create_doc(admin_client, PATH, _new_payload(seeded_boundary_id))
         response = admin_client.delete(f"{PATH}/{doc['slug']}")
         assert response.status_code == 200, response.text
         assert response.json()["data"]["deleted"] is True

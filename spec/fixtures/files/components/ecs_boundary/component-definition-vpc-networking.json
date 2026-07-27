@@ -1,0 +1,77 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-1111-4000-a000-000000000001",
+    "metadata": {
+      "title": "SPARC VPC and Networking Component Definition",
+      "last-modified": "2026-04-06T00:00:00Z",
+      "version": "2.1.0",
+      "oscal-version": "1.2.1",
+      "roles": [
+        {
+          "id": "provider",
+          "title": "Infrastructure Provider"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "a1b2c3d4-0001-4000-a000-000000000001",
+          "type": "organization",
+          "name": "SPARC Platform Team"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "a1b2c3d4-2222-4000-a000-000000000001",
+        "type": "service",
+        "title": "AWS VPC and Networking",
+        "description": "VPC with public/private subnet architecture, internet gateway, NAT gateway, route tables, and layered security groups deployed via Terraform (AWS/ECS/modules/networking/). <!-- UPDATE: Insert VPC ID, CIDR ranges, and account details for your deployment. -->",
+        "responsible-roles": [
+          {
+            "role-id": "provider",
+            "party-uuids": ["a1b2c3d4-0001-4000-a000-000000000001"]
+          }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "a1b2c3d4-3333-4000-a000-000000000001",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST SP 800-53 Rev 5 control implementations for VPC networking components",
+            "implemented-requirements": [
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000001",
+                "control-id": "sc-7",
+                "description": "Boundary Protection: The VPC establishes a network boundary with public subnets (ALB-facing) isolated from private subnets (ECS tasks, RDS, Redis). Public subnets have map_public_ip_on_launch disabled, ensuring instances launched in public subnets do not automatically receive public IP addresses — only the ALB receives a public-facing endpoint. Four security groups enforce layered ingress rules: ALB SG permits 80/443 from 0.0.0.0/0, ECS SG permits container_port from ALB SG only, RDS SG permits 5432 from ECS SG only, Redis SG permits 6379 from ECS SG only. No direct internet access to private subnets. Reference: DISA SRG-NET-000364, CIS AWS 5.1, CIS AWS 5.2.1.",
+                "remarks": "Terraform resources: aws_vpc.main, aws_subnet.public (map_public_ip_on_launch = false), aws_subnet.private, aws_security_group.alb, aws_security_group.ecs, aws_security_group.rds, aws_security_group.redis"
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000002",
+                "control-id": "sc-7.5",
+                "description": "Boundary Protection | Deny by Default / Allow by Exception: Security groups default-deny all inbound traffic. Only explicitly defined ingress rules are permitted: HTTP/HTTPS to ALB, container port from ALB to ECS, PostgreSQL from ECS to RDS, Redis from ECS to ElastiCache. Egress is allowed for operational connectivity (NAT gateway for ECS outbound). Reference: DISA SRG-NET-000202.",
+                "remarks": "All four security groups (ALB, ECS, RDS, Redis) are created in the networking module to prevent circular dependencies between downstream modules."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000003",
+                "control-id": "ac-4",
+                "description": "Information Flow Enforcement: Network architecture enforces unidirectional traffic flow: Internet → ALB (public subnets) → ECS tasks (private subnets) → RDS and Redis (private subnets). Security groups restrict each hop to specific ports and source security groups. NAT gateway provides controlled outbound-only internet access from private subnets. ECS tasks can reach both RDS (5432) and Redis (6379) but neither data store can initiate connections to ECS. Reference: DISA SRG-NET-000019, CIS AWS 5.2.",
+                "remarks": "Terraform resources: aws_route_table.public (→ IGW), aws_route_table.private (→ NAT), aws_nat_gateway.main. Data stores are in private subnets with no public routes."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000004",
+                "control-id": "sc-7.21",
+                "description": "Boundary Protection | Isolation of System Components: ECS tasks and RDS instances are deployed into private subnets with no public IP addresses. Public subnets also disable automatic public IP assignment (map_public_ip_on_launch = false), ensuring no resources receive unintended public exposure. Internet-facing traffic is isolated to the ALB in public subnets via its own Elastic IP/public DNS. Subnet-level separation provides network isolation between application and data tiers.",
+                "remarks": "Private subnets have no internet gateway route; outbound traffic routes through NAT gateway. Public subnets have map_public_ip_on_launch = false."
+              },
+              {
+                "uuid": "a1b2c3d4-4444-4000-a000-000000000005",
+                "control-id": "ca-3",
+                "description": "Information Exchange: All inter-component communication occurs within the VPC over private network paths. No data traverses the public internet between application components. ALB terminates external TLS connections and forwards traffic internally to ECS tasks.",
+                "remarks": "VPC DNS support is enabled (enable_dns_support = true, enable_dns_hostnames = true) for internal service resolution."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
