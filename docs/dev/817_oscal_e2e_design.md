@@ -49,8 +49,8 @@ green.
 |---|---|---|
 | **S1** | ECS boundary fixtures — the 19 sparc-iac `AWS/CDEF/ECS/` CDEFs, sanitized and committed, plus a re-runnable sanitizer | **done** (`fff647b3`) |
 | **S2** | Stages 1–3 — catalog import → ODPs → 3 baselines → profile resolution, each exported and schema-validated, each with reject cases | **done** — 21 examples, 0 failures, 1 pending (#827) |
-| **S3** | Stage 4 — the full ECS CDEF set imported (JSON/YAML/XML/XCCDF) and assembled into a boundary | next |
-| **S4** | Stage 5 — SSP, SAP, Evidence, Amendments, SAR, POA&M; HDF and XCCDF/SCAP ingestion for the assessment side | |
+| **S3** | Stage 4 — the full ECS CDEF set imported (JSON/YAML/XML/XCCDF) and assembled into a boundary | **done** — 10 examples |
+| **S4** | Stage 5 — SSP, SAP, SAR, POA&M, Evidence; HDF ingestion for the assessment side | **done** — 45 examples total, 0 failures, 2 pending (#827, #831) |
 | **S5** | Stage 6 — ATO package assembly + export, round-trip semantic equivalence, `samples/` demo output | blocked by #829 |
 | **S6** | Negative matrix sweep — confirm every stage has an explicit reject assertion; unsupported format/type combinations rejected deliberately rather than crashing | |
 
@@ -116,6 +116,8 @@ Filed as their own issues; **not** fixed on this branch.
 | **#827** | Stage 1, XML validation | **Every OSCAL XML export is schema-invalid.** `OscalJsonToXmlConverter` emits children in JSON key order; the OSCAL XSD is an `xs:sequence` with a mandated order. `download_xml` is user-facing on seven document types. Undetected because no spec ever called `validate_xml` against a real export. |
 | **#828** | Surveying `AtoPackageExportService` | **The ATO package silently omits documents whose export fails while the manifest still lists them** — verified: a raising SSP export yields an archive containing only `manifest.json`, whose document list still names `ssp.json`. Also ships `export_unvalidated` bytes. |
 | **#829** | Surveying `AtoPackageExportService` | ATO package export is **JSON-only**, so #817's all-three-serializations requirement cannot be met. Blocked by #827 for the XML half. |
+| **#830** | Surveying blob storage | No key-prefix logic anywhere — every attachment lands in the bucket root under a random key, so prefix-scoped IAM, lifecycle rules and per-tenant cleanup are all impossible. |
+| **#831** | Stage 5, HDF ingestion | `/api/v1/translations` returns **schema-invalid OSCAL unchecked** — real hdf-cli 3.4.1 output is missing `reviewed-controls`, `finding/description` and `characterization/origin`, and no call site validates. The POA&M target raises outright (`no converter found`). |
 
 ### On the `pending` marker
 

@@ -423,4 +423,222 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       end
     end
   end
+
+  # ── Stage 5 — the authorization artifacts ────────────────────────────────
+  #
+  # SSP, SAP, SAR and POA&M, generated FROM the stage 3 baseline rather than
+  # built by hand. That is the point: each generator consumes the previous
+  # stage's output, so these examples cover seams no per-service spec can.
+  describe "Stage 5 — authorization artifacts" do
+    # SspFromProfileService and SarFromProfileService refuse a profile that is
+    # unpublished OR unresolved — you cannot build an authorization artifact
+    # from a draft baseline, or from one whose controls have never been
+    # resolved against the catalog.
+    #
+    # This mirrors ProfileDocumentsController#before_publish_lifecycle, which
+    # runs OscalResolvedProfileCatalogService and stores the result on publish.
+    # Reproducing the real publish behaviour is the point: stage 3's RESOLUTION
+    # output is stage 5's input, and that is the seam under test.
+    let(:baseline) do
+      profile = create(:profile_document, name: "Stage 5 baseline", baseline_level: "LOW",
+                                          control_catalog: catalog)
+      ids = JSON.parse(Rails.root.join(
+        "spec/fixtures/files/profiles/NIST_SP-800-53_rev5_LOW-baseline_profile.json"
+      ).read).dig("profile", "imports").flat_map { |i| i["include-controls"] || [] }
+        .flat_map { |i| i["with-ids"] || [] }
+      ProfileControlSelectionService.new(profile).update(ids)
+
+      resolved = OscalResolvedProfileCatalogService.new(profile.reload).export
+      profile.update!(resolved_catalog_json: JSON.parse(resolved), lifecycle_status: "published")
+      profile.reload
+    end
+
+    # A POA&M with authored content OSCAL actually requires. #816 established
+    # that a missing risk/statement or finding/target is fixed in the DATA,
+    # never with an exporter fallback — a synthesised statement yields a
+    # schema-valid POA&M that misrepresents the risk, which is worse than a
+    # failed export. Mirrors db/seeds/sample_artifacts.rb.
+    def authored_poam
+      poam = create(:poam_document, authorization_boundary: create(:authorization_boundary))
+      item = PoamItem.create!(
+        poam_document: poam, title: "Incident response plan not tested in 12 months",
+        description: "The IR plan has not been exercised within the past year.",
+        poam_item_uuid: SecureRandom.uuid, risk_status: "remediating",
+        impact: "medium", likelihood: "low", row_order: 0
+      )
+      risk = PoamRisk.create!(
+        poam_document: poam, title: "Risk: untested incident response plan",
+        uuid: SecureRandom.uuid,
+        description: "Risk associated with an untested incident response plan.",
+        statement: "An untested incident response plan is unproven under load: response times, " \
+                   "escalation paths and contact accuracy remain unverified, so the organization " \
+                   "cannot demonstrate it can contain an incident within its stated objectives.",
+        status: "remediating", likelihood: "low", impact: "medium"
+      )
+      finding = PoamFinding.create!(
+        poam_document: poam, title: "Finding: IR exercise overdue",
+        uuid: SecureRandom.uuid,
+        description: "Last IR exercise was conducted 18 months ago.",
+        target_data: {
+          "type" => "statement-id", "target-id" => "ir-3_smt",
+          "title" => "Assessment objective for IR-3",
+          "description" => "Last IR exercise was conducted 18 months ago.",
+          "status" => { "state" => "not-satisfied" }
+        }
+      )
+      PoamItemRisk.create!(poam_item: item, poam_risk: risk)
+      PoamItemFinding.create!(poam_item: item, poam_finding: finding)
+      poam.reload
+    end
+
+    describe "SSP" do
+      it "is generated from the baseline and carries its controls" do
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+
+        expect(ssp).to be_persisted
+        selected = baseline.profile_controls.pluck(:control_id).to_set
+        carried = ssp.ssp_controls.pluck(:control_id).to_set
+
+        expect(selected - carried).to be_empty,
+          "SSP generation dropped #{(selected - carried).size} controls the baseline selected"
+      end
+
+      it "exports as a schema-valid OSCAL system-security-plan (JSON + YAML)" do
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        json = OscalSspExportService.new(ssp).export
+
+        expect_valid_json_and_yaml(json, model_type: :ssp, label: "Stage 5 SSP")
+      end
+
+      it "REJECTS an SSP missing its system-characteristics" do
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        json = OscalSspExportService.new(ssp).export
+
+        expect_rejected_by_schema(json, model_type: :ssp, label: "Stage 5 SSP") do |data|
+          data["system-security-plan"].delete("system-characteristics")
+        end
+      end
+    end
+
+    describe "SAP" do
+      it "is generated from the SSP and exports as a valid assessment-plan" do
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        sap = SapGeneratorService.new(name: "ECS Fargate SAP", ssp_document: ssp).generate
+
+        expect(sap).to be_persisted
+        json = OscalAssessmentPlanExportService.new(sap).export
+        expect_valid_json_and_yaml(json, model_type: :assessment_plan, label: "Stage 5 SAP")
+      end
+
+      it "REJECTS an assessment-plan with no import-ssp" do
+        ssp = SspFromProfileService.new(baseline, name: "ECS Fargate SSP").create
+        sap = SapGeneratorService.new(name: "ECS Fargate SAP", ssp_document: ssp).generate
+        json = OscalAssessmentPlanExportService.new(sap).export
+
+        expect_rejected_by_schema(json, model_type: :assessment_plan, label: "Stage 5 SAP") do |data|
+          data["assessment-plan"].delete("import-ssp")
+        end
+      end
+    end
+
+    describe "SAR" do
+      it "is generated from the baseline and exports as valid assessment-results" do
+        sar = SarFromProfileService.new(baseline, name: "ECS Fargate SAR").create
+
+        expect(sar).to be_persisted
+        json = OscalSarExportService.new(sar).export
+        expect_valid_json_and_yaml(json, model_type: :assessment_results, label: "Stage 5 SAR")
+      end
+
+      it "REJECTS assessment-results with no results" do
+        sar = SarFromProfileService.new(baseline, name: "ECS Fargate SAR").create
+        json = OscalSarExportService.new(sar).export
+
+        expect_rejected_by_schema(json, model_type: :assessment_results, label: "Stage 5 SAR") do |data|
+          data["assessment-results"]["results"] = []
+        end
+      end
+    end
+
+    # ── HDF ingestion — the assessment side of the import matrix ──────────
+    #
+    # This runs the REAL hdf-cli (3.4.1, baked into the image), not a stubbed
+    # runner. Stubbing it would prove only that our wrapper calls a method;
+    # the question #817 asks is whether scan output actually becomes valid
+    # OSCAL, and that lives in the converter we do not own.
+    describe "HDF scan results" do
+      let(:hdf_fixture) { Rails.root.join("spec/fixtures/files/hdf/sample-results.hdf.json").to_s }
+
+      it "converts HDF results into an OSCAL assessment-results document" do
+        oscal = HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture)
+
+        # The conversion itself works and produces the right document shape;
+        # what it produces is not schema-valid (see below).
+        expect(oscal).to have_key("assessment-results")
+        expect(oscal.dig("assessment-results", "results")).to be_present
+      end
+
+      it "converts to SCHEMA-VALID OSCAL assessment-results" do
+        pending "#831 — hdf-cli 3.4.1 emits assessment-results missing required " \
+                "properties (reviewed-controls, finding/description, " \
+                "characterization/origin) and SPARC returns it unvalidated from " \
+                "/api/v1/translations. Remove this marker when #831 lands."
+
+        oscal = HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture)
+        expect_valid_json_and_yaml(JSON.generate(oscal), model_type: :assessment_results,
+                                                         label: "Stage 5 HDF -> SAR")
+      end
+
+      it "cannot convert HDF straight to POA&M — the converter is gone upstream" do
+        # Pinned so the behaviour is visible rather than surprising: hdf-cli
+        # removed hdf -> oscal-poam in 3.2.0. #831 covers the endpoint still
+        # advertising the target.
+        expect {
+          HdfOscalTranslationService.new.hdf_to_oscal_poam(hdf_fixture)
+        }.to raise_error(HdfRunner::Error, /no converter found/)
+      end
+
+      it "merges boundary evidence into OSCAL back-matter" do
+        ab = create(:authorization_boundary)
+        evidence = create(:evidence, authorization_boundary: ab)
+
+        oscal = HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture, boundary: ab)
+        resources = oscal.dig("assessment-results", "back-matter", "resources") || []
+
+        expect(resources).to be_present,
+          "boundary evidence was not merged into back-matter"
+        expect(evidence).to be_persisted
+      end
+    end
+
+    describe "POA&M" do
+      it "exports as a schema-valid plan-of-action-and-milestones (JSON + YAML)" do
+        json = OscalPoamExportService.new(authored_poam).export
+
+        expect_valid_json_and_yaml(json, model_type: :poam, label: "Stage 5 POA&M")
+      end
+
+      it "REJECTS a POA&M with no items — the schema requires at least one" do
+        # The OSCAL POA&M root requires uuid, metadata and poam-items, and
+        # poam-items has minItems 1: a plan of action with no actions in it is
+        # not a plan. (system-id is NOT required — worth stating, because it
+        # reads like it ought to be.)
+        json = OscalPoamExportService.new(authored_poam).export
+
+        expect_rejected_by_schema(json, model_type: :poam, label: "Stage 5 POA&M") do |data|
+          data["plan-of-action-and-milestones"]["poam-items"] = []
+        end
+      end
+
+      it "REJECTS a POA&M whose risk carries no statement" do
+        # The #816 guard, pinned: OSCAL requires risk/statement, and the
+        # exporter must never invent one.
+        json = OscalPoamExportService.new(authored_poam).export
+
+        expect_rejected_by_schema(json, model_type: :poam, label: "Stage 5 POA&M") do |data|
+          data["plan-of-action-and-milestones"]["risks"].each { |r| r.delete("statement") }
+        end
+      end
+    end
+  end
 end
