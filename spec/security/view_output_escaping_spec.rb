@@ -51,6 +51,39 @@ RSpec.describe "View output escaping", type: :request do
     end
   end
 
+  # The processing banner renders `title` through an escaping tag but used to
+  # interpolate `back_label` into an html_safe string — two opposite contracts in
+  # one partial. poam_documents/show passed a pre-escaped title, which was then
+  # escaped again, so users saw the literal text "Processing Your POA&amp;M".
+  describe "GET /poam_documents/:id while processing" do
+    # The banner only renders while the document is NOT completed, so pin the
+    # status rather than letting the factory default decide (it defaults to
+    # "completed", which silently skipped this check).
+    let(:processing) { create(:poam_document, status: "pending") }
+
+    before { get poam_document_path(processing) }
+
+    it "renders the processing banner" do
+      expect(response.body).to include("Processing Your")
+    end
+
+    it "shows the ampersand, not a literal entity" do
+      text = Nokogiri::HTML(response.body).text
+      expect(text).to include("Processing Your POA&M")
+      expect(text).not_to include("POA&amp;M")
+    end
+
+    context "when the conversion failed (the branch that renders the back link)" do
+      let(:processing) { create(:poam_document, status: "failed") }
+
+      it "escapes the back label the same way" do
+        text = Nokogiri::HTML(response.body).text
+        expect(text).to include("Back to POA&Ms")
+        expect(text).not_to include("POA&amp;Ms")
+      end
+    end
+  end
+
   describe "GET /poam_documents/:id/poam_items/new" do
     before { get new_poam_document_poam_item_path(poam) }
 

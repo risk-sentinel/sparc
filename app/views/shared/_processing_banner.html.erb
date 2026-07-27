@@ -1,6 +1,12 @@
 <%# Shared processing banner for document show pages. %>
 <%
   document       = local_assigns[:document]
+  # All labels below are PLAIN TEXT — pass "POA&M", not "POA&amp;M". Each is
+  # rendered through an escaping output tag, so it is escaped exactly once.
+  # back_label used to be interpolated into an html_safe string, so it alone had
+  # to arrive pre-escaped. Two opposite contracts in one partial is why
+  # poam_documents/show passed "Processing Your POA&amp;M" as the title and users
+  # saw the raw entity rendered on the page.
   title          = local_assigns.fetch(:title, "Processing")
   failed_title   = local_assigns.fetch(:failed_title, "Processing Failed")
   back_label     = local_assigns.fetch(:back_label, "Back")
@@ -27,7 +33,7 @@
       <%= document.error_message.presence || "An unknown error occurred." %>
     </p>
     <div style="margin-top: 1.25rem;">
-      <%= link_to "&#8592; #{back_label}".html_safe, back_path, class: "sparc-btn-ghost" %>
+      <%= link_to "← #{back_label}", back_path, class: "sparc-btn-ghost" %>
     </div>
   </div>
 <% elsif is_stuck %>
@@ -44,7 +50,7 @@
       contact an administrator to check the background job queue.
     </p>
     <div style="margin-top: 1.25rem;">
-      <%= link_to "&#8592; #{back_label}".html_safe, back_path, class: "sparc-btn-ghost" %>
+      <%= link_to "← #{back_label}", back_path, class: "sparc-btn-ghost" %>
     </div>
   </div>
 <% else %>
