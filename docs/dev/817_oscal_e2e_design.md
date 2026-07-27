@@ -51,7 +51,7 @@ green.
 | **S2** | Stages 1–3 — catalog import → ODPs → 3 baselines → profile resolution, each exported and schema-validated, each with reject cases | **done** — 21 examples, 0 failures, 1 pending (#827) |
 | **S3** | Stage 4 — the full ECS CDEF set imported (JSON/YAML/XML/XCCDF) and assembled into a boundary | **done** — 10 examples |
 | **S4** | Stage 5 — SSP, SAP, SAR, POA&M, Evidence; HDF ingestion for the assessment side | **done** — 45 examples total, 0 failures, 2 pending (#827, #831) |
-| **S5** | Stage 6 — ATO package assembly + export, round-trip semantic equivalence, `samples/` demo output | **blocked** by #829 (JSON-only) and #827 (XML invalid) |
+| **S5** | Stage 6 — ATO package assembly + export, round-trip semantic equivalence, `samples/` demo output | **split out to #836** — blocked by #829 (JSON-only), #827 (XML invalid) and #828 (manifest/archive disagree) |
 | **S6** | Negative matrix sweep — wrong-schema-for-type cross-product, malformed input, ODP constraint violation | **done** — 50 examples total, 0 failures, 2 pending |
 
 **S6 as built.** Stages 1–5 each carry their own reject cases, so S6 covers only
@@ -143,7 +143,19 @@ Filed as their own issues; **not** fixed on this branch.
 | **#828** | Surveying `AtoPackageExportService` | **The ATO package silently omits documents whose export fails while the manifest still lists them** — verified: a raising SSP export yields an archive containing only `manifest.json`, whose document list still names `ssp.json`. Also ships `export_unvalidated` bytes. |
 | **#829** | Surveying `AtoPackageExportService` | ATO package export is **JSON-only**, so #817's all-three-serializations requirement cannot be met. Blocked by #827 for the XML half. |
 | **#830** | Surveying blob storage | No key-prefix logic anywhere — every attachment lands in the bucket root under a random key, so prefix-scoped IAM, lifecycle rules and per-tenant cleanup are all impossible. |
-| **#831** | Stage 5, HDF ingestion | `/api/v1/translations` returns **schema-invalid OSCAL unchecked** — real hdf-cli 3.4.1 output is missing `reviewed-controls`, `finding/description` and `characterization/origin`, and no call site validates. The POA&M target raises outright (`no converter found`). |
+| **#831** | Stage 5, HDF ingestion | `sar_from_hdf` returns **schema-invalid OSCAL unchecked** — real hdf-cli 3.4.1 output is missing `reviewed-controls`, `finding/description` and `characterization/origin`, and no call site validates. Upstream half filed as [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184). |
+| **#832** | Stage 5, POA&M round-trip | `PoamRisk` validates only `uuid`; every other column is nullable, so OSCAL-required fields (`title`, `description`, `statement`, `status`) and the `deadline` can all be blank. The #816 bug class at its source. |
+| **#835** | CI run of the pipeline spec | CI has no `hdf` binary, so the HDF specs skip there; and hdf-cli is pinned at **three different versions** across the repo (3.4.1 / 3.2.0 / 3.3.2), straddling two behavioural changes in the converter. |
+
+### A correction worth recording
+
+The first version of #831 also claimed the POA&M translation was "dead" because
+`hdf_to_oscal_poam` raises. **That was wrong** and has been withdrawn. Per MITRE,
+hdf-libs handles OSCAL POA&M via **HDF Amendments**; the direct converter was
+removed in 3.2.0 by design, and `TranslationsController#poam_from_hdf` already
+returns a deliberate **501** naming the removal and pointing at the replacement.
+The spec now pins both halves of that contract — raw HDF must refuse, amendments
+must work — rather than treating the removal as breakage.
 
 ### On the `pending` marker
 
