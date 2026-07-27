@@ -31,6 +31,8 @@ development. See [`issue_rules.md`](issue_rules.md) for the full doc-update proc
 | [`aws_labs_cdef_coverage.md`](aws_labs_cdef_coverage.md) · [`aws_security_hub_nist_mapping.md`](aws_security_hub_nist_mapping.md) | AWS Labs CDEF coverage; Security Hub → NIST mapping |
 | [`ubi9_migration_findings.md`](ubi9_migration_findings.md) | UBI9 base-image migration validation & A/B evidence |
 | [`hdf-libs-3.2.0-upstream-report.md`](hdf-libs-3.2.0-upstream-report.md) | hdf-cli 3.2.0 upstream contract report |
+| [`hdf-libs-3.4.1-oscal-sar-upstream-report.md`](hdf-libs-3.4.1-oscal-sar-upstream-report.md) | hdf-cli 3.4.1 emits schema-invalid OSCAL Assessment Results — **draft, ready to file upstream** (sanitized) |
+| [`817_oscal_e2e_design.md`](817_oscal_e2e_design.md) | #817 end-to-end OSCAL pipeline proof — slice plan, decisions, bugs found |
 | [`447_hdf_amendment_design.md`](447_hdf_amendment_design.md) | #447 HDF Amendment triage/UI epic — design pass (reconciled to hdf-cli 3.4.1 / schema v3.4.0) |
 | [`809_811_hdf_aggregation_design.md`](809_811_hdf_aggregation_design.md) | #809+#811 HDF aggregation + scan/CDEF association + re-occurrence lifecycle — design pass (decisions resolved) |
 | [`tls_verification_testing.md`](tls_verification_testing.md) | **Standard** for TLS/MITM testing — both-directions (positive + negative) proof with a real handshake |

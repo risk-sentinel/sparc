@@ -630,7 +630,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         end
       end
 
-      it "REJECTS a POA&M whose risk carries no statement" do
+      it "REJECTS a POA&M whose risk carries no statement (#816 guard)" do
         # The #816 guard, pinned: OSCAL requires risk/statement, and the
         # exporter must never invent one.
         json = OscalPoamExportService.new(authored_poam).export
@@ -639,6 +639,116 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
           data["plan-of-action-and-milestones"]["risks"].each { |r| r.delete("statement") }
         end
       end
+    end
+  end
+
+  # ── S6 — the negative sweep ──────────────────────────────────────────────
+  #
+  # Stages 1-5 each carry their own reject cases. This closes the two gaps
+  # #817 names explicitly and that per-stage assertions cannot cover, because
+  # both are about combinations ACROSS types:
+  #
+  #   "wrong-schema-for-type"  — validating a document as the wrong model
+  #   "unsupported combinations handled deliberately (clear rejection, not a
+  #    crash)" — feeding a parser a format it does not serve
+  describe "S6 — cross-type negative sweep" do
+    # One known-good document per OSCAL model, from committed fixtures rather
+    # than generated, so this sweep is cheap and independent of the pipeline
+    # stages above — a failure here is about SCHEMA SELECTION, not generation.
+    MODEL_FIXTURES = {
+      catalog: "profiles/small-resolved-profile-catalog.json",
+      profile: "profiles/NIST_SP-800-53_rev5_LOW-baseline_profile.json",
+      ssp: "ssp/oscal_leveraging-example_ssp.json",
+      assessment_plan: "sap/ifa_assessment-plan.json",
+      assessment_results: "sar/ifa_assessment-results.json",
+      poam: "poam/ifa_plan-of-action-and-milestones.json",
+      component_definition: "components/example-component-definition.json"
+    }.freeze
+
+    def fixture_json(relative)
+      Rails.root.join("spec/fixtures/files", relative).read
+    end
+
+    # The control. If a fixture does not satisfy its OWN schema, every
+    # cross-type rejection below could be explained by the fixture being bad
+    # rather than by the validator selecting correctly.
+    it "each fixture is valid against its OWN model schema" do
+      MODEL_FIXTURES.each do |model, path|
+        result = OscalSchemaValidationService.validate_json(model, fixture_json(path))
+
+        expect(result.valid?).to be(true),
+          -> { "#{path} is not valid #{model}: #{Array(result.errors).first(3).join('; ')}" }
+      end
+    end
+
+    it "REJECTS every document validated as a model it is not" do
+      # 7 models × 6 wrong schemas = 42 combinations. A validator that ignored
+      # its model_type argument, or defaulted to a permissive schema, would
+      # pass every positive assertion in this file and fail only here.
+      accepted = []
+
+      MODEL_FIXTURES.each do |actual_model, path|
+        json = fixture_json(path)
+
+        MODEL_FIXTURES.each_key do |candidate_model|
+          next if candidate_model == actual_model
+
+          result = OscalSchemaValidationService.validate_json(candidate_model, json)
+          accepted << "#{actual_model} accepted as #{candidate_model}" if result.valid?
+        end
+      end
+
+      expect(accepted).to be_empty,
+        "the validator accepted documents as the wrong model:\n  #{accepted.join("\n  ")}"
+    end
+
+    it "REJECTS malformed input for every model rather than accepting a shell" do
+      malformed = {
+        "empty object" => "{}",
+        "null root" => "null",
+        "array root" => "[]",
+        "right key, empty body" => '{"catalog": {}}'
+      }
+
+      accepted = []
+      MODEL_FIXTURES.each_key do |model|
+        malformed.each do |label, payload|
+          result = OscalSchemaValidationService.validate_json(model, payload)
+          accepted << "#{model} accepted #{label}" if result.valid?
+        end
+      end
+
+      expect(accepted).to be_empty,
+        "the validator accepted malformed input:\n  #{accepted.join("\n  ")}"
+    end
+
+    it "does not CRASH on malformed input — it reports invalid" do
+      # The distinction matters: a raised exception surfaces to an API caller
+      # as a 500, an invalid result as a 422. #817 asks for deliberate
+      # rejection, which means the former is a bug even though both "fail".
+      [ "not json at all", "{unclosed", '{"catalog": ', " " ].each do |payload|
+        expect {
+          OscalSchemaValidationService.validate_json(:catalog, payload)
+        }.not_to raise_error, "validator crashed instead of rejecting: #{payload.inspect}"
+      end
+    end
+
+    # The ODP constraint case #817 calls out by name. A selection value outside
+    # the baseline's allowed choices must not reach the database.
+    it "REJECTS an ODP selection whose value is not an allowed choice" do
+      profile = create(:profile_document, name: "ODP constraint target", baseline_level: "LOW",
+                                          control_catalog: catalog)
+      ProfileControlSelectionService.new(profile).update(%w[ac-1 ac-2])
+
+      payload = OdpImportService.parse(
+        content: { selections: [ { select_id: "ac-2_prm_1", selected: [ "not-an-allowed-choice" ] } ] }.to_json,
+        format: "json"
+      )
+      preview = OdpImportService.new(profile.reload).preview(payload)
+
+      statuses = preview[:rows].map(&:status)
+      expect(statuses).to all(satisfy { |s| %w[invalid unknown].include?(s) }),
+        "an out-of-range ODP choice was previewed as an acceptable change: #{statuses.inspect}"
     end
   end
 end

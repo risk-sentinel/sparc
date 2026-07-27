@@ -1,0 +1,36 @@
+{
+  "platform": { "name": "minimal", "release": "1.0.0" },
+  "version": "1.0.0",
+  "statistics": {},
+  "profiles": [
+    {
+      "name": "minimal-profile",
+      "title": "Minimal profile",
+      "version": "1.0.0",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "supports": [],
+      "attributes": [],
+      "groups": [],
+      "controls": [
+        {
+          "id": "min-1",
+          "title": "A control",
+          "desc": "A description",
+          "impact": 0.5,
+          "refs": [],
+          "tags": { "nist": ["AC-3"] },
+          "code": "",
+          "source_location": {},
+          "results": [
+            {
+              "status": "failed",
+              "code_desc": "expected something",
+              "message": "it was not so",
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

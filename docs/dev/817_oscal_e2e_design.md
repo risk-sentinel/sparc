@@ -51,8 +51,34 @@ green.
 | **S2** | Stages 1–3 — catalog import → ODPs → 3 baselines → profile resolution, each exported and schema-validated, each with reject cases | **done** — 21 examples, 0 failures, 1 pending (#827) |
 | **S3** | Stage 4 — the full ECS CDEF set imported (JSON/YAML/XML/XCCDF) and assembled into a boundary | **done** — 10 examples |
 | **S4** | Stage 5 — SSP, SAP, SAR, POA&M, Evidence; HDF ingestion for the assessment side | **done** — 45 examples total, 0 failures, 2 pending (#827, #831) |
-| **S5** | Stage 6 — ATO package assembly + export, round-trip semantic equivalence, `samples/` demo output | blocked by #829 |
-| **S6** | Negative matrix sweep — confirm every stage has an explicit reject assertion; unsupported format/type combinations rejected deliberately rather than crashing | |
+| **S5** | Stage 6 — ATO package assembly + export, round-trip semantic equivalence, `samples/` demo output | **blocked** by #829 (JSON-only) and #827 (XML invalid) |
+| **S6** | Negative matrix sweep — wrong-schema-for-type cross-product, malformed input, ODP constraint violation | **done** — 50 examples total, 0 failures, 2 pending |
+
+**S6 as built.** Stages 1–5 each carry their own reject cases, so S6 covers only
+what per-stage assertions structurally cannot: combinations *across* types.
+
+- **Wrong-schema-for-type**, as a full cross-product: 7 models × 6 wrong schemas
+  = 42 combinations, every one required to be rejected. A validator that ignored
+  its `model_type` argument, or fell back to a permissive schema, would satisfy
+  every positive assertion in the file and fail only here.
+- A **control** first: each fixture must be valid against its *own* schema.
+  Without it, a cross-type rejection could be explained by a bad fixture rather
+  than by correct schema selection. This control immediately earned its keep —
+  see below.
+- **Malformed input** (`{}`, `null`, `[]`, right-key-empty-body) rejected for
+  every model, and **rejected rather than raised**: an exception reaches an API
+  caller as a 500, an invalid result as a 422, and #817 asks for deliberate
+  rejection.
+- **ODP constraint violation** — a selection value outside the baseline's
+  allowed choices must never be previewed as an acceptable change.
+
+**Fixture defect found by the control:** `small-resolved-profile-catalog.json`
+carried `"uuid": "test-resource-uuid"` in its back-matter — not a UUID, so the
+fixture was not valid OSCAL, and the two specs using it
+(`document_conversion_job_spec`, `profile_resolved_catalog_parser_spec`) were
+exercising invalid input. Replaced with a well-formed UUID; both dependent
+specs re-run green (39 examples). Fixed here rather than filed because it is
+test infrastructure, not product behaviour.
 
 **S2 coverage as built:** catalog completeness (20 families, >2000 controls, no
 empty family), JSON/YAML schema validity, XML well-formedness, XSD validity
