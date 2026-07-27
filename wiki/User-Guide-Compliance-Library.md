@@ -1,11 +1,11 @@
-# User Guide: Trust Store
+# User Guide: Compliance Library
 
-The **trust store** is SPARC's shared library of authoritative back-matter
-sources plus the workflows that govern them: a review queue for documents, a
-promotion queue for elevating sources to instance-wide scope, and federation
-peers for sharing sources across SPARC instances. This guide covers adding
-authoritative sources, moving documents and sources through the queues, and
-configuring federation. It also explains how OSCAL **back matter** and
+The **Compliance Library** is SPARC's shared library of authoritative
+back-matter sources plus the workflows that govern them: a review queue for
+documents, a promotion queue for elevating sources to instance-wide scope, and
+federation peers for sharing sources across SPARC instances. This guide covers
+adding authoritative sources, moving documents and sources through the queues,
+and configuring federation. It also explains how OSCAL **back matter** and
 **artifacts** work.
 
 **Who this is for:** compliance librarians, reviewers, and approvers. Adding a
@@ -20,15 +20,16 @@ managing federation require specific permissions — see [RBAC](RBAC).
   authentication; the **Review Queue** needs reviewer permission, the
   **Promotion Queue** needs approver permission, and **Federation Peers** needs
   the admin/federation permission.
-- **Where to find it:** the **Trust Store** area of the nav and the sidebar's
-  **Compliance Library** — Authoritative Sources, Review Queue, Promotion Queue,
-  Federation Peers.
+- **Where to find it:** **Enterprise › Compliance Library** in the top nav, or
+  the sidebar's **Compliance Library** group — Authoritative Sources, Promotion
+  Queue, Leveraged POA&Ms, Federation Peers. The **Review Queue** is reached from
+  the documents it governs (catalogs, baselines, component definitions).
 
 ---
 
 ![The Authoritative Sources screen listing trusted federation sources and their scope](images/authoritative_sources.png)
 
-*The Authoritative Sources / Trust Store — trusted sources SPARC will accept federated content from.*
+*The Authoritative Sources screen — trusted sources SPARC will accept federated content from.*
 
 ## At a glance
 
@@ -75,7 +76,7 @@ Any authenticated user may add a source.
 
 ## How to review documents
 
-1. Authors submit a trust-store document (**Control Catalog**, **Baseline /
+1. Authors submit a governed document (**Control Catalog**, **Baseline /
    Profile**, or **CDEF**) for review.
 2. A reviewer opens the **Review Queue** (`/review_queue`), which consolidates
    documents awaiting review.
@@ -96,7 +97,7 @@ Any authenticated user may add a source.
 - **Back-matter resources** are OSCAL attachments (citations, policies, diagrams)
   carried by a document. They are managed **inline on each document's detail
   page** — there is no standalone back-matter screen. You can **link** a
-  reusable trust-store source into a document instead of re-uploading the file.
+  reusable Compliance Library source into a document instead of re-uploading the file.
 - **Control back-matter links** attach a back-matter resource to an individual
   catalog or profile control from that control's edit view.
 - **Artifacts** are the durable download side of back matter: a stable UUID
@@ -108,7 +109,7 @@ Any authenticated user may add a source.
 
 ## Tips & best practices
 
-- Add a source **once** to the trust store and **link** it everywhere, rather
+- Add a source **once** to the Compliance Library and **link** it everywhere, rather
   than uploading the same file into multiple documents.
 - **Promote** only sources that are genuinely instance-wide authoritative — keep
   boundary-specific material at boundary scope.

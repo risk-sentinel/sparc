@@ -15,6 +15,10 @@ Rails.application.routes.draw do
   get "help",                  to: "help#index",  as: :help
   get "help/images/:filename", to: "help#image",  as: :help_image,
       constraints: { filename: /[\w\-.]+\.(?:png|jpe?g|gif|svg|webp)/i }
+  # The guide slug derives from the wiki filename, so renaming
+  # User-Guide-Trust-Store.md -> User-Guide-Compliance-Library.md moved the URL.
+  # Keep the old link working for bookmarks and anything already published.
+  get "help/trust-store", to: redirect("/help/compliance-library")
   get "help/:slug",            to: "help#show",    as: :help_guide,
       constraints: { slug: /[a-z0-9-]+/ }
 

@@ -78,7 +78,7 @@ Colour-coded dropdowns group the app by OSCAL layer:
 | **Implementation** (green) | System Security Plans, Component Definitions | Signed in |
 | **Assessment** (orange) | Assessment Plans, Assessment Results, Evidence, POA&Ms | Signed in |
 | **Authorization Boundaries** | Your boundaries | Signed in |
-| **Trust Store** | Authoritative Sources, Review/Promotion Queues, Federation Peers | Signed in, per role |
+| **Compliance Library** | Authoritative Sources, Review/Promotion Queues, Federation Peers | Signed in, per role |
 
 On the right you'll find a **theme toggle** (light/dark, remembered per browser)
 and your **user menu** (avatar/initials) with **Profile**, **Change Password**,

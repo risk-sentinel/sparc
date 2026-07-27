@@ -99,8 +99,8 @@ metadata or **Delete** the record.
 ## Related guides
 
 - [User Guides index](User-Guides)
-- [Assessment Results (SAR)](User-Guide-Assessment-Results) — evidence supports
+- [Security Assessment Results (SAR)](User-Guide-Assessment-Results) — evidence supports
   assessment findings.
-- [Trust Store](User-Guide-Trust-Store) — reusable authoritative back-matter
+- [Compliance Library](User-Guide-Compliance-Library) — reusable authoritative back-matter
   sources.
 - [Screens & UI](Screens) — exhaustive element-level reference.

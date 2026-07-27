@@ -7,7 +7,7 @@ step, with the primary use cases and workflows for each screen.
 
 SPARC helps compliance teams build and maintain the OSCAL documents that make up
 a FedRAMP / NIST 800-53 authorization package: the **System Security Plan
-(SSP)**, **Assessment Plan (SAP)**, **Assessment Results (SAR)**, and **Plan of
+(SSP)**, **Assessment Plan (SAP)**, **Security Assessment Results (SAR)**, and **Plan of
 Action & Milestones (POA&M)** — plus the control catalogs, baselines, and
 component definitions they build on.
 
@@ -75,8 +75,8 @@ flowchart LR
 |---|---|
 | [System Security Plans (SSP)](User-Guide-System-Security-Plans) | Create, enrich, edit control implementations, export |
 | [Component Definitions (CDEF)](User-Guide-Component-Definitions) | Reusable component control sets, bulk apply |
-| [Assessment Plans (SAP)](User-Guide-Assessment-Plans) | Plan how controls will be assessed |
-| [Assessment Results (SAR)](User-Guide-Assessment-Results) | Record pass/fail outcomes, findings |
+| [Security Assessment Plan (SAP)](User-Guide-Assessment-Plans) | Plan how controls will be assessed |
+| [Security Assessment Results (SAR)](User-Guide-Assessment-Results) | Record pass/fail outcomes, findings |
 | [POA&M](User-Guide-POAM) | Track findings, risks, remediations, milestones |
 | [Evidence & Attestations](User-Guide-Evidence-and-Attestations) | Upload evidence, attach attestations |
 | [HDF Amendment Triage](User-Guide-HDF-Amendment-Triage) | Ingest scanner findings, triage into dispositions, export HDF Amendments for CI |
@@ -85,7 +85,7 @@ flowchart LR
 
 | Guide | Covers |
 |---|---|
-| [Trust Store](User-Guide-Trust-Store) | Authoritative sources, review & promotion queues, federation |
+| [Compliance Library](User-Guide-Compliance-Library) | Authoritative sources, review & promotion queues, federation |
 | [Security Keys & Smart Cards](User-Guide-Security-Keys) | Enroll a FIDO2 key or CAC/PIV; passwordless sign-in |
 | [Administration](User-Guide-Administration) | Users, roles/permissions, service accounts, audit log |
 

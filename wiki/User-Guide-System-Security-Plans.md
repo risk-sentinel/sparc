@@ -148,5 +148,5 @@ reflect the current state you want to submit.
 - [Control Catalogs & Baselines](User-Guide-Control-Catalogs-and-Baselines) —
   source of the SSP's control set.
 - [Component Definitions (CDEF)](User-Guide-Component-Definitions)
-- [Assessment Plans (SAP)](User-Guide-Assessment-Plans) — the next step.
+- [Security Assessment Plan (SAP)](User-Guide-Assessment-Plans) — the next step.
 - [Screens & UI](Screens) — exhaustive element-level reference.

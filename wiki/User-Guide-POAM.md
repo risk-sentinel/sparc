@@ -137,7 +137,7 @@ leveraged relationship on your boundary first (see
 ## Related guides
 
 - [User Guides index](User-Guides)
-- [Assessment Results (SAR)](User-Guide-Assessment-Results) — source of findings.
+- [Security Assessment Results (SAR)](User-Guide-Assessment-Results) — source of findings.
 - [Authorization Boundaries](User-Guide-Authorization-Boundaries) — leveraged
   authorizations.
 - [Evidence & Attestations](User-Guide-Evidence-and-Attestations)

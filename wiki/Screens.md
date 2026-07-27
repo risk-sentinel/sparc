@@ -23,7 +23,7 @@ The application uses a dark sticky navbar (`navbar-dark bg-dark sticky-top`) tha
 | Center-Right | Implementation dropdown (green) | Auth required | System Security Plans, Component Definitions |
 | Center-Right | Assessment dropdown (orange) | Auth required | Assessment Plans, Assessment Results, Evidence, POA&Ms |
 | Center-Right | Authorization Boundaries | Auth required | Standalone nav link |
-| Center-Right | Trust Store / workflow | Auth required | Authoritative Sources, Review Queue, Promotion Queue, Federation Peers (surfaced per role/config) |
+| Center-Right | Compliance Library / workflow | Auth required | Authoritative Sources, Review Queue, Promotion Queue, Federation Peers (surfaced per role/config) |
 | Right | Theme toggle | Always | Light/dark mode button, persisted via `localStorage` key `sparc-theme` |
 | Right | User menu | Signed in | Avatar/initials, display name, dropdown with Profile, Change Password, Admin section (Instance Admin only), Sign Out |
 | Right | Login button | Not signed in | `btn-outline-info` button linking to `/login` |
@@ -934,9 +934,9 @@ Status view for **deferred data migrations** (v1.8.3) — migrations that regist
 
 ---
 
-### Trust Store & Document Workflow (auth required)
+### Compliance Library & Document Workflow (auth required)
 
-The trust store holds authoritative back-matter sources and drives the document review/approval and cross-instance federation workflows.
+The Compliance Library holds authoritative back-matter sources and drives the document review/approval and cross-instance federation workflows.
 
 #### Authoritative Sources
 
@@ -956,7 +956,7 @@ Library of authoritative back-matter resources (#372) usable across documents. S
 | **Controller** | `ReviewQueueController#index` |
 | **Auth** | Required (reviewer permission) |
 
-Consolidated queue of trust-store documents (Control Catalog, Baseline/Profile, CDEF) submitted for review (#630). Each row links to the underlying document's approve/reject actions (`POST submit_for_review`, `POST approve`, `POST reject` on the respective document controllers).
+Consolidated queue of governed documents (Control Catalog, Baseline/Profile, CDEF) submitted for review (#630). Each row links to the underlying document's approve/reject actions (`POST submit_for_review`, `POST approve`, `POST reject` on the respective document controllers).
 
 #### Promotion Queue
 
@@ -1002,7 +1002,7 @@ No HTML screen — resolves a stable back-matter UUID to a freshly-signed downlo
 | **Controller** | `BackMatterResourcesController` |
 | **Auth** | Required (document write permission) |
 
-Attach, edit, or remove OSCAL back-matter resources on a parent document, rendered as inline forms within the document detail page (no standalone index). Reusable resources can be linked from the trust store rather than re-uploaded.
+Attach, edit, or remove OSCAL back-matter resources on a parent document, rendered as inline forms within the document detail page (no standalone index). Reusable resources can be linked from the Compliance Library rather than re-uploaded.
 
 #### Control Back-Matter Links (nested)
 
@@ -1082,7 +1082,7 @@ The API lives under the `Api::V1::` namespace. No UI screens -- these are JSON-o
 | Authorization boundaries | `/api/v1/authorization_boundaries` (+ `DELETE bulk`, nested `ksi_validations`) |
 | Federation peers | `/api/v1/federation_peers` (+ `POST :id/sync`) |
 
-#### Trust Store / Federation API
+#### Compliance Library / Federation API
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
