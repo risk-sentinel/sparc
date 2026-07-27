@@ -15,6 +15,7 @@ DELETE /api/v1/evidences/:evidence_id/control_links/:id
 DELETE /api/v1/evidences/:id
 DELETE /api/v1/federation_peers/:id
 DELETE /api/v1/poam_documents/:id
+DELETE /api/v1/poam_risks/:id
 DELETE /api/v1/profile_documents/:id
 DELETE /api/v1/sap_documents/:id
 DELETE /api/v1/sar_documents/:id
@@ -65,6 +66,8 @@ GET /api/v1/ksi_catalog/mappings
 GET /api/v1/ksi_catalog/themes
 GET /api/v1/poam_documents
 GET /api/v1/poam_documents/:id
+GET /api/v1/poam_documents/:poam_document_id/risks
+GET /api/v1/poam_risks/:id
 GET /api/v1/profile_documents
 GET /api/v1/profile_documents/:id
 GET /api/v1/profile_documents/:id/baseline_review
@@ -92,6 +95,7 @@ PATCH /api/v1/control_mappings/:id
 PATCH /api/v1/evidences/:id
 PATCH /api/v1/federation_peers/:id
 PATCH /api/v1/poam_documents/:id
+PATCH /api/v1/poam_risks/:id
 PATCH /api/v1/profile_documents/:id
 PATCH /api/v1/profile_documents/:profile_document_id/parameters
 PATCH /api/v1/sap_documents/:id
@@ -137,6 +141,7 @@ POST /api/v1/oscal/poam_from_amendments
 POST /api/v1/oscal/poam_from_hdf
 POST /api/v1/oscal/sar_from_hdf
 POST /api/v1/poam_documents
+POST /api/v1/poam_documents/:poam_document_id/risks
 POST /api/v1/profile_documents
 POST /api/v1/profile_documents/:id/approve
 POST /api/v1/profile_documents/:id/reject
@@ -170,6 +175,7 @@ PUT /api/v1/control_mappings/:id
 PUT /api/v1/evidences/:id
 PUT /api/v1/federation_peers/:id
 PUT /api/v1/poam_documents/:id
+PUT /api/v1/poam_risks/:id
 PUT /api/v1/profile_documents/:id
 PUT /api/v1/profile_documents/:id/controls
 PUT /api/v1/profile_documents/:profile_document_id/parameters

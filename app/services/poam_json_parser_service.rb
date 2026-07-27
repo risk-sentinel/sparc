@@ -100,11 +100,31 @@ class PoamJsonParserService
 
   # ── Risks ────────────────────────────────────────────────────────
 
+  # #832 — an incomplete source risk is now rejected at import.
+  #
+  # It used to be accepted, and the resulting POA&M failed OSCAL schema
+  # validation at EXPORT, with nothing to say which record caused it. Raising
+  # here names the offending risk and the exact gap, at the point the bad data
+  # enters. Deliberately not filled in with defaults: a statement describes how
+  # a risk affects the system and a deadline is a commitment to a date, so
+  # inventing either produces a POA&M that is schema-valid and untrue.
+  def create_risk!(attributes, source_label)
+    @document.poam_risks.create!(attributes)
+  rescue ActiveRecord::RecordInvalid => e
+    missing = e.record.missing_required_fields
+    raise DocumentParseError,
+          "POA&M risk #{source_label} cannot be imported: missing " \
+          "#{missing.join(', ')}. OSCAL requires title, description, statement and " \
+          "status on a risk, and SPARC requires a deadline — a POA&M item with no " \
+          "time commitment is not a plan of action. Complete these in the source " \
+          "document and re-import."
+  end
+
   def parse_risks(risks, obs_map)
     risks.each_with_object({}) do |risk, map|
       next unless risk["uuid"].present?
 
-      record = @document.poam_risks.create!(
+      record = create_risk!({
         uuid:                    risk["uuid"],
         title:                   risk["title"],
         description:             extract_text(risk["description"]),
@@ -121,7 +141,7 @@ class PoamJsonParserService
         props_data:              risk["props"] || [],
         links_data:              risk["links"] || [],
         remarks:                 extract_text(risk["remarks"])
-      )
+      }, "uuid=#{risk['uuid']}")
 
       # Remediations (called "remediations" in JSON, maps to OSCAL "response")
       (risk["remediations"] || []).each_with_index do |rem, pos|
@@ -308,12 +328,14 @@ class PoamJsonParserService
     return if uuid.blank? || risk_map.key?(uuid)
     return unless ref["status"].present? || ref["description"].present? || ref["title"].present?
 
-    risk_map[uuid] = @document.poam_risks.create!(
+    risk_map[uuid] = create_risk!({
       uuid:        uuid,
       title:       ref["title"].presence || "Risk #{uuid.first(8)}",
       description: extract_text(ref["description"]),
-      status:      ref["status"]
-    )
+      statement:   extract_text(ref["statement"]),
+      status:      ref["status"],
+      deadline:    parse_datetime(ref["deadline"])
+    }, "uuid=#{uuid} (inline item reference)")
   end
 
   # Create a PoamObservation from inline reference data when the top-level

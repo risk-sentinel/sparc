@@ -142,10 +142,13 @@ RSpec.describe OscalPoamExportService do
              props_data: [ { "name" => "tag", "value" => "v1" } ],
              links_data: [ { "href" => "https://item.gov", "rel" => "reference" } ])
 
+      # #832 — deadline is required: a POA&M item with no time commitment is
+      # not a plan, and hdf-cli refuses to convert one.
       risk = poam.poam_risks.create!(uuid: SecureRandom.uuid, title: "Full Risk",
                                       description: "A risk that needs remediation",
                                       statement: "Asset X has weakness Y",
                                       status: "open", impact: "high",
+                                      deadline: Date.parse("2026-09-30"),
                                       props_data: [ { "name" => "cvss", "value" => "9.1" } ])
       remediation = risk.poam_remediations.create!(uuid: SecureRandom.uuid,
                                                      title: "Full Remediation",
