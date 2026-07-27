@@ -25,10 +25,21 @@ class OscalJsonToXmlConverter
 
   # Keys that become XML attributes on their parent element per OSCAL convention.
   # All other keys become child elements.
+  # OSCAL element names that collide with a real Ruby/Nokogiri::XML::Builder
+  # method. Because elements are emitted with `send`, these would invoke that
+  # method instead of creating an element. Derived from the builder's own method
+  # table so it cannot drift, with the OSCAL names we know appear as elements.
+  COLLIDING_ELEMENT_NAMES = (
+    %w[select class] +
+    (Nokogiri::XML::Builder.instance_methods +
+     Nokogiri::XML::Builder.private_instance_methods).map(&:to_s)
+  ).to_set.freeze
+
   ATTRIBUTE_KEYS = Set.new(%w[
     uuid id href rel type name value ns class
     role-id component-uuid control-id param-id statement-id
     state identifier-type system media-type
+    how-many
     target-id provided-uuid responsibility-uuid
     objective-id
   ]).freeze
@@ -203,10 +214,20 @@ class OscalJsonToXmlConverter
     PLURAL_TO_SINGULAR[key] || key
   end
 
-  # Ensure element names are valid for Nokogiri builder
+  # Ensure element names are valid for Nokogiri builder.
+  #
+  # Nokogiri's builder creates elements via method_missing, but we dispatch with
+  # `send`, which finds any REAL method of that name first — including private
+  # Kernel ones. OSCAL catalogs nest <select> inside <param>, so `send(:select,
+  # attrs)` called Kernel#select (IO.select) and raised
+  # "TypeError: wrong argument type Hash (expected Array)", making XML export of
+  # every control catalog fail. `class` collides the same way.
+  #
+  # A trailing underscore is Nokogiri's documented escape hatch — it strips one
+  # when creating the element, so "select_" emits <select>.
   def safe_element_name(name)
-    # Nokogiri treats method names with special chars via send, but
-    # OSCAL element names are already valid XML element names
+    return "#{name}_" if COLLIDING_ELEMENT_NAMES.include?(name.to_s)
+
     name
   end
 
