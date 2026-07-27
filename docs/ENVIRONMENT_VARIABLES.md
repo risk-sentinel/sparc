@@ -33,7 +33,7 @@ This is the real list. Roughly a dozen entries.
 | `SPARC_APP_URL` | Your public URL. Also derives the OIDC redirect URI and FIDO2 RP ID |
 | `SECRET_KEY_BASE` | Rails master secret |
 | `SPARC_HASH` | Per-instance master secret (≥32 chars) |
-| `DATABASE_URL` | Your database |
+| `DB_CREDENTIALS` *or* `DATABASE_URL` | Your database — see [Database Configuration](#database-configuration) for precedence |
 | `SPARC_ADMIN_EMAIL` | The instance administrator account |
 | `SPARC_CONTACT_EMAIL` | Where users are pointed for support |
 | **One auth block** | `SPARC_ENABLE_LOCAL_LOGIN=true`, or OIDC / LDAP / FIDO2 / PIV credentials |
@@ -47,7 +47,8 @@ only needed to force something **off**.
 
 ### Tier 2 — Infrastructure (your platform decides these)
 
-`DATABASE_URL`, `REDIS_URL`, `AWS_BUCKET`, `AWS_REGION`, secret ARNs. In a
+`DB_CREDENTIALS`, `DATABASE_URL`, `REDIS_URL`, `AWS_BUCKET`, `AWS_REGION`,
+secret ARNs. In a
 managed deployment these are rendered by Terraform or your orchestrator; they
 are not authored by hand.
 
@@ -95,14 +96,55 @@ and will override a real default.
 
 ## Database Configuration
 
-SPARC uses PostgreSQL as the primary database. The preferred way to
-configure is via `DATABASE_URL`, but individual variables are supported
-for flexibility. `DATABASE_URL` always takes priority when set (Rails
-auto-merges it over `database.yml` values).
+SPARC uses PostgreSQL. There are three ways to configure it, in strict
+precedence order:
+
+1. **`DB_CREDENTIALS`** — the structured secret (preferred in AWS).
+2. **`DATABASE_URL`** — a full connection URI.
+3. **`SPARC_DB_*`** — individual variables.
+
+All three configure **all four logical databases** — `primary` plus the Solid
+Cache/Queue/Cable databases. Those are four database *names* on the **same
+PostgreSQL server**, not four servers: the secondaries reuse the same host,
+port, username and password, and only append `_cache` / `_queue` / `_cable` to
+the database name. One credential is all you need.
+
+### Preferring `DB_CREDENTIALS` (#834)
+
+`DB_CREDENTIALS` holds the AWS Secrets Manager RDS secret verbatim, injected by
+ECS `secrets` → `valueFrom`, and is read **at boot**:
+
+```json
+{"host":"...","port":5432,"dbname":"...","username":"...","password":"..."}
+```
+
+Use it because it makes **credential rotation work without a redeploy**.
+`DATABASE_URL` is rendered at deploy time, so it pins the password: a Secrets
+Manager rotation has no effect until the task definition is re-rendered. Reading
+the secret at boot means a rotated password is picked up on the next task
+restart, with no IaC change. It also keeps the password out of the task
+definition environment and out of Terraform state.
+
+Notes on behaviour:
+
+- **All or nothing.** `host`, `dbname`, `username` and `password` must all be
+  present; `port` defaults to 5432. A partial secret is ignored *entirely* (with
+  a warning) rather than blended with `DATABASE_URL`, which would connect using
+  half of each credential and fail somewhere unrelated.
+- **It wins outright.** When `DB_CREDENTIALS` is usable, `DATABASE_URL` is
+  removed from the environment at boot. This is deliberate: Rails merges
+  `DATABASE_URL` into `primary` *only*, so leaving both set would put `primary`
+  on the stale deploy-time password while cache/queue/cable used the rotated
+  one.
+- **A malformed secret warns, never raises**, and falls back to `DATABASE_URL` /
+  `SPARC_DB_*`. The warning names the problem but never echoes the value.
+- **TLS is unchanged** — `sslmode` still comes from `SPARC_DB_SSLMODE`, which
+  floors at `require` in production. The credentials carry no TLS setting.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| DATABASE_URL | Full PostgreSQL connection URI (preferred method) | (none) | `postgres://user:pass@host:5432/sparc_prod` | Yes (if no individual vars) |
+| DB_CREDENTIALS | Structured Secrets Manager RDS secret (JSON). **Highest precedence**; enables rotation without redeploy | (none) | `{"host":"db.rds.amazonaws.com","port":5432,"dbname":"sparc_prod","username":"sparc_app","password":"..."}` | No |
+| DATABASE_URL | Full PostgreSQL connection URI. Ignored when `DB_CREDENTIALS` is usable | (none) | `postgres://user:pass@host:5432/sparc_prod` | Yes (if neither `DB_CREDENTIALS` nor the individual vars are set) |
 | SPARC_DB_HOST | Database host. **Fallback only** — `DATABASE_URL` is preferred and, since #785 Pass 2, derives all four databases (primary + cache/queue/cable). Set the `SPARC_DB_*` block only when not using `DATABASE_URL`. | localhost | `db.example.com` | No |
 | SPARC_DB_PORT | Database port | 5432 | `5433` | No |
 | SPARC_DB_NAME | Database name | sparc | `sparc_production` | No |
