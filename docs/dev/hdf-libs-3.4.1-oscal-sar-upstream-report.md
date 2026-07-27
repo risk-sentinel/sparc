@@ -1,8 +1,9 @@
 <!-- markdownlint-disable MD013 -->
 # hdf-cli v3.4.1: `hdf → oscal-sar` emits OSCAL Assessment Results that fail the NIST OSCAL 1.1.2 schema
 
-> **Status: draft, ready to file upstream.** Contains no proprietary content —
-> the reproducer is fully synthetic. Sanitized and safe to share as-is.
+> **Status: FILED upstream as [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184)**
+> (2026-07-27). Contains no proprietary content — the reproducer is fully
+> synthetic. Tracked on our side as #831.
 > Follows the same shape as [`hdf-libs-3.2.0-upstream-report.md`](hdf-libs-3.2.0-upstream-report.md).
 
 ## Summary
