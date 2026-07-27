@@ -13,8 +13,22 @@ import { Controller } from "@hotwired/stimulus"
 export default class ConsentBannerController extends Controller {
   static targets = ["modal", "loginCard", "errorArea"]
 
+  // #824 — acceptance is remembered for the browser SESSION only.
+  //
+  // Session scope is the deliberate middle ground: AC-8 wants the notice shown
+  // before access is granted, so a long-lived cookie that suppresses it for
+  // weeks is not acceptable; but re-firing on every page load broke PIV login
+  // outright, because the banner kept interposing between the card-bearing
+  // request and /auth/piv. Once per browser session satisfies both.
+  static STORAGE_KEY = "sparc.consent.accepted"
+
   connect() {
     if (typeof bootstrap === "undefined") return
+
+    if (this.#alreadyAccepted()) {
+      this.#revealLogin()
+      return
+    }
 
     this.bsModal = new bootstrap.Modal(this.modalTarget, {
       backdrop: "static",
@@ -24,8 +38,32 @@ export default class ConsentBannerController extends Controller {
   }
 
   proceed() {
+    this.#remember()
     this.bsModal.hide()
+    this.#revealLogin()
+  }
+
+  #revealLogin() {
     this.loginCardTarget.classList.remove("d-none")
+  }
+
+  // Storage can throw (Safari private mode, disabled cookies, sandboxed
+  // iframes). Failing to READ must fall back to SHOWING the banner — the
+  // compliance-safe direction — and failing to WRITE must not block login.
+  #alreadyAccepted() {
+    try {
+      return window.sessionStorage.getItem(ConsentBannerController.STORAGE_KEY) === "1"
+    } catch {
+      return false
+    }
+  }
+
+  #remember() {
+    try {
+      window.sessionStorage.setItem(ConsentBannerController.STORAGE_KEY, "1")
+    } catch {
+      /* nothing to do — the banner will simply re-fire next load */
+    }
   }
 
   cancel() {

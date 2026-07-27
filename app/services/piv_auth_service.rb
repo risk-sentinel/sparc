@@ -46,12 +46,59 @@ class PivAuthService
 
   UPN_OID = "1.3.6.1.4.1.311.20.2.3"
 
-  class << self
-    # Parse a PEM string into an Identity, or nil if it isn't a usable cert.
-    def parse(cert_pem)
-      return nil if cert_pem.blank?
+  PEM_HEADER = "-----BEGIN CERTIFICATE-----"
+  PEM_FOOTER = "-----END CERTIFICATE-----"
+  PEM_LINE_LENGTH = 64
+  # A DER-encoded PIV cert is ~1-2 KB, so its base64 body is well over this.
+  # The floor exists to reject header junk that happens to be base64-shaped.
+  MIN_BODY_LENGTH = 100
 
-      cert = OpenSSL::X509::Certificate.new(cert_pem)
+  class << self
+    # Reassemble whatever the proxy put in the forwarded header into a real PEM.
+    #
+    # #824: HTTP headers cannot carry newlines, so every proxy mangles the PEM
+    # somehow — and which way depends on the proxy:
+    #
+    #   nginx $ssl_client_escaped_cert / ALB X-Amzn-Mtls-Clientcert
+    #                          → URL-encoded (newlines as %0A)
+    #   nginx $ssl_client_cert → newlines folded to spaces or tabs
+    #   some gateways          → literal backslash-n written into the value
+    #   others                 → bare base64 DER with no BEGIN/END markers
+    #
+    # OpenSSL accepts only the last of those once wrapped, so a gateway that
+    # collapses newlines yields a cert that is PRESENT and gateway-VERIFIED yet
+    # unparseable — which is exactly the "No smart card certificate was
+    # presented" failure users hit while holding a working card.
+    #
+    # Returns "" when nothing usable can be recovered; never raises.
+    def normalize_pem(raw)
+      value = raw.to_s
+      return "" if value.strip.empty?
+
+      value = safe_unescape(value) if value.include?("%")
+      value = value.gsub('\r\n', "\n").gsub('\n', "\n") # literal escapes, not newlines
+
+      body =
+        if value.include?(PEM_HEADER)
+          value[/#{Regexp.escape(PEM_HEADER)}(.*?)#{Regexp.escape(PEM_FOOTER)}/m, 1]
+        else
+          value # bare base64 DER — no markers to strip
+        end
+      return "" if body.nil?
+
+      body = body.gsub(/\s+/, "")
+      return "" unless body.length >= MIN_BODY_LENGTH && body.match?(%r{\A[A-Za-z0-9+/=]+\z})
+
+      "#{PEM_HEADER}\n#{body.scan(/.{1,#{PEM_LINE_LENGTH}}/).join("\n")}\n#{PEM_FOOTER}\n"
+    end
+
+    # Parse a forwarded certificate into an Identity, or nil if it isn't usable.
+    # Accepts any of the proxy manglings described on .normalize_pem.
+    def parse(cert_pem)
+      pem = normalize_pem(cert_pem)
+      return nil if pem.blank?
+
+      cert = OpenSSL::X509::Certificate.new(pem)
       Identity.new(
         uid:     extract_uid(cert),
         email:   extract_email(cert),
@@ -66,9 +113,10 @@ class PivAuthService
     # Both allowlists empty (default) → accept anything the gateway forwarded.
     # Fail-closed: an unparseable cert is not accepted.
     def cert_accepted?(cert_pem)
-      return false if cert_pem.blank?
+      pem = normalize_pem(cert_pem)
+      return false if pem.blank?
 
-      cert = OpenSSL::X509::Certificate.new(cert_pem)
+      cert = OpenSSL::X509::Certificate.new(pem)
       issuer_accepted?(cert) && policy_accepted?(cert)
     rescue OpenSSL::X509::CertificateError, OpenSSL::OpenSSLError
       false
@@ -84,6 +132,14 @@ class PivAuthService
     end
 
     private
+
+    # A malformed percent-escape must not take the login path down with an
+    # ArgumentError; an unusable cert is a rejected login, not a 500.
+    def safe_unescape(value)
+      CGI.unescape(value)
+    rescue ArgumentError
+      value
+    end
 
     # ── Primary identifier, per SPARC_PIV_IDENTITY_SOURCE ────────────────────
     def extract_uid(cert)

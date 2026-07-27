@@ -86,6 +86,31 @@ SPARC maps a cert to a user by a pre-provisioned PIV identity (the 10-digit
 EDIPI) or by the certificate's email. There is no auto-provisioning — a cert
 with no matching account is rejected.
 
+### Forwarded certificate formats
+
+HTTP headers cannot contain newlines, so every gateway mangles the PEM in some
+way. SPARC reassembles all of the shapes in use, so no extra gateway
+configuration is needed:
+
+| Gateway behaviour | Example source |
+|---|---|
+| URL-encoded PEM (newlines as `%0A`) | nginx `$ssl_client_escaped_cert`, ALB `X-Amzn-Mtls-Clientcert` |
+| Newlines folded to spaces or tabs | nginx `$ssl_client_cert` |
+| Literal `\n` written into the value | assorted gateways |
+| Bare base64 DER, no `BEGIN`/`END` markers | assorted gateways |
+
+### Troubleshooting a failed smart-card sign-in
+
+The two failure messages mean different things, and the audit event for each
+carries shape-only diagnostics (`cert_bytes`, `cert_has_pem_markers`,
+`cert_url_encoded`, `cert_normalized`) — never the certificate itself:
+
+| Message | Meaning | Where to look |
+|---|---|---|
+| *Your smart card could not be verified by the gateway.* | The verify header was missing or not `SUCCESS` | Gateway mTLS config; the app never saw a validated cert |
+| *No smart card certificate was presented.* | Verify succeeded but the cert header was empty (`cert_bytes: 0`) | Gateway is attesting verification without forwarding the cert |
+| *Your smart card certificate could not be read.* | A cert arrived but could not be decoded | Check `cert_bytes` for truncation — headers have size limits |
+
 > **Security — only enable behind a correctly-configured mTLS gateway.** SPARC
 > fails closed unless the gateway sets the verify header, and it trusts the
 > forwarded headers **only** because the gateway strips any client-supplied
