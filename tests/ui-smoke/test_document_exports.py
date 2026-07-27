@@ -81,11 +81,23 @@ def test_export_endpoint_returns_parseable_payload(
         pytest.skip(f"no {label} on this instance")
 
     url = f"{base_url}{href}/{action}"
-    resp = page.request.get(url)
+    # Do NOT follow redirects: the app answers an export it cannot produce with a
+    # 302 back to the show page carrying ?oscal_validation_failed=1. Following it
+    # yields an HTML page and reports a misleading "malformed XML".
+    resp = page.request.get(url, max_redirects=0)
 
     # 404 is acceptable only when the type genuinely lacks that action.
     if resp.status == 404:
         pytest.skip(f"{label} has no {action}")
+
+    if resp.status in (301, 302, 303, 307, 308):
+        location = resp.headers.get("location", "")
+        assert "oscal_validation_failed" not in location, (
+            f"{label} {action}: the UI offers this export but the document fails "
+            f"OSCAL validation, so the user is bounced back with an error instead "
+            f"of an artefact ({location})"
+        )
+        pytest.fail(f"{label} {action} redirected unexpectedly to {location}")
 
     assert resp.status == 200, (
         f"{label} {action} returned {resp.status} "
