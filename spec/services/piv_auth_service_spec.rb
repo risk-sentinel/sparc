@@ -224,4 +224,79 @@ RSpec.describe PivAuthService do
       end
     end
   end
+
+  # #824 — PIV login was impossible for users holding a working card. The
+  # gateway forwarded the cert and attested verify=SUCCESS, but the PEM arrived
+  # with its newlines mangled, because HTTP headers cannot carry newlines and
+  # every proxy works around that differently. OpenSSL rejected it, parse
+  # returned nil, and the login was reported as "no certificate presented".
+  #
+  # These specs pin the shapes real proxies emit. The certificate is IDENTICAL
+  # in every example — only the transport mangling differs — so a failure here
+  # can only mean the reassembly is wrong.
+  describe ".parse — proxy header manglings (#824)" do
+    let(:pem) { build_cert(cn: "DOE.JOHN.Q.1234567890") }
+
+    def expect_parsed(value)
+      identity = described_class.parse(value)
+      expect(identity).not_to be_nil
+      expect(identity.uid).to eq("1234567890")
+    end
+
+    it "parses a well-formed PEM (control — the shape OpenSSL already accepted)" do
+      expect_parsed(pem)
+    end
+
+    it "parses a PEM whose newlines were folded to SPACES (nginx $ssl_client_cert)" do
+      expect_parsed(pem.gsub("\n", " "))
+    end
+
+    it "parses a PEM whose newlines were folded to TABS" do
+      expect_parsed(pem.gsub("\n", "\t"))
+    end
+
+    it "parses a URL-ENCODED PEM (nginx $ssl_client_escaped_cert, ALB mTLS)" do
+      expect_parsed(CGI.escape(pem))
+    end
+
+    it "parses a PEM carrying LITERAL backslash-n instead of newlines" do
+      expect_parsed(pem.gsub("\n", '\n'))
+    end
+
+    it "parses BARE base64 DER with no BEGIN/END markers" do
+      body = pem.lines[1..-2].join.gsub(/\s+/, "")
+      expect_parsed(body)
+    end
+
+    it "parses a single-line PEM (markers present, body unwrapped)" do
+      body = pem.lines[1..-2].join.gsub(/\s+/, "")
+      expect_parsed("-----BEGIN CERTIFICATE----- #{body} -----END CERTIFICATE-----")
+    end
+
+    # The negative direction: reassembly must not become a way to accept junk.
+    it "still returns nil for a blank header" do
+      expect(described_class.parse("")).to be_nil
+      expect(described_class.parse(nil)).to be_nil
+      expect(described_class.parse("   ")).to be_nil
+    end
+
+    it "still returns nil for base64-shaped junk that is not a certificate" do
+      expect(described_class.parse("A" * 500)).to be_nil
+    end
+
+    it "still returns nil for a PEM whose body is not base64" do
+      expect(described_class.parse("#{'-' * 5}BEGIN CERTIFICATE#{'-' * 5} !!!! -----END CERTIFICATE-----")).to be_nil
+    end
+
+    it "does not raise on a malformed percent-escape" do
+      expect { described_class.parse("%%%not-a-valid-escape%%%") }.not_to raise_error
+      expect(described_class.parse("%%%not-a-valid-escape%%%")).to be_nil
+    end
+
+    it "applies the same reassembly to cert_accepted? so the #804 filter agrees" do
+      with_env("SPARC_PIV_ACCEPTED_ISSUERS" => "DOE.JOHN.Q.1234567890") do
+        expect(described_class.cert_accepted?(pem.gsub("\n", " "))).to be(true)
+      end
+    end
+  end
 end
