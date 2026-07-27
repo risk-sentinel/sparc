@@ -9,6 +9,8 @@ class PoamDocument < ApplicationRecord
   include BoundaryLinkInheritance
 
   belongs_to :authorization_boundary, optional: true
+
+  include BoundaryReferenceValidation
   belongs_to :ssp_document, optional: true   # #395 P2: link to remediation source
 
   # #395 P2: inherit ssp_document_id from the boundary's SSP when not

@@ -24,7 +24,7 @@ module SeedRunner
     "demo_published_profile" => "1.0.0",
     "demo_catalog_guidance" => "1.0.0",
     "demo_evidence"        => "1.1.0",  # #738 boundary-scoping smoke fixtures
-    "demo_sample_artifacts" => "1.0.0",
+    "demo_sample_artifacts" => "1.1.0",
     "oscal_schemas"         => "1.0.0"
   }.freeze
 

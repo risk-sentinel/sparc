@@ -95,6 +95,8 @@ if %w[traditional full].include?(mode)
     {
       title: "Multifactor Authentication Not Enforced for All Privileged Users",
       description: "Privileged accounts on legacy admin portal do not require MFA. Emergency access accounts bypass MFA controls.",
+      risk_statement:
+        "Privileged accounts reachable without a second factor allow a single stolen or guessed credential to yield full administrative control of the system, defeating the account-compromise protections IA-2(1) is relied upon to provide.",
       control_ids: %w[ia-2 ia-2.1],
       risk_status: "remediating",
       impact: "high",
@@ -106,6 +108,8 @@ if %w[traditional full].include?(mode)
     {
       title: "Incomplete Audit Log Retention Configuration",
       description: "CloudWatch log groups for application tier set to 90-day retention instead of required 365 days.",
+      risk_statement:
+        "Audit records aged out before the required retention period leave incidents undetectable and unreconstructable after the fact, undermining the accountability AU-11 depends on and removing the evidence an investigation would need.",
       control_ids: %w[au-11],
       risk_status: "open",
       impact: "medium",
@@ -117,6 +121,8 @@ if %w[traditional full].include?(mode)
     {
       title: "Missing Vulnerability Scan Coverage for Container Images",
       description: "Container images in ECR are not scanned for vulnerabilities before deployment to production.",
+      risk_statement:
+        "Images promoted to production without vulnerability scanning may carry known, exploitable CVEs into the authorization boundary, and the absence of scan evidence prevents RA-5 continuous-monitoring reporting from reflecting true system exposure.",
       control_ids: %w[ra-5 si-3],
       risk_status: "investigating",
       impact: "high",
@@ -128,6 +134,8 @@ if %w[traditional full].include?(mode)
     {
       title: "Session Timeout Not Configured for Web Application",
       description: "Web application sessions do not expire after the required 15-minute idle timeout.",
+      risk_statement:
+        "Sessions that persist beyond the 15-minute idle limit leave authenticated browsers open to hijacking on unattended or shared workstations, extending the window in which an unauthorized user can act as a legitimate one.",
       control_ids: %w[ac-11 sc-10],
       risk_status: "closed",
       impact: "medium",
@@ -139,6 +147,8 @@ if %w[traditional full].include?(mode)
     {
       title: "Encryption Key Rotation Not Automated",
       description: "KMS customer-managed keys for database encryption are rotated manually instead of automatically.",
+      risk_statement:
+        "Manual key rotation exceeding the 12-month requirement prolongs the period a single compromised key can decrypt stored data, and depends on an operator action that has already been shown to slip.",
       control_ids: %w[sc-12 sc-28],
       risk_status: "deviation-requested",
       impact: "low",
@@ -150,6 +160,8 @@ if %w[traditional full].include?(mode)
     {
       title: "Incident Response Plan Not Tested in 12 Months",
       description: "The IR plan has not been exercised through tabletop or functional testing within the past year.",
+      risk_statement:
+        "An untested incident response plan is unproven under load: response times, escalation paths, and contact accuracy remain unverified, so the organization cannot demonstrate it can contain an incident within its stated objectives.",
       control_ids: %w[ir-3],
       risk_status: "remediating",
       impact: "medium",
@@ -174,16 +186,41 @@ if %w[traditional full].include?(mode)
     risk = PoamRisk.find_or_create_by!(poam_document: poam, title: "Risk: #{item_data[:title]}") do |r|
       r.uuid        = SecureRandom.uuid
       r.description = "Risk associated with #{item_data[:title].downcase}."
+      # OSCAL REQUIRES risk/statement. It is substantive content describing how
+      # the risk affects the system, so it is authored per item here — the
+      # exporter must never synthesise it from title/description, which would
+      # produce a schema-valid POA&M that misrepresents the risk.
+      r.statement   = item_data[:risk_statement]
       r.status      = item_data[:risk_status]
       r.likelihood  = item_data[:likelihood]
       r.impact      = item_data[:impact]
     end
 
+    # OSCAL REQUIRES finding/target: what was assessed, and the resulting state.
+    # Anchored to the first control the item cites, with the state derived from
+    # the item's real risk status rather than a fixed value.
+    finding_target = {
+      "type"        => "statement-id",
+      "target-id"   => "#{item_data[:control_ids].first}_smt",
+      "title"       => "Assessment objective for #{item_data[:control_ids].first.upcase}",
+      "description" => item_data[:finding_desc],
+      "status"      => {
+        "state" => item_data[:risk_status] == "closed" ? "satisfied" : "not-satisfied"
+      }
+    }
+
     # Create finding
     finding = PoamFinding.find_or_create_by!(poam_document: poam, title: "Finding: #{item_data[:title]}") do |f|
       f.uuid        = SecureRandom.uuid
       f.description = item_data[:finding_desc]
+      f.target_data = finding_target
     end
+
+    # Repair rows seeded before these OSCAL-required fields existed. The blocks
+    # above only run on CREATE, so without this a database seeded earlier keeps
+    # exporting an invalid POA&M even after the section version is bumped.
+    risk.update!(statement: item_data[:risk_statement]) if risk.statement.blank?
+    finding.update!(target_data: finding_target) if finding.target_data.blank?
 
     # Link items to risks and findings
     PoamItemRisk.find_or_create_by!(poam_item: poam_item, poam_risk: risk)

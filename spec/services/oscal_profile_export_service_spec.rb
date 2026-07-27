@@ -65,4 +65,50 @@ RSpec.describe OscalProfileExportService do
       expect(imports).not_to be_empty
     end
   end
+
+  # ProfileControlSelectionService creates a `parameter:<id>` field for EVERY ODP
+  # a control exposes, using the catalog param's label as the value — blank
+  # whenever that param carries no label. The exporter emitted one set-parameter
+  # per field, so a blank one produced "values": [], which OSCAL rejects
+  # (minItems 1). That failed the WHOLE profile: any profile containing such a
+  # control could not be exported in any format.
+  #
+  # Both cases are asserted together: a TAILORED parameter must still be emitted,
+  # and an UNTAILORED one must be omitted rather than asserted as empty.
+  describe "set-parameters for untailored ODPs" do
+    let(:control) do
+      profile.profile_controls.first ||
+        create(:profile_control, profile_document: profile, control_id: "ac-1")
+    end
+
+    def set_parameters
+      JSON.parse(subject.export_unvalidated).dig("profile", "modify", "set-parameters") || []
+    end
+
+    it "emits a parameter the author actually tailored" do
+      create(:profile_control_field, profile_control: control,
+             field_name: "parameter:ac-1_odp.01", field_value: "quarterly")
+
+      entry = set_parameters.find { |p| p["param-id"] == "ac-1_odp.01" }
+      expect(entry).to be_present
+      expect(entry["values"]).to eq([ "quarterly" ])
+    end
+
+    it "omits an untailored parameter instead of emitting empty values" do
+      create(:profile_control_field, profile_control: control,
+             field_name: "parameter:ac-1_odp.02", field_value: "")
+
+      expect(set_parameters.map { |p| p["param-id"] }).not_to include("ac-1_odp.02")
+      expect(set_parameters).to all(satisfy { |p| p["values"].present? })
+    end
+
+    it "still validates against the OSCAL schema when an ODP is untailored" do
+      create(:profile_control_field, profile_control: control,
+             field_name: "parameter:ac-1_odp.01", field_value: "quarterly")
+      create(:profile_control_field, profile_control: control,
+             field_name: "parameter:ac-1_odp.02", field_value: "")
+
+      expect { subject.export }.not_to raise_error
+    end
+  end
 end
