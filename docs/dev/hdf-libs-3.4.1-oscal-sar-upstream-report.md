@@ -18,12 +18,54 @@ unusable until it reaches a schema-validating tool.
 
 Four defects, all reproducible from a 40-line synthetic HDF input:
 
-| # | Location | Problem |
-|---|---|---|
-| 1 | `results[]` | missing required `reviewed-controls` |
-| 2 | `results[].findings[]` | missing required `description` |
-| 3 | `results[].risks[].characterizations[]` | missing required `origin` |
-| 4 | `results[].findings[].props[]` | `value: ""` violates the non-empty string datatype |
+| # | Location | Problem | Since |
+|---|---|---|---|
+| 1 | `results[]` | missing required `reviewed-controls` | long-standing |
+| 2 | `results[].findings[]` | missing required `description` | long-standing |
+| 3 | `results[].risks[].characterizations[]` | missing required `origin` | long-standing |
+| 4 | `results[].findings[].props[]` | `value: ""` violates the non-empty string datatype | **regression, new in 3.4.0** |
+
+## Version matrix
+
+We ran the **same minimal input** through every release from 3.2.0 forward and
+validated each output against the OSCAL v1.1.2 AR schema. This is not a single
+data point.
+
+| Version | Converts? | Schema errors | Notes |
+|---|---|---|---|
+| **3.2.0** | ✗ exit 1 | — | `invalid HDF structure: missing baselines field` (the regression reported in mitre/hdf-libs#104, since resolved) |
+| **3.3.2** | ✓ exit 0 | **4** | `reviewed-controls`, `finding/description`, `characterization/origin`, **`risk/statement`** |
+| **3.4.0** | ✓ exit 0 | **4** | `risk/statement` **FIXED**; **empty `prop.value` introduced** |
+| **3.4.1** | ✓ exit 0 | **4** | identical to 3.4.0 |
+
+Two things follow, and both are actionable:
+
+1. **Defects 1–3 have been present since the converter first worked** (3.3.2).
+   They are not a recent regression, which is why they may not have been
+   noticed — nothing in the pipeline validates the output.
+2. **3.4.0 fixed one schema violation and introduced another.** `risk/statement`
+   was correctly added; in the same release the finding `props` array gained
+   `code` and `control-type` entries, and `code` is emitted with `value: ""`
+   whenever the source control's `code` field is empty.
+
+Concretely, for the same input:
+
+```jsonc
+// 3.3.2
+"props": [ { "name": "nist", "value": "AC-3" } ]
+
+// 3.4.0 / 3.4.1  — two new props, one of them invalid
+"props": [
+  { "name": "nist", "value": "AC-3" },
+  { "name": "code", "value": "" },          // ← violates StringDatatype
+  { "name": "control-type", "value": "technical" }
+]
+```
+
+The `risk/statement` fix in 3.4.0 is the reason we think this report is worth
+filing: schema conformance is clearly something the project acts on, and defect
+4 is a fresh regression that a schema check in CI would have caught before
+release.
 
 ### Scope — what this report is *not* about
 
@@ -167,7 +209,7 @@ or what produced the characterization, and the converter already knows this —
 the HDF `platform`/`profiles[].name` identify the generating tool, and OSCAL's
 `origin.actors[]` with `type: "tool"` is the natural home for it.
 
-## Defect 4 — empty `prop.value` violates the OSCAL string datatype
+## Defect 4 — empty `prop.value` violates the OSCAL string datatype (regression, 3.4.0)
 
 **Schema:** `property` requires `["name", "value"]`, and `value` is
 `StringDatatype`: *"A non-empty string with leading and trailing whitespace
@@ -182,6 +224,9 @@ disallowed"*, `pattern: ^\S(.*\S)?$`.
 The converter maps the HDF control's `code` field to a property unconditionally.
 When `code` is an empty string — common for controls that carry no inline test
 code — it emits `value: ""`, which cannot satisfy a non-empty pattern.
+
+**This is new in 3.4.0.** 3.3.2 emitted only the `nist` prop for the same input;
+3.4.0 added `code` and `control-type`, and `code` carries the empty value.
 
 The fix is to **omit the property** when the source value is empty. OSCAL props
 are optional; an absent prop is correct, an empty one is invalid.
@@ -236,6 +281,15 @@ In rough priority order:
    self-declared `oscal-version` suggests the former.
 2. Is there a supported post-processing step that fills `reviewed-controls`,
    `finding.description` and `characterization.origin`?
-3. Is the converter validated against the NIST schemas in CI? All four defects
-   here reproduce from a 40-line input, which suggests not.
+3. **Is the converter validated against the NIST schemas in CI?** We suspect
+   not: all four defects reproduce from a 40-line input, and 3.4.0 fixed
+   `risk/statement` while introducing the empty `prop.value` in the same
+   release. A single schema assertion in CI would have caught both.
 4. Is the `hdf validate` / `hdf convert` disagreement on `baselines` intentional?
+
+## Offer
+
+If it is useful, we are happy to contribute the schema-validation test itself —
+the reproducer is already reduced to 40 lines of synthetic HDF and the
+assertion is one call to any JSON Schema validator against the bundled NIST
+`oscal-ar-schema.json`.
