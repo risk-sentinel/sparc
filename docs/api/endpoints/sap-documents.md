@@ -8,9 +8,58 @@ Security Assessment Plan (SAP) documents define the scope, methodology, and sche
 |--------|------|-------------|------|
 | `GET` | `/api/v1/sap_documents` | List SAP documents (paginated, filterable) | `sap.read` |
 | `GET` | `/api/v1/sap_documents/:slug` | Get a single SAP document | `sap.read` |
-| `POST` | `/api/v1/sap_documents` | Create a new SAP document | `sap.write` |
+| `POST` | `/api/v1/sap_documents` | Create a new (empty) SAP document | `sap.write` |
+| `POST` | `/api/v1/sap_documents/generate` | **Generate a populated SAP** from an SSP, profile, or boundary | `sap.write` |
 | `PUT` | `/api/v1/sap_documents/:slug` | Update a SAP document | `sap.write` |
 | `DELETE` | `/api/v1/sap_documents/:slug` | Soft-delete a SAP document | `sap.write` |
+
+---
+
+### POST /api/v1/sap_documents/generate
+
+Builds a SAP **populated with controls** from an existing control basis, rather than the empty shell `POST /api/v1/sap_documents` creates. Added in #844.
+
+Use this when a 3PAO or an automated pipeline needs an assessment plan, or when a boundary needs a fresh plan between assessments — the SAP is not a once-per-authorization artifact.
+
+#### Request Body
+
+All fields are nested under `sap_document`.
+
+| Field | Type | Description |
+|---|---|---|
+| `authorization_boundary_id` | integer \| string | Boundary id or slug. Its SSP (then its profile) is used as the control basis when no explicit source is given, and the generated SAP is attached to it. |
+| `ssp_document_id` | integer | Explicit control basis. Takes precedence over the boundary's own SSP. Scoped: non-admins may only name an SSP within their boundaries. |
+| `profile_document_id` | integer | Control basis when there is no SSP. Profiles are shared baselines and are not boundary-scoped. |
+| `name` | string | Defaults to `SAP — <boundary or SSP name> — <date>`. |
+| `assessment_type` | string | Defaults to `initial`. |
+| `assessment_start` / `assessment_end` | date | Optional. |
+| `description` | string | Optional. |
+| `control_ids` | array | Restrict the plan to these controls. Matching is **case-insensitive but not padding-insensitive** — `ac-2` will not match a control stored as `AC-02`. |
+| `assessment_methods` | object | Per-control method overrides, e.g. `{"AC-2": "examine"}`. |
+
+At minimum, supply either a source document or a boundary that has one.
+
+#### Status Codes
+
+| Code | Meaning |
+|---|---|
+| `201 Created` | SAP generated. |
+| `401 Unauthorized` | Missing or invalid token. |
+| `403 Forbidden` | Caller lacks `sap.write` on the boundary. |
+| `404 Not Found` | Boundary not found, or the named SSP is outside the caller's boundaries. |
+| `422 Unprocessable Entity` | No control basis available, or the plan would have covered no controls (nothing is saved). |
+
+Two cases deliberately fail rather than returning an empty plan, because a SAP covering no controls looks like success while being wrong: no source resolves at all, and `control_ids` matching nothing. The generation is transactional, so a rejected request leaves no partial SAP behind.
+
+#### cURL Example
+
+```bash
+# Between assessments: a fresh plan for a boundary, using its own SSP
+curl -X POST https://sparc.example.org/api/v1/sap_documents/generate \
+  -H "Authorization: Bearer $SPARC_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sap_document": {"authorization_boundary_id": 7, "assessment_type": "annual"}}'
+```
 
 ---
 

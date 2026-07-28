@@ -11,6 +11,16 @@
 class OmniauthCallbacksController < ApplicationController
   skip_before_action :require_authentication, raise: false
   skip_before_action :check_password_reset, raise: false
+
+  # CodeQL `rb/csrf-protection-disabled` (alert #8) flags this. It is
+  # deliberate and cannot be otherwise: the identity provider POSTs this
+  # callback from ITS origin, so no CSRF token of ours can be present in the
+  # request. The forgery protection that applies here is the OAuth/OIDC `state`
+  # parameter, which OmniAuth validates before this action runs.
+  #
+  # Scoped with `only: :create` rather than skipped controller-wide, so a
+  # state-changing action added to this controller later does not silently
+  # inherit the exemption.
   skip_before_action :verify_authenticity_token, only: :create
 
   # POST /auth/:provider/callback

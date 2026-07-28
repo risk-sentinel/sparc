@@ -117,6 +117,16 @@ class Api::V1::KsiValidationsController < Api::V1::BaseController
     @validation = @boundary.ksi_validations.find(params[:id])
   end
 
+  # CodeQL `rb/insecure-mass-assignment` (alerts #19, #20) flags the trailing
+  # `validation_metadata: {}`. The allow-list is explicit; what the rule cannot
+  # distinguish is permitting an arbitrary nested HASH from permitting
+  # arbitrary model ATTRIBUTES. `validation_metadata` is a jsonb column, so the
+  # open hash is stored as a document and can never reach an attribute writer.
+  #
+  # `evidence_id` is a real foreign key and IS a live authorization surface —
+  # see #851, where the model now validates that the referenced Evidence
+  # belongs to this boundary. Left mass-assignable deliberately: the guard
+  # belongs on the model so every writer is covered, not on this one call site.
   def validation_params
     params.require(:ksi_validation).permit(
       :catalog_control_id, :evidence_id, :status, :validation_method,

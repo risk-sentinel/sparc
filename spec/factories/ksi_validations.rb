@@ -29,8 +29,22 @@ FactoryBot.define do
       next_validation_due { 1.day.ago }
     end
 
+    # The evidence is created in the SAME boundary as the validation. A bare
+    # `association :evidence` builds one with no boundary at all, which #851
+    # makes invalid — a trait that produces an unsaveable record is a trap for
+    # whoever reaches for it next.
     trait :with_evidence do
-      association :evidence
+      after(:build) do |validation|
+        validation.evidence ||= build(:evidence, authorization_boundary: validation.authorization_boundary)
+      end
+    end
+
+    # Deliberately invalid: evidence belonging to a DIFFERENT boundary, for
+    # exercising the #851 cross-boundary guard.
+    trait :with_foreign_evidence do
+      after(:build) do |validation|
+        validation.evidence ||= build(:evidence, authorization_boundary: build(:authorization_boundary))
+      end
     end
 
     trait :with_metadata do
