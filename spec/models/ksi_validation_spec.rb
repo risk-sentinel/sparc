@@ -33,6 +33,43 @@ RSpec.describe KsiValidation, type: :model do
       expect(subject).to be_valid
     end
 
+    # #851 — evidence_id is mass-assignable through the API, so the boundary
+    # check has to live on the model: a controller-level scoped lookup would
+    # guard only the paths someone remembers to change.
+    describe "cross-boundary evidence (#851)" do
+      it "rejects evidence belonging to a different boundary" do
+        validation = build(:ksi_validation, :with_foreign_evidence)
+
+        expect(validation).not_to be_valid
+        expect(validation.errors[:evidence])
+          .to include("must belong to the same authorization boundary")
+      end
+
+      it "accepts evidence from the same boundary" do
+        expect(build(:ksi_validation, :with_evidence)).to be_valid
+      end
+
+      it "still allows no evidence at all" do
+        expect(build(:ksi_validation, evidence: nil)).to be_valid
+      end
+
+      it "rejects evidence whose boundary was nullified" do
+        # Evidence is `dependent: :nullify`, so an orphaned record is reachable.
+        # Fails closed rather than treating an ambiguous record as universal.
+        validation = build(:ksi_validation)
+        validation.evidence = build(:evidence, authorization_boundary: nil)
+
+        expect(validation).not_to be_valid
+      end
+
+      it "blocks reassignment on update, not only on create" do
+        validation = create(:ksi_validation, :with_evidence)
+        validation.evidence = create(:evidence, authorization_boundary: create(:authorization_boundary))
+
+        expect(validation).not_to be_valid
+      end
+    end
+
     it "enforces uniqueness of catalog_control per boundary" do
       existing = create(:ksi_validation)
       duplicate = build(:ksi_validation,
