@@ -183,6 +183,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/users/:id/password_reset` | `users#password_reset` | yes | no | no |
 | `GET` | `/api/v1/poam_documents` | `poam_documents#index` | yes | yes | yes |
 | `POST` | `/api/v1/poam_documents` | `poam_documents#create` | yes | yes | yes |
+| `POST` | `/api/v1/poam_documents/generate` | `poam_documents#generate` | yes | yes | yes |
 | `DELETE` | `/api/v1/poam_documents/:id` | `poam_documents#destroy` | yes | yes | yes |
 | `GET` | `/api/v1/poam_documents/:id` | `poam_documents#show` | yes | yes | yes |
 | `PATCH/PUT` | `/api/v1/poam_documents/:id` | `poam_documents#update` | yes | yes | yes |

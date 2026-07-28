@@ -12,9 +12,16 @@
 #   service.create  # => authorization_boundary (with linked documents)
 #
 class AtoPackageService
+  # #843 — source risks the POA&M step could not convert, with the reason for
+  # each. Empty unless the SAR carried risks missing required OSCAL content.
+  # Public because it is the only channel by which a caller learns that the
+  # generated POA&M is thinner than the assessment justified.
+  attr_reader :poam_skipped
+
   def initialize(authorization_boundary, params)
     @ab = authorization_boundary
     @params = params.to_h.with_indifferent_access
+    @poam_skipped = []
   end
 
   def create
@@ -139,13 +146,26 @@ class AtoPackageService
       @poam = PoamDocument.find(@params[:poam_document_id])
       @poam.update!(authorization_boundary: @ab)
     when "create_new"
-      @poam = PoamDocument.create!(
+      # #843 — POA&M used to be the one step in this wizard that produced an
+      # EMPTY shell while every other step produced a populated document. When
+      # the wizard has just built a SAR, its open risks are exactly the
+      # remediation work the POA&M exists to track, so they are carried across.
+      #
+      # With no SAR (the step was skipped, or an existing POA&M route was not
+      # taken) this still yields an empty document — a team starting a POA&M
+      # before a full assessment is a legitimate flow, not a failure.
+      generation = PoamGeneratorService.new(
         name: @params[:poam_name].presence || "POA&M for #{@ab.name}",
         description: @params[:poam_description],
-        status: "completed",
-        lifecycle_status: "started",
+        sar_document: @sar,
         authorization_boundary: @ab
-      )
+      ).generate
+
+      @poam = generation.poam_document
+      # Surfaced rather than swallowed: a risk the assessment recorded but the
+      # POA&M could not carry is exactly what an author needs to know about.
+      @poam_skipped = generation.skipped
+      @poam
     else
       nil # no/unknown poam_mode: skip this step
     end

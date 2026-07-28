@@ -8,9 +8,71 @@ Plan of Action and Milestones (POA&M) documents track security weaknesses, plann
 |--------|------|-------------|------|
 | `GET` | `/api/v1/poam_documents` | List POA&M documents (paginated, filterable) | `poam.read` |
 | `GET` | `/api/v1/poam_documents/:slug` | Get a single POA&M document | `poam.read` |
-| `POST` | `/api/v1/poam_documents` | Create a new POA&M document | `poam.write` |
+| `POST` | `/api/v1/poam_documents` | Create a new (empty) POA&M document | `poam.write` |
+| `POST` | `/api/v1/poam_documents/generate` | **Generate a populated POA&M** from a SAR's open risks | `poam.write` |
 | `PUT` | `/api/v1/poam_documents/:slug` | Update a POA&M document | `poam.write` |
 | `DELETE` | `/api/v1/poam_documents/:slug` | Soft-delete a POA&M document | `poam.write` |
+
+---
+
+### POST /api/v1/poam_documents/generate
+
+Builds a POA&M **populated from an assessment**, rather than the empty document `POST /api/v1/poam_documents` creates. Added in #843.
+
+This is the lifecycle step that closes the loop: the assessment produced findings, so a POA&M is opened to track their remediation. A SAR's **open** risks become POA&M items, carrying their findings and observations across with the assessor's own linkage intact.
+
+#### Request Body
+
+All fields nested under `poam_document`.
+
+| Field | Type | Description |
+|---|---|---|
+| `authorization_boundary_id` | integer \| string | Boundary id or slug. Its SAR is used when no explicit source is given, and the POA&M is attached to it. |
+| `sar_document_id` | integer | Explicit source assessment. Scoped: non-admins may only name a SAR within their boundaries. |
+| `name` | string | Defaults to `POA&M — <boundary> — <date>`. |
+| `description` | string | Optional. |
+
+Supplying neither a SAR nor a boundary with one yields an **empty scaffold** — a team starting a POA&M before a full assessment is a supported flow, not an error.
+
+#### Nothing is synthesised
+
+A source risk that cannot form a valid POA&M entry is **skipped and reported**, never completed on your behalf. `PoamRisk` requires title, description, statement, status and deadline; `PoamFinding` requires title, description and target — these are compliance content an assessor and AO read, so inventing them would fabricate an assessment record (see #832).
+
+The one derived value is `deadline`, and only when the source has none: it comes from the admin-provisioned **RemediationTimeline** SLA table, keyed by the boundary's profile baseline and the risk's severity. That is a policy your organisation configured. If no window resolves, the risk is skipped rather than given an arbitrary date.
+
+#### Response
+
+`201 Created` **even when some risks were skipped** — the POA&M genuinely was created, and returning an error would discard it over source data the assessor still has to fix.
+
+```json
+{
+  "data": { "id": 42, "name": "POA&M — Cloud ATO — 2026-07-28", "lifecycle_status": "in_progress" },
+  "meta": { "items_created": 7, "risks_created": 7, "findings_created": 12, "complete": false },
+  "skipped": [
+    { "type": "risk", "uuid": "…", "title": "Weak TLS config", "reason": "source risk is missing statement" }
+  ]
+}
+```
+
+Check `meta.complete` — when `false`, `skipped` lists every omission with its reason.
+
+#### Status Codes
+
+| Code | Meaning |
+|---|---|
+| `201 Created` | POA&M generated (possibly with skipped entries). |
+| `401 Unauthorized` | Missing or invalid token. |
+| `403 Forbidden` | Caller lacks `poam.write` on the boundary. |
+| `404 Not Found` | Boundary not found, or the named SAR is outside the caller's boundaries. |
+
+#### cURL Example
+
+```bash
+curl -X POST https://sparc.example.org/api/v1/poam_documents/generate \
+  -H "Authorization: Bearer $SPARC_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"poam_document": {"authorization_boundary_id": 7}}'
+```
 
 ---
 

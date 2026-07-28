@@ -11,12 +11,6 @@
 # RemediationTimeline SLA table (with built-in defaults). Measured from the
 # control's first-discovered scan.
 class AmendmentValidityService
-  BASELINE_NORMALIZE = { "low" => "Low", "moderate" => "Moderate", "high" => "High" }.freeze
-  SEVERITY_TO_CRITICALITY = {
-    "CRITICAL" => "Critical", "HIGH" => "High", "MEDIUM" => "Moderate",
-    "LOW" => "Low", "INFORMATIONAL" => "Informational"
-  }.freeze
-
   def initialize(finding_disposition)
     @disp = finding_disposition
     @boundary = finding_disposition.authorization_boundary
@@ -40,14 +34,16 @@ class AmendmentValidityService
 
   private
 
+  # #843 — the two vocabulary mappings moved onto RemediationTimeline, which
+  # owns the keys they produce, so the POA&M generator resolves an SLA the same
+  # way this does instead of carrying a second copy.
   def window_days
-    baseline = BASELINE_NORMALIZE[@boundary&.profile_document&.baseline_level.to_s.downcase] || "Moderate"
+    baseline = RemediationTimeline.normalize_baseline(@boundary&.profile_document&.baseline_level)
     RemediationTimeline.window_days(baseline, criticality)
   end
 
   def criticality
-    sev = current_finding&.severity.to_s.upcase
-    SEVERITY_TO_CRITICALITY.fetch(sev, "Unknown")
+    RemediationTimeline.normalize_criticality(current_finding&.severity)
   end
 
   def current_finding

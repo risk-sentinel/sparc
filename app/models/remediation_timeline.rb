@@ -8,6 +8,32 @@ class RemediationTimeline < ApplicationRecord
   BASELINE_LEVELS = %w[Low Moderate High].freeze
   CRITICALITIES   = %w[Critical High Moderate Low Informational Unknown].freeze
 
+  # Translations INTO this table's vocabulary. They live here, with the keys
+  # they produce, rather than in each caller — #843 needed the same two
+  # mappings AmendmentValidityService already had, and #852 is an open issue
+  # about exactly this failure mode (a dozen copies of a normalizer that drift
+  # apart). One copy, used by both.
+  BASELINE_NORMALIZE = { "low" => "Low", "moderate" => "Moderate", "high" => "High" }.freeze
+
+  # Scanner/assessment severity vocabularies use MEDIUM where the SLA table
+  # says Moderate. Anything unrecognised is "Unknown", which has a window of
+  # its own rather than being dropped.
+  SEVERITY_TO_CRITICALITY = {
+    "CRITICAL" => "Critical", "HIGH" => "High", "MEDIUM" => "Moderate",
+    "MODERATE" => "Moderate", "LOW" => "Low", "INFORMATIONAL" => "Informational",
+    "INFO" => "Informational"
+  }.freeze
+
+  DEFAULT_BASELINE = "Moderate"
+
+  def self.normalize_baseline(value)
+    BASELINE_NORMALIZE[value.to_s.strip.downcase] || DEFAULT_BASELINE
+  end
+
+  def self.normalize_criticality(value)
+    SEVERITY_TO_CRITICALITY.fetch(value.to_s.strip.upcase, "Unknown")
+  end
+
   validates :baseline_level, presence: true, inclusion: { in: BASELINE_LEVELS }
   validates :criticality, presence: true, inclusion: { in: CRITICALITIES }
   validates :days, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
