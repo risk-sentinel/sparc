@@ -497,7 +497,10 @@ Rails.application.routes.draw do
           # #844 — generate a POPULATED SAP from an SSP or profile. Without
           # this the API could only create an empty shell, leaving SAP the one
           # document in the chain with no programmatic generation path.
-          post :generate
+          #
+          # Written as an explicit path => controller#action mapping to match
+          # the member routes below (and to satisfy rubydre:S7875).
+          post "generate", to: "sap_documents#generate", as: :generate
         end
         member do
           # #716 — bulk editable-field file import (preview → confirm).
