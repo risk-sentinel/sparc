@@ -268,5 +268,6 @@ class OscalSchemaValidationService
   end
 end
 
-# Custom error class for use with validate!
-class OscalValidationError < StandardError; end
+# OscalValidationError (raised by validate! / validate_xml!) now lives in
+# app/services/oscal_validation_error.rb so Zeitwerk can autoload it by name.
+# See that file for why.
