@@ -4,6 +4,30 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.15.2 -- OSCAL Export Conformance, POA&M Integrity, Credential Recovery (2026-07-28)
+
+A correctness and integrity release. The through-line: SPARC could produce documents that were not valid OSCAL, and only find out much later — or never. Each fix moves the failure to the point of entry, and none of them fills a gap by inventing content.
+
+- **Every OSCAL XML export was schema-invalid** ([#827](https://github.com/risk-sentinel/sparc/issues/827)) — the converter emitted children in JSON key order while each OSCAL assembly is an `xs:sequence` with a mandated order, so all seven document types failed their XSD. Ordering was the first of five defects, all the same mistake of treating a *per-type* schema fact as global: attributes (`name` is an attribute of `<prop>` but an element of `<party>`), markup-line vs markup-multiline prose, `xs:simpleContent` text values, and array naming. The ordering table is now generated from the same XSDs the validator uses, with a drift spec so it cannot rot.
+- **The ATO package** ([#828](https://github.com/risk-sentinel/sparc/issues/828), [#829](https://github.com/risk-sentinel/sparc/issues/829)) — the manifest was built from the boundary's associations while the archive was built from exports that could fail, so a failed export was skipped silently while the manifest went on naming the missing file. Both now derive from the same results and cannot disagree; omissions are stated with their reason. The package also ships **JSON, YAML and XML** instead of JSON only, each validated against the schema matching its serialization.
+- **POA&M integrity** ([#832](https://github.com/risk-sentinel/sparc/issues/832), [#840](https://github.com/risk-sentinel/sparc/issues/840)) — `PoamRisk` validated only `uuid`, and HDF aggregation wrote findings with no OSCAL `target`, so a single aggregation run made the whole POA&M non-exportable. Both are now validated at the point of entry. A `deadline` is required as a SPARC rule: a POA&M with no time commitment is not a plan. Nothing is defaulted or synthesised — pre-existing rows are found with `bin/rails sparc:poam:audit_risks` / `audit_findings`, which deliberately offer no auto-fix.
+- **`sar_from_hdf` returned schema-invalid OSCAL unchecked** ([#831](https://github.com/risk-sentinel/sparc/issues/831)) — a consumer got a `200` and a document no OSCAL tool would accept. It now validates first and answers **502** when the upstream converter output does not conform.
+- **A forgotten password was unrecoverable** ([#841](https://github.com/risk-sentinel/sparc/issues/841)) — no admin reset, no self-service flow, and the change screen requires the *current* password. Admins can now issue a **temporary password** (works with no outbound mail; the user must replace it at first sign-in) or an **emailed one-time link**. The same release stops the break-glass admin credential drifting out of sync with Secrets Manager.
+- **RDS connection from `DB_CREDENTIALS`** ([#834](https://github.com/risk-sentinel/sparc/issues/834)) — `DATABASE_URL` is rendered at deploy time and pins the password, so rotations did nothing until the next redeploy. SPARC now reads the structured secret at boot, so a rotated password takes effect on the next task restart with no IaC change. Database credentials are also redacted from logs by default. See [Configuration](Configuration#database).
+
+**Behaviour changes:** `sar_from_hdf` answers 502 until a fixed hdf-libs is pinned ([mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184)); POA&M imports reject incomplete risks and findings; incomplete pre-existing POA&M rows are unsaveable until completed; the ATO package contains 3x the files.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.15.2).
+
+## v1.15.1 -- PIV/CAC Login Fix (2026-07-27)
+
+Restores smart-card sign-in, which failed on every browser despite a working card, and supersedes the v1.15.0 image (published unsigned when its build stopped before the signing step).
+
+- **PIV/CAC login** ([#824](https://github.com/risk-sentinel/sparc/issues/824)) — the client certificate forwarded by the TLS proxy was rejected as unreadable, so users who selected their certificate and entered their PIN were told "No smart card certificate was presented". The certificate is now reassembled from the forwarded header regardless of how the proxy encodes it (URL-escaped, header-folded, or with the PEM markers stripped), and diagnostics record the certificate's *shape* only — never the certificate itself.
+- **Consent banner persistence** — acceptance is remembered for the browser session. Re-firing on every page load was interposing between the certificate-bearing request and `/auth/piv`, which is what made PIV login impossible; session scope keeps the AC-8 notice without breaking authentication.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.15.1).
+
 ## v1.15.0 -- HDF Aggregation: Re-occurrence Lifecycle + Amendment Approval + Document Aggregation (2026-07-26)
 
 Extends HDF triage from a per-scan worklist into an audit-ready, ATO-integrated flow. Scans are tied to the component they assessed, kept as history with a re-occurrence lifecycle, gated by an approval + ODP-validity flow, and folded into the boundary's assessment documents.
