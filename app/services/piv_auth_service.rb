@@ -135,10 +135,44 @@ class PivAuthService
 
     # A malformed percent-escape must not take the login path down with an
     # ArgumentError; an unusable cert is a rejected login, not a 500.
+    # #850 — decode percent-escapes WITHOUT treating "+" as a space.
+    #
+    # This was CGI.unescape, which implements application/x-www-form-urlencoded
+    # and therefore decodes "+" to " ". Base64 uses "+" as a data character, and
+    # ALB passthrough percent-encodes the PEM while leaving "+" literal. So every
+    # "+" in the certificate body became a space, and the `gsub(/\s+/, "")` in
+    # normalize_pem then DELETED it — silently dropping one character per "+".
+    #
+    # The corruption was invisible at every checkpoint: the shortened body still
+    # matched the base64 charset guard and still cleared MIN_BODY_LENGTH, so
+    # normalize_pem returned a well-formed-looking PEM and reported success
+    # (cert_normalized: true in the audit diagnostics). Only OpenSSL rejected it,
+    # surfacing as "Your smart card certificate could not be read" on a complete,
+    # gateway-verified certificate.
+    #
+    # The existing #824 spec could not catch it: it encoded with CGI.escape,
+    # which writes "+" as "%2B", so CGI.escape/CGI.unescape round-tripped its own
+    # output. That proved the two functions are inverses, not that a real gateway
+    # payload survives.
+    #
+    # Both conventions are still handled, decided by evidence in the value rather
+    # than by guessing. A gateway that form-encodes writes the marker as
+    # "BEGIN+CERTIFICATE"; a "+" anywhere else is base64 data and must survive.
     def safe_unescape(value)
-      CGI.unescape(value)
-    rescue ArgumentError
+      if form_encoded?(value)
+        CGI.unescape(value)
+      else
+        URI::DEFAULT_PARSER.unescape(value)
+      end
+    rescue ArgumentError, URI::Error
       value
+    end
+
+    # "+" standing in for a space is only detectable where a space is REQUIRED —
+    # inside the PEM markers. Anywhere else the two are indistinguishable, and
+    # base64 is the overwhelmingly more likely meaning.
+    def form_encoded?(value)
+      value.include?("BEGIN+CERTIFICATE") || value.include?("END+CERTIFICATE")
     end
 
     # ── Primary identifier, per SPARC_PIV_IDENTITY_SOURCE ────────────────────

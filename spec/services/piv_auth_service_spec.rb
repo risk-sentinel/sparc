@@ -259,6 +259,66 @@ RSpec.describe PivAuthService do
       expect_parsed(CGI.escape(pem))
     end
 
+    # #850 — the regression that shipped in v1.15.1/v1.15.2 despite the test
+    # above. CGI.escape writes "+" as "%2B", so that test round-trips its own
+    # encoder and proves only that CGI.escape and CGI.unescape are inverses.
+    # A real ALB percent-encodes the PEM and leaves "+" LITERAL, and "+" is a
+    # base64 data character — CGI.unescape decoded each one to a space, which
+    # normalize_pem's whitespace strip then deleted outright.
+    #
+    # The corruption passed every internal check (charset guard, minimum
+    # length), so the cert reported as normalized and failed only at OpenSSL,
+    # surfacing as "could not be read" on a complete, verified certificate.
+    describe "ALB passthrough encoding (#850)" do
+      # Exactly what an ALB puts in X-Amzn-Mtls-Clientcert: percent-encoded
+      # newlines and spaces, "+" untouched.
+      def alb_encode(value)
+        value.gsub(" ", "%20").gsub("\n", "%0A")
+      end
+
+      # A certificate whose base64 body is guaranteed to contain "+", so the
+      # test cannot pass by luck on a body that happens to have none.
+      let(:plus_pem) do
+        10.times do
+          candidate = build_cert(cn: "DOE.JOHN.Q.1234567890")
+          body = candidate.lines[1..-2].join.gsub(/\s+/, "")
+          return candidate if body.include?("+")
+        end
+        skip "could not generate a certificate whose base64 body contains '+'"
+      end
+
+      it "parses an ALB-encoded PEM whose base64 contains '+'" do
+        expect(plus_pem.lines[1..-2].join).to include("+") # guard the guard
+        expect_parsed(alb_encode(plus_pem))
+      end
+
+      it "preserves every base64 character through normalization" do
+        original = plus_pem.lines[1..-2].join.gsub(/\s+/, "")
+        normalized = described_class.normalize_pem(alb_encode(plus_pem))
+        recovered = normalized.lines[1..-2].join.gsub(/\s+/, "")
+
+        # The old behaviour lost exactly one character per "+".
+        expect(recovered.length).to eq(original.length)
+        expect(recovered).to eq(original)
+      end
+
+      it "still accepts a gateway that form-encodes, where '+' really is a space" do
+        # A genuine form encoder writes marker spaces as "+" AND base64 "+" as
+        # "%2B" — both, consistently. That is what CGI.escape produces, and the
+        # "BEGIN+CERTIFICATE" marker is the evidence that selects this branch.
+        form_encoded = CGI.escape(plus_pem)
+
+        expect(form_encoded).to include("BEGIN+CERTIFICATE")
+        expect(form_encoded).to include("%2B") # base64 '+' escaped, not literal
+        expect_parsed(form_encoded)
+      end
+
+      it "does not mistake base64 '+' for a space when markers are absent" do
+        body = plus_pem.lines[1..-2].join.gsub(/\s+/, "")
+        expect_parsed(body)
+      end
+    end
+
     it "parses a PEM carrying LITERAL backslash-n instead of newlines" do
       expect_parsed(pem.gsub("\n", '\n'))
     end
