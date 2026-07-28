@@ -21,7 +21,13 @@ class PasswordResetsController < ApplicationController
   before_action :load_user_from_token
 
   # GET /password/reset/:token
-  def edit; end
+  def edit
+    # Intentionally empty. Everything this action needs is already done by the
+    # `load_user_from_token` before_action: it resolves the token, and redirects
+    # with a message when the token is unknown or expired. If control reaches
+    # here, @user and @token are set and the only remaining job is to render
+    # edit.html.erb — which Rails does implicitly.
+  end
 
   # PATCH /password/reset/:token
   def update
