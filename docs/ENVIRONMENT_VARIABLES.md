@@ -140,6 +140,19 @@ Notes on behaviour:
   `SPARC_DB_*`. The warning names the problem but never echoes the value.
 - **TLS is unchanged** — `sslmode` still comes from `SPARC_DB_SSLMODE`, which
   floors at `require` in production. The credentials carry no TLS setting.
+- **Special characters are safe, and there is no URL to encode.** The secret's
+  fields are passed to libpq as discrete parameters, so nothing is ever
+  percent-encoded or parsed back out of a URI. The one place the password is
+  serialised is `config/database.yml`, where it is emitted via `.to_json` so it
+  lands as a *quoted* YAML scalar — the quotes exist only inside that file and
+  the YAML parser removes them before the value is used. Unquoted, a password
+  containing `: ` or a newline stops the app booting, and one starting with `&`
+  is read as a YAML anchor and silently becomes **nil**. Verified end to end on
+  the production image against a real PostgreSQL role whose password is
+  ``p@ss: *w&rd#"'\/+=%20end``: 24 bytes in the secret, 24 bytes at the
+  connection, and the server authenticates.
+- **The password is redacted from logs** unless
+  `SPARC_LOG_CREDENTIALS=true`. See that variable above.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
@@ -151,6 +164,7 @@ Notes on behaviour:
 | SPARC_DB_USER | Database username | (none) | `sparc_app` | No |
 | SPARC_DB_PASSWORD | Database password (use secrets manager in prod) | (none) | `super-secure-pass-123` | No |
 | SPARC_DB_SSLMODE | TLS mode, applied to **all four** databases (primary + cache/queue/cable). `require` refuses plaintext but does NOT authenticate the server; `verify-full` also verifies the certificate chain and hostname and is the FedRAMP High target. See [DATABASE_TLS.md](DATABASE_TLS.md) | **require** (prod), prefer (dev/test) | `verify-full` | No |
+| SPARC_LOG_CREDENTIALS | **Disables credential redaction in the logs.** Off by default: the structured formatter replaces the secret in connection URIs, `password=` conninfo and inspected config hashes, because a driver error or an `inspect` will otherwise write the database password to CloudWatch, where it is retained for the life of the log group. Turn it on ONLY while the credential itself is what you are debugging — then unset it and treat any password logged meanwhile as **compromised** and rotate it (with `DB_CREDENTIALS` that is a Secrets Manager rotation plus a task restart, no redeploy). A warning is logged at boot whenever it is on | false | `true` | No |
 | SPARC_SKIP_DB_TLS_CHECK | Suppress the boot-time database TLS posture check (production only). Not recommended — the check warns and never raises | false | `true` | No |
 | SPARC_DB_SSLROOTCERT | CA bundle libpq verifies against. Only consulted by the `verify-*` modes. libpq ignores `SSL_CERT_FILE`, so the database needs its own trust anchor | `/etc/pki/sparc/rds-global-bundle.pem` (baked into the image) | `/rails/certs/my-ca.pem` | No |
 

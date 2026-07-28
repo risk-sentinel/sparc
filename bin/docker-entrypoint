@@ -20,6 +20,18 @@ fi
 # Parse DATABASE_URL for host/port if available, fallback to docker-compose defaults
 DB_HOST=$(echo "${DATABASE_URL:-}" | sed 's|.*@\(.*\):.*|\1|')
 DB_PORT=$(echo "${DATABASE_URL:-}" | sed 's|.*:\([0-9]*\)/.*|\1|')
+
+# #834 — a deployment may carry ONLY the structured DB_CREDENTIALS secret, with
+# no plaintext DATABASE_URL at all; that is the whole point of the change. This
+# probe runs in the SHELL, long before Rails boots and applies its own
+# precedence, so without this it falls back to the docker-compose default host
+# and waits forever on a database that is not there — the container never
+# starts. Reads host/port only; the password is never read or printed.
+if [ -z "${DB_HOST}" ] && [ -n "${DB_CREDENTIALS:-}" ]; then
+    DB_HOST=$(ruby -rjson -e 'c = (JSON.parse(ENV["DB_CREDENTIALS"]) rescue {}); print c.is_a?(Hash) ? c["host"].to_s : ""' 2>/dev/null || true)
+    DB_PORT=$(ruby -rjson -e 'c = (JSON.parse(ENV["DB_CREDENTIALS"]) rescue {}); print c.is_a?(Hash) ? c["port"].to_s : ""' 2>/dev/null || true)
+fi
+
 echo "Waiting for PostgreSQL at ${DB_HOST:-db}:${DB_PORT:-5432}..."
 until pg_isready -h "${DB_HOST:-db}" -p "${DB_PORT:-5432}" -t 1 >/dev/null 2>&1; do
     echo "Postgres is not ready yet - sleeping..."

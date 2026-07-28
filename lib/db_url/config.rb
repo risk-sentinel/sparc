@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "json"
+
 # #785 Pass 2 — collapse the six SPARC_DB_* variables into DATABASE_URL.
 #
 # The problem this solves: Rails merges DATABASE_URL into the `primary` database
@@ -30,8 +32,6 @@
 # #834 — DB_CREDENTIALS (the structured Secrets Manager RDS secret) takes
 # precedence over DATABASE_URL, which takes precedence over SPARC_DB_*.
 module DbUrl
-  require "json"
-
   DEFAULT_NAME = "ssp_tpr_manager_production"
   DEFAULT_USER = "ssp_tpr_manager"
 
