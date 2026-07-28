@@ -93,6 +93,14 @@ class Api::V1::FederationPeersController < Api::V1::BaseController
     @peer = FederationPeer.find(params[:id])
   end
 
+  # CodeQL `rb/insecure-mass-assignment` (alert #18) flags the trailing
+  # `public_metadata: {}`. The allow-list is explicit; what the rule cannot
+  # distinguish is permitting an arbitrary nested HASH from permitting
+  # arbitrary model ATTRIBUTES. `public_metadata` is a jsonb column, so the
+  # open hash is stored as a document and can never reach an attribute writer.
+  #
+  # The genuinely sensitive fields are handled below in `apply_secrets` and are
+  # deliberately OUTSIDE this surface — see the comment there.
   def peer_params_for_create
     params.require(:federation_peer).permit(:name, :base_url, :enabled, public_metadata: {})
   end

@@ -349,6 +349,18 @@ class AuditEvent < ApplicationRecord
   #   AuditEvent.log(user: current_user, action: "login_success",
   #                  provider: "local", ip_address: request.remote_ip,
   #                  subject: @ssp_document)
+  #
+  # CodeQL `rb/clear-text-storage-sensitive-data` (alert #24) flags the
+  # `create!` below, tracing `metadata` back to the PIV login path. The taint
+  # source is `PivSessionsController#cert_diagnostics`, which records the SHAPE
+  # of the client-certificate header only — byte length and four booleans — and
+  # never the certificate or any part of it. See the comment there, which is
+  # the authoritative one: the audit log is widely readable and a PIV cert
+  # carries the holder's identity.
+  #
+  # `metadata` IS a general-purpose bag written from many call sites, so this
+  # verdict covers the paths that exist today rather than the type. Anything
+  # added here that carries credential material would make the alert correct.
   def self.log(user: nil, action:, provider: nil, ip_address: nil,
                user_agent: nil, metadata: {}, subject: nil)
     event = create!(
