@@ -103,6 +103,22 @@ The leveraging side can also view inherited POA&Ms read-only — see
 3. Create the package, then use **Download** to get the bundled archive
    (`download_ato_package`).
 
+Since v1.15.2 the archive contains **every document in JSON, YAML and XML**
+(previously JSON only), so consumers standardised on OSCAL XML can use it
+directly. Each file is validated against the schema matching its serialization,
+and `manifest.json` records the format and conformance of every one.
+
+Two things the manifest tells you that are worth reading:
+
+- **`documents[].files[].schema_valid`** — whether that file passes its OSCAL
+  schema. The archive deliberately ships documents that do not yet conform, so a
+  partial package stays recoverable; presence in the archive is **not** evidence
+  of conformance.
+- **`omitted`** — any document whose export failed, with the reason. Before
+  v1.15.2 a failed export was skipped silently while the manifest went on listing
+  the missing file, so a package could claim to contain an SSP that was not
+  there.
+
 Make sure the constituent documents are complete before you build the package —
 the wizard bundles their current state.
 

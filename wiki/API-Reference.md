@@ -42,6 +42,25 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 `oscal/poam_from_hdf`, and `hdf/amendments_from_oscal_poam` (see
 [Core Functions §18](Core-Functions#18-hdf--oscal-translation-bridge)).
 
+> **`sar_from_hdf` validates before it returns (v1.15.2).** SPARC checks the
+> translated document against the NIST OSCAL schema and **will not return one
+> that fails** — previously it returned the converter's output as-is, so a caller
+> could receive a `200` carrying a document no OSCAL tool would accept.
+>
+> A non-conforming translation answers **`502 Bad Gateway`**, listing the schema
+> violations. `502` rather than `422` is deliberate: your input is not the
+> problem and there is nothing you can change about the submitted HDF — the
+> fault is in the upstream converter.
+>
+> **Known limitation:** with the currently pinned hdf-cli (3.4.1) this endpoint
+> returns `502` for real HDF input, because the converter omits OSCAL-required
+> properties (`reviewed-controls`, `finding/description`,
+> `characterization/origin`). Tracked upstream at
+> [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184); it returns
+> `200` again once a fixed hdf-libs is pinned. SPARC does not fill the gaps in —
+> `reviewed-controls` is *what the assessment covered*, and synthesising it would
+> produce a document that passes the schema and misstates the assessment.
+
 ### Evidence (v1.12.2)
 
 Evidence is fully manageable over the API — create a record, upload the artifact
