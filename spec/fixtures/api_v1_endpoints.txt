@@ -165,6 +165,7 @@ POST /api/v1/ssp_documents/:id/fields/import/preview
 POST /api/v1/ssp_documents/:id/populate_from_profile
 POST /api/v1/ssp_documents/convert
 POST /api/v1/users
+POST /api/v1/users/:id/password_reset
 PUT /api/v1/admin/remediation_timelines
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PUT /api/v1/authorization_boundaries/:id

@@ -8,12 +8,16 @@ This file is the work-tracking spine for issue [#413](https://github.com/risk-se
 
 ## Summary (as of 2026-07-18)
 
-- **Code:** 141 logical endpoints across 25 controller groups (PATCH+PUT aliases collapsed)
-- **Documentation:** **140 / 141 endpoints documented** in `endpoints/*.md` (**99%**)
-- **Postman collection:** **132 / 141 endpoints covered** (**94%**)
+- **Code:** 142 logical endpoints across 25 controller groups (PATCH+PUT aliases collapsed)
+- **Documentation:** **141 / 142 endpoints documented** in `endpoints/*.md` (**99%**)
+- **Postman collection:** **132 / 142 endpoints covered** (**93%**)
   - 24 folders, mirroring the controller groups
-- **Pytest suite:** **135 / 141** endpoints map to a `tests/api/test_*.py` module
+- **Pytest suite:** **135 / 142** endpoints map to a `tests/api/test_*.py` module
 
+> `POST /api/v1/users/:id/password_reset` (#841) is documented in
+> `endpoints/users.md` and covered by `spec/requests/password_recovery_spec.rb`
+> plus `tests/ui-smoke/test_password_recovery.py`, which drives it end to end.
+>
 > The five `poam_risks` endpoints added in #832 are documented
 > (`endpoints/poam-risks.md`) and covered by a request spec
 > (`spec/requests/api/v1/poam_risks_spec.rb`), but are **not yet** in the
@@ -176,6 +180,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `PATCH/PUT` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id` | `ksi_validations#update` | yes | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export` | `ksi_validations#export` | yes | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/summary` | `ksi_validations#summary` | yes | yes | yes |
+| `POST` | `/api/v1/users/:id/password_reset` | `users#password_reset` | yes | no | no |
 | `GET` | `/api/v1/poam_documents` | `poam_documents#index` | yes | yes | yes |
 | `POST` | `/api/v1/poam_documents` | `poam_documents#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/poam_documents/:id` | `poam_documents#destroy` | yes | yes | yes |
