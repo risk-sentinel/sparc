@@ -69,7 +69,12 @@ on:
 # Pinned producers — bump deliberately (keep in sync with the images that bake
 # these tools: ci-runner/sparc-auditor). hdf-cli is the strategic primary.
 env:
-  HDF_CLI_VERSION: v3.3.2
+  # Pinned to 3.4.1 org-wide until hdf-libs ships the fix for the oscal-sar
+  # schema defects (mitre/hdf-libs#184, root-caused upstream). Was v3.3.2,
+  # which diverged from the 3.4.1 baked into the app image — and 3.3.2 emits
+  # OSCAL SAR without `risk/statement`, a defect 3.4.0 fixed. Keep this equal
+  # to bin/install-hdf.sh's HDF_LIBS_VERSION.
+  HDF_CLI_VERSION: v3.4.1
   SAF_VERSION: '1.6.0'
   BUCKET: sparc-prod-security-artifacts
 
