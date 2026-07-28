@@ -83,6 +83,43 @@ curl -X POST "https://sparc.example.com/api/v1/oscal/sar_from_hdf?authorization_
 }
 ```
 
+#### Output is schema-validated before it is returned
+
+SPARC validates the translated document against the bundled NIST OSCAL v1.1.2
+Assessment Results schema and **will not return one that fails**. Previously this
+endpoint returned the converter's output as-is, so a caller could receive a
+`200` carrying a document no OSCAL tool would accept — a failure that then
+surfaced somewhere with no connection to this call.
+
+**Response** `502 Bad Gateway` — the converter produced non-conforming OSCAL:
+
+```json
+{
+  "error": "The translated document does not conform to the OSCAL schema and was not returned",
+  "details": [
+    "/assessment-results/results/0: missing required properties: reviewed-controls",
+    "/assessment-results/results/0/findings/0: missing required properties: description",
+    "/assessment-results/results/0/risks/0/characterizations/0: missing required properties: origin"
+  ],
+  "note": "This is a defect in the bundled hdf-libs converter, not in the submitted file. …"
+}
+```
+
+`502` rather than `422` is deliberate: **your input is not the problem**, and
+there is nothing you can change about the submitted HDF to fix it. The fault is
+in the upstream converter SPARC depends on.
+
+> **Known limitation.** With the currently pinned hdf-cli (3.4.1), this endpoint
+> returns `502` for real HDF input: the converter omits OSCAL-required
+> properties (`reviewed-controls`, `finding/description`,
+> `characterization/origin`) and emits an empty `prop.value`. Tracked upstream at
+> [mitre/hdf-libs#184](https://github.com/mitre/hdf-libs/issues/184); the
+> endpoint starts returning `200` once a fixed hdf-libs is pinned.
+>
+> SPARC does not fill the gaps in. `reviewed-controls` is *what the assessment
+> covered* — synthesising it would produce a document that passes the schema and
+> misstates the assessment. Determining it is the converter's job.
+
 ---
 
 ### POST `poam_from_hdf` — HDF results → OSCAL POA&M

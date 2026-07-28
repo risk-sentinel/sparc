@@ -23,6 +23,26 @@
 #   SI-2  Flaw Remediation (amendments output gates tenant pipelines)
 #
 class Api::V1::TranslationsController < Api::V1::BaseController
+  # #831 — the converter produced OSCAL that fails NIST's own schema.
+  #
+  # This endpoint used to return that document with a 200. A consumer asked for
+  # an Assessment Results document, was told it succeeded, and got something no
+  # OSCAL tool would accept — a failure that then surfaced far from this call.
+  #
+  # 502 rather than 422: the caller's input is fine, and there is nothing they
+  # can change to fix it. The fault is in the upstream converter SPARC depends
+  # on, which is what a Bad Gateway means. A 422 would send them looking through
+  # their own HDF for a mistake that is not there.
+  rescue_from OscalValidationError do |e|
+    render json: {
+      error: "The translated document does not conform to the OSCAL schema and was not returned",
+      details: e.message.lines.map(&:strip).reject(&:empty?),
+      note: "This is a defect in the bundled hdf-libs converter, not in the submitted file. " \
+            "SPARC validates every OSCAL document it emits and will not return an invalid one. " \
+            "Tracked upstream at https://github.com/mitre/hdf-libs/issues/184"
+    }, status: :bad_gateway
+  end
+
   rescue_from HdfRunner::Error do |e|
     # A "no converter found" failure means the bundled hdf-cli doesn't support
     # this translation path — currently raw hdf→oscal-poam, which 3.2.0 removed
