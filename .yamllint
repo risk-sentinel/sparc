@@ -20,3 +20,31 @@ ignore: |
   tmp/
   node_modules/
   coverage/
+
+rules:
+  # #847 — the inherited 80-column default produced 815 warnings and not one
+  # of them ever indicated a defect. Every finding in the repo was line-length;
+  # zero were structural. At that volume the rule is not a style guide, it is a
+  # screen that hides the rules which DO matter — a future duplicate-key or
+  # truthy warning would arrive as number 816 and be read by nobody.
+  #
+  # Raising the number alone does not fix it: even a 400-column limit leaves 53
+  # findings, because the long lines are embedded shell in workflow `run:` and
+  # compose `command:` blocks, and generated scan data — places where length is
+  # inherent rather than sloppy. So the limit is scoped to the files a human
+  # hand-maintains, and the paths whose length is structural are exempt FROM
+  # THIS RULE ONLY: they still fail on syntax errors, duplicate keys and
+  # trailing whitespace exactly as before.
+  #
+  # Everything else the linter does still applies everywhere at full strength —
+  # syntax errors and duplicate keys, which is what #788 stood this up to catch.
+  line-length:
+    max: 120
+    level: warning
+    # A long unbreakable token (a URL, a digest) is not a wrapping failure.
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+    ignore: |
+      .github/
+      docs/compliance/
+      docker-compose*.yaml
