@@ -142,6 +142,7 @@ POST /api/v1/oscal/poam_from_hdf
 POST /api/v1/oscal/sar_from_hdf
 POST /api/v1/poam_documents
 POST /api/v1/poam_documents/:poam_document_id/risks
+POST /api/v1/poam_documents/generate
 POST /api/v1/profile_documents
 POST /api/v1/profile_documents/:id/approve
 POST /api/v1/profile_documents/:id/reject

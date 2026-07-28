@@ -509,6 +509,11 @@ Rails.application.routes.draw do
       # naming the missing fields at entry, rather than surfacing much later as
       # a POA&M that fails OSCAL schema validation at export.
       resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        collection do
+          # #843 — build a POPULATED POA&M from a SAR's open risks. Explicit
+          # action mapping per rubydre:S7875.
+          post "generate", to: "poam_documents#generate", as: :generate
+        end
         resources :risks, only: [ :index, :create ], controller: "poam_risks"
       end
       resources :poam_risks, only: [ :show, :update, :destroy ]

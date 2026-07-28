@@ -19,6 +19,108 @@ RSpec.describe "Api::V1::PoamDocuments", type: :request do
     end
   end
 
+  # #843 — POA&M was the only document in the authorization chain with no
+  # generator, so the terminal artifact of an ATO could enter SPARC only by
+  # import or by hand-assembling its object graph.
+  describe "POST /api/v1/poam_documents/generate" do
+    let(:profile) { create(:profile_document, baseline_level: "High") }
+    let!(:sar) { create(:sar_document, authorization_boundary: boundary) }
+    let(:sar_result) { create(:sar_result, sar_document: sar) }
+
+    before do
+      boundary.update!(profile_document: profile)
+      create(:sar_risk, sar_result: sar_result, title: "Unencrypted backups", impact: "Critical")
+    end
+
+    it "requires a token" do
+      post generate_api_v1_poam_documents_path, params: { poam_document: { sar_document_id: sar.id } }
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "generates a POPULATED POA&M from the SAR's open risks" do
+      expect {
+        post generate_api_v1_poam_documents_path,
+          params: { poam_document: { sar_document_id: sar.id, name: "FY26 POA&M" } },
+          headers: auth_headers
+      }.to change(PoamDocument, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body["data"]["name"]).to eq("FY26 POA&M")
+      expect(body["meta"]["items_created"]).to eq(1)
+      expect(body["meta"]["complete"]).to be(true)
+      expect(body["skipped"]).to be_empty
+    end
+
+    it "generates from a boundary alone" do
+      post generate_api_v1_poam_documents_path,
+        params: { poam_document: { authorization_boundary_id: boundary.id } },
+        headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["meta"]["items_created"]).to eq(1)
+    end
+
+    # Not a partial failure to paper over: the POA&M genuinely was created, and
+    # returning an error would discard it over source data the assessor still
+    # has to fix. The omissions are reported so the caller can act on them.
+    it "returns 201 AND reports risks it could not convert" do
+      create(:sar_risk, sar_result: sar_result, title: "No statement", statement: nil)
+
+      post generate_api_v1_poam_documents_path,
+        params: { poam_document: { sar_document_id: sar.id } }, headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body["meta"]["items_created"]).to eq(1)
+      expect(body["meta"]["complete"]).to be(false)
+      expect(body["skipped"].first["title"]).to eq("No statement")
+      expect(body["skipped"].first["reason"]).to match(/missing statement/)
+    end
+
+    it "emits a poam_document_generated audit event" do
+      assert_audit_event(action: "poam_document_generated", subject_type: "PoamDocument") do
+        post generate_api_v1_poam_documents_path,
+          params: { poam_document: { sar_document_id: sar.id } }, headers: auth_headers
+      end
+    end
+
+    # Same shape as #851: a permitted *_id naming a record the caller cannot
+    # read. A SAR carries the assessment's findings, and this copies them into
+    # a POA&M the caller owns.
+    describe "source scoping" do
+      let(:other_boundary) { create(:authorization_boundary) }
+      let!(:foreign_sar) { create(:sar_document, authorization_boundary: other_boundary) }
+      let(:member) { create(:user) }
+      let(:member_headers) do
+        { "Authorization" => "Bearer #{ApiToken.generate!(user: member, name: 'M').plaintext_token}" }
+      end
+
+      before do
+        # Full write permission granted deliberately, so this cannot pass for
+        # the wrong reason (a 403 from the write check).
+        allow_any_instance_of(User).to receive(:has_permission?).and_return(true)
+      end
+
+      it "refuses to generate from a SAR the caller cannot read" do
+        expect {
+          post generate_api_v1_poam_documents_path,
+            params: { poam_document: { sar_document_id: foreign_sar.id } },
+            headers: member_headers
+        }.not_to change(PoamDocument, :count)
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "still allows an admin to generate from any SAR" do
+        post generate_api_v1_poam_documents_path,
+          params: { poam_document: { sar_document_id: foreign_sar.id } }, headers: auth_headers
+
+        expect(response).to have_http_status(:created)
+      end
+    end
+  end
+
   describe "GET /api/v1/poam_documents" do
     it "returns paginated list for admin" do
       create_list(:poam_document, 2, authorization_boundary: boundary)
