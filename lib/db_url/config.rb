@@ -106,7 +106,55 @@ module DbUrl
     return if credentials.empty?
     return if ENV.fetch("DATABASE_URL", nil).to_s.empty?
 
+    # Remembered because the removal destroys the evidence: nothing downstream
+    # could otherwise tell that a DATABASE_URL was ever set, so the boot posture
+    # check would silently under-report the conflict it exists to surface.
+    @discarded_database_url = true
     ENV.delete("DATABASE_URL")
+  end
+
+  def discarded_database_url? = @discarded_database_url == true
+
+  # Which of the three sources actually supplied the connection.
+  #
+  # Precedence is deliberate but INVISIBLE at runtime: an operator who sets
+  # SPARC_DB_HOST alongside DB_CREDENTIALS gets the credentials one and no
+  # indication their variable was ignored. `zz_database_config_posture.rb`
+  # reports this at boot so "which of these is actually in effect?" has an
+  # answer in the logs rather than requiring someone to read this file.
+  SOURCES = %i[db_credentials database_url sparc_db_vars defaults].freeze
+
+  def source
+    return :db_credentials if credentials.any?
+    return :database_url   if components.any?
+    return :sparc_db_vars  if sparc_db_vars_set.any?
+
+    :defaults
+  end
+
+  # Sources that are configured but LOSE to the one in effect.
+  def overridden_sources
+    winner = source
+    others = []
+    others << :database_url if winner != :database_url && (components.any? || discarded_database_url?)
+    others << :sparc_db_vars if winner != :sparc_db_vars && sparc_db_vars_set.any?
+    others
+  end
+
+  SPARC_DB_VARS = %w[
+    SPARC_DB_HOST SPARC_DB_PORT SPARC_DB_NAME SPARC_DB_USER SPARC_DB_PASSWORD
+  ].freeze
+
+  def sparc_db_vars_set = SPARC_DB_VARS.select { |name| ENV.fetch(name, nil).to_s.strip.presence }
+
+  # The SPARC_DB_* block has no all-or-nothing guard of its own — an unset
+  # member silently takes a default, so a block missing SPARC_DB_PASSWORD
+  # connects with no password rather than failing. `port` is excluded: 5432 is
+  # an unambiguous default, not an omission.
+  def sparc_db_vars_missing
+    return [] if sparc_db_vars_set.empty?
+
+    (SPARC_DB_VARS - [ "SPARC_DB_PORT" ]) - sparc_db_vars_set
   end
 
   # Secondary databases keep the historical _cache/_queue/_cable suffixes.

@@ -137,6 +137,67 @@ RSpec.describe DbUrl, "DB_CREDENTIALS (#834)" do
     end
   end
 
+  # Precedence is deliberate but invisible at runtime; these are what the boot
+  # posture check reports so an operator can see which variable is actually in
+  # use rather than debugging one that is being ignored.
+  describe "#source and #overridden_sources" do
+    it "reports db_credentials as the source, and names the losers" do
+      ENV["DATABASE_URL"] = "postgres://u:p@h:5432/d"
+      ENV["SPARC_DB_HOST"] = "legacy.host"
+      set_credentials
+
+      expect(DbUrl.source).to eq(:db_credentials)
+      expect(DbUrl.overridden_sources).to contain_exactly(:database_url, :sparc_db_vars)
+    end
+
+    # The removal destroys the evidence, so the conflict has to be remembered
+    # at the moment it happens or it can never be reported.
+    it "still reports DATABASE_URL as overridden after it has been removed" do
+      ENV["DATABASE_URL"] = "postgres://u:p@h:5432/d"
+      set_credentials
+      DbUrl.reconcile_database_url!
+
+      expect(ENV["DATABASE_URL"]).to be_nil
+      expect(DbUrl.overridden_sources).to include(:database_url)
+    end
+
+    it "reports database_url when there is no secret" do
+      ENV["DATABASE_URL"] = "postgres://u:p@h:5432/d"
+
+      expect(DbUrl.source).to eq(:database_url)
+      expect(DbUrl.overridden_sources).to be_empty
+    end
+
+    it "reports sparc_db_vars when it is the only source" do
+      ENV["SPARC_DB_HOST"] = "legacy.host"
+
+      expect(DbUrl.source).to eq(:sparc_db_vars)
+    end
+
+    it "reports defaults when nothing is configured" do
+      expect(DbUrl.source).to eq(:defaults)
+    end
+
+    # The SPARC_DB_* block has no all-or-nothing guard: a missing password
+    # connects with NO password rather than failing.
+    it "names the missing members of a partial SPARC_DB_* block" do
+      ENV["SPARC_DB_HOST"] = "legacy.host"
+      ENV["SPARC_DB_USER"] = "app"
+
+      expect(DbUrl.sparc_db_vars_missing).to contain_exactly("SPARC_DB_NAME", "SPARC_DB_PASSWORD")
+    end
+
+    it "does not treat an unset port as missing — 5432 is unambiguous" do
+      %w[SPARC_DB_HOST SPARC_DB_NAME SPARC_DB_USER SPARC_DB_PASSWORD].each { |k| ENV[k] = "x" }
+
+      expect(DbUrl.sparc_db_vars_missing).to be_empty
+    end
+
+    it "reports nothing missing when the block is untouched" do
+      expect(DbUrl.sparc_db_vars_missing).to be_empty
+    end
+  end
+
   describe "a malformed secret" do
     # Warn, never raise — matching the DATABASE_URL path and the database TLS
     # posture check. A bad secret must not become a cryptic YAML/ERB boot error.
