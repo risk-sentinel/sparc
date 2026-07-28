@@ -1,0 +1,42 @@
+<%# #841 — redeeming an admin-issued reset. Deliberately no "current password"
+    field: the user does not know it, which is why they are here. Authority is
+    the single-use token in the URL. %>
+<div class="row justify-content-center mt-5">
+  <div class="col-lg-5 col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h2 class="h4 fw-bold mb-1">Set a New Password</h2>
+        <p class="text-body-secondary small mb-4">
+          An administrator issued this reset link for
+          <strong><%= @user.email %></strong>. It can be used once, and expires
+          <%= time_ago_in_words(@user.password_reset_expires_at) %> from now.
+        </p>
+
+        <%= form_tag password_reset_path(token: @token), method: :patch do %>
+          <div class="mb-3">
+            <label for="new_password" class="form-label fw-semibold small">New Password</label>
+            <input type="password" name="new_password" id="new_password"
+                   class="form-control" required autofocus minlength="12"
+                   autocomplete="new-password">
+            <div class="form-text">At least 12 characters (NIST 800-63B).</div>
+          </div>
+
+          <div class="mb-4">
+            <label for="new_password_confirmation" class="form-label fw-semibold small">Confirm New Password</label>
+            <input type="password" name="new_password_confirmation" id="new_password_confirmation"
+                   class="form-control" required minlength="12"
+                   autocomplete="new-password">
+          </div>
+
+          <div class="d-grid">
+            <%= submit_tag "Set Password", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+
+        <p class="text-body-secondary small mt-4 mb-0">
+          Did not expect this? Contact your administrator — the link works only once.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

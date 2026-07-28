@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_26_120300) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_28_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1685,6 +1685,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_120300) do
     t.bigint "owner_id"
     t.datetime "password_changed_at"
     t.string "password_digest"
+    t.string "password_reset_digest"
+    t.datetime "password_reset_expires_at"
     t.boolean "service_account", default: false, null: false
     t.integer "sign_in_count", default: 0, null: false
     t.string "status", default: "active", null: false
@@ -1694,6 +1696,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_120300) do
     t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["owner_id"], name: "index_users_on_owner_id"
+    t.index ["password_reset_digest"], name: "index_users_on_password_reset_digest", unique: true, where: "(password_reset_digest IS NOT NULL)"
     t.index ["service_account"], name: "index_users_on_service_account"
     t.index ["status"], name: "index_users_on_status"
     t.index ["uuid"], name: "index_users_on_uuid", unique: true

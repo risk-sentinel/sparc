@@ -5,9 +5,11 @@ module Admin
   # Enhanced with search, pagination, and authorization-boundary-role visibility.
   class UsersController < ApplicationController
     include Pagy::Method
+    include ActionView::Helpers::DateHelper # time_ago_in_words, for the reset expiry notice
 
     before_action :authorize_admin!
-    before_action :set_user, only: [ :show, :edit, :update, :suspend, :reactivate, :deactivate, :reset_security_keys ]
+    before_action :set_user, only: [ :show, :edit, :update, :suspend, :reactivate, :deactivate,
+                                     :reset_security_keys, :reset_password, :email_password_reset ]
 
     USERS_PER_PAGE = 25
 
@@ -92,6 +94,58 @@ module Admin
         success: "Removed #{count} security #{'key'.pluralize(count)}. The user must re-enroll to sign in with a key."
     end
 
+    # ── Password recovery (#841) ─────────────────────────────────────────
+    #
+    # The counterpart to reset_security_keys below: FIDO2 lockout had a recovery
+    # path and passwords did not, so a forgotten local-login password could only
+    # be cleared from a Rails console.
+    #
+    # Two routes, because deployments differ:
+    #
+    #   email_password_reset — the app sends a one-time link. Needs SMTP.
+    #   reset_password       — a temporary password the admin hands over out of
+    #                          band, forced to be changed at first sign-in. The
+    #                          only route available with no outbound mail.
+    #
+    # In neither does the admin end up knowing a password the user keeps. The
+    # temporary one is known to the admin BY DESIGN, which is exactly why it
+    # cannot survive the first login.
+    def reset_password
+      return unless resettable?
+
+      temporary = @user.issue_temporary_password!
+      audit_log("admin_temporary_password_issued", subject: @user,
+        metadata: { target_user_id: @user.id, target_email: @user.email })
+
+      # Flash, not persisted: it is a live credential, and the database keeps
+      # only the bcrypt digest.
+      flash[:temporary_password] = temporary
+      redirect_to admin_user_path(@user),
+        success: "Temporary password issued. Give it to the user over a channel you trust — " \
+                 "it is shown only now, and they must change it as soon as they sign in."
+    end
+
+    def email_password_reset
+      return unless resettable?
+
+      unless SparcConfig.enable_smtp?
+        redirect_to admin_user_path(@user),
+          error: "This instance has no mail configured (SPARC_SMTP_ADDRESS), so a reset link " \
+                 "cannot be sent. Issue a temporary password instead."
+        return
+      end
+
+      token = @user.issue_password_reset!
+      PasswordResetMailer.reset_link(@user, token, issued_by: current_user.email).deliver_later
+      audit_log("admin_password_reset_emailed", subject: @user,
+        metadata: { target_user_id: @user.id, target_email: @user.email,
+                    expires_at: @user.password_reset_expires_at&.iso8601 })
+
+      redirect_to admin_user_path(@user),
+        success: "Password reset link sent to #{@user.email}. It can be used once and expires " \
+                 "#{time_ago_in_words(@user.password_reset_expires_at)} from now."
+    end
+
     def reactivate
       force_reset = params[:force_password_reset] == "1"
       @user.reactivate!(force_password_reset: force_reset)
@@ -110,6 +164,16 @@ module Admin
     end
 
     private
+
+    # A suspended or deactivated account must not be handed a working
+    # credential — reactivate it deliberately first.
+    def resettable?
+      return true if @user.active?
+
+      redirect_to admin_user_path(@user),
+        error: "Only an active user can be issued a password reset. Reactivate the account first."
+      false
+    end
 
     def set_user
       @user = User.find(params[:id])

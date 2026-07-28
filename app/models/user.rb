@@ -117,6 +117,89 @@ class User < ApplicationRecord
 
   # ── Status helpers ──────────────────────────────────────────────────────
 
+  # ── Admin-initiated password reset (#841) ────────────────────────────────
+  #
+  # Before this, a forgotten local-login password was unrecoverable: an admin
+  # could not set one (`user_params` permits only name fields), no self-service
+  # flow existed, and the one password screen requires the CURRENT password —
+  # which is precisely what has been lost. The only way back in was a Rails
+  # console, which on ECS means SSM onto the instance.
+  #
+  # The admin issues a challenge rather than choosing a password. An admin who
+  # types a user's password knows that user's credential, which defeats the
+  # point of having per-user authenticators at all (IA-5). So this returns a
+  # one-time token the admin conveys out of band; only its SHA-256 digest is
+  # stored, exactly as ApiToken does.
+  PASSWORD_RESET_WINDOW = ENV.fetch("SPARC_PASSWORD_RESET_MINUTES", "60").to_i.clamp(5, 1440).minutes
+
+  # Returns the PLAINTEXT token. It is never stored and cannot be shown again —
+  # issuing a second reset invalidates the first, since the digest is replaced.
+  def issue_password_reset!
+    plaintext = SecureRandom.urlsafe_base64(48)
+    update!(
+      password_reset_digest: Digest::SHA256.hexdigest(plaintext),
+      password_reset_expires_at: PASSWORD_RESET_WINDOW.from_now,
+      must_reset_password: false
+    )
+    plaintext
+  end
+
+  # Looked up BY digest so the token itself never has to be compared, and an
+  # expired challenge is indistinguishable from a wrong one.
+  def self.find_by_password_reset_token(plaintext)
+    return nil if plaintext.blank?
+
+    digest = Digest::SHA256.hexdigest(plaintext.to_s)
+    where(password_reset_digest: digest)
+      .where(password_reset_expires_at: Time.current..)
+      .first
+  end
+
+  def password_reset_pending? = password_reset_digest.present? && password_reset_expires_at.to_time&.future?
+
+  # ── Flow B: an admin-issued TEMPORARY password, handed over out of band ──
+  #
+  # The link flow above needs the app to reach the user. Many deployments have
+  # no outbound mail at all, and what an administrator actually hands someone in
+  # that situation is a password, not a URL.
+  #
+  # So this sets a real password AND forces a change at first sign-in. The
+  # temporary credential is one the admin necessarily knows, which is precisely
+  # why it must not survive the first login (IA-5): the user signs in with it
+  # and is immediately required to replace it with one only they know.
+  #
+  # Any outstanding reset link is invalidated — two live paths into one account
+  # is one more than anybody intended.
+  def issue_temporary_password!
+    temporary = "#{SecureRandom.alphanumeric(16)}-#{SecureRandom.random_number(1000)}"
+    update!(
+      password: temporary,
+      password_confirmation: temporary,
+      must_reset_password: true,
+      password_changed_at: nil,
+      password_reset_digest: nil,
+      password_reset_expires_at: nil
+    )
+    temporary
+  end
+
+  # Single-use: the challenge is cleared in the same transaction that sets the
+  # password, so a replayed link cannot set it a second time. `must_reset_password`
+  # is cleared too — unlike the temporary-password flow, the user has just chosen
+  # this one themselves, so forcing another change immediately would strand them
+  # in the very screen they cannot use.
+  def redeem_password_reset!(password:, password_confirmation:)
+    transaction do
+      self.password = password
+      self.password_confirmation = password_confirmation
+      self.password_reset_digest = nil
+      self.password_reset_expires_at = nil
+      self.must_reset_password = false
+      self.password_changed_at = Time.current
+      save
+    end
+  end
+
   def active?      = status == "active"
   def suspended?   = status == "suspended"
   def deactivated? = status == "deactivated"

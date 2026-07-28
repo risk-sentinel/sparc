@@ -8,11 +8,12 @@
 # POST   /api/v1/users          — create (admin only)
 # PATCH  /api/v1/users/:id      — update (admin or self, limited)
 # DELETE /api/v1/users/:id      — deactivate (admin only)
+# POST   /api/v1/users/:id/password_reset — issue a one-time reset link (admin only, #841)
 #
 class Api::V1::UsersController < Api::V1::BaseController
   before_action :set_user, only: [ :show, :update, :destroy ]
   before_action :authorize_admin_or_self!, only: [ :show, :update ]
-  before_action :authorize_admin!, only: [ :index, :create, :destroy ]
+  before_action :authorize_admin!, only: [ :index, :create, :destroy, :password_reset ]
 
   # GET /api/v1/users
   def index
@@ -49,6 +50,66 @@ class Api::V1::UsersController < Api::V1::BaseController
   end
 
   # PATCH /api/v1/users/:id
+  # POST /api/v1/users/:id/password_reset
+  #
+  # #841 — a forgotten local-login password used to be unrecoverable: no admin
+  # reset, no self-service flow, and the change screen requires the CURRENT
+  # password. Two delivery routes, because deployments differ:
+  #
+  #   mode=temporary (default) — returns a temporary password for the admin to
+  #     hand over out of band. The user MUST change it at first sign-in, so the
+  #     credential the admin necessarily saw does not survive.
+  #   mode=email — the app sends a one-time link. Requires SMTP; the token is
+  #     never returned, because the point is that only the mailbox owner sees it.
+  #
+  # Either way the admin does not end up knowing a password the user keeps.
+  def password_reset
+    user = User.find(params[:id])
+
+    unless user.active?
+      return render json: { error: "Only an active user can be issued a password reset" },
+                    status: :unprocessable_content
+    end
+
+    case params[:mode].presence || "temporary"
+    when "temporary"
+      temporary = user.issue_temporary_password!
+      audit_log("admin_temporary_password_issued", subject: user,
+                metadata: { target_user_id: user.id, target_email: user.email })
+
+      render json: { data: {
+        user_id: user.id, email: user.email, mode: "temporary",
+        temporary_password: temporary,
+        must_change_at_next_login: true,
+        note: "Shown once. Convey it out of band; the user is required to change it when they sign in."
+      } }, status: :created
+
+    when "email"
+      unless SparcConfig.enable_smtp?
+        return render json: { error: "No mail is configured on this instance (SPARC_SMTP_ADDRESS); use mode=temporary" },
+                      status: :unprocessable_content
+      end
+
+      token = user.issue_password_reset!
+      PasswordResetMailer.reset_link(user, token, issued_by: current_user&.email).deliver_later
+      audit_log("admin_password_reset_emailed", subject: user,
+                metadata: { target_user_id: user.id, target_email: user.email,
+                            expires_at: user.password_reset_expires_at&.iso8601 })
+
+      # Deliberately no token in the response: emailing it and also returning it
+      # would defeat the point of sending it to the mailbox owner.
+      render json: { data: {
+        user_id: user.id, email: user.email, mode: "email",
+        expires_at: user.password_reset_expires_at&.utc&.iso8601,
+        note: "A one-time link was emailed to the user. It is not retrievable here."
+      } }, status: :created
+
+    else
+      render json: { error: "Unknown mode #{params[:mode].inspect}. Use \"temporary\" or \"email\"." },
+             status: :unprocessable_content
+    end
+  end
+
   def update
     @user.update!(user_self_update_params)
     UserProvisioningService.new(actor: current_user).apply_privileged_attributes!(@user, params[:user])
