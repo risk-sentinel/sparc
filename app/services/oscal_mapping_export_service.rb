@@ -125,7 +125,17 @@ class OscalMappingExportService
     @target_resource_uuid ||= OscalUuidService.derived(@mapping.id.to_s, "mapping-target-resource")
   end
 
+  # #852 — was `id.downcase.tr(" ", "-")`, which never converted a
+  # parenthesised enhancement, so "AC-2 (1)" became "ac-2-(1)" while every
+  # other export wrote "ac-2.1" for the same control.
+  #
+  # That was NOT a schema violation: `id-ref` is StringDatatype in
+  # oscal_mapping_schema.json, unlike `control-id`/`target-id`, which are
+  # TokenDatatype elsewhere. It was worse in practice for being schema-clean —
+  # the same control carried two different identifiers depending on which
+  # document you exported, so nothing linked a mapping entry to a control in an
+  # SSP or POA&M, and no validator would ever complain.
   def normalize_control_id(id)
-    id.downcase.tr(" ", "-")
+    ControlId.canonical(id)
   end
 end

@@ -454,17 +454,13 @@ class OscalSspExportService
 
   # ── Helpers ────────────────────────────────────────────────────────
 
+  # #852 — delegated to the one canonical implementation. This was one of
+  # several byte-identical private copies; ControlId.canonical reproduces them
+  # exactly (including the OSCAL TokenDatatype conversion of "AC-2 (1)" to
+  # "ac-2.1") and additionally removes zero padding, so "AC-02" and "ac-2"
+  # finally name the same control.
   def normalize_control_id(raw_id)
-    return "unknown" if raw_id.blank?
-    # OSCAL TokenDatatype: ^(\p{L}|_)(\p{L}|\p{N}|[.\-_])*$
-    # Convert parenthesised enhancements to dot notation: "AC-2 (1)" -> "ac-2.1"
-    raw_id.strip
-          .downcase
-          .gsub(/\s+/, "-")       # spaces -> hyphens
-          .gsub("(", ".")         # open paren -> dot
-          .gsub(")", "")          # strip close paren
-          .gsub(/\.{2,}/, ".")    # collapse multiple dots
-          .gsub(/-\./, ".")       # clean "ac-2.1" not "ac-2-.1"
+    ControlId.canonical(raw_id)
   end
 
   def build_props(field_map)
