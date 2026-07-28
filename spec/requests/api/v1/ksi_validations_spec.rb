@@ -122,6 +122,57 @@ RSpec.describe "Api::V1::KsiValidations", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    # #851 — the actual attack path, not just the model guard. evidence_id is
+    # mass-assignable, so a caller authorized for THIS boundary could attach
+    # another boundary's evidence and read its title and file_hash back out of
+    # the detailed serializer.
+    describe "cross-boundary evidence (#851)" do
+      let(:other_boundary) { create(:authorization_boundary) }
+      let(:foreign_evidence) { create(:evidence, authorization_boundary: other_boundary, title: "Other tenant SOC2") }
+
+      it "refuses to attach evidence from another boundary" do
+        expect {
+          post api_v1_authorization_boundary_ksi_validations_path(authorization_boundary_id: boundary.slug),
+            params: { ksi_validation: { catalog_control_id: ksi_control.id, evidence_id: foreign_evidence.id } },
+            headers: auth_headers
+        }.not_to change(KsiValidation, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)["details"].join)
+          .to match(/must belong to the same authorization boundary/)
+      end
+
+      it "does not disclose the foreign evidence in the error body" do
+        post api_v1_authorization_boundary_ksi_validations_path(authorization_boundary_id: boundary.slug),
+          params: { ksi_validation: { catalog_control_id: ksi_control.id, evidence_id: foreign_evidence.id } },
+          headers: auth_headers
+
+        expect(response.body).not_to include("Other tenant SOC2")
+      end
+
+      it "refuses the same reassignment on update" do
+        validation = create(:ksi_validation, authorization_boundary: boundary, catalog_control: ksi_control)
+
+        patch api_v1_authorization_boundary_ksi_validation_path(
+          authorization_boundary_id: boundary.slug, id: validation.id
+        ), params: { ksi_validation: { evidence_id: foreign_evidence.id } }, headers: auth_headers
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(validation.reload.evidence_id).to be_nil
+      end
+
+      it "still attaches evidence from the SAME boundary" do
+        own_evidence = create(:evidence, authorization_boundary: boundary)
+
+        post api_v1_authorization_boundary_ksi_validations_path(authorization_boundary_id: boundary.slug),
+          params: { ksi_validation: { catalog_control_id: ksi_control.id, evidence_id: own_evidence.id } },
+          headers: auth_headers
+
+        expect(response).to have_http_status(:created)
+        expect(KsiValidation.last.evidence_id).to eq(own_evidence.id)
+      end
+    end
   end
 
   describe "PATCH /api/v1/authorization_boundaries/:id/ksi_validations/:id" do

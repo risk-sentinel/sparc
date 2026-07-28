@@ -19,6 +19,182 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
     end
   end
 
+  # #844 — the generator has existed since #28 and the UI has driven it since,
+  # but the API exposed only CRUD, so an integrator could create an EMPTY SAP
+  # shell and nothing else. This is the endpoint that closes that gap.
+  describe "POST /api/v1/sap_documents/generate" do
+    let!(:ssp) { create(:ssp_document, authorization_boundary: boundary) }
+
+    before do
+      create(:ssp_control, ssp_document: ssp, control_id: "AC-2", title: "Account Management")
+      create(:ssp_control, ssp_document: ssp, control_id: "AU-6", title: "Audit Review")
+    end
+
+    it "requires a token" do
+      post generate_api_v1_sap_documents_path, params: { sap_document: { ssp_document_id: ssp.id } }
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "generates a POPULATED SAP from an SSP" do
+      expect {
+        post generate_api_v1_sap_documents_path,
+          params: { sap_document: { ssp_document_id: ssp.id, name: "FY26 Annual" } },
+          headers: auth_headers
+      }.to change(SapDocument, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      data = JSON.parse(response.body)["data"]
+      expect(data["name"]).to eq("FY26 Annual")
+      # The whole point: controls, not an empty shell.
+      expect(data["controls_count"]).to eq(2)
+      expect(SapDocument.find(data["id"]).sap_controls.pluck(:control_id)).to match_array(%w[AC-2 AU-6])
+    end
+
+    # The between-assessments case: a boundary should be able to ask for a
+    # fresh plan without the caller restating where its control basis lives.
+    it "generates from a boundary alone, and attaches the result to it" do
+      post generate_api_v1_sap_documents_path,
+        params: { sap_document: { authorization_boundary_id: boundary.id } },
+        headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      data = JSON.parse(response.body)["data"]
+      expect(data["controls_count"]).to eq(2)
+      expect(data["authorization_boundary_id"]).to eq(boundary.id)
+    end
+
+    it "accepts a boundary slug as well as an id" do
+      post generate_api_v1_sap_documents_path,
+        params: { sap_document: { authorization_boundary_id: boundary.slug } },
+        headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+    end
+
+    it "restricts generation to the selected controls" do
+      post generate_api_v1_sap_documents_path,
+        params: { sap_document: { ssp_document_id: ssp.id, control_ids: [ "AC-2" ] } },
+        headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["data"]["controls_count"]).to eq(1)
+    end
+
+    it "names the SAP when the caller does not" do
+      post generate_api_v1_sap_documents_path,
+        params: { sap_document: { ssp_document_id: ssp.id } }, headers: auth_headers
+
+      expect(JSON.parse(response.body)["data"]["name"]).to include(boundary.name)
+    end
+
+    # Generating by ssp_document_id alone used to produce a SAP attached to
+    # nothing, so the boundary still reported having no plan.
+    it "attaches to the SSP's own boundary when none is named" do
+      post generate_api_v1_sap_documents_path,
+        params: { sap_document: { ssp_document_id: ssp.id } }, headers: auth_headers
+
+      expect(JSON.parse(response.body)["data"]["authorization_boundary_id"]).to eq(boundary.id)
+      expect(boundary.reload.sap_document).to be_present
+    end
+
+    # A SAP covering nothing is a wrong result, not a degraded one — the
+    # generator returns an empty control set when given neither source, and
+    # would otherwise persist that and report success.
+    it "refuses when there is no control basis at all" do
+      empty_boundary = create(:authorization_boundary)
+
+      expect {
+        post generate_api_v1_sap_documents_path,
+          params: { sap_document: { authorization_boundary_id: empty_boundary.id } },
+          headers: auth_headers
+      }.not_to change(SapDocument, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to match(/no control basis/i)
+    end
+
+    # filter_controls normalises case but NOT zero-padding, so this is a
+    # plausible caller mistake that used to persist an empty SAP and return 201.
+    it "matches control_ids case-insensitively" do
+      post generate_api_v1_sap_documents_path,
+        params: { sap_document: { ssp_document_id: ssp.id, control_ids: [ "ac-2" ] } },
+        headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["data"]["controls_count"]).to eq(1)
+    end
+
+    # But NOT padding-insensitively. This is the real-world shape: the demo
+    # seed writes SSP controls padded ("AC-02") while the SAP control list is
+    # unpadded ("ac-2"), so the two do not match. Previously that persisted an
+    # empty SAP and returned 201.
+    it "refuses, and saves nothing, when padding makes control_ids miss" do
+      create(:ssp_control, ssp_document: ssp, control_id: "SC-07", title: "Boundary Protection")
+
+      expect {
+        post generate_api_v1_sap_documents_path,
+          params: { sap_document: { ssp_document_id: ssp.id, control_ids: [ "sc-7" ] } },
+          headers: auth_headers
+      }.not_to change(SapDocument, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to match(/covered no controls/i)
+      expect(JSON.parse(response.body)["error"]).to match(/padding/i)
+    end
+
+    it "leaves no orphaned SAP controls behind after that rollback" do
+      expect {
+        post generate_api_v1_sap_documents_path,
+          params: { sap_document: { ssp_document_id: ssp.id, control_ids: [ "nope-1" ] } },
+          headers: auth_headers
+      }.not_to change(SapControl, :count)
+    end
+
+    it "emits a sap_document_generated audit event" do
+      assert_audit_event(action: "sap_document_generated", subject_type: "SapDocument") do
+        post generate_api_v1_sap_documents_path,
+          params: { sap_document: { ssp_document_id: ssp.id } }, headers: auth_headers
+      end
+    end
+
+    # Same shape as #851: a permitted *_id that names a record the caller
+    # cannot read. An SSP carries the implementation narrative for every
+    # control, and the generator copies that basis into the plan.
+    describe "source scoping" do
+      let(:other_boundary) { create(:authorization_boundary) }
+      let!(:foreign_ssp) { create(:ssp_document, authorization_boundary: other_boundary) }
+      let(:member) { create(:user) }
+      let(:member_token) { ApiToken.generate!(user: member, name: "Member") }
+      let(:member_headers) { { "Authorization" => "Bearer #{member_token.plaintext_token}" } }
+
+      before do
+        create(:ssp_control, ssp_document: foreign_ssp, control_id: "SC-7", title: "Boundary Protection")
+        # Deliberately granted FULL write permission. The point is that source
+        # scoping holds independently of whether the caller may write SAPs —
+        # otherwise this test would pass for the wrong reason (a 403 from the
+        # write check) and prove nothing about reading another boundary's SSP.
+        allow_any_instance_of(User).to receive(:has_permission?).and_return(true)
+      end
+
+      it "refuses to generate from an SSP the caller cannot read" do
+        expect {
+          post generate_api_v1_sap_documents_path,
+            params: { sap_document: { ssp_document_id: foreign_ssp.id, authorization_boundary_id: boundary.id } },
+            headers: member_headers
+        }.not_to change(SapDocument, :count)
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "still allows an admin to generate from any SSP" do
+        post generate_api_v1_sap_documents_path,
+          params: { sap_document: { ssp_document_id: foreign_ssp.id } }, headers: auth_headers
+
+        expect(response).to have_http_status(:created)
+      end
+    end
+  end
+
   describe "GET /api/v1/sap_documents" do
     it "returns paginated list for admin" do
       create_list(:sap_document, 2, authorization_boundary: boundary)

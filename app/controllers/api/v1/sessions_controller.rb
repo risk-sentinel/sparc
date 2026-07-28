@@ -34,6 +34,14 @@ class Api::V1::SessionsController < ApplicationController
   # session-timeout check (we're CREATING the session here), no
   # forced-password-reset gate. Each `raise: false` so adding the
   # controller doesn't blow up if the parent removes one of these.
+  #
+  # CodeQL `rb/csrf-protection-disabled` (alert #22) flags the first line.
+  # There is no cookie-based session to forge here: the only credential this
+  # endpoint accepts is a Bearer token, which an attacker's page cannot cause a
+  # browser to attach cross-origin. The skip is written controller-wide rather
+  # than `only:`-scoped, but this controller has exactly ONE action
+  # (`from_token`, the sole route) — so if a second action is ever added here,
+  # scope this skip to `from_token` at the same time.
   skip_before_action :verify_authenticity_token, raise: false
   skip_before_action :require_authentication,    raise: false
   skip_before_action :check_session_timeout,     raise: false

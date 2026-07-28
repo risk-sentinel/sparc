@@ -13,6 +13,7 @@ class KsiValidation < ApplicationRecord
   validates :validation_method, inclusion: { in: METHODS }, allow_nil: true
   validates :catalog_control_id, uniqueness: { scope: :authorization_boundary_id,
     message: "already has a validation for this KSI in this boundary" }
+  validate :evidence_within_boundary
 
   before_validation :generate_uuid, on: :create
   before_save :check_expiration
@@ -56,5 +57,37 @@ class KsiValidation < ApplicationRecord
     if next_validation_due.present? && next_validation_due < Time.current && status == "passed"
       self.status = "expired"
     end
+  end
+
+  # #851 — evidence_id is mass-assignable through the API, and nothing else
+  # checked that the referenced Evidence belongs to the boundary in the URL. A
+  # caller scoped to boundary A could attach boundary B's evidence and read it
+  # back: the detailed serializer returns the evidence title, type, status and
+  # file_hash inline, so this disclosed tenant data rather than merely dangling
+  # a foreign key.
+  #
+  # Enforced as a model validation rather than by scoping the lookup in the
+  # controller, because a controller-level `@boundary.evidences.find` guards
+  # only the paths someone remembers to change — this covers every writer,
+  # including the console and future callers.
+  #
+  # Fails closed on a nil boundary: evidence whose boundary was nullified is not
+  # attachable to a scoped validation, which is the safe reading of an
+  # ambiguous record rather than a special case worth permitting.
+  #
+  # NIST 800-53: AC-3 (Access Enforcement), AC-4 (Information Flow
+  # Enforcement), SC-4 (Information in Shared Resources).
+  # Compares the association OBJECTS rather than the foreign keys. On an
+  # unsaved record both ids are nil, so an id comparison reads "equal" and
+  # waves through exactly the record it exists to reject. ActiveRecord's `==`
+  # falls back to object identity when the id is nil, which gives the right
+  # answer for saved and unsaved records alike.
+  def evidence_within_boundary
+    return if evidence.nil?
+
+    own_boundary = authorization_boundary
+    return if own_boundary.present? && evidence.authorization_boundary == own_boundary
+
+    errors.add(:evidence, "must belong to the same authorization boundary")
   end
 end

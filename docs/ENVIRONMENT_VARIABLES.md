@@ -147,11 +147,28 @@ ECS resolves `valueFrom` when the task starts, so a rotated password is picked
 up on restart exactly as it is with `DB_CREDENTIALS`.
 
 **One caveat if you take that route.** The `SPARC_DB_*` block has no
-all-or-nothing guard — an unset member silently takes a built-in default, and a
-missing `SPARC_DB_PASSWORD` connects with *no* password rather than failing, so
-the error surfaces later as a permission problem. SPARC warns at boot when the
-block is incomplete, but `DB_CREDENTIALS` is validated as a unit and is the
-safer default if you are not sure.
+all-or-nothing guard the way `DB_CREDENTIALS` does — an unset `SPARC_DB_HOST`,
+`SPARC_DB_NAME` or `SPARC_DB_USER` silently takes a built-in default, so a typo
+in one of them can leave SPARC connecting somewhere other than you intended.
+SPARC warns at boot when the block is incomplete.
+
+**The password is the exception, and it fails hard (#849).** In production,
+SPARC **refuses to start** if no password resolves from any source, naming the
+variable that is unset. It does not fall back to connecting without one. This
+matters because the fallback was not a visible failure: `nil` is passed to
+libpq, a PostgreSQL server configured for `trust` authentication *accepts* it,
+and the app then boots, passes health checks and serves traffic against an
+unauthenticated database. A missing ECS `secrets` entry produced a running
+system that looked entirely healthy.
+
+Development and test are unaffected — a local PostgreSQL on `trust`
+authentication is legitimate and common.
+
+If your database genuinely authenticates without a password — **RDS IAM
+authentication** is the real case — say so explicitly with
+`SPARC_DB_ALLOW_EMPTY_PASSWORD=true`. The distinction is deliberate: running
+without a database password should be a decision you made, not something that
+happened to you.
 
 **`DATABASE_URL` is the one to move away from.** It is a single pre-rendered
 string, so it puts the password in the task-definition environment and in
@@ -221,7 +238,9 @@ Notes on behaviour:
 | SPARC_DB_PORT | Database port | 5432 | `5433` | No |
 | SPARC_DB_NAME | Database name | sparc | `sparc_production` | No |
 | SPARC_DB_USER | Database username | (none) | `sparc_app` | No |
-| SPARC_DB_PASSWORD | Database password (use secrets manager in prod) | (none) | `super-secure-pass-123` | No |
+| SPARC_DB_PASSWORD | Database password (use a secrets manager in prod). **In production SPARC refuses to start if no password resolves from any source** (#849) — it will not connect unauthenticated. Dev/test are unaffected | (none) | `super-secure-pass-123` | Yes, in production, unless `SPARC_DB_ALLOW_EMPTY_PASSWORD` is set |
+| SPARC_DB_ALLOW_EMPTY_PASSWORD | **Permits a production connection with no database password.** Off by default, and the only way past the check above. Set this ONLY when the database authenticates by another means — **RDS IAM authentication** is the real case. It is an explicit declaration, not a workaround for a missing secret: if you are setting it to get past a boot failure, the correct fix is to supply the password. A warning is logged on every boot while it is on. Accepts `true`, `1`, `yes` | false | `true` | No |
+| SSP_TPR_MANAGER_DATABASE_PASSWORD | **Deprecated** legacy alias for `SPARC_DB_PASSWORD`, retained so an old deployment does not break on upgrade. Lowest precedence of any password source. Migrate to `SPARC_DB_PASSWORD`; scheduled for removal in 1.16.0 | (none) | `super-secure-pass-123` | No |
 | SPARC_DB_SSLMODE | TLS mode, applied to **all four** databases (primary + cache/queue/cable). `require` refuses plaintext but does NOT authenticate the server; `verify-full` also verifies the certificate chain and hostname and is the FedRAMP High target. See [DATABASE_TLS.md](DATABASE_TLS.md) | **require** (prod), prefer (dev/test) | `verify-full` | No |
 | SPARC_SKIP_DB_TLS_CHECK | Suppress the boot-time database TLS posture check (production only). Not recommended — the check warns and never raises | false | `true` | No |
 | SPARC_DB_SSLROOTCERT | CA bundle libpq verifies against. Only consulted by the `verify-*` modes. libpq ignores `SSL_CERT_FILE`, so the database needs its own trust anchor | `/etc/pki/sparc/rds-global-bundle.pem` (baked into the image) | `/rails/certs/my-ca.pem` | No |
@@ -464,6 +483,7 @@ exports omit empty values rather than write blanks.
 | `SPARC_AWS_REGION` | Redundant in every known deployment | Use `AWS_REGION`. The accessor already falls back `SPARC_AWS_REGION` → `AWS_REGION` → `us-east-1`, and only a split-region deployment could tell the difference |
 | `RAILS_SERVE_STATIC_FILES` | **Not implemented** | Put a reverse proxy or CDN in front of SPARC |
 | `HTTP_PORT` | **Not read** | Use `PORT` |
+| `SSP_TPR_MANAGER_DATABASE_PASSWORD` | **Deprecated alias** — still honoured, at the lowest precedence of any password source. Undocumented until 1.15.3; surfaced here rather than removed silently, since a deployment could be relying on it. **Removal scheduled for 1.16.0** | Use `SPARC_DB_PASSWORD`, or supply the password through `DB_CREDENTIALS` |
 
 ---
 
