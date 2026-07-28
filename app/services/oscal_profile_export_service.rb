@@ -79,7 +79,9 @@ class OscalProfileExportService
     [ {
       "href" => catalog_href,
       "include-controls" => [ {
-        "with-ids" => controls.pluck(:control_id)
+        # #852 — with-ids is TokenDatatype; a profile control stored as
+        # "AC-2 (1)" would otherwise fail the profile schema at export.
+        "with-ids" => controls.pluck(:control_id).map { |id| ControlId.canonical(id) }
       } ]
     } ]
   end
@@ -115,7 +117,8 @@ class OscalProfileExportService
     return nil if props.empty?
 
     {
-      "control-id" => control.control_id,
+      # #852 — TokenDatatype, same as with-ids above.
+      "control-id" => ControlId.canonical(control.control_id),
       "adds" => [ { "position" => "starting", "props" => props } ]
     }
   end

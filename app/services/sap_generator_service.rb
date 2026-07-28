@@ -83,9 +83,14 @@ class SapGeneratorService
     end
   end
 
+  # #852 — matched on `upcase` alone, which is case-insensitive but NOT
+  # padding-insensitive, so a selection of "ac-2" silently matched nothing
+  # against a control stored as "AC-02". Both shapes genuinely coexist: the
+  # demo seed writes SSP controls padded via `pad_ctrl_id` while control lists
+  # are written unpadded. The result was an empty SAP reported as success.
   def filter_controls(controls_data)
-    id_set = @selected_ids.map(&:upcase).to_set
-    controls_data.select { |c| id_set.include?(c[:control_id].to_s.upcase) }
+    id_set = ControlId.canonical_set(@selected_ids)
+    controls_data.select { |c| id_set.include?(ControlId.canonical(c[:control_id])) }
   end
 
   def enrich_with_catalog_guidance(controls_data)

@@ -306,6 +306,7 @@
     "color-contrast::.btn-outline-primary",
     "select-name::select"
   ],
+  "admin_remediation_timelines": [],
   "admin_roles": [
     "color-contrast::a[href$=\"roles/1\"]",
     "color-contrast::a[href$=\"roles/2\"]",
@@ -1484,6 +1485,7 @@
   "help_assessment-plans": [],
   "help_assessment-results": [],
   "help_authorization-boundaries": [],
+  "help_compliance-library": [],
   "help_component-definitions": [],
   "help_control-catalogs-and-baselines": [],
   "help_converters-and-imports": [],

@@ -124,22 +124,37 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
       expect(JSON.parse(response.body)["data"]["controls_count"]).to eq(1)
     end
 
-    # But NOT padding-insensitively. This is the real-world shape: the demo
-    # seed writes SSP controls padded ("AC-02") while the SAP control list is
-    # unpadded ("ac-2"), so the two do not match. Previously that persisted an
-    # empty SAP and returned 201.
-    it "refuses, and saves nothing, when padding makes control_ids miss" do
+    # ...and, since #852, padding-insensitively too.
+    #
+    # This spec previously asserted the OPPOSITE — that "sc-7" failed to match
+    # "SC-07" and generation was therefore refused. That was pinning the bug:
+    # the demo seed writes SSP controls padded while control lists are
+    # unpadded, so the two shapes genuinely coexist and a caller selecting
+    # "sc-7" got an empty SAP. #852 made comparison canonical, so the
+    # selection now matches and the plan is generated.
+    it "matches control_ids across zero padding (#852)" do
       create(:ssp_control, ssp_document: ssp, control_id: "SC-07", title: "Boundary Protection")
 
+      post generate_api_v1_sap_documents_path,
+        params: { sap_document: { ssp_document_id: ssp.id, control_ids: [ "sc-7" ] } },
+        headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["data"]["controls_count"]).to eq(1)
+      expect(SapDocument.last.sap_controls.first.control_id).to eq("SC-07")
+    end
+
+    # The empty-result guard still exists — it just no longer fires for a
+    # padding difference, only for a selection that names nothing real.
+    it "still refuses, and saves nothing, when the selection matches no control" do
       expect {
         post generate_api_v1_sap_documents_path,
-          params: { sap_document: { ssp_document_id: ssp.id, control_ids: [ "sc-7" ] } },
+          params: { sap_document: { ssp_document_id: ssp.id, control_ids: [ "zz-99" ] } },
           headers: auth_headers
       }.not_to change(SapDocument, :count)
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["error"]).to match(/covered no controls/i)
-      expect(JSON.parse(response.body)["error"]).to match(/padding/i)
     end
 
     it "leaves no orphaned SAP controls behind after that rollback" do

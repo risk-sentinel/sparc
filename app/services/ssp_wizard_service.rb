@@ -198,13 +198,15 @@ class SspWizardService
     )
   end
 
+  # #852 — delegated to the canonical implementation.
+  #
+  # This is a MATCHING KEY (controls are indexed by it, then looked up when
+  # applying CDEF content); it is never written into a document, so the change
+  # cannot affect exported OSCAL. What it does fix is the lookup: the previous
+  # version normalised case and notation but not zero padding, so a CDEF citing
+  # "AC-2" failed to match an SSP control stored as "AC-02" and its content was
+  # silently not applied.
   def normalize_id(raw)
-    return "" if raw.blank?
-    raw.to_s.strip.downcase
-       .gsub(/\s+/, "-")
-       .gsub("(", ".")
-       .gsub(")", "")
-       .gsub(/\.{2,}/, ".")
-       .gsub(/-\./, ".")
+    ControlId.canonical(raw)
   end
 end

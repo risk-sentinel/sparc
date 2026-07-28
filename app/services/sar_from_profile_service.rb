@@ -144,14 +144,12 @@ class SarFromProfileService
     part&.dig("prose")
   end
 
+  # #852 — delegated to the one canonical implementation. This was one of
+  # several byte-identical private copies; ControlId.canonical reproduces them
+  # exactly (including the OSCAL TokenDatatype conversion of "AC-2 (1)" to
+  # "ac-2.1") and additionally removes zero padding, so "AC-02" and "ac-2"
+  # finally name the same control.
   def normalize_control_id(raw_id)
-    return "unknown" if raw_id.blank?
-    raw_id.strip
-          .downcase
-          .gsub(/\s+/, "-")
-          .gsub("(", ".")
-          .gsub(")", "")
-          .gsub(/\.{2,}/, ".")
-          .gsub(/-\./, ".")
+    ControlId.canonical(raw_id)
   end
 end
