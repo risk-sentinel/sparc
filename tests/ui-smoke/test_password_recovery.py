@@ -111,7 +111,8 @@ def _set_new_password(page, current: str, new: str) -> None:
     page.fill(TEMP_PASSWORD_FIELD, current)
     page.fill("#new_password", new)
     page.fill("#new_password_confirmation", new)
-    page.locator("form[action='/password'] button[type=submit], form[action='/password'] input[type=submit]").first.click()
+    form = "form[action='/password']"
+    page.locator(f"{form} button[type=submit], {form} input[type=submit]").first.click()
     try:
         page.wait_for_url(lambda url: "/password/edit" not in url, timeout=10_000)
     except Exception:

@@ -134,12 +134,23 @@ class User < ApplicationRecord
 
   # Returns the PLAINTEXT token. It is never stored and cannot be shown again —
   # issuing a second reset invalidates the first, since the digest is replaced.
+  # CodeQL `rb/clear-text-storage-sensitive-data` fires on every write to
+  # `must_reset_password` because the attribute NAME contains "password". It is
+  # a boolean flag — "does this account owe a password change?" — and carries no
+  # credential, so there is nothing to store in clear text. Suppressed per line
+  # below rather than repo-wide: the rule is a good one, and a future attribute
+  # that genuinely does hold a secret should still trip it.
+  #
+  # The real credential on these paths is handled correctly and is NOT what the
+  # alert points at: `password=` runs through has_secure_password, so only the
+  # bcrypt digest is persisted, and the reset token is stored as a SHA-256
+  # digest with the plaintext returned once and never written down.
   def issue_password_reset!
     plaintext = SecureRandom.urlsafe_base64(48)
     update!(
       password_reset_digest: Digest::SHA256.hexdigest(plaintext),
       password_reset_expires_at: PASSWORD_RESET_WINDOW.from_now,
-      must_reset_password: false
+      must_reset_password: false # codeql[rb/clear-text-storage-sensitive-data]
     )
     plaintext
   end
@@ -175,7 +186,7 @@ class User < ApplicationRecord
     update!(
       password: temporary,
       password_confirmation: temporary,
-      must_reset_password: true,
+      must_reset_password: true, # codeql[rb/clear-text-storage-sensitive-data]
       password_changed_at: nil,
       password_reset_digest: nil,
       password_reset_expires_at: nil
@@ -194,7 +205,7 @@ class User < ApplicationRecord
       self.password_confirmation = password_confirmation
       self.password_reset_digest = nil
       self.password_reset_expires_at = nil
-      self.must_reset_password = false
+      self.must_reset_password = false # codeql[rb/clear-text-storage-sensitive-data]
       self.password_changed_at = Time.current
       save
     end

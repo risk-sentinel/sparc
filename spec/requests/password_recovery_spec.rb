@@ -11,6 +11,12 @@ require "rails_helper"
 # so is the property that makes them safe: the admin never ends up knowing a
 # password the user keeps.
 RSpec.describe "Password recovery (#841)", type: :request do
+  # Test fixtures, not credentials. Named once so the scanner allow-list marks a
+  # single declaration instead of every call site, and so the intent is obvious
+  # to a human reader too.
+  CHOSEN_PASSWORD = "BrandNewPassword1"        # gitleaks:allow
+  SECOND_ATTEMPT  = "SecondAttempt12345"       # gitleaks:allow
+  PRIOR_PASSWORD  = "OldKnownPassword1"        # gitleaks:allow
   let(:admin) { create(:user, :admin) }
   let(:user)  { create(:user, email: "locked.out@example.gov") }
 
@@ -34,11 +40,11 @@ RSpec.describe "Password recovery (#841)", type: :request do
     end
 
     it "invalidates the previous password immediately" do
-      user.update!(password: "OldKnownPassword1", password_confirmation: "OldKnownPassword1")
+      user.update!(password: PRIOR_PASSWORD, password_confirmation: PRIOR_PASSWORD)
 
       patch reset_password_admin_user_path(user)
 
-      expect(user.reload.authenticate("OldKnownPassword1")).to be_falsey
+      expect(user.reload.authenticate(PRIOR_PASSWORD)).to be_falsey
     end
 
     it "audits the issuance, naming the target" do
@@ -98,31 +104,31 @@ RSpec.describe "Password recovery (#841)", type: :request do
       # The whole point: PasswordsController#update demands the current
       # password, which is the thing that has been lost.
       patch password_reset_path(token: token),
-            params: { new_password: "BrandNewPassword1", new_password_confirmation: "BrandNewPassword1" }
+            params: { new_password: CHOSEN_PASSWORD, new_password_confirmation: CHOSEN_PASSWORD }
 
       user.reload
-      expect(user.authenticate("BrandNewPassword1")).to be_truthy
+      expect(user.authenticate(CHOSEN_PASSWORD)).to be_truthy
       expect(user.must_reset_password).to be(false),
         "the user chose this one themselves, so forcing another change would strand them"
     end
 
     it "works only once" do
       patch password_reset_path(token: token),
-            params: { new_password: "BrandNewPassword1", new_password_confirmation: "BrandNewPassword1" }
+            params: { new_password: CHOSEN_PASSWORD, new_password_confirmation: CHOSEN_PASSWORD }
 
       patch password_reset_path(token: token),
-            params: { new_password: "SecondAttempt12345", new_password_confirmation: "SecondAttempt12345" }
+            params: { new_password: SECOND_ATTEMPT, new_password_confirmation: SECOND_ATTEMPT }
 
-      expect(user.reload.authenticate("SecondAttempt12345")).to be_falsey
+      expect(user.reload.authenticate(SECOND_ATTEMPT)).to be_falsey
     end
 
     it "rejects an expired token" do
       user.update!(password_reset_expires_at: 1.minute.ago)
 
       patch password_reset_path(token: token),
-            params: { new_password: "BrandNewPassword1", new_password_confirmation: "BrandNewPassword1" }
+            params: { new_password: CHOSEN_PASSWORD, new_password_confirmation: CHOSEN_PASSWORD }
 
-      expect(user.reload.authenticate("BrandNewPassword1")).to be_falsey
+      expect(user.reload.authenticate(CHOSEN_PASSWORD)).to be_falsey
     end
 
     it "rejects a forged token" do
@@ -137,9 +143,9 @@ RSpec.describe "Password recovery (#841)", type: :request do
       user.issue_temporary_password!
 
       patch password_reset_path(token: token),
-            params: { new_password: "BrandNewPassword1", new_password_confirmation: "BrandNewPassword1" }
+            params: { new_password: CHOSEN_PASSWORD, new_password_confirmation: CHOSEN_PASSWORD }
 
-      expect(user.reload.authenticate("BrandNewPassword1")).to be_falsey
+      expect(user.reload.authenticate(CHOSEN_PASSWORD)).to be_falsey
     end
   end
 end
