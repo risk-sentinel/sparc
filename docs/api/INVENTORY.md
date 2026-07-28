@@ -202,6 +202,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/profile_documents/:id/submit_for_review` | `profile_documents#submit_for_review` | yes | yes | yes |
 | `GET` | `/api/v1/sap_documents` | `sap_documents#index` | yes | yes | yes |
 | `POST` | `/api/v1/sap_documents` | `sap_documents#create` | yes | yes | yes |
+| `POST` | `/api/v1/sap_documents/generate` | `sap_documents#generate` | yes | yes | yes |
 | `DELETE` | `/api/v1/sap_documents/:id` | `sap_documents#destroy` | yes | yes | yes |
 | `GET` | `/api/v1/sap_documents/:id` | `sap_documents#show` | yes | yes | yes |
 | `PATCH/PUT` | `/api/v1/sap_documents/:id` | `sap_documents#update` | yes | yes | yes |

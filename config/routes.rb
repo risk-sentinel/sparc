@@ -493,6 +493,12 @@ Rails.application.routes.draw do
       end
 
       resources :sap_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        collection do
+          # #844 — generate a POPULATED SAP from an SSP or profile. Without
+          # this the API could only create an empty shell, leaving SAP the one
+          # document in the chain with no programmatic generation path.
+          post :generate
+        end
         member do
           # #716 — bulk editable-field file import (preview → confirm).
           post "fields/import/preview", to: "sap_documents#import_fields_preview", as: :import_fields_preview

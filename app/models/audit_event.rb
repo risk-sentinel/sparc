@@ -83,6 +83,7 @@ class AuditEvent < ApplicationRecord
     authoritative_source_created
     data_migration_completed
     sap_document_created
+    sap_document_generated
     sap_document_updated
     sap_document_deleted
     sap_document_delete_blocked
@@ -255,9 +256,9 @@ class AuditEvent < ApplicationRecord
                            aws_labs_cdef_refresh_requested
                            control_resource_created control_resource_linked
                            control_resource_unlinked],
-    "SAP Documents" => %w[sap_document_created sap_document_updated sap_document_deleted
-                          sap_document_delete_blocked sap_document_exported sap_document_imported
-                          sap_document_published],
+    "SAP Documents" => %w[sap_document_created sap_document_generated sap_document_updated
+                          sap_document_deleted sap_document_delete_blocked sap_document_exported
+                          sap_document_imported sap_document_published],
     "POAM Documents" => %w[poam_document_created poam_document_updated poam_document_deleted
                            poam_document_delete_blocked
                            poam_document_exported poam_document_imported poam_item_created
