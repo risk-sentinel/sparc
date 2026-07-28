@@ -189,14 +189,11 @@ class OscalComponentDefinitionExportService
       "unknown-#{control.id}"
     end
 
-    # OSCAL TokenDatatype: ^(\p{L}|_)(\p{L}|\p{N}|[.\-_])*$
-    # Convert parenthesised enhancements to dot notation: "SI-2 (2)" → "si-2.2"
-    raw.downcase
-       .gsub(/\s+/, "-")       # spaces → hyphens
-       .gsub("(", ".")         # open paren → dot (enhancement separator)
-       .gsub(")", "")          # strip close paren
-       .gsub(/\.{2,}/, ".")    # collapse multiple dots
-       .gsub(/-\./, ".")       # "si-2.2" not "si-2-.2"
+    # #852 — resolution of WHICH id to use stays here (it is specific to CDEF
+    # field mapping); the normalisation itself is the canonical one, so a
+    # component definition writes the same identifier for a control as the SSP,
+    # SAP, SAR and POA&M exports do.
+    ControlId.canonical(raw)
   end
 
   def build_description(control, field_map)
