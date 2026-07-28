@@ -64,6 +64,18 @@ flowchart TD
    security keys** to revoke all of their FIDO2 keys (the only recovery path —
    there are no self-service codes). They must then re-enroll. See
    [Security Keys & Smart Cards](User-Guide-Security-Keys).
+7. If a user has **forgotten their password** (local login), open their profile
+   and use one of the two recovery routes (v1.15.2):
+   - **Issue temporary password** — works on any instance, including one with no
+     outbound mail. The password is shown to you **once**; give it to the user
+     over a channel you trust. They are required to choose a new password the
+     moment they sign in, so the one you saw stops working immediately.
+   - **Email reset link** — sends the user a single-use, expiring link. Only
+     available when SMTP is configured.
+
+   You never see or set the password the user ends up with. Issuing either one
+   invalidates anything issued previously, and both are recorded in the audit
+   log.
 
 ## How to create and assign roles
 

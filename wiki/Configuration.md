@@ -18,17 +18,75 @@ SPARC is configured via environment variables — most prefixed with `SPARC_`. A
 
 ## Database
 
-`DATABASE_URL` takes priority over individual variables when set.
+There are three ways to configure the connection. **Set exactly one** — they are
+not layered. Precedence is:
+
+**`DB_CREDENTIALS` → `DATABASE_URL` → `SPARC_DB_*`**
+
+The highest one present wins outright and the others are ignored. SPARC reports
+which source it resolved at boot (`Database configuration source: …`) and warns
+when more than one is set, so check the logs if a variable you edited seems to
+have no effect.
+
+All three configure **all four logical databases** — `primary` plus the Solid
+Cache/Queue/Cable databases. Those are four database *names* on the **same
+PostgreSQL server**, not four servers: the secondaries reuse the same host,
+port, username and password and only append `_cache` / `_queue` / `_cable`. One
+credential is all you need.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | (none) | Full PostgreSQL connection URL (preferred) |
+| `DB_CREDENTIALS` | (none) | AWS Secrets Manager RDS secret as JSON (`{"host","port","dbname","username","password"}`). Read at boot, so a rotation takes effect on the next task restart with **no redeploy**. Validated all-or-nothing |
+| `DATABASE_URL` | (none) | Full PostgreSQL connection URL. **Being phased out** — it puts the password in the environment *and* pins it at deploy time, so rotations do not take effect until the next redeploy |
 | `SPARC_DB_HOST` | `localhost` | Database host |
 | `SPARC_DB_PORT` | `5432` | Database port |
 | `SPARC_DB_NAME` | `sparc` | Database name |
 | `SPARC_DB_USER` | (none) | Database user |
 | `SPARC_DB_PASSWORD` | (none) | Database password (use a secrets manager in prod) |
-| `SPARC_DB_SSLMODE` | `prefer` | PostgreSQL SSL mode (disable, prefer, require, verify-full) |
+| `SPARC_DB_SSLMODE` | `prefer` (`require` in production) | PostgreSQL SSL mode (disable, prefer, require, verify-full) |
+
+### Which should you use?
+
+`DB_CREDENTIALS` is not a different *kind* of configuration — it is the same
+five values delivered as one JSON blob, because that is the shape the
+AWS-managed RDS rotator writes. **Only two of the five are secret**: the
+username and the password. Host, port and database name are topology, and are
+already visible in your task definition.
+
+| You want | Use |
+|---|---|
+| AWS-managed rotation with minimum wiring | `DB_CREDENTIALS` |
+| The smallest possible secret surface | `SPARC_DB_*`, with only user and password injected as secrets |
+
+**The second still rotates without a redeploy.** ECS can inject an individual
+key out of a JSON secret, so the managed rotator keeps writing the blob while
+SPARC consumes only the two fields it needs:
+
+```jsonc
+"environment": [
+  { "name": "SPARC_DB_HOST", "value": "sparc-prod.abc123.us-east-1.rds.amazonaws.com" },
+  { "name": "SPARC_DB_PORT", "value": "5432" },
+  { "name": "SPARC_DB_NAME", "value": "sparc_prod" }
+],
+"secrets": [
+  { "name": "SPARC_DB_USER",     "valueFrom": "arn:aws:secretsmanager:…:sparc-prod/db-credentials:username::" },
+  { "name": "SPARC_DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:…:sparc-prod/db-credentials:password::" }
+]
+```
+
+One caveat if you take that route: the `SPARC_DB_*` block has **no
+all-or-nothing guard**. An unset member silently takes a built-in default, and a
+missing `SPARC_DB_PASSWORD` connects with *no* password rather than failing, so
+the error surfaces later as a permission problem. SPARC warns at boot when the
+block is incomplete, but `DB_CREDENTIALS` is validated as a unit and is the
+safer default if you are unsure.
+
+Special characters are safe in any of these. Values are passed to the database
+driver as discrete parameters — no connection URL is rebuilt — so nothing is
+percent-encoded or parsed back out.
+
+See [`docs/ENVIRONMENT_VARIABLES.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/ENVIRONMENT_VARIABLES.md#database-configuration)
+for the full reference.
 
 ## Authentication
 
@@ -166,6 +224,7 @@ Required for registration confirmation, password resets, and notifications.
 | `SPARC_LOG_TO_STDOUT` | `false` (`true` in prod) | Log to STDOUT (for container logs) |
 | `SPARC_STRUCTURED_LOGGING` | `false` | Emit JSON logs (CloudWatch/ELK/Splunk friendly) |
 | `SPARC_LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
+| `SPARC_LOG_CREDENTIALS` | `false` | **Disables credential redaction in the logs.** By default SPARC replaces the secret in connection URIs, `password=` strings and inspected config hashes, because a driver error can otherwise write the database password to CloudWatch. Turn on only while the credential itself is what you are debugging — then unset it and treat any password logged meanwhile as **compromised** and rotate it. A warning is logged at boot whenever it is on |
 
 ## Storage & Uploads
 
