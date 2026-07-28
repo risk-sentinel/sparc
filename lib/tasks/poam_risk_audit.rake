@@ -44,5 +44,38 @@ namespace :sparc do
       puts "Complete them in the UI (POA&M > Risks) or via PATCH /api/v1/poam_risks/:id."
       puts "Do not batch-fill these: a statement and a deadline are commitments, not defaults."
     end
+
+    # #840 — the same problem one level over, and worse, because these rows are
+    # machine-written: HdfAggregationService created findings with no OSCAL
+    # `target`, and a single one makes the whole POA&M fail schema validation in
+    # every serialization. Aggregation now sets a target derived from the
+    # control it assessed, so re-running it repairs the rows it owns; this finds
+    # the ones nothing will re-touch.
+    desc "Report POA&M findings missing OSCAL-required fields (#840)"
+    task audit_findings: :environment do
+      incomplete = PoamFinding.includes(:poam_document).reject { |f| f.missing_required_fields.empty? }
+
+      if incomplete.empty?
+        puts "[sparc:poam:audit_findings] all #{PoamFinding.count} findings carry the required fields."
+        next
+      end
+
+      puts "[sparc:poam:audit_findings] #{incomplete.size} of #{PoamFinding.count} findings are incomplete."
+      puts "Each one makes its POA&M fail OSCAL validation in EVERY serialization."
+      puts
+
+      incomplete.group_by(&:poam_document).each do |document, findings|
+        label = document ? "#{document.name} (id=#{document.id})" : "(no document)"
+        puts "  #{label}"
+        findings.each do |finding|
+          puts "    finding id=#{finding.id} uuid=#{finding.uuid} " \
+               "title=#{finding.title.to_s[0, 40].inspect} missing: #{finding.missing_required_fields.join(', ')}"
+        end
+        puts
+      end
+
+      puts "Findings written by HDF aggregation are repaired by re-running the aggregation."
+      puts "For the rest, `target` states what was assessed — it cannot be defaulted."
+    end
   end
 end

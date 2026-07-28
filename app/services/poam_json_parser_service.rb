@@ -120,6 +120,22 @@ class PoamJsonParserService
           "document and re-import."
   end
 
+  # #840 — an incomplete source finding is rejected at import, for the same
+  # reason as create_risk! above: accepting it produces a POA&M that fails OSCAL
+  # schema validation at EXPORT, with nothing to say which record caused it.
+  # `target` is what was assessed and the resulting state, so it cannot be
+  # filled in on the author's behalf.
+  def create_finding!(attributes, source_label)
+    @document.poam_findings.create!(attributes)
+  rescue ActiveRecord::RecordInvalid => e
+    missing = e.record.missing_required_fields
+    raise DocumentParseError,
+          "POA&M finding #{source_label} cannot be imported: missing " \
+          "#{missing.join(', ')}. OSCAL requires title, description and target on a " \
+          "finding — target states what was assessed and the resulting state. " \
+          "Complete these in the source document and re-import."
+  end
+
   def parse_risks(risks, obs_map)
     risks.each_with_object({}) do |risk, map|
       next unless risk["uuid"].present?
@@ -205,7 +221,7 @@ class PoamJsonParserService
     findings.each_with_object({}) do |finding, map|
       next unless finding["uuid"].present?
 
-      record = @document.poam_findings.create!(
+      record = create_finding!({
         uuid:                          finding["uuid"],
         title:                         finding["title"],
         description:                   extract_text(finding["description"]),
@@ -215,7 +231,7 @@ class PoamJsonParserService
         props_data:                    finding["props"] || [],
         links_data:                    finding["links"] || [],
         remarks:                       extract_text(finding["remarks"])
-      )
+      }, "uuid=#{finding['uuid']}")
 
       # Related observations
       (finding[RELATED_OBSERVATIONS] || []).each do |ro|
