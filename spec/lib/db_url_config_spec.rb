@@ -138,8 +138,27 @@ RSpec.describe "database.yml DATABASE_URL derivation" do
   end
 
   it "still resolves all four from SPARC_DB_* when DATABASE_URL is unset" do
-    prod = resolve("production", "SPARC_DB_HOST" => "legacy", "SPARC_DB_NAME" => "legacydb")
+    # SPARC_DB_PASSWORD is supplied because #849 made a production block
+    # without one a refusal rather than a silent passwordless connection. The
+    # subject here is host/name derivation across all four databases, which is
+    # unchanged — the fixture simply has to be a legal configuration now.
+    prod = resolve("production", "SPARC_DB_HOST" => "legacy", "SPARC_DB_NAME" => "legacydb",
+                                 "SPARC_DB_PASSWORD" => "legacy-pass")
     %w[primary cache queue cable].each { |n| expect(prod[n]["host"]).to eq("legacy") }
     expect(prod["cable"]["database"]).to eq("legacydb_cable")
+  end
+
+  # #849 — the refusal has to fire HERE, during database.yml render, because
+  # that is the only choke point every one of the four databases passes
+  # through. Asserting it on DbUrl.password alone would not prove the
+  # deployment actually fails to start.
+  it "refuses to render the production section with no password" do
+    expect { resolve("production", "SPARC_DB_HOST" => "legacy", "SPARC_DB_NAME" => "legacydb") }
+      .to raise_error(DbUrl::MissingPasswordError)
+  end
+
+  it "renders the development section with no password, as before" do
+    dev = resolve("development", "SPARC_DB_HOST" => "localhost")
+    expect(dev["database"]).to eq("ssp_tpr_manager_development")
   end
 end

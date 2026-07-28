@@ -59,10 +59,24 @@ Rails.application.config.after_initialize do
     if missing.any? && source == :sparc_db_vars
       Rails.logger.warn(
         "[SPARC] ⚠️  The SPARC_DB_* block is incomplete: #{missing.join(', ')} " \
-        "#{missing.one? ? 'is' : 'are'} unset and will take a built-in default. A missing " \
-        "SPARC_DB_PASSWORD connects with NO password rather than failing, so the error " \
-        "surfaces later as a permission problem. Set every member, or use DB_CREDENTIALS, " \
-        "which is validated all-or-nothing."
+        "#{missing.one? ? 'is' : 'are'} unset and will take a built-in default, so SPARC may " \
+        "be connecting somewhere other than intended. Set every member, or use DB_CREDENTIALS, " \
+        "which is validated all-or-nothing. (A missing SPARC_DB_PASSWORD is handled more " \
+        "strictly and refuses to boot outright — #849.)"
+      )
+    end
+
+    # #849 — reaching here at all means a password WAS resolved, since a blank
+    # one raises during database.yml render, long before initializers run. The
+    # exception is a deployment that opted out explicitly, which is legitimate
+    # (RDS IAM auth) but must not be invisible: it is the one path on which
+    # SPARC connects with no credential, so it says so on every boot.
+    if DbUrl.resolved_password.nil? && DbUrl.allow_empty_password?
+      Rails.logger.warn(
+        "[SPARC] ⚠️  Connecting with NO database password: #{DbUrl::ALLOW_EMPTY_PASSWORD_VAR} " \
+        "is set, which disables the check that would otherwise refuse to start. This is " \
+        "correct only when the database authenticates by another means, such as RDS IAM " \
+        "authentication. Unset it if that is not the case."
       )
     end
   rescue StandardError => e

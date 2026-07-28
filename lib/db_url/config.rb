@@ -83,11 +83,60 @@ module DbUrl
   def host     = credentials[:host]     || components[:host]     || ENV.fetch("SPARC_DB_HOST", "localhost")
   def port     = credentials[:port]     || components[:port]     || ENV.fetch("SPARC_DB_PORT", 5432)
 
+  # Raised when production resolves no database password. Deliberately a boot
+  # failure and not a warning — see `password` below.
+  class MissingPasswordError < StandardError; end
+
+  # The one escape hatch, named so it cannot be set by accident. Mirrors
+  # SPARC_LOG_CREDENTIALS (#834): a deliberate, loudly-warned opt-out rather
+  # than a silent default.
+  ALLOW_EMPTY_PASSWORD_VAR = "SPARC_DB_ALLOW_EMPTY_PASSWORD"
+
+  # #849 — fail closed rather than connect unauthenticated.
+  #
+  # Every other member of the SPARC_DB_* block has a sane default, so an unset
+  # one is merely wrong. An unset password is different in kind: nil is passed
+  # to libpq, and a PostgreSQL server configured for `trust` authentication
+  # ACCEPTS it. The app then starts, serves traffic, and passes every health
+  # check while connected to an unauthenticated database. #834 added a boot
+  # warning for this, but a warning is not a control — the operator who missed
+  # the ECS `secrets` entry in the first place is not reading the log that says
+  # so.
+  #
+  # So production refuses to start. The point is not validation for its own
+  # sake: it is that an operator should not be able to run SPARC insecurely by
+  # OMISSION. Declaring it explicitly is still allowed (see the escape hatch),
+  # because a passwordless connection is legitimate under RDS IAM
+  # authentication — that is a decision, not an oversight, and the distinction
+  # is the whole design.
+  #
+  # Development and test are untouched. A local PostgreSQL on `trust` auth is
+  # both legitimate and ubiquitous, and this must not become a dev papercut.
+  # Same precedent as the sslmode floor above: strict in production, permissive
+  # elsewhere.
+  #
+  # Checked on the RESOLVED password rather than per-source, so it also catches
+  # the case that is hardest to notice — DB_CREDENTIALS rejected as malformed
+  # (which only warns) falling through to a SPARC_DB_* block that has no
+  # password either.
   def password
-    credentials[:password] ||
-      components[:password] ||
-      ENV.fetch("SPARC_DB_PASSWORD", nil) ||
-      ENV.fetch("SSP_TPR_MANAGER_DATABASE_PASSWORD", nil)
+    resolved = resolved_password
+    return resolved unless resolved.nil?
+    return nil unless password_required?
+
+    raise MissingPasswordError, missing_password_message
+  end
+
+  # Each candidate goes through `presence`, which the previous implementation
+  # did not do. `ENV.fetch("SPARC_DB_PASSWORD", nil)` returns "" for an
+  # explicitly-empty variable, and "" is TRUTHY in Ruby — so an empty
+  # SPARC_DB_PASSWORD used to short-circuit the `||` chain and be handed to
+  # libpq as a real (empty) password, silently beating the fallbacks behind it.
+  def resolved_password
+    presence(credentials[:password]) ||
+      presence(components[:password]) ||
+      presence(ENV.fetch("SPARC_DB_PASSWORD", nil)) ||
+      presence(ENV.fetch("SSP_TPR_MANAGER_DATABASE_PASSWORD", nil))
   end
 
   # One credential source wins outright (#834).
@@ -148,9 +197,11 @@ module DbUrl
   def sparc_db_vars_set = SPARC_DB_VARS.select { |name| ENV.fetch(name, nil).to_s.strip.presence }
 
   # The SPARC_DB_* block has no all-or-nothing guard of its own — an unset
-  # member silently takes a default, so a block missing SPARC_DB_PASSWORD
-  # connects with no password rather than failing. `port` is excluded: 5432 is
-  # an unambiguous default, not an omission.
+  # member silently takes a built-in default. That is merely wrong for host,
+  # name and user, which is why they are still only WARNED about; #849 made the
+  # password the exception, because defaulting it means connecting with no
+  # credential at all. `port` is excluded: 5432 is an unambiguous default, not
+  # an omission.
   def sparc_db_vars_missing
     return [] if sparc_db_vars_set.empty?
 
@@ -162,7 +213,83 @@ module DbUrl
   def queue_database = "#{database}_queue"
   def cable_database = "#{database}_cable"
 
+  # Whether a blank resolved password is a refusal or merely permitted.
+  #
+  # Public so the boot posture check and the specs can ask the question without
+  # triggering the raise as a side effect.
+  def password_required?
+    return false unless production?
+    # assets:precompile boots the production environment purely to build assets,
+    # with no database configured and none needed. Refusing here would break the
+    # IMAGE BUILD rather than a deployment — the same trap the other posture
+    # checks guard against.
+    return false unless ENV.fetch("SECRET_KEY_BASE_DUMMY", nil).to_s.empty?
+    return false if allow_empty_password?
+
+    true
+  end
+
+  def allow_empty_password?
+    %w[true 1 yes].include?(ENV.fetch(ALLOW_EMPTY_PASSWORD_VAR, "").to_s.strip.downcase)
+  end
+
   private
+
+  # Matches config/database.yml's own production test (`ENV['RAILS_ENV'] ==
+  # 'production'`) rather than Rails.env, for two reasons: this file is required
+  # from config/application.rb before the application class exists, and the
+  # sslmode floor next door keys off exactly this. If the two disagreed, a
+  # deployment could floor its TLS mode but not its password, or the reverse.
+  def production? = ENV.fetch("RAILS_ENV", nil) == "production"
+
+  # The message IS the feature. Whoever hits this is mid-deploy, looking at a
+  # container that will not start, and needs to know which variable to set
+  # without reading this file — so it names the resolved source, the specific
+  # omission, every accepted way to fix it, and the explicit opt-out.
+  def missing_password_message
+    <<~MESSAGE
+      [SPARC] Refusing to start: no database password is configured.
+
+      Resolved configuration source: #{source}
+      #{missing_password_detail}
+
+      SPARC will not connect to a production database without a password. A
+      PostgreSQL server configured for `trust` authentication would ACCEPT an
+      empty password, so this would otherwise boot, pass health checks, and
+      serve traffic against an unauthenticated database connection.
+
+      Set one of the following (precedence: DB_CREDENTIALS > DATABASE_URL > SPARC_DB_*):
+
+        SPARC_DB_PASSWORD=...    alongside SPARC_DB_HOST / SPARC_DB_NAME / SPARC_DB_USER
+        DB_CREDENTIALS=...       the Secrets Manager RDS secret, as JSON
+        DATABASE_URL=...         postgres://user:password@host:5432/database
+
+      If this database genuinely authenticates WITHOUT a password — RDS IAM
+      authentication being the real case — declare that explicitly:
+
+        #{ALLOW_EMPTY_PASSWORD_VAR}=true
+
+      See docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
+    MESSAGE
+  end
+
+  def missing_password_detail
+    case source
+    when :sparc_db_vars
+      missing = sparc_db_vars_missing
+      "Unset: #{missing.any? ? missing.join(', ') : 'SPARC_DB_PASSWORD'}"
+    when :database_url
+      "DATABASE_URL is set but carries no password component."
+    when :db_credentials
+      # Unreachable in practice: parse_credentials rejects a secret missing any
+      # member, so :db_credentials implies a password. Kept so a future change
+      # to that validation cannot produce a message with an empty detail line.
+      "DB_CREDENTIALS resolved without a password."
+    else
+      "No database configuration is set at all (DB_CREDENTIALS, DATABASE_URL " \
+      "and SPARC_DB_* are all unset), so the built-in development defaults applied."
+    end
+  end
 
   def parse_credentials(raw)
     parsed = JSON.parse(raw)
