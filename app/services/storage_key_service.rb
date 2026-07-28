@@ -20,12 +20,23 @@
 #
 # ── The scheme ────────────────────────────────────────────────────────────
 #
-#   <prefix>/org/<org>/boundary/<boundary>/evidence/<uuid>/<token>
-#   <prefix>/org/<org>/boundary/<boundary>/evidence/<uuid>/versions/<id>/<token>
-#   <prefix>/org/<org>/boundary/<boundary>/documents/<kind>/<record>/<token>
-#   <prefix>/org/<org>/boundary/<boundary>/scans/<id>/<token>
-#   <prefix>/instance/users/<id>/avatar/<token>
-#   <prefix>/instance/unscoped/<kind>/<record>/<token>
+#   <prefix>/sparc/users/<id>/avatar/<token>
+#   <prefix>/sparc/unattributed/<kind>/<record>/<name>/<token>
+#   <prefix>/<organization>/shared/<kind>/<record>/<token>
+#   <prefix>/<organization>/<boundary>/evidence/<uuid>/<token>
+#   <prefix>/<organization>/<boundary>/evidence/<uuid>/versions/<id>/<token>
+#   <prefix>/<organization>/<boundary>/documents/<kind>/<record>/<token>
+#   <prefix>/<organization>/<boundary>/scans/<id>/<token>
+#
+# The bucket root IS the tenant list: `sparc/` plus one folder per
+# organization, and inside an organization, one folder per boundary. Someone
+# browsing the bucket can see where to look without being told the convention,
+# and a prefix-filtered LIST narrows to a tenant or a boundary in one hop.
+#
+# Constant segments are deliberately absent. An earlier draft wrote
+# `organization/<org>/boundary/<boundary>/…`, which spends two path segments
+# restating what the position already says and makes every LIST prefix longer
+# for no gain.
 #
 # Ordered widest-scope-first so a single `s3:prefix` condition can express
 # "this organization" or "this boundary" — the narrower the policy needs to be,
@@ -60,6 +71,14 @@ class StorageKeyService
 
   UNKNOWN = "unknown"
 
+  # `sparc/` is the instance-wide namespace and therefore sits in the same
+  # position as an organization folder. An organization whose name slugifies to
+  # a reserved word would collide with it and its artifacts would land among
+  # instance-level ones, so reserved names are disambiguated by id instead.
+  RESERVED_TOP_LEVEL = %w[sparc].freeze
+
+  INSTANCE = "sparc"
+
   class << self
     # The key for a blob about to be attached to `record` as `name`.
     # `token` is ActiveStorage's generated key, kept as the leaf.
@@ -81,8 +100,8 @@ class StorageKeyService
       case record
       when Evidence          then evidence_segments(record)
       when ArtifactVersion   then version_segments(record)
-      when ScanRun           then boundary_segments(record.authorization_boundary) + [ "scans", id_of(record) ]
-      when User              then [ "instance", "users", id_of(record), slug(name) ]
+      when ScanRun           then scan_segments(record)
+      when User              then [ INSTANCE, "users", id_of(record), slug(name) ]
       else                        document_segments(record, name)
       end
     end
@@ -92,8 +111,17 @@ class StorageKeyService
     # have would raise, and a storage-layout detail must never be the reason an
     # upload fails.
     def evidence_segments(evidence)
-      boundary_segments(evidence.authorization_boundary, evidence.try(:organization)) +
-        [ "evidence", record_key(evidence) ]
+      tenancy = boundary_segments(evidence.authorization_boundary, evidence.try(:organization))
+      return unattributed_segments(evidence, :file) if tenancy.nil?
+
+      tenancy + [ "evidence", record_key(evidence) ]
+    end
+
+    def scan_segments(scan_run)
+      tenancy = boundary_segments(scan_run.authorization_boundary)
+      return unattributed_segments(scan_run, :file) if tenancy.nil?
+
+      tenancy + [ "scans", id_of(scan_run) ]
     end
 
     # Nested UNDER the evidence it versions, so "everything for this artifact"
@@ -103,42 +131,72 @@ class StorageKeyService
     # blob (see ArtifactVersionable#attach_version_content).
     def version_segments(version)
       evidence = version.evidence
-      return [ "instance", "unscoped", "artifact_version", id_of(version) ] if evidence.nil?
+      return unattributed_segments(version, :content) if evidence.nil?
 
       evidence_segments(evidence) + [ "versions", id_of(version) ]
     end
 
     def document_segments(record, name)
       kind = DOCUMENT_KINDS[record.class.name]
-      return [ "instance", "unscoped", slug(record.class.name), id_of(record), slug(name) ] if kind.nil?
+      return unattributed_segments(record, name) if kind.nil?
 
-      boundary_segments(record.try(:authorization_boundary), record.try(:organization)) +
-        [ "documents", kind, record_key(record) ]
+      tenancy = boundary_segments(record.try(:authorization_boundary), record.try(:organization))
+      return unattributed_segments(record, name) if tenancy.nil?
+
+      tenancy + [ "documents", kind, record_key(record) ]
+    end
+
+    # Artifacts whose owner cannot be determined — no boundary AND no
+    # organization. Kept in a NAMED quarantine rather than mixed in with
+    # genuinely instance-wide files, because the two have opposite grant
+    # stories: `sparc/users/` is safe to read broadly, while an unattributed
+    # blob may well be tenant data whose association was lost. Anything landing
+    # here is a data-quality signal, not a scope.
+    def unattributed_segments(record, name)
+      [ INSTANCE, "unattributed", slug(record.class.name) || UNKNOWN, id_of(record), slug(name) ]
     end
 
     # The tenancy path, in three tiers. An artifact with no tenant is NOT
     # dropped at the root; every object has an owner visible from the bucket
     # side.
     #
-    #   org/<org>/boundary/<boundary>/…  one boundary owns it
-    #   org/<org>/shared/…               the ORGANIZATION owns it, no single boundary does
-    #   instance/unscoped/…              neither
+    #   <organization>/<boundary>/…   one boundary owns it
+    #   <organization>/shared/…       the ORGANIZATION owns it, no single boundary does
+    #   sparc/unattributed/…          neither
     #
     # The `shared` tier is not a fallback, it is a real category. A
     # CdefDocument links to MANY boundaries through a join table and belongs to
     # an organization; a ProfileDocument is a shared baseline like a control
     # catalog. A component definition reused by three boundaries cannot live
     # under any one of their prefixes without lying about ownership — and an
-    # org-scoped IAM policy should still cover it, which `org/<org>/shared/`
+    # org-scoped IAM policy should still cover it, which `<organization>/shared/`
     # gives for free while a boundary-scoped policy correctly does not match.
+    #
+    # `shared` is likewise reserved: a boundary named "Shared" would otherwise
+    # occupy the same position as the org-wide tier.
     def boundary_segments(boundary, organization = nil)
       org = organization || boundary&.organization
-      return [ "instance", "unscoped" ] if boundary.nil? && org.nil?
+      return nil if boundary.nil? && org.nil?
 
-      org_segment = [ "org", slug(org&.slug || org&.name) || UNKNOWN ]
+      org_segment = [ organization_segment(org) ]
       return org_segment + [ "shared" ] if boundary.nil?
 
-      org_segment + [ "boundary", slug(boundary.slug || boundary.name) || UNKNOWN ]
+      org_segment + [ boundary_segment(boundary) ]
+    end
+
+    # An organization folder sits at the bucket root, in the same position as
+    # `sparc/`, so a name that slugifies to a reserved word is disambiguated by
+    # id rather than allowed to collide with the instance namespace.
+    def organization_segment(org)
+      name = slug(org&.slug || org&.name) || UNKNOWN
+      return name unless RESERVED_TOP_LEVEL.include?(name)
+
+      "#{name}-#{org.id}"
+    end
+
+    def boundary_segment(boundary)
+      name = slug(boundary.slug || boundary.name) || UNKNOWN
+      name == "shared" ? "#{name}-#{boundary.id}" : name
     end
 
     # Prefer a UUID, then a slug, then the id — whichever the record actually

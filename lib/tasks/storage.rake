@@ -33,7 +33,7 @@ namespace :sparc do
       if legacy.positive?
         puts
         puts "Legacy blobs sit at the bucket root and are NOT covered by prefix-scoped"
-        puts "IAM or by lifecycle rules written against org/ or instance/."
+        puts "IAM or by lifecycle rules written against sparc/ or an organization prefix."
         puts "Preview a relocation with:  bin/rails sparc:storage:relocate"
         puts "Apply it with:              bin/rails sparc:storage:relocate APPLY=true"
       else

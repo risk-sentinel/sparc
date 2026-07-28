@@ -21,7 +21,7 @@ RSpec.describe "structured storage keys (#830)" do
     evidence = create(:evidence, authorization_boundary: boundary)
     evidence.file.attach(**upload)
 
-    expect(evidence.file.blob.key).to start_with("org/acme-corp/boundary/cloud-ato/evidence/")
+    expect(evidence.file.blob.key).to start_with("acme-corp/cloud-ato/evidence/")
   end
 
   it "assigns a structured key to a document upload" do
@@ -35,7 +35,7 @@ RSpec.describe "structured storage keys (#830)" do
     user = create(:user)
     user.avatar.attach(**upload(filename: "face.png"))
 
-    expect(user.avatar.blob.key).to start_with("instance/users/#{user.id}/avatar/")
+    expect(user.avatar.blob.key).to start_with("sparc/users/#{user.id}/avatar/")
   end
 
   it "no longer writes any attachment to the bucket root" do

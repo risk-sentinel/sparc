@@ -25,16 +25,16 @@ RSpec.describe StorageKeyService do
       ours   = key_for(create(:evidence, authorization_boundary: boundary))
       theirs = key_for(create(:evidence, authorization_boundary: other_boundary))
 
-      expect(ours).to start_with("org/acme-corp/")
-      expect(theirs).to start_with("org/globex/")
+      expect(ours).to start_with("acme-corp/")
+      expect(theirs).to start_with("globex/")
       # The whole point: a policy on one prefix cannot reach the other.
-      expect(theirs).not_to start_with("org/acme-corp/")
+      expect(theirs).not_to start_with("acme-corp/")
     end
 
     it "nests boundary inside organization, so either scope is one prefix" do
       key = key_for(create(:evidence, authorization_boundary: boundary))
 
-      expect(key).to start_with("org/acme-corp/boundary/cloud-ato/")
+      expect(key).to start_with("acme-corp/cloud-ato/")
     end
 
     it "never writes to the bucket root" do
@@ -77,26 +77,26 @@ RSpec.describe StorageKeyService do
     # they get an org-level `shared` tier that an org-scoped IAM policy still
     # covers while a boundary-scoped one correctly does not.
     describe "shared, org-owned artifacts" do
-      it "puts an organization's CDEF under org/<org>/shared" do
+      it "puts an organization's CDEF under <organization>/shared" do
         cdef = create(:cdef_document, organization: organization)
 
         key = key_for(cdef)
-        expect(key).to start_with("org/acme-corp/shared/")
+        expect(key).to start_with("acme-corp/shared/")
         expect(key).to include("/documents/cdef/")
-        expect(key).not_to include("/boundary/")
+        expect(key).not_to start_with("acme-corp/cloud-ato/")
       end
 
       it "is reachable by an org-scoped policy but not a boundary-scoped one" do
         cdef = create(:cdef_document, organization: organization)
         evidence = create(:evidence, authorization_boundary: boundary)
 
-        expect(key_for(cdef)).to start_with("org/acme-corp/")
-        expect(key_for(evidence)).to start_with("org/acme-corp/boundary/cloud-ato/")
-        expect(key_for(cdef)).not_to start_with("org/acme-corp/boundary/")
+        expect(key_for(cdef)).to start_with("acme-corp/")
+        expect(key_for(evidence)).to start_with("acme-corp/cloud-ato/")
+        expect(key_for(cdef)).not_to start_with("acme-corp/cloud-ato/")
       end
 
-      it "falls back to instance/unscoped when there is no organization either" do
-        expect(key_for(create(:cdef_document, organization: nil))).to start_with("instance/unscoped/")
+      it "falls back to sparc/unattributed when there is no organization either" do
+        expect(key_for(create(:cdef_document, organization: nil))).to start_with("sparc/unattributed/")
       end
     end
 
@@ -106,17 +106,17 @@ RSpec.describe StorageKeyService do
   end
 
   describe "artifacts with no boundary have an explicit documented home" do
-    it "puts a user avatar under instance/users, not the root" do
+    it "puts a user avatar under sparc/users, not the root" do
       user = create(:user)
 
       key = key_for(user, name: :avatar)
-      expect(key).to eq("instance/users/#{user.id}/avatar/tok123")
+      expect(key).to eq("sparc/users/#{user.id}/avatar/tok123")
     end
 
-    it "puts a boundary-less document under instance/unscoped rather than the root" do
+    it "puts a boundary-less document under sparc/unattributed rather than the root" do
       key = key_for(create(:ssp_document, authorization_boundary: nil))
 
-      expect(key).to start_with("instance/unscoped/")
+      expect(key).to start_with("sparc/unattributed/")
     end
   end
 
@@ -130,7 +130,7 @@ RSpec.describe StorageKeyService do
       version = ArtifactVersion.create!(evidence: evidence, fingerprint: SecureRandom.hex(8))
 
       key = key_for(version, name: :content)
-      expect(key).to start_with("org/acme-corp/boundary/cloud-ato/evidence/")
+      expect(key).to start_with("acme-corp/cloud-ato/evidence/")
       expect(key).to include("/versions/#{version.id}/")
     end
 
@@ -168,7 +168,7 @@ RSpec.describe StorageKeyService do
 
       key = key_for(create(:evidence, authorization_boundary: messy_boundary))
 
-      expect(key).to match(%r{\Aorg/[a-z0-9._-]+/boundary/[a-z0-9._-]+/}), key
+      expect(key).to match(%r{\A[a-z0-9._-]+/[a-z0-9._-]+/}), key
       expect(key).not_to include(" ")
       expect(key).not_to include("//")
     end
@@ -206,13 +206,36 @@ RSpec.describe StorageKeyService do
     it "prepends a deployment prefix when a bucket is shared between instances" do
       ENV["SPARC_STORAGE_PREFIX"] = "staging"
 
-      expect(key_for(create(:evidence, authorization_boundary: boundary))).to start_with("staging/org/")
+      expect(key_for(create(:evidence, authorization_boundary: boundary))).to start_with("staging/acme-corp/")
     end
 
     it "is absent by default" do
       ENV.delete("SPARC_STORAGE_PREFIX")
 
-      expect(key_for(create(:evidence, authorization_boundary: boundary))).to start_with("org/")
+      expect(key_for(create(:evidence, authorization_boundary: boundary))).to start_with("acme-corp/")
+    end
+  end
+
+  # `sparc/` is the instance namespace and sits at the SAME level as an
+  # organization folder, so a tenant must not be able to occupy it.
+  describe "reserved top-level names" do
+    it "disambiguates an organization whose name collides with the instance namespace" do
+      sneaky = create(:organization, name: "SPARC")
+      sneaky_boundary = create(:authorization_boundary, name: "B1", organization: sneaky)
+
+      key = key_for(create(:evidence, authorization_boundary: sneaky_boundary))
+
+      expect(key).not_to start_with("sparc/")
+      expect(key).to start_with("sparc-#{sneaky.id}/")
+    end
+
+    it "disambiguates a boundary named Shared so it cannot occupy the org-wide tier" do
+      shared_boundary = create(:authorization_boundary, name: "Shared", organization: organization)
+
+      key = key_for(create(:evidence, authorization_boundary: shared_boundary))
+
+      expect(key).not_to start_with("acme-corp/shared/")
+      expect(key).to start_with("acme-corp/shared-#{shared_boundary.id}/")
     end
   end
 end

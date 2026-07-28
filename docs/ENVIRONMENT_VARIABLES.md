@@ -545,7 +545,7 @@ notifications, etc.
 | AWS_SECRET_ACCESS_KEY | AWS secret key for S3 storage | (none) | `wJalr...` | Yes (if amazon) |
 | AWS_REGION | AWS region for S3 bucket | (none) | `us-east-1` | Yes (if amazon) |
 | AWS_BUCKET | **Legacy fallback** for `SPARC_STORAGE_URL`. S3 bucket name for file uploads. | (none) | `sparc-uploads` | Yes (if amazon and no SPARC_STORAGE_URL) |
-| SPARC_STORAGE_PREFIX | Optional top-level prefix placed in front of every object key (#830), for a bucket shared between deployments — staging and production, or two tenants of one operator. Leave unset when the bucket already belongs to one instance, which is the common case. Changing it does **not** move existing objects: keys are persisted, so relocation is copy-then-update (`bin/rails sparc:storage:relocate`). | (unset) | `staging` | No |
+| SPARC_STORAGE_PREFIX | Optional prefix placed in front of every object key (#830), for a bucket shared between deployments — staging and production, or two tenants of one operator. Leave unset when the bucket already belongs to one instance, which is the common case. Changing it does **not** move existing objects: keys are persisted, so relocation is copy-then-update (`bin/rails sparc:storage:relocate`). | (unset) | `staging` | No |
 | SPARC_PERSIST_S3_BLOB | Keep the original upload blob after a successful parse. **As of #680 the blob is RETAINED by default** so a referenced artifact never disappears out from under an exported document (durable back-matter). Set to `false` to restore the old purge-after-parse behavior (#392). Failed parses always retain the blob regardless. | true (retain) | `false` | No |
 
 ---
