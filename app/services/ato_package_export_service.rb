@@ -145,6 +145,11 @@ class AtoPackageExportService
         when :json then json
         when :yaml then OscalExportFormatService.to_yaml(json)
         when :xml  then OscalExportFormatService.to_xml(json, model)
+        # Unreachable while FORMATS and this case agree — which is
+        # exactly what it guards. Adding a format to FORMATS without
+        # teaching this method to render it would otherwise write a
+        # file with nil content into the package.
+        else raise ArgumentError, "no renderer for serialization #{format.inspect}"
         end
 
         { file: "#{basename}.#{format}", format: format.to_s, body: body,
@@ -165,6 +170,9 @@ class AtoPackageExportService
                model, YAML.safe_load(body, permitted_classes: [ Date, Time, DateTime ], aliases: true)
              )
     when :xml then OscalSchemaValidationService.validate_xml(model, body)
+    # Same guard as `serialize`: a new format that nothing validates
+    # must not silently report as conformant.
+    else raise ArgumentError, "no schema check for serialization #{format.inspect}"
     end
     result.valid?
   rescue StandardError

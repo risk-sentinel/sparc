@@ -65,6 +65,13 @@ require "nokogiri"
 require "pathname"
 
 module OscalElementOrderGenerator
+  # Raised for anything that means the generated table would be WRONG rather
+  # than merely incomplete — a missing schema directory, two XSDs disagreeing
+  # about a type, an unresolvable group reference. Each one must stop the run:
+  # a silently partial ordering table produces XML that fails validation far
+  # from here.
+  class GeneratorError < StandardError; end
+
   XS = "http://www.w3.org/2001/XMLSchema"
 
   ROOT_DIR   = Pathname.new(__dir__).parent
@@ -80,7 +87,7 @@ module OscalElementOrderGenerator
   class << self
     def generate
       schemas = SCHEMA_DIR.glob("*.xsd").sort
-      raise "no XSDs found in #{SCHEMA_DIR}" if schemas.empty?
+      raise GeneratorError, "no XSDs found in #{SCHEMA_DIR}" if schemas.empty?
 
       @types  = {}   # name => Nokogiri node for xs:complexType
       @groups = {}   # name => Nokogiri node for xs:group
@@ -159,7 +166,7 @@ module OscalElementOrderGenerator
     def register_unique(table, name, node, path)
       existing = table[name]
       if existing && normalize(existing) != normalize(node)
-        raise "conflicting definitions of '#{name}' (redefined in #{path.basename})"
+        raise GeneratorError, "conflicting definitions of '#{name}' (redefined in #{path.basename})"
       end
 
       table[name] = node
@@ -285,13 +292,13 @@ module OscalElementOrderGenerator
       # No OSCAL assembly has a child element named <p>.
       return "multiline" if permits_paragraphs?(node)
 
-      own_bases(node).each do |base|
-        return MARKUP_DATATYPES[base] if MARKUP_DATATYPES.key?(base)
+      inherited = own_bases(node).filter_map do |base|
+        next MARKUP_DATATYPES[base] if MARKUP_DATATYPES.key?(base)
         next if seen.include?(base) || @types[base].nil?
 
-        inherited = markup_kind(@types[base], base, seen + [ base ])
-        return inherited if inherited
-      end
+        markup_kind(@types[base], base, seen + [ base ])
+      end.first
+      return inherited if inherited
 
       # A few assemblies inline the prose vocabulary instead of extending the
       # named datatype. Mixed content is still prose.
@@ -331,7 +338,7 @@ module OscalElementOrderGenerator
         next [] unless child.namespace&.href == XS
 
         case child.name
-        when "element"    then [ element_particle(child, type_name: type_name, seen_groups: seen_groups) ].compact
+        when "element"    then [ element_particle(child, type_name: type_name) ].compact
         when "sequence", "choice", "all"
           walk(child, type_name: type_name, seen_groups: seen_groups)
         when "group"      then group_particles(child, type_name: type_name, seen_groups: seen_groups)
@@ -345,7 +352,7 @@ module OscalElementOrderGenerator
 
     # An element contributes itself and, when it declares an inline
     # complexType, a synthesized entry so the converter can descend into it.
-    def element_particle(node, type_name:, seen_groups:)
+    def element_particle(node, type_name:)
       name = node["name"]
       return nil if name.nil?
 
@@ -372,7 +379,7 @@ module OscalElementOrderGenerator
       return [] if ref.nil? || seen_groups.include?(ref)
 
       target = @groups[ref]
-      raise "unresolved xs:group ref='#{ref}'" if target.nil?
+      raise GeneratorError, "unresolved xs:group ref='#{ref}'" if target.nil?
 
       walk(target, type_name: type_name, seen_groups: seen_groups + [ ref ])
     end
