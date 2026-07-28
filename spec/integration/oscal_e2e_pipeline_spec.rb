@@ -77,10 +77,6 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
     end
 
     it "round-trips to XSD-valid OSCAL XML" do
-      pending "#827 — OscalJsonToXmlConverter emits JSON key order instead of " \
-              "the OSCAL XSD element sequence, so every XML export is " \
-              "schema-invalid. Remove this marker when #827 lands."
-
       json = OscalCatalogExportService.new(catalog).export
       expect_valid_xml(json, model_type: :catalog, label: "Stage 1 catalog")
     end
@@ -598,24 +594,54 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         end
       end
 
+      # Driven through HdfRunner rather than the service, because the service
+      # now REFUSES to return this document (#831 — it is not schema-valid).
+      # The conversion itself still works and produces the right shape, and
+      # that seam is worth pinning independently of the validation gate: if the
+      # CLI stopped converting at all, the failure should say so rather than
+      # looking like a schema problem.
       it "converts HDF results into an OSCAL assessment-results document" do
-        oscal = HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture)
+        oscal = HdfRunner.new.convert(hdf_fixture, from: "hdf", to: "oscal-sar")
 
-        # The conversion itself works and produces the right document shape;
-        # what it produces is not schema-valid (see below).
         expect(oscal).to have_key("assessment-results")
         expect(oscal.dig("assessment-results", "results")).to be_present
       end
 
-      it "converts to SCHEMA-VALID OSCAL assessment-results" do
-        pending "#831 — hdf-cli 3.4.1 emits assessment-results missing required " \
-                "properties (reviewed-controls, finding/description, " \
-                "characterization/origin) and SPARC returns it unvalidated from " \
-                "/api/v1/translations. Remove this marker when #831 lands."
+      # #831 — SPARC no longer hands back OSCAL that fails NIST's own schema.
+      #
+      # hdf-cli 3.4.1 emits assessment-results missing required properties
+      # (reviewed-controls, finding/description, characterization/origin, plus
+      # an empty prop.value). That is an upstream defect — mitre/hdf-libs#184 —
+      # and SPARC cannot repair it without INVENTING what the assessment
+      # reviewed, which would be schema-valid and untrue. So the translation is
+      # rejected rather than returned.
+      #
+      # This example pins the CURRENT upstream state. When #184 lands, the
+      # conversion starts succeeding and this fails — deliberately, so the
+      # improvement is noticed rather than sitting unclaimed. At that point
+      # swap it for the positive assertion below it.
+      it "REFUSES to return schema-invalid assessment-results from hdf-cli" do
+        expect {
+          HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture)
+        }.to raise_error(OscalValidationError, /reviewed-controls/),
+             "hdf-cli SAR output now satisfies the OSCAL schema. mitre/hdf-libs#184 " \
+             "appears fixed — replace this with the positive assertion: " \
+             "expect_valid_json_and_yaml(JSON.generate(oscal), model_type: :assessment_results, ...)"
+      end
 
-        oscal = HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture)
-        expect_valid_json_and_yaml(JSON.generate(oscal), model_type: :assessment_results,
-                                                         label: "Stage 5 HDF -> SAR")
+      # The gate must reject for the RIGHT reason. Given output the schema
+      # accepts, the same path returns it — so the rejection above is the
+      # schema talking, not the gate refusing everything.
+      it "returns the document when it does satisfy the schema" do
+        runner = instance_double(HdfRunner)
+        valid_sar = JSON.parse(
+          Rails.root.join("spec/fixtures/files/sar/ifa_assessment-results.json").read
+        )
+        allow(runner).to receive(:convert).and_return(valid_sar)
+
+        result = HdfOscalTranslationService.new(runner: runner).hdf_to_oscal_sar(hdf_fixture)
+
+        expect(result).to have_key("assessment-results")
       end
 
       # OSCAL POA&M is sourced from HDF **Amendments**, not from raw HDF: the
@@ -654,16 +680,25 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
         end
       end
 
+      # Enrichment is exercised against a document the schema accepts, because
+      # the service will not return one it rejects (#831). Using real hdf-cli
+      # output here would fail on the upstream converter defect rather than on
+      # anything to do with evidence merging, which is what this pins.
       it "merges boundary evidence into OSCAL back-matter" do
         ab = create(:authorization_boundary)
         evidence = create(:evidence, authorization_boundary: ab)
+        runner = instance_double(HdfRunner)
+        allow(runner).to receive(:convert).and_return(
+          JSON.parse(Rails.root.join("spec/fixtures/files/sar/ifa_assessment-results.json").read)
+        )
 
-        oscal = HdfOscalTranslationService.new.hdf_to_oscal_sar(hdf_fixture, boundary: ab)
+        oscal = HdfOscalTranslationService.new(runner: runner)
+                                          .hdf_to_oscal_sar(hdf_fixture, boundary: ab)
         resources = oscal.dig("assessment-results", "back-matter", "resources") || []
 
         expect(resources).to be_present,
           "boundary evidence was not merged into back-matter"
-        expect(evidence).to be_persisted
+        expect(resources.map { |r| r["uuid"] }).to include(evidence.uuid)
       end
     end
 
@@ -737,6 +772,48 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       end
     end
 
+    # #827. Every OSCAL model has a `download_xml` route, and before #827 every
+    # one of them emitted schema-invalid XML: the converter walked the parsed
+    # JSON in insertion order while each XSD assembly is an `xs:sequence` with a
+    # mandated child order. Catalog alone is not enough coverage — the defect
+    # was in shared traversal code, and the models differ in which parts of it
+    # they exercise (grouped arrays, simpleContent fields, markup-line versus
+    # markup-multiline prose, elements renamed between JSON and XML).
+    it "converts every model to XSD-valid OSCAL XML" do
+      invalid = MODEL_FIXTURES.filter_map do |model, path|
+        xml = OscalExportFormatService.to_xml(fixture_json(path), model)
+        result = OscalSchemaValidationService.validate_xml(model, xml)
+
+        "#{model}: #{Array(result.errors).first(3).join('; ')}" unless result.valid?
+      end
+
+      expect(invalid).to be_empty,
+        "these models did not produce XSD-valid XML:\n  #{invalid.join("\n  ")}"
+    end
+
+    # The negative for the assertion above. The XSD is the only thing standing
+    # behind it, so if it accepted anything well-formed, "converts every model
+    # to XSD-valid XML" would pass no matter what the converter emitted. Damage
+    # ONLY the element order — content, attributes and namespaces stay valid —
+    # so nothing but the sequence rule can be doing the rejecting.
+    it "REJECTS XML whose elements are well-formed but out of sequence" do
+      xml = OscalExportFormatService.to_xml(fixture_json(MODEL_FIXTURES[:catalog]), :catalog)
+      expect(OscalSchemaValidationService.validate_xml(:catalog, xml).valid?).to be(true),
+        "precondition failed: the catalog fixture must convert to valid XML first"
+
+      doc = Nokogiri::XML(xml)
+      metadata = doc.at_xpath("//*[local-name()='metadata']")
+      title = metadata.at_xpath("./*[local-name()='title']")
+      last_modified = metadata.at_xpath("./*[local-name()='last-modified']")
+      title.add_previous_sibling(last_modified.dup)
+      last_modified.remove
+
+      result = OscalSchemaValidationService.validate_xml(:catalog, doc.to_xml)
+
+      expect(result.valid?).to be(false),
+        "the XSD accepted <metadata> with last-modified before title — it is not enforcing sequence order"
+    end
+
     it "REJECTS every document validated as a model it is not" do
       # 7 models × 6 wrong schemas = 42 combinations. A validator that ignored
       # its model_type argument, or defaulted to a permissive schema, would
@@ -782,7 +859,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       # The distinction matters: a raised exception surfaces to an API caller
       # as a 500, an invalid result as a 422. #817 asks for deliberate
       # rejection, which means the former is a bug even though both "fail".
-      [ "not json at all", "{unclosed", '{"catalog": ', " " ].each do |payload|
+      [ "not json at all", "{unclosed", '{"catalog": ', "\u0000" ].each do |payload|
         expect {
           OscalSchemaValidationService.validate_json(:catalog, payload)
         }.not_to raise_error, "validator crashed instead of rejecting: #{payload.inspect}"

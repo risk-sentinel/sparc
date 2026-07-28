@@ -120,13 +120,21 @@ test:
 #
 # DATABASE_URL always wins when present (Rails convention). See
 # docs/ENVIRONMENT_VARIABLES.md for the full configuration reference.
+# Values are emitted via `.to_json` so they land as QUOTED YAML scalars.
+# Every JSON string is a valid YAML string, and this is not cosmetic: these
+# values come from a rotated Secrets Manager secret, so the password is
+# machine-generated and will eventually contain a YAML metacharacter. Unquoted,
+# `pa: ss` and `a\nb` fail to parse (the app will not boot), `*star` raises
+# Psych::AliasesNotEnabled, and `&anchor` is read as a YAML ANCHOR and silently
+# becomes nil — connecting with no password at all. `.to_json` also renders a
+# nil password as `null`, which YAML reads back as nil, preserving "unset".
 production:
   primary: &primary_production
     <<: *default
-    database: <%= DbUrl.database %>
-    username: <%= DbUrl.username %>
-    password: <%= DbUrl.password %>
-    host: <%= DbUrl.host %>
+    database: <%= DbUrl.database.to_json %>
+    username: <%= DbUrl.username.to_json %>
+    password: <%= DbUrl.password.to_json %>
+    host: <%= DbUrl.host.to_json %>
     port: <%= DbUrl.port %>
   cache:
     <<: *primary_production

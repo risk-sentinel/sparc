@@ -18,9 +18,13 @@ RSpec.describe "PoamRisks", type: :request do
 
   describe "POST /poam_documents/:poam_document_id/poam_risks" do
     let(:base_attrs) do
+      # #832 — description, statement, status and deadline are all required on
+      # a risk now; an incomplete one is rejected at entry rather than failing
+      # OSCAL schema validation later at export.
       { title: "Test Risk", description: "A risk to track",
         statement: "Asset X has weakness Y allowing Z",
-        status: "open", impact: "high", likelihood: "medium" }
+        status: "open", impact: "high", likelihood: "medium",
+        deadline: 30.days.from_now.to_date }
     end
 
     it "creates a risk with core fields and props/links/origins" do
@@ -54,9 +58,21 @@ RSpec.describe "PoamRisks", type: :request do
       expect(risk.origins_data).to eq([])
     end
 
+    # This example was named "returns 422" but asserted 302-or-200 — it
+    # documented the old behaviour, in which an incomplete risk was accepted and
+    # only failed later at export. #832 makes the name true.
     it "returns 422 when title is missing" do
       post poam_document_poam_risks_path(poam), params: { poam_risk: base_attrs.merge(title: "") }
-      expect(response).to have_http_status(:found).or have_http_status(:ok)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(poam.poam_risks.count).to eq(0)
+    end
+
+    it "returns 422 when the deadline is missing (#832)" do
+      post poam_document_poam_risks_path(poam), params: { poam_risk: base_attrs.except(:deadline) }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to match(/deadline/i)
     end
 
     it "writes a poam_risk_created audit event" do
@@ -69,7 +85,10 @@ RSpec.describe "PoamRisks", type: :request do
   describe "PATCH /poam_documents/:poam_document_id/poam_risks/:id" do
     let!(:risk) do
       poam.poam_risks.create!(uuid: SecureRandom.uuid, title: "Existing Risk",
-                              status: "open", impact: "medium")
+                              description: "An existing risk under test",
+                              statement: "Asset X has weakness Y allowing Z",
+                              status: "open", impact: "medium",
+                              deadline: 30.days.from_now)
     end
 
     it "updates fields and props/links" do
@@ -88,7 +107,10 @@ RSpec.describe "PoamRisks", type: :request do
 
   describe "DELETE /poam_documents/:poam_document_id/poam_risks/:id" do
     let!(:risk) do
-      poam.poam_risks.create!(uuid: SecureRandom.uuid, title: "To Be Deleted")
+      poam.poam_risks.create!(uuid: SecureRandom.uuid, title: "To Be Deleted",
+                              description: "A risk that will be removed",
+                              statement: "Asset X has weakness Y allowing Z",
+                              status: "open", deadline: 30.days.from_now)
     end
 
     it "destroys the risk and writes an audit event" do

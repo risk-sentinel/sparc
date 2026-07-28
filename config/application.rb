@@ -13,6 +13,13 @@ require_relative "../lib/logging/sparc_json_formatter"
 # must stay raw-YAML-parseable, so it cannot `<% require %>` the helper itself).
 require_relative "../lib/db_url/config"
 
+# #834 — DB_CREDENTIALS (the structured Secrets Manager RDS secret) outranks
+# DATABASE_URL. Rails merges DATABASE_URL into `primary` only, so when both are
+# set this rewrites it from the preferred source; otherwise `primary` would use
+# the deploy-time-pinned password while cache/queue/cable used the rotated one.
+# Must run before config/database.yml renders.
+DbUrl.reconcile_database_url!
+
 # #785 Pass 2.1 — StorageUrl derives the object-storage backend from
 # SPARC_STORAGE_URL. Required here so the constant exists when config/storage.yml
 # renders (same pre-autoload reason as DbUrl).

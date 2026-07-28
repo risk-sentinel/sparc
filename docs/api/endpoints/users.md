@@ -343,6 +343,84 @@ curl -X DELETE "https://sparc.example.com/api/v1/users/3" \
 
 ---
 
+### POST Issue a Password Reset (Admin Only)
+
+```
+POST /api/v1/users/:id/password_reset
+```
+
+Recovers a user who has forgotten their local-login password (#841). Before this
+there was no recovery path at all: an admin could not set a password, no
+self-service flow existed, and the password-change screen requires the *current*
+password — which is exactly what has been lost.
+
+The administrator never ends up knowing a password the user keeps.
+
+**Modes**
+
+| `mode` | Requires | Behaviour |
+|---|---|---|
+| `temporary` (default) | nothing | Returns a temporary password for the admin to hand over out of band. The user **must** replace it at first sign-in. |
+| `email` | SMTP configured | Emails a single-use, expiring link. The token is **not** returned. |
+
+`:id` is the numeric user id, the same identifier the admin UI uses.
+
+**Request**
+
+```bash
+curl -s -X POST https://sparc.example.com/api/v1/users/42/password_reset \
+  -H "Authorization: Bearer $SPARC_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"mode": "temporary"}'
+```
+
+`201 Created`:
+
+```json
+{
+  "data": {
+    "user_id": 42,
+    "email": "locked.out@example.gov",
+    "mode": "temporary",
+    "temporary_password": "k3Jd8sPq2mVx9Lza-417",
+    "must_change_at_next_login": true,
+    "note": "Shown once. Convey it out of band; the user is required to change it when they sign in."
+  }
+}
+```
+
+The temporary password is shown **once** — only its bcrypt digest is stored, so
+it cannot be retrieved again, only re-issued. Re-issuing invalidates the
+previous one, and any outstanding email link.
+
+With `{"mode": "email"}` the response carries no credential:
+
+```json
+{
+  "data": {
+    "user_id": 42,
+    "email": "locked.out@example.gov",
+    "mode": "email",
+    "expires_at": "2026-07-28T13:00:00Z",
+    "note": "A one-time link was emailed to the user. It is not retrievable here."
+  }
+}
+```
+
+**Errors**
+
+| Status | When |
+|---|---|
+| `422` | The account is not active — reactivate it first; issuing a credential must not bypass that decision |
+| `422` | `mode=email` on an instance with no SMTP configured (`SPARC_SMTP_ADDRESS`) |
+| `422` | An unrecognised `mode` |
+| `403` | Caller is not an Instance Admin |
+
+Both issuance and redemption are audited (`admin_temporary_password_issued`,
+`admin_password_reset_emailed`, `password_reset_redeemed`).
+
+---
+
 ## Common Errors
 
 | Code | Error | Description |

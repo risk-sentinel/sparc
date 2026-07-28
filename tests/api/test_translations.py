@@ -74,18 +74,42 @@ class TestSarFromHdf:
         # stops testing anything.
         assert "baselines" not in json.loads(_hdf_bytes()), "fixture must stay baseline-less"
         response = _post_raw(admin_client, SAR_PATH, _hdf_bytes())
-        assert response.status_code == 200, response.text
+
+        # #831 — SPARC validates every OSCAL document it emits. hdf-cli 3.4.1
+        # produces assessment-results missing OSCAL-REQUIRED properties
+        # (reviewed-controls, finding/description, characterization/origin), so
+        # the translation is REFUSED rather than returned. 502, not 422: the
+        # caller's input is fine; the fault is in the upstream converter.
+        #
+        # This pins the CURRENT upstream state. When mitre/hdf-libs#184 lands
+        # this starts returning 200 and the assertion below fails ON PURPOSE, so
+        # the fix is noticed rather than sitting unclaimed.
+        if response.status_code == 200:
+            assert "assessment-results" in response.json(), response.text
+            pytest.fail(
+                "hdf-cli now emits schema-valid assessment-results — mitre/hdf-libs#184 "
+                "appears fixed. Restore the plain 200 assertion here and in "
+                "spec/integration/oscal_e2e_pipeline_spec.rb."
+            )
+
+        assert response.status_code == 502, response.text
         body = response.json()
-        # OSCAL SAR documents are rooted at "assessment-results".
-        assert "assessment-results" in body, body
+        assert "reviewed-controls" in " ".join(body["details"]), body
+        assert "hdf-libs" in body["note"]
 
     @pytest.mark.happy
     def test_multipart_upload_returns_oscal_sar(self, admin_client: httpx.Client) -> None:
         response = admin_client.post(
             SAR_PATH, files={"file": ("sample.hdf.json", _hdf_bytes(), "application/json")}
         )
-        assert response.status_code == 200, response.text
-        assert "assessment-results" in response.json()
+
+        # Same #831 gate as the raw-body case; what this pins is that the
+        # MULTIPART path reaches the same converter and the same validation.
+        assert response.status_code in (200, 502), response.text
+        if response.status_code == 502:
+            assert "does not conform" in response.json()["error"]
+        else:
+            assert "assessment-results" in response.json()
 
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
@@ -245,8 +269,16 @@ class TestBoundaryEnrichment:
         response = _post_raw(
             admin_client, f"{SAR_PATH}?authorization_boundary_id={boundary['id']}", _hdf_bytes()
         )
-        assert response.status_code == 200, response.text
-        assert "assessment-results" in response.json()
+
+        # What this pins is that the BOUNDARY parameter is accepted and routed,
+        # not the converter's conformance — which #831 now gates and hdf-cli
+        # 3.4.1 fails. A 403/401 here would mean authorization broke; a 502
+        # means enrichment ran and the upstream converter output was refused.
+        assert response.status_code in (200, 502), response.text
+        if response.status_code == 502:
+            assert "does not conform" in response.json()["error"]
+        else:
+            assert "assessment-results" in response.json()
 
     @pytest.mark.authz
     def test_non_privileged_user_forbidden(

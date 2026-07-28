@@ -14,6 +14,11 @@ RSpec.describe "PoamFindings", type: :request do
         post poam_document_poam_findings_path(poam), params: {
           poam_finding: { title: "AU-2 coverage gap",
                           description: "Audit events missing for new subsystem",
+                          # #840 — OSCAL requires finding/target: what was
+                          # assessed and the resulting state.
+                          target_data: { "type" => "statement-id",
+                                         "target-id" => "au-2_smt",
+                                         "status" => { "state" => "not-satisfied" } },
                           implementation_statement_uuid: "stmt-uuid-1",
                           props_data: [ { name: "ctrl", value: "au-2" } ],
                           links_data: [ { href: "https://gov/au2.pdf", rel: "reference" } ] }
@@ -64,7 +69,7 @@ RSpec.describe "PoamFindings", type: :request do
   end
 
   describe "DELETE /poam_documents/:poam_document_id/poam_findings/:id" do
-    let!(:finding) { poam.poam_findings.create!(uuid: SecureRandom.uuid, title: "Doomed") }
+    let!(:finding) { create(:poam_finding, poam_document: poam, title: "Doomed") }
 
     it "destroys and writes audit row" do
       expect {

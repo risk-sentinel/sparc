@@ -95,6 +95,51 @@ def test_acceptance_is_session_scoped_not_permanent(page):
     )
 
 
+def test_login_tabs_are_clickable_after_consent(page):
+    """#833 — the login tabs must be usable, not merely visible, after Proceed.
+
+    Reported symptom: dismiss the banner and the OIDC (Okta) tab cannot be
+    selected; a hard reload clears it. The tab is present and looks enabled, so
+    "visible" proves nothing — the suspected mechanism is that Bootstrap's modal
+    backdrop is still in the DOM, sitting above the card and swallowing clicks.
+
+    ``proceed()`` reveals the login card SYNCHRONOUSLY but ``hide()`` tears the
+    backdrop down ASYNCHRONOUSLY, so there is always a window where a visible
+    card is covered. Bootstrap's backstop timer normally closes it in ~150ms;
+    this asserts it actually closes, and that a real click then lands.
+
+    Note the bounded waits: an unbounded one would pass by waiting out a
+    backdrop that never leaves, which is exactly the reported failure.
+    """
+    _open_login(page)
+    _require_banner(page)
+
+    page.locator(CONSENT_PROCEED).first.click()
+
+    # The card must be revealed, and the backdrop must actually go away.
+    page.wait_for_selector(LOGIN_CARD, state="visible", timeout=3000)
+    try:
+        page.wait_for_selector(".modal-backdrop", state="detached", timeout=3000)
+    except Exception as exc:  # noqa: BLE001 - want the assertion message, not the raw error
+        raise AssertionError(
+            "the Bootstrap modal backdrop was still in the DOM 3s after Proceed. "
+            "It covers the revealed login card and swallows clicks, which is the "
+            "#833 symptom: tabs look enabled but cannot be selected."
+        ) from exc
+
+    oidc_tab = page.locator("button[data-tab='tab-oidc']")
+    if oidc_tab.count() == 0:
+        pytest.skip("OIDC is not enabled on this instance")
+
+    # A real click, with a short timeout. If anything is intercepting pointer
+    # events this raises rather than silently retrying until the page settles.
+    oidc_tab.first.click(timeout=2000)
+
+    assert page.locator("#tab-oidc.active").count() == 1, (
+        "clicking the OIDC tab did not activate its panel — the click did not reach the button"
+    )
+
+
 def test_acceptance_is_recorded_under_the_expected_key(page):
     """Guards the storage key, which the system-spec teardown also clears."""
     _open_login(page)

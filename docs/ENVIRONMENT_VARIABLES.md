@@ -33,7 +33,7 @@ This is the real list. Roughly a dozen entries.
 | `SPARC_APP_URL` | Your public URL. Also derives the OIDC redirect URI and FIDO2 RP ID |
 | `SECRET_KEY_BASE` | Rails master secret |
 | `SPARC_HASH` | Per-instance master secret (≥32 chars) |
-| `DATABASE_URL` | Your database |
+| `DB_CREDENTIALS` *or* `DATABASE_URL` | Your database — see [Database Configuration](#database-configuration) for precedence |
 | `SPARC_ADMIN_EMAIL` | The instance administrator account |
 | `SPARC_CONTACT_EMAIL` | Where users are pointed for support |
 | **One auth block** | `SPARC_ENABLE_LOCAL_LOGIN=true`, or OIDC / LDAP / FIDO2 / PIV credentials |
@@ -47,7 +47,8 @@ only needed to force something **off**.
 
 ### Tier 2 — Infrastructure (your platform decides these)
 
-`DATABASE_URL`, `REDIS_URL`, `AWS_BUCKET`, `AWS_REGION`, secret ARNs. In a
+`DB_CREDENTIALS`, `DATABASE_URL`, `REDIS_URL`, `AWS_BUCKET`, `AWS_REGION`,
+secret ARNs. In a
 managed deployment these are rendered by Terraform or your orchestrator; they
 are not authored by hand.
 
@@ -95,15 +96,128 @@ and will override a real default.
 
 ## Database Configuration
 
-SPARC uses PostgreSQL as the primary database. The preferred way to
-configure is via `DATABASE_URL`, but individual variables are supported
-for flexibility. `DATABASE_URL` always takes priority when set (Rails
-auto-merges it over `database.yml` values).
+SPARC uses PostgreSQL. There are three ways to configure it, in strict
+precedence order:
+
+1. **`DB_CREDENTIALS`** — the AWS Secrets Manager RDS secret, consumed whole.
+2. **`DATABASE_URL`** — a full connection URI.
+3. **`SPARC_DB_*`** — individual variables.
+
+### Which one should you use?
+
+**Set exactly one of these.** They are not layered — the highest one present
+wins outright and the others are ignored silently. SPARC reports the source it
+resolved at boot (`Database configuration source: …`) and warns when more than
+one is configured, so check the logs if a variable you edited seems to have no
+effect.
+
+`DB_CREDENTIALS` is not a different *kind* of configuration; it is the same five
+values (`host`, `port`, `dbname`, `username`, `password`) delivered as one JSON
+blob, because that is the shape the AWS-managed RDS rotator writes. Only two of
+those five are secret — the username and the password. The host, port and
+database name are topology, and they are already visible in your task definition
+and Terraform state.
+
+So there are two good answers, and which is right depends on who rotates the
+credential:
+
+| You want | Use | Why |
+|---|---|---|
+| AWS-managed rotation, minimum wiring | `DB_CREDENTIALS` | The rotator writes this exact blob; SPARC reads it at boot, so a rotation takes effect on the next task restart with no redeploy. Validated all-or-nothing. |
+| The smallest possible secret surface | `SPARC_DB_*`, with only user and password injected as secrets | Host, port and database name stay ordinary environment variables. Only the two values that are actually sensitive are secret references. |
+
+**The second is not a downgrade, and it still rotates without a redeploy.** ECS
+can inject an individual key out of a JSON secret, so the managed rotator can
+keep writing the blob while SPARC consumes only the two fields it needs:
+
+```jsonc
+// ECS task definition
+"environment": [
+  { "name": "SPARC_DB_HOST", "value": "sparc-prod.abc123.us-east-1.rds.amazonaws.com" },
+  { "name": "SPARC_DB_PORT", "value": "5432" },
+  { "name": "SPARC_DB_NAME", "value": "sparc_prod" }
+],
+"secrets": [
+  { "name": "SPARC_DB_USER",     "valueFrom": "arn:aws:secretsmanager:…:sparc-prod/db-credentials:username::" },
+  { "name": "SPARC_DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:…:sparc-prod/db-credentials:password::" }
+]
+```
+
+ECS resolves `valueFrom` when the task starts, so a rotated password is picked
+up on restart exactly as it is with `DB_CREDENTIALS`.
+
+**One caveat if you take that route.** The `SPARC_DB_*` block has no
+all-or-nothing guard — an unset member silently takes a built-in default, and a
+missing `SPARC_DB_PASSWORD` connects with *no* password rather than failing, so
+the error surfaces later as a permission problem. SPARC warns at boot when the
+block is incomplete, but `DB_CREDENTIALS` is validated as a unit and is the
+safer default if you are not sure.
+
+**`DATABASE_URL` is the one to move away from.** It is a single pre-rendered
+string, so it puts the password in the task-definition environment and in
+Terraform state, and it pins the password at deploy time — a rotation has no
+effect until the next redeploy.
+
+All three configure **all four logical databases** — `primary` plus the Solid
+Cache/Queue/Cable databases. Those are four database *names* on the **same
+PostgreSQL server**, not four servers: the secondaries reuse the same host,
+port, username and password, and only append `_cache` / `_queue` / `_cable` to
+the database name. One credential is all you need.
+
+### Preferring `DB_CREDENTIALS` (#834)
+
+`DB_CREDENTIALS` holds the AWS Secrets Manager RDS secret verbatim, injected by
+ECS `secrets` → `valueFrom`, and is read **at boot**:
+
+```json
+{"host":"...","port":5432,"dbname":"...","username":"...","password":"..."}
+```
+
+Use it because it makes **credential rotation work without a redeploy**.
+`DATABASE_URL` is rendered at deploy time, so it pins the password: a Secrets
+Manager rotation has no effect until the task definition is re-rendered. Reading
+the secret at boot means a rotated password is picked up on the next task
+restart, with no IaC change. It also keeps the password out of the task
+definition environment and out of Terraform state.
+
+Notes on behaviour:
+
+- **All or nothing.** `host`, `dbname`, `username` and `password` must all be
+  present; `port` defaults to 5432. A partial secret is ignored *entirely* (with
+  a warning) rather than blended with `DATABASE_URL`, which would connect using
+  half of each credential and fail somewhere unrelated.
+- **It wins outright.** When `DB_CREDENTIALS` is usable, `DATABASE_URL` is
+  removed from the environment at boot. This is deliberate: Rails merges
+  `DATABASE_URL` into `primary` *only*, so leaving both set would put `primary`
+  on the stale deploy-time password while cache/queue/cable used the rotated
+  one.
+- **A malformed secret warns, never raises**, and falls back to `DATABASE_URL` /
+  `SPARC_DB_*`. The warning names the problem but never echoes the value.
+- **TLS is unchanged** — `sslmode` still comes from `SPARC_DB_SSLMODE`, which
+  floors at `require` in production. The credentials carry no TLS setting.
+- **Special characters are safe, and there is no URL to encode.** The secret's
+  fields are passed to libpq as discrete parameters, so nothing is ever
+  percent-encoded or parsed back out of a URI. The one place the password is
+  serialised is `config/database.yml`, where it is emitted via `.to_json` so it
+  lands as a *quoted* YAML scalar — the quotes exist only inside that file and
+  the YAML parser removes them before the value is used. Unquoted, a password
+  containing `: ` or a newline stops the app booting, and one starting with `&`
+  is read as a YAML anchor and silently becomes **nil**. Verified end to end on
+  the production image against a real PostgreSQL role whose password is
+  ``p@ss: *w&rd#"'\/+=%20end``: 24 bytes in the secret, 24 bytes at the
+  connection, and the server authenticates.
+- **The password is redacted from logs** unless `SPARC_LOG_CREDENTIALS=true`
+  (documented under [General Application & Logging](#general-application--logging)).
+- **The source in effect is reported at boot.** Precedence is otherwise
+  invisible, so SPARC logs `Database configuration source: …` and warns when a
+  second source is configured but ignored, or when a `SPARC_DB_*` block is
+  incomplete.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| DATABASE_URL | Full PostgreSQL connection URI (preferred method) | (none) | `postgres://user:pass@host:5432/sparc_prod` | Yes (if no individual vars) |
-| SPARC_DB_HOST | Database host. **Fallback only** — `DATABASE_URL` is preferred and, since #785 Pass 2, derives all four databases (primary + cache/queue/cable). Set the `SPARC_DB_*` block only when not using `DATABASE_URL`. | localhost | `db.example.com` | No |
+| DB_CREDENTIALS | Structured Secrets Manager RDS secret (JSON). **Highest precedence**; enables rotation without redeploy | (none) | `{"host":"db.rds.amazonaws.com","port":5432,"dbname":"sparc_prod","username":"sparc_app","password":"..."}` | No |
+| DATABASE_URL | Full PostgreSQL connection URI. Ignored when `DB_CREDENTIALS` is usable | (none) | `postgres://user:pass@host:5432/sparc_prod` | Yes (if neither `DB_CREDENTIALS` nor the individual vars are set) |
+| SPARC_DB_HOST | Database host. A fully supported way to configure the connection — see [Which one should you use?](#which-one-should-you-use) — and the right one if you want only the username and password to be secret references. Lowest precedence: ignored entirely when `DB_CREDENTIALS` or `DATABASE_URL` is set. Derives all four databases (primary + cache/queue/cable). | localhost | `db.example.com` | No |
 | SPARC_DB_PORT | Database port | 5432 | `5433` | No |
 | SPARC_DB_NAME | Database name | sparc | `sparc_production` | No |
 | SPARC_DB_USER | Database username | (none) | `sparc_app` | No |
@@ -376,6 +490,7 @@ Override the URL for air-gapped or mirror environments.
 | SPARC_CONTACT_EMAIL | Support/admin email shown in UI and login page | (none) | `compliance-team@yourorg.com` | No |
 | SPARC_RESOURCES | JSON array of external resource links for Resources page | FedRAMP 20x, NIST OSCAL, MITRE SAF defaults | `'[{"display_text":"Custom","href":"https://example.com"}]'` | No |
 | SPARC_LOG_TO_STDOUT | Send logs to stdout (recommended for containers) | false | `true` | No |
+| SPARC_LOG_CREDENTIALS | **Disables credential redaction in the logs.** Off by default: the structured formatter replaces the secret in connection URIs, `password=` conninfo and inspected config hashes, because a driver error or an `inspect` will otherwise write the database password to CloudWatch, where it is retained for the life of the log group. Turn it on ONLY while the credential itself is what you are debugging — then unset it and treat any password logged meanwhile as **compromised** and rotate it (with `DB_CREDENTIALS` that is a Secrets Manager rotation plus a task restart, no redeploy). A warning is logged at boot whenever it is on | false | `true` | No |
 | SPARC_STRUCTURED_LOGGING | Output logs in JSON format (CloudWatch, ELK, Splunk friendly) | false | `true` | No |
 | SPARC_LOG_LEVEL | Logging verbosity (debug, info, warn, error) | info | `debug` | No |
 

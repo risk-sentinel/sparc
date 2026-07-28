@@ -194,6 +194,12 @@ if %w[traditional full].include?(mode)
       r.status      = item_data[:risk_status]
       r.likelihood  = item_data[:likelihood]
       r.impact      = item_data[:impact]
+      # #832 REQUIRES a deadline: a POA&M with no time commitment is not a plan,
+      # and hdf-cli refuses to convert one. Taken from the item's authored
+      # milestone date — the real commitment — rather than invented from "today
+      # plus a year", which is precisely the hdf-cli 3.3.2 behaviour we called a
+      # bug when it did it.
+      r.deadline    = item_data[:milestone_date]
     end
 
     # OSCAL REQUIRES finding/target: what was assessed, and the resulting state.

@@ -39,8 +39,20 @@ namespace :sparc do
         display_name: admin.display_name.presence || "SPARC Admin",
         admin: true,
         status: "active",
-        must_reset_password: true,
-        password_changed_at: nil
+        # #841 — force a change ONLY when SPARC generated the password itself.
+        #
+        # When it comes from SPARC_ADMIN_PASSWORD its lifecycle belongs to
+        # Secrets Manager, and forcing a human to change it is actively harmful:
+        # the moment they do, the credential documented in SM is stale, and on
+        # the next restart the branch below sees the mismatch and overwrites
+        # their choice — so the operator is forced to change it again, forever.
+        # A break-glass account whose recorded password does not work is worse
+        # than no break-glass account, because it fails when it is needed.
+        #
+        # A generated password IS printed (dev) or was visible in the container
+        # logs, so that one must still be changed.
+        must_reset_password: desired_password.blank?,
+        password_changed_at: desired_password.present? ? Time.current : nil
       )
 
       if admin.save
@@ -67,7 +79,13 @@ namespace :sparc do
           puts "  Password: #{password}"
         end
         puts ""
-        puts "  *** You will be required to change this password on first login. ***"
+        if desired_password
+          puts "  Managed by Secrets Manager: rotate there and restart the task."
+          puts "  No forced change on first login — that would leave the stored"
+          puts "  credential stale and it would be overwritten on the next boot."
+        else
+          puts "  *** You will be required to change this password on first login. ***"
+        end
         puts "=" * 60
         puts ""
       else
@@ -81,7 +99,11 @@ namespace :sparc do
       admin.update!(
         password: desired_password,
         password_confirmation: desired_password,
-        must_reset_password: true,
+        # Never forced here: this value came FROM Secrets Manager, so requiring
+        # a change would guarantee the two diverge again immediately (#841).
+        # Rotation is the way this password changes, and it propagates on the
+        # next restart with no human step.
+        must_reset_password: false,
         password_changed_at: Time.current
       )
       AuditEvent.log(

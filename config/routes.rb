@@ -34,6 +34,12 @@ Rails.application.routes.draw do
   # Password change (forced reset for bootstrapped admin)
   resource :password, only: [ :edit, :update ]
 
+  # #841 — redeeming an admin-issued reset. Unauthenticated by necessity: the
+  # user cannot sign in, which is the problem being solved. Authority is the
+  # single-use, expiring token.
+  get   "password/reset/:token", to: "password_resets#edit",   as: :edit_password_reset
+  patch "password/reset/:token", to: "password_resets#update", as: :password_reset
+
   # FIDO2 security keys — enroll (WebAuthn attestation ceremony), list, revoke (#779)
   resources :webauthn_credentials, only: [ :index, :create, :destroy ] do
     post :registration_options, on: :collection
@@ -383,6 +389,9 @@ Rails.application.routes.draw do
         patch :reactivate
         patch :deactivate
         delete :reset_security_keys   # revoke all of a user's FIDO2 keys (#779 lockout recovery)
+        # #841 lockout recovery, two routes because deployments differ:
+        patch  :reset_password        # temporary password, handed over out of band
+        patch  :email_password_reset  # emailed one-time link (requires SMTP)
       end
       resources :api_tokens, only: [ :create, :destroy ], controller: "api_tokens"
     end
@@ -490,7 +499,13 @@ Rails.application.routes.draw do
           post "fields/import/confirm", to: "sap_documents#import_fields_confirm", as: :import_fields_confirm
         end
       end
-      resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ]
+      # #832 — risks are addressable so an incomplete one is rejected with a 422
+      # naming the missing fields at entry, rather than surfacing much later as
+      # a POA&M that fails OSCAL schema validation at export.
+      resources :poam_documents, only: [ :index, :show, :create, :update, :destroy ] do
+        resources :risks, only: [ :index, :create ], controller: "poam_risks"
+      end
+      resources :poam_risks, only: [ :show, :update, :destroy ]
 
       # Evidence CRUD (#756 — file upload + Control/CDEF association) plus
       # attestations (#440 — periodic-review records + CMS schema export).
@@ -611,7 +626,13 @@ Rails.application.routes.draw do
       end
 
       # CRUD API endpoints (#95)
-      resources :users, only: [ :index, :show, :create, :update, :destroy ]
+      # #841 — issuing a reset is a user-facing admin function, so it has an API
+      # surface too. Returns the one-time link; the token is never persisted.
+      resources :users, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :password_reset
+        end
+      end
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
         # #770 bug 6 — assign/move/clear the boundary's organization, enforcing
         # the org-admin authorization matrix (instance admin may move; org_admin

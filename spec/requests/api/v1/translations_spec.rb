@@ -54,6 +54,28 @@ RSpec.describe "Api::V1::Translations", type: :request do
       expect(JSON.parse(response.body)).to eq(sar_doc)
     end
 
+    # #831 — the endpoint used to return whatever hdf-cli produced, so a caller
+    # could get a 200 carrying OSCAL that no tool would accept. The service now
+    # validates before returning; this pins how that surfaces at the API.
+    it "502s when the converter produced non-conforming OSCAL" do
+      expect(translation_service).to receive(:hdf_to_oscal_sar)
+        .and_raise(OscalValidationError, "OSCAL assessment_results validation failed:\n" \
+                                         "/assessment-results/results/0: missing required properties: reviewed-controls")
+
+      post api_v1_sar_from_hdf_path,
+           params: hdf_payload,
+           headers: auth_headers.merge(json_ct)
+
+      # Bad Gateway, not 422: the caller's input is fine and there is nothing
+      # they can change. The fault is in the upstream converter.
+      expect(response).to have_http_status(:bad_gateway)
+
+      body = JSON.parse(response.body)
+      expect(body["details"].join(" ")).to include("reviewed-controls"),
+        "the response must name what failed, or the caller cannot tell an upstream defect from their own bad input"
+      expect(body["note"]).to include("hdf-libs")
+    end
+
     it "translates multipart upload" do
       expect(translation_service).to receive(:hdf_to_oscal_sar)
         .with(an_instance_of(String), boundary: nil)

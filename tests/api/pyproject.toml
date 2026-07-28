@@ -79,6 +79,7 @@ markers = [
     "sessions: tests for the API session-from-token cookie bridge (#573)",
     "attestations: tests for evidence attestations (#440)",
     "evidence: tests for evidence CRUD and control links (#756)",
+    "poam_risks: tests for POA&M risk CRUD and required-field rejection (#832)",
 ]
 
 [tool.ruff]

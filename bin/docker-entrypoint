@@ -17,9 +17,34 @@ else
 fi
 
 # Wait for PostgreSQL (safe for all services)
-# Parse DATABASE_URL for host/port if available, fallback to docker-compose defaults
-DB_HOST=$(echo "${DATABASE_URL:-}" | sed 's|.*@\(.*\):.*|\1|')
-DB_PORT=$(echo "${DATABASE_URL:-}" | sed 's|.*:\([0-9]*\)/.*|\1|')
+
+# Resolve host/port in the SAME precedence order Rails uses (#834):
+# DB_CREDENTIALS > DATABASE_URL > SPARC_DB_*. This probe runs in the SHELL, long
+# before Rails boots and applies that precedence itself, so if the two disagree
+# the container waits on one database and then connects to another. Reads host
+# and port only; the password is never read or printed.
+DB_HOST=""
+DB_PORT=""
+
+if [ -n "${DB_CREDENTIALS:-}" ]; then
+    DB_HOST=$(ruby -rjson -e 'c = (JSON.parse(ENV["DB_CREDENTIALS"]) rescue {}); print c.is_a?(Hash) ? c["host"].to_s : ""' 2>/dev/null || true)
+    DB_PORT=$(ruby -rjson -e 'c = (JSON.parse(ENV["DB_CREDENTIALS"]) rescue {}); print c.is_a?(Hash) ? c["port"].to_s : ""' 2>/dev/null || true)
+fi
+
+if [ -z "${DB_HOST}" ] && [ -n "${DATABASE_URL:-}" ]; then
+    DB_HOST=$(echo "${DATABASE_URL}" | sed 's|.*@\(.*\):.*|\1|')
+    DB_PORT=$(echo "${DATABASE_URL}" | sed 's|.*:\([0-9]*\)/.*|\1|')
+fi
+
+# The SPARC_DB_* block is a fully supported route — and the recommended one when
+# only the username and password should be secret references — so it has to be
+# understood here too, or the readiness probe falls back to the compose default
+# and waits forever on a database that is not there.
+if [ -z "${DB_HOST}" ]; then
+    DB_HOST="${SPARC_DB_HOST:-}"
+    DB_PORT="${SPARC_DB_PORT:-}"
+fi
+
 echo "Waiting for PostgreSQL at ${DB_HOST:-db}:${DB_PORT:-5432}..."
 until pg_isready -h "${DB_HOST:-db}" -p "${DB_PORT:-5432}" -t 1 >/dev/null 2>&1; do
     echo "Postgres is not ready yet - sleeping..."

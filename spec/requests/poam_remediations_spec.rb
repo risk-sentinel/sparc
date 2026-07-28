@@ -5,7 +5,8 @@ require "rails_helper"
 RSpec.describe "PoamRemediations + PoamMilestones", type: :request do
   let(:user) { create(:user) }
   let(:poam) { create(:poam_document, name: "Remediations Test POAM") }
-  let!(:risk) { poam.poam_risks.create!(uuid: SecureRandom.uuid, title: "Parent Risk") }
+  # #832 — a risk requires description/statement/status/deadline as well.
+  let!(:risk) { create(:poam_risk, poam_document: poam, title: "Parent Risk") }
 
   before { sign_in_as(user) }
 

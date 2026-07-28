@@ -1,0 +1,20 @@
+<p>Hello<%= " #{@user.first_name}" if @user.first_name.present? %>,</p>
+
+<p>
+  <%= @issued_by.present? ? "#{@issued_by} has" : "An administrator has" %>
+  issued a password reset for your <%= SparcConfig.app_name %> account
+  (<strong><%= @user.email %></strong>).
+</p>
+
+<p><a href="<%= @reset_url %>">Set a new password</a></p>
+
+<p>
+  This link can be used once and expires
+  <%= @expires_at ? l(@expires_at, format: :long) : "shortly" %>.
+  If it has expired, ask an administrator to issue another.
+</p>
+
+<p>
+  If you did not expect this, tell your administrator — someone requested a
+  reset on your account.
+</p>

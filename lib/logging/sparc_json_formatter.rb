@@ -56,12 +56,67 @@ module Logging
     private
 
     def stringify(msg)
-      case msg
-      when String    then msg.strip
-      when Exception then "#{msg.class}: #{msg.message}"
-      when nil       then ""
-      else msg.inspect
-      end
+      redact(
+        case msg
+        when String    then msg.strip
+        when Exception then "#{msg.class}: #{msg.message}"
+        when nil       then ""
+        else msg.inspect
+        end
+      )
+    end
+
+    REDACTED = "[REDACTED]"
+
+    # Credentials must never reach the log aggregator (NIST AU-9, IA-5(1)).
+    #
+    # Nothing here logs a password on purpose — they arrive through paths nobody
+    # intends. A driver failure reports the whole connection string
+    # (`PG::ConnectionBad` embeds the conninfo), and `inspect` on a resolved
+    # database config hash prints every value in it. Both land in CloudWatch
+    # during an ECS deployment, where a database password is then retained for
+    # as long as the log group is.
+    #
+    # #834 is the real fix — the plaintext DATABASE_URL leaves the task
+    # definition entirely. This is the backstop for everything that still
+    # renders one, and it is deliberately narrow: only the secret is replaced,
+    # so the host, port, user and error text all survive and the log stays
+    # useful for diagnosis.
+    REDACTIONS = [
+      # scheme://user:password@host  ->  scheme://user:[REDACTED]@host
+      [ %r{(?<prefix>[a-zA-Z][a-zA-Z0-9+.\-]*://[^:/?\#\s@]+:)[^@\s/]+@}, "\\k<prefix>#{REDACTED}@" ],
+      # libpq conninfo and shell form: password=secret, PGPASSWORD=secret.
+      # `(?!>)` keeps this off Ruby's `:password=>"..."` hash form, which the
+      # next pattern handles — without it this one matches first and eats the
+      # `>` and the quotes, leaving a mangled line.
+      [ /\b(PGPASSWORD|password)=(?!>)(?:"[^"]*"|'[^']*'|\S+)/i, "\\1=#{REDACTED}" ],
+      # inspected hashes: "password"=>"secret", password: "secret"
+      [ /(["']?password["']?\s*(?:=>|:)\s*)(?:"[^"]*"|'[^']*')/i, "\\1\"#{REDACTED}\"" ]
+    ].freeze
+
+    # Deliberate, opt-in escape hatch for the case where the credential itself
+    # is what you are debugging — "is the app even receiving the rotated
+    # password?" cannot be answered from `[REDACTED]`.
+    #
+    # Off unless SPARC_LOG_CREDENTIALS=true, and an initializer
+    # announces it loudly at boot because the consequence outlives the session:
+    # anything logged while it is on is in the aggregator for the life of the
+    # log group. Treat any password exposed this way as COMPROMISED and rotate
+    # it afterwards — with #834 that is a Secrets Manager rotation and a task
+    # restart, no redeploy.
+    #
+    # Read per instance rather than per line: a formatter is constructed at boot
+    # and ENV does not change under it, so this stays a hot-path-free check.
+    def unredacted?
+      return @unredacted if defined?(@unredacted)
+
+      @unredacted = ENV.fetch("SPARC_LOG_CREDENTIALS", "false") == "true"
+    end
+
+    def redact(text)
+      return text if unredacted?
+
+      REDACTIONS.reduce(text) { |acc, (pattern, replacement)| acc.gsub(pattern, replacement) }
     end
   end
 end

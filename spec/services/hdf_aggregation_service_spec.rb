@@ -39,6 +39,50 @@ RSpec.describe HdfAggregationService do
     expect(poam.poam_findings.pluck(:title)).to contain_exactly("HDF: CVE-1")
   end
 
+  # ── #840 ─────────────────────────────────────────────────────────────────
+  #
+  # Aggregation used to write POA&M findings with no OSCAL `target`. One run was
+  # enough to make the ENTIRE document fail schema validation in every
+  # serialization, and the user hit it at export — bounced back to
+  # `?oscal_validation_failed=1` with nothing saying which record was at fault.
+  describe "the POA&M it writes into stays exportable (#840)" do
+    it "gives every finding an OSCAL target derived from the control assessed" do
+      poam = create(:poam_document, authorization_boundary: boundary)
+      failed_finding(nist: [ "AC-2" ], control_id: "AC-2")
+
+      described_class.new(boundary).aggregate
+
+      target = poam.poam_findings.find_by(title: "HDF: AC-2").target_data
+      expect(target).to be_present
+      expect(target["target-id"]).to eq("ac-2_smt"),
+        "the target must name the control the scanner actually assessed"
+      expect(target["type"]).to eq("statement-id")
+      expect(target.dig("status", "state")).to eq("not-satisfied"),
+        "aggregation only tracks FAILED findings — a failed control is not satisfied"
+    end
+
+    # The seam neither side checked: aggregation wrote, export validated, and
+    # nothing ran both. This is the assertion that would have caught #840.
+    it "leaves the POA&M exporting as schema-valid OSCAL after aggregating" do
+      poam = create(:poam_document, authorization_boundary: boundary)
+      create(:poam_item, poam_document: poam)
+      before = OscalSchemaValidationService.validate_json(
+        :poam, OscalPoamExportService.new(poam).export_unvalidated
+      )
+      expect(before.valid?).to be(true), "precondition: the POA&M must export cleanly to begin with"
+
+      failed_finding(nist: [ "AC-2" ], control_id: "AC-2")
+      described_class.new(boundary).aggregate
+
+      result = OscalSchemaValidationService.validate_json(
+        :poam, OscalPoamExportService.new(poam.reload).export_unvalidated
+      )
+
+      expect(result.valid?).to be(true),
+        -> { "aggregation made the POA&M unexportable: #{Array(result.errors).first(3).join('; ')}" }
+    end
+  end
+
   it "opens a POA&M item once a suppressing waiver has expired" do
     poam = create(:poam_document, authorization_boundary: boundary)
     failed_finding(nist: [ "AC-2" ], control_id: "CVE-LAPSED")

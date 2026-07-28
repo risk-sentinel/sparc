@@ -28,7 +28,7 @@ class HdfOscalTranslationService
   # @return [Hash] OSCAL SAR document
   def hdf_to_oscal_sar(hdf_input, boundary: nil)
     oscal = @runner.convert(hdf_input, from: "hdf", to: "oscal-sar")
-    enrich_back_matter(oscal, boundary)
+    validate_oscal!(:assessment_results, enrich_back_matter(oscal, boundary))
   end
 
   # HDF results → OSCAL Plan of Action and Milestones
@@ -69,6 +69,33 @@ class HdfOscalTranslationService
   end
 
   private
+
+  # #831 — never hand back OSCAL that fails NIST's own schema.
+  #
+  # Every other OSCAL-producing path in SPARC calls
+  # `OscalSchemaValidationService.validate!` and refuses to emit an invalid
+  # document. The translation endpoints were the exception: an API consumer
+  # asked SPARC to translate HDF into an Assessment Results document, got a
+  # 200, and received something no OSCAL tool would accept. A 200 carrying
+  # invalid OSCAL is worse than an error, because it propagates — the consumer
+  # stores it, signs it, or submits it, and the failure surfaces somewhere with
+  # no connection to this call.
+  #
+  # REJECT rather than repair, deliberately. The gaps in hdf-cli's output are
+  # OSCAL-REQUIRED content — `reviewed-controls` (what the assessment actually
+  # covered), `finding/description`, `characterization/origin`. Synthesising
+  # them here would produce a document that passes the schema and misstates the
+  # assessment, which is the same mistake as an exporter inventing required
+  # content (#816) or hdf-cli 3.3.2 inventing a POA&M deadline (#764).
+  # Determining what a scan reviewed is the converter's job, and it is tracked
+  # upstream at mitre/hdf-libs#184.
+  #
+  # The error names every schema violation, so the caller can see it is an
+  # upstream converter limitation rather than something wrong with their input.
+  def validate_oscal!(model_type, oscal)
+    OscalSchemaValidationService.validate!(model_type, oscal)
+    oscal
+  end
 
   # When a tenant hosts evidence in SPARC for the given AuthorizationBoundary,
   # merge those records as OSCAL back-matter `resource` entries. Pass-through

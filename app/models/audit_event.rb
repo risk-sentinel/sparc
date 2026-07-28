@@ -49,6 +49,9 @@ class AuditEvent < ApplicationRecord
     admin_password_reset
     admin_webauthn_reset
     admin_credential_synced_from_env
+    admin_temporary_password_issued
+    admin_password_reset_emailed
+    password_reset_redeemed
     admin_credential_rotated
     sparc_hash_rotated
     ssp_document_created
@@ -216,6 +219,8 @@ class AuditEvent < ApplicationRecord
   # ── Categories (for admin UI grouping) ─────────────────────────────────
   ACTION_CATEGORIES = {
     "Authentication" => %w[login_success login_failure logout password_change
+                           admin_temporary_password_issued admin_password_reset_emailed
+                           password_reset_redeemed
                             webauthn_key_registered webauthn_key_revoked
                             api_session_bridged api_session_bridge_failed],
     "Authorization" => %w[authorization_failure],

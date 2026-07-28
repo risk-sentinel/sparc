@@ -4,12 +4,39 @@ RSpec.describe HdfOscalTranslationService do
   let(:runner) { instance_double(HdfRunner) }
   let(:service) { described_class.new(runner: runner) }
 
+  # #831 — hdf_to_oscal_sar now validates its output against the OSCAL schema
+  # before returning, so these stubs must be documents the schema accepts.
+  # A `{"assessment-results" => {"uuid" => "abc"}}` placeholder is exactly the
+  # kind of thing the gate exists to stop, and using one here would have made
+  # these examples pass against output no OSCAL tool would take.
+  def minimal_sar(uuid: "11111111-1111-4111-8111-111111111111")
+    {
+      "assessment-results" => {
+        "uuid" => uuid,
+        "metadata" => {
+          "title" => "Stub Assessment Results",
+          "last-modified" => "2026-07-27T00:00:00Z",
+          "version" => "1.0",
+          "oscal-version" => "1.1.2"
+        },
+        "import-ap" => { "href" => "#22222222-2222-4222-8222-222222222222" },
+        "results" => [ {
+          "uuid" => "33333333-3333-4333-8333-333333333333",
+          "title" => "Stub Result",
+          "description" => "Stub result description.",
+          "start" => "2026-07-27T00:00:00Z",
+          "reviewed-controls" => { "control-selections" => [ { "include-all" => {} } ] }
+        } ]
+      }
+    }
+  end
+
   describe "#hdf_to_oscal_sar" do
     it "shells `hdf convert --from hdf --to oscal-sar`" do
       expect(runner).to receive(:convert).with("/tmp/scan.hdf.json", from: "hdf", to: "oscal-sar")
-                                           .and_return("assessment-results" => { "uuid" => "abc" })
+                                           .and_return(minimal_sar(uuid: "44444444-4444-4444-8444-444444444444"))
       result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json")
-      expect(result.dig("assessment-results", "uuid")).to eq("abc")
+      expect(result.dig("assessment-results", "uuid")).to eq("44444444-4444-4444-8444-444444444444")
     end
 
     context "with a boundary supplying back-matter enrichment (#449 L4)" do
@@ -34,8 +61,7 @@ RSpec.describe HdfOscalTranslationService do
       end
 
       it "merges Evidence records into back-matter.resources" do
-        oscal_in = { "assessment-results" => { "uuid" => "abc" } }
-        allow(runner).to receive(:convert).and_return(oscal_in)
+        allow(runner).to receive(:convert).and_return(minimal_sar)
 
         result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json", boundary: boundary)
         resources = result.dig("assessment-results", "back-matter", "resources")
@@ -45,7 +71,7 @@ RSpec.describe HdfOscalTranslationService do
       end
 
       it "captures attestation, control, and source as props" do
-        allow(runner).to receive(:convert).and_return("assessment-results" => {})
+        allow(runner).to receive(:convert).and_return(minimal_sar)
         result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json", boundary: boundary)
         props = result.dig("assessment-results", "back-matter", "resources", 0, "props")
         names = props.map { |p| p["name"] }
@@ -53,7 +79,7 @@ RSpec.describe HdfOscalTranslationService do
       end
 
       it "emits an rlink referencing the durable artifact resolver (#680)" do
-        allow(runner).to receive(:convert).and_return("assessment-results" => {})
+        allow(runner).to receive(:convert).and_return(minimal_sar)
         result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json", boundary: boundary)
         rlinks = result.dig("assessment-results", "back-matter", "resources", 0, "rlinks")
         expect(rlinks.first["href"]).to match(%r{/artifacts/[0-9a-f-]{36}\z})
@@ -62,8 +88,7 @@ RSpec.describe HdfOscalTranslationService do
     end
 
     it "leaves back-matter untouched when no boundary is given" do
-      oscal_in = { "assessment-results" => { "uuid" => "abc" } }
-      allow(runner).to receive(:convert).and_return(oscal_in)
+      allow(runner).to receive(:convert).and_return(minimal_sar)
       result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json")
       expect(result.dig("assessment-results", "back-matter")).to be_nil
     end

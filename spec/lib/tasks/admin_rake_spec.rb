@@ -30,6 +30,25 @@ RSpec.describe "lib/tasks/admin.rake", type: :task do
       expect(admin.password_digest).to be_present
     end
 
+    # #841 — a Secrets-Manager-managed credential must NOT be forced to change.
+    #
+    # Forcing it produced a loop: the operator changes the password, the value
+    # recorded in Secrets Manager is now stale, and on the next restart the
+    # reconciliation branch sees the mismatch and overwrites their choice —
+    # forcing another change, forever. A break-glass account whose stored
+    # password does not work is worse than none, because it fails exactly when
+    # it is needed.
+    it "does NOT force a reset when the password came from Secrets Manager" do
+      ENV["SPARC_ADMIN_PASSWORD"] = "Injected-From-SM-1234"
+
+      task.invoke
+
+      admin = User.find_by(email: email)
+      expect(admin.must_reset_password).to eq(false),
+        "forcing a change on an SM-managed credential guarantees the two diverge"
+      expect(admin.password_changed_at).to be_present
+    end
+
     it "creates the admin using SPARC_ADMIN_PASSWORD when set" do
       ENV["SPARC_ADMIN_PASSWORD"] = "Injected-From-SM-1234"
       task.invoke
@@ -83,11 +102,18 @@ RSpec.describe "lib/tasks/admin.rake", type: :task do
       expect(admin.authenticate("Initial-Pwd-1234")).to be_falsey
     end
 
-    it "marks must_reset_password and bumps password_changed_at" do
+    # #841 — this example used to assert `must_reset_password == true`, which
+    # encoded the defect rather than a requirement. Forcing a change on a value
+    # that CAME FROM Secrets Manager guarantees the stored credential goes
+    # stale the moment the operator complies, and the next restart then
+    # overwrites their new password and forces another change. The contract is
+    # now the opposite: a synced credential is immediately usable.
+    it "bumps password_changed_at WITHOUT forcing a change" do
       admin.update!(must_reset_password: false, password_changed_at: 30.days.ago)
       task.invoke
       admin.reload
-      expect(admin.must_reset_password).to eq(true)
+      expect(admin.must_reset_password).to eq(false),
+        "the password came from Secrets Manager — forcing a change re-creates the drift loop"
       expect(admin.password_changed_at).to be_within(5.seconds).of(Time.current)
     end
 
@@ -113,6 +139,40 @@ RSpec.describe "lib/tasks/admin.rake", type: :task do
     it "skips entirely" do
       allow(SparcConfig).to receive(:enable_local_login?).and_return(false)
       expect { task.invoke }.not_to change { User.count }
+    end
+  end
+
+  # The regression that motivated #841: rotate in Secrets Manager, restart, and
+  # the new value must take effect WITHOUT stranding the operator in a forced
+  # change — and without a second restart undoing anything.
+  describe "rotation propagation (#841)" do
+    it "syncs a rotated password and leaves the account usable" do
+      ENV["SPARC_ADMIN_PASSWORD"] = "Original-From-SM-1234"
+      task.invoke
+      task.reenable
+
+      ENV["SPARC_ADMIN_PASSWORD"] = "Rotated-In-SM-5678"
+      task.invoke
+
+      admin = User.find_by(email: email)
+      expect(admin.authenticate("Rotated-In-SM-5678")).to be_truthy
+      expect(admin.authenticate("Original-From-SM-1234")).to be_falsey
+      expect(admin.must_reset_password).to eq(false),
+        "a rotated SM credential must be usable immediately — forcing a change " \
+        "here is what made the stored credential stale in the first place"
+    end
+
+    # Restarting with an UNCHANGED secret must be a no-op. If it re-forced a
+    # reset, every deploy would strand the break-glass account.
+    it "is idempotent across restarts with the same secret" do
+      ENV["SPARC_ADMIN_PASSWORD"] = "Stable-From-SM-1234"
+      task.invoke
+      task.reenable
+      task.invoke
+
+      admin = User.find_by(email: email)
+      expect(admin.authenticate("Stable-From-SM-1234")).to be_truthy
+      expect(admin.must_reset_password).to eq(false)
     end
   end
 end

@@ -5,27 +5,32 @@
     </div>
   <% end %>
 
+  <%# #832 — title, description, statement and status are OSCAL-required on a
+      risk; deadline is a SPARC rule (a POA&M item with no time commitment is
+      not a plan, and hdf-cli refuses to convert one). Marked here so the
+      requirement is visible while filling the form, rather than arriving as a
+      validation error on submit — or, as before, as a schema failure at export. %>
   <div class="form-group">
-    <%= f.label :title, class: "fw-semibold" %>
+    <%= f.label :title, class: "fw-semibold" do %>Title <span class="text-danger">*</span><% end %>
     <%= f.text_field :title, class: "form-control", required: true,
                      placeholder: "e.g., Hard-coded credentials in admin panel" %>
   </div>
 
   <div class="form-group mt-3">
-    <%= f.label :description, class: "fw-semibold" %>
-    <%= f.text_area :description, class: "form-control", rows: 3,
+    <%= f.label :description, class: "fw-semibold" do %>Description <span class="text-danger">*</span><% end %>
+    <%= f.text_area :description, class: "form-control", rows: 3, required: true,
                     placeholder: "What the risk is and why it matters" %>
   </div>
 
   <div class="form-group mt-3">
-    <%= f.label :statement, "Risk statement", class: "fw-semibold" %>
-    <%= f.text_area :statement, class: "form-control", rows: 2,
+    <%= f.label :statement, class: "fw-semibold" do %>Risk statement <span class="text-danger">*</span><% end %>
+    <%= f.text_area :statement, class: "form-control", rows: 2, required: true,
                     placeholder: "Formal risk statement (asset, threat, vulnerability, impact)" %>
   </div>
 
   <div class="row row-cols-1 row-cols-md-3 g-3 mt-1">
     <div class="col">
-      <%= f.label :status, class: "fw-semibold" %>
+      <%= f.label :status, class: "fw-semibold" do %>Status <span class="text-danger">*</span><% end %>
       <%= f.select :status,
             options_for_select([
               [ "Open", "open" ], [ "Investigating", "investigating" ],
@@ -33,7 +38,7 @@
               [ "Deviation Approved", "deviation-approved" ],
               [ "Closed", "closed" ]
             ], poam_risk.status),
-            { include_blank: "— Select —" }, class: "form-control" %>
+            { include_blank: "— Select —" }, class: "form-control", required: true %>
     </div>
     <div class="col">
       <%= f.label :impact, class: "fw-semibold" %>
@@ -52,8 +57,13 @@
   </div>
 
   <div class="form-group mt-3">
-    <%= f.label :deadline, class: "fw-semibold" %>
-    <%= f.date_field :deadline, class: "form-control" %>
+    <%= f.label :deadline, class: "fw-semibold" do %>Deadline <span class="text-danger">*</span><% end %>
+    <%= f.date_field :deadline, class: "form-control", required: true %>
+    <div class="form-text">
+      The date this risk is committed to be resolved by. Required: a POA&amp;M
+      item with no time commitment is not a plan of action, and it cannot be
+      converted to HDF amendments.
+    </div>
   </div>
 
   <div class="form-group mt-3">

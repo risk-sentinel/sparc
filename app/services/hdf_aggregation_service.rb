@@ -71,10 +71,38 @@ class HdfAggregationService
       pf = poam.poam_findings.find_or_initialize_by(title: "HDF: #{finding.control_id}")
       pf.uuid ||= SecureRandom.uuid
       pf.description = annotation_for(finding)
+      pf.target_data = finding_target_for(finding)
       pf.save!
       tracked += 1
     end
     tracked
+  end
+
+  # OSCAL REQUIRES finding/target: what was assessed, and the resulting state
+  # (#840). Without it the POA&M this aggregation writes into fails schema
+  # validation in EVERY serialization, and the user is bounced back from the
+  # export with no indication why — a single aggregation run was enough to make
+  # the whole document unexportable.
+  #
+  # Every value here is DERIVED, not invented. The control is the thing the
+  # scanner actually assessed (`ScannerFinding` validates `control_id`
+  # presence, so it is always available), and the state is the scan's own
+  # verdict. `aggregate_poam` only reaches this for `status == "failed"`, which
+  # is precisely "not-satisfied" — an accepted or mitigated risk does not make
+  # the control satisfied, so the disposition must not soften it.
+  def finding_target_for(finding)
+    control_id = finding.control_id.to_s.strip
+
+    # Statement ids in the NIST OSCAL catalogs are lower-case (`ac-2_smt`),
+    # while HDF tags the control upper-case (`AC-2`). Downcase so the target
+    # actually resolves against the catalog instead of dangling.
+    {
+      "type"        => "statement-id",
+      "target-id"   => "#{control_id.downcase}_smt",
+      "title"       => "Assessment objective for #{control_id.upcase}",
+      "description" => annotation_for(finding),
+      "status"      => { "state" => "not-satisfied" }
+    }
   end
 
   def nist_controls_for(finding)

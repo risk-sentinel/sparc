@@ -68,6 +68,67 @@ RSpec.describe Logging::SparcJsonFormatter do
     expect(result["msg"]).to include("brace }")
   end
 
+  # ── Credential redaction (#834) ──────────────────────────────────────────
+  #
+  # Nothing logs a password on purpose. They arrive through paths nobody
+  # intends: a driver failure reports the whole connection string, and
+  # `inspect` on a resolved database config prints every value in it. Both land
+  # in CloudWatch during an ECS deployment, where the password is then retained
+  # for as long as the log group is. NIST AU-9 / IA-5(1).
+  describe "credential redaction" do
+    SECRET = "Sup3r$ecret!"
+
+    {
+      "a connection URI"        => "could not connect: postgresql://app:#{SECRET}@db.rds:5432/prod",
+      "libpq conninfo"          => "host=db.rds user=app password=#{SECRET} sslmode=require",
+      "an inspected config"     => { adapter: "postgresql", password: SECRET }.inspect,
+      "a JSON secret payload"   => %Q({"username":"app","password":"#{SECRET}"}),
+      "a non-database URI"      => "redis://default:#{SECRET}@cache:6379/1"
+    }.each do |label, line|
+      it "redacts the secret in #{label}" do
+        expect(emit("ERROR", line)["msg"]).not_to include(SECRET)
+      end
+    end
+
+    it "redacts a password carried on an exception message" do
+      error = StandardError.new("FATAL: postgresql://app:#{SECRET}@db.rds:5432/prod refused")
+
+      expect(emit("ERROR", error)["msg"]).not_to include(SECRET)
+    end
+
+    # Redaction that also destroys the diagnostic context is its own problem —
+    # an operator still has to be able to tell WHICH connection failed.
+    it "keeps everything that is not the secret" do
+      msg = emit("ERROR", "host=db.rds port=5432 user=app password=#{SECRET} sslmode=require")["msg"]
+
+      expect(msg).to include("host=db.rds", "port=5432", "user=app", "sslmode=require")
+      expect(msg).to include("[REDACTED]")
+    end
+
+    # The escape hatch: sometimes the credential IS what you are debugging, and
+    # "[REDACTED]" answers nothing. Opt-in only, and an initializer warns at
+    # boot that anything logged while it is on must be treated as compromised.
+    it "can be disabled deliberately for credential troubleshooting" do
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("SPARC_LOG_CREDENTIALS", "false").and_return("true")
+
+      line = "postgresql://app:#{SECRET}@db.rds:5432/prod"
+
+      expect(described_class.new.call("ERROR", ts, nil, line)).to include(SECRET)
+    end
+
+    it "redacts by default when the variable is unset" do
+      expect(ENV.fetch("SPARC_LOG_CREDENTIALS", "false")).to eq("false"),
+        "redaction must be the default — an opt-OUT would leak on every deployment that forgot it"
+    end
+
+    it "leaves an ordinary line untouched" do
+      line = "Completed 200 OK in 56ms (Views: 35.3ms | ActiveRecord: 0.0ms)"
+
+      expect(emit("INFO", line)["msg"]).to eq(line)
+    end
+  end
+
   # A logger that raises takes the process with it. Serialisation failure must
   # degrade to a valid record, never an exception.
   it "never raises, even when the message cannot be serialised" do
