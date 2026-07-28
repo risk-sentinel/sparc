@@ -102,9 +102,25 @@ module ControlId
 
   private
 
-  # Remove zero padding from every numeric segment: `ac-02.01` -> `ac-2.1`.
-  # Guarded so a segment of only zeros keeps one digit rather than vanishing.
+  # NIST control numbering is one or two digits per segment (AC-1 … AC-25), so
+  # padding beyond that is not padding at all — it is a fixed-width identifier
+  # from a DIFFERENT vocabulary.
+  #
+  # `CCI-000213` is the case that matters: those are six-digit fixed-width by
+  # definition, and stripping the zeros produced `cci-213`, silently corrupting
+  # an identifier from external tooling into one that matches nothing. Bounding
+  # the rule keeps zero-stripping to the NIST shape it was written for.
+  MAX_PADDED_DIGITS = 3
+
+  # Remove zero padding from short numeric segments: `ac-02.01` -> `ac-2.1`.
+  # Guarded so a segment of only zeros keeps one digit rather than vanishing,
+  # and so a long fixed-width run is left exactly as it arrived.
   def strip_padding(value)
-    value.gsub(/(?<=\A|[-.])0+(\d)/) { ::Regexp.last_match(1) }
+    value.gsub(/(?<=\A|[-.])(0+)(\d+)/) do
+      zeros = ::Regexp.last_match(1)
+      digits = ::Regexp.last_match(2)
+
+      (zeros.length + digits.length) <= MAX_PADDED_DIGITS ? digits : "#{zeros}#{digits}"
+    end
   end
 end

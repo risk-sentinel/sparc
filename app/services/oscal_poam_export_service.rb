@@ -208,6 +208,26 @@ class OscalPoamExportService
 
   # ── Findings ─────────────────────────────────────────────────────
 
+  # #852 — `target_data` is stored verbatim from whatever produced the finding:
+  # an OSCAL import, the API, or HDF aggregation. Its `target-id` is
+  # TokenDatatype in the POA&M schema, so a finding carrying "AC-2 (1)" made the
+  # whole document fail validation at export — the #840 shape of failure, where
+  # the user meets the problem only when publishing.
+  #
+  # Normalising the FORM on the way out is not synthesising content: the target
+  # still names exactly the control the assessment recorded, written the way
+  # every other document writes it. Anything without a `target-id` is passed
+  # through untouched.
+  def normalized_target(finding)
+    target = finding.target_data.presence
+    return target unless target.is_a?(Hash)
+
+    raw = target["target-id"] || target[:"target-id"]
+    return target if raw.blank?
+
+    target.merge("target-id" => ControlId.canonical(raw))
+  end
+
   def build_findings
     return nil if @findings.empty?
     @findings.map do |finding|
@@ -215,7 +235,7 @@ class OscalPoamExportService
         "uuid"                          => finding.uuid,
         "title"                         => finding.title,
         "description"                   => finding.description,
-        "target"                        => finding.target_data.presence,
+        "target"                        => normalized_target(finding),
         "implementation-statement-uuid" => finding.implementation_statement_uuid,
         "origins"                       => finding.origins_data.presence,
         RELATED_OBSERVATIONS          => finding.poam_finding_observations.map { |fo|
