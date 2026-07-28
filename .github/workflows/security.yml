@@ -1305,7 +1305,14 @@ jobs:
         # script handles arch detection and SHA-256 verification against
         # checksums.txt from the same release.
         env:
-          HDF_LIBS_VERSION: "3.2.0"
+          # Pinned to 3.4.1 org-wide until hdf-libs ships the fix for the
+          # oscal-sar schema defects (mitre/hdf-libs#184, root-caused upstream).
+          # Was 3.2.0, which silently diverged from the 3.4.1 the image bakes —
+          # and 3.2.0 cannot perform hdf->oscal-sar at all. Verified before
+          # bumping: `hdf amend verify`, `amend list` and `amend apply` all
+          # behave identically on 3.2.0 and 3.4.1 against this repo's real
+          # sparc-findings.yml amendments, which is all this job uses.
+          HDF_LIBS_VERSION: "3.4.1"
         run: bin/install-hdf.sh
 
       - name: Convert sparc-findings.yml to HDF Amendments
@@ -1320,7 +1327,7 @@ jobs:
           jq '.overrides | length' amendments.hdf.json >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Verify amendment document against v3.2.0 schema
+      - name: Verify amendment document against the hdf-cli amendments schema
         run: |
           hdf amend verify amendments.hdf.json
           hdf amend list amendments.hdf.json | head -20
