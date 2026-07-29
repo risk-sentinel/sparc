@@ -155,11 +155,14 @@ COPY --from=builder /rails /rails
 # deliberately left alone: their code is the stdlib itself, so removing only
 # the gemspec would falsify the scan rather than harden the image. See the
 # script header and docs/compliance/sparc-findings.yml.
+#
+# `bundle check` + a real `bundle exec require` gate the build: a prune that
+# strands the bundle fails here rather than at runtime. Merged with the user
+# setup below to keep this a single layer (sonar docker:S7031).
 RUN ruby /rails/bin/prune-shadowed-gems.rb \
     && bundle check \
-    && bundle exec ruby -e 'require "net/imap"; require "rails"; puts "post-prune bundle OK: net-imap #{Gem.loaded_specs["net-imap"]&.version}"'
-
-RUN groupadd --system --gid 1000 rails \
+    && bundle exec ruby -e 'require "net/imap"; require "rails"' \
+    && groupadd --system --gid 1000 rails \
     && useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash \
     && mkdir -p db log storage tmp \
     && chown -R rails:rails db log storage tmp
