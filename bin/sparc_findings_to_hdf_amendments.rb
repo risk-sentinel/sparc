@@ -10,8 +10,34 @@
 # Disposition mapping:
 #   false_positive  -> override type "falsePositive", status "notApplicable"
 #   accepted        -> override type "waiver",        status "notApplicable"
-#   deferred        -> override type "poam",          status "failed"
+#   deferred        -> override type "poam",          status per deviation (below)
 #   remediated      -> SKIP (finding should not be in current scan)
+#
+# FedRAMP deviation flow (#865)
+# ─────────────────────────────
+# A `deferred` finding may carry a `deviation:` block expressing the FedRAMP
+# deviation vocabulary and the OSCAL risk lifecycle. The deviation's risk_status
+# — not the disposition — decides whether the finding gates the build:
+#
+#   deviation-requested -> status "failed"          -> counts toward threshold.yml
+#   deviation-approved  -> status "notApplicable"   -> suppressed from the residual
+#
+# That is the whole mechanic. `threshold.yml` needs no knowledge of deviations:
+# an UNAPPROVED deviation on a CRITICAL still breaches failed.critical.max: 0
+# and turns the build red, which is the intended behaviour. An APPROVED one is
+# a signed-off risk decision and is suppressed.
+#
+# Approval is the code-owner review on the pull request that introduces it —
+# see scripts/ci/check_deviation_approvals.rb, which refuses to let a deviation
+# self-approve. The approval is also recorded in the register (approved_by /
+# approved_in / approved_at) so the evidence lives in the artefact, not only in
+# GitHub.
+#
+# FedRAMP deviation types:
+#   false_positive         — the finding is WRONG; no vulnerability exists
+#   risk_adjustment        — the vulnerability EXISTS but is rated higher than
+#                            actual risk because mitigations are in place
+#   operational_requirement— a weakness that must remain open
 #
 # Severity-based review cadence policy (per #244 acceptance criteria):
 #   CRITICAL       -> 0 days  (no acceptance allowed; fail-fast)
@@ -56,9 +82,27 @@ MAX_REVIEW_DAYS = {
 # CRITICAL findings cannot be 'accepted' (no risk acceptance for criticals).
 # false_positive IS allowed because it's semantically distinct from accepted:
 # 'accepted' means "we're keeping the risk", 'false_positive' means "the
-# scanner is wrong; this finding doesn't apply." Genuine FPs on criticals
-# (e.g., unreachable code paths, unused libraries) must be documentable.
+# scanner is wrong; this finding doesn't apply."
+#
+# #865: a real-but-mitigated CRITICAL is neither. It belongs in the POA&M as a
+# `deferred` finding carrying a risk_adjustment deviation — which is what the
+# FedRAMP vocabulary is for. Before that existed, such findings were recorded
+# as false_positive because it was the only slot a CRITICAL could occupy, which
+# asserted something untrue in auditable evidence and escaped the review
+# cadence. Use a deviation instead.
 CRITICAL_ALLOWED_DISPOSITIONS = %w[false_positive deferred remediated].freeze
+
+# FedRAMP deviation types (all require Authorizing Official approval; here the
+# code-owner review on the PR is that approval).
+DEVIATION_TYPES = %w[false_positive risk_adjustment operational_requirement].freeze
+
+# OSCAL risk lifecycle states a deviation may occupy in this register. The full
+# OSCAL vocabulary (open/investigating/remediating/closed) is modelled on
+# PoamRisk/SarRisk; only the deviation states are meaningful here.
+DEVIATION_RISK_STATUSES = %w[deviation-requested deviation-approved].freeze
+
+# An approved deviation must name who approved it, where, and when.
+DEVIATION_APPROVAL_FIELDS = %w[approved_by approved_in approved_at].freeze
 
 DISPOSITION_TO_OVERRIDE_TYPE = {
   "false_positive" => "falsePositive",
@@ -107,7 +151,71 @@ def validate!(finding, errors, today: Date.today)
     errors << "#{cve_id}: CRITICAL findings cannot use disposition='#{disp}'; allowed dispositions are #{CRITICAL_ALLOWED_DISPOSITIONS.join(', ')} (no waivers/false-positives — must remediate or document POA&M)"
   end
 
+  validate_deviation(finding, errors)
   validate_review_cadence(finding, errors, severity: severity, disposition: disp, discovery: discovery, next_rev: next_rev, today: today)
+
+  errors
+end
+
+# #865 — validate the FedRAMP deviation block, if present.
+#
+# The rules encode distinctions that matter to an assessor reading the POA&M:
+# a risk_adjustment with no stated mitigation is just an undocumented risk
+# acceptance, and a false_positive that claims mitigations is contradicting
+# itself (nothing to mitigate if the finding is wrong).
+def validate_deviation(finding, errors)
+  cve_id = finding["cve_id"]
+  dev    = finding["deviation"]
+  disp   = finding["disposition"]
+
+  if dev.nil?
+    # A deferred CRITICAL with no deviation block is an untriaged critical.
+    if disp == "deferred" && severity_normalize(finding["severity"]) == "CRITICAL"
+      errors << "#{cve_id}: CRITICAL deferred findings require a deviation block (type + risk_status + mitigating_factors)"
+    end
+    return errors
+  end
+
+  unless disp == "deferred"
+    errors << "#{cve_id}: deviation blocks are only valid on disposition=deferred (got '#{disp}')"
+    return errors
+  end
+
+  type   = dev["type"]
+  status = dev["risk_status"]
+  factors = Array(dev["mitigating_factors"])
+
+  errors << "#{cve_id}: deviation.type must be one of #{DEVIATION_TYPES.join(', ')} (got '#{type}')" unless DEVIATION_TYPES.include?(type)
+  errors << "#{cve_id}: deviation.risk_status must be one of #{DEVIATION_RISK_STATUSES.join(', ')} (got '#{status}')" unless DEVIATION_RISK_STATUSES.include?(status)
+
+  case type
+  when "risk_adjustment"
+    if factors.empty?
+      errors << "#{cve_id}: deviation.type=risk_adjustment requires at least one mitigating_factors entry — an RA with no stated mitigation is an undocumented risk acceptance"
+    end
+    if factors.any? { |f| f.is_a?(Hash) ? f["description"].to_s.strip.empty? : f.to_s.strip.empty? }
+      errors << "#{cve_id}: every mitigating_factors entry needs a non-empty description"
+    end
+  when "false_positive"
+    unless factors.empty?
+      errors << "#{cve_id}: deviation.type=false_positive must not carry mitigating_factors — a false positive is wrong, not mitigated"
+    end
+  when "operational_requirement"
+    if dev["operational_justification"].to_s.strip.empty?
+      errors << "#{cve_id}: deviation.type=operational_requirement requires operational_justification"
+    end
+  end
+
+  if status == "deviation-approved"
+    missing = DEVIATION_APPROVAL_FIELDS.reject { |f| dev[f].to_s.strip != "" }
+    errors << "#{cve_id}: deviation.risk_status=deviation-approved requires #{missing.join(', ')}" unless missing.empty?
+  end
+
+  # #864 — a KEV-listed CVE is actively exploited in the wild; adjusting its
+  # risk downward demands more than the standard reachability argument.
+  if finding.dig("kev", "listed") && type == "risk_adjustment" && dev["kev_justification"].to_s.strip.empty?
+    errors << "#{cve_id}: KEV-listed findings using risk_adjustment require an explicit kev_justification"
+  end
 
   errors
 end
@@ -150,17 +258,53 @@ def disposition_to_override(finding)
 
   return nil if SKIP_DISPOSITIONS.include?(disp)
 
-  status = NOT_APPLICABLE_DISPOSITIONS.include?(disp) ? "notApplicable" : "failed"
+  status = deviation_status(finding) ||
+           (NOT_APPLICABLE_DISPOSITIONS.include?(disp) ? "notApplicable" : "failed")
 
   {
     "type"          => DISPOSITION_TO_OVERRIDE_TYPE.fetch(disp),
     "requirementId" => cve_id,
     "status"        => status,
-    "reason"        => rationale,
+    "reason"        => deviation_reason(finding, rationale),
     "appliedBy"     => identity_for(reviewer),
     "appliedAt"     => discovery.iso8601 + "T00:00:00Z",
     "expiresAt"     => next_rev.iso8601 + "T00:00:00Z"
   }
+end
+
+# #865 — the deviation's risk_status decides whether the finding gates.
+# An approved deviation is a signed-off risk decision and is suppressed from the
+# residual; an unapproved one stays `failed` so a CRITICAL still breaches
+# threshold.yml's failed.critical.max: 0 and turns the build red.
+# Returns nil when there is no deviation, so the caller falls back to the
+# disposition-based mapping.
+def deviation_status(finding)
+  dev = finding["deviation"]
+  return nil unless dev.is_a?(Hash)
+
+  dev["risk_status"] == "deviation-approved" ? "notApplicable" : "failed"
+end
+
+# Fold the deviation's structured evidence into the override reason so the HDF
+# artefact carries the justification, not just the verdict. The structured
+# mitigating factors remain in the register for OSCAL risk/mitigating-factor
+# export; the amendment schema has no richer field than `reason`.
+def deviation_reason(finding, rationale)
+  dev = finding["deviation"]
+  return rationale unless dev.is_a?(Hash)
+
+  parts = ["[FedRAMP deviation: #{dev['type']} / #{dev['risk_status']}]"]
+  if (adjusted = dev["adjusted_severity"])
+    parts << "Adjusted severity: #{adjusted}."
+  end
+  factors = Array(dev["mitigating_factors"]).map { |f| f.is_a?(Hash) ? f["description"] : f }.compact
+  parts << "Mitigating factors: #{factors.join('; ')}." unless factors.empty?
+  if dev["risk_status"] == "deviation-approved"
+    parts << "Approved by #{dev['approved_by']} in #{dev['approved_in']} on #{dev['approved_at']}."
+  end
+  parts << rationale.to_s
+
+  parts.join(" ")
 end
 
 def identity_for(reviewer)

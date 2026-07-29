@@ -1,0 +1,51 @@
+name: Deviation approval
+
+# #865 — a FedRAMP deviation may not approve itself.
+#
+# docs/compliance/sparc-findings.yml lets a deferred finding carry a deviation
+# whose risk_status is `deviation-approved`. That status suppresses the finding
+# from the SAF threshold residual, so on a CRITICAL it is the difference
+# between a red build and a green one. The approval that justifies it is the
+# code-owner review on the PR that introduces it.
+#
+# This lives in its own workflow rather than inside security.yml because it
+# must re-run when a review is submitted. Adding a `pull_request_review`
+# trigger to security.yml would re-run the entire scan suite (Trivy, Grype,
+# CodeQL, SBOM generation) on every review comment.
+
+on:
+  pull_request:
+    paths:
+      - 'docs/compliance/sparc-findings.yml'
+      - 'scripts/ci/check_deviation_approvals.rb'
+      - '.github/CODEOWNERS'
+  pull_request_review:
+    types: [ submitted ]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  deviation_approval:
+    name: Deviation approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          # Need the base branch to tell a newly-approved deviation from one
+          # that was already approved when it landed.
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@003a5c4d8d6321bd302e38f6f0ec593f77f06600 # v1
+        with:
+          ruby-version: .ruby-version
+
+      - name: Check deviation approvals
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SPARC_PR_NUMBER: ${{ github.event.pull_request.number }}
+          SPARC_BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+        run: ruby scripts/ci/check_deviation_approvals.rb
