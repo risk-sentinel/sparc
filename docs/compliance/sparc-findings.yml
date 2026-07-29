@@ -247,11 +247,11 @@ findings:
 
   - cve_id: CVE-2026-42246
     package: net-imap (base-image-bundled stdlib, version 0.5.8)
-    installed_version: "0.5.8 (default gem) / 0.6.6 (bundled, loaded)"
+    installed_version: "0.6.6 (bundled; 0.5.8 removed from the image)"
     fixed_version: ">= 0.6.4"
     severity: HIGH
-    disposition: false_positive
-    rationale: "FALSE POSITIVE (default-gem shadow). Net::IMAP STARTTLS-stripping MITM. The Gemfile now explicitly pins net-imap >= 0.6.4 (#620, resolv-style override); Bundler activates the patched 0.6.4.x from /usr/local/bundle. ruby:3.4.4-slim ships net-imap 0.5.8 as a default gem, which the scanner reports, but it is never activated — and SPARC uses no Net::IMAP code path (no IMAP client / email retrieval) regardless. Present-but-not-loaded; see CVE-2026-42257/42258 (the CRITICAL siblings in the same net-imap 0.5.8 default gem). Remediation candidate: drop the default-gem file on a distroless/base migration. Re-verified on the v1.15.3 image 2026-07-29 (#862): net-imap 0.5.8 remains on disk as a Ruby-shipped gem; Bundler resolves 0.6.6, above the >= 0.6.4 fix floor."
+    disposition: remediated
+    rationale: "REMEDIATED by the shadowed-gem prune (#862): bin/prune-shadowed-gems.rb, invoked from the runtime stage of the Dockerfile, deletes Ruby-shipped bundled gems that the application bundle already shadows at an equal-or-newer version. net-imap 0.5.8 -- the copy this finding was raised against -- is removed from the image entirely; only the bundled net-imap 0.6.6 remains, above the >= 0.6.4 fix floor. Verified on a build of this branch: no net-imap 0.5.8 path anywhere on the filesystem, bundle check passes, a bundle exec require of net/imap resolves 0.6.6, and a Grype rescan of the built image clears all eight net-imap advisories that the published v1.15.3 image reported. Previously false_positive on the grounds that the vulnerable copy was present but never loaded; that copy no longer exists, so remediation is the correct disposition. Prior assessment: FALSE POSITIVE (default-gem shadow). Net::IMAP STARTTLS-stripping MITM. The Gemfile now explicitly pins net-imap >= 0.6.4 (#620, resolv-style override); Bundler activates the patched 0.6.4.x from /usr/local/bundle. ruby:3.4.4-slim ships net-imap 0.5.8 as a default gem, which the scanner reports, but it is never activated — and SPARC uses no Net::IMAP code path (no IMAP client / email retrieval) regardless. Present-but-not-loaded; see CVE-2026-42257/42258 (the CRITICAL siblings in the same net-imap 0.5.8 default gem). Remediation candidate: drop the default-gem file on a distroless/base migration. Re-verified on the v1.15.3 image 2026-07-29 (#862): net-imap 0.5.8 remains on disk as a Ruby-shipped gem; Bundler resolves 0.6.6, above the >= 0.6.4 fix floor."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1053,11 +1053,11 @@ findings:
 
   - cve_id: CVE-2026-42257
     package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
-    installed_version: "0.5.8 (default gem) / 0.6.6 (bundled, loaded)"
+    installed_version: "0.6.6 (bundled; 0.5.8 removed from the image)"
     fixed_version: ">= 0.6.4"
     severity: CRITICAL
-    disposition: false_positive
-    rationale: "FALSE POSITIVE (default-gem shadow). Net::IMAP response-parsing flaw. The Gemfile pins net-imap >= 0.6.4 (#620), so Bundler activates the patched 0.6.4.1 from /usr/local/bundle. ruby:3.4.4-slim's net-imap 0.5.8 default gem is reported by the filesystem scanner but never activated; additionally SPARC uses no Net::IMAP code path (no IMAP client / email retrieval). Vulnerable code is not loaded. Re-verified on the v1.15.3 image 2026-07-29 (#862): Bundler resolves net-imap 0.6.6 (>= 0.6.4 fix floor); the 0.5.8 tree is present but never loaded."
+    disposition: remediated
+    rationale: "REMEDIATED by the shadowed-gem prune (#862): bin/prune-shadowed-gems.rb, invoked from the runtime stage of the Dockerfile, deletes Ruby-shipped bundled gems that the application bundle already shadows at an equal-or-newer version. net-imap 0.5.8 -- the copy this finding was raised against -- is removed from the image entirely; only the bundled net-imap 0.6.6 remains, above the >= 0.6.4 fix floor. Verified on a build of this branch: no net-imap 0.5.8 path anywhere on the filesystem, bundle check passes, a bundle exec require of net/imap resolves 0.6.6, and a Grype rescan of the built image clears all eight net-imap advisories that the published v1.15.3 image reported. Previously false_positive on the grounds that the vulnerable copy was present but never loaded; that copy no longer exists, so remediation is the correct disposition. Prior assessment: FALSE POSITIVE (default-gem shadow). Net::IMAP response-parsing flaw. The Gemfile pins net-imap >= 0.6.4 (#620), so Bundler activates the patched 0.6.4.1 from /usr/local/bundle. ruby:3.4.4-slim's net-imap 0.5.8 default gem is reported by the filesystem scanner but never activated; additionally SPARC uses no Net::IMAP code path (no IMAP client / email retrieval). Vulnerable code is not loaded. Re-verified on the v1.15.3 image 2026-07-29 (#862): Bundler resolves net-imap 0.6.6 (>= 0.6.4 fix floor); the 0.5.8 tree is present but never loaded."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1065,11 +1065,11 @@ findings:
 
   - cve_id: CVE-2026-42258
     package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
-    installed_version: "0.5.8 (default gem) / 0.6.6 (bundled, loaded)"
+    installed_version: "0.6.6 (bundled; 0.5.8 removed from the image)"
     fixed_version: ">= 0.6.4"
     severity: CRITICAL
-    disposition: false_positive
-    rationale: "FALSE POSITIVE (default-gem shadow). Second net-imap 0.5.8 parsing CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 is bundled and loaded, the 0.5.8 default gem is present-but-not-loaded, and SPARC invokes no Net::IMAP path. Re-verified on the v1.15.3 image 2026-07-29 (#862): Bundler resolves net-imap 0.6.6 (>= 0.6.4 fix floor); the 0.5.8 tree is present but never loaded."
+    disposition: remediated
+    rationale: "REMEDIATED by the shadowed-gem prune (#862): bin/prune-shadowed-gems.rb, invoked from the runtime stage of the Dockerfile, deletes Ruby-shipped bundled gems that the application bundle already shadows at an equal-or-newer version. net-imap 0.5.8 -- the copy this finding was raised against -- is removed from the image entirely; only the bundled net-imap 0.6.6 remains, above the >= 0.6.4 fix floor. Verified on a build of this branch: no net-imap 0.5.8 path anywhere on the filesystem, bundle check passes, a bundle exec require of net/imap resolves 0.6.6, and a Grype rescan of the built image clears all eight net-imap advisories that the published v1.15.3 image reported. Previously false_positive on the grounds that the vulnerable copy was present but never loaded; that copy no longer exists, so remediation is the correct disposition. Prior assessment: FALSE POSITIVE (default-gem shadow). Second net-imap 0.5.8 parsing CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 is bundled and loaded, the 0.5.8 default gem is present-but-not-loaded, and SPARC invokes no Net::IMAP path. Re-verified on the v1.15.3 image 2026-07-29 (#862): Bundler resolves net-imap 0.6.6 (>= 0.6.4 fix floor); the 0.5.8 tree is present but never loaded."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1077,11 +1077,11 @@ findings:
 
   - cve_id: CVE-2026-42245
     package: net-imap (default gem 0.5.8; bundled 0.6.4.1)
-    installed_version: "0.5.8 (default gem) / 0.6.6 (bundled, loaded)"
+    installed_version: "0.6.6 (bundled; 0.5.8 removed from the image)"
     fixed_version: ">= 0.6.4"
     severity: HIGH
-    disposition: false_positive
-    rationale: "FALSE POSITIVE (default-gem shadow). net-imap 0.5.8 HIGH CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 bundled and loaded, 0.5.8 default gem not activated, no Net::IMAP usage in SPARC. Re-verified on the v1.15.3 image 2026-07-29 (#862): /usr/local/lib/ruby/gems/3.4.0/gems/net-imap-0.5.8 is present but shadowed by /usr/local/bundle/ruby/3.4.0/gems/net-imap-0.6.6, which Bundler resolves. 0.6.6 exceeds the >= 0.6.4 fix floor."
+    disposition: remediated
+    rationale: "REMEDIATED by the shadowed-gem prune (#862): bin/prune-shadowed-gems.rb, invoked from the runtime stage of the Dockerfile, deletes Ruby-shipped bundled gems that the application bundle already shadows at an equal-or-newer version. net-imap 0.5.8 -- the copy this finding was raised against -- is removed from the image entirely; only the bundled net-imap 0.6.6 remains, above the >= 0.6.4 fix floor. Verified on a build of this branch: no net-imap 0.5.8 path anywhere on the filesystem, bundle check passes, a bundle exec require of net/imap resolves 0.6.6, and a Grype rescan of the built image clears all eight net-imap advisories that the published v1.15.3 image reported. Previously false_positive on the grounds that the vulnerable copy was present but never loaded; that copy no longer exists, so remediation is the correct disposition. Prior assessment: FALSE POSITIVE (default-gem shadow). net-imap 0.5.8 HIGH CVE; same basis as CVE-2026-42257 -- patched 0.6.4.1 bundled and loaded, 0.5.8 default gem not activated, no Net::IMAP usage in SPARC. Re-verified on the v1.15.3 image 2026-07-29 (#862): /usr/local/lib/ruby/gems/3.4.0/gems/net-imap-0.5.8 is present but shadowed by /usr/local/bundle/ruby/3.4.0/gems/net-imap-0.6.6, which Bundler resolves. 0.6.6 exceeds the >= 0.6.4 fix floor."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
