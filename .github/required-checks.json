@@ -210,6 +210,7 @@
     {
       "checkName": "Deviation approval",
       "workflow": ".github/workflows/deviation-approval.yml",
+      "workflowFilterName": "_top_level_paths",
       "filterPathSpec": [
         "docs/compliance/sparc-findings.yml",
         "scripts/ci/check_deviation_approvals.rb",

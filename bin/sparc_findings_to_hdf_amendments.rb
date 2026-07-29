@@ -94,12 +94,23 @@ CRITICAL_ALLOWED_DISPOSITIONS = %w[false_positive deferred remediated].freeze
 
 # FedRAMP deviation types (all require Authorizing Official approval; here the
 # code-owner review on the PR is that approval).
-DEVIATION_TYPES = %w[false_positive risk_adjustment operational_requirement].freeze
+DEVIATION_FALSE_POSITIVE         = "false_positive"
+DEVIATION_RISK_ADJUSTMENT        = "risk_adjustment"
+DEVIATION_OPERATIONAL_REQUIREMENT = "operational_requirement"
+DEVIATION_TYPES = [
+  DEVIATION_FALSE_POSITIVE,
+  DEVIATION_RISK_ADJUSTMENT,
+  DEVIATION_OPERATIONAL_REQUIREMENT
+].freeze
 
 # OSCAL risk lifecycle states a deviation may occupy in this register. The full
 # OSCAL vocabulary (open/investigating/remediating/closed) is modelled on
 # PoamRisk/SarRisk; only the deviation states are meaningful here.
-DEVIATION_RISK_STATUSES = %w[deviation-requested deviation-approved].freeze
+DEVIATION_REQUESTED = "deviation-requested"
+DEVIATION_APPROVED  = "deviation-approved"
+DEVIATION_RISK_STATUSES = [ DEVIATION_REQUESTED, DEVIATION_APPROVED ].freeze
+
+DISPOSITION_DEFERRED = "deferred"
 
 # An approved deviation must name who approved it, where, and when.
 DEVIATION_APPROVAL_FIELDS = %w[approved_by approved_in approved_at].freeze
@@ -164,59 +175,101 @@ end
 # acceptance, and a false_positive that claims mitigations is contradicting
 # itself (nothing to mitigate if the finding is wrong).
 def validate_deviation(finding, errors)
+  dev  = finding["deviation"]
+  disp = finding["disposition"]
+
+  return validate_missing_deviation(finding, errors) if dev.nil?
+
+  unless disp == DISPOSITION_DEFERRED
+    errors << "#{finding['cve_id']}: deviation blocks are only valid on disposition=#{DISPOSITION_DEFERRED} (got '#{disp}')"
+    return errors
+  end
+
+  validate_deviation_vocabulary(finding, dev, errors)
+  validate_deviation_by_type(finding, dev, errors)
+  validate_deviation_approval(finding, dev, errors)
+  validate_deviation_kev(finding, dev, errors)
+
+  errors
+end
+
+# A deferred CRITICAL with no deviation block is an untriaged critical.
+def validate_missing_deviation(finding, errors)
+  if finding["disposition"] == DISPOSITION_DEFERRED && severity_normalize(finding["severity"]) == "CRITICAL"
+    errors << "#{finding['cve_id']}: CRITICAL deferred findings require a deviation block (type + risk_status + mitigating_factors)"
+  end
+  errors
+end
+
+def validate_deviation_vocabulary(finding, dev, errors)
   cve_id = finding["cve_id"]
-  dev    = finding["deviation"]
-  disp   = finding["disposition"]
-
-  if dev.nil?
-    # A deferred CRITICAL with no deviation block is an untriaged critical.
-    if disp == "deferred" && severity_normalize(finding["severity"]) == "CRITICAL"
-      errors << "#{cve_id}: CRITICAL deferred findings require a deviation block (type + risk_status + mitigating_factors)"
-    end
-    return errors
+  unless DEVIATION_TYPES.include?(dev["type"])
+    errors << "#{cve_id}: deviation.type must be one of #{DEVIATION_TYPES.join(', ')} (got '#{dev['type']}')"
   end
-
-  unless disp == "deferred"
-    errors << "#{cve_id}: deviation blocks are only valid on disposition=deferred (got '#{disp}')"
-    return errors
+  unless DEVIATION_RISK_STATUSES.include?(dev["risk_status"])
+    errors << "#{cve_id}: deviation.risk_status must be one of #{DEVIATION_RISK_STATUSES.join(', ')} (got '#{dev['risk_status']}')"
   end
+  errors
+end
 
-  type   = dev["type"]
-  status = dev["risk_status"]
+# Per-type rules. These encode distinctions that matter to an assessor reading
+# the POA&M: a risk_adjustment with no stated mitigation is just an
+# undocumented risk acceptance, and a false_positive that claims mitigations is
+# contradicting itself (nothing to mitigate if the finding is wrong).
+def validate_deviation_by_type(finding, dev, errors)
+  cve_id  = finding["cve_id"]
   factors = Array(dev["mitigating_factors"])
 
-  errors << "#{cve_id}: deviation.type must be one of #{DEVIATION_TYPES.join(', ')} (got '#{type}')" unless DEVIATION_TYPES.include?(type)
-  errors << "#{cve_id}: deviation.risk_status must be one of #{DEVIATION_RISK_STATUSES.join(', ')} (got '#{status}')" unless DEVIATION_RISK_STATUSES.include?(status)
-
-  case type
-  when "risk_adjustment"
-    if factors.empty?
-      errors << "#{cve_id}: deviation.type=risk_adjustment requires at least one mitigating_factors entry — an RA with no stated mitigation is an undocumented risk acceptance"
-    end
-    if factors.any? { |f| f.is_a?(Hash) ? f["description"].to_s.strip.empty? : f.to_s.strip.empty? }
-      errors << "#{cve_id}: every mitigating_factors entry needs a non-empty description"
-    end
-  when "false_positive"
+  case dev["type"]
+  when DEVIATION_RISK_ADJUSTMENT
+    validate_risk_adjustment(cve_id, factors, errors)
+  when DEVIATION_FALSE_POSITIVE
     unless factors.empty?
-      errors << "#{cve_id}: deviation.type=false_positive must not carry mitigating_factors — a false positive is wrong, not mitigated"
+      errors << "#{cve_id}: deviation.type=#{DEVIATION_FALSE_POSITIVE} must not carry mitigating_factors — a false positive is wrong, not mitigated"
     end
-  when "operational_requirement"
+  when DEVIATION_OPERATIONAL_REQUIREMENT
     if dev["operational_justification"].to_s.strip.empty?
-      errors << "#{cve_id}: deviation.type=operational_requirement requires operational_justification"
+      errors << "#{cve_id}: deviation.type=#{DEVIATION_OPERATIONAL_REQUIREMENT} requires operational_justification"
     end
+  else
+    # Unknown type — already reported by validate_deviation_vocabulary; no
+    # per-type rules can be applied, so there is nothing further to check.
+    nil
   end
 
-  if status == "deviation-approved"
-    missing = DEVIATION_APPROVAL_FIELDS.reject { |f| dev[f].to_s.strip != "" }
-    errors << "#{cve_id}: deviation.risk_status=deviation-approved requires #{missing.join(', ')}" unless missing.empty?
-  end
+  errors
+end
 
-  # #864 — a KEV-listed CVE is actively exploited in the wild; adjusting its
-  # risk downward demands more than the standard reachability argument.
-  if finding.dig("kev", "listed") && type == "risk_adjustment" && dev["kev_justification"].to_s.strip.empty?
-    errors << "#{cve_id}: KEV-listed findings using risk_adjustment require an explicit kev_justification"
+def validate_risk_adjustment(cve_id, factors, errors)
+  if factors.empty?
+    errors << "#{cve_id}: deviation.type=#{DEVIATION_RISK_ADJUSTMENT} requires at least one mitigating_factors entry — an RA with no stated mitigation is an undocumented risk acceptance"
   end
+  if factors.any? { |f| mitigating_factor_description(f).empty? }
+    errors << "#{cve_id}: every mitigating_factors entry needs a non-empty description"
+  end
+  errors
+end
 
+def mitigating_factor_description(factor)
+  (factor.is_a?(Hash) ? factor["description"] : factor).to_s.strip
+end
+
+def validate_deviation_approval(finding, dev, errors)
+  return errors unless dev["risk_status"] == DEVIATION_APPROVED
+
+  missing = DEVIATION_APPROVAL_FIELDS.reject { |f| dev[f].to_s.strip != "" }
+  errors << "#{finding['cve_id']}: deviation.risk_status=#{DEVIATION_APPROVED} requires #{missing.join(', ')}" unless missing.empty?
+  errors
+end
+
+# #864 — a KEV-listed CVE is actively exploited in the wild; adjusting its risk
+# downward demands more than the standard reachability argument.
+def validate_deviation_kev(finding, dev, errors)
+  return errors unless finding.dig("kev", "listed")
+  return errors unless dev["type"] == DEVIATION_RISK_ADJUSTMENT
+  return errors unless dev["kev_justification"].to_s.strip.empty?
+
+  errors << "#{finding['cve_id']}: KEV-listed findings using #{DEVIATION_RISK_ADJUSTMENT} require an explicit kev_justification"
   errors
 end
 
@@ -282,7 +335,7 @@ def deviation_status(finding)
   dev = finding["deviation"]
   return nil unless dev.is_a?(Hash)
 
-  dev["risk_status"] == "deviation-approved" ? "notApplicable" : "failed"
+  dev["risk_status"] == DEVIATION_APPROVED ? "notApplicable" : "failed"
 end
 
 # Fold the deviation's structured evidence into the override reason so the HDF
@@ -299,7 +352,7 @@ def deviation_reason(finding, rationale)
   end
   factors = Array(dev["mitigating_factors"]).map { |f| f.is_a?(Hash) ? f["description"] : f }.compact
   parts << "Mitigating factors: #{factors.join('; ')}." unless factors.empty?
-  if dev["risk_status"] == "deviation-approved"
+  if dev["risk_status"] == DEVIATION_APPROVED
     parts << "Approved by #{dev['approved_by']} in #{dev['approved_in']} on #{dev['approved_at']}."
   end
   parts << rationale.to_s
