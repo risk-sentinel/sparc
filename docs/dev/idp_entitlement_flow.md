@@ -163,27 +163,33 @@ Audit each grant applied and each grant unmatched, with the reason
 
 ---
 
-## Offboarding
+## Two axes, not one spectrum
 
-Three alternative triggers. None precedes another, and they differ in what they actually end.
+Offboarding and scope reduction are different mechanisms answering different questions. Conflating them is what makes access changes hard to reason about.
 
-### A — Grant removed (user leaves a team, keeps their account)
+| Axis | Mechanism | Answers |
+|---|---|---|
+| **Authentication** | The IdP / MFA stops authenticating the user | Can they get in **at all**? |
+| **Authorization** | Grants absent from the claims presented at login | What can they **reach** once in? |
 
-The group membership is removed at the IdP, so the grant is absent from the next login and the entitlement simply does not materialise. Other scopes are unaffected. No destructive operation occurs.
+### Offboarding a person — authentication
 
-Residual exposure: an active session retains the entitlement until it ends — bounded by session duration, and shortened further by the inactivity timeout above.
+**The offboard is complete when the IdP no longer authenticates them.** There is no separate de-provisioning step in SPARC, because SPARC never held the entitlement independently: it derives authority per session from claims, and a user who cannot authenticate presents no claims.
 
-### B — User disabled at the IdP (a leaver)
+That is the whole mechanism. It is not a gap requiring compensating in-app action.
 
-No new sessions can be created. An existing session remains valid until it expires or idles out, and **a local-login credential, if one exists, still works**.
+Two deployment preconditions make it airtight, and both should be stated in operator documentation rather than discovered:
 
-This is the trigger that needs an explicit operator procedure. IdP disablement is not by itself a complete offboard while local login is enabled for that account.
+- **Local login must be disabled, or break-glass only.** A local credential is a second authentication path and therefore a second way in. In an IdP-as-source-of-record deployment it should not exist for ordinary users.
+- **An active session survives until it ends.** Bounded by session duration, and shortened by the configurable inactivity timeout. This is a known, bounded window rather than an open one.
 
-### C — Full offboard (deliberate, in-app)
+In-app deactivation by an instance admin remains available as a **fallback** — for a deployment that has not disabled local login, or when a session must be ended immediately rather than at expiry. It is not the primary route. It retains the user record for audit integrity (NIST **AU-9**) rather than hard-deleting it.
 
-An instance admin deactivates the user: sessions terminated, entitlements ended, and the user record **retained** for audit integrity (NIST **AU-9**) rather than hard-deleted. The audit event records who deactivated whom, and when.
+### Reducing what someone can reach — authorization
 
----
+A grant removed at the IdP is simply absent from the next login, so the entitlement does not materialise. Other scopes are unaffected. Nothing is revoked destructively, and recovery is automatic if the grant returns.
+
+At the limit, **all** grants absent leaves an authenticated user with no organization or boundary access at all — the degrade posture described above. That is scope reduction taken to zero, which is deliberately **not** the same as an offboard: the person can still sign in.
 
 ## Deliverables
 
