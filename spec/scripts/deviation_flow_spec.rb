@@ -19,8 +19,10 @@ require "json"
 #   2. A deviation cannot approve itself. The approval is the code-owner review
 #      on the PR, so the CI gate must fail when no approving review exists.
 RSpec.describe "FedRAMP deviation flow (#865)" do
-  amender  = Rails.root.join("bin/sparc_findings_to_hdf_amendments.rb").to_s
-  approver = Rails.root.join("scripts/ci/check_deviation_approvals.rb").to_s
+  # `let`, not local variables: a `def` below opens a new scope and cannot see
+  # locals assigned here, while it can call a `let`-defined instance method.
+  let(:amender)  { Rails.root.join("bin/sparc_findings_to_hdf_amendments.rb").to_s }
+  let(:approver) { Rails.root.join("scripts/ci/check_deviation_approvals.rb").to_s }
 
   around do |example|
     Dir.mktmpdir("deviation-spec-") { |dir| @dir = dir; example.run }
