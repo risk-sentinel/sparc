@@ -1,29 +1,33 @@
 name: Deviation approval
 
-# #865 — a FedRAMP deviation may not approve itself.
+# #865 — the admin's PR review IS the FedRAMP deviation approval.
 #
-# docs/compliance/sparc-findings.yml lets a deferred finding carry a deviation
-# whose risk_status is `deviation-approved`. That status suppresses the finding
-# from the SAF threshold residual, so on a CRITICAL it is the difference
-# between a red build and a green one. The approval that justifies it is the
-# code-owner review on the PR that introduces it.
+# A deviation lands as `deviation-requested`, which emits `failed` and turns the
+# build red, blocking the merge for anyone without admin rights. An admin then
+# submits an approving review; that review is the Authorizing Official decision.
+# This workflow records it — deriving who, when and which PR from the review
+# event itself — and the gate turns green so any code approver can merge.
 #
-# This lives in its own workflow rather than inside security.yml because it
-# must re-run when a review is submitted. Adding a `pull_request_review`
-# trigger to security.yml would re-run the entire scan suite (Trivy, Grype,
-# CodeQL, SBOM generation) on every review comment.
+# The approval is never asserted by the PR author. The gate corroborates every
+# claimed approval against a real review by someone holding admin/maintain, so
+# hand-editing the fields cannot fake it.
+#
+# Separate from security.yml because it must run on `pull_request_review`;
+# putting that trigger there would re-run Trivy, Grype, CodeQL and SBOM
+# generation on every review.
 
 on:
   pull_request:
     paths:
       - 'docs/compliance/sparc-findings.yml'
       - 'scripts/ci/check_deviation_approvals.rb'
+      - 'scripts/ci/apply_deviation_approval.rb'
       - '.github/CODEOWNERS'
   pull_request_review:
     types: [ submitted ]
 
 permissions:
-  contents: read
+  contents: write        # push the recorded approval back to the PR branch
   pull-requests: read
 
 jobs:
@@ -31,11 +35,13 @@ jobs:
     name: Deviation approval
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout the PR branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          # Need the base branch to tell a newly-approved deviation from one
-          # that was already approved when it landed.
+          # Check out the PR head by name so the recorded approval can be
+          # pushed back to it, and fetch history so the gate can diff against
+          # the base branch.
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Set up Ruby
@@ -43,9 +49,45 @@ jobs:
         with:
           ruby-version: .ruby-version
 
-      - name: Check deviation approvals
+      # Only fires on pull_request_review. Verifies the reviewer's authority,
+      # then records the approval against the deviations awaiting one.
+      - name: Record admin approval as the deviation approval
+        if: github.event_name == 'pull_request_review'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          SPARC_REPO: ${{ github.repository }}
+          SPARC_PR_NUMBER: ${{ github.event.pull_request.number }}
+          SPARC_REVIEW_STATE: ${{ github.event.review.state }}
+          SPARC_REVIEWER: ${{ github.event.review.user.login }}
+          SPARC_REVIEWED_AT: ${{ github.event.review.submitted_at }}
+        run: ruby scripts/ci/apply_deviation_approval.rb
+
+      # Branch ref and reviewer login are attacker-influencable, so they go
+      # through the environment rather than being interpolated into the shell
+      # (actionlint script-injection rule).
+      - name: Push the recorded approval to the PR branch
+        if: github.event_name == 'pull_request_review'
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          REVIEWER: ${{ github.event.review.user.login }}
+        run: |
+          if git diff --quiet -- docs/compliance/sparc-findings.yml; then
+            echo "No approval recorded — nothing to push."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/compliance/sparc-findings.yml
+          git commit -m "chore(compliance): record deviation approval from @${REVIEWER} (#865)"
+          git push origin "HEAD:${HEAD_REF}"
+
+      # Runs in the SAME job after the push, because pushes made with
+      # GITHUB_TOKEN deliberately do not trigger new workflow runs — so this
+      # gate cannot rely on being re-fired by the commit above.
+      - name: Verify no deviation is unapproved or self-approved
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SPARC_REPO: ${{ github.repository }}
           SPARC_PR_NUMBER: ${{ github.event.pull_request.number }}
           SPARC_BASE_REF: origin/${{ github.event.pull_request.base.ref }}
         run: ruby scripts/ci/check_deviation_approvals.rb

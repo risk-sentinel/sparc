@@ -4,32 +4,36 @@
 # CI gate (#865): a FedRAMP deviation may not approve itself.
 #
 # `docs/compliance/sparc-findings.yml` lets a deferred finding carry a
-# deviation whose risk_status is `deviation-approved`. That status suppresses
-# the finding from the SAF threshold residual — so on a CRITICAL it is the
-# difference between a red build and a green one. The approval that justifies
-# it is the code-owner review on the pull request introducing it.
+# deviation. Its risk_status decides whether the finding gates the build:
+# `deviation-requested` emits `failed` (a CRITICAL then breaches
+# threshold.yml's failed.critical.max: 0), `deviation-approved` emits
+# `notApplicable` and is suppressed from the residual.
 #
-#   On a pull request : every finding whose deviation is `deviation-approved`
-#                       AND which this PR adds or modifies must be covered by
-#                       an approving code-owner review.
-#   On main / push    : trusted — such entries could only arrive via an
-#                       approved PR, because branch protection requires one.
+# So `deviation-approved` is a powerful claim, and this gate refuses to take it
+# on trust. Two rules:
 #
-# Unchanged approved deviations are NOT re-checked. They were approved when
-# they landed; re-litigating them would make every unrelated PR depend on a
-# review of work it did not touch.
+#   1. A deviation still `deviation-requested` fails the gate. That is the
+#      intended resting state of a PR awaiting an Authorizing Official — red
+#      blocks the merge until an admin decides.
 #
-# Why `reviewDecision` and not a CODEOWNERS name match:
-# .github/CODEOWNERS assigns ownership to TEAMS (@risk-sentinel/sparc-admin),
-# while reviews are submitted by individuals. Matching reviewer logins against
-# the file would never succeed without resolving team membership through an
-# org-scoped API call the default CI token may not be able to make. GitHub
-# already computes the answer — `reviewDecision` is APPROVED only when the
-# review requirements branch protection derives from CODEOWNERS are satisfied.
-# That is precisely the question this gate asks.
+#   2. A deviation marked `deviation-approved` by this PR must be corroborated:
+#      the recorded approved_by must have actually submitted an APPROVING
+#      REVIEW on this PR, and must hold admin/maintain on the repo. Hand-typing
+#      the approval fields cannot satisfy this, because the review either
+#      exists in the API or it does not.
 #
-# Exit 0 = every newly-approved deviation carries an approving review.
-# Exit 1 = a deviation is self-approved, or approval could not be established.
+# Normally the fields are not hand-written at all —
+# scripts/ci/apply_deviation_approval.rb writes them in response to a real
+# review. This gate is the check that the writing was legitimate.
+#
+# Deviations already approved on the base branch are NOT re-litigated; they
+# were corroborated when they landed, and re-checking them would make every
+# unrelated PR depend on a review of work it did not touch.
+#
+# On push/main the gate defers to branch protection.
+#
+# Exit 0 = no unapproved deviations, and every newly-approved one is corroborated.
+# Exit 1 = a deviation awaits approval, or claims one that cannot be corroborated.
 
 require "yaml"
 require "json"
@@ -39,6 +43,9 @@ FINDINGS  = ENV.fetch("SPARC_FINDINGS_FILE", File.join(REPO_ROOT, "docs/complian
 EVENT     = ENV["GITHUB_EVENT_NAME"].to_s
 PR_NUM    = ENV["SPARC_PR_NUMBER"].to_s
 BASE_REF  = ENV.fetch("SPARC_BASE_REF", "origin/main")
+REPO_SLUG = ENV.fetch("SPARC_REPO", "risk-sentinel/sparc")
+
+AUTHORISED_PERMISSIONS = %w[admin maintain].freeze
 
 def load_findings(source)
   data = YAML.safe_load(source, permitted_classes: [ Date ], aliases: true)
@@ -50,51 +57,48 @@ def load_findings(source)
   end
 end
 
-def approved_deviation?(finding)
-  finding.dig("deviation", "risk_status") == "deviation-approved"
-end
-
-# Findings whose approved-deviation state this change introduces or alters.
-def newly_approved(head, base)
-  head.each_with_object([]) do |(cve, finding), acc|
-    next unless approved_deviation?(finding)
-
-    before = base[cve]
-    acc << cve if before.nil? || before["deviation"] != finding["deviation"]
-  end
-end
-
-def pr_review_state
-  raw = `gh pr view #{PR_NUM} --json reviewDecision,latestReviews 2>/dev/null`
-  return [ nil, [] ] if raw.strip.empty?
-
-  parsed = JSON.parse(raw)
-  approvers = Array(parsed["latestReviews"])
-              .select { |r| r["state"] == "APPROVED" }
-              .filter_map { |r| r.dig("author", "login") }
-  [ parsed["reviewDecision"], approvers ]
-rescue JSON::ParserError
-  [ nil, [] ]
+def risk_status(finding)
+  finding.dig("deviation", "risk_status")
 end
 
 abort "✗ findings file not found: #{FINDINGS}" unless File.exist?(FINDINGS)
 
-head_findings = load_findings(File.read(FINDINGS))
-base_source   = `git show #{BASE_REF}:docs/compliance/sparc-findings.yml 2>/dev/null`
-base_findings = base_source.strip.empty? ? {} : load_findings(base_source)
+head = load_findings(File.read(FINDINGS))
+base_source = `git show #{BASE_REF}:docs/compliance/sparc-findings.yml 2>/dev/null`
+base = base_source.strip.empty? ? {} : load_findings(base_source)
 
-pending = newly_approved(head_findings, base_findings)
+awaiting = head.select { |_, f| risk_status(f) == "deviation-requested" }
+newly_approved = head.select do |cve, f|
+  next false unless risk_status(f) == "deviation-approved"
+  before = base[cve]
+  before.nil? || before["deviation"] != f["deviation"]
+end
 
-if pending.empty?
-  puts "✓ No newly-approved deviations in this change."
+# ── Rule 1: nothing may still be awaiting approval ────────────────────────────
+unless awaiting.empty?
+  warn "✗ DEVIATION AWAITING APPROVAL"
+  warn ""
+  awaiting.each do |cve, f|
+    warn "    #{cve}  #{f['severity']}  #{f.dig('deviation', 'type')}"
+  end
+  warn ""
+  warn "  These emit `failed`, so a CRITICAL breaches threshold.yml. That is intended:"
+  warn "  a deviation is a risk decision and needs an Authorizing Official."
+  warn ""
+  warn "  To approve: an admin submits an APPROVING REVIEW on this PR. The"
+  warn "  deviation-approval workflow then records who approved, when, and on"
+  warn "  which PR, and this gate turns green. Do not edit the approval fields"
+  warn "  by hand — they are corroborated against the actual review."
+  exit 1
+end
+
+if newly_approved.empty?
+  puts "✓ No deviations awaiting approval, and none newly approved by this change."
   exit 0
 end
 
-puts "Deviations newly marked `deviation-approved` by this change:"
-pending.each do |cve|
-  dev = head_findings[cve]["deviation"]
-  puts "  - #{cve}  type=#{dev['type']}  severity=#{head_findings[cve]['severity']}"
-end
+puts "Deviations newly approved by this change:"
+newly_approved.each { |cve, f| puts "  - #{cve}  #{f['severity']}  #{f.dig('deviation', 'type')}" }
 puts
 
 unless %w[pull_request pull_request_review].include?(EVENT)
@@ -103,27 +107,55 @@ unless %w[pull_request pull_request_review].include?(EVENT)
 end
 
 if PR_NUM.empty?
-  warn "✗ SPARC_PR_NUMBER is not set; cannot verify the review decision."
+  warn "✗ SPARC_PR_NUMBER is not set; cannot corroborate the approval."
   exit 1
 end
 
-decision, approvers = pr_review_state
+# ── Rule 2: corroborate each claimed approval against a real review ───────────
+raw = `gh pr view #{PR_NUM} --json latestReviews 2>/dev/null`
+approvers =
+  begin
+    Array(JSON.parse(raw)["latestReviews"])
+      .select { |r| r["state"] == "APPROVED" }
+      .filter_map { |r| r.dig("author", "login")&.downcase }
+  rescue JSON::ParserError
+    []
+  end
 
-if decision == "APPROVED"
-  puts "✓ Deviation approval satisfied — PR review decision is APPROVED."
-  puts "  Approving reviewers: #{approvers.empty? ? '(not disclosed)' : approvers.join(', ')}"
+failures = []
+newly_approved.each do |cve, f|
+  claimed = f.dig("deviation", "approved_by").to_s.sub(/\A@/, "").downcase
+  if claimed.empty?
+    failures << "#{cve}: claims deviation-approved but names no approver"
+    next
+  end
+  unless approvers.include?(claimed)
+    failures << "#{cve}: claims approval by @#{claimed}, who has not submitted an approving review on this PR"
+    next
+  end
+
+  perm_raw = `gh api repos/#{REPO_SLUG}/collaborators/#{claimed}/permission 2>/dev/null`
+  permission =
+    begin
+      JSON.parse(perm_raw).fetch("permission", "")
+    rescue JSON::ParserError
+      ""
+    end
+  unless AUTHORISED_PERMISSIONS.include?(permission)
+    failures << "#{cve}: @#{claimed} holds '#{permission.empty? ? 'unknown' : permission}', not #{AUTHORISED_PERMISSIONS.join('/')}"
+  end
+end
+
+if failures.empty?
+  puts "✓ Every newly-approved deviation is corroborated by an approving review from an authorised reviewer."
+  puts "  Approving reviewers on this PR: #{approvers.join(', ')}"
   exit 0
 end
 
-warn "✗ DEVIATION NOT APPROVED"
+warn "✗ DEVIATION APPROVAL NOT CORROBORATED"
 warn ""
-warn "  #{pending.size} deviation(s) are marked `deviation-approved`, which suppresses them"
-warn "  from the threshold residual. On a CRITICAL that is the difference between a"
-warn "  red build and a green one, so the approval must come from a code-owner review"
-warn "  of this PR — a deviation cannot approve itself."
+failures.each { |f| warn "    #{f}" }
 warn ""
-warn "  PR review decision : #{decision || '(none — no review submitted yet)'}"
-warn "  Approving reviewers: #{approvers.empty? ? '(none)' : approvers.join(', ')}"
-warn ""
-warn "  This check re-runs automatically when a review is submitted."
+warn "  Approving reviewers on this PR: #{approvers.empty? ? '(none)' : approvers.join(', ')}"
+warn "  The approval fields must describe a review that actually happened."
 exit 1

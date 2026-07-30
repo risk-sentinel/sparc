@@ -160,91 +160,149 @@ RSpec.describe "FedRAMP deviation flow (#865)" do
   end
 
   describe "the committed register" do
-    it "validates and emits no failed overrides (every deviation is approved)" do
+    it "validates, and every deviation carries a type and mitigating factors" do
       out = File.join(@dir, "real.json")
       stdout, status = Open3.capture2e(
         "ruby", amender,
         "--input", Rails.root.join("docs/compliance/sparc-findings.yml").to_s,
-        "--output", out, "--today", "2026-07-29"
+        "--output", out, "--today", "2026-07-30"
       )
 
       expect(status.exitstatus).to eq(0), stdout
-      overrides = JSON.parse(File.read(out)).values.find { |v| v.is_a?(Array) && v.first.is_a?(Hash) } || []
-      expect(overrides.map { |o| o["status"] }.uniq).to eq([ "notApplicable" ])
+
+      register = YAML.safe_load_file(
+        Rails.root.join("docs/compliance/sparc-findings.yml"), permitted_classes: [ Date ], aliases: true
+      )
+      deviations = Array(register["findings"]).filter_map { |f| f["deviation"] }
+      expect(deviations).not_to be_empty
+      deviations.each do |dev|
+        expect(%w[false_positive risk_adjustment operational_requirement]).to include(dev["type"])
+        expect(%w[deviation-requested deviation-approved]).to include(dev["risk_status"])
+        next unless dev["type"] == "risk_adjustment"
+        expect(Array(dev["mitigating_factors"])).not_to be_empty
+      end
+    end
+
+    it "never claims an approval without naming approver, PR and date" do
+      register = YAML.safe_load_file(
+        Rails.root.join("docs/compliance/sparc-findings.yml"), permitted_classes: [ Date ], aliases: true
+      )
+      Array(register["findings"]).each do |f|
+        dev = f["deviation"]
+        next unless dev && dev["risk_status"] == "deviation-approved"
+
+        %w[approved_by approved_in approved_at].each do |field|
+          expect(dev[field].to_s.strip).not_to be_empty,
+            "#{f['cve_id']} is deviation-approved but has no #{field}"
+        end
+      end
     end
   end
 
-  describe "scripts/ci/check_deviation_approvals.rb" do
-    it "passes when the change introduces no newly-approved deviation" do
-      findings = write("f.yml", finding(severity: "HIGH", disposition: "accepted", deviation: nil))
-      stdout, status = Open3.capture2e(
-        { "SPARC_FINDINGS_FILE" => findings, "GITHUB_EVENT_NAME" => "pull_request" },
-        "ruby", approver
-      )
-
-      expect(status.exitstatus).to eq(0), stdout
-      expect(stdout).to include("No newly-approved deviations")
-    end
-
-    # Stub `gh` on PATH rather than clearing PATH — clearing it would break
+  describe "the approval loop (#865)" do
+    # A stubbed `gh` on PATH, not a cleared PATH — clearing PATH would break
     # `ruby` itself and the example would pass for the wrong reason.
-    def stub_gh(body)
+    def stub_gh(permission: "admin", approver: "clem-field")
       bin = File.join(@dir, "bin")
       FileUtils.mkdir_p(bin)
-      File.write(File.join(bin, "gh"), "#!/bin/sh\ncat <<'JSON'\n#{body}\nJSON\n")
+      File.write(File.join(bin, "gh"), <<~SH)
+        #!/bin/sh
+        case "$*" in
+          *"collaborators/#{approver}/permission"*) echo '{"permission":"#{permission}"}' ;;
+          *"collaborators/"*"/permission"*)         echo '{"permission":"write"}' ;;
+          *"--json latestReviews"*)                 echo '{"latestReviews":[{"state":"APPROVED","author":{"login":"#{approver}"}}]}' ;;
+          *) echo '{}' ;;
+        esac
+      SH
       FileUtils.chmod(0o755, File.join(bin, "gh"))
       "#{bin}:#{ENV['PATH']}"
     end
 
-    it "fails a pull request that self-approves a deviation with no review" do
-      findings = write("f.yml", finding(deviation: risk_adjustment))
+    def requested_register
+      write("f.yml", finding(deviation: risk_adjustment(status: "deviation-requested", approval: false)))
+    end
+
+    def run_gate(path, env = {})
+      Open3.capture2e(
+        { "SPARC_FINDINGS_FILE" => path, "GITHUB_EVENT_NAME" => "pull_request",
+          "SPARC_PR_NUMBER" => "999", "SPARC_BASE_REF" => "refs/none" }.merge(env),
+        "ruby", approver_script
+      )
+    end
+
+    let(:approver_script) { Rails.root.join("scripts/ci/check_deviation_approvals.rb").to_s }
+    let(:applier)         { Rails.root.join("scripts/ci/apply_deviation_approval.rb").to_s }
+
+    it "blocks while a deviation is still awaiting approval" do
+      stdout, status = run_gate(requested_register, "PATH" => stub_gh)
+
+      expect(status.exitstatus).to eq(1), stdout
+      expect(stdout).to include("DEVIATION AWAITING APPROVAL")
+    end
+
+    it "refuses to record an approval from a reviewer without admin rights" do
+      path = requested_register
       stdout, status = Open3.capture2e(
-        {
-          "SPARC_FINDINGS_FILE" => findings,
-          "GITHUB_EVENT_NAME"   => "pull_request",
-          "SPARC_PR_NUMBER"     => "999999",
-          "SPARC_BASE_REF"      => "refs/nonexistent",
-          "PATH"                => stub_gh('{"reviewDecision":"REVIEW_REQUIRED","latestReviews":[]}')
-        },
-        "ruby", approver
+        { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+          "SPARC_REVIEWER" => "someuser", "SPARC_PR_NUMBER" => "999",
+          "PATH" => stub_gh(approver: "clem-field") },
+        "ruby", applier
       )
 
       expect(status.exitstatus).to eq(1), stdout
-      expect(stdout).to include("DEVIATION NOT APPROVED")
+      expect(stdout).to include("may only be approved by admin or maintain")
+      expect(File.read(path)).to include("deviation-requested")
     end
 
-    it "passes once the PR carries an approving code-owner review" do
-      findings = write("f.yml", finding(deviation: risk_adjustment))
+    it "ignores a review that is not an approval" do
+      path = requested_register
+      before = File.read(path)
       stdout, status = Open3.capture2e(
-        {
-          "SPARC_FINDINGS_FILE" => findings,
-          "GITHUB_EVENT_NAME"   => "pull_request_review",
-          "SPARC_PR_NUMBER"     => "999999",
-          "SPARC_BASE_REF"      => "refs/nonexistent",
-          "PATH"                => stub_gh(
-            '{"reviewDecision":"APPROVED","latestReviews":[{"state":"APPROVED","author":{"login":"clem-field"}}]}'
-          )
-        },
-        "ruby", approver
+        { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "COMMENTED",
+          "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999",
+          "PATH" => stub_gh },
+        "ruby", applier
       )
 
       expect(status.exitstatus).to eq(0), stdout
-      expect(stdout).to include("Deviation approval satisfied")
+      expect(File.read(path)).to eq(before)
     end
 
-    it "does not gate on push events — branch protection covers those" do
-      findings = write("f.yml", finding(deviation: risk_adjustment))
-      stdout, status = Open3.capture2e(
-        {
-          "SPARC_FINDINGS_FILE" => findings,
-          "GITHUB_EVENT_NAME"   => "push",
-          "SPARC_BASE_REF"      => "refs/nonexistent"
-        },
-        "ruby", approver
+    it "records an admin approval and then passes the gate" do
+      path = requested_register
+      _out, status = Open3.capture2e(
+        { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+          "SPARC_REVIEWER" => "clem-field", "SPARC_REVIEWED_AT" => "2026-07-30T12:00:00Z",
+          "SPARC_PR_NUMBER" => "999", "PATH" => stub_gh },
+        "ruby", applier
       )
+      expect(status.exitstatus).to eq(0)
 
-      expect(status.exitstatus).to eq(0), stdout
-      expect(stdout).to include("branch protection")
+      body = File.read(path)
+      expect(body).to include("deviation-approved")
+      expect(body).to include('approved_by: "@clem-field"')
+      expect(body).to include('approved_at: "2026-07-30"')
+
+      stdout, gate = run_gate(path, "PATH" => stub_gh, "GITHUB_EVENT_NAME" => "pull_request_review")
+      expect(gate.exitstatus).to eq(0), stdout
+      expect(stdout).to include("corroborated")
+    end
+
+    it "rejects a hand-typed approval from someone who never reviewed" do
+      path = requested_register
+      Open3.capture2e(
+        { "SPARC_FINDINGS_FILE" => path, "SPARC_REVIEW_STATE" => "APPROVED",
+          "SPARC_REVIEWER" => "clem-field", "SPARC_PR_NUMBER" => "999", "PATH" => stub_gh },
+        "ruby", applier
+      )
+      forged = File.join(@dir, "forged.yml")
+      File.write(forged, File.read(path).gsub("@clem-field", "@mallory"))
+
+      stdout, status = run_gate(forged, "PATH" => stub_gh)
+
+      expect(status.exitstatus).to eq(1), stdout
+      expect(stdout).to include("NOT CORROBORATED")
+      expect(stdout).to include("has not submitted an approving review")
     end
   end
 end
