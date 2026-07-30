@@ -5,7 +5,7 @@ them from the credentials that were already configured:
 
     SPARC_ENABLE_OIDC    <- SPARC_OIDC_CLIENT_ID being set
     SPARC_ENABLE_SMTP    <- SPARC_SMTP_ADDRESS being set
-    SPARC_BANNER_ENABLED <- SPARC_BANNER_MESSAGE being set
+    SPARC_BANNER_ENABLED <- SPARC_BANNER_MESSAGE or SPARC_BANNER_HTML being set
 
 Those inferences are the kind of change request specs pass on and users still
 notice, because the failure mode is silent: a login method or a consent banner
@@ -60,7 +60,12 @@ def _open_login(page) -> None:
 
 
 class TestConsentBanner:
-    """SPARC_BANNER_ENABLED is now inferred from SPARC_BANNER_MESSAGE (#785).
+    """SPARC_BANNER_ENABLED is inferred from either content variable (#785, #867).
+
+    Either SPARC_BANNER_MESSAGE (a file path) or SPARC_BANNER_HTML (inline
+    markup, #867) turns the banner on. This test is source-agnostic on purpose:
+    it asserts the banner REACHES THE USER, which is the property that matters
+    for AC-8, whichever variable supplied the text.
 
     The banner is an AC-8 control (system use notification). If the inference
     regressed, the banner would silently stop rendering and users would reach the

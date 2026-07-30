@@ -529,15 +529,54 @@ module SparcConfig
 
   # ── Consent Banner ──────────────────────────────────────────────────────
 
-  # #785 — inferred from the banner message. A banner with no message renders
-  # nothing, and a message that is never shown is a configuration mistake, so
-  # presence of the message IS the switch. Explicit "false" still forces it off.
+  # The banner is shown when it has something to say. Nothing else decides.
+  #
+  # #785 inferred this from SPARC_BANNER_MESSAGE; #867 added SPARC_BANNER_HTML
+  # and RETIRED SPARC_BANNER_ENABLED entirely — it is read only to tell the
+  # operator it is being ignored.
+  #
+  # Why retire it: it could not turn the banner on (content already does that),
+  # and its one real use — suppressing the notice without deleting the text —
+  # existed because the text used to live in the image where the deployer could
+  # not remove it. With SPARC_BANNER_HTML the content is in deployment config,
+  # so unsetting the content IS the off switch, and the flag is left able only
+  # to do harm.
+  #
+  # And it did. The old `raw == "true"` was case-sensitive and short-circuited
+  # the inference, so SPARC_BANNER_ENABLED=TRUE (or 1, or yes, or a typo)
+  # alongside perfectly good content SILENTLY DISABLED the banner. Setting the
+  # flag to enable an AC-8 notice was worse than never setting it. A compliance
+  # control should not be one capital letter away from vanishing.
+  #
+  # Failure direction is now safe: a stale flag can only leave the notice
+  # showing, never hide it.
   def banner_enabled?
-    raw = ENV.fetch("SPARC_BANNER_ENABLED", nil)
-    return raw == "true" if raw.present?
+    if ENV.fetch("SPARC_BANNER_ENABLED", nil).present?
+      Rails.logger.warn(
+        "[ConsentBanner] SPARC_BANNER_ENABLED is ignored (#867). The banner is shown " \
+        "whenever SPARC_BANNER_HTML or SPARC_BANNER_MESSAGE has content; unset the " \
+        "content to hide it."
+      )
+    end
 
-    banner_message_path.present?
+    banner_html.present? || banner_message_path.present?
   end
+
+  # #867 — inline banner body, so rules-of-behavior wording is owned by the
+  # deployment rather than baked into the image.
+  #
+  # SPARC_BANNER_MESSAGE is a PATH ONLY, and the only filesystem Rails can read
+  # in the shipped task definition is the image layer — so changing banner text
+  # meant a rebuild, a re-sign, a release and an image-tag bump. For an AC-8
+  # artifact whose whole purpose is stating THIS deployment's rules, that is the
+  # wrong owner.
+  #
+  # A separate variable rather than a heuristic on SPARC_BANNER_MESSAGE
+  # ("doesn't look like a file → treat as literal"): under a heuristic a typo'd
+  # path silently renders as banner text instead of logging "Banner file not
+  # found", and silently displaying a path where a legal notice should be is a
+  # worse failure than displaying nothing.
+  def banner_html = ENV.fetch("SPARC_BANNER_HTML", nil).presence
 
   def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil).presence
 

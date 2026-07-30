@@ -38,12 +38,13 @@ This is the real list. Roughly a dozen entries.
 | `SPARC_CONTACT_EMAIL` | Where users are pointed for support |
 | **One auth block** | `SPARC_ENABLE_LOCAL_LOGIN=true`, or OIDC / LDAP / FIDO2 / PIV credentials |
 | `SPARC_ORG_NAME`, `SPARC_ORG_DESCRIPTION` | Organisation metadata for OSCAL exports |
-| `SPARC_HEADER_TEXT`, `SPARC_BANNER_MESSAGE` | Environment banner and consent text, if you want them |
+| `SPARC_HEADER_TEXT`, `SPARC_BANNER_HTML` | Environment banner and consent text, if you want them |
 
 Configuring a block is usually enough to switch it on: setting
 `SPARC_OIDC_CLIENT_ID` enables OIDC, `SPARC_SMTP_ADDRESS` enables mail, and
-`SPARC_BANNER_MESSAGE` enables the banner. The matching `SPARC_ENABLE_*` flag is
-only needed to force something **off**.
+`SPARC_BANNER_HTML` enables the consent banner. The matching `SPARC_ENABLE_*`
+flag is only needed to force something **off** — except for the banner, whose
+flag is retired (#867); unset the content to hide it.
 
 ### Tier 2 — Infrastructure (your platform decides these)
 
@@ -313,16 +314,46 @@ Controls which auth method the REST API accepts. Modes are mutually exclusive.
 ### Login Consent Banner (#190)
 
 Show a mandatory consent/warning banner modal before login options
-appear. The banner HTML is loaded from the file at
-`SPARC_BANNER_MESSAGE` (relative paths resolve against `Rails.root`)
-and sanitized for XSS before rendering in a Bootstrap 5 modal. A
-sample file is provided at `docs/banners/sample-consent-banner.html`
-(see [`docs/banners/`](banners/) for DoD and demo variants).
+appear. The body is sanitized for XSS before rendering in a Bootstrap 5 modal.
+
+**Two ways to supply the content, and one of them is almost certainly what you want.**
+
+`SPARC_BANNER_HTML` (#867) takes the markup **inline**, so the rules-of-behavior
+wording belongs to your deployment config. `SPARC_BANNER_MESSAGE` takes a **file
+path only**, and in a container deployment the only filesystem SPARC can read is
+the image itself — so using it means a rebuild, re-sign and release to change a
+sentence. For an AC-8 artifact stating *this* deployment's rules, that is the
+wrong owner. Prefer `SPARC_BANNER_HTML` unless you are deliberately shipping the
+notice inside the image.
+
+Keep the content in version control and render it into the variable — a
+Terraform `file()` into `templatefile()`, a Kubernetes ConfigMap, or equivalent —
+so the notice stays reviewable.
+
+**Precedence:** if both are set, `SPARC_BANNER_HTML` wins and a warning naming
+the ignored path is logged.
+
+**`SPARC_BANNER_ENABLED` is retired (#867) and ignored.** The banner is shown
+whenever either content variable has a value; to hide it, unset the content.
+The flag could never turn the banner *on* — content already did that — and its
+parsing was case-sensitive, so `SPARC_BANNER_ENABLED=TRUE` alongside perfectly
+good content silently *disabled* the notice. A compliance control should not be
+one capital letter away from vanishing. If the variable is present it is logged
+as ignored; a stale flag can now only leave the notice showing, never hide it.
+
+Sample files are provided at `docs/banners/sample-consent-banner.html`
+(see [`docs/banners/`](banners/) for DoD and demo variants) — usable as-is with
+`SPARC_BANNER_MESSAGE`, or as the source text to render into `SPARC_BANNER_HTML`.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_BANNER_ENABLED | Show mandatory consent banner on login page | false | `true` | No |
-| SPARC_BANNER_MESSAGE | File path to banner HTML body (resolved against `Rails.root`) | (none) | `docs/banners/sample-consent-banner.html` | Yes (if enabled) |
+| SPARC_BANNER_ENABLED | **Retired (#867) — ignored.** The content variables are the switch | (ignored) | — | No |
+| SPARC_BANNER_HTML | Banner HTML body, supplied **inline**. Preferred — changing it needs no image rebuild | (none) | `<p><strong>WARNING</strong> Authorized use only.</p>` | No |
+| SPARC_BANNER_MESSAGE | File path to banner HTML body (resolved against `Rails.root`). **Path only** — passing markup here is ignored | (none) | `docs/banners/sample-consent-banner.html` | No |
+
+Only permitted tags survive sanitization: `p br strong em ul ol li h1`–`h6 a span
+div`, with `href class style` attributes. Anything else — `<script>`, event
+handlers — is stripped from **both** sources by the same sanitizer.
 
 ### Environment / Rules Header (#682)
 
