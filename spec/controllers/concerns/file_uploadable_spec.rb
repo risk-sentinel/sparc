@@ -105,12 +105,16 @@ RSpec.describe FileUploadable do
     end
 
     context "extension does NOT match actual content (attack vector)" do
+      # #868 — these now assert the DETECTED type by name. The check sniffs on
+      # content alone (no filename hint), so the payload's real identity appears
+      # in the message; asserting it proves the bytes were inspected rather than
+      # the extension merely disbelieved.
       it "rejects a PE32 binary mislabeled as .json" do
         # PE32 (Windows executable) magic bytes: "MZ" followed by header.
         pe32_header = "MZ" + ("\x00" * 60) + "PE\x00\x00".b
         fake = fake_upload(filename: "trojan.json", bytes: pe32_header)
         expect { harness.validate_content_type!(fake) }
-          .to raise_error(/extension \.json expects.*actual content type is/)
+          .to raise_error(FileUploadable::UploadRejectedError, /named \.json.*detected application\/x-msdownload/)
       end
 
       it "rejects a zip mislabeled as .json" do
@@ -122,7 +126,7 @@ RSpec.describe FileUploadable do
                                  original_filename: "fake.json",
                                  path: tmp.path)
           expect { harness.validate_content_type!(fake) }
-            .to raise_error(/extension \.json expects.*actual content type is/)
+            .to raise_error(FileUploadable::UploadRejectedError, /named \.json.*detected application\/zip/)
         end
       end
 
@@ -130,7 +134,19 @@ RSpec.describe FileUploadable do
         pdf_bytes = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n".b
         fake = fake_upload(filename: "fake.yaml", bytes: pdf_bytes)
         expect { harness.validate_content_type!(fake) }
-          .to raise_error(/extension \.yaml expects.*actual content type is/)
+          .to raise_error(FileUploadable::UploadRejectedError, /named \.yaml.*detected application\/pdf/)
+      end
+
+      # #868 — the case the old name-hinted check silently allowed: ordinary
+      # text renamed to a structured extension. Content sniffing cannot tell
+      # text from text, so this must pass here and be caught downstream by
+      # validate_syntactic_structure!, which parses it.
+      it "lets plain text through this layer, leaving it to the structural parse" do
+        fake = fake_upload(filename: "notes.json", bytes: "this is not json at all")
+
+        expect { harness.validate_content_type!(fake) }.not_to raise_error
+        expect { harness.validate_syntactic_structure!(fake, "json") }
+          .to raise_error(FileUploadable::UploadRejectedError, /not valid JSON/)
       end
     end
 

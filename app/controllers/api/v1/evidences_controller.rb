@@ -62,7 +62,7 @@ class Api::V1::EvidencesController < Api::V1::BaseController
   # Accepts multipart/form-data (evidence[file] + metadata) or plain JSON
   # for metadata-only evidence.
   def create
-    reject_if_executable_signature!(uploaded_file) if uploaded_file
+    EvidenceUploadPolicy.validate!(uploaded_file)
 
     evidence = Evidence.new(evidence_params)
     # #738 / AU-10: provenance is system-recorded, never client-supplied.
@@ -85,7 +85,7 @@ class Api::V1::EvidencesController < Api::V1::BaseController
 
   # PATCH /api/v1/evidences/:id
   def update
-    reject_if_executable_signature!(uploaded_file) if uploaded_file
+    EvidenceUploadPolicy.validate!(uploaded_file)
 
     if @evidence.update(evidence_params)
       # Re-hash only when a new blob arrived (mirrors the web controller).
@@ -160,20 +160,12 @@ class Api::V1::EvidencesController < Api::V1::BaseController
     params.dig(:evidence, :file).presence
   end
 
-  # #509 deny-list, shared with FileUploadable so the signature table has
-  # a single home. The web concern's variant renders/redirects; API
-  # callers get a 422 JSON envelope instead.
-  def reject_if_executable_signature!(file)
-    return unless file.respond_to?(:path)
-
-    header = File.binread(file.path, 32).to_s
-    FileUploadable::EXECUTABLE_MAGIC_BYTES.each do |signature, description|
-      next unless header.start_with?(signature)
-
-      raise FileUploadable::UploadRejectedError,
-            "File rejected: detected #{description}. Executable content is not permitted as an upload."
-    end
-  end
+  # #868 — the executable-signature deny-list used to live here as a local copy
+  # of FileUploadable's. It now lives in EvidenceUploadPolicy alongside the
+  # extension allowlist and the declared-vs-actual type check, so the UI and the
+  # API enforce one policy rather than two that drift. This controller keeps its
+  # `rescue FileUploadable::UploadRejectedError` — EvidenceUploadPolicy::Error
+  # is that same class — so API callers still get a 422 JSON envelope.
 
   # Accepts either an array (`control_ids[]=AC-1&control_ids[]=AC-2`) or
   # the comma-separated string the web form posts. Absent key ⇒ leave

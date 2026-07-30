@@ -198,10 +198,15 @@ RSpec.describe "Api::V1::Evidences", type: :request do
         expect(data["file_size"]).to be_positive
       end
 
+      # #868 — the fixture is named .pdf, not .bin, on purpose. EvidenceUploadPolicy
+      # checks the extension allowlist first, so a .bin would be rejected as an
+      # unaccepted type and this example would stop exercising the deny-list it
+      # exists to test. Disguising the executable as an accepted type is also the
+      # more realistic attack.
       it "rejects an executable upload with 422 (#509 deny-list)" do
         elf = Rack::Test::UploadedFile.new(
           StringIO.new("\x7fELF\x02\x01\x01#{'A' * 64}".b), "application/octet-stream", true,
-          original_filename: "payload.bin"
+          original_filename: "payload.pdf"
         )
 
         expect {
