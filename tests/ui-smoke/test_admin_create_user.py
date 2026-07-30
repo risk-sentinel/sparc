@@ -7,6 +7,16 @@ the show page — all with zero CSP violations. The creation *contract* is
 covered by tests/api/test_users.py; here we verify the UI wiring.
 
 Selectors verified against app/views/admin/users/{index,new}.html.erb.
+
+No Playwright check exists for the #878 last-admin guard, deliberately. The show
+page hides Suspend/Deactivate when ``@user == current_user``, and the only way a
+target *is* the last active admin is for it to be the signed-in admin — so the
+refusal is not reachable by clicking. It guards the paths that have no UI:
+InactivityCheckJob, the REST API, and the service-account controller. Driving it
+from a browser would mean POSTing the route directly, and a smoke run that
+guessed wrong about how many admins the seeded instance has would deactivate a
+real one. It is covered at the request and model layers instead — see
+spec/requests/admin/users_spec.rb and spec/models/admin_lockout_protection_spec.rb.
 """
 
 from __future__ import annotations
@@ -81,6 +91,21 @@ class TestAdminCreateUser:
             m = re.search(r"/admin/users/(\d+)", authed_page.url)
             assert m, f"expected redirect to show page, got {authed_page.url}"
             created_id = int(m.group(1))
+
+            # #877 — the handover. The temporary is shown on this page load and
+            # nowhere else (only its bcrypt digest is stored), so if the panel
+            # fails to render, the admin cannot onboard the user at all and the
+            # account is stranded. That makes its presence, and a non-empty
+            # value in the field, the property that actually matters here.
+            panel = authed_page.locator('input[aria-label="Temporary password"]')
+            assert panel.count() == 1, (
+                "the created user's page must show the one-time temporary "
+                "password — without it there is no way to hand the credential over (#877)"
+            )
+            assert panel.input_value().strip(), "temporary password field rendered empty (#877)"
+            assert "copy it now" in authed_page.content().lower(), (
+                "the temporary should be presented as copy-once, not as a durable credential"
+            )
         finally:
             if created_id:
                 deactivate_user(created_id)

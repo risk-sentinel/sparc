@@ -8,7 +8,12 @@
 # attributes +admin+ and +status+ are only ever set when the acting user is an
 # admin, and never through Rails mass-assignment (Brakeman BRAKE0105 hardening).
 #
-# NIST AC-2 (Account Management) — administrative account provisioning.
+# NIST 800-53 Controls:
+#   AC-2 Account Management (administrative account provisioning)
+#   IA-5(1) Password-Based Authentication (#877 — the caller does not choose the
+#           first credential; SPARC issues a temporary and forces its replacement,
+#           so no provisioning admin ends up knowing a password the user keeps)
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class UserProvisioningService
   # Attributes any actor may set on a new user. Deliberately excludes :admin
   # and :status — those flow through +apply_privileged_attributes!+.

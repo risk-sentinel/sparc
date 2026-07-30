@@ -10,6 +10,16 @@
 #   rails runner "InactivityCheckJob.perform_now"
 #
 # Or schedule with sidekiq-cron / solid_queue recurring.
+#
+# NIST 800-53 Controls:
+#   AC-2(3) Disable Accounts (automatic deactivation past SPARC_INACTIVITY_DAYS)
+#   AC-2(4) Automated Audit Actions (system-actor AuditEvent per deactivation)
+# The break-glass admin (SparcConfig.admin_email) and the last active admin are
+# exempt (#878). AC-2(3) mandates disabling inactive accounts, but disabling the
+# only administrator would deny administration entirely with no self-service
+# recovery — the exemption keeps AC-2(3) from defeating AC-2 itself. The scope
+# (User.inactive_past_threshold) carries the exemption, not this job.
+# See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class InactivityCheckJob < ApplicationJob
   queue_as :default
 

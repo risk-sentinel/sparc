@@ -204,21 +204,51 @@ class TestLifecycle:
         assert body["error"] == "Validation failed"
         assert isinstance(body["details"], list) and body["details"]
 
-    @pytest.mark.validation
-    def test_executable_upload_rejected(self, admin_client: httpx.Client) -> None:
-        """#509 deny-list: ELF magic bytes must be refused, not stored."""
-        files = {
-            "evidence[file]": ("payload.bin", b"\x7fELF\x02\x01\x01" + b"A" * 64,
-                               "application/octet-stream")
-        }
-        data = {
+    @staticmethod
+    def _upload_payload() -> dict[str, str]:
+        return {
             "evidence[title]": "Should not persist",
             "evidence[description]": "Executable upload attempt.",
             "evidence[evidence_type]": "artifact",
             "evidence[status]": "draft",
             "evidence[source]": "https://example.com/contract-suite",
         }
-        response = admin_client.post(_EVIDENCES, data=data, files=files)
+
+    @pytest.mark.validation
+    def test_unaccepted_extension_rejected(self, admin_client: httpx.Client) -> None:
+        """#868 layer 1: .bin is not an accepted evidence type, so it never
+        reaches content sniffing at all.
+
+        This used to assert the #509 executable-signature message. #868 added an
+        extension allowlist in front of that check, so the same ELF payload named
+        .bin is now refused one layer earlier and cheaper. Still a 422 and still
+        not stored — the guarantee is unchanged, the reason is stricter. The
+        signature check itself is asserted below, where it is the layer that
+        actually has to do the work.
+        """
+        files = {
+            "evidence[file]": ("payload.bin", b"\x7fELF\x02\x01\x01" + b"A" * 64,
+                               "application/octet-stream")
+        }
+        response = admin_client.post(_EVIDENCES, data=self._upload_payload(), files=files)
+        assert response.status_code == 422, response.text
+        assert "not an accepted evidence type" in response.json()["error"]
+
+    @pytest.mark.validation
+    def test_executable_upload_rejected(self, admin_client: httpx.Client) -> None:
+        """#509 deny-list: ELF magic bytes refused even under an accepted name.
+
+        Named .txt, so the extension allowlist passes it through and the
+        executable-signature check is the only thing standing between this
+        payload and storage. That makes this the case that proves renaming an
+        executable to an accepted extension does not get it stored — the
+        property the allowlist alone cannot provide.
+        """
+        files = {
+            "evidence[file]": ("payload.txt", b"\x7fELF\x02\x01\x01" + b"A" * 64,
+                               "text/plain")
+        }
+        response = admin_client.post(_EVIDENCES, data=self._upload_payload(), files=files)
         assert response.status_code == 422, response.text
         assert "Executable content is not permitted" in response.json()["error"]
 

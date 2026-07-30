@@ -12,8 +12,12 @@
 #
 # NIST 800-53 Controls:
 #   AC-2 Account Management (status lifecycle, deactivate!/reactivate!, service account ownership)
+#   AC-2(3) Disable Accounts (inactive_past_threshold sweep; break-glass and
+#           last-active-admin are exempt so availability of administration survives it — #878)
 #   IA-4 Identifier Management (unique email, case-insensitive, sparc_sa_ prefix)
 #   IA-5 Authenticator Management (bcrypt, 12-char min, password expiry)
+#   IA-5(1) Password-Based Authentication (SPARC-issued temporary at provisioning,
+#           must_reset_password forces replacement at first sign-in — #877)
 #   AC-6 Least Privilege (service accounts cannot be admin)
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 class User < ApplicationRecord

@@ -692,6 +692,7 @@ removed and are no longer tracked:
 | 12 | Complete | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, ~~#445~~, ~~#440~~, ~~#449~~, ~~#451~~, ~~#453~~ | **COMPLETE** (carried items #433, #341, #246, #422, #413, #447 moved to Phase 14) |
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
+| 15 | Current | v1.15.4 patch — account-lifecycle and UX defects (milestone `v1.15.4`) | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, #875 | In Progress — 6 of 7 merged/ready |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -699,4 +700,12 @@ removed and are no longer tracked:
 **Completed (Phases 1-13):** 92 issues including the full v1.7.x sprint (17 issues across hardening + patch releases). v1.7.2 shipped 2026-05-24 (image `risksentinel/sparc:1.7.2`).
 **Remaining (Phase 14 active backlog):** 11 issues — P0: #545 (operator clicks pre-public-flip), #433 (in progress) / P1: #498, #499 (CDEF mutations chain) / P2: #528, #531, #447 (deferred) / P3: #341, #246, #413, #422 (gated)
 **Phases 1-13 complete.** Phase 14 (pre-public-flip + API test validation + CDEF mutations) in progress.
+
+> **This document is stale between v1.9.1 and v1.15.3.** The release history from
+> v1.9.2 onward was tracked on the GitHub Releases page and the wiki Changelog
+> rather than here, so the version and issue counts below reflect v1.7.2 and have
+> not been carried forward. Phase 15 is recorded above because it is in flight;
+> backfilling the intervening releases is tracked separately. Treat
+> [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) as canonical
+> for what shipped when.
 **First public release: v1.0.0** (#271). **Current version: v1.7.2** (released 2026-05-24 — pagination fix + processing-banner trap + CI workflow validator fix). Org migration to `risk-sentinel/sparc` completed 2026-05-02 (#430). **Repo flipping to public** — gated on #545 completion + `risk-sentinel/sparc-iac#281`.
