@@ -205,6 +205,9 @@ module FileUploadable
   # specific type, but NOT for .json/.yaml/.xls — those have stable
   # magic bytes when valid, so octet-stream there indicates garbage.
   TEXT_PLAIN = "text/plain".freeze
+  # What Marcel reports for ordinary text when sniffed without a filename hint —
+  # so every text-bearing extension has to allow it (sonar ruby:S1192).
+  OCTET_STREAM = "application/octet-stream".freeze
 
   # #868 — expected MIME types when the file is sniffed on CONTENT ALONE.
   #
@@ -217,10 +220,10 @@ module FileUploadable
   # them. Structural parsing (validate_syntactic_structure!) then catches text
   # that is merely malformed.
   EXPECTED_MIME_BY_EXT = {
-    ".json"  => [ "application/json", TEXT_PLAIN, "text/json", "application/octet-stream" ],
-    ".xml"   => [ "application/xml", "text/xml", "application/octet-stream", TEXT_PLAIN ],
-    ".yaml"  => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml", "application/octet-stream" ],
-    ".yml"   => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml", "application/octet-stream" ],
+    ".json"  => [ "application/json", TEXT_PLAIN, "text/json", OCTET_STREAM ],
+    ".xml"   => [ "application/xml", "text/xml", OCTET_STREAM, TEXT_PLAIN ],
+    ".yaml"  => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml", OCTET_STREAM ],
+    ".yml"   => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml", OCTET_STREAM ],
     ".xlsx"  => %w[application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/zip],
     ".xls"   => %w[application/vnd.ms-excel application/x-ole-storage]
   }.freeze
