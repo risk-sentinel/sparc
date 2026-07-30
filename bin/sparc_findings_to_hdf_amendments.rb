@@ -115,6 +115,18 @@ DISPOSITION_DEFERRED = "deferred"
 # An approved deviation must name who approved it, where, and when.
 DEVIATION_APPROVAL_FIELDS = %w[approved_by approved_in approved_at].freeze
 
+# How the approval was obtained. Recorded so the evidence states the strength of
+# its own provenance rather than implying all approvals are equal.
+#
+#   review              — an authorised reviewer submitted an APPROVING REVIEW on
+#                         the PR. The strong path: a distinct, attributable act.
+#   admin-merge-bypass  — an admin merged past the red gate. GitHub forbids
+#                         approving your own PR, so a single-admin repo cannot
+#                         use the review path. Authority is verifiable; a
+#                         separate approval event is not. Weaker, and declared
+#                         so it can never be mistaken for the strong path.
+DEVIATION_APPROVAL_MECHANISMS = %w[review admin-merge-bypass].freeze
+
 DISPOSITION_TO_OVERRIDE_TYPE = {
   "false_positive" => "falsePositive",
   "accepted"       => "waiver",
@@ -259,6 +271,12 @@ def validate_deviation_approval(finding, dev, errors)
 
   missing = DEVIATION_APPROVAL_FIELDS.reject { |f| dev[f].to_s.strip != "" }
   errors << "#{finding['cve_id']}: deviation.risk_status=#{DEVIATION_APPROVED} requires #{missing.join(', ')}" unless missing.empty?
+
+  mechanism = dev["approval_mechanism"]
+  if mechanism && !DEVIATION_APPROVAL_MECHANISMS.include?(mechanism)
+    errors << "#{finding['cve_id']}: deviation.approval_mechanism must be one of #{DEVIATION_APPROVAL_MECHANISMS.join(', ')} (got '#{mechanism}')"
+  end
+
   errors
 end
 

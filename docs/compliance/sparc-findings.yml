@@ -239,7 +239,7 @@ findings:
     fixed_version: ">= 6.0.4 (or backport 4.0.4.1)"
     severity: HIGH
     disposition: deferred
-    rationale: "FALSE POSITIVE (default-gem shadow). ERB instance variable @_init guard bypass via Marshal.load of crafted ERB objects. The Gemfile now explicitly pins erb >= 6.0.4 (#620, same override pattern as the resolv CVE-2025-24294 pin), so Bundler installs and activates the patched 6.0.4 into /usr/local/bundle. ruby:3.4.4-slim still ships erb 4.0.4 as a default gem in specifications/default/, which the filesystem scanner reports — but Bundler activates 6.0.4, so `require \"erb\"` never loads the vulnerable 4.0.4 code. The flagged file is present-but-not-loaded (same basis as the libgnutls30/perl entries). Remediation candidate: drop the default-gem file on a distroless/base migration. Re-verified on the v1.15.3 image 2026-07-29 (#862): erb 4.0.4 remains as a Ruby default gem, but Bundler resolves erb 6.0.6, above the >= 6.0.4 fix floor."
+    rationale: "RISK ADJUSTMENT. The vulnerable erb 4.0.4 (Ruby default gem) tree is present on disk but never loaded: Bundler resolves erb 6.0.6 from /usr/local/bundle, which is above the fix floor. The shipped copy is a Ruby default gem whose code is the standard library, so it cannot be pruned without falsifying the scan — deleting only the gemspec would hide the package while leaving the code in place. Risk is adjusted rather than accepted because the vulnerable code path is unreachable, not because the finding is wrong. Re-verified on the shipped image 2026-07-29 (#862)."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -247,14 +247,15 @@ findings:
     deviation:
       type: risk_adjustment
       risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "erb 4.0.4 (Ruby default gem) is present on disk but shadowed: Bundler resolves erb 6.0.6 from /usr/local/bundle"
         - description: "the vulnerable copy is never added to $LOAD_PATH and is not loaded at runtime"
         - description: "verified on the shipped v1.15.3 image and re-verified after the #862 shadowed-gem prune"
-      approved_by: "@risk-sentinel/sparc-admin"
-      approved_in: "risk-sentinel/sparc#863"
-      approved_at: "2026-07-29"
       kev_checked: "2026-07-29"
       kev_listed: false
 
@@ -1044,7 +1045,7 @@ findings:
     fixed_version: ">= 3.2.3"
     severity: CRITICAL
     disposition: deferred
-    rationale: "FALSE POSITIVE (default-gem shadow). The Gemfile now pins zlib >= 3.2.3 (#620, resolv-style override), so Bundler installs and loads the patched 3.2.3. ruby:3.4.4-slim ships zlib 3.2.1 as a default gem; if its gemspec lingers on disk the filesystem scanner reports it, but Bundler activates 3.2.3 so the vulnerable 3.2.1 code is never loaded. Present-but-not-loaded -- same basis as the net-imap/erb default-gem shadows. (Scanner rates this CRITICAL; the prior INFORMATIONAL classification is corrected here.) Re-verified on the v1.15.3 image 2026-07-29 (#862): the zlib-3.2.1 default gemspec remains, but Bundler resolves the bundled zlib 3.2.3, which meets the >= 3.2.3 fix floor exactly."
+    rationale: "RISK ADJUSTMENT. The vulnerable zlib 3.2.1 (Ruby default gem) tree is present on disk but never loaded: Bundler resolves zlib 3.2.3 from /usr/local/bundle, which is above the fix floor. The shipped copy is a Ruby default gem whose code is the standard library, so it cannot be pruned without falsifying the scan — deleting only the gemspec would hide the package while leaving the code in place. Risk is adjusted rather than accepted because the vulnerable code path is unreachable, not because the finding is wrong. Re-verified on the shipped image 2026-07-29 (#862)."
     nist_control: ra-5
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1052,14 +1053,15 @@ findings:
     deviation:
       type: risk_adjustment
       risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "zlib 3.2.1 (Ruby default gem) is present on disk but shadowed: Bundler resolves zlib 3.2.3 from /usr/local/bundle"
         - description: "the vulnerable copy is never added to $LOAD_PATH and is not loaded at runtime"
         - description: "verified on the shipped v1.15.3 image and re-verified after the #862 shadowed-gem prune"
-      approved_by: "@risk-sentinel/sparc-admin"
-      approved_in: "risk-sentinel/sparc#863"
-      approved_at: "2026-07-29"
       kev_checked: "2026-07-29"
       kev_listed: false
 
@@ -1260,7 +1262,7 @@ findings:
     fixed_version: "none (Red Hat: Affected, no erratum)"
     severity: CRITICAL
     disposition: deferred
-    rationale: "FALSE POSITIVE (not reachable). Use-after-free in SQLite expression evaluation (sqlite3ReleaseTempReg / exprComputeOperands); Red Hat rates this Critical, CVSS 10.0. Exploitation requires supplying a malicious SQL statement to a SQLite parser, and SPARC exposes none: there is no sqlite3 gem in the Gemfile, /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the v1.15.3 image), no package in the image requires sqlite-libs, and the only binaries linking it are gpg/gpg2 and the rpm/microdnf family backing the RPM database. SPARC's data path is PostgreSQL. Same substantive basis as the unreachable-library precedent set by CVE-2026-41989 (libgcrypt20). NOTE ON DISPOSITION: the HIGH and MEDIUM members of this cluster are dispositioned `accepted` on identical reasoning; this entry uses `false_positive` because the #244 policy forbids `accepted` for CRITICAL and `deferred` would breach the zero-tolerance critical threshold. The classification difference is a policy artifact, not a difference in assessment — and because false_positive is exempt from the automated review cadence, this entry must be revisited by hand when Red Hat ships the erratum. Tracked in #862."
+    rationale: "RISK ADJUSTMENT. Use-after-free in SQLite expression evaluation (sqlite3ReleaseTempReg / exprComputeOperands); Red Hat rates this Critical, CVSS 10.0. The finding is CORRECT — sqlite-libs 3.34.1-9.el9_7 is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC's data path is PostgreSQL, so no attacker-controlled SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1268,6 +1270,10 @@ findings:
     deviation:
       type: risk_adjustment
       risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1275,9 +1281,6 @@ findings:
         - description: "the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family, which back the RPM database and do not process untrusted input at runtime"
         - description: "no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL"
         - description: "no attacker-controlled SQL or JSON reaches a SQLite parser on any request path"
-      approved_by: "@risk-sentinel/sparc-admin"
-      approved_in: "risk-sentinel/sparc#863"
-      approved_at: "2026-07-29"
       kev_checked: "2026-07-29"
       kev_listed: false
 
@@ -1287,7 +1290,7 @@ findings:
     fixed_version: "none (Red Hat: Affected, no erratum)"
     severity: HIGH
     disposition: deferred
-    rationale: "ACCEPTED RISK. Use-after-free in SQLite JSON parsing; Red Hat rates this Important, CVSS 9.8. Requires crafted JSON reaching a SQLite JSON function. Same reachability basis as CVE-2026-51302: no sqlite3 gem, ruby not linked against libsqlite3, PostgreSQL data path, sqlite-libs present only for the RPM database. No fixed package exists."
+    rationale: "RISK ADJUSTMENT. Use-after-free in SQLite JSON parsing; Red Hat rates this Important, CVSS 9.8. The finding is correct; the package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC's data path is PostgreSQL, so no attacker-controlled SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1295,6 +1298,10 @@ findings:
     deviation:
       type: risk_adjustment
       risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1302,9 +1309,6 @@ findings:
         - description: "the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family, which back the RPM database and do not process untrusted input at runtime"
         - description: "no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL"
         - description: "no attacker-controlled SQL or JSON reaches a SQLite parser on any request path"
-      approved_by: "@risk-sentinel/sparc-admin"
-      approved_in: "risk-sentinel/sparc#863"
-      approved_at: "2026-07-29"
       kev_checked: "2026-07-29"
       kev_listed: false
 
@@ -1314,7 +1318,7 @@ findings:
     fixed_version: "none (Red Hat: Affected, no erratum)"
     severity: HIGH
     disposition: deferred
-    rationale: "ACCEPTED RISK. Use-after-free in the SQLite core parsing component (dangling ExprList pointer after sqlite3ExprListDelete); Red Hat rates this Important, CVSS 9.8. Requires crafted SQL reaching the parser. Same reachability basis as CVE-2026-51302. No fixed package exists."
+    rationale: "RISK ADJUSTMENT. Use-after-free in the SQLite core parsing component (dangling ExprList pointer after sqlite3ExprListDelete); Red Hat rates this Important, CVSS 9.8. The finding is correct; the package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC's data path is PostgreSQL, so no attacker-controlled SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1322,6 +1326,10 @@ findings:
     deviation:
       type: risk_adjustment
       risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1329,9 +1337,6 @@ findings:
         - description: "the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family, which back the RPM database and do not process untrusted input at runtime"
         - description: "no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL"
         - description: "no attacker-controlled SQL or JSON reaches a SQLite parser on any request path"
-      approved_by: "@risk-sentinel/sparc-admin"
-      approved_in: "risk-sentinel/sparc#863"
-      approved_at: "2026-07-29"
       kev_checked: "2026-07-29"
       kev_listed: false
 
@@ -1341,7 +1346,7 @@ findings:
     fixed_version: "none (Red Hat: Affected, no erratum)"
     severity: HIGH
     disposition: deferred
-    rationale: "ACCEPTED RISK. Use-after-free in the SQLite ORDER BY clause parsing routine (nExpr read after sqlite3ExprListDelete); Red Hat rates this Important, CVSS 9.8. Requires a crafted SQL statement with a large ORDER BY clause. Same reachability basis as CVE-2026-51302. No fixed package exists."
+    rationale: "RISK ADJUSTMENT. Use-after-free in the SQLite ORDER BY clause parsing routine (nExpr read after sqlite3ExprListDelete); Red Hat rates this Important, CVSS 9.8. The finding is correct; the package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC's data path is PostgreSQL, so no attacker-controlled SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1349,6 +1354,10 @@ findings:
     deviation:
       type: risk_adjustment
       risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1356,9 +1365,6 @@ findings:
         - description: "the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family, which back the RPM database and do not process untrusted input at runtime"
         - description: "no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL"
         - description: "no attacker-controlled SQL or JSON reaches a SQLite parser on any request path"
-      approved_by: "@risk-sentinel/sparc-admin"
-      approved_in: "risk-sentinel/sparc#863"
-      approved_at: "2026-07-29"
       kev_checked: "2026-07-29"
       kev_listed: false
 
@@ -1368,7 +1374,7 @@ findings:
     fixed_version: "none (Red Hat: Affected, no erratum)"
     severity: HIGH
     disposition: deferred
-    rationale: "ACCEPTED RISK. Member of the same 2026-07-27 SQLite use-after-free cluster, reported by grype against the image at High. Same reachability basis as CVE-2026-51302: no attacker-reachable SQLite parser in SPARC. No fixed package exists."
+    rationale: "RISK ADJUSTMENT. Member of the 2026-07-27 SQLite use-after-free cluster, reported by Grype against the image at High. The finding is correct; the package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC's data path is PostgreSQL, so no attacker-controlled SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1376,6 +1382,10 @@ findings:
     deviation:
       type: risk_adjustment
       risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1383,9 +1393,6 @@ findings:
         - description: "the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family, which back the RPM database and do not process untrusted input at runtime"
         - description: "no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL"
         - description: "no attacker-controlled SQL or JSON reaches a SQLite parser on any request path"
-      approved_by: "@risk-sentinel/sparc-admin"
-      approved_in: "risk-sentinel/sparc#863"
-      approved_at: "2026-07-29"
       kev_checked: "2026-07-29"
       kev_listed: false
 
@@ -1395,7 +1402,7 @@ findings:
     fixed_version: "none (Red Hat: Affected, no erratum)"
     severity: MEDIUM
     disposition: deferred
-    rationale: "ACCEPTED RISK. Member of the same 2026-07-27 SQLite use-after-free cluster, reported by grype against the image at Medium. Same reachability basis as CVE-2026-51302. No fixed package exists."
+    rationale: "RISK ADJUSTMENT. Member of the 2026-07-27 SQLite use-after-free cluster, reported by Grype against the image at Medium. The finding is correct; the package is present at the affected version. SPARC is not exploitable: /usr/local/bin/ruby is not linked against libsqlite3 (verified by ldd on the shipped image), no package in the image requires sqlite-libs, and the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family backing the RPM database — none of which process untrusted input at runtime. There is no sqlite3 gem in Gemfile or Gemfile.lock and SPARC's data path is PostgreSQL, so no attacker-controlled SQL or JSON reaches a SQLite parser. Red Hat lists RHEL 9 as Affected with no erratum, so there is nothing to patch to. Mitigating factors are recorded as structured data on the deviation for OSCAL risk/mitigating-factor export. Not KEV-listed as of the 2026.07.27 catalogue."
     nist_control: si-2
     reviewed_by: "@clem-field"
     discovery_date: "2026-07-29"
@@ -1403,6 +1410,10 @@ findings:
     deviation:
       type: risk_adjustment
       risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1410,9 +1421,6 @@ findings:
         - description: "the only binaries linking libsqlite3.so.0 are gpg/gpg2 and the rpm/microdnf family, which back the RPM database and do not process untrusted input at runtime"
         - description: "no sqlite3 gem in Gemfile or Gemfile.lock; SPARC's data path is PostgreSQL"
         - description: "no attacker-controlled SQL or JSON reaches a SQLite parser on any request path"
-      approved_by: "@risk-sentinel/sparc-admin"
-      approved_in: "risk-sentinel/sparc#863"
-      approved_at: "2026-07-29"
       kev_checked: "2026-07-29"
       kev_listed: false
 

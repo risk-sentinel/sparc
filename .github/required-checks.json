@@ -214,6 +214,7 @@
       "filterPathSpec": [
         "docs/compliance/sparc-findings.yml",
         "scripts/ci/check_deviation_approvals.rb",
+        "scripts/ci/apply_deviation_approval.rb",
         ".github/CODEOWNERS"
       ],
       "comment": "#865 FedRAMP deviation flow. A finding marked deviation-approved is suppressed from the threshold residual, so it must carry a code-owner approval on the PR that introduces it. Also triggers on pull_request_review so it re-runs when the approval arrives."

@@ -136,6 +136,89 @@ from `.github/oscal-metadata.json`.
 
 ---
 
+## Deviations (FedRAMP FP / RA / OR)
+
+A finding in `sparc-findings.yml` that cannot simply be remediated carries a
+`deviation:` block. This uses the FedRAMP deviation vocabulary and the OSCAL
+risk lifecycle — **do not invent terms here**, because these entries become
+POA&M and SAR evidence.
+
+### Deviation types
+
+| Type | Meaning | Requires |
+|---|---|---|
+| `false_positive` | The finding is **wrong** — the scanner misidentified the package or version | Must **not** carry mitigating factors; there is nothing to mitigate |
+| `risk_adjustment` | The finding is **right** and we are not exploitable — the affected package is present, but the vulnerable code cannot be reached | At least one `mitigating_factors` entry |
+| `operational_requirement` | A weakness that must remain open | `operational_justification` |
+
+Calling a real, correctly-identified CVE a "false positive" asserts something
+untrue in an auditable artefact. If the package is genuinely present at the
+affected version, it is a **risk adjustment**, not a false positive.
+
+### How a deviation gates the build
+
+The deviation's `risk_status` — **not** the disposition — decides the emitted
+HDF status. `threshold.yml` needs no knowledge of deviations:
+
+| `risk_status` | HDF status | Effect |
+|---|---|---|
+| `deviation-requested` | `failed` | Counts toward `threshold.yml`. A CRITICAL breaches `failed.critical.max: 0` → **build red** |
+| `deviation-approved` | `notApplicable` | Suppressed from the residual → build green |
+
+An unapproved deviation on a critical is *supposed* to be loud. An approved one
+is a signed-off risk decision.
+
+### The approval flow
+
+Approval is an Authorizing Official decision, so it must be a real, attributable
+act — never something the PR asserts about itself.
+
+```
+1. PR adds the deviation as `deviation-requested`
+2. Amendments emit `failed` → CRITICAL breaches threshold → build RED
+3. Red blocks the merge for anyone without admin rights
+4. An authorised approver (admin/maintain) approves
+5. The approval is recorded: who, when, which PR, and by what mechanism
+6. Gate goes GREEN → merge
+```
+
+`scripts/ci/check_deviation_approvals.rb` enforces this. It does **not** trust
+the approval fields: an entry marked `deviation-approved` must be corroborated
+against a real approving review by someone holding `admin`/`maintain`.
+Hand-editing the YAML cannot satisfy it, because the review either exists in the
+API or it does not.
+
+### `approval_mechanism` — how the approval was obtained
+
+| Value | Strength |
+|---|---|
+| `review` | **Strong.** An authorised reviewer submitted an approving review — a distinct, attributable act |
+| `admin-merge-bypass` | **Weaker.** An admin merged past the red gate |
+
+**Why the bypass path exists:** GitHub does not permit anyone to approve their
+own pull request. In a single-admin repository the admin is usually also the
+author, so the review path is structurally unreachable and the only route is an
+admin merge. Rather than let that happen silently, the register must *declare*
+it. The gate then verifies the named approver holds authority — but it cannot
+verify a separate approval event occurred, and it says so loudly in the log.
+
+This is deliberately recorded in the evidence so the artefact states the
+strength of its own provenance. It is superseded by the mechanized
+`/approve-deviation` flow (#871), which restores a
+distinct approval act that works even when the admin is the author.
+
+### What went wrong before this existed
+
+PR #863 merged eight deviations marked `deviation-approved` — including
+CVE-2026-51302 at CVSS 10.0 — recording an approval that never happened. The
+gate correctly failed (`reviewDecision` was `REVIEW_REQUIRED`; the only review
+was a `COMMENTED`), but `enforce_admins: false` let the merge proceed anyway.
+All eight were suppressed from the threshold residual on the strength of a claim
+nobody had made. That is the failure mode this whole flow exists to prevent, and
+why the mechanism is now declared rather than assumed.
+
+---
+
 ## Baseline Selection Rationale
 
 **NIST SP 800-53 Rev 5 HIGH** (370 controls) was selected because:
