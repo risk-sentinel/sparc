@@ -4,6 +4,7 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
 
   def new
     @membership = @authorization_boundary.authorization_boundary_memberships.new
+    load_roster
   end
 
   def create
@@ -12,9 +13,14 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
     if @membership.save
       audit_log("authorization_boundary_membership_created", subject: @membership, metadata: { authorization_boundary_id: @authorization_boundary.id, user_name: @membership.user_name })
       flash[:success] = "Member '#{@membership.user_name}' added as #{@membership.role_label}."
-      redirect_to @authorization_boundary
+      # #869 — stay in the add loop. Building a roster is inherently repetitive;
+      # bouncing back to the boundary after every save meant re-opening the form
+      # for each person, with no view of who was already on it. Leaving is now an
+      # intentional act (Done / Cancel), not the default.
+      redirect_to new_authorization_boundary_membership_path(@authorization_boundary)
     else
       flash.now[:error] = @membership.errors.full_messages.join(", ")
+      load_roster
       render :new, status: :unprocessable_entity
     end
   end
@@ -23,6 +29,10 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
     # Empty action: renders edit.html.erb; the record is loaded by a set_* before_action.
   end
 
+  # #869 — edit deliberately still returns to the boundary. Correcting one
+  # person's role is a single errand, not a loop: there is nothing to add next,
+  # so keeping the operator on a form for a record they just finished editing
+  # would strand them. Only `create` repeats.
   def update
     if @membership.update(membership_params)
       audit_log("authorization_boundary_membership_updated", subject: @membership, metadata: { authorization_boundary_id: @authorization_boundary.id })
@@ -49,6 +59,12 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
 
   def set_membership
     @membership = @authorization_boundary.authorization_boundary_memberships.find(params[:id])
+  end
+
+  # #869 — the same unified roster the boundary screen shows (#770 bug 3), so
+  # the operator can see progress and spot duplicates without leaving the form.
+  def load_roster
+    @personnel = @authorization_boundary.personnel_roster
   end
 
   def membership_params
