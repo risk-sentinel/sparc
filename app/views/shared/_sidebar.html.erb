@@ -146,8 +146,13 @@
         <ul class="sparc-sidebar-leaves">
           <%# #796 — Getting Oriented pinned first, then the Help Center index, %>
           <%# then every guide for fast navigation (sourced from wiki/User-Guide-*). %>
+          <%# #870 — guides open in a new tab so consulting one never discards
+              work in progress on the screen underneath. The Help Center index is
+              a destination rather than a reference, so it navigates normally. %>
           <li>
-            <%= link_to help_guide_path("getting-oriented"), class: "sparc-sidebar-leaf" do %>
+            <%= link_to help_guide_path("getting-oriented"), class: "sparc-sidebar-leaf",
+                  target: "_blank", rel: "noopener noreferrer",
+                  aria: { label: "Getting Oriented guide, opens in a new tab" } do %>
               <span class="sparc-sidebar-dot" style="background: #27ae60;"></span> Getting Oriented
             <% end %>
           </li>
@@ -159,7 +164,9 @@
           <% sidebar_help_guides.each do |guide| %>
             <% next if guide.slug == "getting-oriented" %>
             <li>
-              <%= link_to help_guide_path(guide.slug), class: "sparc-sidebar-leaf" do %>
+              <%= link_to help_guide_path(guide.slug), class: "sparc-sidebar-leaf",
+                    target: "_blank", rel: "noopener noreferrer",
+                    aria: { label: "#{guide.title} guide, opens in a new tab" } do %>
                 <span class="sparc-sidebar-dot" style="background: #9b59b6;"></span> <%= guide.title %>
               <% end %>
             </li>

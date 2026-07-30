@@ -200,11 +200,17 @@
                     title: "OSCAL Document Relationship Overview" %>
             </li>
 
-            <%# ── Contextual Help (#784) — deep-links to the guide for this screen ── %>
+            <%# ── Contextual Help (#784) — deep-links to the guide for this screen ──
+                #870: opens in a new tab. Operators reach for help BECAUSE they are
+                mid-task, so replacing the current page is the one thing help must
+                never do — it abandons a part-filled form to answer a question about
+                that same form. rel=noopener keeps the new tab from touching this one. %>
             <% if !SparcConfig.any_auth_enabled? || signed_in? %>
               <li class="nav-item d-none d-lg-block">
                 <%= link_to contextual_help_path, class: "nav-link sparc-nav-btn",
-                      title: "Help & User Guides" do %>&#10067;<% end %>
+                      target: "_blank", rel: "noopener noreferrer",
+                      title: "Help & User Guides (opens in a new tab)",
+                      aria: { label: "Help and user guides, opens in a new tab" } do %>&#10067;<% end %>
               </li>
             <% end %>
 
