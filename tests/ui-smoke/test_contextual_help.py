@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import pytest
 
-from helpers import assert_no_csp_violations, record_csp
+from helpers import assert_no_csp_violations, first_show_href, record_csp
 
 pytestmark = pytest.mark.authenticated
 
@@ -101,3 +101,38 @@ def test_field_help_survives_a_turbo_navigation(authed_page):
     help_button = authed_page.locator("button.sparc-field-help").first
     help_button.focus()
     authed_page.wait_for_selector(".tooltip", state="visible", timeout=3000)
+
+
+def test_autofocus_does_not_fire_the_help_tooltip(authed_page):
+    """#869's autofocus and #870's focus-triggered tooltip share a form.
+
+    The help control sits between the label and the input, so autofocus should
+    land on the field itself. If it ever landed on the `?` instead, every visit
+    to Add Member would pop a tooltip nobody asked for. Cheap to assert, and
+    only observable with both changes in one tree.
+    """
+    # Discover a real boundary rather than guessing a slug — /authorization_boundaries/new
+    # is the *new* form, and requesting .../new/memberships/new is a 404 that would
+    # make this assertion vacuously pass.
+    # No trailing slash — the helper appends one (it matches `prefix + "/"`).
+    href = first_show_href(authed_page, "/authorization_boundaries", "/authorization_boundaries")
+    if not href:
+        pytest.skip("no authorization boundary exists in this deployment")
+
+    authed_page.goto(f"{href}/memberships/new")
+    authed_page.wait_for_load_state("networkidle")
+
+    # Guard against the vacuous pass: the form must actually be here.
+    assert authed_page.locator("button.sparc-field-help").count() > 0, (
+        f"expected the membership form at {authed_page.url}"
+    )
+
+    focused_name = authed_page.evaluate(
+        "document.activeElement?.getAttribute('name') || ''"
+    )
+    assert "user_name" in focused_name, (
+        f"autofocus landed on {focused_name!r}, not the name field"
+    )
+    assert authed_page.locator(".tooltip").count() == 0, (
+        "a tooltip was visible on page load — autofocus must not trigger field help"
+    )
