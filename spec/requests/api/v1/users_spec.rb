@@ -96,6 +96,12 @@ RSpec.describe "Api::V1::Users", type: :request do
       # xfail per #567 — api_user_created is missing from AuditEvent::ACTIONS,
       # so the audit_log call silently fails (caught by base_controller rescue).
       # Remove this skip once the action is whitelisted.
+      #
+      # #877 — stubbed explicitly rather than relying on the ambient setting:
+      # a temporary is only issued when local login is on, and CI runs with it
+      # OFF while a dev machine has it ON. Left implicit this passes locally and
+      # fails in CI, which is exactly what it did.
+      allow(SparcConfig).to receive(:enable_local_login?).and_return(true)
 
       post api_v1_users_path, params: {
         user: {
@@ -113,6 +119,30 @@ RSpec.describe "Api::V1::Users", type: :request do
       issued = AuditEvent.where(action: "admin_temporary_password_issued").last
       expect(issued).to be_present
       expect(issued.metadata["provisioning"]).to be(true)
+    end
+
+    # #877 — the other half of the contract. On an SSO-only instance there is no
+    # local credential to issue, so no temporary is generated, nothing is
+    # returned, and no issuance is claimed in the audit trail. Worth pinning:
+    # the failure that would matter is auditing a credential that was never
+    # created, and the account must still be provisioned successfully.
+    it "issues no temporary and claims none when local login is disabled" do
+      allow(SparcConfig).to receive(:enable_local_login?).and_return(false)
+
+      expect {
+        post api_v1_users_path, params: {
+          user: {
+            email: "sso-only@example.com",
+            first_name: "Sso",
+            last_name: "Only",
+            display_name: "Sso Only"
+          }
+        }, headers: auth_headers, as: :json
+      }.not_to change { AuditEvent.where(action: "admin_temporary_password_issued").count }
+
+      expect(response).to have_http_status(:created)
+      expect(User.find_by(email: "sso-only@example.com")).to be_present
+      expect(JSON.parse(response.body)["data"]).not_to have_key("temporary_password")
     end
 
     context "as a non-admin" do
@@ -168,6 +198,10 @@ RSpec.describe "Api::V1::Users", type: :request do
       # xfail per #567 — api_user_created is missing from AuditEvent::ACTIONS,
       # so the audit_log call silently fails (caught by base_controller rescue).
       # Remove this skip once the action is whitelisted.
+      #
+      # #877 — see the sibling copy: local login is stubbed explicitly because
+      # CI runs with it off and a dev machine runs with it on.
+      allow(SparcConfig).to receive(:enable_local_login?).and_return(true)
 
       post api_v1_users_path, params: {
         user: {
