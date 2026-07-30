@@ -399,6 +399,7 @@
   "admin_service_accounts": [
     "color-contrast::.btn-outline-secondary"
   ],
+  "admin_user_new": [],
   "admin_users": [
     "color-contrast::a[href$=\"users/1\"]",
     "color-contrast::a[href$=\"users/2\"]",
