@@ -12,8 +12,20 @@
 class UserProvisioningService
   # Attributes any actor may set on a new user. Deliberately excludes :admin
   # and :status — those flow through +apply_privileged_attributes!+.
-  BASE_ATTRIBUTES = %i[email password password_confirmation
-                       first_name last_name display_name].freeze
+  #
+  # #877 — and no longer :password / :password_confirmation. SPARC issues the
+  # first credential itself (User#assign_temporary_password) and forces its
+  # replacement at first sign-in, so a caller-supplied password is not merely
+  # unnecessary, it is the thing being prevented: a credential the provisioning
+  # admin chose, knew, and which survived indefinitely because nothing made the
+  # user change it.
+  #
+  # Not permitted rather than accepted-and-overwritten, so a caller still
+  # sending one gets no false impression that it took effect.
+  #
+  # Self-service registration is unaffected — RegistrationsController builds
+  # User directly and still takes a password from the person it belongs to.
+  BASE_ATTRIBUTES = %i[email first_name last_name display_name].freeze
 
   # @param actor [User, nil] the authenticated user performing the action
   def initialize(actor:)

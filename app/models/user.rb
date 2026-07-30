@@ -82,6 +82,11 @@ class User < ApplicationRecord
   ALLOWED_AVATAR_MIME_TYPES = %w[image/png image/jpeg image/gif image/webp].freeze
 
   validate :avatar_image_type, if: -> { avatar.attached? }
+  # #878 — belt to deactivate!'s braces. `suspend` writes status directly, and
+  # suspended accounts fail `active?` just as deactivated ones do, so the
+  # lockout is reachable through more than one door. Validating the transition
+  # closes every current path and any future one.
+  validate :protect_last_active_admin, if: :will_save_change_to_status?
 
   def avatar_image_type
     actual = avatar.blob.open { |io| Marcel::MimeType.for(io) }
@@ -93,6 +98,25 @@ class User < ApplicationRecord
     # the primary gate. Skip; will re-validate on the next save once the
     # blob is in the service.
     nil
+  end
+
+  # #878 — refuse to move the last active administrator out of `active`.
+  #
+  # Authentication gates on `active?`, so both "deactivated" and "suspended"
+  # are hard lockouts, and reactivation requires another admin — there is no
+  # self-service way back. Recovery would mean shell access and a rake task.
+  #
+  # Reads the PREVIOUS status: an admin already inactive is not the last active
+  # admin, and re-saving them must not be blocked.
+  def protect_last_active_admin
+    return unless admin?
+    return unless status_was == "active"
+    return if status == "active"
+    return if self.class.active.admins.where.not(id: id).exists?
+
+    errors.add(:status,
+      "cannot be changed — #{email} is the only active administrator. Promote another " \
+      "administrator first, or the instance becomes unadministrable.")
   end
 
   # ── Callbacks ───────────────────────────────────────────────────────────
@@ -107,12 +131,24 @@ class User < ApplicationRecord
 
   # Users who have been active longer than `days` without signing in.
   # Includes users who have never signed in (uses created_at as fallback).
+  #
+  # #878 — the break-glass admin is excluded. Its credential is rotated out of
+  # band (sparc-iac and customers rotate the admin and RDS passwords via
+  # Lambda), so SPARC auto-deactivating it for idleness would strand the one
+  # account that can recover everything else — and `deactivate!` is a hard stop,
+  # since SessionsController gates authentication on `active?`.
+  #
+  # NOT all admins: a named administrator is a person with their own credential
+  # and their own recovery path through another admin, so they age out like
+  # anyone else. Only the shared bootstrap account is exempt.
   scope :inactive_past_threshold, ->(days) {
     cutoff = days.days.ago
-    active.where(
-      "last_sign_in_at < :cutoff OR (last_sign_in_at IS NULL AND created_at < :cutoff)",
-      cutoff: cutoff
-    )
+    active
+      .where(
+        "last_sign_in_at < :cutoff OR (last_sign_in_at IS NULL AND created_at < :cutoff)",
+        cutoff: cutoff
+      )
+      .where.not("LOWER(email) = ?", SparcConfig.admin_email.to_s.downcase.strip)
   }
 
   # ── Status helpers ──────────────────────────────────────────────────────
@@ -188,8 +224,15 @@ class User < ApplicationRecord
   #
   # Any outstanding reset link is invalidated — two live paths into one account
   # is one more than anybody intended.
+  # #877 — extracted so PROVISIONING can use the same generator. An account's
+  # first credential is exactly as admin-known as a reset one, and generating it
+  # in two places is how they end up differing in strength.
+  def self.generate_temporary_password
+    "#{SecureRandom.alphanumeric(16)}-#{SecureRandom.random_number(1000)}"
+  end
+
   def issue_temporary_password!
-    temporary = "#{SecureRandom.alphanumeric(16)}-#{SecureRandom.random_number(1000)}"
+    temporary = self.class.generate_temporary_password
     update!(
       password: temporary,
       password_confirmation: temporary,
@@ -198,6 +241,25 @@ class User < ApplicationRecord
       password_reset_digest: nil,
       password_reset_expires_at: nil
     )
+    temporary
+  end
+
+  # #877 — the same handover, applied to an UNSAVED user at provisioning time.
+  #
+  # Before this, an admin typed a password into the new-user form and the user
+  # was never made to replace it: a credential the admin chose, knew, and which
+  # survived indefinitely. password_expired? could not catch it either, because
+  # it returns false when password_changed_at is blank — exactly the state a
+  # freshly provisioned account is in.
+  #
+  # Returns the plaintext for the caller to hand over once. Never persisted;
+  # the database keeps only the bcrypt digest.
+  def assign_temporary_password
+    temporary = self.class.generate_temporary_password
+    self.password              = temporary
+    self.password_confirmation = temporary
+    self.must_reset_password   = true # boolean flag, not a credential — see above
+    self.password_changed_at   = nil
     temporary
   end
 
@@ -222,8 +284,38 @@ class User < ApplicationRecord
   def suspended?   = status == "suspended"
   def deactivated? = status == "deactivated"
 
+  # #878 — raised rather than silently refusing. A caller that thinks it
+  # deactivated an account and did not is worse than a visible failure.
+  class LastAdminError < StandardError; end
+
+  # True when this is the only active administrator left. Deactivating them
+  # locks everyone out of administration, and there is no self-service way
+  # back — reactivation requires another admin.
+  def last_active_admin?
+    return false unless admin?
+    return false unless active?
+
+    self.class.active.admins.where.not(id: id).none?
+  end
+
   # Soft-delete: set status to deactivated with timestamp and reason.
+  #
+  # #878 — the guard lives HERE, not in a controller, because `deactivate!` has
+  # four callers: InactivityCheckJob (automatic), Admin::UsersController,
+  # Admin::ServiceAccountsController, and organizations. A controller-level
+  # check would leave the automatic path open — and that is the one that
+  # strands you silently, since nobody is watching when a scheduled job
+  # deactivates the last admin for idleness.
+  #
+  # Authentication gates on `active?`, so this is a hard lockout rather than a
+  # forced password change, and there is no recovery short of shell access.
   def deactivate!(reason: "admin_action")
+    if last_active_admin?
+      raise LastAdminError,
+            "#{email} is the only active administrator. Promote another administrator " \
+            "before deactivating this account, or the instance becomes unadministrable."
+    end
+
     update!(status: "deactivated", deleted_at: Time.current, inactive_reason: reason)
   end
 
@@ -250,11 +342,31 @@ class User < ApplicationRecord
     disabled_at.present?
   end
 
+  # ── Break-glass account (#878) ───────────────────────────────────────────
+
+  # The shared bootstrap admin named by SPARC_ADMIN_EMAIL.
+  #
+  # One definition, because three places now ask the question — the FIDO2
+  # enrollment gate (authentication.rb), the inactivity scope above, and
+  # password expiry below — and three inline copies is how they drift apart.
+  #
+  # Deliberately keyed on the configured email, NOT on `admin?`. This exempts
+  # THE break-glass account, not everyone holding the admin bit. It matches the
+  # line the FIDO2 gate already draws: "a shared local account fronted by an
+  # external role-checkout/PAM flow".
+  #
+  # casecmp? on purpose — an email differing only in case must not slip past
+  # the exemption and get deactivated, which is the exact outcome it prevents.
+  def break_glass_admin?
+    email.to_s.casecmp?(SparcConfig.admin_email.to_s)
+  end
+
   # ── Password expiry ──────────────────────────────────────────────────────
 
   # Returns true when a local-auth user's password is older than the
   # configured expiry threshold. OAuth/SSO-only users are exempt.
   def password_expired?
+    return false if break_glass_admin?           # #878 — rotated out of band
     return false unless password_digest.present? # OAuth-only users have no password
     return false if identities.exists?           # Users with linked providers are exempt
     return false if password_changed_at.blank?   # No timestamp — treat as not expired

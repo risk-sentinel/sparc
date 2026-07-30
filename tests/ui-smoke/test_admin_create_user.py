@@ -22,6 +22,9 @@ from helpers import assert_no_csp_violations, record_csp
 pytestmark = pytest.mark.authenticated
 
 EMAIL = 'input[name="user[email]"]'
+# #877 — the admin no longer chooses the first credential. SPARC generates a
+# temporary and forces its replacement at first sign-in, so these fields are
+# GONE from the form; their absence is now the property worth asserting.
 PASSWORD = 'input[name="user[password]"]'
 CONFIRM = 'input[name="user[password_confirmation]"]'
 NEW_LINK = 'a[href="/admin/users/new"]'
@@ -46,8 +49,17 @@ class TestAdminCreateUser:
         )
         if authed_page.locator(EMAIL).count() == 0:
             pytest.skip("create-user form not rendered (non-admin session or auth disabled)")
-        assert authed_page.locator(PASSWORD).count() > 0, "password field missing"
-        assert authed_page.locator(CONFIRM).count() > 0, "password confirmation field missing"
+        # #877 — inverted deliberately. An admin-chosen password is one the
+        # admin knows and, before #877, one the user was never made to replace.
+        assert authed_page.locator(PASSWORD).count() == 0, (
+            "password field is still on the form — the admin must not choose the credential (#877)"
+        )
+        assert authed_page.locator(CONFIRM).count() == 0, (
+            "password confirmation field is still on the form (#877)"
+        )
+        assert "temporary password will be generated" in authed_page.content().lower(), (
+            "the form should tell the admin a temporary will be issued"
+        )
         assert_no_csp_violations(authed_page, during="admin users new")
 
     def test_create_user_submits(self, authed_page):
@@ -57,12 +69,10 @@ class TestAdminCreateUser:
             pytest.skip("create-user form not rendered (non-admin session or auth disabled)")
 
         email = f"phase2-ui-user-{uuid.uuid4().hex[:8]}@example.com"
-        pw = "SmokeTestPassword123!"
         created_id = None
         try:
             authed_page.fill(EMAIL, email)
-            authed_page.fill(PASSWORD, pw)
-            authed_page.fill(CONFIRM, pw)
+            # No password to fill — #877 issues one.
             authed_page.click('input[type="submit"]')
             # Redirect lands on the show page /admin/users/<id> — require digits
             # so we don't match the /admin/users/new we started on.

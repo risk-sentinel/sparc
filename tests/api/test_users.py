@@ -28,17 +28,15 @@ PATH = "/api/v1/users"
 
 def _new_payload(**overrides: Any) -> dict[str, Any]:
     suffix = uuid.uuid4().hex[:8]
-    password = f"phase2-test-pw-{suffix}!"
+    # #877 — password / password_confirmation are no longer accepted on create.
+    # SPARC issues a temporary credential itself and forces its replacement at
+    # first sign-in, so a caller-supplied password is not permitted rather than
+    # accepted-and-overwritten. The temporary comes back once in this response
+    # and is never retrievable afterwards.
     body = {
         "email": f"phase2-user-{suffix}@example.com",
         "first_name": "Phase",
         "last_name": "Two",
-        "password": password,
-        # API requires confirmation match (Devise-style). The Ruby
-        # request specs always send it; the Python helper used to omit
-        # it, causing every create to 422 with
-        # "Password confirmation can't be blank".
-        "password_confirmation": password,
     }
     body.update(overrides)
     return {"user": body}
@@ -47,7 +45,17 @@ def _new_payload(**overrides: Any) -> dict[str, Any]:
 def _create(client: httpx.Client) -> dict[str, Any]:
     response = client.post(PATH, json=_new_payload())
     assert response.status_code in (200, 201), response.text
-    return response.json().get("data") or response.json()
+    data = response.json().get("data") or response.json()
+    # #877 — the create response is the only place the temporary appears.
+    # Asserted strictly on purpose: the field is omitted only when local login
+    # is disabled entirely (SSO-only), which no instance this suite targets is.
+    # If this fires against an SSO-only deployment, that is a coverage gap to
+    # close, not an assertion to relax.
+    assert data.get("temporary_password"), (
+        "create should return a one-time temporary password (#877); "
+        "absent only when SPARC_ENABLE_LOCAL_LOGIN is off"
+    )
+    return data
 
 
 def _delete(client: httpx.Client, user_id: int) -> None:

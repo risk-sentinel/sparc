@@ -43,10 +43,26 @@ class Api::V1::UsersController < Api::V1::BaseController
     # applies :admin/:status only for admin actors — this action is already
     # gated by before_action :authorize_admin! (defense in depth).
     user = UserProvisioningService.new(actor: current_user).build(params.require(:user))
+
+    # #877 — same handover as the UI: SPARC issues the first credential and
+    # forces its replacement at first sign-in, rather than letting the caller
+    # choose one that survives indefinitely. Skipped when local login is off.
+    temporary = user.assign_temporary_password if SparcConfig.enable_local_login?
+
     user.save!
 
     audit_log("api_user_created", subject: user, metadata: { email: user.email })
-    render json: { data: serialize_user(user) }, status: :created
+    if temporary
+      audit_log("admin_temporary_password_issued", subject: user,
+        metadata: { target_user_id: user.id, target_email: user.email, provisioning: true })
+    end
+
+    # Returned ONCE, in the create response only — never retrievable later, and
+    # never persisted; the database keeps only the bcrypt digest.
+    payload = serialize_user(user)
+    payload = payload.merge(temporary_password: temporary) if temporary
+
+    render json: { data: payload }, status: :created
   end
 
   # PATCH /api/v1/users/:id

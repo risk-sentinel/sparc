@@ -18,7 +18,15 @@ class InactivityCheckJob < ApplicationJob
     users = User.inactive_past_threshold(threshold)
 
     users.find_each do |user|
-      user.deactivate!(reason: "auto_inactivity")
+      # #878 — one protected account must not abort the sweep for everyone
+      # else. The break-glass admin is already excluded by the scope; this
+      # catches the last-admin case, which the scope cannot express.
+      begin
+        user.deactivate!(reason: "auto_inactivity")
+      rescue User::LastAdminError => e
+        Rails.logger.warn("[InactivityCheck] Skipped #{user.email}: #{e.message}")
+        next
+      end
 
       AuditEvent.log(
         user: nil,

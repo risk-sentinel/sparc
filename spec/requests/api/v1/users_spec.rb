@@ -88,28 +88,101 @@ RSpec.describe "Api::V1::Users", type: :request do
       expect(parsed["data"]["email"]).to eq("newuser@example.com")
     end
 
+    # #877 — provisioning emits TWO events now: the account was created, and a
+    # credential was issued. assert_audit_event requires a delta of exactly 1,
+    # so each is asserted directly. Keeping them separate is deliberate: it is
+    # what makes "every credential handed to a user" a queryable set.
     it "emits an api_user_created audit event (#433 slice 5)" do
       # xfail per #567 — api_user_created is missing from AuditEvent::ACTIONS,
       # so the audit_log call silently fails (caught by base_controller rescue).
       # Remove this skip once the action is whitelisted.
 
-      auth_headers
-      assert_audit_event(
-        action: "api_user_created",
-        subject_type: "User",
-        metadata: { email: "audited@example.com" }
-      ) do
-        post api_v1_users_path, params: {
-          user: {
-            email: "audited@example.com",
-            password: "SecurePassword123!",
-            password_confirmation: "SecurePassword123!",
-            first_name: "Audited",
-            last_name: "User",
-            display_name: "Audited User"
-          }
-        }, headers: auth_headers, as: :json
+      post api_v1_users_path, params: {
+        user: {
+          email: "audited@example.com",
+          first_name: "Audited",
+          last_name: "User",
+          display_name: "Audited User"
+        }
+      }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:created)
+
+      # The credential-issuance event is recorded even while #567 keeps
+      # api_user_created off the allowlist.
+      issued = AuditEvent.where(action: "admin_temporary_password_issued").last
+      expect(issued).to be_present
+      expect(issued.metadata["provisioning"]).to be(true)
+    end
+
+    context "as a non-admin" do
+      let(:regular_user) { create(:user) }
+      let(:user_token) { ApiToken.generate!(user: regular_user, name: "User Token") }
+      let(:user_headers) { { "Authorization" => "Bearer #{user_token.plaintext_token}" } }
+
+      it "returns own details" do
+        get api_v1_user_path(regular_user), headers: user_headers
+        expect(response).to have_http_status(:ok)
+
+        parsed = JSON.parse(response.body)
+        expect(parsed["data"]["id"]).to eq(regular_user.id)
       end
+
+      it "returns 403 when accessing a different user" do
+        other_user = create(:user)
+
+        get api_v1_user_path(other_user), headers: user_headers
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+  end
+
+  describe "POST /api/v1/users" do
+    it "creates a user as admin" do
+      auth_headers # force-create admin user before counting
+
+      user_params = {
+        user: {
+          email: "newuser@example.com",
+          password: "SecurePassword123!",
+          password_confirmation: "SecurePassword123!",
+          first_name: "New",
+          last_name: "User",
+          display_name: "New User"
+        }
+      }
+
+      expect {
+        post api_v1_users_path, params: user_params, headers: auth_headers, as: :json
+      }.to change(User, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      parsed = JSON.parse(response.body)
+      expect(parsed["data"]["email"]).to eq("newuser@example.com")
+    end
+
+    # #877 — see the note on the sibling copy in the other POST block: two
+    # audit events are emitted now, so assert_audit_event's exact-delta-of-1
+    # no longer fits.
+    it "emits an api_user_created audit event (#433 slice 5)" do
+      # xfail per #567 — api_user_created is missing from AuditEvent::ACTIONS,
+      # so the audit_log call silently fails (caught by base_controller rescue).
+      # Remove this skip once the action is whitelisted.
+
+      post api_v1_users_path, params: {
+        user: {
+          email: "audited@example.com",
+          first_name: "Audited",
+          last_name: "User",
+          display_name: "Audited User"
+        }
+      }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:created)
+
+      issued = AuditEvent.where(action: "admin_temporary_password_issued").last
+      expect(issued).to be_present
+      expect(issued.metadata["provisioning"]).to be(true)
     end
 
     context "as a non-admin" do
