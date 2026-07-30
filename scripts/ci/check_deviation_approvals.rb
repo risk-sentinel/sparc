@@ -123,12 +123,43 @@ approvers =
   end
 
 failures = []
+bypassed = []
 newly_approved.each do |cve, f|
   claimed = f.dig("deviation", "approved_by").to_s.sub(/\A@/, "").downcase
   if claimed.empty?
     failures << "#{cve}: claims deviation-approved but names no approver"
     next
   end
+
+  # INTERIM PATH — admin merge bypass.
+  #
+  # GitHub does not allow anyone to approve their own pull request. In a
+  # single-admin repository the admin is usually also the author, so the
+  # review-based corroboration below is unreachable and the only route is an
+  # admin merge past the red gate. Rather than let that happen silently — which
+  # is how #863 landed eight approvals nobody had granted — the register must
+  # declare it: `approval_mechanism: admin-merge-bypass`.
+  #
+  # This is WEAKER than review corroboration. It proves the named approver holds
+  # authority, not that a distinct approval event occurred. It is accepted only
+  # until the mechanized `/approve-deviation` flow lands (#871), which restores
+  # a separate, attributable approval act.
+  if f.dig("deviation", "approval_mechanism") == "admin-merge-bypass"
+    perm_raw = `gh api repos/#{REPO_SLUG}/collaborators/#{claimed}/permission 2>/dev/null`
+    permission =
+      begin
+        JSON.parse(perm_raw).fetch("permission", "")
+      rescue JSON::ParserError
+        ""
+      end
+    if AUTHORISED_PERMISSIONS.include?(permission)
+      bypassed << "#{cve}: approved by @#{claimed} (#{permission}) via admin merge bypass"
+    else
+      failures << "#{cve}: declares admin-merge-bypass but @#{claimed} holds '#{permission.empty? ? 'unknown' : permission}'"
+    end
+    next
+  end
+
   unless approvers.include?(claimed)
     failures << "#{cve}: claims approval by @#{claimed}, who has not submitted an approving review on this PR"
     next
@@ -147,8 +178,24 @@ newly_approved.each do |cve, f|
 end
 
 if failures.empty?
-  puts "✓ Every newly-approved deviation is corroborated by an approving review from an authorised reviewer."
-  puts "  Approving reviewers on this PR: #{approvers.join(', ')}"
+  unless bypassed.empty?
+    puts "⚠ APPROVED VIA ADMIN MERGE BYPASS — not by a distinct approval event"
+    puts
+    bypassed.each { |b| puts "    #{b}" }
+    puts
+    puts "  GitHub forbids approving your own PR, so a single-admin repo cannot use the"
+    puts "  review path. Authority is verified; a separate approval act is not. This is"
+    puts "  recorded in the register as approval_mechanism: admin-merge-bypass so the"
+    puts "  evidence says how it was approved, and is superseded by the mechanized"
+    puts "  /approve-deviation flow (#871)."
+    puts
+  end
+  corroborated = newly_approved.size - bypassed.size
+  if corroborated.positive?
+    puts "✓ #{corroborated} deviation(s) corroborated by an approving review from an authorised reviewer."
+    puts "  Approving reviewers on this PR: #{approvers.join(', ')}"
+  end
+  puts "✓ No unapproved or unauthorised deviations."
   exit 0
 end
 

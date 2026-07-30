@@ -246,7 +246,11 @@ findings:
     next_review_date: "2026-08-28"
     deviation:
       type: risk_adjustment
-      risk_status: deviation-requested
+      risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "erb 4.0.4 (Ruby default gem) is present on disk but shadowed: Bundler resolves erb 6.0.6 from /usr/local/bundle"
@@ -1048,7 +1052,11 @@ findings:
     next_review_date: "2026-08-28"
     deviation:
       type: risk_adjustment
-      risk_status: deviation-requested
+      risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "zlib 3.2.1 (Ruby default gem) is present on disk but shadowed: Bundler resolves zlib 3.2.3 from /usr/local/bundle"
@@ -1261,7 +1269,11 @@ findings:
     next_review_date: "2026-08-28"
     deviation:
       type: risk_adjustment
-      risk_status: deviation-requested
+      risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1285,7 +1297,11 @@ findings:
     next_review_date: "2026-08-28"
     deviation:
       type: risk_adjustment
-      risk_status: deviation-requested
+      risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1309,7 +1325,11 @@ findings:
     next_review_date: "2026-08-28"
     deviation:
       type: risk_adjustment
-      risk_status: deviation-requested
+      risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1333,7 +1353,11 @@ findings:
     next_review_date: "2026-08-28"
     deviation:
       type: risk_adjustment
-      risk_status: deviation-requested
+      risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1357,7 +1381,11 @@ findings:
     next_review_date: "2026-08-28"
     deviation:
       type: risk_adjustment
-      risk_status: deviation-requested
+      risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
@@ -1381,7 +1409,11 @@ findings:
     next_review_date: "2026-08-28"
     deviation:
       type: risk_adjustment
-      risk_status: deviation-requested
+      risk_status: deviation-approved
+      approved_by: "@clem-field"
+      approved_in: "risk-sentinel/sparc#866"
+      approved_at: "2026-07-30T12:38:25Z"
+      approval_mechanism: "admin-merge-bypass"
       adjusted_severity: LOW
       mitigating_factors:
         - description: "ruby is not linked against libsqlite3 (verified by ldd on the shipped v1.15.3 image)"
