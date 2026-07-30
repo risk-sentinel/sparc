@@ -206,37 +206,48 @@ module FileUploadable
   # magic bytes when valid, so octet-stream there indicates garbage.
   TEXT_PLAIN = "text/plain".freeze
 
+  # #868 — expected MIME types when the file is sniffed on CONTENT ALONE.
+  #
+  # Measured 2026-07-30: read without a filename hint, Marcel gives every
+  # strong-magic payload a specific type — PE32 application/x-msdownload, ELF
+  # application/x-elf, zip application/zip, PDF application/pdf — while all
+  # ordinary text collapses to application/octet-stream. Allowing octet-stream
+  # for the text formats therefore accepts genuine JSON/YAML/XML while still
+  # rejecting anything with recognisable binary structure renamed to look like
+  # them. Structural parsing (validate_syntactic_structure!) then catches text
+  # that is merely malformed.
   EXPECTED_MIME_BY_EXT = {
-    ".json"  => [ "application/json", TEXT_PLAIN, "text/json" ],
+    ".json"  => [ "application/json", TEXT_PLAIN, "text/json", "application/octet-stream" ],
     ".xml"   => [ "application/xml", "text/xml", "application/octet-stream", TEXT_PLAIN ],
-    ".yaml"  => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml" ],
-    ".yml"   => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml" ],
-    ".xlsx"  => %w[application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/zip application/octet-stream],
+    ".yaml"  => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml", "application/octet-stream" ],
+    ".yml"   => [ TEXT_PLAIN, "text/yaml", "application/yaml", "application/x-yaml", "application/octet-stream" ],
+    ".xlsx"  => %w[application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/zip],
     ".xls"   => %w[application/vnd.ms-excel application/x-ole-storage]
   }.freeze
 
-  # #509: assert the actual file bytes match the declared extension.
-  # Defeats trivial "rename PE32 binary to foo.json" attacks that the
-  # extension allowlist alone permits. Marcel reads the file directly,
-  # bypassing the client-supplied Content-Type header.
+  # #509: assert the actual file bytes match the declared extension, so a
+  # renamed binary does not sail through on its extension alone.
   #
-  # We pass `name:` to Marcel so the extension is used only as a tiebreaker
-  # for content with ambiguous magic bytes (e.g., short plain-text JSON
-  # without a BOM). Explicit magic bytes — PE32 ("MZ..."), PDF ("%PDF"),
-  # zip ("PK..."), etc. — are always detected from content and override the
-  # filename hint, so an attacker can't bypass by just renaming.
+  # #868 — this previously passed `name:` to Marcel, with a comment claiming an
+  # attacker could not bypass it by renaming. Measured 2026-07-30, that holds
+  # only for formats with strong magic bytes: with the hint supplied, Marcel
+  # falls back to the extension for anything else, so a text payload named
+  # .json was reported as application/json and passed. The hint made the check
+  # agree with the filename it was meant to be checking.
+  #
+  # Marcel is now called on CONTENT ALONE — the filename is the thing under
+  # suspicion, so it does not get to vouch for the bytes.
   def validate_content_type!(uploaded_file)
     ext = File.extname(uploaded_file.original_filename.to_s).downcase
     expected = EXPECTED_MIME_BY_EXT[ext]
     return unless expected # extension not in our allowlist → extension layer already rejected
 
-    actual = File.open(uploaded_file.path, "rb") do |io|
-      Marcel::MimeType.for(io, name: uploaded_file.original_filename.to_s)
-    end
+    actual = File.open(uploaded_file.path, "rb") { |io| Marcel::MimeType.for(io) }
     return if expected.include?(actual)
 
-    raise "File rejected: extension #{ext} expects one of [#{expected.join(', ')}], " \
-          "but actual content type is #{actual.inspect}."
+    raise UploadRejectedError,
+          "File rejected: #{uploaded_file.original_filename} is named #{ext} but its contents " \
+          "are not #{expected.first} (detected #{actual})."
   end
 
   # #509: syntactic structural-validity check. Catches truncated or

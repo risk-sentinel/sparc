@@ -71,12 +71,15 @@
 
       <%# ── File Upload ── %>
       <div class="mb-4">
+        <%# #868 — `accept` comes from the same constant the server enforces, so
+            the advertised list and the accepted list cannot drift. Archives are
+            not accepted: a container hides what is inside it from every check. %>
         <%= render "shared/dropzone",
           form: f,
           field: :file,
-          accept: ".pdf,.png,.jpg,.jpeg,.gif,.xlsx,.xls,.csv,.json,.xml,.txt,.log,.zip,.html",
+          accept: EvidenceUploadPolicy.accept_attribute,
           label: "Evidence File",
-          hint: "Upload screenshots, logs, config exports, scan results, or policy documents." %>
+          hint: "Screenshots, logs, config exports, scan results, or policy documents. Archives (.zip) are not accepted." %>
         <% if @evidence.persisted? && @evidence.file.attached? %>
           <div class="mt-2">
             <span class="text-success small">Current file: <strong><%= @evidence.original_filename || @evidence.file.filename %></strong></span>
@@ -89,6 +92,13 @@
 
       <div class="d-flex gap-2">
         <%= f.submit(@evidence.persisted? ? "Update Evidence" : "Upload Evidence", class: "btn btn-primary") %>
+        <%# #868 — collecting evidence is inherently repetitive: a control often
+            needs several screenshots or exports. Landing on the show page after
+            every save meant a full round-trip back to this form each time. This
+            keeps the user here, carrying the boundary and type forward. %>
+        <% unless @evidence.persisted? %>
+          <%= f.submit "Save and add another", name: "commit_and_new", class: "btn btn-outline-primary" %>
+        <% end %>
         <% if @evidence.persisted? %>
           <%= link_to "Cancel", evidence_path(@evidence), class: "btn btn-outline-secondary" %>
         <% else %>
