@@ -49,3 +49,25 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# ── Developer-machine artefacts that must never reach the image (#862) ────────
+# CI builds from a clean checkout, so these are invisible there — but a local
+# `docker build` copies whatever is in the working tree. A developer who has run
+# the ui-smoke suite ships Playwright's bundled `node` binary (3 CVEs, and it is
+# not a SPARC dependency at all), and an agent worktree under .claude/ bakes an
+# entire second copy of the repository into the production image. Both were
+# observed in a local build of v1.15.3 and neither is present in the published
+# image, which is exactly the local-vs-CI drift that hides prod-only bugs.
+/.claude/
+**/.venv/
+**/__pycache__/
+**/*.pyc
+
+/coverage/
+
+# NOTE: /spec/ is deliberately NOT excluded. lib/tasks/catalog_oscal_id_migration.rake
+# and lib/tasks/profile_backfill.rake load catalog fixtures from
+# spec/fixtures/files/catalogs/ at runtime, so dropping spec/ would break those
+# data-migration tasks inside the container. Slimming the image further means
+# relocating those fixtures out of spec/ first — worth doing, but it is a
+# behaviour change and does not belong in this commit.

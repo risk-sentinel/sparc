@@ -1,8 +1,8 @@
 {
   "_doc": [
     "Single source of truth for required-check gating. Read by:",
-    "  .github/workflows/required-passed.yml          — aggregator (consumes filterPathSpec to decide if a check is required for a PR's changed files)",
-    "  .github/workflows/validate-required-checks-sync.yml — drift validator (asserts each rule's filterPathSpec is a subset of the workflow's actual path filter)",
+    "  .github/workflows/required-passed.yml          \u2014 aggregator (consumes filterPathSpec to decide if a check is required for a PR's changed files)",
+    "  .github/workflows/validate-required-checks-sync.yml \u2014 drift validator (asserts each rule's filterPathSpec is a subset of the workflow's actual path filter)",
     "",
     "When you add or modify a required check:",
     "  1. Add/update the rule here.",
@@ -18,10 +18,10 @@
     "advisoryChecks: non-required, externally-managed checks that the aggregator",
     "  must NOT treat as a catastrophic failure. They are not in rules[] (so they",
     "  were never path-required), but required-passed.yml otherwise short-circuits",
-    "  on ANY failed/cancelled check — including these. Listing a check here exempts",
+    "  on ANY failed/cancelled check \u2014 including these. Listing a check here exempts",
     "  it from that short-circuit so a broken external check can't block merges.",
     "  'SonarCloud Code Analysis' is SonarCloud's GitHub App (no in-repo workflow);",
-    "  it currently fails on the org LOC quota (#636) — tracked + fixed org-side."
+    "  it currently fails on the org LOC quota (#636) \u2014 tracked + fixed org-side."
   ],
   "version": 1,
   "advisoryChecks": [
@@ -32,7 +32,7 @@
       "checkName": "Test plan checklist",
       "workflow": ".github/workflows/pr-checklist.yml",
       "alwaysRequired": true,
-      "comment": "pr-checklist.yml has no path filter — must run + pass on every PR. If this is ever skipped, treat as a CI bug."
+      "comment": "pr-checklist.yml has no path filter \u2014 must run + pass on every PR. If this is ever skipped, treat as a CI bug."
     },
     {
       "checkName": "lint",
@@ -77,7 +77,7 @@
         "app/models/concerns/**",
         "config/initializers/**"
       ],
-      "comment": "compliance.yml uses top-level on.pull_request.paths — workflow does not fire at all when paths don't match (no skipped check is reported). The aggregator must not require this check on PRs whose paths don't intersect."
+      "comment": "compliance.yml uses top-level on.pull_request.paths \u2014 workflow does not fire at all when paths don't match (no skipped check is reported). The aggregator must not require this check on PRs whose paths don't intersect."
     },
     {
       "checkName": "secrets_scan",
@@ -206,6 +206,17 @@
         "docs/compliance/**"
       ],
       "comment": "#461 SBOM-driven SCA via Grype. Consumes CycloneDX SBOMs from sbom_generation, trivy_fs_scan, trivy_container_scan. Path filter mirrors the security.yml app_code filter so it only runs when scans run."
+    },
+    {
+      "checkName": "Deviation approval",
+      "workflow": ".github/workflows/deviation-approval.yml",
+      "workflowFilterName": "_top_level_paths",
+      "filterPathSpec": [
+        "docs/compliance/sparc-findings.yml",
+        "scripts/ci/check_deviation_approvals.rb",
+        ".github/CODEOWNERS"
+      ],
+      "comment": "#865 FedRAMP deviation flow. A finding marked deviation-approved is suppressed from the threshold residual, so it must carry a code-owner approval on the PR that introduces it. Also triggers on pull_request_review so it re-runs when the approval arrives."
     }
   ]
 }
