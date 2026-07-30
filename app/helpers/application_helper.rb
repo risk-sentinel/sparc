@@ -43,6 +43,31 @@ module ApplicationHelper
     @sidebar_help_guides ||= UserGuideLibrary.all
   end
 
+  # #870 — a small "?" beside a field label, answering the micro-question
+  # ("what goes in here?") without sending the operator to a full guide.
+  #
+  #   <%= f.label :source, class: "form-label" %><%= field_help "Where the
+  #       artefact came from — the scanner, system or person that produced it." %>
+  #
+  # A <button>, not a <span>: it must be reachable by keyboard, and Bootstrap's
+  # default tooltip trigger is "hover focus", so tabbing to it shows the text.
+  # Help that only appears on hover is invisible to keyboard and touch users.
+  #
+  # No inline handlers — CSP has no 'unsafe-inline', so the tooltip is wired up
+  # by data attributes and initialised on turbo:load in application.js.
+  def field_help(text, placement: "top")
+    return if text.blank?
+
+    tag.button(
+      "?",
+      type: "button",
+      class: "sparc-field-help",
+      tabindex: 0,
+      data: { bs_toggle: "tooltip", bs_placement: placement, bs_title: text },
+      aria: { label: "Help: #{text}" }
+    )
+  end
+
   # #808 — true when the gateway forwarded a verified client cert on THIS
   # request (login page). Same header + success check piv_sessions#create uses,
   # so "button shown" ⟺ "the gateway would accept the cert". The cert is

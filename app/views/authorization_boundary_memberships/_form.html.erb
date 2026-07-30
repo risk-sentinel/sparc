@@ -4,20 +4,26 @@
              class: "mb-4") do |f| %>
   <div class="mb-3">
     <%= f.label :user_name, "Name", class: "form-label fw-semibold" %>
+    <%= field_help "The person's name as it should appear on the ATO package personnel roster." %>
     <%# #869 — autofocus on the add form so the next entry can be typed straight
         after a save lands back here. Not on edit, where stealing focus into a
-        pre-filled field is just annoying. %>
+        pre-filled field is just annoying.
+        #870 — the help control sits between the label and the input in DOM
+        order, so autofocus still lands on the field itself and the tooltip
+        does not fire unbidden on page load. %>
     <%= f.text_field :user_name, class: "form-control", required: true,
           autofocus: !membership.persisted? %>
   </div>
 
   <div class="mb-3">
     <%= f.label :user_email, "Email", class: "form-label fw-semibold" %>
+    <%= field_help "Optional, but it is how this roster entry is matched to a SPARC user account if one exists." %>
     <%= f.email_field :user_email, class: "form-control" %>
   </div>
 
   <div class="mb-3">
     <%= f.label :role, class: "form-label fw-semibold" %>
+    <%= field_help "The RMF role this person holds for this boundary — what they are accountable for, not their SPARC permissions." %>
     <%= f.select :role, AuthorizationBoundaryMembership.role_options, {}, class: "form-select" %>
   </div>
 

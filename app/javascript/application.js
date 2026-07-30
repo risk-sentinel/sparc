@@ -122,4 +122,27 @@ document.addEventListener("turbo:load", () => {
       bootstrap.Collapse.getOrCreateInstance(el, { toggle: false })
     }
   })
+
+  // #870 — field-level help tooltips (see ApplicationHelper#field_help).
+  // Same turbo:load pattern as the widgets above: Turbo Drive swaps the body
+  // without a full page load, so anything Bootstrap instantiated on the old
+  // DOM is gone and has to be re-created here.
+  //
+  // Default trigger is "hover focus", which is deliberate — help that only
+  // appears on hover cannot be reached by keyboard or touch.
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
+    if (window.bootstrap) {
+      bootstrap.Tooltip.getOrCreateInstance(el)
+    }
+  })
+})
+
+// Tooltips attach their popup to <body>, outside the element Turbo replaces.
+// Without this, navigating away while one is visible leaves it stranded on the
+// next screen with nothing to dismiss it.
+document.addEventListener("turbo:before-render", () => {
+  if (!window.bootstrap) return
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
+    bootstrap.Tooltip.getInstance(el)?.dispose()
+  })
 })

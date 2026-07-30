@@ -2324,3 +2324,39 @@ a.link-purple { color: var(--sparc-purple); }
   margin: 1.5rem 0;
 }
 .sparc-guide-content .table-responsive { margin-bottom: 1rem; }
+
+/* ── Field-level help (#870) ──────────────────────────────────────────────
+   A small "?" beside a field label. It is a <button> so keyboard users can
+   tab to it and Bootstrap's "hover focus" trigger reveals the text — help
+   that only responds to hover is unreachable by keyboard and touch. Sized in
+   em so it tracks the label it sits beside. */
+.sparc-field-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  margin-left: 0.35em;
+  padding: 0;
+  font-size: 0.85em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  color: var(--bs-secondary-color, #6c757d);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  cursor: help;
+}
+
+.sparc-field-help:hover,
+.sparc-field-help:focus-visible {
+  color: var(--bs-primary, #0d6efd);
+}
+
+/* Never rely on colour alone, and never remove the focus ring — this control
+   is only discoverable by keyboard users if its focus state is visible. */
+.sparc-field-help:focus-visible {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 2px;
+}
