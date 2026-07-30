@@ -78,9 +78,27 @@ class SessionsController < ApplicationController
   def load_consent_banner
     return unless SparcConfig.banner_enabled?
 
+    # #867 — inline content wins over the file path. Both run through the SAME
+    # sanitize call below, so this adds a source, not a trust path.
+    inline = SparcConfig.banner_html
     raw_path = SparcConfig.banner_message_path
+
+    if inline.present? && raw_path.present?
+      Rails.logger.warn(
+        "[ConsentBanner] Both SPARC_BANNER_HTML and SPARC_BANNER_MESSAGE are set; " \
+        "using SPARC_BANNER_HTML and ignoring #{raw_path}"
+      )
+    end
+
+    if inline.present?
+      @consent_banner_content = sanitize_banner(inline)
+      return
+    end
+
     if raw_path.blank?
-      Rails.logger.warn("[ConsentBanner] SPARC_BANNER_ENABLED=true but SPARC_BANNER_MESSAGE is not set")
+      Rails.logger.warn(
+        "[ConsentBanner] SPARC_BANNER_ENABLED=true but neither SPARC_BANNER_HTML nor SPARC_BANNER_MESSAGE is set"
+      )
       return
     end
 
@@ -93,10 +111,16 @@ class SessionsController < ApplicationController
     end
 
     raw_content = File.read(path, encoding: "UTF-8")
-    @consent_banner_content = helpers.sanitize(raw_content, tags: BANNER_ALLOWED_TAGS, attributes: BANNER_ALLOWED_ATTRS)
+    @consent_banner_content = sanitize_banner(raw_content)
   rescue StandardError => e
     Rails.logger.error("[ConsentBanner] Failed to read banner file: #{e.message}")
     @consent_banner_content = nil
+  end
+
+  # One sanitizer for both sources — an inline banner is exactly as untrusted as
+  # a file one, and having two call sites is how they drift apart.
+  def sanitize_banner(raw)
+    helpers.sanitize(raw, tags: BANNER_ALLOWED_TAGS, attributes: BANNER_ALLOWED_ATTRS)
   end
 
   # ── Local Login ───────────────────────────────────────────────────────
