@@ -1,5 +1,33 @@
-<div class="card">
-  <h2 class="mb-2">Add Member to <%= @authorization_boundary.name %></h2>
-  <p class="text-body-secondary mb-4">Assign an RMF role to a team member.</p>
-  <%= render "form", membership: @membership %>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <div>
+        <h2 class="mb-1">Add Member to <%= @authorization_boundary.name %></h2>
+        <p class="text-body-secondary mb-0">Assign an RMF role to a team member.</p>
+      </div>
+      <%# #869 — leaving the roster-building loop is an intentional act. Done is
+          the primary way out; Cancel inside the form abandons the entry in
+          progress. Both return to the boundary. %>
+      <%= link_to "Done", authorization_boundary_path(@authorization_boundary),
+            class: "btn btn-outline-primary" %>
+    </div>
+    <%= render "form", membership: @membership %>
+  </div>
+</div>
+
+<%# ── Current roster ──────────────────────────────────────────
+    #869 — shown while building so the operator can see progress and avoid
+    adding someone twice. Read-only here: this screen is for adding, and an
+    accidental Remove mid-entry would be expensive. Manage the roster on the
+    boundary screen. %>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Current Personnel Roster</h4>
+      <span class="badge bg-secondary"><%= pluralize(@personnel.size, "member") %></span>
+    </div>
+
+    <%= render "authorization_boundaries/roster_table",
+          personnel: @personnel, boundary: @authorization_boundary, actions: false %>
+  </div>
 </div>

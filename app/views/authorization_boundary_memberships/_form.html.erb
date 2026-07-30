@@ -5,7 +5,14 @@
   <div class="mb-3">
     <%= f.label :user_name, "Name", class: "form-label fw-semibold" %>
     <%= field_help "The person's name as it should appear on the ATO package personnel roster." %>
-    <%= f.text_field :user_name, class: "form-control", required: true %>
+    <%# #869 — autofocus on the add form so the next entry can be typed straight
+        after a save lands back here. Not on edit, where stealing focus into a
+        pre-filled field is just annoying.
+        #870 — the help control sits between the label and the input in DOM
+        order, so autofocus still lands on the field itself and the tooltip
+        does not fire unbidden on page load. %>
+    <%= f.text_field :user_name, class: "form-control", required: true,
+          autofocus: !membership.persisted? %>
   </div>
 
   <div class="mb-3">
