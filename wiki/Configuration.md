@@ -267,10 +267,29 @@ Rack::Attack throttle thresholds. Defaults are conservative; tighten for high-se
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SPARC_REQUIRE_DOCUMENT_APPROVAL` | `false` | Require documents to pass an approval workflow before finalization |
-| `SPARC_INACTIVITY_DAYS` | `30` | Days of user inactivity before an account is auto-deactivated |
-| `SPARC_PASSWORD_EXPIRY_DAYS` | `30` | Days before a local-auth password expires (SSO users exempt) |
+| `SPARC_INACTIVITY_DAYS` | `30` | Days of user inactivity before an account is auto-deactivated. The break-glass admin is exempt — see below |
+| `SPARC_PASSWORD_EXPIRY_DAYS` | `30` | Days before a local-auth password expires (SSO users exempt; break-glass admin exempt — see below) |
 | `SPARC_SA_INACTIVITY_DAYS` | `90` | Days of inactivity before a service account is auto-disabled |
 | `SPARC_PROCESSING_STUCK_MINUTES` | `5` | Minutes after which a stuck document stops auto-refreshing its show page |
+
+### Administrator lockout protection (v1.15.4)
+
+A deactivated account cannot sign in at all, and only *another* administrator can
+restore it — so an instance that deactivates its last admin has no way back in
+short of shell access. Two guards prevent that:
+
+- The account named by **`SPARC_ADMIN_EMAIL`** (matched regardless of case) is
+  exempt from inactivity deactivation and from password expiry, because that
+  credential is rotated externally rather than by signing in. The exemption covers
+  that **one account**, not everyone with the admin flag — named administrators
+  still age out and their passwords still expire.
+- Suspending or deactivating the **last active administrator** is refused on every
+  path (admin screens, API, and the inactivity sweep) and written to the audit log.
+
+`SPARC_ADMIN_EMAIL` is never empty — unset, it falls back to `admin@sparc.local`.
+**Point it at your real break-glass account.** If you renamed or replaced that
+account without updating this variable, the exemption still protects
+`admin@sparc.local` while your actual break-glass admin is exposed to the sweep.
 
 ## Artifact Retention
 

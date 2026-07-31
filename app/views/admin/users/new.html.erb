@@ -37,17 +37,23 @@
             <%= f.text_field :display_name, class: "form-control" %>
           </div>
 
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <%= f.label :password, class: "form-label fw-semibold small" %>
-              <%= f.password_field :password, class: "form-control", required: true, autocomplete: "new-password" %>
-              <div class="form-text">At least 12 characters (NIST 800-63B). No complexity rules.</div>
+          <%# #877 — the admin no longer chooses the first credential. SPARC
+              generates a temporary password on save and shows it once, and the
+              user must replace it at first sign-in (IA-5). A password an admin
+              picks is one the admin knows, and it used to survive indefinitely
+              because nothing forced a change. %>
+          <% if SparcConfig.enable_local_login? %>
+            <div class="alert alert-info py-2 mb-3">
+              <strong>A temporary password will be generated</strong> and shown once after you
+              save. Give it to the user over a channel you trust — they must change it the first
+              time they sign in.
             </div>
-            <div class="col-md-6">
-              <%= f.label :password_confirmation, "Confirm password", class: "form-label fw-semibold small" %>
-              <%= f.password_field :password_confirmation, class: "form-control", required: true, autocomplete: "new-password" %>
+          <% else %>
+            <div class="alert alert-secondary py-2 mb-3">
+              Local login is disabled, so no password is issued. This user signs in through the
+              configured identity provider.
             </div>
-          </div>
+          <% end %>
 
           <div class="mb-3">
             <%= f.label :status, "Initial status", class: "form-label fw-semibold small" %>

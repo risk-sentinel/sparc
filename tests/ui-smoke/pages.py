@@ -73,6 +73,7 @@ FORM_PAGES = [
     ("evidence_new", "/evidences/new"),
     ("federation_peer_new", "/federation_peers/new"),
     ("authoritative_source_new", "/authoritative_sources/new"),
+    ("admin_user_new", "/admin/users/new"),  # #877 — no password fields
     ("profile_edit", "/profile/edit"),
     ("password_edit", "/password/edit"),
 ]

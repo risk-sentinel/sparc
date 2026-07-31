@@ -77,6 +77,51 @@ flowchart TD
    invalidates anything issued previously, and both are recorded in the audit
    log.
 
+## How to create a user (v1.15.4)
+
+![The New User screen: email, name and role fields, with a notice that a temporary password will be generated and shown once after saving](images/admin_user_new.png)
+
+1. Go to **Administration → Users** and click **New User** (`/admin/users/new`).
+2. Fill in the email and name. **There is no password field** — you do not choose
+   the new user's password.
+3. Save. SPARC generates a **temporary password** and shows it once, in a panel on
+   the new user's profile page.
+4. **Copy it before you navigate away.** Only its encrypted digest is stored, so
+   it cannot be shown again — if you lose it, issue a new one with **Issue
+   temporary password** (above).
+5. Give it to the user over a channel you trust. They must choose a new password
+   the moment they sign in, so the one you saw stops working straight afterwards.
+
+This closes a gap where an administrator typed a password the user was never
+forced to replace — leaving a credential the administrator knew and that lasted
+indefinitely. The account creation and the credential issuance are recorded as
+separate audit events.
+
+> **API callers:** `POST /api/v1/users` no longer accepts `password` /
+> `password_confirmation`; a supplied value is ignored without error. The
+> generated credential comes back once as `temporary_password`. See
+> [API Reference](API-Reference).
+
+## Administrators cannot be locked out (v1.15.4)
+
+Two guards prevent an instance from losing all administrative access:
+
+- **The last active administrator cannot be suspended or deactivated.** The
+  attempt is refused with an explanation and recorded in the audit log. This
+  applies everywhere — the admin screens, the API, and the automatic inactivity
+  sweep. A deactivated account cannot sign in at all, and only *another*
+  administrator can restore it, so there would be no way back in.
+- **The break-glass administrator is exempt from inactivity deactivation and
+  password expiry.** This is the single account named by `SPARC_ADMIN_EMAIL`,
+  whose credential is rotated externally rather than by signing in. The exemption
+  covers that one account only — named administrators are still deactivated when
+  idle, and their passwords still expire.
+
+If you renamed or replaced the break-glass account, update `SPARC_ADMIN_EMAIL` to
+match. Left unset it defaults to `admin@sparc.local`, which would protect an
+account you no longer use while leaving your real one exposed to the sweep. See
+[Configuration](Configuration).
+
 ## How to create and assign roles
 
 1. Go to **Administration → Roles** (`/admin/roles`).

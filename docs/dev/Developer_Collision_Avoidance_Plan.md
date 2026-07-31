@@ -381,6 +381,8 @@ All 17 issues shipped across v1.7.0 / v1.7.1 / v1.7.2 (2026-05-22 → 2026-05-24
 | [x] | #548 | Shared/UI | `app/views/shared/_processing_banner.html.erb`, `sparc_config.rb`, view spec | Meta-refresh trap bailout (Tier 1) |
 | [x] | #549 | API (v1) | `app/controllers/api/v1/base_controller.rb` | paginate() honors ?items/?per_page |
 | [x] | #553 | CI/Infrastructure | `.github/workflows/build-sign-publish.yml` (job-level env hoist) | Real fix for #547 follow-on |
+| [x] | #878 | Auth/Users | `app/models/user.rb` (`break_glass_admin?`, `inactive_past_threshold` exemption, `LastAdminError`, `protect_last_active_admin`), `app/jobs/inactivity_check_job.rb`, `app/controllers/admin/users_controller.rb`, `app/models/audit_event.rb` (2 refusal actions) | **HOT: `user.rb`** — shipped with #877 on one branch to avoid a same-file collision |
+| [x] | #877 | Auth/Users | `app/models/user.rb` (`generate_temporary_password`, `assign_temporary_password`), `app/services/user_provisioning_service.rb` (drop `:password`), `app/controllers/admin/users_controller.rb`, `app/controllers/api/v1/users_controller.rb`, `app/views/admin/users/new.html.erb` | **API-breaking**: `POST /api/v1/users` no longer accepts a password; also touches `tests/api` + `tests/ui-smoke` |
 
 <!-- markdownlint-enable MD013 -->
 

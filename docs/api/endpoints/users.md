@@ -156,13 +156,19 @@ curl -X GET "https://sparc.example.com/api/v1/users/1" \
 
 Create a new user account.
 
+> **Changed in v1.15.4 (#877).** The caller no longer chooses the password.
+> `password` and `password_confirmation` are **not permitted** on this endpoint --
+> supplying them has no effect and raises no error. SPARC issues a temporary
+> password and flags the account `must_reset_password`, so a provisioned user is
+> forced to replace the credential at first sign-in. This matches the behaviour of
+> `POST /api/v1/users/:id/password_reset` and means the administrator never ends up
+> knowing a password the user keeps.
+
 **Request Body**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `email` | string | Yes | User email address (must be unique) |
-| `password` | string | Yes | Password (minimum 12 characters) |
-| `password_confirmation` | string | Yes | Must match password |
 | `first_name` | string | Yes | First name |
 | `last_name` | string | Yes | Last name |
 | `display_name` | string | No | Display name (defaults to first + last name) |
@@ -177,8 +183,6 @@ curl -X POST "https://sparc.example.com/api/v1/users" \
   -d '{
     "user": {
       "email": "alice.chen@acme-corp.com",
-      "password": "SecureP@ssw0rd!2026",
-      "password_confirmation": "SecureP@ssw0rd!2026",
       "first_name": "Alice",
       "last_name": "Chen",
       "display_name": "Alice Chen",
@@ -189,21 +193,34 @@ curl -X POST "https://sparc.example.com/api/v1/users" \
 
 **Response Body**
 
+`temporary_password` is returned **once**, in this response only -- just its bcrypt
+digest is stored, so it cannot be retrieved afterwards. Hand it to the user out of
+band; if it is lost, issue a fresh one with `POST /api/v1/users/:id/password_reset`.
+
+The field is **present only when local login is enabled** (`SPARC_ENABLE_LOCAL_LOGIN`).
+On an SSO-only instance there is no local credential to issue, so the key is omitted
+entirely -- read it with a presence check rather than assuming it is always there.
+
 ```json
 {
   "data": {
     "id": 3,
+    "uuid": "3f2b1c4e-8a91-4d77-9c0e-1b2a3c4d5e6f",
     "email": "alice.chen@acme-corp.com",
+    "display_name": "Alice Chen",
     "first_name": "Alice",
     "last_name": "Chen",
-    "display_name": "Alice Chen",
-    "admin": false,
     "status": "active",
+    "admin": false,
     "created_at": "2026-03-23T12:00:00Z",
-    "updated_at": "2026-03-23T12:00:00Z"
+    "updated_at": "2026-03-23T12:00:00Z",
+    "temporary_password": "k3Jd8sPq2mVx9Lza-417"
   }
 }
 ```
+
+Issuance is audited as `admin_temporary_password_issued` with `provisioning: true`,
+alongside the endpoint's usual `api_user_created` event.
 
 **Status Codes**
 

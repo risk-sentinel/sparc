@@ -460,12 +460,37 @@ policies. These settings apply to all users unless noted otherwise.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_INACTIVITY_DAYS | Days of inactivity before an account is auto-deactivated. **Applies to ALL accounts — human and service (#785 Pass 2.1).** | 30 | `90` | No |
-| SPARC_PASSWORD_EXPIRY_DAYS | Number of days before a local-auth user's password expires and must be reset. OAuth/SSO-only users are exempt. | 30 | `90` | No |
+| SPARC_INACTIVITY_DAYS | Days of inactivity before an account is auto-deactivated. **Applies to ALL accounts — human and service (#785 Pass 2.1)** — except the break-glass admin, see below. | 30 | `90` | No |
+| SPARC_PASSWORD_EXPIRY_DAYS | Number of days before a local-auth user's password expires and must be reset. OAuth/SSO-only users are exempt, as is the break-glass admin (see below). | 30 | `90` | No |
 | SPARC_PROCESSING_STUCK_MINUTES | Minutes after which a document stuck in pending/processing stops auto-refreshing on its show page (#548). Without this guard, documents whose parsing job never ran trap the browser in a 3-second refresh loop. | 5 | `10` | No |
 
 The `InactivityCheckJob` should be scheduled via cron or your job
 scheduler (e.g., `rails runner "InactivityCheckJob.perform_now"`).
+
+### Break-glass admin exemption (#878)
+
+Authentication refuses a deactivated account outright, and reactivation requires
+*another* administrator — so an instance whose only admin gets swept for idleness
+has no self-service way back in; recovery means shell access and
+`lib/tasks/admin.rake`. Two guards prevent that:
+
+- The account matching **`SPARC_ADMIN_EMAIL`** (compared case-insensitively) is
+  exempt from both inactivity deactivation and password expiry. This is the shared
+  break-glass credential, rotated out of band — sparc-iac uses a Lambda against
+  Secrets Manager. The exemption is the **account, not the `admin` bit**: a named
+  administrator still ages out and their password still expires. It matches the
+  FIDO2 exemption in `app/controllers/concerns/authentication.rb` exactly.
+- Deactivating or suspending the **last active administrator** is refused by any
+  path — the job, the admin UI, and the API alike — and the refusal is audited
+  (`user_deactivate_refused` / `user_suspend_refused`). Suspension is included
+  because a suspended account cannot authenticate either.
+
+`SPARC_ADMIN_EMAIL` selects which account the first guard covers. It is never
+blank — unset, it falls back to `admin@sparc.local` (the seeded break-glass
+account), so the exemption always protects exactly one address. **Point it at your
+real break-glass account.** If you renamed or replaced that account without
+updating this variable, the exemption is still protecting `admin@sparc.local` and
+your actual break-glass admin is exposed to the sweep.
 
 ---
 

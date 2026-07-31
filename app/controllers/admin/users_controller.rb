@@ -40,12 +40,31 @@ module Admin
       # Thin client over the same provisioning contract as the API
       # (Api::V1::UsersController#create) — privilege-safe :admin/:status.
       @user = UserProvisioningService.new(actor: current_user).build(params.require(:user))
+
+      # #877 — SPARC issues the first credential; the admin never chooses one.
+      # A password an admin picks is one they know, and before this it survived
+      # indefinitely because nothing forced a change. Skipped when local login
+      # is off: handing a password to someone who will only ever arrive via
+      # OIDC/PIV puts an unusable secret on screen.
+      temporary = @user.assign_temporary_password if SparcConfig.enable_local_login?
+
       if @user.save
         sync_instance_roles
         audit_log("user_created", subject: @user,
           metadata: { target_user_id: @user.id, target_email: @user.email, uuid: @user.uuid,
                       admin: @user.admin?, status: @user.status })
-        redirect_to admin_user_path(@user), success: "User created."
+
+        if temporary
+          # Same audit action as a reset, so "how did this account get its first
+          # credential" has one answer shape for an assessor to follow.
+          audit_log("admin_temporary_password_issued", subject: @user,
+            metadata: { target_user_id: @user.id, target_email: @user.email, provisioning: true })
+          flash[:temporary_password] = temporary
+        end
+
+        redirect_to admin_user_path(@user),
+          success: temporary ? "User created. Give them the temporary password over a channel you trust — " \
+                               "they must change it at first sign-in." : "User created."
       else
         @instance_roles = Role.where(scope: "instance").sorted
         flash.now[:error] = @user.errors.full_messages.to_sentence
@@ -82,6 +101,12 @@ module Admin
       audit_log("user_suspended", subject: @user,
         metadata: { target_user_id: @user.id, target_email: @user.email, uuid: @user.uuid })
       redirect_to admin_user_path(@user), success: "User suspended."
+    rescue ActiveRecord::RecordInvalid => e
+      # #878 — suspending the last admin locks everyone out just as
+      # deactivating does; the model refuses and this reports it.
+      audit_log("user_suspend_refused", subject: @user,
+        metadata: { target_user_id: @user.id, target_email: @user.email, reason: "last_active_admin" })
+      redirect_to admin_user_path(@user), error: e.record.errors.full_messages.to_sentence
     end
 
     # Lockout recovery (#779): revoke all of a user's FIDO2 security keys so they
@@ -161,6 +186,13 @@ module Admin
         metadata: { target_user_id: @user.id, target_email: @user.email, uuid: @user.uuid,
                     reason: "admin_action" })
       redirect_to admin_user_path(@user), success: "User deactivated."
+    rescue User::LastAdminError => e
+      # #878 — a message, not a 500. Authentication gates on `active?`, so this
+      # would have locked everyone out of administration with no self-service
+      # way back.
+      audit_log("user_deactivate_refused", subject: @user,
+        metadata: { target_user_id: @user.id, target_email: @user.email, reason: "last_active_admin" })
+      redirect_to admin_user_path(@user), error: e.message
     end
 
     private

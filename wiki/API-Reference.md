@@ -38,6 +38,21 @@ baseline parameters, back-matter resources, evidence and evidence control links,
 attestations, the KSI catalog and validations, admin credentials, users, and
 discovery. Common verbs include `convert`, `update_fields`, and `export`.
 
+> **Breaking: `POST /api/v1/users` no longer takes a password (v1.15.4).**
+> `password` and `password_confirmation` are no longer permitted attributes.
+> SPARC generates the initial credential itself, returns it **once** as
+> `temporary_password` in the creation response, and flags the account so the user
+> must replace it at first sign-in.
+>
+> A supplied password is **ignored without raising an error** — unpermitted
+> parameters do not fail the request. If your client provisions users with a
+> chosen password, it will keep receiving `201` while that password has no effect,
+> so update it to read `temporary_password` from the response instead.
+>
+> The field is present only when local login is enabled; on an SSO-only instance
+> there is no local credential to issue and the key is omitted. Full details in
+> [`docs/api/endpoints/users.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/users.md).
+
 The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_hdf`,
 `oscal/poam_from_hdf`, and `hdf/amendments_from_oscal_poam` (see
 [Core Functions §18](Core-Functions#18-hdf--oscal-translation-bridge)).

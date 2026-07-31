@@ -780,7 +780,19 @@ Records a leveraged (inherited) authorization on the leveraging boundary (#396).
 | **Controller** | `Admin::UsersController#index` |
 | **Auth** | Instance Admin |
 
-Search input, status filter, paginated user list (25 per page). Each row shows email, display name, status, creation date. Actions: View, Suspend/Reactivate.
+Search input, status filter, paginated user list (25 per page). Each row shows email, display name, status, creation date. Actions: View, Suspend/Reactivate, and **New User**.
+
+#### New User
+
+| | |
+|---|---|
+| **Route** | `GET /admin/users/new` |
+| **Controller** | `Admin::UsersController#new` |
+| **Auth** | Instance Admin |
+
+Form fields: email, first name, last name, display name, status, Instance Admin checkbox, instance role assignments.
+
+**No password fields (v1.15.4, #877).** The administrator does not choose the new user's credential. On save, SPARC generates a temporary password, flags the account `must_reset_password`, and shows the value once on the resulting User Detail page. Both the account creation and the credential issuance are audited (`user_created`, `admin_temporary_password_issued`).
 
 #### User Detail
 
@@ -795,6 +807,11 @@ Displays:
 - Instance roles assigned
 - Authorization boundary roles assigned
 - Recent audit events (last 50)
+- **Temporary password panel** — shown only on the page load immediately following account creation or a password re-issue. The value is stored only as a bcrypt digest, so it cannot be redisplayed, only re-issued.
+
+Actions: Edit, Suspend/Deactivate/Reactivate, Issue temporary password, Email reset link, Reset security keys.
+
+**Last-admin protection (v1.15.4, #878).** Suspend and Deactivate are refused when the target is the last active administrator; the refusal is surfaced as an error and audited (`user_suspend_refused`, `user_deactivate_refused`). The buttons are already hidden when viewing your own account, so this guard chiefly protects the non-UI paths — the API, the service-account controller, and the inactivity sweep.
 
 #### User Edit
 

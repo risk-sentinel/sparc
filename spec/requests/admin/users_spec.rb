@@ -67,14 +67,27 @@ RSpec.describe "Admin::Users", type: :request do
       expect(response).to redirect_to(admin_user_path(user))
     end
 
+    # #877 — provisioning now emits TWO events: the account was created, and a
+    # credential was issued. They are distinct facts and both belong in the
+    # trail (AU-2/AU-3) — folding the second into the first's metadata would
+    # make "show me every time a credential was handed to a user" unqueryable,
+    # which is precisely the question an assessor asks. assert_audit_event
+    # requires a delta of exactly 1, so this asserts each event directly.
     it "emits a user_created audit event" do
-      assert_audit_event(
-        action: "user_created",
-        subject_type: "User",
-        metadata: { target_email: "created@example.com" }
-      ) do
-        post admin_users_path, params: valid_params
-      end
+      expect { post admin_users_path, params: valid_params }
+        .to change(AuditEvent, :count).by(2)
+
+      created = AuditEvent.find_by(action: "user_created", subject_type: "User")
+      expect(created).to be_present
+      expect(created.metadata["target_email"]).to eq("created@example.com")
+    end
+
+    it "also records that a credential was issued, with the same action a reset uses" do
+      expect { post admin_users_path, params: valid_params }
+        .to change { AuditEvent.where(action: "admin_temporary_password_issued").count }.by(1)
+
+      event = AuditEvent.where(action: "admin_temporary_password_issued").order(:created_at).last
+      expect(event.metadata["provisioning"]).to be(true)
     end
 
     it "lets an admin create another admin" do
@@ -90,12 +103,23 @@ RSpec.describe "Admin::Users", type: :request do
     end
 
     context "validation failures" do
-      it "rejects a password shorter than 12 characters" do
+      # #877 — this used to assert that a short admin-chosen password was
+      # rejected. The admin no longer chooses one at all: :password is not a
+      # permitted provisioning attribute, and SPARC issues a temporary that must
+      # be replaced at first sign-in. So the property worth pinning is no longer
+      # "a weak password is refused" but "a supplied password has no effect" —
+      # which is stronger, because it cannot be satisfied by silently
+      # overwriting the value and leaving the caller to assume otherwise.
+      it "ignores a password supplied by the admin and issues its own" do
         expect {
           post admin_users_path, params: valid_params(password: "short", password_confirmation: "short")
-        }.not_to change(User, :count)
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(response.body).to include("at least 12 characters")
+        }.to change(User, :count).by(1)
+
+        created = User.find_by(email: "created@example.com")
+        expect(created.authenticate("short")).to be_falsey
+        expect(created.must_reset_password).to be(true)
+        expect(flash[:temporary_password]).to be_present
+        expect(created.authenticate(flash[:temporary_password])).to be_truthy
       end
 
       it "rejects a duplicate email" do
@@ -105,6 +129,45 @@ RSpec.describe "Admin::Users", type: :request do
         }.not_to change(User, :count)
         expect(response).to have_http_status(:unprocessable_entity)
       end
+    end
+  end
+
+  # #878 — deactivating or suspending the last active admin locks everyone out
+  # of administration, and reactivation needs another admin, so there is no
+  # self-service way back. The model refuses; these assert the admin is told,
+  # and that the refusal reaches the audit trail rather than failing silently
+  # (AuditEvent::ACTIONS is an allowlist — an unlisted action is dropped).
+  describe "last-admin protection" do
+    before { sign_in_as(admin) }
+
+    it "refuses to deactivate the only active admin and says why" do
+      expect { patch deactivate_admin_user_path(admin) }.not_to change { admin.reload.status }
+
+      expect(admin.reload).to be_active
+      expect(flash[:error]).to match(/only active administrator/)
+    end
+
+    it "records the refusal in the audit trail" do
+      expect { patch deactivate_admin_user_path(admin) }
+        .to change { AuditEvent.where(action: "user_deactivate_refused").count }.by(1)
+    end
+
+    it "refuses to suspend the only active admin — suspended cannot authenticate either" do
+      expect { patch suspend_admin_user_path(admin) }.not_to change { admin.reload.status }
+
+      expect(flash[:error]).to match(/only active administrator/)
+    end
+
+    it "records the suspend refusal too" do
+      expect { patch suspend_admin_user_path(admin) }
+        .to change { AuditEvent.where(action: "user_suspend_refused").count }.by(1)
+    end
+
+    it "allows deactivation once a second active admin exists" do
+      other = create(:user, :admin, email: "second-admin@example.com")
+
+      expect { patch deactivate_admin_user_path(other) }
+        .to change { other.reload.status }.from("active").to("deactivated")
     end
   end
 end
