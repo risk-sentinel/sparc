@@ -52,6 +52,29 @@ RSpec.describe UserProvisioningService do
       end
     end
 
+    # #877 — the credential is SPARC's to issue, not the caller's to choose.
+    # This is asserted here, at the permit list, because the request-level
+    # behaviour hides it: the admin UI and API call assign_temporary_password
+    # right after build, which overwrites anything the caller sent. So with
+    # :password permitted, every request spec still passes and the only visible
+    # difference appears on an SSO-only instance, where no temporary is issued
+    # and a caller-supplied password would survive untouched.
+    #
+    # Confirmed by mutation: adding :password back to BASE_ATTRIBUTES makes
+    # these two examples fail.
+    context "credentials (#877)" do
+      it "ignores a caller-supplied password" do
+        user = described_class.new(actor: admin).build(user_params)
+        expect(user.password_digest).to be_blank
+        expect(user.authenticate("SecurePassword123!")).to be_falsey
+      end
+
+      it "ignores it for a non-admin actor too" do
+        user = described_class.new(actor: non_admin).build(user_params)
+        expect(user.password_digest).to be_blank
+      end
+    end
+
     it "accepts a plain Hash as params" do
       user = described_class.new(actor: admin).build(
         email: "hash@example.com", password: "SecurePassword123!",

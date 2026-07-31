@@ -93,10 +93,6 @@ RSpec.describe "Api::V1::Users", type: :request do
     # so each is asserted directly. Keeping them separate is deliberate: it is
     # what makes "every credential handed to a user" a queryable set.
     it "emits an api_user_created audit event (#433 slice 5)" do
-      # xfail per #567 — api_user_created is missing from AuditEvent::ACTIONS,
-      # so the audit_log call silently fails (caught by base_controller rescue).
-      # Remove this skip once the action is whitelisted.
-      #
       # #877 — stubbed explicitly rather than relying on the ambient setting:
       # a temporary is only issued when local login is on, and CI runs with it
       # OFF while a dev machine has it ON. Left implicit this passes locally and
@@ -114,8 +110,18 @@ RSpec.describe "Api::V1::Users", type: :request do
 
       expect(response).to have_http_status(:created)
 
-      # The credential-issuance event is recorded even while #567 keeps
-      # api_user_created off the allowlist.
+      # This used to be a single assert_audit_event. #877 emits TWO events, and
+      # that helper requires a delta of exactly 1 — so both are asserted
+      # directly. Asserting only the credential event would leave this example
+      # named for a claim it no longer checked.
+      #
+      # (An earlier comment here said api_user_created was missing from
+      # AuditEvent::ACTIONS and silently dropped. That is not true — it is
+      # allowlisted, so the event is really written and really assertable.)
+      created = AuditEvent.find_by(action: "api_user_created", subject_type: "User")
+      expect(created).to be_present
+      expect(created.metadata["email"]).to eq("audited@example.com")
+
       issued = AuditEvent.where(action: "admin_temporary_password_issued").last
       expect(issued).to be_present
       expect(issued.metadata["provisioning"]).to be(true)
@@ -143,6 +149,36 @@ RSpec.describe "Api::V1::Users", type: :request do
       expect(response).to have_http_status(:created)
       expect(User.find_by(email: "sso-only@example.com")).to be_present
       expect(JSON.parse(response.body)["data"]).not_to have_key("temporary_password")
+    end
+
+    # The case that exposes why :password must be UNPERMITTED rather than
+    # merely overwritten. When local login is on, assign_temporary_password
+    # overwrites whatever the caller sent, so a permitted :password is
+    # invisible — every assertion still passes. When local login is OFF no
+    # temporary is issued at all, nothing overwrites anything, and a permitted
+    # :password would be saved verbatim: a credential the provisioning caller
+    # chose and knows, on the one deployment shape where SPARC issues none.
+    #
+    # Verified by mutation: restoring :password to
+    # UserProvisioningService::BASE_ATTRIBUTES makes this example fail, and it
+    # was the only one that did.
+    it "does not let a caller set the password even when none is issued" do
+      allow(SparcConfig).to receive(:enable_local_login?).and_return(false)
+
+      post api_v1_users_path, params: {
+        user: {
+          email: "sso-pw@example.com",
+          first_name: "Sso",
+          last_name: "Pw",
+          password: "CallerChosen123!",
+          password_confirmation: "CallerChosen123!"
+        }
+      }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      created = User.find_by(email: "sso-pw@example.com")
+      expect(created.authenticate("CallerChosen123!")).to be_falsey
+      expect(created.password_digest).to be_blank
     end
 
     context "as a non-admin" do
@@ -195,12 +231,9 @@ RSpec.describe "Api::V1::Users", type: :request do
     # audit events are emitted now, so assert_audit_event's exact-delta-of-1
     # no longer fits.
     it "emits an api_user_created audit event (#433 slice 5)" do
-      # xfail per #567 — api_user_created is missing from AuditEvent::ACTIONS,
-      # so the audit_log call silently fails (caught by base_controller rescue).
-      # Remove this skip once the action is whitelisted.
-      #
       # #877 — see the sibling copy: local login is stubbed explicitly because
-      # CI runs with it off and a dev machine runs with it on.
+      # CI runs with it off and a dev machine runs with it on, and BOTH audit
+      # events are asserted directly since assert_audit_event wants a delta of 1.
       allow(SparcConfig).to receive(:enable_local_login?).and_return(true)
 
       post api_v1_users_path, params: {
@@ -213,6 +246,10 @@ RSpec.describe "Api::V1::Users", type: :request do
       }, headers: auth_headers, as: :json
 
       expect(response).to have_http_status(:created)
+
+      created = AuditEvent.find_by(action: "api_user_created", subject_type: "User")
+      expect(created).to be_present
+      expect(created.metadata["email"]).to eq("audited@example.com")
 
       issued = AuditEvent.where(action: "admin_temporary_password_issued").last
       expect(issued).to be_present
