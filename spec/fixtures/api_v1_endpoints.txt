@@ -2,6 +2,7 @@
 # Regenerate intentionally: bin/rails runner script in that spec's header. Every entry should have a request spec.
 
 DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
+DELETE /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 DELETE /api/v1/authorization_boundaries/:id
 DELETE /api/v1/authorization_boundaries/bulk
 DELETE /api/v1/back_matter_resources/:id
@@ -35,6 +36,9 @@ GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/export
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/summary
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/roles
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings
@@ -86,6 +90,7 @@ GET /api/v1/ssp_documents/:id/export
 GET /api/v1/users
 GET /api/v1/users/:id
 PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
+PATCH /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PATCH /api/v1/authorization_boundaries/:id
 PATCH /api/v1/authorization_boundaries/:id/organization
 PATCH /api/v1/back_matter_resources/:id
@@ -108,6 +113,7 @@ POST /api/v1/authoritative_sources/import
 POST /api/v1/authorization_boundaries
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/aggregate
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/memberships
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 POST /api/v1/back_matter_resources
 POST /api/v1/back_matter_resources/:id/approve_promotion
@@ -170,6 +176,7 @@ POST /api/v1/users
 POST /api/v1/users/:id/password_reset
 PUT /api/v1/admin/remediation_timelines
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
+PUT /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PUT /api/v1/authorization_boundaries/:id
 PUT /api/v1/back_matter_resources/:id
 PUT /api/v1/cdef_documents/:id
