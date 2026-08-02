@@ -458,11 +458,40 @@ class User < ApplicationRecord
 
   # ── Sign-in tracking ───────────────────────────────────────────────────
 
+  # #857 — update_columns, deliberately not update!.
+  #
+  # `update!` re-ran EVERY validation on every successful authentication,
+  # including `avatar_image_type`, which opens the avatar blob from the storage
+  # service. Two consequences:
+  #
+  #   1. A user whose stored avatar failed validation could not sign in AT ALL.
+  #      The login raised RecordInvalid and the request ended in a 422, through
+  #      every entry point that calls `start_session` — not just the API session
+  #      bridge where it was first seen. Not reachable through the UI today,
+  #      because ProfilesController sniffs before attaching, but it made the
+  #      avatar rule a lockout switch: tightening the accepted content types or
+  #      adding a size cap would instantly lock out every user whose stored
+  #      avatar no longer passed, and it would present as "login is broken"
+  #      with nothing pointing at an avatar rule. Seeds, imports, restores and
+  #      console attaches are the other ways in.
+  #   2. Every sign-in paid for a storage read of the avatar, to validate
+  #      something the request was not changing.
+  #
+  # These three columns are internal bookkeeping — no user input, and nothing an
+  # unrelated validation has any business gating — so writing them directly is
+  # both the smallest fix and the honest one. `updated_at` is set explicitly
+  # because update_columns does not touch it, keeping the observable writes
+  # identical to the update! this replaces.
+  #
+  # NIST 800-53: AC-7 / AU-2 (the sign-in record still happens, it just stops
+  # being contingent on unrelated validations).
   def record_sign_in!(ip_address: nil)
-    update!(
-      last_sign_in_at: Time.current,
+    now = Time.current
+    update_columns(
+      last_sign_in_at: now,
       last_sign_in_ip: ip_address,
-      sign_in_count: sign_in_count + 1
+      sign_in_count: sign_in_count + 1,
+      updated_at: now
     )
   end
 

@@ -148,5 +148,55 @@ RSpec.describe User, type: :model do
       expect(user.last_sign_in_at).to be_present
       expect(user.last_sign_in_ip).to eq("192.168.1.1")
     end
+
+    it "still bumps updated_at, as the update! it replaced did" do
+      user = create(:user)
+      user.update_columns(updated_at: 3.days.ago)
+
+      expect { user.record_sign_in!(ip_address: "10.0.0.1") }
+        .to(change { user.reload.updated_at })
+    end
+
+    # #857 — the lockout. Sign-in used to save the whole record, so EVERY
+    # validation had to pass for a login to succeed. A stored avatar that no
+    # longer satisfies the content-type rule therefore made the account
+    # unusable, with the failure surfacing as a 422 on login rather than
+    # anything mentioning an avatar.
+    context "when an unrelated validation on the record fails" do
+      let(:user) { create(:user, sign_in_count: 0) }
+
+      before do
+        # Attaching succeeds: the validator skips while the blob is not yet in
+        # the storage service. It is the NEXT save that used to fail — which is
+        # exactly the mechanism that locked the account.
+        user.avatar.attach(
+          io: StringIO.new("definitely not an image"),
+          filename: "avatar.png",
+          content_type: "image/png"
+        )
+        user.reload
+      end
+
+      it "the record really is invalid — the precondition this rests on" do
+        expect(user).not_to be_valid
+        expect(user.errors[:avatar].join).to match(/must be a PNG, JPG, GIF, or WebP image/)
+      end
+
+      it "records the sign-in anyway" do
+        expect { user.record_sign_in!(ip_address: "192.168.1.1") }.not_to raise_error
+
+        user.reload
+        expect(user.sign_in_count).to eq(1)
+        expect(user.last_sign_in_ip).to eq("192.168.1.1")
+        expect(user.last_sign_in_at).to be_present
+      end
+
+      it "does not quietly drop the invalid avatar to get there" do
+        user.record_sign_in!(ip_address: "192.168.1.1")
+
+        expect(user.reload.avatar).to be_attached
+        expect(user).not_to be_valid
+      end
+    end
   end
 end
