@@ -550,24 +550,22 @@ jobs:
       #
       # A Syft SBOM of the same image reproduces a direct `grype <image>` scan
       # exactly: 207 findings each, zero delta in BOTH directions.
-      - name: Cache Syft binary
-        id: syft-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
-        with:
-          path: /usr/local/bin/syft
-          key: syft-${{ runner.os }}-${{ env.SYFT_VERSION }}
-
-      - name: Install Syft
-        if: steps.syft-cache.outputs.cache-hit != 'true'
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
-            | sh -s -- -b /usr/local/bin "${SYFT_VERSION}"
-          syft version
-
+      # Uses the official Anchore action pinned by commit SHA rather than
+      # `curl … | sh`, which executes a downloaded script unverified
+      # (Sonar githubactions:S8482 / S6506). The syft version is still pinned.
       - name: Generate Syft SBOM of the container image
-        run: |
-          syft "sparc:${{ github.sha }}" -o syft-json=syft-container-sbom.json
-          jq '{artifacts: (.artifacts | length)}' syft-container-sbom.json
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: sparc:${{ github.sha }}
+          format: syft-json
+          output-file: syft-container-sbom.json
+          syft-version: ${{ env.SYFT_VERSION }}
+          # This job uploads the SBOM itself, under a name the Grype job knows.
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Summarise the SBOM
+        run: jq '{artifacts: (.artifacts | length)}' syft-container-sbom.json
 
       # The regression guard for #873. The blindness was silent — the gate went
       # green while seeing under half the image — so the only symptom was an
