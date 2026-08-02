@@ -48,6 +48,8 @@ def _add_member_path(boundary) -> str:
 
 
 ROLE_SELECT = "select[name='authorization_boundary_membership[role]']"
+NAME_INPUT = "input[name='authorization_boundary_membership[user_name]']"
+EMAIL_INPUT = "input[name='authorization_boundary_membership[user_email]']"
 # Scope to the form that owns the role select. A bare "form button[type=submit]"
 # also matches the nav's hidden Sign Out button, which is first in DOM order.
 MEMBER_FORM = f"form:has({ROLE_SELECT})"
@@ -93,8 +95,8 @@ class TestAddMemberRoles:
         options = _role_options(authed_page)
         value, label = options[0]
 
-        authed_page.fill("input[name='authorization_boundary_membership[user_name]']", "Smoke Tester")
-        authed_page.fill("input[name='authorization_boundary_membership[user_email]']", "smoke@example.gov")
+        authed_page.fill(NAME_INPUT, "Smoke Tester")
+        authed_page.fill(EMAIL_INPUT, "smoke@example.gov")
         authed_page.select_option(ROLE_SELECT, value)
         authed_page.locator(f"{MEMBER_FORM} input[type='submit']").click()
 
