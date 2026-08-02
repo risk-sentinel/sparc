@@ -58,6 +58,10 @@ env:
   # job, so nothing is lost. Flip to true (or enable GHAS) once the
   # repo is public or GHAS is licensed.
   UPLOAD_TO_CODE_SCANNING: ${{ inputs.upload_to_code_scanning == '' && 'false' || inputs.upload_to_code_scanning }}
+  # #873 — Syft produces the container SBOM the Grype gate consumes. Pinned:
+  # the gate's correctness depends on this tool emitting source-RPM (upstream=)
+  # purl qualifiers, so the version is not something to float.
+  SYFT_VERSION: v1.50.0
 
 # Permissions are declared per-job (least privilege) rather than workflow-wide,
 # so a job never silently inherits more than it needs (githubactions:S8233/S8264).
@@ -523,8 +527,103 @@ jobs:
       - name: Run Trivy container scan (CycloneDX for SAF)
         # #472 — `license` scanner closes the ~21% license gap in the
         # container SBOM (Debian packages get license metadata populated).
+        #
+        # #873 — this SBOM is retained for the SAF/HDF pipeline and the license
+        # inventory, but it is NO LONGER what the Grype gate scans. See the
+        # syft step below.
         run: trivy image --format cyclonedx --output trivy-container-sbom.cdx.json --scanners vuln,license sparc:${{ github.sha }}
         continue-on-error: true
+
+      # ── #873 — Syft SBOM for the Grype gate ──────────────────────────────
+      # Grype is Syft's sibling and consumes its native format losslessly. The
+      # Trivy CycloneDX SBOM cannot drive the gate correctly, measured on the
+      # shipped image:
+      #
+      #   * It omits the source-RPM `upstream=` purl qualifier. Red Hat files
+      #     advisories against the SOURCE package (sqlite-libs ships from
+      #     sqlite), so without it Grype cannot map binary -> source, silently
+      #     falls back to CPE/NVD matching, and 117 real RHEL findings (18 of
+      #     them Critical/High) become invisible to the gate.
+      #   * It also reports packages that are NOT in the final image — versions
+      #     from superseded layers — which show up as phantom findings,
+      #     including "Criticals" for gem versions the image does not contain.
+      #
+      # A Syft SBOM of the same image reproduces a direct `grype <image>` scan
+      # exactly: 207 findings each, zero delta in BOTH directions.
+      # Uses the official Anchore action pinned by commit SHA rather than
+      # `curl … | sh`, which executes a downloaded script unverified
+      # (Sonar githubactions:S8482 / S6506). The syft version is still pinned.
+      - name: Generate Syft SBOM of the container image
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: sparc:${{ github.sha }}
+          format: syft-json
+          output-file: syft-container-sbom.json
+          syft-version: ${{ env.SYFT_VERSION }}
+          # This job uploads the SBOM itself, under a name the Grype job knows.
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Summarise the SBOM
+        run: |
+          jq '{artifacts: (.artifacts | length)}' syft-container-sbom.json
+
+      # The regression guard for #873. The blindness was silent — the gate went
+      # green while seeing under half the image — so the only symptom was an
+      # absence. This asserts the two pieces of SBOM data Grype actually needs
+      # to resolve RHEL advisories, measured by deleting each from a real SBOM
+      # and re-scanning:
+      #
+      #   metadata.sourceRpm removed -> 207 findings drop to  90  (-117)
+      #   distro block removed       -> 207 findings drop to   5  (-202)
+      #
+      # Note it checks `metadata.sourceRpm`, NOT the `upstream=` purl qualifier
+      # the issue named. They carry the same fact, but Grype reads the metadata
+      # field: stripping `upstream=` from every purl changes nothing, while
+      # stripping sourceRpm loses precisely the 117 findings the Trivy SBOM also
+      # misses. Asserting the purl would have been a proxy that could pass while
+      # matching silently broke.
+      - name: Assert the SBOM carries what Grype needs for RHEL matching (#873)
+        run: |
+          RPMS=$(jq '[.artifacts[] | select(.type == "rpm")] | length' syft-container-sbom.json)
+          SRC=$(jq '[.artifacts[] | select(.type == "rpm")
+                     | select((.metadata.sourceRpm // "") != "")] | length' syft-container-sbom.json)
+          DISTRO_ID=$(jq -r '.distro.id // ""' syft-container-sbom.json)
+          DISTRO_VER=$(jq -r '.distro.versionID // ""' syft-container-sbom.json)
+          echo "RPM packages: ${RPMS}, carrying sourceRpm: ${SRC}, distro: ${DISTRO_ID:-<none>} ${DISTRO_VER:-<none>}"
+
+          if [ "${RPMS}" -eq 0 ]; then
+            echo "::error::No RPM packages in the container SBOM — the image is not RPM-based, or cataloguing broke."
+            exit 1
+          fi
+
+          # Without a resolvable distro Grype falls back to CPE/NVD matching,
+          # which both misses vendor advisories and invents false positives
+          # against versions the vendor has already backport-fixed.
+          if [ -z "${DISTRO_ID}" ] || [ -z "${DISTRO_VER}" ]; then
+            echo "::error::SBOM carries no resolvable distro — Grype would fall back to CPE/NVD matching. See #873."
+            exit 1
+          fi
+
+          # A handful of RPMs are their own source, so require the vast
+          # majority rather than every one.
+          THRESHOLD=$(( RPMS * 90 / 100 ))
+          if [ "${SRC}" -lt "${THRESHOLD}" ]; then
+            echo "::error::Only ${SRC}/${RPMS} RPMs carry a sourceRpm mapping (need >= ${THRESHOLD})."
+            echo "::error::Red Hat files advisories against the SOURCE package, so without it Grype cannot"
+            echo "::error::map e.g. sqlite-libs -> sqlite and the gate silently misses RHEL advisories. See #873."
+            exit 1
+          fi
+          echo "Source-RPM mappings and distro present — Grype can resolve RHEL advisories."
+
+      - name: Upload Syft container SBOM
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: syft-container-sbom
+          path: syft-container-sbom.json
+          retention-days: 90
+          if-no-files-found: warn
 
       - name: Upload Trivy container artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -631,15 +730,25 @@ jobs:
           ruby-version: 3.4
 
       - name: Generate Grype ignore list from sparc-findings.yml
+        # #873 — the `package.name` constraint is deliberately NOT emitted.
+        #
+        # It used to be, and it made most of these rules inert. The register's
+        # `package` field is free text written for humans — values like
+        # "net-imap (default gem 0.5.8; bundled 0.6.4.1)" or "thruster (Go
+        # binary, stdlib v1.26.2)" never equal a scanner package name, so the
+        # rule could not match. Measured against the register: 40 dispositions
+        # suppressed by CVE alone versus 6 with the name constraint attached.
+        #
+        # Dropping it is safe in the direction that matters. A disposition that
+        # fails to apply makes the gate NOISIER, not blinder, and the
+        # authoritative accounting — where a deferred critical still fails —
+        # runs in security_gate against the amended HDF, not here.
         run: |
           ruby -ryaml -e '
             data  = YAML.safe_load(File.read("docs/compliance/sparc-findings.yml"))
-            rules = Array(data && data["findings"]).map { |f|
-              next nil unless f["cve_id"]
-              r = { "vulnerability" => f["cve_id"] }
-              r["package"] = { "name" => f["package"] } if f["package"] && !f["package"].to_s.empty?
-              r
-            }.compact.uniq
+            rules = Array(data && data["findings"]).filter_map { |f|
+              f["cve_id"] && { "vulnerability" => f["cve_id"] }
+            }.uniq
             File.write(".grype.yaml", { "ignore" => rules }.to_yaml)
             warn "Grype: #{rules.size} dispositioned CVE(s) loaded from sparc-findings.yml"
           '
@@ -689,11 +798,16 @@ jobs:
           name: trivy-fs-results
           path: sboms/trivy-fs/
 
-      - name: Download Trivy container SBOM
+      # #873 — the container image is gated from the SYFT SBOM, not Trivy's.
+      # Trivy's CycloneDX SBOM is still produced and still feeds the SAF/HDF
+      # pipeline and the license inventory; it just no longer gates the build,
+      # because it omits source-RPM mappings (hiding real RHEL advisories) and
+      # reports packages from superseded layers that are not in the final image.
+      - name: Download Syft container SBOM
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: trivy-container-results
-          path: sboms/trivy-container/
+          name: syft-container-sbom
+          path: sboms/syft-container/
 
       - name: Create output directory
         run: mkdir -p grype-results
@@ -714,10 +828,12 @@ jobs:
             -o sarif=grype-results/grype-fs.sarif \
             -o json=grype-results/grype-fs.json
 
-      - name: Scan Trivy container SBOM (trivy-container-sbom.cdx.json)
+      # Output filenames are unchanged (grype-container.*) so normalize_hdf and
+      # the downstream HDF/SAF steps keep working; only the INPUT changed (#873).
+      - name: Scan Syft container SBOM (syft-container-sbom.json)
         continue-on-error: true
         run: |
-          grype "sbom:sboms/trivy-container/trivy-container-sbom.cdx.json" \
+          grype "sbom:sboms/syft-container/syft-container-sbom.json" \
             --fail-on "${GRYPE_FAIL_ON}" \
             -o sarif=grype-results/grype-container.sarif \
             -o json=grype-results/grype-container.json
@@ -736,11 +852,15 @@ jobs:
           sarif_file: grype-results/grype-fs.sarif
           category: grype-sbom-trivy-fs
 
-      - name: Upload Trivy container SBOM SARIF to Code Scanning
+      - name: Upload container SBOM SARIF to Code Scanning
         if: always() && env.UPLOAD_TO_CODE_SCANNING == 'true' && hashFiles('grype-results/grype-container.sarif') != ''
         uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4
         with:
           sarif_file: grype-results/grype-container.sarif
+          # Category deliberately unchanged (#873). The SBOM behind it switched
+          # from Trivy to Syft, but reusing the category keeps Code Scanning
+          # resolving the previous alerts instead of orphaning them under a
+          # retired category while a new one opens duplicates.
           category: grype-sbom-trivy-container
 
       - name: Upload Grype artifacts
@@ -762,7 +882,7 @@ jobs:
           for sbom in \
             "sboms/ruby/sbom-ruby.cdx.json" \
             "sboms/trivy-fs/trivy-fs-sbom.cdx.json" \
-            "sboms/trivy-container/trivy-container-sbom.cdx.json"; do
+            "sboms/syft-container/syft-container-sbom.json"; do
             if [ -f "$sbom" ]; then
               if ! grype "sbom:$sbom" --fail-on "${GRYPE_FAIL_ON}" -o table > /dev/null 2>&1; then
                 echo "::error::Grype found ${GRYPE_FAIL_ON}+ vulnerabilities in $sbom"

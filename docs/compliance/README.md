@@ -134,6 +134,47 @@ evidence for these controls on every PR:
 All results are normalized to HDF via SAF CLI and enriched with OSCAL metadata
 from `.github/oscal-metadata.json`.
 
+### Which SBOM gates the build, and why (#873)
+
+Three SBOMs are produced, and they are **not interchangeable**:
+
+| SBOM | Producer | Used for |
+|---|---|---|
+| `sbom-ruby.cdx.json` | cdxgen | Ruby dependency scanning |
+| `trivy-container-sbom.cdx.json` | Trivy (CycloneDX) | **SAF/HDF pipeline and the license inventory** |
+| `syft-container-sbom.json` | Syft (syft-json) | **The Grype `--fail-on` gate** |
+
+The container **gate** consumes the **Syft** SBOM. Grype is Syft's sibling and
+reads its native format losslessly; a Syft SBOM of the image reproduces a direct
+`grype <image>` scan exactly — 207 findings each, zero delta in both directions
+when measured on the shipped image.
+
+The Trivy CycloneDX SBOM cannot drive the gate correctly, and was doing so until
+#873. Measured on the same image:
+
+- It conveys no `sourceRpm` mapping. Red Hat files advisories against the
+  **source** package (`sqlite-libs` ships from `sqlite`), so without it Grype
+  cannot map binary to source, falls back to CPE/NVD matching, and **117
+  findings — 18 of them Critical/High — become invisible to the gate**. Deleting
+  `metadata.sourceRpm` from a Syft SBOM reproduces exactly that loss, which is
+  what identifies it as the mechanism.
+- It also lists packages that are **not in the final image** — versions carried
+  by superseded layers — which surface as phantom findings, including
+  "Criticals" for gem versions the image does not contain.
+
+Trivy's SBOM is still generated and still feeds SAF/HDF and the license
+inventory, where its richer license metadata is the reason it exists. It simply
+no longer decides whether the build passes.
+
+A guard in `trivy_container_scan` fails the job if the Syft SBOM stops carrying
+`sourceRpm` mappings or a resolvable `distro` block, because the failure mode
+this fixes was **silent**: the gate stayed green while seeing under half the
+image, so the only symptom was an absence.
+
+> **Method trap.** Grype auto-discovers `.grype.yaml` from the working
+> directory. A stray one silently applies ignore rules and contaminates
+> measurements. Always pass `--config` explicitly and keep the CWD clean.
+
 ---
 
 ## Deviations (FedRAMP FP / RA / OR)
