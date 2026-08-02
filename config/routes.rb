@@ -662,7 +662,11 @@ Rails.application.routes.draw do
         resources :memberships, only: [ :index, :show, :create, :update, :destroy ],
                   controller: "authorization_boundary_memberships" do
           collection do
-            get :roles
+            # Explicit path => controller#action rather than a bare `get :roles`
+            # (Sonar rubydre:S7875): the inferred form relies on the enclosing
+            # `controller:` override to resolve, which is exactly the kind of
+            # action-at-a-distance that makes a route hard to follow.
+            get "roles", to: "authorization_boundary_memberships#roles"
           end
         end
         # KSI validation tracking (#107)
