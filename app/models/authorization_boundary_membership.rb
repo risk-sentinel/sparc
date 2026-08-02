@@ -61,8 +61,16 @@ class AuthorizationBoundaryMembership < ApplicationRecord
   # matches neither is a genuine custom role and is kept, not "corrected".
 
   # Form only: case, separators, punctuation. Never vocabulary.
+  #
+  # The trim is delete_prefix/delete_suffix rather than a /\A_+|_+\z/ gsub on
+  # purpose. `role` arrives from a request parameter, and that alternation
+  # backtracks polynomially on a long run of underscores — CodeQL rb/polynomial-redos,
+  # reachable by POSTing a role of many separator characters. It is also
+  # unnecessary: the gsub above collapses each run of non-alphanumerics to a
+  # SINGLE underscore, so at most one can be leading and one trailing. Linear,
+  # and byte-for-byte equivalent.
   def self.normalize_role(raw)
-    raw.to_s.strip.downcase.gsub(/[^[:alnum:]]+/, "_").gsub(/\A_+|_+\z/, "")
+    raw.to_s.strip.downcase.gsub(/[^[:alnum:]]+/, "_").delete_prefix("_").delete_suffix("_")
   end
 
   # Abbreviations that appear in no label verbatim, plus the "System Owner (SO)"

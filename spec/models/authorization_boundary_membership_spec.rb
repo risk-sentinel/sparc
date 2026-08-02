@@ -72,6 +72,26 @@ RSpec.describe AuthorizationBoundaryMembership, type: :model do
       expect(described_class.resolve_role("Security Champion")).to eq("security_champion")
     end
 
+    it "trims leading and trailing separators" do
+      expect(described_class.resolve_role("  --isso--  ")).to eq("isso")
+      expect(described_class.resolve_role("___")).to eq("")
+    end
+
+    # CodeQL flagged the previous /\A_+|_+\z/ trim as rb/polynomial-redos, and
+    # `role` does come from a request parameter. The pattern IS quadratic in
+    # isolation, but it was not reachable here: the preceding gsub collapses
+    # every run of non-alphanumerics to a SINGLE underscore, so its output can
+    # never hold the long underscore run the alternation would backtrack on.
+    # (Measured: the old code normalizes 50k separators in 0.03s.) The trim is
+    # delete_prefix/delete_suffix now — equivalent, linear, and it does not
+    # leave a flagged construct in the tree. This example pins the equivalence;
+    # a timing assertion would pass against both and prove nothing.
+    it "collapses any separator run to a single underscore, so the trim sees at most one" do
+      expect(described_class.normalize_role("a" + ("-" * 500) + "b")).to eq("a_b")
+      expect(described_class.normalize_role("-" * 500)).to eq("")
+      expect(described_class.normalize_role("--isso--")).to eq("isso")
+    end
+
     it "does not collapse a role that merely resembles a built-in one" do
       expect(described_class.resolve_role("Assessor / Independent")).to eq("assessor_independent")
       expect(described_class.resolve_role("Deputy AO")).to eq("deputy_ao")
