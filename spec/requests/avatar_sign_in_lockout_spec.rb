@@ -2,50 +2,48 @@
 
 require "rails_helper"
 
-# #857 — an invalid stored avatar used to make sign-in impossible.
+# #857 / #892 — an avatar that no longer satisfies the content-type rule used to
+# make an account unusable, and the failure surfaced as a 422 on login with
+# nothing pointing at an avatar.
 #
-# `record_sign_in!` saved the whole user on every successful authentication, so
-# every validation had to pass for a login to succeed. The model spec pins the
-# method; these pin the customer path — the actual login request — because that
-# is where the failure showed up (a 422 on POST /login, with nothing in the
-# response connecting it to an avatar rule).
+# Two faults combined into that:
 #
-# The third case is the one that keeps this fix honest: the upload gate must
-# still reject a bad avatar. It would be easy to "fix" the lockout by loosening
-# the rule, which would trade an outage for a hole.
-RSpec.describe "Sign-in with an invalid stored avatar (#857)", type: :request do
+#   #857  `record_sign_in!` saved the whole user on every authentication, so
+#         every validation had to pass for a login to succeed.
+#   #892  the avatar validator ran on EVERY save of a user who had one,
+#         re-reading the stored blob — and, at upload time, did not actually
+#         run at all.
+#
+# The scenario below is the one the issue warns about and the one that survives
+# both fixes: a stored avatar that was legitimate when uploaded and stops being
+# legitimate when the rule is tightened. Simulated with stub_const rather than
+# by writing a bad file, because after #892 a bad file cannot be attached.
+RSpec.describe "Sign-in with a stored avatar that fails the current rule (#857, #892)",
+               type: :request do
   let(:password) { "Initial-Pwd-1234" } # gitleaks:allow
   let(:user) do
     create(:user, password: password, password_confirmation: password,
                   must_reset_password: false, password_changed_at: Time.current)
   end
-
-  def attach_invalid_avatar(target)
-    # Attaching succeeds because the validator skips while the blob is not yet
-    # in the storage service; the record only becomes invalid afterwards. That
-    # asymmetry is the whole bug.
-    target.avatar.attach(
-      io: StringIO.new("definitely not an image"),
-      filename: "avatar.png",
-      content_type: "image/png"
-    )
-    target.reload
-  end
+  let(:real_image) { Rails.root.join("app/assets/images/sparc_admin.jpg") }
 
   before do
     allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
     allow(SparcConfig).to receive(:enable_local_login?).and_return(true)
   end
 
-  it "the stored avatar really does fail validation — the precondition" do
-    attach_invalid_avatar(user)
-
-    expect(user).not_to be_valid
-    expect(user.errors[:avatar].join).to match(/must be a PNG, JPG, GIF, or WebP image/)
+  def attach_then_tighten
+    skip "fixture image missing" unless File.exist?(real_image)
+    user.avatar.attach(io: File.open(real_image), filename: "sparc_admin.jpg",
+                       content_type: "image/jpeg")
+    user.reload
+    # The rule changes under the user's feet — a dropped format, a new size cap,
+    # a dimension requirement. Their stored avatar no longer qualifies.
+    stub_const("User::ALLOWED_AVATAR_MIME_TYPES", %w[image/gif])
   end
 
   it "signs in successfully" do
-    attach_invalid_avatar(user)
+    attach_then_tighten
 
     post login_path, params: { email: user.email, password: password }
 
@@ -55,7 +53,7 @@ RSpec.describe "Sign-in with an invalid stored avatar (#857)", type: :request do
   end
 
   it "still records the sign-in bookkeeping" do
-    attach_invalid_avatar(user)
+    attach_then_tighten
     user.update_columns(sign_in_count: 0)
 
     post login_path, params: { email: user.email, password: password }
@@ -64,6 +62,16 @@ RSpec.describe "Sign-in with an invalid stored avatar (#857)", type: :request do
     expect(user.last_sign_in_at).to be_present
   end
 
+  it "keeps the avatar — it is not silently purged to let the login through" do
+    attach_then_tighten
+
+    post login_path, params: { email: user.email, password: password }
+
+    expect(user.reload.avatar).to be_attached
+  end
+
+  # The fix must not become a hole. Loosening the rule would also have "fixed"
+  # the lockout, so the upload gate is re-asserted here.
   it "does not weaken the upload gate — a bad avatar is still refused" do
     sign_in_as(user)
 
@@ -73,5 +81,6 @@ RSpec.describe "Sign-in with an invalid stored avatar (#857)", type: :request do
     patch update_avatar_profile_path, params: { user: { avatar: bad } }
 
     expect(flash[:error]).to match(/must be a PNG, JPG, GIF, or WebP image/)
+    expect(user.reload.avatar).not_to be_attached
   end
 end
