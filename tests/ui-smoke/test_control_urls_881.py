@@ -18,7 +18,7 @@ import re
 
 import pytest
 
-from helpers import assert_no_csp_violations, record_csp
+from helpers import RESERVED_SEGMENTS, assert_no_csp_violations, record_csp
 
 CATALOGS = "/control_catalogs"
 
@@ -30,19 +30,33 @@ def _first_catalog_href(page) -> str | None:
         f"a[href*='{CATALOGS}/']", "els => els.map(e => e.getAttribute('href'))"
     )
     for href in hrefs:
-        # A catalog show URL, not a nested or collection route.
-        if re.fullmatch(rf"{CATALOGS}/[^/]+", href or ""):
+        # A catalog show URL, not a nested or collection route. RESERVED_SEGMENTS
+        # is the shared guard — /control_catalogs/import matches the shape of a
+        # show URL and is not one.
+        m = re.fullmatch(rf"{CATALOGS}/([^/?#]+)", (href or "").split("?")[0])
+        if m and m.group(1) not in RESERVED_SEGMENTS:
             return href
     return None
 
 
-def _first_family_href(page, catalog_href: str) -> str | None:
+def _family_with_controls(page, catalog_href: str) -> str | None:
+    """Return a family that actually HAS controls.
+
+    Taking the first family made the two most valuable checks skip with
+    "family has no controls" — a green run that exercised nothing. Walk until
+    one has controls instead of silently giving up on the first.
+    """
     page.goto(catalog_href)
     page.wait_for_load_state("networkidle")
     hrefs = page.eval_on_selector_all(
         "a[href*='control_families/']", "els => els.map(e => e.getAttribute('href'))"
     )
-    return hrefs[0] if hrefs else None
+    for href in dict.fromkeys(h for h in hrefs if h):
+        page.goto(href)
+        page.wait_for_load_state("networkidle")
+        if page.locator("a[href*='/controls/']").count() > 0:
+            return href
+    return None
 
 
 class TestControlUrls:
@@ -66,9 +80,9 @@ class TestControlUrls:
         catalog = _first_catalog_href(authed_page)
         if not catalog:
             pytest.skip("no catalogs seeded")
-        family = _first_family_href(authed_page, catalog)
+        family = _family_with_controls(authed_page, catalog)
         if not family:
-            pytest.skip("catalog has no families")
+            pytest.skip("no family in this catalog has controls")
 
         authed_page.goto(family)
         authed_page.wait_for_load_state("networkidle")
@@ -81,9 +95,9 @@ class TestControlUrls:
         catalog = _first_catalog_href(authed_page)
         if not catalog:
             pytest.skip("no catalogs seeded")
-        family = _first_family_href(authed_page, catalog)
+        family = _family_with_controls(authed_page, catalog)
         if not family:
-            pytest.skip("catalog has no families")
+            pytest.skip("no family in this catalog has controls")
 
         record_csp(authed_page)
         authed_page.goto(family)
@@ -95,6 +109,9 @@ class TestControlUrls:
 
         href = links.first.get_attribute("href")
         links.first.click()
+        # Turbo navigates by fetch, so networkidle can resolve before the URL
+        # changes. Wait for the navigation itself.
+        authed_page.wait_for_url("**/controls/**", timeout=10_000)
         authed_page.wait_for_load_state("networkidle")
 
         # The identifier must survive routing intact. If Rails ate a trailing
@@ -113,9 +130,9 @@ class TestControlUrls:
         catalog = _first_catalog_href(authed_page)
         if not catalog:
             pytest.skip("no catalogs seeded")
-        family = _first_family_href(authed_page, catalog)
+        family = _family_with_controls(authed_page, catalog)
         if not family:
-            pytest.skip("catalog has no families")
+            pytest.skip("no family in this catalog has controls")
 
         authed_page.goto(family)
         authed_page.wait_for_load_state("networkidle")
@@ -124,17 +141,25 @@ class TestControlUrls:
             pytest.skip("family has no controls")
 
         control_links.first.click()
+        authed_page.wait_for_url("**/controls/**", timeout=10_000)
         authed_page.wait_for_load_state("networkidle")
 
-        sub = authed_page.locator("a[href*='/controls/']")
+        # Sub-part links only; exclude the Edit affordance, which also matches.
+        sub = authed_page.locator("a[href*='/controls/']:not([href$='/edit'])")
         if sub.count() == 0:
             pytest.skip("this control has no sub-parts on the page")
 
         record_csp(authed_page)
+        target = sub.first.get_attribute("href")
         sub.first.click()
+        # Wait for THIS target: we are already on a /controls/ URL, so a glob
+        # would match instantly and the assertion would race the navigation.
+        authed_page.wait_for_url(f"**{target}", timeout=10_000)
         authed_page.wait_for_load_state("networkidle")
 
-        assert "/controls/" in authed_page.url
+        assert authed_page.url.endswith(target), (
+            f"sub-part link did not land where it pointed: {target} -> {authed_page.url}"
+        )
         body = authed_page.inner_text("body")
         assert "not found" not in body.lower(), "sub-part link resolved to an error page"
         assert_no_csp_violations(authed_page, during="sub-part navigation")
