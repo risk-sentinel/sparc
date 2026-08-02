@@ -148,5 +148,132 @@ RSpec.describe User, type: :model do
       expect(user.last_sign_in_at).to be_present
       expect(user.last_sign_in_ip).to eq("192.168.1.1")
     end
+
+    it "still bumps updated_at, as the update! it replaced did" do
+      user = create(:user)
+      user.update_columns(updated_at: 3.days.ago)
+
+      expect { user.record_sign_in!(ip_address: "10.0.0.1") }
+        .to(change { user.reload.updated_at })
+    end
+
+    # #857 — sign-in used to save the whole record, so EVERY validation had to
+    # pass for a login to succeed. The avatar rule is how this was found, but
+    # the coupling is the defect: a record invalid for a reason that has nothing
+    # to do with authentication must still be able to sign in.
+    #
+    # The example uses a service account whose owner has been nullified —
+    # ordinary data drift, and exactly the kind of record the API token bridge
+    # signs in. The avatar is no longer usable to demonstrate this because #892
+    # stopped the avatar rule from firing on unrelated saves at all.
+    context "when the record is invalid for an unrelated reason" do
+      let(:user) do
+        create(:user, sign_in_count: 0).tap do |u|
+          u.update_columns(service_account: true, owner_id: nil)
+          u.reload
+        end
+      end
+
+      it "the record really is invalid — the precondition this rests on" do
+        expect(user).not_to be_valid
+        expect(user.errors[:owner_id].join).to match(/required for service accounts/)
+      end
+
+      it "records the sign-in anyway" do
+        expect { user.record_sign_in!(ip_address: "192.168.1.1") }.not_to raise_error
+
+        user.reload
+        expect(user.sign_in_count).to eq(1)
+        expect(user.last_sign_in_ip).to eq("192.168.1.1")
+        expect(user.last_sign_in_at).to be_present
+      end
+
+      it "does not quietly repair the record to get there" do
+        user.record_sign_in!(ip_address: "192.168.1.1")
+
+        expect(user.reload.owner_id).to be_nil
+        expect(user).not_to be_valid
+      end
+    end
+  end
+
+  # #892 — the avatar validator used to run on EVERY save of a user who had an
+  # avatar, re-reading the blob out of storage to check something the save was
+  # not changing, and at upload time it did not actually run (the blob is not in
+  # the service yet, so its rescue fired). Both halves are fixed by validating
+  # the attachable being attached.
+  describe "avatar validation (#892)" do
+    let(:user) { create(:user) }
+    let(:real_image) { Rails.root.join("app/assets/images/sparc_admin.jpg") }
+
+    def attach_image(target, path)
+      target.avatar.attach(io: File.open(path), filename: File.basename(path),
+                           content_type: "image/jpeg")
+    end
+
+    describe "at attach time" do
+      it "refuses a non-image, on the console/API path with no controller involved" do
+        result = user.avatar.attach(
+          io: StringIO.new("definitely not an image"),
+          filename: "avatar.png",
+          content_type: "image/png" # a lie; the bytes are what count (#509)
+        )
+
+        expect(result).to be_falsey
+        expect(user.reload.avatar).not_to be_attached
+        expect(user.errors[:avatar].join).to match(/must be a PNG, JPG, GIF, or WebP image/)
+      end
+
+      it "accepts a real image" do
+        skip "fixture image missing" unless File.exist?(real_image)
+
+        expect(attach_image(user, real_image)).to be_truthy
+        expect(user.reload.avatar).to be_attached
+      end
+
+      it "uploads the file intact — the sniff rewinds what it reads" do
+        skip "fixture image missing" unless File.exist?(real_image)
+        attach_image(user, real_image)
+
+        expect(user.reload.avatar.blob.byte_size).to eq(File.size(real_image))
+      end
+    end
+
+    # The lockout, at its source. A stored avatar that no longer satisfies the
+    # rule — because the rule was tightened, or the file arrived by seed, import
+    # or restore — must not make the account unmanageable.
+    describe "when a stored avatar would no longer pass a tightened rule" do
+      let(:tightened) { %w[image/gif] } # jpeg no longer accepted
+
+      before do
+        skip "fixture image missing" unless File.exist?(real_image)
+        attach_image(user, real_image)
+        user.reload
+        stub_const("User::ALLOWED_AVATAR_MIME_TYPES", tightened)
+      end
+
+      it "the record is still valid — unrelated saves do not re-check the stored blob" do
+        expect(user).to be_valid
+      end
+
+      it "an administrator can still deactivate the account" do
+        expect { user.deactivate!(reason: "admin_action") }.not_to raise_error
+        expect(user.reload.status).to eq("deactivated")
+      end
+
+      it "can still be reactivated" do
+        user.deactivate!(reason: "admin_action")
+        expect { user.reactivate! }.not_to raise_error
+        expect(user.reload.status).to eq("active")
+      end
+
+      it "can still be issued a temporary password" do
+        expect { user.issue_temporary_password! }.not_to raise_error
+      end
+
+      it "can still have unrelated attributes updated" do
+        expect { user.update!(first_name: "Renamed") }.not_to raise_error
+      end
+    end
   end
 end
