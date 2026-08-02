@@ -308,7 +308,7 @@ Comma-separated lists overriding the built-in defaults. Set these **before** inv
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SPARC_ORGANIZATION_ROLES` | (built-in agency roles) | Role names available to organization members (plus the always-present "Org Admin") |
-| `SPARC_AUTH_BOUNDARY_ROLES` | (built-in ATO roles) | Role names available to authorization-boundary members |
+| `SPARC_AUTH_BOUNDARY_ROLES` | `authorizing_official, system_owner, ciso, isso, project_member, assessor, view_only` | Roles available to authorization-boundary members. Replaces the built-in list, so it can subset as well as extend. An entry may be a built-in key, a recognised label or abbreviation (`ISSO`, `AO`, `Team Member`, `Assessor / 3PAO` all resolve to their built-in role), or a new custom role; write `role:Label` to set the display label. Case and punctuation are ignored when matching, so `ISSO` and `isso` are the same role. The built-in roles stay valid on existing records even when the list narrows (#875) |
 | `SPARC_ENVIRONMENTS_LIST` | DEV, TEST, STAG, UAT, QA, PROD | Selectable environments for boundaries as `Name:CODE` pairs, e.g. `Development:DEV,Production:PROD` |
 
 ## OSCAL Organization Metadata
