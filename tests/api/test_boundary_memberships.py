@@ -23,7 +23,7 @@ import pytest
 
 from conftest import assert_error_envelope, assert_paginated_envelope
 
-pytestmark = [pytest.mark.boundaries, pytest.mark.phase1]
+pytestmark = [pytest.mark.boundaries, pytest.mark.phase2]
 
 BOUNDARIES = "/api/v1/authorization_boundaries"
 
@@ -148,7 +148,7 @@ class TestCreate:
 
         assert member["role"] == offered
 
-    @pytest.mark.negative
+    @pytest.mark.validation
     def test_rejects_a_role_outside_the_vocabulary(
         self, admin_client: httpx.Client, boundary: dict[str, Any]
     ) -> None:
@@ -163,7 +163,7 @@ class TestCreate:
         )
         assert_error_envelope(response, expected_status=422)
 
-    @pytest.mark.negative
+    @pytest.mark.validation
     def test_rejects_a_member_with_no_name(
         self, admin_client: httpx.Client, boundary: dict[str, Any]
     ) -> None:
@@ -224,7 +224,7 @@ class TestShowUpdateDestroy:
 
         assert admin_client.get(f"{_path(boundary)}/{member['id']}").status_code == 404
 
-    @pytest.mark.negative
+    @pytest.mark.authz
     def test_member_of_another_boundary_is_not_reachable(
         self, admin_client: httpx.Client, boundary: dict[str, Any]
     ) -> None:
@@ -239,7 +239,7 @@ class TestShowUpdateDestroy:
         finally:
             admin_client.delete(f"{BOUNDARIES}/{other_boundary['id']}")
 
-    @pytest.mark.auth
+    @pytest.mark.authz
     def test_non_admin_cannot_write(
         self, user_client: httpx.Client, admin_client: httpx.Client, boundary: dict[str, Any]
     ) -> None:
