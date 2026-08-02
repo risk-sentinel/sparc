@@ -354,6 +354,35 @@ Rails.application.routes.draw do
       end
     end
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
+
+    # #881 — the readable control URL:
+    #   /control_catalogs/nist-800-53-rev5/controls/ac-19.4.b.1
+    #
+    # Catalog-scoped rather than family-scoped: control_id is unique per family,
+    # but it already encodes its family, and (catalog, canonical_id) is unique —
+    # verified across all 4054 seeded controls. A family segment would be noise.
+    #
+    # `format: false` and the constraint are load-bearing, not decoration.
+    # Canonical ids contain dots (1478 of 2447 distinct ids do), and Rails would
+    # otherwise parse `/controls/ac-19.4.b.1` as id `ac-19.4.b` with format `1`.
+    # That does not raise — it silently resolves the PARENT control, i.e. the
+    # exact "stops before the sub-part" failure this issue is about.
+    # #881 — families are catalog-scoped and addressed by their code (`ac`),
+    # not a database id. Declared before the control routes so "control_families"
+    # is never swallowed by the `controls/:id` pattern.
+    get "control_families/:id", to: "control_families#show", as: :family,
+        constraints: { id: /[^\/]+/ }, format: false
+
+    get    "controls/:id/edit", to: "catalog_controls#edit",    as: :edit_control,
+           constraints: { id: /[^\/]+/ }, format: false
+    get    "controls/:id",      to: "catalog_controls#show",
+           constraints: { id: /[^\/]+/ }, format: false
+    patch  "controls/:id",      to: "catalog_controls#update",  as: :control,
+           constraints: { id: /[^\/]+/ }, format: false
+    put    "controls/:id",      to: "catalog_controls#update",
+           constraints: { id: /[^\/]+/ }, format: false
+    delete "controls/:id",      to: "catalog_controls#destroy",
+           constraints: { id: /[^\/]+/ }, format: false
   end
 
   resources :converters do

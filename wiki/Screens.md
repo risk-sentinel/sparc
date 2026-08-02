@@ -194,7 +194,7 @@ Summary tiles showing total catalogs, families, and controls. Table listing all 
 
 | | |
 |---|---|
-| **Route** | `GET /control_catalogs/:id` |
+| **Route** | `GET /control_catalogs/:uuid` — the OSCAL document uuid. The name-derived slug and the numeric id still resolve and 301 onto it (#881) |
 | **Controller** | `ControlCatalogsController#show` |
 | **Auth** | Public |
 
@@ -229,7 +229,7 @@ File upload form accepting JSON and XML catalog files for import.
 
 | | |
 |---|---|
-| **Routes** | `GET /control_families/:id`, `GET /control_families/:id/edit` |
+| **Routes** | `GET /control_catalogs/:uuid/control_families/:code` (e.g. `.../control_families/ac`), `GET /control_families/:id/edit`. The bare `GET /control_families/:id` 301s onto the catalog-scoped form (#881) |
 | **Controller** | `ControlFamiliesController#show`, `#edit` |
 | **Auth** | Public (show), Authenticated (edit) |
 
@@ -239,7 +239,7 @@ Family detail shows controls within the family. Edit form includes family code, 
 
 | | |
 |---|---|
-| **Routes** | `GET /catalog_controls/:id/edit` |
+| **Routes** | `GET /control_catalogs/:uuid/controls/:control_id` — a control's own page, new in #881. Also `.../controls/:control_id/edit`. `:control_id` is the canonical form (`ac-2`, `ac-1a`, `ac-19.4.b.1`); the legacy `GET /catalog_controls/:id[/edit]` 301s onto it |
 | **Controller** | `CatalogControlsController#edit` |
 | **Auth** | Authenticated |
 

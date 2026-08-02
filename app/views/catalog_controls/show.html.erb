@@ -1,0 +1,126 @@
+<%# #881 — a control's own page.
+    Controls were previously only visible inside the family aggregate, so there
+    was nothing to link to or cite, and statement sub-parts (48% of catalog
+    control rows) had no address at all. This is the control-specific view;
+    the catalog > family > control browsing experience stays where it is. %>
+
+<div class="container-fluid px-0">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to "Catalogs", control_catalogs_path %></li>
+      <li class="breadcrumb-item"><%= link_to @control_catalog.name, @control_catalog %></li>
+      <li class="breadcrumb-item"><%= link_to @control_family.code, control_catalog_family_path(@control_catalog.url_id, @control_family.code.downcase) %></li>
+      <li class="breadcrumb-item active" aria-current="page"><%= @catalog_control.display_id %></li>
+    </ol>
+  </nav>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-1"><%= @catalog_control.display_id %></h1>
+      <% if @catalog_control.title.present? %>
+        <p class="text-body-secondary mb-0"><%= @catalog_control.title %></p>
+      <% end %>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to "Back to #{@control_family.code}", control_catalog_family_path(@control_catalog.url_id, @control_family.code.downcase), class: "btn btn-secondary" %>
+      <% if can_write_catalogs? %>
+        <%= link_to "Edit", control_catalog_edit_control_path(@control_catalog.url_id, @catalog_control),
+              class: "btn btn-sparc-orange" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <% if @catalog_control.description.present? %>
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">Description</div>
+          <div class="card-body"><%= simple_format(@catalog_control.description) %></div>
+        </div>
+      <% end %>
+
+      <%# Catalog statement parts (#393) — the policy language itself,
+          read-only because it is authored by the catalog publisher. %>
+      <% if @catalog_control.catalog_control_parts.any? %>
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">Statement</div>
+          <div class="card-body">
+            <%= render "control_catalogs/parts_tree", control: @catalog_control %>
+          </div>
+        </div>
+      <% end %>
+
+      <% guidance = @catalog_control.guidance_fields %>
+      <% if @catalog_control.guidance_present? %>
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">Guidance</div>
+          <div class="card-body">
+            <% guidance.each do |field, value| %>
+              <% next if value.blank? %>
+              <h2 class="h6 text-uppercase text-body-secondary"><%= field.to_s.humanize %></h2>
+              <div class="mb-3"><%= simple_format(value.to_s) %></div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @sub_parts.any? %>
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">
+            Sub-parts <span class="badge bg-secondary"><%= @sub_parts.size %></span>
+          </div>
+          <ul class="list-group list-group-flush">
+            <% @sub_parts.each do |part| %>
+              <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                <%= link_to part.display_id, control_catalog_control_path(@control_catalog.url_id, part),
+                      class: "fw-semibold text-decoration-none" %>
+                <span class="text-body-secondary small text-end"><%= part.title %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header fw-semibold">Details</div>
+        <dl class="card-body mb-0">
+          <dt class="small text-body-secondary">Canonical identifier</dt>
+          <dd><code><%= @catalog_control.canonical_identifier %></code></dd>
+
+          <dt class="small text-body-secondary">Catalog</dt>
+          <dd><%= link_to @control_catalog.name, @control_catalog %></dd>
+
+          <dt class="small text-body-secondary">Family</dt>
+          <dd><%= link_to "#{@control_family.code} — #{@control_family.name}", control_catalog_family_path(@control_catalog.url_id, @control_family.code.downcase) %></dd>
+
+          <% if @catalog_control.baseline_levels.any? %>
+            <dt class="small text-body-secondary">Baselines</dt>
+            <dd>
+              <% @catalog_control.baseline_levels.each do |level| %>
+                <span class="badge bg-primary me-1"><%= level %></span>
+              <% end %>
+            </dd>
+          <% end %>
+
+          <% if @catalog_control.priority.present? %>
+            <dt class="small text-body-secondary">Priority</dt>
+            <dd><%= @catalog_control.priority %></dd>
+          <% end %>
+        </dl>
+      </div>
+
+      <% if @linked_resources.any? %>
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">Linked resources</div>
+          <ul class="list-group list-group-flush">
+            <% @linked_resources.each do |resource| %>
+              <li class="list-group-item"><%= resource.title %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

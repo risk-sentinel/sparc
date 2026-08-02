@@ -14,6 +14,8 @@ class ControlCatalogsController < ApplicationController
     :publish, :publish_check, :acknowledge_warnings, :revalidate,
     :submit_for_review, :approve, :reject
   ]
+  # Must run AFTER set_control_catalog — it needs the resolved record.
+  before_action :redirect_catalog_to_uuid, only: [ :show ]
   before_action :ensure_editable!, only: [ :update, :update_baseline, :bulk_update_baselines, :publish ]
   before_action :authorize_catalog_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :update_metadata, :revalidate,
@@ -345,8 +347,22 @@ class ControlCatalogsController < ApplicationController
       redirect_path: control_catalog_path(@control_catalog), label: "Catalog" }
   end
 
+  # #881 — the web canonical catalog URL is the uuid. Slug and numeric id still
+  # resolve (find_for_url) and are redirected here, so nothing already linked
+  # breaks and links converge instead of both forms persisting.
+  def redirect_catalog_to_uuid
+    return unless request.get?
+    return if @control_catalog.blank? || @control_catalog.oscal_uuid.blank?
+    return if params[:id] == @control_catalog.oscal_uuid
+
+    redirect_to control_catalog_path(@control_catalog.url_id), status: :moved_permanently
+  end
+
   def set_control_catalog
-    @control_catalog = ControlCatalog.find_by!(slug: params[:id])
+    # #881 — uuid is the canonical identifier; slug and numeric id still resolve
+    # so nothing already linked breaks.
+    @control_catalog = ControlCatalog.find_for_url(params[:id]) ||
+                       raise(ActiveRecord::RecordNotFound)
   rescue ActiveRecord::RecordNotFound
     # Shell record may have been destroyed by the background job during
     # a re-import (UUID conflict). Fall back to the catalog index.

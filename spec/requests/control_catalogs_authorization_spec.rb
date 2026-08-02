@@ -46,7 +46,10 @@ RSpec.describe "Catalog Authorization", type: :request do
 
       it "allows viewer to access show" do
         sign_in_as(viewer_user)
+        # #881 — the slug 301s onto the canonical uuid URL; read access itself
+        # is unchanged, which is what this example is about.
         get control_catalog_path(catalog)
+        follow_redirect! while response.status == 301
         expect(response).to have_http_status(:ok)
       end
     end
@@ -103,7 +106,9 @@ RSpec.describe "Catalog Authorization", type: :request do
   describe "ControlFamiliesController" do
     it "allows viewer to access show" do
       sign_in_as(viewer_user)
+      # #881 — the numeric family URL 301s onto the catalog-scoped one.
       get control_family_path(family)
+      follow_redirect! while response.status == 301
       expect(response).to have_http_status(:ok)
     end
 
