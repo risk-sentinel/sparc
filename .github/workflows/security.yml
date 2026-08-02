@@ -565,7 +565,8 @@ jobs:
           upload-release-assets: false
 
       - name: Summarise the SBOM
-        run: jq '{artifacts: (.artifacts | length)}' syft-container-sbom.json
+        run: |
+          jq '{artifacts: (.artifacts | length)}' syft-container-sbom.json
 
       # The regression guard for #873. The blindness was silent — the gate went
       # green while seeing under half the image — so the only symptom was an
