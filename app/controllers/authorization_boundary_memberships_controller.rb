@@ -67,10 +67,14 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
     @personnel = @authorization_boundary.personnel_roster
   end
 
+  # #875 — permit the role and let the model decide. The old hand-rolled
+  # allowlist checked against the DISPLAY list while the enum enforced its own
+  # keys, and the two disagreed: a configured label passed the check and then
+  # raised ArgumentError inside the enum — the 500 this issue reports. It also
+  # dropped an unrecognised value silently, so the operator was told "Role can't
+  # be blank" about a role they had plainly selected. The model now resolves and
+  # validates in one place, and says which part is wrong.
   def membership_params
-    permitted = params.require(:authorization_boundary_membership).permit(:user_name, :user_email)
-    role = params.dig(:authorization_boundary_membership, :role)
-    permitted[:role] = role if role.present? && AuthorizationBoundaryMembership.available_roles.include?(role)
-    permitted
+    params.require(:authorization_boundary_membership).permit(:user_name, :user_email, :role)
   end
 end
