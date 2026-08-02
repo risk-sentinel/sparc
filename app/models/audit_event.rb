@@ -216,6 +216,9 @@ class AuditEvent < ApplicationRecord
     api_authorization_boundary_created
     api_authorization_boundary_updated
     api_authorization_boundary_deleted
+    api_authorization_boundary_membership_created
+    api_authorization_boundary_membership_updated
+    api_authorization_boundary_membership_deleted
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }
@@ -241,6 +244,9 @@ class AuditEvent < ApplicationRecord
     "Auth Boundary Members" => %w[authorization_boundary_member_added authorization_boundary_member_removed
                                   authorization_boundary_membership_created authorization_boundary_membership_updated
                                   authorization_boundary_membership_deleted
+                                  api_authorization_boundary_membership_created
+                                  api_authorization_boundary_membership_updated
+                                  api_authorization_boundary_membership_deleted
                                   project_member_added project_member_removed
                                   project_membership_created project_membership_updated
                                   project_membership_deleted],

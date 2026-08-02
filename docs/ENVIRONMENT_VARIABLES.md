@@ -505,13 +505,21 @@ needs a custom title set (e.g., agency-specific role names).
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
 | SPARC_ORGANIZATION_ROLES | Comma-separated list of role names available to organization members (in addition to the always-present "Org Admin" system role) | Head of Agency, Senior Accountable Official, CIO, CISO, Risk Executive, Chief Acquisition Officer, Senior Agency Official for Privacy, Member | `Director, Officer, Member` | No |
-| SPARC_AUTH_BOUNDARY_ROLES | Comma-separated list of role names available to authorization-boundary members | Assessor / 3PAO, Authorizing Official (AO), CISO, ISSO, Team Member, System Owner (SO), View Only | `Assessor, AO, ISSO, Owner, Viewer` | No |
+| SPARC_AUTH_BOUNDARY_ROLES | Comma-separated roles available to authorization-boundary members, replacing the built-in list (so it can subset as well as extend). Each entry is a built-in role key, a recognised label or abbreviation (`ISSO`, `AO`, `Team Member`, `Assessor / 3PAO` all resolve), or a new custom role. Write `role:Label` to set the display label. Matching ignores case and punctuation, so `ISSO` and `isso` are one role (#875) | `authorizing_official, system_owner, ciso, isso, project_member, assessor, view_only` | `isso, system_owner, security_champion:Security Champion` | No |
 | SPARC_ENVIRONMENTS_LIST | Selectable deployment environments for boundaries, as comma-separated `Name:CODE` pairs. A missing `:CODE` defaults to the name. The stored value is the name slug, so the legacy set (production/development/staging/test) round-trips (#770) | Development (DEV), Test (TEST), Staging (STAG), User Acceptance Testing (UAT), Quality Assurance (QA), Production (PROD) | `Sandbox:SBX, Production:PROD` | No |
 
 > Set these BEFORE inviting members — existing role assignments are not
 > automatically migrated to a new role list. Removing a role name that
 > users already hold leaves them with the removed-role label until an
-> admin reassigns them.
+> admin reassigns them; those members stay editable, and the role is
+> still accepted on records that already hold it, but it no longer
+> appears in the dropdown for new assignments (#875).
+>
+> The seven built-in authorization-boundary keys are `authorizing_official`,
+> `system_owner`, `ciso`, `isso`, `project_member`, `assessor` and
+> `view_only`. They are always accepted on save even when
+> `SPARC_AUTH_BOUNDARY_ROLES` narrows what the dropdown offers, so
+> subsetting the list can never strand an existing member.
 
 ---
 

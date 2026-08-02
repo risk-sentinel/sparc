@@ -274,9 +274,19 @@ module SparcConfig
     roles.presence || OrganizationMembership::DEFAULT_ROLES
   end
 
-  def auth_boundary_roles
-    roles = ENV.fetch("SPARC_AUTH_BOUNDARY_ROLES", "").split(",").map(&:strip).reject(&:blank?)
-    roles.presence || AuthorizationBoundaryMembership::DEFAULT_ROLES
+  # #875 — the raw configured entries for authorization-boundary memberships.
+  # Comma-separated; each entry is a role key, a recognised label/abbreviation,
+  # or a custom role, optionally written as "role:Label" to set the display
+  # label (the same pair convention as SPARC_ENVIRONMENTS_LIST below).
+  #
+  # Returns [{ raw:, label: }] and deliberately does NOT resolve or validate:
+  # AuthorizationBoundaryMembership owns the role vocabulary. Callers wanting
+  # the usable list want `AuthorizationBoundaryMembership.available_roles`.
+  def auth_boundary_role_entries
+    ENV.fetch("SPARC_AUTH_BOUNDARY_ROLES", "").split(",").map(&:strip).reject(&:blank?).map do |entry|
+      raw, label = entry.split(":", 2).map(&:strip)
+      { raw: raw, label: label.presence }
+    end
   end
 
   # ── Environments (#770) ──────────────────────────────────────────────────

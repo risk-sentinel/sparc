@@ -655,6 +655,20 @@ Rails.application.routes.draw do
           # #629 — admin-only bulk delete; ids[] body, partial-success result.
           delete "bulk", to: "authorization_boundaries#bulk_destroy"
         end
+        # Legacy personnel roster entries (#875). The UI could add, edit and
+        # remove boundary members with no API equivalent — the one mutation
+        # path that was UI-only. `roles` reports the configured vocabulary so a
+        # client does not have to guess what the enum will accept.
+        resources :memberships, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "authorization_boundary_memberships" do
+          collection do
+            # Explicit path => controller#action rather than a bare `get :roles`
+            # (Sonar rubydre:S7875): the inferred form relies on the enclosing
+            # `controller:` override to resolve, which is exactly the kind of
+            # action-at-a-distance that makes a route hard to follow.
+            get "roles", to: "authorization_boundary_memberships#roles"
+          end
+        end
         # KSI validation tracking (#107)
         resources :ksi_validations, only: [ :index, :show, :create, :update, :destroy ] do
           collection do

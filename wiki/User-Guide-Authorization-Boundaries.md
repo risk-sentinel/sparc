@@ -79,6 +79,14 @@ authorization boundary.
    they can do *within this boundary* — see [RBAC](RBAC)).
 4. Save. Use the same section to **edit** a member's role or **remove** them.
 
+The dropdown offers seven built-in roles — Authorizing Official (AO), System
+Owner (SO/ISO), CISO, ISSO, Team Member, Assessor / 3PAO and View Only. An
+operator can narrow that list or add roles of their own with
+`SPARC_AUTH_BOUNDARY_ROLES` ([Configuration](Configuration)), so what you see may
+differ from the defaults. If a role is later removed from that setting, members
+already holding it keep it and stay editable — it simply stops being offered for
+new assignments.
+
 ## How to record a leveraged authorization
 
 Use this when your system inherits controls from an underlying authorized system

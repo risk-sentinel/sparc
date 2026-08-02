@@ -109,6 +109,12 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `GET` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#show` | yes | yes | yes |
 | `PATCH/PUT` | `/api/v1/authorization_boundaries/:id` | `authorization_boundaries#update` | yes | yes | yes |
 | `DELETE` | `/api/v1/authorization_boundaries/bulk` | `authorization_boundaries#bulk_destroy` | yes | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships` | `authorization_boundary_memberships#index` | yes | no | yes |
+| `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships` | `authorization_boundary_memberships#create` | yes | no | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/roles` | `authorization_boundary_memberships#roles` | yes | no | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#show` | yes | no | yes |
+| `PATCH/PUT` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#update` | yes | no | yes |
+| `DELETE` | `/api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id` | `authorization_boundary_memberships#destroy` | yes | no | yes |
 | `GET` | `/api/v1/back_matter_resources` | `back_matter_resources#index` | yes | yes | yes |
 | `POST` | `/api/v1/back_matter_resources` | `back_matter_resources#create` | yes | yes | yes |
 | `DELETE` | `/api/v1/back_matter_resources/:id` | `back_matter_resources#destroy` | yes | yes | yes |

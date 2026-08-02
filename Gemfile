@@ -93,8 +93,26 @@ gem "kamal", require: false
 # use, so it's dropped. Re-add if an in-container HTTP/2 + X-Sendfile proxy is
 # ever needed without an external proxy in front.
 
-# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 2.0"
+# Active Storage variants: NOT USED, and the gem is deliberately absent.
+#
+# SPARC attaches files (evidence, document uploads, the admin avatar) but never
+# derives images from them — there is no `.variant`, `.representation` or
+# `.preview` call anywhere in app/, and the avatar renders the original blob via
+# `image_tag user.avatar`. The gem was vestigial.
+#
+# Removing it is what makes Rails 8.1.3.1 bootable. The CVE-2026-66066 patch
+# hardens Active Storage by disabling libvips' untrusted image loaders AT BOOT,
+# which reaches for `ImageProcessing::Vips` -> `ruby-vips` -> libvips. Those were
+# never in the Gemfile or the image, so with `image_processing` present the app
+# aborts in config/environment.rb before serving anything — in every
+# environment, not only under CI's eager loading.
+#
+# The alternative was adding ruby-vips plus libvips >= 8.13 to the UBI9 image:
+# a native dependency, a larger CVE surface, and a hard version floor, all to
+# support a feature nothing calls. If image derivatives are ever wanted, add
+# `image_processing` AND `ruby-vips` together, ensure libvips >= 8.13 is in the
+# image, and review `config.active_storage.variable_content_types` — the CVE
+# advisory notes BMP/ICO/PSD handling breaks under the hardened loaders.
 
 # #784 — render the in-app User Guides (Help Center) from the wiki Markdown
 # sources at request time. kramdown + its GFM parser are PURE RUBY (no native
