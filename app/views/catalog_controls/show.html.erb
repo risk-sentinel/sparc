@@ -8,7 +8,7 @@
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><%= link_to "Catalogs", control_catalogs_path %></li>
-      <li class="breadcrumb-item"><%= link_to @control_catalog.name, @control_catalog %></li>
+      <li class="breadcrumb-item"><%= link_to h(@control_catalog.name), @control_catalog %></li>
       <li class="breadcrumb-item"><%= link_to @control_family.code, control_catalog_family_path(@control_catalog.url_id, @control_family.code.downcase) %></li>
       <li class="breadcrumb-item active" aria-current="page"><%= @catalog_control.display_id %></li>
     </ol>
@@ -90,7 +90,7 @@
           <dd><code><%= @catalog_control.canonical_identifier %></code></dd>
 
           <dt class="small text-body-secondary">Catalog</dt>
-          <dd><%= link_to @control_catalog.name, @control_catalog %></dd>
+          <dd><%= link_to h(@control_catalog.name), @control_catalog %></dd>
 
           <dt class="small text-body-secondary">Family</dt>
           <dd><%= link_to "#{@control_family.code} — #{@control_family.name}", control_catalog_family_path(@control_catalog.url_id, @control_family.code.downcase) %></dd>
