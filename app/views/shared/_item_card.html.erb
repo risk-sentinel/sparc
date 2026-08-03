@@ -1,0 +1,84 @@
+<%#
+  Generic item card (#887, pilot for #888).
+
+  Nothing here knows what a component definition is — that is the point. #888
+  rolls this out across every collection screen, so the contract is a set of
+  slots any resource can fill, and anything a caller omits simply does not
+  render rather than leaving a hole.
+
+  The card is NOT itself a link. Exactly one link — the title — is focusable,
+  so keyboard users get one stop per card instead of a nested-interactive
+  element that screen readers announce as a single unreadable blob.
+
+  Locals (all optional except title/url):
+    title      — String
+    url        — where the title links
+    badges     — [{ text:, class: }]         top-right, e.g. source/status
+    description— String, clamped to 2 lines in CSS (full text stays in the DOM)
+    metrics    — [{ value:, label: }]        the numbers worth comparing
+    chips      — [{ text:, class:, title: }] applicability / capability
+    empty_note — String shown when there is nothing to assert
+    footer     — String or safe HTML
+    actions    — safe HTML, right side of the footer
+%>
+<article class="sparc-item-card">
+  <div class="sparc-item-card__head">
+    <h3 class="sparc-item-card__title">
+      <%= link_to local_assigns[:title], local_assigns[:url] %>
+    </h3>
+    <% if local_assigns[:badges].present? %>
+      <div class="sparc-item-card__chips">
+        <% Array(local_assigns[:badges]).each do |badge| %>
+          <span class="<%= badge[:class].presence || "badge bg-secondary" %>"><%= badge[:text] %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Names what the item contains when the title cannot — an upstream OSCAL
+      filename says nothing about the services inside it. %>
+  <% if local_assigns[:subtitle].present? %>
+    <p class="sparc-item-card__subtitle"><%= local_assigns[:subtitle] %></p>
+  <% end %>
+
+  <% if local_assigns[:description].present? %>
+    <%# clamp: false on a detail page, where there is one card and no reason to
+        hide prose the reader came for. %>
+    <p class="sparc-item-card__desc <%= "sparc-item-card__desc--full" unless local_assigns.fetch(:clamp, true) %>">
+      <%= local_assigns[:description] %>
+    </p>
+  <% end %>
+
+  <% if local_assigns[:metrics].present? %>
+    <div class="sparc-item-card__metrics">
+      <% Array(local_assigns[:metrics]).each do |metric| %>
+        <div class="sparc-item-card__metric">
+          <strong><%= metric[:value] %></strong>
+          <span><%= metric[:label] %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if local_assigns[:chips].present? %>
+    <div class="sparc-item-card__chips">
+      <% Array(local_assigns[:chips]).each do |chip| %>
+        <%# tag helper rather than interpolating an attribute string: `title`
+            is caller-supplied and must be escaped as an attribute, not spliced
+            in as raw HTML. %>
+        <%= tag.span chip[:text], class: "sparc-chip #{chip[:class]}", title: chip[:title].presence %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if local_assigns[:empty_note].present? %>
+    <p class="sparc-item-card__empty"><%= local_assigns[:empty_note] %></p>
+  <% end %>
+
+  <% if local_assigns[:footer].present? || local_assigns[:actions].present? %>
+    <div class="sparc-item-card__foot">
+      <span class="small text-body-secondary"><%= local_assigns[:footer] %></span>
+      <%= local_assigns[:actions] %>
+    </div>
+  <% end %>
+</article>
