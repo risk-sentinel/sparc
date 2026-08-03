@@ -578,6 +578,11 @@ Rails.application.routes.draw do
 
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do
+        # #895 — catalog CONTENTS. The catalog container had a full API while
+        # its families and controls had none. Families are addressed by code
+        # (`ac`), scoped to the catalog, matching the web routes from #881.
+        resources :control_families, only: [ :index, :show, :create, :update, :destroy ],
+                  param: :id, constraints: { id: /[^\/]+/ }
         member do
           # #630/#631 — review/approval workflow.
           post :submit_for_review, to: "control_catalogs#submit_for_review"

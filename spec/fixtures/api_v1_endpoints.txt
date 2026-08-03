@@ -9,6 +9,7 @@ DELETE /api/v1/back_matter_resources/:id
 DELETE /api/v1/back_matter_resources/:id/unlink
 DELETE /api/v1/cdef_documents/:id
 DELETE /api/v1/cdef_documents/bulk
+DELETE /api/v1/control_catalogs/:control_catalog_id/control_families/:id
 DELETE /api/v1/control_catalogs/:id
 DELETE /api/v1/control_mappings/:id
 DELETE /api/v1/evidences/:evidence_id/attestations/:id
@@ -51,6 +52,8 @@ GET /api/v1/back_matter_resources/promotion_queue
 GET /api/v1/cdef_documents
 GET /api/v1/cdef_documents/:id
 GET /api/v1/control_catalogs
+GET /api/v1/control_catalogs/:control_catalog_id/control_families
+GET /api/v1/control_catalogs/:control_catalog_id/control_families/:id
 GET /api/v1/control_catalogs/:id
 GET /api/v1/control_mappings
 GET /api/v1/control_mappings/:id
@@ -95,6 +98,7 @@ PATCH /api/v1/authorization_boundaries/:id
 PATCH /api/v1/authorization_boundaries/:id/organization
 PATCH /api/v1/back_matter_resources/:id
 PATCH /api/v1/cdef_documents/:id
+PATCH /api/v1/control_catalogs/:control_catalog_id/control_families/:id
 PATCH /api/v1/control_catalogs/:id
 PATCH /api/v1/control_mappings/:id
 PATCH /api/v1/evidences/:id
@@ -133,6 +137,7 @@ POST /api/v1/cdef_documents/:id/populate_from_profile
 POST /api/v1/cdef_documents/:id/reject
 POST /api/v1/cdef_documents/:id/submit_for_review
 POST /api/v1/control_catalogs
+POST /api/v1/control_catalogs/:control_catalog_id/control_families
 POST /api/v1/control_catalogs/:id/approve
 POST /api/v1/control_catalogs/:id/reject
 POST /api/v1/control_catalogs/:id/submit_for_review
@@ -180,6 +185,7 @@ PUT /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PUT /api/v1/authorization_boundaries/:id
 PUT /api/v1/back_matter_resources/:id
 PUT /api/v1/cdef_documents/:id
+PUT /api/v1/control_catalogs/:control_catalog_id/control_families/:id
 PUT /api/v1/control_catalogs/:id
 PUT /api/v1/control_mappings/:id
 PUT /api/v1/evidences/:id
