@@ -190,5 +190,7 @@
   <% else %>
     <p class="text-center p-4 text-body-secondary">No component definitions found. Upload your first CDEF to get started.</p>
   <% end %>
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "component definitions" %>
+
   </div>
 </div>

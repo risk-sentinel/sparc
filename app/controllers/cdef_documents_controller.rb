@@ -1,4 +1,5 @@
 class CdefDocumentsController < ApplicationController
+  include CollectionViewable
   include FileUploadable
   include Publishable
   include OscalExportable
@@ -39,12 +40,14 @@ class CdefDocumentsController < ApplicationController
     # #887 — view mode lives in the URL rather than in client state, so a
     # chosen view is shareable, survives a reload, round-trips with the active
     # search, and works with JavaScript disabled.
-    @view_mode = params[:view].to_s == "card" ? :card : :list
+    @view_mode = resolve_view_mode(:cdef_documents)
 
     # Roll the component index up only for the rows actually being rendered.
     # Cards show document-level applicability, but the facts are per component,
     # and summarising the whole table to draw one page would not hold up.
-    @component_summaries = CdefComponent.summary_for(@cdef_documents.map(&:id)) if @view_mode == :card
+    # #888 — paginate before summarising, so the roll-up only touches the page.
+    @pagy, @cdef_documents = paginate_collection(@cdef_documents)
+    @component_summaries = CdefComponent.summary_for(@cdef_documents.map(&:id))
   end
 
   def show

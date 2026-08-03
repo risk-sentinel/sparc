@@ -1,0 +1,41 @@
+<%#
+  Shared pagination for collection screens (#888).
+
+  Ships with the shared view component rather than after it: cards default
+  everywhere, a card costs far more to render than a table row, and defaulting
+  to cards without pagination would regress every large collection at once.
+
+  Pagy's nav emits its own links, which carry the existing query string — so
+  view mode, search and filters survive a page change.
+
+  §3 requires the result count to be announced to assistive tech when filters
+  change; `aria-live="polite"` on the count does that without stealing focus.
+  The count is rendered even on a single page, because "12 results" after a
+  search is the feedback, not the page links.
+
+  Locals:
+    pagy  — the Pagy object
+    label — plural noun for the collection, e.g. "component definitions"
+%>
+<% pagy = local_assigns[:pagy] %>
+<% label = local_assigns.fetch(:label, "results") %>
+
+<% if pagy %>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+    <p class="small text-body-secondary mb-0" aria-live="polite" role="status">
+      <% if pagy.count.zero? %>
+        No <%= label %> match the current filters.
+      <% elsif pagy.pages > 1 %>
+        <%= pagy.from %>–<%= pagy.to %> of <%= pagy.count %> <%= label %>
+      <% else %>
+        <%= pagy.count %> <%= label %>
+      <% end %>
+    </p>
+
+    <% if pagy.pages > 1 %>
+      <nav aria-label="<%= label.capitalize %> pages">
+        <%== pagy.series_nav %>
+      </nav>
+    <% end %>
+  </div>
+<% end %>
