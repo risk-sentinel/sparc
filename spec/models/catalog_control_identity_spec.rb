@@ -96,6 +96,23 @@ RSpec.describe CatalogControl, type: :model do
     it "prefers the uuid — it is the stable identity" do
       expect(catalog.url_id).to eq(catalog.oscal_uuid)
     end
+
+    # oscal_uuid is taken verbatim from an uploaded OSCAL document and has no
+    # format validation, so it is attacker-influenced input that reaches an
+    # href. CodeQL flagged exactly this (rb/stored-xss).
+    it "refuses a malformed oscal_uuid in a URL and falls back to the slug" do
+      catalog.update_column(:oscal_uuid, "javascript:alert(1)")
+
+      expect(catalog.reload.url_id).to eq(catalog.slug)
+      expect(catalog.url_id).not_to include("javascript:")
+    end
+
+    it "keeps a hostile catalog NAME out of the URL — the slug is parameterized" do
+      hostile = create(:control_catalog, name: %q{<script>alert(1)</script> & "quoted"})
+
+      expect(hostile.slug).to match(/\A[a-z0-9\-_]+\z/)
+      expect(hostile.url_id).to match(/\A[a-z0-9\-_]+\z/).or match(ControlCatalog::UUID_FORMAT)
+    end
   end
 
   # The backfill runs post-boot via DeferredDataMigrationJob, so a deploy can

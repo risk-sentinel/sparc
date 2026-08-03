@@ -42,7 +42,16 @@ class ControlCatalog < ApplicationRecord
   # than one Rev 5 (5.1.0, 5.2.0, the 800-53A variant, org-tailored copies), and
   # a label collapses them. The uuid pins the exact source document, which is
   # the thing a control reference has to be traceable to.
-  def url_id = oscal_uuid.presence || slug
+  # Only a well-formed uuid may reach a URL. `oscal_uuid` is taken verbatim from
+  # an UPLOADED OSCAL document and carries no format validation — just a
+  # uniqueness index — so it is attacker-influenced input, and CodeQL was right
+  # to flag it reaching an href (rb/stored-xss). `slug` is safe by construction:
+  # Sluggable derives it with `source.parameterize`, which yields [a-z0-9\-_].
+  UUID_FORMAT = /\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\z/
+
+  def url_id
+    oscal_uuid.to_s.match?(UUID_FORMAT) ? oscal_uuid : slug
+  end
   # NOTE: `to_param` is deliberately NOT overridden. Doing so switched every
   # catalog URL app-wide to the uuid — including `/api/v1/control_catalogs/:id`,
   # whose identifier is a published contract. The web canonical URL is the uuid
