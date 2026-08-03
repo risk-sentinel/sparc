@@ -28,7 +28,7 @@ gem "activerecord-import"           # Bulk imports
 gem "caxlsx", "~> 4.5"             # Excel .xlsx generation
 gem "pagy", "~> 43.6"              # Pagination
 gem "sidekiq"                       # Background jobs
-gem "redis", "~> 5.0"              # For Sidekiq
+gem "redis", "~> 6.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
 gem "aws-sdk-secretsmanager", "~> 1.134"  # Secrets Manager (ECS deployments)
 gem "aws-sdk-rds", "~> 1.319"           # IAM DB auth token generation
