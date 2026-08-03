@@ -2,6 +2,14 @@ Rails.application.routes.draw do
   # UUID (8-4-4-4-12 hex) constraint shared by the artifact resolver routes (#680).
   uuid_constraint = /[0-9a-fA-F-]{36}/
 
+  # #881 — the catalog-scoped control member path, and the options that make it
+  # work. `format: false` plus the constraint are load-bearing: canonical
+  # control ids contain dots (1478 of 2447 distinct ids), and Rails would
+  # otherwise read `/controls/ac-19.4.b.1` as id `ac-19.4.b` with format `1`,
+  # silently resolving the PARENT control.
+  control_member       = "controls/:id"
+  control_member_opts  = { constraints: { id: /[^\/]+/ }, format: false }
+
   root "home#index"
   get "oscal-overview", to: "home#oscal_overview", as: :oscal_overview
   get "about",          to: "about#index",         as: :about
@@ -354,6 +362,30 @@ Rails.application.routes.draw do
       end
     end
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
+
+    # #881 — the readable control URL:
+    #   /control_catalogs/nist-800-53-rev5/controls/ac-19.4.b.1
+    #
+    # Catalog-scoped rather than family-scoped: control_id is unique per family,
+    # but it already encodes its family, and (catalog, canonical_id) is unique —
+    # verified across all 4054 seeded controls. A family segment would be noise.
+    #
+    # `format: false` and the constraint are load-bearing, not decoration.
+    # Canonical ids contain dots (1478 of 2447 distinct ids do), and Rails would
+    # otherwise parse `/controls/ac-19.4.b.1` as id `ac-19.4.b` with format `1`.
+    # That does not raise — it silently resolves the PARENT control, i.e. the
+    # exact "stops before the sub-part" failure this issue is about.
+    # #881 — families are catalog-scoped and addressed by their code (`ac`),
+    # not a database id. Declared before the control routes so "control_families"
+    # is never swallowed by the `controls/:id` pattern.
+    get "control_families/:id", to: "control_families#show", as: :family,
+        constraints: { id: /[^\/]+/ }, format: false
+
+    get    "#{control_member}/edit", to: "catalog_controls#edit",   **control_member_opts, as: :edit_control
+    get    control_member,           to: "catalog_controls#show",   **control_member_opts
+    patch  control_member,           to: "catalog_controls#update", **control_member_opts, as: :control
+    put    control_member,           to: "catalog_controls#update", **control_member_opts
+    delete control_member,           to: "catalog_controls#destroy", **control_member_opts
   end
 
   resources :converters do

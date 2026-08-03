@@ -245,7 +245,7 @@ class ProfileDocumentsController < ApplicationController
   end
 
   def create_from_catalog
-    catalog = ControlCatalog.find_by!(slug: params[:catalog_id])
+    catalog = ControlCatalog.find_for_url(params[:catalog_id]) || raise(ActiveRecord::RecordNotFound)
     control_ids = Array(params[:control_ids]).reject(&:blank?)
 
     if control_ids.empty?

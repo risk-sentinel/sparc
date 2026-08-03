@@ -22,6 +22,91 @@ class CatalogControl < ApplicationRecord
 
   validates :control_id, presence: true, uniqueness: { scope: :control_family_id }
 
+  # ── URL identity (#881) ───────────────────────────────────────────────────
+  #
+  # `canonical_id` is the LOOKUP KEY behind
+  # `/control_catalogs/<slug>/controls/ac-19.4.b.1`. It stores
+  # `ControlId.canonical(control_id)` — the same form #852 established and every
+  # OSCAL exporter already writes as `control-id`, so the URL agrees with the
+  # artefact instead of inventing a second identity.
+  #
+  # It is not a new identity and nothing outside routing/lookup should read it;
+  # callers wanting the canonical form keep calling ControlId.canonical.
+  #
+  # Statement sub-parts are first-class rows here (1936 of 4054 in the seeded
+  # catalogs), so they need identifiers too — which is what makes the canonical
+  # form necessary rather than cosmetic: `ac-19.4.(b).(1)` is not usable in a
+  # path, `ac-19.4.b.1` is.
+  before_validation :assign_canonical_id
+
+  # The value to put in a URL. Falls back to computing it so links resolve
+  # during the window between the schema migration and the deferred backfill
+  # (20260802140100), and for any row written by a path that skipped callbacks.
+  def canonical_identifier
+    canonical_id.presence || ControlId.canonical(control_id)
+  end
+
+  # ── Control hierarchy (#881) ──────────────────────────────────────────────
+  #
+  # OSCAL control ids encode their own tree: `ac-1` has statement parts `ac-1a`,
+  # `ac-1a.1` and enhancement `ac-1.1`. A naive prefix match is WRONG — `ac-10`
+  # also starts with `ac-1` and is a completely separate control. The rule is
+  # that a descendant's remainder must begin with a non-digit; a digit means the
+  # base number itself differs (1 vs 10).
+  #
+  # Depth reproduces the counting the family view has always used, moved here so
+  # there is one definition rather than a lambda in a template.
+  def self.control_depth(id)
+    suffix = id.to_s.sub(/\A[a-z]+-\d+(\.\d+)?/i, "")
+    suffix.blank? ? 0 : suffix.scan(/[a-z]|\.\d+|\.\([^)]+\)/).size
+  end
+
+  def self.descendant?(candidate_id, ancestor_id)
+    candidate = candidate_id.to_s
+    ancestor  = ancestor_id.to_s
+    return false if candidate == ancestor || ancestor.blank?
+    return false unless candidate.start_with?(ancestor)
+
+    # `ac-10` vs `ac-1`: the next character is a digit, so this is a different
+    # control, not a child.
+    !candidate[ancestor.length].match?(/\d/)
+  end
+
+  def depth = self.class.control_depth(control_id)
+
+  def descendant_of?(other) = self.class.descendant?(control_id, other.to_s)
+
+  # Direct children only — one level down. Deeper parts are reached by walking
+  # into the child, which is what makes every sub-part addressable.
+  def direct_children
+    own_depth = depth
+    self.class.unscoped
+        .where(control_family_id: control_family_id)
+        .where("control_id LIKE ?", "#{control_id}%")
+        .reject { |c| c.id == id }
+        .select { |c| c.descendant_of?(control_id) && c.depth == own_depth + 1 }
+        .sort_by(&:control_id)
+  end
+
+  def to_param = canonical_identifier
+
+  # Resolve a control within a catalog by its canonical identifier.
+  #
+  # `(catalog, canonical_id)` is unique — verified across all 4054 seeded
+  # controls — which is why the family need not appear in the path.
+  #
+  # The linear fallback exists only for the backfill window; it is bounded by
+  # one catalog's controls and disappears once canonical_id is populated.
+  def self.find_by_canonical(catalog, identifier)
+    return nil if catalog.nil? || identifier.blank?
+
+    scope = joins(control_family: :control_catalog)
+              .where(control_families: { control_catalog_id: catalog.id })
+
+    scope.find_by(canonical_id: identifier) ||
+      scope.detect { |control| control.canonical_identifier == identifier }
+  end
+
   default_scope { order(Arel.sql("COALESCE(sort_id, control_id)")) }
 
   # Scope to only base controls (e.g. "ac-1") and enhancements (e.g. "ac-2.1"),
@@ -148,6 +233,13 @@ class CatalogControl < ApplicationRecord
   end
 
   private
+
+  # #881 — keep the URL identifier in step with control_id on every write.
+  def assign_canonical_id
+    return if control_id.blank?
+
+    self.canonical_id = ControlId.canonical(control_id)
+  end
 
   # update_all bypasses ActiveRecord type casting, so guidance_data can
   # arrive from the DB as a plain String (double-encoded JSON) rather than
