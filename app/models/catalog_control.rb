@@ -20,6 +20,51 @@ class CatalogControl < ApplicationRecord
 
   BASELINE_LEVELS = %w[LOW MODERATE HIGH].freeze
 
+  # ── API-writable guidance schema (#895) ───────────────────────────────────
+  #
+  # `guidance_data` is a free-form JSONB column and the web form permits it as
+  # `guidance_data: {}` — an arbitrary hash. That is tolerable for a form
+  # posting a known set of inputs. It is NOT tolerable on a public endpoint:
+  # every OSCAL exporter reads this column, so an unenumerated key travels
+  # straight into a delivered artefact. Adding a key here is a decision.
+  #
+  # `statement` is the verbatim catalog statement (carrying `{{ insert: param }}`
+  # markup); `assessment_objective` is the SP 800-53A objective prose. Neither
+  # is in GUIDANCE_FIELDS above, which lists only the *extra* fields the edit
+  # form surfaces — but both are written by CatalogImportService and read by
+  # the exporters, so both are writable.
+  PROSE_GUIDANCE_KEYS = (%w[statement assessment_objective] + GUIDANCE_FIELDS).freeze
+
+  # SP 800-53A assessment methods: [{ "method" => "EXAMINE", "objects" => "…" }]
+  ASSESSMENT_KEYS = %w[method objects].freeze
+
+  # FedRAMP KSI catalogs carry three extra keys, read by
+  # Api::V1::KsiCatalogController. They belong to the same column, so leaving
+  # them out would make a KSI catalog unmanageable over the API.
+  KSI_GUIDANCE_KEYS = %w[automation_required evidence_type validation_frequency].freeze
+
+  # Strong-parameters filter for `guidance_data`.
+  def self.guidance_params_filter
+    PROSE_GUIDANCE_KEYS + KSI_GUIDANCE_KEYS + [ { assessment: ASSESSMENT_KEYS } ]
+  end
+
+  # Strong-parameters filter for `params_data` — OSCAL parameter (ODP)
+  # definitions. Shape taken from the seeded catalogs rather than invented:
+  # `id`, `label`, `class`, `depends-on`, `props[]`, `guidelines[]`, `select`.
+  # OSCAL spells two of these with hyphens; they stay spelled that way so the
+  # payload matches the artefact.
+  def self.params_data_filter
+    [
+      :id, :label, :class, "depends-on",
+      {
+        props: [ :name, :value, :class, :ns, :uuid, :remarks ],
+        guidelines: [ :prose ],
+        select: [ "how-many", { choice: [] } ],
+        values: []
+      }
+    ]
+  end
+
   validates :control_id, presence: true, uniqueness: { scope: :control_family_id }
 
   # ── URL identity (#881) ───────────────────────────────────────────────────
@@ -131,11 +176,51 @@ class CatalogControl < ApplicationRecord
     GUIDANCE_FIELDS.any? { |f| data[f].present? }
   end
 
+  # The whole guidance_data document, parsed. `guidance_fields` below returns
+  # only the subset the edit form surfaces as "additional" fields; API callers
+  # need all of it, including `statement` and the assessment structures.
+  def guidance_hash = parsed_guidance_data
+
   # Returns only populated guidance fields as { field_name => value }.
   def guidance_fields
     data = parsed_guidance_data
     return {} if data.blank?
     data.select { |k, v| GUIDANCE_FIELDS.include?(k) && v.present? }
+  end
+
+  # Drop blank values so an empty field is an absent key rather than an empty
+  # string in a delivered OSCAL artefact — but keep `false`, which is a value
+  # (the KSI keys are booleans) and not an absence.
+  def self.normalize_guidance(incoming)
+    (incoming || {}).each_with_object({}) do |(key, value), out|
+      next if value != false && value.blank?
+
+      out[key.to_s] = value
+    end
+  end
+
+  # PATCH semantics for `guidance_data` (#895).
+  #
+  # Assigning the column wholesale would silently drop every key the caller did
+  # not resend: a partial update of `statement` would take `supplemental_guidance`
+  # with it, and the loss would only surface in an OSCAL export weeks later.
+  # Merge instead. A key sent as `null` or `""` is deleted, so a caller can still
+  # remove one without having to resend the whole document.
+  def merge_guidance_data(incoming)
+    existing = parsed_guidance_data.dup
+    return existing if incoming.blank?
+
+    incoming.each do |key, value|
+      # `false` is a value, not an absence — the KSI keys are booleans.
+      if value == false
+        existing[key.to_s] = false
+      elsif value.blank?
+        existing.delete(key.to_s)
+      else
+        existing[key.to_s] = value
+      end
+    end
+    existing
   end
 
   # Returns true when at least one parameter definition exists.

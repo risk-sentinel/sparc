@@ -78,7 +78,10 @@ SPARC supports three API authentication modes (controlled by `SPARC_API_AUTH` en
 
 ### 6. Control Catalogs (5 requests)
 - CRUD — **admin-only for writes**
-- Uses numeric `:id`
+- Accepts the OSCAL uuid (preferred), the slug, or the numeric `:id`
+- Catalog **contents** — [families](endpoints/control-families.md) and
+  [controls](endpoints/catalog-controls.md) (#895) — are documented and covered
+  by request + contract specs, but are **not yet in the Postman collection**
 
 ### 7. Profile Documents (5 requests)
 - CRUD with soft-delete

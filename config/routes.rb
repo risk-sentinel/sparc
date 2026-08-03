@@ -578,6 +578,28 @@ Rails.application.routes.draw do
 
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do
+        # #895 — catalog CONTENTS. The catalog container had a full API while
+        # its families and controls had none. Families are addressed by code
+        # (`ac`), scoped to the catalog, matching the web routes from #881.
+        resources :control_families, only: [ :index, :show, :create, :update, :destroy ],
+                  param: :id, constraints: { id: /[^\/]+/ } do
+          # Creation is family-scoped — a control has to be put somewhere — and
+          # so is the family listing. Reads and updates of an existing control
+          # are catalog-scoped below, because `(catalog, canonical_id)` is
+          # already unique.
+          resources :catalog_controls, only: [ :index, :create ], path: "controls",
+                    constraints: { id: /[^\/]+/ }, format: false
+        end
+
+        # #881 identity: `ac-2`, `ac-19.4.b.1`. The `id` constraint is the
+        # load-bearing part — 1478 of 2447 canonical ids contain a dot, and the
+        # default segment pattern stops at one, so without it every sub-part
+        # 404s. (Verified by mutation: dropping the constraint reddens the
+        # dotted-identifier spec; dropping `format: false` alone does not,
+        # because the greedy constraint already swallows the dots. It stays as
+        # an explicit statement that these paths have no format suffix.)
+        resources :catalog_controls, only: [ :index, :show, :update, :destroy ], path: "controls",
+                  param: :id, constraints: { id: /[^\/]+/ }, format: false
         member do
           # #630/#631 — review/approval workflow.
           post :submit_for_review, to: "control_catalogs#submit_for_review"
