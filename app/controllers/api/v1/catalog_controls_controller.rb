@@ -202,7 +202,12 @@ class Api::V1::CatalogControlsController < Api::V1::BaseController
     raw = params.dig(:catalog_control, :baseline_levels) || params.dig(:catalog_control, :baseline_impact)
     return false if raw.blank?
 
-    levels = raw.is_a?(Array) ? raw : raw.to_s.split(/\s*,\s*/)
+    # Split on a bare comma, NOT /\s*,\s*/. `raw` is unbounded request data, and
+    # a regex with `\s*` on both sides of the delimiter backtracks polynomially
+    # on a long run of spaces containing no comma (CodeQL rb/polynomial-redos).
+    # The per-token `strip` below already handles the surrounding whitespace, so
+    # the regex bought nothing.
+    levels = raw.is_a?(Array) ? raw : raw.to_s.split(",")
     invalid = levels.map { |l| l.to_s.strip.upcase }.reject(&:blank?) - CatalogControl::BASELINE_LEVELS
     return false if invalid.empty?
 

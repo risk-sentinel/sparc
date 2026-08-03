@@ -278,6 +278,27 @@ RSpec.describe "Api::V1::CatalogControls", type: :request do
       expect(event.metadata["fields"]).to include("title")
     end
 
+    # The delimiter split is a bare "," rather than /\s*,\s*/ — the regex form
+    # backtracks polynomially on unbounded request data. Whitespace around the
+    # levels must still be tolerated, which is what the per-token strip does.
+    it "still accepts a comma-separated string with surrounding whitespace" do
+      patch "#{catalog_path}/ac-2", headers: auth, params: {
+        catalog_control: { baseline_impact: "  LOW ,   MODERATE  " }
+      }
+
+      expect(response).to have_http_status(:ok)
+      expect(control.reload.baseline_levels).to eq(%w[LOW MODERATE])
+    end
+
+    it "rejects an unknown baseline level in a whitespace-padded string" do
+      patch "#{catalog_path}/ac-2", headers: auth, params: {
+        catalog_control: { baseline_impact: "LOW ,  CATASTROPHIC" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(control.reload.baseline_impact).to eq("LOW, MODERATE, HIGH")
+    end
+
     it "rejects an unknown baseline level instead of storing it" do
       patch "#{catalog_path}/ac-2", headers: auth, params: {
         catalog_control: { baseline_levels: %w[LOW CATASTROPHIC] }
