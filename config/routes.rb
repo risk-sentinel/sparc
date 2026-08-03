@@ -2,6 +2,14 @@ Rails.application.routes.draw do
   # UUID (8-4-4-4-12 hex) constraint shared by the artifact resolver routes (#680).
   uuid_constraint = /[0-9a-fA-F-]{36}/
 
+  # #881 — the catalog-scoped control member path, and the options that make it
+  # work. `format: false` plus the constraint are load-bearing: canonical
+  # control ids contain dots (1478 of 2447 distinct ids), and Rails would
+  # otherwise read `/controls/ac-19.4.b.1` as id `ac-19.4.b` with format `1`,
+  # silently resolving the PARENT control.
+  control_member       = "controls/:id"
+  control_member_opts  = { constraints: { id: /[^\/]+/ }, format: false }
+
   root "home#index"
   get "oscal-overview", to: "home#oscal_overview", as: :oscal_overview
   get "about",          to: "about#index",         as: :about
@@ -373,16 +381,11 @@ Rails.application.routes.draw do
     get "control_families/:id", to: "control_families#show", as: :family,
         constraints: { id: /[^\/]+/ }, format: false
 
-    get    "controls/:id/edit", to: "catalog_controls#edit",    as: :edit_control,
-           constraints: { id: /[^\/]+/ }, format: false
-    get    "controls/:id",      to: "catalog_controls#show",
-           constraints: { id: /[^\/]+/ }, format: false
-    patch  "controls/:id",      to: "catalog_controls#update",  as: :control,
-           constraints: { id: /[^\/]+/ }, format: false
-    put    "controls/:id",      to: "catalog_controls#update",
-           constraints: { id: /[^\/]+/ }, format: false
-    delete "controls/:id",      to: "catalog_controls#destroy",
-           constraints: { id: /[^\/]+/ }, format: false
+    get    "#{control_member}/edit", to: "catalog_controls#edit",   **control_member_opts, as: :edit_control
+    get    control_member,           to: "catalog_controls#show",   **control_member_opts
+    patch  control_member,           to: "catalog_controls#update", **control_member_opts, as: :control
+    put    control_member,           to: "catalog_controls#update", **control_member_opts
+    delete control_member,           to: "catalog_controls#destroy", **control_member_opts
   end
 
   resources :converters do
