@@ -1,0 +1,33 @@
+<%#
+  Card / list toggle (#887, pilot for #888).
+
+  State lives in the URL, not in the client. That means a chosen view is
+  shareable and bookmarkable, survives a reload, round-trips with whatever
+  filters are already applied, and needs no JavaScript — so it cannot break
+  under CSP and works for keyboard and screen-reader users by default.
+
+  `request.query_parameters.merge` preserves every other param, which is what
+  stops the toggle from silently clearing an active search or facet.
+
+  Locals:
+    current — :card or :list
+    label   — what is being toggled, for the accessible name
+%>
+<% current = local_assigns.fetch(:current, :list) %>
+<% label = local_assigns.fetch(:label, "items") %>
+
+<div class="sparc-view-toggle" role="group" aria-label="<%= "Choose how to display #{label}" %>">
+  <% [ [ :card, "Cards", "▦" ], [ :list, "List", "☰" ] ].each do |mode, text, glyph| %>
+    <%
+      selected = current.to_sym == mode
+      # aria-current is the state assistive tech reads; the CSS selector keys
+      # off the same attribute so the visual and announced states cannot drift.
+    %>
+    <%= link_to url_for(request.query_parameters.merge(view: mode)),
+                class: "sparc-view-toggle__option",
+                "aria-current": selected.to_s,
+                title: "#{text} view" do %>
+      <span aria-hidden="true"><%= glyph %></span><%= text %>
+    <% end %>
+  <% end %>
+</div>

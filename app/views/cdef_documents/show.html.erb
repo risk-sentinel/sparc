@@ -32,7 +32,7 @@
 
       <div id="doc-meta-view" data-doc-meta-target="view">
         <div class="d-flex align-items-center gap-2 flex-wrap">
-          <h2 class="sparc-header-title"><%= @cdef_document.name %></h2>
+          <h2 class="sparc-header-title"><%= cdef_display_name(@cdef_document) %></h2>
           <% if @cdef_document.cdef_version.present? %>
             <span class="sparc-version-badge">v<%= @cdef_document.cdef_version %></span>
           <% end %>
@@ -167,6 +167,14 @@
     </div>
   </div>
 </div>
+
+<%# ── #887: COMPONENTS, APPLICABILITY AND PROVENANCE ──────────────────
+    Placed above the control sections deliberately: for the 163 of 230
+    upstream CDEFs that assert no controls, this is the only content on the
+    page, and it must not sit below an empty heatmap. %>
+<%= render "cdef_documents/components_panel",
+      document: @cdef_document,
+      components: @components || [] %>
 
 <%# ── SEVERITY HEATMAP BY CONTROL FAMILY ─────────────────────────── %>
 <%= render "shared/heatmap",

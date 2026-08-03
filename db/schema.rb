@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_03_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_03_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
@@ -284,6 +285,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_130000) do
     t.string "partitions", default: [], null: false, array: true
     t.text "purpose"
     t.string "region_ids", default: [], null: false, array: true
+    t.text "search_blob"
     t.string "service_id"
     t.string "title"
     t.datetime "updated_at", null: false
@@ -298,6 +300,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_130000) do
     t.index ["native_control_ids"], name: "index_cdef_components_on_native_control_ids", using: :gin
     t.index ["partitions"], name: "index_cdef_components_on_partitions", using: :gin
     t.index ["region_ids"], name: "index_cdef_components_on_region_ids", using: :gin
+    t.index ["search_blob"], name: "idx_cdef_components_search_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["service_id"], name: "index_cdef_components_on_service_id"
   end
 

@@ -13,6 +13,17 @@ class CdefComponent < ApplicationRecord
   PARTITION_CN  = "aws-cn".freeze
   PARTITION_STD = "aws".freeze
 
+  # The raw identifiers are what OSCAL and the AWS APIs use, so they stay in
+  # the data and remain searchable. These are for display only: a chip reading
+  # `aws-cn` makes a reader decode an identifier, where "AWS China" just says it.
+  PARTITION_LABELS = {
+    PARTITION_STD => "AWS Commercial",
+    PARTITION_GOV => "AWS GovCloud",
+    PARTITION_CN  => "AWS China"
+  }.freeze
+
+  def self.partition_label(partition) = PARTITION_LABELS.fetch(partition.to_s, partition.to_s)
+
   # Deployment scope, as AWS spells it in `props[name=availability]`.
   AVAILABILITY_SCOPES = %w[REGIONAL ZONAL SUBZONAL GLOBAL].freeze
 
@@ -112,6 +123,105 @@ class CdefComponent < ApplicationRecord
     CAPABILITY_CONTROL_MAP.filter_map do |capability, controls|
       capability if controls.any? { |c| ids.include?(ControlId.canonical(c)) }
     end.sort
+  end
+
+  # Free-text search across everything the index knows (#887).
+  #
+  # The document-level `search_text` scope only sees name and description, so
+  # `us-east` matched nothing even though most components are available there —
+  # the regions, control ids, capabilities and service ids all live here.
+  #
+  # Array columns are matched with ILIKE over `unnest` rather than membership,
+  # so a partial term finds the full value: `us-east` -> `us-east-1`,
+  # `AC-2` -> `AC-2.1`. Exact-only membership would make the obvious search
+  # return nothing, which is exactly the failure being fixed.
+  ARRAY_SEARCH_COLUMNS = %w[
+    region_ids partitions declared_capabilities derived_capabilities
+    native_control_ids enriched_control_ids check_ids
+  ].freeze
+
+  TEXT_SEARCH_COLUMNS = %w[title description service_id availability lifecycle_stage].freeze
+
+  def self.search(term)
+    return none if term.blank?
+
+    # One indexed predicate against the denormalized blob. The previous form —
+    # ILIKE over unnest() of seven array columns — could not use any index and
+    # sequentially scanned the table for every query.
+    where("search_blob ILIKE ?", "%#{sanitize_sql_like(term.to_s.strip)}%")
+  end
+
+  # Everything searchable, flattened into the column the trigram index covers.
+  # Built here rather than in the indexer so the definition of "searchable"
+  # lives next to the columns it names.
+  def self.build_search_blob(attrs)
+    text = TEXT_SEARCH_COLUMNS.map { |c| attrs[c.to_sym] || attrs[c] }
+    arrays = ARRAY_SEARCH_COLUMNS.flat_map { |c| Array(attrs[c.to_sym] || attrs[c]) }
+    (text + arrays).compact.reject(&:blank?).join(" ")
+  end
+
+  # ── Browser summaries (#887) ──────────────────────────────────────────────
+  #
+  # A card shows document-level applicability, but the facts live per
+  # component. Roll them up for the documents actually being rendered — never
+  # for the whole table — so the cost tracks the page, not the corpus.
+  #
+  # Aggregated in Ruby rather than SQL: the arrays would need unnest + array_agg
+  # per column, and the input is one page of documents, not 861 rows.
+  def self.summary_for(document_ids)
+    ids = Array(document_ids).compact.uniq
+    return {} if ids.empty?
+
+    where(cdef_document_id: ids).group_by(&:cdef_document_id).transform_values do |components|
+      services = components.select { |c| c.component_type == "service" }
+      {
+        component_count: components.size,
+        service_count: services.size,
+        # An upstream file is a service FAMILY, not one service:
+        # workspaces.oscal carries four (WorkSpaces, Instances, Thin Client,
+        # Web). Naming them is the difference between a card that informs and
+        # one that just says "4".
+        service_titles: services.filter_map(&:title).uniq.sort,
+        # The component's own description is the most useful prose available —
+        # it says what the thing actually does, which neither the OSCAL
+        # filename nor the document description manages. Prefer a service's;
+        # fall back to any component with one.
+        primary_description: services.filter_map { |s| s.description.presence }.first ||
+                             components.filter_map { |c| c.description.presence }.first,
+        partitions: components.flat_map(&:partitions).uniq.sort,
+        # Those four services do NOT share a region set (17 / 0 / 7 / 10), so a
+        # unioned partition chip can say aws-us-gov when only one of them is
+        # actually in GovCloud. Flag when the union is hiding a difference, so
+        # the card can say so rather than quietly overstating availability.
+        partitions_uniform: services.size <= 1 ||
+                            services.map { |s| s.partitions.sort }.uniq.size == 1,
+        region_count: components.flat_map(&:region_ids).uniq.size,
+        availability: components.filter_map(&:availability).uniq.sort,
+        lifecycle_stages: components.filter_map(&:lifecycle_stage).uniq.sort,
+        declared_capabilities: components.flat_map(&:declared_capabilities).uniq.sort,
+        derived_capabilities: components.flat_map(&:derived_capabilities).uniq.sort,
+        # check_ids repeat across a document's components (a service rolls up
+        # its siblings'), so count the distinct rules, not the occurrences.
+        check_count: components.flat_map(&:check_ids).uniq.size,
+        native_control_count: components.flat_map(&:native_control_ids).uniq.size,
+        enriched_control_count: components.flat_map(&:enriched_control_ids).uniq.size,
+        mapping_sources: components.flat_map(&:mapping_sources).uniq.sort
+      }
+    end
+  end
+
+  # An empty summary, so a view never has to nil-check. A CDEF with no indexed
+  # components is a real state — nothing has been indexed for it yet — and
+  # should render as "no coverage asserted" rather than blank.
+  def self.empty_summary
+    {
+      component_count: 0, service_count: 0, service_titles: [],
+      primary_description: nil, partitions: [],
+      partitions_uniform: true, region_count: 0,
+      availability: [], lifecycle_stages: [], declared_capabilities: [],
+      derived_capabilities: [], check_count: 0, native_control_count: 0,
+      enriched_control_count: 0, mapping_sources: []
+    }.freeze
   end
 
   # Derive the partition set from region ids. Kept here rather than in the

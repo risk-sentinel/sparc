@@ -76,7 +76,36 @@
     </div>
   <% end %>
 
+  <%# #887 — card/list toggle. Cards read well for browsing and comparison;
+      the list reads well for scanning hundreds of rows, so both stay. This is
+      the pilot for the pattern #888 applies across every collection screen. %>
   <% if @cdef_documents.any? %>
+    <div class="d-flex justify-content-end mb-3">
+      <%= render "shared/view_toggle", current: @view_mode, label: "component definitions" %>
+    </div>
+  <% end %>
+
+  <% if @cdef_documents.any? && @view_mode == :card %>
+    <div class="sparc-card-grid">
+      <% @cdef_documents.each do |doc| %>
+        <% summary = (@component_summaries || {})[doc.id] || CdefComponent.empty_summary %>
+        <%= render "shared/item_card",
+              title: cdef_display_name(doc),
+              url: cdef_document_path(doc),
+              badges: [
+                cdef_source_badge(doc),
+                { text: "OSCAL #{doc.oscal_version.presence || "—"}", class: "badge bg-light text-dark" }
+              ],
+              subtitle: cdef_service_summary(summary),
+              description: summary[:primary_description].presence || doc.description,
+              metrics: cdef_card_metrics(doc, summary),
+              chips: cdef_card_chips(summary),
+              empty_note: [ cdef_partition_caveat(summary), cdef_coverage_note(summary) ].compact.join(" "),
+              footer: [ doc.cdef_type.presence, cdef_mapping_note(summary),
+                        "#{summary[:region_count]} regions" ].compact.join(" · ") %>
+      <% end %>
+    </div>
+  <% elsif @cdef_documents.any? %>
     <table class="table table-hover">
       <thead>
         <tr>
@@ -98,7 +127,7 @@
             <% if can_bulk_delete? %>
               <td><input type="checkbox" name="ids[]" value="<%= doc.id %>" form="cdefBulkForm" data-bulk-select-target="row" data-action="bulk-select#toggle" aria-label="Select <%= doc.name %>"></td>
             <% end %>
-            <td><strong><%= link_to doc.name, cdef_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
+            <td><strong><%= link_to cdef_display_name(doc), cdef_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
               <% type_variants = { "disa_stig" => "danger", "scap" => "info", "cis" => "warning", "custom" => "neutral" } %>
               <span class="sparc-status sparc-status--<%= type_variants[doc.cdef_type] || 'neutral' %>">

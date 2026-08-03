@@ -42,6 +42,9 @@ class CdefComponentIndexer
     components = Array(body["components"])
 
     rows = components.filter_map { |component| build_row(component) }
+    # The trigram index covers `search_blob`, and this is the only writer of
+    # these rows, so filling it here keeps it in step by construction.
+    rows.each { |row| row[:search_blob] = CdefComponent.build_search_blob(row) }
 
     CdefComponent.transaction do
       CdefComponent.where(cdef_document: @document).delete_all

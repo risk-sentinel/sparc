@@ -1,6 +1,6 @@
 <div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Populate "<%= @cdef_document.name %>" from a Published Profile</h2>
+    <h2>Populate "<%= cdef_display_name(@cdef_document) %>" from a Published Profile</h2>
     <%= link_to "Back to Component Definition", cdef_document_path(@cdef_document), class: "btn btn-secondary" %>
   </div>
 
