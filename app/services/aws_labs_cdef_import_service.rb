@@ -215,7 +215,21 @@ class AwsLabsCdefImportService
       status: "completed"
     )
     enrich_with_nist_mappings!(document)
+
+    # #887 — the parser already indexed this document's components, but it ran
+    # BEFORE enrichment, so `enriched_control_ids` (and the capabilities derived
+    # from them) were empty at that point. Re-index now that the NIST mappings
+    # exist. The indexer replaces a document's rows rather than merging, so
+    # running it twice is exactly as correct as running it once.
+    reindex_components(document, candidate[:content])
+
     document
+  end
+
+  def reindex_components(document, content)
+    CdefComponentIndexer.new(document, content).index!
+  rescue StandardError => e
+    @logger.warn("[AwsLabsCdefImportService] reindex failed for #{document.id}: #{e.class}: #{e.message}")
   end
 
   # Issue #491 / #494 -- Two-hop NIST enrichment.

@@ -18,6 +18,11 @@ class CdefDocument < ApplicationRecord
   include AttachmentSizeLimit
 
   has_many :cdef_controls, dependent: :delete_all
+  # #887 — derived browser index rows. delete_all (not destroy) to match
+  # cdef_controls: there are no callbacks worth running and a CDEF can carry
+  # hundreds of components. Without this the foreign key makes every CDEF
+  # delete fail once the document has been indexed.
+  has_many :cdef_components, dependent: :delete_all
   has_many :boundary_cdef_documents, dependent: :destroy
   has_many :boundaries, through: :boundary_cdef_documents
   belongs_to :profile_document, optional: true

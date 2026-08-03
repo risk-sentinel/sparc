@@ -116,6 +116,25 @@ class CdefJsonParserService
     )
 
     populate_cdef_statements(imported_ids, ir_statements_by_idx)
+
+    # #887 — build the browser index here rather than in any one importer.
+    # This method is the single choke point every OSCAL CDEF passes through
+    # (AWS Labs, org upload, YAML, XCCDF), and the parsed document is in hand,
+    # so an org-uploaded CDEF gets the same searchable fields as the AWS corpus
+    # without the source needing to be retained anywhere.
+    #
+    # Non-fatal: a CDEF that imports but fails to index is a degraded browser
+    # row, not a failed import, and cdef:reindex can repair it.
+    index_components(data)
+  end
+
+  def index_components(data)
+    CdefComponentIndexer.new(@document, data).index!
+  rescue StandardError => e
+    Rails.logger.warn(
+      "[CdefJsonParserService] component indexing failed for " \
+      "cdef_document_id=#{@document&.id}: #{e.class}: #{e.message}"
+    )
   end
 
   # #393: iterate ir["statements"][] and create cdef_control_statements.
