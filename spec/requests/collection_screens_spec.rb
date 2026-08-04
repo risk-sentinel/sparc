@@ -122,6 +122,45 @@ RSpec.describe "Collection screens", type: :request do
       search_term: "Findable"
   end
 
+  describe "Leveraged POA&Ms" do
+    it_behaves_like "a collection screen",
+      path: -> { leveraged_poam_documents_path },
+      screen: :leveraged_poam_documents,
+      create: lambda {
+        leveraged = create(:authorization_boundary)
+        create(:leveraged_authorization, leveraging_boundary: create(:authorization_boundary),
+                                         leveraged_boundary: leveraged)
+        create(:poam_document, name: "Findable Widget", authorization_boundary: leveraged)
+      },
+      search_term: "Findable",
+      actions: %w[View]
+  end
+
+  # The queues are Arrays, not relations — approval authority is decided per
+  # record — so they exercise the Array pagination and in-memory search paths.
+  describe "Promotion queue" do
+    it_behaves_like "a collection screen",
+      path: -> { promotion_queue_index_path },
+      screen: :promotion_queue,
+      create: -> { create(:back_matter_resource, title: "Findable Widget", promotion_status: "pending_review") },
+      search_term: "Findable",
+      actions: %w[Approve Reject]
+  end
+
+  describe "Review queue" do
+    it_behaves_like "a collection screen",
+      path: -> { review_queue_index_path },
+      screen: :review_queue,
+      create: lambda {
+        submitter = create(:user)
+        create(:control_catalog, name: "Findable Widget",
+                                 approval_status: "pending_review",
+                                 submitted_by_user: submitter)
+      },
+      search_term: "Findable",
+      actions: %w[Approve Reject]
+  end
+
   describe "Authoritative sources" do
     it_behaves_like "a collection screen",
       path: -> { authoritative_sources_path },

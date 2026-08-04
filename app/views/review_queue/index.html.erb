@@ -1,7 +1,7 @@
 <div class="card">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Review Queue</h2>
-    <span class="text-body-secondary"><%= @pending.size %> awaiting your review</span>
+    <span class="text-body-secondary"><%= @total_pending %> awaiting your review</span>
   </div>
 
   <p class="text-body-secondary mb-4">
@@ -11,7 +11,26 @@
     of duties).
   </p>
 
-  <% if @pending.any? %>
+  <%= render "shared/collection_toolbar",
+        label: "documents awaiting review", placeholder: "Search by name or submitter…",
+        view_mode: (@pending.any? ? @view_mode : nil) %>
+
+  <% if @pending.any? && @view_mode == :card %>
+    <div class="sparc-card-grid">
+      <% @pending.each do |doc| %>
+        <% routes = review_queue_routes(doc) %>
+        <%= render "shared/item_card",
+              title: doc.name,
+              url: routes[:show],
+              badges: [ { text: routes[:label], class: "badge bg-secondary" } ],
+              subtitle: "Submitted by #{doc.submitted_by_user&.email || '\u2014'}",
+              description: doc.description,
+              empty_note: baseline_review_summary(doc, @baseline_reviews),
+              actions: render("review_queue/item_actions", doc: doc,
+                              approve_path: routes[:approve], reject_path: routes[:reject]) %>
+      <% end %>
+    </div>
+  <% elsif @pending.any? %>
     <table class="table table-hover">
       <thead>
         <tr>
@@ -25,17 +44,9 @@
       <tbody>
         <% @pending.each do |doc| %>
           <%
-            case doc
-            when ControlCatalog
-              type_label = "Control Catalog"; show_path = control_catalog_path(doc)
-              approve_path = approve_control_catalog_path(doc); reject_path = reject_control_catalog_path(doc)
-            when ProfileDocument
-              type_label = "Profile"; show_path = profile_document_path(doc)
-              approve_path = approve_profile_document_path(doc); reject_path = reject_profile_document_path(doc)
-            when CdefDocument
-              type_label = "CDEF"; show_path = cdef_document_path(doc)
-              approve_path = approve_cdef_document_path(doc); reject_path = reject_cdef_document_path(doc)
-            end
+            routes = review_queue_routes(doc)
+            type_label = routes[:label]; show_path = routes[:show]
+            approve_path = routes[:approve]; reject_path = routes[:reject]
           %>
           <tr>
             <td><span class="badge bg-secondary"><%= type_label %></span></td>
@@ -53,12 +64,7 @@
               <% end %>
             </td>
             <td style="white-space: nowrap;">
-              <%= button_to "Approve", approve_path, method: :post, class: "btn btn-success btn-sm",
-                    form: { data: { turbo_confirm: "Approve '#{doc.name}'?" }, style: "display:inline;" } %>
-              <%= form_with url: reject_path, method: :post, class: "d-inline" do |f| %>
-                <%= f.text_field :reason, placeholder: "Reason", class: "form-control form-control-sm d-inline-block", style: "width: 11rem;", required: true %>
-                <%= f.submit "Reject", class: "btn btn-danger btn-sm" %>
-              <% end %>
+              <%= render "review_queue/item_actions", doc: doc, approve_path: approve_path, reject_path: reject_path %>
             </td>
           </tr>
         <% end %>
@@ -67,4 +73,6 @@
   <% else %>
     <p class="text-center p-4 text-body-secondary">Nothing awaiting your review.</p>
   <% end %>
+
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "documents awaiting review" %>
 </div>

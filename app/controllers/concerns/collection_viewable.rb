@@ -121,6 +121,31 @@ module CollectionViewable
     pagy(:offset, scope, limit: resolve_per_page(limit))
   end
 
+  # The queues (review, promotion) cannot be relations: which rows a user may
+  # act on is decided per record by an approval service, not by SQL. Pagy's
+  # offset paginator handles an Array as happily as a relation, so this exists
+  # to name the intent — and to keep the page size and the cap identical to
+  # every other screen — rather than to do anything different.
+  def paginate_array(records, limit: PER_PAGE)
+    pagy(:offset, Array(records), limit: resolve_per_page(limit))
+  end
+
+  # In-memory equivalent of Searchable#search_text, for those same queues.
+  # `fields` are called on each record; nils are skipped, so a record missing
+  # one simply does not match on it.
+  def search_records(records, term, *fields)
+    term = term.to_s.strip
+    return Array(records) if term.blank?
+
+    needle = term.downcase
+    Array(records).select do |record|
+      fields.any? do |field|
+        value = field.respond_to?(:call) ? field.call(record) : record.try(field)
+        value.to_s.downcase.include?(needle)
+      end
+    end
+  end
+
   def resolve_per_page(default)
     raw = params[:per_page].presence
     return default if raw.blank?

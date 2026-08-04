@@ -1,0 +1,11 @@
+<%#
+  Actions on one leveraged POA&M, shared by the table row and the card
+  (#888 §4). Read-only by design: these belong to another boundary.
+
+  Locals: poam — the PoamDocument
+%>
+<% poam = local_assigns[:poam] %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", leveraged_poam_document_path(poam), class: "btn btn-sm btn-outline-primary" %>
+</div>
