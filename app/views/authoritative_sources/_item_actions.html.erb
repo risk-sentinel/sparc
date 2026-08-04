@@ -1,0 +1,11 @@
+<%#
+  Actions on one authoritative source, shared by the table row and the card
+  (#888 §4) so an action cannot exist in one view and not the other.
+
+  Locals: resource — the BackMatterResource
+%>
+<% resource = local_assigns[:resource] %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", authoritative_source_path(resource), class: "btn btn-sm btn-outline-primary" %>
+</div>

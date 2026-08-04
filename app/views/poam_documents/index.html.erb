@@ -17,9 +17,22 @@
     </div>
   </div>
 
-  <%= render "shared/index_search", placeholder: "Search POA&Ms…" %>
+  <%= render "shared/collection_toolbar",
+        label: "POA&M documents", placeholder: "Search POA&Ms…",
+        view_mode: (@view_mode if @poam_documents.any?) %>
 
-  <% if @poam_documents.any? %>
+  <% if @poam_documents.any? && @view_mode == :card %>
+    <div class="sparc-card-grid">
+      <% @poam_documents.each do |doc| %>
+        <%= render "shared/item_card", **document_card_slots(
+              doc, count: doc.poam_items.count, count_label: "items",
+              version: doc.poam_version).merge(
+              url: poam_document_path(doc),
+              badges: document_card_badges(doc),
+              actions: render("poam_documents/item_actions", doc: doc, compact: true)) %>
+      <% end %>
+    </div>
+  <% elsif @poam_documents.any? %>
     <table class="table table-hover">
       <thead>
         <tr>
@@ -63,24 +76,7 @@
             </td>
             <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
-              <div class="d-flex flex-wrap gap-1" style="max-width: 280px;">
-                <%= link_to "View", poam_document_path(doc), class: "btn btn-primary btn-sm", style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;" %>
-                <% if doc.completed? %>
-                  <%# #451 A1: shared partial routes dropdown clicks through the
-                      Stimulus modal that surfaces specific validation errors. %>
-                  <%= render "shared/oscal_export_dropdown",
-                        validate_path: validate_oscal_export_poam_document_path(doc),
-                        download_json_path: download_oscal_validated_poam_document_path(doc),
-                        download_yaml_path: download_yaml_poam_document_path(doc),
-                        download_xml_path: download_xml_poam_document_path(doc),
-                        fallback_json_path: download_oscal_unvalidated_poam_document_path(doc),
-                        document_type: "POAM" %>
-                <% end %>
-                <%= button_to "Delete", poam_document_path(doc), method: :delete,
-                      class: "btn btn-danger btn-sm",
-                      style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;",
-                      form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
-              </div>
+              <%= render "poam_documents/item_actions", doc: doc %>
             </td>
           </tr>
         <% end %>
@@ -89,4 +85,6 @@
   <% else %>
     <p class="text-center p-4 text-body-secondary">No POA&M documents found. Upload your first OSCAL POA&M to get started.</p>
   <% end %>
+
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "POA&M documents" %>
 </div>

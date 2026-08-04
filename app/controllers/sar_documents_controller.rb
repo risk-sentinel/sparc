@@ -1,6 +1,6 @@
 class SarDocumentsController < ApplicationController
+  include CollectionViewable
   include FileUploadable
-  include Pagy::Method
   include Publishable
   include OscalExportable
   include BoundaryScopedDocument
@@ -24,11 +24,18 @@ class SarDocumentsController < ApplicationController
   helper_method :filter_params
 
   def index
-    @sar_documents = boundary_scoped_relation(SarDocument).order(created_at: :desc)
-    @total_count = @sar_documents.count
+    scope = boundary_scoped_relation(SarDocument).order(created_at: :desc)
+    @total_count = scope.count
     @controls_count = SarControl.count
-    @completed_count = @sar_documents.where(status: "completed").count
-    @sar_documents = @sar_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+    @completed_count = scope.where(status: "completed").count
+
+    # #672 — filter listed rows; the tiles above keep showing totals.
+    scope = scope.search_text(params[:q])
+
+    # #888 — cards by default, remembered per screen, and paginated because a
+    # card costs far more to render than a table row.
+    @view_mode = resolve_view_mode(:sar_documents)
+    @pagy, @sar_documents = paginate_collection(scope)
   end
 
   def show

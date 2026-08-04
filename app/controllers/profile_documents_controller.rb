@@ -1,4 +1,5 @@
 class ProfileDocumentsController < ApplicationController
+  include CollectionViewable
   include FileUploadable
   include Publishable
   include OscalExportable
@@ -20,11 +21,17 @@ class ProfileDocumentsController < ApplicationController
   PRIORITY_ORDER = %w[P1 P2 P3].freeze
 
   def index
-    @profile_documents = ProfileDocument.order(created_at: :desc)
-    @total_count = @profile_documents.count
+    scope = ProfileDocument.order(created_at: :desc)
+    @total_count = scope.count
     @controls_count = ProfileControl.count
-    @completed_count = @profile_documents.where(status: "completed").count
-    @profile_documents = @profile_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+    @completed_count = scope.where(status: "completed").count
+
+    # #672 — filter listed rows; the tiles above keep showing totals.
+    scope = scope.search_text(params[:q])
+
+    # #888 — cards by default, remembered per screen, and paginated.
+    @view_mode = resolve_view_mode(:profile_documents)
+    @pagy, @profile_documents = paginate_collection(scope)
   end
 
   def show

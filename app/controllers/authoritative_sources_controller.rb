@@ -10,7 +10,12 @@
 # instance-wide immediately; everyone else's request lands in the promotion
 # queue for an approver. Nothing here grants instance-wide without that gate.
 class AuthoritativeSourcesController < ApplicationController
+  include CollectionViewable
   before_action :authorize_read!, only: %i[index show]
+
+  # #888 — the facets this screen offers; the chrome that renders them is shared.
+  SOURCE_FACETS = %i[scope rel media_type].freeze
+  SOURCE_FACET_LABELS = { scope: "Scope", rel: "Rel", media_type: "Media type" }.freeze
 
   def index
     scope = visible_resources
@@ -24,13 +29,20 @@ class AuthoritativeSourcesController < ApplicationController
     scope = scope.where(rel: params[:rel])               if params[:rel].present?
     scope = scope.where(media_type: params[:media_type]) if params[:media_type].present?
 
-    if params[:q].present?
-      term  = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
-      scope = scope.where("title ILIKE ? OR description ILIKE ?", term, term)
-    end
+    # #888 — search now goes through the shared scope, so this screen matches
+    # href as well as title and description. BackMatterResource declares those
+    # columns; nothing here needs to know which.
+    scope = scope.search_text(params[:q])
 
-    @resources = scope.order(updated_at: :desc).limit(200)
-    @total     = scope.count
+    @total = scope.count
+
+    # The old `.limit(200)` silently dropped everything past the 200th row with
+    # nothing on the page to say so — a library you cannot reach the end of.
+    # Pagination replaces it.
+    @view_mode = resolve_view_mode(:authoritative_sources)
+    @facets = active_facets(SOURCE_FACETS, labels: SOURCE_FACET_LABELS)
+    @clear_facets = clear_facets_params(SOURCE_FACETS)
+    @pagy, @resources = paginate_collection(scope.order(updated_at: :desc))
   end
 
   def show

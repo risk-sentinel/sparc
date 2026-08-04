@@ -1,4 +1,5 @@
 class PoamDocumentsController < ApplicationController
+  include CollectionViewable
   include FileUploadable
   include Publishable
   include OscalExportable
@@ -20,11 +21,18 @@ class PoamDocumentsController < ApplicationController
   IMPACT_ORDER      = %w[high medium low].freeze
 
   def index
-    @poam_documents = boundary_scoped_relation(PoamDocument).order(created_at: :desc)
-    @total_count = @poam_documents.count
+    scope = boundary_scoped_relation(PoamDocument).order(created_at: :desc)
+    @total_count = scope.count
     @items_count = PoamItem.count
-    @completed_count = @poam_documents.where(status: "completed").count
-    @poam_documents = @poam_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+    @completed_count = scope.where(status: "completed").count
+
+    # #672 — filter listed rows; the tiles above keep showing totals.
+    scope = scope.search_text(params[:q])
+
+    # #888 — cards by default, remembered per screen, and paginated because a
+    # card costs far more to render than a table row.
+    @view_mode = resolve_view_mode(:poam_documents)
+    @pagy, @poam_documents = paginate_collection(scope)
   end
 
   def show

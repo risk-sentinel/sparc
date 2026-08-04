@@ -1,0 +1,25 @@
+<%#
+  Actions on one catalog, shared by the table row and the card (#888 §4)
+  so an action cannot exist in one view and not the other.
+
+  Locals:
+    catalog — the record
+%>
+<% catalog = local_assigns[:catalog] %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", catalog, class: "btn btn-sm btn-primary" %>
+  <%= render "shared/oscal_export_dropdown",
+        validate_path: validate_oscal_export_control_catalog_path(catalog),
+        download_json_path: download_oscal_validated_control_catalog_path(catalog),
+        download_yaml_path: download_yaml_control_catalog_path(catalog),
+        download_xml_path: download_xml_control_catalog_path(catalog),
+        fallback_json_path: download_oscal_unvalidated_control_catalog_path(catalog),
+        document_type: "Catalog" %>
+  <% if can_write_catalogs? %>
+    <%= link_to "Edit", edit_control_catalog_path(catalog), class: "btn btn-sm btn-warning" %>
+    <%= button_to "Delete", catalog, method: :delete,
+        form: { data: { turbo_confirm: "Delete '#{catalog.name}'? This will remove all families and controls." } },
+        class: "btn btn-sm btn-danger" %>
+  <% end %>
+</div>

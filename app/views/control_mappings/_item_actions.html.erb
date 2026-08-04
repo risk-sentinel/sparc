@@ -1,0 +1,16 @@
+<%#
+  Actions on one control mapping, shared by the table row and the card (#888 §4)
+  so an action cannot exist in one view and not the other.
+
+  Locals: mapping — the record
+%>
+<% mapping = local_assigns[:mapping] %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", control_mapping_path(mapping), class: "btn btn-sm btn-outline-primary" %>
+  <% if can_write_mappings? %>
+    <%= button_to "Delete", control_mapping_path(mapping), method: :delete,
+          class: "btn btn-sm btn-outline-danger",
+          data: { turbo_confirm: "Delete mapping '#{mapping.name}'?" } %>
+  <% end %>
+</div>

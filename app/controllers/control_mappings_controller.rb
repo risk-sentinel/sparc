@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class ControlMappingsController < ApplicationController
+  include CollectionViewable
   # #726: index/show join the Controls layer public-read gate
   # (SPARC_PUBLIC_CATALOGS, secure-by-default). (AC-3)
   skip_before_action :require_authentication, only: [ :index, :show ]
@@ -13,10 +14,17 @@ class ControlMappingsController < ApplicationController
   ]
 
   def index
-    @control_mappings = ControlMapping.sorted.includes(:source_catalog, :target_catalog)
-    @total_count      = @control_mappings.size
-    @complete_count   = @control_mappings.count { |m| m.status == "complete" }
-    @draft_count      = @control_mappings.count { |m| m.status == "draft" }
+    scope = ControlMapping.sorted.includes(:source_catalog, :target_catalog)
+    @total_count    = scope.count
+    @complete_count = scope.where(status: "complete").count
+    @draft_count    = scope.where(status: "draft").count
+
+    # #888 — this screen had no search at all; a corpus you can only scroll is
+    # not a corpus you can use.
+    scope = scope.search_text(params[:q])
+
+    @view_mode = resolve_view_mode(:control_mappings)
+    @pagy, @control_mappings = paginate_collection(scope)
   end
 
   def show

@@ -1,4 +1,5 @@
 class ControlCatalogsController < ApplicationController
+  include CollectionViewable
   include Publishable
   include OscalExportable
   include DocumentApprovalActions
@@ -23,12 +24,18 @@ class ControlCatalogsController < ApplicationController
   ]
 
   def index
-    @control_catalogs = ControlCatalog.includes(:control_families).order(:name)
-    @total_count = @control_catalogs.size
+    scope = ControlCatalog.includes(:control_families).order(:name)
+    @total_count = scope.size
     @family_count = ControlFamily.distinct.count(:code)
     @control_count = CatalogControl.distinct.count(:control_id)
     @revision_count = ControlCatalog.where.not(version: [ nil, "" ]).select(:version).distinct.count
-    @control_catalogs = @control_catalogs.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+
+    # #672 — filter listed rows; the tiles above keep showing totals.
+    scope = scope.search_text(params[:q])
+
+    # #888 — cards by default, remembered per screen, and paginated.
+    @view_mode = resolve_view_mode(:control_catalogs)
+    @pagy, @control_catalogs = paginate_collection(scope)
   end
 
   def show

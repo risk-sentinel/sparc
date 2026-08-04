@@ -1,4 +1,5 @@
 class EvidencesController < ApplicationController
+  include CollectionViewable
   include BoundaryScopedDocument
   boundary_scoped Evidence, read: "evidence.read", write: "evidence.write"
 
@@ -7,24 +8,43 @@ class EvidencesController < ApplicationController
   before_action :authorize_document_read!, only: [ :show ]
   before_action :authorize_document_write!, only: [ :edit, :update, :destroy, :create ]
 
+  # #888 — the facets this screen offers. The chrome that renders them is
+  # shared; only the names and the scoping below are screen-specific.
+  EVIDENCE_FACETS = %i[type status control_id authorization_boundary_id].freeze
+  EVIDENCE_FACET_LABELS = {
+    type: "Type", status: "Status", control_id: "Control",
+    authorization_boundary_id: "Authorization boundary"
+  }.freeze
+
   def index
-    @evidences = boundary_scoped_relation(Evidence).order(created_at: :desc)
-    @total_count = @evidences.count
+    scope = boundary_scoped_relation(Evidence).order(created_at: :desc)
+    @total_count = scope.count
     @link_count = EvidenceControlLink.where(evidence_id: boundary_scoped_relation(Evidence).select(:id)).count
 
-    @evidences = @evidences.where(evidence_type: params[:type]) if params[:type].present?
-    @evidences = @evidences.where(status: params[:status]) if params[:status].present?
-    @evidences = @evidences.where(authorization_boundary_id: params[:authorization_boundary_id]) if params[:authorization_boundary_id].present?
+    scope = scope.where(evidence_type: params[:type]) if params[:type].present?
+    scope = scope.where(status: params[:status]) if params[:status].present?
+    scope = scope.where(authorization_boundary_id: params[:authorization_boundary_id]) if params[:authorization_boundary_id].present?
 
     if params[:control_id].present?
       evidence_ids = EvidenceControlLink.where(control_id: params[:control_id]).select(:evidence_id)
-      @evidences = @evidences.where(id: evidence_ids)
+      scope = scope.where(id: evidence_ids)
     end
 
-    if params[:search].present?
-      term = "%#{params[:search]}%"
-      @evidences = @evidences.where("title ILIKE :q OR description ILIKE :q OR original_filename ILIKE :q", q: term)
+    # #888 — this screen searched on `search`, everything else on `q`. It reads
+    # `q` now like the rest of the app; `search` still works so existing links
+    # and bookmarks do not break.
+    term = params[:q].presence || params[:search].presence
+    if term.present?
+      pattern = "%#{Evidence.sanitize_sql_like(term)}%"
+      scope = scope.where(
+        "title ILIKE :q OR description ILIKE :q OR original_filename ILIKE :q", q: pattern
+      )
     end
+
+    @facets = active_facets(EVIDENCE_FACETS, labels: EVIDENCE_FACET_LABELS)
+    @clear_facets = clear_facets_params(EVIDENCE_FACETS)
+    @view_mode = resolve_view_mode(:evidences)
+    @pagy, @evidences = paginate_collection(scope)
   end
 
   def show

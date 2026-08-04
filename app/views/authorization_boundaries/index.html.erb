@@ -10,7 +10,9 @@
     <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "btn btn-primary" %>
   </div>
 
-  <%= render "shared/index_search", placeholder: "Search authorization boundaries…" %>
+  <%= render "shared/collection_toolbar",
+        label: "authorization boundaries", placeholder: "Search authorization boundaries…",
+        view_mode: (@authorization_boundaries.any? ? @view_mode : nil) %>
 
   <div data-controller="bulk-select">
   <%# #629 — admin-only bulk delete bar; appears when ≥1 row is selected. %>
@@ -25,7 +27,22 @@
     </div>
   <% end %>
 
-  <% if @authorization_boundaries.any? %>
+  <% if @authorization_boundaries.any? && @view_mode == :card %>
+    <div class="sparc-card-grid">
+      <% @authorization_boundaries.each do |authorization_boundary| %>
+        <%= render "shared/item_card",
+              title: authorization_boundary.name,
+              url: authorization_boundary_path(authorization_boundary),
+              badges: [ { text: authorization_boundary.status.to_s.titleize,
+                          class: "sparc-status sparc-status--#{authorization_boundary.status == 'active' ? 'success' : 'neutral'}" } ],
+              description: authorization_boundary.description,
+              metrics: [ { value: authorization_boundary.authorization_boundary_memberships.count, label: "personnel" },
+                         { value: authorization_boundary.boundaries.count, label: "boundaries" } ],
+              footer: "Updated #{authorization_boundary.updated_at.strftime('%Y-%m-%d')}",
+              actions: render("authorization_boundaries/item_actions", authorization_boundary: authorization_boundary) %>
+      <% end %>
+    </div>
+  <% elsif @authorization_boundaries.any? %>
     <table class="table table-hover" style="table-layout: fixed;">
       <colgroup>
         <% if can_bulk_delete? %><col style="width: 4%;"><% end %>
@@ -75,13 +92,7 @@
             <td><%= authorization_boundary.authorization_boundary_memberships.count %></td>
             <td><%= authorization_boundary.boundaries.count %></td>
             <td>
-              <div class="d-flex gap-1">
-                <%= link_to "View", authorization_boundary_path(authorization_boundary), class: "btn btn-primary btn-sm" %>
-                <%= link_to "Edit", edit_authorization_boundary_path(authorization_boundary), class: "btn btn-secondary btn-sm" %>
-                <%= button_to "Delete", authorization_boundary_path(authorization_boundary), method: :delete,
-                      class: "btn btn-danger btn-sm",
-                      form: { data: { turbo_confirm: "Delete '#{authorization_boundary.name}'? This cannot be undone." }, style: "display: inline;" } %>
-              </div>
+              <%= render "authorization_boundaries/item_actions", authorization_boundary: authorization_boundary %>
             </td>
           </tr>
         <% end %>
@@ -91,4 +102,6 @@
     <p class="text-center p-4 text-body-secondary">No authorization boundaries yet. Create your first authorization boundary to organize RMF artifacts and personnel.</p>
   <% end %>
   </div>
+
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "authorization boundaries" %>
 </div>

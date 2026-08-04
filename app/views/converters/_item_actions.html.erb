@@ -1,0 +1,18 @@
+<%#
+  Actions on one converter, shared by the table row and the card (#888 §4)
+  so an action cannot exist in one view and not the other.
+
+  Locals: converter — the record
+%>
+<% converter = local_assigns[:converter] %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", converter_path(converter), class: "btn btn-primary btn-sm",
+        style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
+  <% if can_write_converters? %>
+    <%= button_to "Delete", converter_path(converter), method: :delete,
+          class: "btn btn-danger btn-sm",
+          style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+          form: { data: { turbo_confirm: "Delete converter '#{converter.name}'?" }, style: "display: inline;" } %>
+  <% end %>
+</div>

@@ -15,6 +15,9 @@
 # NIST AC-3 / AC-6: promotion approval gated by role + boundary scope
 # NIST AU-2: every state-changing action recorded in BackMatterResourceChange
 class BackMatterResource < ApplicationRecord
+  include Searchable
+  # A back-matter resource has a title, not a name, and is often hunted by URL.
+  searchable_on :title, :description, :href
   UUID_V4_REGEX = /\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
   PROMOTION_STATES = %w[none pending_review approved rejected].freeze

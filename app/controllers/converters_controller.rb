@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class ConvertersController < ApplicationController
+  include CollectionViewable
   before_action :authorize_converter_write!, only: [
     :new, :create, :edit, :update, :destroy, :import, :do_import, :refresh_cci,
     :refresh_aws_config, :refresh_aws_security_hub, :import_stig
@@ -11,10 +12,18 @@ class ConvertersController < ApplicationController
   ]
 
   def index
-    @converters    = Converter.sorted
-    @total_count   = @converters.size
-    @complete_count = @converters.count { |c| c.status == "complete" }
-    @draft_count   = @converters.count { |c| c.status == "draft" }
+    scope = Converter.sorted
+    @total_count    = scope.count
+    @complete_count = scope.where(status: "complete").count
+    @draft_count    = scope.where(status: "draft").count
+
+    # #888 — no search here before. A converter is looked up by what it
+    # translates between at least as often as by its name, which is why
+    # Converter declares those columns searchable.
+    scope = scope.search_text(params[:q])
+
+    @view_mode = resolve_view_mode(:converters)
+    @pagy, @converters = paginate_collection(scope)
 
     # Aggregate coverage stats across all converters
     all_entries = ConverterEntry.joins(:converter).pluck(:target_id)

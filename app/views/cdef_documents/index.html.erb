@@ -31,7 +31,6 @@
     <% end %>
   </div>
 
-  <%= render "shared/index_search", placeholder: "Search component definitions…" %>
 
   <%# #488 — Refresh from AWS Labs confirmation modal (matches the DISA
       CCI confirmation modal pattern from app/views/converters/show.html.erb). %>
@@ -76,29 +75,12 @@
     </div>
   <% end %>
 
-  <%= render "shared/collection_filters", facets: @facets, clear_params: @clear_facets,
-        query: params[:q], label: "component definitions" %>
-
-  <%# #887 — card/list toggle. Cards read well for browsing and comparison;
-      the list reads well for scanning hundreds of rows, so both stay. This is
-      the pilot for the pattern #888 applies across every collection screen. %>
-  <% if @cdef_documents.any? %>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <%# The table puts select-all in its header; the card grid has no header,
-          so it lives here — otherwise bulk delete is per-card-only in the
-          default view (#888 §4). %>
-      <% if can_bulk_delete? && @view_mode == :card %>
-        <label class="small text-body-secondary d-flex align-items-center gap-2 mb-0">
-          <input type="checkbox" data-bulk-select-target="selectAll"
-                 data-action="bulk-select#toggleAll" aria-label="Select all component definitions">
-          Select all
-        </label>
-      <% else %>
-        <span></span>
-      <% end %>
-      <%= render "shared/view_toggle", current: @view_mode, label: "component definitions" %>
-    </div>
-  <% end %>
+  <%= render "shared/collection_toolbar",
+        label: "component definitions",
+        placeholder: "Search component definitions…",
+        view_mode: (@view_mode if @cdef_documents.any?),
+        facets: @facets, clear_params: @clear_facets,
+        extra: (render("cdef_documents/select_all") if can_bulk_delete? && @cdef_documents.any? && @view_mode == :card) %>
 
   <% if @cdef_documents.any? && @view_mode == :card %>
     <div class="sparc-card-grid">

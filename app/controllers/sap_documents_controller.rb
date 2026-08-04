@@ -1,4 +1,5 @@
 class SapDocumentsController < ApplicationController
+  include CollectionViewable
   include FileUploadable
   include Publishable
   include OscalExportable
@@ -19,11 +20,18 @@ class SapDocumentsController < ApplicationController
   METHOD_ORDER = %w[examine interview test].freeze
 
   def index
-    @sap_documents = boundary_scoped_relation(SapDocument).order(created_at: :desc)
-    @total_count = @sap_documents.count
+    scope = boundary_scoped_relation(SapDocument).order(created_at: :desc)
+    @total_count = scope.count
     @controls_count = SapControl.count
-    @completed_count = @sap_documents.where(status: "completed").count
-    @sap_documents = @sap_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+    @completed_count = scope.where(status: "completed").count
+
+    # #672 — filter listed rows; the tiles above keep showing totals.
+    scope = scope.search_text(params[:q])
+
+    # #888 — cards by default, remembered per screen, and paginated because a
+    # card costs far more to render than a table row.
+    @view_mode = resolve_view_mode(:sap_documents)
+    @pagy, @sap_documents = paginate_collection(scope)
   end
 
   def show

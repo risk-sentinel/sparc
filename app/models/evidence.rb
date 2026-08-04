@@ -1,5 +1,8 @@
 class Evidence < ApplicationRecord
   include Sluggable
+  include Searchable
+  # Evidence has no `name`; `collected_by` is how an assessor finds their own.
+  searchable_on :title, :description, :collected_by
   include AttachmentSizeLimit
   include ArtifactVersionable
   sluggable_source :title

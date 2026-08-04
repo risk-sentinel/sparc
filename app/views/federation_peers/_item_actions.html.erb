@@ -1,0 +1,11 @@
+<%#
+  Actions on one federation peer, shared by the table row and the card
+  (#888 §4) so an action cannot exist in one view and not the other.
+
+  Locals: peer — the FederationPeer
+%>
+<% peer = local_assigns[:peer] %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "Open", federation_peer_path(peer), class: "btn btn-sm btn-outline-primary" %>
+</div>

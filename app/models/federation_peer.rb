@@ -17,6 +17,9 @@
 #                                   verified channels with encrypted creds.
 # NIST IA-5: encrypt-then-MAC token + secret storage.
 class FederationPeer < ApplicationRecord
+  include Searchable
+  # No description column; the URL is the identifying detail operators recall.
+  searchable_on :name, :base_url
   TOKEN_KEY_PURPOSE  = "federation_peer_service_token"
   SECRET_KEY_PURPOSE = "federation_peer_signing_secret"
 

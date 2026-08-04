@@ -1,0 +1,29 @@
+<%#
+  Actions on one POAM document, shared by the table row and the card
+  (#888 §4) so an action cannot exist in one view and not the other.
+
+  Locals:
+    doc     — the document
+    compact — true in a card, where there is less width than a table cell
+%>
+<% doc = local_assigns[:doc] %>
+<% size = local_assigns.fetch(:compact, false) ? "padding: 0.2rem 0.5rem; font-size: 0.75rem;" : "padding: 0.25rem 0.6rem; font-size: 0.78rem;" %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", poam_document_path(doc), class: "btn btn-primary btn-sm", style: size %>
+  <% if doc.completed? %>
+    <%# #451 A1: shared partial routes dropdown clicks through the
+        Stimulus modal that surfaces specific validation errors. %>
+    <%= render "shared/oscal_export_dropdown",
+          validate_path: validate_oscal_export_poam_document_path(doc),
+          download_json_path: download_oscal_validated_poam_document_path(doc),
+          download_yaml_path: download_yaml_poam_document_path(doc),
+          download_xml_path: download_xml_poam_document_path(doc),
+          fallback_json_path: download_oscal_unvalidated_poam_document_path(doc),
+          document_type: "POAM" %>
+  <% end %>
+  <%= button_to "Delete", poam_document_path(doc), method: :delete,
+        class: "btn btn-danger btn-sm",
+        style: size,
+        form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
+</div>

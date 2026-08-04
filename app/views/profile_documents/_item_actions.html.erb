@@ -1,0 +1,36 @@
+<%#
+  Actions on one profile, shared by the table row and the card (#888 §4)
+  so an action cannot exist in one view and not the other.
+
+  Locals:
+    doc — the record
+%>
+<% doc = local_assigns[:doc] %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", profile_document_path(doc), class: "btn btn-primary btn-sm", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
+  <% if signed_in? && doc.completed? %>
+    <%# btn-primary (#1f6fa5) gives white-on-button 5.78:1 — AA-compliant.
+        The old inline #2980b9 was ~4.3:1 and failed WCAG AA (#668). %>
+    <%= button_to "Copy", copy_profile_document_path(doc), method: :post,
+          class: "btn btn-sm btn-primary", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+          form: { data: { turbo_confirm: "Duplicate this profile?" }, style: "display: inline;" } %>
+  <% end %>
+  <% if doc.completed? %>
+    <%# #451 A1: shared partial routes dropdown clicks through the
+        Stimulus modal that surfaces specific validation errors. %>
+    <%= render "shared/oscal_export_dropdown",
+          validate_path: validate_oscal_export_profile_document_path(doc),
+          download_json_path: download_oscal_validated_profile_document_path(doc),
+          download_yaml_path: download_yaml_profile_document_path(doc),
+          download_xml_path: download_xml_profile_document_path(doc),
+          fallback_json_path: download_oscal_unvalidated_profile_document_path(doc),
+          document_type: "Profile" %>
+  <% end %>
+  <% if signed_in? %>
+    <%= button_to "Delete", profile_document_path(doc), method: :delete,
+          class: "btn btn-danger btn-sm",
+          style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
+          form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
+  <% end %>
+</div>

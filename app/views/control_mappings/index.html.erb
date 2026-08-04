@@ -14,7 +14,26 @@
     <% end %>
   </div>
 
-  <% if @control_mappings.any? %>
+  <%= render "shared/collection_toolbar",
+        label: "control mappings", placeholder: "Search control mappings…",
+        view_mode: (@control_mappings.any? ? @view_mode : nil) %>
+
+  <% if @control_mappings.any? && @view_mode == :card %>
+    <div class="sparc-card-grid">
+      <% @control_mappings.each do |mapping| %>
+        <%= render "shared/item_card",
+              title: mapping.name,
+              url: control_mapping_path(mapping),
+              badges: [ { text: mapping.status.to_s.titleize,
+                          class: "sparc-status sparc-status--#{mapping.status == 'complete' ? 'success' : 'neutral'}" } ],
+              subtitle: [ mapping.source_catalog&.name, mapping.target_catalog&.name ].compact.join(" → ").presence,
+              description: mapping.description,
+              metrics: [ { value: mapping.control_mapping_entries.size, label: "entries" } ],
+              footer: "#{mapping.method_type.to_s.titleize} · updated #{mapping.updated_at.strftime('%Y-%m-%d')}",
+              actions: render("control_mappings/item_actions", mapping: mapping) %>
+      <% end %>
+    </div>
+  <% elsif @control_mappings.any? %>
     <table class="table table-hover" style="table-layout: fixed;">
       <colgroup>
         <col style="width: 20%;">
@@ -55,14 +74,7 @@
             <td class="small text-body-secondary"><%= mapping.method_type.titleize %></td>
             <td class="small text-body-secondary"><%= mapping.updated_at.strftime("%Y-%m-%d") %></td>
             <td>
-              <div class="d-flex gap-1 justify-content-end">
-                <%= link_to "View", control_mapping_path(mapping), class: "btn btn-sm btn-outline-primary" %>
-                <% if can_write_mappings? %>
-                  <%= button_to "Delete", control_mapping_path(mapping), method: :delete,
-                        class: "btn btn-sm btn-outline-danger",
-                        data: { turbo_confirm: "Delete mapping '#{mapping.name}'?" } %>
-                <% end %>
-              </div>
+              <%= render "control_mappings/item_actions", mapping: mapping %>
             </td>
           </tr>
         <% end %>
@@ -76,4 +88,6 @@
       <% end %>
     </div>
   <% end %>
+
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "control mappings" %>
 </div>

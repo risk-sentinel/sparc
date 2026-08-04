@@ -49,8 +49,29 @@
       </div>
     <% end %>
 
+    <%= render "shared/collection_toolbar",
+          label: "authoritative sources", placeholder: "Search sources by title, description or URL…",
+          facets: @facets, clear_params: @clear_facets,
+          view_mode: (@resources.any? ? @view_mode : nil) %>
+
     <% if @resources.empty? %>
       <div class="alert alert-info mb-0">No matching resources.</div>
+    <% elsif @view_mode == :card %>
+      <div class="sparc-card-grid">
+        <% @resources.each do |r| %>
+          <%= render "shared/item_card",
+                title: r.title,
+                url: authoritative_source_path(r),
+                badges: [ { text: r.source.to_s.titleize, class: "badge bg-light text-dark" },
+                          { text: r.rel.to_s, class: "badge text-bg-secondary" } ],
+                description: r.description,
+                chips: [ ({ text: r.globally_available? ? "Global" : "Organization", class: "" }),
+                         (r.media_type.present? ? { text: r.media_type, class: "" } : nil) ].compact,
+                empty_note: (card_short(r.href) if r.href.present?),
+                footer: "Updated #{r.updated_at.to_date}",
+                actions: render("authoritative_sources/item_actions", resource: r) %>
+        <% end %>
+      </div>
     <% else %>
       <div class="table-responsive">
         <table class="table table-sm table-hover align-middle">
@@ -92,7 +113,7 @@
                 </td>
                 <td class="text-nowrap"><span class="small"><%= r.updated_at.to_date %></span></td>
                 <td class="text-end">
-                  <%= link_to "View", authoritative_source_path(r), class: "btn btn-sm btn-outline-primary" %>
+                  <%= render "authoritative_sources/item_actions", resource: r %>
                 </td>
               </tr>
             <% end %>
@@ -100,5 +121,7 @@
         </table>
       </div>
     <% end %>
+
+    <%= render "shared/collection_pagination", pagy: @pagy, label: "authoritative sources" %>
   </div>
 </div>
