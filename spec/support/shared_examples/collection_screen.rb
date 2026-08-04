@@ -25,7 +25,7 @@
 # `actions` are substrings matched against the rendered body — a route, a
 # Stimulus hook, or button text. Route fragments are the most durable.
 RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_term: nil,
-                                                actions: [], label: nil|
+                                                actions: [], label: nil, bulk_select: false|
   let(:screen_path) { instance_exec(&path) }
   let!(:record) { instance_exec(&create) }
 
@@ -120,6 +120,35 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
         it "offers #{marker} in both views" do
           expect(with_view(screen_path, "card")).to include(marker), "card view is missing #{marker}"
           expect(with_view(screen_path, "list")).to include(marker), "list view is missing #{marker}"
+        end
+      end
+    end
+  end
+
+  # Bulk delete is unusable in a view with nothing to tick. The table puts
+  # select-all in its header, which the card grid does not have — so a screen
+  # can pass every other check and still have lost bulk delete in the default
+  # view. That is exactly what happened on both screens that offer it.
+  if bulk_select
+    describe "bulk selection" do
+      it "can select an individual item in both views" do
+        %w[card list].each do |mode|
+          expect(with_view(screen_path, mode)).to include('data-bulk-select-target="row"'),
+            "#{mode} view has nothing to select"
+        end
+      end
+
+      it "can select all in both views" do
+        %w[card list].each do |mode|
+          expect(with_view(screen_path, mode)).to include('data-bulk-select-target="selectAll"'),
+            "#{mode} view cannot select all"
+        end
+      end
+
+      it "wires the selection to the bulk form in both views" do
+        %w[card list].each do |mode|
+          expect(with_view(screen_path, mode)).to match(/form="\w+BulkForm"/),
+            "#{mode} view's checkbox is not wired to the bulk form"
         end
       end
     end

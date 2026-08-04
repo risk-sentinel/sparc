@@ -57,7 +57,8 @@ RSpec.describe "Collection screens", type: :request do
       screen: :cdef_documents,
       create: -> { create(:cdef_document, name: "Findable Widget", status: "completed") },
       search_term: "Findable",
-      actions: %w[View Delete]
+      actions: %w[View Delete],
+      bulk_select: true
   end
 
   describe "Control catalogs" do
@@ -84,7 +85,8 @@ RSpec.describe "Collection screens", type: :request do
       screen: :authorization_boundaries,
       create: -> { create(:authorization_boundary, name: "Findable Widget") },
       search_term: "Findable",
-      actions: %w[View]
+      actions: %w[View],
+      bulk_select: true
   end
 
   describe "Control mappings" do

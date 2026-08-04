@@ -1,0 +1,11 @@
+<%#
+  Bulk-select checkbox for one authorization boundary (#629), shared by the
+  table row and the card so admin bulk delete works in either view (#888 §4).
+
+  `form:` points at the bulk form by id rather than nesting inside it, which is
+  what lets the same control live in a table cell or a card head.
+%>
+<% boundary = local_assigns[:boundary] %>
+<input type="checkbox" name="ids[]" value="<%= boundary.id %>" form="abBulkForm"
+       data-bulk-select-target="row" data-action="bulk-select#toggle"
+       aria-label="Select <%= boundary.name %>">
