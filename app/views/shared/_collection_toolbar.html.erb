@@ -1,0 +1,39 @@
+<%#
+  The chrome above every collection (#888).
+
+  One partial rather than four calls per screen, so a screen cannot end up with
+  search but no filter chips, or a toggle but no way to see what is filtering
+  the list. Seventeen screens adopt this; consistency is the deliverable.
+
+  Order is deliberate: search, then what is currently applied, then how it is
+  drawn. Reading top to bottom answers "what am I looking at" before "how".
+
+  Locals:
+    label        — plural noun, e.g. "system security plans"
+    view_mode    — :card or :list (omit to hide the toggle)
+    placeholder  — search box hint (omit for the shared default)
+    facets       — from CollectionViewable#active_facets (omit if the screen has none)
+    clear_params — from CollectionViewable#clear_facets_params
+    search       — false to hide the search box
+    extra        — safe HTML placed on the left of the toggle row, for
+                   screen-specific controls like select-all
+%>
+<% label = local_assigns.fetch(:label, "results") %>
+
+<% if local_assigns.fetch(:search, true) %>
+  <%= render "shared/index_search",
+        placeholder: local_assigns.fetch(:placeholder, "Search #{label}…") %>
+<% end %>
+
+<%= render "shared/collection_filters",
+      facets: local_assigns[:facets],
+      clear_params: local_assigns[:clear_params],
+      query: params[:q],
+      label: label %>
+
+<% if local_assigns[:view_mode].present? %>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div><%= local_assigns[:extra] %></div>
+    <%= render "shared/view_toggle", current: local_assigns[:view_mode], label: label %>
+  </div>
+<% end %>

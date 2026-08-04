@@ -10,6 +10,16 @@
 <% placeholder = local_assigns.fetch(:placeholder, "Search by name or description…") %>
 <div class="mb-3" data-controller="index-search">
   <%= form_with url: request.path, method: :get, data: { index_search_target: "form" } do |f| %>
+    <%# #888 — a GET form submits ONLY its own fields, so without these the act
+        of searching would silently drop whatever facets, view mode or page size
+        were already applied. Everything except the search term and the page
+        number rides along as a hidden field; the page resets because the old
+        page number means nothing against a different result set. %>
+    <% request.query_parameters.except("q", "page").each do |key, value| %>
+      <% Array(value).each do |item| %>
+        <%= hidden_field_tag(value.is_a?(Array) ? "#{key}[]" : key, item, id: nil) %>
+      <% end %>
+    <% end %>
     <div class="input-group">
       <%= f.search_field :q,
             value: params[:q],
@@ -19,7 +29,10 @@
             "aria-label": placeholder,
             data: { action: "input->index-search#submit" } %>
       <% if params[:q].present? %>
-        <%= link_to "Clear", request.path, class: "btn btn-outline-secondary" %>
+        <%# Clears the search only — the surrounding filters stay, which is what
+            "clear the thing next to me" means. Clear-all lives with the chips. %>
+        <%= link_to "Clear", url_for(request.query_parameters.except("q", "page")),
+                    class: "btn btn-outline-secondary" %>
       <% end %>
     </div>
   <% end %>

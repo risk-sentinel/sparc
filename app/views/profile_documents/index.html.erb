@@ -20,9 +20,20 @@
     <% end %>
   </div>
 
-  <%= render "shared/index_search", placeholder: "Search baselines / profiles…" %>
+  <%= render "shared/collection_toolbar",
+        label: "profiles", placeholder: "Search baselines / profiles…",
+        view_mode: (@profile_documents.any? ? @view_mode : nil) %>
 
-  <% if @profile_documents.any? %>
+  <% if @profile_documents.any? && @view_mode == :card %>
+    <div class="sparc-card-grid">
+      <% @profile_documents.each do |doc| %>
+        <%= render "shared/item_card", **document_card_slots(
+              doc, count: doc.profile_controls.count, count_label: "controls").merge(
+              url: profile_document_path(doc),
+              actions: render("profile_documents/item_actions", doc: doc)) %>
+      <% end %>
+    </div>
+  <% elsif @profile_documents.any? %>
     <table class="table table-hover" style="table-layout: fixed; width: 100%;">
       <thead>
         <tr>
@@ -74,33 +85,7 @@
             <td><%= doc.profile_controls.count %></td>
             <td style="white-space: nowrap; font-size: 0.85rem;"><%= doc.created_at.strftime("%Y-%m-%d") %></td>
             <td class="text-end" style="white-space: nowrap;">
-              <div style="display: inline-flex; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end;">
-                <%= link_to "View", profile_document_path(doc), class: "btn btn-primary btn-sm", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
-                <% if signed_in? && doc.completed? %>
-                  <%# btn-primary (#1f6fa5) gives white-on-button 5.78:1 — AA-compliant.
-                      The old inline #2980b9 was ~4.3:1 and failed WCAG AA (#668). %>
-                  <%= button_to "Copy", copy_profile_document_path(doc), method: :post,
-                        class: "btn btn-sm btn-primary", style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
-                        form: { data: { turbo_confirm: "Duplicate this profile?" }, style: "display: inline;" } %>
-                <% end %>
-                <% if doc.completed? %>
-                  <%# #451 A1: shared partial routes dropdown clicks through the
-                      Stimulus modal that surfaces specific validation errors. %>
-                  <%= render "shared/oscal_export_dropdown",
-                        validate_path: validate_oscal_export_profile_document_path(doc),
-                        download_json_path: download_oscal_validated_profile_document_path(doc),
-                        download_yaml_path: download_yaml_profile_document_path(doc),
-                        download_xml_path: download_xml_profile_document_path(doc),
-                        fallback_json_path: download_oscal_unvalidated_profile_document_path(doc),
-                        document_type: "Profile" %>
-                <% end %>
-                <% if signed_in? %>
-                  <%= button_to "Delete", profile_document_path(doc), method: :delete,
-                        class: "btn btn-danger btn-sm",
-                        style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
-                        form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
-                <% end %>
-              </div>
+              <%= render "profile_documents/item_actions", doc: doc %>
             </td>
           </tr>
         <% end %>
@@ -109,4 +94,6 @@
   <% else %>
     <p class="text-center p-4 text-body-secondary">No profiles found. Upload your first OSCAL Profile (Baseline) to get started.</p>
   <% end %>
+
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "profiles" %>
 </div>

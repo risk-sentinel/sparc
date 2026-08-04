@@ -1,4 +1,5 @@
 class SspDocumentsController < ApplicationController
+  include CollectionViewable
   include FileUploadable
   include Publishable
   include OscalExportable
@@ -22,11 +23,18 @@ class SspDocumentsController < ApplicationController
   before_action :authorize_document_write!, only: [ :create, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :populate_from_profile, :import_boundary_users, :import_cdef_components, :import_back_matter ]
 
   def index
-    @ssp_documents = boundary_scoped_relation(SspDocument).order(created_at: :desc)
-    @total_count = @ssp_documents.count
+    scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
+    @total_count = scope.count
     @controls_count = SspControl.count
-    @completed_count = @ssp_documents.where(status: "completed").count
-    @ssp_documents = @ssp_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+    @completed_count = scope.where(status: "completed").count
+
+    # #672 — filter listed rows; the tiles above keep showing totals.
+    scope = scope.search_text(params[:q])
+
+    # #888 — cards by default, remembered per screen, and paginated because a
+    # card costs far more to render than a table row.
+    @view_mode = resolve_view_mode(:ssp_documents)
+    @pagy, @ssp_documents = paginate_collection(scope)
   end
 
   def show
@@ -353,6 +361,15 @@ class SspDocumentsController < ApplicationController
               filename:    "#{@ssp_document.name}_oscal_ssp_#{Date.today}.json",
               type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
+  # A document that fails schema validation must not 500 here. This is the
+  # route the OSCAL export dropdown's JSON option actually points at, and
+  # download_yaml / download_xml / download_oscal all degrade to a flash and
+  # a bounce back — this one raised instead, purely because it was the one
+  # sibling missing the rescue.
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL validation failed for SSP #{@ssp_document.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
+    redirect_to ssp_document_path(@ssp_document, oscal_validation_failed: 1, oscal_format: "json")
   end
 
   def download_oscal_unvalidated

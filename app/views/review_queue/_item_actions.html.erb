@@ -1,0 +1,28 @@
+<%#
+  Approve / reject for one document awaiting review, shared by the table row
+  and the card (#888 §4). The queue exists to be acted on, so the actions have
+  to be reachable in whichever view the reviewer is in.
+
+  Locals:
+    doc          — the document
+    approve_path — POST target for approval
+    reject_path  — POST target for rejection (reason required)
+%>
+<% doc = local_assigns[:doc] %>
+<% approve_path = local_assigns[:approve_path] %>
+<% reject_path = local_assigns[:reject_path] %>
+
+<%# No routes means an unrecognised reviewable type; showing no actions is the
+    safe failure, not an approve button pointing nowhere. %>
+<% if approve_path.blank? || reject_path.blank? %>
+  <span class="small text-body-secondary">No actions available</span>
+<% else %>
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= button_to "Approve", approve_path, method: :post, class: "btn btn-success btn-sm",
+        form: { data: { turbo_confirm: "Approve '#{doc.name}'?" }, style: "display:inline;" } %>
+  <%= form_with url: reject_path, method: :post, class: "d-inline" do |f| %>
+    <%= f.text_field :reason, placeholder: "Reason", class: "form-control form-control-sm d-inline-block", style: "width: 11rem;", required: true %>
+    <%= f.submit "Reject", class: "btn btn-danger btn-sm" %>
+  <% end %>
+</div>
+<% end %>

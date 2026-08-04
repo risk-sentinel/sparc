@@ -12,6 +12,10 @@
 # instead of numeric IDs via to_param override.
 class Converter < ApplicationRecord
   include Sluggable
+  include Searchable
+  # #888 — a converter is looked up by what it translates between at least as
+  # often as by its name.
+  searchable_on :name, :description, :source_framework, :target_framework
 
   # Strips the numeric control suffix to derive the family (e.g. "AC-2(3)" → "AC").
   FAMILY_SUFFIX_PATTERN = /-\d+.*/

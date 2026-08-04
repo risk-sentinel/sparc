@@ -21,11 +21,14 @@
     <div class="card bg-body-secondary mb-3">
       <div class="card-body py-2">
         <%= form_with url: evidences_path, method: :get, local: true, class: "row g-2 align-items-end" do |f| %>
+      <%# Carry the search term and view mode: a GET form submits only its own
+          fields, so applying a filter here would otherwise drop the active
+          search and reset how the list is drawn. %>
+      <%= hidden_field_tag :q, params[:q], id: nil if params[:q].present? %>
+      <%= hidden_field_tag :view, params[:view], id: nil if params[:view].present? %>
+          <%# Search lives in the shared box above, on `q`, like every other
+              collection screen. %>
           <div class="col-md-3">
-            <%= f.label :search, "Search", class: "form-label small fw-semibold mb-1" %>
-            <%= f.text_field :search, value: params[:search], class: "form-control form-control-sm", placeholder: "Title, filename..." %>
-          </div>
-          <div class="col-md-2">
             <%= f.label :type, "Type", class: "form-label small fw-semibold mb-1" %>
             <%= f.select :type, options_for_select(Evidence::EVIDENCE_TYPE_LABELS.map { |k, v| [ v, k ] }, params[:type]),
                          { include_blank: "All Types" }, class: "form-select form-select-sm" %>
@@ -51,7 +54,29 @@
       </div>
     </div>
 
-    <% if @evidences.any? %>
+    <%= render "shared/collection_toolbar",
+          label: "evidence records", placeholder: "Search evidence…",
+          facets: @facets, clear_params: @clear_facets,
+          view_mode: (@evidences.any? ? @view_mode : nil) %>
+
+    <% if @evidences.any? && @view_mode == :card %>
+      <div class="sparc-card-grid">
+        <% @evidences.each do |evidence| %>
+          <%= render "shared/item_card",
+                title: evidence.title,
+                url: evidence_path(evidence),
+                badges: [ { text: Evidence::STATUS_LABELS[evidence.status] || evidence.status.to_s.titleize,
+                            class: "sparc-status sparc-status--#{evidence.status == 'approved' ? 'success' : 'neutral'}" },
+                          { text: Evidence::EVIDENCE_TYPE_LABELS[evidence.evidence_type] || evidence.evidence_type.to_s.titleize,
+                            class: "badge bg-light text-dark" } ],
+                description: evidence.description,
+                metrics: [ { value: evidence.evidence_control_links.size, label: "controls" } ],
+                chips: (evidence.authorization_boundary ? [ { text: evidence.authorization_boundary.name, class: "" } ] : []),
+                footer: [ evidence.collected_by.presence, evidence.created_at.strftime("%Y-%m-%d") ].compact.join(" · "),
+                actions: render("evidences/item_actions", evidence: evidence) %>
+        <% end %>
+      </div>
+    <% elsif @evidences.any? %>
       <table class="table table-hover">
         <thead>
           <tr>
@@ -110,13 +135,7 @@
                 <% end %>
               </td>
               <td>
-                <div class="d-flex gap-1">
-                  <%= link_to "View", evidence, class: "btn btn-primary btn-sm" %>
-                  <%= link_to "Edit", edit_evidence_path(evidence), class: "btn btn-sm btn-sparc-orange" %>
-                  <%= button_to "Delete", evidence, method: :delete,
-                      form: { data: { turbo_confirm: "Delete evidence '#{evidence.title}'?" } },
-                      class: "btn btn-danger btn-sm" %>
-                </div>
+                <%= render "evidences/item_actions", evidence: evidence %>
               </td>
             </tr>
           <% end %>
@@ -128,4 +147,6 @@
       </div>
     <% end %>
   </div>
+
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "evidence records" %>
 </div>

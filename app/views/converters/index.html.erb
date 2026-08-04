@@ -18,7 +18,26 @@
     <% end %>
   </div>
 
-  <% if @converters.any? %>
+  <%= render "shared/collection_toolbar",
+        label: "converters", placeholder: "Search converters…",
+        view_mode: (@converters.any? ? @view_mode : nil) %>
+
+  <% if @converters.any? && @view_mode == :card %>
+    <div class="sparc-card-grid">
+      <% @converters.each do |converter| %>
+        <%= render "shared/item_card",
+              title: converter.name,
+              url: converter_path(converter),
+              badges: [ { text: converter.status.to_s.titleize,
+                          class: "sparc-status sparc-status--#{converter.status == 'complete' ? 'success' : 'neutral'}" } ],
+              subtitle: [ converter.source_framework, converter.target_framework ].compact_blank.join(" → ").presence,
+              description: converter.description,
+              metrics: [ { value: converter.converter_entries.size, label: "entries" } ],
+              footer: "Updated #{converter.updated_at.strftime('%Y-%m-%d')}",
+              actions: render("converters/item_actions", converter: converter) %>
+      <% end %>
+    </div>
+  <% elsif @converters.any? %>
     <table class="table table-hover" style="table-layout: fixed;">
       <colgroup>
         <col style="width: 22%;">
@@ -66,16 +85,7 @@
             <td class="small text-body-secondary"><%= converter.version %></td>
             <td class="small text-body-secondary"><%= converter.updated_at.strftime("%Y-%m-%d") %></td>
             <td class="text-end" style="white-space: nowrap;">
-              <div style="display: inline-flex; gap: 0.3rem; justify-content: flex-end;">
-                <%= link_to "View", converter_path(converter), class: "btn btn-primary btn-sm",
-                      style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;" %>
-                <% if can_write_converters? %>
-                  <%= button_to "Delete", converter_path(converter), method: :delete,
-                        class: "btn btn-danger btn-sm",
-                        style: "font-size: 0.75rem; padding: 0.25rem 0.5rem;",
-                        form: { data: { turbo_confirm: "Delete converter '#{converter.name}'?" }, style: "display: inline;" } %>
-                <% end %>
-              </div>
+              <%= render "converters/item_actions", converter: converter %>
             </td>
           </tr>
         <% end %>
@@ -94,4 +104,6 @@
       <% end %>
     </div>
   <% end %>
+
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "converters" %>
 </div>

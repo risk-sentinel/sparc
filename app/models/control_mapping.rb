@@ -10,6 +10,7 @@
 # Exports to OSCAL v1.2.1 mapping-collection JSON via OscalMappingExportService.
 class ControlMapping < ApplicationRecord
   include OscalMetadata
+  include Searchable
   include Sluggable
 
   belongs_to :source_catalog, class_name: "ControlCatalog"

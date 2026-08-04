@@ -18,11 +18,15 @@
 
     <%= form_with url: authoritative_sources_path, method: :get,
                   local: true, class: "row g-2 mb-3" do |f| %>
+      <%# Carry the search term and view mode: a GET form submits only its own
+          fields, so applying a filter here would otherwise drop the active
+          search and reset how the list is drawn. %>
+      <%= hidden_field_tag :q, params[:q], id: nil if params[:q].present? %>
+      <%= hidden_field_tag :view, params[:view], id: nil if params[:view].present? %>
+      <%# #888 — search moved to the shared box above, on `q`, like every other
+          collection screen. Keeping a second `q` input here would have put two
+          fields of the same name on one page and three controls named "Clear". %>
       <div class="col-md-4">
-        <%= f.text_field :q, value: params[:q], class: "form-control",
-                         placeholder: "Search title or description" %>
-      </div>
-      <div class="col-md-3">
         <%= f.select :scope,
                      options_for_select([
                        [ "All visible", "" ],
@@ -38,19 +42,37 @@
                                         params[:rel]),
                      {}, class: "form-select" %>
       </div>
-      <%# Filter + Clear share one column. "Clear" in a col-md-1 was narrower than
-          the word itself, so it wrapped to "Clea / r". Pairing them in a flex
-          column gives each a sane minimum, and text-nowrap stops any future
-          wrap regardless of viewport. %>
-      <div class="col-md-3 d-flex gap-2">
+      <%# Clearing is owned by the shared filter chrome ("Clear all"), which also
+          drops the search — one control instead of two that did nearly the
+          same thing. text-nowrap stops "Filter" wrapping at narrow widths. %>
+      <div class="col-md-2 d-flex gap-2">
         <%= f.submit "Filter", class: "btn btn-primary flex-fill text-nowrap" %>
-        <%= link_to "Clear", authoritative_sources_path,
-                    class: "btn btn-outline-secondary flex-fill text-nowrap" %>
       </div>
     <% end %>
 
+    <%= render "shared/collection_toolbar",
+          label: "authoritative sources", placeholder: "Search sources by title, description or URL…",
+          facets: @facets, clear_params: @clear_facets,
+          view_mode: (@resources.any? ? @view_mode : nil) %>
+
     <% if @resources.empty? %>
       <div class="alert alert-info mb-0">No matching resources.</div>
+    <% elsif @view_mode == :card %>
+      <div class="sparc-card-grid">
+        <% @resources.each do |r| %>
+          <%= render "shared/item_card",
+                title: r.title,
+                url: authoritative_source_path(r),
+                badges: [ { text: r.source.to_s.titleize, class: "badge bg-light text-dark" },
+                          { text: r.rel.to_s, class: "badge text-bg-secondary" } ],
+                description: r.description,
+                chips: [ ({ text: r.globally_available? ? "Global" : "Organization", class: "" }),
+                         (r.media_type.present? ? { text: r.media_type, class: "" } : nil) ].compact,
+                empty_note: (card_short(r.href) if r.href.present?),
+                footer: "Updated #{r.updated_at.to_date}",
+                actions: render("authoritative_sources/item_actions", resource: r) %>
+        <% end %>
+      </div>
     <% else %>
       <div class="table-responsive">
         <table class="table table-sm table-hover align-middle">
@@ -92,7 +114,7 @@
                 </td>
                 <td class="text-nowrap"><span class="small"><%= r.updated_at.to_date %></span></td>
                 <td class="text-end">
-                  <%= link_to "View", authoritative_source_path(r), class: "btn btn-sm btn-outline-primary" %>
+                  <%= render "authoritative_sources/item_actions", resource: r %>
                 </td>
               </tr>
             <% end %>
@@ -100,5 +122,7 @@
         </table>
       </div>
     <% end %>
+
+    <%= render "shared/collection_pagination", pagy: @pagy, label: "authoritative sources" %>
   </div>
 </div>

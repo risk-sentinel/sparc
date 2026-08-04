@@ -6,11 +6,29 @@
       leveraging-side authorization boundaries depend on. Read-only.
     </p>
 
+    <%= render "shared/collection_toolbar",
+          label: "leveraged POA&Ms", placeholder: "Search leveraged POA&Ms…",
+          view_mode: (@leveraged_poams.any? ? @view_mode : nil) %>
+
     <% if @leveraged_poams.empty? %>
       <div class="alert alert-info mb-0">
         No leveraged POA&amp;Ms in scope. This list populates from
         <code>LeveragedAuthorization</code> records linking your boundaries to
         leveraged ones.
+      </div>
+    <% elsif @view_mode == :card %>
+      <div class="sparc-card-grid">
+        <% @leveraged_poams.each do |poam| %>
+          <%= render "shared/item_card",
+                title: poam.name,
+                url: leveraged_poam_document_path(poam),
+                badges: [ { text: poam.lifecycle_status.to_s.titleize, class: "badge bg-light text-dark" } ],
+                subtitle: poam.authorization_boundary&.name,
+                description: poam.description,
+                metrics: [ { value: poam.poam_items.count, label: "items" } ],
+                empty_note: "Read-only — owned by a leveraged boundary.",
+                actions: render("leveraged_poam_documents/item_actions", poam: poam) %>
+        <% end %>
       </div>
     <% else %>
       <div class="table-responsive">
@@ -32,8 +50,7 @@
                 <td><%= poam.lifecycle_status %></td>
                 <td><%= poam.poam_items.count %></td>
                 <td class="text-end">
-                  <%= link_to "View", leveraged_poam_document_path(poam),
-                              class: "btn btn-sm btn-outline-primary" %>
+                  <%= render "leveraged_poam_documents/item_actions", poam: poam %>
                 </td>
               </tr>
             <% end %>
@@ -41,5 +58,7 @@
         </table>
       </div>
     <% end %>
+
+    <%= render "shared/collection_pagination", pagy: @pagy, label: "leveraged POA&Ms" %>
   </div>
 </div>

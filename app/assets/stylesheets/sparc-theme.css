@@ -2458,6 +2458,21 @@ a.link-purple { color: var(--sparc-purple); }
   line-height: 1.3;
 }
 
+/* Bulk-select sits before the title and must not be squeezed by it. Nudged
+   down so the box aligns with the first line of the title rather than its
+   ascender. */
+.sparc-item-card__select {
+  flex: 0 0 auto;
+  padding-top: 0.15rem;
+}
+
+/* The title is what flexes; actions keep their natural width so buttons are
+   not compressed to slivers in a narrow column. */
+.sparc-item-card__head .sparc-item-card__title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .sparc-item-card__title a { text-decoration: none; }
 .sparc-item-card__title a:hover { text-decoration: underline; }
 

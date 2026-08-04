@@ -1,0 +1,10 @@
+<%#
+  Select-all for the card grid (#888 §4). The table puts this in its header;
+  the card grid has no header, so it rides in the toolbar instead — otherwise
+  bulk delete is per-card-only in the default view.
+%>
+<label class="small text-body-secondary d-flex align-items-center gap-2 mb-0">
+  <input type="checkbox" data-bulk-select-target="selectAll"
+         data-action="bulk-select#toggleAll" aria-label="Select all component definitions">
+  Select all
+</label>

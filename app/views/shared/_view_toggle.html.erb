@@ -13,10 +13,10 @@
     current — :card or :list
     label   — what is being toggled, for the accessible name
 %>
-<% current = local_assigns.fetch(:current, :list) %>
+<% current = local_assigns.fetch(:current, :card) %>
 <% label = local_assigns.fetch(:label, "items") %>
 
-<div class="sparc-view-toggle" role="group" aria-label="<%= "Choose how to display #{label}" %>">
+<div class="sparc-view-toggle" role="radiogroup" aria-label="<%= "Choose how to display #{label}" %>">
   <% [ [ :card, "Cards", "▦" ], [ :list, "List", "☰" ] ].each do |mode, text, glyph| %>
     <%
       selected = current.to_sym == mode
@@ -25,6 +25,8 @@
     %>
     <%= link_to url_for(request.query_parameters.merge(view: mode)),
                 class: "sparc-view-toggle__option",
+                role: "radio",
+                "aria-checked": selected.to_s,
                 "aria-current": selected.to_s,
                 title: "#{text} view" do %>
       <span aria-hidden="true"><%= glyph %></span><%= text %>

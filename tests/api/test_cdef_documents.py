@@ -77,6 +77,78 @@ class TestIndex:
         assert_error_envelope(anon_client.get(PATH), expected_status=401)
 
 
+class TestBrowse:
+    """#887 — search and facets, shared with the web index.
+
+    The gap these close: the UI matched component regions, control ids,
+    capabilities and check ids while this endpoint matched only name and
+    description, so the same query string gave two different answers.
+    """
+
+    @pytest.mark.happy
+    def test_search_narrows_the_list(self, admin_client: httpx.Client, cdef_doc) -> None:
+        hit = admin_client.get(PATH, params={"q": cdef_doc["name"]})
+        assert hit.status_code == 200, hit.text
+        assert cdef_doc["slug"] in [d["slug"] for d in hit.json()["data"]]
+
+        miss = admin_client.get(PATH, params={"q": "zzz-no-such-component-zzz"})
+        assert miss.status_code == 200, miss.text
+        assert miss.json()["data"] == []
+
+    @pytest.mark.happy
+    def test_facets_are_echoed_back(self, admin_client: httpx.Client) -> None:
+        """A paginating consumer can tell what produced the result set."""
+        response = admin_client.get(
+            PATH, params={"partition": "aws-us-gov", "capability": "MFA"}
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["meta"]["facets"] == {
+            "partition": "aws-us-gov",
+            "capability": "MFA",
+        }
+
+    def test_no_facets_reported_when_none_applied(self, admin_client: httpx.Client) -> None:
+        assert admin_client.get(PATH).json()["meta"]["facets"] == {}
+
+    def test_an_unknown_facet_value_returns_nothing_rather_than_everything(
+        self, admin_client: httpx.Client
+    ) -> None:
+        """A facet that matches nothing must narrow, not silently no-op."""
+        response = admin_client.get(PATH, params={"partition": "no-such-partition"})
+        assert response.status_code == 200, response.text
+        assert response.json()["data"] == []
+
+    @pytest.mark.happy
+    def test_every_row_carries_the_enriched_shape(
+        self, admin_client: httpx.Client, cdef_doc
+    ) -> None:
+        """Including one with nothing indexed — a real state, not an error."""
+        response = admin_client.get(PATH, params={"q": cdef_doc["name"]})
+        row = next(d for d in response.json()["data"] if d["slug"] == cdef_doc["slug"])
+
+        components = row["components"]
+        assert components["count"] == 0
+        assert components["service_titles"] == []
+        assert components["control_counts"] == {"native": 0, "enriched": 0}
+        # Partitions arrive with their labels resolved, so a consumer never has
+        # to keep its own aws-us-gov -> "AWS GovCloud" table.
+        assert components["partitions"] == []
+
+    def test_component_details_are_detail_only(
+        self, admin_client: httpx.Client, cdef_doc
+    ) -> None:
+        """On a list this would be a row multiplier for no benefit."""
+        index_row = next(
+            d
+            for d in admin_client.get(PATH, params={"q": cdef_doc["name"]}).json()["data"]
+            if d["slug"] == cdef_doc["slug"]
+        )
+        assert "component_details" not in index_row
+
+        show = admin_client.get(f"{PATH}/{cdef_doc['slug']}").json()["data"]
+        assert "component_details" in show
+
+
 class TestShow:
     @pytest.mark.happy
     def test_admin_shows_document(

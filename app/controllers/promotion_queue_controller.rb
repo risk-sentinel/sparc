@@ -3,13 +3,24 @@
 # Both actions call BackMatterResourcePromotionService — same code path
 # the API uses.
 class PromotionQueueController < ApplicationController
+  include CollectionViewable
   before_action :set_resource, only: %i[approve reject]
 
   def index
     pending = BackMatterResource.pending_promotion.includes(:resourceable, :organization)
-    @resources = pending.select do |r|
+
+    # Which rows a user may act on is decided per record by the promotion
+    # service, not by SQL — so this stays an Array, and search and pagination
+    # run over it rather than in the database.
+    approvable = pending.select do |r|
       BackMatterResourcePromotionService.new(resource: r, actor: current_user).can_approve?
     end
+
+    # #888 — this screen had no search at all.
+    approvable = search_records(approvable, params[:q], :title, :description, :href)
+
+    @view_mode = resolve_view_mode(:promotion_queue)
+    @pagy, @resources = paginate_array(approvable)
   end
 
   def approve

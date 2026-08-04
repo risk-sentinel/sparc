@@ -1,4 +1,5 @@
 class AuthorizationBoundariesController < ApplicationController
+  include CollectionViewable
   include BulkDestroyable
 
   before_action :set_authorization_boundary, only: [
@@ -9,11 +10,17 @@ class AuthorizationBoundariesController < ApplicationController
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
   def index
-    @authorization_boundaries = AuthorizationBoundary.order(updated_at: :desc)
-    @total_count = @authorization_boundaries.count
-    @active_count = @authorization_boundaries.where(status: "active").count
+    scope = AuthorizationBoundary.order(updated_at: :desc)
+    @total_count = scope.count
+    @active_count = scope.where(status: "active").count
     @member_count = AuthorizationBoundaryMembership.count
-    @authorization_boundaries = @authorization_boundaries.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+
+    # #672 — filter listed rows; the tiles above keep showing totals.
+    scope = scope.search_text(params[:q])
+
+    # #888 — cards by default, remembered per screen, and paginated.
+    @view_mode = resolve_view_mode(:authorization_boundaries)
+    @pagy, @authorization_boundaries = paginate_collection(scope)
   end
 
   def show

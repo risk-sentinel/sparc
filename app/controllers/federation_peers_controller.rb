@@ -2,11 +2,17 @@
 # plus a sync trigger. service_token and signing_secret are write-only
 # fields on the form; blank submissions on edit leave them unchanged.
 class FederationPeersController < ApplicationController
+  include CollectionViewable
   before_action :require_admin
   before_action :set_peer, only: %i[show edit update destroy sync]
 
   def index
-    @peers = FederationPeer.order(:name)
+    # #888 — no search here before. A peer is recalled by its URL as often as
+    # by its name, which is why FederationPeer declares both searchable.
+    scope = FederationPeer.order(:name).search_text(params[:q])
+
+    @view_mode = resolve_view_mode(:federation_peers)
+    @pagy, @peers = paginate_collection(scope)
   end
 
   def show

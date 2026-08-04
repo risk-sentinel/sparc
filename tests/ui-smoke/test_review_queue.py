@@ -69,7 +69,16 @@ class TestReviewQueue:
 
 
 def _row(page, name: str):
-    """The review-queue table row for the document named ``name``."""
+    """The queue entry for ``name``, in whichever view is showing.
+
+    #888 made cards the default, so a table-only locator would assert against
+    a view users no longer land on. Approve and reject exist in both by
+    design — this finds the entry either way, which is the property worth
+    holding: the queue is actionable in the view you actually get.
+    """
+    card = page.locator(".sparc-item-card").filter(has_text=name)
+    if card.count() > 0:
+        return card.first
     return page.get_by_role("row").filter(has_text=name)
 
 

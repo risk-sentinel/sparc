@@ -1,0 +1,16 @@
+<%#
+  Actions on one authorization boundary, shared by the table row and the card (#888 §4)
+  so an action cannot exist in one view and not the other.
+
+  Locals:
+    authorization_boundary — the record
+%>
+<% authorization_boundary = local_assigns[:authorization_boundary] %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", authorization_boundary_path(authorization_boundary), class: "btn btn-primary btn-sm" %>
+  <%= link_to "Edit", edit_authorization_boundary_path(authorization_boundary), class: "btn btn-secondary btn-sm" %>
+  <%= button_to "Delete", authorization_boundary_path(authorization_boundary), method: :delete,
+        class: "btn btn-danger btn-sm",
+        form: { data: { turbo_confirm: "Delete '#{authorization_boundary.name}'? This cannot be undone." }, style: "display: inline;" } %>
+</div>

@@ -20,10 +20,17 @@
 #   AU-2 — every cross-boundary view emits an AuditEvent so the
 #         leveraged system has visibility into who is consuming its data
 class LeveragedPoamDocumentsController < ApplicationController
+  include CollectionViewable
   before_action :set_poam_document, only: :show
 
   def index
-    @leveraged_poams = visible_leveraged_poam_documents.includes(:authorization_boundary).distinct
+    # #888 — this screen had no search. It lists POA&Ms owned by other
+    # boundaries, so the boundary name matters as much as the document's.
+    scope = visible_leveraged_poam_documents.includes(:authorization_boundary)
+                                            .distinct.search_text(params[:q])
+
+    @view_mode = resolve_view_mode(:leveraged_poam_documents)
+    @pagy, @leveraged_poams = paginate_collection(scope)
   end
 
   def show

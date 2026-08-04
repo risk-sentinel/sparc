@@ -1,4 +1,5 @@
 class CdefDocumentsController < ApplicationController
+  include CollectionViewable
   include FileUploadable
   include Publishable
   include OscalExportable
@@ -21,30 +22,28 @@ class CdefDocumentsController < ApplicationController
   SEVERITY_ORDER = %w[high medium low info].freeze
 
   def index
-    @cdef_documents = CdefDocument.order(created_at: :desc)
-    @total_count = @cdef_documents.count
+    @total_count = CdefDocument.count
     @controls_count = CdefControl.count
-    @completed_count = @cdef_documents.where(status: "completed").count
-    # #672 filtered on name/description only, which meant an obvious query like
-    # `us-east` or `AC-2` returned nothing — those facts live in the #887
-    # component index, not on the document. Match either.
-    if params[:q].present?
-      by_document = @cdef_documents.search_text(params[:q]).select(:id)
-      by_component = CdefComponent.search(params[:q]).select(:cdef_document_id)
-      @cdef_documents = @cdef_documents.where(id: by_document).or(
-        @cdef_documents.where(id: by_component)
-      )
-    end
+    @completed_count = CdefDocument.where(status: "completed").count
+
+    # #887 §5 — search and facets live in CdefBrowseQuery so this screen and
+    # Api::V1 narrow the collection identically. The chrome that renders the
+    # facets is shared too (CollectionViewable + shared/_collection_filters);
+    # only the labels are screen-specific.
+    @cdef_documents = CdefBrowseQuery.new(params).documents
+    @facets = active_facets(CdefBrowseQuery::FACETS, labels: CdefBrowseQuery::FACET_LABELS)
+    @clear_facets = clear_facets_params(CdefBrowseQuery::FACETS)
 
     # #887 — view mode lives in the URL rather than in client state, so a
     # chosen view is shareable, survives a reload, round-trips with the active
     # search, and works with JavaScript disabled.
-    @view_mode = params[:view].to_s == "card" ? :card : :list
+    @view_mode = resolve_view_mode(:cdef_documents)
 
-    # Roll the component index up only for the rows actually being rendered.
-    # Cards show document-level applicability, but the facts are per component,
-    # and summarising the whole table to draw one page would not hold up.
-    @component_summaries = CdefComponent.summary_for(@cdef_documents.map(&:id)) if @view_mode == :card
+    # #888 — paginate before summarising. Cards show document-level
+    # applicability, but the facts are per component, and rolling up the whole
+    # table to draw one page would not hold up.
+    @pagy, @cdef_documents = paginate_collection(@cdef_documents)
+    @component_summaries = CdefComponent.summary_for(@cdef_documents.map(&:id))
   end
 
   def show
@@ -146,6 +145,15 @@ class CdefDocumentsController < ApplicationController
               filename:    "#{@cdef_document.name}_oscal_component_#{Date.today}.json",
               type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
+  # A document that fails schema validation must not 500 here. This is the
+  # route the OSCAL export dropdown's JSON option actually points at, and
+  # download_yaml / download_xml / download_oscal all degrade to a flash and
+  # a bounce back — this one raised instead, purely because it was the one
+  # sibling missing the rescue.
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL validation failed for CDEF #{@cdef_document.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
+    redirect_to cdef_document_path(@cdef_document, oscal_validation_failed: 1, oscal_format: "json")
   end
 
   def download_oscal_unvalidated

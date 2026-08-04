@@ -31,7 +31,6 @@
     <% end %>
   </div>
 
-  <%= render "shared/index_search", placeholder: "Search component definitions…" %>
 
   <%# #488 — Refresh from AWS Labs confirmation modal (matches the DISA
       CCI confirmation modal pattern from app/views/converters/show.html.erb). %>
@@ -76,14 +75,12 @@
     </div>
   <% end %>
 
-  <%# #887 — card/list toggle. Cards read well for browsing and comparison;
-      the list reads well for scanning hundreds of rows, so both stay. This is
-      the pilot for the pattern #888 applies across every collection screen. %>
-  <% if @cdef_documents.any? %>
-    <div class="d-flex justify-content-end mb-3">
-      <%= render "shared/view_toggle", current: @view_mode, label: "component definitions" %>
-    </div>
-  <% end %>
+  <%= render "shared/collection_toolbar",
+        label: "component definitions",
+        placeholder: "Search component definitions…",
+        view_mode: (@view_mode if @cdef_documents.any?),
+        facets: @facets, clear_params: @clear_facets,
+        extra: (render("cdef_documents/select_all") if can_bulk_delete? && @cdef_documents.any? && @view_mode == :card) %>
 
   <% if @cdef_documents.any? && @view_mode == :card %>
     <div class="sparc-card-grid">
@@ -102,7 +99,9 @@
               chips: cdef_card_chips(summary),
               empty_note: [ cdef_partition_caveat(summary), cdef_coverage_note(summary) ].compact.join(" "),
               footer: [ doc.cdef_type.presence, cdef_mapping_note(summary),
-                        "#{summary[:region_count]} regions" ].compact.join(" · ") %>
+                        "#{summary[:region_count]} regions" ].compact.join(" · "),
+              select: (render("cdef_documents/bulk_checkbox", doc: doc) if can_bulk_delete?),
+              actions: render("cdef_documents/item_actions", doc: doc, compact: true) %>
       <% end %>
     </div>
   <% elsif @cdef_documents.any? %>
@@ -125,7 +124,7 @@
         <% @cdef_documents.each do |doc| %>
           <tr>
             <% if can_bulk_delete? %>
-              <td><input type="checkbox" name="ids[]" value="<%= doc.id %>" form="cdefBulkForm" data-bulk-select-target="row" data-action="bulk-select#toggle" aria-label="Select <%= doc.name %>"></td>
+              <td><%= render "cdef_documents/bulk_checkbox", doc: doc %></td>
             <% end %>
             <td><strong><%= link_to cdef_display_name(doc), cdef_document_path(doc), class: "text-primary", style: "text-decoration: none;" %></strong></td>
             <td>
@@ -159,28 +158,8 @@
             <td><%= doc.cdef_controls.count %></td>
             <td style="white-space: nowrap;"><%= doc.created_at.strftime("%Y-%m-%d %H:%M") %></td>
             <td>
-              <div class="d-flex flex-wrap gap-1" style="max-width: 280px;">
-                <%= link_to "View", cdef_document_path(doc), class: "btn btn-primary btn-sm", style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;" %>
-                <% if signed_in? && doc.completed? %>
-                  <%= button_to "Copy", copy_cdef_document_path(doc), method: :post, class: "btn btn-sm btn-primary", style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;", form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
-                <% end %>
-                <% if doc.completed? %>
-                  <%# #451 A1: shared partial routes dropdown clicks through the
-                      Stimulus modal that surfaces specific validation errors. %>
-                  <%= render "shared/oscal_export_dropdown",
-                        validate_path: validate_oscal_export_cdef_document_path(doc),
-                        download_json_path: download_oscal_validated_cdef_document_path(doc),
-                        download_yaml_path: download_yaml_cdef_document_path(doc),
-                        download_xml_path: download_xml_cdef_document_path(doc),
-                        fallback_json_path: download_oscal_unvalidated_cdef_document_path(doc),
-                        document_type: "CDEF" %>
-                <% end %>
-                <% if signed_in? %>
-                  <%= button_to "Delete", cdef_document_path(doc), method: :delete,
-                        class: "btn btn-danger btn-sm",
-                        style: "padding: 0.25rem 0.6rem; font-size: 0.78rem;",
-                        form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." }, style: "display: inline;" } %>
-                <% end %>
+              <div style="max-width: 280px;">
+                <%= render "cdef_documents/item_actions", doc: doc %>
               </div>
             </td>
           </tr>
@@ -190,5 +169,7 @@
   <% else %>
     <p class="text-center p-4 text-body-secondary">No component definitions found. Upload your first CDEF to get started.</p>
   <% end %>
+  <%= render "shared/collection_pagination", pagy: @pagy, label: "component definitions" %>
+
   </div>
 </div>

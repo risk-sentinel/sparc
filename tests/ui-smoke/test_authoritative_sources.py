@@ -43,14 +43,19 @@ def test_filter_then_clear(authed_page):
     record_csp(authed_page)
     authed_page.goto(INDEX, wait_until="networkidle")
 
-    authed_page.fill("#q", "Smoke")
-    authed_page.locator('input[type="submit"][value="Filter"]').click()
+    # #888 — search is the shared box now (one `q` field per screen, not two).
+    authed_page.get_by_role("searchbox").fill("Smoke")
+    authed_page.keyboard.press("Enter")
     authed_page.wait_for_url(lambda u: "q=Smoke" in u, timeout=10000)
     authed_page.wait_for_load_state("networkidle")
     assert_no_csp_violations(authed_page, during="apply filter")
 
-    authed_page.get_by_role("link", name="Clear").click()
-    authed_page.wait_for_url(lambda u: "q=" not in u, timeout=10000)
+    # Exactly one control clears the search — the ambiguity of three different
+    # "Clear"s on one screen is what this now guards against.
+    clear = authed_page.get_by_role("link", name="Clear", exact=True)
+    assert clear.count() == 1, f"expected one Clear control, found {clear.count()}"
+    clear.click()
+    authed_page.wait_for_url(lambda u: "q=Smoke" not in u, timeout=10000)
     assert_no_csp_violations(authed_page, during="clear filter")
 
 
@@ -109,8 +114,11 @@ def test_add_instance_wide_checkbox(authed_page):
     )
     authed_page.wait_for_load_state("networkidle")
 
-    row = authed_page.locator("tr", has_text=title)
+    # #888 — cards are the default view, so match the entry in either rendering
+    # rather than assuming a table row.
+    card = authed_page.locator(".sparc-item-card").filter(has_text=title)
+    row = card if card.count() > 0 else authed_page.locator("tr", has_text=title)
     assert row.count() > 0, f"'{title}' not listed after instance-wide create"
-    # An admin self-approves → the row is globally available.
+    # An admin self-approves → the entry is globally available.
     assert row.first.get_by_text("Global").count() > 0, "instance-wide source not marked Global"
     assert_no_csp_violations(authed_page, during="submit instance-wide add")

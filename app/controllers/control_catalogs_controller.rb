@@ -1,4 +1,5 @@
 class ControlCatalogsController < ApplicationController
+  include CollectionViewable
   include Publishable
   include OscalExportable
   include DocumentApprovalActions
@@ -23,12 +24,18 @@ class ControlCatalogsController < ApplicationController
   ]
 
   def index
-    @control_catalogs = ControlCatalog.includes(:control_families).order(:name)
-    @total_count = @control_catalogs.size
+    scope = ControlCatalog.includes(:control_families).order(:name)
+    @total_count = scope.size
     @family_count = ControlFamily.distinct.count(:code)
     @control_count = CatalogControl.distinct.count(:control_id)
     @revision_count = ControlCatalog.where.not(version: [ nil, "" ]).select(:version).distinct.count
-    @control_catalogs = @control_catalogs.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+
+    # #672 — filter listed rows; the tiles above keep showing totals.
+    scope = scope.search_text(params[:q])
+
+    # #888 — cards by default, remembered per screen, and paginated.
+    @view_mode = resolve_view_mode(:control_catalogs)
+    @pagy, @control_catalogs = paginate_collection(scope)
   end
 
   def show
@@ -215,6 +222,15 @@ class ControlCatalogsController < ApplicationController
               filename:    "#{@control_catalog.name}_oscal_catalog_#{Date.today}.json",
               type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
+  # A document that fails schema validation must not 500 here. This is the
+  # route the OSCAL export dropdown's JSON option actually points at, and
+  # download_yaml / download_xml / download_oscal all degrade to a flash and
+  # a bounce back — this one raised instead, purely because it was the one
+  # sibling missing the rescue.
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL validation failed for Catalog #{@control_catalog.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
+    redirect_to control_catalog_path(@control_catalog, oscal_validation_failed: 1, oscal_format: "json")
   end
 
   def download_oscal_unvalidated
