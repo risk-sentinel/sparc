@@ -151,6 +151,25 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
             "#{mode} view's checkbox is not wired to the bulk form"
         end
       end
+
+      # Markup present is not the same as control wired. Stimulus only binds
+      # targets inside its controller element, so a select-all rendered just
+      # outside `data-controller="bulk-select"` looks correct in the HTML and
+      # does nothing when clicked — which is exactly what happened when the
+      # card grid's select-all first moved into the shared toolbar.
+      it "puts every bulk-select target inside the controller that binds them" do
+        %w[card list].each do |mode|
+          body = with_view(screen_path, mode)
+          scope = body[/<div[^>]*data-controller="bulk-select"[^>]*>.*/m].to_s
+
+          expect(scope).to include('data-bulk-select-target="selectAll"'),
+            "#{mode} view's select-all is outside the bulk-select controller"
+          expect(scope).to include('data-bulk-select-target="row"'),
+            "#{mode} view's row checkbox is outside the bulk-select controller"
+          expect(scope).to include('data-bulk-select-target="bar"'),
+            "#{mode} view's delete bar is outside the bulk-select controller"
+        end
+      end
     end
   end
 

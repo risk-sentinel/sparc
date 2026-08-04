@@ -10,12 +10,13 @@
     <%= link_to "New Authorization Boundary", new_authorization_boundary_path, class: "btn btn-primary" %>
   </div>
 
+  <div data-controller="bulk-select">
+
   <%= render "shared/collection_toolbar",
         label: "authorization boundaries", placeholder: "Search authorization boundaries…",
         view_mode: (@authorization_boundaries.any? ? @view_mode : nil),
         extra: (render("authorization_boundaries/select_all") if can_bulk_delete? && @authorization_boundaries.any? && @view_mode == :card) %>
 
-  <div data-controller="bulk-select">
   <%# #629 — admin-only bulk delete bar; appears when ≥1 row is selected. %>
   <% if can_bulk_delete? && @authorization_boundaries.any? %>
     <div class="mb-2" data-bulk-select-target="bar" hidden>
