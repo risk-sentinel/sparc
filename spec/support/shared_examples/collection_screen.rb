@@ -84,7 +84,8 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
     end
 
     it "reports how many there are" do
-      expect(body_at(screen_path)).to include('aria-live="polite"')
+      # <output> carries an implicit status role and polite live region.
+      expect(body_at(screen_path)).to include("<output")
     end
   end
 

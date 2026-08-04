@@ -9,9 +9,12 @@
   view mode, search and filters survive a page change.
 
   §3 requires the result count to be announced to assistive tech when filters
-  change; `aria-live="polite"` on the count does that without stealing focus.
-  The count is rendered even on a single page, because "12 results" after a
-  search is the feedback, not the page links.
+  change. `<output>` carries an implicit `status` role and an implicit polite
+  live region, so it announces without stealing focus — and it is better
+  supported across devices than the same roles spelled out in ARIA, which is
+  why the native element is preferred over `<p role="status">`. The count is
+  rendered even on a single page, because "12 results" after a search is the
+  feedback, not the page links.
 
   Locals:
     pagy  — the Pagy object
@@ -22,7 +25,7 @@
 
 <% if pagy %>
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
-    <p class="small text-body-secondary mb-0" aria-live="polite" role="status">
+    <output class="small text-body-secondary mb-0 d-block">
       <% if pagy.count.zero? %>
         No <%= label %> match the current filters.
       <% elsif pagy.pages > 1 %>
@@ -30,7 +33,7 @@
       <% else %>
         <%= pagy.count %> <%= label %>
       <% end %>
-    </p>
+    </output>
 
     <% if pagy.pages > 1 %>
       <nav aria-label="<%= label.capitalize %> pages">

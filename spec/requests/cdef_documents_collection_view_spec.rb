@@ -242,7 +242,9 @@ RSpec.describe "CdefDocuments collection view", type: :request do
     it "announces the result count to assistive tech" do
       get cdef_documents_path
 
-      expect(response.body).to include('aria-live="polite"')
+      # <output> carries an implicit status role and polite live region, so
+      # the element itself is what makes the count announce.
+      expect(response.body).to include("<output")
       expect(response.body).to include("3 component definitions")
     end
 
