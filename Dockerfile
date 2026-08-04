@@ -9,11 +9,19 @@ ARG RUBY_VERSION=3.4.4
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
 ARG HDF_LIBS_VERSION=3.4.1
-# Digest-pinned manifest-list (multi-arch) for reproducibility (#742 / folded #639
-# pinning policy). Currently ubi-minimal 9.7. Digest-only (no version tag) so the
-# reference is unambiguous (SonarQube docker:S6596 — don't pin tag AND digest).
-# Bump deliberately via Dependabot/Renovate when RH ships a patch.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:907b68736aa798b2d38255b7aa070b2a70acb90803864a40f05d0ec47556ddd0
+# Digest-pinned manifest-list (multi-arch: amd64, arm64, ppc64le, s390x) for
+# reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 9.8.
+# Digest-only (no version tag) so the reference is unambiguous (SonarQube
+# docker:S6596 — don't pin tag AND digest).
+# Bump deliberately when RH ships a patch — a stale pin is how baked-in base
+# packages quietly rot. Bumped 2026-08-04 (9.7 -> 9.8) to take the fixes for six
+# HIGH CVEs the v1.15.4 scanner audit found with fixes available upstream:
+#   gnutls  3.8.3-10.el9_7    -> 3.8.10-4.el9_8    CVE-2026-33845/-33846/-42009/-42010
+#   libacl  2.3.1-4.el9       -> 2.4.0-1.el9_8     CVE-2026-54369
+#   glib2   2.68.4-18.el9_7.2 -> 2.68.4-19.el9_8.2 CVE-2026-58016
+# The base already carries them, so a digest bump is sufficient — no `microdnf
+# update`, which would trade reproducibility for the same result.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal@sha256:48fa5d8cda7fc00d270d8747c3eaa54ae196f0820d8540074a9c8c61d5e3056f
 
 # ── builder: toolchain + Ruby/jemalloc from source + hdf-cli + gems + assets ──
 FROM ${UBI_IMAGE} AS builder
