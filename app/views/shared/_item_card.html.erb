@@ -20,9 +20,17 @@
     empty_note — String shown when there is nothing to assert
     footer     — String or safe HTML
     actions    — safe HTML, right side of the footer
+    select     — safe HTML, a bulk-select control shown before the title
+
+  `select` and `actions` exist so a card is not a read-only rendering of a row:
+  #888 §4 requires every action available in one view to be available in the
+  other, and bulk delete is unusable in a view with nothing to tick.
 %>
 <article class="sparc-item-card">
   <div class="sparc-item-card__head">
+    <% if local_assigns[:select].present? %>
+      <div class="sparc-item-card__select"><%= local_assigns[:select] %></div>
+    <% end %>
     <h3 class="sparc-item-card__title">
       <%= link_to local_assigns[:title], local_assigns[:url] %>
     </h3>

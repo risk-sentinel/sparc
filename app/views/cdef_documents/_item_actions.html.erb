@@ -1,0 +1,44 @@
+<%#
+  The actions available on one component definition.
+
+  Shared by the table row and the card (#888 §4): an action offered in one view
+  must be offered in the other. When the card view landed it carried none of
+  these, and because cards are the default, View / Copy / OSCAL export / Delete
+  all disappeared from the screen a user lands on. Rendering both modes from
+  this one partial is what stops that recurring.
+
+  Locals:
+    doc     — the CdefDocument
+    compact — true in a card, where there is less width than a table cell
+%>
+<% doc = local_assigns[:doc] %>
+<% size = local_assigns.fetch(:compact, false) ? "padding: 0.2rem 0.5rem; font-size: 0.75rem;" : "padding: 0.25rem 0.6rem; font-size: 0.78rem;" %>
+
+<div class="d-flex flex-wrap gap-1 align-items-center">
+  <%= link_to "View", cdef_document_path(doc), class: "btn btn-primary btn-sm", style: size %>
+
+  <% if signed_in? && doc.completed? %>
+    <%= button_to "Copy", copy_cdef_document_path(doc), method: :post,
+          class: "btn btn-sm btn-primary", style: size,
+          form: { data: { turbo_confirm: "Duplicate this component definition?" } } %>
+  <% end %>
+
+  <% if doc.completed? %>
+    <%# #451 A1: shared partial routes dropdown clicks through the Stimulus
+        modal that surfaces specific validation errors. %>
+    <%= render "shared/oscal_export_dropdown",
+          validate_path: validate_oscal_export_cdef_document_path(doc),
+          download_json_path: download_oscal_validated_cdef_document_path(doc),
+          download_yaml_path: download_yaml_cdef_document_path(doc),
+          download_xml_path: download_xml_cdef_document_path(doc),
+          fallback_json_path: download_oscal_unvalidated_cdef_document_path(doc),
+          document_type: "CDEF" %>
+  <% end %>
+
+  <% if signed_in? %>
+    <%= button_to "Delete", cdef_document_path(doc), method: :delete,
+          class: "btn btn-danger btn-sm", style: size,
+          form: { data: { turbo_confirm: "Delete '#{doc.name}'? This cannot be undone." },
+                  style: "display: inline;" } %>
+  <% end %>
+</div>
