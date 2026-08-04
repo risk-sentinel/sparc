@@ -222,6 +222,15 @@ class ControlCatalogsController < ApplicationController
               filename:    "#{@control_catalog.name}_oscal_catalog_#{Date.today}.json",
               type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
+  # A document that fails schema validation must not 500 here. This is the
+  # route the OSCAL export dropdown's JSON option actually points at, and
+  # download_yaml / download_xml / download_oscal all degrade to a flash and
+  # a bounce back — this one raised instead, purely because it was the one
+  # sibling missing the rescue.
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL validation failed for Catalog #{@control_catalog.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
+    redirect_to control_catalog_path(@control_catalog, oscal_validation_failed: 1, oscal_format: "json")
   end
 
   def download_oscal_unvalidated

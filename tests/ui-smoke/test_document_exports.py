@@ -35,10 +35,18 @@ RESOURCES = [
     ("sap_document", "/sap_documents"),
 ]
 
-# action -> how to validate the payload
+# action -> how to validate the payload.
+#
+# `download_oscal_validated` is the one the OSCAL export dropdown's JSON option
+# actually links, on every card, row and show page — it was missing here, and
+# that gap hid a 500: it was the only one of the four validating actions with no
+# rescue for OscalValidationError. The two entries above it cannot catch that,
+# because `download_json` is a non-OSCAL internal dump the UI never links and
+# `download_oscal_unvalidated` skips validation by design.
 FORMATS = {
     "download_json": "json",
     "download_oscal_unvalidated": "json",
+    "download_oscal_validated": "json",
     "download_yaml": "yaml",
     "download_xml": "xml",
 }

@@ -23,6 +23,12 @@ class Meta(BaseModel):
     pages: int = Field(ge=1)
     count: int = Field(ge=0)
     items: int = Field(ge=0)
+    # #887 — endpoints that offer facets echo back the ones actually applied,
+    # so a paginating consumer can tell what produced the result set without
+    # re-parsing its own query string. Absent on endpoints with no facets;
+    # declared here rather than loosening the model, so an UNKNOWN meta key
+    # still fails the contract.
+    facets: dict[str, str] | None = None
 
 
 class Source(BaseModel):

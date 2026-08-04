@@ -206,6 +206,34 @@ RSpec.describe "CdefDocuments collection view", type: :request do
 
       expect(response.body).to include("No component definitions match the current filters.")
     end
+
+    # A GET form submits only its own fields. Without hidden inputs carrying
+    # them, the act of searching silently dropped every active facet and the
+    # view mode — so a user who filtered, then searched within it, lost the
+    # filter and could not tell why the results widened.
+    describe "the search box" do
+      it "carries the active facets so searching narrows within them" do
+        get cdef_documents_path(partition: "aws-us-gov", capability: "MFA", view: "list")
+
+        expect(search_form).to include('name="partition"', "aws-us-gov")
+        expect(search_form).to include('name="capability"', "MFA")
+        expect(search_form).to include('name="view"', "list")
+      end
+
+      it "does not carry the page number, which means nothing against new results" do
+        get cdef_documents_path(partition: "aws-us-gov", page: "3")
+
+        expect(search_form).not_to include('name="page"')
+      end
+
+      it "clears only the search, leaving the surrounding filters in place" do
+        get cdef_documents_path(q: "iam", partition: "aws-us-gov")
+
+        clear = response.body[/<a[^>]*class="btn btn-outline-secondary"[^>]*>\s*Clear\s*<\/a>/m].to_s
+        expect(clear).to include("partition=aws-us-gov")
+        expect(clear).not_to include("q=iam")
+      end
+    end
   end
 
   describe "pagination" do
@@ -248,6 +276,12 @@ RSpec.describe "CdefDocuments collection view", type: :request do
 
   def clear_all_link(body)
     filter_block(body)[/<a[^>]*href="([^"]*)"[^>]*>\s*Clear all/, 1]
+  end
+
+  # The search form specifically — the layout has others (logout, bulk delete),
+  # and grabbing the first <form> on the page asserts nothing about search.
+  def search_form
+    response.body[/<form[^>]*data-index-search-target="form"[^>]*>.*?<\/form>/m].to_s
   end
 
   def filter_block(body)

@@ -18,11 +18,15 @@
 
     <%= form_with url: authoritative_sources_path, method: :get,
                   local: true, class: "row g-2 mb-3" do |f| %>
+      <%# Carry the search term and view mode: a GET form submits only its own
+          fields, so applying a filter here would otherwise drop the active
+          search and reset how the list is drawn. %>
+      <%= hidden_field_tag :q, params[:q], id: nil if params[:q].present? %>
+      <%= hidden_field_tag :view, params[:view], id: nil if params[:view].present? %>
+      <%# #888 — search moved to the shared box above, on `q`, like every other
+          collection screen. Keeping a second `q` input here would have put two
+          fields of the same name on one page and three controls named "Clear". %>
       <div class="col-md-4">
-        <%= f.text_field :q, value: params[:q], class: "form-control",
-                         placeholder: "Search title or description" %>
-      </div>
-      <div class="col-md-3">
         <%= f.select :scope,
                      options_for_select([
                        [ "All visible", "" ],
@@ -38,14 +42,11 @@
                                         params[:rel]),
                      {}, class: "form-select" %>
       </div>
-      <%# Filter + Clear share one column. "Clear" in a col-md-1 was narrower than
-          the word itself, so it wrapped to "Clea / r". Pairing them in a flex
-          column gives each a sane minimum, and text-nowrap stops any future
-          wrap regardless of viewport. %>
-      <div class="col-md-3 d-flex gap-2">
+      <%# Clearing is owned by the shared filter chrome ("Clear all"), which also
+          drops the search — one control instead of two that did nearly the
+          same thing. text-nowrap stops "Filter" wrapping at narrow widths. %>
+      <div class="col-md-2 d-flex gap-2">
         <%= f.submit "Filter", class: "btn btn-primary flex-fill text-nowrap" %>
-        <%= link_to "Clear", authoritative_sources_path,
-                    class: "btn btn-outline-secondary flex-fill text-nowrap" %>
       </div>
     <% end %>
 

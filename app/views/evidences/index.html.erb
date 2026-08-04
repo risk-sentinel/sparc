@@ -21,6 +21,11 @@
     <div class="card bg-body-secondary mb-3">
       <div class="card-body py-2">
         <%= form_with url: evidences_path, method: :get, local: true, class: "row g-2 align-items-end" do |f| %>
+      <%# Carry the search term and view mode: a GET form submits only its own
+          fields, so applying a filter here would otherwise drop the active
+          search and reset how the list is drawn. %>
+      <%= hidden_field_tag :q, params[:q], id: nil if params[:q].present? %>
+      <%= hidden_field_tag :view, params[:view], id: nil if params[:view].present? %>
           <%# Search lives in the shared box above, on `q`, like every other
               collection screen. %>
           <div class="col-md-3">

@@ -256,6 +256,15 @@ class SarDocumentsController < ApplicationController
               filename:    "#{@sar_document.name}_oscal_ar_#{Date.today}.json",
               type:        JSON_CONTENT_TYPE,
               disposition: "attachment"
+  # A document that fails schema validation must not 500 here. This is the
+  # route the OSCAL export dropdown's JSON option actually points at, and
+  # download_yaml / download_xml / download_oscal all degrade to a flash and
+  # a bounce back — this one raised instead, purely because it was the one
+  # sibling missing the rescue.
+  rescue OscalValidationError => e
+    Rails.logger.warn("OSCAL validation failed for SAR #{@sar_document.id}: #{e.message.to_s.truncate(300)}")
+    flash[:warning] = SCHEMA_VALIDATION_FAILED_FLASH
+    redirect_to sar_document_path(@sar_document, oscal_validation_failed: 1, oscal_format: "json")
   end
 
   def download_oscal_unvalidated
