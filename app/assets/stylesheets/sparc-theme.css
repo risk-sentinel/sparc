@@ -2360,3 +2360,201 @@ a.link-purple { color: var(--sparc-purple); }
   outline: 2px solid var(--bs-primary, #0d6efd);
   outline-offset: 2px;
 }
+
+
+/* ── Item cards + view toggle (#887) ───────────────────────────────
+   Piloted on the CDEF browser, intended as the shared pattern #888
+   rolls out across every collection screen. Deliberately generic:
+   nothing here knows what a component definition is.
+
+   Cards read well for browsing and comparison; lists read well for
+   scanning hundreds of rows. Both are kept, and which one you get is
+   a URL parameter rather than client state, so a view is shareable,
+   survives a reload, and works with JavaScript disabled. */
+
+.sparc-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.sparc-view-toggle__option {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  text-decoration: none;
+  color: var(--bs-secondary-color);
+  background: transparent;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sparc-view-toggle__option + .sparc-view-toggle__option {
+  border-left: 1px solid var(--bs-border-color);
+}
+
+.sparc-view-toggle__option:hover {
+  background: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+}
+
+/* aria-current carries the state for assistive tech; this is only its
+   visual counterpart, so the two can never disagree. */
+.sparc-view-toggle__option[aria-current="true"] {
+  background: var(--bs-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.sparc-view-toggle__option:focus-visible {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: -2px;
+}
+
+/* auto-fill + minmax rather than fixed breakpoints: the grid reflows on
+   container width, so it behaves inside a narrow panel as well as full
+   width without a media query per screen. */
+.sparc-card-grid {
+  display: grid;
+  /* auto-FIT, not auto-fill: auto-fill keeps empty tracks, which pins a
+     single card to the 320px minimum even with a full row available. auto-fit
+     collapses them, so one component on a detail page fills the width and a
+     filtered result set does not sit in a narrow column. */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.sparc-item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  height: 100%;
+  padding: 1rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  background: var(--bs-tertiary-bg);
+}
+
+.sparc-item-card:focus-within {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.sparc-item-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.sparc-item-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.sparc-item-card__title a { text-decoration: none; }
+.sparc-item-card__title a:hover { text-decoration: underline; }
+
+/* Two lines, then ellipsis. Clamping in CSS rather than truncating in Ruby
+   keeps the full text in the DOM for screen readers and for find-in-page. */
+.sparc-item-card__desc {
+  font-size: 0.85rem;
+  color: var(--bs-secondary-color);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sparc-item-card__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  font-size: 0.8rem;
+}
+
+.sparc-item-card__metric strong {
+  display: block;
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.sparc-item-card__metric span { color: var(--bs-secondary-color); }
+
+.sparc-item-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.sparc-item-card__foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.sparc-chip {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--bs-border-color);
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+
+.sparc-chip--strong {
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+/* Derived values are visually quieter than asserted ones on purpose: an
+   inference must never read with the same weight as an author's claim. */
+.sparc-chip--derived {
+  border-style: dashed;
+  font-style: italic;
+}
+
+.sparc-chip--warn {
+  border-color: var(--bs-warning);
+  color: var(--bs-warning-text-emphasis, #664d03);
+}
+
+/* "Nothing asserted" is a finding, not an absence — 163 of the 230 upstream
+   AWS CDEFs are in this state, so it has to be stated rather than left blank. */
+.sparc-item-card__empty {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--bs-secondary-color);
+}
+
+/* Description gets clamped on an index card, where a uniform card height makes
+   a grid of many scannable. On a detail page there is one card and no reason
+   to hide prose the user came to read. */
+.sparc-item-card__desc--full {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+}
+
+/* A subtitle names what an item contains when the title cannot — an upstream
+   OSCAL filename says nothing about the four services inside it. */
+.sparc-item-card__subtitle {
+  font-size: 0.78rem;
+  color: var(--bs-secondary-color);
+  margin: -0.25rem 0 0;
+}

@@ -1,7 +1,29 @@
 class CatalogControlsController < ApplicationController
+  # #881 — `show` is a READ of catalog content, so it follows the same posture
+  # as control_catalogs#show and control_families#show: reachable without
+  # authentication only when the deployment opts into public controls (#726),
+  # and never gated on catalogs.write. The write gate below was previously
+  # unscoped, which was harmless while every action was a write.
+  skip_before_action :require_authentication, only: [ :show ]
+  before_action :require_authentication_unless_public_controls, only: [ :show ]
+
   before_action :set_control_family, only: [ :new, :create, :batch_new, :batch_create ]
-  before_action :set_catalog_control, only: [ :edit, :update, :destroy ]
-  before_action :authorize_catalog_write!
+  before_action :set_catalog_control, only: [ :show, :edit, :update, :destroy ]
+  # #881 — legacy numeric URLs converge on the readable one.
+  before_action :redirect_legacy_identifier, only: [ :show, :edit ]
+  before_action :authorize_catalog_write!, except: [ :show ]
+
+  # #881 — a control's own page. Controls were previously only visible inside
+  # the family aggregate, so there was nothing to link to or cite; sub-parts
+  # (48% of rows) had no address at all.
+  def show
+    @control_family  = @catalog_control.control_family
+    @control_catalog = @control_family.control_catalog
+    # Direct children only. A prefix match would be wrong: `ac-10` starts with
+    # `ac-1` but is a separate control, not a sub-part of it.
+    @sub_parts = @catalog_control.direct_children
+    @linked_resources = @catalog_control.back_matter_resources.order(:title)
+  end
 
   def new
     @catalog_control = @control_family.catalog_controls.new
@@ -94,8 +116,45 @@ class CatalogControlsController < ApplicationController
     @control_family = ControlFamily.find(params[:control_family_id])
   end
 
+  # #881 — resolve a control by its canonical identifier when the route is
+  # catalog-scoped (`/control_catalogs/<slug>/controls/ac-19.4.b.1`), and by
+  # database id on the legacy shallow route.
+  #
+  # The legacy route stays resolvable so existing bookmarks and any link already
+  # in the wild keep working, but `redirect_legacy_identifier` sends them on with
+  # a 301 so they converge on the readable URL rather than both forms living
+  # forever.
   def set_catalog_control
-    @catalog_control = CatalogControl.find(params[:id])
+    @catalog_control =
+      if params[:control_catalog_id].present?
+        CatalogControl.find_by_canonical(current_control_catalog, params[:id]) ||
+          raise(ActiveRecord::RecordNotFound, "No control #{params[:id].inspect} in this catalog")
+      else
+        CatalogControl.find(params[:id])
+      end
+  end
+
+  def current_control_catalog
+    @current_control_catalog ||= ControlCatalog.find_for_url(params[:control_catalog_id])
+  end
+
+  # 301 the legacy numeric URL to the canonical one. GET only: a redirect
+  # preserves the method for 301, but re-issuing a PATCH/DELETE through a
+  # redirect is not something to rely on, so writes simply resolve in place.
+  def redirect_legacy_identifier
+    return if params[:control_catalog_id].present?
+    return unless request.get?
+
+    catalog = @catalog_control.control_family&.control_catalog
+    return if catalog.nil?
+
+    target = action_name == "edit" ? :edit : :show
+    path = if target == :edit
+      control_catalog_edit_control_path(catalog.url_id, @catalog_control.canonical_identifier)
+    else
+      control_catalog_control_path(catalog.url_id, @catalog_control.canonical_identifier)
+    end
+    redirect_to path, status: :moved_permanently
   end
 
   def catalog_control_params

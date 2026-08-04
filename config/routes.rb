@@ -2,6 +2,14 @@ Rails.application.routes.draw do
   # UUID (8-4-4-4-12 hex) constraint shared by the artifact resolver routes (#680).
   uuid_constraint = /[0-9a-fA-F-]{36}/
 
+  # #881 — the catalog-scoped control member path, and the options that make it
+  # work. `format: false` plus the constraint are load-bearing: canonical
+  # control ids contain dots (1478 of 2447 distinct ids), and Rails would
+  # otherwise read `/controls/ac-19.4.b.1` as id `ac-19.4.b` with format `1`,
+  # silently resolving the PARENT control.
+  control_member       = "controls/:id"
+  control_member_opts  = { constraints: { id: /[^\/]+/ }, format: false }
+
   root "home#index"
   get "oscal-overview", to: "home#oscal_overview", as: :oscal_overview
   get "about",          to: "about#index",         as: :about
@@ -354,6 +362,30 @@ Rails.application.routes.draw do
       end
     end
     resources :back_matter_resources, only: [ :create, :update, :destroy ]
+
+    # #881 — the readable control URL:
+    #   /control_catalogs/nist-800-53-rev5/controls/ac-19.4.b.1
+    #
+    # Catalog-scoped rather than family-scoped: control_id is unique per family,
+    # but it already encodes its family, and (catalog, canonical_id) is unique —
+    # verified across all 4054 seeded controls. A family segment would be noise.
+    #
+    # `format: false` and the constraint are load-bearing, not decoration.
+    # Canonical ids contain dots (1478 of 2447 distinct ids do), and Rails would
+    # otherwise parse `/controls/ac-19.4.b.1` as id `ac-19.4.b` with format `1`.
+    # That does not raise — it silently resolves the PARENT control, i.e. the
+    # exact "stops before the sub-part" failure this issue is about.
+    # #881 — families are catalog-scoped and addressed by their code (`ac`),
+    # not a database id. Declared before the control routes so "control_families"
+    # is never swallowed by the `controls/:id` pattern.
+    get "control_families/:id", to: "control_families#show", as: :family,
+        constraints: { id: /[^\/]+/ }, format: false
+
+    get    "#{control_member}/edit", to: "catalog_controls#edit",   **control_member_opts, as: :edit_control
+    get    control_member,           to: "catalog_controls#show",   **control_member_opts
+    patch  control_member,           to: "catalog_controls#update", **control_member_opts, as: :control
+    put    control_member,           to: "catalog_controls#update", **control_member_opts
+    delete control_member,           to: "catalog_controls#destroy", **control_member_opts
   end
 
   resources :converters do
@@ -546,6 +578,28 @@ Rails.application.routes.draw do
 
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do
+        # #895 — catalog CONTENTS. The catalog container had a full API while
+        # its families and controls had none. Families are addressed by code
+        # (`ac`), scoped to the catalog, matching the web routes from #881.
+        resources :control_families, only: [ :index, :show, :create, :update, :destroy ],
+                  param: :id, constraints: { id: /[^\/]+/ } do
+          # Creation is family-scoped — a control has to be put somewhere — and
+          # so is the family listing. Reads and updates of an existing control
+          # are catalog-scoped below, because `(catalog, canonical_id)` is
+          # already unique.
+          resources :catalog_controls, only: [ :index, :create ], path: "controls",
+                    constraints: { id: /[^\/]+/ }, format: false
+        end
+
+        # #881 identity: `ac-2`, `ac-19.4.b.1`. The `id` constraint is the
+        # load-bearing part — 1478 of 2447 canonical ids contain a dot, and the
+        # default segment pattern stops at one, so without it every sub-part
+        # 404s. (Verified by mutation: dropping the constraint reddens the
+        # dotted-identifier spec; dropping `format: false` alone does not,
+        # because the greedy constraint already swallows the dots. It stays as
+        # an explicit statement that these paths have no format suffix.)
+        resources :catalog_controls, only: [ :index, :show, :update, :destroy ], path: "controls",
+                  param: :id, constraints: { id: /[^\/]+/ }, format: false
         member do
           # #630/#631 — review/approval workflow.
           post :submit_for_review, to: "control_catalogs#submit_for_review"
@@ -654,6 +708,20 @@ Rails.application.routes.draw do
         collection do
           # #629 — admin-only bulk delete; ids[] body, partial-success result.
           delete "bulk", to: "authorization_boundaries#bulk_destroy"
+        end
+        # Legacy personnel roster entries (#875). The UI could add, edit and
+        # remove boundary members with no API equivalent — the one mutation
+        # path that was UI-only. `roles` reports the configured vocabulary so a
+        # client does not have to guess what the enum will accept.
+        resources :memberships, only: [ :index, :show, :create, :update, :destroy ],
+                  controller: "authorization_boundary_memberships" do
+          collection do
+            # Explicit path => controller#action rather than a bare `get :roles`
+            # (Sonar rubydre:S7875): the inferred form relies on the enclosing
+            # `controller:` override to resolve, which is exactly the kind of
+            # action-at-a-distance that makes a route hard to follow.
+            get "roles", to: "authorization_boundary_memberships#roles"
+          end
         end
         # KSI validation tracking (#107)
         resources :ksi_validations, only: [ :index, :show, :create, :update, :destroy ] do

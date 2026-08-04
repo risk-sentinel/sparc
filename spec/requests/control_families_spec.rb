@@ -21,7 +21,13 @@ RSpec.describe "ControlFamilies", type: :request do
       family = create(:control_family, control_catalog: catalog, code: "AC", name: "Access Control")
       family.catalog_controls.create!(control_id: "ac-1", label: "AC-1", title: "Access Policy")
 
+      # #881 — the numeric family URL now 301s onto the catalog-scoped,
+      # code-addressed one; the page itself is unchanged.
       get control_family_path(family)
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to(control_catalog_family_path(catalog.url_id, "ac"))
+
+      follow_redirect!
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("AC")
       expect(response.body).to include("Access Control")

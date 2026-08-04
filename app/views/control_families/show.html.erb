@@ -118,7 +118,11 @@
                            font-weight: <%= depth == 0 ? 700 : 500 %>;
                            color: <%= depth == 0 ? "#2c3e50" : "#666" %>;
                            font-size: <%= depth == 0 ? "0.95rem" : "0.85rem" %>;">
-                <%= control.display_id %>
+                <%# #881 — the control id links to the control's own page, which
+                    is also how a sub-part becomes addressable at all. %>
+                <%= link_to control.display_id,
+                      control_catalog_control_path(@control_family.control_catalog.url_id, control),
+                      class: "text-decoration-none" %>
               </span>
             </td>
 
@@ -225,9 +229,11 @@
             <% if can_write_catalogs? %>
               <td style="vertical-align: top; padding-top: 0.45rem;">
                 <div class="d-flex flex-wrap gap-1">
-                  <%= link_to "Edit", edit_catalog_control_path(control), class: "btn btn-sm btn-sparc-orange" %>
+                  <%# #881 — readable, catalog-scoped URLs; `control` renders as its
+                      canonical id (ac-19.4.b.1) via CatalogControl#to_param. %>
+                  <%= link_to "Edit", control_catalog_edit_control_path(@control_family.control_catalog.url_id, control), class: "btn btn-sm btn-sparc-orange" %>
                   <% if depth == 0 %>
-                    <%= button_to "Delete", catalog_control_path(control), method: :delete,
+                    <%= button_to "Delete", control_catalog_control_path(@control_family.control_catalog.url_id, control), method: :delete,
                         form: { data: { turbo_confirm: "Delete #{control.control_id}? This also removes all its sub-parts." } },
                         class: "btn btn-danger btn-sm" %>
                   <% end %>

@@ -101,6 +101,10 @@ def collect_console_errors(page) -> list[str]:
 RESERVED_SEGMENTS = {
     "new", "import", "wizard", "select_catalog", "select_profile", "select_ssp",
     "batch_new", "edit",
+    # #881 — catalog-scoped nested routes. Without these, a href like
+    # /control_catalogs/<uuid>/controls/ac-1 is mistaken for a catalog show URL
+    # and every caller exercises the wrong screen while appearing to pass.
+    "controls", "control_families",
 }
 
 

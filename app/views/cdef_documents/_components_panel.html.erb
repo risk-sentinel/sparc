@@ -1,0 +1,188 @@
+<%#
+  #887 — components, applicability and provenance for the CDEF detail view.
+
+  Everything below the header on this page is control-driven, so a CDEF with no
+  control implementations rendered an effectively blank screen — and that is
+  163 of the 230 upstream AWS definitions, the majority of the corpus. All the
+  facts that make such a CDEF worth choosing (which service, which partitions,
+  which regions, whether it can be automatically checked) were already imported
+  and simply never surfaced.
+
+  Locals:
+    document   — CdefDocument
+    components — the document's CdefComponent rows
+%>
+<% provenance = document.import_metadata.is_a?(Hash) ? document.import_metadata : {} %>
+<% disclaimer = document.metadata_extra.is_a?(Hash) ? document.metadata_extra["remarks"].presence : nil %>
+<% links = document.metadata_extra.is_a?(Hash) ? Array(document.metadata_extra["links"]) : [] %>
+
+<%# The upstream disclaimer is rendered as an advisory rather than swallowed:
+    AWS labels this content experimental, and a user choosing a component for an
+    authorization package needs to see that before they rely on it. %>
+<% if disclaimer.present? %>
+  <div class="alert alert-warning mb-4" role="note">
+    <strong>Upstream notice</strong>
+    <details style="margin-top: 0.35rem;">
+      <summary style="cursor: pointer;"><%= truncate(disclaimer, length: 160) %></summary>
+      <p class="small mb-0" style="margin-top: 0.5rem; white-space: pre-wrap;"><%= disclaimer %></p>
+    </details>
+  </div>
+<% end %>
+
+<% if components.any? %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h3 class="h5">Components and applicability</h3>
+      <p class="small text-body-secondary">
+        What this definition covers, and where it applies.
+      </p>
+
+      <div class="sparc-card-grid">
+        <% components.each do |component| %>
+          <article class="sparc-item-card">
+            <div class="sparc-item-card__head">
+              <h4 class="sparc-item-card__title"><%= component.title %></h4>
+              <span class="badge bg-secondary"><%= component.component_type %></span>
+            </div>
+
+            <%# Unclamped: this is the detail view, the description is the most
+                useful prose on the page, and there is room for it. %>
+            <% if component.description.present? %>
+              <p class="sparc-item-card__desc sparc-item-card__desc--full"><%= component.description %></p>
+            <% end %>
+            <% if component.purpose.present? %>
+              <p class="small text-body-secondary" style="margin: -0.2rem 0 0;">
+                <strong>Purpose:</strong> <%= component.purpose %>
+              </p>
+            <% end %>
+
+            <div class="sparc-item-card__chips">
+              <%# All partitions render alike — emphasis is reserved for the
+                  asserted-vs-derived distinction, where it means something. %>
+              <% component.partitions.each do |partition| %>
+                <%= tag.span CdefComponent.partition_label(partition), class: "sparc-chip",
+                      title: "Available in the #{partition} partition" %>
+              <% end %>
+              <% if component.availability.present? %>
+                <%= tag.span component.availability, class: "sparc-chip", title: "Deployment scope" %>
+              <% end %>
+              <% if component.lifecycle_stage.present? && component.lifecycle_stage != "generally-available" %>
+                <%= tag.span component.lifecycle_stage.tr("-", " "), class: "sparc-chip sparc-chip--warn" %>
+              <% end %>
+              <% component.declared_capabilities.each do |capability| %>
+                <%= tag.span capability, class: "sparc-chip sparc-chip--strong",
+                      title: "Declared by the component author" %>
+              <% end %>
+              <%# Dashed and italic: an inference must not read with the same
+                  weight as the author's own assertion. %>
+              <% component.derived_capabilities.each do |capability| %>
+                <%= tag.span capability, class: "sparc-chip sparc-chip--derived",
+                      title: "Derived by SPARC from control coverage" %>
+              <% end %>
+            </div>
+
+            <div class="sparc-item-card__metrics">
+              <div class="sparc-item-card__metric">
+                <strong><%= component.region_ids.size %></strong><span>regions</span>
+              </div>
+              <div class="sparc-item-card__metric">
+                <strong><%= component.native_control_ids.size %></strong><span>asserted</span>
+              </div>
+              <div class="sparc-item-card__metric">
+                <strong><%= component.enriched_control_ids.size %></strong><span>derived</span>
+              </div>
+              <div class="sparc-item-card__metric">
+                <strong><%= component.check_ids.size %></strong><span>checks</span>
+              </div>
+            </div>
+
+            <% if component.no_coverage_asserted? %>
+              <p class="sparc-item-card__empty">No control coverage asserted.</p>
+            <% end %>
+
+            <%# Native and derived are listed apart, never merged. Presenting a
+                SPARC-derived NIST id as though the upstream author asserted it
+                would misrepresent the evidence to an assessor. %>
+            <% if component.native_control_ids.any? %>
+              <details>
+                <summary class="small">Asserted controls (<%= component.native_control_ids.size %>)</summary>
+                <p class="small text-body-secondary" style="margin-top: 0.4rem;">
+                  <%= component.native_control_ids.join(", ") %>
+                </p>
+              </details>
+            <% end %>
+
+            <% if component.enriched_control_ids.any? %>
+              <details>
+                <summary class="small">
+                  Derived NIST controls (<%= component.enriched_control_ids.size %>)
+                  <% if component.mapping_directness %>
+                    — <%= component.mapping_directness == :direct ? "direct" : "inferred via Config Rule" %>
+                  <% end %>
+                </summary>
+                <p class="small text-body-secondary" style="margin-top: 0.4rem;">
+                  <%= component.enriched_control_ids.join(", ") %>
+                </p>
+              </details>
+            <% end %>
+
+            <% if component.region_ids.any? %>
+              <details>
+                <summary class="small">Regions (<%= component.region_ids.size %>)</summary>
+                <p class="small text-body-secondary" style="margin-top: 0.4rem;">
+                  <%= component.region_ids.join(", ") %>
+                </p>
+              </details>
+            <% end %>
+
+            <% if component.check_ids.any? %>
+              <details>
+                <summary class="small">Automated checks (<%= component.check_ids.size %>)</summary>
+                <p class="small text-body-secondary" style="margin-top: 0.4rem;">
+                  <%= component.check_ids.join(", ") %>
+                </p>
+              </details>
+            <% end %>
+          </article>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# Provenance. Which content this is, where it came from, and how stale it is —
+    upstream AWS content, SPARC-curated and org-provided definitions carry very
+    different warranties and must never be blurred together. %>
+<% if provenance.any? || links.any? %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h3 class="h5">Provenance</h3>
+      <dl class="row small mb-0">
+        <% {
+             "Source" => provenance["source_repo"],
+             "Path" => provenance["source_path"],
+             "Branch" => provenance["source_branch"],
+             "Content SHA" => provenance["source_sha"],
+             "Commit" => provenance["source_commit_sha"],
+             "Upstream version" => provenance["source_metadata_version"],
+             "Upstream OSCAL" => provenance["source_oscal_version"],
+             "Imported" => provenance["fetched_at"]
+           }.each do |label, value| %>
+          <% next if value.blank? %>
+          <dt class="col-sm-3 text-body-secondary fw-normal"><%= label %></dt>
+          <dd class="col-sm-9" style="word-break: break-all;"><%= value %></dd>
+        <% end %>
+      </dl>
+
+      <% if links.any? %>
+        <div style="margin-top: 0.75rem;">
+          <% links.each do |link| %>
+            <% next if link["href"].blank? %>
+            <%= link_to link["text"].presence || link["rel"].presence || link["href"],
+                        link["href"], class: "small", target: "_blank", rel: "noopener noreferrer" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

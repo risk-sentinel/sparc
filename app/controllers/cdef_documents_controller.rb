@@ -25,13 +25,39 @@ class CdefDocumentsController < ApplicationController
     @total_count = @cdef_documents.count
     @controls_count = CdefControl.count
     @completed_count = @cdef_documents.where(status: "completed").count
-    @cdef_documents = @cdef_documents.search_text(params[:q]) # #672 — filter listed rows; tiles keep totals
+    # #672 filtered on name/description only, which meant an obvious query like
+    # `us-east` or `AC-2` returned nothing — those facts live in the #887
+    # component index, not on the document. Match either.
+    if params[:q].present?
+      by_document = @cdef_documents.search_text(params[:q]).select(:id)
+      by_component = CdefComponent.search(params[:q]).select(:cdef_document_id)
+      @cdef_documents = @cdef_documents.where(id: by_document).or(
+        @cdef_documents.where(id: by_component)
+      )
+    end
+
+    # #887 — view mode lives in the URL rather than in client state, so a
+    # chosen view is shareable, survives a reload, round-trips with the active
+    # search, and works with JavaScript disabled.
+    @view_mode = params[:view].to_s == "card" ? :card : :list
+
+    # Roll the component index up only for the rows actually being rendered.
+    # Cards show document-level applicability, but the facts are per component,
+    # and summarising the whole table to draw one page would not hold up.
+    @component_summaries = CdefComponent.summary_for(@cdef_documents.map(&:id)) if @view_mode == :card
   end
 
   def show
     return if @cdef_document.pending? || @cdef_document.processing? || @cdef_document.failed?
 
     controls_scope = @cdef_document.cdef_controls
+
+    # #887 — the rest of this page is control-driven, so a CDEF with no control
+    # implementations rendered a blank screen. That is 163 of the 230 upstream
+    # AWS definitions. Services first: they are what a user is choosing between;
+    # the Config Rule components are supporting detail.
+    @components = @cdef_document.cdef_components
+                                .order(Arel.sql("component_type = 'service' DESC"), :title)
 
     @severity_counts = controls_scope.group(:severity).count
     @total_controls  = controls_scope.count

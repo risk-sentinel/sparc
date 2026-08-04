@@ -94,13 +94,15 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
   # #630 — DocumentApprovalApi hook.
   def approval_document = @catalog
 
+  # #895 — one resolver for the whole catalog tree. The nested family and
+  # control endpoints accept the OSCAL uuid and document it as the stable
+  # identity ("prefer it when storing a reference"), so the catalog's own show
+  # endpoint 404ing on that same uuid was an inconsistency callers would hit
+  # the moment they followed that advice. find_for_url still resolves slug and
+  # numeric id, so nothing already written breaks.
   def set_catalog
-    id_or_slug = params[:id].to_s
-    @catalog = if id_or_slug.match?(/\A\d+\z/)
-      ControlCatalog.find_by!(id: id_or_slug)
-    else
-      ControlCatalog.find_by!(slug: id_or_slug)
-    end
+    @catalog = ControlCatalog.find_for_url(params[:id]) ||
+               raise(ActiveRecord::RecordNotFound, "No catalog #{params[:id].inspect}")
   end
 
   def catalog_params

@@ -76,16 +76,41 @@ class User < ApplicationRecord
   # Content-Type trust per #509). Size cap handled by AttachmentSizeLimit
   # (above), which honors SPARC_MAX_AVATAR_MB.
   #
-  # The controller layer (ProfilesController#update_avatar) is the primary
-  # gate — it runs Marcel against the tempfile BEFORE attach. This model
-  # validator is defense-in-depth for non-controller paths (API, console,
-  # direct ActiveRecord usage). When the blob hasn't yet been persisted to
-  # the storage service (validators run before save), there's nothing to
-  # sniff; we skip — the controller layer already validated, or the bytes
-  # will be re-validated on the next save once the blob is in the service.
+  # The controller layer (ProfilesController#update_avatar) is the primary gate
+  # — it runs Marcel against the tempfile BEFORE attach. This validator is
+  # defense-in-depth for the non-controller paths: API, console, seeds, imports
+  # and restores.
+  #
+  # #892 — this validates the attachable BEING ATTACHED, not the stored blob,
+  # and only on saves that actually touch the avatar. The previous form,
+  #
+  #   validate :avatar_image_type, if: -> { avatar.attached? }
+  #
+  # was wrong in both halves and the two faults cancelled into a lockout:
+  #
+  #   * It ran on EVERY save of a user who has an avatar, re-reading the blob
+  #     out of the storage service to check something the save was not
+  #     changing. A user whose stored avatar did not pass therefore could not
+  #     be saved at all — no deactivate!, no disable!, no reactivate!, no
+  #     issue_temporary_password!. An administrator could not disable the
+  #     account, which is an access-control action failing in the unsafe
+  #     direction. #857 fixed the sign-in symptom of this; this is the cause.
+  #   * At the moment of upload it did NOT actually validate. Validators run
+  #     before save, so the blob was not yet in the service, the
+  #     FileNotFoundError rescue fired, and the check was skipped — deferring
+  #     it to "the next save", which is exactly what created the first fault.
+  #     The path it was written to guard was the one path it never guarded.
+  #
+  # Sniffing the attachable fixes both: a bad file is rejected at attach time
+  # on every path, and an unrelated save never touches storage.
+  #
+  # The bytes are sniffed directly rather than trusting `blob.content_type`.
+  # ActiveStorage derives that via Marcel with the DECLARED type and filename
+  # as hints, so a "definitely not an image" body sent as image/png can come
+  # back image/png — precisely the client-supplied trust #509 removed.
   ALLOWED_AVATAR_MIME_TYPES = %w[image/png image/jpeg image/gif image/webp].freeze
 
-  validate :avatar_image_type, if: -> { avatar.attached? }
+  validate :avatar_image_type, if: -> { attachment_changes["avatar"].present? }
   # #878 — belt to deactivate!'s braces. `suspend` writes status directly, and
   # suspended accounts fail `active?` just as deactivated ones do, so the
   # lockout is reachable through more than one door. Validating the transition
@@ -93,15 +118,51 @@ class User < ApplicationRecord
   validate :protect_last_active_admin, if: :will_save_change_to_status?
 
   def avatar_image_type
-    actual = avatar.blob.open { |io| Marcel::MimeType.for(io) }
+    change = attachment_changes["avatar"]
+    # A purge (DeleteOne) carries no attachable — nothing to type-check.
+    return unless change.respond_to?(:attachable)
+
+    actual = sniff_attachable_mime(change.attachable)
+    # Unreadable attachable (a signed id we cannot resolve, a closed io). Say
+    # nothing rather than guess: the controller gate still applies, and
+    # inventing a failure here would block legitimate uploads.
+    return if actual.nil?
     return if ALLOWED_AVATAR_MIME_TYPES.include?(actual)
 
     errors.add(:avatar, "must be a PNG, JPG, GIF, or WebP image (detected #{actual.inspect})")
-  rescue Errno::ENOENT, ActiveStorage::FileNotFoundError
-    # Blob not yet persisted to the storage service; controller layer is
-    # the primary gate. Skip; will re-validate on the next save once the
-    # blob is in the service.
+  end
+
+  # Read the magic bytes of whatever was handed to `attach`. Duck-typed rather
+  # than matched against Rack::Test::UploadedFile and friends, which are not
+  # loaded in production.
+  def sniff_attachable_mime(attachable)
+    case attachable
+    when Hash
+      io = attachable[:io] || attachable["io"]
+      io && sniff_io(io)
+    when ActiveStorage::Blob
+      attachable.open { |io| Marcel::MimeType.for(io) }
+    when String
+      ActiveStorage::Blob.find_signed(attachable)&.open { |io| Marcel::MimeType.for(io) }
+    else
+      if attachable.respond_to?(:tempfile)  # ActionDispatch / Rack::Test uploaded file
+        sniff_io(attachable.tempfile)
+      elsif attachable.respond_to?(:read)
+        sniff_io(attachable)
+      end
+    end
+  rescue Errno::ENOENT, IOError, ActiveStorage::FileNotFoundError,
+         ActiveSupport::MessageVerifier::InvalidSignature
     nil
+  end
+
+  # Rewinding afterwards is not optional: ActiveStorage uploads this same io
+  # after validation, and a consumed io uploads a truncated file.
+  def sniff_io(io)
+    io.rewind if io.respond_to?(:rewind)
+    Marcel::MimeType.for(io)
+  ensure
+    io.rewind if io.respond_to?(:rewind)
   end
 
   # #878 — refuse to move the last active administrator out of `active`.
@@ -458,11 +519,40 @@ class User < ApplicationRecord
 
   # ── Sign-in tracking ───────────────────────────────────────────────────
 
+  # #857 — update_columns, deliberately not update!.
+  #
+  # `update!` re-ran EVERY validation on every successful authentication,
+  # including `avatar_image_type`, which opens the avatar blob from the storage
+  # service. Two consequences:
+  #
+  #   1. A user whose stored avatar failed validation could not sign in AT ALL.
+  #      The login raised RecordInvalid and the request ended in a 422, through
+  #      every entry point that calls `start_session` — not just the API session
+  #      bridge where it was first seen. Not reachable through the UI today,
+  #      because ProfilesController sniffs before attaching, but it made the
+  #      avatar rule a lockout switch: tightening the accepted content types or
+  #      adding a size cap would instantly lock out every user whose stored
+  #      avatar no longer passed, and it would present as "login is broken"
+  #      with nothing pointing at an avatar rule. Seeds, imports, restores and
+  #      console attaches are the other ways in.
+  #   2. Every sign-in paid for a storage read of the avatar, to validate
+  #      something the request was not changing.
+  #
+  # These three columns are internal bookkeeping — no user input, and nothing an
+  # unrelated validation has any business gating — so writing them directly is
+  # both the smallest fix and the honest one. `updated_at` is set explicitly
+  # because update_columns does not touch it, keeping the observable writes
+  # identical to the update! this replaces.
+  #
+  # NIST 800-53: AC-7 / AU-2 (the sign-in record still happens, it just stops
+  # being contingent on unrelated validations).
   def record_sign_in!(ip_address: nil)
-    update!(
-      last_sign_in_at: Time.current,
+    now = Time.current
+    update_columns(
+      last_sign_in_at: now,
       last_sign_in_ip: ip_address,
-      sign_in_count: sign_in_count + 1
+      sign_in_count: sign_in_count + 1,
+      updated_at: now
     )
   end
 

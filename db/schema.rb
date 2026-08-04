@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_28_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_03_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
@@ -244,6 +245,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_28_120000) do
 
   create_table "catalog_controls", force: :cascade do |t|
     t.string "baseline_impact"
+    t.string "canonical_id"
     t.bigint "control_family_id", null: false
     t.string "control_id", null: false
     t.datetime "created_at", null: false
@@ -256,10 +258,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_28_120000) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["control_family_id", "canonical_id"], name: "index_catalog_controls_on_family_and_canonical_id", unique: true
     t.index ["control_family_id", "control_id"], name: "index_catalog_controls_on_control_family_id_and_control_id", unique: true
     t.index ["control_family_id"], name: "index_catalog_controls_on_control_family_id"
     t.index ["control_id"], name: "index_catalog_controls_on_control_id"
     t.index ["uuid"], name: "index_catalog_controls_on_uuid", unique: true
+  end
+
+  create_table "cdef_components", force: :cascade do |t|
+    t.string "availability"
+    t.bigint "cdef_document_id", null: false
+    t.integer "check_count", default: 0, null: false
+    t.string "check_ids", default: [], null: false, array: true
+    t.string "component_type"
+    t.string "component_uuid", null: false
+    t.string "content_hash"
+    t.datetime "created_at", null: false
+    t.string "declared_capabilities", default: [], null: false, array: true
+    t.string "derived_capabilities", default: [], null: false, array: true
+    t.text "description"
+    t.string "enriched_control_ids", default: [], null: false, array: true
+    t.boolean "has_checks", default: false, null: false
+    t.string "lifecycle_stage"
+    t.string "mapping_sources", default: [], null: false, array: true
+    t.string "native_control_ids", default: [], null: false, array: true
+    t.string "partitions", default: [], null: false, array: true
+    t.text "purpose"
+    t.string "region_ids", default: [], null: false, array: true
+    t.text "search_blob"
+    t.string "service_id"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["cdef_document_id", "component_uuid"], name: "idx_cdef_components_doc_uuid", unique: true
+    t.index ["cdef_document_id"], name: "index_cdef_components_on_cdef_document_id"
+    t.index ["check_ids"], name: "index_cdef_components_on_check_ids", using: :gin
+    t.index ["component_type"], name: "index_cdef_components_on_component_type"
+    t.index ["declared_capabilities"], name: "index_cdef_components_on_declared_capabilities", using: :gin
+    t.index ["derived_capabilities"], name: "index_cdef_components_on_derived_capabilities", using: :gin
+    t.index ["enriched_control_ids"], name: "index_cdef_components_on_enriched_control_ids", using: :gin
+    t.index ["has_checks"], name: "idx_cdef_components_with_checks", where: "(has_checks = true)"
+    t.index ["native_control_ids"], name: "index_cdef_components_on_native_control_ids", using: :gin
+    t.index ["partitions"], name: "index_cdef_components_on_partitions", using: :gin
+    t.index ["region_ids"], name: "index_cdef_components_on_region_ids", using: :gin
+    t.index ["search_blob"], name: "idx_cdef_components_search_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["service_id"], name: "index_cdef_components_on_service_id"
   end
 
   create_table "cdef_control_fields", force: :cascade do |t|
@@ -1740,6 +1782,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_28_120000) do
   add_foreign_key "boundary_cdef_documents", "cdef_documents", on_delete: :cascade
   add_foreign_key "catalog_control_parts", "catalog_controls", on_delete: :cascade
   add_foreign_key "catalog_controls", "control_families"
+  add_foreign_key "cdef_components", "cdef_documents"
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_control_statements", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
