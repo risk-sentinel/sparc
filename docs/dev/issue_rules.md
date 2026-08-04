@@ -86,9 +86,18 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
      The User Guides are the task-oriented end-user documentation; `wiki/Screens.md`
      remains the element-level reference. See the authoring template at
      `docs/dev/user_guide_template.md`.
+     - **Screenshots are necessary, not sufficient.** Refreshing `wiki/images/`
+       is **not** updating a guide. If the way a user does something changed —
+       a new control, a new default, a different place to search — the **prose**
+       must change too. A guide whose images show a redesigned screen while its
+       text describes the old one is worse than one that is uniformly stale,
+       because the two now disagree. (v1.15.4 shipped 69 refreshed screenshots
+       of collection screens whose guides never mentioned the card/list toggle.)
      - **Screenshots (required, captured from Chrome).** Every new or materially
        changed screen a guide describes **must** include a current screenshot
-       under `wiki/images/`, referenced as `images/<name>.png`. Screenshots are
+       under `wiki/images/`, referenced as `images/<name>.png`. Purge smoke-test
+       fixtures from the instance before capturing — these images publish to a
+       public wiki. Screenshots are
        captured from **Google Chrome** (not headless Chromium — it is not rich
        enough; see #781), driven against a seeded local instance. Refresh them
        when the screen changes so the guide never drifts from the running UI.
@@ -100,7 +109,12 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
        `User-Guide-` prefix, kebab-cased) and its images load, in the same PR.
    - **Release notes → the GitHub Release** for the shipping version (canonical);
      the wiki Changelog gets a concise linked entry. Do **not** maintain a stacked
-     in-repo release-notes file.
+     in-repo release-notes file. **Verify the Changelog entry exists** — v1.15.3
+     shipped to GitHub Releases and was never added to the wiki Changelog, and
+     nothing caught it for a week. Check against `gh release list`.
+   - **Cutting a release?** Work `docs/dev/release_checklist.md` end to end
+     before tagging. Guide prose, Changelog, VERSION and a real scanner rescan
+     all live there; none of them fail CI, so nothing else catches them.
    - Regression testing — add/update specs as appropriate
 9. **Compliance artifact review** — if the issue touches security-critical
    code (authentication, authorization, audit, session management, crypto,

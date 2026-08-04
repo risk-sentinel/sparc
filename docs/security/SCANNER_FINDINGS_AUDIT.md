@@ -1,6 +1,6 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-07-20 (v1.12.2 — Evidence API, hdf-cli 3.4.1, boundary/org management)
+**Last reviewed:** 2026-08-04 (v1.15.4 — collection views, catalog API, provisioning credentials)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
 
@@ -13,6 +13,69 @@ or whenever a new suppression is added.
 > Highs (gnutls/curl/libpq/glib2/libacl — Red Hat-backported; erb/net-imap
 > default-gem shadows) are non-gating (`--fail-on critical`). See
 > `docs/dev/ubi9_migration_findings.md` for the scan comparison + A/B evidence.
+
+> **v1.15.4 rescan (2026-08-04):** re-scanned the **actual v1.15.4 production
+> image** with Grype and Trivy — a real rescan, not a date bump. Results:
+>
+> | Scanner | Critical | High | Medium |
+> |---|---|---|---|
+> | Grype (image) | **0** | 21 | 118 |
+> | Trivy (image) | 8 | 70 | 169 |
+>
+> **Those numbers were the *before*.** The six Highs with fixes available
+> upstream turned out to be already carried by the current UBI9 base, so the
+> digest pin was bumped 9.7 → 9.8 in this same release rather than deferred:
+>
+> | | Critical | High | Medium | Low | Total |
+> |---|---|---|---|---|---|
+> | UBI 9.7 (as found) | 0 | 21 | 118 | 68 | 207 |
+> | **UBI 9.8 (shipped)** | **0** | **15** | **82** | **58** | **155** |
+>
+> All six resolved — CVE-2026-33845, -33846, -42009, -42010 (gnutls
+> 3.8.3-10.el9_7 → 3.8.10-4.el9_8), CVE-2026-54369 (libacl 2.3.1-4.el9 →
+> 2.4.0-1.el9_8), CVE-2026-58016 (glib2 2.68.4-18.el9_7.2 → 2.68.4-19.el9_8.2)
+> — with **zero new findings introduced**, and 52 fewer findings overall.
+> curl/libcurl also moved 7.76.1-35.el9_7.3 → 7.76.1-40.el9, which does not
+> clear its six CVEs (still `not-fixed`) but is the current build.
+>
+> **The 8 Trivy CRITICALs are all Ruby gemspecs that are not present in the
+> shipped image.** Verified by running the image rather than trusting either
+> scanner: `activestorage-8.1.2`, `concurrent-ruby-1.3.6`, `net-imap-0.6.3` and
+> `rack-session-2.1.1` have neither a gemspec nor a gem directory in the merged
+> filesystem (`spec=NO lib=NO`), and `bundle list` activates the **patched**
+> versions — activestorage 8.1.3.1, concurrent-ruby 1.3.8, net-imap 0.6.6,
+> rack-session 2.1.2, zlib 3.2.3, every one at or above its fix floor. Trivy is
+> reporting specifications that existed in an intermediate build layer and were
+> removed later in the build. Grype's image scan reports none of them, which is
+> the correct answer. **Do not disposition these as accepted risk — they are not
+> in the artifact.** If they persist across releases, the fix is build-layer
+> hygiene, not a suppression.
+>
+> **The Highs at the time of the scan (21)**, by fix availability — this is what
+> makes them actionable or not, and what drove the base bump above:
+>
+> - **8 curl / libcurl-minimal** (CVE-2026-11352, -11586, -8286, -8925, -8927,
+>   -9547) — `fix=not-fixed`, awaiting a Red Hat backport. Nothing to do.
+> - **2 postgresql / postgresql-private-libs** (CVE-2026-6479) — `not-fixed`.
+> - **6 with fixes available upstream** — gnutls (CVE-2026-33845, -33846,
+>   -42009, -42010), libacl (CVE-2026-54369), glib2 (CVE-2026-58016).
+>   **Taken in this release** via the 9.7 → 9.8 digest bump. The base already
+>   shipped every fixed package, so a deliberate digest bump was sufficient — no
+>   `microdnf update`, which would have traded reproducibility for the same
+>   result.
+> - **1 erb 4.0.4** (GHSA-q339-8rmv-2mhv) — a Ruby **default-gem shadow** at
+>   `specifications/default/erb-4.0.4.gemspec`. The bundle resolves erb **6.0.6**
+>   at runtime. Retained deliberately: `bin/prune-shadowed-gems.rb` removes
+>   *bundled* gems but never *default* ones, because deleting the gemspec while
+>   the stdlib code remains would hide the package from scanners rather than
+>   harden the image. Same basis for zlib 3.2.1.
+>
+> **Gate status:** Grype `--fail-on critical` passes on 0 Critical. The
+> Critical→High ramp remains a calibration decision, not a suppression: on the
+> shipped 9.8 image, raising it to HIGH would gate on **14 CVEs with no
+> available fix** (curl/libcurl ×12, postgresql ×2) plus the erb default-gem
+> shadow. Every remaining High is now either unfixable upstream or structurally
+> a shadow — there is no longer a fixable High being carried.
 
 > **v1.12.2 reconciliation (2026-07-20, #770):** re-scanned the **UBI9** image
 > (Trivy + Grype) and reconciled every overdue disposition against the live

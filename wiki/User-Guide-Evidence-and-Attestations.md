@@ -96,6 +96,19 @@ metadata or **Delete** the record.
 
 ---
 
+## Finding what you need
+
+The evidence list opens as **cards**, with a **☰ List** toggle if you prefer a
+table. Your choice is remembered for this screen.
+
+Evidence filters by **type**, **status**, **control ID** and **authorization
+boundary**. Search covers the title, description and the original filename, which
+is often what you actually remember about an artifact.
+
+See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
+
+---
+
 ## Related guides
 
 - [User Guides index](User-Guides)

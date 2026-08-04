@@ -4,6 +4,40 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.15.4 -- Consistent Collections, Catalog API, Provisioning Credentials (2026-08-04)
+
+A usability and consistency release. The through-line: **the same task looked different on every screen**, and several things the UI offered could not actually be completed. Sixteen list screens now behave identically, and the gaps found while proving that are fixed rather than filed.
+
+- **One way to browse everything** ([#887](https://github.com/risk-sentinel/sparc/issues/887), [#888](https://github.com/risk-sentinel/sparc/issues/888)) — every collection screen opens as cards with a list toggle, remembers the choice per screen, and offers search, removable filter chips and paging in the same places. Search reached five screens that previously could only be scrolled: control mappings, converters, evidence, federation peers and authoritative sources. A component definition is now findable by its regions, control IDs, capabilities and check IDs, so `us-east` or `AC-2` finds what a title search never would — and the API answers that query identically, which it did not before.
+- **Six defects found by testing that work, all fixed in the same release.** The card view first shipped with none of the row's actions, so View, Copy, OSCAL export and Delete vanished from the screen users land on. Searching silently discarded any active filter. `download_oscal_validated` — the route every OSCAL export dropdown's JSON option points at — returned **500** on a schema-invalid document in all seven document types, where its three sibling routes degraded to an explanation. Bulk delete was lost on the boundary card view.
+- **Catalog families and controls over the API** ([#895](https://github.com/risk-sentinel/sparc/issues/895)) — CRUD for both, with guidance parameters enumerated to their leaves rather than accepted wholesale, and PATCH that merges rather than replaces.
+- **Readable, stable URLs for catalogs, families and controls** ([#881](https://github.com/risk-sentinel/sparc/issues/881)) — addresses you can read, share and keep.
+- **SPARC-issued provisioning credentials, a break-glass exemption and a last-admin guard** ([#877](https://github.com/risk-sentinel/sparc/issues/877), [#878](https://github.com/risk-sentinel/sparc/issues/878)) — an admin creating a user now hands over a temporary password that SPARC generates and the user must replace at first sign-in, so no one types a colleague's password into a form. The last remaining Instance Admin can no longer be demoted or disabled.
+- **An invalid avatar could lock an account out** ([#857](https://github.com/risk-sentinel/sparc/issues/857), [#892](https://github.com/risk-sentinel/sparc/issues/892)) — the stored image was re-validated on every save, so a bad avatar blocked sign-in *and* blocked an admin from deactivating, disabling or re-credentialing the account. Validation now applies to the image being attached.
+- **`SPARC_AUTH_BOUNDARY_ROLES` was not actually configurable** ([#875](https://github.com/risk-sentinel/sparc/issues/875), [#890](https://github.com/risk-sentinel/sparc/issues/890)) — a database enum overrode the setting. The roster also gained an API.
+- **Evidence uploads enforce their type server-side** ([#868](https://github.com/risk-sentinel/sparc/issues/868)) — the UI had been able to bypass the executable guard.
+- **Container advisories are visible again** ([#873](https://github.com/risk-sentinel/sparc/issues/873)) — the image build gates on a Syft SBOM so RHEL advisories surface rather than being silently missed.
+- **UBI9 base refreshed 9.7 → 9.8** — the release scan found six HIGH CVEs whose fixes were already sitting in the current base, so they were taken rather than deferred: gnutls (4), libacl and glib2. Total image findings fall from 207 to 155 with nothing new introduced. Every High that remains is either unfixable upstream (curl, postgresql) or a Ruby default-gem shadow the bundle already overrides.
+- Also: inline consent-banner content ([#867](https://github.com/risk-sentinel/sparc/issues/867)), guides that open without discarding work plus field-level help ([#870](https://github.com/risk-sentinel/sparc/issues/870)), and personnel management that stays on the roster screen while you build it ([#869](https://github.com/risk-sentinel/sparc/issues/869)).
+
+**Behaviour changes:** `POST /api/v1/users` **no longer accepts `password` / `password_confirmation`** — and does so silently, since unpermitted parameters do not raise. An existing client still receives `201` while the password it chose is ignored; the account is created with a SPARC-issued temporary password instead. Collection screens now default to **cards** rather than a table, and are paged at 24 items. `SPARC_BANNER_ENABLED` is retired in favour of `SPARC_BANNER_HTML`.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.15.4).
+
+## v1.15.3 -- Control Identifier Consistency, Fail-Closed Database Password, POA&M Generator (2026-07-28)
+
+An integrity and consistency release. The through-line: **the same control could be identified two different ways depending on which document you exported, and nothing would ever tell you.**
+
+- **One canonical control identifier** ([#852](https://github.com/risk-sentinel/sparc/issues/852)) — SPARC carried a dozen ad-hoc control-id transformers, none of which reconciled zero-padding, so `AC-02` and `ac-2` were different strings for one control. A mapping wrote `ac-2-(1)` while every other document wrote `ac-2.1`, and **no validator would ever flag it** because `id-ref` is a plain string in the mapping schema — so mapping entries silently linked to nothing. A control selection of `ac-2` matched nothing against a stored `AC-02`, producing an **empty SAP reported as success**. Normalisation covers form, not vocabulary: `CCI-000213` is normalised in shape and never translated into a NIST control.
+- **A missing database password no longer connects anyway** ([#849](https://github.com/risk-sentinel/sparc/issues/849)) — a `SPARC_DB_*` block without a password connected with none at all, so against a server on `trust` auth the app booted, passed health checks and served traffic on an unauthenticated database. Production now refuses to start unless `SPARC_DB_ALLOW_EMPTY_PASSWORD=true` makes it a decision.
+- **PIV sign-in behind an ALB** ([#850](https://github.com/risk-sentinel/sparc/issues/850)) — `CGI.unescape` decodes `+` as a space, and base64 uses `+` as data, so every `+` in a gateway-verified certificate was deleted. The corruption passed every internal check; only OpenSSL rejected it.
+- **POA&M generator** ([#843](https://github.com/risk-sentinel/sparc/issues/843)) — the terminal artifact of an ATO was the one document with no in-app generator. A SAR's open risks become POA&M items, and anything that cannot form a valid entry is **skipped with a reason** rather than completed on the author's behalf.
+- **Standalone SAP generation** ([#844](https://github.com/risk-sentinel/sparc/issues/844)), **structured object-storage keys** ([#830](https://github.com/risk-sentinel/sparc/issues/830)) so prefix-scoped IAM and per-tenant retention are possible, and a **cross-boundary evidence disclosure** ([#851](https://github.com/risk-sentinel/sparc/issues/851)) closed.
+
+**Behaviour changes:** production refuses to start without a database password; exports emit unpadded control ids (`ac-2`, not `ac-02` — both legal, unpadded is what makes cross-document linkage work); new blobs use structured keys while existing ones keep theirs.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.15.3).
+
 ## v1.15.2 -- OSCAL Export Conformance, POA&M Integrity, Credential Recovery (2026-07-28)
 
 A correctness and integrity release. The through-line: SPARC could produce documents that were not valid OSCAL, and only find out much later — or never. Each fix moves the failure to the point of entry, and none of them fills a gap by inventing content.

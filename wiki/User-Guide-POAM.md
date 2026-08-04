@@ -134,6 +134,18 @@ leveraged relationship on your boundary first (see
 
 ---
 
+## Finding what you need
+
+The POA&Ms list opens as **cards**, with a **☰ List** toggle if you prefer a
+table. Your choice is remembered for this screen.
+
+Leveraged POA&Ms — those owned by a system you inherit from — are listed on
+their own screen and are read-only, which the cards state plainly.
+
+See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
+
+---
+
 ## Related guides
 
 - [User Guides index](User-Guides)

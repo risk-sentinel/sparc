@@ -158,6 +158,15 @@ mapping in OSCAL form.
 
 ---
 
+## Finding what you need
+
+The catalogs, baselines and mappings list opens as **cards**, with a **☰ List** toggle if you prefer a
+table. Your choice is remembered for this screen.
+
+See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
+
+---
+
 ## Related guides
 
 - [User Guides index](User-Guides)

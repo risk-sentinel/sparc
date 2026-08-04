@@ -115,6 +115,30 @@ On the detail page:
 
 ---
 
+## Finding what you need
+
+The component definitions list opens as **cards**, with a **☰ List** toggle if you prefer a
+table. Your choice is remembered for this screen.
+
+The component-definition list filters by **cloud partition** (AWS Commercial,
+GovCloud, China), by **capability** (MFA, Encryption at Rest, and similar), and
+by whether a definition carries **automated checks** — the difference between a
+definition that only documents a control and one that contributes to continuous
+assessment.
+
+Search here reaches further than the name: region IDs, control IDs, capabilities
+and Config-rule check IDs all match, so `us-east-1` or `SC-28` finds definitions
+their titles never would.
+
+Each card names the services inside the definition rather than just counting
+them — an upstream file is often a service *family* — and flags when the services
+it contains are not available in the same regions, so a partition badge never
+quietly overstates where something can be used.
+
+See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
+
+---
+
 ## Related guides
 
 - [User Guides index](User-Guides)

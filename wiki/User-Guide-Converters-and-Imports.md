@@ -111,6 +111,18 @@ this for corrections; prefer refresh/import for bulk changes.
 
 ---
 
+## Finding what you need
+
+The converters list opens as **cards**, with a **☰ List** toggle if you prefer a
+table. Your choice is remembered for this screen.
+
+Search matches the frameworks a converter translates **between**, not just its
+name — so `CIS` finds every converter with CIS on either side.
+
+See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
+
+---
+
 ## Related guides
 
 - [User Guides index](User-Guides)
