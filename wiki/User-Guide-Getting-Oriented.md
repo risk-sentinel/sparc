@@ -94,6 +94,72 @@ queues, Federation Peers) and external **Resources** links.
 
 ---
 
+## Browsing a list of documents
+
+Every list screen in SPARC — SSPs, assessments, POA&Ms, component definitions,
+catalogs, evidence, converters, boundaries, the queues — works the same way. Learn
+it once and it applies everywhere.
+
+![A collection screen in card view, showing the search box, active-filter chips and the card/list toggle](images/cdef_index.png)
+
+*A collection screen in card view. Search sits at the top, any active filters
+appear as removable chips beneath it, and the view toggle is on the right.*
+
+### Cards or a list — your choice, remembered
+
+Each screen opens as **cards** by default. A card shows enough to choose between
+items without opening them: what the item is, what state it's in, and how big it
+is. Use the **▦ Cards / ☰ List** toggle on the right to switch to a table, which
+is easier for scanning a long run of items or comparing a single column.
+
+Your choice is remembered **per screen**, so you can keep SSPs as a list and
+component definitions as cards. It sticks for a year, in that browser.
+
+The choice also travels in the address bar. If you send someone a link while
+you're in list view, they see the list — the link shows them what you were
+looking at, and it does **not** change their own saved preference for that screen.
+
+Every action available in one view is available in the other. Nothing is hidden
+by choosing cards.
+
+### Searching
+
+The search box narrows the list as you type. What it matches depends on the
+screen and is usually broader than the name: a component definition also matches
+on its AWS regions, control IDs, capabilities and automated-check IDs, so
+`us-east` or `AC-2` finds things the name alone never would. A converter matches
+on the frameworks it translates between; a federation peer on its URL.
+
+Searching never changes your card/list choice, and it keeps any filters you have
+already applied.
+
+### Filters
+
+Some screens offer filters as well as search — component definitions filter by
+cloud partition, capability and whether they carry automated checks; evidence by
+type, status, control and boundary; authoritative sources by scope, rel and media
+type.
+
+Filters and search **narrow together**, they don't replace each other. Searching
+`iam` with the GovCloud filter on means "IAM, in GovCloud".
+
+Whatever is currently narrowing the list appears as a row of chips above it, with
+a count — *"3 filters active"*. Each chip removes just that one filter and leaves
+the rest; **Clear all** removes them all but keeps your card/list choice, because
+that's how the list is drawn, not which items are in it. The search term appears
+as a chip too, so a short list is never unexplained.
+
+When nothing matches, the screen says so — *"No component definitions match the
+current filters."* — rather than simply appearing empty.
+
+### Paging
+
+Long collections are paged, with the count shown underneath ("1–24 of 331"). Page
+links carry your search, filters and view mode with them, so paging never loses
+your place in a filtered set.
+
+---
+
 ## How your work is organized
 
 Everything in SPARC lives inside a hierarchy. Understanding it explains why you

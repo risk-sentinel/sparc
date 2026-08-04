@@ -157,6 +157,18 @@ the wizard bundles their current state.
 
 ---
 
+## Finding what you need
+
+The authorization boundaries list opens as **cards**, with a **☰ List** toggle if you prefer a
+table. Your choice is remembered for this screen.
+
+Instance Admins can select boundaries for bulk delete in either view — the
+tick-boxes are on the cards as well as the table rows.
+
+See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
+
+---
+
 ## Related guides
 
 - [User Guides index](User-Guides)

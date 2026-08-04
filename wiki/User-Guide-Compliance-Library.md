@@ -131,6 +131,23 @@ Any authenticated user may add a source.
 
 ---
 
+## Finding what you need
+
+The authoritative sources, the queues and federation peers list opens as **cards**, with a **☰ List** toggle if you prefer a
+table. Your choice is remembered for this screen.
+
+Authoritative sources filter by **scope** (authoritative / globally available),
+**rel** and **media type**, and search covers the URL as well as the title and
+description.
+
+The review and promotion queues are lists like any other, and their **Approve**
+and **Reject** actions are on the cards as well as the table rows — you can work
+a queue without leaving the default view.
+
+See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
+
+---
+
 ## Related guides
 
 - [User Guides index](User-Guides)

@@ -1,6 +1,6 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-07-20 (v1.12.2 — Evidence API, hdf-cli 3.4.1, boundary/org management)
+**Last reviewed:** 2026-08-04 (v1.15.4 — collection views, catalog API, provisioning credentials)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
 
@@ -13,6 +13,47 @@ or whenever a new suppression is added.
 > Highs (gnutls/curl/libpq/glib2/libacl — Red Hat-backported; erb/net-imap
 > default-gem shadows) are non-gating (`--fail-on critical`). See
 > `docs/dev/ubi9_migration_findings.md` for the scan comparison + A/B evidence.
+
+> **v1.15.4 rescan (2026-08-04):** re-scanned the **actual v1.15.4 production
+> image** with Grype and Trivy — a real rescan, not a date bump. Results:
+>
+> | Scanner | Critical | High | Medium |
+> |---|---|---|---|
+> | Grype (image) | **0** | 21 | 118 |
+> | Trivy (image) | 8 | 70 | 169 |
+>
+> **The 8 Trivy CRITICALs are all Ruby gemspecs that are not present in the
+> shipped image.** Verified by running the image rather than trusting either
+> scanner: `activestorage-8.1.2`, `concurrent-ruby-1.3.6`, `net-imap-0.6.3` and
+> `rack-session-2.1.1` have neither a gemspec nor a gem directory in the merged
+> filesystem (`spec=NO lib=NO`), and `bundle list` activates the **patched**
+> versions — activestorage 8.1.3.1, concurrent-ruby 1.3.8, net-imap 0.6.6,
+> rack-session 2.1.2, zlib 3.2.3, every one at or above its fix floor. Trivy is
+> reporting specifications that existed in an intermediate build layer and were
+> removed later in the build. Grype's image scan reports none of them, which is
+> the correct answer. **Do not disposition these as accepted risk — they are not
+> in the artifact.** If they persist across releases, the fix is build-layer
+> hygiene, not a suppression.
+>
+> **The 21 Highs**, by fix availability — this is what makes them actionable or
+> not:
+>
+> - **8 curl / libcurl-minimal** (CVE-2026-11352, -11586, -8286, -8925, -8927,
+>   -9547) — `fix=not-fixed`, awaiting a Red Hat backport. Nothing to do.
+> - **2 postgresql / postgresql-private-libs** (CVE-2026-6479) — `not-fixed`.
+> - **6 with fixes available upstream** — gnutls (CVE-2026-33845, -33846,
+>   -42009, -42010), libacl (CVE-2026-54369), glib2 (CVE-2026-58016). These land
+>   on the **next UBI9 base refresh**; they are the reason to take one.
+> - **1 erb 4.0.4** (GHSA-q339-8rmv-2mhv) — a Ruby **default-gem shadow** at
+>   `specifications/default/erb-4.0.4.gemspec`. The bundle resolves erb **6.0.6**
+>   at runtime. Retained deliberately: `bin/prune-shadowed-gems.rb` removes
+>   *bundled* gems but never *default* ones, because deleting the gemspec while
+>   the stdlib code remains would hide the package from scanners rather than
+>   harden the image. Same basis for zlib 3.2.1.
+>
+> **Gate status:** Grype `--fail-on critical` passes on 0 Critical. The
+> Critical→High ramp remains a calibration decision, not a suppression; on this
+> image raising it to HIGH would gate on 10 CVEs with no available fix.
 
 > **v1.12.2 reconciliation (2026-07-20, #770):** re-scanned the **UBI9** image
 > (Trivy + Grype) and reconciled every overdue disposition against the live
