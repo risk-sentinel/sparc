@@ -22,6 +22,19 @@ class Evidence < ApplicationRecord
   validates :description, presence: true  # #738: evidence must carry a description
   validates :source, presence: true       # #738: evidence must record its source
 
+  # #903 / NIST AU-10 (non-repudiation), SI-10 (input validation) — evidence
+  # cannot have been collected in the future. Both write paths stamp
+  # `collected_at` server-side today (#738), so this can only fire if that ever
+  # stops being true: a new permitted parameter, a console session, a data
+  # migration, an admin tool. It is the backstop for that day, because an
+  # impossible collection timestamp in a FedRAMP evidence package is a defect
+  # an assessor is entitled to treat as a control failure.
+  #
+  # Guarded on `collected_at_changed?` so a row that already carries a bad value
+  # can still be corrected — a validation that locks the record it is meant to
+  # protect helps nobody.
+  validate :collected_at_not_in_future
+
   # Stable, immutable OSCAL back-matter href (#680). Resolves via the
   # /artifacts/:uuid resolver to a freshly-signed download URL, so the
   # reference survives evidence rename (slug change), file re-upload (new
@@ -93,5 +106,15 @@ class Evidence < ApplicationRecord
 
   def attested?
     attestations.any?
+  end
+
+  private
+
+  def collected_at_not_in_future
+    return if collected_at.blank?
+    return unless collected_at_changed?
+    return if collected_at <= Time.current
+
+    errors.add(:collected_at, "cannot be in the future")
   end
 end

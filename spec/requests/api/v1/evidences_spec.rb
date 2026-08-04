@@ -141,6 +141,20 @@ RSpec.describe "Api::V1::Evidences", type: :request do
       expect(evidence.collected_at).to be_within(1.minute).of(Time.current)
     end
 
+    # #903 — the existing case above supplies a PAST timestamp, which the server
+    # would also have produced, so it could not distinguish "ignored" from
+    # "accepted". A future value can only come from the client.
+    it "ignores a client-supplied FUTURE collected_at" do
+      post api_v1_evidences_path,
+           params: { evidence: valid_attributes(collected_at: 5.years.from_now.iso8601) },
+           headers: admin_headers
+
+      expect(response).to have_http_status(:created)
+      evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
+      expect(evidence.collected_at).to be <= Time.current
+      expect(evidence.collected_at).to be_within(1.minute).of(Time.current)
+    end
+
     it "returns a JSON 400 (not an HTML page) when the root key is absent" do
       post api_v1_evidences_path, params: {}, headers: admin_headers
 

@@ -38,19 +38,34 @@
         <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Describe the evidence and its relevance to the control(s)..." %>
       </div>
 
+      <%# #903 — Collected By and Collection Date are provenance, not input.
+          The server stamps both on create (#738, NIST AU-10 non-repudiation)
+          and neither is a permitted parameter, so the editable fields that used
+          to sit here were purely misleading: a user could type a name, or pick
+          a date in the future, and watch the server discard it. They are shown
+          read-only instead — the value is still worth seeing, it is just not
+          the user's to set. %>
       <div class="row g-3 mb-3">
         <div class="col-md-4">
-          <%= f.label :collected_by, "Collected By", class: "form-label fw-semibold" %>
-          <%= f.text_field :collected_by, class: "form-control", placeholder: "Name or system" %>
+          <span class="form-label fw-semibold d-block" id="evidence_collected_by_label">Collected By</span>
+          <p class="form-control-plaintext mb-0" aria-labelledby="evidence_collected_by_label">
+            <%= @evidence.collected_by.presence || content_tag(:span, "Recorded on save", class: "text-body-secondary fst-italic") %>
+          </p>
         </div>
         <div class="col-md-4">
-          <%= f.label :collected_at, "Collection Date", class: "form-label fw-semibold" %>
-          <%= f.datetime_local_field :collected_at, class: "form-control", value: @evidence.collected_at&.strftime("%Y-%m-%dT%H:%M") %>
+          <span class="form-label fw-semibold d-block" id="evidence_collected_at_label">Collection Date</span>
+          <p class="form-control-plaintext mb-0" aria-labelledby="evidence_collected_at_label">
+            <%= @evidence.collected_at&.utc&.strftime("%Y-%m-%d %H:%M UTC") || content_tag(:span, "Recorded on save", class: "text-body-secondary fst-italic") %>
+          </p>
         </div>
         <div class="col-md-4">
           <%= f.label :source, "Source", class: "form-label fw-semibold" %>
           <%= f.text_field :source, class: "form-control", placeholder: "e.g. InSpec, Vulcan, Manual" %>
         </div>
+      </div>
+      <div class="form-text mb-3">
+        Collected By and Collection Date are recorded automatically by SPARC when
+        the evidence is saved, in UTC. They cannot be edited.
       </div>
 
       <div class="row g-3 mb-3">
