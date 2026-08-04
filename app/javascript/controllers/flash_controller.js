@@ -1,15 +1,43 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Auto-dismiss flash notifications after a delay.
-// Close button allows immediate dismissal.
+// Flash notification lifecycle.
+//
+// Success and warning messages fade on their own — they confirm something the
+// user already believes happened, so a transient toast is enough.
+//
+// Errors do NOT. An error that fades is a failure the user can miss entirely,
+// which is the whole complaint in #902: a rejected evidence upload read as
+// "nothing happened". Errors stay on screen until the user dismisses them, so
+// a failure always requires acknowledgement rather than attention within a
+// 12-second window. (Errors auto-dismissed at 12s between 2026-03-06 and this
+// change — an unintended side effect of restyling flash as a toast overlay.)
 export default class FlashController extends Controller {
   static targets = ["message"]
 
+  static AUTO_DISMISS_MS = 8000
+
   connect() {
+    this.timers = []
+
     this.messageTargets.forEach((el) => {
-      const delay = el.classList.contains("alert-danger") ? 12000 : 8000
-      setTimeout(() => this.autoDismiss(el), delay)
+      if (this.constructor.persistent(el)) return
+
+      this.timers.push(
+        setTimeout(() => this.autoDismiss(el), this.constructor.AUTO_DISMISS_MS)
+      )
     })
+  }
+
+  disconnect() {
+    // Turbo caches and restores pages; a timer left running from a previous
+    // visit would dismiss a message belonging to the current one.
+    this.timers.forEach(clearTimeout)
+    this.timers = []
+  }
+
+  // Errors require an explicit dismissal.
+  static persistent(el) {
+    return el.classList.contains("alert-danger")
   }
 
   dismiss(event) {
