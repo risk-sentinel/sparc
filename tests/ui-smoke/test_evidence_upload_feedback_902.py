@@ -36,9 +36,12 @@ NEW_EVIDENCE = "/evidences/new"
 # public wiki, so nothing may be left behind.
 TITLE_PREFIX = "phase2-ui-evidence902"
 
-# The success flash auto-dismisses at 8s; errors must never auto-dismiss.
-# Fast-forwarded via Playwright's clock API rather than waited out.
-PAST_AUTO_DISMISS_MS = 30_000
+# Success auto-dismisses at 8s; errors used to auto-dismiss at 12s and must
+# now never do so. Waited out in real time rather than fast-forwarded with a
+# mocked clock — installing fake timers would freeze Stimulus and Turbo too,
+# which is exactly the machinery these two tests exist to exercise. The cost is
+# ~14s in a suite that already runs for minutes.
+PAST_AUTO_DISMISS_MS = 14_000
 
 # Stands in for the AWS WAF block page: a 403 with an HTML body, which is what
 # actually reached the browser in sparc-iac#620.
@@ -74,6 +77,24 @@ def _attach_pdf(page, name: str = "smoke-evidence.pdf") -> None:
     )
 
 
+def _evidence_form(page):
+    """The evidence form specifically — `form` alone also matches Sign Out."""
+    return page.locator("form").filter(has=page.locator("#evidence_title"))
+
+
+def _wait_for_saved(page) -> None:
+    """Wait for the create to land on a saved record.
+
+    Deliberately NOT `wait_for_url("**/evidences/**")`: that glob also matches
+    `/evidences/new`, so it returns instantly without waiting for anything and
+    whatever follows races the navigation.
+    """
+    page.wait_for_url(
+        lambda url: "/evidences/" in url and not url.rstrip("/").endswith("/new"),
+        timeout=15_000,
+    )
+
+
 class TestSuccessIsVisible:
     """Path 1 — a working upload must say so."""
 
@@ -85,7 +106,7 @@ class TestSuccessIsVisible:
         _fill_metadata(authed_page)
         _attach_pdf(authed_page)
         authed_page.click("input[type=submit][value='Upload Evidence']")
-        authed_page.wait_for_url("**/evidences/**", timeout=15_000)
+        _wait_for_saved(authed_page)
 
         success = authed_page.locator(".flash-container .alert-success")
         success.first.wait_for(state="visible", timeout=10_000)
@@ -136,11 +157,14 @@ class TestMissingFileIsRefusedVisibly:
         # Now satisfy it and submit again.
         _attach_pdf(authed_page)
         authed_page.click("input[type=submit][value='Upload Evidence']")
-        authed_page.wait_for_url("**/evidences/**", timeout=15_000)
+        _wait_for_saved(authed_page)
 
         assert not authed_page.url.endswith("/evidences/new"), (
             "form still refused to submit after a valid file was attached"
         )
+        assert "uploaded successfully" in " ".join(
+            authed_page.locator(".flash-container .alert-success").all_text_contents()
+        ), "the retried submit did not report success"
 
 
 class TestEdgeBlockIsSurfaced:
@@ -187,7 +211,7 @@ class TestEdgeBlockIsSurfaced:
         _fill_metadata(authed_page, title=f"{TITLE_PREFIX}-unblocked")
         _attach_pdf(authed_page)
         authed_page.click("input[type=submit][value='Upload Evidence']")
-        authed_page.wait_for_url("**/evidences/**", timeout=15_000)
+        _wait_for_saved(authed_page)
 
         errors = authed_page.locator(".flash-container .alert-danger")
         assert errors.count() == 0, (
@@ -199,10 +223,6 @@ class TestErrorFlashPersists:
     """Path 4 — an error must wait for acknowledgement; success may fade."""
 
     def test_error_survives_the_auto_dismiss_window_and_closes_on_click(self, authed_page):
-        if not hasattr(authed_page, "clock"):
-            pytest.skip("Playwright build predates page.clock — cannot fast-forward")
-
-        authed_page.clock.install()
         record_csp(authed_page)
         authed_page.goto(NEW_EVIDENCE)
         authed_page.wait_for_load_state("networkidle")
@@ -223,7 +243,7 @@ class TestErrorFlashPersists:
         alert = authed_page.locator(".flash-container .alert-danger")
         alert.first.wait_for(state="visible", timeout=10_000)
 
-        authed_page.clock.fast_forward(PAST_AUTO_DISMISS_MS)
+        authed_page.wait_for_timeout(PAST_AUTO_DISMISS_MS)
 
         assert alert.first.is_visible(), (
             "the error flash auto-dismissed — a failure the user can miss is the "
@@ -237,23 +257,21 @@ class TestErrorFlashPersists:
 
     def test_success_still_fades_on_its_own(self, authed_page):
         """Both directions: persistence is for errors only, not every flash."""
-        if not hasattr(authed_page, "clock"):
-            pytest.skip("Playwright build predates page.clock — cannot fast-forward")
-
-        authed_page.clock.install()
         authed_page.goto(NEW_EVIDENCE)
         authed_page.wait_for_load_state("networkidle")
 
         _fill_metadata(authed_page, title=f"{TITLE_PREFIX}-fading")
         _attach_pdf(authed_page)
         authed_page.click("input[type=submit][value='Upload Evidence']")
-        authed_page.wait_for_url("**/evidences/**", timeout=15_000)
+        _wait_for_saved(authed_page)
 
         success = authed_page.locator(".flash-container .alert-success")
         success.first.wait_for(state="visible", timeout=10_000)
 
-        authed_page.clock.fast_forward(PAST_AUTO_DISMISS_MS)
-        success.first.wait_for(state="detached", timeout=5_000)
+        # Real time, not a mocked clock: the success path is a Turbo navigation
+        # plus a CSS fade-out animation, and freezing the page's timers to skip
+        # the wait would also freeze the machinery under test.
+        success.first.wait_for(state="detached", timeout=PAST_AUTO_DISMISS_MS)
 
 
 class TestCollectionProvenance:
@@ -272,7 +290,7 @@ class TestCollectionProvenance:
             "#903 regression: the form still offers an editable Collected By"
         )
 
-        body = authed_page.locator("form").inner_text()
+        body = _evidence_form(authed_page).inner_text()
         assert "Collection Date" in body, "the provenance is no longer shown at all"
         assert "recorded automatically" in body.lower(), (
             "the form does not explain how Collection Date is set"
