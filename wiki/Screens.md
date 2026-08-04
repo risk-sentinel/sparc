@@ -585,6 +585,24 @@ Form for adding OSCAL assessment result metadata: results, observations, finding
 
 Summary tiles. Lists all evidence items with filters for type, status, authorization boundary, and associated control. Search functionality. "Upload" button for new evidence.
 
+#### Evidence Upload / Edit
+
+| | |
+|---|---|
+| **Route** | `GET /evidences/new`, `GET /evidences/:id/edit` |
+| **Controller** | `EvidencesController#new` / `#edit` |
+| **Auth** | Required (`evidence.write`, boundary-scoped) |
+
+Editable fields: **Title**, **Evidence Type**, **Status**, **Description**, **Source**, **Authorization Boundary**, **Control IDs** (comma-separated), and the **Evidence File** dropzone (click or drag-and-drop; accepted extensions come from `EvidenceUploadPolicy`, archives excluded).
+
+**Collected By** and **Collection Date** are read-only (#903). SPARC stamps both on save — UTC timestamp and the signed-in user — so collection provenance is system-recorded rather than self-asserted (NIST AU-10). They render as plain text with a "recorded automatically" note.
+
+A file is **required** when creating, optional when editing a record that already has one. The requirement is enforced by `dropzone_controller.js` on submit, not the native `required` attribute — the input is visually hidden, and Chrome silently refuses to submit a form containing a required control it cannot focus (#902).
+
+Submit actions: **Upload Evidence** (or **Update Evidence**), **Save and add another** (create only, carries boundary + type forward), **Cancel**.
+
+Feedback (#902): success confirms the **file** by name, size and SHA-256 prefix; failures render as a red flash that persists until dismissed, with the form's contents preserved. Submissions rejected before reaching Rails — an edge WAF block, a proxy size limit, a dropped connection — are reported client-side by `submit_feedback_controller.js` with the HTTP status.
+
 #### Evidence Detail
 
 | | |

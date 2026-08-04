@@ -146,7 +146,7 @@ Accepts **`multipart/form-data`** (metadata plus a file) or **`application/json`
 | `file` | no | The artifact itself |
 | `control_ids` | no | Array or comma-separated string; replaces existing control links |
 
-> **`collected_at` and `collected_by` are server-recorded and cannot be set by the client** (#738, NIST AU-10). Values supplied in the request are ignored.
+> **`collected_at` and `collected_by` are server-recorded and cannot be set by the client** (#738, NIST AU-10). Values supplied in the request are ignored — including future timestamps, which the model additionally rejects outright should any path ever be able to set them (#903). Record an artifact's original production date in `description` or `source` instead.
 
 **Example** (multipart)
 

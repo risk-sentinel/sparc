@@ -692,7 +692,7 @@ removed and are no longer tracked:
 | 12 | Complete | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, ~~#445~~, ~~#440~~, ~~#449~~, ~~#451~~, ~~#453~~ | **COMPLETE** (carried items #433, #341, #246, #422, #413, #447 moved to Phase 14) |
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
-| 15 | Current | v1.15.4 patch — account-lifecycle and UX defects (milestone `v1.15.4`) | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, #879, #881, #887, #888 | In Progress — 7 merged/ready; UX items #879/#881/#887/#888 added to the milestone |
+| 15 | Current | v1.15.4 patch — account-lifecycle and UX defects (milestone `v1.15.4`) | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, #879, ~~#881~~, ~~#887~~, ~~#888~~, #902, #903 | In Progress — #881/#887/#888 shipped in PR #906; #902/#903 (evidence upload feedback + collection-date provenance) found in production user testing |
 
 <!-- markdownlint-enable MD013 -->
 
