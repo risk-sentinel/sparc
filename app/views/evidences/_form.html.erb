@@ -74,10 +74,14 @@
         <%# #868 — `accept` comes from the same constant the server enforces, so
             the advertised list and the accepted list cannot drift. Archives are
             not accepted: a container hides what is inside it from every check. %>
+        <%# #902 — a file is required to create evidence, but NOT to edit a
+            record that already has one: demanding a re-upload to correct a typo
+            in the title would be its own trap. %>
         <%= render "shared/dropzone",
           form: f,
           field: :file,
           accept: EvidenceUploadPolicy.accept_attribute,
+          required: !@evidence.file.attached?,
           label: "Evidence File",
           hint: "Screenshots, logs, config exports, scan results, or policy documents. Archives (.zip) are not accepted." %>
         <% if @evidence.persisted? && @evidence.file.attached? %>

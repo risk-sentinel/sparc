@@ -120,12 +120,17 @@ RSpec.describe "Evidence upload policy (#868)", type: :request do
       expect { post_ui(file) }.to change(Evidence, :count).by(1)
     end
 
+    # #902 — this used to assert on flash[:notice], and passed, while the user
+    # saw nothing at all: the layout rendered success/error/warning only, so
+    # `notice` was set and silently dropped on the floor. A spec that asserts a
+    # controller set a value proves nothing about whether anyone can read it —
+    # hence the rendering coverage in spec/requests/flash_rendering_spec.rb.
     it "confirms the file landed, naming it and its checksum" do
       file = upload("policy.pdf", "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n%%EOF\n", "application/pdf")
       post_ui(file)
 
-      expect(flash[:notice]).to include("policy.pdf")
-      expect(flash[:notice]).to match(/SHA-256/i)
+      expect(flash[:success]).to include("policy.pdf")
+      expect(flash[:success]).to match(/SHA-256/i)
     end
   end
 

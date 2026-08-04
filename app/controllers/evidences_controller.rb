@@ -77,7 +77,16 @@ class EvidencesController < ApplicationController
       audit_log("evidence_created", subject: @evidence, metadata: { title: @evidence.title })
       process_file_upload if @evidence.file.attached?
       sync_control_links
-      redirect_to after_create_path(@evidence), notice: upload_success_notice(@evidence)
+
+      # #902 — never report success for a file that is not there. If the user
+      # chose a file and it did not end up attached, the record saved but the
+      # artefact did not, and "uploaded successfully" would be a lie an
+      # assessor might rely on.
+      if file_posted_but_not_attached?
+        redirect_to @evidence, flash: { error: missing_attachment_error(@evidence) }
+      else
+        redirect_to after_create_path(@evidence), flash: { success: upload_success_notice(@evidence) }
+      end
     else
       render :new, status: :unprocessable_entity
     end
@@ -96,7 +105,12 @@ class EvidencesController < ApplicationController
       audit_log("evidence_updated", subject: @evidence, metadata: { title: @evidence.title })
       process_file_upload if @evidence.file.attached? && @evidence.file_hash.blank?
       sync_control_links
-      redirect_to @evidence, notice: "Evidence updated successfully."
+
+      if file_posted_but_not_attached?
+        redirect_to @evidence, flash: { error: missing_attachment_error(@evidence) }
+      else
+        redirect_to @evidence, flash: { success: "Evidence updated successfully." }
+      end
     else
       render :edit, status: :unprocessable_entity
     end
@@ -108,7 +122,7 @@ class EvidencesController < ApplicationController
     title = @evidence.title
     audit_log("evidence_deleted", subject: @evidence, metadata: { title: title })
     @evidence.destroy
-    redirect_to evidences_path, notice: "Evidence '#{title}' deleted."
+    redirect_to evidences_path, flash: { success: "Evidence '#{title}' deleted." }
   end
 
   private
@@ -150,6 +164,18 @@ class EvidencesController < ApplicationController
     flash.now[:error] = error.message
     @evidence ||= Evidence.new(evidence_params)
     render template, status: :unprocessable_entity
+  end
+
+  # #902 — the user chose a file and the record saved without one. Rare, but it
+  # is the exact shape of the failure this issue is about, so it gets a check
+  # rather than an assumption.
+  def file_posted_but_not_attached?
+    uploaded_file.present? && !@evidence.file.attached?
+  end
+
+  def missing_attachment_error(evidence)
+    "Evidence '#{evidence.title}' was saved, but the file did NOT attach and is " \
+    "not stored. Use Edit to upload it again before relying on this record."
   end
 
   # #868 — confirm the FILE landed, not merely that a record was created.

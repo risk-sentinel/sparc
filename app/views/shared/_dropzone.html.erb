@@ -13,9 +13,16 @@
   <span class="form-label fw-semibold d-block"><%= label %></span>
 <% end %>
 
+<%# #902 — `required` is enforced by dropzone_controller on submit, NOT by the
+    native attribute. The input is `d-none`, and Chrome refuses to submit a form
+    containing a required control it cannot focus: it blocks the submit and logs
+    "An invalid form control ... is not focusable" to the console with nothing
+    shown to the user. Clicking "Upload Evidence" with no file did nothing at
+    all, which is one of the silent failures reported in #902. %>
 <div data-controller="dropzone"
      data-dropzone-accept-value="<%= accept %>"
-     data-dropzone-multiple-value="<%= multiple %>">
+     data-dropzone-multiple-value="<%= multiple %>"
+     data-dropzone-required-value="<%= required %>">
 
   <div class="sparc-dropzone"
        data-dropzone-target="zone"
@@ -34,7 +41,9 @@
     <div class="sparc-dropzone__file-list" data-dropzone-target="fileList" style="display: none;"></div>
     <p class="sparc-dropzone__filename" data-dropzone-target="filename"></p>
     <p class="sparc-dropzone__filesize" data-dropzone-target="filesize"></p>
-    <p class="sparc-dropzone__error" data-dropzone-target="error"></p>
+    <%# role="alert" so a rejected file or a missing-file submit is announced,
+        not just drawn (#902). %>
+    <p class="sparc-dropzone__error" data-dropzone-target="error" role="alert"></p>
 
     <% if accept.present? %>
       <span class="sparc-dropzone__hint">
@@ -45,7 +54,6 @@
 
   <%= form.file_field (multiple ? :files : field),
         accept: accept,
-        required: required,
         multiple: multiple,
         class: "d-none",
         data: {
