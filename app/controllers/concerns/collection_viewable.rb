@@ -80,6 +80,38 @@ module CollectionViewable
     "#{COOKIE_PREFIX}#{screen.to_s.parameterize.underscore}"
   end
 
+  # ── Facets (#887 §5, shared chrome per #888 §3) ───────────────────────────
+  #
+  # Facets are screen-specific but the CHROME is shared: the same chip
+  # rendering, the same clear-all, the same active count. Screens declare which
+  # params are facets; everything here is generic.
+  #
+  # Returns [{ key:, value:, label:, remove_params: }] for the active ones, so
+  # the view can render a removable chip without knowing what a partition is.
+  def active_facets(allowed, labels: {})
+    Array(allowed).filter_map do |key|
+      value = params[key].presence
+      next if value.blank?
+
+      {
+        key: key,
+        value: value,
+        label: labels.fetch(key, key.to_s.humanize),
+        # Removing one facet must preserve the others, the search, the view and
+        # the page size — but reset to page 1, because the current page number
+        # is meaningless against a different result set.
+        remove_params: request.query_parameters.except(key.to_s, "page")
+      }
+    end
+  end
+
+  # Everything that narrows the collection, so "clear all" can drop exactly
+  # those and keep view mode and page size — which are display state, not
+  # filters, and should survive a clear.
+  def clear_facets_params(allowed)
+    request.query_parameters.except(*Array(allowed).map(&:to_s), "q", "page")
+  end
+
   # Paginate a collection screen. Returns [pagy, records].
   #
   # `per_page` is capped so `?per_page=999999` cannot be used to ask the server

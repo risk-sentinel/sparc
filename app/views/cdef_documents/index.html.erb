@@ -76,6 +76,9 @@
     </div>
   <% end %>
 
+  <%= render "shared/collection_filters", facets: @facets, clear_params: @clear_facets,
+        query: params[:q], label: "component definitions" %>
+
   <%# #887 — card/list toggle. Cards read well for browsing and comparison;
       the list reads well for scanning hundreds of rows, so both stay. This is
       the pilot for the pattern #888 applies across every collection screen. %>

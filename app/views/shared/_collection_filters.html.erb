@@ -1,0 +1,56 @@
+<%#
+  Active-filter chrome for collection screens (#887 §5, #888 §3).
+
+  Facets differ per screen; this chrome does not. It renders whatever the
+  controller reports as active, so it never needs to know what a partition or a
+  capability is.
+
+  Every chip is a real link that drops one facet, and clear-all drops the rest —
+  no JavaScript, so filter state stays in the URL, stays shareable, and keeps
+  working under CSP and without a mouse.
+
+  §3 requires an active-filter count and a distinct no-results state; both live
+  here so every screen states them the same way.
+
+  Locals:
+    facets       — from CollectionViewable#active_facets
+    clear_params — from CollectionViewable#clear_facets_params
+    query        — the current free-text term, if any
+    label        — plural noun for the collection
+%>
+<% facets = Array(local_assigns[:facets]) %>
+<% query = local_assigns[:query].presence %>
+<% label = local_assigns.fetch(:label, "results") %>
+<% active_count = facets.size + (query ? 1 : 0) %>
+
+<% if active_count.positive? %>
+  <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+    <span class="small text-body-secondary">
+      <%= pluralize(active_count, "filter") %> active
+    </span>
+
+    <% if query %>
+      <%# The search term is a filter like any other and must be removable from
+          here — otherwise a user who cannot see the search box (or has scrolled
+          past it) has no way to tell why the list is short. %>
+      <%= link_to url_for(request.query_parameters.except("q", "page")),
+                  class: "sparc-chip sparc-chip--strong",
+                  title: "Remove this search" do %>
+        search: <%= query %> <span aria-hidden="true">&times;</span>
+        <span class="visually-hidden">(remove)</span>
+      <% end %>
+    <% end %>
+
+    <% facets.each do |facet| %>
+      <%= link_to url_for(facet[:remove_params]),
+                  class: "sparc-chip sparc-chip--strong",
+                  title: "Remove the #{facet[:label]} filter" do %>
+        <%= facet[:label] %>: <%= facet[:value] %> <span aria-hidden="true">&times;</span>
+        <span class="visually-hidden">(remove)</span>
+      <% end %>
+    <% end %>
+
+    <%= link_to "Clear all", url_for(local_assigns[:clear_params] || {}),
+                class: "btn btn-link btn-sm p-0 small" %>
+  </div>
+<% end %>

@@ -32,7 +32,6 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     scope = CdefDocument.order(created_at: :desc)
     scope = scope.where(status: params[:status]) if params[:status].present?
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
-    scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
     scope = scope.where(cdef_type: params[:cdef_type]) if params[:cdef_type].present?
 
     # Issue #466 — filter by provenance. source_type=aws_labs returns only
@@ -42,16 +41,28 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       scope = scope.where("import_metadata->>'source_type' = ?", params[:source_type])
     end
 
-    result = paginate(scope)
+    # #887 §5 — free-text search and the browse facets, shared with the web
+    # index. Before this, `?q=` here matched name/description only while the
+    # UI also matched regions, control ids and capabilities, and the facets
+    # did not exist on the API at all.
+    query = CdefBrowseQuery.new(params, scope: scope)
+    result = paginate(query.documents)
+
+    # Summarise only the page, the way the card view does.
+    summaries = CdefComponent.summary_for(result[:data].map(&:id))
+
     render json: {
-      data: result[:data].map { |c| serialize_cdef(c) },
-      meta: result[:meta]
+      data: result[:data].map { |c| serialize_cdef(c, summary: summaries[c.id]) },
+      meta: result[:meta].merge(facets: query.applied_facets)
     }
   end
 
   # GET /api/v1/cdef_documents/:id
   def show
-    render json: { data: serialize_cdef(@cdef, detailed: true) }
+    render json: {
+      data: serialize_cdef(@cdef, detailed: true,
+                                  summary: CdefComponent.summary_for([ @cdef.id ])[@cdef.id])
+    }
   end
 
   # POST /api/v1/cdef_documents
@@ -256,7 +267,7 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
     )
   end
 
-  def serialize_cdef(cdef, detailed: false)
+  def serialize_cdef(cdef, detailed: false, summary: nil)
     data = {
       id: cdef.id,
       slug: cdef.slug,
@@ -296,6 +307,79 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:source] = { type: "cloned", cloned_from_id: cdef.cloned_from_id }
     end
 
+    # #887 — the enriched shape the card view renders. It is derived from the
+    # component index rather than computed in the view, so an API consumer sees
+    # the same services, partitions, capabilities and check coverage a user
+    # does. `components` is a real state when nothing has been indexed yet, so
+    # the empty summary is returned rather than omitting the key.
+    data[:components] = serialize_component_summary(summary || CdefComponent.empty_summary)
+
+    # The detailed shape lists the components themselves. On the index that
+    # would be a row-count multiplier for no benefit — the roll-up is what a
+    # list needs.
+    if detailed
+      data[:component_details] = cdef.cdef_components
+                                    .order(Arel.sql("component_type = 'service' DESC"), :title)
+                                    .map { |c| serialize_component(c) }
+    end
+
     append_oscal_fields(data, cdef, detailed: detailed)
+  end
+
+  def serialize_component_summary(summary)
+    {
+      count: summary[:component_count],
+      service_count: summary[:service_count],
+      service_titles: summary[:service_titles],
+      description: summary[:primary_description],
+      partitions: summary[:partitions].map do |p|
+        { id: p, label: CdefComponent.partition_label(p) }
+      end,
+      # False means the services in this definition are NOT available in the
+      # same places, so the unioned partition list overstates any one of them.
+      partitions_uniform: summary[:partitions_uniform],
+      region_count: summary[:region_count],
+      availability: summary[:availability],
+      lifecycle_stages: summary[:lifecycle_stages],
+      capabilities: {
+        declared: summary[:declared_capabilities],
+        derived: summary[:derived_capabilities]
+      },
+      check_count: summary[:check_count],
+      # Controls the upstream definition asserts itself, vs those SPARC mapped
+      # in. Kept apart so a consumer can tell what the vendor claimed.
+      control_counts: {
+        native: summary[:native_control_count],
+        enriched: summary[:enriched_control_count]
+      },
+      mapping_sources: summary[:mapping_sources]
+    }
+  end
+
+  def serialize_component(component)
+    {
+      uuid: component.component_uuid,
+      type: component.component_type,
+      title: component.title,
+      description: component.description,
+      service_id: component.service_id,
+      region_ids: component.region_ids,
+      partitions: component.partitions.map do |p|
+        { id: p, label: CdefComponent.partition_label(p) }
+      end,
+      availability: component.availability,
+      lifecycle_stage: component.lifecycle_stage,
+      capabilities: {
+        declared: component.declared_capabilities,
+        derived: component.derived_capabilities
+      },
+      has_checks: component.has_checks,
+      check_ids: component.check_ids,
+      control_ids: {
+        native: component.native_control_ids,
+        enriched: component.enriched_control_ids
+      },
+      mapping_sources: component.mapping_sources
+    }
   end
 end
