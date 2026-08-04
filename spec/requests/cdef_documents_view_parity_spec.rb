@@ -66,8 +66,16 @@ RSpec.describe "CdefDocuments view parity", type: :request do
   # The mirror case: an action a signed-out visitor must NOT get has to be
   # absent from both views too. A card that leaks Delete would be the same bug
   # in the other direction.
-  context "as an anonymous visitor" do
+  #
+  # The posture has to be pinned. `can_bulk_delete?` is
+  # `!any_auth_enabled? || current_user&.admin?`, so on a deployment with auth
+  # switched off every visitor is an admin by design — correct behaviour, and
+  # the opposite of what this context is asserting. Leaving it to the ambient
+  # environment meant the suite passed locally (auth on) and failed in CI
+  # (auth off) while the app was behaving correctly in both.
+  context "as an anonymous visitor, with authentication enabled" do
     before do
+      allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
       allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(nil)
       allow_any_instance_of(ApplicationController).to receive(:signed_in?).and_return(false)
     end
@@ -87,6 +95,25 @@ RSpec.describe "CdefDocuments view parity", type: :request do
 
         expect(body).to include(cdef_document_path(document))
         expect(body).to include('data-controller="oscal-export"')
+      end
+    end
+  end
+
+  # The other posture, asserted rather than assumed (#885). With authentication
+  # disabled SPARC is a single-user local tool and the visitor IS the admin, so
+  # bulk delete is offered — and must be offered in BOTH views, or the default
+  # view silently loses it exactly as it did before.
+  context "with authentication disabled" do
+    before do
+      allow(SparcConfig).to receive(:any_auth_enabled?).and_return(false)
+      allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(nil)
+      allow_any_instance_of(ApplicationController).to receive(:signed_in?).and_return(false)
+    end
+
+    it "offers bulk selection in both views" do
+      %w[card list].each do |view|
+        expect(body_for(view)).to include('data-bulk-select-target="row"'),
+          "#{view} view lost bulk select when auth is disabled"
       end
     end
   end
