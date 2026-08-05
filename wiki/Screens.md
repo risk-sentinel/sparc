@@ -593,7 +593,11 @@ Summary tiles. Lists all evidence items with filters for type, status, authoriza
 | **Controller** | `EvidencesController#new` / `#edit` |
 | **Auth** | Required (`evidence.write`, boundary-scoped) |
 
-Editable fields: **Title**, **Evidence Type**, **Status**, **Description**, **Source**, **Authorization Boundary**, **Control IDs** (comma-separated), and the **Evidence File** dropzone (click or drag-and-drop; accepted extensions come from `EvidenceUploadPolicy`, archives excluded).
+Editable fields: **Title**, **Evidence Type**, **Status**, **Description**, **Source**, **Authorization Boundary**, **Controls** (catalog-backed picker), and the **Evidence File** dropzone (click or drag-and-drop; accepted extensions come from `EvidenceUploadPolicy`, archives excluded).
+
+**Controls** is a type-ahead search over loaded catalogs (`control_picker_controller.js` → `GET /controls/lookup`, the session-authenticated sibling of `GET /api/v1/controls`; both run `ControlLookupService`). Selections render as removable chips and post canonical identifiers through a hidden `evidence[control_ids]` field. It replaced a free-text box, in which a typed identifier was easy to get subtly wrong — control identifiers have three legitimate forms (#852) and the one SPARC displays is not the one catalogs store. Enhancements (`ac-2.1`) are selectable in their own right. When the boundary carries a baseline the search narrows to it and says so; otherwise it covers every loaded catalog.
+
+A link whose identifier matches no loaded catalog renders as an **unrecognised** chip rather than being hidden, so it can be seen and re-picked instead of silently discarded on save. Server-side validation of stored identifiers — across evidence, profiles, converters and mappings — is deliberately **not** part of this change; it is [#911](https://github.com/risk-sentinel/sparc/issues/911), because the rule has to be designed once against catalogs as the source of truth rather than per screen.
 
 **Collected By** and **Collection Date** are read-only (#903). SPARC stamps both on save — UTC timestamp and the signed-in user — so collection provenance is system-recorded rather than self-asserted (NIST AU-10). They render as plain text with a "recorded automatically" note.
 

@@ -77,6 +77,31 @@ security policy rejecting the upload, a file too large for an intermediate
 proxy, or a dropped connection. Those are reported too, with the HTTP status, so
 a blocked upload never looks like a successful one.
 
+### Linking evidence to controls
+
+The **Controls** field is a search over the controls in your loaded catalogs,
+rather than a box you type a bare identifier into. Type an identifier
+(`AC-2`, `AC-02` and `ac-2` all find the same control) or part of a title
+(`account management`), then pick from the results. Each pick becomes a
+removable chip.
+
+This matters because a control identifier can be written three ways, and the
+form SPARC shows you on screen is not the form catalogs store internally. Typing
+one by hand was easy to get subtly wrong. Picking from the list gives you the
+identifier the catalog actually uses.
+
+Two things worth knowing:
+
+- **Enhancements are separate controls.** `AC-2(1)` is not the same link as
+  `AC-2`. Pick the one you actually mean; both are selectable.
+- **If the system has a baseline** (a profile attached to its authorization
+  boundary), the search offers that baseline's controls and says so. Otherwise
+  it searches every loaded catalog.
+
+Links created before this search existed may show as **unrecognised** — they
+carry an identifier that does not match a control in any loaded catalog. They
+are shown rather than hidden so you can re-pick the right control.
+
 ### How Collection Date and Collected By are set
 
 These two fields are **recorded by SPARC**, not entered by you. When you save,
@@ -132,6 +157,8 @@ metadata or **Delete** the record.
 | Red message naming an HTTP status (403, 413) | The request was rejected before it reached SPARC, usually by a network security policy or a proxy size limit | Nothing was saved. Retry; if it persists, send the status code to your administrator |
 | Saved, but the message says the file did **not** attach | The record stored without its file | Treat the record as incomplete — use **Edit** to upload the file again before relying on it |
 | Collection Date can't be edited | It is recorded automatically on save (AU-10) | Expected. Record an original production date in **Description** or **Source** |
+| A control you expect isn't in the Controls search | Its catalog isn't loaded, or the boundary's baseline excludes it | Load the catalog, or check the system's baseline |
+| A linked control shows as **unrecognised** | It was linked before the search existed and its identifier matches no loaded catalog | Remove the chip and pick the control from the search |
 
 ---
 

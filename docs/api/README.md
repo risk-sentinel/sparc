@@ -82,6 +82,10 @@ SPARC supports three API authentication modes (controlled by `SPARC_API_AUTH` en
 - Catalog **contents** — [families](endpoints/control-families.md) and
   [controls](endpoints/catalog-controls.md) (#895) — are documented and covered
   by request + contract specs, but are **not yet in the Postman collection**
+- **Cross-catalog** control search and identifier resolution lives in
+  [control lookup](endpoints/control-lookup.md) (#902 follow-up). The routes above
+  are catalog-scoped, which cannot answer "does this identifier name a real
+  control?" for a caller — such as evidence — that belongs to no catalog
 
 ### 7. Profile Documents (5 requests)
 - CRUD with soft-delete
