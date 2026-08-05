@@ -271,6 +271,11 @@ Rails.application.routes.draw do
   # Leveraging-side read-only view of leveraged-system POA&Ms (#415 Scenario A)
   resources :leveraged_poam_documents, only: %i[index show]
 
+  # #902 follow-up — JSON for the evidence control picker. Session-authenticated
+  # sibling of GET /api/v1/controls; both run ControlLookupService, because the
+  # API excludes cookies and the browser cannot send a Bearer token.
+  get "controls/lookup", to: "control_lookups#index", as: :control_lookup, defaults: { format: :json }
+
   resources :evidences do
     resources :attestations, only: [ :new, :create, :destroy ]
   end
@@ -577,6 +582,13 @@ Rails.application.routes.draw do
           constraints: { uuid: uuid_constraint }
 
       # Catalog, Profile, CDEF, and Mapping CRUD (#242)
+      # #902 follow-up — cross-catalog control lookup. Every other control route
+      # is catalog-scoped, which cannot answer "does this identifier name a real
+      # control?" for a caller (evidence) that belongs to no catalog. Backs the
+      # evidence control picker so a link can only name a control that exists.
+      get "controls",         to: "control_lookups#index",   as: :control_lookups
+      get "controls/resolve", to: "control_lookups#resolve", as: :resolve_control_lookup
+
       resources :control_catalogs, only: [ :index, :show, :create, :update, :destroy ] do
         # #895 — catalog CONTENTS. The catalog container had a full API while
         # its families and controls had none. Families are addressed by code

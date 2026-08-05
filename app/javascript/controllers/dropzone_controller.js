@@ -20,12 +20,54 @@ export default class DropzoneController extends Controller {
   static values = {
     accept: { type: String, default: "" },
     maxSize: { type: Number, default: 52428800 }, // 50 MB
-    multiple: { type: Boolean, default: false }
+    multiple: { type: Boolean, default: false },
+    required: { type: Boolean, default: false }
   }
 
   connect() {
     this.dragCounter = 0
     this.selectedFiles = [] // Track files for multi-mode
+
+    // #902 — the file input is `d-none`, so the native `required` attribute
+    // cannot be used: Chrome blocks submission of a form with a required
+    // control it cannot focus and reports it only to the console, leaving the
+    // user staring at a button that appears to do nothing. Enforce it here
+    // instead, where the message can actually be shown.
+    this.form = this.element.closest("form")
+    if (this.form) {
+      this.onSubmit = this.validateOnSubmit.bind(this)
+      // Capture phase: run before Turbo's submit handling, so preventDefault
+      // stops the request being made at all.
+      this.form.addEventListener("submit", this.onSubmit, { capture: true })
+    }
+  }
+
+  disconnect() {
+    if (this.form && this.onSubmit) {
+      this.form.removeEventListener("submit", this.onSubmit, { capture: true })
+    }
+  }
+
+  // ── Submit-time guard ────────────────────────────────────────────
+
+  validateOnSubmit(event) {
+    if (!this.requiredValue) return
+    if (this.inputTarget.files && this.inputTarget.files.length > 0) return
+
+    event.preventDefault()
+    event.stopPropagation()
+
+    this.showError(
+      this.multipleValue
+        ? "Select at least one file before submitting."
+        : "Select a file before submitting."
+    )
+
+    // Move focus to the zone so the message is announced and the user is put
+    // where the problem is, mirroring what native validation would have done.
+    this.zoneTarget.setAttribute("tabindex", "-1")
+    this.zoneTarget.focus()
+    this.zoneTarget.scrollIntoView({ block: "center", behavior: "smooth" })
   }
 
   // ── Drag events ──────────────────────────────────────────────────
@@ -97,7 +139,14 @@ export default class DropzoneController extends Controller {
   handleFile(file, dataTransferFiles) {
     this.clearState()
 
-    if (!this.validateFile(file)) return
+    if (!this.validateFile(file)) {
+      // #902 — a file chosen through the browse dialog is already on the input
+      // by the time we see it. Leaving a client-rejected file there means the
+      // form posts it anyway and the user is told "no" a second time, by the
+      // server, after the upload. Drop it so the rejection is final here.
+      this.inputTarget.value = ""
+      return
+    }
 
     if (dataTransferFiles) {
       this.inputTarget.files = dataTransferFiles
@@ -129,6 +178,7 @@ export default class DropzoneController extends Controller {
     }
 
     if (accepted.length === 0) {
+      this.inputTarget.value = ""
       this.showError("No valid files found. Check file types and sizes.")
       return
     }

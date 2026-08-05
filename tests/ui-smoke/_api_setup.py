@@ -118,6 +118,23 @@ def delete_doc(resource: str, ident: Any) -> None:
         c.delete(f"/api/v1/{resource}/{ident}")
 
 
+def delete_evidences_titled(prefix: str) -> None:
+    """Delete every evidence record whose title starts with `prefix`.
+
+    #902's UI smoke creates evidence by driving the form, so there is no id to
+    hold onto for teardown. These records carry files and publish to a public
+    wiki when screenshots are captured, so they are swept by title instead of
+    left for the janitor.
+    """
+    with _client() as c:
+        resp = c.get("/api/v1/evidences", params={"q": prefix, "per_page": 100})
+        if resp.status_code >= 400:
+            return
+        for item in resp.json().get("data", []):
+            if str(item.get("title", "")).startswith(prefix):
+                c.delete(f"/api/v1/evidences/{item['slug']}")
+
+
 def deactivate_user(user_id: Any) -> None:
     """Cleanup for users created by the admin-create smoke. DELETE deactivates
     (soft) — the only teardown the API offers — mirroring the API suite."""

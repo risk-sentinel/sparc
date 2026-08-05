@@ -47,7 +47,10 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body data-controller="video-easter-egg details-arrow">
+  <%# #902 — submit-feedback is body-scoped on purpose: a form submission that
+      never reaches Rails (edge WAF block, proxy 413, transport failure) has no
+      controller to set a flash, so the feedback has to come from the client. %>
+  <body data-controller="video-easter-egg details-arrow submit-feedback">
     <%= render "shared/environment_header" %>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
       <div class="container-fluid">
@@ -282,25 +285,26 @@
       </div>
     </nav>
 
-    <%# ── Flash notifications (fixed top-right overlay) ──────── %>
-    <% if flash[:success] || flash[:error] || flash[:warning] %>
+    <%# ── Flash notifications (fixed top-right overlay) ────────
+        #902 — driven by ApplicationHelper::FLASH_CLASSES so `notice:`/`alert:`
+        render like `success`/`error` instead of vanishing. Errors carry
+        role="alert" (assertive) so a screen reader announces a failure the
+        moment it lands; the rest are polite status updates. Errors also stay
+        put until dismissed — see flash_controller.js. %>
+    <% flashes = displayable_flashes %>
+    <% if flashes.any? %>
       <div class="flash-container" data-controller="flash">
-        <% if flash[:success] %>
-          <div class="alert alert-success alert-dismissible fade show flash" data-flash-target="message" role="alert">
-            <%= flash[:success] %>
-            <button type="button" class="btn-close" data-action="click->flash#dismiss" aria-label="Close"></button>
-          </div>
-        <% end %>
-        <% if flash[:error] %>
-          <div class="alert alert-danger alert-dismissible fade show flash" data-flash-target="message" role="alert">
-            <%= flash[:error] %>
-            <button type="button" class="btn-close" data-action="click->flash#dismiss" aria-label="Close"></button>
-          </div>
-        <% end %>
-        <% if flash[:warning] %>
-          <div class="alert alert-warning alert-dismissible fade show flash" data-flash-target="message" role="alert">
-            <%= flash[:warning] %>
-            <button type="button" class="btn-close" data-action="click->flash#dismiss" aria-label="Close"></button>
+        <% flashes.each do |key, css_class, message| %>
+          <% danger = css_class == "alert-danger" %>
+          <div class="alert <%= css_class %> alert-dismissible fade show flash"
+               data-flash-target="message"
+               data-flash-key="<%= key %>"
+               role="<%= danger ? "alert" : "status" %>"
+               aria-live="<%= danger ? "assertive" : "polite" %>">
+            <%= message %>
+            <button type="button" class="btn-close"
+                    data-action="click->flash#dismiss"
+                    aria-label="<%= danger ? "Dismiss error" : "Close" %>"></button>
           </div>
         <% end %>
       </div>

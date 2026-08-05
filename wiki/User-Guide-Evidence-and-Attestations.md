@@ -55,6 +55,66 @@ flowchart LR
 4. Save. The evidence appears in the list, which you can filter by **type**,
    **status**, **authorization boundary**, and **associated control**, or search.
 
+### Knowing whether the upload worked
+
+Evidence is only useful if it is really there, so SPARC always tells you which
+of the two happened:
+
+- **It worked.** A green confirmation names the **file**, not just the record —
+  filename, size, and the first part of its **SHA-256 checksum**. If you do not
+  see the filename in that message, the file did not store, whatever else the
+  screen says.
+- **It did not work.** A red message explains why and **stays on screen until
+  you dismiss it**. The form keeps everything you typed, so you can correct the
+  problem and submit again without re-entering the metadata.
+
+A file is required when you create evidence. If you submit without choosing one,
+the dropzone says so and the form does not submit. (Editing an existing record
+does not require re-uploading — the attached file is kept unless you replace it.)
+
+Some failures happen before the request reaches SPARC at all — a network
+security policy rejecting the upload, a file too large for an intermediate
+proxy, or a dropped connection. Those are reported too, with the HTTP status, so
+a blocked upload never looks like a successful one.
+
+### Linking evidence to controls
+
+The **Controls** field is a search over the controls in your loaded catalogs,
+rather than a box you type a bare identifier into. Type an identifier
+(`AC-2`, `AC-02` and `ac-2` all find the same control) or part of a title
+(`account management`), then pick from the results. Each pick becomes a
+removable chip.
+
+This matters because a control identifier can be written three ways, and the
+form SPARC shows you on screen is not the form catalogs store internally. Typing
+one by hand was easy to get subtly wrong. Picking from the list gives you the
+identifier the catalog actually uses.
+
+Two things worth knowing:
+
+- **Enhancements are separate controls.** `AC-2(1)` is not the same link as
+  `AC-2`. Pick the one you actually mean; both are selectable.
+- **If the system has a baseline** (a profile attached to its authorization
+  boundary), the search offers that baseline's controls and says so. Otherwise
+  it searches every loaded catalog.
+
+Links created before this search existed may show as **unrecognised** — they
+carry an identifier that does not match a control in any loaded catalog. They
+are shown rather than hidden so you can re-pick the right control.
+
+### How Collection Date and Collected By are set
+
+These two fields are **recorded by SPARC**, not entered by you. When you save,
+SPARC stamps the collection time in **UTC** and records the signed-in user as
+the collector. They are shown on the form read-only.
+
+This is deliberate: collection provenance that the submitter can type is
+provenance an assessor cannot rely on (NIST **AU-10**, non-repudiation). It also
+means a collection date can never be set in the future, which would be
+impossible on its face. If you need to record when an artifact was *originally*
+produced — as opposed to when it was collected into SPARC — put that in the
+**Description** or **Source** field.
+
 ## How to review an evidence item
 
 Open an evidence record (`/evidences/:id`) to see a **file preview**, the
@@ -93,6 +153,12 @@ metadata or **Delete** the record.
 | Can't add an attestation | Not on an evidence record, or view-only role | Open the evidence first; confirm your role ([RBAC](RBAC)) |
 | File won't preview | Unsupported preview type | The file is still stored and downloadable; preview is best-effort |
 | Filters hide items you expect | An active filter is applied | Reset the type/status/boundary/control filters |
+| **Upload** does nothing when clicked | No file chosen — a file is required to create evidence | The dropzone shows the reason; choose a file and submit again |
+| Red message naming an HTTP status (403, 413) | The request was rejected before it reached SPARC, usually by a network security policy or a proxy size limit | Nothing was saved. Retry; if it persists, send the status code to your administrator |
+| Saved, but the message says the file did **not** attach | The record stored without its file | Treat the record as incomplete — use **Edit** to upload the file again before relying on it |
+| Collection Date can't be edited | It is recorded automatically on save (AU-10) | Expected. Record an original production date in **Description** or **Source** |
+| A control you expect isn't in the Controls search | Its catalog isn't loaded, or the boundary's baseline excludes it | Load the catalog, or check the system's baseline |
+| A linked control shows as **unrecognised** | It was linked before the search existed and its identifier matches no loaded catalog | Remove the chip and pick the control from the search |
 
 ---
 

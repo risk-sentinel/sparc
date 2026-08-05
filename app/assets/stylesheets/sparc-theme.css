@@ -2573,3 +2573,148 @@ a.link-purple { color: var(--sparc-purple); }
   color: var(--bs-secondary-color);
   margin: -0.25rem 0 0;
 }
+
+/* ── Control picker (#902 follow-up) ──────────────────────────────
+   Replaces a free-text "Control IDs" box. Control identifiers have three
+   legitimate forms (#852) and SPARC displays a different one from the one
+   catalogs store, so typing was never a reliable way to name a control —
+   every seeded evidence link was dead as a result. This is the affordance
+   for picking a real one. */
+
+.sparc-control-picker {
+  position: relative;
+}
+
+.sparc-control-picker__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+  min-height: 1.75rem;
+  align-items: center;
+}
+
+.sparc-control-picker__none {
+  font-size: 0.8rem;
+  color: var(--bs-tertiary-color);
+  font-style: italic;
+}
+
+.sparc-control-picker__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.4rem 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--bs-secondary-bg);
+  border: 1px solid var(--bs-border-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.sparc-control-picker__chip-remove {
+  border: 0;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 0.1rem;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.sparc-control-picker__chip-remove:hover,
+.sparc-control-picker__chip-remove:focus-visible {
+  color: var(--sparc-danger);
+  background: var(--bs-tertiary-bg);
+}
+
+/* Results float over following content so the form does not jump on each keystroke. */
+.sparc-control-picker__results {
+  position: absolute;
+  z-index: 1050;
+  left: 0;
+  right: 0;
+  max-height: 18rem;
+  overflow-y: auto;
+  margin-top: 0.2rem;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.375rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.sparc-control-picker__option {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, auto) 1fr auto;
+  gap: 0.5rem;
+  align-items: baseline;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.sparc-control-picker__option:last-child {
+  border-bottom: 0;
+}
+
+.sparc-control-picker__option:hover,
+.sparc-control-picker__option:focus-visible,
+.sparc-control-picker__option.is-active {
+  background: var(--bs-tertiary-bg);
+}
+
+.sparc-control-picker__option-id {
+  font-weight: 700;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* An enhancement is a control in its own right, but it reads as a child of
+   its base control — worth showing, not worth shouting. */
+.sparc-control-picker__option-id--enhancement {
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+}
+
+.sparc-control-picker__option-title {
+  font-size: 0.8rem;
+  color: var(--bs-body-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sparc-control-picker__option-family {
+  font-size: 0.7rem;
+  color: var(--bs-tertiary-color);
+  font-weight: 600;
+}
+
+.sparc-control-picker__empty,
+.sparc-control-picker__scope {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--bs-secondary-color);
+}
+
+.sparc-control-picker__scope {
+  border-bottom: 1px solid var(--bs-border-color);
+  font-weight: 600;
+}
+
+/* A control link stored before #902's validation existed, whose identifier
+   resolves to nothing. Shown rather than dropped — see the picker controller —
+   so the user can see which link is broken instead of losing it on save. */
+.sparc-control-picker__chip--unresolved {
+  border-color: var(--sparc-danger);
+  border-style: dashed;
+}
+
+.sparc-control-picker__chip--unresolved .sparc-control-picker__chip-id {
+  color: var(--sparc-danger);
+}

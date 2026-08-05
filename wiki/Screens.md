@@ -585,6 +585,28 @@ Form for adding OSCAL assessment result metadata: results, observations, finding
 
 Summary tiles. Lists all evidence items with filters for type, status, authorization boundary, and associated control. Search functionality. "Upload" button for new evidence.
 
+#### Evidence Upload / Edit
+
+| | |
+|---|---|
+| **Route** | `GET /evidences/new`, `GET /evidences/:id/edit` |
+| **Controller** | `EvidencesController#new` / `#edit` |
+| **Auth** | Required (`evidence.write`, boundary-scoped) |
+
+Editable fields: **Title**, **Evidence Type**, **Status**, **Description**, **Source**, **Authorization Boundary**, **Controls** (catalog-backed picker), and the **Evidence File** dropzone (click or drag-and-drop; accepted extensions come from `EvidenceUploadPolicy`, archives excluded).
+
+**Controls** is a type-ahead search over loaded catalogs (`control_picker_controller.js` → `GET /controls/lookup`, the session-authenticated sibling of `GET /api/v1/controls`; both run `ControlLookupService`). Selections render as removable chips and post canonical identifiers through a hidden `evidence[control_ids]` field. It replaced a free-text box, in which a typed identifier was easy to get subtly wrong — control identifiers have three legitimate forms (#852) and the one SPARC displays is not the one catalogs store. Enhancements (`ac-2.1`) are selectable in their own right. When the boundary carries a baseline the search narrows to it and says so; otherwise it covers every loaded catalog.
+
+A link whose identifier matches no loaded catalog renders as an **unrecognised** chip rather than being hidden, so it can be seen and re-picked instead of silently discarded on save. Server-side validation of stored identifiers — across evidence, profiles, converters and mappings — is deliberately **not** part of this change; it is [#911](https://github.com/risk-sentinel/sparc/issues/911), because the rule has to be designed once against catalogs as the source of truth rather than per screen.
+
+**Collected By** and **Collection Date** are read-only (#903). SPARC stamps both on save — UTC timestamp and the signed-in user — so collection provenance is system-recorded rather than self-asserted (NIST AU-10). They render as plain text with a "recorded automatically" note.
+
+A file is **required** when creating, optional when editing a record that already has one. The requirement is enforced by `dropzone_controller.js` on submit, not the native `required` attribute — the input is visually hidden, and Chrome silently refuses to submit a form containing a required control it cannot focus (#902).
+
+Submit actions: **Upload Evidence** (or **Update Evidence**), **Save and add another** (create only, carries boundary + type forward), **Cancel**.
+
+Feedback (#902): success confirms the **file** by name, size and SHA-256 prefix; failures render as a red flash that persists until dismissed, with the form's contents preserved. Submissions rejected before reaching Rails — an edge WAF block, a proxy size limit, a dropped connection — are reported client-side by `submit_feedback_controller.js` with the HTTP status.
+
 #### Evidence Detail
 
 | | |

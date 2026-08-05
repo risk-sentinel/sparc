@@ -1,4 +1,36 @@
 module ApplicationHelper
+  # #902 — every flash key the app actually sets, mapped to the Bootstrap
+  # contextual class that renders it.
+  #
+  # The layouts used to render `success`/`error`/`warning` only, but Rails'
+  # own `redirect_to ..., notice:` / `alert:` shorthand writes `:notice` and
+  # `:alert` — so 34 call sites across 12 controllers set a flash that was
+  # never displayed. Among them was the evidence upload success notice, which
+  # is why a *working* upload still looked like nothing happened (#902).
+  #
+  # Keep this the single source of truth: a key absent here renders nowhere,
+  # silently, which is the bug this constant exists to prevent.
+  FLASH_CLASSES = {
+    "success" => "alert-success",
+    "notice"  => "alert-success",
+    "error"   => "alert-danger",
+    "alert"   => "alert-danger",
+    "warning" => "alert-warning"
+  }.freeze
+
+  # Displayable flash entries as [key, css_class, message] triples, in a stable
+  # order (success before error before warning) so a request setting several
+  # keys renders predictably. Blank messages are dropped — an empty flash
+  # should not paint an empty box.
+  def displayable_flashes
+    FLASH_CLASSES.filter_map do |key, css_class|
+      message = flash[key]
+      next if message.blank?
+
+      [ key, css_class, message ]
+    end
+  end
+
   # #784 — per-screen contextual help. Maps a controller (controller_path, so
   # namespaced admin controllers work) to the slug of the User Guide that best
   # covers it. Keys must stay in sync with wiki/User-Guide-*.md filenames; the

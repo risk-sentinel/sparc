@@ -61,6 +61,8 @@ GET /api/v1/control_catalogs/:control_catalog_id/controls/:id
 GET /api/v1/control_catalogs/:id
 GET /api/v1/control_mappings
 GET /api/v1/control_mappings/:id
+GET /api/v1/controls
+GET /api/v1/controls/resolve
 GET /api/v1/evidences
 GET /api/v1/evidences/:evidence_id/attestations
 GET /api/v1/evidences/:evidence_id/attestations/:id

@@ -38,19 +38,34 @@
         <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Describe the evidence and its relevance to the control(s)..." %>
       </div>
 
+      <%# #903 — Collected By and Collection Date are provenance, not input.
+          The server stamps both on create (#738, NIST AU-10 non-repudiation)
+          and neither is a permitted parameter, so the editable fields that used
+          to sit here were purely misleading: a user could type a name, or pick
+          a date in the future, and watch the server discard it. They are shown
+          read-only instead — the value is still worth seeing, it is just not
+          the user's to set. %>
       <div class="row g-3 mb-3">
         <div class="col-md-4">
-          <%= f.label :collected_by, "Collected By", class: "form-label fw-semibold" %>
-          <%= f.text_field :collected_by, class: "form-control", placeholder: "Name or system" %>
+          <span class="form-label fw-semibold d-block" id="evidence_collected_by_label">Collected By</span>
+          <p class="form-control-plaintext mb-0" aria-labelledby="evidence_collected_by_label">
+            <%= @evidence.collected_by.presence || content_tag(:span, "Recorded on save", class: "text-body-secondary fst-italic") %>
+          </p>
         </div>
         <div class="col-md-4">
-          <%= f.label :collected_at, "Collection Date", class: "form-label fw-semibold" %>
-          <%= f.datetime_local_field :collected_at, class: "form-control", value: @evidence.collected_at&.strftime("%Y-%m-%dT%H:%M") %>
+          <span class="form-label fw-semibold d-block" id="evidence_collected_at_label">Collection Date</span>
+          <p class="form-control-plaintext mb-0" aria-labelledby="evidence_collected_at_label">
+            <%= @evidence.collected_at&.utc&.strftime("%Y-%m-%d %H:%M UTC") || content_tag(:span, "Recorded on save", class: "text-body-secondary fst-italic") %>
+          </p>
         </div>
         <div class="col-md-4">
           <%= f.label :source, "Source", class: "form-label fw-semibold" %>
           <%= f.text_field :source, class: "form-control", placeholder: "e.g. InSpec, Vulcan, Manual" %>
         </div>
+      </div>
+      <div class="form-text mb-3">
+        Collected By and Collection Date are recorded automatically by SPARC when
+        the evidence is saved, in UTC. They cannot be edited.
       </div>
 
       <div class="row g-3 mb-3">
@@ -60,12 +75,65 @@
               options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), @evidence.authorization_boundary_id),
               { include_blank: "None" }, class: "form-select" %>
         </div>
+        <%# #902 follow-up — this was a free-text box, and free text is what got
+            stored. A typo linked evidence to a control in no catalog, and
+            copying the padded id SPARC displays (AC-02) never matched the
+            canonical one catalogs store (ac-2) — every seeded link was dead
+            that way. Now the user searches real controls and picks from them,
+            so what is submitted is always an identifier that exists. %>
         <div class="col-md-6">
-          <label class="form-label fw-semibold" for="evidence_control_ids">Control IDs</label>
-          <%= text_field_tag "evidence[control_ids]",
-              @evidence.evidence_control_links.pluck(:control_id).join(", "),
-              id: "evidence_control_ids", class: "form-control", placeholder: "e.g. AC-01, AC-02, IA-05 (comma-separated)" %>
-          <div class="form-text">Comma-separated list of control IDs to link this evidence to.</div>
+          <% linked = @evidence.evidence_control_links.pluck(:control_id) %>
+          <%# Every existing link becomes a chip, INCLUDING one whose identifier
+              no longer resolves. Dropping unresolvable ids here would silently
+              delete the link on the next save — turning a visible data problem
+              into data loss. They render with the raw stored value so the user
+              can see which link is broken and re-pick it. %>
+          <% linked_controls = linked.map do |cid|
+               control = ControlLookupService.resolve(cid)
+               if control
+                 ControlLookupService.serialize(control)
+               else
+                 { control_id: cid, display_id: "#{ControlId.padded(cid)} (unrecognised)",
+                   title: "", unresolved: true }
+               end
+             end %>
+          <span class="form-label fw-semibold d-block" id="evidence_control_ids_label">Controls</span>
+
+          <div data-controller="control-picker"
+               data-control-picker-url-value="<%= control_lookup_path %>"
+               data-control-picker-boundary-id-value="<%= @evidence.authorization_boundary_id %>"
+               data-control-picker-selected-value="<%= linked_controls.to_json %>"
+               class="sparc-control-picker">
+
+            <div class="sparc-control-picker__chips" data-control-picker-target="chips"></div>
+
+            <input type="text"
+                   class="form-control"
+                   id="evidence_control_search"
+                   autocomplete="off"
+                   aria-labelledby="evidence_control_ids_label"
+                   aria-describedby="evidence_control_help"
+                   placeholder="Search by identifier or title, e.g. AC-2 or &quot;account management&quot;"
+                   data-control-picker-target="search"
+                   data-action="input->control-picker#search keydown->control-picker#keydown">
+
+            <div class="sparc-control-picker__results"
+                 role="listbox"
+                 hidden
+                 data-control-picker-target="results"></div>
+
+            <%# Canonical ids only — this is what the form actually posts. %>
+            <%= hidden_field_tag "evidence[control_ids]", linked.join(","),
+                  id: "evidence_control_ids",
+                  data: { control_picker_target: "hidden" } %>
+
+            <div class="form-text" id="evidence_control_help">
+              Pick controls from a loaded catalog. Enhancements (AC-2(1)) are
+              selectable in their own right.
+            </div>
+            <div class="form-text" role="status" aria-live="polite"
+                 data-control-picker-target="status"></div>
+          </div>
         </div>
       </div>
 
@@ -74,10 +142,14 @@
         <%# #868 — `accept` comes from the same constant the server enforces, so
             the advertised list and the accepted list cannot drift. Archives are
             not accepted: a container hides what is inside it from every check. %>
+        <%# #902 — a file is required to create evidence, but NOT to edit a
+            record that already has one: demanding a re-upload to correct a typo
+            in the title would be its own trap. %>
         <%= render "shared/dropzone",
           form: f,
           field: :file,
           accept: EvidenceUploadPolicy.accept_attribute,
+          required: !@evidence.file.attached?,
           label: "Evidence File",
           hint: "Screenshots, logs, config exports, scan results, or policy documents. Archives (.zip) are not accepted." %>
         <% if @evidence.persisted? && @evidence.file.attached? %>
