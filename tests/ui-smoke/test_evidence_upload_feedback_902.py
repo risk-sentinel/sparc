@@ -274,6 +274,109 @@ class TestErrorFlashPersists:
         success.first.wait_for(state="detached", timeout=PAST_AUTO_DISMISS_MS)
 
 
+class TestControlPicker:
+    """#902 follow-up — control links must name a control that exists.
+
+    The field was free text. A typo linked evidence to a control in no catalog,
+    and copying the padded id SPARC displays (AC-02) never matched the canonical
+    one catalogs store (ac-2) — every seeded link was dead that way. The picker
+    can only emit identifiers that resolve.
+    """
+
+    def test_the_free_text_control_field_is_gone(self, authed_page):
+        record_csp(authed_page)
+        authed_page.goto(NEW_EVIDENCE)
+        authed_page.wait_for_load_state("networkidle")
+
+        # The hidden field still carries the value, but it must not be a
+        # user-typable text box any more.
+        control_input = authed_page.locator("#evidence_control_ids")
+        assert control_input.count() == 1, "the control_ids field disappeared entirely"
+        assert control_input.get_attribute("type") == "hidden", (
+            "#902 regression: Control IDs is a free-text field again, so a typo "
+            "can once more link evidence to a control that does not exist"
+        )
+        assert_no_csp_violations(authed_page, during="evidence form load")
+
+    def test_searching_finds_a_real_control_and_adds_it_as_a_chip(self, authed_page):
+        record_csp(authed_page)
+        authed_page.goto(NEW_EVIDENCE)
+        authed_page.wait_for_load_state("networkidle")
+
+        authed_page.fill("#evidence_control_search", "ac-2")
+        option = authed_page.locator(".sparc-control-picker__option").first
+        option.wait_for(state="visible", timeout=10_000)
+        chosen = (option.locator(".sparc-control-picker__option-id").text_content() or "").strip()
+        option.click()
+
+        chip = authed_page.locator(".sparc-control-picker__chip").first
+        chip.wait_for(state="visible", timeout=5_000)
+        assert chosen in (chip.text_content() or ""), "the picked control did not become a chip"
+
+        # The hidden field is what actually posts, and it must hold a canonical id.
+        posted = authed_page.input_value("#evidence_control_ids")
+        assert posted, "picking a control did not populate the submitted field"
+        assert posted == posted.lower(), (
+            f"expected a canonical (lowercase) identifier, got {posted!r} — the "
+            "padded form is what used to match nothing"
+        )
+        assert_no_csp_violations(authed_page, during="control picker interaction")
+
+    def test_searching_the_padded_form_finds_the_canonical_control(self, authed_page):
+        """The exact reported mismatch: type what the UI shows, find what is stored."""
+        authed_page.goto(NEW_EVIDENCE)
+        authed_page.wait_for_load_state("networkidle")
+
+        authed_page.fill("#evidence_control_search", "AC-02")
+        option = authed_page.locator(".sparc-control-picker__option").first
+        option.wait_for(state="visible", timeout=10_000)
+
+        assert option.count() >= 1, (
+            "searching the padded form SPARC displays returned nothing — the "
+            "display/storage mismatch behind #902"
+        )
+
+    def test_an_unknown_identifier_offers_nothing(self, authed_page):
+        """Both directions: the picker must not invent a match for a typo."""
+        authed_page.goto(NEW_EVIDENCE)
+        authed_page.wait_for_load_state("networkidle")
+
+        authed_page.fill("#evidence_control_search", "ZZ-999")
+        results = authed_page.locator(".sparc-control-picker__results")
+        results.wait_for(state="visible", timeout=10_000)
+
+        assert authed_page.locator(".sparc-control-picker__option").count() == 0, (
+            "the picker offered a match for an identifier that exists in no catalog"
+        )
+        assert "No matching controls" in (results.text_content() or "")
+
+    def test_a_picked_control_survives_the_save(self, authed_page):
+        record_csp(authed_page)
+        authed_page.goto(NEW_EVIDENCE)
+        authed_page.wait_for_load_state("networkidle")
+
+        _fill_metadata(authed_page, title=f"{TITLE_PREFIX}-linked")
+        _attach_pdf(authed_page)
+
+        authed_page.fill("#evidence_control_search", "ac-2")
+        option = authed_page.locator(".sparc-control-picker__option").first
+        option.wait_for(state="visible", timeout=10_000)
+        option.click()
+        authed_page.locator(".sparc-control-picker__chip").first.wait_for(
+            state="visible", timeout=5_000
+        )
+        linked = authed_page.input_value("#evidence_control_ids")
+
+        authed_page.click("input[type=submit][value='Upload Evidence']")
+        _wait_for_saved(authed_page)
+
+        body = authed_page.locator("body").inner_text().lower()
+        assert linked.split(",")[0] in body or linked.split(",")[0].upper() in body, (
+            f"the linked control {linked!r} is not shown on the saved evidence"
+        )
+        assert_no_csp_violations(authed_page, during="save with a linked control")
+
+
 class TestCollectionProvenance:
     """#903 — collection date is recorded, never solicited."""
 

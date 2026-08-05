@@ -75,12 +75,65 @@
               options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), @evidence.authorization_boundary_id),
               { include_blank: "None" }, class: "form-select" %>
         </div>
+        <%# #902 follow-up — this was a free-text box, and free text is what got
+            stored. A typo linked evidence to a control in no catalog, and
+            copying the padded id SPARC displays (AC-02) never matched the
+            canonical one catalogs store (ac-2) — every seeded link was dead
+            that way. Now the user searches real controls and picks from them,
+            so what is submitted is always an identifier that exists. %>
         <div class="col-md-6">
-          <label class="form-label fw-semibold" for="evidence_control_ids">Control IDs</label>
-          <%= text_field_tag "evidence[control_ids]",
-              @evidence.evidence_control_links.pluck(:control_id).join(", "),
-              id: "evidence_control_ids", class: "form-control", placeholder: "e.g. AC-01, AC-02, IA-05 (comma-separated)" %>
-          <div class="form-text">Comma-separated list of control IDs to link this evidence to.</div>
+          <% linked = @evidence.evidence_control_links.pluck(:control_id) %>
+          <%# Every existing link becomes a chip, INCLUDING one whose identifier
+              no longer resolves. Dropping unresolvable ids here would silently
+              delete the link on the next save — turning a visible data problem
+              into data loss. They render with the raw stored value so the user
+              can see which link is broken and re-pick it. %>
+          <% linked_controls = linked.map do |cid|
+               control = ControlLookupService.resolve(cid)
+               if control
+                 ControlLookupService.serialize(control)
+               else
+                 { control_id: cid, display_id: "#{ControlId.padded(cid)} (unrecognised)",
+                   title: "", unresolved: true }
+               end
+             end %>
+          <span class="form-label fw-semibold d-block" id="evidence_control_ids_label">Controls</span>
+
+          <div data-controller="control-picker"
+               data-control-picker-url-value="<%= control_lookup_path %>"
+               data-control-picker-boundary-id-value="<%= @evidence.authorization_boundary_id %>"
+               data-control-picker-selected-value="<%= linked_controls.to_json %>"
+               class="sparc-control-picker">
+
+            <div class="sparc-control-picker__chips" data-control-picker-target="chips"></div>
+
+            <input type="text"
+                   class="form-control"
+                   id="evidence_control_search"
+                   autocomplete="off"
+                   aria-labelledby="evidence_control_ids_label"
+                   aria-describedby="evidence_control_help"
+                   placeholder="Search by identifier or title, e.g. AC-2 or &quot;account management&quot;"
+                   data-control-picker-target="search"
+                   data-action="input->control-picker#search keydown->control-picker#keydown">
+
+            <div class="sparc-control-picker__results"
+                 role="listbox"
+                 hidden
+                 data-control-picker-target="results"></div>
+
+            <%# Canonical ids only — this is what the form actually posts. %>
+            <%= hidden_field_tag "evidence[control_ids]", linked.join(","),
+                  id: "evidence_control_ids",
+                  data: { control_picker_target: "hidden" } %>
+
+            <div class="form-text" id="evidence_control_help">
+              Pick controls from a loaded catalog. Enhancements (AC-2(1)) are
+              selectable in their own right.
+            </div>
+            <div class="form-text" role="status" aria-live="polite"
+                 data-control-picker-target="status"></div>
+          </div>
         </div>
       </div>
 
