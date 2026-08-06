@@ -76,12 +76,31 @@ module SparcConfig
     end
   end
 
+  # Shipped with the image so a deployment has them without configuring
+  # anything. `SPARC_RESOURCES` replaces this list wholesale when set.
+  #
+  # The NIST OSCAL entries are deliberately deep links rather than one link to
+  # the site root. SPARC is a translation engine for OSCAL, so the questions
+  # users actually arrive with are per-document-type — "what belongs in a
+  # profile", "how does a component definition reference a control" — and the
+  # answers live on specific tutorial pages. Sending someone to the root and
+  # letting them hunt is how a reference stops being used.
   def default_resources
     [
       { "display_text" => "FedRAMP 20x", "href" => "https://www.fedramp.gov/20x" },
-      { "display_text" => "NIST OSCAL", "href" => "https://pages.nist.gov/OSCAL/" },
-      { "display_text" => "MITRE Security Automation Framework", "href" => "https://saf.mitre.org/" }
-    ]
+      { "display_text" => "MITRE Security Automation Framework", "href" => "https://saf.mitre.org/" },
+      { "display_text" => "NIST OSCAL", "href" => "https://pages.nist.gov/OSCAL/about/" },
+      { "display_text" => "OSCAL Tutorials", "href" => "https://pages.nist.gov/OSCAL/learn/tutorials/" },
+      { "display_text" => "OSCAL Catalogs",
+        "href" => "https://pages.nist.gov/OSCAL/learn/tutorials/control/basic-catalog/" },
+      { "display_text" => "OSCAL Profiles", "href" => "https://pages.nist.gov/OSCAL/learn/tutorials/profile/" },
+      { "display_text" => "OSCAL Component Definitions",
+        "href" => "https://pages.nist.gov/OSCAL/learn/tutorials/implementation/simple-component-definition/" },
+      { "display_text" => "OSCAL System Security Plans",
+        "href" => "https://pages.nist.gov/OSCAL/concepts/layer/implementation/ssp/" },
+      { "display_text" => "OSCAL Control Validation",
+        "href" => "https://pages.nist.gov/OSCAL/learn/tutorials/implementation/validation-modeling/" }
+    ].freeze
   end
 
   # ── Organization ─────────────────────────────────────────────────────────
