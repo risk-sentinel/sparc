@@ -37,6 +37,10 @@ class CdefDocument < ApplicationRecord
               remedy:  "PATCH /api/v1/cdef_documents/:id { profile_document_id }",
               options: "/api/v1/profile_documents",
               controls: :cdef_controls
+  include ControlMembership
+  membership_within controls: :cdef_controls, baseline: :profile_document,
+                    baseline_controls: :profile_controls,
+                    label: "@source profile"
 
   belongs_to :organization, optional: true
   # Issue #466 — AWS-sourced CDEFs are read-only; users clone them to edit.
@@ -107,6 +111,10 @@ class CdefDocument < ApplicationRecord
   # than as a field of its own, so an integrator handling reconciliation gets
   # this for free instead of learning a second shape.
   def additional_reconciliation_issues
+    super + unmapped_stig_rule_issues
+  end
+
+  private def unmapped_stig_rule_issues
     return [] unless unmapped_stig_rules?
 
     count = unmapped_stig_rule_count

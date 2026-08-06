@@ -24,6 +24,10 @@ class ProfileDocument < ApplicationRecord
               options: "/api/v1/control_catalogs",
               controls: :profile_controls
   include AttachmentSizeLimit
+  include ControlMembership
+  membership_within controls: :profile_controls, baseline: :control_catalog,
+                    baseline_controls: :catalog_controls,
+                    label: "catalog"
 
   belongs_to :source_profile, class_name: "ProfileDocument", optional: true
   has_many :derived_profiles, class_name: "ProfileDocument", foreign_key: :source_profile_id

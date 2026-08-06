@@ -135,16 +135,16 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
     # the lineage gate will use, so an integrator handles one object rather than
     # learning a second field when layer 2 lands.
     context "when the cdef has STIG rules that map to no control" do
-      # Lineage is deliberately RESOLVED here so this exercises the unmapped-rule
-      # issue on its own. An unresolved profile would add its own issue to the
-      # same array and flip `blocking`, which is layer 2's behaviour and is
-      # covered in spec/models/concerns/catalog_lineage_spec.rb.
-      let(:cdef) do
-        create(:cdef_document, file_type: "xccdf",
-               profile_document: create(:profile_document, control_catalog: create(:control_catalog)))
-      end
+      # Lineage is RESOLVED and the profile actually selects the mapped control,
+      # so this exercises the unmapped-rule issue on its own. An unresolved
+      # profile would add a lineage issue and flip `blocking` (layer 2); a
+      # control the profile does not select would add a membership issue
+      # (layer 3). Both are covered in their own specs.
+      let(:profile) { create(:profile_document, control_catalog: create(:control_catalog)) }
+      let(:cdef) { create(:cdef_document, file_type: "xccdf", profile_document: profile) }
 
       before do
+        create(:profile_control, profile_document: profile, control_id: "ac-2")
         cdef.cdef_controls.create!(control_id: "ac-2", title: "Mapped", row_order: 0)
         cdef.cdef_controls.create!(
           stig_id: "SV-999999r000001_rule", rule_id: "SV-999999r000001_rule",
@@ -160,16 +160,20 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
         expect(reconciliation["status"]).to eq("unresolved")
         expect(reconciliation["blocking"]).to eq([]), "an unmapped rule is advisory, not blocking"
 
-        issue = reconciliation["issues"].first
-        expect(issue["code"]).to eq("unmapped_stig_rules")
+        # Matched by code, not position: the issues array is shared by all three
+        # layers, so asserting on `.first` would break the moment another layer
+        # has something to say about the same document.
+        issue = reconciliation["issues"].find { _1["code"] == "unmapped_stig_rules" }
+        expect(issue).to be_present, "got: #{reconciliation['issues'].map { _1['code'] }}"
         expect(issue["count"]).to eq(1)
         expect(issue["remedy"]).to include("stig_to_nist")
       end
     end
 
-    it "omits reconciliation when lineage resolves and every control maps" do
-      cdef = create(:cdef_document,
-                    profile_document: create(:profile_document, control_catalog: create(:control_catalog)))
+    it "omits reconciliation when lineage resolves, controls map, and all are in baseline" do
+      profile = create(:profile_document, control_catalog: create(:control_catalog))
+      create(:profile_control, profile_document: profile, control_id: "ac-2")
+      cdef = create(:cdef_document, profile_document: profile)
       cdef.cdef_controls.create!(control_id: "ac-2", title: "Mapped", row_order: 0)
 
       get api_v1_cdef_document_path(cdef), headers: auth_headers

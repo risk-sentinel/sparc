@@ -48,6 +48,10 @@ class SarDocument < ApplicationRecord
               remedy:        "PATCH /api/v1/sar_documents/:id { sap_document_id }",
               options:       "/api/v1/sap_documents",
               controls: :sar_controls
+  include ControlMembership
+  membership_within controls: :sar_controls, baseline: :sap_document,
+                    baseline_controls: :sap_controls,
+                    label: "assessment plan"
 
   # Inherit cross-document FKs from the boundary's existing siblings on save
   # (#395 P1). User-supplied values take precedence; we only fill nil columns.

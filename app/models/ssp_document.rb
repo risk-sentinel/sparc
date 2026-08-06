@@ -55,6 +55,10 @@ class SspDocument < ApplicationRecord
   has_many :sar_documents, dependent: :nullify
   has_many :ssp_document_cdef_documents, dependent: :delete_all
   has_many :cdef_documents, through: :ssp_document_cdef_documents
+  include ControlMembership
+  membership_within controls: :ssp_controls, baseline: :profile_document,
+                    baseline_controls: :profile_controls,
+                    label: "profile's selection"
 
   enum :status, { pending: "pending", processing: "processing", completed: "completed", failed: "failed" }
 

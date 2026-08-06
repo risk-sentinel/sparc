@@ -165,8 +165,12 @@ module CatalogLineage
 
   # Issues beyond the import chain. Override per type — CdefDocument reports
   # STIG rules that resolved to no NIST control this way (#911 commit 1).
+  #
+  # Layer 3's membership findings arrive here too, so lineage, unmapped rules and
+  # out-of-baseline controls reach the reader as ONE account of their document
+  # rather than three separately-worded warnings about the same thing.
   def additional_reconciliation_issues
-    []
+    respond_to?(:membership_issues) ? membership_issues : []
   end
 
   # The whole picture, in ONE shape.

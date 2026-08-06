@@ -30,6 +30,10 @@ class SapDocument < ApplicationRecord
               options: "/api/v1/ssp_documents",
               controls: :sap_controls
   belongs_to :profile_document, optional: true
+  include ControlMembership
+  membership_within controls: :sap_controls, baseline: :ssp_document,
+                    baseline_controls: :ssp_controls,
+                    label: "assessed SSP"
 
   # Inherit cross-document FKs from the boundary's existing siblings on save
   # (#395 P1). User-supplied values take precedence; we only fill nil columns.
