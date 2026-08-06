@@ -47,7 +47,9 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
       expect(data["name"]).to eq("FY26 Annual")
       # The whole point: controls, not an empty shell.
       expect(data["controls_count"]).to eq(2)
-      expect(SapDocument.find(data["id"]).sap_controls.pluck(:control_id)).to match_array(%w[AC-2 AU-6])
+      # #911 — controls store the canonical form; the SSP rows were seeded as
+      # "AC-2" / "AU-6" and carry through as the same controls, canonically spelled.
+      expect(SapDocument.find(data["id"]).sap_controls.pluck(:control_id)).to match_array(%w[ac-2 au-6])
     end
 
     # The between-assessments case: a boundary should be able to ask for a
@@ -141,7 +143,7 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
 
       expect(response).to have_http_status(:created)
       expect(JSON.parse(response.body)["data"]["controls_count"]).to eq(1)
-      expect(SapDocument.last.sap_controls.first.control_id).to eq("SC-07")
+      expect(SapDocument.last.sap_controls.first.control_id).to eq("sc-7")
     end
 
     # The empty-result guard still exists — it just no longer fires for a

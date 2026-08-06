@@ -409,7 +409,7 @@ class CdefDocumentsController < ApplicationController
   # ── Control-level resource linking (AJAX) ───────────────────────────
 
   def create_control_resource
-    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    control = @cdef_document.cdef_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     resource = BackMatterResource.new(control_resource_params)
     resource.uuid = SecureRandom.uuid
     resource.source = "managed"
@@ -439,7 +439,7 @@ class CdefDocumentsController < ApplicationController
   end
 
   def link_control_resource
-    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    control = @cdef_document.cdef_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     resource = BackMatterResource.find(params[:back_matter_resource_id])
     link = control.control_back_matter_links.build(back_matter_resource: resource)
 
@@ -516,7 +516,7 @@ class CdefDocumentsController < ApplicationController
   end
 
   def unlink_control_resource
-    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    control = @cdef_document.cdef_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     link = control.control_back_matter_links.find(params[:link_id])
     audit_log("control_resource_unlinked", subject: link.back_matter_resource,
               metadata: { control_id: params[:control_id] })

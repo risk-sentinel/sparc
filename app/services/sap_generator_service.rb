@@ -28,7 +28,13 @@ class SapGeneratorService
     @assessment_end = assessment_end
     @description = description
     @selected_ids = selected_control_ids
-    @method_overrides = assessment_methods || {}
+    # #911 — keyed canonically. Callers pass the form a human writes
+    # (`{ "AC-1" => "interview" }`, straight from the UI or an API body) while
+    # controls are stored canonically, so a literal lookup silently applied no
+    # override at all and the caller got the default method with no indication
+    # their choice was ignored.
+    @method_overrides = (assessment_methods || {})
+                          .transform_keys { |k| ControlId.canonical(k) }
   end
 
   def generate
@@ -155,7 +161,7 @@ class SapGeneratorService
     )
 
     controls_data.each_with_index do |cd, idx|
-      method = @method_overrides[cd[:control_id]].presence || cd[:assessment_method]
+      method = @method_overrides[ControlId.canonical(cd[:control_id])].presence || cd[:assessment_method]
 
       sap_control = sap.sap_controls.create!(
         control_id: cd[:control_id],

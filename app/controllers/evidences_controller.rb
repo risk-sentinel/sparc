@@ -26,7 +26,8 @@ class EvidencesController < ApplicationController
     scope = scope.where(authorization_boundary_id: params[:authorization_boundary_id]) if params[:authorization_boundary_id].present?
 
     if params[:control_id].present?
-      evidence_ids = EvidenceControlLink.where(control_id: params[:control_id]).select(:evidence_id)
+      evidence_ids = EvidenceControlLink.where(control_id: ControlId.forms(params[:control_id]))
+                                        .select(:evidence_id)
       scope = scope.where(id: evidence_ids)
     end
 

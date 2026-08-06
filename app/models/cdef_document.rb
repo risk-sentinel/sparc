@@ -77,6 +77,20 @@ class CdefDocument < ApplicationRecord
     import_metadata["source_url"]
   end
 
+  # #911 — STIG rules in this CDEF that resolved to no NIST control. These are
+  # not an error: a benchmark legitimately contains rules the CCI mapping does
+  # not cover, and the remedy is a converter refresh rather than an edit. They
+  # are reported so the gap is visible, because the alternative — parking the
+  # rule id in `control_id` — made an unmapped rule indistinguishable from a
+  # mapped control at every consumer, including the OSCAL export.
+  def unmapped_stig_rule_count
+    cdef_controls.unmapped_stig_rules.count
+  end
+
+  def unmapped_stig_rules?
+    unmapped_stig_rule_count.positive?
+  end
+
   def to_json_data
     {
       document_name: name,

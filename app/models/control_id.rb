@@ -70,6 +70,20 @@ module ControlId
     canonical(raw).upcase.gsub(/(?<=\A|[-.])(\d+)/) { ::Regexp.last_match(1).rjust(2, "0") }
   end
 
+  # The NIST *tag* form: `AC-2(1)`, `CA-7`. Same as `human` but without the
+  # space before an enhancement (#911).
+  #
+  # This is what tag-keyed consumers expect — the CMS / SAF CLI attestation
+  # export is read by Heimdall, which matches on the NIST tag. `human` renders
+  # the publication spacing (`AC-2 (1)`), which is right for prose and wrong
+  # for a tag match, so the two are separate rather than one guessing.
+  def nist_tag(raw)
+    base, *enhancements = strip_padding(canonical(raw)).split(".")
+    return base.to_s.upcase if enhancements.empty?
+
+    "#{base.upcase}#{enhancements.map { |e| "(#{e})" }.join}"
+  end
+
   # NIST publication form: `AC-2 (1)`.
   def human(raw)
     base, *enhancements = strip_padding(canonical(raw)).split(".")
@@ -96,6 +110,32 @@ module ControlId
   # A set-like index for O(1) membership over many comparisons.
   def canonical_set(collection)
     Array(collection).reject(&:blank?).map { |value| canonical(value) }.to_set
+  end
+
+  # Every legitimate spelling of one identifier, for matching a column whose
+  # stored values may be in any of them (#911).
+  #
+  # Canonicalisation happens on write, so a row adopts the canonical form only
+  # when it is next saved. Until then a table holds a mix — `SarControl` is
+  # entirely padded today, evidence links likewise — and a query that
+  # canonicalises only its INPUT still matches nothing. That is the same silent
+  # failure canonicalisation exists to end, so comparisons match the set.
+  #
+  #   ControlId.forms("AC-2")   # => ["ac-2", "AC-02", "AC-2"]
+  #
+  # Prefer this over a bare `where(control_id: input)` anywhere the column is
+  # not yet guaranteed canonical. Once a table is fully canonical the extra
+  # values are simply redundant, so it stays correct rather than needing unwind.
+  # Lowercase variants are included because catalogs do not agree on case for
+  # the padded form. The FedRAMP KSI catalog stores `ksi-auth-01` — padded AND
+  # lowercase — while SPARC's display convention uppercases it. Emitting only
+  # `KSI-AUTH-01` would miss every KSI row, which is the same silent-mismatch
+  # failure in a different vocabulary.
+  def forms(raw)
+    return [] if raw.blank?
+
+    base = [ canonical(raw), padded(raw), human(raw), raw.to_s.strip ]
+    (base + base.map(&:downcase)).reject(&:blank?).uniq
   end
 
   def token?(value) = value.to_s.match?(TOKEN)

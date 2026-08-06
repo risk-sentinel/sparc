@@ -7,6 +7,18 @@
 # Relationship types are aligned with NIST IR 8477 set-theory mapping:
 #   equal, equivalent, subset, superset, intersects
 class ControlMappingEntry < ApplicationRecord
+  include ControlIdentifiable
+  # #911 — TARGET only. `source_control_id` is by definition the non-NIST side
+  # of the mapping: a FedRAMP KSI entry stores `ksi-iam-01` here and the NIST
+  # control in `target_control_id`. `ControlId.canonical` encodes NIST numbering,
+  # so it strips KSI's zero-padding to `ksi-iam-1` — an identifier the KSI
+  # catalog does not contain, which silently emptied the mappings endpoint.
+  #
+  # The source identifier persists exactly as it arrived; the NIST side is the
+  # one that has to line up with a catalog. Promoting that split into
+  # first-class columns across the control-bearing models is #912.
+  canonicalises_control_id :target_control_id
+
   belongs_to :control_mapping, touch: true
 
   before_validation :generate_uuid, on: :create

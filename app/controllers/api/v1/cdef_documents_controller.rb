@@ -291,6 +291,31 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:description] = cdef.description
       data[:oscal_version] = cdef.oscal_version
       data[:controls_count] = cdef.cdef_controls.count
+
+      # #911 — STIG rules that resolved to no NIST control are reported with
+      # their remedy rather than silently dropped. `blocking` is empty because
+      # this is advisory: an unmapped rule does not stop an update.
+      #
+      # The shape is the reconciliation object the lineage gate will use, so a
+      # consumer written against this keeps working when layer 2 adds its own
+      # issues to the same array instead of introducing a second field.
+      unmapped = cdef.unmapped_stig_rule_count
+      if unmapped.positive?
+        data[:reconciliation] = {
+          status: "unresolved",
+          blocking: [],
+          issues: [ {
+            code: "unmapped_stig_rules",
+            count: unmapped,
+            message: "#{unmapped} STIG #{'rule'.pluralize(unmapped)} resolved to no NIST control " \
+                     "through their CCI references, so they carry no control identifier.",
+            remedy: "Refresh the stig_to_nist converter, or supply the missing CCI references in the benchmark.",
+            # No Api::V1 converters endpoint exists yet, so this points at the
+            # screen that owns the remedy rather than inventing a path.
+            options: "/converters"
+          } ]
+        }
+      end
     end
 
     # Issue #466 — expose AWS Labs provenance on every row so API consumers

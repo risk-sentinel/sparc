@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  #911 — a benchmark that mixes a rule the CCI mapping covers with one it does
+  not. Real STIGs contain both, and the unmapped case is what determines whether
+  `control_id` stays a catalog control identifier or quietly becomes a rule id.
+
+  V-257777 carries CCI-000366, which resolves to a NIST control.
+  V-999999 carries no <ident> at all, so it resolves to nothing.
+-->
+<Benchmark id="xccdf_mil.disa.stig_benchmark_RHEL_9_STIG" xmlns="http://checklists.nist.gov/xccdf/1.2">
+  <title>RHEL 9 STIG Test — partial CCI coverage</title>
+  <description>Test STIG with one mapped and one unmapped rule</description>
+  <version>002.007</version>
+  <status>accepted</status>
+  <plain-text id="release-info">Release: 7 Benchmark Date: 05 Jul 2024</plain-text>
+  <Group id="V-257777">
+    <Rule id="SV-257777r925318_rule" severity="high">
+      <version>RHEL-09-211010</version>
+      <title>RHEL 9 must be a vendor-supported release.</title>
+      <description>&lt;VulnDiscussion&gt;An operating system release is considered supported if the vendor continues to provide patches.&lt;/VulnDiscussion&gt;</description>
+      <fixtext>Upgrade to a supported version of RHEL 9.</fixtext>
+      <check system="C-61518r925316_chk">
+        <check-content>Verify RHEL 9 version is supported.</check-content>
+      </check>
+      <ident system="http://cyber.mil/cci">CCI-000366</ident>
+    </Rule>
+  </Group>
+  <Group id="V-999999">
+    <Rule id="SV-999999r000001_rule" severity="low">
+      <version>RHEL-09-999990</version>
+      <title>A rule the CCI mapping does not cover.</title>
+      <description>&lt;VulnDiscussion&gt;No CCI reference, so no route to a NIST control.&lt;/VulnDiscussion&gt;</description>
+      <fixtext>Nothing to do.</fixtext>
+      <check system="C-99999r000000_chk">
+        <check-content>Check nothing.</check-content>
+      </check>
+    </Rule>
+  </Group>
+</Benchmark>

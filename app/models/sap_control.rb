@@ -1,4 +1,7 @@
 class SapControl < ApplicationRecord
+  include ControlIdentifiable
+  canonicalises_control_id :control_id
+
   IN_PROGRESS = "in-progress".freeze
 
   belongs_to :sap_document

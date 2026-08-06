@@ -276,10 +276,19 @@ class TestControlLinks:
     def test_link_list_unlink(self, admin_client: httpx.Client, evidence: dict) -> None:
         path = f"{_EVIDENCES}/{evidence['id']}/control_links"
 
+        # #911 — BREAKING, and deliberate: control identifiers are stored and
+        # returned in the OSCAL canonical form, so the API no longer echoes back
+        # whatever spelling the caller sent. Posting "AC-2" yields "ac-2".
+        #
+        # The input side is unchanged on purpose — any legitimate spelling is
+        # still accepted ("AC-2", "AC-02", "ac-2", "AC-2 (1)"), which is the
+        # whole point: they name one control and now resolve to one identifier.
         created = admin_client.post(path, json={"control_link": {"control_id": "AC-2"}})
         assert created.status_code == 201, created.text
         link = created.json()["data"]
-        assert link["control_id"] == "AC-2"
+        assert link["control_id"] == "ac-2", (
+            "control ids are returned canonically since #911; see the release notes"
+        )
 
         listed = admin_client.get(path)
         assert listed.status_code == 200, listed.text

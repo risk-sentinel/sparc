@@ -142,6 +142,33 @@ class CatalogControl < ApplicationRecord
   #
   # The linear fallback exists only for the backfill window; it is bounded by
   # one catalog's controls and disappears once canonical_id is populated.
+  # ── The one answer to "is this a real control?" (#911) ────────────────────
+  #
+  # Catalogs are the source of truth every other document depends on, so the
+  # existence check belongs here rather than in each consumer. `ControlId`
+  # (#852) owns the three *forms* an identifier can take; this owns whether one
+  # of them names something real.
+  #
+  # Cross-catalog and form-agnostic on purpose: a caller (an SSP, a control
+  # mapping, an evidence link) usually holds an identifier a human typed, in
+  # whichever form they saw, and no particular catalog in mind. That differs
+  # from `find_by_canonical`, which resolves *within* one catalog and expects an
+  # already-canonical id.
+  #
+  # Every consumer goes through here. #852 exists because a dozen private copies
+  # of identifier logic disagreed with each other; an existence check duplicated
+  # per model would rot the same way.
+  def self.resolve(raw)
+    canonical = ControlId.canonical(raw)
+    return nil if canonical.blank? || canonical == "unknown"
+
+    where(control_id: canonical).or(where(canonical_id: canonical))
+      .includes(:control_family).first
+  end
+
+  # Boolean form, for callers that do not need the record.
+  def self.resolvable?(raw) = resolve(raw).present?
+
   def self.find_by_canonical(catalog, identifier)
     return nil if catalog.nil? || identifier.blank?
 

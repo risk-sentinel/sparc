@@ -83,11 +83,14 @@ class SapJsonParserService
     catalog_json = matched_catalog
 
     control_ids.each_with_index do |control_id, idx|
-      denormalized_id = control_id.upcase.gsub(".", " (").then { |s| s.include?("(") ? "#{s})" : s }
-                                   .gsub("-", "-")
-
+      # #911 — the incoming OSCAL id is already canonical (`ac-2.1`), and it is
+      # stored that way. A private de-normaliser here used to turn it back into
+      # the publication form (`AC-2 (1)`) on the way in, which is #852's defect
+      # exactly: a display convention applied at the storage layer, so the same
+      # control was spelled differently depending on which parser wrote it.
+      # Display renders `ControlId.human` / `padded` at the view instead.
       sap_control = @document.sap_controls.create!(
-        control_id: denormalized_id,
+        control_id: control_id,
         assessment_method: method_map[control_id],
         assessment_status: "planned",
         row_order: idx

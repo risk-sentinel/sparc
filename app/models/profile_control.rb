@@ -1,4 +1,7 @@
 class ProfileControl < ApplicationRecord
+  include ControlIdentifiable
+  canonicalises_control_id :control_id
+
   belongs_to :profile_document
   has_many :profile_control_fields, dependent: :delete_all
   has_many :control_back_matter_links, as: :linkable, dependent: :destroy

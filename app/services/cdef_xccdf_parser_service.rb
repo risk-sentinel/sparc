@@ -251,8 +251,16 @@ class CdefXccdfParserService
     nist_id = resolve_nist_for_stig(sv_id, cci_refs) if sv_id.present?
     control_family = nist_id.present? ? nist_family_from_id(nist_id) : nil
 
+    # #911 — `control_id` names a control in a catalog, and an XCCDF rule is not
+    # one. A STIG rule reaches NIST through CCI (rule → CCI → 800-53), which is
+    # what `resolve_nist_for_stig` does; where that resolution fails there is no
+    # control to name, so the column is left NULL and the rule is surfaced as
+    # unmapped rather than filled with a rule id wearing a control's column.
+    #
+    # This loses nothing: `rule_id`, `group_id` and `stig_id` below carry the
+    # XCCDF provenance, and they are the columns lookups already use.
     attrs = {
-      control_id:     nist_id || rule_id,
+      control_id:     nist_id,
       title:          title,
       severity:       severity,
       control_family: control_family,

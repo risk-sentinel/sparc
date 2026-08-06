@@ -48,6 +48,10 @@ class FrameworkMappingGeneratorService
     )
 
     entries = build_entries(mapping)
+    # #911 — `import` runs no callbacks, so canonicalise explicitly rather than
+    # letting this writer disagree with the `before_validation` the model
+    # already declares for these two columns.
+    entries.each { ControlMappingEntry.canonicalise_control_ids!(_1) }
     ControlMappingEntry.import(entries, validate: false) if entries.any?
 
     mapping.reload

@@ -11,7 +11,32 @@ RSpec.describe SspControl, type: :model do
   end
 
   describe "validations" do
-    it { is_expected.to validate_uniqueness_of(:control_id).scoped_to(:ssp_document_id) }
+    # #911 — the shoulda `validate_uniqueness_of` matcher cannot express this
+    # model any more, in either its case-sensitive or case_insensitive form.
+    # It probes uniqueness by mutating the attribute and re-validating, but
+    # canonicalisation runs in before_validation and rewrites whatever the
+    # matcher just set, so its probes no longer mean what it assumes.
+    #
+    # Replaced with the two behavioural examples below, which assert the actual
+    # contract — same control twice in one document is rejected, the same
+    # control in a different document is allowed — rather than a proxy for it.
+    # These are strictly stronger: they also pin the canonicalisation
+    # interaction, which the matcher never covered.
+    it "rejects a second spelling of a control the document already has" do
+      document = create(:ssp_document)
+      create(:ssp_control, ssp_document: document, control_id: "AC-02")
+      duplicate = build(:ssp_control, ssp_document: document, control_id: "AC-2")
+
+      expect(duplicate).not_to be_valid
+      expect(duplicate.errors[:control_id]).to be_present
+    end
+
+    it "still allows the same control in a different document" do
+      create(:ssp_control, ssp_document: create(:ssp_document), control_id: "AC-02")
+      other = build(:ssp_control, ssp_document: create(:ssp_document), control_id: "ac-2")
+
+      expect(other).to be_valid
+    end
   end
 
   describe "#provider_statement?" do

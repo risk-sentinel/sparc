@@ -129,6 +129,45 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       expect(parsed["data"]).to have_key("description")
       expect(parsed["data"]).to have_key("oscal_version")
     end
+
+    # #911 — an unmapped STIG rule carries no control identifier, so the API
+    # must say so and carry the remedy. The shape is the reconciliation object
+    # the lineage gate will use, so an integrator handles one object rather than
+    # learning a second field when layer 2 lands.
+    context "when the cdef has STIG rules that map to no control" do
+      let(:cdef) { create(:cdef_document, file_type: "xccdf") }
+
+      before do
+        cdef.cdef_controls.create!(control_id: "ac-2", title: "Mapped", row_order: 0)
+        cdef.cdef_controls.create!(
+          stig_id: "SV-999999r000001_rule", rule_id: "SV-999999r000001_rule",
+          title: "Unmapped", row_order: 1
+        )
+      end
+
+      it "reports the gap with its remedy" do
+        get api_v1_cdef_document_path(cdef), headers: auth_headers
+        expect(response).to have_http_status(:ok)
+
+        reconciliation = JSON.parse(response.body).dig("data", "reconciliation")
+        expect(reconciliation["status"]).to eq("unresolved")
+        expect(reconciliation["blocking"]).to eq([]), "an unmapped rule is advisory, not blocking"
+
+        issue = reconciliation["issues"].first
+        expect(issue["code"]).to eq("unmapped_stig_rules")
+        expect(issue["count"]).to eq(1)
+        expect(issue["remedy"]).to include("stig_to_nist")
+      end
+    end
+
+    it "omits reconciliation when every control resolves" do
+      cdef = create(:cdef_document)
+      cdef.cdef_controls.create!(control_id: "ac-2", title: "Mapped", row_order: 0)
+
+      get api_v1_cdef_document_path(cdef), headers: auth_headers
+
+      expect(JSON.parse(response.body)["data"]).not_to have_key("reconciliation")
+    end
   end
 
   describe "POST /api/v1/cdef_documents" do

@@ -278,7 +278,9 @@ class ProfileDocumentsController < ApplicationController
       description: "Created from #{catalog.name} catalog"
     )
 
-    catalog_controls = catalog.catalog_controls.where(control_id: control_ids).includes(:control_family)
+    catalog_controls = catalog.catalog_controls
+                              .where(control_id: control_ids.flat_map { ControlId.forms(_1) })
+                              .includes(:control_family)
     catalog_controls.each_with_index do |cc, idx|
       pc = profile.profile_controls.create!(
         control_id: cc.control_id,

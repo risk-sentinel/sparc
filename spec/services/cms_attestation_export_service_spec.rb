@@ -18,6 +18,51 @@ RSpec.describe CmsAttestationExportService do
       end
     end
 
+    # #911 — CONTRACT, not an incidental value.
+    #
+    # Control identifiers are stored canonically (`ca-7`) so internal
+    # comparisons stop failing silently. This payload is consumed downstream by
+    # Heimdall, which keys on the NIST tag, so it must keep emitting the padded
+    # form regardless of how SPARC stores it. If this spec goes red because the
+    # storage form leaked into the export, the fix is in the service — not here.
+    context "the emitted identifier is the CMS form, not SPARC's storage form" do
+      it "emits the padded NIST form even when the link is stored canonically" do
+        evidence.evidence_control_links.create!(control_id: "ca-7")
+        attestation = create(:attestation, evidence: evidence)
+
+        records = described_class.new(Attestation.where(id: attestation.id)).call
+
+        expect(records.first[:control_id]).to eq("CA-7")
+      end
+
+      # Heimdall matches on the NIST tag, which has NO space before the
+      # enhancement. `ControlId.human` renders publication spacing
+      # ("AC-2 (1)") — right for prose, wrong for a tag match — so the export
+      # uses `nist_tag` and this pins the difference.
+      it "renders an enhancement as a NIST tag, without a space" do
+        ev = create(:evidence, title: "CMS enhancement")
+        ev.evidence_control_links.create!(control_id: "ac-2.1")
+        att = create(:attestation, evidence: ev)
+
+        records = described_class.new(Attestation.where(id: att.id)).call
+
+        expect(records.first[:control_id]).to eq("AC-2(1)")
+      end
+
+      it "emits the same identifier however the link was entered" do
+        %w[AC-2 ac-2 AC-02].each_with_index do |form, i|
+          ev = create(:evidence, title: "CMS form #{i}")
+          ev.evidence_control_links.create!(control_id: form)
+          att = create(:attestation, evidence: ev)
+
+          records = described_class.new(Attestation.where(id: att.id)).call
+
+          expect(records.first[:control_id]).to eq("AC-2"),
+            "entering #{form.inspect} changed what the CMS consumer receives"
+        end
+      end
+    end
+
     context "when the attestation's evidence has no control links" do
       it "emits zero records" do
         attestation = create(:attestation, evidence: evidence)
