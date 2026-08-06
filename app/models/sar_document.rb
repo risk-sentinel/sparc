@@ -28,6 +28,27 @@ class SarDocument < ApplicationRecord
   belongs_to :profile_document, optional: true
   belongs_to :ssp_document, optional: true
 
+  # #911 layer 2 — OSCAL requires `import-ap`, and it is the ONLY import on
+  # assessment-results (verified against the 1.1.2 and 1.2.1 schemas:
+  # `required: [uuid, metadata, import-ap, results]`, with no `import-ssp`
+  # property at all). The SSP is reached transitively — SAR -> AP -> SSP — so
+  # `ssp_document_id` here is a convenience FK from boundary inheritance (#395),
+  # not a second lineage hop.
+  #
+  # A SAR carrying only the SSP link is therefore still unresolved: its controls
+  # can be traced to a catalog, but it is not a valid SAR and will not export.
+  # `traceable_via` makes that report as `incomplete_` rather than `missing_`,
+  # because an operator sizing the remediation needs to know which one they have.
+  include CatalogLineage
+  lineage_via :sap_document,
+              key:           :assessment_plan,
+              href:          :import_ap_href,
+              traceable_via: :ssp_document,
+              label:         "assessment plan",
+              remedy:        "PATCH /api/v1/sar_documents/:id { sap_document_id }",
+              options:       "/api/v1/sap_documents",
+              controls: :sar_controls
+
   # Inherit cross-document FKs from the boundary's existing siblings on save
   # (#395 P1). User-supplied values take precedence; we only fill nil columns.
   inherits_from_boundary(

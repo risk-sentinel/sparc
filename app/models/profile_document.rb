@@ -11,6 +11,18 @@ class ProfileDocument < ApplicationRecord
 
   has_many :profile_controls, dependent: :delete_all
   belongs_to :control_catalog, optional: true
+
+  # #911 layer 2 — a profile does not merely HAVE a catalog, it imports a
+  # selection from one. This is the root of the chain: a profile whose import
+  # cannot be mapped back is broken at the root, and every SSP, SAP and SAR
+  # beneath it inherits that.
+  include CatalogLineage
+  lineage_via :control_catalog,
+              key:     :catalog,
+              label:   "catalog",
+              remedy:  "PATCH /api/v1/profile_documents/:id { control_catalog_id }",
+              options: "/api/v1/control_catalogs",
+              controls: :profile_controls
   include AttachmentSizeLimit
 
   belongs_to :source_profile, class_name: "ProfileDocument", optional: true

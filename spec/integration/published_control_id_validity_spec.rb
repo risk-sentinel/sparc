@@ -68,6 +68,22 @@ RSpec.describe "published documents emit valid OSCAL control ids (#852)" do
 
   let(:boundary) { create(:authorization_boundary) }
 
+  # #911 layer 2 — export refuses to publish a control-id that resolves to no
+  # loaded catalog, so every hostile spelling above must name a control that
+  # genuinely exists. That makes these documents more realistic, not less:
+  # previously they asserted token legality for identifiers no catalog
+  # contained, which is a shape SPARC now declines to publish at all.
+  #
+  # Seeded in the CANONICAL form, because that is what a catalog stores — the
+  # point of the exercise is that the hostile spellings still resolve to it.
+  let!(:catalog_family) { create(:control_family, control_catalog: create(:control_catalog)) }
+
+  before do
+    HOSTILE_IDS.map { |id| ControlId.canonical(id) }.uniq.each do |canonical|
+      create(:catalog_control, control_family: catalog_family, control_id: canonical)
+    end
+  end
+
   describe "SSP export" do
     it "emits only legal tokens, and validates" do
       ssp = create(:ssp_document, authorization_boundary: boundary)

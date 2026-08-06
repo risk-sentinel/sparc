@@ -1,4 +1,9 @@
 class ProfileDocumentsController < ApplicationController
+  include ReconciliationGate
+  # #911 layer 2 — refuse an edit until the document names the baseline
+  # its controls descend from. `set_baseline` is deliberately absent.
+  before_action :enforce_reconciliation_gate!, only: %i[update_metadata update_controls]
+  include BaselineDeclarable
   include CollectionViewable
   include FileUploadable
   include Publishable
@@ -8,7 +13,7 @@ class ProfileDocumentsController < ApplicationController
   # #726: public reads are gated by SPARC_PUBLIC_CATALOGS (secure-by-default). (AC-3)
   before_action :require_authentication_unless_public_controls, only: [ :index, :show ]
 
-  before_action :set_profile_document, only: %i[
+  before_action :set_profile_document, only: %i[set_baseline
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml validate_oscal_export status

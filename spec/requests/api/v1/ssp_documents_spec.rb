@@ -148,8 +148,13 @@ RSpec.describe "Api::V1::SspDocuments", type: :request do
   # --- Update ---
 
   describe "PUT /api/v1/ssp_documents/:id" do
+    # #911 layer 2 — the reconciliation gate refuses an update to a document
+    # that cannot name the baseline its controls descend from, so these
+    # fixtures declare one. The refusal itself is covered below.
+    let(:baseline) { create(:profile_document, control_catalog: create(:control_catalog)) }
+
     it "updates a document as admin" do
-      ssp = create(:ssp_document, authorization_boundary: boundary)
+      ssp = create(:ssp_document, authorization_boundary: boundary, profile_document: baseline)
 
       put api_v1_ssp_document_path(ssp), params: {
         ssp_document: { name: "Updated SSP" }
@@ -161,7 +166,7 @@ RSpec.describe "Api::V1::SspDocuments", type: :request do
     end
 
     it "emits an ssp_document_updated audit event (#433 slice 5)" do
-      ssp = create(:ssp_document, authorization_boundary: boundary)
+      ssp = create(:ssp_document, authorization_boundary: boundary, profile_document: baseline)
       assert_audit_event(
         action: "ssp_document_updated",
         subject_type: "SspDocument",

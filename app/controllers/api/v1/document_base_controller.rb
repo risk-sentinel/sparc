@@ -19,6 +19,8 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::DocumentBaseController < Api::V1::BaseController
+  include ReconciliationGate
+
   before_action :set_document, only: [ :show, :update, :destroy ]
   before_action :authorize_document_read!, only: [ :show ]
   before_action :authorize_document_write!, only: [ :create, :update, :destroy ]
@@ -53,6 +55,10 @@ class Api::V1::DocumentBaseController < Api::V1::BaseController
 
   # PUT /api/v1/{resource}/:id
   def update
+    # #911 layer 2 — refuse until the document declares the baseline its
+    # controls descend from. Supplying that baseline is itself permitted.
+    return unless enforce_reconciliation!(@document, document_params)
+
     @document.update!(document_params)
 
     audit_log("#{document_audit_name}_updated", subject: @document, metadata: { name: @document.name })

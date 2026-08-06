@@ -15,6 +15,8 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalSspExportService
+  include OscalExportReconciliation
+
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
@@ -34,6 +36,10 @@ class OscalSspExportService
 
   # Build, validate, and return pretty-printed OSCAL SSP JSON.
   def export
+    # #911 layer 2 — never publish a control-id that resolves to no loaded
+    # catalog. The schema cannot catch this: `tbd` is a valid TokenDatatype.
+    refuse_unresolvable_controls!(label: "SSP", name: @document.name,
+                                  control_ids: @document.ssp_controls.pluck(:control_id))
     data = build_ssp
     OscalSchemaValidationService.validate!(:ssp, data, version: effective_oscal_version)
     JSON.pretty_generate(data)

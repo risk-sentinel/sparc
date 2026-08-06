@@ -111,6 +111,8 @@ Rails.application.routes.draw do
 
   resources :ssp_documents do
     member do
+      # #911 — the write the reconciliation gate exists to provoke.
+      patch :set_baseline
       patch :update_metadata
       patch :update_statement
       patch :publish
@@ -154,6 +156,8 @@ Rails.application.routes.draw do
 
   resources :sar_documents do
     member do
+      # #911 — the write the reconciliation gate exists to provoke.
+      patch :set_baseline
       patch :update_metadata
       patch :publish
       get :publish_check
@@ -187,6 +191,8 @@ Rails.application.routes.draw do
 
   resources :profile_documents do
     member do
+      # #911 — the write the reconciliation gate exists to provoke.
+      patch :set_baseline
       patch :update_metadata
       get :download_json
       get :download_oscal
@@ -222,6 +228,8 @@ Rails.application.routes.draw do
 
   resources :sap_documents do
     member do
+      # #911 — the write the reconciliation gate exists to provoke.
+      patch :set_baseline
       patch :update_metadata
       patch :publish
       get :publish_check
@@ -244,6 +252,8 @@ Rails.application.routes.draw do
 
   resources :poam_documents do
     member do
+      # #911 — the write the reconciliation gate exists to provoke.
+      patch :set_baseline
       patch :update_metadata
       patch :publish
       get :publish_check
@@ -289,6 +299,8 @@ Rails.application.routes.draw do
 
   resources :cdef_documents do
     member do
+      # #911 — the write the reconciliation gate exists to provoke.
+      patch :set_baseline
       patch :update_metadata
       patch :update_field
       patch :update_statement
@@ -420,6 +432,8 @@ Rails.application.routes.draw do
 
   # ── Admin ───────────────────────────────────────────────────────────
   namespace :admin do
+    # #911 — instance-wide catalog-lineage report (read-only).
+    resources :reconciliation, only: [ :index ]
     resources :users, only: [ :index, :show, :new, :create, :edit, :update ] do
       member do
         patch :suspend
@@ -780,6 +794,7 @@ Rails.application.routes.draw do
       # Admin credential rotation (#403) — receives a new admin password
       # from the sparc-iac rotation Lambda. See sparc-iac#197.
       namespace :admin do
+        resources :reconciliation, only: [ :index ]
         post "refresh_credentials", to: "credentials#refresh"
         # #809 — remediation-timeline (SLA) table management.
         get "remediation_timelines", to: "remediation_timelines#index"

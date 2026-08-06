@@ -54,20 +54,12 @@
         </div>
       </div>
 
-      <%# ── #911: STIG rules that resolved to no catalog control ── %>
-      <% if @cdef_document.unmapped_stig_rules? %>
-        <% unmapped_count = @cdef_document.unmapped_stig_rule_count %>
-        <div class="alert alert-warning mt-2 mb-0" role="alert">
-          <strong><%= pluralize(unmapped_count, "STIG rule") %> not mapped to a control.</strong>
-          These rules resolved to no NIST control through their CCI references, so
-          SPARC cannot say which control they satisfy and they are excluded from
-          control coverage and from OSCAL export.
-          <strong>To fix:</strong> refresh the <code>stig_to_nist</code> converter
-          so the mapping is current, or add the missing CCI references to the
-          benchmark. The rules themselves are intact — each is listed below by its
-          STIG identifier.
-        </div>
-      <% end %>
+      <%# ── #911: lineage + unmapped STIG rules, in one place ──
+          This replaced a bespoke unmapped-rules banner. Unmapped rules now
+          arrive through `additional_reconciliation_issues`, so the shared
+          partial reports them alongside missing lineage instead of the reader
+          meeting two differently-worded warnings about the same document. %>
+      <%= render "shared/reconciliation_banner", document: @cdef_document %>
 
       <% if @cdef_document.aws_labs_source? %>
         <div class="alert alert-warning d-flex justify-content-between align-items-center mt-2 mb-0" role="alert">

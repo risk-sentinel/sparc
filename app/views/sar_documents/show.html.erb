@@ -43,6 +43,10 @@
 
 <div data-controller="doc-meta inline-edit">
 
+<%# ── #911: catalog lineage. Discovered by looking, not by being
+     refused mid-edit. Renders nothing when reconciled. %>
+<%= render "shared/reconciliation_banner", document: @sar_document %>
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header">
 

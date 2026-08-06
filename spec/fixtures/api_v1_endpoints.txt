@@ -25,6 +25,7 @@ DELETE /api/v1/sar_documents/:id
 DELETE /api/v1/scanner_findings/:scanner_finding_id/disposition
 DELETE /api/v1/ssp_documents/:id
 DELETE /api/v1/users/:id
+GET /api/v1/admin/reconciliation
 GET /api/v1/admin/remediation_timelines
 GET /api/v1/artifacts/:uuid
 GET /api/v1/artifacts/:uuid/freshness

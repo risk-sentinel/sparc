@@ -298,8 +298,13 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
   end
 
   describe "PUT /api/v1/sap_documents/:id" do
+    # #911 layer 2 — OSCAL requires `import-ssp` on an assessment plan, so the
+    # reconciliation gate refuses an update until the SSP is named. The refusal
+    # itself is covered below.
+    let(:baseline) { create(:ssp_document) }
+
     it "updates a document as admin" do
-      sap = create(:sap_document, authorization_boundary: boundary)
+      sap = create(:sap_document, authorization_boundary: boundary, ssp_document: baseline)
 
       put api_v1_sap_document_path(sap), params: {
         sap_document: { name: "Updated SAP", assessment_type: "annual" }
@@ -311,7 +316,7 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
     end
 
     it "emits a sap_document_updated audit event (#433 slice 5)" do
-      sap = create(:sap_document, authorization_boundary: boundary)
+      sap = create(:sap_document, authorization_boundary: boundary, ssp_document: baseline)
       assert_audit_event(
         action: "sap_document_updated",
         subject_type: "SapDocument",

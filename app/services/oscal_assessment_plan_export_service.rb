@@ -14,6 +14,8 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalAssessmentPlanExportService
+  include OscalExportReconciliation
+
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
@@ -22,6 +24,10 @@ class OscalAssessmentPlanExportService
   end
 
   def export
+    # #911 layer 2 — never publish a control-id that resolves to no loaded
+    # catalog. TokenDatatype constrains the character set, not existence.
+    refuse_unresolvable_controls!(label: "Assessment plan", name: @document.name,
+                                  control_ids: @document.sap_controls.pluck(:control_id))
     data = build_assessment_plan
     OscalSchemaValidationService.validate!(:assessment_plan, data, version: effective_oscal_version)
     JSON.pretty_generate(data)

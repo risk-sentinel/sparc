@@ -40,6 +40,18 @@ class SspDocument < ApplicationRecord
 
   # Source linkages
   belongs_to :profile_document, optional: true
+
+  # #911 layer 2 — OSCAL requires `import-profile` on every SSP. Both seeded
+  # SSPs came from `demo_acme_*.xlsx`, which carries no lineage, so this is
+  # unresolved for exactly the documents SPARC authored rather than imported.
+  include CatalogLineage
+  lineage_via :profile_document,
+              key:     :profile,
+              href:    :import_profile_href,
+              label:   "profile",
+              remedy:  "PATCH /api/v1/ssp_documents/:id { profile_document_id }",
+              options: "/api/v1/profile_documents",
+              controls: :ssp_controls
   has_many :sar_documents, dependent: :nullify
   has_many :ssp_document_cdef_documents, dependent: :delete_all
   has_many :cdef_documents, through: :ssp_document_cdef_documents

@@ -142,8 +142,13 @@ RSpec.describe "Api::V1::ProfileDocuments", type: :request do
   end
 
   describe "PUT /api/v1/profile_documents/:id" do
+    # #911 layer 2 — a profile imports a selection FROM a catalog, so the
+    # reconciliation gate refuses an update until it names one. The refusal is
+    # covered in spec/requests/api/v1/reconciliation_gate_spec.rb.
+    let(:baseline) { create(:control_catalog) }
+
     it "updates a profile" do
-      profile = create(:profile_document)
+      profile = create(:profile_document, control_catalog: baseline)
 
       put api_v1_profile_document_path(profile), params: {
         profile_document: { name: "Updated Profile", baseline_level: "MODERATE" }
@@ -155,7 +160,7 @@ RSpec.describe "Api::V1::ProfileDocuments", type: :request do
     end
 
     it "emits a profile_document_updated audit event (#433 slice 5)" do
-      profile = create(:profile_document)
+      profile = create(:profile_document, control_catalog: baseline)
       assert_audit_event(
         action: "profile_document_updated",
         subject_type: "ProfileDocument",

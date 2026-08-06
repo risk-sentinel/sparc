@@ -39,6 +39,10 @@
   has_filters   = [active_status, active_impact].any?(&:present?)
 %>
 
+<%# ── #911: catalog lineage. Discovered by looking, not by being
+     refused mid-edit. Renders nothing when reconciled. %>
+<%= render "shared/reconciliation_banner", document: @poam_document %>
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-gradient-header" style="border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; color: white;">
 

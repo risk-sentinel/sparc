@@ -135,7 +135,14 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
     # the lineage gate will use, so an integrator handles one object rather than
     # learning a second field when layer 2 lands.
     context "when the cdef has STIG rules that map to no control" do
-      let(:cdef) { create(:cdef_document, file_type: "xccdf") }
+      # Lineage is deliberately RESOLVED here so this exercises the unmapped-rule
+      # issue on its own. An unresolved profile would add its own issue to the
+      # same array and flip `blocking`, which is layer 2's behaviour and is
+      # covered in spec/models/concerns/catalog_lineage_spec.rb.
+      let(:cdef) do
+        create(:cdef_document, file_type: "xccdf",
+               profile_document: create(:profile_document, control_catalog: create(:control_catalog)))
+      end
 
       before do
         cdef.cdef_controls.create!(control_id: "ac-2", title: "Mapped", row_order: 0)
@@ -160,8 +167,9 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       end
     end
 
-    it "omits reconciliation when every control resolves" do
-      cdef = create(:cdef_document)
+    it "omits reconciliation when lineage resolves and every control maps" do
+      cdef = create(:cdef_document,
+                    profile_document: create(:profile_document, control_catalog: create(:control_catalog)))
       cdef.cdef_controls.create!(control_id: "ac-2", title: "Mapped", row_order: 0)
 
       get api_v1_cdef_document_path(cdef), headers: auth_headers
@@ -227,8 +235,13 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
   end
 
   describe "PUT /api/v1/cdef_documents/:id" do
+    # #911 layer 2 — OSCAL requires `control-implementation/@source`, so the
+    # reconciliation gate refuses an update until the CDEF names its profile.
+    # The refusal is covered in spec/requests/api/v1/reconciliation_gate_spec.rb.
+    let(:baseline) { create(:profile_document, control_catalog: create(:control_catalog)) }
+
     it "updates a cdef" do
-      cdef = create(:cdef_document)
+      cdef = create(:cdef_document, profile_document: baseline)
 
       put api_v1_cdef_document_path(cdef), params: {
         cdef_document: { name: "Updated CDEF", cdef_version: "2.0.0" }
@@ -240,7 +253,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
     end
 
     it "emits a cdef_document_updated audit event (#433 slice 5)" do
-      cdef = create(:cdef_document)
+      cdef = create(:cdef_document, profile_document: baseline)
       assert_audit_event(
         action: "cdef_document_updated",
         subject_type: "CdefDocument",

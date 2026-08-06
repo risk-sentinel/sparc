@@ -1,4 +1,9 @@
 class PoamDocumentsController < ApplicationController
+  include ReconciliationGate
+  # #911 layer 2 — refuse an edit until the document names the baseline
+  # its controls descend from. `set_baseline` is deliberately absent.
+  before_action :enforce_reconciliation_gate!, only: %i[update update_metadata]
+  include BaselineDeclarable
   include CollectionViewable
   include FileUploadable
   include Publishable
@@ -6,7 +11,7 @@ class PoamDocumentsController < ApplicationController
   include BoundaryScopedDocument
   boundary_scoped PoamDocument, read: "poam.read", write: "poam.write"
 
-  before_action :set_poam_document, only: %i[
+  before_action :set_poam_document, only: %i[set_baseline
     show destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml validate_oscal_export

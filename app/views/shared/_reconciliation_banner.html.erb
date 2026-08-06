@@ -1,0 +1,63 @@
+<%# #911 layer 2 — the reconciliation banner.
+    Users must discover this by LOOKING, not by being refused mid-edit. The
+    banner therefore states the consequence, and carries the fix inline rather
+    than sending the reader somewhere else to find it.
+
+    `document` is any model including CatalogLineage. Renders nothing when the
+    document is fully reconciled. %>
+<% reconciliation = document.reconciliation %>
+<% if reconciliation.present? %>
+  <% blocking = reconciliation[:blocking].present? %>
+  <div class="alert <%= blocking ? 'alert-warning' : 'alert-info' %> mt-2 mb-0" role="alert">
+
+    <% reconciliation[:issues].each do |issue| %>
+      <div class="mb-2">
+        <strong>
+          <%= blocking ? "Baseline not set." : "Worth reviewing." %>
+        </strong>
+        <%= issue[:message] %>
+      </div>
+    <% end %>
+
+    <% if blocking %>
+      <p class="mb-2">
+        Until this is set, SPARC cannot tell you whether these controls are in scope,
+        this document cannot be edited, and OSCAL export will be incomplete.
+      </p>
+
+      <%# The fix, inline. One form per lineage hop. %>
+      <% document.lineage_choices.each do |choice| %>
+        <% if choice[:records].any? %>
+          <%= form_with url: url_for(action: :set_baseline, id: document),
+                        method: :patch, local: true,
+                        class: "d-flex align-items-center gap-2 flex-wrap mb-2" do |f| %>
+            <label class="fw-semibold mb-0" for="baseline_<%= choice[:attribute] %>">
+              <%= choice[:label] %>
+            </label>
+            <%= select_tag "#{document.model_name.param_key}[#{choice[:attribute]}]",
+                  options_from_collection_for_select(choice[:records], :id, :name),
+                  include_blank: "Choose a #{choice[:label].downcase}…",
+                  id: "baseline_#{choice[:attribute]}",
+                  class: "form-select form-select-sm w-auto" %>
+            <%= f.submit "Set baseline", class: "btn btn-primary btn-sm" %>
+          <% end %>
+        <% else %>
+          <%# SPARC never invents a baseline from the document's own controls —
+              that would validate the document against itself. When nothing
+              suitable is loaded, say so plainly and name the remedy. %>
+          <p class="mb-2">
+            <strong>No <%= choice[:label].downcase %> is loaded to choose from.</strong>
+            SPARC will not create one from this document's own controls — that would
+            check the document against itself. Load the correct
+            <%= choice[:label].downcase %> first, then set it here.
+          </p>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% remedy = reconciliation[:issues].first[:remedy] %>
+    <% if remedy.present? %>
+      <small class="text-body-secondary d-block">API: <code><%= remedy %></code></small>
+    <% end %>
+  </div>
+<% end %>

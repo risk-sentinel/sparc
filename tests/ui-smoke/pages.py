@@ -54,6 +54,7 @@ ADMIN_PAGES = [
     ("admin_organizations", "/admin/organizations"),
     ("admin_data_migrations", "/admin/data_migrations"),
     ("admin_remediation_timelines", "/admin/remediation_timelines"),  # #809
+    ("admin_reconciliation", "/admin/reconciliation"),  # #911 catalog lineage
 ]
 
 # ── New / wizard forms (richest source of a11y debt + form-render bugs) ─────

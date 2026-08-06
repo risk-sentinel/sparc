@@ -1,4 +1,9 @@
 class SapDocumentsController < ApplicationController
+  include ReconciliationGate
+  # #911 layer 2 — refuse an edit until the document names the baseline
+  # its controls descend from. `set_baseline` is deliberately absent.
+  before_action :enforce_reconciliation_gate!, only: %i[update update_metadata update_objective]
+  include BaselineDeclarable
   include CollectionViewable
   include FileUploadable
   include Publishable
@@ -6,7 +11,7 @@ class SapDocumentsController < ApplicationController
   include BoundaryScopedDocument
   boundary_scoped SapDocument, read: "sap.read", write: "sap.write"
 
-  before_action :set_sap_document, only: %i[
+  before_action :set_sap_document, only: %i[set_baseline
     show edit update destroy download_json download_oscal
     download_oscal_validated download_oscal_unvalidated
     download_yaml download_xml validate_oscal_export status
