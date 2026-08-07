@@ -20,8 +20,14 @@ The admin report at /admin/reconciliation is covered for page-load in pages.py.
 
 from __future__ import annotations
 
-import pytest
+import os
+from urllib.parse import urlparse
 
+import httpx
+import pytest
+from playwright.sync_api import expect
+
+import helpers
 from helpers import assert_no_csp_violations, record_csp
 
 pytestmark = pytest.mark.authenticated
@@ -31,28 +37,35 @@ SELECT = "select[name='ssp_document[profile_document_id]']"
 SUBMIT = ".alert input[type='submit'][value='Set baseline']"
 
 
-def _first_unreconciled_ssp(page, base_url):
-    """Return the URL of an SSP showing the banner, or None if all are clean."""
-    page.goto(f"{base_url}/ssp_documents", wait_until="domcontentloaded")
-    links = page.locator("a[href^='/ssp_documents/']")
-    seen = []
-    for i in range(min(links.count(), 12)):
-        href = links.nth(i).get_attribute("href") or ""
-        # Skip nested action routes; we want the show page itself.
-        if href.count("/") == 2 and href not in seen:
-            seen.append(href)
-    for href in seen:
-        page.goto(f"{base_url}{href}", wait_until="domcontentloaded")
-        if page.locator(BANNER).count() > 0:
-            return f"{base_url}{href}"
+def _unreconciled_ssp(page, base_url):
+    """URL of an SSP showing the baseline banner.
+
+    Discovery goes through ``helpers.first_show_href`` deliberately. A
+    hand-rolled ``a[href^='/ssp_documents/']`` walk does NOT work here: SPARC
+    document URLs are slug-based (FriendlyId), and a naive walk also picks up
+    collection routes like ``/ssp_documents/new``. The first version of this
+    test did exactly that, found nothing, and skipped itself on every run —
+    reporting success while exercising none of the feature it was written for.
+
+    Raises AssertionError when an SSP exists but discovery yields nothing, so a
+    future discovery break fails loudly instead of quietly skipping again.
+    """
+    href = helpers.first_show_href(page, f"{base_url}/ssp_documents", "/ssp_documents")
+    if href is None:
+        return None  # genuinely no SSP on this deployment
+
+    page.goto(f"{base_url}{href}", wait_until="domcontentloaded")
+    if page.locator(BANNER).count() > 0:
+        return f"{base_url}{href}"
     return None
 
 
-def test_banner_states_the_problem_and_offers_the_fix(page, base_url):
+def test_banner_states_the_problem_and_offers_the_fix(authed_page, base_url):
+    page = authed_page
     record_csp(page)
-    url = _first_unreconciled_ssp(page, base_url)
+    url = _unreconciled_ssp(page, base_url)
     if url is None:
-        pytest.skip("no unreconciled SSP in this instance — nothing to exercise")
+        pytest.skip("no unreconciled SSP on this deployment — nothing to exercise")
 
     banner = page.locator(BANNER).first
     assert banner.is_visible()
@@ -61,11 +74,12 @@ def test_banner_states_the_problem_and_offers_the_fix(page, base_url):
     assert_no_csp_violations(page, during="reconciliation banner render")
 
 
-def test_set_baseline_resolves_the_document(page, base_url):
+def test_set_baseline_resolves_the_document(authed_page, base_url):
+    page = authed_page
     record_csp(page)
-    url = _first_unreconciled_ssp(page, base_url)
+    url = _unreconciled_ssp(page, base_url)
     if url is None:
-        pytest.skip("no unreconciled SSP in this instance — nothing to exercise")
+        pytest.skip("no unreconciled SSP on this deployment — nothing to exercise")
 
     select = page.locator(SELECT)
     if select.count() == 0:
@@ -74,7 +88,10 @@ def test_set_baseline_resolves_the_document(page, base_url):
         assert "will not create one" in page.locator(BANNER).first.inner_text()
         pytest.skip("no profile loaded to choose from — banner correctly offers no control")
 
-    options = select.locator("option[value!='']")
+    # CSS has no `!=` operator — `option[value!='']` throws a SyntaxError in
+    # the browser, which surfaced as a Playwright Error rather than a clean
+    # assertion failure.
+    options = select.locator("option:not([value=''])")
     assert options.count() > 0, "a loaded profile must be offerable"
     select.select_option(index=1)
 
@@ -83,6 +100,51 @@ def test_set_baseline_resolves_the_document(page, base_url):
 
     assert_no_csp_violations(page, during="set baseline submit")
 
-    # The document is reconciled, so the blocking banner is gone.
-    page.goto(url, wait_until="domcontentloaded")
-    assert page.locator(BANNER).count() == 0, "banner should clear once the baseline is set"
+    # Assert on the page the SUBMIT landed us on, rather than navigating to the
+    # document again.
+    #
+    # The earlier version did `page.goto(url)` and then looked for the banner.
+    # That failed under the full suite while passing in isolation, and the cause
+    # was NOT timing: the DB was already correct (profile set, blocks=false, the
+    # audit event written) while the re-fetched page still showed the banner
+    # through 24 retries over 10s. The preceding test in this file `goto`s the
+    # same URL and primes a cached response; the second navigation re-served it.
+    #
+    # `set_baseline` already redirects back to the document, so the post-submit
+    # render IS the document page — freshly generated, no second fetch, and it
+    # is exactly what a user sees after clicking. Asserting here removes the
+    # cache from the picture instead of trying to out-wait it.
+    expect(page.locator(BANNER)).to_have_count(0, timeout=10_000)
+
+    # And the user is actually told it worked. Asserted separately because a
+    # silent success is its own defect class here: SPARC has previously shipped
+    # controllers whose `notice:` rendered NOWHERE because the flash key was
+    # missing from FLASH_CLASSES, so "the write succeeded" and "the user can
+    # tell the write succeeded" are genuinely different claims.
+    assert "Baseline set" in page.content(), "setting a baseline must confirm itself to the user"
+
+    # Put it back. This test CONSUMES its own precondition: each run reconciles
+    # one more document, so without a restore it would quietly exhaust the
+    # unreconciled documents on the deployment and skip forever afterwards —
+    # reporting success while exercising nothing. That is the same silent-skip
+    # failure this file already hit once.
+    #
+    # Clearing is permitted precisely because the document is reconciled right
+    # now: the gate only refuses updates to UNresolved documents.
+    _clear_baseline(url)
+
+
+def _clear_baseline(show_url: str) -> None:
+    """Restore the document to its unreconciled state via the API."""
+    token = os.environ.get("SPARC_SMOKE_SA_TOKEN")
+    if not token:
+        return
+
+    slug = urlparse(show_url).path.rsplit("/", 1)[-1]
+    httpx.patch(
+        f"{urlparse(show_url).scheme}://{urlparse(show_url).netloc}/api/v1/ssp_documents/{slug}",
+        json={"ssp_document": {"profile_document_id": None}},
+        headers={"Authorization": f"Bearer {token}"},
+        verify=helpers.smoke_tls_verify(),
+        timeout=30,
+    )
