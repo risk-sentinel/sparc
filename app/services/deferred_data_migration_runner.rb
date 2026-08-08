@@ -75,21 +75,29 @@ class DeferredDataMigrationRunner
     existing = name.safe_constantize
     return existing if existing
 
-    require_migration_file(name)
+    load_migration_file(name)
     name.safe_constantize
   end
 
-  def require_migration_file(name)
+  # `load`, not `require`, and deliberately so: the path is discovered at
+  # runtime rather than known statically, and this is the same call Rails makes
+  # for the same job in `ActiveRecord::MigrationProxy#load_migration`. It also
+  # keeps `$LOADED_FEATURES` free of migration files, which `db:migrate` in the
+  # same process manages on its own terms.
+  #
+  # (Rails' own proxy is not reusable here — `MigrationProxy#migration` is
+  # private, and its public surface only exposes `migrate`, which would run the
+  # body outside the `DeferredDataMigration.executing!` guard in `execute`.)
+  def load_migration_file(name)
     suffix = "_#{name.underscore}.rb"
 
-    Array(ActiveRecord::Migrator.migrations_paths).each do |dir|
+    Array(ActiveRecord::Migrator.migrations_paths).any? do |dir|
       path = Dir.glob(Rails.root.join(dir, "*#{suffix}")).first
-      next if path.nil?
+      next false if path.nil?
 
-      require path
-      return true
+      load path
+      true
     end
-    false
   rescue StandardError => e
     # A migration file that raises on load must not take the whole runner down
     # with it — the row is marked failed by the caller, and the remaining

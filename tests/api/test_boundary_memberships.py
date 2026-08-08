@@ -308,7 +308,10 @@ class TestAuthorization:
     ) -> None:
         member = _create(admin_client, boundary)
         roles = _available_roles(admin_client, boundary)
-        other = next((r["value"] for r in roles if r["value"] != member.get("role")), roles[0]["value"])
+        other = next(
+            (r["value"] for r in roles if r["value"] != member.get("role")),
+            roles[0]["value"],
+        )
 
         response = user_client.patch(
             f"{_path(boundary)}/{member['id']}",
