@@ -112,7 +112,7 @@ Rails.application.routes.draw do
   resources :ssp_documents do
     member do
       # #911 — the write the reconciliation gate exists to provoke.
-      patch :set_baseline
+      patch :set_baseline, to: "ssp_documents#set_baseline"
       patch :update_metadata
       patch :update_statement
       patch :publish
@@ -157,7 +157,7 @@ Rails.application.routes.draw do
   resources :sar_documents do
     member do
       # #911 — the write the reconciliation gate exists to provoke.
-      patch :set_baseline
+      patch :set_baseline, to: "sar_documents#set_baseline"
       patch :update_metadata
       patch :publish
       get :publish_check
@@ -192,7 +192,7 @@ Rails.application.routes.draw do
   resources :profile_documents do
     member do
       # #911 — the write the reconciliation gate exists to provoke.
-      patch :set_baseline
+      patch :set_baseline, to: "profile_documents#set_baseline"
       patch :update_metadata
       get :download_json
       get :download_oscal
@@ -229,7 +229,7 @@ Rails.application.routes.draw do
   resources :sap_documents do
     member do
       # #911 — the write the reconciliation gate exists to provoke.
-      patch :set_baseline
+      patch :set_baseline, to: "sap_documents#set_baseline"
       patch :update_metadata
       patch :publish
       get :publish_check
@@ -253,7 +253,7 @@ Rails.application.routes.draw do
   resources :poam_documents do
     member do
       # #911 — the write the reconciliation gate exists to provoke.
-      patch :set_baseline
+      patch :set_baseline, to: "poam_documents#set_baseline"
       patch :update_metadata
       patch :publish
       get :publish_check
@@ -300,7 +300,7 @@ Rails.application.routes.draw do
   resources :cdef_documents do
     member do
       # #911 — the write the reconciliation gate exists to provoke.
-      patch :set_baseline
+      patch :set_baseline, to: "cdef_documents#set_baseline"
       patch :update_metadata
       patch :update_field
       patch :update_statement

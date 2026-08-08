@@ -32,11 +32,11 @@ class CdefDocument < ApplicationRecord
   # something, and that something is a catalog or profile.
   include CatalogLineage
   lineage_via :profile_document,
-              key:     :profile,
-              label:   "profile",
-              remedy:  "PATCH /api/v1/cdef_documents/:id { profile_document_id }",
-              options: "/api/v1/profile_documents",
-              controls: :cdef_controls
+              key:      :profile,
+              controls: :cdef_controls,
+              message:  { label:   "profile",
+                          remedy:  "PATCH /api/v1/cdef_documents/:id { profile_document_id }",
+                          options: "/api/v1/profile_documents" }
   include ControlMembership
   membership_within controls: :cdef_controls, baseline: :profile_document,
                     baseline_controls: :profile_controls,

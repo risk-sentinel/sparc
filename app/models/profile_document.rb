@@ -18,11 +18,11 @@ class ProfileDocument < ApplicationRecord
   # beneath it inherits that.
   include CatalogLineage
   lineage_via :control_catalog,
-              key:     :catalog,
-              label:   "catalog",
-              remedy:  "PATCH /api/v1/profile_documents/:id { control_catalog_id }",
-              options: "/api/v1/control_catalogs",
-              controls: :profile_controls
+              key:      :catalog,
+              controls: :profile_controls,
+              message:  { label:   "catalog",
+                          remedy:  "PATCH /api/v1/profile_documents/:id { control_catalog_id }",
+                          options: "/api/v1/control_catalogs" }
   include AttachmentSizeLimit
   include ControlMembership
   membership_within controls: :profile_controls, baseline: :control_catalog,

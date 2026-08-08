@@ -24,11 +24,11 @@ class SapDocument < ApplicationRecord
   # say what was assessed without naming the system security plan it assessed.
   include CatalogLineage
   lineage_via :ssp_document,
-              key:     :ssp,
-              label:   "SSP",
-              remedy:  "PATCH /api/v1/sap_documents/:id { ssp_document_id }",
-              options: "/api/v1/ssp_documents",
-              controls: :sap_controls
+              key:      :ssp,
+              controls: :sap_controls,
+              message:  { label:   "SSP",
+                          remedy:  "PATCH /api/v1/sap_documents/:id { ssp_document_id }",
+                          options: "/api/v1/ssp_documents" }
   belongs_to :profile_document, optional: true
   include ControlMembership
   membership_within controls: :sap_controls, baseline: :ssp_document,

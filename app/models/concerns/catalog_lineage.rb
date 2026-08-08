@@ -79,13 +79,20 @@ module CatalogLineage
     # @param mode    [:all, :any] `:any` for OSCAL's either/or hops
     # @param controls [Symbol] the association holding this document's control
     #   references. Until it has some, there is nothing to reconcile.
-    def lineage_via(*associations, key:, href: nil, traceable_via: [], label:,
-                    remedy:, options: nil, mode: :all, controls: nil)
+    # @param message [Hash] what a human and an integrator are told:
+    #   `label:` the prose name of the baseline ("assessment plan"),
+    #   `remedy:` the action that fixes it, `options:` where to find candidates.
+    #   Grouped because the three are one concern — the reported wording — and
+    #   splitting them pushed this signature past a readable arity.
+    def lineage_via(*associations, key:, message:, controls: nil,
+                    href: nil, traceable_via: [], mode: :all)
       self.lineage_control_association = controls if controls
       self.lineage_defs = lineage_defs + [ {
         associations: associations.flatten.map(&:to_sym),
-        key: key.to_sym, href: href, label: label, remedy: remedy,
-        options: options, mode: mode,
+        key: key.to_sym, href: href, mode: mode,
+        label: message.fetch(:label),
+        remedy: message.fetch(:remedy),
+        options: message[:options],
         traceable_via: Array(traceable_via).map(&:to_sym)
       }.freeze ]
     end

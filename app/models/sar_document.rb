@@ -44,10 +44,10 @@ class SarDocument < ApplicationRecord
               key:           :assessment_plan,
               href:          :import_ap_href,
               traceable_via: :ssp_document,
-              label:         "assessment plan",
-              remedy:        "PATCH /api/v1/sar_documents/:id { sap_document_id }",
-              options:       "/api/v1/sap_documents",
-              controls: :sar_controls
+              controls:      :sar_controls,
+              message:       { label:   "assessment plan",
+                               remedy:  "PATCH /api/v1/sar_documents/:id { sap_document_id }",
+                               options: "/api/v1/sap_documents" }
   include ControlMembership
   membership_within controls: :sar_controls, baseline: :sap_document,
                     baseline_controls: :sap_controls,

@@ -19,12 +19,12 @@ class PoamDocument < ApplicationRecord
   # rather than a concession SPARC is making.
   include CatalogLineage
   lineage_via :ssp_document, :authorization_boundary,
-              key:     :ssp,
-              mode:    :any,
-              label:   "SSP",
-              remedy:  "PATCH /api/v1/poam_documents/:id { ssp_document_id }",
-              options: "/api/v1/ssp_documents",
-              controls: :poam_items
+              key:      :ssp,
+              mode:     :any,
+              controls: :poam_items,
+              message:  { label:   "SSP",
+                          remedy:  "PATCH /api/v1/poam_documents/:id { ssp_document_id }",
+                          options: "/api/v1/ssp_documents" }
 
   # #395 P2: inherit ssp_document_id from the boundary's SSP when not
   # user-provided. Runs before_validation; nil-result is a no-op.
