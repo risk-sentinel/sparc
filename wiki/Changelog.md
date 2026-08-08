@@ -4,6 +4,23 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.15.5 -- Catalog Lineage, Boundary Roster Authorization (2026-08-08)
+
+An integrity release. The through-line: **catalogs are the source of truth, and a document that has drifted from its catalog should say so before you publish it, not after.**
+
+- **Catalog lineage, and control membership** ([#911](https://github.com/risk-sentinel/sparc/issues/911)) — a document whose catalog has moved on is reconciled before it can be edited and refused before it can be published, instead of drifting silently from the catalog it claims to follow. A control now answers directly whether it is actually in your baseline, rather than leaving you to infer it. Control identifiers are canonicalised on **every** write path, so the same control cannot enter the system under two spellings. The NIST OSCAL reference set ships inside the image, so lineage and reconciliation work without reaching an external host at runtime.
+- **Authorization-boundary rosters require write permission to modify** — a caller without write access on a boundary could change its membership. Roster mutations are now permission-checked, with a request spec asserting that an unauthorized caller is refused.
+- **Deferred data migrations actually run, and fail loudly** — they could previously be skipped without surfacing an error, leaving a migration silently unapplied and no one any the wiser.
+- **The control source identifier is separate from the NIST reference** ([#912](https://github.com/risk-sentinel/sparc/issues/912)) — a control's originating identifier and its NIST 800-53 reference are distinct fields rather than one overloaded value.
+- **A blank control identifier no longer raises an error when deriving a control family** ([#913](https://github.com/risk-sentinel/sparc/issues/913)) — eight call sites guarded this inconsistently; they are now consistent.
+- **Evidence upload feedback is unmistakable** ([#902](https://github.com/risk-sentinel/sparc/issues/902), [#903](https://github.com/risk-sentinel/sparc/issues/903)) — and the UI no longer solicits collection provenance it does not use.
+- **The admin data-migrations table is reachable by keyboard** — the scrollable region is focusable, satisfying WCAG 2.1 `scrollable-region-focusable`.
+- Also: [#915](https://github.com/risk-sentinel/sparc/issues/915) was reviewed and closed with the current behaviour intentionally retained.
+
+**Behaviour changes:** publishing is now **blocked** on a document whose catalog lineage is unreconciled — previously it proceeded. Control identifiers are rewritten to canonical form on every write path, so an identifier stored in a non-canonical spelling will read back canonicalised.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.15.5).
+
 ## v1.15.4 -- Consistent Collections, Catalog API, Provisioning Credentials (2026-08-04)
 
 A usability and consistency release. The through-line: **the same task looked different on every screen**, and several things the UI offered could not actually be completed. Sixteen list screens now behave identically, and the gaps found while proving that are fixed rather than filed.
