@@ -1,4 +1,5 @@
 {
+  "brakeman_version": "8.0.5",
   "ignored_warnings": [
     {
       "fingerprint": "85a0dc658a70597402234c68bb646c6ca9b9f8eb02dcf92f686dcbd95f4cfbe4",
@@ -10,13 +11,72 @@
     },
     {
       "fingerprint": "199675786ba99a935e6d82db70b3ded4dfd64225415eb50a0321fa5c2aa95693",
-      "note": "Admin::ServiceAccountsController#service_account_params permits :admin BY DESIGN. This is the admin-only service-account admin interface (module Admin, admin-gated) and granting admin to a service account is an intentional, documented feature — the 'Grant admin privileges' checkbox (see spec/system/admin_service_account_admin_checkbox_spec.rb), called out in the model header as AC-6 'admin flag is per-SA opt-in, never implicit'. Brakeman flags :admin because it's on its dangerous-key list; the assignment is safe here because it is reachable only by an authenticated admin. Unlike the Attestation permits there is no value-bounding validator (:admin is a boolean); the safety rests on the admin-only namespace + intended capability."
+      "note": "Admin::ServiceAccountsController#service_account_params permits :admin BY DESIGN. This is the admin-only service-account admin interface (module Admin, admin-gated) and granting admin to a service account is an intentional, documented feature \u2014 the 'Grant admin privileges' checkbox (see spec/system/admin_service_account_admin_checkbox_spec.rb), called out in the model header as AC-6 'admin flag is per-SA opt-in, never implicit'. Brakeman flags :admin because it's on its dangerous-key list; the assignment is safe here because it is reachable only by an authenticated admin. Unlike the Attestation permits there is no value-bounding validator (:admin is a boolean); the safety rests on the admin-only namespace + intended capability."
     },
     {
       "fingerprint": "156709226fb5a8cdb1ff381e59aa7c85fd73913ded914eaa137e3677f6299537",
-      "note": "Admin::ServiceAccountsController#service_account_update_params — same permit list and same rationale as fingerprint 199675786ba9...: admin-only, intentional per-SA admin opt-in (AC-6). Not a privilege-escalation vector because the action is reachable only by an authenticated admin."
+      "note": "Admin::ServiceAccountsController#service_account_update_params \u2014 same permit list and same rationale as fingerprint 199675786ba9...: admin-only, intentional per-SA admin opt-in (AC-6). Not a privilege-escalation vector because the action is reachable only by an authenticated admin."
+    },
+    {
+      "check_name": "PermitAttributes",
+      "code": "params.require(:authorization_boundary_membership).permit(:user_name, :user_email, :role)",
+      "confidence": "Medium",
+      "file": "app/controllers/api/v1/authorization_boundary_memberships_controller.rb",
+      "fingerprint": "5ed5a55c9ac71064901ccc727d8406ed87960fcbbfb2a339edfac11fe9e5083e",
+      "line": 133,
+      "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
+      "location": {
+        "class": "Api::V1::AuthorizationBoundaryMembershipsController",
+        "method": "membership_params",
+        "type": "method"
+      },
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "note": "`:role` is permitted deliberately (#875): the model resolves and validates it against the configured SPARC_AUTH_BOUNDARY_ROLES vocabulary in one place, so the API and UI cannot disagree about what is acceptable. A hand-rolled controller allowlist previously checked the DISPLAY list while the enum enforced its own keys, which 500'd on a valid configured label. Privilege escalation is prevented by AUTHORIZATION, not by the permit list: both the API and (as of the #913/#912 follow-up branch) the web controller gate every write behind `authorization_boundaries.write`. The web path had NO such gate before that fix \u2014 see spec/requests/authorization_boundary_memberships_authz_spec.rb, which fails if it is removed.",
+      "render_path": null,
+      "user_input": ":role",
+      "warning_code": 105,
+      "warning_type": "Mass Assignment"
+    },
+    {
+      "check_name": "PermitAttributes",
+      "code": "params.require(:authorization_boundary_membership).permit(:user_name, :user_email, :role)",
+      "confidence": "Medium",
+      "file": "app/controllers/authorization_boundary_memberships_controller.rb",
+      "fingerprint": "a8f5d143f0a0b76a580988d43bb5190cb83a7d6815cedfb6e00894fcacf32ef8",
+      "line": 108,
+      "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
+      "location": {
+        "class": "AuthorizationBoundaryMembershipsController",
+        "method": "membership_params",
+        "type": "method"
+      },
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "note": "`:role` is permitted deliberately (#875): the model resolves and validates it against the configured SPARC_AUTH_BOUNDARY_ROLES vocabulary in one place, so the API and UI cannot disagree about what is acceptable. A hand-rolled controller allowlist previously checked the DISPLAY list while the enum enforced its own keys, which 500'd on a valid configured label. Privilege escalation is prevented by AUTHORIZATION, not by the permit list: both the API and (as of the #913/#912 follow-up branch) the web controller gate every write behind `authorization_boundaries.write`. The web path had NO such gate before that fix \u2014 see spec/requests/authorization_boundary_memberships_authz_spec.rb, which fails if it is removed.",
+      "render_path": null,
+      "user_input": ":role",
+      "warning_code": 105,
+      "warning_type": "Mass Assignment"
+    },
+    {
+      "check_name": "SendFile",
+      "code": "send_file(UserGuideLibrary.image_path(params[:filename]), :type => ((Mime::Type.lookup_by_extension(File.extname(UserGuideLibrary.image_path(params[:filename])).delete(\".\")) or \"application/octet-stream\")), :disposition => \"inline\", :url_based_filename => true)",
+      "confidence": "Weak",
+      "file": "app/controllers/help_controller.rb",
+      "fingerprint": "e85833a48b6bce522b808ab16682f573a526aa5915cb81ea4cfe30aff4682e3c",
+      "line": 33,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "location": {
+        "class": "HelpController",
+        "method": "image",
+        "type": "method"
+      },
+      "message": "Parameter value used in file name",
+      "note": "HelpController#image passes params[:filename] to UserGuideLibrary.image_path, which is a WHITELIST lookup, not a filtered path build: it matches the name against the set of files that actually ship in wiki/images (built via Dir.glob, each entry realpath-checked to be inside that directory, so a symlink pointing elsewhere is excluded rather than followed). User input is only ever compared, never used to construct a path, so traversal has no spelling that works. Brakeman cannot see through the service call. Hardened in the #913/#912 follow-up branch; previously this WAS a filtered path build.",
+      "render_path": null,
+      "user_input": "params[:filename]",
+      "warning_code": 16,
+      "warning_type": "File Access"
     }
   ],
-  "updated": "2026-07-11",
-  "brakeman_version": "8.0.4"
+  "updated": "2026-07-11"
 }

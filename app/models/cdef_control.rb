@@ -1,17 +1,33 @@
 class CdefControl < ApplicationRecord
-  # #911 — deliberately NOT canonicalised, unlike the other control-bearing
-  # models. This column is mixed-vocabulary: an AWS Labs CDEF stores Security
-  # Hub ids (`IAM.3`), a STIG stores NIST resolved through CCI, and a plain
-  # InSpec profile stores its own control names. `ControlId.canonical` encodes
-  # NIST numbering and case, so applying it here mutated `IAM.3` into `iam.3`
-  # and broke the SecHub enrichment lookups outright.
+  # #912 — canonicalisation is safe here again, because `control_id` now holds
+  # ONLY a NIST reference.
   #
-  # The fix is structural, not a normalisation tweak: the source identifier
-  # belongs in its own column, preserved exactly as it arrived, with the NIST
-  # control it maps to enriched alongside it — which is what the AWS importer
-  # already does via the `nist_oscal_ids` field. Canonicalisation becomes safe
-  # here once `control_id` is guaranteed to hold the NIST reference — tracked as
-  # #912. Until then CDEF form-matching goes through `ControlId.forms`.
+  # #911 had to disable it: the column was mixed-vocabulary (AWS Security Hub
+  # `IAM.3`, STIG rules, InSpec control names, NIST), and `ControlId.canonical`
+  # encodes NIST numbering and case, so it rewrote `IAM.3` to `iam.3` and broke
+  # the Security Hub enrichment lookups outright. The fix was structural rather
+  # than a normalisation tweak: the source identifier moved to its own column,
+  # preserved exactly as it arrived, with the NIST control it maps to resolved
+  # alongside it — the pattern the AWS importer had already proved by writing
+  # `nist_oscal_ids` next to an untouched `control_id`.
+  #
+  # `source_control_id` is NEVER canonicalised. That is the point of it.
+  include ControlIdentifiable
+  canonicalises_control_id :control_id
+
+  # Framework the source identifier came from. Recorded at import rather than
+  # inferred from the shape of the string later — sniffing `IAM.3` versus `ac-2`
+  # is precisely the guesswork this column exists to end.
+  SOURCE_VOCABULARIES = %w[nist disa_stig aws_security_hub cis scap_oval fedramp_ksi].freeze
+
+  validates :source_vocabulary, inclusion: { in: SOURCE_VOCABULARIES }, allow_nil: true
+
+  # The identifier as it arrived, whatever the framework. Falls back to the
+  # legacy columns so rows read correctly between the schema migration and the
+  # deferred backfill completing.
+  def source_identifier
+    source_control_id.presence || stig_id.presence || rule_id.presence || group_id.presence
+  end
 
   belongs_to :cdef_document
   has_many :cdef_control_fields, dependent: :delete_all
@@ -52,8 +68,10 @@ class CdefControl < ApplicationRecord
   end
 
   # The identifier to show when there is no control to name.
+  # #912 — one accessor, so callers stop reaching into the STIG-specific
+  # columns. Kept as an alias because the display paths already call it.
   def provenance_id
-    stig_id.presence || rule_id.presence || group_id.presence
+    source_identifier
   end
 
   def to_hash

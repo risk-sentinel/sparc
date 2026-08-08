@@ -253,3 +253,93 @@ class TestShowUpdateDestroy:
             },
         )
         assert response.status_code in (401, 403, 404), response.text
+
+
+class TestAuthorization:
+    """A non-admin without `authorization_boundaries.write` must be refused.
+
+    This class exists because its absence hid a real vulnerability. The web
+    controller for this same resource shipped with NO authorization at all from
+    2026-03-09 until v1.15.5 — any signed-in user could add, re-role or remove
+    members on any boundary whose slug they knew, and boundary roles gate access
+    to compliance documents.
+
+    Nothing caught it for five months: Brakeman has no check for *missing*
+    authorization (it flags patterns in code that exists, not a guard that was
+    never written), and every test here exercised the permitted path with
+    `admin_client`. A contract suite that only ever asks "can the authorized
+    caller do this?" cannot answer "is anyone else stopped?".
+
+    So these assert the negative, on every mutating verb, against the API — and
+    the web surface has the equivalent in
+    spec/requests/authorization_boundary_memberships_authz_spec.rb.
+    """
+
+    @pytest.mark.authz
+    def test_non_admin_cannot_list_the_roster(
+        self, user_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        response = user_client.get(_path(boundary))
+        assert response.status_code in (401, 403, 404), response.text
+
+    @pytest.mark.authz
+    def test_non_admin_cannot_add_a_member(
+        self, user_client: httpx.Client, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        role = _available_roles(admin_client, boundary)[0]["value"]
+        response = user_client.post(
+            _path(boundary),
+            json={"authorization_boundary_membership": {
+                "user_name": "Unauthorized Add",
+                "user_email": "intruder@example.gov",
+                "role": role,
+            }},
+        )
+        assert response.status_code in (401, 403, 404), response.text
+
+        # And it genuinely did not happen — a refusal that still writes is worse
+        # than no refusal, because it reads as safe.
+        roster = admin_client.get(_path(boundary)).json()["data"]
+        assert not any(m.get("user_email") == "intruder@example.gov" for m in roster), roster
+
+    @pytest.mark.authz
+    def test_non_admin_cannot_change_a_members_role(
+        self, user_client: httpx.Client, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        member = _create(admin_client, boundary)
+        roles = _available_roles(admin_client, boundary)
+        other = next(
+            (r["value"] for r in roles if r["value"] != member.get("role")),
+            roles[0]["value"],
+        )
+
+        response = user_client.patch(
+            f"{_path(boundary)}/{member['id']}",
+            json={"authorization_boundary_membership": {"role": other}},
+        )
+        assert response.status_code in (401, 403, 404), response.text
+
+        after = admin_client.get(f"{_path(boundary)}/{member['id']}").json()["data"]
+        assert after.get("role") == member.get("role"), "role must be unchanged"
+
+    @pytest.mark.authz
+    def test_non_admin_cannot_remove_a_member(
+        self, user_client: httpx.Client, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        member = _create(admin_client, boundary)
+
+        response = user_client.delete(f"{_path(boundary)}/{member['id']}")
+        assert response.status_code in (401, 403, 404), response.text
+
+        still_there = admin_client.get(f"{_path(boundary)}/{member['id']}")
+        assert still_there.status_code == 200, "the member must survive an unauthorized delete"
+
+    @pytest.mark.authz
+    def test_anonymous_is_rejected_on_every_verb(
+        self, anon_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        path = _path(boundary)
+        assert anon_client.get(path).status_code == 401
+        assert anon_client.post(path, json={}).status_code == 401
+        assert anon_client.patch(f"{path}/1", json={}).status_code == 401
+        assert anon_client.delete(f"{path}/1").status_code == 401

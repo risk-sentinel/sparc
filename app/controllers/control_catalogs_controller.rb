@@ -367,7 +367,11 @@ class ControlCatalogsController < ApplicationController
   # resolve (find_for_url) and are redirected here, so nothing already linked
   # breaks and links converge instead of both forms persisting.
   def redirect_catalog_to_uuid
-    return unless request.get?
+    # HEAD is GET without a body, but `request.get?` is false for it — so a
+    # HEAD on a legacy URL skipped the 301 and resolved in place, and caches
+    # and crawlers never saw the canonical location. Writes still resolve in
+    # place, which is the behaviour this guard exists for.
+    return unless request.get? || request.head?
     return if @control_catalog.blank? || @control_catalog.oscal_uuid.blank?
     return if params[:id] == @control_catalog.oscal_uuid
 

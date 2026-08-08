@@ -72,7 +72,12 @@ RSpec.describe DocumentDuplicationService do
     end
 
     let!(:control) do
-      create(:cdef_control, cdef_document: source, control_id: "V-230221", title: "RHEL 8 must implement NIST crypto", severity: "high")
+      # #912 — a STIG vuln id is a SOURCE identifier, not a NIST reference. It
+      # lives in source_control_id (verbatim); control_id carries what the CCI
+      # lookup resolved.
+      create(:cdef_control, cdef_document: source,
+             source_control_id: "V-230221", source_vocabulary: "disa_stig",
+             control_id: "ac-2", title: "RHEL 8 must implement NIST crypto", severity: "high")
     end
 
     let!(:field) do
@@ -94,7 +99,8 @@ RSpec.describe DocumentDuplicationService do
       expect(copy.cdef_controls.count).to eq(1)
 
       copied_control = copy.cdef_controls.first
-      expect(copied_control.control_id).to eq("V-230221")
+      expect(copied_control.source_control_id).to eq("V-230221"), "provenance survives duplication verbatim"
+      expect(copied_control.control_id).to eq("ac-2")
       expect(copied_control.severity).to eq("high")
       expect(copied_control.cdef_control_fields.count).to eq(1)
       expect(copied_control.cdef_control_fields.first.field_value).to eq("Configure crypto policy")

@@ -231,8 +231,8 @@ class FrameworkMappingGeneratorService
   def extract_cis_id(control)
     # CIS XCCDF group IDs: "xccdf_org.cisecurity.benchmarks_group_1.1.1"
     # or rule IDs:          "xccdf_org.cisecurity.benchmarks_rule_1.1.1"
-    raw = [ control.group_id, control.rule_id, control.control_id ].compact.join(" ")
-    raw.match(/(\d+(?:\.\d+){1,})/)&.[](1) || control.control_id
+    raw = [ control.group_id, control.rule_id, control.source_identifier ].compact.join(" ")
+    raw.match(/(\d+(?:\.\d+){1,})/)&.[](1) || control.source_identifier
   end
 
   def detect_oval_family(control)
@@ -256,7 +256,10 @@ class FrameworkMappingGeneratorService
       .includes(:cdef_control_fields)
       .each_with_object({}) do |ctrl, hash|
         resolved = resolve_nist_controls(ctrl)
-        hash[ctrl.control_id] = resolved if resolved.any?
+        # #912 — key on the SOURCE identifier. A mapping's job is
+        # source-framework -> NIST, so keying on `control_id` (which now holds
+        # the NIST reference) produced a NIST -> NIST mapping that says nothing.
+        hash[ctrl.source_identifier] = resolved if resolved.any?
       end
   end
 
@@ -269,7 +272,7 @@ class FrameworkMappingGeneratorService
         entries << ControlMappingEntry.new(
           control_mapping_id: mapping.id,
           uuid:               SecureRandom.uuid,
-          source_control_id:  ctrl.control_id,
+          source_control_id:  ctrl.source_identifier,
           source_type:        "control",
           target_control_id:  resolved[:nist_id],
           target_type:        "control",

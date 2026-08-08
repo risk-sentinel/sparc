@@ -1,6 +1,6 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-08-04 (v1.15.4 — collection views, catalog API, provisioning credentials)
+**Last reviewed:** 2026-08-08 (v1.15.5 — catalog lineage, boundary-roster authorization fix)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
 
@@ -100,7 +100,7 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 
 | Scanner | App-code suppressions | Configured threshold | Source of truth |
 |---|---|---|---|
-| Brakeman | 0 | any finding fails | (no ignore file present) |
+| Brakeman | 7 (documented false positives) | any un-ignored finding fails | `config/brakeman.ignore` |
 | CodeQL | 0 | default rule set | (no `.github/codeql/codeql-config.yml`) |
 | Rubocop | 0 (style-only via `rubocop-rails-omakase`) | `cops_to_omit` from omakase | `.rubocop.yml` |
 | Bundler-audit / dependency-audit | 5 (all `mcp`, dev-only transitive) | any vulnerable gem fails | `Gemfile.lock` + `.bundler-audit.yml` |
@@ -109,14 +109,28 @@ For each scanner: what it covers, what threshold it gates on, what's suppressed 
 | Trivy container | 0 CVEs in `.trivyignore` (9 Debian-era entries removed as obsolete on UBI9, v1.12.2); container CVE dispositions tracked in `sparc-findings.yml` | CRITICAL + HIGH | `.trivyignore` + `docs/compliance/sparc-findings.yml` |
 | Grype SBOM | 0 explicit per-CVE suppressions; **threshold ramp** = CRITICAL only | CRITICAL (ramp; intent is HIGH after baseline triage) | `.github/workflows/security.yml` (`GRYPE_FAIL_ON`) |
 
-**Net state:** SPARC's app code has zero scanner suppressions. All suppressions live at the container / OS / dependency layer, are documented with rationale, and have a stated review cadence. The Grype threshold is a deliberate calibration choice (ramp from CRITICAL → HIGH) flagged for follow-up, not a suppression.
+**Net state:** SPARC's app code carries 7 Brakeman suppressions, each recorded in `config/brakeman.ignore` with a written rationale. Every other scanner has zero app-code suppressions; the rest live at the container / OS / dependency layer, are documented with rationale, and have a stated review cadence. The Grype threshold is a deliberate calibration choice (ramp from CRITICAL → HIGH) flagged for follow-up, not a suppression.
+
+> **Corrected 2026-08-08 (v1.15.5).** This section previously claimed "zero scanner suppressions" and that no Brakeman ignore file existed. Both were wrong: 4 entries were already present in `config/brakeman.ignore`. The document understated the app-code suppression count for as long as those entries have existed, which is precisely the question this audit is supposed to answer honestly.
 
 ## Per-scanner detail
 
 ### Brakeman (Rails security static analysis)
 
 - **Covers:** XSS, SQLi, command injection, mass assignment, unsafe deserialization, weak crypto in Rails app code (`app/`, `lib/`, `config/`).
-- **Suppressions:** none. No `.brakeman.ignore` file exists; no inline `# brakeman:ignore` directives in `app/` or `lib/` (verified via `grep -rn 'brakeman:ignore' app/ lib/`).
+- **Suppressions:** 7, all in `config/brakeman.ignore`, each with a `note` giving its
+  rationale. No inline `# brakeman:ignore` directives in `app/` or `lib/`.
+  - **2 × Mass Assignment (attestations)** — `role` is descriptive metadata identifying the
+    attester, not an authorization role.
+  - **2 × Mass Assignment (service accounts)** — `:admin` is permitted BY DESIGN on the admin-only
+    service-account screens.
+  - **2 × Mass Assignment (boundary memberships, added v1.15.5)** — `:role` is permitted so the
+    model validates it in one place against the configured vocabulary (#875), and escalation is
+    prevented by AUTHORIZATION rather than by the permit list. Note that the web path had NO such
+    authorization until v1.15.5; see the boundary-roster fix in that release.
+  - **1 × File Access (help images, added v1.15.5)** — `UserGuideLibrary.image_path` is a whitelist
+    lookup against the images that ship, each realpath-checked; user input is compared, never used
+    to build a path. Brakeman cannot see through the service call.
 - **Threshold:** every Brakeman warning fails the `brakeman_scan` CI job. The job currently passes on all recent PRs (#509, #510, #511, #513, #514, #515) without any suppressions added.
 - **If a finding surfaces in the future:** prefer fixing the code over adding `# brakeman:ignore`. If suppression is unavoidable, document the rationale inline AND append an entry to this doc.
 

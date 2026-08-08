@@ -52,8 +52,62 @@ class DeferredDataMigrationRunner
 
   private
 
+  # Resolve a migration class, loading its file if the constant is not already
+  # defined.
+  #
+  # This is why deferred data migrations had NEVER executed on a normal boot.
+  # `db/migrate` is not an autoload path, and the runner runs inside the Puma /
+  # Solid Queue process — a DIFFERENT process from the `bundle exec rails
+  # db:prepare` that loaded the migration file. So `safe_constantize` returned
+  # nil, the row was marked "failed", and the deploy carried on reporting
+  # success: `schema_migrations` already had the version, because the deferred
+  # pattern records that at db:migrate time and defers only the body.
+  #
+  # It went unnoticed because the only prior deferred migration (#881) also had
+  # a `before_validation` callback and a computed fallback, so its column was
+  # populated anyway on every path that mattered. Nothing about the mechanism
+  # worked; it was masked.
+  #
+  # Rails guarantees the filename matches the class name, so the class name is a
+  # reliable key. Loading is attempted ONLY when the constant is missing, so the
+  # in-process db:migrate path is unaffected.
+  def resolve_migration_class(name)
+    existing = name.safe_constantize
+    return existing if existing
+
+    load_migration_file(name)
+    name.safe_constantize
+  end
+
+  # `load`, not `require`, and deliberately so: the path is discovered at
+  # runtime rather than known statically, and this is the same call Rails makes
+  # for the same job in `ActiveRecord::MigrationProxy#load_migration`. It also
+  # keeps `$LOADED_FEATURES` free of migration files, which `db:migrate` in the
+  # same process manages on its own terms.
+  #
+  # (Rails' own proxy is not reusable here — `MigrationProxy#migration` is
+  # private, and its public surface only exposes `migrate`, which would run the
+  # body outside the `DeferredDataMigration.executing!` guard in `execute`.)
+  def load_migration_file(name)
+    suffix = "_#{name.underscore}.rb"
+
+    Array(ActiveRecord::Migrator.migrations_paths).any? do |dir|
+      path = Dir.glob(Rails.root.join(dir, "*#{suffix}")).first
+      next false if path.nil?
+
+      load path
+      true
+    end
+  rescue StandardError => e
+    # A migration file that raises on load must not take the whole runner down
+    # with it — the row is marked failed by the caller, and the remaining
+    # migrations still get their turn.
+    Rails.logger.error("[DeferredDataMigrationRunner] could not load #{name}: #{e.class}: #{e.message}")
+    false
+  end
+
   def execute(run, user:)
-    klass = run.name.safe_constantize
+    klass = resolve_migration_class(run.name)
     if klass.nil?
       run.update!(status: "failed", completed_at: Time.current,
                   error_message: "Class #{run.name} not loadable")
@@ -67,13 +121,22 @@ class DeferredDataMigrationRunner
     emit_log(run, "started")
 
     DeferredDataMigration.executing!
-    begin
-      klass.new.up
-    ensure
-      DeferredDataMigration.idle!
-    end
+    result =
+      begin
+        klass.new.up
+      ensure
+        DeferredDataMigration.idle!
+      end
 
-    run.update!(status: "completed", completed_at: Time.current)
+    # `records_processed` was never written by anything — every migration
+    # reported "completed, 0 records processed", so an operator could not tell a
+    # successful run from a no-op, which is exactly the distinction they need
+    # when checking whether an upgrade actually did its data work. A migration
+    # that returns an Integer now has that count recorded; one that returns
+    # anything else leaves the column untouched rather than lying with a zero.
+    processed = result if result.is_a?(Integer)
+    run.update!(status: "completed", completed_at: Time.current,
+                **(processed ? { records_processed: processed } : {}))
     emit_log(run, "completed")
     emit_audit_event(run, user: user)
   rescue StandardError => e

@@ -261,6 +261,10 @@ class CdefXccdfParserService
     # XCCDF provenance, and they are the columns lookups already use.
     attrs = {
       control_id:     nist_id,
+      # #912 — provenance in its own column, never rewritten. `control_id`
+      # above holds only the NIST reference resolved through CCI.
+      source_control_id: rule_id,
+      source_vocabulary: "disa_stig",
       title:          title,
       severity:       severity,
       control_family: control_family,

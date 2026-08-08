@@ -10,7 +10,10 @@
 
   <div class="sparc-card p-4 p-md-5">
     <div class="sparc-guide-content">
-      <%= @guide.html.html_safe %>
+      <%# Sanitised in UserGuideLibrary#markdown_to_html, so this is already a
+          SafeBuffer — no `.html_safe` needed, and adding one back would defeat
+          the sanitisation. %>
+      <%= @guide.html %>
     </div>
   </div>
 

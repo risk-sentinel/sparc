@@ -1,5 +1,28 @@
 class AuthorizationBoundaryMembershipsController < ApplicationController
+  # CRITICAL — this controller had NO authorization of any kind.
+  #
+  # `set_authorization_boundary` is an unscoped `find_by!(slug:)`, and
+  # ApplicationController enforces only AUTHENTICATION (session, password,
+  # WebAuthn, auth method). Nothing checked whether the signed-in user had any
+  # relationship to the boundary whose roster they were editing.
+  #
+  # Demonstrated before the fix: a non-admin, non-member user POSTed to
+  # `/authorization_boundaries/:slug/memberships` and got
+  # `302 / "Member 'Victim' added as Assessor / 3PAO."` — a role granted on a
+  # boundary they had nothing to do with. Boundary roles gate access to
+  # compliance documents, so that is privilege escalation (OWASP A01), not just
+  # an untidy roster.
+  #
+  # The Api::V1 equivalent was already gated with `authorize_boundary_write!`;
+  # only the web path was open. This mirrors that policy exactly — the same
+  # permission key, with the admin bypass that `User#has_permission?` provides —
+  # so the two surfaces cannot drift into disagreeing about who may edit a
+  # roster.
+  #
+  # NIST 800-53: AC-3 (access enforcement), AC-6 (least privilege),
+  # AC-2 (account management — role assignment).
   before_action :set_authorization_boundary
+  before_action :authorize_boundary_write!
   before_action :set_membership, only: [ :edit, :update, :destroy ]
 
   def new
@@ -55,6 +78,13 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
 
   def set_authorization_boundary
     @authorization_boundary = AuthorizationBoundary.find_by!(slug: params[:authorization_boundary_id])
+  end
+
+  # Same key and same shape as Api::V1::AuthorizationBoundaryMembershipsController.
+  # `has_permission?` returns true for instance admins, so the admin bypass the
+  # API spells out explicitly is preserved here without duplicating it.
+  def authorize_boundary_write!
+    authorize_permission!("authorization_boundaries.write")
   end
 
   def set_membership

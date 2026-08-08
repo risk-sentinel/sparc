@@ -19,14 +19,16 @@ RSpec.describe FrameworkMappingGeneratorService do
     let!(:control_with_ccis) do
       create(:cdef_control,
              cdef_document:  cdef_doc,
-             control_id:     "SV-257777",
+             source_control_id: "SV-257777",
+             source_vocabulary: "disa_stig",
              cci_references: "CCI-000015,CCI-000225")
     end
 
     let!(:control_no_ccis) do
       create(:cdef_control,
              cdef_document:  cdef_doc,
-             control_id:     "SV-999999",
+             source_control_id: "SV-999999",
+             source_vocabulary: "disa_stig",
              cci_references: nil)
     end
 
@@ -99,12 +101,13 @@ RSpec.describe FrameworkMappingGeneratorService do
         # CCI-000002, CCI-002107, CCI-003602 all map to ac-1-a-1.a; ensure no duplicates
         ctrl = create(:cdef_control,
                       cdef_document:  cdef_doc,
-                      control_id:     "SV-111111",
+                      source_control_id: "SV-111111",
+                      source_vocabulary: "disa_stig",
                       cci_references: "CCI-000002,CCI-002107,CCI-003602")
 
         mapping = service.generate!
         ac1_entries = mapping.control_mapping_entries
-                             .where(source_control_id: ctrl.control_id, target_control_id: "ac-1-a-1.a")
+                             .where(source_control_id: ctrl.source_identifier, target_control_id: "ac-1-a-1.a")
         expect(ac1_entries.count).to eq(1)
       end
     end
@@ -123,7 +126,8 @@ RSpec.describe FrameworkMappingGeneratorService do
     let!(:cis_control) do
       create(:cdef_control,
              cdef_document: cdef_doc,
-             control_id:    "xccdf_org.cisecurity.benchmarks_rule_5.2.1",
+             source_control_id: "xccdf_org.cisecurity.benchmarks_rule_5.2.1",
+             source_vocabulary: "cis",
              group_id:      "xccdf_org.cisecurity.benchmarks_group_5.2.1")
     end
 
@@ -132,7 +136,7 @@ RSpec.describe FrameworkMappingGeneratorService do
     describe "#preview" do
       it "maps CIS section IDs to NIST controls" do
         result = service.preview
-        key = cis_control.control_id
+        key = cis_control.source_identifier
         expect(result).to have_key(key)
         expect(result[key]).to include("ac-3")
         expect(result[key]).to include("ac-6")
@@ -169,7 +173,8 @@ RSpec.describe FrameworkMappingGeneratorService do
     let!(:scap_control) do
       ctrl = create(:cdef_control,
                     cdef_document: cdef_doc,
-                    control_id:    "oval:ssg-installed_env_has_login_defs:def:1",
+                    source_control_id: "oval:ssg-installed_env_has_login_defs:def:1",
+                    source_vocabulary: "scap_oval",
                     title:         "Ensure password expiration policy")
       create(:cdef_control_field,
              cdef_control: ctrl,
@@ -187,8 +192,8 @@ RSpec.describe FrameworkMappingGeneratorService do
     describe "#preview" do
       it "resolves SCAP controls via check system and keyword matching" do
         result = service.preview
-        expect(result).to have_key(scap_control.control_id)
-        expect(result[scap_control.control_id]).not_to be_empty
+        expect(result).to have_key(scap_control.source_identifier)
+        expect(result[scap_control.source_identifier]).not_to be_empty
       end
     end
 

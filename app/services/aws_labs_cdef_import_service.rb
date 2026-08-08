@@ -251,9 +251,16 @@ class AwsLabsCdefImportService
   #      Found  -> use those NIST ids; mark source = "via_config_rule".
   #      Empty  -> leave unmapped.
   #
-  # We do NOT mutate the control_id column. The AWS upstream identifier
-  # remains the canonical reference; NIST mapping is additive metadata
-  # written to cdef_control_fields.
+  # #912 — the AWS upstream identifier is never lost, but it no longer lives in
+  # `control_id`. It moves to `source_control_id` (verbatim, never rewritten)
+  # and `control_id` carries the NIST reference the converter resolved, or NULL
+  # where it resolved nothing. Before the split both meanings shared one column,
+  # so a Security Hub id was indistinguishable from a NIST control at every
+  # consumer — and canonicalisation had to be disabled on the whole model to
+  # avoid rewriting `IAM.3` to `iam.3`.
+  #
+  # The enrichment FIELDS below are unchanged: they remain the audit trail of
+  # how the mapping was derived.
   #
   # Fields written per enriched CdefControl:
   #   - aws_security_hub_id   : the original SecHub identifier
@@ -274,8 +281,24 @@ class AwsLabsCdefImportService
 
     enriched_count = 0
     document.cdef_controls.find_each do |control|
-      sec_hub_id = control.control_id.to_s
+      # #912 — the Security Hub id is the SOURCE identifier. Read it from
+      # `source_control_id` where the split has already been applied, and fall
+      # back to `control_id` for rows the deferred backfill has not reached yet.
+      sec_hub_id = control.source_identifier.to_s.presence || control.control_id.to_s
       next unless sec_hub_id.match?(/\A[A-Za-z][A-Za-z0-9]*\.\d+\z/)
+
+      # #912 — clear the Security Hub id out of `control_id` before attempting
+      # resolution. If the converter maps it, `write_enrichment!` writes the NIST
+      # reference back; if it does not, the row is correctly left with no control
+      # identifier and is reported as unmapped rather than presenting a Security
+      # Hub id as though it were a NIST control.
+      record_aws_source!(control, sec_hub_id)
+      # Compare canonically: `control_id` is canonicalised on write now, so the
+      # stored value is `iam.99999` while the source is `IAM.99999`. Comparing
+      # raw never matched, and the Security Hub id stayed in the NIST column.
+      if control.control_id.present? && control.control_id == ControlId.canonical(sec_hub_id)
+        control.update_columns(control_id: nil)
+      end
 
       direct_ids = sec_hub_converter.converter_entries
         .where(source_id: sec_hub_id)
@@ -307,7 +330,20 @@ class AwsLabsCdefImportService
     end
   end
 
+  # Provenance first, for every AWS control — mapped or not. An unmapped
+  # Security Hub control must still say where it came from.
+  def record_aws_source!(control, sec_hub_id)
+    return if control.source_control_id == sec_hub_id && control.source_vocabulary == "aws_security_hub"
+
+    control.update_columns(source_control_id: sec_hub_id, source_vocabulary: "aws_security_hub")
+  end
+
   def write_enrichment!(control, sec_hub_id, nist_ids, source:, config_rule: nil)
+    # #912 — `control_id` now holds the NIST reference. `update_columns` skips
+    # validations deliberately: a control invalid for an unrelated reason must
+    # still receive its resolved mapping.
+    control.update_columns(control_id: ControlId.canonical(nist_ids.first))
+
     upsert_cdef_field!(control, "aws_security_hub_id", sec_hub_id, editable: false)
     upsert_cdef_field!(control, "nist_oscal_ids", nist_ids.join(","), editable: false)
     upsert_cdef_field!(control, "nist_primary_id", nist_ids.first, editable: false)

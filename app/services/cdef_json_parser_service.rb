@@ -92,6 +92,12 @@ class CdefJsonParserService
           idx = control_attrs.size
           attrs = {
             control_id:     ir[CONTROL_ID],
+            # #912 — an OSCAL component definition references controls FROM a
+            # catalog, so its identifiers are NIST by construction. Source and
+            # NIST reference are the same value here; recording both keeps the
+            # column meaning uniform across importers.
+            source_control_id: ir[CONTROL_ID],
+            source_vocabulary: "nist",
             title:          ir[CONTROL_ID],
             control_family: ir[CONTROL_ID].to_s.split("-").first.upcase.presence,
             row_order:      row_order
@@ -213,6 +219,11 @@ class CdefJsonParserService
 
       attrs = {
         control_id:     nist_id || fallback_id,
+        # #912 — a STIG-derived InSpec profile records the SV-ID as its source;
+        # a plain profile records its own control name. Either way the source is
+        # kept verbatim and `control_id` carries only what resolved to NIST.
+        source_control_id: original_id,
+        source_vocabulary: stig_rule ? "disa_stig" : "nist",
         title:          ctrl["title"],
         severity:       impact_to_severity(ctrl["impact"]),
         control_family: nist_id.present? ? nist_family_from_id(nist_id) : fallback_id.to_s.split("-").first.upcase.presence,
@@ -275,6 +286,8 @@ class CdefJsonParserService
       # `group_id` / `stig_id` below keep the V-ID.
       attrs = {
         control_id:     nist_id,
+        source_control_id: vuln_num,
+        source_vocabulary: "disa_stig",
         title:          finding["rule_title"],
         severity:       finding["severity"],
         control_family: nist_id.present? ? nist_family_from_id(nist_id) : nil,
