@@ -29,7 +29,17 @@
       <code>DeferredDataMigrationJob</code>.
     </div>
   <% else %>
-    <div class="sparc-card p-0" style="overflow-x: auto;">
+    <%# A horizontally scrollable region must be reachable by keyboard, or a
+        keyboard-only user cannot see the columns that overflow (WCAG 2.1 A/AA,
+        axe `scrollable-region-focusable`).
+
+        The region only renders when there are rows, and the a11y baseline was
+        captured against the empty state — so it had never been audited.
+
+        The label matches the visible <h3> so a screen-reader user hears the
+        same name as the heading they just passed. %>
+    <div class="sparc-card p-0" style="overflow-x: auto;"
+         tabindex="0" role="region" aria-label="Data Migrations">
       <table class="table table-sm align-middle mb-0">
         <thead class="table-light">
           <tr>
