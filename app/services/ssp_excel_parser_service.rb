@@ -35,6 +35,7 @@ class SspExcelParserService
     rows              = []
     current_parent_idx = nil
     row_order          = 0
+    dropped_rows      = 0
 
     (2..sheet.last_row).each do |row_num|
       row_data = sheet.row(row_num)
@@ -54,9 +55,33 @@ class SspExcelParserService
         end
       end
 
-      is_parent  = attrs[:control_id].present?
-      parent_ref = is_parent ? nil : current_parent_idx
-      current_parent_idx = rows.size if is_parent
+      # #913 — a row with NO control id is not a control.
+      #
+      # In a spreadsheet SSP these blank rows are continuation lines: what OSCAL
+      # models as a LEVERAGED SSP, not as a control of this system. Importing
+      # them as headless `SspControl` rows produced records with no control_id
+      # and no derived family, which is what made
+      # `control_id.to_s.split("-").first.upcase` raise across the app — the
+      # blank state was manufactured here and guarded against everywhere else.
+      #
+      # Dropping them removes the state at its source. The rows carry prose, so
+      # this is a lossy import: it is a MIGRATION AID for converting a
+      # spreadsheet into a real OSCAL SSP, which a human then enriches. The
+      # count is recorded on the document so the loss is visible rather than
+      # silent.
+      #
+      # This is NOT a retreat from #911's ruling 8 ("never drop a row; alert").
+      # That governs a row whose control id is UNRECOGNISED — a control the
+      # author intended to claim, which must still be reported and never
+      # discarded. A row with no control id was never a control claim.
+      unless attrs[:control_id].present?
+        dropped_rows += 1
+        next
+      end
+
+      is_parent  = true
+      parent_ref = nil
+      current_parent_idx = rows.size
 
       rows << {
         attrs:      { control_id: attrs[:control_id].presence, title: attrs[:title], row_order: row_order },
@@ -72,12 +97,27 @@ class SspExcelParserService
       row_order += 1
     end
 
+    record_dropped_rows!(dropped_rows)
+
     update_processing_stage!(:creating_records, "Creating #{rows.size} controls in database...")
     batch_insert_with_hierarchy(rows)
     update_processing_stage!(:finalizing, "Finalizing #{rows.size} controls...")
   end
 
   private
+
+  # #913 — a lossy import must say what it dropped. Recorded on the document
+  # rather than only logged, so the number survives the request and an author
+  # can see it when they come to enrich the result.
+  def record_dropped_rows!(count)
+    return if count.zero?
+
+    @document.update_columns(
+      import_metadata: (@document.import_metadata || {}).merge(
+        "dropped_rows_without_control_id" => count
+      )
+    )
+  end
 
   # Two-phase batch insert: parents first (to get their IDs), then children
   # with parent_id resolved, then all fields.
@@ -102,7 +142,17 @@ class SspExcelParserService
       parent_attrs  = parents.map { |p| p[:attrs] }
 
       parent_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
-        records = batch.map { |a| SspControl.new(ssp_document_id: @document.id, uuid: SecureRandom.uuid, **a.compact) }
+        # #911/#913 — this parser has its OWN two-phase import and therefore
+        # never went through `batch_insert_records`, so the canonicalisation
+        # fix applied there missed it entirely: SSP controls imported from a
+        # spreadsheet were stored exactly as typed ("AC-1", "AC-02"), which is
+        # the very mismatch #911 exists to remove. Route them through the same
+        # single declaration rather than normalising inline.
+        records = batch.map do |a|
+          canonicalise_control_ids(
+            SspControl, SspControl.new(ssp_document_id: @document.id, uuid: SecureRandom.uuid, **a.compact)
+          )
+        end
         result  = SspControl.import(records, validate: false, returning: :id)
 
         batch_offset = parent_db_ids.size
@@ -119,7 +169,17 @@ class SspExcelParserService
       end
 
       child_attrs.each_slice(BATCH_SIZE_CONTROLS) do |batch|
-        records = batch.map { |a| SspControl.new(ssp_document_id: @document.id, uuid: SecureRandom.uuid, **a.compact) }
+        # #911/#913 — this parser has its OWN two-phase import and therefore
+        # never went through `batch_insert_records`, so the canonicalisation
+        # fix applied there missed it entirely: SSP controls imported from a
+        # spreadsheet were stored exactly as typed ("AC-1", "AC-02"), which is
+        # the very mismatch #911 exists to remove. Route them through the same
+        # single declaration rather than normalising inline.
+        records = batch.map do |a|
+          canonicalise_control_ids(
+            SspControl, SspControl.new(ssp_document_id: @document.id, uuid: SecureRandom.uuid, **a.compact)
+          )
+        end
         result  = SspControl.import(records, validate: false, returning: :id)
 
         batch_offset = child_db_ids.size

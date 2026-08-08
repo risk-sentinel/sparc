@@ -33,6 +33,24 @@
 # verified when nothing verified it — the failure mode this whole issue exists
 # to end.
 #
+# ── Two questions, both settled (#915) ──────────────────────────────────────
+#
+# **Cross-revision references do NOT count as in-baseline.** A baseline may
+# contain additional controls, but it never mixes Rev 4 and Rev 5 standards — so
+# a Rev 4 reference against a Rev 5 baseline is genuinely out of baseline, and
+# the strict subset below is correct. Membership deliberately does NOT route
+# through `ControlIdNormalizer.lookup_mapping`: translating across revisions here
+# would assert an equivalence nobody verified, which is the class of false
+# assurance this whole issue exists to remove.
+#
+# **Membership is judged at control id, not statement id.** Parts of a boundary
+# can legitimately have partial coverage, and several parts may be required
+# before a control is actually implemented — so a partially covered control is a
+# normal intermediate state, not a membership failure. Catalogs do store
+# statement sub-parts as rows (1936 of 4054 in the seeded Rev 5 catalog), and a
+# CDEF can implement at statement level; that granularity belongs to coverage
+# reporting, not to "is this control in scope".
+#
 # NIST 800-53: CA-2, CA-5, PM-6 — controls are assessed against the baseline the
 # system was authorized under, not against the union of everything loaded.
 module ControlMembership
