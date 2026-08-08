@@ -42,7 +42,18 @@ class CmsAttestationExportService
 
   def build_record(attestation, link)
     {
-      control_id: link.control_id,
+      # #911 — RENDERED, not passed through. Control identifiers are stored
+      # canonically (`ca-7`) so internal comparisons stop failing silently, but
+      # this payload is an external contract: the CMS / SAF CLI attestation
+      # schema consumed downstream by Heimdall, which keys on the NIST tag.
+      # Leaking the storage form would silently change every delivered record
+      # from `CA-7` to `ca-7`.
+      #
+      # An export renders the form its consumer's schema requires. It does not
+      # publish SPARC's storage convention. (CCI is a separate tag with its own
+      # helpers on the Heimdall side, and is deliberately untouched by
+      # ControlId's padding rules — see ControlId::MAX_PADDED_DIGITS.)
+      control_id: ControlId.nist_tag(link.control_id),
       explanation: attestation.statement,
       frequency: attestation.frequency || DEFAULT_FREQUENCY,
       status: attestation.status,

@@ -19,7 +19,21 @@ class SapDocument < ApplicationRecord
   limit_attachment_size :file, max: -> { SparcConfig.max_upload_bytes }
 
   belongs_to :ssp_document, optional: true
+
+  # #911 layer 2 — OSCAL requires `import-ssp` on an assessment plan. You cannot
+  # say what was assessed without naming the system security plan it assessed.
+  include CatalogLineage
+  lineage_via :ssp_document,
+              key:      :ssp,
+              controls: :sap_controls,
+              message:  { label:   "SSP",
+                          remedy:  "PATCH /api/v1/sap_documents/:id { ssp_document_id }",
+                          options: "/api/v1/ssp_documents" }
   belongs_to :profile_document, optional: true
+  include ControlMembership
+  membership_within controls: :sap_controls, baseline: :ssp_document,
+                    baseline_controls: :ssp_controls,
+                    label: "assessed SSP"
 
   # Inherit cross-document FKs from the boundary's existing siblings on save
   # (#395 P1). User-supplied values take precedence; we only fill nil columns.

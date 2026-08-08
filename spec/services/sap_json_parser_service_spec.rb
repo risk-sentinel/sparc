@@ -49,7 +49,7 @@ RSpec.describe SapJsonParserService do
       path = write_fixture(plan)
       described_class.new(document, path).parse
 
-      ctrl = document.reload.sap_controls.find_by(control_id: "AC-1")
+      ctrl = document.reload.sap_controls.find_by(control_id: "ac-1")  # #911 — controls store the canonical form
       expect(ctrl.sap_control_objectives.pluck(:objective_id))
         .to match_array([ "ac-1_obj.a-1", "ac-1_obj.a-2" ])
     end
@@ -58,7 +58,7 @@ RSpec.describe SapJsonParserService do
       path = write_fixture(plan)
       described_class.new(document, path).parse
 
-      ctrl = document.reload.sap_controls.find_by(control_id: "AC-1")
+      ctrl = document.reload.sap_controls.find_by(control_id: "ac-1")  # #911 — controls store the canonical form
       expect(ctrl.assessment_method).to eq("examine")
     end
   end
@@ -82,7 +82,7 @@ RSpec.describe SapJsonParserService do
       path = write_fixture(plan)
       described_class.new(document, path).parse
 
-      ctrl = document.reload.sap_controls.find_by(control_id: "AC-1")
+      ctrl = document.reload.sap_controls.find_by(control_id: "ac-1")  # #911 — controls store the canonical form
       expect(ctrl).to be_present
       expect(ctrl.sap_control_objectives).to be_empty
     end

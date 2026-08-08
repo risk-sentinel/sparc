@@ -75,7 +75,7 @@ RSpec.describe OscalAssessmentPlanExportService do
 
   describe "include-controls statement-ids" do
     it "emits statement-ids for controls with sap_control_objectives" do
-      ctrl = sap.sap_controls.find_by(control_id: "AC-1")
+      ctrl = sap.sap_controls.find_by(control_id: "ac-1")
       create(:sap_control_objective, sap_control: ctrl, objective_id: "ac-1_obj.a-1", row_order: 0)
       create(:sap_control_objective, sap_control: ctrl, objective_id: "ac-1_obj.a-2", row_order: 1)
 

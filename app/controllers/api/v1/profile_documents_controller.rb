@@ -16,6 +16,8 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::ProfileDocumentsController < Api::V1::BaseController
+  include ReconciliationGate
+
   # #575 Path D — admin OR `profiles.write` permission required for
   # any mutation. Was previously open to any authenticated user (no
   # gate at all). Run authorize BEFORE set_profile so a non-admin
@@ -76,6 +78,11 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
 
   # PATCH /api/v1/profile_documents/:id
   def update
+    # #911 layer 2 — a profile is the ROOT of the lineage chain, so an
+    # unresolved one is the worst case: every SSP, SAP and SAR beneath it
+    # inherits the break. Declaring the catalog is itself permitted.
+    return unless enforce_reconciliation!(@profile, profile_params)
+
     @profile.update!(profile_params)
 
     audit_log("profile_document_updated", subject: @profile, metadata: { name: @profile.name })

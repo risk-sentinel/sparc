@@ -96,7 +96,7 @@ RSpec.describe Evidence, type: :model do
       create(:evidence_control_link, evidence: evidence, control_id: "AC-01")
       create(:evidence_control_link, evidence: evidence, control_id: "AC-02")
 
-      expect(evidence.linked_control_ids).to contain_exactly("AC-01", "AC-02")
+      expect(evidence.linked_control_ids).to contain_exactly("ac-1", "ac-2")
     end
   end
 

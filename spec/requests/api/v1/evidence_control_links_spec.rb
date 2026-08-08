@@ -54,7 +54,7 @@ RSpec.describe "Api::V1::EvidenceControlLinks", type: :request do
       }.to change(EvidenceControlLink, :count).by(1)
 
       expect(response).to have_http_status(:created)
-      expect(JSON.parse(response.body)["data"]["control_id"]).to eq("AC-2")
+      expect(JSON.parse(response.body)["data"]["control_id"]).to eq("ac-2")
     end
 
     it "returns a JSON 400 (not an HTML page) when the root key is absent" do

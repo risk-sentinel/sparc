@@ -1,4 +1,7 @@
 class SspControl < ApplicationRecord
+  include ControlIdentifiable
+  canonicalises_control_id :control_id
+
   belongs_to :ssp_document
   belongs_to :parent, class_name: "SspControl", optional: true
   has_many :provider_statements, class_name: "SspControl", foreign_key: :parent_id,

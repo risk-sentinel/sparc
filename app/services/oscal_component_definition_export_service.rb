@@ -67,9 +67,23 @@ class OscalComponentDefinitionExportService
   end
 
   def build_component
+    # #911 — a STIG rule that resolved to no NIST control has nothing to put in
+    # `control-id`. It used to be exported as `unknown-<row id>`, which is a
+    # false claim: the document asserted an implemented requirement against a
+    # control that does not exist in any catalog, and no validator would flag it
+    # because the string is a well-formed token. Omitting the rule is the
+    # honest export; the CDEF screen and API report the gap and its remedy.
     controls = @document.cdef_controls
+                        .where.not(id: @document.cdef_controls.unmapped_stig_rules.select(:id))
                         .order(:row_order)
                         .includes(:cdef_control_fields)
+
+    if controls.empty? && @document.unmapped_stig_rules?
+      raise OscalValidationError,
+            "No rule in \"#{@document.name}\" maps to a NIST control, so there is no " \
+            "implemented requirement to export. Refresh the stig_to_nist converter, or " \
+            "supply the missing CCI references in the benchmark, then export again."
+    end
 
     {
       "uuid"        => OscalUuidService.derived(@document.uuid, "cdef-component"),

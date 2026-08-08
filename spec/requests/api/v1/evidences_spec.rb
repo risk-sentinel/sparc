@@ -180,7 +180,7 @@ RSpec.describe "Api::V1::Evidences", type: :request do
 
       expect(response).to have_http_status(:created)
       evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
-      expect(evidence.linked_control_ids).to contain_exactly("AC-2", "AU-12")
+      expect(evidence.linked_control_ids).to contain_exactly("ac-2", "au-12")
     end
 
     it "creates control links from a comma-separated string (web-form shape)" do
@@ -189,7 +189,7 @@ RSpec.describe "Api::V1::Evidences", type: :request do
            headers: admin_headers
 
       evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
-      expect(evidence.linked_control_ids).to contain_exactly("AC-2", "AU-12")
+      expect(evidence.linked_control_ids).to contain_exactly("ac-2", "au-12")
     end
 
     context "with a file upload" do

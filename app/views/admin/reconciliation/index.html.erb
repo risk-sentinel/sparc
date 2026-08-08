@@ -1,0 +1,95 @@
+<div class="container py-4">
+  <div class="sparc-card p-4 p-md-5">
+
+    <div class="mb-4">
+      <h1 class="fw-bold mb-1">Catalog lineage</h1>
+      <p class="text-body-secondary mb-0">
+        Every document that cannot yet name the catalog its controls descend from.
+        Blocking documents are refused edits until a baseline is set; advisory ones
+        are findings to act on, not work that is stopping anyone.
+      </p>
+    </div>
+
+    <%# ── Summary strip. A bare count means nothing without a denominator:
+        12 affected is very different at 12 of 12 than at 12 of 4000. ── %>
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="sparc-score-card">
+          <div class="sparc-score-value"><%= @report.blocking_count %></div>
+          <div class="sparc-score-label">Blocking edits</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="sparc-score-card">
+          <div class="sparc-score-value"><%= @report.advisory_count %></div>
+          <div class="sparc-score-label">Advisory</div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="sparc-score-card h-100">
+          <div class="sparc-score-label mb-2">By type (affected / total)</div>
+          <div class="d-flex flex-wrap gap-2">
+            <% @report.summary.each do |entry| %>
+              <span class="sparc-tag-outline <%= 'fw-semibold' if entry[:affected].positive? %>">
+                <%= entry[:type] %>
+                <strong><%= entry[:affected] %></strong> / <%= entry[:total] %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <% if @report.any? %>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Type</th>
+              <th scope="col">Document</th>
+              <th scope="col">Status</th>
+              <th scope="col">What it needs</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @report.rows.each do |row| %>
+              <tr>
+                <td class="text-nowrap"><%= row.type_label %></td>
+                <td>
+                  <%# The fix lives on the document's own page, where the author
+                      has the context to choose correctly. SPARC never picks a
+                      baseline on someone's behalf. %>
+                  <%= link_to row.document.name.presence || "(untitled)",
+                              url_for(row.document), class: "fw-semibold" %>
+                </td>
+                <td class="text-nowrap">
+                  <% if row.blocking? %>
+                    <span class="sparc-status-pill sparc-status--warning">Blocks edits</span>
+                  <% else %>
+                    <span class="sparc-status-pill sparc-status--info">Advisory</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% row.reconciliation[:issues].each do |issue| %>
+                    <div class="mb-1">
+                      <%= issue[:message] %>
+                      <% if issue[:remedy].present? %>
+                        <br><small class="text-body-secondary"><%= issue[:remedy] %></small>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="alert alert-success mb-0" role="alert">
+        <strong>Every document can name its catalog.</strong>
+        Nothing needs reconciliation.
+      </div>
+    <% end %>
+
+  </div>
+</div>

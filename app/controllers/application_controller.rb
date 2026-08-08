@@ -15,16 +15,24 @@ class ApplicationController < ActionController::Base
   before_action :check_webauthn_enrollment  # #802 — mandatory FIDO2 enrollment gate
   before_action :check_required_auth_method # #805 — require OIDC/PIV (phishing-resistant) auth
 
-  # Convert SSP/SAR control IDs (from Excel: "AC-1", "AC-01", "AC-2(1)")
-  # to the OSCAL canonical format used by catalogs:
-  #   "AC-1"    → "ac-1"      "AC-01"   → "ac-1"
-  #   "AC-2(1)" → "ac-2.1"    "ac-2.1"  → "ac-2.1" (already canonical)
-  def normalize_ctrl_id(id)
-    id.to_s.strip.downcase
-      .gsub(/\s+/, "-")
-      .gsub("(", ".").gsub(")", "")
-      .gsub(/(?<=-|\.)0+(\d)/) { $1 }
-  end
+  # Convert a control ID to the OSCAL canonical form catalogs store.
+  #
+  # #911 — this was a private reimplementation of ControlId.canonical (#852)
+  # that had drifted, and was wrong in four ways. It disagreed on:
+  #
+  #   "AC-2 (1)"        -> "ac-2-.1"        (should be "ac-2.1")
+  #   "CCI-000213"      -> "cci-213"        (should be "cci-000213")
+  #   "ac-19.4.(b).(1)" -> "ac-19.4..b..1"  (should be "ac-19.4.b.1")
+  #
+  # The first case is the NIST publication form — the most common way a person
+  # writes an enhancement — so the catalog-guidance lookups in the SSP and SAR
+  # views silently found nothing for it. The second corrupted fixed-width
+  # external identifiers, which is exactly what ControlId's padding guard
+  # exists to prevent.
+  #
+  # Kept as a helper_method under its original name because the SSP and SAR
+  # views call it; it now delegates rather than duplicating.
+  def normalize_ctrl_id(id) = ControlId.canonical(id)
   helper_method :normalize_ctrl_id
 
   private

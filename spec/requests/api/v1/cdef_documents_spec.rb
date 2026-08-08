@@ -129,6 +129,57 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
       expect(parsed["data"]).to have_key("description")
       expect(parsed["data"]).to have_key("oscal_version")
     end
+
+    # #911 — an unmapped STIG rule carries no control identifier, so the API
+    # must say so and carry the remedy. The shape is the reconciliation object
+    # the lineage gate will use, so an integrator handles one object rather than
+    # learning a second field when layer 2 lands.
+    context "when the cdef has STIG rules that map to no control" do
+      # Lineage is RESOLVED and the profile actually selects the mapped control,
+      # so this exercises the unmapped-rule issue on its own. An unresolved
+      # profile would add a lineage issue and flip `blocking` (layer 2); a
+      # control the profile does not select would add a membership issue
+      # (layer 3). Both are covered in their own specs.
+      let(:profile) { create(:profile_document, control_catalog: create(:control_catalog)) }
+      let(:cdef) { create(:cdef_document, file_type: "xccdf", profile_document: profile) }
+
+      before do
+        create(:profile_control, profile_document: profile, control_id: "ac-2")
+        cdef.cdef_controls.create!(control_id: "ac-2", title: "Mapped", row_order: 0)
+        cdef.cdef_controls.create!(
+          stig_id: "SV-999999r000001_rule", rule_id: "SV-999999r000001_rule",
+          title: "Unmapped", row_order: 1
+        )
+      end
+
+      it "reports the gap with its remedy" do
+        get api_v1_cdef_document_path(cdef), headers: auth_headers
+        expect(response).to have_http_status(:ok)
+
+        reconciliation = JSON.parse(response.body).dig("data", "reconciliation")
+        expect(reconciliation["status"]).to eq("unresolved")
+        expect(reconciliation["blocking"]).to eq([]), "an unmapped rule is advisory, not blocking"
+
+        # Matched by code, not position: the issues array is shared by all three
+        # layers, so asserting on `.first` would break the moment another layer
+        # has something to say about the same document.
+        issue = reconciliation["issues"].find { _1["code"] == "unmapped_stig_rules" }
+        expect(issue).to be_present, "got: #{reconciliation['issues'].map { _1['code'] }}"
+        expect(issue["count"]).to eq(1)
+        expect(issue["remedy"]).to include("stig_to_nist")
+      end
+    end
+
+    it "omits reconciliation when lineage resolves, controls map, and all are in baseline" do
+      profile = create(:profile_document, control_catalog: create(:control_catalog))
+      create(:profile_control, profile_document: profile, control_id: "ac-2")
+      cdef = create(:cdef_document, profile_document: profile)
+      cdef.cdef_controls.create!(control_id: "ac-2", title: "Mapped", row_order: 0)
+
+      get api_v1_cdef_document_path(cdef), headers: auth_headers
+
+      expect(JSON.parse(response.body)["data"]).not_to have_key("reconciliation")
+    end
   end
 
   describe "POST /api/v1/cdef_documents" do
@@ -188,8 +239,13 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
   end
 
   describe "PUT /api/v1/cdef_documents/:id" do
+    # #911 layer 2 — OSCAL requires `control-implementation/@source`, so the
+    # reconciliation gate refuses an update until the CDEF names its profile.
+    # The refusal is covered in spec/requests/api/v1/reconciliation_gate_spec.rb.
+    let(:baseline) { create(:profile_document, control_catalog: create(:control_catalog)) }
+
     it "updates a cdef" do
-      cdef = create(:cdef_document)
+      cdef = create(:cdef_document, profile_document: baseline)
 
       put api_v1_cdef_document_path(cdef), params: {
         cdef_document: { name: "Updated CDEF", cdef_version: "2.0.0" }
@@ -201,7 +257,7 @@ RSpec.describe "Api::V1::CdefDocuments", type: :request do
     end
 
     it "emits a cdef_document_updated audit event (#433 slice 5)" do
-      cdef = create(:cdef_document)
+      cdef = create(:cdef_document, profile_document: baseline)
       assert_audit_event(
         action: "cdef_document_updated",
         subject_type: "CdefDocument",

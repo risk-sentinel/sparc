@@ -47,7 +47,9 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
       expect(data["name"]).to eq("FY26 Annual")
       # The whole point: controls, not an empty shell.
       expect(data["controls_count"]).to eq(2)
-      expect(SapDocument.find(data["id"]).sap_controls.pluck(:control_id)).to match_array(%w[AC-2 AU-6])
+      # #911 — controls store the canonical form; the SSP rows were seeded as
+      # "AC-2" / "AU-6" and carry through as the same controls, canonically spelled.
+      expect(SapDocument.find(data["id"]).sap_controls.pluck(:control_id)).to match_array(%w[ac-2 au-6])
     end
 
     # The between-assessments case: a boundary should be able to ask for a
@@ -141,7 +143,7 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
 
       expect(response).to have_http_status(:created)
       expect(JSON.parse(response.body)["data"]["controls_count"]).to eq(1)
-      expect(SapDocument.last.sap_controls.first.control_id).to eq("SC-07")
+      expect(SapDocument.last.sap_controls.first.control_id).to eq("sc-7")
     end
 
     # The empty-result guard still exists — it just no longer fires for a
@@ -296,8 +298,13 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
   end
 
   describe "PUT /api/v1/sap_documents/:id" do
+    # #911 layer 2 — OSCAL requires `import-ssp` on an assessment plan, so the
+    # reconciliation gate refuses an update until the SSP is named. The refusal
+    # itself is covered below.
+    let(:baseline) { create(:ssp_document) }
+
     it "updates a document as admin" do
-      sap = create(:sap_document, authorization_boundary: boundary)
+      sap = create(:sap_document, authorization_boundary: boundary, ssp_document: baseline)
 
       put api_v1_sap_document_path(sap), params: {
         sap_document: { name: "Updated SAP", assessment_type: "annual" }
@@ -309,7 +316,7 @@ RSpec.describe "Api::V1::SapDocuments", type: :request do
     end
 
     it "emits a sap_document_updated audit event (#433 slice 5)" do
-      sap = create(:sap_document, authorization_boundary: boundary)
+      sap = create(:sap_document, authorization_boundary: boundary, ssp_document: baseline)
       assert_audit_event(
         action: "sap_document_updated",
         subject_type: "SapDocument",

@@ -16,6 +16,8 @@
 # See: docs/compliance/nist-sp800-53-rev5-mapping.md
 #
 class Api::V1::CdefDocumentsController < Api::V1::BaseController
+  include ReconciliationGate
+
   include DocumentApprovalApi
   include FieldImportable
   before_action :set_cdef, only: [ :show, :update, :destroy, :bulk_apply_converter_preview, :bulk_apply_converter_confirm, :populate_from_profile, :submit_for_review, :approve, :reject, :import_fields_preview, :import_fields_confirm ]
@@ -84,6 +86,11 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
 
   # PATCH /api/v1/cdef_documents/:id
   def update
+    # #911 layer 2 — OSCAL requires `control-implementation/@source`: a
+    # component claims to implement controls FROM something. Refuse the edit
+    # until it says what. Declaring the profile is itself permitted.
+    return unless enforce_reconciliation!(@cdef, cdef_params)
+
     # #498 slice 1 — route the mutation through CdefMutationService so
     # the post-mutation OSCAL hash is validated against the NIST
     # component-definition schema before the transaction commits. A
@@ -291,6 +298,12 @@ class Api::V1::CdefDocumentsController < Api::V1::BaseController
       data[:description] = cdef.description
       data[:oscal_version] = cdef.oscal_version
       data[:controls_count] = cdef.cdef_controls.count
+
+      # #911 — lineage and unmapped STIG rules in ONE object, carrying the
+      # remedy. Same shape whether advisory or the body of a 422 refusal, so an
+      # integrator writes one handler; `blocking` is what tells them apart.
+      reconciliation = cdef.reconciliation
+      data[:reconciliation] = reconciliation if reconciliation
     end
 
     # Issue #466 — expose AWS Labs provenance on every row so API consumers

@@ -21,6 +21,10 @@
 <div data-controller="doc-meta family-toggle heatmap-chip"
      data-family-toggle-selector-value="#controlsContainer > details.sparc-family-group">
 
+<%# ── #911: catalog lineage. Discovered by looking, not by being
+     refused mid-edit. Renders nothing when reconciled. %>
+<%= render "shared/reconciliation_banner", document: @profile_document %>
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header">
 

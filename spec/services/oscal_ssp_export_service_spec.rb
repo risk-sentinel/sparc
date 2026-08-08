@@ -46,6 +46,14 @@ RSpec.describe OscalSspExportService do
            ssp_document: ssp,
            control_id: "ac-1",
            title: "Access Control Policy and Procedures")
+
+    # #911 layer 2 — export refuses to publish a control-id that resolves to no
+    # loaded catalog, so `ac-1` has to actually exist somewhere. Asserting
+    # export mechanics against an identifier no catalog contains was only ever
+    # possible because nothing checked.
+    create(:catalog_control,
+           control_family: create(:control_family, control_catalog: create(:control_catalog)),
+           control_id: "ac-1")
   end
 
   subject { described_class.new(ssp) }

@@ -1,4 +1,9 @@
 class CdefDocumentsController < ApplicationController
+  include ReconciliationGate
+  # #911 layer 2 — refuse an edit until the document names the baseline
+  # its controls descend from. `set_baseline` is deliberately absent.
+  before_action :enforce_reconciliation_gate!, only: %i[update_field update_metadata update_statement]
+  include BaselineDeclarable
   include CollectionViewable
   include FileUploadable
   include Publishable
@@ -9,7 +14,7 @@ class CdefDocumentsController < ApplicationController
   # #629 — bulk delete is admin-only.
   before_action :authorize_admin!, only: [ :bulk_destroy ]
 
-  before_action :set_cdef_document, only: %i[show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile submit_for_review approve reject]
+  before_action :set_cdef_document, only: %i[set_baseline show destroy download_json download_oscal download_oscal_validated download_oscal_unvalidated download_yaml download_xml validate_oscal_export status update_metadata update_field copy publish publish_check create_control_resource link_control_resource unlink_control_resource update_statement bulk_apply bulk_apply_preview bulk_apply_confirm attach_profile populate_from_profile submit_for_review approve reject]
   before_action :ensure_editable!, only: [ :update_metadata, :update_field, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :attach_profile, :populate_from_profile, :submit_for_review ]
   # Issue #488 — same RBAC bucket as the DISA CCI "Refresh Now" button on
   # ConvertersController. Treats AWS Labs catalog refresh as an
@@ -409,7 +414,7 @@ class CdefDocumentsController < ApplicationController
   # ── Control-level resource linking (AJAX) ───────────────────────────
 
   def create_control_resource
-    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    control = @cdef_document.cdef_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     resource = BackMatterResource.new(control_resource_params)
     resource.uuid = SecureRandom.uuid
     resource.source = "managed"
@@ -439,7 +444,7 @@ class CdefDocumentsController < ApplicationController
   end
 
   def link_control_resource
-    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    control = @cdef_document.cdef_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     resource = BackMatterResource.find(params[:back_matter_resource_id])
     link = control.control_back_matter_links.build(back_matter_resource: resource)
 
@@ -516,7 +521,7 @@ class CdefDocumentsController < ApplicationController
   end
 
   def unlink_control_resource
-    control = @cdef_document.cdef_controls.find_by!(control_id: params[:control_id])
+    control = @cdef_document.cdef_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     link = control.control_back_matter_links.find(params[:link_id])
     audit_log("control_resource_unlinked", subject: link.back_matter_resource,
               metadata: { control_id: params[:control_id] })

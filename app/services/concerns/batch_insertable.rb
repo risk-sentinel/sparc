@@ -54,7 +54,8 @@ module BatchInsertable
         records = batch.map do |attrs|
           merged = attrs.compact
           merged[:uuid] ||= SecureRandom.uuid if inject_uuid_for_control
-          control_class.new(document_fk => @document.id, **merged)
+          record = control_class.new(document_fk => @document.id, **merged)
+          canonicalise_control_ids(control_class, record)
         end
         result = control_class.import(records, validate: false, returning: :id)
         imported_ids.concat(result.ids)
@@ -77,5 +78,21 @@ module BatchInsertable
 
       imported_ids
     end
+  end
+
+  # #911 — `activerecord-import` builds its INSERT from listed attributes and
+  # runs no callbacks, so the `before_validation` that canonicalises control
+  # identifiers never fires here. Every parser writes through this method, which
+  # made it the single largest source of non-canonical identifiers: `SarControl`
+  # measured 0% resolvable verbatim and 100% after canonicalisation, and every
+  # one of those rows came through this path.
+  #
+  # This delegates to the model's own declaration rather than normalising
+  # inline. A bulk writer with a private copy of the transform is exactly the
+  # drift #852 was opened to remove.
+  def canonicalise_control_ids(control_class, record)
+    return record unless control_class.respond_to?(:canonicalise_control_ids!)
+
+    control_class.canonicalise_control_ids!(record)
   end
 end

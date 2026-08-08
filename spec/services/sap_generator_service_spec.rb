@@ -33,8 +33,8 @@ RSpec.describe SapGeneratorService do
           ssp_document: ssp
         ).generate
 
-        ac_control = sap.sap_controls.find_by(control_id: "AC-1")
-        at_control = sap.sap_controls.find_by(control_id: "AT-1")
+        ac_control = sap.sap_controls.find_by(control_id: "ac-1")
+        at_control = sap.sap_controls.find_by(control_id: "at-1")
 
         expect(ac_control.assessment_method).to eq("test")
         expect(at_control.assessment_method).to eq("interview")
@@ -48,7 +48,7 @@ RSpec.describe SapGeneratorService do
         ).generate
 
         expect(sap.sap_controls.count).to eq(1)
-        expect(sap.sap_controls.first.control_id).to eq("AC-1")
+        expect(sap.sap_controls.first.control_id).to eq("ac-1")
       end
 
       it "carries over implementation data as control fields" do
@@ -57,7 +57,7 @@ RSpec.describe SapGeneratorService do
           ssp_document: ssp
         ).generate
 
-        ac_control = sap.sap_controls.find_by(control_id: "AC-1")
+        ac_control = sap.sap_controls.find_by(control_id: "ac-1")
         impl_field = ac_control.sap_control_fields.find_by(field_name: "implementation_description")
         expect(impl_field.field_value).to include("LDAP")
       end
@@ -96,7 +96,7 @@ RSpec.describe SapGeneratorService do
           assessment_methods: { "AC-1" => "interview" }
         ).generate
 
-        control = sap.sap_controls.find_by(control_id: "AC-1")
+        control = sap.sap_controls.find_by(control_id: "ac-1")
         expect(control.assessment_method).to eq("interview")
       end
     end

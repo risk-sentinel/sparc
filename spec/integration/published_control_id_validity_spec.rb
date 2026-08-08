@@ -22,7 +22,22 @@ require "rails_helper"
 RSpec.describe "published documents emit valid OSCAL control ids (#852)" do
   # Every shape a control id genuinely arrives in: NIST publication text, a
   # spreadsheet upload, an OSCAL file, and the demo seed's padded form.
-  HOSTILE_IDS = [ "AC-2 (1)", "AC-02", "ac-2.1", "AC-2(1)", "  au-6  ", "SI-4 (12)" ].freeze
+  #
+  #   "AC-2 (1)"   publication form, space before the enhancement
+  #   "AC-02"      SPARC's padded display convention
+  #   "ac-3.1"     already canonical
+  #   "AU-2(1)"    enhancement with no space
+  #   "  au-6  "   surrounding whitespace, as a spreadsheet cell yields
+  #   "SI-4 (12)"  two-digit enhancement
+  #
+  # #911 — each names a DIFFERENT control on purpose. Canonicalisation on write
+  # means several spellings of one control now collapse to a single stored
+  # identifier, so a list containing `AC-2 (1)`, `ac-2.1` and `AC-2(1)` would
+  # trip the per-document uniqueness rule during setup and never reach the
+  # export being tested. That collapse is asserted directly in
+  # spec/services/concerns/batch_insertable_spec.rb; here the point is shape
+  # coverage, which is preserved.
+  HOSTILE_IDS = [ "AC-2 (1)", "AC-02", "ac-3.1", "AU-2(1)", "  au-6  ", "SI-4 (12)" ].freeze
 
   OSCAL_TOKEN = /\A(\p{L}|_)(\p{L}|\p{N}|[.\-_])*\z/
   ID_FIELDS   = %w[control-id target-id id-ref].freeze
@@ -52,6 +67,22 @@ RSpec.describe "published documents emit valid OSCAL control ids (#852)" do
   end
 
   let(:boundary) { create(:authorization_boundary) }
+
+  # #911 layer 2 — export refuses to publish a control-id that resolves to no
+  # loaded catalog, so every hostile spelling above must name a control that
+  # genuinely exists. That makes these documents more realistic, not less:
+  # previously they asserted token legality for identifiers no catalog
+  # contained, which is a shape SPARC now declines to publish at all.
+  #
+  # Seeded in the CANONICAL form, because that is what a catalog stores — the
+  # point of the exercise is that the hostile spellings still resolve to it.
+  let!(:catalog_family) { create(:control_family, control_catalog: create(:control_catalog)) }
+
+  before do
+    HOSTILE_IDS.map { |id| ControlId.canonical(id) }.uniq.each do |canonical|
+      create(:catalog_control, control_family: catalog_family, control_id: canonical)
+    end
+  end
 
   describe "SSP export" do
     it "emits only legal tokens, and validates" do

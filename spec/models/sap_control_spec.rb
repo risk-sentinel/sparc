@@ -28,7 +28,7 @@ RSpec.describe SapControl, type: :model do
 
     it "returns a serializable hash" do
       hash = control.to_hash
-      expect(hash[:control_id]).to eq("AC-2")
+      expect(hash[:control_id]).to eq("ac-2")
       expect(hash[:assessment_method]).to eq("test")
       expect(hash[:fields]).to be_an(Array)
     end

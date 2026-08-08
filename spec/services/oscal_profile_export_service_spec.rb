@@ -29,6 +29,14 @@ RSpec.describe OscalProfileExportService do
            profile_document: profile,
            control_id: "ac-2",
            priority: "P2")
+
+    # #911 layer 2 — export refuses a control-id that resolves to no loaded
+    # catalog. A profile selects FROM its catalog, so a profile control naming
+    # something that catalog does not contain was never coherent; it only went
+    # unnoticed because nothing checked.
+    family = create(:control_family, control_catalog: catalog)
+    create(:catalog_control, control_family: family, control_id: "ac-1")
+    create(:catalog_control, control_family: family, control_id: "ac-2")
   end
 
   subject { described_class.new(profile) }

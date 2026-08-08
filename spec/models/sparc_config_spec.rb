@@ -236,4 +236,61 @@ RSpec.describe SparcConfig do
       end
     end
   end
+
+  # SPARC is a translation engine for OSCAL, so the authoritative NIST
+  # documentation ships with the image rather than being something each
+  # deployment has to know to configure.
+  describe ".resources" do
+    around do |example|
+      previous = ENV["SPARC_RESOURCES"]
+      ENV.delete("SPARC_RESOURCES")
+      example.run
+      previous.nil? ? ENV.delete("SPARC_RESOURCES") : ENV["SPARC_RESOURCES"] = previous
+    end
+
+    # Deep links, not one link to the site root: the questions users arrive
+    # with are per-document-type, and the answers live on specific pages.
+    it "ships a reference for every OSCAL document type SPARC handles" do
+      texts = SparcConfig.resources.map { _1["display_text"] }
+
+      expect(texts).to include(
+        "NIST OSCAL", "OSCAL Tutorials", "OSCAL Catalogs", "OSCAL Profiles",
+        "OSCAL Component Definitions", "OSCAL System Security Plans",
+        "OSCAL Control Validation"
+      )
+    end
+
+    it "keeps the pre-existing framework links" do
+      texts = SparcConfig.resources.map { _1["display_text"] }
+
+      expect(texts).to include("FedRAMP 20x", "MITRE Security Automation Framework")
+    end
+
+    it "gives every entry a display text and an https href" do
+      SparcConfig.resources.each do |resource|
+        expect(resource["display_text"]).to be_present
+        expect(resource["href"]).to start_with("https://"),
+          "#{resource['display_text']} must be https — the page opens these in a new tab"
+      end
+    end
+
+    it "has no duplicate destinations" do
+      hrefs = SparcConfig.resources.map { _1["href"] }
+      expect(hrefs).to eq(hrefs.uniq)
+    end
+
+    context "when SPARC_RESOURCES is set" do
+      it "replaces the shipped list wholesale" do
+        ENV["SPARC_RESOURCES"] = [ { "display_text" => "Internal Wiki", "href" => "https://wiki.example.gov" } ].to_json
+
+        expect(SparcConfig.resources.map { _1["display_text"] }).to eq([ "Internal Wiki" ])
+      end
+
+      it "falls back to the shipped list when the override is not valid JSON" do
+        ENV["SPARC_RESOURCES"] = "{not json"
+
+        expect(SparcConfig.resources.map { _1["display_text"] }).to include("OSCAL Profiles")
+      end
+    end
+  end
 end

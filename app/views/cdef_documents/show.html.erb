@@ -54,6 +54,13 @@
         </div>
       </div>
 
+      <%# ── #911: lineage + unmapped STIG rules, in one place ──
+          This replaced a bespoke unmapped-rules banner. Unmapped rules now
+          arrive through `additional_reconciliation_issues`, so the shared
+          partial reports them alongside missing lineage instead of the reader
+          meeting two differently-worded warnings about the same document. %>
+      <%= render "shared/reconciliation_banner", document: @cdef_document %>
+
       <% if @cdef_document.aws_labs_source? %>
         <div class="alert alert-warning d-flex justify-content-between align-items-center mt-2 mb-0" role="alert">
           <div>
@@ -260,7 +267,13 @@
       sev_colors_map = { "high" => "#e74c3c", "medium" => "#f39c12", "low" => "#3498db", "info" => "#95a5a6" }
       sev_color    = sev_colors_map[sev_val] || "#7f8c8d"
       sev_variant  = cdef_severity_variant(sev_val)
-      family_code  = control.control_family.presence || control.control_id.to_s.split("-").first.upcase
+      # #911 — `"".split("-").first` is nil, so the unguarded `.upcase` that was
+      # here raised NoMethodError and 500'd this whole page for any CDEF holding
+      # an unmapped STIG rule — which, as of this commit, legitimately has no
+      # control_id and no derived family. The same idiom is unguarded in seven
+      # other places; consolidating them is tracked as #913.
+      family_code  = control.control_family.presence ||
+                     control.control_id.to_s.split("-").first&.upcase.presence
       description  = field_map["description"]&.field_value.presence
       cci_refs     = field_map["cci_refs"]&.field_value.presence
     %>
@@ -273,13 +286,21 @@
       <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
         <div style="min-width: 0; flex: 1;">
           <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom: 0.2rem;">
+            <%# #911 — an unmapped STIG rule leads with its own identifier and
+                says so, rather than showing a bare dash where a control would be. %>
             <span class="sparc-ctrl-id">
-              <%= control.control_id.presence || "&mdash;".html_safe %>
+              <%= control.control_id.presence || control.provenance_id.presence || "&mdash;".html_safe %>
             </span>
+            <% if control.unmapped_stig_rule? %>
+              <span class="sparc-tag-outline fw-semibold" style="background: rgba(243,156,18,0.10); border: 1px solid rgba(243,156,18,0.35);"
+                    title="This STIG rule resolved to no NIST control through its CCI references.">
+                Unmapped
+              </span>
+            <% end %>
             <span class="sparc-status-pill sparc-status--<%= sev_variant %>" style="text-transform: capitalize;">
               <%= sev_val %>
             </span>
-            <% if control.stig_id.present? && control.stig_id != control.control_id %>
+            <% if control.stig_id.present? && control.stig_id != control.control_id && !control.unmapped_stig_rule? %>
               <span class="sparc-tag-outline fw-semibold text-body-secondary" style="background: rgba(155,89,182,0.08); border: 1px solid rgba(155,89,182,0.2);">
                 <%= control.stig_id %>
               </span>

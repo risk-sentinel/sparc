@@ -47,7 +47,8 @@ class Api::V1::KsiCatalogController < Api::V1::BaseController
   def show_indicator
     indicator = CatalogControl.joins(:control_family)
                               .where(control_families: { control_catalog_id: @ksi_catalog.id })
-                              .find_by!(control_id: params[:id])
+                              .where(control_id: ControlId.forms(params[:id]))
+                              .first!
 
     mapped_controls = load_mapped_controls(indicator.control_id)
 

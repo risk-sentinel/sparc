@@ -62,7 +62,7 @@ RSpec.describe SapDocument, type: :model do
       expect(data[:assessment_type]).to eq("annual")
       expect(data[:controls]).to be_an(Array)
       expect(data[:controls].length).to eq(1)
-      expect(data[:controls].first[:control_id]).to eq("AC-1")
+      expect(data[:controls].first[:control_id]).to eq("ac-1")
     end
   end
 

@@ -77,7 +77,7 @@ class FieldImportService
 
     Array(payload[:controls]).each do |entry|
       cid = entry[:control_id]
-      control = controls_by_id[cid]
+      control = find_control(controls_by_id, cid)
 
       Hash(entry[:fields]).each do |fname, value|
         fname = fname.to_s
@@ -120,7 +120,7 @@ class FieldImportService
       rows.each do |row|
         next unless %w[change unchanged].include?(row.status)
 
-        control = controls_by_id[row.control_id]
+        control = find_control(controls_by_id, row.control_id)
         field = control.public_send(@config[:fields]).find_or_initialize_by(field_name: row.field_name)
         field.field_value = row.new_value
         field.save!
@@ -136,10 +136,22 @@ class FieldImportService
 
   # control_id => control. SAR permits multiple controls per control_id
   # (test-row rows); first wins, mirroring the existing update_fields write path.
+  #
+  # #911 — keyed on the CANONICAL identifier, and looked up the same way. This
+  # matched literally before, so an import file keyed `AC-1` found nothing when
+  # the document stored `ac-1` (or `AC-01`), and every row came back `unknown`
+  # rather than reporting a mismatch. The author sees "nothing to import" and no
+  # reason why, which is the silent-no-op failure this issue exists to end.
   def index_controls
     @document.public_send(@config[:controls]).each_with_object({}) do |control, acc|
-      acc[control.control_id] ||= control
+      acc[ControlId.canonical(control.control_id)] ||= control
     end
+  end
+
+  # The import file carries whatever spelling its author used, so resolve it the
+  # same way rather than trusting the two to agree.
+  def find_control(controls_by_id, raw_control_id)
+    controls_by_id[ControlId.canonical(raw_control_id)]
   end
 
   def current_value(control, field_name)

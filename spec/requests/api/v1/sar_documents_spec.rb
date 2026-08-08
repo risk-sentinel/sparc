@@ -100,8 +100,13 @@ RSpec.describe "Api::V1::SarDocuments", type: :request do
   end
 
   describe "PUT /api/v1/sar_documents/:id" do
+    # #911 layer 2 — OSCAL requires `import-ap` on assessment results, so the
+    # reconciliation gate refuses an update until the assessment plan is named.
+    # These fixtures declare one; the refusal itself is covered below.
+    let(:baseline) { create(:sap_document) }
+
     it "updates a document as admin" do
-      sar = create(:sar_document, authorization_boundary: boundary)
+      sar = create(:sar_document, authorization_boundary: boundary, sap_document: baseline)
 
       put api_v1_sar_document_path(sar), params: {
         sar_document: { name: "Updated SAR" }
@@ -113,7 +118,7 @@ RSpec.describe "Api::V1::SarDocuments", type: :request do
     end
 
     it "emits a sar_document_updated audit event (#433 slice 5)" do
-      sar = create(:sar_document, authorization_boundary: boundary)
+      sar = create(:sar_document, authorization_boundary: boundary, sap_document: baseline)
       assert_audit_event(
         action: "sar_document_updated",
         subject_type: "SarDocument",

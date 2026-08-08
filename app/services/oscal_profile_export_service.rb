@@ -9,6 +9,8 @@
 #   result      = service.validation_result  # inspect errors without raising
 #
 class OscalProfileExportService
+  include OscalExportReconciliation
+
   DEFAULT_OSCAL_VERSION = OscalSchema::DEFAULT_VERSION
   OSCAL_VERSION = DEFAULT_OSCAL_VERSION # backward compat
 
@@ -17,6 +19,10 @@ class OscalProfileExportService
   end
 
   def export
+    # #911 layer 2 — never publish a control-id that resolves to no loaded
+    # catalog. TokenDatatype constrains the character set, not existence.
+    refuse_unresolvable_controls!(label: "Profile", name: @document.name,
+                                  control_ids: @document.profile_controls.pluck(:control_id))
     data = build_profile
     OscalSchemaValidationService.validate!(:profile, data, version: effective_oscal_version)
     JSON.pretty_generate(data)

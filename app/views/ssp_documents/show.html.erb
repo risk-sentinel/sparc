@@ -29,6 +29,10 @@
      data-ssp-control-resource-create-url-value="<%= create_control_resource_ssp_document_path(@ssp_document) %>"
      data-ssp-control-resource-unlink-url-value="<%= unlink_control_resource_ssp_document_path(@ssp_document) %>">
 
+<%# ── #911: catalog lineage. Discovered by looking, not by being
+     refused mid-edit. Renders nothing when reconciled. %>
+<%= render "shared/reconciliation_banner", document: @ssp_document %>
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header">
 

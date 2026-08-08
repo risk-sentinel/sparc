@@ -1,4 +1,7 @@
 class EvidenceControlLink < ApplicationRecord
+  include ControlIdentifiable
+  canonicalises_control_id :control_id
+
   belongs_to :evidence
 
   validates :control_id, presence: true

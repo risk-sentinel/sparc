@@ -1,4 +1,9 @@
 class SspDocumentsController < ApplicationController
+  include ReconciliationGate
+  # #911 layer 2 — refuse an edit until the document names the baseline
+  # its controls descend from. `set_baseline` is deliberately absent.
+  before_action :enforce_reconciliation_gate!, only: %i[update update_enrich update_metadata update_statement]
+  include BaselineDeclarable
   include CollectionViewable
   include FileUploadable
   include Publishable
@@ -6,7 +11,7 @@ class SspDocumentsController < ApplicationController
   include BoundaryScopedDocument
   boundary_scoped SspDocument, read: "ssp.read", write: "ssp.write"
 
-  before_action :set_ssp_document, only: [
+  before_action :set_ssp_document, only: [ :set_baseline,
     :show, :edit, :update, :destroy,
     :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated,
     :download_yaml, :download_xml, :validate_oscal_export,
@@ -527,7 +532,7 @@ class SspDocumentsController < ApplicationController
   # ── Control-level resource linking (AJAX) ───────────────────────────
 
   def create_control_resource
-    control = @ssp_document.ssp_controls.find_by!(control_id: params[:control_id])
+    control = @ssp_document.ssp_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     resource = BackMatterResource.new(ssp_control_resource_params)
     resource.uuid = SecureRandom.uuid
     resource.source = "managed"
@@ -546,7 +551,7 @@ class SspDocumentsController < ApplicationController
   end
 
   def link_control_resource
-    control = @ssp_document.ssp_controls.find_by!(control_id: params[:control_id])
+    control = @ssp_document.ssp_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     resource = BackMatterResource.find(params[:back_matter_resource_id])
     link = control.control_back_matter_links.build(back_matter_resource: resource)
 
@@ -560,7 +565,7 @@ class SspDocumentsController < ApplicationController
   end
 
   def unlink_control_resource
-    control = @ssp_document.ssp_controls.find_by!(control_id: params[:control_id])
+    control = @ssp_document.ssp_controls.where(control_id: ControlId.forms(params[:control_id])).first!
     link = control.control_back_matter_links.find(params[:link_id])
     audit_log("control_resource_unlinked", subject: link.back_matter_resource,
               metadata: { control_id: params[:control_id] })

@@ -306,6 +306,7 @@
     "color-contrast::.btn-outline-primary",
     "select-name::select"
   ],
+  "admin_reconciliation": [],
   "admin_remediation_timelines": [],
   "admin_roles": [
     "color-contrast::a[href$=\"roles/1\"]",

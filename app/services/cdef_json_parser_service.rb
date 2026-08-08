@@ -195,19 +195,27 @@ class CdefJsonParserService
       nist_tags = Array(ctrl.dig("tags", "nist"))
       cci_refs  = Array(ctrl.dig("tags", "cci"))
       original_id = ctrl["id"]
+      stig_rule   = extract_sv_id(original_id).present?
 
       nist_id = if nist_tags.any?
         normalize_nist_tag(nist_tags.first)
-      else
-        sv_id = extract_sv_id(original_id)
-        sv_id.present? ? resolve_nist_for_stig(sv_id, cci_refs) : nil
+      elsif stig_rule
+        resolve_nist_for_stig(extract_sv_id(original_id), cci_refs)
       end
 
+      # #911 — a STIG rule that does not resolve to NIST has no control to name,
+      # so `control_id` stays NULL and the rule is surfaced as unmapped; the
+      # SV-ID is kept in `stig_id`. A NON-STIG InSpec control keeps its own id,
+      # because that id is the only label the profile gives it and nulling it
+      # would blank every row of a plain InSpec CDEF. Whether such an id belongs
+      # in `control_id` at all is a lineage question, deferred to layer 2.
+      fallback_id = stig_rule ? nil : original_id
+
       attrs = {
-        control_id:     nist_id || original_id,
+        control_id:     nist_id || fallback_id,
         title:          ctrl["title"],
         severity:       impact_to_severity(ctrl["impact"]),
-        control_family: nist_id.present? ? nist_family_from_id(nist_id) : original_id.to_s.split("-").first.upcase.presence,
+        control_family: nist_id.present? ? nist_family_from_id(nist_id) : fallback_id.to_s.split("-").first.upcase.presence,
         row_order:      row_order,
         stig_id:        original_id
       }
@@ -263,8 +271,10 @@ class CdefJsonParserService
       cci_refs = Array(finding["cci_ref"]&.split(",")).map(&:strip).reject(&:blank?)
       nist_id = resolve_nist_for_stig(vuln_num, cci_refs) if vuln_num.present?
 
+      # #911 — as in the XCCDF parser: unresolved means no control to name, and
+      # `group_id` / `stig_id` below keep the V-ID.
       attrs = {
-        control_id:     nist_id || vuln_num,
+        control_id:     nist_id,
         title:          finding["rule_title"],
         severity:       finding["severity"],
         control_family: nist_id.present? ? nist_family_from_id(nist_id) : nil,

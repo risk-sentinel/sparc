@@ -32,7 +32,11 @@ class ProfileControlSelectionService
     to_remove = existing - desired
 
     ActiveRecord::Base.transaction do
-      @profile.profile_controls.where(control_id: to_remove.to_a).delete_all if to_remove.any?
+      if to_remove.any?
+        @profile.profile_controls
+                .where(control_id: to_remove.flat_map { ControlId.forms(_1) })
+                .delete_all
+      end
       add_controls(to_add.to_a) if to_add.any?
     end
 
@@ -44,7 +48,7 @@ class ProfileControlSelectionService
 
   def add_controls(control_ids)
     catalog_controls = @profile.control_catalog.catalog_controls
-                               .where(control_id: control_ids)
+                               .where(control_id: control_ids.flat_map { ControlId.forms(_1) })
                                .includes(:control_family)
     max_order = @profile.profile_controls.maximum(:row_order) || 0
 

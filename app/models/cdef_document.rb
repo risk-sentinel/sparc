@@ -26,6 +26,22 @@ class CdefDocument < ApplicationRecord
   has_many :boundary_cdef_documents, dependent: :destroy
   has_many :boundaries, through: :boundary_cdef_documents
   belongs_to :profile_document, optional: true
+
+  # #911 layer 2 — OSCAL requires `control-implementation/@source` on every
+  # component definition: a component claims to implement controls FROM
+  # something, and that something is a catalog or profile.
+  include CatalogLineage
+  lineage_via :profile_document,
+              key:      :profile,
+              controls: :cdef_controls,
+              message:  { label:   "profile",
+                          remedy:  "PATCH /api/v1/cdef_documents/:id { profile_document_id }",
+                          options: "/api/v1/profile_documents" }
+  include ControlMembership
+  membership_within controls: :cdef_controls, baseline: :profile_document,
+                    baseline_controls: :profile_controls,
+                    label: "@source profile"
+
   belongs_to :organization, optional: true
   # Issue #466 — AWS-sourced CDEFs are read-only; users clone them to edit.
   # cloned_from points back to the original; clones are isolated from refreshes.
@@ -75,6 +91,43 @@ class CdefDocument < ApplicationRecord
   def source_url
     return nil unless aws_labs_source?
     import_metadata["source_url"]
+  end
+
+  # #911 — STIG rules in this CDEF that resolved to no NIST control. These are
+  # not an error: a benchmark legitimately contains rules the CCI mapping does
+  # not cover, and the remedy is a converter refresh rather than an edit. They
+  # are reported so the gap is visible, because the alternative — parking the
+  # rule id in `control_id` — made an unmapped rule indistinguishable from a
+  # mapped control at every consumer, including the OSCAL export.
+  def unmapped_stig_rule_count
+    cdef_controls.unmapped_stig_rules.count
+  end
+
+  def unmapped_stig_rules?
+    unmapped_stig_rule_count.positive?
+  end
+
+  # #911 — reported alongside lineage in the one reconciliation object rather
+  # than as a field of its own, so an integrator handling reconciliation gets
+  # this for free instead of learning a second shape.
+  def additional_reconciliation_issues
+    super + unmapped_stig_rule_issues
+  end
+
+  private def unmapped_stig_rule_issues
+    return [] unless unmapped_stig_rules?
+
+    count = unmapped_stig_rule_count
+    [ {
+      code: "unmapped_stig_rules",
+      count: count,
+      message: "#{count} STIG #{'rule'.pluralize(count)} resolved to no NIST control " \
+               "through their CCI references, so they carry no control identifier.",
+      remedy: "Refresh the stig_to_nist converter, or supply the missing CCI references in the benchmark.",
+      # No Api::V1 converters endpoint exists yet, so this points at the screen
+      # that owns the remedy rather than inventing a path.
+      options: "/converters"
+    } ]
   end
 
   def to_json_data

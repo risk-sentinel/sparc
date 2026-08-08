@@ -144,7 +144,8 @@ class Api::V1::EvidencesController < Api::V1::BaseController
       scope = scope.where(authorization_boundary_id: params[:authorization_boundary_id])
     end
     if params[:control_id].present?
-      linked = EvidenceControlLink.where(control_id: params[:control_id]).select(:evidence_id)
+      linked = EvidenceControlLink.where(control_id: ControlId.forms(params[:control_id]))
+                                  .select(:evidence_id)
       scope = scope.where(id: linked)
     end
     if params[:q].present?
