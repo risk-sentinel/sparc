@@ -74,7 +74,11 @@ class ControlFamiliesController < ApplicationController
 
   def redirect_legacy_family_url
     return if params[:control_catalog_id].present?
-    return unless request.get?
+    # HEAD is GET without a body, but `request.get?` is false for it — so a
+    # HEAD on a legacy URL skipped the 301 and resolved in place, and caches
+    # and crawlers never saw the canonical location. Writes still resolve in
+    # place, which is the behaviour this guard exists for.
+    return unless request.get? || request.head?
 
     catalog = @control_family.control_catalog
     return if catalog.nil?
