@@ -18,6 +18,9 @@ RSpec.describe ControlIdentifiable, type: :model do
     SarControl => :control_id,
     SapControl => :control_id,
     ProfileControl => :control_id,
+    # #912 — canonicalised again now that `control_id` holds ONLY a NIST
+    # reference; the source identifier moved to its own column.
+    CdefControl => :control_id,
     EvidenceControlLink => :control_id,
     # TARGET only — the source side of a mapping is the non-NIST vocabulary.
     ControlMappingEntry => :target_control_id
@@ -29,7 +32,10 @@ RSpec.describe ControlIdentifiable, type: :model do
   # significant (`ksi-auth-01`, not `ksi-auth-1`) and AWS Security Hub ids are
   # case-bearing (`IAM.3`, not `iam.3`).
   MIXED_VOCABULARY_COLUMNS = {
-    CdefControl => :control_id,          # AWS SecHub / STIG / InSpec / NIST
+    # #912 — the source identifier, whatever framework it came from. Preserved
+    # byte-for-byte: an AWS Security Hub id is case-bearing (`IAM.3`) and a
+    # FedRAMP KSI id's zero-padding is significant (`ksi-auth-01`).
+    CdefControl => :source_control_id,
     ControlMappingEntry => :source_control_id  # whatever framework maps INTO NIST
   }.freeze
 
@@ -60,13 +66,22 @@ RSpec.describe ControlIdentifiable, type: :model do
     expect(entry.target_control_id).to eq("ac-2")
   end
 
+  # #912 — the identifier is still never rewritten; it now lives in
+  # `source_control_id`. `control_id` alongside it is canonicalised, because it
+  # holds a NIST reference rather than a Security Hub one.
   it "preserves an AWS Security Hub identifier through a bulk import" do
     document = create(:cdef_document)
-    record   = CdefControl.new(cdef_document_id: document.id, control_id: "IAM.3",
-                               title: "x", uuid: SecureRandom.uuid)
+    record   = CdefControl.new(cdef_document_id: document.id,
+                               source_control_id: "IAM.3", source_vocabulary: "aws_security_hub",
+                               control_id: "AC-02", title: "x", uuid: SecureRandom.uuid)
+    # A direct `.import` runs no callbacks — the bulk path applies the model's
+    # own declaration, so mirror that here rather than expecting magic.
+    CdefControl.canonicalise_control_ids!(record)
     CdefControl.import([ record ], validate: false)
 
-    expect(CdefControl.where(cdef_document_id: document.id).pluck(:control_id)).to eq([ "IAM.3" ])
+    stored = CdefControl.where(cdef_document_id: document.id).first
+    expect(stored.source_control_id).to eq("IAM.3"), "the source identifier must never be rewritten"
+    expect(stored.control_id).to eq("ac-2"), "the NIST reference is canonicalised"
   end
 
   describe "canonicalisation on write" do

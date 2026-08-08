@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_03_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_08_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -342,14 +342,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_140000) do
     t.integer "row_order", default: 0, null: false
     t.string "rule_id"
     t.string "severity"
+    t.string "source_control_id"
+    t.string "source_vocabulary"
     t.string "stig_id"
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["cdef_document_id", "control_family"], name: "idx_cdef_controls_on_doc_family"
     t.index ["cdef_document_id", "row_order"], name: "idx_cdef_controls_on_doc_row"
+    t.index ["cdef_document_id", "source_control_id"], name: "index_cdef_controls_on_document_and_source_control_id"
     t.index ["cdef_document_id", "stig_id"], name: "index_cdef_controls_on_document_and_stig_id"
     t.index ["cdef_document_id"], name: "index_cdef_controls_on_cdef_document_id"
+    t.index ["source_vocabulary"], name: "index_cdef_controls_on_source_vocabulary"
     t.index ["uuid"], name: "index_cdef_controls_on_uuid", unique: true
   end
 

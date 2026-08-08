@@ -226,7 +226,7 @@ RSpec.describe AwsLabsCdefImportService do
       described_class.new(client: client).run
 
       doc = CdefDocument.aws_labs_sourced.last
-      iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
+      iam3 = doc.cdef_controls.find_by(source_control_id: "IAM.3")
       fields = iam3.cdef_control_fields.pluck(:field_name, :field_value).to_h
       expect(fields["aws_security_hub_id"]).to eq("IAM.3")
       expect(fields["nist_oscal_ids"]).to eq("ac-2.1,ac-3.15")
@@ -238,7 +238,7 @@ RSpec.describe AwsLabsCdefImportService do
       described_class.new(client: client).run
 
       doc = CdefDocument.aws_labs_sourced.last
-      iam7 = doc.cdef_controls.find_by(control_id: "IAM.7")
+      iam7 = doc.cdef_controls.find_by(source_control_id: "IAM.7")
       fields = iam7.cdef_control_fields.pluck(:field_name, :field_value).to_h
       expect(fields["nist_oscal_ids"]).to eq("ia-5.1")
       expect(fields["nist_mapping_source"]).to eq("via_config_rule")
@@ -249,21 +249,46 @@ RSpec.describe AwsLabsCdefImportService do
       described_class.new(client: client).run
 
       doc = CdefDocument.aws_labs_sourced.last
-      unmapped = doc.cdef_controls.find_by(control_id: "IAM.99999")
+      unmapped = doc.cdef_controls.find_by(source_control_id: "IAM.99999")
       expect(unmapped.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
     end
 
-    it "preserves the original SecHub control_id (does not mutate it)" do
+    # #912 — the Security Hub identifier is still never rewritten, but it no
+    # longer lives in `control_id`. The property this pins is unchanged (the
+    # upstream id survives import byte-for-byte); only the column moved, because
+    # `control_id` now carries the NIST reference the converter resolved.
+    it "preserves the original SecHub identifier verbatim (does not mutate it)" do
       described_class.new(client: client).run
       doc = CdefDocument.aws_labs_sourced.last
-      expect(doc.cdef_controls.pluck(:control_id)).to include("IAM.3", "IAM.7", "IAM.99999")
+
+      expect(doc.cdef_controls.pluck(:source_control_id)).to include("IAM.3", "IAM.7", "IAM.99999")
+      expect(doc.cdef_controls.pluck(:source_vocabulary).uniq).to eq([ "aws_security_hub" ])
+    end
+
+    # The reason the split exists: a Security Hub id must never be presented as
+    # though it were a NIST control.
+    it "puts the resolved NIST reference in control_id, not the SecHub id" do
+      described_class.new(client: client).run
+      doc = CdefDocument.aws_labs_sourced.last
+
+      expect(doc.cdef_controls.find_by(source_control_id: "IAM.3").control_id).to eq("ac-2.1")
+      expect(doc.cdef_controls.pluck(:control_id).compact).not_to include("IAM.3", "IAM.7", "IAM.99999")
+    end
+
+    # An unresolvable control gets no control identifier at all, rather than
+    # keeping its Security Hub id in the NIST column.
+    it "leaves control_id NULL when neither hop resolves" do
+      described_class.new(client: client).run
+      doc = CdefDocument.aws_labs_sourced.last
+
+      expect(doc.cdef_controls.find_by(source_control_id: "IAM.99999").control_id).to be_nil
     end
 
     it "no-ops gracefully when aws_security_hub_to_nist Converter is missing" do
       sec_hub_converter.destroy!
       expect { described_class.new(client: client).run }.not_to raise_error
       doc = CdefDocument.aws_labs_sourced.last
-      iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
+      iam3 = doc.cdef_controls.find_by(source_control_id: "IAM.3")
       expect(iam3.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
     end
 
@@ -271,17 +296,17 @@ RSpec.describe AwsLabsCdefImportService do
       aws_config_converter.destroy!
       described_class.new(client: client).run
       doc = CdefDocument.aws_labs_sourced.last
-      iam7 = doc.cdef_controls.find_by(control_id: "IAM.7")
+      iam7 = doc.cdef_controls.find_by(source_control_id: "IAM.7")
       # No fallback available, but hop 1 controls (IAM.3) still enriched.
       expect(iam7.cdef_control_fields.where(field_name: "nist_oscal_ids")).to be_empty
-      iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
+      iam3 = doc.cdef_controls.find_by(source_control_id: "IAM.3")
       expect(iam3.cdef_control_fields.where(field_name: "nist_oscal_ids")).not_to be_empty
     end
 
     it "marks enrichment fields as non-editable" do
       described_class.new(client: client).run
       doc = CdefDocument.aws_labs_sourced.last
-      iam3 = doc.cdef_controls.find_by(control_id: "IAM.3")
+      iam3 = doc.cdef_controls.find_by(source_control_id: "IAM.3")
       expect(iam3.cdef_control_fields.pluck(:editable).uniq).to eq([ false ])
     end
   end
