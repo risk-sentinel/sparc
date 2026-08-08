@@ -18,8 +18,6 @@
 #   * Rows are read `unscoped` so soft-deleted documents' controls migrate too;
 #     leaving them behind would strand them in the old shape forever.
 #
-# ── What it does NOT do ─────────────────────────────────────────────────────
-#
 # ── An ordering hazard, deliberately accepted ───────────────────────────────
 #
 # #912 re-enables canonicalisation on `CdefControl#control_id` in the same
@@ -33,6 +31,8 @@
 # only writers in it are an import or a UI edit. An AWS row that does lose its
 # casing is repaired on the next `AwsLabsCdefRefreshJob`, which re-derives
 # `source_control_id` from the upstream fixture via `record_aws_source!`.
+#
+# ── What it does NOT do ─────────────────────────────────────────────────────
 #
 # It does not invent NIST references. Where the existing `control_id` is not
 # already NIST (an AWS Security Hub id, an InSpec control name), `control_id` is
@@ -88,6 +88,11 @@ class BackfillCdefControlSourceIdentifiers < ActiveRecord::Migration[8.1]
 
     say "backfilled source identifiers on #{migrated} CDEF control(s); " \
         "cleared #{cleared} non-NIST control_id value(s) into source_control_id"
+
+    # Returned so the runner records it as `records_processed` — an operator
+    # checking whether the upgrade did its data work needs a number, not just a
+    # status.
+    migrated
   end
 
   private
