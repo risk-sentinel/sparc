@@ -31,7 +31,7 @@ gem "sidekiq"                       # Background jobs
 gem "redis", "~> 6.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
 gem "aws-sdk-secretsmanager", "~> 1.134"  # Secrets Manager (ECS deployments)
-gem "aws-sdk-rds", "~> 1.319"           # IAM DB auth token generation
+gem "aws-sdk-rds", "~> 1.320"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 gem "resolv", ">= 0.7.0"            # CVE-2025-24294 ReDoS fix (overrides Ruby 3.4.4 bundled 0.6.0)
 # #620 — pin patched versions of Ruby default gems so Bundler loads them instead
@@ -77,7 +77,7 @@ gem "tzinfo-data"
 
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
-gem "solid_queue", "~> 1.5.0"   # 1.6.0 is a minor bump on the prod job backend — review separately
+gem "solid_queue", "~> 1.6.0"   # 1.6.0 is a minor bump on the prod job backend — review separately
 gem "solid_cable"
 
 # Reduces boot times through caching; required in config/boot.rb
