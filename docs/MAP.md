@@ -27,6 +27,7 @@ CDEFs, and control catalogs — with a REST API and OSCAL v1.1.2 import/export.
 | Roles & permissions | [RBAC](https://github.com/risk-sentinel/sparc/wiki/RBAC) · [Data Isolation](https://github.com/risk-sentinel/sparc/wiki/Data-Isolation) |
 | Screens / UI | [Screens](https://github.com/risk-sentinel/sparc/wiki/Screens) |
 | Features | [Core Functions](https://github.com/risk-sentinel/sparc/wiki/Core-Functions) · [Framework Mapping](https://github.com/risk-sentinel/sparc/wiki/Framework-Mapping) |
+| OSCAL toolchain (end to end) | [OSCAL End to End](https://github.com/risk-sentinel/sparc/wiki/OSCAL-End-to-End) — SPARC + SAF CLI + InSpec + Heimdall, what binds to what, accelerated ATO vs cATO |
 | Integrations / auth providers | [Integrations](https://github.com/risk-sentinel/sparc/wiki/Integrations) |
 | Release history | [Changelog](https://github.com/risk-sentinel/sparc/wiki/Changelog) · [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) |
 
@@ -76,7 +77,6 @@ CDEFs, and control catalogs — with a REST API and OSCAL v1.1.2 import/export.
 
 | Doc | Purpose |
 |---|---|
-| [oscal-sparc-ecosystem.html](oscal-sparc-ecosystem.html) | **Ecosystem overview** — how SPARC, SAF CLI, InSpec and Heimdall fit together end to end: what binds to what, the three OSCAL layers against one boundary, scanner normalisation, UUID stability, leveraged/federated reuse, and accelerated ATO vs cATO. Open it in a browser (HTML with rendered diagrams, not Markdown) |
 | [compliance/README.md](compliance/README.md) | Compliance process guide & sparc-iac integration model |
 | [compliance/nist-sp800-53-rev5-mapping.md](compliance/nist-sp800-53-rev5-mapping.md) | NIST SP 800-53 Rev 5 HIGH-baseline control mapping |
 | [compliance/oscal/cdefs/](compliance/oscal/cdefs/) | OSCAL v1.1.2 component definitions (5 CDEFs) |
