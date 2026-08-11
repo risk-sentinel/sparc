@@ -15,11 +15,9 @@ RSpec.describe "PoamObservations", type: :request do
   # guard were removed.
 
   before do
-
     grant_document_permission(user, "poam.write", poam)
 
     sign_in_as(user)
-
   end
   describe "POST /poam_documents/:poam_document_id/poam_observations" do
     let(:base_attrs) do

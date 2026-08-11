@@ -14,11 +14,9 @@ RSpec.describe "ProfileDocuments", type: :request do
   # regresses (admin? bypasses has_permission? entirely).
 
   before do
-
     grant_permission(user, "profiles.write")
 
     sign_in_as(user)
-
   end
   describe "GET /profile_documents" do
     it "returns a successful response" do

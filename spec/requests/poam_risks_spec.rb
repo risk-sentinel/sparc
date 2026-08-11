@@ -15,11 +15,9 @@ RSpec.describe "PoamRisks", type: :request do
   # guard were removed.
 
   before do
-
     grant_document_permission(user, "poam.write", poam)
 
     sign_in_as(user)
-
   end
   describe "GET /poam_documents/:poam_document_id/poam_risks/new" do
     it "renders the new-risk form" do

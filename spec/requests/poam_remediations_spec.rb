@@ -17,11 +17,9 @@ RSpec.describe "PoamRemediations + PoamMilestones", type: :request do
   # guard were removed.
 
   before do
-
     grant_document_permission(user, "poam.write", poam)
 
     sign_in_as(user)
-
   end
   describe "Remediations CRUD" do
     let(:base_attrs) do

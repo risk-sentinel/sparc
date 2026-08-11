@@ -15,11 +15,9 @@ RSpec.describe "PoamFindings", type: :request do
   # guard were removed.
 
   before do
-
     grant_document_permission(user, "poam.write", poam)
 
     sign_in_as(user)
-
   end
   describe "POST /poam_documents/:poam_document_id/poam_findings" do
     it "creates a finding with shared OSCAL arrays + audit emission" do
