@@ -661,15 +661,47 @@ drawer, the Terraform→CDEF coverage wizard, and the IdP-as-entitlement-source 
 
 Sequenced in nine PRs; issues are bundled only where they share a hot file or an audit shape.
 
+#### Release status — update this block on every PR
+
+**2 of 13 issues shipped. Bundle B in review. Target tag ~2026-09-21.**
+
+| Bundle | Issues | Branch | State |
+|---|---|---|---|
+| **A** Config | #914, #909 | `feature/914_909_config_single_variable` | ✅ **MERGED** — PR #924 |
+| **B** Content safety | #894, #897 | `feature/894_897_content_safety` | 🔍 **IN REVIEW** — all gates green |
+| **C** Authz sweep | #919 | — | ⬜ next; opens with a triage memo + **owner decision gate** |
+| **D** Index filters | #908 | — | ⬜ blocked on C (`profile_documents_controller`) |
+| **F** CDEF wizard | #904 | — | ⬜ independent; parallelisable |
+| **E** Help & guidance | #880, #879 | — | ⬜ after D and F (global a11y baseline regen) |
+| **G** IdP PIV | #822 | — | ⬜ |
+| **H** Role decision | #707 | — | ⬜ docs-only; closes as **DECIDED**, sequence before I |
+| **I** Auth epic | #860, #842 | — | ⬜ largest; memo commit answering 5 open questions first |
+| **Release** | — | `release/v1.16.0` | ⬜ VERSION → 1.16.0, scanner rescan, guide prose, changelog |
+
+**Owner decisions still owed:**
+
+1. **#919 roster posture** — admin-only vs delegable to ISSM/ISSO/SO, and whether to delete or
+   seed `authorization_boundaries.manage_members` (defined, documented in `wiki/RBAC.md`, granted
+   to 0 of 29 roles, enforced by 0 code). Triage memo lands first; build waits on the ruling.
+2. **#860 × 5 open questions** — claim name, grant string format, slug canonicalization, session-
+   revocation timing, whether `bootstrap` mode earns its keep.
+3. **14-day fallback** — a coherent hardening-only v1.16.0 (A+B+C = 6 issues) was available around
+   2026-08-21. Not taken; recorded because the option recurs if the date starts to bind.
+
+**Release-notes obligations accumulated so far** (the release PR must carry these):
+
+- #914 extend-by-default is a **behaviour change on upgrade** — leads the notes.
+- #909 legacy banner variables **scheduled for removal in v1.18.0**, with the reasoning.
+
 <!-- markdownlint-disable MD013 -->
 
 | Priority | Status | Issue | Description | Notes |
 | -------- | ------ | ----- | ----------- | ----- |
-| **P1** | [ ] | #914 | `SPARC_RESOURCES` replaced the shipped list wholesale | **IN PROGRESS** — bundle A, `feature/914_909_config_single_variable`. Now extends by default; `SPARC_RESOURCES_REPLACE=true` opts back in. De-dupes on `href`, logs malformed JSON instead of swallowing it. Behaviour change on upgrade — release-noted. |
-| **P1** | [ ] | #909 | Single `SPARC_BANNER` accepting inline HTML or a `file:` path | **IN PROGRESS** — bundle A, same branch. `file:` prefix is explicit, never rendered literally, so a typo'd path can't become the AC-8 notice. `SPARC_BANNER_HTML`/`SPARC_BANNER_MESSAGE` deprecated but **honoured** (they carry the notice text). Cleared four surfaces already stale since #867. |
+| **P1** | [x] | #914 | ~~`SPARC_RESOURCES` replaced the shipped list wholesale~~ — **MERGED (PR #924)** | Bundle A. Extends by default; `SPARC_RESOURCES_REPLACE=true` opts back in. De-dupes on `href`, logs malformed JSON instead of swallowing it. **Behaviour change on upgrade — must lead the release notes:** deployments setting `SPARC_RESOURCES` get the 9 shipped links back unless they opt out. |
+| **P1** | [x] | #909 | ~~Single `SPARC_BANNER` accepting inline HTML or a `file:` path~~ — **MERGED (PR #924)** | Bundle A. `file:` prefix is explicit and never rendered literally, so a typo'd path cannot become the AC-8 notice. `SPARC_BANNER_HTML`/`SPARC_BANNER_MESSAGE` deprecated but **honoured** (they carry the notice text). Cleared four doc surfaces stale since #867, incl. AC-8/PL-4/PS-6/PT-4 citing the retired flag. **All three legacy names scheduled for removal in v1.18.0** — release notes must say so and why. |
 | **P0** | [ ] | #919 | Sweep every controller for missing authorization, make the gap fail a test | Bundle C. Triage memo first (16 controllers + all 35 `Role::PERMISSION_KEYS`), then an owner ruling on roster posture and `authorization_boundaries.manage_members`, then fixes + the structural spec. 12 known gaps. |
-| **P1** | [ ] | #894 | Regression test pinning `disposition: "attachment"` | Bundle B. All 48 `send_data` sites are already correct; the fragile seam is the keyword default in `artifact_resolvable.rb`, which no caller passes. |
-| **P1** | [ ] | #897 | Audit stored-value render sites for XSS | Bundle B. Real finding: `BackMatterResource#href` has no scheme allowlist where `FederationPeer` does — a stored `javascript:` href reaches 6 render sites. |
+| **P1** | [ ] | #894 | Regression test pinning `disposition: "attachment"` | **IN REVIEW** — bundle B, `feature/894_897_content_safety`. All 48 `send_data` sites were already correct; the fragile seam was the keyword default in `artifact_resolvable.rb` that no caller passes. Specs assert the **emitted signed URL**, not the default; flipping it turns 5 of 9 red. Adds an inline-disposition source scan (help_controller allowlisted by name) and pins the host-only session cookie (#515). |
+| **P1** | [ ] | #897 | Audit stored-value render sites for XSS | **IN REVIEW** — bundle B, same branch. `BackMatterResource#href` had no scheme validation where `FederationPeer` does; `href: "javascript:alert(1)"` was a **valid record** on both surfaces, reaching **4** anchor render sites (not 6 — two of the originally-surveyed sites are different shapes and still need judging). Validates the **scheme, not the shape**: mirroring `FederationPeer`'s absolute-URL rule would have rejected ~97% of real OSCAL hrefs (25,485 fragment refs + 38 relative paths vs 872 http(s)) and broken catalog import. Adds `safe_external_url` at the render sites and an `html_safe`-on-literals guard. |
 | **P1** | [ ] | #908 | Filter controls on index screens | Bundle D. Facet infrastructure already exists (`CollectionViewable#active_facets`); 3 of 16 screens use it. Framework filter cut — no column exists. |
 | **P2** | [ ] | #880 | In-page help drawer (Bootstrap offcanvas) | Bundle E. First offcanvas in the app; budget a full `a11y_baseline.json` regeneration. |
 | **P2** | [ ] | #879 | Extend `field_help` to remaining edit screens | Bundle E. ~90-100 fields across 14 forms. Copy drafted for owner review, not shipped as filler. |
