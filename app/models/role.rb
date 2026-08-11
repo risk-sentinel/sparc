@@ -30,6 +30,16 @@ class Role < ApplicationRecord
 
   # ── Permissions ──────────────────────────────────────────────────────────
   # Canonical list of all permission keys. Each is "resource.action".
+  #
+  # NOTE: this is a %w[] array — do NOT put comments inside it. Each line becomes
+  # an element, so a comment silently adds junk keys rather than being ignored.
+  #
+  # #919 removed `converters.read`. Any authenticated user may read converters, so
+  # the absence of a check is correct behaviour and the key was redundant: it was
+  # granted to 7 roles and enforced by no code, which advertises an access boundary
+  # that does not exist. A permission that grants nothing is worse than no
+  # permission, because the role catalog implies a restriction a reader will trust.
+  # Entries left in stored `roles.permissions` JSONB become inert.
   PERMISSION_KEYS = %w[
     catalogs.read
     catalogs.write
@@ -55,7 +65,6 @@ class Role < ApplicationRecord
     evidence.write
     mappings.read
     mappings.write
-    converters.read
     converters.write
     back_matter.read
     back_matter.write
