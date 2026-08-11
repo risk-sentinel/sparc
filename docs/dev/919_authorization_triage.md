@@ -117,7 +117,69 @@ problem rather than data exfiltration; document *reads* remain gated by
 
 ---
 
-## Decisions required
+## Decisions — DECIDED 2026-08-11 (owner)
+
+Settled. Recorded here so they are not re-opened; the questions that produced
+them are kept below for the reasoning.
+
+### 1. Roster posture → **delegable**
+
+Seed `authorization_boundaries.manage_members` onto **issm, isso, so_iso** and
+switch both the web and `Api::V1` surfaces to enforce it. `wiki/RBAC.md:75`
+already describes this behaviour, so the documentation becomes true rather than
+being corrected downward. `authorization_boundaries.write` is seeded to the same
+three.
+
+### 2. Back-matter is **not** admin-only
+
+Two tiers, by what the resource pertains to:
+
+- **Instance-level back-matter** (globally available / authoritative) →
+  **policy team + instance-level roles**, plus instance admin.
+- **Boundary-scoped back-matter** → **members of that boundary**, excluding
+  `assessor_3pao` (separation of duties — an assessor must not edit the
+  provenance they are assessing) and `view_only`.
+
+**The boundary set is the 14 roles that already hold some document write**, not
+all 17 non-excluded roles. `ciso`, `information_owner_steward` and
+`solution_evaluator` are excluded as well: they write no document today, and
+granting them back-matter authority would give them more control over compliance
+artifacts than over the documents those artifacts support. This follows the
+governing rule — *the ability to manage documents matches the RBAC already
+decided*.
+
+```
+ao  agency_ao  cloud_service_provider  common_control_provider
+component_supplier  evidence_integration_engineer  issm  isso
+project_member  so_iso  sparc_sme  system_architect_engineer
+system_operator_admin  vendor_dependency_manager
+```
+
+Applies to `back_matter.write`, `.promote`, `.archive`, `.bulk_import`,
+`.federate`, `.approve_promotion` and `converters.write`.
+
+### 3. Approval keys
+
+- `catalogs.approve`, `profiles.approve` → **policy_manager** (it already holds
+  `catalogs.write` / `profiles.write`).
+- `cdef.approve` → **issm, isso, so_iso _and_ the policy team** — CDEF approval is
+  not purely a boundary concern.
+
+### 4. `admin.rotate_credentials` stays instance-admin-only
+
+Correct as-is. Pinned by a spec so it stops reading as an oversight.
+
+### 5. `converters.read` → **removed**
+
+Any authenticated user may read converters, so the current behaviour — no check —
+is right. The key is therefore redundant: it is granted to 7 roles and implies an
+access boundary that does not exist, which is worse than no key at all. Remove it
+from `Role::PERMISSION_KEYS`, from the seeds, and from `wiki/RBAC.md`; existing
+JSONB entries on stored roles become inert and harmless.
+
+---
+
+## Decisions required *(kept for reasoning — settled above)*
 
 ### 1. Boundary-roster posture
 
