@@ -1,5 +1,10 @@
 class BoundariesController < ApplicationController
   before_action :set_authorization_boundary
+  # #919 — editing a boundary's environments is the same shape as the roster bug
+  # fixed in #918: unguarded, with an unscoped parent lookup, so knowing a slug was
+  # enough. Boundary-scoped for the reason given in the roster controller — the
+  # delegated grant is held at boundary scope, so an unscoped check would refuse it.
+  before_action :authorize_boundary_write!
   before_action :set_boundary, only: [ :edit, :update, :destroy ]
 
   def new
@@ -48,6 +53,11 @@ class BoundariesController < ApplicationController
   end
 
   private
+
+  def authorize_boundary_write!
+    authorize_permission!("authorization_boundaries.write",
+                          authorization_boundary_id: @authorization_boundary&.id)
+  end
 
   def set_authorization_boundary
     @authorization_boundary = AuthorizationBoundary.find_by!(slug: params[:authorization_boundary_id])

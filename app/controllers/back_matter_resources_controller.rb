@@ -9,6 +9,14 @@
 # NIST SA-10: Developer Configuration Management
 class BackMatterResourcesController < ApplicationController
   before_action :set_document
+  # #919 — the widest asymmetry found: the Api::V1 sibling enforces SIX distinct
+  # permissions here and the web surface enforced none. `require_draft` below is a
+  # lifecycle-state check, not authorization.
+  #
+  # back_matter.write, scoped to the parent document's boundary. The seeds grant it
+  # to the fourteen boundary roles that already write documents, so a boundary-scoped
+  # check is what makes that delegation effective.
+  before_action :authorize_back_matter_write!
   before_action :set_resource, only: %i[update destroy]
   before_action :require_draft, only: %i[create update destroy]
 
@@ -69,6 +77,11 @@ class BackMatterResourcesController < ApplicationController
     "profile_document_id"  => ProfileDocument,
     "control_catalog_id"   => ControlCatalog
   }.freeze
+
+  def authorize_back_matter_write!
+    authorize_permission!("back_matter.write",
+                          authorization_boundary_id: @document.try(:authorization_boundary_id))
+  end
 
   def set_document
     found = PARENT_PARAMS.find { |param_key, _klass| params[param_key].present? }

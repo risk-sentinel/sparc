@@ -21,7 +21,7 @@ require "rails_helper"
 # Modelled on spec/requests/authorization_boundary_memberships_authz_spec.rb
 # (the #918 fix), including the audit assertion: a denial that is not recorded is
 # not much of a control (AU-2).
-RSpec.describe "POA&M child controllers — authorization (#919)", type: :request do
+RSpec.describe "Controller authorization sweep (#919)", type: :request do
   # The guards no-op unless auth is enabled, so a spec that forgets this stub
   # passes against a completely unguarded app.
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
@@ -112,6 +112,80 @@ RSpec.describe "POA&M child controllers — authorization (#919)", type: :reques
       get "/poam_documents/#{poam.slug}/poam_risks/new"
 
       expect(response).to have_http_status(:ok)
+    end
+  end
+
+  # The other four gaps closed in #919. Grouped here rather than in four new
+  # files because the property under test is identical and the setup is three
+  # lines; a per-controller file would be ceremony without coverage.
+  #
+  # Worth noting WHY these had no denial coverage before: three of them
+  # (boundaries, back_matter_resources, control_back_matter_links) had no request
+  # spec of any kind. Adding the guards broke nothing, which looked like success
+  # and was actually the absence of tests.
+  describe "the remaining unguarded controllers" do
+    before { sign_in_as(outsider) }
+
+    it "refuses editing a boundary's environments" do
+      expect {
+        post "/authorization_boundaries/#{boundary.slug}/boundaries",
+             params: { boundary: { name: "Injected environment" } }
+      }.not_to change(Boundary, :count)
+
+      expect(response).to redirect_to(root_path)
+    end
+
+    it "refuses attesting to evidence" do
+      evidence = create(:evidence, authorization_boundary: boundary)
+
+      expect {
+        post "/evidences/#{evidence.slug}/attestations",
+             params: { attestation: { attestation_type: "self", statement: "Injected" } }
+      }.not_to change(Attestation, :count)
+
+      expect(response).to redirect_to(root_path)
+    end
+
+    it "refuses adding back-matter to a document" do
+      ssp = create(:ssp_document, authorization_boundary: boundary)
+
+      expect {
+        post "/ssp_documents/#{ssp.slug}/back_matter_resources",
+             params: { back_matter_resource: { title: "Injected resource" } }
+      }.not_to change(BackMatterResource, :count)
+
+      expect(response).to redirect_to(root_path)
+    end
+
+    it "records each refusal as an audit event" do
+      expect {
+        post "/authorization_boundaries/#{boundary.slug}/boundaries",
+             params: { boundary: { name: "Injected" } }
+      }.to change { AuditEvent.where(action: "authorization_failure").count }.by_at_least(1)
+    end
+  end
+
+  # Decision 1 (#919): roster management is DELEGABLE. The v1.15.5 fix enforced
+  # `authorization_boundaries.write` UNSCOPED, which matches only instance-level
+  # roles — so the delegated grant, held at boundary scope, would have been
+  # refused and the feature would have stayed admin-only while appearing fixed.
+  describe "roster management is delegable, not admin-only" do
+    it "allows a boundary-scoped manage_members holder" do
+      grant_permission(outsider, "authorization_boundaries.manage_members",
+                       authorization_boundary: boundary)
+      sign_in_as(outsider)
+
+      get "/authorization_boundaries/#{boundary.slug}/memberships/new"
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "still refuses someone without it" do
+      sign_in_as(outsider)
+
+      get "/authorization_boundaries/#{boundary.slug}/memberships/new"
+
+      expect(response).to redirect_to(root_path)
     end
   end
 

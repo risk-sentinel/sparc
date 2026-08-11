@@ -84,7 +84,19 @@ class AuthorizationBoundaryMembershipsController < ApplicationController
   # `has_permission?` returns true for instance admins, so the admin bypass the
   # API spells out explicitly is preserved here without duplicating it.
   def authorize_boundary_write!
-    authorize_permission!("authorization_boundaries.write")
+    # #919 — two corrections to the v1.15.5 fix.
+    #
+    # 1. `manage_members` is the key wiki/RBAC.md has always described for this
+    #    action ("add / remove members and assign roles within a boundary"). It
+    #    was defined, documented, granted to nobody and enforced nowhere; the
+    #    seeds now grant it to issm/isso/so_iso, so enforcing it makes the
+    #    published documentation true.
+    # 2. The check MUST be boundary-scoped. `has_permission?` with no boundary
+    #    matches only roles held at instance scope, and the delegated grant is
+    #    held at BOUNDARY scope — so the unscoped form would reject exactly the
+    #    people the delegation was for, leaving this admin-only in practice.
+    authorize_permission!("authorization_boundaries.manage_members",
+                          authorization_boundary_id: @authorization_boundary&.id)
   end
 
   def set_membership
