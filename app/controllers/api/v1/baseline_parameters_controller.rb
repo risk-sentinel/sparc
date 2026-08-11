@@ -18,6 +18,14 @@
 #
 class Api::V1::BaselineParametersController < Api::V1::BaseController
   before_action :set_profile
+  # #919 — found by spec/security/controller_authorization_coverage_spec.rb, NOT
+  # by the original 16-controller survey, which looked only at the web surface.
+  # `update` and `import_confirm` persist through BaselineParameterService with no
+  # permission check, so any valid API token could rewrite a profile's baseline
+  # parameters — the tailoring an ATO package rests on.
+  #
+  # profiles.write, unscoped, matching both the web and Api::V1 profile guards.
+  before_action :authorize_profiles_write!, only: %i[update import_preview import_confirm]
 
   # GET /api/v1/profile_documents/:profile_document_id/parameters
   def show
@@ -117,6 +125,13 @@ class Api::V1::BaselineParametersController < Api::V1::BaseController
 
   # #574 — accept either numeric id or slug; same rationale as the
   # ksi_validations and #566 fixes.
+  def authorize_profiles_write!
+    return if current_user&.admin?
+    return if current_user&.has_permission?("profiles.write")
+
+    render json: { error: "Forbidden" }, status: :forbidden
+  end
+
   def set_profile
     id_or_slug = params[:profile_document_id].to_s
     @profile = if id_or_slug.match?(/\A\d+\z/)

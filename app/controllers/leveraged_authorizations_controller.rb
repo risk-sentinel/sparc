@@ -7,7 +7,7 @@
 #   3. legacy            — upload a legacy (non-OSCAL) CRM back-matter
 class LeveragedAuthorizationsController < ApplicationController
   before_action :set_leveraging_boundary
-  before_action :authorize_leveraging_boundary
+  before_action :authorize_leveraging_boundary!
   before_action :set_leveraged_authorization, only: [ :show, :destroy, :populate ]
 
   def new
@@ -59,13 +59,27 @@ class LeveragedAuthorizationsController < ApplicationController
     @leveraged_authorization = @leveraging_boundary.leveraging_relationships.find(params[:id])
   end
 
-  def authorize_leveraging_boundary
+  # #919 — this was guarded, but by a bespoke check that silently lost three
+  # properties every other guard has: it ignored SparcConfig.any_auth_enabled?,
+  # emitted no authorization_failure audit event, and bypassed the shared
+  # rescue_from so denials rendered differently from everywhere else.
+  #
+  # The AUTHORITY MODEL is deliberately unchanged — still "assigned to this
+  # boundary" rather than a permission key. Switching to
+  # authorization_boundaries.write would narrow access from any assigned member
+  # to issm/isso/so_iso only, which is a product decision, not a bug fix, and is
+  # not something to change silently inside a security sweep. Recorded in the
+  # #919 memo as the one place membership and permission still disagree.
+  #
+  # Raising NotAuthorizedError routes through Authorization#handle_not_authorized,
+  # which audits the denial and redirects consistently (AU-2, AC-3).
+  def authorize_leveraging_boundary!
+    return unless SparcConfig.any_auth_enabled?
     return if current_user&.admin?
+    return if @leveraging_boundary.assigned_users.exists?(id: current_user&.id)
 
-    unless @leveraging_boundary.assigned_users.exists?(id: current_user&.id)
-      redirect_to authorization_boundaries_path,
-                  alert: "You don't have permission to modify this boundary."
-    end
+    raise Authorization::NotAuthorizedError,
+          "Membership of boundary '#{@leveraging_boundary.slug}' required"
   end
 
   def la_params
