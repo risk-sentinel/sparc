@@ -1,5 +1,10 @@
 class ProfileControlsController < ApplicationController
   before_action :set_profile_document
+  # #919 — a profile's controls ARE the profile, so editing them is a
+  # `profiles.write` act. Mirrors Api::V1::ProfileDocumentsController; unscoped
+  # because profiles are instance-level, not boundary-scoped. Every action here
+  # (new/create/edit/update/destroy) is authoring.
+  before_action :authorize_profiles_write!
   before_action :set_profile_control, only: %i[edit update destroy]
 
   def new
@@ -46,6 +51,10 @@ class ProfileControlsController < ApplicationController
   end
 
   private
+
+  def authorize_profiles_write!
+    authorize_permission!("profiles.write")
+  end
 
   def set_profile_document
     @profile_document = ProfileDocument.find_by!(slug: params[:profile_document_id])

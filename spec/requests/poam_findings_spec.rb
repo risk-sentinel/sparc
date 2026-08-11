@@ -6,8 +6,21 @@ RSpec.describe "PoamFindings", type: :request do
   let(:user) { create(:user) }
   let(:poam) { create(:poam_document, name: "Findings Test POAM") }
 
-  before { sign_in_as(user) }
+  # #919 — these actions now require poam.write on the parent document's
 
+  # boundary. Granting the specific key rather than signing in as an admin:
+
+  # admin? short-circuits has_permission?, so an admin would pass even if the
+
+  # guard were removed.
+
+  before do
+
+    grant_document_permission(user, "poam.write", poam)
+
+    sign_in_as(user)
+
+  end
   describe "POST /poam_documents/:poam_document_id/poam_findings" do
     it "creates a finding with shared OSCAL arrays + audit emission" do
       expect {
