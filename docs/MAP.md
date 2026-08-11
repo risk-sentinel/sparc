@@ -76,6 +76,7 @@ CDEFs, and control catalogs — with a REST API and OSCAL v1.1.2 import/export.
 
 | Doc | Purpose |
 |---|---|
+| [oscal-sparc-ecosystem.html](oscal-sparc-ecosystem.html) | **Ecosystem overview** — how SPARC, SAF CLI, InSpec and Heimdall fit together end to end: what binds to what, the three OSCAL layers against one boundary, scanner normalisation, UUID stability, leveraged/federated reuse, and accelerated ATO vs cATO. Open it in a browser (HTML with rendered diagrams, not Markdown) |
 | [compliance/README.md](compliance/README.md) | Compliance process guide & sparc-iac integration model |
 | [compliance/nist-sp800-53-rev5-mapping.md](compliance/nist-sp800-53-rev5-mapping.md) | NIST SP 800-53 Rev 5 HIGH-baseline control mapping |
 | [compliance/oscal/cdefs/](compliance/oscal/cdefs/) | OSCAL v1.1.2 component definitions (5 CDEFs) |
