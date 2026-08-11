@@ -76,37 +76,32 @@ class SessionsController < ApplicationController
   BANNER_ALLOWED_ATTRS = %w[href class style].freeze
 
   def load_consent_banner
+    # Also the call site that surfaces the retired SPARC_BANNER_ENABLED (#867)
+    # and the deprecated SPARC_BANNER_HTML / SPARC_BANNER_MESSAGE (#909) — the
+    # warnings live in SparcConfig, but nothing logs them unless something asks.
     return unless SparcConfig.banner_enabled?
 
-    # #867 — inline content wins over the file path. Both run through the SAME
-    # sanitize call below, so this adds a source, not a trust path.
+    # #909 — SparcConfig resolves WHICH source is in play; this decides what to
+    # do with it. Both branches run through the SAME sanitize call below, so a
+    # source is added, never a trust path.
     inline = SparcConfig.banner_html
     raw_path = SparcConfig.banner_message_path
-
-    if inline.present? && raw_path.present?
-      Rails.logger.warn(
-        "[ConsentBanner] Both SPARC_BANNER_HTML and SPARC_BANNER_MESSAGE are set; " \
-        "using SPARC_BANNER_HTML and ignoring #{raw_path}"
-      )
-    end
 
     if inline.present?
       @consent_banner_content = sanitize_banner(inline)
       return
     end
 
-    if raw_path.blank?
-      Rails.logger.warn(
-        "[ConsentBanner] SPARC_BANNER_ENABLED=true but neither SPARC_BANNER_HTML nor SPARC_BANNER_MESSAGE is set"
-      )
-      return
-    end
+    return if raw_path.blank?
 
     # Resolve relative paths against Rails.root
     path = Pathname.new(raw_path).absolute? ? raw_path : Rails.root.join(raw_path).to_s
 
+    # #909 — a `file:` value is NEVER rendered literally. A typo'd path logs and
+    # leaves the banner empty rather than displaying the path where the rules of
+    # behavior belong, which would look like AC-8 was satisfied when it was not.
     unless File.exist?(path)
-      Rails.logger.warn("[ConsentBanner] Banner file not found: #{path}")
+      Rails.logger.error("[ConsentBanner] Banner file not found: #{path}")
       return
     end
 

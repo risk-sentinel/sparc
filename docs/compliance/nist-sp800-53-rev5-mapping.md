@@ -142,7 +142,7 @@ injection for direct import into compliance dashboards.
 | AC-6(9) | Log Use of Privileged Functions | H | Application (SPARC) | Authorization failures logged with user, path, method; admin actions audited across all 16 categories | `app/controllers/concerns/authorization.rb`, `app/models/audit_event.rb` | Implemented |
 | AC-6(10) | Prohibit Non-Privileged Users from Executing Privileged Functions | H | Application (SPARC) | `authorize_admin!`, `authorize_role!`, `authorize_permission!` gates enforce separation | `app/controllers/concerns/authorization.rb` | Implemented |
 | AC-7 | Unsuccessful Logon Attempts | H | Hybrid | `login_failure` audit events tracked with IP and user agent; lockout policy at infrastructure/WAF level | `app/models/audit_event.rb`, sparc-iac WAF | Partial |
-| AC-8 | System Use Notification | H | Application (SPARC) | Two layers: (1) configurable consent/warning banner modal before login (HTML loaded from file, sanitized for XSS); (2) **configurable environment/rules header bar shown on every screen** (#682) — escaped plain-text notice of the deployment environment and rules of behavior, persistent post-login | `SPARC_BANNER_ENABLED`, `SPARC_BANNER_MESSAGE`, `SPARC_HEADER_TEXT`, `SPARC_HEADER_TEXT_COLOR`, `SPARC_HEADER_HIGHLIGHT_COLOR` | Implemented |
+| AC-8 | System Use Notification | H | Application (SPARC) | Two layers: (1) configurable consent/warning banner modal before login (content supplied inline or from a file, sanitized for XSS); (2) **configurable environment/rules header bar shown on every screen** (#682) — escaped plain-text notice of the deployment environment and rules of behavior, persistent post-login | `SPARC_BANNER` (#909), `SPARC_HEADER_TEXT`, `SPARC_HEADER_TEXT_COLOR`, `SPARC_HEADER_HIGHLIGHT_COLOR` | Implemented |
 | AC-10 | Concurrent Session Control | H | Infrastructure (sparc-iac) | Session management at load balancer / infrastructure layer | sparc-iac | Planned |
 | AC-11 | Device Lock | H | Hybrid | Session timeout after configurable inactivity period; client-side lock deferred to endpoint management | `app/controllers/concerns/authentication.rb`, `SPARC_SESSION_TIMEOUT_MINUTES` | Partial |
 | AC-11(1) | Pattern-Hiding Displays | H | Application (SPARC) | Session expiry redirects to login page, clearing all session data | `app/controllers/concerns/authentication.rb` | Implemented |
@@ -392,7 +392,7 @@ injection for direct import into compliance dashboards.
 | PL-1 | Policy and Procedures | H | Organizational Policy | Organization defines planning policy | Org policy docs | Planned |
 | PL-2 | System Security and Privacy Plans | H | Application (SPARC) | SPARC manages SSP documents with full control-level detail; OSCAL SSP export for machine-readable plans | `app/models/ssp_document.rb`, `app/services/oscal_ssp_export_service.rb` | Implemented |
 | PL-2(3) | Plan and Coordinate with Other Organizational Entities | H | Organizational Policy | Cross-organizational SSP coordination | Org policy docs | Planned |
-| PL-4 | Rules of Behavior | H | Application (SPARC) | Configurable consent/warning banner displayed before login; customizable HTML message | `SPARC_BANNER_ENABLED`, `SPARC_BANNER_MESSAGE` | Implemented |
+| PL-4 | Rules of Behavior | H | Application (SPARC) | Configurable consent/warning banner displayed before login; customizable HTML supplied inline or by `file:` path | `SPARC_BANNER` (#909) | Implemented |
 | PL-4(1) | Social Media and External Site/Application Usage Restrictions | H | Organizational Policy | Organization defines social media usage policy | Org policy docs | Planned |
 | PL-8 | Security and Privacy Architectures | H | Hybrid | SPARC architecture documented; authorization boundary model; sparc-iac infrastructure architecture | Architecture docs, sparc-iac | Partial |
 | PL-10 | Baseline Selection | H | Application (SPARC) | SPARC imports and manages NIST SP 800-53 Rev 4 and Rev 5 control catalogs with baseline tagging (LOW/MODERATE/HIGH) | `app/models/control_catalog.rb`, `app/services/catalog_import_service.rb` | Implemented |
@@ -429,7 +429,7 @@ injection for direct import into compliance dashboards.
 | PS-4 | Personnel Termination | H | Hybrid | SPARC supports account deactivation with reason tracking; `deactivate!` with timestamp; organization removes access | `app/models/user.rb` | Implemented |
 | PS-4(2) | Automated Actions | H | Application (SPARC) | Automated inactivity-based deactivation via `inactive_past_threshold` scope; `user_auto_deactivated` audit event | `app/models/user.rb`, `SPARC_INACTIVITY_DAYS` | Implemented |
 | PS-5 | Personnel Transfer | H | Hybrid | Role reassignment via admin UI; boundary membership changes audited; organization manages transfer procedures | `app/models/user_role.rb`, `app/models/audit_event.rb` | Implemented |
-| PS-6 | Access Agreements | H | Application (SPARC) | Consent banner presents rules of behavior/access agreement before login | `SPARC_BANNER_ENABLED`, `SPARC_BANNER_MESSAGE` | Implemented |
+| PS-6 | Access Agreements | H | Application (SPARC) | Consent banner presents rules of behavior/access agreement before login | `SPARC_BANNER` (#909) | Implemented |
 | PS-7 | External Personnel Security | H | Organizational Policy | Organization manages external personnel security | Org policy docs | Planned |
 | PS-8 | Personnel Sanctions | H | Hybrid | Account suspension capability; `user_suspended` audit event; organizational sanctions policy | `app/models/user.rb`, `app/models/audit_event.rb` | Partial |
 
@@ -442,7 +442,7 @@ injection for direct import into compliance dashboards.
 | PT-1 | Policy and Procedures | H | Organizational Policy | Organization defines PII processing and transparency policy | Org policy docs | Planned |
 | PT-2 | Authority to Process Personally Identifiable Information | H | Organizational Policy | Organization establishes authority for PII processing | Org policy docs | Planned |
 | PT-3 | Personally Identifiable Information Processing Purposes | H | Organizational Policy | Organization defines PII processing purposes | Org policy docs | Planned |
-| PT-4 | Consent | H | Hybrid | Consent banner supports use notification; organizational consent policies | `SPARC_BANNER_ENABLED`, Org policy docs | Partial |
+| PT-4 | Consent | H | Hybrid | Consent banner supports use notification; organizational consent policies | `SPARC_BANNER` (#909), Org policy docs | Partial |
 | PT-5 | Privacy Notice | H | Organizational Policy | Organization provides privacy notices | Org policy docs | Planned |
 | PT-6 | System of Records Notice | H | Organizational Policy | Organization publishes SORN as required | Org policy docs | Planned |
 | PT-7 | Specific Categories of Personally Identifiable Information | H | Hybrid | SPARC stores minimal PII (email, name, IP); access controlled by RBAC | `app/models/user.rb` | Partial |

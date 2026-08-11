@@ -99,7 +99,8 @@ RSpec.configure do |config|
   AUTH_ENV_KEYS = %w[SPARC_ENABLE_LOCAL_LOGIN SPARC_ENABLE_OIDC
                      SPARC_ENABLE_LDAP SPARC_OIDC_PROVIDER_TITLE
                      SPARC_OIDC_ISSUER_URL SPARC_OIDC_CLIENT_ID
-                     SPARC_BANNER_ENABLED SPARC_BANNER_MESSAGE].freeze
+                     SPARC_BANNER SPARC_BANNER_ENABLED
+                     SPARC_BANNER_HTML SPARC_BANNER_MESSAGE].freeze
 
   config.include SystemConsentBanner, type: :system
 
@@ -121,9 +122,16 @@ RSpec.configure do |config|
     # on for all system specs so the real banner→Proceed→login flow is always
     # covered, regardless of whether the developer's local .env enables it.
     # Specs dismiss it via `accept_consent_banner`. Points at the in-repo DoD
-    # banner file (resolved against Rails.root by SessionsController).
-    ENV["SPARC_BANNER_ENABLED"] = "true"
-    ENV["SPARC_BANNER_MESSAGE"] = "public/banners/dod-banner.html"
+    # banner file (relative paths resolve against Rails.root).
+    #
+    # #909 — one variable, `file:` prefixed. The deprecated pair is cleared
+    # rather than left alone so these specs exercise the CURRENT path: if
+    # SPARC_BANNER ever stopped resolving, a developer's .env SPARC_BANNER_MESSAGE
+    # would otherwise quietly keep the banner on screen and the suite green.
+    ENV["SPARC_BANNER"] = "file:public/banners/dod-banner.html"
+    ENV.delete("SPARC_BANNER_ENABLED")
+    ENV.delete("SPARC_BANNER_HTML")
+    ENV.delete("SPARC_BANNER_MESSAGE")
   end
 
   config.after(:each, type: :system) do |example|

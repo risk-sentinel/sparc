@@ -145,18 +145,105 @@ RSpec.describe "Inline consent banner (#867)", type: :request do
   end
 
   describe "when the banner is on but nothing supplies content" do
-    it "warns naming both variables and renders no banner" do
-      allow(Rails.logger).to receive(:warn)
+    # The log assertion this example used to carry named a branch that was
+    # already unreachable in production: banner_enabled? requires content, so
+    # "enabled with no content" only ever occurred here, via the stub. #909
+    # deleted the branch. The behaviour worth pinning is what remains — the page
+    # still renders, and renders no banner.
+    it "renders the page and no banner" do
       allow(SparcConfig).to receive(:banner_enabled?).and_return(true)
 
-      with_env(SPARC_BANNER_HTML: nil, SPARC_BANNER_MESSAGE: nil) do
+      with_env(SPARC_BANNER: nil, SPARC_BANNER_HTML: nil, SPARC_BANNER_MESSAGE: nil) do
         get login_path
       end
 
       expect(response).to have_http_status(:ok)
       expect(response.body).not_to include("consentBannerLabel")
+    end
+  end
+
+  # #909 — one variable, carrying the notice or a file: path to it.
+  describe "SPARC_BANNER" do
+    it "renders an unprefixed value as inline markup" do
+      with_env(SPARC_BANNER: "<p>Authorized use only.</p>") do
+        get login_path
+
+        expect(response.body).to include("Authorized use only.")
+      end
+    end
+
+    it "reads a file: prefixed value from disk" do
+      file = Tempfile.new([ "banner", ".html" ])
+      file.write("<p>From the file.</p>")
+      file.rewind
+
+      with_env(SPARC_BANNER: "file:#{file.path}") do
+        get login_path
+
+        expect(response.body).to include("From the file.")
+      end
+    ensure
+      file.unlink
+    end
+
+    it "resolves a relative file: path against Rails.root" do
+      with_env(SPARC_BANNER: "file:public/banners/dod-banner.html") do
+        get login_path
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("consentBannerLabel")
+      end
+    end
+
+    # The failure #867 designed against, and the reason the prefix is explicit
+    # rather than inferred: a typo'd path must never become the notice.
+    it "renders NOTHING — never the raw string — when the file: target is missing" do
+      with_env(SPARC_BANNER: "file:public/banners/typo.html") do
+        get login_path
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("public/banners/typo.html")
+        expect(response.body).not_to include("consentBannerLabel")
+      end
+    end
+
+    it "sanitizes inline markup through the same path as the file source" do
+      with_env(SPARC_BANNER: '<p>Safe</p><script>alert("xss")</script>') do
+        get login_path
+
+        expect(response.body).to include("Safe")
+        expect(response.body).not_to include("<script>alert")
+      end
+    end
+
+    it "wins over the deprecated variables, and says so" do
+      allow(Rails.logger).to receive(:warn)
+
+      with_env(SPARC_BANNER: "<p>The new one.</p>",
+               SPARC_BANNER_HTML: "<p>The old one.</p>",
+               SPARC_BANNER_MESSAGE: nil) do
+        get login_path
+
+        expect(response.body).to include("The new one.")
+        expect(response.body).not_to include("The old one.")
+      end
+
       expect(Rails.logger).to have_received(:warn)
-        .with(/neither SPARC_BANNER_HTML nor SPARC_BANNER_MESSAGE is set/)
+        .with(/SPARC_BANNER is set, so SPARC_BANNER_HTML is ignored/)
+    end
+
+    # Deprecated, but HONOURED — ignoring them would blank a legal notice on
+    # upgrade for every deployment still setting them.
+    it "still renders the notice when only the deprecated variables are set" do
+      allow(Rails.logger).to receive(:warn)
+
+      with_env(SPARC_BANNER: nil, SPARC_BANNER_HTML: "<p>Still here.</p>", SPARC_BANNER_MESSAGE: nil) do
+        get login_path
+
+        expect(response.body).to include("Still here.")
+      end
+
+      expect(Rails.logger).to have_received(:warn).with(/SPARC_BANNER_HTML is deprecated/)
     end
   end
 end
