@@ -48,6 +48,19 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
   suppression's review date is within 90 days (bump or clear stale ones). This
   keeps the audit in cadence with the shipped image instead of drifting.
 
+- **No AI-assistant attribution anywhere in the repository or its artifacts.**
+  PR titles and bodies, commit messages, issue and PR comments, code comments and
+  documentation are written in the project's own voice. Do not name Claude,
+  Claude Code, Anthropic or any assistant, and do not emit `Generated with …` or
+  `Co-Authored-By: <assistant>` trailers. **Tooling that appends these by default
+  must be overridden — a tool default is not an exception to this rule.** The
+  repository is public and its history is read as the change-control record, so a
+  commit or PR should describe *what changed and why*, not what produced it. If
+  an assistant trailer reaches a PR body, edit it out; GitHub allows editing the
+  body of a merged PR. (Removing the references that already exist in tracked
+  files and history is a separate, larger piece of work — do not attempt it
+  inside an unrelated PR.)
+
 - **Never commit real secrets; keep test credentials scanner-clean.** Real
   secrets live only in gitignored `.env` files or the CI/deploy secret store —
   never in tracked code, compose files, or workflows. Test/local/CI credentials
@@ -147,11 +160,15 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
     Trivy/Grype scans must likewise target the UBI9 image.
 12. **Commit / push changes**
     - Reference the issue in all commit messages
+    - No assistant attribution in the message — see the guardrail above
 13. **Wait for user testing**
     - Functional testing
     - Review regression report(s)
 14. **Create a PR**
     - Reference the issue so it will auto-close on merge
+    - **Check the body for assistant attribution before opening it** — see the
+      guardrail above. This is the surface it slips through on, because the
+      trailer is appended after the body is written
     - Wait for the PR to be merged by the owner before moving forward
 
 ---
