@@ -654,35 +654,128 @@ module SparcConfig
   #
   # Failure direction is now safe: a stale flag can only leave the notice
   # showing, never hide it.
+  #
+  # This is also where every banner-configuration warning is emitted, because it
+  # is called exactly ONCE per login render while the readers below are called
+  # twice more. Warning from the readers instead logged each deprecation notice
+  # three times per request.
   def banner_enabled?
+    warn_banner_configuration
+    banner_source.present?
+  end
+
+  def warn_banner_configuration
     if ENV.fetch("SPARC_BANNER_ENABLED", nil).present?
       Rails.logger.warn(
         "[ConsentBanner] SPARC_BANNER_ENABLED is ignored (#867). The banner is shown " \
-        "whenever SPARC_BANNER_HTML or SPARC_BANNER_MESSAGE has content; unset the " \
-        "content to hide it."
+        "whenever SPARC_BANNER has content; unset the content to hide it."
       )
     end
 
-    banner_html.present? || banner_message_path.present?
+    deprecated = deprecated_banner_variables_in_use
+    return if deprecated.empty?
+
+    if ENV.fetch("SPARC_BANNER", nil).present?
+      Rails.logger.warn(
+        "[ConsentBanner] SPARC_BANNER is set, so #{deprecated.to_sentence} " \
+        "#{deprecated.one? ? 'is' : 'are'} ignored (#909)."
+      )
+      return
+    end
+
+    Rails.logger.warn(
+      "[ConsentBanner] #{deprecated.to_sentence} #{deprecated.one? ? 'is' : 'are'} " \
+      "deprecated (#909); use a single SPARC_BANNER, set either to the notice HTML or to " \
+      "\"#{BANNER_FILE_SCHEME}path/to/banner.html\"."
+    )
+
+    return unless deprecated.size > 1
+
+    # Preserved from #867 — precedence is stated rather than silently applied.
+    Rails.logger.warn(
+      "[ConsentBanner] Both SPARC_BANNER_HTML and SPARC_BANNER_MESSAGE are set; " \
+      "using SPARC_BANNER_HTML and ignoring #{ENV.fetch('SPARC_BANNER_MESSAGE', nil)}"
+    )
   end
 
-  # #867 — inline banner body, so rules-of-behavior wording is owned by the
-  # deployment rather than baked into the image.
-  #
-  # SPARC_BANNER_MESSAGE is a PATH ONLY, and the only filesystem Rails can read
-  # in the shipped task definition is the image layer — so changing banner text
-  # meant a rebuild, a re-sign, a release and an image-tag bump. For an AC-8
-  # artifact whose whole purpose is stating THIS deployment's rules, that is the
-  # wrong owner.
-  #
-  # A separate variable rather than a heuristic on SPARC_BANNER_MESSAGE
-  # ("doesn't look like a file → treat as literal"): under a heuristic a typo'd
-  # path silently renders as banner text instead of logging "Banner file not
-  # found", and silently displaying a path where a legal notice should be is a
-  # worse failure than displaying nothing.
-  def banner_html = ENV.fetch("SPARC_BANNER_HTML", nil).presence
+  # #909 — a `file:`-prefixed SPARC_BANNER is a path; anything else is markup.
+  BANNER_FILE_SCHEME = "file:"
 
-  def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil).presence
+  # #909 — ONE variable, carrying either the notice itself or a path to it.
+  #
+  # Returns [:inline, html] | [:file, path] | nil.
+  #
+  # #867 chose two variables over a heuristic on SPARC_BANNER_MESSAGE ("doesn't
+  # look like a file → treat as literal"), and that reasoning was right: under a
+  # heuristic a typo'd path renders AS the banner text, and silently displaying
+  # `public/banners/typo.html` where a legal notice belongs is worse than
+  # displaying nothing, because it looks like AC-8 is satisfied when it is not.
+  #
+  # The objection was to GUESSING, though, not to having one variable. An
+  # explicit `file:` prefix removes the guess entirely: a prefixed value is
+  # always a path and is never rendered literally, so the failure #867 guarded
+  # against cannot occur. An unprefixed value is always markup. Nothing is
+  # inferred from the shape of the string.
+  #
+  # Why one variable matters operationally: sparc-iac ships
+  # SPARC_BANNER_MESSAGE pointing into the image layer, so changing the wording
+  # needs a rebuild, re-sign, release and image-tag bump. Moving that content
+  # inline is the intended direction, and under two variables it is a
+  # task-definition change rather than a config edit. Under one, it is an edit.
+  def banner_source
+    raw = ENV.fetch("SPARC_BANNER", nil).presence
+
+    if raw
+      return file_banner_source(raw) if raw.start_with?(BANNER_FILE_SCHEME)
+
+      return [ :inline, raw ]
+    end
+
+    deprecated_banner_source
+  end
+
+  def file_banner_source(raw)
+    path = raw.delete_prefix(BANNER_FILE_SCHEME).strip
+    return nil if path.blank?
+
+    [ :file, path ]
+  end
+
+  # #909 — SPARC_BANNER_HTML / SPARC_BANNER_MESSAGE are deprecated but still
+  # HONOURED, not ignored.
+  #
+  # This deliberately differs from the read-warn-IGNORE treatment
+  # SPARC_BANNER_ENABLED got in #867. That variable was a boolean flag; these two
+  # carry the notice text itself. Ignoring them on upgrade would blank a legal
+  # banner on every deployment still setting them — the exact silent-compliance-
+  # loss failure this subsystem keeps being hardened against.
+  #
+  # Existing inline-wins precedence is preserved, so no deployment changes
+  # behaviour until it opts into SPARC_BANNER.
+  def deprecated_banner_source
+    inline = ENV.fetch("SPARC_BANNER_HTML", nil).presence
+    path   = ENV.fetch("SPARC_BANNER_MESSAGE", nil).presence
+    return nil if inline.blank? && path.blank?
+
+    inline.present? ? [ :inline, inline ] : [ :file, path ]
+  end
+
+  def deprecated_banner_variables_in_use
+    %w[SPARC_BANNER_HTML SPARC_BANNER_MESSAGE].select { |name| ENV.fetch(name, nil).presence }
+  end
+
+  # Kept as derived readers so callers and specs keep one question each: "is
+  # there inline markup?" and "is there a file to read?". Exactly one is
+  # non-nil at a time.
+  def banner_html
+    kind, value = banner_source
+    kind == :inline ? value : nil
+  end
+
+  def banner_message_path
+    kind, value = banner_source
+    kind == :file ? value : nil
+  end
 
   # ── Environment / Rules Header (#682) ─────────────────────────────────────
   # Operator-configurable header bar shown on EVERY screen describing the

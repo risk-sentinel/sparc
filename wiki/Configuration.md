@@ -184,12 +184,29 @@ Auto-enabled when the client ID is present (no separate enable flag needed).
 
 ### Login Consent Banner
 
-Shows a mandatory consent/warning modal before login options appear. The banner HTML is loaded from the file at `SPARC_BANNER_MESSAGE` (resolved against `Rails.root`) and sanitized for XSS. Sample files live in `docs/banners/`.
+Shows a mandatory consent/warning modal before login options appear. The content is sanitized for XSS before rendering. Sample files live in `docs/banners/`; the DoD and demo banners ship at `public/banners/`.
+
+**One variable, `SPARC_BANNER`.** It takes either the notice itself or a path to it:
+
+```bash
+SPARC_BANNER='<p><strong>WARNING</strong> Authorized use only.</p>'   # inline markup
+SPARC_BANNER='file:public/banners/dod-banner.html'                    # a path
+```
+
+A value beginning `file:` is always a path (resolved against `Rails.root` when relative); anything else is always markup. Nothing is inferred from the shape of the value, so a typo'd path can never be rendered *as* the banner — it logs an error and shows nothing. Displaying a file path where the rules of behavior belong would look like the control was satisfied when it was not.
+
+**The banner is shown whenever `SPARC_BANNER` has content.** To hide it, unset the content.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_BANNER_ENABLED` | `false` | Show the mandatory consent banner on the login page |
-| `SPARC_BANNER_MESSAGE` | (none) | File path to the banner HTML body (required if enabled) |
+| `SPARC_BANNER` | (none) | Banner HTML inline, or `file:<path>`. Shows the banner when set |
+| `SPARC_BANNER_ENABLED` | (ignored) | **Retired (#867).** Read only to log that it is ignored |
+| `SPARC_BANNER_HTML` | (none) | **Deprecated (#909)** — use `SPARC_BANNER`. Still honoured |
+| `SPARC_BANNER_MESSAGE` | (none) | **Deprecated (#909)** — use `SPARC_BANNER=file:<path>`. Still honoured |
+
+The deprecated pair is honoured rather than ignored because it carries the notice text — ignoring it on upgrade would blank a legal banner. `SPARC_BANNER` wins when set.
+
+Only these tags survive sanitization: `p br strong em ul ol li h1`–`h6 a span div`, with `href class style` attributes. Everything else — `<script>`, event handlers — is stripped.
 
 ### Environment / Rules-of-Behavior Header (NIST AC-8)
 

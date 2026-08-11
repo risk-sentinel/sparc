@@ -316,22 +316,41 @@ Controls which auth method the REST API accepts. Modes are mutually exclusive.
 Show a mandatory consent/warning banner modal before login options
 appear. The body is sanitized for XSS before rendering in a Bootstrap 5 modal.
 
-**Two ways to supply the content, and one of them is almost certainly what you want.**
+**One variable: `SPARC_BANNER` (#909).** It carries either the notice itself or a
+path to it, and which one you mean is explicit rather than inferred:
 
-`SPARC_BANNER_HTML` (#867) takes the markup **inline**, so the rules-of-behavior
-wording belongs to your deployment config. `SPARC_BANNER_MESSAGE` takes a **file
-path only**, and in a container deployment the only filesystem SPARC can read is
-the image itself — so using it means a rebuild, re-sign and release to change a
-sentence. For an AC-8 artifact stating *this* deployment's rules, that is the
-wrong owner. Prefer `SPARC_BANNER_HTML` unless you are deliberately shipping the
-notice inside the image.
+```bash
+SPARC_BANNER='<p><strong>WARNING</strong> Authorized use only.</p>'  # inline markup
+SPARC_BANNER='file:public/banners/dod-banner.html'                   # a path
+```
 
-Keep the content in version control and render it into the variable — a
-Terraform `file()` into `templatefile()`, a Kubernetes ConfigMap, or equivalent —
+A value beginning `file:` is **always** a path (resolved against `Rails.root`
+when relative). Anything else is **always** markup. Nothing is guessed from the
+shape of the string.
+
+That matters for a reason worth stating: if a missing file could fall back to
+rendering the raw value, a typo'd path would appear on the login page *as* the
+rules of behavior. That looks like AC-8 is satisfied when it is not, which is
+worse than an empty banner. Because a `file:` value is never rendered literally,
+a bad path logs an error and shows nothing.
+
+Prefer inline content. In a container deployment the only filesystem SPARC can
+read is the image itself, so a path means a rebuild, re-sign and release to
+change a sentence — the wrong owner for an artifact stating *this* deployment's
+rules. Keep the text in version control and render it into the variable (a
+Terraform `file()` into `templatefile()`, a Kubernetes ConfigMap, or equivalent)
 so the notice stays reviewable.
 
-**Precedence:** if both are set, `SPARC_BANNER_HTML` wins and a warning naming
-the ignored path is logged.
+**Deprecated, still honoured.** `SPARC_BANNER_HTML` and `SPARC_BANNER_MESSAGE`
+continue to work and log a deprecation warning. They are *honoured* rather than
+ignored deliberately: they carry the notice text, so ignoring them on upgrade
+would blank a legal banner. Migrating is an edit, not a variable swap —
+`SPARC_BANNER_MESSAGE=path` becomes `SPARC_BANNER=file:path`, and
+`SPARC_BANNER_HTML=markup` becomes `SPARC_BANNER=markup`.
+
+**Precedence:** `SPARC_BANNER` wins over both, and logs that it is doing so. If
+only the deprecated pair is set, `SPARC_BANNER_HTML` still wins over
+`SPARC_BANNER_MESSAGE`, exactly as before.
 
 **`SPARC_BANNER_ENABLED` is retired (#867) and ignored.** The banner is shown
 whenever either content variable has a value; to hide it, unset the content.
@@ -343,13 +362,14 @@ as ignored; a stale flag can now only leave the notice showing, never hide it.
 
 Sample files are provided at `docs/banners/sample-consent-banner.html`
 (see [`docs/banners/`](banners/) for DoD and demo variants) — usable as-is with
-`SPARC_BANNER_MESSAGE`, or as the source text to render into `SPARC_BANNER_HTML`.
+`SPARC_BANNER=file:...`, or as the source text to render inline.
 
 | Variable | Description | Default | Example | Required? |
 | --- | --- | --- | --- | --- |
-| SPARC_BANNER_ENABLED | **Retired (#867) — ignored.** The content variables are the switch | (ignored) | — | No |
-| SPARC_BANNER_HTML | Banner HTML body, supplied **inline**. Preferred — changing it needs no image rebuild | (none) | `<p><strong>WARNING</strong> Authorized use only.</p>` | No |
-| SPARC_BANNER_MESSAGE | File path to banner HTML body (resolved against `Rails.root`). **Path only** — passing markup here is ignored | (none) | `docs/banners/sample-consent-banner.html` | No |
+| SPARC_BANNER | Banner HTML body **inline**, or `file:<path>` for a path (resolved against `Rails.root`). Preferred | (none) | `<p><strong>WARNING</strong> Authorized use only.</p>` | No |
+| SPARC_BANNER_ENABLED | **Retired (#867) — ignored.** Content is the switch | (ignored) | — | No |
+| SPARC_BANNER_HTML | **Deprecated (#909)** — use `SPARC_BANNER`. Still honoured | (none) | `<p>Authorized use only.</p>` | No |
+| SPARC_BANNER_MESSAGE | **Deprecated (#909)** — use `SPARC_BANNER=file:<path>`. Still honoured | (none) | `docs/banners/sample-consent-banner.html` | No |
 
 Only permitted tags survive sanitization: `p br strong em ul ol li h1`–`h6 a span
 div`, with `href class style` attributes. Anything else — `<script>`, event
@@ -548,6 +568,8 @@ exports omit empty values rather than write blanks.
 | `RAILS_SERVE_STATIC_FILES` | **Not implemented** | Put a reverse proxy or CDN in front of SPARC |
 | `HTTP_PORT` | **Not read** | Use `PORT` |
 | `SSP_TPR_MANAGER_DATABASE_PASSWORD` | **Deprecated alias** — still honoured, at the lowest precedence of any password source. Undocumented until 1.15.3; surfaced here rather than removed silently, since a deployment could be relying on it. **Removal scheduled for 1.16.0** | Use `SPARC_DB_PASSWORD`, or supply the password through `DB_CREDENTIALS` |
+| `SPARC_BANNER_HTML` | **Deprecated (#909, v1.16.0)** — still honoured and warned. Honoured rather than ignored on purpose: it carries the notice text, and ignoring it would blank a legal banner on upgrade | Use `SPARC_BANNER` with the same markup |
+| `SPARC_BANNER_MESSAGE` | **Deprecated (#909, v1.16.0)** — still honoured and warned | Use `SPARC_BANNER=file:<path>` — the same path with a `file:` prefix |
 
 ---
 
