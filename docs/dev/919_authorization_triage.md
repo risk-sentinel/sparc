@@ -155,8 +155,15 @@ project_member  so_iso  sparc_sme  system_architect_engineer
 system_operator_admin  vendor_dependency_manager
 ```
 
-Applies to `back_matter.write`, `.promote`, `.archive`, `.bulk_import`,
-`.federate`, `.approve_promotion` and `converters.write`.
+Applies to `back_matter.write`, `.promote`, `.archive`, `.bulk_import` and
+`converters.write`.
+
+**`approve_promotion` and `federate` stay OFF the boundary tier** — CONFIRMED by
+the owner 2026-08-11: *the boundary requests, the instance approves*. Promotion
+elevates boundary content to instance-wide authoritative, so granting both legs to
+one role would let a member approve their own promotion and defeat the review queue
+that exists for it (AC-5). Federation is cross-instance and likewise not a
+boundary-level act. Pinned by spec so a later seed edit cannot quietly undo it.
 
 ### 3. Approval keys
 
