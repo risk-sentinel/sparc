@@ -652,6 +652,42 @@ Backlog / gated:
 
 ---
 
+### Phase 15: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
+
+**Goal:** Close the v1.16.0 milestone (13 issues). Two structural security deliverables lead —
+a spec that fails when a controller ships without authorization (#919) and one that pins
+`disposition: "attachment"` on user content (#894) — followed by index filtering, the help
+drawer, the Terraform→CDEF coverage wizard, and the IdP-as-entitlement-source auth epic.
+
+Sequenced in nine PRs; issues are bundled only where they share a hot file or an audit shape.
+
+<!-- markdownlint-disable MD013 -->
+
+| Priority | Status | Issue | Description | Notes |
+| -------- | ------ | ----- | ----------- | ----- |
+| **P1** | [ ] | #914 | `SPARC_RESOURCES` replaced the shipped list wholesale | **IN PROGRESS** — bundle A, `feature/914_909_config_single_variable`. Now extends by default; `SPARC_RESOURCES_REPLACE=true` opts back in. De-dupes on `href`, logs malformed JSON instead of swallowing it. Behaviour change on upgrade — release-noted. |
+| **P1** | [ ] | #909 | Single `SPARC_BANNER` accepting inline HTML or a `file:` path | **IN PROGRESS** — bundle A, same branch. `file:` prefix is explicit, never rendered literally, so a typo'd path can't become the AC-8 notice. `SPARC_BANNER_HTML`/`SPARC_BANNER_MESSAGE` deprecated but **honoured** (they carry the notice text). Cleared four surfaces already stale since #867. |
+| **P0** | [ ] | #919 | Sweep every controller for missing authorization, make the gap fail a test | Bundle C. Triage memo first (16 controllers + all 35 `Role::PERMISSION_KEYS`), then an owner ruling on roster posture and `authorization_boundaries.manage_members`, then fixes + the structural spec. 12 known gaps. |
+| **P1** | [ ] | #894 | Regression test pinning `disposition: "attachment"` | Bundle B. All 48 `send_data` sites are already correct; the fragile seam is the keyword default in `artifact_resolvable.rb`, which no caller passes. |
+| **P1** | [ ] | #897 | Audit stored-value render sites for XSS | Bundle B. Real finding: `BackMatterResource#href` has no scheme allowlist where `FederationPeer` does — a stored `javascript:` href reaches 6 render sites. |
+| **P1** | [ ] | #908 | Filter controls on index screens | Bundle D. Facet infrastructure already exists (`CollectionViewable#active_facets`); 3 of 16 screens use it. Framework filter cut — no column exists. |
+| **P2** | [ ] | #880 | In-page help drawer (Bootstrap offcanvas) | Bundle E. First offcanvas in the app; budget a full `a11y_baseline.json` regeneration. |
+| **P2** | [ ] | #879 | Extend `field_help` to remaining edit screens | Bundle E. ~90-100 fields across 14 forms. Copy drafted for owner review, not shipped as filler. |
+| **P1** | [ ] | #904 | Terraform state/plan → CDEF coverage wizard | Bundle F. Engine ports from `sparc-iac` `state_cdef_coverage.py`. Multi-file upload in scope from the start; POA&M generation cut to a follow-on. |
+| **P1** | [ ] | #822 | IdP-mediated PIV via OIDC `acr`/`amr` | Bundle G. Both auth paths stay configurable; two-ceremony verification required. |
+| **P2** | [ ] | #707 | Reconcile membership role enums vs canonical Role catalog | Bundle H — closes as a recorded **DECIDED** outcome, not a migration. #860 already answers it: these are the permission model and the membership model, not two spellings of one thing. |
+| **P0** | [ ] | #860 | Epic: IdP as system of record for entitlements | Bundle I with #842. Five design questions answered in a memo commit before code. Dry-run built first, not last. |
+| **P0** | [ ] | #842 | Map OIDC claims to organization, boundary and role | Bundle I. A **missing** claim is an error, never "revoke everything" — that failure mode is what the blast-radius guard exists for. |
+
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Config that extends instead of silently replacing; a build that fails when a
+mutating controller ships unguarded; filterable collections; in-product guidance; CDEF coverage
+from real infrastructure; and entitlements sourced from the IdP without the power to de-provision
+a customer.
+
+---
+
 ## Closed / Removed Issues
 
 The following issues from the original plan have been resolved or
