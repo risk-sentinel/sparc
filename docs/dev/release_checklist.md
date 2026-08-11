@@ -10,7 +10,55 @@ releases stale. None of these block CI, so nothing catches them but this.
 
 ---
 
-## 1. Documentation
+## 1. Testing and Security
+
+- [ ] **Run full test suite before commit** — `bundle exec rspec` (full suite,
+    not targeted specs). Targeted specs during development are fine, but the
+    full suite **must pass** before releasing. Also run `bundle exec rubocop`
+    on all files.
+- [ ] **Local smoke + API check concludes any application-code change — against the
+  PROD (UBI9) image** — Run BOTH the full `tests/api` endpoint suite and the
+  `tests/ui-smoke` Playwright suite against a freshly-running local container
+  (Chrome, zero CSP violations), authenticated with a locally-minted `ApiToken`.
+  **The container MUST be the production UBI9 image — bring the stack up with
+  `docker compose -f docker-compose.ubi9.yaml up --build -d` (builds
+  `./Dockerfile`, self-seeds `SPARC_SEED_DEMO=true`).**
+  Green `rspec` alone is **not** sufficient — it never exercises the running
+  image, routing, or CSP. **CI-only or docs-only changes are exempt.**
+- [ ] **Refresh `docs/security/SCANNER_FINDINGS_AUDIT.md` with a real rescan**,
+      not a date bump. Build the release image and scan it:
+
+      bundle exec bundle-audit check --update
+      docker build --target runtime -t sparc:vX.Y.Z-audit .
+      grype sparc:vX.Y.Z-audit -o json > grype.json
+      trivy image --scanners vuln --severity CRITICAL,HIGH,MEDIUM \
+        --format json -o trivy.json sparc:vX.Y.Z-audit
+
+      Then refresh the **Last reviewed** date/version line and reconcile the
+      finding counts against the `sparc-findings.yml` / `.trivyignore`
+      suppression inventory, so the audit stays in cadence with the shipped
+      image instead of drifting.
+
+- [ ] **Scan the image, not an SBOM.** Grype's SBOM path has missed findings that
+      its image path catches (#873).
+- [ ] **Reconcile the two scanners; they will disagree.** When one reports a CVE
+      the other does not, resolve it against the *artifact* before dispositioning
+      anything:
+
+      docker run --rm --entrypoint sh sparc:vX.Y.Z-audit -c \
+        'ls /usr/local/bundle/ruby/*/specifications/ | grep <gem>; cd /rails && bundle list'
+
+      A package that is not in the shipped image is **not** an accepted risk — it
+      is not there. Say so; do not carry a disposition for it.
+- [ ] Every High/Critical is classified by **fix availability** (`not-fixed` =
+      nothing to do; fixed upstream = name the vehicle, usually the next base
+      refresh). "It's a High" is not a disposition.
+- [ ] `docs/compliance/sparc-findings.yml` dispositions are not overdue, and
+      **every suppression's review date is within 90 days** — bump or clear the
+      stale ones. A suppression nobody has re-read is an accepted risk nobody
+      has re-accepted.
+
+## 2. Documentation
 
 - [ ] **Guide prose, not just screenshots.** Refreshing `wiki/images/` is *not*
       updating a guide. If the way a user does something changed — a new control,
@@ -29,37 +77,11 @@ releases stale. None of these block CI, so nothing catches them but this.
       version that shipped without one. Check the entries against
       `gh release list`, not against memory.
 
-## 2. Version
+## 3. Version
 
 - [ ] `SparcConfig::VERSION` (`app/models/sparc_config.rb`) matches the tag. It
       ships in the same PR as its changes, not a separate bump commit after the
       fact.
-
-## 3. Security
-
-- [ ] **Refresh `docs/security/SCANNER_FINDINGS_AUDIT.md` with a real rescan**,
-      not a date bump. Build the release image and scan it:
-
-      docker build --target runtime -t sparc:vX.Y.Z-audit .
-      grype sparc:vX.Y.Z-audit -o json > grype.json
-      trivy image --scanners vuln --severity CRITICAL,HIGH,MEDIUM \
-        --format json -o trivy.json sparc:vX.Y.Z-audit
-
-- [ ] **Scan the image, not an SBOM.** Grype's SBOM path has missed findings that
-      its image path catches (#873).
-- [ ] **Reconcile the two scanners; they will disagree.** When one reports a CVE
-      the other does not, resolve it against the *artifact* before dispositioning
-      anything:
-
-      docker run --rm --entrypoint sh sparc:vX.Y.Z-audit -c \
-        'ls /usr/local/bundle/ruby/*/specifications/ | grep <gem>; cd /rails && bundle list'
-
-      A package that is not in the shipped image is **not** an accepted risk — it
-      is not there. Say so; do not carry a disposition for it.
-- [ ] Every High/Critical is classified by **fix availability** (`not-fixed` =
-      nothing to do; fixed upstream = name the vehicle, usually the next base
-      refresh). "It's a High" is not a disposition.
-- [ ] `docs/compliance/sparc-findings.yml` dispositions are not overdue.
 
 ## 4. Release notes
 

@@ -79,6 +79,40 @@ class BackMatterResource < ApplicationRecord
   validates :rel, inclusion: { in: REL_VALUES, message: "must be a valid OSCAL link relationship" },
             allow_blank: true
   validates :promotion_status, inclusion: { in: PROMOTION_STATES }
+  validate  :href_scheme_is_safe
+
+  # #897 — `href` is operator-writable on BOTH surfaces
+  # (back_matter_resources_controller.rb permits it, as does the Api::V1
+  # equivalent) and is rendered straight into an anchor's href attribute in four
+  # views. ERB escaping does not help here: it blocks quote-breaking, not a
+  # `javascript:` scheme. Before this, `href: "javascript:alert(1)"` was a
+  # perfectly valid record.
+  #
+  # NOT the `FederationPeer#base_url` rule, which requires an absolute http(s)
+  # URL. OSCAL hrefs are overwhelmingly NOT absolute URLs — across this repo's
+  # own OSCAL corpus they are ~25,485 fragment references (`#<uuid>`) and 38
+  # relative paths against 872 http(s) URLs. Requiring a scheme would reject
+  # ~97% of legitimate values and break catalog import outright.
+  #
+  # So the rule is about the scheme, not the shape: if there IS one it must be
+  # http or https; a value with no scheme (fragment or relative path) is inert
+  # in an href and is allowed. That blocks javascript:, data:, vbscript: and
+  # file: without touching valid OSCAL.
+  #
+  # NIST 800-53: SI-10 (input validation), SC-18 (mobile code).
+  SAFE_HREF_SCHEMES = %w[http https].freeze
+  HREF_SCHEME_REGEX = /\A([a-zA-Z][a-zA-Z0-9+.\-]*):/
+
+  def href_scheme_is_safe
+    return if href.blank?
+
+    match = HREF_SCHEME_REGEX.match(href.to_s.strip)
+    return if match.nil? # fragment or relative path — no scheme to abuse
+
+    return if SAFE_HREF_SCHEMES.include?(match[1].downcase)
+
+    errors.add(:href, "scheme must be http or https (got #{match[1].downcase}:)")
+  end
 
   scope :managed, -> { where(source: "managed") }
   scope :imported, -> { where(source: "imported") }

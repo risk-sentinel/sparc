@@ -661,15 +661,76 @@ drawer, the Terraform→CDEF coverage wizard, and the IdP-as-entitlement-source 
 
 Sequenced in nine PRs; issues are bundled only where they share a hot file or an audit shape.
 
+#### Release status — update this block on every PR
+
+**2 of 13 issues shipped. Bundle B in review. Target tag ~2026-09-21.**
+
+| Bundle | Issues | Branch | State |
+|---|---|---|---|
+| **A** Config | #914, #909 | `feature/914_909_config_single_variable` | ✅ **MERGED** — PR #924 |
+| **B** Content safety | #894, #897 | `feature/894_897_content_safety` | 🔍 **IN REVIEW** — PR #925, all gates green |
+| *(deps)* | #923 actions | `dependabot/…/actions-updates` | ⬜ **merge before C** — fixes the CodeQL baseline for the sweep |
+| **C** Authz sweep | #919 | — | ⬜ next; opens with a triage memo + **owner decision gate** |
+| *(deps)* | #922 + #921 | `dependabot/bundler/{minor,patch}-updates` | ⬜ **merge after B** — re-run the disposition spec |
+| **D** Index filters | #908 | — | ⬜ blocked on C (`profile_documents_controller`) |
+| **F** CDEF wizard | #904 | — | ⬜ independent; parallelisable |
+| **E** Help & guidance | #880, #879 | — | ⬜ after D and F (global a11y baseline regen) |
+| **G** IdP PIV | #822 | — | ⬜ pair with **#820 openssl 4.x** — one TLS ceremony covers both |
+| **H** Role decision | #707 | — | ⬜ docs-only; closes as **DECIDED**, sequence before I |
+| **I** Auth epic | #860, #842 | — | ⬜ largest; memo commit answering 5 open questions first |
+| **Release** | — | `release/v1.16.0` | ⬜ VERSION → 1.16.0, scanner rescan, guide prose, changelog |
+
+#### Dependency lane (open Dependabot PRs)
+
+Judged by **running `bundle-audit`, not by reading diffs** — it reports **no vulnerabilities**
+against the current lock (advisory DB `6bda08e`, 2026-08-11). **None of these closes a CVE**, which
+is what makes them schedulable around the feature work rather than reactive to it.
+
+| PR | Bump | Slot | Why there |
+|---|---|---|---|
+| **#923** | `actions-updates` — `github/codeql-action` (init/analyze/upload-sarif), `dorny/paths-filter` | **BEFORE #919** | The one that impacts the sweep. #919's premise is that CodeQL/Brakeman/Semgrep **cannot** detect missing authorization, and it touches 16 controllers while adding a structural spec. If the CodeQL engine changes mid-sweep, a new alert is ambiguous — engine or our change? Fix the scanner baseline first. CI-only; its own run is the gate. |
+| **#922** | `minor-updates` — `aws-sdk-s3` 1.228.2→1.229.0, aws-sdk-core/rds/partitions, io-console, rbs, reline | **AFTER #925** | `aws-sdk-s3` sits directly under ActiveStorage presigned-URL generation, which is exactly what #894's new spec pins (`disposition=attachment` on the emitted URL). Good interaction — the pin catches a regression — but the pin must land first. **Specific check: re-run `spec/security/user_content_disposition_spec.rb`.** |
+| **#921** | `erb` 6.0.6→6.0.7 (patch) | **AFTER #925**, batch with #922 | Low risk. `erb` is one of the default-gem shadows showing as a residual UBI9 High, so it may reduce scanner-audit noise at release time. |
+| **#820** | `openssl` 3.3.0→**4.0.2** (major) | **WITH Bundle G (#822)** | Blast radius is 8 files: `piv_auth_service`, `federation_bundle_signing_service`, `sparc_http`, `sparc_key_derivation`, `ldap_auth_service`, `authoritative_source_fetch_service`, `cdef_bulk_apply_service`, `hdf_package_service` — PIV cert parsing, federation HMAC, outbound TLS, LDAP. #822 already requires the **two-ceremony** TLS proof, so pairing them means one verification round covers both. Also needs the Gemfile constraint change `~> 3.3` → `~> 4.0`; `~> 3.3` forbids 4.x today. |
+
+**Closed 2026-08-11:** ~~#886 `activestorage` 8.1.3→8.1.3.1~~ — already in the image on `main`.
+Worth recording *why it lingered*, because the same shape will recur: `activestorage` is **not a
+direct Gemfile entry** (transitive via `rails`), so when #889 cherry-picked the Rails 8.1.3.1 bump
++ `image_processing` removal, the branch diff became empty but Dependabot had **no manifest line to
+reconcile against** and left the orphan open. Auto-close is reliable for direct dependencies, not
+for a transitive security PR whose requirement is satisfied by a different gem's bump. **Check
+transitive security PRs by hand after any framework bump.**
+
+> **#820 is not stale, it is pending a decision.** `dependabot.yml` deliberately keeps majors as
+> individual PRs ("higher review needed", no major group), so an unmerged major sitting alone is
+> the config working as intended — not neglect.
+
+**Owner decisions still owed:**
+
+1. **#919 roster posture** — admin-only vs delegable to ISSM/ISSO/SO, and whether to delete or
+   seed `authorization_boundaries.manage_members` (defined, documented in `wiki/RBAC.md`, granted
+   to 0 of 29 roles, enforced by 0 code). Triage memo lands first; build waits on the ruling.
+2. **#860 × 5 open questions** — claim name, grant string format, slug canonicalization, session-
+   revocation timing, whether `bootstrap` mode earns its keep.
+3. **14-day fallback** — a coherent hardening-only v1.16.0 (A+B+C = 6 issues) was available around
+   2026-08-21. Not taken; recorded because the option recurs if the date starts to bind.
+
+**Release-notes obligations accumulated so far** (the release PR must carry these):
+
+- #914 extend-by-default is a **behaviour change on upgrade** — leads the notes.
+- #909 legacy banner variables **scheduled for removal in v1.18.0**, with the reasoning.
+- If **#820** lands, `openssl` moves **3.x → 4.x** (a major, with the Gemfile constraint widened).
+  Call it out explicitly — it sits under PIV, federation signing, outbound TLS and LDAP.
+
 <!-- markdownlint-disable MD013 -->
 
 | Priority | Status | Issue | Description | Notes |
 | -------- | ------ | ----- | ----------- | ----- |
-| **P1** | [ ] | #914 | `SPARC_RESOURCES` replaced the shipped list wholesale | **IN PROGRESS** — bundle A, `feature/914_909_config_single_variable`. Now extends by default; `SPARC_RESOURCES_REPLACE=true` opts back in. De-dupes on `href`, logs malformed JSON instead of swallowing it. Behaviour change on upgrade — release-noted. |
-| **P1** | [ ] | #909 | Single `SPARC_BANNER` accepting inline HTML or a `file:` path | **IN PROGRESS** — bundle A, same branch. `file:` prefix is explicit, never rendered literally, so a typo'd path can't become the AC-8 notice. `SPARC_BANNER_HTML`/`SPARC_BANNER_MESSAGE` deprecated but **honoured** (they carry the notice text). Cleared four surfaces already stale since #867. |
+| **P1** | [x] | #914 | ~~`SPARC_RESOURCES` replaced the shipped list wholesale~~ — **MERGED (PR #924)** | Bundle A. Extends by default; `SPARC_RESOURCES_REPLACE=true` opts back in. De-dupes on `href`, logs malformed JSON instead of swallowing it. **Behaviour change on upgrade — must lead the release notes:** deployments setting `SPARC_RESOURCES` get the 9 shipped links back unless they opt out. |
+| **P1** | [x] | #909 | ~~Single `SPARC_BANNER` accepting inline HTML or a `file:` path~~ — **MERGED (PR #924)** | Bundle A. `file:` prefix is explicit and never rendered literally, so a typo'd path cannot become the AC-8 notice. `SPARC_BANNER_HTML`/`SPARC_BANNER_MESSAGE` deprecated but **honoured** (they carry the notice text). Cleared four doc surfaces stale since #867, incl. AC-8/PL-4/PS-6/PT-4 citing the retired flag. **All three legacy names scheduled for removal in v1.18.0** — release notes must say so and why. |
 | **P0** | [ ] | #919 | Sweep every controller for missing authorization, make the gap fail a test | Bundle C. Triage memo first (16 controllers + all 35 `Role::PERMISSION_KEYS`), then an owner ruling on roster posture and `authorization_boundaries.manage_members`, then fixes + the structural spec. 12 known gaps. |
-| **P1** | [ ] | #894 | Regression test pinning `disposition: "attachment"` | Bundle B. All 48 `send_data` sites are already correct; the fragile seam is the keyword default in `artifact_resolvable.rb`, which no caller passes. |
-| **P1** | [ ] | #897 | Audit stored-value render sites for XSS | Bundle B. Real finding: `BackMatterResource#href` has no scheme allowlist where `FederationPeer` does — a stored `javascript:` href reaches 6 render sites. |
+| **P1** | [ ] | #894 | Regression test pinning `disposition: "attachment"` | **IN REVIEW** — bundle B, `feature/894_897_content_safety`. All 48 `send_data` sites were already correct; the fragile seam was the keyword default in `artifact_resolvable.rb` that no caller passes. Specs assert the **emitted signed URL**, not the default; flipping it turns 5 of 9 red. Adds an inline-disposition source scan (help_controller allowlisted by name) and pins the host-only session cookie (#515). |
+| **P1** | [ ] | #897 | Audit stored-value render sites for XSS | **IN REVIEW** — bundle B, same branch. `BackMatterResource#href` had no scheme validation where `FederationPeer` does; `href: "javascript:alert(1)"` was a **valid record** on both surfaces, reaching **4** anchor render sites (not 6 — two of the originally-surveyed sites are different shapes and still need judging). Validates the **scheme, not the shape**: mirroring `FederationPeer`'s absolute-URL rule would have rejected ~97% of real OSCAL hrefs (25,485 fragment refs + 38 relative paths vs 872 http(s)) and broken catalog import. Adds `safe_external_url` at the render sites and an `html_safe`-on-literals guard. |
 | **P1** | [ ] | #908 | Filter controls on index screens | Bundle D. Facet infrastructure already exists (`CollectionViewable#active_facets`); 3 of 16 screens use it. Framework filter cut — no column exists. |
 | **P2** | [ ] | #880 | In-page help drawer (Bootstrap offcanvas) | Bundle E. First offcanvas in the app; budget a full `a11y_baseline.json` regeneration. |
 | **P2** | [ ] | #879 | Extend `field_help` to remaining edit screens | Bundle E. ~90-100 fields across 14 forms. Copy drafted for owner review, not shipped as filler. |

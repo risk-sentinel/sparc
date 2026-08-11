@@ -15,11 +15,18 @@
       <div class="col-md-3"><strong>Promotion:</strong> <%= @resource.promotion_status %></div>
     </div>
 
+    <%# #897 — link only when the scheme is safe; otherwise show the value as text
+        so the operator can still SEE what was stored without it being clickable. %>
     <% if @resource.href.present? %>
       <p><strong>Reference URL:</strong>
-        <a href="<%= @resource.href %>" target="_blank" rel="noopener noreferrer">
-          <%= @resource.href %>
-        </a>
+        <% if (safe_href = safe_external_url(@resource.href)) %>
+          <a href="<%= safe_href %>" target="_blank" rel="noopener noreferrer">
+            <%= @resource.href %>
+          </a>
+        <% else %>
+          <code><%= @resource.href %></code>
+          <span class="text-danger small">(not a link — unsupported URL scheme)</span>
+        <% end %>
       </p>
     <% end %>
 
