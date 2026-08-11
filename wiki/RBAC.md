@@ -40,7 +40,7 @@ Authorization boundaries can be associated with an organization. Who may change 
 - **Attaching an _unassigned_ boundary** to an organization requires the **Org Admin** role (`org_admin` organization membership) on that target organization — or Instance Admin.
 - **Moving a boundary between organizations** (it already belongs to a different org) is **Instance Admin only**. The admin organization screen surfaces this with a confirmation and a note; non-admin attempts are refused.
 
-Both surfaces — the admin organization screen and the API (`PATCH /api/v1/authorization_boundaries/:id/organization`) — enforce the same rule through a single authorization service, so they cannot drift. Personnel assigned to a boundary through the admin screen (canonical `user_roles`) and through the boundary screen (legacy memberships) are both shown on the boundary's Personnel Roster. (#770)
+Both surfaces — the admin organization screen and the API (`PATCH /api/v1/authorization_boundaries/:id/organization`) — enforce the same rule through a single authorization service, so they cannot drift. Personnel assigned to a boundary through the admin screen and through the boundary's Personnel Roster are both shown on that roster, and since v1.16.0 both grant permissions — a roster entry provisions a boundary-scoped `user_roles` row (#707). (#770)
 
 ---
 
@@ -55,6 +55,41 @@ A single user can hold:
 - Multiple instance-scoped roles simultaneously.
 - Different authorization-boundary-scoped roles across different authorization boundaries.
 - A combination of instance-scoped and authorization-boundary-scoped roles.
+
+**A boundary-scoped role cannot be held instance-wide, and an instance-scoped role cannot be pinned to a boundary.** `UserRole` validates this in both directions, so Authorizing Official, System Owner, ISSO, CISO and the rest are *always* per-boundary — a user is AO **on a boundary**, never AO everywhere. Attempting either raises a validation error rather than being silently accepted.
+
+---
+
+## How a user gets a boundary-scoped role
+
+Two paths, and both write to `user_roles`:
+
+| Path | `source` | Who does it |
+|---|---|---|
+| **Added to a boundary's Personnel Roster** with a role | `membership` | Anyone holding `authorization_boundaries.manage_members` on that boundary (ISSM / ISSO / SO-ISO), or an Instance Admin |
+| **Assigned directly** in Admin → Users | `manual` | Instance Admin |
+
+### Roster membership grants permissions (#707)
+
+Adding someone to a boundary's roster with a role **grants that role's permissions on that boundary**, scoped to it. Changing their role on the roster re-points the grant; removing them revokes it.
+
+This was not always true. Until v1.16.0 the roster and the permission model were separate tables that never met: a roster entry recorded *who was on a boundary*, while `user_roles` recorded *what they could do*, and creating the first never created the second. A member added as ISSO held zero permissions. That went unnoticed because the boundary-scoped screens had no authorization checks at the time — the roster looked like it worked because nothing was asking. #919 added those checks, which is why the two had to be connected in the same release.
+
+**The two `source` values do not interfere.** Removing someone from a roster revokes only the `membership` grant; an Instance Admin's deliberate `manual` assignment survives. This is why the column exists — otherwise a roster edit would silently undo an unrelated decision.
+
+### Per-boundary granularity
+
+Because every roster entry carries its own role, the same person can hold different authority on different boundaries:
+
+> A user who is **ISSO on Boundary A** and **View Only on Boundary B** can write the SSP on A, can only read on B, and has no instance-wide write permission anywhere.
+
+That is the intended model: a role is a statement about a boundary, not a title a person carries across the instance.
+
+### Roles the roster cannot grant
+
+The roster vocabulary and the canonical role catalog are not identical. Four names match exactly (`ciso`, `isso`, `project_member`, `view_only`); three are translated (`authorizing_official` → AO, `system_owner` → SO-ISO, `assessor` → Assessor / 3PAO).
+
+A custom role configured through `SPARC_AUTH_BOUNDARY_ROLES` that matches no canonical role **grants nothing** and logs a warning naming the valid options. This is deliberate: inventing permissions for an unrecognised role name would be worse than granting none. Define a matching role in **Admin → Roles** if a custom name needs real authority.
 
 ---
 
