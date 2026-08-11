@@ -66,18 +66,35 @@ module SparcConfig
   def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
 
   # Configurable resources list — JSON array of {display_text, href} objects.
-  # Falls back to default FedRAMP/OSCAL/MITRE links when not set.
+  #
+  # #914 — operator entries EXTEND the shipped list. This variable used to
+  # replace it wholesale, so an operator adding one internal wiki link silently
+  # lost every shipped reference, including the seven NIST OSCAL deep links that
+  # are the point of the page. Nothing warned them; the page just rendered one
+  # card, and the loss was invisible unless someone remembered what used to be
+  # there.
+  #
+  # Operator entries come FIRST, and de-duplication keeps the first occurrence of
+  # an href — so a deployment that re-lists a shipped link gets it once, with its
+  # own wording rather than ours.
+  #
+  # A deployment that genuinely wants only its own links sets
+  # SPARC_RESOURCES_REPLACE=true. That is a behaviour change for anyone relying
+  # on the old replace-wholesale semantics, which is why it ships release-noted
+  # rather than silently.
   def resources
-    raw = ENV.fetch("SPARC_RESOURCES", nil)
-    if raw.present?
-      JSON.parse(raw) rescue default_resources
-    else
-      default_resources
-    end
+    custom = custom_resources
+    return default_resources if custom.empty?
+    return dedupe_resources(custom) if resources_replace?
+
+    dedupe_resources(custom + default_resources)
   end
 
+  # #914 — opt back in to the pre-v1.16.0 behaviour.
+  def resources_replace? = ENV.fetch("SPARC_RESOURCES_REPLACE", "false") == "true"
+
   # Shipped with the image so a deployment has them without configuring
-  # anything. `SPARC_RESOURCES` replaces this list wholesale when set.
+  # anything. `SPARC_RESOURCES` adds to this list (#914).
   #
   # The NIST OSCAL entries are deliberately deep links rather than one link to
   # the site root. SPARC is a translation engine for OSCAL, so the questions
@@ -101,6 +118,64 @@ module SparcConfig
       { "display_text" => "OSCAL Control Validation",
         "href" => "https://pages.nist.gov/OSCAL/learn/tutorials/implementation/validation-modeling/" }
     ].freeze
+  end
+
+  # #914 — parse SPARC_RESOURCES into usable entries, or none.
+  #
+  # Every rejection is LOGGED. The old code swallowed a JSON::ParserError with a
+  # bare inline rescue, so an operator who typo'd the variable got the shipped
+  # list back with no signal at all. That mattered less when a good value
+  # replaced the defaults (the page looked obviously different); now that a good
+  # value ADDS to them, a parse failure and a successful parse both leave the
+  # shipped links on screen, and "my links are missing" has two silent causes.
+  #
+  # Shape is validated too, not just syntax: `'"hello"'` and `'{"a":1}'` are
+  # valid JSON that the Resources view would then call #each on and raise.
+  def custom_resources
+    raw = ENV.fetch("SPARC_RESOURCES", nil)
+    return [] if raw.blank?
+
+    parsed = begin
+      JSON.parse(raw)
+    rescue JSON::ParserError => e
+      Rails.logger.error(
+        "[Resources] SPARC_RESOURCES is not valid JSON and is being ignored; " \
+        "the shipped resource list is unchanged. #{e.message}"
+      )
+      return []
+    end
+
+    unless parsed.is_a?(Array)
+      Rails.logger.error(
+        "[Resources] SPARC_RESOURCES must be a JSON array of " \
+        '{"display_text":…,"href":…} objects, got a ' \
+        "#{parsed.class}. Ignoring it; the shipped resource list is unchanged."
+      )
+      return []
+    end
+
+    entries, rejected = parsed.partition { |entry| valid_resource_entry?(entry) }
+
+    if rejected.any?
+      Rails.logger.warn(
+        "[Resources] Ignoring #{rejected.size} SPARC_RESOURCES " \
+        "#{'entry'.pluralize(rejected.size)} missing a display_text or href."
+      )
+    end
+
+    entries
+  end
+
+  def valid_resource_entry?(entry)
+    entry.is_a?(Hash) && entry["display_text"].present? && entry["href"].present?
+  end
+
+  # De-duplicate on href, keeping the first occurrence — so an operator re-listing
+  # a shipped link gets their own display_text rather than ours, and the "no
+  # duplicate destinations" invariant the defaults already satisfy survives
+  # extension.
+  def dedupe_resources(entries)
+    entries.uniq { |entry| entry["href"] }.freeze
   end
 
   # ── Organization ─────────────────────────────────────────────────────────

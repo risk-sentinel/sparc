@@ -242,11 +242,18 @@ RSpec.describe SparcConfig do
   # deployment has to know to configure.
   describe ".resources" do
     around do |example|
-      previous = ENV["SPARC_RESOURCES"]
+      previous = ENV.to_h.slice("SPARC_RESOURCES", "SPARC_RESOURCES_REPLACE")
       ENV.delete("SPARC_RESOURCES")
+      ENV.delete("SPARC_RESOURCES_REPLACE")
       example.run
-      previous.nil? ? ENV.delete("SPARC_RESOURCES") : ENV["SPARC_RESOURCES"] = previous
+      %w[SPARC_RESOURCES SPARC_RESOURCES_REPLACE].each do |key|
+        previous.key?(key) ? ENV[key] = previous[key] : ENV.delete(key)
+      end
     end
+
+    def resource_texts = SparcConfig.resources.map { _1["display_text"] }
+
+    def set_resources(*entries) = ENV["SPARC_RESOURCES"] = entries.to_json
 
     # Deep links, not one link to the site root: the questions users arrive
     # with are per-document-type, and the answers live on specific pages.
@@ -279,17 +286,82 @@ RSpec.describe SparcConfig do
       expect(hrefs).to eq(hrefs.uniq)
     end
 
+    # #914 — adding a link used to cost you every shipped one. The operator who
+    # sets this is adding an internal wiki link, not asking us to forget what
+    # OSCAL is.
     context "when SPARC_RESOURCES is set" do
-      it "replaces the shipped list wholesale" do
-        ENV["SPARC_RESOURCES"] = [ { "display_text" => "Internal Wiki", "href" => "https://wiki.example.gov" } ].to_json
+      let(:wiki) { { "display_text" => "Internal Wiki", "href" => "https://wiki.example.gov" } }
 
-        expect(SparcConfig.resources.map { _1["display_text"] }).to eq([ "Internal Wiki" ])
+      it "adds the operator's links WITHOUT dropping the shipped ones" do
+        set_resources(wiki)
+
+        expect(resource_texts).to include("Internal Wiki")
+        expect(resource_texts).to include(
+          "FedRAMP 20x", "MITRE Security Automation Framework", "NIST OSCAL", "OSCAL Profiles"
+        )
+      end
+
+      it "lists the operator's links first" do
+        set_resources(wiki)
+
+        expect(resource_texts.first).to eq("Internal Wiki")
+      end
+
+      it "collapses a re-listed shipped href, keeping the operator's wording" do
+        set_resources({ "display_text" => "OSCAL (our mirror)", "href" => "https://pages.nist.gov/OSCAL/about/" })
+
+        hrefs = SparcConfig.resources.map { _1["href"] }
+        expect(hrefs).to eq(hrefs.uniq)
+        expect(resource_texts).to include("OSCAL (our mirror)")
+        expect(resource_texts).not_to include("NIST OSCAL")
+      end
+
+      # The escape hatch for deployments that really do want only their own
+      # links — explicit, so it can never happen by accident again.
+      context "and SPARC_RESOURCES_REPLACE is true" do
+        it "replaces the shipped list wholesale" do
+          set_resources(wiki)
+          ENV["SPARC_RESOURCES_REPLACE"] = "true"
+
+          expect(resource_texts).to eq([ "Internal Wiki" ])
+        end
+      end
+
+      it "extends rather than replaces for any other SPARC_RESOURCES_REPLACE value" do
+        set_resources(wiki)
+        ENV["SPARC_RESOURCES_REPLACE"] = "TRUE"
+
+        expect(resource_texts).to include("FedRAMP 20x")
       end
 
       it "falls back to the shipped list when the override is not valid JSON" do
         ENV["SPARC_RESOURCES"] = "{not json"
 
-        expect(SparcConfig.resources.map { _1["display_text"] }).to include("OSCAL Profiles")
+        expect(resource_texts).to include("OSCAL Profiles")
+      end
+
+      # Valid JSON of the wrong shape used to reach the view, which called #each
+      # on a String and raised.
+      it "falls back to the shipped list when the override is valid JSON but not an array" do
+        ENV["SPARC_RESOURCES"] = '{"display_text":"Internal Wiki","href":"https://wiki.example.gov"}'
+
+        expect(resource_texts).to eq(SparcConfig.default_resources.map { _1["display_text"] })
+      end
+
+      it "drops entries missing a display_text or href but keeps the good ones" do
+        set_resources(wiki, { "display_text" => "No href" }, { "href" => "https://no-text.example.gov" })
+
+        expect(resource_texts).to include("Internal Wiki", "FedRAMP 20x")
+        expect(resource_texts).not_to include("No href")
+      end
+
+      it "logs rather than silently swallowing malformed JSON" do
+        allow(Rails.logger).to receive(:error)
+        ENV["SPARC_RESOURCES"] = "{not json"
+
+        SparcConfig.resources
+
+        expect(Rails.logger).to have_received(:error).with(/SPARC_RESOURCES is not valid JSON/)
       end
     end
   end

@@ -14,7 +14,8 @@ SPARC is configured via environment variables — most prefixed with `SPARC_`. A
 | `SPARC_APP_NAME` | `SPARC` | Application display name |
 | `SPARC_WELCOME_TEXT` | `Welcome to SPARC` | Custom welcome text on the login page |
 | `SPARC_CONTACT_EMAIL` | (none) | Support/admin contact email shown in UI |
-| `SPARC_RESOURCES` | (built-in defaults) | JSON array of external resource links for the Resources page |
+| `SPARC_RESOURCES` | (adds to 9 shipped links) | JSON array of external resource links **added to** the shipped set (#914). Your entries appear first; duplicate `href`s collapse |
+| `SPARC_RESOURCES_REPLACE` | `false` | Set `true` to make `SPARC_RESOURCES` replace the shipped links instead of extending them |
 
 ## Database
 

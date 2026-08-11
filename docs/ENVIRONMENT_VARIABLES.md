@@ -572,7 +572,24 @@ Override the URL for air-gapped or mirror environments.
 | SPARC_APP_NAME | Human-readable name of the platform | SPARC | `SPARC Compliance Platform` | No |
 | SPARC_WELCOME_TEXT | Message displayed on the login page | Welcome to SPARC | `Welcome to ACME Compliance` | No |
 | SPARC_CONTACT_EMAIL | Support/admin email shown in UI and login page | (none) | `compliance-team@yourorg.com` | No |
-| SPARC_RESOURCES | JSON array of external resource links for Resources page | FedRAMP 20x, NIST OSCAL, MITRE SAF defaults | `'[{"display_text":"Custom","href":"https://example.com"}]'` | No |
+| SPARC_RESOURCES | JSON array of external resource links **added to** the shipped list (#914). Entries need `display_text` and `href`; malformed JSON is logged and ignored | (adds to the 9 shipped links) | `'[{"display_text":"Internal Wiki","href":"https://wiki.example.gov"}]'` | No |
+| SPARC_RESOURCES_REPLACE | Set `true` to make `SPARC_RESOURCES` **replace** the shipped list instead of extending it (pre-1.16.0 behaviour) | `false` | `true` | No |
+
+### Resources page: extend, don't replace (#914)
+
+`SPARC_RESOURCES` **adds** your links to the shipped set. Before v1.16.0 it
+replaced them wholesale, so an operator adding one internal wiki link silently
+lost every shipped reference — including the seven NIST OSCAL deep links that are
+the page's reason to exist. Nothing warned them; the page just rendered one card.
+
+Your entries appear first, and duplicate `href` values collapse to a single card
+keeping *your* wording — so re-listing a shipped link to rename it works as you
+would expect.
+
+If you genuinely want only your own links, set `SPARC_RESOURCES_REPLACE=true`.
+Note this is a **behaviour change on upgrade** for any deployment that was
+relying on replacement: after v1.16.0 the shipped links reappear unless you set
+that variable.
 | SPARC_LOG_TO_STDOUT | Send logs to stdout (recommended for containers) | false | `true` | No |
 | SPARC_LOG_CREDENTIALS | **Disables credential redaction in the logs.** Off by default: the structured formatter replaces the secret in connection URIs, `password=` conninfo and inspected config hashes, because a driver error or an `inspect` will otherwise write the database password to CloudWatch, where it is retained for the life of the log group. Turn it on ONLY while the credential itself is what you are debugging — then unset it and treat any password logged meanwhile as **compromised** and rotate it (with `DB_CREDENTIALS` that is a Secrets Manager rotation plus a task restart, no redeploy). A warning is logged at boot whenever it is on | false | `true` | No |
 | SPARC_STRUCTURED_LOGGING | Output logs in JSON format (CloudWatch, ELK, Splunk friendly) | false | `true` | No |
