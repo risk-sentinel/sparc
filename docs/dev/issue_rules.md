@@ -87,10 +87,10 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
 8. **Update project documentation:**
    - `docs/dev/Implemenation_plan.md` — mark issue complete, update phase status
    - `docs/dev/Developer_Collision_Avoidance_Plan.md` — update file lists, status
-   - **Public-facing changes → update the GitHub wiki** (source under `wiki/`): if a
-     user, operator, or integrator would read it (new/changed feature, screen, route,
-     env var, role/permission, config), update the relevant wiki page in the same PR.
-     The wiki is the canonical public documentation and must stay current.
+   - **Public-facing changes → update the GitHub wiki** (source under `wiki/`):
+   if a user, operator, or integrator would read it (new/changed feature, screen,
+   route, env var, role/permission, config), update the relevant wiki page in the
+   same PR. The wiki is the canonical public documentation and must stay current.
    - **Functional or screen changes → update the relevant User Guide.** Any new
      or changed screen, route, workflow, field, or permission that an end user
      interacts with **must** update the matching `wiki/User-Guide-*.md` page (and
@@ -116,8 +116,8 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
        when the screen changes so the guide never drifts from the running UI.
      - **In-app rendering is automatic — verify it.** The in-app Help Center
        (#784, `UserGuideLibrary` + `HelpController`) discovers every
-       `wiki/User-Guide-*.md` and serves `wiki/images/` at `/help/images/*`, so a
-       new guide and its screenshots surface in the app with no extra wiring.
+       `wiki/User-Guide-*.md` and serves `wiki/images/` at `/help/images/*`, so
+       a new guide and its screenshots surface in the app with no extra wiring.
        Confirm the guide renders at `/help/<slug>` (slug = filename minus the
        `User-Guide-` prefix, kebab-cased) and its images load, in the same PR.
    - **Release notes → the GitHub Release** for the shipping version (canonical);
@@ -136,7 +136,8 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
      status, implementation summary, and code locations for affected controls
    - `docs/compliance/oscal/cdefs/*.json` — update or add OSCAL component
      definitions for new/changed control implementations. Document conditional
-     coverage where applicable (see [Conditional Coverage](#conditional-coverage) below)
+     coverage where applicable (see [Conditional Coverage](#conditional-coverage)
+     below)
    - Inline NIST control comments in modified source files (see
      `docs/compliance/README.md` for the comment block format)
    - `.github/oscal-metadata.json` — update if system metadata changes
@@ -246,7 +247,7 @@ note which configuration is required for full coverage.
 ### Authentication Mode Deltas
 
 | Control | Local-Only Login | OIDC/SAML Enabled | OIDC + JWT API Auth | Hybrid (OIDC + Service Tokens) | LDAP Enabled |
-|---------|-----------------|-------------------|---------------------|-------------------------------|--------------|
+| --------- | ----------------- | ------------------- | --------------------- | ------------------------------- | -------------- |
 | **IA-2** Identification & Auth | **Partial** — password only, no MFA | **Full** — IdP enforces MFA when `SPARC_OIDC_FORCE_MFA=true` | **Full** — Okta JWT validated via RS256; IdP MFA applies | **Full** — Okta JWT for humans (MFA via IdP); service accounts use SPARC tokens (no MFA, API-only) | **Partial** — depends on LDAP server MFA config |
 | **IA-2(1)** MFA to Privileged | **Not Met** — no MFA mechanism | **Full** — delegated to OIDC IdP | **Full** — JWT issued by IdP with MFA | **Full** — JWT issued by IdP with MFA; service accounts exempt (non-interactive) | **Partial** — depends on LDAP server |
 | **IA-2(2)** MFA to Non-Privileged | **Not Met** — no MFA mechanism | **Full** — delegated to OIDC IdP | **Full** — JWT issued by IdP with MFA | **Full** — JWT issued by IdP with MFA; service accounts exempt (non-interactive) | **Partial** — depends on LDAP server |
@@ -294,8 +295,11 @@ In OSCAL CDEFs, use the `remarks` field to note configuration dependencies:
 ## References
 
 - `docs/dev/Implemenation_plan.md` — phased roadmap and issue tracking
-- `docs/dev/tls_verification_testing.md` — **required** standard for any TLS/MITM surface: prove BOTH directions (untrusted rejected, trusted accepted) with a real handshake, negative test first
+- `docs/dev/tls_verification_testing.md` — **required** standard for any TLS/MITM
+surface: prove BOTH directions (untrusted rejected, trusted accepted) with a real
+handshake, negative test first
 - `docs/dev/Developer_Collision_Avoidance_Plan.md` — domain ownership and hot files
-- [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) — canonical release notes (the wiki Changelog is a concise index)
+- [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) — canonical
+release notes (the wiki Changelog is a concise index)
 - `docs/compliance/README.md` — compliance documentation guide
 - `docs/compliance/nist-sp800-53-rev5-mapping.md` — central NIST control mapping

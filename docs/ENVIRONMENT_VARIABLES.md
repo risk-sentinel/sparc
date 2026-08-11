@@ -348,6 +348,34 @@ would blank a legal banner. Migrating is an edit, not a variable swap —
 `SPARC_BANNER_MESSAGE=path` becomes `SPARC_BANNER=file:path`, and
 `SPARC_BANNER_HTML=markup` becomes `SPARC_BANNER=markup`.
 
+> **Planned removal: v1.18.0.** `SPARC_BANNER_HTML`, `SPARC_BANNER_MESSAGE` and
+> `SPARC_BANNER_ENABLED` will be deleted, leaving `SPARC_BANNER` as the only
+> banner variable. **Migrate before then** — after removal, a deployment still
+> setting only the old variables gets **no banner at all**, which for an AC-8
+> notice is a compliance gap rather than a cosmetic one.
+>
+> Why remove them rather than keep them working indefinitely:
+>
+> - **Three variables for one setting is how the bugs happened.** Each one added
+>   a precedence rule, and precedence is where this subsystem has failed twice —
+>   `SPARC_BANNER_ENABLED=TRUE` silently *disabling* an AC-8 notice (#867), and
+>   an operator having to know which variable to pick based on how they happened
+>   to be delivering the content (#909).
+> - **The compliance surface has to be legible.** AC-8, PL-4, PS-6 and PT-4 all
+>   cite this configuration. An assessor reading four variables where one is
+>   authoritative, one is inert and two are deprecated cannot tell what is
+>   actually in force. That drift is already on record: the control mapping
+>   cited the retired `SPARC_BANNER_ENABLED` for four releases after #867
+>   retired it.
+> - **A deprecated variable that never expires is not deprecated.** Keeping the
+>   old names alive indefinitely means every future change to the banner has to
+>   preserve three code paths and their interactions, forever, for a setting
+>   that has exactly one value.
+>
+> `SPARC_BANNER_ENABLED` is already inert (#867) — removing it changes nothing
+> except that SPARC stops warning about it. The two content variables are the
+> ones that need action.
+
 **Precedence:** `SPARC_BANNER` wins over both, and logs that it is doing so. If
 only the deprecated pair is set, `SPARC_BANNER_HTML` still wins over
 `SPARC_BANNER_MESSAGE`, exactly as before.
@@ -568,8 +596,9 @@ exports omit empty values rather than write blanks.
 | `RAILS_SERVE_STATIC_FILES` | **Not implemented** | Put a reverse proxy or CDN in front of SPARC |
 | `HTTP_PORT` | **Not read** | Use `PORT` |
 | `SSP_TPR_MANAGER_DATABASE_PASSWORD` | **Deprecated alias** — still honoured, at the lowest precedence of any password source. Undocumented until 1.15.3; surfaced here rather than removed silently, since a deployment could be relying on it. **Removal scheduled for 1.16.0** | Use `SPARC_DB_PASSWORD`, or supply the password through `DB_CREDENTIALS` |
-| `SPARC_BANNER_HTML` | **Deprecated (#909, v1.16.0)** — still honoured and warned. Honoured rather than ignored on purpose: it carries the notice text, and ignoring it would blank a legal banner on upgrade | Use `SPARC_BANNER` with the same markup |
-| `SPARC_BANNER_MESSAGE` | **Deprecated (#909, v1.16.0)** — still honoured and warned | Use `SPARC_BANNER=file:<path>` — the same path with a `file:` prefix |
+| `SPARC_BANNER_HTML` | **Deprecated (#909, v1.16.0)** — still honoured and warned. Honoured rather than ignored on purpose: it carries the notice text, and ignoring it would blank a legal banner on upgrade. **Removal scheduled for 1.18.0** | Use `SPARC_BANNER` with the same markup |
+| `SPARC_BANNER_MESSAGE` | **Deprecated (#909, v1.16.0)** — still honoured and warned. **Removal scheduled for 1.18.0** | Use `SPARC_BANNER=file:<path>` — the same path with a `file:` prefix |
+| `SPARC_BANNER_ENABLED` | **Retired (#867)** — read only to log that it is ignored; it cannot enable or disable the banner. **Removal scheduled for 1.18.0**, after which it is not read at all | Delete it. Content presence is the switch — unset `SPARC_BANNER` to hide the banner |
 
 ---
 

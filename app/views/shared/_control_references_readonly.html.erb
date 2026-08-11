@@ -12,8 +12,10 @@
     <div class="d-flex flex-wrap gap-2 mt-1">
       <% ctrl_refs.each do |resource| %>
         <span class="badge bg-body-secondary text-body d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; font-weight: 500;">
-          <% if resource.href.present? %>
-            <a href="<%= resource.href %>" target="_blank" class="text-decoration-none"><%= resource.title %></a>
+          <%# #897 — safe_external_url, not .href: a stored javascript: scheme is a live
+              XSS link even though ERB escapes the value. nil falls back to plain text. %>
+          <% if (safe_href = safe_external_url(resource.href)) %>
+            <a href="<%= safe_href %>" target="_blank" rel="noopener noreferrer" class="text-decoration-none"><%= resource.title %></a>
           <% else %>
             <%= resource.title %>
           <% end %>

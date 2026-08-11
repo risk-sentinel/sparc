@@ -100,6 +100,38 @@ module ApplicationHelper
     )
   end
 
+  # #897 — THE HOUSE RULE for rendering a stored value into an href.
+  #
+  # Escaping is the wrong tool here and it is worth being explicit about why,
+  # because "Rails escapes it" is the reflex that let this sit. ERB escaping
+  # protects the element BODY and blocks quote-breaking in an attribute; it does
+  # nothing about the SCHEME. `<a href="<%= value %>">` with a stored
+  # `javascript:alert(1)` renders a working XSS link, fully escaped.
+  #
+  # So: any stored value reaching a URL position goes through this. It returns
+  # the value when the scheme is safe (or absent — a fragment or relative path
+  # cannot execute) and nil when it is not, letting the view fall back to
+  # rendering plain text rather than a live link.
+  #
+  # BackMatterResource validates this on write (#897), so this is the guard for
+  # rows written BEFORE that validation existed — validation cannot retroactively
+  # clean stored data.
+  #
+  # NIST 800-53: SI-10 (input validation), SC-18 (mobile code), SI-15 (output filtering).
+  UNSAFE_URL_SCHEME_REGEX = /\A([a-zA-Z][a-zA-Z0-9+.\-]*):/
+  SAFE_URL_SCHEMES = %w[http https mailto].freeze
+
+  def safe_external_url(value)
+    url = value.to_s.strip
+    return nil if url.blank?
+
+    match = UNSAFE_URL_SCHEME_REGEX.match(url)
+    return url if match.nil? # fragment / relative — inert
+    return url if SAFE_URL_SCHEMES.include?(match[1].downcase)
+
+    nil
+  end
+
   # #808 — true when the gateway forwarded a verified client cert on THIS
   # request (login page). Same header + success check piv_sessions#create uses,
   # so "button shown" ⟺ "the gateway would accept the cert". The cert is
