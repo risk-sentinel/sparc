@@ -422,8 +422,9 @@
                 <% ctrl_resources.each do |resource| %>
                   <% link_record = control.control_back_matter_links.find_by(back_matter_resource: resource) %>
                   <span class="badge bg-body-secondary text-body d-inline-flex align-items-center gap-1" style="font-size: 0.78rem; font-weight: 500;">
-                    <% if resource.href.present? %>
-                      <a href="<%= resource.href %>" target="_blank" class="text-decoration-none"><%= resource.title %></a>
+                    <%# #897 — safe_external_url, not .href (a stored javascript: scheme survives ERB escaping). %>
+                    <% if (safe_href = safe_external_url(resource.href)) %>
+                      <a href="<%= safe_href %>" target="_blank" rel="noopener noreferrer" class="text-decoration-none"><%= resource.title %></a>
                     <% else %>
                       <%= resource.title %>
                     <% end %>

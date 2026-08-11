@@ -14,7 +14,8 @@ SPARC is configured via environment variables — most prefixed with `SPARC_`. A
 | `SPARC_APP_NAME` | `SPARC` | Application display name |
 | `SPARC_WELCOME_TEXT` | `Welcome to SPARC` | Custom welcome text on the login page |
 | `SPARC_CONTACT_EMAIL` | (none) | Support/admin contact email shown in UI |
-| `SPARC_RESOURCES` | (built-in defaults) | JSON array of external resource links for the Resources page |
+| `SPARC_RESOURCES` | (adds to 9 shipped links) | JSON array of external resource links **added to** the shipped set (#914). Your entries appear first; duplicate `href`s collapse |
+| `SPARC_RESOURCES_REPLACE` | `false` | Set `true` to make `SPARC_RESOURCES` replace the shipped links instead of extending them |
 
 ## Database
 
@@ -183,12 +184,35 @@ Auto-enabled when the client ID is present (no separate enable flag needed).
 
 ### Login Consent Banner
 
-Shows a mandatory consent/warning modal before login options appear. The banner HTML is loaded from the file at `SPARC_BANNER_MESSAGE` (resolved against `Rails.root`) and sanitized for XSS. Sample files live in `docs/banners/`.
+Shows a mandatory consent/warning modal before login options appear. The content is sanitized for XSS before rendering. Sample files live in `docs/banners/`; the DoD and demo banners ship at `public/banners/`.
+
+**One variable, `SPARC_BANNER`.** It takes either the notice itself or a path to it:
+
+```bash
+SPARC_BANNER='<p><strong>WARNING</strong> Authorized use only.</p>'   # inline markup
+SPARC_BANNER='file:public/banners/dod-banner.html'                    # a path
+```
+
+A value beginning `file:` is always a path (resolved against `Rails.root` when relative); anything else is always markup. Nothing is inferred from the shape of the value, so a typo'd path can never be rendered *as* the banner — it logs an error and shows nothing. Displaying a file path where the rules of behavior belong would look like the control was satisfied when it was not.
+
+**The banner is shown whenever `SPARC_BANNER` has content.** To hide it, unset the content.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SPARC_BANNER_ENABLED` | `false` | Show the mandatory consent banner on the login page |
-| `SPARC_BANNER_MESSAGE` | (none) | File path to the banner HTML body (required if enabled) |
+| `SPARC_BANNER` | (none) | Banner HTML inline, or `file:<path>`. Shows the banner when set |
+| `SPARC_BANNER_ENABLED` | (ignored) | **Retired (#867).** Read only to log that it is ignored |
+| `SPARC_BANNER_HTML` | (none) | **Deprecated (#909)** — use `SPARC_BANNER`. Still honoured |
+| `SPARC_BANNER_MESSAGE` | (none) | **Deprecated (#909)** — use `SPARC_BANNER=file:<path>`. Still honoured |
+
+The deprecated pair is honoured rather than ignored because it carries the notice text — ignoring it on upgrade would blank a legal banner. `SPARC_BANNER` wins when set.
+
+> **Planned removal in v1.18.0.** `SPARC_BANNER_HTML`, `SPARC_BANNER_MESSAGE` and `SPARC_BANNER_ENABLED` will be deleted, leaving `SPARC_BANNER` alone. **Migrate before then:** after removal a deployment setting only the old variables shows **no banner at all**, which for an AC-8 notice is a compliance gap, not a cosmetic one.
+>
+> The reason is that three variables for one setting is what caused the bugs. Each added a precedence rule, and precedence is where this has failed twice — `SPARC_BANNER_ENABLED=TRUE` silently *disabling* the notice, and operators having to choose a variable based on how they were delivering the content. It also has to be legible to an assessor: AC-8, PL-4, PS-6 and PT-4 all cite this configuration, and four variables where one is authoritative, one is inert and two are deprecated cannot be read at a glance.
+>
+> Migration is an edit, not a swap: `SPARC_BANNER_MESSAGE=path` → `SPARC_BANNER=file:path`; `SPARC_BANNER_HTML=markup` → `SPARC_BANNER=markup`; delete `SPARC_BANNER_ENABLED`.
+
+Only these tags survive sanitization: `p br strong em ul ol li h1`–`h6 a span div`, with `href class style` attributes. Everything else — `<script>`, event handlers — is stripped.
 
 ### Environment / Rules-of-Behavior Header (NIST AC-8)
 

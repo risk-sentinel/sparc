@@ -66,18 +66,35 @@ module SparcConfig
   def welcome_text  = ENV.fetch("SPARC_WELCOME_TEXT", "Welcome to SPARC")
 
   # Configurable resources list — JSON array of {display_text, href} objects.
-  # Falls back to default FedRAMP/OSCAL/MITRE links when not set.
+  #
+  # #914 — operator entries EXTEND the shipped list. This variable used to
+  # replace it wholesale, so an operator adding one internal wiki link silently
+  # lost every shipped reference, including the seven NIST OSCAL deep links that
+  # are the point of the page. Nothing warned them; the page just rendered one
+  # card, and the loss was invisible unless someone remembered what used to be
+  # there.
+  #
+  # Operator entries come FIRST, and de-duplication keeps the first occurrence of
+  # an href — so a deployment that re-lists a shipped link gets it once, with its
+  # own wording rather than ours.
+  #
+  # A deployment that genuinely wants only its own links sets
+  # SPARC_RESOURCES_REPLACE=true. That is a behaviour change for anyone relying
+  # on the old replace-wholesale semantics, which is why it ships release-noted
+  # rather than silently.
   def resources
-    raw = ENV.fetch("SPARC_RESOURCES", nil)
-    if raw.present?
-      JSON.parse(raw) rescue default_resources
-    else
-      default_resources
-    end
+    custom = custom_resources
+    return default_resources if custom.empty?
+    return dedupe_resources(custom) if resources_replace?
+
+    dedupe_resources(custom + default_resources)
   end
 
+  # #914 — opt back in to the pre-v1.16.0 behaviour.
+  def resources_replace? = ENV.fetch("SPARC_RESOURCES_REPLACE", "false") == "true"
+
   # Shipped with the image so a deployment has them without configuring
-  # anything. `SPARC_RESOURCES` replaces this list wholesale when set.
+  # anything. `SPARC_RESOURCES` adds to this list (#914).
   #
   # The NIST OSCAL entries are deliberately deep links rather than one link to
   # the site root. SPARC is a translation engine for OSCAL, so the questions
@@ -101,6 +118,64 @@ module SparcConfig
       { "display_text" => "OSCAL Control Validation",
         "href" => "https://pages.nist.gov/OSCAL/learn/tutorials/implementation/validation-modeling/" }
     ].freeze
+  end
+
+  # #914 — parse SPARC_RESOURCES into usable entries, or none.
+  #
+  # Every rejection is LOGGED. The old code swallowed a JSON::ParserError with a
+  # bare inline rescue, so an operator who typo'd the variable got the shipped
+  # list back with no signal at all. That mattered less when a good value
+  # replaced the defaults (the page looked obviously different); now that a good
+  # value ADDS to them, a parse failure and a successful parse both leave the
+  # shipped links on screen, and "my links are missing" has two silent causes.
+  #
+  # Shape is validated too, not just syntax: `'"hello"'` and `'{"a":1}'` are
+  # valid JSON that the Resources view would then call #each on and raise.
+  def custom_resources
+    raw = ENV.fetch("SPARC_RESOURCES", nil)
+    return [] if raw.blank?
+
+    parsed = begin
+      JSON.parse(raw)
+    rescue JSON::ParserError => e
+      Rails.logger.error(
+        "[Resources] SPARC_RESOURCES is not valid JSON and is being ignored; " \
+        "the shipped resource list is unchanged. #{e.message}"
+      )
+      return []
+    end
+
+    unless parsed.is_a?(Array)
+      Rails.logger.error(
+        "[Resources] SPARC_RESOURCES must be a JSON array of " \
+        '{"display_text":…,"href":…} objects, got a ' \
+        "#{parsed.class}. Ignoring it; the shipped resource list is unchanged."
+      )
+      return []
+    end
+
+    entries, rejected = parsed.partition { |entry| valid_resource_entry?(entry) }
+
+    if rejected.any?
+      Rails.logger.warn(
+        "[Resources] Ignoring #{rejected.size} SPARC_RESOURCES " \
+        "#{'entry'.pluralize(rejected.size)} missing a display_text or href."
+      )
+    end
+
+    entries
+  end
+
+  def valid_resource_entry?(entry)
+    entry.is_a?(Hash) && entry["display_text"].present? && entry["href"].present?
+  end
+
+  # De-duplicate on href, keeping the first occurrence — so an operator re-listing
+  # a shipped link gets their own display_text rather than ours, and the "no
+  # duplicate destinations" invariant the defaults already satisfy survives
+  # extension.
+  def dedupe_resources(entries)
+    entries.uniq { |entry| entry["href"] }.freeze
   end
 
   # ── Organization ─────────────────────────────────────────────────────────
@@ -579,35 +654,128 @@ module SparcConfig
   #
   # Failure direction is now safe: a stale flag can only leave the notice
   # showing, never hide it.
+  #
+  # This is also where every banner-configuration warning is emitted, because it
+  # is called exactly ONCE per login render while the readers below are called
+  # twice more. Warning from the readers instead logged each deprecation notice
+  # three times per request.
   def banner_enabled?
+    warn_banner_configuration
+    banner_source.present?
+  end
+
+  def warn_banner_configuration
     if ENV.fetch("SPARC_BANNER_ENABLED", nil).present?
       Rails.logger.warn(
         "[ConsentBanner] SPARC_BANNER_ENABLED is ignored (#867). The banner is shown " \
-        "whenever SPARC_BANNER_HTML or SPARC_BANNER_MESSAGE has content; unset the " \
-        "content to hide it."
+        "whenever SPARC_BANNER has content; unset the content to hide it."
       )
     end
 
-    banner_html.present? || banner_message_path.present?
+    deprecated = deprecated_banner_variables_in_use
+    return if deprecated.empty?
+
+    if ENV.fetch("SPARC_BANNER", nil).present?
+      Rails.logger.warn(
+        "[ConsentBanner] SPARC_BANNER is set, so #{deprecated.to_sentence} " \
+        "#{deprecated.one? ? 'is' : 'are'} ignored (#909)."
+      )
+      return
+    end
+
+    Rails.logger.warn(
+      "[ConsentBanner] #{deprecated.to_sentence} #{deprecated.one? ? 'is' : 'are'} " \
+      "deprecated (#909); use a single SPARC_BANNER, set either to the notice HTML or to " \
+      "\"#{BANNER_FILE_SCHEME}path/to/banner.html\"."
+    )
+
+    return unless deprecated.size > 1
+
+    # Preserved from #867 — precedence is stated rather than silently applied.
+    Rails.logger.warn(
+      "[ConsentBanner] Both SPARC_BANNER_HTML and SPARC_BANNER_MESSAGE are set; " \
+      "using SPARC_BANNER_HTML and ignoring #{ENV.fetch('SPARC_BANNER_MESSAGE', nil)}"
+    )
   end
 
-  # #867 — inline banner body, so rules-of-behavior wording is owned by the
-  # deployment rather than baked into the image.
-  #
-  # SPARC_BANNER_MESSAGE is a PATH ONLY, and the only filesystem Rails can read
-  # in the shipped task definition is the image layer — so changing banner text
-  # meant a rebuild, a re-sign, a release and an image-tag bump. For an AC-8
-  # artifact whose whole purpose is stating THIS deployment's rules, that is the
-  # wrong owner.
-  #
-  # A separate variable rather than a heuristic on SPARC_BANNER_MESSAGE
-  # ("doesn't look like a file → treat as literal"): under a heuristic a typo'd
-  # path silently renders as banner text instead of logging "Banner file not
-  # found", and silently displaying a path where a legal notice should be is a
-  # worse failure than displaying nothing.
-  def banner_html = ENV.fetch("SPARC_BANNER_HTML", nil).presence
+  # #909 — a `file:`-prefixed SPARC_BANNER is a path; anything else is markup.
+  BANNER_FILE_SCHEME = "file:"
 
-  def banner_message_path = ENV.fetch("SPARC_BANNER_MESSAGE", nil).presence
+  # #909 — ONE variable, carrying either the notice itself or a path to it.
+  #
+  # Returns [:inline, html] | [:file, path] | nil.
+  #
+  # #867 chose two variables over a heuristic on SPARC_BANNER_MESSAGE ("doesn't
+  # look like a file → treat as literal"), and that reasoning was right: under a
+  # heuristic a typo'd path renders AS the banner text, and silently displaying
+  # `public/banners/typo.html` where a legal notice belongs is worse than
+  # displaying nothing, because it looks like AC-8 is satisfied when it is not.
+  #
+  # The objection was to GUESSING, though, not to having one variable. An
+  # explicit `file:` prefix removes the guess entirely: a prefixed value is
+  # always a path and is never rendered literally, so the failure #867 guarded
+  # against cannot occur. An unprefixed value is always markup. Nothing is
+  # inferred from the shape of the string.
+  #
+  # Why one variable matters operationally: sparc-iac ships
+  # SPARC_BANNER_MESSAGE pointing into the image layer, so changing the wording
+  # needs a rebuild, re-sign, release and image-tag bump. Moving that content
+  # inline is the intended direction, and under two variables it is a
+  # task-definition change rather than a config edit. Under one, it is an edit.
+  def banner_source
+    raw = ENV.fetch("SPARC_BANNER", nil).presence
+
+    if raw
+      return file_banner_source(raw) if raw.start_with?(BANNER_FILE_SCHEME)
+
+      return [ :inline, raw ]
+    end
+
+    deprecated_banner_source
+  end
+
+  def file_banner_source(raw)
+    path = raw.delete_prefix(BANNER_FILE_SCHEME).strip
+    return nil if path.blank?
+
+    [ :file, path ]
+  end
+
+  # #909 — SPARC_BANNER_HTML / SPARC_BANNER_MESSAGE are deprecated but still
+  # HONOURED, not ignored.
+  #
+  # This deliberately differs from the read-warn-IGNORE treatment
+  # SPARC_BANNER_ENABLED got in #867. That variable was a boolean flag; these two
+  # carry the notice text itself. Ignoring them on upgrade would blank a legal
+  # banner on every deployment still setting them — the exact silent-compliance-
+  # loss failure this subsystem keeps being hardened against.
+  #
+  # Existing inline-wins precedence is preserved, so no deployment changes
+  # behaviour until it opts into SPARC_BANNER.
+  def deprecated_banner_source
+    inline = ENV.fetch("SPARC_BANNER_HTML", nil).presence
+    path   = ENV.fetch("SPARC_BANNER_MESSAGE", nil).presence
+    return nil if inline.blank? && path.blank?
+
+    inline.present? ? [ :inline, inline ] : [ :file, path ]
+  end
+
+  def deprecated_banner_variables_in_use
+    %w[SPARC_BANNER_HTML SPARC_BANNER_MESSAGE].select { |name| ENV.fetch(name, nil).presence }
+  end
+
+  # Kept as derived readers so callers and specs keep one question each: "is
+  # there inline markup?" and "is there a file to read?". Exactly one is
+  # non-nil at a time.
+  def banner_html
+    kind, value = banner_source
+    kind == :inline ? value : nil
+  end
+
+  def banner_message_path
+    kind, value = banner_source
+    kind == :file ? value : nil
+  end
 
   # ── Environment / Rules Header (#682) ─────────────────────────────────────
   # Operator-configurable header bar shown on EVERY screen describing the
