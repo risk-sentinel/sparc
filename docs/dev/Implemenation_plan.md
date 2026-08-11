@@ -654,7 +654,7 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (13 issues). Two structural security deliverables lead —
+**Goal:** Close the v1.16.0 milestone (14 issues). Two structural security deliverables lead —
 a spec that fails when a controller ships without authorization (#919) and one that pins
 `disposition: "attachment"` on user content (#894) — followed by index filtering, the help
 drawer, the Terraform→CDEF coverage wizard, and the IdP-as-entitlement-source auth epic.
@@ -671,6 +671,7 @@ Sequenced in nine PRs; issues are bundled only where they share a hot file or an
 | **P1** | [x] | #894 | ~~Regression test pinning `disposition: "attachment"`~~ — **MERGED (PR #925)** | Bundle B. All 48 `send_data` sites were already correct; the fragile seam was the keyword default in `artifact_resolvable.rb` that no caller passes. Specs assert the **emitted signed URL**, not the default; flipping it turns 5 of 9 red. Adds an inline-disposition source scan (help_controller allowlisted by name) and pins the host-only session cookie (#515). |
 | **P1** | [x] | #897 | ~~Audit stored-value render sites for XSS~~ — **MERGED (PR #925)** | Bundle B. `BackMatterResource#href` had no scheme validation where `FederationPeer` does; `href: "javascript:alert(1)"` was a **valid record** on both surfaces, reaching **4** anchor render sites (not 6 — two of the originally-surveyed sites are different shapes and still need judging). Validates the **scheme, not the shape**: mirroring `FederationPeer`'s absolute-URL rule would have rejected ~97% of real OSCAL hrefs (25,485 fragment refs + 38 relative paths vs 872 http(s)) and broken catalog import. Adds `safe_external_url` at the render sites and an `html_safe`-on-literals guard. |
 | **P1** | [ ] | #908 | Filter controls on index screens | Bundle D. Facet infrastructure already exists (`CollectionViewable#active_facets`); 3 of 16 screens use it. Framework filter cut — no column exists. |
+| **P1** | [ ] | #928 | An imported profile cannot be linked to a catalog — and is then permanently unpublishable | Bundle D with #908 — both touch `profile_documents_controller`, so they ship as one PR rather than colliding on it. Found in user testing. The API already permits `control_catalog_id` on `update`; the UI has no permitted-params path at all, so an operator can only recover by calling the API by hand — the inverse of the thin-client rule. Until linked, `before_publish_lifecycle` refuses publish with no in-app remedy. Resolved profiles are exempt, so it bites non-resolved imports. |
 | **P2** | [ ] | #880 | In-page help drawer (Bootstrap offcanvas) | Bundle E. First offcanvas in the app; budget a full `a11y_baseline.json` regeneration. |
 | **P2** | [ ] | #879 | Extend `field_help` to remaining edit screens | Bundle E. ~90-100 fields across 14 forms. Copy drafted for owner review, not shipped as filler. |
 | **P1** | [ ] | #904 | Terraform state/plan → CDEF coverage wizard | Bundle F. Engine ports from `sparc-iac` `state_cdef_coverage.py`. Multi-file upload in scope from the start; POA&M generation cut to a follow-on. |
@@ -693,7 +694,7 @@ file or an audit shape.
 
 ```text
 A #914 #909  ->  B #894 #897  ->  [#923 actions]  ->  C #919  ->  [#922 #921 bundler]
-  ->  D #908  ->  F #904  ->  E #880 #879  ->  G #822 (+#820 openssl)  ->  H #707  ->  I #860 #842
+  ->  D #908 #928  ->  F #904  ->  E #880 #879  ->  G #822 (+#820 openssl)  ->  H #707  ->  I #860 #842
   ->  release/v1.16.0
 ```
 
@@ -788,7 +789,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, #919, #908, #904, #880, #879, #822, #707, #860, #842 | In Progress — 4 of 13 shipped (PRs #924, #925). Bundle C (#919) next. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, #919, #908, #928, #904, #880, #879, #822, #707, #860, #842 | In Progress — 4 of 14 shipped (PRs #924, #925). Bundle C (#919) next. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 
