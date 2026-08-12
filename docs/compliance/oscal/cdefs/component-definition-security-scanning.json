@@ -33,6 +33,18 @@
             "description": "NIST SP 800-53 Rev 5 HIGH Baseline",
             "implemented-requirements": [
               {
+                "uuid": "7c4a9e61-3b28-4d75-9e10-5f2c8b71a0d3",
+                "control-id": "au-10",
+                "description": "The scanner output SPARC hands onward is attributable to the instance that produced it. The HDF package — amendments, findings and disposition summaries — is HMAC-SHA256 signed with an instance key derived from SPARC_HASH via SparcKeyDerivation, so a consumer can prove the package came from this SPARC instance and was not altered. Each disposition carries a signature_hash binding both the person who decided it and the person who approved it, so a risk acceptance cannot be repudiated by either.",
+                "remarks": "Implemented in app/services/hdf_package_service.rb, app/lib/sparc_key_derivation.rb and app/models/finding_disposition.rb (#809, #862)."
+              },
+              {
+                "uuid": "d18b5f30-6c47-4a92-b3e5-0a91d2c74f68",
+                "control-id": "au-12",
+                "description": "Re-occurrence is never silent. Every ingest writes a per-scan-run ScannerFinding row and demotes the prior row to superseded rather than overwriting it, so the full scan history — and each finding's computed lifecycle state (new, carried_forward, re_failed, expired) — remains reconstructable as an audit record. Disposition approve/reject decisions and aggregation runs emit AuditEvent rows through the API base controller's audit_log helper.",
+                "remarks": "Implemented in app/services/hdf_ingest_service.rb#record_finding, app/models/scanner_finding.rb, app/controllers/api/v1/finding_dispositions_controller.rb and app/controllers/api/v1/aggregations_controller.rb (#811, #862)."
+              },
+              {
                 "uuid": "50be4f1d-7766-4c69-b1e2-f4a0cc638f33",
                 "control-id": "ra-5",
                 "description": "SPARC performs automated vulnerability scanning through multiple tools in the CI security workflow: Trivy filesystem and container image scanning for CVEs in dependencies and base images, CodeQL semantic analysis for code-level vulnerabilities, bundler-audit for Ruby gem advisory checks, and Grype SBOM-driven SCA (#461) that consumes the CycloneDX SBOMs produced by sbom_generation and the Trivy fs/container scans. Grype provides authoritative vulnerability matching against the published SBOM artifacts that downstream consumers receive — the SBOM is scan-verified, not just generated. Scan results are uploaded as SARIF to GitHub Security for centralized tracking; Grype JSON is normalized to HDF via SAF CLI (anchoregrype2hdf). All container image CVE findings are triaged and dispositioned in docs/compliance/sparc-findings.yml with severity classification, deployment-specific rationale, NIST control mapping, and 30-day review cycles. Tenant-supplied scan results are attributable to what they assessed (#811): an ingested HDF scan records the target CdefDocument it ran against and a scanner_scope of 'target' (component-specific scanners such as Trivy or Gitleaks) or 'boundary' (system-wide posture scanners), and each resulting ScannerFinding carries component_ref and source_location. Vulnerability results therefore roll up per component, not only per authorization boundary. Findings are retained per scan run rather than overwritten, so scan-over-scan history is preserved for the authorization boundary.",
