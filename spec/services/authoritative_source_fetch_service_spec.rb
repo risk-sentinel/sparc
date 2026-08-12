@@ -54,6 +54,46 @@ RSpec.describe AuthoritativeSourceFetchService do
       expect(resource.reload.evidence_id).to eq(result.evidence.id)
     end
 
+    # #934 — this path built an Evidence with neither `collected_at` nor
+    # `collected_by` while the actor was passed in and discarded. The rows
+    # rendered "Collected By: N/A" and, `collected_at` being nil, could never
+    # match the collected-between filter #908 shipped.
+    describe "collection provenance" do
+      let(:success_class) { Class.new(Net::HTTPSuccess) { class << self; def name; "Net::HTTPOK_200"; end; end } }
+
+      before do
+        allow_any_instance_of(described_class).to receive(:follow_redirects)
+          .and_return(stub_response(success_class))
+      end
+
+      it "records the actor that requested the fetch" do
+        evidence = described_class.call(resource: resource, actor: actor).evidence
+
+        expect(evidence.collected_by_user_id).to eq(actor.id)
+        expect(evidence.collected_by).to eq(actor.display_label)
+        expect(evidence.collected_at).to be_within(1.minute).of(Time.current)
+      end
+
+      # The acceptance criterion, stated as the filter it could not satisfy.
+      it "is reachable by the collected-between filter" do
+        evidence = described_class.call(resource: resource, actor: actor).evidence
+
+        found = EvidenceBrowseQuery.new(
+          { collected_from: Date.current.to_s, collected_to: Date.current.to_s }
+        ).records
+
+        expect(found).to include(evidence)
+      end
+
+      it "names the collector when there is no actor, rather than leaving it blank" do
+        evidence = described_class.call(resource: resource, actor: nil).evidence
+
+        expect(evidence.collected_by).to eq(described_class::SYSTEM_COLLECTOR)
+        expect(evidence.collected_by_user_id).to be_nil
+        expect(evidence.collected_at).to be_present
+      end
+    end
+
     it "returns disabled when env var is off" do
       ENV["SPARC_AUTHORITATIVE_FETCH_ENABLED"] = "false"
       result = described_class.call(resource: resource, actor: actor)

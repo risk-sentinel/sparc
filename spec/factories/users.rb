@@ -45,5 +45,16 @@ FactoryBot.define do
     trait :with_expired_password do
       password_changed_at { 60.days.ago }
     end
+
+    # A service account is a real User row, not a separate kind of principal —
+    # which is why an API token minted for one resolves to it as `current_user`
+    # and why evidence it submits is attributed to it (#934). `owner` is
+    # required by the model, so the trait supplies one rather than leaving the
+    # record invalid.
+    trait :service_account do
+      service_account { true }
+      display_name { "Pipeline Service Account" }
+      association :owner, factory: :user
+    end
   end
 end

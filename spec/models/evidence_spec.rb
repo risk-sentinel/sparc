@@ -100,6 +100,50 @@ RSpec.describe Evidence, type: :model do
     end
   end
 
+  # #934 / AU-10 — the one place collection provenance is written, so a fourth
+  # creation path cannot repeat the omission this issue was filed for.
+  describe "#stamp_collection!" do
+    it "records the actor as both the historical name and the reference" do
+      user = create(:user, display_name: "Ada Lovelace")
+      evidence = build(:evidence, collected_by: nil, collected_at: nil)
+
+      evidence.stamp_collection!(actor: user)
+
+      expect(evidence.collected_by).to eq("Ada Lovelace")
+      expect(evidence.collected_by_user).to eq(user)
+      expect(evidence.collected_at).to be_within(1.minute).of(Time.current)
+      expect(evidence.collected_at.zone).to eq("UTC")
+    end
+
+    it "falls back to email when the account has no name to show" do
+      user = create(:user, display_name: nil, first_name: nil, last_name: nil,
+                    email: "grace@example.gov")
+      evidence = build(:evidence)
+
+      evidence.stamp_collection!(actor: user)
+
+      expect(evidence.collected_by).to eq("grace@example.gov")
+    end
+
+    it "names a non-user collector and leaves the reference null" do
+      evidence = build(:evidence)
+
+      evidence.stamp_collection!(actor: nil, label: "System (authoritative fetch)")
+
+      expect(evidence.collected_by).to eq("System (authoritative fetch)")
+      expect(evidence.collected_by_user).to be_nil
+      expect(evidence.collected_at).to be_present
+    end
+
+    it "assigns without saving, leaving each caller its own error handling" do
+      evidence = build(:evidence)
+
+      evidence.stamp_collection!(actor: create(:user))
+
+      expect(evidence).to be_new_record
+    end
+  end
+
   describe "#attested?" do
     it "returns false when no attestations exist" do
       evidence = create(:evidence)

@@ -66,6 +66,35 @@ RSpec.describe "Api::V1::Evidences", type: :request do
       expect(parsed["data"].first["id"]).to eq(linked.id)
     end
 
+    # #934 — the facet #908 could not ship, because provenance was a name string
+    # rather than a reference.
+    it "filters by collected_by_user_id, and an unmatched account returns nothing" do
+      mine = create(:evidence, collected_by_user: admin, collected_by: admin.display_label)
+      create(:evidence, collected_by_user: member, collected_by: member.display_label)
+      create(:evidence, collected_by_user: nil, collected_by: "Someone Unresolved")
+
+      get api_v1_evidences_path, params: { collected_by_user_id: admin.id }, headers: admin_headers
+      parsed = JSON.parse(response.body)
+      expect(parsed["data"].map { |e| e["id"] }).to contain_exactly(mine.id)
+      expect(parsed["data"].first["collected_by_user_id"]).to eq(admin.id)
+
+      # Both directions: the facet must NARROW, not merely re-order. An account
+      # that collected nothing returns an empty set rather than everything.
+      stranger = create(:user)
+      get api_v1_evidences_path, params: { collected_by_user_id: stranger.id }, headers: admin_headers
+      expect(JSON.parse(response.body)["data"]).to be_empty
+    end
+
+    # The row an unattributed name leaves behind is invisible to the facet, and
+    # that is deliberate — see EvidenceBrowseQuery. Asserted so a later change
+    # that "helpfully" folds nulls into a bucket fails here.
+    it "excludes unattributed evidence from every collected_by_user_id value" do
+      create(:evidence, collected_by_user: nil, collected_by: "Ambiguous Name")
+
+      get api_v1_evidences_path, params: { collected_by_user_id: admin.id }, headers: admin_headers
+      expect(JSON.parse(response.body)["data"]).to be_empty
+    end
+
     context "boundary scoping for non-admins" do
       let(:own_boundary)   { create(:authorization_boundary) }
       let(:other_boundary) { create(:authorization_boundary) }
@@ -139,6 +168,61 @@ RSpec.describe "Api::V1::Evidences", type: :request do
       evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
       expect(evidence.collected_by).to eq(admin.display_name.presence || admin.email)
       expect(evidence.collected_at).to be_within(1.minute).of(Time.current)
+    end
+
+    # #934 — the name string alone cannot answer "what did this account
+    # provide", so the FK is stamped too, and it is no more client-supplied
+    # than the other two.
+    it "stamps collected_by_user_id and ignores a client-supplied one" do
+      other = create(:user)
+
+      post api_v1_evidences_path,
+           params: { evidence: valid_attributes(collected_by_user_id: other.id) },
+           headers: admin_headers
+
+      expect(response).to have_http_status(:created)
+      evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
+      expect(evidence.collected_by_user_id).to eq(admin.id)
+      expect(evidence.collected_by_user_id).not_to eq(other.id)
+      expect(JSON.parse(response.body)["data"]["collected_by_user_id"]).to eq(admin.id)
+    end
+
+    # #934 — automation is the case that made provenance worth having as a
+    # reference. A `sparc_sa_…` token resolves to the service-account User
+    # itself (ApiAuthentication#authenticate_sparc_token!), so the artifact is
+    # attributed to the account that submitted it — not left blank, and not
+    # charged to the human who owns that account.
+    context "when submitted with a service-account token" do
+      let(:service_account) { create(:user, :service_account) }
+      let(:sa_token)        { ApiToken.generate!(user: service_account, name: "Pipeline") }
+      let(:sa_headers)      { { "Authorization" => "Bearer #{sa_token.plaintext_token}" } }
+
+      before { allow_any_instance_of(User).to receive(:has_permission?).and_return(true) }
+
+      it "attributes the evidence to the service account, not its owner" do
+        expect(sa_token.plaintext_token).to start_with("sparc_sa_")
+
+        post api_v1_evidences_path, params: { evidence: valid_attributes }, headers: sa_headers
+
+        expect(response).to have_http_status(:created)
+        evidence = Evidence.find(JSON.parse(response.body)["data"]["id"])
+        expect(evidence.collected_by_user_id).to eq(service_account.id)
+        expect(evidence.collected_by_user_id).not_to eq(service_account.owner_id)
+        expect(evidence.collected_by).to eq(service_account.display_label)
+        expect(evidence.collected_at).to be_within(1.minute).of(Time.current)
+      end
+
+      it "makes what the pipeline submitted findable by account" do
+        post api_v1_evidences_path, params: { evidence: valid_attributes }, headers: sa_headers
+        submitted = Evidence.find(JSON.parse(response.body)["data"]["id"])
+        create(:evidence, collected_by_user: admin)
+
+        get api_v1_evidences_path,
+            params: { collected_by_user_id: service_account.id }, headers: admin_headers
+
+        ids = JSON.parse(response.body)["data"].map { |e| e["id"] }
+        expect(ids).to contain_exactly(submitted.id)
+      end
     end
 
     # #903 — the existing case above supplies a PAST timestamp, which the server
