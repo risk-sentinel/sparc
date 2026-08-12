@@ -83,6 +83,19 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     # inherits the break. Declaring the catalog is itself permitted.
     return unless enforce_reconciliation!(@profile, profile_params)
 
+    # #928 — the web refuses to repoint a PUBLISHED profile at a different
+    # catalog; this surface permitted it silently. `profile_params` has always
+    # included `control_catalog_id`, so the API was the way around a rule the
+    # UI enforces — the surface drift #919 exists to stop. Setting a catalog
+    # that is missing stays allowed here too, for the same legacy-document
+    # reason. (NIST CM-3, CA-5)
+    if @profile.rebaselining_published?(profile_params)
+      render json: { error: "This profile is published and its baseline is fixed. " \
+                            "Copy it to point at a different catalog." },
+             status: :unprocessable_entity
+      return
+    end
+
     @profile.update!(profile_params)
 
     audit_log("profile_document_updated", subject: @profile, metadata: { name: @profile.name })
