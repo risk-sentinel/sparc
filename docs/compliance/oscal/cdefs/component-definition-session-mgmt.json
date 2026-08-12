@@ -33,10 +33,34 @@
             "description": "NIST SP 800-53 Rev 5 HIGH Baseline",
             "implemented-requirements": [
               {
+                "uuid": "e4c809d5-065a-4057-a481-d6b6aed7cb38",
+                "control-id": "ac-4",
+                "description": "Cross-instance information flow is explicit rather than implicit. Federation exchanges signed bundles against a peer allow-list: an instance that is not a registered peer is not trusted, and a bundle whose signature does not verify is rejected rather than partially applied. There is no ambient cross-instance trust to inherit.",
+                "remarks": "Implemented in app/services/authoritative_source_federation_service.rb and app/models/federation_peer.rb. Tested by spec/services/authoritative_source_federation_service_spec.rb and spec/models/federation_peer_spec.rb."
+              },
+              {
+                "uuid": "62417e74-0d75-4c89-aae1-c91d793e1000",
+                "control-id": "ac-20",
+                "description": "External SPARC instances are registered deliberately by an administrator through the FederationPeer model, and their signing secrets are exchanged out of band rather than negotiated in-channel. An external system has no standing with this instance until an administrator has created that record.",
+                "remarks": "Implemented in app/models/federation_peer.rb. Tested by spec/models/federation_peer_spec.rb."
+              },
+              {
                 "uuid": "b62f0d17-9a4e-4c53-8f21-7d6e05a9c418",
                 "control-id": "au-10",
                 "description": "SPARC provides non-repudiation for the payloads it federates and exports. Federation bundles are signed with HMAC-SHA256 over a canonical-JSON payload using the receiving peer's signing secret, so a bundle is tied to a specific peer and cannot be altered in transit without detection — application-layer integrity that survives TLS termination at an intermediate proxy. The signed HDF package (amendments, findings and disposition summaries) uses the same pattern with an instance key derived from SPARC_HASH via SparcKeyDerivation, so a consumer can prove a package came from this SPARC instance. Each finding disposition's signature_hash binds both its decider and its approver.",
                 "remarks": "Implemented in app/services/federation_bundle_signing_service.rb, app/services/hdf_package_service.rb, app/lib/sparc_key_derivation.rb and app/models/finding_disposition.rb (#372, #809, #862)."
+              },
+              {
+                "uuid": "b29476f7-ae2b-40de-a7ac-3e5f16498900",
+                "control-id": "ia-5",
+                "description": "Federation peer service tokens and signing secrets are encrypted at rest with AES-GCM authenticated encryption via ActiveSupport::MessageEncryptor, keyed through SparcKeyDerivation from the per-instance SPARC_HASH secret. A database copy alone therefore does not yield usable peer credentials.",
+                "remarks": "Implemented in app/models/federation_peer.rb and app/lib/sparc_key_derivation.rb. Tested by spec/models/federation_peer_spec.rb."
+              },
+              {
+                "uuid": "b2802f94-d978-48e9-b58d-3d28775d03d6",
+                "control-id": "sc-7",
+                "description": "Outbound fetching of authoritative sources is boundary-controlled. AuthoritativeSourceFetchService rejects non-HTTPS hrefs outright and is gated by SPARC_AUTHORITATIVE_FETCH_ENABLED, which is off by default, so an air-gapped or restricted deployment makes no outbound requests at all and administrators attach evidence manually instead.",
+                "remarks": "Implemented in app/services/authoritative_source_fetch_service.rb. Tested by spec/services/authoritative_source_fetch_service_spec.rb."
               },
               {
                 "uuid": "b4d7e9f2-1a83-4c65-8b29-d36f5e8a91c7",
@@ -67,6 +91,12 @@
                 "control-id": "sc-28",
                 "description": "SPARC protects information at rest through PostgreSQL native encryption capabilities for database storage and AWS S3 Server-Side Encryption with KMS (SSE-KMS) for Active Storage file attachments. The production environment configures the Amazon S3 storage service for all uploaded documents, ensuring encryption at the storage layer. Application secrets (SECRET_KEY_BASE, database credentials) are KMS-encrypted in AWS Secrets Manager and injected at boot time — never stored on disk. Feature-gated by SPARC_AWS_SECRETS_ENABLED.",
                 "remarks": "Implemented in config/environments/production.rb (config.active_storage.service = :amazon with SSE-KMS) and config/initializers/00_aws_secrets.rb. Database encryption managed by PostgreSQL infrastructure."
+              },
+              {
+                "uuid": "dd81b84f-5e29-4244-bb6a-26fafd3d0712",
+                "control-id": "si-10",
+                "description": "SPARC validates externally supplied content before it enters the corpus. AuthoritativeSourceFetchService enforces a 25 MB body cap, a 30-second read timeout, and derives the filename and content type from response headers rather than trusting a supplied name. BackMatterBulkImportService validates each row independently with per-row error reporting. Signed bundle verification rejects unknown algorithms and tampered payloads.",
+                "remarks": "Implemented in app/services/authoritative_source_fetch_service.rb, app/services/back_matter_bulk_import_service.rb and app/services/federation_bundle_signing_service.rb. Tested by the corresponding specs under spec/services/."
               }
             ]
           }

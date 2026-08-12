@@ -21,6 +21,23 @@ RSpec.describe "OSCAL component definitions", type: :model do
     expect(cdef_paths.size).to be >= 5
   end
 
+  # Uniqueness has to hold across the whole set, not just within one file: a
+  # consumer that ingests all five and keys on uuid cannot tell two
+  # same-uuid requirements apart, whichever files they came from.
+  it "gives every implemented requirement a uuid unique across all of them" do
+    uuids = cdef_paths.flat_map do |path|
+      JSON.parse(File.read(path)).dig("component-definition", "components").to_a.flat_map do |component|
+        component["control-implementations"].to_a.flat_map do |implementation|
+          implementation["implemented-requirements"].to_a.map { |r| r["uuid"] }
+        end
+      end
+    end
+
+    duplicates = uuids.tally.select { |_uuid, count| count > 1 }.keys
+
+    expect(duplicates).to be_empty, -> { "uuid reused across component definitions: #{duplicates.join(', ')}" }
+  end
+
   cdef_paths.each do |path|
     context File.basename(path) do
       let(:data) { JSON.parse(File.read(path)) }
