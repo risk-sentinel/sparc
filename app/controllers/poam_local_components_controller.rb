@@ -7,6 +7,11 @@ class PoamLocalComponentsController < ApplicationController
   include OscalExtensibilityParams
 
   before_action :set_poam_document
+  include PoamChildAuthorization
+  # #919 — every action here is authoring (new/create/edit/update/destroy), so all
+  # of them require poam.write on the parent document's boundary. Runs AFTER
+  # set_poam_document, which is what resolves that boundary.
+  before_action :authorize_poam_write!
   before_action :set_poam_local_component, only: %i[edit update destroy]
 
   def new

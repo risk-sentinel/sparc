@@ -12,7 +12,7 @@ module SeedRunner
   CURRENT_VERSIONS = {
     "nist_rev5_catalog"    => "2.0.0",
     "nist_rev4_catalog"    => "2.0.0",
-    "roles"                => "1.1.0",
+    "roles"                => "1.2.0",  # #919 back-matter/roster/approve grants
     "admin_user"           => "1.1.0",
     "fedramp_20x_ksi"      => "1.0.0",
     "nist_rev4_rev5_mapping" => "1.0.0",

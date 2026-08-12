@@ -2268,14 +2268,100 @@ SPARC_ROLES = [
     permissions: PERM_VIEW_ONLY }
 ].freeze
 
+# ── #919 — grants the seeds were never issuing ────────────────────────────
+#
+# Measured on the 29-role catalog before this change: 11 of the 35 permission
+# keys were enforced by code but granted to NO role. Because User#has_permission?
+# returns true for admins, every one of them was silently instance-admin-only —
+# nobody decided that, it fell out of the seeds. The back_matter cluster was the
+# clearest case: `read` was granted to 7 roles while write/promote/archive/
+# bulk_import/federate/approve_promotion were granted to zero, so the entire
+# back-matter authoring workflow was admin-only out of the box. The same held for
+# catalogs/cdef/profiles `.approve`, which made the #630-#634 approval workflow
+# admin-only too.
+#
+# Applied here rather than by editing thirteen PERM_* constants inline: the grant
+# and the reason it applies to a given role stay in one place, and the role
+# definitions above remain a readable statement of each role's document scope.
+#
+# NIST AC-2 (account management), AC-3 (access enforcement), AC-5 (separation of
+# duties), AC-6 (least privilege).
+
+# Boundary members manage back-matter that pertains to their boundary.
+#
+# `approve_promotion` and `federate` are deliberately EXCLUDED. Promotion
+# elevates boundary-scoped content to instance-wide authoritative, so the
+# boundary REQUESTS (`promote`) and the instance ADJUDICATES — granting both to
+# the same role would let a member approve their own promotion and defeat the
+# review queue that exists for it (AC-5). Federation is cross-instance and is
+# likewise not a boundary-level act.
+PERM_BACK_MATTER_BOUNDARY = {
+  "back_matter.read"        => true,
+  "back_matter.write"       => true,
+  "back_matter.promote"     => true,
+  "back_matter.archive"     => true,
+  "back_matter.bulk_import" => true,
+  "converters.write"        => true
+}.freeze
+
+# The policy team owns instance-wide/authoritative back-matter and adjudicates
+# promotion requests coming up from boundaries.
+PERM_BACK_MATTER_INSTANCE = PERM_BACK_MATTER_BOUNDARY.merge(
+  "back_matter.approve_promotion" => true,
+  "back_matter.federate"          => true,
+  "catalogs.approve"              => true,
+  "profiles.approve"              => true,
+  "cdef.approve"                  => true
+).freeze
+
+# The fourteen boundary roles that already hold some document write.
+#
+# Excludes assessor_3pao (separation of duties — an assessor must not edit the
+# provenance it is assessing) and view_only, per the owner's ruling; and also
+# ciso, information_owner_steward and solution_evaluator, which write no document
+# at all today. The governing rule is that the ability to manage back-matter
+# matches the RBAC already decided for documents — nobody gains authority over a
+# compliance artifact that they lack over the document it supports.
+BACK_MATTER_BOUNDARY_ROLES = %w[
+  ao agency_ao cloud_service_provider common_control_provider
+  component_supplier evidence_integration_engineer issm isso
+  project_member so_iso sparc_sme system_architect_engineer
+  system_operator_admin vendor_dependency_manager
+].freeze
+
+BACK_MATTER_INSTANCE_ROLES = %w[policy_manager].freeze
+
+# Roster management is DELEGABLE (#919). wiki/RBAC.md already described
+# `manage_members` as "add / remove members and assign roles within a boundary";
+# it was granted to no role and enforced by no code, so the published
+# documentation described a capability the application did not implement. Seeding
+# it here — and enforcing it on both surfaces — makes the documentation true
+# rather than correcting it downward.
+ROSTER_MANAGER_ROLES = %w[issm isso so_iso].freeze
+PERM_ROSTER_MANAGER = {
+  "authorization_boundaries.write"          => true,
+  "authorization_boundaries.manage_members" => true
+}.freeze
+
+# CDEF approval is not purely a boundary concern, so the policy team holds it
+# alongside the boundary security leads.
+CDEF_APPROVER_ROLES = %w[issm isso so_iso].freeze
+
 SPARC_ROLES.each do |attrs|
   role = Role.find_or_initialize_by(name: attrs[:name])
+
+  permissions = attrs[:permissions].dup
+  permissions.merge!(PERM_BACK_MATTER_BOUNDARY) if BACK_MATTER_BOUNDARY_ROLES.include?(attrs[:name])
+  permissions.merge!(PERM_BACK_MATTER_INSTANCE) if BACK_MATTER_INSTANCE_ROLES.include?(attrs[:name])
+  permissions.merge!(PERM_ROSTER_MANAGER)       if ROSTER_MANAGER_ROLES.include?(attrs[:name])
+  permissions["cdef.approve"] = true            if CDEF_APPROVER_ROLES.include?(attrs[:name])
+
   role.assign_attributes(
     display_name: attrs[:display_name],
     scope:        attrs[:scope],
     sort_order:   attrs[:sort_order],
     description:  attrs[:description],
-    permissions:  attrs[:permissions]
+    permissions:  permissions
   )
   role.save!
 end

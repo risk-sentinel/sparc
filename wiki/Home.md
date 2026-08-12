@@ -36,6 +36,9 @@ Complete inventory of every page in the application — Controls Layer, Implemen
 ### [Core Functions & Features](Core-Functions)
 OSCAL import/export/validation, the document processing pipeline, SSP/SAR wizards, control mapping, converters (CCI / AWS), KSI validations, the HDF ↔ OSCAL bridge, authoritative-source federation, and audit logging.
 
+### [OSCAL End to End](OSCAL-End-to-End)
+How SPARC, SAF CLI, InSpec and Heimdall fit together — what binds each OSCAL model to the previous one, the three layers against a single authorization boundary, how every scanner is normalized into the same shape, UUID stability across reuse, leveraged/federated authorizations, and why an accelerated ATO is not a continuous one.
+
 ### [Framework Mapping](Framework-Mapping)
 How SPARC maps external frameworks — DISA STIG, CIS Benchmarks, CCI, SCAP/OVAL — to NIST SP 800-53 via OSCAL, and the roadmap for expanding coverage.
 

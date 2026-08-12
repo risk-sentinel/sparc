@@ -92,10 +92,20 @@ class FederationPeersController < ApplicationController
     peer.signing_secret = nested[:signing_secret] if nested[:signing_secret].present?
   end
 
+  # #919 — was a hand-rolled admin gate, which disagreed with
+  # Api::V1::FederationPeersController's `back_matter.federate` check: the same
+  # operation had two different answers depending on the surface.
+  #
+  # Now the permission, matching the API. The seeds grant back_matter.federate to
+  # policy_manager (federation is instance-level governance, not a boundary act),
+  # so this widens web access from admin-only to admin + policy team — which is
+  # the posture decided for instance-tier back-matter, and what the API already
+  # allowed.
+  #
+  # authorize_permission! rather than a bespoke redirect: it honours
+  # SparcConfig.any_auth_enabled? and emits the authorization_failure audit event
+  # (AU-2), neither of which the hand-rolled version did.
   def require_admin
-    return if current_user&.admin?
-
-    flash[:error] = "Federation peer administration is restricted to instance admins"
-    redirect_to root_path
+    authorize_permission!("back_matter.federate")
   end
 end

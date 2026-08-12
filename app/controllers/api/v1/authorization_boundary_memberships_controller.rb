@@ -120,7 +120,10 @@ class Api::V1::AuthorizationBoundaryMembershipsController < Api::V1::BaseControl
 
   def authorize_boundary_write!
     return if current_user.admin?
-    return if current_user.has_permission?("authorization_boundaries.write")
+    # #919 — manage_members, boundary-scoped. See the web sibling for why: the
+    # delegated grant is held at boundary scope, so an unscoped check refuses it.
+    return if current_user.has_permission?("authorization_boundaries.manage_members",
+                                           authorization_boundary_id: @authorization_boundary&.id)
 
     raise NotAuthorizedError, "Not authorized to modify authorization boundaries"
   end

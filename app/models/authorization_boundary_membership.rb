@@ -112,6 +112,16 @@ class AuthorizationBoundaryMembership < ApplicationRecord
             inclusion: { in: ->(record) { record.class.acceptable_roles }, message: "is not an available role" },
             if: -> { role.present? && role_changed? }
 
+  # #707 / #919 — the roster GRANTS permissions. Creating a membership provisions
+  # a UserRole scoped to that boundary; changing the role re-points it; removing
+  # the membership revokes it. Before this the two systems never met, so a roster
+  # member had zero permissions and the #919 guards refused them.
+  #
+  # after_commit, not after_save: the sync writes a second table, and a roster
+  # edit that rolls back must not leave a grant behind.
+  after_commit :sync_boundary_role_grant, on: %i[create update]
+  after_commit :revoke_boundary_role_grant, on: :destroy
+
   # Configured entries, resolved. `[{ value:, label: }]`; label is nil unless the
   # operator supplied one via the "role:Label" form.
   def self.configured_roles
@@ -178,5 +188,13 @@ class AuthorizationBoundaryMembership < ApplicationRecord
     return if role.blank? || !role_changed?
 
     self.role = self.class.resolve_role(role)
+  end
+
+  def sync_boundary_role_grant
+    BoundaryMembershipRoleSync.sync!(self)
+  end
+
+  def revoke_boundary_role_grant
+    BoundaryMembershipRoleSync.revoke!(self)
   end
 end

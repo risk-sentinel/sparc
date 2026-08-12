@@ -652,33 +652,58 @@ Backlog / gated:
 
 ---
 
-### Phase 15: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
+### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (13 issues). Two structural security deliverables lead —
+**Goal:** Close the v1.16.0 milestone (15 issues). Two structural security deliverables lead —
 a spec that fails when a controller ships without authorization (#919) and one that pins
 `disposition: "attachment"` on user content (#894) — followed by index filtering, the help
 drawer, the Terraform→CDEF coverage wizard, and the IdP-as-entitlement-source auth epic.
 
 Sequenced in nine PRs; issues are bundled only where they share a hot file or an audit shape.
 
-#### Release status — update this block on every PR
+<!-- markdownlint-disable MD013 -->
 
-**2 of 13 issues shipped. Bundle B in review. Target tag ~2026-09-21.**
+| Priority | Status | Issue | Description | Notes |
+| -------- | ------ | ----- | ----------- | ----- |
+| **P1** | [x] | #914 | ~~`SPARC_RESOURCES` replaced the shipped list wholesale~~ — **MERGED (PR #924)** | Bundle A. Extends by default; `SPARC_RESOURCES_REPLACE=true` opts back in. De-dupes on `href`, logs malformed JSON instead of swallowing it. **Behaviour change on upgrade — must lead the release notes:** deployments setting `SPARC_RESOURCES` get the 9 shipped links back unless they opt out. |
+| **P1** | [x] | #909 | ~~Single `SPARC_BANNER` accepting inline HTML or a `file:` path~~ — **MERGED (PR #924)** | Bundle A. `file:` prefix is explicit and never rendered literally, so a typo'd path cannot become the AC-8 notice. `SPARC_BANNER_HTML`/`SPARC_BANNER_MESSAGE` deprecated but **honoured** (they carry the notice text). Cleared four doc surfaces stale since #867, incl. AC-8/PL-4/PS-6/PT-4 citing the retired flag. **All three legacy names scheduled for removal in v1.18.0** — release notes must say so and why. |
+| **P0** | [ ] | #919 | Sweep every controller for missing authorization, make the gap fail a test | Bundle C. Triage memo first (16 controllers + all 35 `Role::PERMISSION_KEYS`), then an owner ruling on roster posture and `authorization_boundaries.manage_members`, then fixes + the structural spec. 12 known gaps. |
+| **P1** | [x] | #894 | ~~Regression test pinning `disposition: "attachment"`~~ — **MERGED (PR #925)** | Bundle B. All 48 `send_data` sites were already correct; the fragile seam was the keyword default in `artifact_resolvable.rb` that no caller passes. Specs assert the **emitted signed URL**, not the default; flipping it turns 5 of 9 red. Adds an inline-disposition source scan (help_controller allowlisted by name) and pins the host-only session cookie (#515). |
+| **P1** | [x] | #897 | ~~Audit stored-value render sites for XSS~~ — **MERGED (PR #925)** | Bundle B. `BackMatterResource#href` had no scheme validation where `FederationPeer` does; `href: "javascript:alert(1)"` was a **valid record** on both surfaces, reaching **4** anchor render sites (not 6 — two of the originally-surveyed sites are different shapes and still need judging). Validates the **scheme, not the shape**: mirroring `FederationPeer`'s absolute-URL rule would have rejected ~97% of real OSCAL hrefs (25,485 fragment refs + 38 relative paths vs 872 http(s)) and broken catalog import. Adds `safe_external_url` at the render sites and an `html_safe`-on-literals guard. |
+| **P1** | [ ] | #908 | Filter controls on index screens | Bundle D. Facet infrastructure already exists (`CollectionViewable#active_facets`); 3 of 16 screens use it. Framework filter cut — no column exists. |
+| **P1** | [ ] | #928 | An imported profile cannot be linked to a catalog — and is then permanently unpublishable | Bundle D with #908 — both touch `profile_documents_controller`, so they ship as one PR rather than colliding on it. Found in user testing. The API already permits `control_catalog_id` on `update`; the UI has no permitted-params path at all, so an operator can only recover by calling the API by hand — the inverse of the thin-client rule. Until linked, `before_publish_lifecycle` refuses publish with no in-app remedy. Resolved profiles are exempt, so it bites non-resolved imports. |
+| **P1** | [ ] | #929 | A document cannot be attached to a boundary after upload — the "Add…" tile leads nowhere | Bundle J (new). Same inversion as #928 and affects **all five** document types: the boundary can be set at upload but never after (`document_metadata_params` omits `authorization_boundary_id`), while the API permits it. Aggravated by the upload picker listing only boundaries the user is a member of, so the one chance to set it may not include the right one. Re-association must authorize against the **target** boundary — coordinate with #919. |
+| **P2** | [ ] | #880 | In-page help drawer (Bootstrap offcanvas) | Bundle E. First offcanvas in the app; budget a full `a11y_baseline.json` regeneration. |
+| **P2** | [ ] | #879 | Extend `field_help` to remaining edit screens | Bundle E. ~90-100 fields across 14 forms. Copy drafted for owner review, not shipped as filler. |
+| **P1** | [ ] | #904 | Terraform state/plan → CDEF coverage wizard | Bundle F. Engine ports from `sparc-iac` `state_cdef_coverage.py`. Multi-file upload in scope from the start; POA&M generation cut to a follow-on. |
+| **P1** | [ ] | #822 | IdP-mediated PIV via OIDC `acr`/`amr` | Bundle G. Both auth paths stay configurable; two-ceremony verification required. |
+| **P2** | [ ] | #707 | Reconcile membership role enums vs canonical Role catalog | Bundle H — closes as a recorded **DECIDED** outcome, not a migration. #860 already answers it: these are the permission model and the membership model, not two spellings of one thing. |
+| **P0** | [ ] | #860 | Epic: IdP as system of record for entitlements | Bundle I with #842. Five design questions answered in a memo commit before code. Dry-run built first, not last. |
+| **P0** | [ ] | #842 | Map OIDC claims to organization, boundary and role | Bundle I. A **missing** claim is an error, never "revoke everything" — that failure mode is what the blast-radius guard exists for. |
 
-| Bundle | Issues | Branch | State |
-|---|---|---|---|
-| **A** Config | #914, #909 | `feature/914_909_config_single_variable` | ✅ **MERGED** — PR #924 |
-| **B** Content safety | #894, #897 | `feature/894_897_content_safety` | 🔍 **IN REVIEW** — PR #925, all gates green |
-| *(deps)* | #923 actions | `dependabot/…/actions-updates` | ⬜ **merge before C** — fixes the CodeQL baseline for the sweep |
-| **C** Authz sweep | #919 | — | ⬜ next; opens with a triage memo + **owner decision gate** |
-| *(deps)* | #922 + #921 | `dependabot/bundler/{minor,patch}-updates` | ⬜ **merge after B** — re-run the disposition spec |
-| **D** Index filters | #908 | — | ⬜ blocked on C (`profile_documents_controller`) |
-| **F** CDEF wizard | #904 | — | ⬜ independent; parallelisable |
-| **E** Help & guidance | #880, #879 | — | ⬜ after D and F (global a11y baseline regen) |
-| **G** IdP PIV | #822 | — | ⬜ pair with **#820 openssl 4.x** — one TLS ceremony covers both |
-| **H** Role decision | #707 | — | ⬜ docs-only; closes as **DECIDED**, sequence before I |
-| **I** Auth epic | #860, #842 | — | ⬜ largest; memo commit answering 5 open questions first |
-| **Release** | — | `release/v1.16.0` | ⬜ VERSION → 1.16.0, scanner rescan, guide prose, changelog |
+<!-- markdownlint-enable MD013 -->
+
+**Deliverables:** Config that extends instead of silently replacing; a build that fails when a
+mutating controller ships unguarded; filterable collections; in-product guidance; CDEF coverage
+from real infrastructure; and entitlements sourced from the IdP without the power to de-provision
+a customer.
+
+---
+
+**Sequencing:** bundles land in this order; issues are grouped only where they share a hot
+file or an audit shape.
+
+```text
+A #914 #909  ->  B #894 #897  ->  [#923 actions]  ->  C #919  ->  [#922 #921 bundler]
+  ->  D #908 #928  ->  F #904  ->  E #880 #879  ->  G #822 (+#820 openssl)  ->  H #707  ->  I #860 #842
+  ->  release/v1.16.0
+```
+
+- **D after C** — both edit `profile_documents_controller`.
+- **E after D and F** — the offcanvas forces a global `a11y_baseline.json` regeneration, so it
+  should sweep up their new pages in one diff.
+- **H before I** — #842 needs a written answer for which role system a claim binds to.
+- **F is independent** — the best candidate to run in parallel if a second dev is free.
 
 #### Dependency lane (open Dependabot PRs)
 
@@ -722,31 +747,6 @@ transitive security PRs by hand after any framework bump.**
 - If **#820** lands, `openssl` moves **3.x → 4.x** (a major, with the Gemfile constraint widened).
   Call it out explicitly — it sits under PIV, federation signing, outbound TLS and LDAP.
 
-<!-- markdownlint-disable MD013 -->
-
-| Priority | Status | Issue | Description | Notes |
-| -------- | ------ | ----- | ----------- | ----- |
-| **P1** | [x] | #914 | ~~`SPARC_RESOURCES` replaced the shipped list wholesale~~ — **MERGED (PR #924)** | Bundle A. Extends by default; `SPARC_RESOURCES_REPLACE=true` opts back in. De-dupes on `href`, logs malformed JSON instead of swallowing it. **Behaviour change on upgrade — must lead the release notes:** deployments setting `SPARC_RESOURCES` get the 9 shipped links back unless they opt out. |
-| **P1** | [x] | #909 | ~~Single `SPARC_BANNER` accepting inline HTML or a `file:` path~~ — **MERGED (PR #924)** | Bundle A. `file:` prefix is explicit and never rendered literally, so a typo'd path cannot become the AC-8 notice. `SPARC_BANNER_HTML`/`SPARC_BANNER_MESSAGE` deprecated but **honoured** (they carry the notice text). Cleared four doc surfaces stale since #867, incl. AC-8/PL-4/PS-6/PT-4 citing the retired flag. **All three legacy names scheduled for removal in v1.18.0** — release notes must say so and why. |
-| **P0** | [ ] | #919 | Sweep every controller for missing authorization, make the gap fail a test | Bundle C. Triage memo first (16 controllers + all 35 `Role::PERMISSION_KEYS`), then an owner ruling on roster posture and `authorization_boundaries.manage_members`, then fixes + the structural spec. 12 known gaps. |
-| **P1** | [ ] | #894 | Regression test pinning `disposition: "attachment"` | **IN REVIEW** — bundle B, `feature/894_897_content_safety`. All 48 `send_data` sites were already correct; the fragile seam was the keyword default in `artifact_resolvable.rb` that no caller passes. Specs assert the **emitted signed URL**, not the default; flipping it turns 5 of 9 red. Adds an inline-disposition source scan (help_controller allowlisted by name) and pins the host-only session cookie (#515). |
-| **P1** | [ ] | #897 | Audit stored-value render sites for XSS | **IN REVIEW** — bundle B, same branch. `BackMatterResource#href` had no scheme validation where `FederationPeer` does; `href: "javascript:alert(1)"` was a **valid record** on both surfaces, reaching **4** anchor render sites (not 6 — two of the originally-surveyed sites are different shapes and still need judging). Validates the **scheme, not the shape**: mirroring `FederationPeer`'s absolute-URL rule would have rejected ~97% of real OSCAL hrefs (25,485 fragment refs + 38 relative paths vs 872 http(s)) and broken catalog import. Adds `safe_external_url` at the render sites and an `html_safe`-on-literals guard. |
-| **P1** | [ ] | #908 | Filter controls on index screens | Bundle D. Facet infrastructure already exists (`CollectionViewable#active_facets`); 3 of 16 screens use it. Framework filter cut — no column exists. |
-| **P2** | [ ] | #880 | In-page help drawer (Bootstrap offcanvas) | Bundle E. First offcanvas in the app; budget a full `a11y_baseline.json` regeneration. |
-| **P2** | [ ] | #879 | Extend `field_help` to remaining edit screens | Bundle E. ~90-100 fields across 14 forms. Copy drafted for owner review, not shipped as filler. |
-| **P1** | [ ] | #904 | Terraform state/plan → CDEF coverage wizard | Bundle F. Engine ports from `sparc-iac` `state_cdef_coverage.py`. Multi-file upload in scope from the start; POA&M generation cut to a follow-on. |
-| **P1** | [ ] | #822 | IdP-mediated PIV via OIDC `acr`/`amr` | Bundle G. Both auth paths stay configurable; two-ceremony verification required. |
-| **P2** | [ ] | #707 | Reconcile membership role enums vs canonical Role catalog | Bundle H — closes as a recorded **DECIDED** outcome, not a migration. #860 already answers it: these are the permission model and the membership model, not two spellings of one thing. |
-| **P0** | [ ] | #860 | Epic: IdP as system of record for entitlements | Bundle I with #842. Five design questions answered in a memo commit before code. Dry-run built first, not last. |
-| **P0** | [ ] | #842 | Map OIDC claims to organization, boundary and role | Bundle I. A **missing** claim is an error, never "revoke everything" — that failure mode is what the blast-radius guard exists for. |
-
-<!-- markdownlint-enable MD013 -->
-
-**Deliverables:** Config that extends instead of silently replacing; a build that fails when a
-mutating controller ships unguarded; filterable collections; in-product guidance; CDEF coverage
-from real infrastructure; and entitlements sourced from the IdP without the power to de-provision
-a customer.
-
 ---
 
 ## Closed / Removed Issues
@@ -789,14 +789,16 @@ removed and are no longer tracked:
 | 12 | Complete | Active Backlog — Post-migration Test/CI Hardening + Federation Follow-ups | ~~#436~~, ~~#244~~, ~~#367~~, ~~#445~~, ~~#440~~, ~~#449~~, ~~#451~~, ~~#453~~ | **COMPLETE** (carried items #433, #341, #246, #422, #413, #447 moved to Phase 14) |
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
-| 15 | Current | v1.15.4 patch — account-lifecycle and UX defects (milestone `v1.15.4`) | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, #879, ~~#881~~, ~~#887~~, ~~#888~~, #902, #903, #911 | In Progress — #881/#887/#888 shipped in PR #906; #902/#903 (evidence upload feedback + collection-date provenance) found in production user testing. PR #910 also adds a catalog-backed control **picker** (discovery only). Control-identifier **validation** was deliberately backed out of that PR and moved to #911: catalogs are the source of truth for every document type, so the rule must be designed once across evidence, profile load, converter ingestion and mappings — and must account for Rev 4 ↔ Rev 5 translation — rather than enforced per screen |
+| 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, #919, #908, #928, #929, #904, #880, #879, #822, #707, #860, #842 | In Progress — 4 of 15 shipped (PRs #924, #925). Bundle C (#919) next. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 
 **Total issues tracked:** 88 (23 original + 65 ad-hoc/new — adds the v1.7.x hardening cluster #509–#553)
 **Completed (Phases 1-13):** 92 issues including the full v1.7.x sprint (17 issues across hardening + patch releases). v1.7.2 shipped 2026-05-24 (image `risksentinel/sparc:1.7.2`).
 **Remaining (Phase 14 active backlog):** 11 issues — P0: #545 (operator clicks pre-public-flip), #433 (in progress) / P1: #498, #499 (CDEF mutations chain) / P2: #528, #531, #447 (deferred) / P3: #341, #246, #413, #422 (gated)
-**Phases 1-13 complete.** Phase 14 (pre-public-flip + API test validation + CDEF mutations) in progress.
+**Phases 1-13 and 15 complete.** Phase 14 (pre-public-flip + API test validation + CDEF mutations)
+and Phase 16 (v1.16.0) are both in progress — 14 is a carried backlog, 16 is the active milestone.
 
 > **This document is stale between v1.9.1 and v1.15.3.** The release history from
 > v1.9.2 onward was tracked on the GitHub Releases page and the wiki Changelog

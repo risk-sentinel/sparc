@@ -154,14 +154,36 @@ RSpec.describe "Api::V1::BaselineParameters", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "allows write access (all authenticated)" do
+    # #919 — BEHAVIOUR CHANGE. This example previously asserted "allows write
+    # access (all authenticated)", which encoded a missing guard as intended
+    # behaviour: any valid API token could rewrite a profile's baseline
+    # parameters, the ODP tailoring an ATO package rests on.
+    #
+    # It was inconsistent as well as insecure — PUT /profile_documents/:id has
+    # required profiles.write since #575, while PUT /profile_documents/:id/
+    # parameters, which edits part of the same profile, required nothing.
+    #
+    # Found by spec/security/controller_authorization_coverage_spec.rb, not by
+    # the original 16-controller survey, which looked only at the web surface.
+    it "refuses a write without profiles.write" do
       create(:profile_control, profile_document: profile, control_id: "ac-1")
 
       put api_v1_profile_document_parameters_path(profile), params: {
-        parameters: [
-          { param_id: "ac-1_prm_1", value: "test" }
-        ]
+        parameters: [ { param_id: "ac-1_prm_1", value: "test" } ]
       }, headers: user_headers, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    # The positive control: the guard must not lock out a legitimate editor.
+    it "allows a write when the caller holds profiles.write" do
+      grant_permission(regular_user, "profiles.write")
+      create(:profile_control, profile_document: profile, control_id: "ac-1")
+
+      put api_v1_profile_document_parameters_path(profile), params: {
+        parameters: [ { param_id: "ac-1_prm_1", value: "test" } ]
+      }, headers: user_headers, as: :json
+
       expect(response).to have_http_status(:ok)
     end
   end

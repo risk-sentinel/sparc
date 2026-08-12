@@ -6,8 +6,19 @@ RSpec.describe "Attestations", type: :request do
   let(:user) { create(:user) }
   let(:evidence) { create(:evidence) }
 
-  before { sign_in_as(user) }
+  # #919 — attesting is a write on the assessor trail, so it now requires
 
+  # evidence.write on the evidence's boundary. Granting the key rather than
+
+  # using an admin keeps the spec honest: admin? bypasses has_permission?, so an
+
+  # admin would stay green even if the guard were removed.
+
+  before do
+    grant_permission(user, "evidence.write", authorization_boundary: evidence.authorization_boundary)
+
+    sign_in_as(user)
+  end
   describe "GET /evidences/:evidence_id/attestations/new" do
     it "renders the new attestation form" do
       get new_evidence_attestation_path(evidence)

@@ -23,6 +23,26 @@ class ProfileDocumentsController < ApplicationController
   ]
   before_action :ensure_editable!, only: %i[update_metadata update_controls publish submit_for_review]
 
+  # #919 — this controller had NO authorization on any mutating action.
+  # `ensure_editable!` above is a lifecycle-state check and
+  # `require_authentication_unless_public_controls` is authentication; neither
+  # asks whether the caller may write. Its own Api::V1 sibling already gated the
+  # same actions and carried a comment noting the web side did not, so the two
+  # surfaces disagreed on the identical operation.
+  #
+  # Mirrors Api::V1::ProfileDocumentsController#authorize_profiles_write! —
+  # unscoped `profiles.write`, because profiles and catalogs are instance-level
+  # rather than boundary-scoped. `approve`/`reject` are intentionally excluded:
+  # DocumentApprovalActions gates those on approver authority and separation of
+  # duties, which is a stricter and different question from write access.
+  #
+  # NIST AC-3 (access enforcement), AC-6 (least privilege).
+  before_action :authorize_profiles_write!, only: %i[
+    new create destroy update_metadata copy set_baseline
+    select_catalog select_profile create_from_profile create_from_catalog
+    manage_controls update_controls publish submit_for_review
+  ]
+
   PRIORITY_ORDER = %w[P1 P2 P3].freeze
 
   def index
@@ -425,6 +445,14 @@ class ProfileDocumentsController < ApplicationController
   def document_metadata_params
     permitted = params.require(:profile_document).permit(:name, :profile_version, :oscal_version, :description, :published)
     merge_metadata_extra(permitted, :profile_document)
+  end
+
+  # #919 — mirrors the Api::V1 sibling exactly so the two surfaces cannot
+  # drift. authorize_permission! carries the admin bypass, honours
+  # SparcConfig.any_auth_enabled?, and emits the authorization_failure audit
+  # event; a hand-rolled check loses all three.
+  def authorize_profiles_write!
+    authorize_permission!("profiles.write")
   end
 
   def set_profile_document

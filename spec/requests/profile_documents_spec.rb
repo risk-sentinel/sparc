@@ -5,8 +5,19 @@ require "rails_helper"
 RSpec.describe "ProfileDocuments", type: :request do
   let(:user) { create(:user) }
 
-  before { sign_in_as(user) }
+  # #919 — profile mutations now require profiles.write. Unscoped: profiles and
 
+  # catalogs are instance-level, matching the Api::V1 sibling's guard. Granting
+
+  # the key rather than using an admin, so the spec still fails if the guard
+
+  # regresses (admin? bypasses has_permission? entirely).
+
+  before do
+    grant_permission(user, "profiles.write")
+
+    sign_in_as(user)
+  end
   describe "GET /profile_documents" do
     it "returns a successful response" do
       get profile_documents_path

@@ -7,6 +7,17 @@
 # NIST SA-10: Developer Configuration Management
 class ControlBackMatterLinksController < ApplicationController
   before_action :set_control
+  # #919 — linking a back-matter resource to a control had no guard, and BOTH
+  # lookups were unscoped: the control (`klass.find(id)` across four control
+  # types) and the resource (`BackMatterResource.find(id)`), which allowed
+  # linking any resource to any control across documents.
+  #
+  # Scoped to the owning document's boundary via resolve_document. That handles
+  # both tiers without a special case: CDEF and SSP controls resolve to a
+  # boundary-scoped document, while catalog and profile controls have no
+  # boundary, so the check falls through to requiring an INSTANCE-level grant —
+  # which is the policy tier, and the correct fail-closed direction.
+  before_action :authorize_back_matter_write!
   before_action :set_link, only: :destroy
 
   # POST /:parent/:parent_id/control_back_matter_links
@@ -70,6 +81,11 @@ class ControlBackMatterLinksController < ApplicationController
     "profile_control_id"  => ProfileControl,
     "ssp_control_id"      => SspControl
   }.freeze
+
+  def authorize_back_matter_write!
+    authorize_permission!("back_matter.write",
+                          authorization_boundary_id: resolve_document.try(:authorization_boundary_id))
+  end
 
   def set_control
     CONTROL_PARAMS.each do |param_key, klass|

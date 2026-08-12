@@ -8,8 +8,19 @@ RSpec.describe "PoamRemediations + PoamMilestones", type: :request do
   # #832 — a risk requires description/statement/status/deadline as well.
   let!(:risk) { create(:poam_risk, poam_document: poam, title: "Parent Risk") }
 
-  before { sign_in_as(user) }
+  # #919 — these actions now require poam.write on the parent document's
 
+  # boundary. Granting the specific key rather than signing in as an admin:
+
+  # admin? short-circuits has_permission?, so an admin would pass even if the
+
+  # guard were removed.
+
+  before do
+    grant_document_permission(user, "poam.write", poam)
+
+    sign_in_as(user)
+  end
   describe "Remediations CRUD" do
     let(:base_attrs) do
       { poam_risk_id: risk.id, title: "Patch Library X",

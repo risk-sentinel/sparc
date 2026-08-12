@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_08_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_11_150100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1705,10 +1705,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_08_120100) do
     t.bigint "authorization_boundary_id"
     t.datetime "created_at", null: false
     t.bigint "role_id", null: false
+    t.string "source", default: "manual", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["authorization_boundary_id"], name: "index_user_roles_on_authorization_boundary_id"
     t.index ["role_id"], name: "index_user_roles_on_role_id"
+    t.index ["source"], name: "index_user_roles_on_source"
     t.index ["user_id", "role_id", "authorization_boundary_id"], name: "idx_user_roles_unique", unique: true
     t.index ["user_id"], name: "index_user_roles_on_user_id"
   end

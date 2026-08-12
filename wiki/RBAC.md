@@ -40,7 +40,7 @@ Authorization boundaries can be associated with an organization. Who may change 
 - **Attaching an _unassigned_ boundary** to an organization requires the **Org Admin** role (`org_admin` organization membership) on that target organization — or Instance Admin.
 - **Moving a boundary between organizations** (it already belongs to a different org) is **Instance Admin only**. The admin organization screen surfaces this with a confirmation and a note; non-admin attempts are refused.
 
-Both surfaces — the admin organization screen and the API (`PATCH /api/v1/authorization_boundaries/:id/organization`) — enforce the same rule through a single authorization service, so they cannot drift. Personnel assigned to a boundary through the admin screen (canonical `user_roles`) and through the boundary screen (legacy memberships) are both shown on the boundary's Personnel Roster. (#770)
+Both surfaces — the admin organization screen and the API (`PATCH /api/v1/authorization_boundaries/:id/organization`) — enforce the same rule through a single authorization service, so they cannot drift. Personnel assigned to a boundary through the admin screen and through the boundary's Personnel Roster are both shown on that roster, and since v1.16.0 both grant permissions — a roster entry provisions a boundary-scoped `user_roles` row (#707). (#770)
 
 ---
 
@@ -55,6 +55,41 @@ A single user can hold:
 - Multiple instance-scoped roles simultaneously.
 - Different authorization-boundary-scoped roles across different authorization boundaries.
 - A combination of instance-scoped and authorization-boundary-scoped roles.
+
+**A boundary-scoped role cannot be held instance-wide, and an instance-scoped role cannot be pinned to a boundary.** `UserRole` validates this in both directions, so Authorizing Official, System Owner, ISSO, CISO and the rest are *always* per-boundary — a user is AO **on a boundary**, never AO everywhere. Attempting either raises a validation error rather than being silently accepted.
+
+---
+
+## How a user gets a boundary-scoped role
+
+Two paths, and both write to `user_roles`:
+
+| Path | `source` | Who does it |
+|---|---|---|
+| **Added to a boundary's Personnel Roster** with a role | `membership` | Anyone holding `authorization_boundaries.manage_members` on that boundary (ISSM / ISSO / SO-ISO), or an Instance Admin |
+| **Assigned directly** in Admin → Users | `manual` | Instance Admin |
+
+### Roster membership grants permissions (#707)
+
+Adding someone to a boundary's roster with a role **grants that role's permissions on that boundary**, scoped to it. Changing their role on the roster re-points the grant; removing them revokes it.
+
+This was not always true. Until v1.16.0 the roster and the permission model were separate tables that never met: a roster entry recorded *who was on a boundary*, while `user_roles` recorded *what they could do*, and creating the first never created the second. A member added as ISSO held zero permissions. That went unnoticed because the boundary-scoped screens had no authorization checks at the time — the roster looked like it worked because nothing was asking. #919 added those checks, which is why the two had to be connected in the same release.
+
+**The two `source` values do not interfere.** Removing someone from a roster revokes only the `membership` grant; an Instance Admin's deliberate `manual` assignment survives. This is why the column exists — otherwise a roster edit would silently undo an unrelated decision.
+
+### Per-boundary granularity
+
+Because every roster entry carries its own role, the same person can hold different authority on different boundaries:
+
+> A user who is **ISSO on Boundary A** and **View Only on Boundary B** can write the SSP on A, can only read on B, and has no instance-wide write permission anywhere.
+
+That is the intended model: a role is a statement about a boundary, not a title a person carries across the instance.
+
+### Roles the roster cannot grant
+
+The roster vocabulary and the canonical role catalog are not identical. Four names match exactly (`ciso`, `isso`, `project_member`, `view_only`); three are translated (`authorizing_official` → AO, `system_owner` → SO-ISO, `assessor` → Assessor / 3PAO).
+
+A custom role configured through `SPARC_AUTH_BOUNDARY_ROLES` that matches no canonical role **grants nothing** and logs a warning naming the valid options. This is deliberate: inventing permissions for an unrecognised role name would be worse than granting none. Define a matching role in **Admin → Roles** if a custom name needs real authority.
 
 ---
 
@@ -88,7 +123,6 @@ SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION
 | `evidence.write` | Upload / edit / link evidence artifacts |
 | `mappings.read` | View control mappings |
 | `mappings.write` | Create / edit control mappings |
-| `converters.read` | View / run OSCAL and HDF converter tooling |
 | `converters.write` | Configure / manage converter definitions |
 | `back_matter.read` | View back-matter resources |
 | `back_matter.write` | Create / edit back-matter resources |
@@ -106,7 +140,7 @@ SPARC defines **35 permission keys** across 14 resource areas (`Role::PERMISSION
 
 Triaging a scanner finding (`evidence.write`) and *approving* the resulting amendment are deliberately separate acts — the approval is what makes a disposition suppress its finding during aggregation and export, for the length of its validity window. `amendment.approve` is granted by default to the **Authorizing Official**, **Agency Authorizing Official**, and **ISSM** role seeds (the roles that accept residual risk), and Instance Admins bypass it. Any other role can be granted the key from **Admin → Roles**. See [User Guide: HDF Amendment Triage](User-Guide-HDF-Amendment-Triage).
 
-> **Note on seeded assignments.** The permission *keys* above are the full set the platform can enforce. The **default role seeds do not yet grant** the catalog/profile/CDEF approval, back-matter write/promote/approve/archive/bulk-import/federate, `converters.write`, or `admin.rotate_credentials` keys to any role — those are reserved for the Instance Admin bypass and future role tailoring, or must be granted explicitly via the Admin > Roles interface. The only new keys picked up by the default seeds are `converters.read` and `back_matter.read`, which are included in the all-read permission set used by the broad read-only roles (see matrices below).
+> **Note on seeded assignments (updated #919).** The permission *keys* above are the full set the platform can enforce, and — with one deliberate exception — every one is now granted to at least one seeded role. Before #919, eleven keys were enforced by code but granted to **no** role; because Instance Admins bypass permission checks entirely, that silently made back-matter authoring, promotion, and catalog/profile/CDEF approval **admin-only out of the box**. Nobody decided that, it fell out of the seeds. The current posture: **boundary-scoped back-matter** (`back_matter.write`, `.promote`, `.archive`, `.bulk_import`, and `converters.write`) is granted to the fourteen boundary roles that already write documents — excluding **Assessor / 3PAO** (separation of duties: an assessor must not edit the provenance it assesses), **View Only**, and the three oversight roles that write no document at all. **Instance-tier back-matter** (`back_matter.approve_promotion`, `.federate`) plus `catalogs.approve` and `profiles.approve` go to **Policy Manager**: a boundary *requests* promotion and the instance *approves* it, so granting both legs to one role would defeat the review queue. `cdef.approve` goes to ISSM / ISSO / SO-ISO **and** Policy Manager. `authorization_boundaries.write` and `authorization_boundaries.manage_members` are delegated to **ISSM / ISSO / SO-ISO**, so roster management is no longer admin-only. The one exception is `admin.rotate_credentials`, which remains Instance-Admin-only by design. `converters.read` was **removed** — any authenticated user may read converters, so a key implying a restriction that does not exist is worse than no key.
 
 ---
 
