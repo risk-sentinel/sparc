@@ -51,6 +51,36 @@ def _first_filter_select(page):
     return selects.first if selects.count() > 0 else None
 
 
+def _apply_first_filter(page):
+    """Select the first real option and submit, returning (param, value).
+
+    Returns None when this corpus offers no filter.
+
+    `wait_for_url` is load-bearing. Submitting is a Turbo GET visit, and
+    `wait_for_load_state("networkidle")` can return BEFORE that navigation
+    commits — leaving `page.url` and the DOM as they were pre-submit. An
+    assertion made there reads back the state the test set up itself and
+    passes without exercising anything, which is exactly what happened to the
+    per_page check until the chip assertion caught it. Wait for the parameter
+    to actually appear in the URL. Same pattern as test_index_search.py.
+    """
+    select = _first_filter_select(page)
+    if select is None:
+        return None
+
+    param = select.get_attribute("name")
+    options = select.locator("option")
+    assert options.count() >= 2, f"filter dropdown '{param}' drawn with no choices"
+    value = options.nth(1).get_attribute("value")
+    assert value, f"filter dropdown '{param}' first real option has an empty value"
+
+    select.select_option(value)
+    page.locator("input[type='submit'][value='Filter']").first.click()
+    page.wait_for_url(f"**{param}=*", timeout=10000)
+    page.wait_for_load_state("networkidle")
+    return param, value
+
+
 @pytest.mark.parametrize(
     "name,path", FILTERED_PAGES, ids=[p[0] for p in FILTERED_PAGES]
 )
@@ -65,21 +95,15 @@ def test_filter_preserves_per_page_and_search(authed_page, name, path):
     )
     authed_page.wait_for_load_state("networkidle")
 
-    select = _first_filter_select(authed_page)
-    if select is None:
+    applied = _apply_first_filter(authed_page)
+    if applied is None:
         pytest.skip(f"{name}: no filter dropdown offered for this corpus")
-
-    # Every facet's value set has >= 2 entries or it would not be drawn, so
-    # there is always a real option after the blank "All".
-    options = select.locator("option")
-    assert options.count() >= 2, f"{name}: filter dropdown drawn with no choices"
-    value = options.nth(1).get_attribute("value")
-
-    select.select_option(value)
-    authed_page.locator("input[type='submit'][value='Filter']").first.click()
-    authed_page.wait_for_load_state("networkidle")
+    param, value = applied
 
     url = authed_page.url
+    assert f"{param}={value}" in url, (
+        f"{name}: the selected filter did not reach the URL. URL: {url}"
+    )
     assert "per_page=50" in url, (
         f"{name}: filtering dropped per_page — the user's page size was reset. URL: {url}"
     )
@@ -106,14 +130,10 @@ def test_applied_filter_shows_a_removable_chip(authed_page, name, path):
     assert resp is not None and resp.status < 400
     authed_page.wait_for_load_state("networkidle")
 
-    select = _first_filter_select(authed_page)
-    if select is None:
+    applied = _apply_first_filter(authed_page)
+    if applied is None:
         pytest.skip(f"{name}: no filter dropdown offered for this corpus")
-
-    value = select.locator("option").nth(1).get_attribute("value")
-    select.select_option(value)
-    authed_page.locator("input[type='submit'][value='Filter']").first.click()
-    authed_page.wait_for_load_state("networkidle")
+    param, _value = applied
 
     chips = authed_page.locator("a.sparc-chip")
     assert chips.count() >= 1, (
@@ -124,11 +144,17 @@ def test_applied_filter_shows_a_removable_chip(authed_page, name, path):
 
     # Removing the chip is a plain link, not JavaScript — filter state lives in
     # the URL so it stays shareable and works without a mouse.
+    #
+    # Waiting for the parameter to LEAVE the URL, for the same reason as the
+    # submit above: asserting straight after the click would read the page that
+    # still has the filter applied and pass without removing anything.
     chips.first.click()
+    authed_page.wait_for_url(lambda url: f"{param}=" not in url, timeout=10000)
     authed_page.wait_for_load_state("networkidle")
-    assert authed_page.locator("a.sparc-chip").count() < chips.count() or (
-        "filter active" not in authed_page.content()
-    ), f"{name}: removing the chip did not clear the filter"
+    assert f"{param}=" not in authed_page.url, (
+        f"{name}: removing the chip did not drop {param} from the URL. "
+        f"URL: {authed_page.url}"
+    )
 
     assert not csp_violations(authed_page), (
         f"{name}: CSP violations during chip interaction: {csp_violations(authed_page)}"
