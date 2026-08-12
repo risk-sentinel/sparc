@@ -94,6 +94,31 @@ def create_ssp(boundary_id: int) -> dict[str, Any]:
         return r.json()["data"]
 
 
+def create_evidence(title: str | None = None) -> dict[str, Any]:
+    """Metadata-only evidence submitted by the smoke service account (#934).
+
+    Collection provenance is never sent — the server stamps `collected_at`,
+    `collected_by` and `collected_by_user_id` from the token's account, which is
+    what the "Added by" smoke then looks for on screen. A record created here is
+    therefore attributed to the service account, not to its owner.
+    """
+    with _client() as c:
+        r = c.post(
+            "/api/v1/evidences",
+            json={
+                "evidence": {
+                    "title": title or _name("evidence"),
+                    "description": "ui-smoke",
+                    "evidence_type": "artifact",
+                    "status": "collected",
+                    "source": "ui-smoke",
+                }
+            },
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+
 def submit_for_review(resource: str, ident: Any) -> int:
     """Submit a document for review. Returns the HTTP status (200 on success)."""
     with _client() as c:

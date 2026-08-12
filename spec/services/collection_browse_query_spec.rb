@@ -162,6 +162,46 @@ RSpec.describe CollectionBrowseQuery do
     end
   end
 
+  # #934 — the facet #908 had to cut, now that provenance is a reference.
+  describe "the evidence \"Added by\" facet" do
+    it "narrows to one account and reads as that account's name" do
+      collector = create(:user, display_name: "Ada Lovelace")
+      mine = create(:evidence, collected_by_user: collector, collected_by: "Ada Lovelace")
+      create(:evidence, collected_by_user: create(:user), collected_by: "Someone Else")
+
+      query = EvidenceBrowseQuery.new(
+        ActionController::Parameters.new(collected_by_user_id: collector.id), scope: Evidence.all
+      )
+
+      expect(query.records).to contain_exactly(mine)
+      added_by = query.filter_fields.find { |f| f[:key] == :collected_by_user_id }
+      expect(added_by[:choices]).to include([ "Ada Lovelace", collector.id ])
+    end
+
+    it "offers a service account as a collector like any other" do
+      pipeline = create(:user, :service_account)
+      create(:evidence, collected_by_user: pipeline)
+      create(:evidence, collected_by_user: create(:user))
+
+      choices = EvidenceBrowseQuery.new(ActionController::Parameters.new, scope: Evidence.all)
+                                   .filter_fields
+                                   .find { |f| f[:key] == :collected_by_user_id }[:choices]
+
+      expect(choices).to include([ pipeline.display_label, pipeline.id ])
+    end
+
+    it "leaves unattributed evidence out of every account's results" do
+      collector = create(:user)
+      create(:evidence, collected_by_user: nil, collected_by: "Unresolvable Name")
+
+      result = EvidenceBrowseQuery.new(
+        ActionController::Parameters.new(collected_by_user_id: collector.id), scope: Evidence.all
+      ).records
+
+      expect(result).to be_empty
+    end
+  end
+
   describe "facets reached through a join" do
     it "matches every accepted spelling of a control id" do
       evidence = create(:evidence)

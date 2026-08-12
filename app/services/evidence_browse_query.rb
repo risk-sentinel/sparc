@@ -11,12 +11,19 @@
 # `source` is a real column that was never faceted — the issue asked for it and
 # it costs nothing.
 #
-# The issue also asked for "added by". Evidence records provenance as
-# `collected_by`, a free-text string written at upload from the user's display
-# name, not a foreign key — so its values do not resolve to accounts and a
-# facet built on it would go stale the moment someone's name changed. Filtering
-# it properly needs a `collected_by_user_id` column and a backfill; that is a
-# migration, and it is called out rather than approximated.
+# "Added by" was cut from #908 and shipped in #934. Evidence recorded provenance
+# only as `collected_by`, a free-text string written at upload from the user's
+# display name — its values do not resolve to accounts, so a facet built on it
+# would go stale the moment someone was renamed. It needed a
+# `collected_by_user_id` column and a backfill, which is a migration, so it was
+# called out rather than approximated. That column now exists and the facet
+# below filters on it.
+#
+# Rows the backfill could not resolve — an unmatched or ambiguous name, or an
+# auto-fetched artifact that predates #934 and carries no collector at all —
+# have a null FK and match no "added by" value. That is the honest result: they
+# are unattributed, and a filter that swept them into someone's bucket would be
+# asserting something the data does not say.
 class EvidenceBrowseQuery < CollectionBrowseQuery
   queries Evidence, order: { created_at: :desc }
 
@@ -34,6 +41,14 @@ class EvidenceBrowseQuery < CollectionBrowseQuery
   # happened to type.
   facet :control_id, label: "Control", type: :text, narrow: lambda { |scope, value|
     scope.where(id: EvidenceControlLink.where(control_id: ControlId.forms(value)).select(:evidence_id))
+  }
+
+  # #934 — the issue's "added by", on the FK rather than the name string.
+  # Service accounts appear here alongside people, which is the point: an
+  # assessor asking what a submission pipeline provided gets an answer.
+  facet :collected_by_user_id, label: "Added by", choices: lambda { |scope|
+    User.where(id: scope.distinct.select(:collected_by_user_id))
+        .order(:email).map { |user| [ user.display_label.presence || user.email, user.id ] }
   }
 
   facet :collected, label: "Collected", type: :date, column: :collected_at
