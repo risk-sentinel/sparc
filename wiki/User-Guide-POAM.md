@@ -139,6 +139,9 @@ leveraged relationship on your boundary first (see
 The POA&Ms list opens as **cards**, with a **☰ List** toggle if you prefer a
 table. Your choice is remembered for this screen.
 
+POA&Ms filter by **status**, **OSCAL version**, **revision**, **authorization
+boundary**, **added by** and a **created between** date range.
+
 Leveraged POA&Ms — those owned by a system you inherit from — are listed on
 their own screen and are read-only, which the cards state plainly.
 

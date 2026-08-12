@@ -25,34 +25,13 @@
         this document cannot be edited, and OSCAL export will be incomplete.
       </p>
 
-      <%# The fix, inline. One form per lineage hop. %>
-      <% document.lineage_choices.each do |choice| %>
-        <% if choice[:records].any? %>
-          <%= form_with url: url_for(action: :set_baseline, id: document),
-                        method: :patch, local: true,
-                        class: "d-flex align-items-center gap-2 flex-wrap mb-2" do |f| %>
-            <label class="fw-semibold mb-0" for="baseline_<%= choice[:attribute] %>">
-              <%= choice[:label] %>
-            </label>
-            <%= select_tag "#{document.model_name.param_key}[#{choice[:attribute]}]",
-                  options_from_collection_for_select(choice[:records], :id, :name),
-                  include_blank: "Choose a #{choice[:label].downcase}…",
-                  id: "baseline_#{choice[:attribute]}",
-                  class: "form-select form-select-sm w-auto" %>
-            <%= f.submit "Set baseline", class: "btn btn-primary btn-sm" %>
-          <% end %>
-        <% else %>
-          <%# SPARC never invents a baseline from the document's own controls —
-              that would validate the document against itself. When nothing
-              suitable is loaded, say so plainly and name the remedy. %>
-          <p class="mb-2">
-            <strong>No <%= choice[:label].downcase %> is loaded to choose from.</strong>
-            SPARC will not create one from this document's own controls — that would
-            check the document against itself. Load the correct
-            <%= choice[:label].downcase %> first, then set it here.
-          </p>
-        <% end %>
-      <% end %>
+      <%# The fix, inline. One form per lineage hop.
+
+          #928 moved the form itself to shared/_baseline_picker so the profile
+          screen can offer the same control OUTSIDE the blocked state — a
+          document with no controls never reaches this branch, and a document
+          linked to the wrong catalog has already left it. %>
+      <%= render "shared/baseline_picker", document: document %>
     <% end %>
 
     <% remedy = reconciliation[:issues].first[:remedy] %>

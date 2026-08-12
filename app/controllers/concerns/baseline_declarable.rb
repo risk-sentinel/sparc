@@ -36,6 +36,13 @@ module BaselineDeclarable
       return
     end
 
+    if document.rebaselining_published?(permitted)
+      redirect_back fallback_location: document,
+                    alert: "This #{document.model_name.human.downcase} is published and its " \
+                           "baseline is fixed. Create a copy to point at a different baseline."
+      return
+    end
+
     document.update!(permitted)
     audit_log("#{document.model_name.element}_baseline_declared", subject: document,
               metadata: permitted.to_h)
@@ -51,4 +58,13 @@ module BaselineDeclarable
   def baseline_document
     instance_variable_get(:"@#{controller_name.singularize}")
   end
+
+  # #928 — the rule itself lives on CatalogLineage, because the API reaches the
+  # same write through `PATCH /api/v1/<documents>/:id` and a controller-side
+  # check would have covered only this surface.
+  #
+  # `set_baseline` stays outside `ensure_editable!` deliberately: a document
+  # published before #911 shipped can be both published AND unreconciled, and
+  # blocking it wholesale would make those permanently unreconcilable. The rule
+  # is about the CHANGE, not the state — see CatalogLineage#rebaselining_published?.
 end

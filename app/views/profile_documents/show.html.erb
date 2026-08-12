@@ -25,6 +25,36 @@
      refused mid-edit. Renders nothing when reconciled. %>
 <%= render "shared/reconciliation_banner", document: @profile_document %>
 
+<%# ── #928: the source catalog, changeable ───────────────────────────
+     The banner above carries a picker only while the document is BLOCKED,
+     which leaves two reachable states with no way to link a catalog at all:
+     an imported profile that references no controls yet (nothing to
+     reconcile, so no banner) and a profile already linked to the wrong
+     catalog (reconciled, so the banner is gone). Both dead-end, because
+     "Manage Controls" and the publish button are themselves hidden until a
+     catalog exists — the profile becomes permanently unpublishable.
+
+     Rendered only where the banner is NOT already offering the same control,
+     so the two never appear together. %>
+<% if signed_in? && can_write_profiles? &&
+     !@profile_document.published_lifecycle? &&
+     !@profile_document.reconciliation_blocks_update? %>
+  <div class="card mt-2 mb-0 <%= "border-warning" if @profile_document.control_catalog.blank? %>">
+    <div class="card-body py-2">
+      <% if @profile_document.control_catalog.blank? %>
+        <p class="mb-2">
+          <strong>No source catalog is linked.</strong>
+          A profile selects controls from a catalog, so until one is set this
+          profile cannot be published and its controls cannot be managed.
+        </p>
+      <% end %>
+      <%= render "shared/baseline_picker",
+            document: @profile_document,
+            submit_label: @profile_document.control_catalog.present? ? "Change catalog" : "Link catalog" %>
+    </div>
+  </div>
+<% end %>
+
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header">
 
@@ -66,12 +96,17 @@
         &nbsp;&bull;&nbsp;
         <span class="fw-semibold" style="color: <%= level_color %>;"><%= @profile_document.baseline_level || "Custom" %></span>
         &nbsp;&bull;&nbsp; <%= @total_controls %> controls
+        &nbsp;&bull;&nbsp;
         <% if @profile_document.control_catalog.present? %>
-          &nbsp;&bull;&nbsp;
           Source: <span class="fw-semibold"><%= @profile_document.control_catalog.name %></span>
           <% if @profile_document.control_catalog.short_digest.present? %>
             <code style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-left: 0.2rem;"><%= @profile_document.control_catalog.short_digest %></code>
           <% end %>
+        <% else %>
+          <%# #928 — an unlinked profile said nothing at all here, so the state
+              that blocks publishing was invisible until the publish button
+              failed to appear. Name it where the source normally goes. %>
+          <span class="fw-semibold" style="color: #f39c12;">No source catalog</span>
         <% end %>
         <% if @profile_document.source_profile.present? %>
           &nbsp;&bull;&nbsp;

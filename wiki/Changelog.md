@@ -99,6 +99,27 @@ Turn raw scanner output into auditable disposition decisions. SPARC becomes the 
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.14.0).
 
+## v1.13.2 -- Phishing-Resistant Authentication Enforcement (2026-07-25)
+
+The **enforcement layer** over the MFA foundation from v1.13.0 and v1.13.1 — the controls an operator uses to *require* strong authentication org-wide. All new controls are **off by default**: existing deployments upgrade with no behaviour change and no configuration required.
+
+- **Mandatory FIDO2 enrolment gate** ([#802](https://github.com/risk-sentinel/sparc/issues/802)) — `SPARC_REQUIRE_FIDO2` both enables FIDO2 and sets who must enrol a key before using the app (`off` / `local` / `all`). Users without a key are redirected to security-key management until they enrol; the break-glass admin and service accounts are exempt.
+- **Require phishing-resistant sign-in** ([#805](https://github.com/risk-sentinel/sparc/issues/805)) — `SPARC_REQUIRE_AUTH_METHODS` is an allowlist of accepted login methods (e.g. `oidc,piv`). Anyone authenticating by a method not on the list is signed out with a clear message.
+- Certificate-policy filtering for accepted smart cards, and the last raw-XML upload path closed.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.13.2).
+
+## v1.13.1 -- Configuration Simplification, TLS/Storage Posture, Help Center (2026-07-24)
+
+A configuration-simplification and documentation release: **reduce what operators must set** by inferring and deriving configuration rather than requiring it. Nothing that worked before stops working — legacy variables remain honoured as fallbacks except where called out as breaking.
+
+- **Configuration simplification** ([#785](https://github.com/risk-sentinel/sparc/issues/785), [#789](https://github.com/risk-sentinel/sparc/issues/789), [#791](https://github.com/risk-sentinel/sparc/issues/791), [#793](https://github.com/risk-sentinel/sparc/issues/793)) — prompted by a real deployment setting ~97 env vars, about half redundant. Enable-flags are inferred from credential presence, `DATABASE_URL` becomes the single preferred database source, and `SPARC_STORAGE_URL` the single object-storage variable.
+- **Breaking posture changes to review before upgrading** — database `sslmode` floored at `require` in production (SC-8); object storage defaults to local disk and **production refuses to boot on it**, because an ECS/EKS container filesystem is ephemeral and uploads are silently lost on redeploy (CP-9, SI-12); the rate-limiting kill switch was **removed** in favour of a CIDR safelist; document approval now defaults on.
+- **PIV/CAC identity mapping is configurable** ([#790](https://github.com/risk-sentinel/sparc/issues/790)) — `SPARC_PIV_IDENTITY_SOURCE` selects how identity is extracted rather than assuming one DoD certificate shape. Proven end to end against both DoD and non-DoD shapes.
+- **In-app Help Center and User Guides** ([#781](https://github.com/risk-sentinel/sparc/issues/781), [#784](https://github.com/risk-sentinel/sparc/issues/784)) — the guides ship both as wiki pages with screenshots and in-app at `/help`.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.13.1).
+
 ## v1.13.0 -- FIDO2 + PIV Authentication (App-Native MFA) (2026-07-21)
 
 SPARC's first **app-native multi-factor authentication** — phishing-resistant and DoD-ready. A FIDO2 security key or a CAC/PIV smart card + PIN is now a complete, single-step login.

@@ -29,11 +29,15 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
   # GET /api/v1/profile_documents
   def index
     scope = ProfileDocument.order(created_at: :desc)
-    scope = scope.where(status: params[:status]) if params[:status].present?
+    # Not a facet on the index screen — free-text search covers it there — but
+    # this endpoint has always accepted it, so it stays.
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
-    scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
-    scope = scope.where(baseline_level: params[:baseline_level]) if params[:baseline_level].present?
-    scope = scope.where(control_catalog_id: params[:control_catalog_id]) if params[:control_catalog_id].present?
+
+    # #908 — status, baseline_level and control_catalog_id (plus the new
+    # oscal_version / profile_version / lifecycle_status / uploaded_by /
+    # created-range facets) come from ProfileBrowseQuery, the same object the
+    # index screen uses.
+    scope = ProfileBrowseQuery.new(params, scope: scope).records
 
     result = paginate(scope)
     render json: {
@@ -82,6 +86,19 @@ class Api::V1::ProfileDocumentsController < Api::V1::BaseController
     # unresolved one is the worst case: every SSP, SAP and SAR beneath it
     # inherits the break. Declaring the catalog is itself permitted.
     return unless enforce_reconciliation!(@profile, profile_params)
+
+    # #928 — the web refuses to repoint a PUBLISHED profile at a different
+    # catalog; this surface permitted it silently. `profile_params` has always
+    # included `control_catalog_id`, so the API was the way around a rule the
+    # UI enforces — the surface drift #919 exists to stop. Setting a catalog
+    # that is missing stays allowed here too, for the same legacy-document
+    # reason. (NIST CM-3, CA-5)
+    if @profile.rebaselining_published?(profile_params)
+      render json: { error: "This profile is published and its baseline is fixed. " \
+                            "Copy it to point at a different catalog." },
+             status: :unprocessable_entity
+      return
+    end
 
     @profile.update!(profile_params)
 

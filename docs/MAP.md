@@ -27,7 +27,7 @@ CDEFs, and control catalogs — with a REST API and OSCAL v1.1.2 import/export.
 | Roles & permissions | [RBAC](https://github.com/risk-sentinel/sparc/wiki/RBAC) · [Data Isolation](https://github.com/risk-sentinel/sparc/wiki/Data-Isolation) |
 | Screens / UI | [Screens](https://github.com/risk-sentinel/sparc/wiki/Screens) |
 | Features | [Core Functions](https://github.com/risk-sentinel/sparc/wiki/Core-Functions) · [Framework Mapping](https://github.com/risk-sentinel/sparc/wiki/Framework-Mapping) |
-| OSCAL toolchain (end to end) | [OSCAL End to End](https://github.com/risk-sentinel/sparc/wiki/OSCAL-End-to-End) — SPARC + SAF CLI + InSpec + Heimdall, what binds to what, accelerated ATO vs cATO |
+| OSCAL toolchain (end to end) | [OSCAL End to End](https://github.com/risk-sentinel/sparc/wiki/OSCAL-End-to-End) — SPARC + SAF CLI + InSpec + Heimdall, what binds to what, accelerated ATO vs cATO. **Offline/standalone copy:** [`data_mapping/oscal-sparc-ecosystem.html`](data_mapping/oscal-sparc-ecosystem.html) — open it in a browser to read the same material without the app or the wiki |
 | Integrations / auth providers | [Integrations](https://github.com/risk-sentinel/sparc/wiki/Integrations) |
 | Release history | [Changelog](https://github.com/risk-sentinel/sparc/wiki/Changelog) · [GitHub Releases](https://github.com/risk-sentinel/sparc/releases) |
 

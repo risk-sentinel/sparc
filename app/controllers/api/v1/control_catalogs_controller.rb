@@ -28,10 +28,15 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
   # GET /api/v1/control_catalogs
   def index
     scope = ControlCatalog.order(created_at: :desc)
-    scope = scope.where(status: params[:status]) if params[:status].present?
+    # `name` is not a facet on the index screen (free-text search covers it
+    # there), so it stays here rather than moving into the query object — this
+    # endpoint has always accepted it and dropping it would break callers.
     scope = scope.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
-    scope = scope.search_text(params[:q]) if params[:q].present? # #672 free-text search
-    scope = scope.where(lifecycle_status: params[:lifecycle_status]) if params[:lifecycle_status].present?
+
+    # #908 — status, lifecycle_status, oscal_version, version and source now
+    # come from CatalogBrowseQuery, the same object the index screen uses, so
+    # the two surfaces cannot offer different filters.
+    scope = CatalogBrowseQuery.new(params, scope: scope).records
 
     result = paginate(scope)
     render json: {

@@ -14,6 +14,7 @@
     placeholder  — search box hint (omit for the shared default)
     facets       — from CollectionViewable#active_facets (omit if the screen has none)
     clear_params — from CollectionViewable#clear_facets_params
+    filter_fields— from CollectionBrowseQuery#filter_fields (#908; omit if none)
     search       — false to hide the search box
     extra        — safe HTML placed on the left of the toggle row, for
                    screen-specific controls like select-all
@@ -23,6 +24,13 @@
 <% if local_assigns.fetch(:search, true) %>
   <%= render "shared/index_search",
         placeholder: local_assigns.fetch(:placeholder, "Search #{label}…") %>
+<% end %>
+
+<%# #908 — the controls that narrow, between the search box and the record of
+    what is currently applied. Keeps the top-to-bottom reading order intact:
+    how to narrow, what IS narrowed, then how it is drawn. %>
+<% if local_assigns[:filter_fields].present? %>
+  <%= render "shared/collection_filter_form", fields: local_assigns[:filter_fields] %>
 <% end %>
 
 <%= render "shared/collection_filters",

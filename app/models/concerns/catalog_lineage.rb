@@ -142,6 +142,39 @@ module CatalogLineage
     self.class.lineage_attribute_names.any? { |name| normalised[name].present? }
   end
 
+  # #928 — does this set of attributes REPOINT a published document at a
+  # different baseline?
+  #
+  # The inverse of `lineage_resolving_write?` and deliberately narrower than
+  # "is it published". Setting a baseline that is MISSING must stay permitted
+  # even on a published document: anything published before #911 shipped can be
+  # both published and unreconciled, and refusing those wholesale would leave
+  # them permanently unreconcilable — the exact trap the gate was built to
+  # avoid. Swapping a baseline that is already set is the write to stop, because
+  # lineage exists to give change control something approved to change against,
+  # and silently repointing an approved document invalidates every assessment
+  # made against it.
+  #
+  # Lives on the model rather than in a controller concern because both
+  # surfaces need it: the web reaches it through `set_baseline`, the API through
+  # `PATCH /api/v1/profile_documents/:id { control_catalog_id }`. A
+  # controller-side check would have covered one of the two, which is the drift
+  # #919 spent a whole PR closing.
+  #
+  # NIST 800-53: CM-3 (configuration change control), CA-5.
+  def rebaselining_published?(attributes)
+    return false unless respond_to?(:published_lifecycle?)
+    return false unless published_lifecycle?
+    return false if attributes.blank?
+
+    normalised = attributes.to_h.transform_keys(&:to_sym)
+    self.class.lineage_attribute_names.any? do |name|
+      current = public_send(name)
+      supplied = normalised[name]
+      current.present? && supplied.present? && current.to_s != supplied.to_s
+    end
+  end
+
   # Every unresolved hop, as machine-readable issues.
   #
   # A document that references NO controls has nothing to trace, so it has

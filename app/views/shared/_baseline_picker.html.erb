@@ -1,0 +1,63 @@
+<%# The baseline picker — one form per lineage hop (#911, generalised in #928).
+
+    #911 put this inline in the reconciliation banner, where it is only reachable
+    while the document is BLOCKED. That left two states with no way to declare a
+    baseline at all:
+
+      * a document that references no controls yet — `lineage_issues` is empty by
+        design, so no banner renders, so an imported profile with zero controls
+        had no picker, no publish button and no way forward;
+      * a document already linked to the WRONG catalog — reconciled, so the
+        banner is gone, and the only remaining remedy was the API.
+
+    Both were reachable from the normal import order (upload the baseline before
+    the catalog it derives from). The form is the same either way, so it lives
+    here and both callers render it rather than growing a second implementation
+    that can drift from the gate's idea of a lineage-resolving write.
+
+    Posts to `set_baseline`, which permits exactly
+    `lineage_attribute_names` — the same attributes the reconciliation gate
+    accepts as resolving. A parallel path through `update_metadata` would be
+    refused by that gate for an unreconciled document, which is the trap this is
+    supposed to open.
+
+    Locals:
+      document      — any model including CatalogLineage
+      submit_label  — button text (default "Set baseline")
+      empty_notice  — false to drop the "nothing is loaded" prose (the caller
+                      may already be saying it in its own words)
+%>
+<% submit_label = local_assigns.fetch(:submit_label, "Set baseline") %>
+<% show_empty_notice = local_assigns.fetch(:empty_notice, true) %>
+
+<% document.lineage_choices.each do |choice| %>
+  <% if choice[:records].any? %>
+    <%= form_with url: url_for(action: :set_baseline, id: document),
+                  method: :patch, local: true,
+                  class: "d-flex align-items-center gap-2 flex-wrap mb-2" do |f| %>
+      <label class="fw-semibold mb-0" for="baseline_<%= choice[:attribute] %>">
+        <%= choice[:label] %>
+      </label>
+      <%# Pre-select what is already set, so this reads as "change it" on a
+          reconciled document and as "choose one" on an unreconciled one,
+          without the caller having to know which state it is in. %>
+      <%= select_tag "#{document.model_name.param_key}[#{choice[:attribute]}]",
+            options_from_collection_for_select(choice[:records], :id, :name,
+                                               document.public_send(choice[:attribute])),
+            include_blank: "Choose a #{choice[:label].downcase}…",
+            id: "baseline_#{choice[:attribute]}",
+            class: "form-select form-select-sm w-auto" %>
+      <%= f.submit submit_label, class: "btn btn-primary btn-sm" %>
+    <% end %>
+  <% elsif show_empty_notice %>
+    <%# SPARC never invents a baseline from the document's own controls —
+        that would validate the document against itself. When nothing
+        suitable is loaded, say so plainly and name the remedy. %>
+    <p class="mb-2">
+      <strong>No <%= choice[:label].downcase %> is loaded to choose from.</strong>
+      SPARC will not create one from this document's own controls — that would
+      check the document against itself. Load the correct
+      <%= choice[:label].downcase %> first, then set it here.
+    </p>
+  <% end %>
+<% end %>

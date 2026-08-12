@@ -17,46 +17,13 @@
       </div>
     </div>
 
-    <%# ── Filters ── %>
-    <div class="card bg-body-secondary mb-3">
-      <div class="card-body py-2">
-        <%= form_with url: evidences_path, method: :get, local: true, class: "row g-2 align-items-end" do |f| %>
-      <%# Carry the search term and view mode: a GET form submits only its own
-          fields, so applying a filter here would otherwise drop the active
-          search and reset how the list is drawn. %>
-      <%= hidden_field_tag :q, params[:q], id: nil if params[:q].present? %>
-      <%= hidden_field_tag :view, params[:view], id: nil if params[:view].present? %>
-          <%# Search lives in the shared box above, on `q`, like every other
-              collection screen. %>
-          <div class="col-md-3">
-            <%= f.label :type, "Type", class: "form-label small fw-semibold mb-1" %>
-            <%= f.select :type, options_for_select(Evidence::EVIDENCE_TYPE_LABELS.map { |k, v| [ v, k ] }, params[:type]),
-                         { include_blank: "All Types" }, class: "form-select form-select-sm" %>
-          </div>
-          <div class="col-md-2">
-            <%= f.label :status, "Status", class: "form-label small fw-semibold mb-1" %>
-            <%= f.select :status, options_for_select(Evidence::STATUS_LABELS.map { |k, v| [ v, k ] }, params[:status]),
-                         { include_blank: "All Statuses" }, class: "form-select form-select-sm" %>
-          </div>
-          <div class="col-md-2">
-            <%= f.label :control_id, "Control ID", class: "form-label small fw-semibold mb-1" %>
-            <%= f.text_field :control_id, value: params[:control_id], class: "form-control form-control-sm", placeholder: "e.g. AC-01" %>
-          </div>
-          <div class="col-md-2">
-            <%= f.label :authorization_boundary_id, "Authorization Boundary", class: "form-label small fw-semibold mb-1" %>
-            <%= f.select :authorization_boundary_id, options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), params[:authorization_boundary_id]),
-                         { include_blank: "All Authorization Boundaries" }, class: "form-select form-select-sm" %>
-          </div>
-          <div class="col-md-1">
-            <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
-          </div>
-        <% end %>
-      </div>
-    </div>
-
+    <%# #908 — the filters were a hand-written form here that re-emitted `q` and
+        `view` but dropped `per_page`, so filtering silently reset the page
+        size. They come through the shared toolbar now, like every other
+        collection screen. %>
     <%= render "shared/collection_toolbar",
           label: "evidence records", placeholder: "Search evidence…",
-          facets: @facets, clear_params: @clear_facets,
+          filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,
           view_mode: (@evidences.any? ? @view_mode : nil) %>
 
     <% if @evidences.any? && @view_mode == :card %>

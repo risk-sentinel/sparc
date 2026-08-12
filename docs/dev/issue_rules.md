@@ -91,6 +91,16 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
    if a user, operator, or integrator would read it (new/changed feature, screen,
    route, env var, role/permission, config), update the relevant wiki page in the
    same PR. The wiki is the canonical public documentation and must stay current.
+     - **Editing `wiki/` publishes nothing.** The wiki a user reads is a
+       **separate git repo**, mirrored by `./wiki/PUSH_TO_WIKI.sh`, and that
+       push is a manual step that runs **at release time** (see
+       `docs/dev/release_checklist.md`) — not per PR. So a merged PR leaves the
+       published page stale by design, and the debt is only cleared by cutting
+       a release. It went **three releases and 15 days behind** exactly this
+       way: every PR looked correct, because every PR *was* correct, and
+       nothing distinguished "source updated" from "readers can see it."
+       If a doc fix must reach users before the next release, say so on the PR
+       and push the mirror deliberately.
    - **Functional or screen changes → update the relevant User Guide.** Any new
      or changed screen, route, workflow, field, or permission that an end user
      interacts with **must** update the matching `wiki/User-Guide-*.md` page (and

@@ -1,0 +1,82 @@
+<%#
+  The filter form above a collection (#908).
+
+  One partial rather than a form per screen. The evidence screen's hand-written
+  version re-emitted `q` and `view` as hidden fields but dropped `per_page`, so
+  applying a filter silently reset the user's page size — the kind of bug that
+  appears once per copy. Carrying EVERYTHING that is not a filter or the page
+  number happens here, once, derived from the request rather than from a list
+  someone has to remember to extend.
+
+  Fields come from CollectionBrowseQuery#filter_fields, so the form never needs
+  to know what a baseline level is, and a facet whose value set has cardinality
+  1 has already been dropped upstream.
+
+  No JavaScript: filter state stays in the URL, stays shareable, and keeps
+  working under CSP and without a mouse — the same property the chips have.
+
+  Locals:
+    fields — from CollectionBrowseQuery#filter_fields
+    url    — where to submit (defaults to the current path)
+%>
+<% fields = Array(local_assigns[:fields]) %>
+<% if fields.any? %>
+  <% filter_keys = fields.flat_map { |f| f[:type] == :date ? [ f[:from_key], f[:to_key] ] : [ f[:key] ] }.map(&:to_s) %>
+  <div class="card bg-body-secondary mb-3">
+    <div class="card-body py-2">
+      <%= form_with url: local_assigns.fetch(:url, request.path), method: :get, local: true,
+                    class: "row g-2 align-items-end" do |f| %>
+        <%# Everything that is NOT one of this form's own fields rides along —
+            the search term, the view mode, the page size. `page` is deliberately
+            dropped: the old page number is meaningless against a different
+            result set. %>
+        <% request.query_parameters.except(*filter_keys, "page").each do |key, value| %>
+          <% Array(value).each do |item| %>
+            <%= hidden_field_tag(value.is_a?(Array) ? "#{key}[]" : key, item, id: nil) %>
+          <% end %>
+        <% end %>
+
+        <% fields.each do |field| %>
+          <% case field[:type] %>
+          <% when :date %>
+            <div class="col-6 col-md-2">
+              <%= label_tag field[:from_key], "#{field[:label]} from",
+                    class: "form-label small fw-semibold mb-1" %>
+              <%= date_field_tag field[:from_key], field[:from_value],
+                    class: "form-control form-control-sm" %>
+            </div>
+            <div class="col-6 col-md-2">
+              <%= label_tag field[:to_key], "#{field[:label]} to",
+                    class: "form-label small fw-semibold mb-1" %>
+              <%= date_field_tag field[:to_key], field[:to_value],
+                    class: "form-control form-control-sm" %>
+            </div>
+          <% when :text %>
+            <div class="col-6 col-md-2">
+              <%= label_tag field[:key], field[:label],
+                    class: "form-label small fw-semibold mb-1" %>
+              <%= text_field_tag field[:key], field[:value],
+                    class: "form-control form-control-sm",
+                    placeholder: "e.g. AC-01" %>
+            </div>
+          <% else %>
+            <div class="col-6 col-md-2">
+              <%= label_tag field[:key], field[:label],
+                    class: "form-label small fw-semibold mb-1" %>
+              <%# Choices come from the loaded data, not a hardcoded enum, so
+                  the list cannot drift as new OSCAL versions arrive. %>
+              <%= select_tag field[:key],
+                    options_for_select(field[:choices], field[:value]),
+                    include_blank: "All",
+                    class: "form-select form-select-sm" %>
+            </div>
+          <% end %>
+        <% end %>
+
+        <div class="col-6 col-md-1">
+          <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
