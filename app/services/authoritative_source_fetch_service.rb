@@ -17,11 +17,17 @@
 #   AC-4   Information Flow Enforcement (gated by env var)
 #   SC-7   Boundary Protection (HTTPS-only outbound)
 #   SI-10  Information Input Validation (size + content-type checks)
+#   AU-10  Non-repudiation (the fetched Evidence records its collector — #934)
 class AuthoritativeSourceFetchService
   MAX_BYTES        = 25 * 1024 * 1024
   MAX_REDIRECTS    = 3
   CONNECT_TIMEOUT  = 10
   READ_TIMEOUT     = 30
+
+  # Recorded as `collected_by` when a fetch runs with no actor — a future
+  # scheduled job or console call. Today's only caller always passes
+  # `current_user`, so real rows carry a real collector.
+  SYSTEM_COLLECTOR = "System (authoritative fetch)"
 
   Result = Struct.new(:success, :evidence, :error, :status_code, keyword_init: true) do
     def success? = success
@@ -93,6 +99,13 @@ class AuthoritativeSourceFetchService
       description:   "Auto-fetched from #{uri}",
       source:        uri.to_s
     )
+    # #934 / NIST AU-10 — this path recorded NO collector at all while the actor
+    # was known at the call site, so auto-fetched artifacts rendered
+    # "Collected By: N/A" and, `collected_at` being nil, could never match the
+    # collected-between filter (#908). A fetch with no actor is stamped
+    # SYSTEM_COLLECTOR rather than left blank: a null user with a real timestamp
+    # and a named collector is honest, silence is not.
+    evidence.stamp_collection!(actor: @actor, label: (SYSTEM_COLLECTOR if @actor.nil?))
     evidence.save!
     evidence.file.attach(
       io: StringIO.new(body),

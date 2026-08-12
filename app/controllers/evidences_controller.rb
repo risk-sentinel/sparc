@@ -47,9 +47,9 @@ class EvidencesController < ApplicationController
     EvidenceUploadPolicy.validate!(uploaded_file)
 
     @evidence = Evidence.new(evidence_params)
-    # #738: collection provenance is system-recorded (UTC, no DST drift), not self-asserted.
-    @evidence.collected_at = Time.current.utc
-    @evidence.collected_by = current_user&.display_name.presence || current_user&.email
+    # #738 / #934: collection provenance is system-recorded (UTC, no DST drift),
+    # not self-asserted, and written in one place so no creation path can omit it.
+    @evidence.stamp_collection!(actor: current_user)
 
     if @evidence.save
       audit_log("evidence_created", subject: @evidence, metadata: { title: @evidence.title })

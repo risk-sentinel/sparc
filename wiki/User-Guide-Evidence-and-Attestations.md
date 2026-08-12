@@ -108,6 +108,15 @@ These two fields are **recorded by SPARC**, not entered by you. When you save,
 SPARC stamps the collection time in **UTC** and records the signed-in user as
 the collector. They are shown on the form read-only.
 
+The collector is recorded two ways: the **name** as it read at the moment of
+collection, which is what you see and what an assessor reads, and a link to the
+**account**, which is what the **Added by** filter uses. The name is never
+rewritten afterwards — if someone is later renamed, evidence they collected
+still shows the name that was true when they collected it, and still resolves to
+their account. Evidence fetched automatically from an authoritative URL, and
+evidence submitted through the API with a service-account token, records a
+collector the same way.
+
 This is deliberate: collection provenance that the submitter can type is
 provenance an assessor cannot rely on (NIST **AU-10**, non-repudiation). It also
 means a collection date can never be set in the future, which would be
@@ -168,9 +177,17 @@ The evidence list opens as **cards**, with a **☰ List** toggle if you prefer a
 table. Your choice is remembered for this screen.
 
 Evidence filters by **type**, **status**, **source**, **control ID**,
-**authorization boundary** and a **collected between** date range. Search covers
-the title, description and the original filename, which is often what you
-actually remember about an artifact.
+**authorization boundary**, **added by**, and a **collected between** date range.
+Search covers the title, description and the original filename, which is often
+what you actually remember about an artifact.
+
+**Added by** lists the accounts that have collected evidence — including any
+service account that submits through the API, so you can see everything one
+automated pipeline provided. Evidence collected before this filter existed is
+matched to its account where the recorded name identifies exactly one; where the
+name is shared by two accounts, or matches none, the item is left unattributed
+and does not appear under any account. It is still findable by search, type,
+status and date.
 
 See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
 

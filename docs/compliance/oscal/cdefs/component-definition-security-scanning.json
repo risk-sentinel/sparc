@@ -33,6 +33,18 @@
             "description": "NIST SP 800-53 Rev 5 HIGH Baseline",
             "implemented-requirements": [
               {
+                "uuid": "7c4a9e61-3b28-4d75-9e10-5f2c8b71a0d3",
+                "control-id": "au-10",
+                "description": "The scanner output SPARC hands onward is attributable to the instance that produced it. The HDF package — amendments, findings and disposition summaries — is HMAC-SHA256 signed with an instance key derived from SPARC_HASH via SparcKeyDerivation, so a consumer can prove the package came from this SPARC instance and was not altered. Each disposition carries a signature_hash binding both the person who decided it and the person who approved it, so a risk acceptance cannot be repudiated by either.",
+                "remarks": "Implemented in app/services/hdf_package_service.rb, app/lib/sparc_key_derivation.rb and app/models/finding_disposition.rb (#809, #862)."
+              },
+              {
+                "uuid": "d18b5f30-6c47-4a92-b3e5-0a91d2c74f68",
+                "control-id": "au-12",
+                "description": "Re-occurrence is never silent. Every ingest writes a per-scan-run ScannerFinding row and demotes the prior row to superseded rather than overwriting it, so the full scan history — and each finding's computed lifecycle state (new, carried_forward, re_failed, expired) — remains reconstructable as an audit record. Disposition approve/reject decisions and aggregation runs emit AuditEvent rows through the API base controller's audit_log helper.",
+                "remarks": "Implemented in app/services/hdf_ingest_service.rb#record_finding, app/models/scanner_finding.rb, app/controllers/api/v1/finding_dispositions_controller.rb and app/controllers/api/v1/aggregations_controller.rb (#811, #862)."
+              },
+              {
                 "uuid": "50be4f1d-7766-4c69-b1e2-f4a0cc638f33",
                 "control-id": "ra-5",
                 "description": "SPARC performs automated vulnerability scanning through multiple tools in the CI security workflow: Trivy filesystem and container image scanning for CVEs in dependencies and base images, CodeQL semantic analysis for code-level vulnerabilities, bundler-audit for Ruby gem advisory checks, and Grype SBOM-driven SCA (#461) that consumes the CycloneDX SBOMs produced by sbom_generation and the Trivy fs/container scans. Grype provides authoritative vulnerability matching against the published SBOM artifacts that downstream consumers receive — the SBOM is scan-verified, not just generated. Scan results are uploaded as SARIF to GitHub Security for centralized tracking; Grype JSON is normalized to HDF via SAF CLI (anchoregrype2hdf). All container image CVE findings are triaged and dispositioned in docs/compliance/sparc-findings.yml with severity classification, deployment-specific rationale, NIST control mapping, and 30-day review cycles. Tenant-supplied scan results are attributable to what they assessed (#811): an ingested HDF scan records the target CdefDocument it ran against and a scanner_scope of 'target' (component-specific scanners such as Trivy or Gitleaks) or 'boundary' (system-wide posture scanners), and each resulting ScannerFinding carries component_ref and source_location. Vulnerability results therefore roll up per component, not only per authorization boundary. Findings are retained per scan run rather than overwritten, so scan-over-scan history is preserved for the authorization boundary.",
@@ -91,6 +103,42 @@
                 "control-id": "si-10",
                 "description": "SPARC validates information inputs through multiple layers: Brakeman SAST scanning detects injection and cross-site scripting (XSS) vulnerabilities in the codebase, Rails strong parameters enforce allowlisting of permitted request parameters in all controllers, and ActiveRecord validations enforce data type and format constraints at the model level. Avatar upload validates content type against an allowlist (PNG, JPG, GIF, WebP) and enforces a 2 MB file size limit at both client-side (Stimulus controller) and server-side (ProfilesController strong params and User model ActiveStorage validations). Client-side Cropper.js constrains canvas output to 256x256 pixels before upload. Evidence artifact upload via the REST API (POST /api/v1/evidences) accepts arbitrary artifact content by design (PDF, images, logs, scan output), so it is defended by an executable-signature deny-list rather than a MIME allowlist: the first 32 bytes are checked against known executable magic bytes (PE/MS-DOS, ELF, Mach-O, Java class, WebAssembly, and shebang scripts) and the upload is rejected with HTTP 422 before persistence. The upload size cap is enforced model-side by the AttachmentSizeLimit concern. Temporal input validation (#903): Evidence#collected_at is rejected when it is in the future, because a collection timestamp later than now is impossible on its face and, if persisted, would place incorrect provenance metadata into an exported OSCAL evidence package. The web and API create paths both server-stamp the value and never permit it as a request parameter, so the model validation is the backstop for any path that later can set it (console, data migration, admin tooling, a newly permitted parameter). The validation is scoped to changed values so an existing record holding a bad timestamp remains correctable.",
                 "remarks": "Implemented in .github/workflows/security.yml (Brakeman), all controllers (strong params), and models (validations). Avatar input validation in app/controllers/profiles_controller.rb, app/models/user.rb, and app/javascript/controllers/avatar_crop_controller.js. Evidence upload validation in app/controllers/api/v1/evidences_controller.rb (reject_if_executable_signature!), reusing the FileUploadable::EXECUTABLE_MAGIC_BYTES table, with the size cap in app/models/concerns/attachment_size_limit.rb. Tested by spec/ (incl. the executable-rejection case in spec/requests/api/v1/evidences_spec.rb), tests/api/test_evidences.py, and Brakeman scan. Temporal validation in app/models/evidence.rb (collected_at_not_in_future), covered by spec/models/evidence_spec.rb and the future-value rejection cases in spec/requests/evidences_spec.rb and spec/requests/api/v1/evidences_spec.rb (#903)."
+              },
+              {
+                "uuid": "62b49a95-a4f9-4b24-a1f1-f1632ea39f0a",
+                "control-id": "ac-3",
+                "description": "SPARC treats approving an amendment as a distinct authorization act from triaging one. Setting a disposition requires evidence.write; approving or rejecting it requires admin or the amendment.approve permission key, seeded to the AO, Agency AO and ISSM roles — the roles that accept residual risk. Every triage endpoint remains boundary-scoped, so the permission is evaluated against the boundary whose risk is being accepted.",
+                "remarks": "Implemented in app/models/role.rb (PERMISSION_KEYS), app/controllers/api/v1/finding_dispositions_controller.rb#authorize_approve! and db/seeds.rb. Tested by spec/models/role_spec.rb and spec/requests/api/v1/finding_dispositions_spec.rb."
+              },
+              {
+                "uuid": "87d40ef1-bd0e-4a91-9797-c8f0c8b2f855",
+                "control-id": "ac-6",
+                "description": "SPARC enforces separation of duties within the finding disposition workflow. The person who decides a disposition (decided_by) and the person who approves it (approved_by) are recorded independently, and a draft disposition has no suppressing effect on a finding until an approver acts. One account cannot both accept a scanner risk and authorise its acceptance in a single step.",
+                "remarks": "Implemented in app/models/finding_disposition.rb and app/controllers/api/v1/finding_dispositions_controller.rb. Tested by spec/models/finding_disposition_spec.rb and spec/requests/api/v1/finding_dispositions_spec.rb."
+              },
+              {
+                "uuid": "521c48d3-a804-4fcb-aa9b-5b15eeefa410",
+                "control-id": "ca-5",
+                "description": "Undispositioned scanner risk becomes a tracked POA&M item automatically rather than by re-keying. A failed finding that is not suppressed by an applicable, approved, in-window falsePositive, waiver or inherited disposition is upserted as a PoamFinding on the boundary's POA&M, keyed as HDF: <control-id>. The operation is idempotent, so re-aggregation updates the existing item instead of duplicating it.",
+                "remarks": "Implemented in app/services/hdf_aggregation_service.rb#aggregate_poam and app/models/poam_finding.rb. Tested by spec/services/hdf_aggregation_service_spec.rb."
+              },
+              {
+                "uuid": "2dc24c3c-e032-419e-8144-fc9af229e46b",
+                "control-id": "ca-7",
+                "description": "Continuous monitoring output reaches the authorization package instead of stopping at a worklist. HdfAggregationService maps each current finding to the NIST control or controls named in its HDF tags.nist and writes a dedicated hdf_scan_result annotation field on the matching SSP, SAP and SAR controls. The write is non-destructive: authored narrative is never overwritten. It runs on demand or asynchronously through AggregateFindingsJob.",
+                "remarks": "Implemented in app/services/hdf_aggregation_service.rb, app/jobs/aggregate_findings_job.rb and app/controllers/api/v1/aggregations_controller.rb. Tested by spec/services/hdf_aggregation_service_spec.rb."
+              },
+              {
+                "uuid": "ce087b95-c983-4e77-bcde-a7246d6bc9d9",
+                "control-id": "ca-7.4",
+                "description": "SPARC distinguishes regression from steady-state known risk across scans. A finding that was passing or dispositioned and then fails again — or fails at a worse severity than before — is classified re_failed and surfaced distinctly on the triage board, so a control that has regressed is not lost among findings that were already known and accepted.",
+                "remarks": "Implemented in app/services/hdf_ingest_service.rb#lifecycle_for and app/controllers/hdf_triage_controller.rb. Tested by spec/services/hdf_ingest_service_spec.rb."
+              },
+              {
+                "uuid": "8b34dbee-7f7c-45d3-8fb0-d7bef9156ffa",
+                "control-id": "ra-3",
+                "description": "An amendment is a time-bounded risk decision, not a permanent suppression. AmendmentValidityService computes valid_until from the boundary profile's baseline level and the finding's NIST criticality, measured from the scan that first discovered the control rather than from the date the amendment was written. An open POA&M addressing the control confers validity for as long as it stays open. When an amendment expires it stops suppressing, and the finding returns to the triage board as expired for re-approval.",
+                "remarks": "Implemented in app/services/amendment_validity_service.rb and app/models/remediation_timeline.rb. Tested by spec/services/amendment_validity_service_spec.rb."
               }
             ]
           }

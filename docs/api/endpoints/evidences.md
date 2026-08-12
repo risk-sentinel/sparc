@@ -63,11 +63,20 @@ Returns a paginated list (see [pagination.md](../pagination.md)), newest first.
 |---|---|
 | `type` | Filter by `evidence_type` (e.g. `scan_result`) |
 | `status` | Filter by status (e.g. `collected`) |
+| `source` | Filter by the recorded source |
 | `authorization_boundary_id` | Filter to one boundary |
 | `control_id` | Only evidence linked to this control (e.g. `AC-2`) |
+| `collected_by_user_id` | Only evidence collected by this account — "added by" (#934) |
+| `collected_from` / `collected_to` | Collection-date range, inclusive of both days (`YYYY-MM-DD`) |
 | `q` | Free-text over title, description, and original filename |
 | `items` / `per_page` | Page size (default 25, max 200) |
 | `page` | Page number |
+
+`collected_by_user_id` matches on the recorded account, not on the
+`collected_by` name. Evidence whose collector could not be resolved to an
+account — an artifact imported before #934, or a name that matched two accounts
+and was deliberately left unattributed — has a null `collected_by_user_id` and
+is returned by no value of this filter.
 
 **Response** `200 OK`
 
@@ -87,6 +96,7 @@ Returns a paginated list (see [pagination.md](../pagination.md)), newest first.
       "authorization_boundary_id": 3,
       "collected_at": "2026-07-18T14:02:11Z",
       "collected_by": "Alex Rivera",
+      "collected_by_user_id": 17,
       "has_file": true,
       "created_at": "2026-07-18T14:02:11Z"
     }
@@ -146,7 +156,9 @@ Accepts **`multipart/form-data`** (metadata plus a file) or **`application/json`
 | `file` | no | The artifact itself |
 | `control_ids` | no | Array or comma-separated string; replaces existing control links |
 
-> **`collected_at` and `collected_by` are server-recorded and cannot be set by the client** (#738, NIST AU-10). Values supplied in the request are ignored — including future timestamps, which the model additionally rejects outright should any path ever be able to set them (#903). Record an artifact's original production date in `description` or `source` instead.
+> **`collected_at`, `collected_by`, and `collected_by_user_id` are server-recorded and cannot be set by the client** (#738, #934, NIST AU-10). Values supplied in the request are ignored — including future timestamps, which the model additionally rejects outright should any path ever be able to set them (#903). Record an artifact's original production date in `description` or `source` instead.
+>
+> **Evidence submitted with a service-account token is attributed to that service account.** A `sparc_sa_…` token resolves to its own account, so `collected_by_user_id` is the service account's id and `collected_by` is its display name — not the human who owns the token. This is what makes "everything this pipeline submitted" answerable via `?collected_by_user_id=`.
 
 **Example** (multipart)
 
@@ -224,7 +236,7 @@ Standard envelope — see [errors.md](../errors.md).
 |---|---|
 | IA-2 | Bearer token required on every endpoint |
 | AC-3 / AC-6 | `evidence.read` / `evidence.write`, boundary-scoped |
-| AU-10 | `collected_at` / `collected_by` server-recorded, never client-supplied |
+| AU-10 | `collected_at` / `collected_by` / `collected_by_user_id` server-recorded, never client-supplied; a token's submission is attributed to the token's account |
 | AU-12 | All mutations audit-logged |
 | CA-2 / CA-7 | Evidence lifecycle for assessment and continuous monitoring |
 | SI-10 | Executable-signature deny-list and upload size cap |

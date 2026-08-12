@@ -180,6 +180,23 @@ RSpec.describe "Evidences", type: :request do
       expect(evidence.collected_by).not_to eq("spoofed")
     end
 
+    # #934 — the web path stamps the account reference too, and it is no more
+    # client-supplied than the name and the timestamp.
+    it "stamps collected_by_user_id from the session and ignores a posted one" do
+      other = create(:user)
+
+      post evidences_path, params: {
+        evidence: {
+          title: "Session provenance", evidence_type: "artifact", status: "draft",
+          description: "d", source: "s", collected_by_user_id: other.id
+        }
+      }
+
+      evidence = Evidence.find_by(title: "Session provenance")
+      expect(evidence.collected_by_user_id).to eq(user.id)
+      expect(evidence.collected_by).to eq(user.display_label)
+    end
+
     it "ignores a future collected_at posted directly to update" do
       evidence = create(:evidence, collected_at: 1.hour.ago)
       original = evidence.collected_at

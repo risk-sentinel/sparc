@@ -11,6 +11,13 @@ class Evidence < ApplicationRecord
 
   belongs_to :authorization_boundary, optional: true
 
+  # #934 / NIST AU-10 — who collected this, as a reference rather than a name.
+  # Optional for the same reason `UploadTrackable`'s is: a system-initiated
+  # fetch has no interactive user, and the backfill leaves an ambiguous name
+  # unattributed rather than guessing. `collected_by` remains the historical
+  # snapshot and is never derived from this association.
+  belongs_to :collected_by_user, class_name: "User", optional: true
+
   include BoundaryReferenceValidation
   has_many :evidence_control_links, dependent: :destroy
   has_many :attestations, dependent: :destroy
@@ -88,6 +95,28 @@ class Evidence < ApplicationRecord
 
   def status_label
     STATUS_LABELS[status] || status.titleize
+  end
+
+  # #738 / #934 — NIST AU-10 (non-repudiation), AU-12.
+  #
+  # The one place collection provenance is written. It lived as two copied lines
+  # in `EvidencesController#create` and `Api::V1::EvidencesController#create`,
+  # and as an omission in `AuthoritativeSourceFetchService` — a third creation
+  # path that recorded no collector at all while its caller already knew who the
+  # actor was (#934). A single method is what stops a fourth path from
+  # repeating that.
+  #
+  # Assignment only, never a save: each caller owns its own validation and error
+  # rendering. UTC because a local-zone timestamp drifts across DST and an
+  # impossible collection time in an evidence package reads as a control failure.
+  #
+  # `label` is for a collector that is not a user — a scheduled fetch, a console
+  # session. Naming it plainly is honest; leaving the field blank is not, which
+  # is exactly the state #934 found in production data.
+  def stamp_collection!(actor:, label: nil)
+    self.collected_at      = Time.current.utc
+    self.collected_by      = label.presence || actor&.display_label.presence || actor&.email.presence
+    self.collected_by_user = actor
   end
 
   def compute_file_hash!

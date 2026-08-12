@@ -139,6 +139,18 @@
                 "control-id": "ia-12",
                 "description": "SPARC delegates identity proofing to configured OIDC identity providers, which perform identity verification according to their own policies before issuing identity assertions. The application consumes verified identity claims from the provider's token response.",
                 "remarks": "CONDITIONAL COVERAGE: Requires SPARC_ENABLE_OIDC=true. Not met with local-only login (self-registration with no identity proofing). Implemented in app/controllers/omniauth_callbacks_controller.rb. Identity proofing is handled by the external OIDC provider."
+              },
+              {
+                "uuid": "a22605df-770a-4d9e-938f-c3d6e1068ff4",
+                "control-id": "sc-13",
+                "description": "SPARC uses vetted cryptography for credentials at rest and in transit. Passwords are stored as bcrypt digests, never reversibly encrypted; the API path is TLS-protected in transit. The deployment's task role holds PutSecretValue write-only access to the admin-credentials secret rather than GetSecretValue, so the running application can rotate the break-glass credential without being able to read it back — retrieval stays MFA-gated to a human operator.",
+                "remarks": "Implemented in app/services/admin_credential_rotation_service.rb, with the write-only IAM policy in sparc-iac (#197). Tested by spec/services/admin_credential_rotation_service_spec.rb."
+              },
+              {
+                "uuid": "6838e5c9-93c8-4765-b11c-94fea90ba213",
+                "control-id": "si-10",
+                "description": "SPARC validates credential input before mutating any stored secret. Password changes are checked for presence and minimum length, and the service compares the supplied value against the current digest first so an idempotent request is recognised rather than performed twice. A rejected request returns a structured 4xx and leaves no partial database mutation behind.",
+                "remarks": "Implemented in app/services/admin_credential_rotation_service.rb and app/controllers/api/v1/admin/credentials_controller.rb. Tested by spec/services/admin_credential_rotation_service_spec.rb."
               }
             ]
           }

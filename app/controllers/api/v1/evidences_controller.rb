@@ -31,7 +31,8 @@
 #   IA-2 Identification and Authentication (Bearer token required)
 #   AC-3 Access Enforcement (evidence.read / evidence.write RBAC, boundary-scoped)
 #   AC-6 Least Privilege (non-admin sees only their boundaries + global evidence)
-#   AU-10 Non-repudiation (server-stamped collected_at / collected_by — never client-supplied)
+#   AU-10 Non-repudiation (server-stamped collected_at / collected_by / collected_by_user_id
+#         — never client-supplied; a token's submission is attributed to the token's account)
 #   AU-12 Audit Record Generation (mutations logged)
 #   CA-2 / CA-7 Security Assessment & Continuous Monitoring (evidence lifecycle)
 #   SI-10 Information Input Validation (executable-signature deny-list, size cap)
@@ -65,9 +66,13 @@ class Api::V1::EvidencesController < Api::V1::BaseController
     EvidenceUploadPolicy.validate!(uploaded_file)
 
     evidence = Evidence.new(evidence_params)
-    # #738 / AU-10: provenance is system-recorded, never client-supplied.
-    evidence.collected_at = Time.current.utc
-    evidence.collected_by = current_user&.display_name.presence || current_user&.email
+    # #738 / #934 / AU-10: provenance is system-recorded, never client-supplied.
+    #
+    # `current_user` here is the token's owner — for a `sparc_sa_…` token that is
+    # the service-account User itself (ApiAuthentication#authenticate_sparc_token!),
+    # so evidence submitted by automation is attributed to the account that
+    # submitted it rather than to the human who owns that account.
+    evidence.stamp_collection!(actor: current_user)
 
     if evidence.save
       evidence.compute_file_hash! if evidence.file.attached?
@@ -192,6 +197,9 @@ class Api::V1::EvidencesController < Api::V1::BaseController
       authorization_boundary_id: evidence.authorization_boundary_id,
       collected_at: evidence.collected_at&.utc&.iso8601,
       collected_by: evidence.collected_by,
+      # #934 — the account, alongside the historical name. Null where the row
+      # predates the backfill's ability to resolve it unambiguously.
+      collected_by_user_id: evidence.collected_by_user_id,
       has_file: evidence.file.attached?,
       created_at: evidence.created_at.utc.iso8601
     }

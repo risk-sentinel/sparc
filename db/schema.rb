@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_150100) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -581,6 +581,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_150100) do
     t.bigint "authorization_boundary_id"
     t.datetime "collected_at"
     t.string "collected_by"
+    t.bigint "collected_by_user_id"
     t.datetime "created_at", null: false
     t.text "description"
     t.string "evidence_type", default: "artifact", null: false
@@ -596,6 +597,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_150100) do
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["authorization_boundary_id"], name: "index_evidences_on_authorization_boundary_id"
     t.index ["collected_at"], name: "index_evidences_on_collected_at"
+    t.index ["collected_by_user_id"], name: "index_evidences_on_collected_by_user_id"
     t.index ["evidence_type"], name: "index_evidences_on_evidence_type"
     t.index ["slug"], name: "index_evidences_on_slug", unique: true
     t.index ["status"], name: "index_evidences_on_status"
@@ -1804,6 +1806,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_150100) do
   add_foreign_key "converter_entries", "converters"
   add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
   add_foreign_key "evidences", "authorization_boundaries", on_delete: :nullify
+  add_foreign_key "evidences", "users", column: "collected_by_user_id", on_delete: :nullify
   add_foreign_key "finding_dispositions", "authorization_boundaries"
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "ksi_validations", "authorization_boundaries"
