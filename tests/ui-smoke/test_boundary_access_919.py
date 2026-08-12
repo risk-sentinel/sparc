@@ -95,7 +95,8 @@ class TestAdminRetainsAccess:
         resp = authed_page.goto(_memberships_path(boundary))
         authed_page.wait_for_load_state("networkidle")
 
-        assert resp is not None and resp.status < 400, f"admin was refused: {resp.status if resp else 'n/a'}"
+        status = resp.status if resp else None
+        assert resp is not None and resp.status < 400, f"admin was refused: {status}"
         assert "/memberships/new" in authed_page.url, (
             f"admin did not reach the roster editor — landed on {authed_page.url}"
         )
@@ -129,7 +130,8 @@ class TestRosterMembershipGrantsAccess:
         assert options, "the role dropdown rendered no options"
         chosen = "isso" if "isso" in options else options[0]
 
-        authed_page.fill("input[name='authorization_boundary_membership[user_name]']", "Smoke Member 919")
+        name_input = "input[name='authorization_boundary_membership[user_name]']"
+        authed_page.fill(name_input, "Smoke Member 919")
         authed_page.fill(
             "input[name='authorization_boundary_membership[user_email]']", "smoke-919@example.gov"
         )
@@ -160,10 +162,10 @@ class TestRosterMembershipGrantsAccess:
         )
         chosen = "view_only" if "view_only" in options else options[0]
 
-        authed_page.fill("input[name='authorization_boundary_membership[user_name]']", "Smoke ViewOnly 919")
-        authed_page.fill(
-            "input[name='authorization_boundary_membership[user_email]']", "smoke-919-ro@example.gov"
-        )
+        name_input = "input[name='authorization_boundary_membership[user_name]']"
+        email_input = "input[name='authorization_boundary_membership[user_email]']"
+        authed_page.fill(name_input, "Smoke ViewOnly 919")
+        authed_page.fill(email_input, "smoke-919-ro@example.gov")
         authed_page.select_option(role_select, chosen)
         authed_page.locator(f"form:has({role_select}) input[type='submit']").click()
         authed_page.wait_for_selector("text=Smoke ViewOnly 919", timeout=10_000)

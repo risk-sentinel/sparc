@@ -5,7 +5,17 @@ require "rails_helper"
 RSpec.describe "Federation Peers UI", type: :request do
   let(:admin) { create(:user, :admin) }
 
+  # #919 — federation peer administration moved from a hand-rolled admin gate to
+  # authorize_permission!("back_matter.federate"), matching the Api::V1 sibling
+  # that already used it. The canonical guard honours SparcConfig.any_auth_enabled?
+  # (the hand-rolled one did not), so these must stub it — otherwise the guard
+  # no-ops and the denial expectation below asserts nothing.
+  #
+  # This is the local-vs-CI drift trap: a developer .env with
+  # SPARC_ENABLE_LOCAL_LOGIN=true makes the unstubbed spec pass locally and fail
+  # in CI, where no auth is configured.
   before do
+    allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
     sign_in_as(admin)
     allow_any_instance_of(ApplicationController).to receive(:require_authentication).and_return(true)
     allow_any_instance_of(ApplicationController).to receive(:check_session_timeout).and_return(true)
@@ -20,10 +30,38 @@ RSpec.describe "Federation Peers UI", type: :request do
       expect(response.body).to include("Alpha")
     end
 
-    it "redirects non-admin users" do
+    it "redirects a user without back_matter.federate" do
       sign_in_as(create(:user))
       get federation_peers_path
       expect(response).to redirect_to(root_path)
+    end
+
+    # #919 — the permission, not admin-ness, is what grants access now. The
+    # seeds give back_matter.federate to policy_manager, so the web surface
+    # widened from admin-only to admin + policy team, matching the API.
+    it "admits a non-admin holding back_matter.federate" do
+      federator = create(:user)
+      role = Role.create!(name: "spec_federator", display_name: "Spec Federator",
+                          scope: "instance", permissions: { "back_matter.federate" => true })
+      UserRole.create!(user: federator, role: role, authorization_boundary_id: nil)
+      sign_in_as(federator)
+
+      get federation_peers_path
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    # #885 — prove BOTH postures. With no auth configured every guard in the app
+    # no-ops by design; federation peers are no longer a special case. This is a
+    # deliberate behaviour change: the old hand-rolled gate refused non-admins
+    # even in a no-auth deployment, which was inconsistent with everything else.
+    it "does not gate when no authentication is configured" do
+      allow(SparcConfig).to receive(:any_auth_enabled?).and_return(false)
+      sign_in_as(create(:user))
+
+      get federation_peers_path
+
+      expect(response).to have_http_status(:ok)
     end
   end
 
