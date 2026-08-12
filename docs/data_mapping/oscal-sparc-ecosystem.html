@@ -537,7 +537,21 @@ responsibility_uuid = uuid5(NS_EXPORT, f"{provider_id}|{component_key}|{control_
   <footer>Diagram sources are Mermaid — copy any figure and drop it into a repo README, a docs site, or an ADR.</footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<!-- Subresource Integrity is not optional here. This file is opened straight
+     from disk by a reader who has not installed SPARC, so the CDN is the only
+     thing standing between them and whatever that origin serves. `integrity`
+     makes the browser refuse a script that is not byte-for-byte the mermaid
+     10.9.1 this document was written against; `crossorigin` is required for the
+     check to run at all on a cross-origin fetch.
+
+     Hash computed from the file as actually served, not copied from a
+     third-party listing:
+       curl -fsSL <src> | openssl dgst -sha384 -binary | openssl base64 -A
+     Recompute it if the pinned version ever moves. Same convention as the
+     Bootstrap tags in app/views/layouts/{application,login}.html.erb. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"
+        integrity="sha384-WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr"
+        crossorigin="anonymous"></script>
 <script>
 const SRC = {
 lineage: `flowchart LR
