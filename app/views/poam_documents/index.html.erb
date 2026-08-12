@@ -19,6 +19,7 @@
 
   <%= render "shared/collection_toolbar",
         label: "POA&M documents", placeholder: "Search POA&Ms…",
+        filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,
         view_mode: (@view_mode if @poam_documents.any?) %>
 
   <% if @poam_documents.any? && @view_mode == :card %>

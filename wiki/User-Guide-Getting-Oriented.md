@@ -135,13 +135,33 @@ already applied.
 
 ### Filters
 
-Some screens offer filters as well as search — component definitions filter by
-cloud partition, capability and whether they carry automated checks; evidence by
-type, status, control and boundary; authoritative sources by scope, rel and media
-type.
+Most list screens offer filters as well as search. What each one offers depends
+on the screen:
+
+| Screen | Filters |
+|---|---|
+| Control catalogs | OSCAL version · revision · source · status |
+| Baselines (profiles) | baseline level · OSCAL version · revision · status · source catalog · added by · created between |
+| POA&Ms | status · OSCAL version · revision · authorization boundary · added by · created between |
+| Evidence | type · status · source · control · authorization boundary · collected between |
+| Component definitions | cloud partition · capability · whether they carry automated checks |
+| Authoritative sources | scope · rel · media type |
+
+Two things about those lists are worth knowing:
+
+- **The choices come from your data, not a fixed list.** The OSCAL version
+  dropdown offers the versions your documents actually use. As you import
+  documents written against newer OSCAL releases, they appear on their own.
+- **A filter you couldn't use isn't shown.** If every catalog you hold uses the
+  same OSCAL version, there is nothing to choose between, so that filter is
+  hidden rather than offered as a dropdown with one entry.
 
 Filters and search **narrow together**, they don't replace each other. Searching
 `iam` with the GovCloud filter on means "IAM, in GovCloud".
+
+Applying a filter keeps everything else about how you were looking at the list —
+your search, your card/list choice and your page size. It does return you to the
+first page, because the page you were on describes a different set of results.
 
 Whatever is currently narrowing the list appears as a row of chips above it, with
 a count — *"3 filters active"*. Each chip removes just that one filter and leaves

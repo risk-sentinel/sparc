@@ -100,6 +100,14 @@ class Api::V1::PoamDocumentsController < Api::V1::DocumentBaseController
     "POA&M — #{boundary&.name || sar&.name || 'Boundary'} — #{Date.current.iso8601}"
   end
 
+  # #908 — the same facets the POA&M index screen offers, through the same
+  # query object, so a filter cannot be added to one surface and missed on the
+  # other. `super` first, to keep the shared `name` filter this endpoint has
+  # always accepted.
+  def apply_filters(scope)
+    PoamBrowseQuery.new(params, scope: super).records
+  end
+
   def document_class = PoamDocument
   def document_param_key = :poam_document
   def read_permission_key = "poam.read"

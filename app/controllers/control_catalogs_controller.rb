@@ -30,12 +30,16 @@ class ControlCatalogsController < ApplicationController
     @control_count = CatalogControl.distinct.count(:control_id)
     @revision_count = ControlCatalog.where.not(version: [ nil, "" ]).select(:version).distinct.count
 
-    # #672 — filter listed rows; the tiles above keep showing totals.
-    scope = scope.search_text(params[:q])
+    # #672 search + #908 facets, both through the shared query object so this
+    # screen and Api::V1 narrow the collection identically.
+    query = CatalogBrowseQuery.new(params, scope: scope)
+    @filter_fields = query.filter_fields
+    @facets = active_facets(CatalogBrowseQuery.facet_params, labels: CatalogBrowseQuery.facet_labels)
+    @clear_facets = clear_facets_params(CatalogBrowseQuery.facet_params)
 
     # #888 — cards by default, remembered per screen, and paginated.
     @view_mode = resolve_view_mode(:control_catalogs)
-    @pagy, @control_catalogs = paginate_collection(scope)
+    @pagy, @control_catalogs = paginate_collection(query.records)
   end
 
   def show

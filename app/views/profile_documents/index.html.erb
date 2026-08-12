@@ -22,6 +22,7 @@
 
   <%= render "shared/collection_toolbar",
         label: "profiles", placeholder: "Search baselines / profiles…",
+        filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,
         view_mode: (@profile_documents.any? ? @view_mode : nil) %>
 
   <% if @profile_documents.any? && @view_mode == :card %>

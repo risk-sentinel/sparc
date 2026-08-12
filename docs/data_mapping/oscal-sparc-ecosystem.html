@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OSCAL end to end — SPARC, SAF CLI, InSpec, Heimdall</title>
+<style>
+  :root{
+    --ink:#12213A;
+    --ink-2:#43536F;
+    --ground:#E6EAF1;
+    --paper:#F7F8FB;
+    --rule:#C3CBD9;
+    --authority:#2F5FA8;
+    --assertion:#0E7C6B;
+    --evidence:#B4610C;
+    --risk:#A32436;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background-color:var(--ground);
+    background-image:
+      linear-gradient(to right, rgba(47,95,168,.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(47,95,168,.055) 1px, transparent 1px);
+    background-size:28px 28px;
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.55;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px 96px}
+
+  /* ---------- type ---------- */
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--ink-2);
+    margin:0 0 10px;
+  }
+  h1{
+    font-size:clamp(38px,7vw,72px);
+    line-height:.97;
+    letter-spacing:-.035em;
+    font-weight:800;
+    margin:0 0 18px;
+  }
+  h2{
+    font-size:clamp(24px,3.4vw,34px);
+    line-height:1.1;
+    letter-spacing:-.02em;
+    font-weight:750;
+    margin:0 0 6px;
+  }
+  h3{font-size:17px;letter-spacing:-.01em;margin:0 0 6px}
+  p{margin:0 0 14px;max-width:70ch;color:var(--ink-2)}
+  p.lede{color:var(--ink);font-size:clamp(17px,2vw,20px);max-width:64ch}
+  code, .m{font-family:var(--mono);font-size:.88em}
+  code{background:rgba(47,95,168,.09);padding:1px 5px;border-radius:3px;color:var(--ink)}
+  a{color:var(--authority)}
+
+  header.masthead{padding:64px 0 8px}
+  .rulebar{display:flex;align-items:center;gap:14px;margin:36px 0 0}
+  .rulebar::after{content:"";flex:1;height:1px;background:var(--rule)}
+
+  section{padding-top:64px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  .sec-head .tag{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:#fff;background:var(--ink);padding:4px 9px;border-radius:2px;white-space:nowrap;
+  }
+
+  /* ---------- hero rail (signature) ---------- */
+  .rail{
+    margin:34px 0 8px;
+    overflow-x:auto;
+    padding-bottom:8px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .rail-inner{display:flex;align-items:stretch;min-width:940px;gap:0}
+  .stop{flex:1;min-width:118px;position:relative;padding-bottom:64px}
+  .stop .chip{
+    border:1.5px solid var(--ink);
+    background:var(--paper);
+    border-radius:3px;
+    padding:10px 10px 11px;
+    height:100%;
+  }
+  .stop .model{font-family:var(--mono);font-size:11.5px;line-height:1.35;font-weight:600;word-break:break-word}
+  .stop .role{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-top:7px;font-family:var(--mono)}
+  .stop .leader{position:absolute;left:50%;top:calc(100% - 62px);width:1px;height:26px;background:var(--rule)}
+  .stop .bind{
+    position:absolute;left:0;right:0;top:calc(100% - 34px);
+    text-align:center;font-family:var(--mono);font-size:10px;color:var(--ink-2);
+    line-height:1.3;padding:0 4px;
+  }
+  .stop::after{
+    content:"";position:absolute;right:-1px;top:34px;width:14px;height:1px;background:var(--ink);
+  }
+  .stop:last-child::after{display:none}
+  .stop + .stop{margin-left:14px}
+  .k-auth .chip{border-color:var(--authority);box-shadow:inset 0 3px 0 var(--authority)}
+  .k-claim .chip{border-color:var(--assertion);box-shadow:inset 0 3px 0 var(--assertion)}
+  .k-ev .chip{border-color:var(--evidence);box-shadow:inset 0 3px 0 var(--evidence)}
+  .k-risk .chip{border-color:var(--risk);box-shadow:inset 0 3px 0 var(--risk)}
+  .railnote{font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.04em}
+
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin:22px 0 0;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block}
+
+  /* ---------- panels ---------- */
+  .panel{
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:20px;
+    margin:20px 0;
+  }
+  .panel > h3{margin-top:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .compare{border-top:3px solid var(--ink)}
+  .compare.hot{border-top-color:var(--evidence)}
+  .compare dl{margin:0}
+  .compare dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-top:14px}
+  .compare dd{margin:3px 0 0;font-size:14.5px}
+
+  /* ---------- diagram blocks ---------- */
+  .fig{margin:22px 0 0;border:1px solid var(--rule);border-radius:4px;background:var(--paper);overflow:hidden}
+  .fig-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border-bottom:1px solid var(--rule);background:rgba(47,95,168,.05)}
+  .fig-bar .name{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+  .fig-bar button{
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    background:transparent;border:1px solid var(--rule);border-radius:2px;padding:4px 9px;
+    color:var(--ink);cursor:pointer;
+  }
+  .fig-bar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .fig-bar button:focus-visible{outline:2px solid var(--authority);outline-offset:2px}
+  .fig-body{padding:16px;overflow-x:auto}
+  .fig-body svg{max-width:100%;height:auto}
+  .caption{font-size:13.5px;color:var(--ink-2);padding:0 16px 16px;margin:0;max-width:78ch}
+
+  /* ---------- matrix ---------- */
+  .tablewrap{overflow-x:auto;margin:20px 0}
+  table{border-collapse:collapse;width:100%;min-width:760px;background:var(--paper);font-size:13.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);border-bottom:1.5px solid var(--ink)}
+  td.m{font-family:var(--mono);font-size:12px;white-space:nowrap}
+  tbody tr:hover{background:rgba(47,95,168,.045)}
+
+  pre.cmd{
+    background:var(--ink);color:#E9EEF7;font-family:var(--mono);font-size:12.5px;line-height:1.7;
+    padding:16px 18px;border-radius:4px;overflow-x:auto;margin:16px 0;
+  }
+  pre.cmd .c{color:#8FA6C9}
+
+  ul.tight{margin:0 0 14px;padding-left:20px;color:var(--ink-2);max-width:70ch}
+  ul.tight li{margin-bottom:7px}
+  ul.tight strong{color:var(--ink)}
+
+  footer{margin-top:72px;padding-top:20px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+
+  /* ---------- adoption ladder ---------- */
+  .ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:24px 0 0}
+  .stage{background:var(--paper);border:1px solid var(--rule);border-top:3px solid var(--authority);border-radius:3px;padding:14px;display:flex;flex-direction:column}
+  .stage.terminal{border-top-color:var(--assertion)}
+  .stage .n{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--ink-2)}
+  .stage h4{margin:6px 0 8px;font-size:15px;letter-spacing:-.01em}
+  .stage p{font-size:13px;margin:0 0 12px;flex:1}
+  .stage .exit{border-top:1px dashed var(--rule);padding-top:9px;font-family:var(--mono);font-size:10.5px;line-height:1.45;color:var(--evidence)}
+  .stage .exit b{display:block;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin-bottom:3px}
+
+  /* ---------- cadence band ---------- */
+  .cadence{display:grid;grid-template-columns:repeat(6,1fr);margin:24px 0 0;border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:var(--paper)}
+  .tick{padding:14px 12px;border-right:1px solid var(--rule)}
+  .tick:last-child{border-right:none}
+  .tick .when{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#F7F8FB;background:var(--ink);display:inline-block;padding:3px 7px;border-radius:2px;margin-bottom:10px}
+  .tick ul{margin:0;padding-left:15px;font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  .tick li{margin-bottom:5px}
+
+  @media (max-width:900px){
+    .ladder{grid-template-columns:1fr 1fr}
+    .cadence{grid-template-columns:1fr 1fr}
+    .tick{border-bottom:1px solid var(--rule)}
+  }
+  @media (max-width:760px){
+    .grid2{grid-template-columns:1fr}
+    header.masthead{padding-top:40px}
+  }
+  @media (max-width:560px){
+    .ladder{grid-template-columns:1fr}
+    .cadence{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+</style>
+</head>
+<body>
+<!--
+  Standalone reading copy. Open it in a browser — it needs no app, no server and
+  no wiki account, which is the point: it explains how the OSCAL models relate
+  to one another for someone who has not installed SPARC.
+
+  The SAME material is maintained as wiki/OSCAL-End-to-End.md, which is the
+  canonical copy — it renders on the GitHub wiki and in the in-app Help Center,
+  and its mermaid diagrams render natively there. Edit that one first, then
+  bring this into line. Two copies of one document is a real cost, accepted
+  deliberately because neither format serves the other's reader.
+
+  One caveat to know before relying on it offline: the diagrams are drawn by
+  mermaid loaded from cdnjs.cloudflare.com (see the bottom of this file), so
+  with no network you get the prose and none of the ten diagrams. This file is
+  NOT served by the application — the app's CSP does not allow that origin.
+-->
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">risk-sentinel / sparc &nbsp;·&nbsp; oscal 1.1.x &nbsp;·&nbsp; hdf v1 + v2</p>
+    <h1>OSCAL,<br>end to end.</h1>
+    <p class="lede">One chain of models. One normalization format. One decision gate. Everything below is either an artifact in the chain, a tool that writes to it, or a scanner that feeds it.</p>
+
+    <div class="rail" role="img" aria-label="OSCAL model chain from catalog through profile, resolved catalog, component definition, SSP, SAP, SAR, to POA&amp;M, annotated with the field that binds each model to the previous one">
+      <div class="rail-inner">
+        <div class="stop k-auth"><div class="chip"><div class="model">catalog</div><div class="role">Authority</div></div><div class="leader"></div><div class="bind">source of truth<br>SP 800-53 Rev 5</div></div>
+        <div class="stop k-auth"><div class="chip"><div class="model">profile</div><div class="role">Tailoring</div></div><div class="leader"></div><div class="bind">import/@href<br>→ catalog</div></div>
+        <div class="stop k-auth"><div class="chip"><div class="model">resolved<br>catalog</div><div class="role">Baseline</div></div><div class="leader"></div><div class="bind">profile<br>resolution</div></div>
+        <div class="stop k-claim"><div class="chip"><div class="model">component-<br>definition</div><div class="role">Reuse unit</div></div><div class="leader"></div><div class="bind">control-implementation<br>/@source</div></div>
+        <div class="stop k-claim"><div class="chip"><div class="model">system-<br>security-plan</div><div class="role">Claim</div></div><div class="leader"></div><div class="bind">import-profile/@href<br>+ assembled CDEFs</div></div>
+        <div class="stop k-ev"><div class="chip"><div class="model">assessment-<br>plan</div><div class="role">Method</div></div><div class="leader"></div><div class="bind">import-ssp<br>/@href</div></div>
+        <div class="stop k-ev"><div class="chip"><div class="model">assessment-<br>results</div><div class="role">Proof</div></div><div class="leader"></div><div class="bind">import-ap<br>/@href</div></div>
+        <div class="stop k-risk"><div class="chip"><div class="model">plan-of-action-<br>and-milestones</div><div class="role">Residual risk</div></div><div class="leader"></div><div class="bind">import-ssp/@href<br>+ related-risk</div></div>
+      </div>
+    </div>
+    <p class="railnote">↔ scroll the rail · the caption under each stop is the field that actually binds it upstream</p>
+
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--authority)"></i> authority</span>
+      <span><i class="swatch" style="background:var(--assertion)"></i> what you claim</span>
+      <span><i class="swatch" style="background:var(--evidence)"></i> what you prove</span>
+      <span><i class="swatch" style="background:var(--risk)"></i> what you owe</span>
+    </div>
+  </header>
+
+  <section id="lineage">
+    <div class="sec-head"><span class="tag">Model lineage</span><h2>What binds to what</h2></div>
+    <p>Most broken OSCAL pipelines break here: the SSP imports a profile that was never resolved, or the SAR imports an assessment plan whose control set no longer matches the SSP. Bind by <code>href</code> and UUID, resolve once, and treat the resolved catalog as the only control vocabulary anything downstream is allowed to use.</p>
+    <div class="fig" data-diagram="lineage">
+      <div class="fig-bar"><span class="name">fig. lineage — oscal model chain</span><button type="button" data-copy="lineage">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-lineage"></pre></div>
+      <p class="caption">CDEFs are not imported by the SSP through a schema field — tooling assembles them into <code>implemented-requirement</code> entries. That assembly step is where SPARC's authoritative layer earns its keep, and where inheritance and hybrid controls get resolved.</p>
+    </div>
+  </section>
+
+  <section id="layers">
+    <div class="sec-head"><span class="tag">Tooling</span><h2>Three layers, one boundary each</h2></div>
+    <p>SPARC owns authority. InSpec and SAF CLI own validation. Heimdall owns delivery and triage. The value of holding the line between them is that any layer can be swapped without rewriting the other two — a scanner change touches validation only, an authorization boundary change touches authority only.</p>
+    <div class="fig" data-diagram="layers">
+      <div class="fig-bar"><span class="name">fig. layers — tool to artifact map</span><button type="button" data-copy="layers">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-layers"></pre></div>
+      <p class="caption"><code>sparc-iac</code> is not a side quest: the Terraform that stands up the resource is also what supplies <code>target</code> and <code>auth_boundary</code> as root-level HDF objects, so a result can be attributed to a boundary without a human mapping step.</p>
+    </div>
+  </section>
+
+  <section id="evidence">
+    <div class="sec-head"><span class="tag">Evidence</span><h2>Every scanner ends up in the same shape</h2></div>
+    <p>HDF is the narrow waist. Scanners disagree about everything — severity scales, identifiers, nesting, what counts as a finding — and normalizing them into HDF before anything else is what makes aggregation and control mapping tractable. The join key back to OSCAL is the NIST tag carried on each HDF control.</p>
+    <div class="fig" data-diagram="evidence">
+      <div class="fig-bar"><span class="name">fig. evidence — scanners to assessment-results</span><button type="button" data-copy="evidence">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-evidence"></pre></div>
+      <p class="caption">Manual and interview evidence enters through <code>saf attest</code> rather than bypassing the pipeline, so an examine-method control and an automated control land in assessment-results as the same kind of observation with different <code>method</code> values.</p>
+    </div>
+
+    <pre class="cmd"><span class="c"># normalize — every scanner, same target format</span>
+saf convert trivy2hdf    -i trivy.json     -o hdf/trivy.json
+saf convert checkov2hdf  -i checkov.json   -o hdf/checkov.json
+saf convert asff2hdf     -i securityhub.json -o hdf/
+saf convert sarif2hdf    -i semgrep.sarif  -o hdf/semgrep.json
+inspec exec profiles/rhel9-stig --reporter json:hdf/rhel9.json
+
+<span class="c"># attach non-automatable evidence instead of hand-waving it</span>
+saf attest create -o attestations.json
+saf attest apply -i hdf/rhel9.json attestations.json -o hdf/rhel9-attested.json
+
+<span class="c"># gate the pipeline on a threshold, not on a human reading a report</span>
+saf validate threshold -i hdf/rhel9-attested.json -T thresholds/moderate.yaml
+
+<span class="c"># authority layer: resolve once, validate always</span>
+oscal-cli profile resolve profiles/moderate-tailored.json -o baselines/resolved.json
+oscal-cli validate ssp/system-security-plan.json</pre>
+  </section>
+
+  <section id="matrix">
+    <div class="sec-head"><span class="tag">Ownership</span><h2>Who writes it, who checks it, how often</h2></div>
+    <p>Print this one. Most cATO conversations stall because nobody has agreed on the cadence column.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>OSCAL model</th><th>Produced by</th><th>Validated by</th><th>Consumed by</th><th>Cadence under cATO</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="m">catalog</td><td>NIST / agency</td><td>oscal-cli</td><td>profile authors</td><td>On release</td></tr>
+          <tr><td class="m">profile</td><td>SPARC authority layer</td><td>sparc-validate</td><td>SSP, CDEF</td><td>On baseline change</td></tr>
+          <tr><td class="m">component-definition</td><td>Component owner, <span class="m">risk-sentinel/*</span></td><td>sparc-validate + InSpec profile pairing</td><td>SSP assembly</td><td>On component version change</td></tr>
+          <tr><td class="m">system-security-plan</td><td>SPARC assembly from CDEFs</td><td>sparc-validate</td><td>SAP, POA&amp;M, AO</td><td>On drift or component change</td></tr>
+          <tr><td class="m">assessment-plan</td><td>Assessor + SPARC</td><td>oscal-cli</td><td>SAR generation</td><td>On SSP change</td></tr>
+          <tr><td class="m">assessment-results</td><td>Heimdall aggregation of HDF</td><td>Threshold gate</td><td>POA&amp;M, AO dashboard</td><td>Every pipeline run; ≤ 3 days for moderate</td></tr>
+          <tr><td class="m">plan-of-action-and-milestones</td><td>Risk delta engine</td><td>sparc-validate</td><td>AO, ConMon reporting</td><td>Continuous, with milestone SLAs</td></tr>
+          <tr><td class="m">KSI evidence (20x)</td><td>Per-component emitter</td><td>Schema + freshness check</td><td>FedRAMP 20x package</td><td>≥ 70% automated, ≤ 3 days</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cato">
+    <div class="sec-head"><span class="tag">Authorization</span><h2>ATO acceleration is not cATO</h2></div>
+    <p>They use the same pipeline. The difference is what happens on the right-hand side after evidence lands — and whether the authorization decision itself has been made continuous.</p>
+    <div class="grid2">
+      <div class="panel compare">
+        <h3>Accelerated ATO</h3>
+        <dl>
+          <dt>What automation buys</dt><dd>Assembly speed. CDEF reuse and machine-generated SSPs cut months off package preparation.</dd>
+          <dt>Assessment</dt><dd>Point in time. One SAR, one snapshot, one signature.</dd>
+          <dt>Evidence after authorization</dt><dd>ConMon reporting on a monthly or quarterly cycle, largely narrative.</dd>
+          <dt>Failure mode</dt><dd>The package is accurate on day one and stale by day ninety.</dd>
+          <dt>Feedback loop</dt><dd>Open. Drift is discovered at the next assessment.</dd>
+        </dl>
+      </div>
+      <div class="panel compare hot">
+        <h3>Continuous ATO</h3>
+        <dl>
+          <dt>What automation buys</dt><dd>Ongoing authorization. The same artifacts are regenerated and re-evaluated on a defined cadence.</dd>
+          <dt>Assessment</dt><dd>Standing. Assessment-results are a rolling object, not a deliverable.</dd>
+          <dt>Evidence after authorization</dt><dd>Machine-readable, timestamped, freshness-enforced. Stale evidence is itself a finding.</dd>
+          <dt>Failure mode</dt><dd>Evidence flows but no one computes risk delta, so the AO has telemetry instead of a decision.</dd>
+          <dt>Feedback loop</dt><dd>Closed. Risk delta → AO decision → SSP and POA&amp;M sync-back.</dd>
+        </dl>
+      </div>
+    </div>
+    <p style="margin-top:18px">The honest test for cATO: can the system tell you, without a human, that today's authorization state differs from the authorized state, by how much, and against which controls? If not, what you have is fast ATO with good dashboards.</p>
+  </section>
+
+  <section id="loop">
+    <div class="sec-head"><span class="tag">The gap</span><h2>Closing the right-hand side</h2></div>
+    <p>Evidence ingestion is the well-solved half. The half that decides whether authorization actually holds is risk delta, the AO decision gate, and sync-back into the authoritative layer.</p>
+    <div class="fig" data-diagram="loop">
+      <div class="fig-bar"><span class="name">fig. loop — continuous authorization cycle</span><button type="button" data-copy="loop">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-loop"></pre></div>
+      <p class="caption">Sync-back is the step most stacks skip. Without it the SSP describes a system that no longer exists, and every subsequent assessment measures against a fiction.</p>
+    </div>
+
+    <h3 style="margin-top:28px">The reusable unit</h3>
+    <ul class="tight">
+      <li><strong>CDEF statement</strong> — the control implementation narrative, written once per component, not once per system.</li>
+      <li><strong>InSpec control</strong> — NIST-tagged, so its HDF output maps back to the same control ID the statement claims.</li>
+      <li><strong>KSI evidence emitter</strong> — per-KSI JSON with cadence metadata, so freshness is machine-checkable.</li>
+    </ul>
+    <p>Ship those three together as one versioned artifact and a component becomes portable across systems, boundaries, and agencies. Ship them separately and you have three things that drift apart by the second system.</p>
+  </section>
+
+  <section id="bdocs">
+    <div class="sec-head"><span class="tag">Boundary docs</span><h2>The documents are outputs, not inputs</h2></div>
+    <p>An SSP is only one of the artifacts an AO looks at. The inventory workbook, boundary and data-flow diagrams, PPSM table, CRM, and the narrative attachments all drift independently, and they drift silently because nothing fails when they go stale. The fix is to demote every one of them to a build output with exactly one upstream source of truth.</p>
+    <div class="fig" data-diagram="bdocs">
+      <div class="fig-bar"><span class="name">fig. bdocs — boundary document pipeline</span><button type="button" data-copy="bdocs">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-bdocs"></pre></div>
+      <p class="caption">The regen-diff gate is the load-bearing one: CI regenerates every derived document and fails the merge if the result differs from what is committed. A hand edit to a generated file becomes a build break instead of a discrepancy someone finds during assessment.</p>
+    </div>
+
+    <h3 style="margin-top:32px">Script inventory</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Script</th><th>Runtime</th><th>Trigger</th><th>Reads</th><th>Writes</th></tr></thead>
+        <tbody>
+          <tr><td class="m">bd-inventory</td><td>Python</td><td>PR + nightly</td><td>Terraform state, AWS Config</td><td><span class="m">system-implementation</span> components and inventory-items</td></tr>
+          <tr><td class="m">bd-diagram</td><td>Python → Mermaid</td><td>PR</td><td>OSCAL components, TF graph</td><td>Boundary, network, data-flow diagrams as committed source</td></tr>
+          <tr><td class="m">bd-ppsm</td><td>Python</td><td>PR + nightly</td><td>Security groups, NACLs, listeners</td><td>PPSM table and component props</td></tr>
+          <tr><td class="m">bd-crm</td><td>Python</td><td>On CDEF change</td><td>CDEF <span class="m">responsible-role</span>, control origination</td><td>CRM/CIS worksheet, inheritance export</td></tr>
+          <tr><td class="m">bd-narrative</td><td>Bash + pandoc</td><td>On tag</td><td>Markdown with front-matter</td><td>Rendered DOCX/PDF attachments</td></tr>
+          <tr><td class="m">bd-freshness</td><td>Python</td><td>Daily + PR</td><td><span class="m">last_reviewed</span>, <span class="m">review_cadence</span></td><td>Freshness report; fails CI; opens issues</td></tr>
+          <tr><td class="m">bd-poam-sync</td><td>Python</td><td>Nightly</td><td>HDF from Heimdall</td><td>POA&amp;M risks with stable UUIDv5 ids; auto-close on clean evidence</td></tr>
+          <tr><td class="m">bd-sigchange</td><td>Python</td><td>PR</td><td>Diff of inventory and component set</td><td>Significant vs administrative classification; SCR draft</td></tr>
+          <tr><td class="m">bd-deviation</td><td>Python</td><td>PR</td><td>Deviation YAML (DR, FP, OR)</td><td>Gate result; expiring-waiver queue</td></tr>
+          <tr><td class="m">bd-manifest</td><td>Bash</td><td>On tag</td><td>All artifacts</td><td>SHA-256 manifest plus signature</td></tr>
+          <tr><td class="m">bd-package</td><td>TypeScript</td><td>On tag</td><td>OSCAL, rendered docs, manifest</td><td>Release bundle; VDR and GRC export</td></tr>
+          <tr><td class="m">bd-inherit</td><td>Python</td><td>PR + on provider bump</td><td>Provider CDEF exports</td><td>Resolved <span class="m">inherited</span> and <span class="m">satisfied</span>; fails on unmatched responsibility UUIDs</td></tr>
+          <tr><td class="m">bd-leverage-pin</td><td>Python</td><td>PR</td><td>Provider bundle version and digest</td><td>Back-matter provenance record; bump raises change review</td></tr>
+          <tr><td class="m">bd-trust</td><td>Bash</td><td>On fetch</td><td>Signed bundle, trust anchor</td><td>Verification result; refuses unverified inheritance</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:28px">Two patterns that carry the weight</h3>
+    <p><strong>Front-matter as the currency contract.</strong> Every narrative document declares its own review terms, so staleness is machine-detectable rather than a calendar reminder someone snoozes.</p>
+    <pre class="cmd"><span class="c"># docs/attachments/incident-response-plan.md</span>
+---
+title: Incident Response Plan
+oscal_ref: urn:uuid:8b1c...          <span class="c"># back-matter resource uuid</span>
+owner: platform-security
+approver: system-owner
+last_reviewed: 2026-05-14
+review_cadence: P1Y                  <span class="c"># ISO 8601 duration</span>
+covers_controls: [IR-1, IR-4, IR-6, IR-8]
+evidence_class: narrative            <span class="c"># narrative | derived | machine</span>
+---</pre>
+    <p><strong>Deterministic risk identity.</strong> POA&amp;M items must survive re-generation. Derive the OSCAL risk UUID as a v5 UUID over a fixed namespace and a stable tuple, so the same finding produces the same identifier on every run — no duplicates, and auto-close becomes safe.</p>
+    <pre class="cmd">risk_uuid = uuid5(NS_POAM, f"{control_id}|{component_uuid}|{check_id}")
+
+<span class="c"># same finding tomorrow  -> same uuid -> updated in place</span>
+<span class="c"># finding gone tomorrow  -> uuid absent -> closed with evidence link</span></pre>
+  </section>
+
+  <section id="leverage">
+    <div class="sec-head"><span class="tag">Inheritance</span><h2>Leveraged, federated, and reused</h2></div>
+    <p>This is where CDEFs stop being a convenience and become the wire format. A leveraged authorization is a contract between two systems, and OSCAL expresses that contract as four assemblies and two UUID joins — <code>export/provided</code> pairs with <code>inherited/provided-uuid</code>, and <code>export/responsibility</code> pairs with <code>satisfied/responsibility-uuid</code>. Everything else is packaging.</p>
+
+    <div class="fig" data-diagram="inherit">
+      <div class="fig-bar"><span class="name">fig. inherit — the inheritance contract</span><button type="button" data-copy="inherit">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-inherit"></pre></div>
+      <p class="caption">The CDEF is the provider side of the contract; the leveraging SSP is the consumer side. A provider that ships CDEFs with stable exports can be leveraged by any number of systems without ever seeing their SSPs.</p>
+    </div>
+
+    <h3 style="margin-top:30px">UUID stability is the whole ballgame</h3>
+    <p>If a provider re-issues its CDEF and the <code>provided</code> and <code>responsibility</code> UUIDs change, every leveraging SSP silently orphans its inheritance. Use the same deterministic derivation you use for POA&amp;M risks, so exports are reproducible across regenerations and across federated instances.</p>
+    <pre class="cmd">provided_uuid       = uuid5(NS_EXPORT, f"{provider_id}|{component_key}|{control_id}|{statement_id}|provided")
+responsibility_uuid = uuid5(NS_EXPORT, f"{provider_id}|{component_key}|{control_id}|{statement_id}|responsibility")
+
+<span class="c"># exports become content-addressed: same contract -> same uuids -> no orphaned inheritance</span>
+<span class="c"># a deliberate contract change is then a visible uuid change, which bd-sigchange can catch</span></pre>
+
+    <h3 style="margin-top:30px">Origination is not binary</h3>
+    <p>"Inherited" collapses six distinct situations that carry different evidence obligations. Modelling them separately is what keeps hybrid controls from becoming the place assessments go to die.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Control origination</th><th>OSCAL representation</th><th>Evidence held by</th><th>Leveraging system must</th></tr></thead>
+        <tbody>
+          <tr><td>Inherited from leveraged ATO</td><td class="m">inherited + provided-uuid</td><td>Provider</td><td>Verify authorization currency; record an EXAMINE observation</td></tr>
+          <tr><td>Shared</td><td class="m">inherited + satisfied on one by-component</td><td>Both</td><td>Test only its own half; cite the provider for the remainder</td></tr>
+          <tr><td>Service provider hybrid</td><td class="m">partial inherited + local implementation-status</td><td>Both, split by statement</td><td>Emit local HDF for the locally-implemented statement parts</td></tr>
+          <tr><td>Configured by customer</td><td class="m">responsibility → satisfied</td><td>Consumer</td><td>Ship an InSpec check per responsibility</td></tr>
+          <tr><td>Provided by customer</td><td class="m">responsibility + consumer component</td><td>Consumer</td><td>Model the supplied thing as its own component and CDEF</td></tr>
+          <tr><td>Common control provider (corporate)</td><td class="m">org-scope CDEF, reused across systems</td><td>Provider org</td><td>Pin the CDEF version; no local test</td></tr>
+          <tr><td>System specific</td><td class="m">local by-component, no export</td><td>This system</td><td>Full local evidence</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:30px">Three distribution modes, one verification step</h3>
+    <p>Federation is a delivery detail, not a model change. The same signed CDEF bundle travels three ways depending on whether the two parties share a trust fabric — and the detached mode matters, because plenty of environments will never have federated PKI with anyone.</p>
+    <div class="fig" data-diagram="trust">
+      <div class="fig-bar"><span class="name">fig. trust — federated, brokered, detached</span><button type="button" data-copy="trust">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-trust"></pre></div>
+      <p class="caption">Whichever path a bundle takes, it converges on the same two steps: verify the signature against a trust anchor, then pin version and digest into SSP back-matter so the provenance of every inherited claim is recorded in the artifact itself.</p>
+    </div>
+
+    <h3 style="margin-top:30px">Every responsibility must be discharged</h3>
+    <p>The most common leveraged-authorization failure is quiet: the CRM says the customer must configure something, the leveraging SSP marks the control inherited, and nobody ever tests the customer half. Make it a build gate rather than an assessment finding.</p>
+    <div class="fig" data-diagram="discharge">
+      <div class="fig-bar"><span class="name">fig. discharge — responsibility resolution gate</span><button type="button" data-copy="discharge">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-discharge"></pre></div>
+      <p class="caption">Three outcomes, all of them explicit: discharged with evidence, accepted as risk with a milestone, or a failed build. There is no fourth state where a responsibility exists and nothing happened.</p>
+    </div>
+
+    <h3 style="margin-top:30px">What this does to cATO</h3>
+    <ul class="tight">
+      <li><strong>Inherited controls carry an authorization, not evidence.</strong> Raw scanner output does not cross the boundary. The leveraging system's assessment-results hold an EXAMINE observation citing the leveraged authorization, its date, and its currency.</li>
+      <li><strong>Provider staleness is your finding.</strong> Run the leveraged ATO through <span class="m">bd-freshness</span> like any other document. A lapsed or expiring provider authorization should surface as a risk in your POA&amp;M before it surfaces in someone else's report.</li>
+      <li><strong>Continuous on top of point-in-time is a half-measure.</strong> If the provider runs cATO, consume its evidence-freshness and risk-delta signal as an input to your own. If it does not, say so plainly — your continuous authorization rests on a snapshot foundation, and the AO should know which controls that affects.</li>
+      <li><strong>A provider CDEF bump is a change event.</strong> Pinning makes upgrades deliberate: <span class="m">bd-leverage-pin</span> records version and digest, and <span class="m">bd-sigchange</span> classifies the delta as administrative or significant.</li>
+    </ul>
+  </section>
+
+  <section id="adoption">
+    <div class="sec-head"><span class="tag">Adoption</span><h2>A finite ramp that ends in a loop</h2></div>
+    <p>Adoption is a ratchet with five stages and a real exit criterion at each one. It is worth being strict about the gates: teams that skip straight to continuous evidence end up with a fast pipeline pointed at documents nobody trusts.</p>
+
+    <div class="ladder">
+      <div class="stage">
+        <div class="n">STAGE 1</div><h4>Source</h4>
+        <p>Boundary docs move into git. Narrative in Markdown with front-matter. Nothing generated yet — this stage is only about custody and history.</p>
+        <div class="exit"><b>Exit</b>Every doc has an owner, a review cadence, and a commit history.</div>
+      </div>
+      <div class="stage">
+        <div class="n">STAGE 2</div><h4>Derive</h4>
+        <p>Inventory, diagrams, PPSM, and CRM become generated artifacts. CDEFs become the reuse unit; the SSP is assembled, not written.</p>
+        <div class="exit"><b>Exit</b>Regen diff is clean. No derived doc is hand-maintained.</div>
+      </div>
+      <div class="stage">
+        <div class="n">STAGE 3</div><h4>Validate</h4>
+        <p>Gates land in CI: OSCAL schema and constraints, regen diff, freshness, deviation expiry, significant-change classification.</p>
+        <div class="exit"><b>Exit</b>Invalid or stale content cannot merge.</div>
+      </div>
+      <div class="stage">
+        <div class="n">STAGE 4</div><h4>Prove</h4>
+        <p>Scanners normalize to HDF, aggregate in Heimdall, and land as assessment-results on a defined cadence. Thresholds gate the pipeline.</p>
+        <div class="exit"><b>Exit</b>≥70% automated coverage; evidence ≤3 days old.</div>
+      </div>
+      <div class="stage terminal">
+        <div class="n">STAGE 5</div><h4>Decide</h4>
+        <p>Risk delta against the authorized state, an AO decision gate, and sync-back into SSP, CDEF, and POA&amp;M. Adoption ends here; maintenance begins.</p>
+        <div class="exit"><b>Exit</b>Authorization state is computed, not asserted.</div>
+      </div>
+    </div>
+
+    <div class="fig" data-diagram="ladder" style="margin-top:26px">
+      <div class="fig-bar"><span class="name">fig. ladder — adoption stages and gates</span><button type="button" data-copy="ladder">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-ladder"></pre></div>
+      <p class="caption">The dashed return edge is the honest part: steady state is not stage 6. Drift and change push the system back into stage 4, and it re-earns stage 5 on every cycle.</p>
+    </div>
+  </section>
+
+  <section id="steady">
+    <div class="sec-head"><span class="tag">Maintenance</span><h2>Steady state, by cadence</h2></div>
+    <p>Once adopted, the programme is a set of recurring obligations with different clocks. Publishing this band is usually what turns "we're doing cATO" from an aspiration into something a team can staff.</p>
+
+    <div class="cadence">
+      <div class="tick"><span class="when">Per commit</span><ul><li>OSCAL validate</li><li>Regen diff</li><li>Deviation expiry check</li><li>Significant-change classify</li></ul></div>
+      <div class="tick"><span class="when">Daily</span><ul><li>Scanner sweep → HDF</li><li>Assessment-results refresh</li><li>Freshness report</li><li>POA&amp;M sync</li></ul></div>
+      <div class="tick"><span class="when">Weekly</span><ul><li>Risk delta review</li><li>Milestone slippage check</li><li>Waiver renewal queue</li></ul></div>
+      <div class="tick"><span class="when">Monthly</span><ul><li>ConMon submission</li><li>Inventory reconciliation</li><li>CRM re-issue if changed</li></ul></div>
+      <div class="tick"><span class="when">Quarterly</span><ul><li>Narrative review sweep</li><li>Threshold recalibration</li><li>Deviation renewal</li></ul></div>
+      <div class="tick"><span class="when">Annual / on change</span><ul><li>SAP refresh</li><li>Full package re-assembly</li><li>AO re-affirmation</li></ul></div>
+    </div>
+
+    <div class="fig" data-diagram="maintain" style="margin-top:26px">
+      <div class="fig-bar"><span class="name">fig. maintain — authorization state machine</span><button type="button" data-copy="maintain">Copy source</button></div>
+      <div class="fig-body"><pre class="mermaid" id="d-maintain"></pre></div>
+      <p class="caption">Modelling authorization as a state machine rather than a milestone is what makes suspension a normal, recoverable transition instead of a programme failure. Every edge here maps to a script and a gate in the table above.</p>
+    </div>
+  </section>
+
+  <footer>Diagram sources are Mermaid — copy any figure and drop it into a repo README, a docs site, or an ADR.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+const SRC = {
+lineage: `flowchart LR
+  classDef auth fill:#DCE6F5,stroke:#2F5FA8,stroke-width:1.5px,color:#12213A
+  classDef claim fill:#D7EDE8,stroke:#0E7C6B,stroke-width:1.5px,color:#12213A
+  classDef ev fill:#F7E4CE,stroke:#B4610C,stroke-width:1.5px,color:#12213A
+  classDef risk fill:#F6D9DD,stroke:#A32436,stroke-width:1.5px,color:#12213A
+
+  CAT["catalog<br/>SP 800-53 Rev 5"]:::auth
+  PRO["profile<br/>baseline plus tailoring"]:::auth
+  RES["resolved catalog<br/>the only control vocabulary"]:::auth
+  CDEF["component-definition<br/>reusable implementations"]:::claim
+  SSP["system-security-plan"]:::claim
+  SAP["assessment-plan"]:::ev
+  SAR["assessment-results"]:::ev
+  POAM["plan-of-action-and-milestones"]:::risk
+
+  CAT -->|"import href"| PRO
+  PRO -->|"oscal-cli profile resolve"| RES
+  RES -->|"control-implementation source"| CDEF
+  CDEF -->|"tooling assembles implemented-requirement"| SSP
+  PRO -->|"import-profile href"| SSP
+  SSP -->|"import-ssp href"| SAP
+  SAP -->|"import-ap href"| SAR
+  SSP -->|"import-ssp href"| POAM
+  SAR -->|"finding to related-risk"| POAM`,
+
+layers: `flowchart TB
+  classDef auth fill:#DCE6F5,stroke:#2F5FA8,stroke-width:1.5px,color:#12213A
+  classDef val fill:#D7EDE8,stroke:#0E7C6B,stroke-width:1.5px,color:#12213A
+  classDef del fill:#F7E4CE,stroke:#B4610C,stroke-width:1.5px,color:#12213A
+
+  subgraph AUTH["Authoritative layer — SPARC"]
+    direction LR
+    A1["ingest and back-matter<br/>registration"]:::auth
+    A2["profile resolution"]:::auth
+    A3["CDEF registry<br/>risk-sentinel profiles"]:::auth
+    A4["SSP assembly<br/>inheritance and hybrid controls"]:::auth
+    A1 --> A2 --> A3 --> A4
+  end
+
+  subgraph VAL["Validation layer"]
+    direction LR
+    V1["sparc-validate<br/>schema and constraints"]:::val
+    V2["InSpec profiles<br/>NIST-tagged controls"]:::val
+    V3["SAF CLI<br/>convert attest threshold"]:::val
+  end
+
+  subgraph DEL["Delivery layer"]
+    direction LR
+    D1["Heimdall<br/>aggregation and triage"]:::del
+    D2["assessment-results"]:::del
+    D3["POA&M"]:::del
+    D4["KSI evidence<br/>per-KSI JSON"]:::del
+  end
+
+  IAC["sparc-iac<br/>Terraform targets<br/>auth_boundary metadata"]:::auth
+
+  AUTH --> VAL
+  VAL --> DEL
+  IAC --> VAL
+  DEL -->|"sync-back"| AUTH`,
+
+evidence: `flowchart LR
+  classDef scan fill:#EDEFF5,stroke:#43536F,stroke-width:1.2px,color:#12213A
+  classDef norm fill:#F7E4CE,stroke:#B4610C,stroke-width:1.5px,color:#12213A
+  classDef oscal fill:#D7EDE8,stroke:#0E7C6B,stroke-width:1.5px,color:#12213A
+  classDef risk fill:#F6D9DD,stroke:#A32436,stroke-width:1.5px,color:#12213A
+
+  subgraph SCAN["Scanners and checks"]
+    direction TB
+    S1["InSpec<br/>STIG and CIS profiles"]:::scan
+    S2["Trivy Grype Snyk Sonatype<br/>SCA and image"]:::scan
+    S3["Trufflehog<br/>secrets"]:::scan
+    S4["Checkov and Prisma Cloud<br/>IaC and runtime"]:::scan
+    S5["AWS Config and Security Hub<br/>ASFF"]:::scan
+    S6["SAST and DAST<br/>SARIF"]:::scan
+  end
+
+  CONV["SAF CLI convert<br/>scanner to HDF"]:::norm
+  ATT["saf attest<br/>manual and interview evidence"]:::norm
+  HDF["Heimdall Data Format<br/>v1 and v2"]:::norm
+  THR["saf validate threshold<br/>pipeline gate"]:::norm
+  AGG["Heimdall Server<br/>evidence aggregation"]:::norm
+  MAP["control mapping<br/>tags.nist to implemented-requirement"]:::oscal
+  OBS["observations and findings<br/>assessment-results"]:::oscal
+  RISK["risks and milestones<br/>POA&M"]:::risk
+
+  SCAN --> CONV --> HDF
+  ATT --> HDF
+  HDF --> THR
+  HDF --> AGG --> MAP --> OBS --> RISK`,
+
+loop: `flowchart LR
+  classDef ev fill:#F7E4CE,stroke:#B4610C,stroke-width:1.5px,color:#12213A
+  classDef dec fill:#F6D9DD,stroke:#A32436,stroke-width:1.5px,color:#12213A
+  classDef auth fill:#DCE6F5,stroke:#2F5FA8,stroke-width:1.5px,color:#12213A
+
+  E["fresh evidence<br/>HDF and KSI JSON"]:::ev
+  DELTA["risk delta<br/>compare to authorized state"]:::ev
+  GATE{"within authorized<br/>risk tolerance"}:::dec
+  AO["AO decision<br/>accept mitigate or suspend"]:::dec
+  SYNC["sync-back<br/>assessment-results and POA&M"]:::auth
+  UP["update SSP and CDEF<br/>authoritative layer"]:::auth
+
+  E --> DELTA --> GATE
+  GATE -->|"yes"| SYNC
+  GATE -->|"no"| AO
+  AO --> SYNC
+  SYNC --> UP
+  UP -->|"next cycle"| E`,
+
+bdocs: `flowchart LR
+  classDef src fill:#EDEFF5,stroke:#43536F,stroke-width:1.2px,color:#12213A
+  classDef gen fill:#DCE6F5,stroke:#2F5FA8,stroke-width:1.5px,color:#12213A
+  classDef gate fill:#F6D9DD,stroke:#A32436,stroke-width:1.5px,color:#12213A
+  classDef out fill:#D7EDE8,stroke:#0E7C6B,stroke-width:1.5px,color:#12213A
+
+  subgraph SRC["Sources of truth"]
+    direction TB
+    T1["Terraform state<br/>sparc-iac"]:::src
+    T2["CDEF registry<br/>risk-sentinel"]:::src
+    T3["narrative markdown<br/>owner and review cadence"]:::src
+    T4["HDF evidence<br/>Heimdall"]:::src
+  end
+
+  subgraph GEN["Generators"]
+    direction TB
+    G1["bd-inventory<br/>components and inventory-items"]:::gen
+    G2["bd-diagram<br/>boundary network dataflow"]:::gen
+    G3["bd-ppsm<br/>ports protocols services"]:::gen
+    G4["bd-crm<br/>customer responsibility"]:::gen
+    G5["bd-narrative<br/>render docx and pdf"]:::gen
+    G6["bd-poam-sync<br/>deterministic risk ids"]:::gen
+  end
+
+  subgraph GATES["Merge gates"]
+    direction TB
+    K1["oscal validate<br/>sparc-validate"]:::gate
+    K2["regen diff<br/>generated equals committed"]:::gate
+    K3["bd-freshness<br/>review cadence not exceeded"]:::gate
+    K4["bd-deviation<br/>waivers unexpired"]:::gate
+    K5["bd-sigchange<br/>classify and raise SCR"]:::gate
+  end
+
+  PKG["bd-package and bd-manifest<br/>signed authorization package"]:::out
+
+  SRC --> GEN
+  GEN --> GATES
+  GATES --> PKG`,
+
+ladder: `flowchart LR
+  classDef st fill:#DCE6F5,stroke:#2F5FA8,stroke-width:1.5px,color:#12213A
+  classDef gt fill:#F7E4CE,stroke:#B4610C,stroke-width:1.5px,color:#12213A
+  classDef run fill:#D7EDE8,stroke:#0E7C6B,stroke-width:1.5px,color:#12213A
+
+  S1["1 Source<br/>docs in git with owners"]:::st
+  E1{"owner and cadence<br/>on every doc"}:::gt
+  S2["2 Derive<br/>generate what can be generated"]:::st
+  E2{"regen diff clean"}:::gt
+  S3["3 Validate<br/>gates in CI"]:::st
+  E3{"invalid or stale<br/>cannot merge"}:::gt
+  S4["4 Prove<br/>continuous evidence"]:::st
+  E4{"70 percent automated<br/>evidence under 3 days"}:::gt
+  S5["5 Decide<br/>risk delta and AO gate"]:::run
+  LOOP["steady state<br/>maintenance cadence"]:::run
+
+  S1 --> E1 --> S2 --> E2 --> S3 --> E3 --> S4 --> E4 --> S5 --> LOOP
+  LOOP -.->|"drift or change"| S4`,
+
+maintain: `stateDiagram-v2
+  state "AO decision" as AO
+  state "Change review" as CR
+
+  [*] --> Authorized
+  Authorized --> Drifted: evidence delta detected
+  Authorized --> CR: change proposed
+  Drifted --> Remediating: within risk tolerance
+  Drifted --> Escalated: outside risk tolerance
+  Escalated --> AO
+  AO --> Authorized: accepted or mitigated
+  AO --> Suspended: not accepted
+  Suspended --> Remediating: corrective action plan
+  Remediating --> Authorized: sync-back complete
+  CR --> Authorized: administrative
+  CR --> Reassessment: significant
+  Reassessment --> Authorized: SAP and SAR refreshed`,
+
+inherit: `flowchart LR
+  classDef prov fill:#DCE6F5,stroke:#2F5FA8,stroke-width:1.5px,color:#12213A
+  classDef cons fill:#D7EDE8,stroke:#0E7C6B,stroke-width:1.5px,color:#12213A
+  classDef ev fill:#F7E4CE,stroke:#B4610C,stroke-width:1.5px,color:#12213A
+
+  subgraph PROV["Leveraged provider or common control provider"]
+    direction TB
+    PCD["component-definition<br/>versioned and signed"]:::prov
+    PEX["by-component export"]:::prov
+    PP["provided<br/>uuid"]:::prov
+    PR["responsibility<br/>uuid"]:::prov
+    PCD --> PEX
+    PEX --> PP
+    PEX --> PR
+  end
+
+  subgraph CONS["Leveraging system"]
+    direction TB
+    LA["leveraged-authorization<br/>party and date-authorized"]:::cons
+    INH["inherited<br/>provided-uuid"]:::cons
+    SAT["satisfied<br/>responsibility-uuid"]:::cons
+    CHK["local InSpec check<br/>HDF evidence"]:::ev
+    SAT --> CHK
+  end
+
+  PCD -->|"pinned version and digest"| LA
+  PP -->|"provided-uuid join"| INH
+  PR -->|"responsibility-uuid join"| SAT
+  LA -->|"scopes"| INH`,
+
+trust: `flowchart TB
+  classDef mode fill:#DCE6F5,stroke:#2F5FA8,stroke-width:1.5px,color:#12213A
+  classDef step fill:#F7E4CE,stroke:#B4610C,stroke-width:1.5px,color:#12213A
+  classDef out fill:#D7EDE8,stroke:#0E7C6B,stroke-width:1.5px,color:#12213A
+
+  BUN["provider CDEF and SSP export<br/>signed and versioned"]:::mode
+
+  M1["Federated<br/>PKI trust between SPARC instances<br/>live pull and revalidate"]:::mode
+  M2["Brokered<br/>controlled VDR exchange<br/>release control and audit trail"]:::mode
+  M3["Detached<br/>no shared PKI<br/>signed bundle plus out of band anchor"]:::mode
+
+  VER["bd-trust<br/>verify signature and anchor"]:::step
+  PIN["bd-leverage-pin<br/>record version and digest in back-matter"]:::step
+  ASM["SSP assembly<br/>inherited and satisfied"]:::out
+
+  BUN --> M1
+  BUN --> M2
+  BUN --> M3
+  M1 --> VER
+  M2 --> VER
+  M3 --> VER
+  VER --> PIN --> ASM`,
+
+discharge: `flowchart LR
+  classDef q fill:#F6D9DD,stroke:#A32436,stroke-width:1.5px,color:#12213A
+  classDef ok fill:#D7EDE8,stroke:#0E7C6B,stroke-width:1.5px,color:#12213A
+  classDef warn fill:#F7E4CE,stroke:#B4610C,stroke-width:1.5px,color:#12213A
+
+  R["responsibility<br/>from provider export"]:::warn
+  Q1{"matching satisfied<br/>in this SSP"}:::q
+  Q2{"backed by a check<br/>emitting HDF"}:::q
+  OK["discharged<br/>observation in assessment-results"]:::ok
+  PO["accepted risk<br/>POA&M item with milestone"]:::warn
+  FAIL["build fails<br/>unmatched responsibility"]:::warn
+
+  R --> Q1
+  Q1 -->|"no"| FAIL
+  Q1 -->|"yes"| Q2
+  Q2 -->|"yes"| OK
+  Q2 -->|"no"| PO`
+};
+
+Object.entries(SRC).forEach(([k, v]) => {
+  const el = document.getElementById('d-' + k);
+  if (el) el.textContent = v;
+});
+
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  securityLevel: 'loose',
+  flowchart: { htmlLabels: false, curve: 'basis', nodeSpacing: 42, rankSpacing: 56, useMaxWidth: true },
+  themeVariables: {
+    fontFamily: 'ui-monospace, SF Mono, Menlo, Consolas, monospace',
+    fontSize: '13px',
+    primaryColor: '#F7F8FB',
+    primaryTextColor: '#12213A',
+    primaryBorderColor: '#12213A',
+    lineColor: '#43536F',
+    clusterBkg: '#EFF2F7',
+    clusterBorder: '#C3CBD9',
+    edgeLabelBackground: '#F7F8FB'
+  }
+});
+
+document.querySelectorAll('button[data-copy]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const src = SRC[btn.dataset.copy];
+    const label = btn.textContent;
+    try {
+      await navigator.clipboard.writeText(src);
+      btn.textContent = 'Copied';
+    } catch (e) {
+      btn.textContent = 'Copy blocked';
+    }
+    setTimeout(() => { btn.textContent = label; }, 1600);
+  });
+});
+</script>
+</body>
+</html>

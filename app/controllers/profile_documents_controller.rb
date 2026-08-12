@@ -51,12 +51,16 @@ class ProfileDocumentsController < ApplicationController
     @controls_count = ProfileControl.count
     @completed_count = scope.where(status: "completed").count
 
-    # #672 — filter listed rows; the tiles above keep showing totals.
-    scope = scope.search_text(params[:q])
+    # #672 search + #908 facets, both through the shared query object so this
+    # screen and Api::V1 narrow the collection identically.
+    query = ProfileBrowseQuery.new(params, scope: scope)
+    @filter_fields = query.filter_fields
+    @facets = active_facets(ProfileBrowseQuery.facet_params, labels: ProfileBrowseQuery.facet_labels)
+    @clear_facets = clear_facets_params(ProfileBrowseQuery.facet_params)
 
     # #888 — cards by default, remembered per screen, and paginated.
     @view_mode = resolve_view_mode(:profile_documents)
-    @pagy, @profile_documents = paginate_collection(scope)
+    @pagy, @profile_documents = paginate_collection(query.records)
   end
 
   def show

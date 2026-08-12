@@ -27,6 +27,7 @@
 
   <%= render "shared/collection_toolbar",
         label: "control catalogs", placeholder: "Search catalogs…",
+        filter_fields: @filter_fields, facets: @facets, clear_params: @clear_facets,
         view_mode: (@control_catalogs.any? ? @view_mode : nil) %>
 
   <% if @control_catalogs.any? && @view_mode == :card %>

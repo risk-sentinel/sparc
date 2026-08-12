@@ -200,6 +200,15 @@ mapping in OSCAL form.
 The catalogs, baselines and mappings list opens as **cards**, with a **☰ List** toggle if you prefer a
 table. Your choice is remembered for this screen.
 
+Catalogs filter by **OSCAL version**, **revision**, **source** and **status**.
+Baselines add **baseline level** (Low / Moderate / High), **source catalog**,
+**added by** and a **created between** date range.
+
+Note that *revision* and *OSCAL version* are different things: revision is the
+catalog's own version (Rev 4, Rev 5, 5.2.0), while OSCAL version is the schema
+the file was written against. A single package legitimately contains documents
+written against several OSCAL versions, which is why both are offered.
+
 See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
 
 ---

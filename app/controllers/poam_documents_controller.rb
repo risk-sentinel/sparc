@@ -31,13 +31,19 @@ class PoamDocumentsController < ApplicationController
     @items_count = PoamItem.count
     @completed_count = scope.where(status: "completed").count
 
-    # #672 — filter listed rows; the tiles above keep showing totals.
-    scope = scope.search_text(params[:q])
+    # #672 search + #908 facets, both through the shared query object so this
+    # screen and Api::V1 narrow the collection identically. The scope is passed
+    # in already boundary-scoped — the query object must never re-derive who may
+    # see what.
+    query = PoamBrowseQuery.new(params, scope: scope)
+    @filter_fields = query.filter_fields
+    @facets = active_facets(PoamBrowseQuery.facet_params, labels: PoamBrowseQuery.facet_labels)
+    @clear_facets = clear_facets_params(PoamBrowseQuery.facet_params)
 
     # #888 — cards by default, remembered per screen, and paginated because a
     # card costs far more to render than a table row.
     @view_mode = resolve_view_mode(:poam_documents)
-    @pagy, @poam_documents = paginate_collection(scope)
+    @pagy, @poam_documents = paginate_collection(query.records)
   end
 
   def show

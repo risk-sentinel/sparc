@@ -137,24 +137,12 @@ class Api::V1::EvidencesController < Api::V1::BaseController
     scope.order(created_at: :desc)
   end
 
+  # #908 — the same query object the evidence index screen uses. This method
+  # and the controller's web counterpart were separate implementations of the
+  # same four filters, which is exactly how `source` came to be filterable on
+  # neither surface despite being a column on both.
   def apply_filters(scope)
-    scope = scope.where(evidence_type: params[:type]) if params[:type].present?
-    scope = scope.where(status: params[:status]) if params[:status].present?
-    if params[:authorization_boundary_id].present?
-      scope = scope.where(authorization_boundary_id: params[:authorization_boundary_id])
-    end
-    if params[:control_id].present?
-      linked = EvidenceControlLink.where(control_id: ControlId.forms(params[:control_id]))
-                                  .select(:evidence_id)
-      scope = scope.where(id: linked)
-    end
-    if params[:q].present?
-      term = "%#{params[:q]}%"
-      scope = scope.where(
-        "title ILIKE :t OR description ILIKE :t OR original_filename ILIKE :t", t: term
-      )
-    end
-    scope
+    EvidenceBrowseQuery.new(params, scope: scope).records
   end
 
   def uploaded_file
