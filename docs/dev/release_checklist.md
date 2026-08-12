@@ -76,6 +76,21 @@ releases stale. None of these block CI, so nothing catches them but this.
 - [ ] **`wiki/Changelog.md` has an entry for this version** — and for any earlier
       version that shipped without one. Check the entries against
       `gh release list`, not against memory.
+- [ ] **`bundle exec rspec spec/docs/wiki_currency_spec.rb` is green.** It pins
+      `wiki/Home.md`'s advertised version and the newest Changelog heading to
+      `SparcConfig::VERSION`. Home.md advertised **v1.13.0 for roughly twelve
+      releases** before this existed — the number lives in two files and only
+      one of them gets touched during a release.
+- [ ] **PUBLISH the wiki — `./wiki/PUSH_TO_WIKI.sh`.** Editing `wiki/` changes
+      nothing a user can see; the published wiki is a **separate git repo** and
+      the mirror is a manual step. It went **three releases (15 days) behind**
+      without anyone noticing, because the source looked current in every PR.
+      Nothing in CI detects this, so it has to be done here, deliberately.
+      - Verify afterwards by reading the **published** page, not the source:
+        `git clone --depth 1 https://github.com/risk-sentinel/sparc.wiki.git`
+        and confirm the Changelog's top entry is this version.
+      - The push is **outward-facing and public** — screenshots and prose go
+        live. Confirm the fixture purge above happened first.
 
 ## 3. Version
 

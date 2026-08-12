@@ -101,6 +101,41 @@ A baseline selects and prioritizes controls from a catalog.
 You can also click **Create New** for an empty baseline, or **Copy** an existing
 baseline's detail page to duplicate it as a starting point.
 
+### How to link an imported baseline to its source catalog
+
+A baseline created with **Create from Catalog** is linked to that catalog
+automatically. An **imported** baseline is not — the file may name a catalog
+SPARC has not loaded, or you may have imported the baseline first. Until it is
+linked, SPARC has nothing to resolve the baseline's controls against, so
+**Manage Controls** and **Publish** do not appear on its detail page.
+
+An unlinked baseline says so in its header: **No source catalog**.
+
+To link it:
+
+1. Open the baseline (*Controls → Baselines*, then the baseline's name).
+2. In the **source catalog** panel near the top of the page, choose the catalog
+   the baseline draws its controls from.
+3. Click **Link catalog**.
+
+**Manage Controls** and the publish flow appear once it is linked.
+
+Two things to know:
+
+- **Nothing is invented for you.** If no suitable catalog is loaded, SPARC says
+  so rather than building one from the baseline's own controls — that would
+  check the document against itself. Import the correct catalog first, then come
+  back and link it.
+- **Choose carefully before publishing.** While the baseline is in draft you can
+  change the catalog at any time (the button reads **Change catalog**). Once the
+  baseline is **published** its catalog is fixed, because assessments made
+  against it are only meaningful relative to the baseline they were made
+  against. To point a published baseline at a different catalog, make an
+  editable copy.
+
+API equivalent: `PATCH /api/v1/profile_documents/:id` with
+`{ "profile_document": { "control_catalog_id": <id> } }`.
+
 ### How to set control priorities
 
 Open a baseline, then **Edit** an individual profile control
@@ -155,6 +190,8 @@ mapping in OSCAL form.
 | OSCAL export fails validation | Missing required metadata on a control | Fix the flagged fields, then use the validated export |
 | Can't add a mapping entry / edit a control | View-only access | You need the write permission ([RBAC](RBAC)) |
 | Baseline shows no controls | None selected in the checklist step | Re-run **Create from Catalog** and select controls |
+| No **Publish** or **Manage Controls** button on a baseline | It has no source catalog — the header shows **No source catalog** | [Link it to a catalog](#how-to-link-an-imported-baseline-to-its-source-catalog) |
+| Can't change a published baseline's catalog | Published baselines have a fixed catalog, so assessments stay meaningful | Create an editable copy, then link the copy |
 
 ---
 
