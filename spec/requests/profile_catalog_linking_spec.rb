@@ -46,12 +46,42 @@ RSpec.describe "Linking a profile to its source catalog", type: :request do
     end
 
     it "offers a catalog picker on the profile screen" do
+      # `catalog` is referenced deliberately, not incidentally: the picker can
+      # only offer catalogs that EXIST, and without this the example passed
+      # locally (where the test database carries seeded catalogs) and failed in
+      # CI (where the table is empty) — blaming the picker for fixture state.
+      catalog
+
       get profile_document_path(profile)
 
       expect(response.body).to include("No source catalog is linked")
       expect(response.body).to include("profile_document[control_catalog_id]")
       expect(response.body).to include(set_baseline_profile_document_path(profile))
       expect(response.body).to include("Link catalog")
+    end
+
+    it "says so plainly when there is no catalog to choose, rather than offering an empty picker" do
+      # The behaviour the CI failure exposed, now pinned rather than depended
+      # upon. SPARC never synthesises a baseline from the document's own
+      # controls — that would check the document against itself — so with
+      # nothing loaded the honest answer is to name the remedy.
+      #
+      # "No catalog is loaded" is stated at the seam rather than by emptying the
+      # table. CI's table already is empty; a local one carries seeded catalogs,
+      # and an example that only holds in one of the two is exactly how the bug
+      # above got through. Deleting them is not an option either — three
+      # separate tables hold foreign keys to `control_catalogs`, and chasing
+      # them by hand means this spec breaks the next time a fourth is added.
+      #
+      # `CatalogLineage#choosable` reads `ControlCatalog.all`, so that is the
+      # condition under test. Everything downstream of it — the view, the
+      # partial, the branch — still runs for real.
+      allow(ControlCatalog).to receive(:all).and_return(ControlCatalog.none)
+
+      get profile_document_path(profile)
+
+      expect(response.body).to include("No control catalog is loaded to choose from")
+      expect(response.body).not_to include("profile_document[control_catalog_id]")
     end
 
     it "names the missing catalog in the header, not only in the picker" do
