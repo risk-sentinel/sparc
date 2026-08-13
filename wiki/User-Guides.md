@@ -22,6 +22,26 @@ of the interface.
 > **Resources** page. The in-app guides render the same Markdown you see here, so
 > the wiki and the shipped documentation never drift (#784).
 
+### Looking something up without losing your place
+
+From **v1.16.0**, the **?** in the top navigation opens the guide for the screen
+you're on in a **drawer that slides over the page** instead of taking you
+somewhere else. The form stays visible underneath it, and anything you have
+already typed is untouched — so checking what a field means mid-way through
+filling one in costs you nothing.
+
+- **Esc**, the **×**, or a click outside closes the drawer and returns you to
+  exactly where you were, including keyboard focus.
+- The drawer is fully keyboard-operable and is announced to screen readers as a
+  dialog.
+- For a guide you actually want to sit and read — the ones with screenshots,
+  tables and diagrams — use **Open full guide** at the top of the drawer. It
+  opens the complete page in a new tab and leaves your work alone.
+
+The sidebar **Help & Guides** links and the **Resources** page still open guides
+in a new tab, which remains the better route when you are reading rather than
+looking something up.
+
 ---
 
 ## The compliance lifecycle in SPARC
