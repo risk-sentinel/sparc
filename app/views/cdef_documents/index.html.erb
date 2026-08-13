@@ -25,6 +25,12 @@
             Refresh from AWS Labs
           </button>
         <% end %>
+        <%# #904 — the other direction into the coverage wizard. Its primary home
+            is the boundary screen (that is where the question is asked), but
+            someone standing in the CDEF library asking "what are we missing?"
+            should not have to go find a boundary first. %>
+        <%= link_to "Coverage from Terraform", new_cdef_coverage_path,
+              class: "btn btn-outline-info", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
         <%= link_to "Create New", select_profile_cdef_documents_path, class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
         <%= link_to "Upload File", new_cdef_document_path, class: "btn btn-success" %>
       </div>

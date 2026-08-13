@@ -150,7 +150,7 @@ RSpec.describe "CdefCoverage", type: :request do
     end
   end
 
-  describe "the boundary entry point" do
+  describe "the entry points" do
     it "offers the wizard from the boundary screen, pre-attached to it" do
       boundary = create(:authorization_boundary)
 
@@ -158,6 +158,14 @@ RSpec.describe "CdefCoverage", type: :request do
 
       expect(response.body).to include("CDEF Coverage")
       expect(response.body).to include(new_cdef_coverage_path(authorization_boundary_id: boundary.id))
+    end
+
+    # Both entry points were described in the design; only the boundary one was
+    # built, and nothing caught it because nothing asserted it. Asserted now.
+    it "offers the wizard from the CDEF library index" do
+      get cdef_documents_path
+
+      expect(response.body).to include(new_cdef_coverage_path)
     end
   end
 end
