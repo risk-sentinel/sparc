@@ -27,8 +27,14 @@ pytestmark = pytest.mark.authenticated
 BOUNDARY_FORM = "/authorization_boundaries/new"
 
 
-def test_help_control_opens_in_a_new_tab(authed_page):
-    """The navbar ? is target=_blank — the whole point of #870."""
+def test_help_control_keeps_its_new_tab_fallback(authed_page):
+    """The navbar ? is still target=_blank, now as the no-JS fallback.
+
+    #880 moved the click to an in-page drawer but deliberately left the anchor
+    intact: if help_drawer_controller never connects, the "?" degrades to
+    #870's new tab rather than becoming a dead control. Either way it cannot
+    replace the current page, which is the property #870 exists to protect.
+    """
     record_csp(authed_page)
     authed_page.goto(BOUNDARY_FORM)
 
@@ -43,24 +49,33 @@ def test_help_control_opens_in_a_new_tab(authed_page):
 
 
 def test_opening_help_does_not_discard_typed_input(authed_page):
-    """The failure this issue exists to prevent, driven end to end."""
+    """The failure this issue exists to prevent, driven end to end.
+
+    #870 delivered this with a new tab; #880 delivers it with a drawer. The
+    guarantee is unchanged and is what this test pins — clicking the "?" must
+    leave the part-filled form exactly as it was. Only the mechanism moved, so
+    this now drives the drawer instead of waiting for a tab that no longer
+    opens. The drawer's own behaviour is covered in test_help_drawer_880.py.
+    """
     authed_page.goto(BOUNDARY_FORM)
 
     typed = "Half-finished boundary name"
     authed_page.fill("#authorization_boundary_name", typed)
+    url_before = authed_page.url
 
-    # Real click. If the link were same-tab, Turbo would replace the page here
-    # and the field would come back empty.
-    with authed_page.context.expect_page() as new_tab_info:
-        authed_page.click("a.sparc-nav-btn[href*='/help']")
-    new_tab = new_tab_info.value
-    new_tab.wait_for_load_state()
+    authed_page.click("a.sparc-nav-btn[href*='/help']")
+    authed_page.wait_for_selector("#sparc-help-drawer.show", timeout=5000)
 
-    assert "/help" in new_tab.url, f"help tab landed on {new_tab.url}"
-    new_tab.close()
+    # The point of the drawer: help arrived without going anywhere.
+    assert authed_page.url == url_before, (
+        f"opening help navigated to {authed_page.url} — it must not leave the screen"
+    )
+
+    authed_page.keyboard.press("Escape")
+    authed_page.wait_for_selector("#sparc-help-drawer.show", state="detached", timeout=5000)
 
     assert authed_page.locator("#authorization_boundary_name").input_value() == typed, (
-        "typed input was lost when help opened — help must not replace the page"
+        "typed input was lost when help opened — help must not disturb the form"
     )
 
 

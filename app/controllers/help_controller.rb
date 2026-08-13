@@ -18,10 +18,17 @@ class HelpController < ApplicationController
   end
 
   # GET /help/:slug — a single rendered guide.
+  # GET /help/:slug?drawer=1 — the same guide as a bare Turbo Frame (#880).
   def show
     @guide = UserGuideLibrary.find(params[:slug])
     # not_found renders 404, which suppresses the implicit show render.
-    not_found unless @guide
+    return not_found unless @guide
+
+    # The drawer variant is the SAME guide through the same service — only the
+    # wrapper differs. Keeping it on this action (rather than a second one) is
+    # what stops the drawer from drifting into showing something the full page
+    # does not.
+    render "drawer", layout: false if params[:drawer] == "1"
   end
 
   # GET /help/images/:filename — serve a guide screenshot from wiki/images.

@@ -50,7 +50,7 @@
   <%# #902 — submit-feedback is body-scoped on purpose: a form submission that
       never reaches Rails (edge WAF block, proxy 413, transport failure) has no
       controller to set a flash, so the feedback has to come from the client. %>
-  <body data-controller="video-easter-egg details-arrow submit-feedback">
+  <body data-controller="video-easter-egg details-arrow submit-feedback help-drawer">
     <%= render "shared/environment_header" %>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
       <div class="container-fluid">
@@ -204,16 +204,24 @@
             </li>
 
             <%# ── Contextual Help (#784) — deep-links to the guide for this screen ──
-                #870: opens in a new tab. Operators reach for help BECAUSE they are
-                mid-task, so replacing the current page is the one thing help must
-                never do — it abandons a part-filled form to answer a question about
-                that same form. rel=noopener keeps the new tab from touching this one. %>
+                #870: help must never replace the current page. Operators reach for
+                it BECAUSE they are mid-task, so navigating away abandons a
+                part-filled form to answer a question about that same form.
+
+                #880 keeps that property and drops the tab switch with it: the
+                click opens the guide in an in-page drawer over this screen. The
+                href and target stay exactly as #870 left them, deliberately — if
+                the Stimulus controller never connects, this is still a working
+                link to the guide in a new tab, which is the old behaviour rather
+                than a dead control. rel=noopener keeps that tab from touching
+                this one. %>
             <% if !SparcConfig.any_auth_enabled? || signed_in? %>
               <li class="nav-item d-none d-lg-block">
                 <%= link_to contextual_help_path, class: "nav-link sparc-nav-btn",
                       target: "_blank", rel: "noopener noreferrer",
-                      title: "Help & User Guides (opens in a new tab)",
-                      aria: { label: "Help and user guides, opens in a new tab" } do %>&#10067;<% end %>
+                      title: "Help & User Guides",
+                      data: { action: "click->help-drawer#open" },
+                      aria: { label: "Help and user guides" } do %>&#10067;<% end %>
               </li>
             <% end %>
 
@@ -323,6 +331,12 @@
       <div class="container">
         <%= yield %>
       </div>
+    <% end %>
+
+    <%# In-page help drawer (#880). Gated on the same condition as the navbar
+        "?" that opens it — no trigger, no drawer. %>
+    <% if !SparcConfig.any_auth_enabled? || signed_in? %>
+      <%= render "layouts/help_drawer" %>
     <% end %>
 
     <%# Easter egg video overlay — triggered by navbar logo click %>
