@@ -99,8 +99,8 @@ def test_show_page_controls_fire_without_csp_violation(
         # Named, not silent: a skip that does not say what it looked at is
         # indistinguishable from a test that never ran.
         pytest.skip(
-            f"{label}: none of the {len(candidates)} documents sampled (of {len(listed)}) expose an "
-            f"interactive control (all read-only or non-draft)"
+            f"{label}: none of the {len(candidates)} sampled (of {len(listed)}) expose "
+            f"an interactive control (all read-only or non-draft)"
         )
 
     # Baseline: the page renders with no CSP violation before any interaction.

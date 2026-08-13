@@ -15,8 +15,6 @@ import io
 import json
 import uuid
 
-
-
 # A value that exists nowhere else, so finding it anywhere is unambiguous.
 FAKE_SECRET = f"tfstate-secret-{uuid.uuid4().hex}"
 FAKE_ACCOUNT = "123456789012"
@@ -61,7 +59,9 @@ class TestAnalyze:
     def test_maps_resources_to_services_and_verdicts(self, admin_client):
         resp = admin_client.post(
             "/api/v1/cdef_coverage/analyze",
-            files=_files(("prod.tfstate", _state_bytes(["aws_ecs_service", "aws_guardduty_detector"]))),
+            files=_files(
+                ("prod.tfstate", _state_bytes(["aws_ecs_service", "aws_guardduty_detector"]))
+            ),
         )
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
