@@ -15,9 +15,21 @@ from __future__ import annotations
 
 import pytest
 
-from helpers import assert_no_csp_violations, first_show_href, record_csp
+from helpers import assert_no_csp_violations, record_csp, show_hrefs
 
 pytestmark = pytest.mark.authenticated
+
+# The controls this test exercises. Also used to choose a document that can
+# actually exercise them.
+# How many documents to open looking for one with usable controls. Each costs a
+# page load, so this is a sample, not a scan.
+MAX_CANDIDATES = 10
+
+CONTROL_SELECTORS = [
+    '[data-action~="doc-meta#toggle"]',
+    '[data-action~="family-toggle#expandAll"]',
+    '[data-action~="inline-edit#toggle"]',
+]
 
 # (label, index_path, show_prefix)
 SHOW_DOCS = [
@@ -37,12 +49,60 @@ def test_show_page_controls_fire_without_csp_violation(
     authed_page, label, index_path, prefix
 ):
     record_csp(authed_page)
-    href = first_show_href(authed_page, index_path, prefix)
-    if not href:
+    # A large page so the sample below can reach the whole collection: these
+    # indexes sort newest-first, and on a CDEF index led by 230 freshly-ingested
+    # AWS Labs documents every editable one is at the far end.
+    # Both ends of the collection. `per_page` is capped server-side at 200, and
+    # a CDEF index carrying the full AWS Labs corpus runs past that — so the
+    # editable documents, being the oldest, fall entirely off page one. Reading
+    # only the first page is how this test came to conclude that no document
+    # anywhere had a usable control.
+    listed = []
+    for page_param in ("?per_page=200", "?per_page=200&page=2"):
+        for href in show_hrefs(authed_page, f"{index_path}{page_param}", prefix, limit=200):
+            if href not in listed:
+                listed.append(href)
+    if not listed:
         pytest.skip(f"no {label} record to exercise")
 
-    authed_page.goto(href)
-    authed_page.wait_for_load_state("networkidle")
+    # Sample across the collection rather than walking it from the top: each
+    # candidate costs a page load, and the document that can exercise these
+    # controls may be anywhere. Ends first, then spread through the middle.
+    candidates = []
+    for pick in [0, len(listed) - 1] + [
+        (len(listed) * n) // MAX_CANDIDATES for n in range(1, MAX_CANDIDATES)
+    ]:
+        href = listed[pick] if 0 <= pick < len(listed) else None
+        if href and href not in candidates:
+            candidates.append(href)
+        if len(candidates) >= MAX_CANDIDATES:
+            break
+
+    # Find a document whose controls are actually usable, rather than assuming
+    # the first one is. A read-only document still RENDERS these controls — AWS
+    # Labs CDEFs are the case in point (#466) — so `count() > 0` is presence in
+    # the DOM, not clickability, and clicking a control the user cannot click
+    # times out. Visibility is the honest gate.
+    href = None
+    for candidate in candidates:
+        authed_page.goto(candidate)
+        authed_page.wait_for_load_state("networkidle")
+        if any(
+            authed_page.locator(sel).count() > 0
+            and authed_page.locator(sel).first.is_visible()
+            for sel in CONTROL_SELECTORS
+        ):
+            href = candidate
+            break
+
+    if href is None:
+        # Named, not silent: a skip that does not say what it looked at is
+        # indistinguishable from a test that never ran.
+        pytest.skip(
+            f"{label}: none of the {len(candidates)} documents sampled (of {len(listed)}) expose an "
+            f"interactive control (all read-only or non-draft)"
+        )
+
     # Baseline: the page renders with no CSP violation before any interaction.
     assert_no_csp_violations(authed_page, during=f"{label} show load")
 
@@ -50,7 +110,7 @@ def test_show_page_controls_fire_without_csp_violation(
 
     # 1) doc-meta Edit/Cancel toggle (view ⇄ edit).
     toggle = authed_page.locator('[data-action~="doc-meta#toggle"]')
-    if toggle.count() > 0:
+    if toggle.count() > 0 and toggle.first.is_visible():
         edit = authed_page.locator("#doc-meta-edit")
         toggle.first.click()
         authed_page.wait_for_timeout(150)
@@ -62,7 +122,7 @@ def test_show_page_controls_fire_without_csp_violation(
 
     # 2) family expand/collapse (SSP/SAP/Profile).
     expand = authed_page.locator('[data-action~="family-toggle#expandAll"]')
-    if expand.count() > 0:
+    if expand.count() > 0 and expand.first.is_visible():
         expand.first.click()
         authed_page.wait_for_timeout(150)
         assert_no_csp_violations(authed_page, during=f"{label} family expand")
@@ -70,7 +130,7 @@ def test_show_page_controls_fire_without_csp_violation(
 
     # 3) per-control / per-item inline edit toggle.
     inline = authed_page.locator('[data-action~="inline-edit#toggle"]')
-    if inline.count() > 0:
+    if inline.count() > 0 and inline.first.is_visible():
         inline.first.click()
         authed_page.wait_for_timeout(150)
         assert_no_csp_violations(authed_page, during=f"{label} inline-edit toggle")
