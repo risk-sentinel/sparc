@@ -36,6 +36,25 @@ class AwsLabsCdefImportService
     end
   end
 
+  # The service key a repository path denotes — the one rule for turning an AWS
+  # Labs file path into "which AWS service is this?".
+  #
+  # Public because #904's CdefServiceIndex has to derive the SAME key from the
+  # `source_path` recorded here in order to match a deployed service to its
+  # CDEF. It briefly had its own copy that handled only the flat layout, so
+  # `component-definitions/s3/s3-cd.json` yielded "s3-cd" and matched nothing —
+  # every service would have reported "needs a CDEF" forever, against the real
+  # repository, with no error to notice. Two implementations of one rule is the
+  # defect; this is the rule.
+  #
+  #   component-definitions/<service>/<file>.json → "<service>"   (upstream)
+  #   component-definitions/<file>.json           → "<file>"      (flattened)
+  def self.service_key_for_path(path)
+    parts = path.to_s.split("/")
+    key = parts.length >= 3 ? parts[1] : parts.last.to_s.sub(/\.oscal\.json\z/, "").sub(/\.json\z/, "")
+    key.to_s.strip.downcase.presence
+  end
+
   def initialize(client: AwsLabsCdefSourceClient.new,
                  allowed_oscal_versions: SparcConfig.aws_labs_oscal_versions,
                  logger: Rails.logger)
@@ -123,11 +142,7 @@ class AwsLabsCdefImportService
            .map { |_, group| highest_version(group) }
   end
 
-  def service_dir_for(path)
-    # component-definitions/<service>/<file>.json → "<service>"
-    parts = path.split("/")
-    parts.length >= 3 ? parts[1] : parts.last.to_s.sub(/\.json\z/, "")
-  end
+  def service_dir_for(path) = self.class.service_key_for_path(path)
 
   def highest_version(group)
     group.max_by { |c| version_tuple(c[:metadata_version]) }

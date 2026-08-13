@@ -75,11 +75,16 @@ class CdefServiceIndex
     end
   end
 
+  # Delegated, not reimplemented. This key must agree exactly with the one the
+  # importer derived when it wrote `source_path`, and a private second copy here
+  # silently disagreed: it handled only the flattened `<service>.oscal.json`
+  # form, so upstream's real `component-definitions/<service>/<file>.json`
+  # produced "<file>" and matched no deployed service at all.
   def aws_labs_key(metadata)
     path = metadata.is_a?(Hash) ? metadata["source_path"].to_s : ""
     return nil if path.blank?
 
-    File.basename(path).delete_suffix(AWS_LABS_SUFFIX).delete_suffix(".json").downcase.presence
+    AwsLabsCdefImportService.service_key_for_path(path)
   end
 
   # Declared props first, explicit operator aliases second. Both are assertions;
