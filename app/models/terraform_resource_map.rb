@@ -80,8 +80,9 @@ class TerraformResourceMap
     rules = RULES_BY_PROVIDER[provider_for(resource_type)]
     return nil if rules.blank?
 
-    rules.each { |pattern, service| return service if pattern.match?(resource_type) }
-    nil
+    # `find`, not `each` with an early return: the intent IS first-match-wins,
+    # and saying so directly keeps the ordering contract legible.
+    rules.find { |pattern, _service| pattern.match?(resource_type) }&.last
   end
 
   def self.supported_providers = RULES_BY_PROVIDER.keys.select { |p| RULES_BY_PROVIDER[p].present? }
