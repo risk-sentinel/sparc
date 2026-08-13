@@ -99,14 +99,25 @@ def test_boundary_screen_offers_the_wizard(authed_page):
     assert resp is not None and resp.status < 400
     authed_page.wait_for_load_state("networkidle")
 
-    first = authed_page.locator("a[href^='/authorization_boundaries/']").first
-    if first.count() == 0:
+    # Navigate by href rather than clicking the first matching anchor: the nav
+    # dropdown also links boundaries and its items are not visible, so a click
+    # times out on an element that is present but hidden. `/new` and nested
+    # routes are excluded — only a boundary's own show page carries the button.
+    hrefs = authed_page.eval_on_selector_all(
+        "a[href^='/authorization_boundaries/']",
+        "els => els.map(e => e.getAttribute('href'))",
+    )
+    shows = [h for h in hrefs if h and h.count("/") == 2 and not h.endswith("/new")]
+    if not shows:
         pytest.skip("no authorization boundaries on this deployment")
 
-    first.click()
+    authed_page.goto(shows[0])
     authed_page.wait_for_load_state("networkidle")
 
-    link = authed_page.locator("a", has_text="CDEF Coverage")
+    # Located by href, not by text: the sidebar's Help & Guides menu also
+    # carries a "CDEF Coverage" link (wiki/User-Guide-*.md pages are served
+    # in-app at /help/<slug>), and matching on text finds that one first.
+    link = authed_page.locator("a[href^='/cdef_coverage/new']")
     assert link.count() >= 1, "the boundary screen does not offer the coverage wizard"
     assert "authorization_boundary_id=" in link.first.get_attribute("href"), (
         "the wizard link from a boundary does not pre-attach that boundary"

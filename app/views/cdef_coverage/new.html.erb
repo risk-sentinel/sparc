@@ -20,7 +20,15 @@
       file's name and SHA-256 checksum.
     </div>
 
-    <%= form_with url: analyze_cdef_coverage_index_path, method: :post, multipart: true, local: true do |f| %>
+    <%# `turbo: false` is load-bearing. Analyze renders its report with 200
+        rather than redirecting, because the report is derived from the POSTed
+        files and there is nothing to redirect TO — the upload is discarded, so
+        a follow-up GET could not rebuild it. Turbo Drive refuses a non-redirect
+        200 from a form ("Form responses must redirect to another location"),
+        silently leaving the user on the upload screen. Only a browser catches
+        that; request specs do not run Turbo. %>
+    <%= form_with url: analyze_cdef_coverage_index_path, method: :post, multipart: true,
+                  local: true, data: { turbo: false } do |f| %>
       <%= hidden_field_tag :authorization_boundary_id, @boundary&.id %>
 
       <%= render "shared/dropzone",
