@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -404,6 +404,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_120100) do
     t.index ["submitted_by_user_id"], name: "index_cdef_documents_on_submitted_by_user_id"
     t.index ["uploaded_by_user_id"], name: "index_cdef_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_cdef_documents_on_uuid", unique: true
+  end
+
+  create_table "cdef_service_aliases", force: :cascade do |t|
+    t.boolean "always_keep", default: false, null: false
+    t.bigint "cdef_document_id"
+    t.datetime "created_at", null: false
+    t.text "note"
+    t.string "service_key", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cdef_document_id", "service_key"], name: "index_cdef_service_aliases_on_document_and_service", unique: true
+    t.index ["cdef_document_id"], name: "index_cdef_service_aliases_on_cdef_document_id"
+    t.index ["service_key"], name: "index_cdef_service_aliases_on_service_key"
   end
 
   create_table "control_back_matter_links", force: :cascade do |t|
@@ -1798,6 +1810,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_120100) do
   add_foreign_key "cdef_documents", "organizations", on_delete: :nullify
   add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify
   add_foreign_key "cdef_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
+  add_foreign_key "cdef_service_aliases", "cdef_documents", on_delete: :cascade
   add_foreign_key "control_back_matter_links", "back_matter_resources"
   add_foreign_key "control_families", "control_catalogs"
   add_foreign_key "control_mapping_entries", "control_mappings"
