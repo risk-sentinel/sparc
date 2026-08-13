@@ -26,6 +26,7 @@ a domain lane for a sprint.
 | **SSP** | `ssp_document.rb`, `ssp_control.rb`, `ssp_documents_controller`, `ssp_wizard_service`, `ssp_*_parser_service`, `oscal_ssp_export_service`, views under `ssp_documents/` | Dev C |
 | **SAR** | `sar_document.rb`, `sar_control.rb`, `sar_control_objective.rb`, `sar_finding.rb`, `sar_documents_controller`, `sar_wizard_service`, `sar_*_parser_service`, `oscal_sar_export_service`, `control_objective_extractor_service`, views under `sar_documents/` (incl. `_objectives_table.html.erb`) | Dev C |
 | **CDEF** | `cdef_document.rb`, `cdef_control.rb`, `cdef_documents_controller`, `cdef_*_parser_service`, `oscal_component_definition_export_service`, views under `cdef_documents/` | Dev B |
+| **CDEF Coverage** (#904) | `terraform_*_service.rb`, `terraform_inventory.rb`, `terraform_resource_map.rb`, `cdef_service_index.rb`, `cdef_coverage_analysis.rb`, `cdef_coverage_run.rb`, `cdef_service_alias.rb`, `cdef_coverage_controller` (web + Api::V1), views under `cdef_coverage/` | Dev B |
 | **Converters** | `converter.rb`, `converter_entry.rb`, `converters_controller.rb`, `cci_refresh_service.rb`, `framework_mapping_generator_service.rb`, views under `converters/` | Dev A |
 | **POAM/SAP** | `poam_document.rb`, `sap_document.rb`, `sap_control.rb`, `sap_control_objective.rb`, related controllers/services, `control_objective_extractor_service`, views under `sap_documents/` (incl. `_objectives_table.html.erb`) | Dev C |
 | **Auth/Users** | `user.rb`, `role.rb`, `identity.rb`, sessions, registrations, `admin/*` controllers | Dev D |
