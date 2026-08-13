@@ -31,6 +31,7 @@ CONTROLLER_TO_DOC = {
   "sap_documents"            => "sap-documents",
   "poam_documents"           => "poam-documents",
   "cdef_documents"           => "cdef-documents",
+  "cdef_coverage"            => "cdef-coverage",
   "profile_documents"        => "profile-documents",
   "control_catalogs"         => "control-catalogs",
   "control_mappings"         => "control-mappings",

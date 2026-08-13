@@ -34,9 +34,14 @@
       <%= render "shared/baseline_picker", document: document %>
     <% end %>
 
+    <%# The remedy is guidance for the person reading the screen, so it reads as
+        guidance. It used to be prefixed "API:" and set in <code>, which framed
+        a plain instruction ("confirm these are intended additions") as
+        something only an integrator could act on — API affordances do not
+        belong in the product UI. The API reference lives under About. %>
     <% remedy = reconciliation[:issues].first[:remedy] %>
     <% if remedy.present? %>
-      <small class="text-body-secondary d-block">API: <code><%= remedy %></code></small>
+      <small class="text-body-secondary d-block"><%= remedy %></small>
     <% end %>
   </div>
 <% end %>

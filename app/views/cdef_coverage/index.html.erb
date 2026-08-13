@@ -1,0 +1,62 @@
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2>CDEF Coverage Analyses</h2>
+        <p class="text-body-secondary mb-0">
+          <%= pluralize(@runs.size, "saved analysis", plural: "saved analyses") %>
+        </p>
+      </div>
+      <%= link_to "New analysis", new_cdef_coverage_path, class: "btn btn-success" %>
+    </div>
+
+    <% if @runs.any? %>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Analysed</th>
+              <th scope="col">Boundary</th>
+              <th scope="col">By</th>
+              <th scope="col">Needs a CDEF</th>
+              <th scope="col">Unused</th>
+              <th scope="col">Files</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @runs.each do |run| %>
+              <tr>
+                <td><%= link_to run.analyzed_at.strftime("%Y-%m-%d %H:%M UTC"), cdef_coverage_path(run) %></td>
+                <td>
+                  <% if run.authorization_boundary %>
+                    <%= link_to run.authorization_boundary.name,
+                                authorization_boundary_path(run.authorization_boundary) %>
+                  <% else %>
+                    <span class="text-body-secondary">Not attached</span>
+                  <% end %>
+                </td>
+                <td class="small"><%= run.created_by.presence || "—" %></td>
+                <td>
+                  <% if run.needs_custom_count.positive? %>
+                    <span class="sparc-status sparc-status--warning"><%= run.needs_custom_count %></span>
+                  <% else %>
+                    <span class="text-body-secondary">0</span>
+                  <% end %>
+                </td>
+                <td><%= run.stale_custom_count %></td>
+                <td class="small"><%= Array(run.source_files).size %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <%== pagy_nav(@pagy) if @pagy && @pagy.pages > 1 %>
+    <% else %>
+      <p class="text-body-secondary mb-0">
+        No saved analyses yet. <%= link_to "Run one", new_cdef_coverage_path %> against a boundary's
+        Terraform to see which Component Definitions it needs.
+      </p>
+    <% end %>
+  </div>
+</div>

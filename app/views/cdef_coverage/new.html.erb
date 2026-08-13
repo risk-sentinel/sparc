@@ -1,0 +1,57 @@
+<div class="card mb-4">
+  <div class="card-body">
+    <h2>CDEF Coverage Analysis</h2>
+    <p class="text-body-secondary">
+      Upload the Terraform this boundary is built from and SPARC will report which
+      Component Definitions it needs: which to adopt from AWS Labs, which of your own
+      to keep, which are still to be authored, and which you maintain but nothing deploys.
+    </p>
+
+    <%# #904 — the sensitivity note is on the screen, not only in the code. An
+        operator is about to upload a file that may contain live credentials, and
+        is entitled to know what happens to it before choosing the file. %>
+    <div class="alert alert-info" role="note">
+      <strong>Your state file is not stored.</strong>
+      Terraform state can contain plaintext secrets — database passwords, private keys,
+      account identifiers. SPARC reads only whether each resource is managed, its
+      <em>type</em> (for example <code>aws_db_instance</code>), and how many there are.
+      Resource attributes are never read, and the file itself is never saved. If you
+      save the analysis, what is written is the list of services and counts, plus each
+      file's name and SHA-256 checksum.
+    </div>
+
+    <%# `turbo: false` is load-bearing. Analyze renders its report with 200
+        rather than redirecting, because the report is derived from the POSTed
+        files and there is nothing to redirect TO — the upload is discarded, so
+        a follow-up GET could not rebuild it. Turbo Drive refuses a non-redirect
+        200 from a form ("Form responses must redirect to another location"),
+        silently leaving the user on the upload screen. Only a browser catches
+        that; request specs do not run Turbo. %>
+    <%= form_with url: analyze_cdef_coverage_index_path, method: :post, multipart: true,
+                  local: true, data: { turbo: false } do |f| %>
+      <%= hidden_field_tag :authorization_boundary_id, @boundary&.id %>
+
+      <%= render "shared/dropzone",
+            form: f,
+            field: :files,
+            accept: ".json,.tfstate",
+            multiple: true,
+            hint: "Terraform state (.tfstate) or plan JSON (terraform show -json plan.tfplan). Upload every state that makes up the boundary — analysing one state of several reports the others' services as unused." %>
+
+      <div class="d-flex gap-3 mt-3">
+        <%= f.submit "Analyze coverage", class: "btn btn-success" %>
+        <%= link_to "Cancel", (@boundary ? authorization_boundary_path(@boundary) : cdef_documents_path),
+              class: "btn btn-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h3 class="h5">Saved analyses</h3>
+    <p class="text-body-secondary mb-2">
+      <%= link_to "View saved coverage runs", cdef_coverage_index_path %>
+    </p>
+  </div>
+</div>

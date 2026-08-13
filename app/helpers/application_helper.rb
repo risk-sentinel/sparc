@@ -42,6 +42,7 @@ module ApplicationHelper
     "sap_documents"            => "assessment-plans",
     "poam_documents"           => "poam",
     "cdef_documents"           => "component-definitions",
+    "cdef_coverage"            => "cdef-coverage",
     "profile_documents"        => "control-catalogs-and-baselines",
     "control_catalogs"         => "control-catalogs-and-baselines",
     "control_mappings"         => "control-catalogs-and-baselines",

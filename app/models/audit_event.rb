@@ -85,6 +85,9 @@ class AuditEvent < ApplicationRecord
     cdef_document_created
     cdef_document_updated
     cdef_document_deleted
+    cdef_coverage_analyzed
+    cdef_coverage_run_saved
+    cdef_coverage_run_deleted
     cdef_document_delete_blocked
     cdef_document_exported
     cdef_document_imported
@@ -281,6 +284,7 @@ class AuditEvent < ApplicationRecord
                           sar_document_delete_blocked sar_document_exported sar_document_imported
                           sar_document_published sar_document_baseline_declared],
     "CDEF Documents" => %w[cdef_document_created cdef_document_updated cdef_document_deleted
+                           cdef_coverage_analyzed cdef_coverage_run_saved cdef_coverage_run_deleted
                            cdef_document_delete_blocked
                            cdef_document_exported cdef_document_imported cdef_document_copied
                            cdef_document_published cdef_back_matter_promoted

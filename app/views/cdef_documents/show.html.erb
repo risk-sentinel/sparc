@@ -198,12 +198,22 @@
 <% if @gap_analysis.present? %>
   <div class="card mb-4">
     <div class="card-body">
-      <h5 class="fw-bold mb-3">Baseline Coverage</h5>
+      <h5 class="fw-bold mb-3" id="baseline-coverage-heading">Baseline Coverage</h5>
       <div class="d-flex align-items-center gap-3 mb-2">
         <div class="progress flex-grow-1" style="height: 1.2rem;">
+          <%# role="progressbar" takes no accessible name from its contents, so the
+              percentage rendered inside it is invisible to a screen reader — the
+              control announced as "progress bar" with no name and no value. Named
+              from the heading it sits under, and given the value attributes so the
+              figure is announced rather than only drawn (WCAG 2.1 A/AA,
+              axe rule `aria-progressbar-name`). %>
           <div class="progress-bar <%= @gap_analysis[:coverage_pct] == 100.0 ? 'bg-success' : @gap_analysis[:coverage_pct] >= 80 ? 'bg-warning' : 'bg-danger' %>"
                style="width: <%= @gap_analysis[:coverage_pct] %>%"
-               role="progressbar">
+               role="progressbar"
+               aria-labelledby="baseline-coverage-heading"
+               aria-valuenow="<%= @gap_analysis[:coverage_pct] %>"
+               aria-valuemin="0"
+               aria-valuemax="100">
             <%= @gap_analysis[:coverage_pct] %>%
           </div>
         </div>

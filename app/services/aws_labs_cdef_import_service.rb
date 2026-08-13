@@ -36,6 +36,25 @@ class AwsLabsCdefImportService
     end
   end
 
+  # The service key a repository path denotes — the one rule for turning an AWS
+  # Labs file path into "which AWS service is this?".
+  #
+  # Public because #904's CdefServiceIndex has to derive the SAME key from the
+  # `source_path` recorded here in order to match a deployed service to its
+  # CDEF. It briefly had its own copy that handled only the flat layout, so
+  # `component-definitions/s3/s3-cd.json` yielded "s3-cd" and matched nothing —
+  # every service would have reported "needs a CDEF" forever, against the real
+  # repository, with no error to notice. Two implementations of one rule is the
+  # defect; this is the rule.
+  #
+  #   component-definitions/<service>/<file>.json → "<service>"   (upstream)
+  #   component-definitions/<file>.json           → "<file>"      (flattened)
+  def self.service_key_for_path(path)
+    parts = path.to_s.split("/")
+    key = parts.length >= 3 ? parts[1] : parts.last.to_s.sub(/\.oscal\.json\z/, "").sub(/\.json\z/, "")
+    key.to_s.strip.downcase.presence
+  end
+
   def initialize(client: AwsLabsCdefSourceClient.new,
                  allowed_oscal_versions: SparcConfig.aws_labs_oscal_versions,
                  logger: Rails.logger)
@@ -63,7 +82,7 @@ class AwsLabsCdefImportService
     end
 
     commit_sha = @client.current_commit_sha
-    candidates = build_candidates(tree_entries)
+    candidates = regions_first(build_candidates(tree_entries))
     @logger.info("[AwsLabsCdefImportService] Discovered #{candidates.length} candidate CDEFs after version filtering")
 
     imported = 0
@@ -112,7 +131,11 @@ class AwsLabsCdefImportService
         content: file[:content],
         oscal_version: meta[OSCAL_VERSION],
         metadata_version: meta["version"].to_s,
-        service_dir: service_dir_for(file[:path])
+        service_dir: service_dir_for(file[:path]),
+        # Detected from content, not from the filename: the ordering below
+        # depends on it, and `aws_regions.oscal.json` is a naming convention
+        # upstream can change without telling anyone.
+        defines_regions: defines_regions?(data)
       }
     rescue JSON::ParserError => e
       @logger.warn("[AwsLabsCdefImportService] Skipping #{entry['path']}: invalid JSON (#{e.message})")
@@ -123,10 +146,58 @@ class AwsLabsCdefImportService
            .map { |_, group| highest_version(group) }
   end
 
-  def service_dir_for(path)
-    # component-definitions/<service>/<file>.json → "<service>"
-    parts = path.split("/")
-    parts.length >= 3 ? parts[1] : parts.last.to_s.sub(/\.json\z/, "")
+  def service_dir_for(path) = self.class.service_key_for_path(path)
+
+  # True when this document defines the region components other CDEFs point at.
+  def defines_regions?(data)
+    Array(data.dig("component-definition", "components")).any? { |c| c["type"] == "region" }
+  end
+
+  # Import the regions CDEF before anything that references it.
+  #
+  # CdefComponentIndexer resolves a service's regions by looking up region
+  # components ACROSS documents (`region_map` reads
+  # `CdefComponent.where(component_type: "region")`), so a service indexed
+  # before the regions CDEF exists resolves nothing and is stored with zero
+  # regions. Nothing re-indexes it afterwards, so it stays that way until the
+  # next time that particular document changes upstream.
+  #
+  # The indexer's own comment states the requirement — "the regions CDEF must be
+  # indexed before the services that reference it" — but nothing enforced it,
+  # and the import order is upstream's tree order. Alphabetically
+  # `component-definitions/acm/…` sorts BEFORE
+  # `component-definitions/aws_regions.oscal.json`, so the bug was partial and
+  # silent: services early in the alphabet lost their regions, later ones kept
+  # theirs, and the result looked like real data either way.
+  #
+  # `sort_by` with a boolean key is a stable partition — relative order within
+  # each group is preserved, so this changes nothing except moving regions to
+  # the front.
+  def regions_first(candidates)
+    candidates.sort_by { |candidate| candidate[:defines_regions] ? 0 : 1 }
+  end
+
+  # Re-index a document that was imported before the regions CDEF existed.
+  #
+  # Ordering fixes this going forward, but it does nothing for rows already in
+  # the database: an unchanged file is skipped, so a service imported into an
+  # instance with no regions CDEF keeps its empty `region_ids` until upstream
+  # happens to edit that one file. On a weekly refresh that could be never.
+  #
+  # The content is already in hand — build_candidates fetched it to read the
+  # metadata — so repairing costs no extra request. The indexer is idempotent by
+  # design ("same input, same rows"), which is what makes re-running safe.
+  #
+  # Deliberately narrow: only when region components now exist AND this document
+  # resolved none. A service that genuinely has no regions re-indexes on each
+  # run, which is bounded work and self-correcting; a service that HAS regions
+  # is left alone entirely.
+  def repair_regions(document, candidate)
+    return if candidate[:defines_regions]
+    return unless CdefComponent.where(component_type: "region").exists?
+    return if document.cdef_components.where.not(region_ids: []).exists?
+
+    reindex_components(document, candidate[:content])
   end
 
   def highest_version(group)
@@ -148,6 +219,7 @@ class AwsLabsCdefImportService
 
     if existing && existing.import_metadata["source_sha"] == candidate[:sha]
       @logger.debug("[AwsLabsCdefImportService] Unchanged: #{candidate[:path]}")
+      repair_regions(existing, candidate)
       return :skipped_unchanged
     end
 

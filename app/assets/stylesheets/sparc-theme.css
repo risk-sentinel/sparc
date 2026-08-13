@@ -820,6 +820,22 @@ a.link-purple { color: var(--sparc-purple); }
    4. REUSABLE COMPONENT CLASSES
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Index-screen action buttons ────────────────────────────────
+ *
+ * The size the collection screens' header actions have always used, as a class
+ * rather than as `style="padding: 0.5rem 1rem; font-size: 0.875rem"` repeated
+ * inline. Those inline copies (6 across 5 index screens) all break when #528
+ * removes 'unsafe-inline' from style-src, so new buttons use this instead of
+ * adding another one. Sizing only — the colour still comes from the Bootstrap
+ * `btn-*` class beside it, which sparc-theme already remaps onto SPARC tokens.
+ *
+ * Converting the existing 6 belongs to #528, not to whatever feature happens to
+ * add the 7th button. */
+.sparc-btn-action {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
 /* ── Dashboard header buttons (dark gradient backgrounds) ──────── */
 
 .sparc-btn-ghost {

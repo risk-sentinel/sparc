@@ -141,6 +141,41 @@ def first_show_href(page, index_path: str, prefix: str):
     return None
 
 
+def show_hrefs(page, index_path: str, prefix: str, limit: int = 8):
+    """Up to `limit` document show hrefs on `index_path`, same rules as
+    `first_show_href`.
+
+    Exists because "the first document" is not always a document that can
+    exercise the control under test. A CDEF index led by AWS Labs content is the
+    case that forced this: those documents are read-only by design (#466), so
+    their edit controls render but never become clickable, and a test that took
+    the first href alone either timed out or degraded into a silent skip on any
+    deployment with the AWS Labs ingest enabled.
+    """
+    resp = page.goto(index_path)
+    if not (resp and resp.status < 400):
+        return []
+    page.wait_for_load_state("networkidle")
+
+    found = []
+    for h in page.eval_on_selector_all(
+        "a[href]", "els => els.map(e => e.getAttribute('href'))"
+    ):
+        if not h:
+            continue
+        path = h.split("?")[0].split("#")[0]
+        if not path.startswith(prefix + "/"):
+            continue
+        seg = path[len(prefix) + 1:]
+        if "/" in seg or seg in RESERVED_SEGMENTS:
+            continue
+        if path not in found:
+            found.append(path)
+        if len(found) >= limit:
+            break
+    return found
+
+
 def same_origin(url: str, base_url: str) -> bool:
     """True if `url` is on the same host as `base_url` (or a relative path)."""
     target = urlparse(url)

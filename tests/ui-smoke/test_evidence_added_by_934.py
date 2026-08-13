@@ -54,23 +54,6 @@ def _added_by_select(page):
 def test_added_by_is_offered_and_narrows(authed_page, submitted_evidence):
     record_csp(authed_page)
 
-    resp = authed_page.goto("/evidences?per_page=50&view=list")
-    assert resp is not None and resp.status < 400
-    authed_page.wait_for_load_state("networkidle")
-
-    select = _added_by_select(authed_page)
-    assert select.count() == 1, (
-        "the Added by filter is not drawn on the evidence screen, even though "
-        "this test just submitted evidence that has a collector"
-    )
-
-    options = select.locator("option")
-    assert options.count() >= 2, (
-        "Added by is drawn with no accounts to choose from — the facet resolves "
-        "collectors to users, so an empty list means the reference is not being "
-        "recorded on the submission path"
-    )
-
     # Filter by the account the API says collected these records, not by
     # whichever option happens to sort first. Picking arbitrarily would filter
     # to some other collector and then assert our evidence is present, which is
@@ -80,20 +63,40 @@ def test_added_by_is_offered_and_narrows(authed_page, submitted_evidence):
         "the API reported no collected_by_user_id for evidence it just created — "
         "the submission path is not recording the account"
     )
+
+    # Arrive with the facet ALREADY applied rather than selecting it from the
+    # dropdown.
+    #
+    # CollectionBrowseQuery hides a select whose value set has cardinality 1 —
+    # a dropdown offering one choice is noise (#908) — but always renders one
+    # the user has already set, or the control that set it would vanish while
+    # its effect remained. An instance where a single account has collected
+    # everything is therefore a legitimate state in which the dropdown is
+    # correctly absent, and the earlier version of this test failed there while
+    # the product was behaving exactly as designed.
+    resp = authed_page.goto(f"/evidences?per_page=50&view=list&collected_by_user_id={value}")
+    assert resp is not None and resp.status < 400
+    authed_page.wait_for_load_state("networkidle")
+
+    select = _added_by_select(authed_page)
+    assert select.count() == 1, (
+        "the Added by filter is not drawn even though it is applied in the URL — "
+        "an active facet must stay visible or its control disappears while it is "
+        "still narrowing the list"
+    )
+
     option_values = [
-        options.nth(i).get_attribute("value") for i in range(options.count())
+        select.locator("option").nth(i).get_attribute("value")
+        for i in range(select.locator("option").count())
     ]
     assert value in option_values, (
         f"the account that collected this evidence ({value}) is not offered in "
         f"Added by; offered: {option_values}"
     )
-
-    select.select_option(value)
-    authed_page.locator("input[type='submit'][value='Filter']").first.click()
-    # Same reason as #908's suite: the Turbo GET visit may not have committed
-    # when networkidle returns, and asserting there reads back pre-submit state.
-    authed_page.wait_for_url("**collected_by_user_id=*", timeout=10000)
-    authed_page.wait_for_load_state("networkidle")
+    assert select.input_value() == value, (
+        "the applied account is not the selected option, so the control does not "
+        "reflect the filter actually in force"
+    )
 
     url = authed_page.url
     assert f"collected_by_user_id={value}" in url, f"the filter did not reach the URL: {url}"

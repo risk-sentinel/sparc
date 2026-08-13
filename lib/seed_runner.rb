@@ -25,7 +25,8 @@ module SeedRunner
     "demo_catalog_guidance" => "1.0.0",
     "demo_evidence"        => "1.1.0",  # #738 boundary-scoping smoke fixtures
     "demo_sample_artifacts" => "1.2.0",  # #832 POA&M risks carry a deadline
-    "oscal_schemas"         => "1.0.0"
+    "oscal_schemas"         => "1.0.0",
+    "cdef_service_aliases"  => "1.0.0"  # #904 coverage analysis escape hatches
   }.freeze
 
   # Ensure the seed_sections table exists (handles first-ever run before migrations).

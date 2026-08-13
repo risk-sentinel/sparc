@@ -2603,6 +2603,13 @@ load Rails.root.join("db/seeds/converters.rb")
 end # SeedRunner converters
 
 # ══════════════════════════════════════════════════════════════════════
+# REQUIRED: CDEF Service Aliases (#904 coverage analysis escape hatches)
+# ══════════════════════════════════════════════════════════════════════
+SeedRunner.run_section("cdef_service_aliases") do
+load Rails.root.join("db/seeds/cdef_service_aliases.rb")
+end # SeedRunner cdef_service_aliases
+
+# ══════════════════════════════════════════════════════════════════════
 # DEMO: Sample Artifacts (SAP, POA&M, CDEF, Profile, KSI Validations)
 # ══════════════════════════════════════════════════════════════════════
 if SEED_DEMO

@@ -19,6 +19,7 @@
 * [Converters & Imports](User-Guide-Converters-and-Imports)
 * [System Security Plans (SSP)](User-Guide-System-Security-Plans)
 * [Component Definitions (CDEF)](User-Guide-Component-Definitions)
+* [CDEF Coverage](User-Guide-CDEF-Coverage)
 * [Security Assessment Plan (SAP)](User-Guide-Assessment-Plans)
 * [Security Assessment Results (SAR)](User-Guide-Assessment-Results)
 * [POA&M](User-Guide-POAM)

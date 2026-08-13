@@ -35,6 +35,18 @@ RESOURCES = [
     ("sap_document", "/sap_documents"),
 ]
 
+# Actions a resource does not declare in config/routes.rb.
+#
+# `control_catalogs` exports OSCAL only — it has never had `download_json`,
+# which is a non-OSCAL internal dump. The cross-product below used to generate
+# that pair anyway and the `resp.status == 404` skip never caught it: an
+# unrouted path raises ActionController::RoutingError, which development
+# renders as a 500, so it read as a broken export rather than a route that does
+# not exist. Assert what exists instead of generating a case that cannot pass.
+UNSUPPORTED = {
+    "control_catalog": {"download_json"},
+}
+
 # action -> how to validate the payload.
 #
 # `download_oscal_validated` is the one the OSCAL export dropdown's JSON option
@@ -77,8 +89,19 @@ def _assert_parses(fmt: str, body: bytes, where: str):
         assert ":" in text[:400], f"{where}: does not look like YAML"
 
 
-@pytest.mark.parametrize("label,index_path", RESOURCES)
-@pytest.mark.parametrize("action,fmt", sorted(FORMATS.items()))
+EXPORT_CASES = [
+    (label, index_path, action, fmt)
+    for label, index_path in RESOURCES
+    for action, fmt in sorted(FORMATS.items())
+    if action not in UNSUPPORTED.get(label, set())
+]
+
+
+@pytest.mark.parametrize(
+    "label,index_path,action,fmt",
+    EXPORT_CASES,
+    ids=[f"{c[0]}-{c[2]}" for c in EXPORT_CASES],
+)
 def test_export_endpoint_returns_parseable_payload(
     authed_page, base_url, label, index_path, action, fmt
 ):

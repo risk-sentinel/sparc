@@ -297,6 +297,15 @@ Rails.application.routes.draw do
   get "artifacts/:uuid", to: "artifacts#show", as: :artifact,
       constraints: { uuid: uuid_constraint }
 
+  # #904 — Terraform → CDEF coverage wizard. `analyze` renders a report and
+  # persists nothing; `create` saves one from the signed token that report
+  # carried, so the uploaded state is never needed twice and never stored.
+  resources :cdef_coverage, only: [ :new, :index, :show, :create ] do
+    collection do
+      post :analyze
+    end
+  end
+
   resources :cdef_documents do
     member do
       # #911 — the write the reconciliation gate exists to provoke.
@@ -652,6 +661,17 @@ Rails.application.routes.draw do
           post "import/confirm", to: "baseline_parameters#import_confirm", on: :member, as: :import_confirm
         end
       end
+      # #904 — Terraform → CDEF coverage. `analyze` persists nothing, which is
+      # why it is a POST that needs only read permission: it uploads files to
+      # answer a question, and the answer is not saved unless a run is created.
+      scope "cdef_coverage", as: "cdef_coverage" do
+        post "analyze", to: "cdef_coverage#analyze"
+        get "runs", to: "cdef_coverage#runs"
+        post "runs", to: "cdef_coverage#create_run"
+        get "runs/:id", to: "cdef_coverage#show_run", as: "run"
+        delete "runs/:id", to: "cdef_coverage#destroy_run"
+      end
+
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
           # #629 — admin-only bulk delete; ids[] body, partial-success result.
