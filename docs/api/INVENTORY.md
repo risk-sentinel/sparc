@@ -18,6 +18,12 @@ This file is the work-tracking spine for issue [#413](https://github.com/risk-se
 > `endpoints/users.md` and covered by `spec/requests/password_recovery_spec.rb`
 > plus `tests/ui-smoke/test_password_recovery.py`, which drives it end to end.
 >
+> The five `cdef_coverage` endpoints added in #904 are documented
+> (`endpoints/cdef-coverage.md`), covered by request specs
+> (`spec/requests/api/v1/cdef_coverage_spec.rb`) and by the pytest suite
+> (`tests/api/test_cdef_coverage.py`), but are **not yet** in the Postman
+> collection — the same posture as the #832 rows below.
+>
 > The five `poam_risks` endpoints added in #832 are documented
 > (`endpoints/poam-risks.md`) and covered by a request spec
 > (`spec/requests/api/v1/poam_risks_spec.rb`), but are **not yet** in the
