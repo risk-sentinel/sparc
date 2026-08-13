@@ -90,6 +90,17 @@ See [`dev/README.md`](dev/README.md) — **internal** process/roadmap/engineerin
 reference (issue rules, implementation plan, collision-avoidance plan, secrets
 inventory, AWS/UBI9/HDF findings, a11y audit, credential rotation). Not public.
 
+### Design specs
+
+| Path | Purpose |
+|---|---|
+| [design/sparc-readiness-design.md](design/sparc-readiness-design.md) | `sparc readiness` — scores a boundary against a declarative catalog of onboarding checks and emits a CI gate verdict. Draft. |
+
+Forward-looking specs for work not yet built. Distinct from `dev/` (process and
+roadmap) and from the wiki (which documents what exists today) — a design here
+describes something a reader cannot yet use, so it must not be mistaken for
+product documentation.
+
 ### Generated artifacts (not hand-edited)
 
 | Path | Purpose |
