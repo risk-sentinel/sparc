@@ -7,6 +7,7 @@ DELETE /api/v1/authorization_boundaries/:id
 DELETE /api/v1/authorization_boundaries/bulk
 DELETE /api/v1/back_matter_resources/:id
 DELETE /api/v1/back_matter_resources/:id/unlink
+DELETE /api/v1/cdef_coverage/runs/:id
 DELETE /api/v1/cdef_documents/:id
 DELETE /api/v1/cdef_documents/bulk
 DELETE /api/v1/control_catalogs/:control_catalog_id/control_families/:id
@@ -51,6 +52,8 @@ GET /api/v1/back_matter_resources
 GET /api/v1/back_matter_resources/:id
 GET /api/v1/back_matter_resources/:id/changes
 GET /api/v1/back_matter_resources/promotion_queue
+GET /api/v1/cdef_coverage/runs
+GET /api/v1/cdef_coverage/runs/:id
 GET /api/v1/cdef_documents
 GET /api/v1/cdef_documents/:id
 GET /api/v1/control_catalogs
@@ -135,6 +138,8 @@ POST /api/v1/back_matter_resources/:id/promote
 POST /api/v1/back_matter_resources/:id/reject_promotion
 POST /api/v1/back_matter_resources/:id/restore
 POST /api/v1/back_matter_resources/bulk
+POST /api/v1/cdef_coverage/analyze
+POST /api/v1/cdef_coverage/runs
 POST /api/v1/cdef_documents
 POST /api/v1/cdef_documents/:id/approve
 POST /api/v1/cdef_documents/:id/bulk_apply_converter/confirm
