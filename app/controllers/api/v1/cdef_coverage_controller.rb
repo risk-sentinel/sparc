@@ -50,27 +50,38 @@ class Api::V1::CdefCoverageController < Api::V1::BaseController
       needs_custom: report.counts["needs_custom"]
     })
 
-    render json: { data: report.to_h }
+    # The token lets a caller save this exact analysis without re-uploading —
+    # the same handle the wizard uses. Signed, short-lived, and safe to hand
+    # over because the report carries no resource values (#904).
+    render json: { data: report.to_h.merge(report_token: CdefCoverageReportToken.sign(report.to_h)) }
   rescue TerraformUploadInventoryService::Error => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
   # POST /api/v1/cdef_coverage/runs
   #
-  # Re-analyses the uploads rather than trusting a client-supplied report: a
-  # saved coverage run is a compliance artifact, and one assembled from a POST
-  # body would assert whatever the caller wanted it to.
+  # Accepts either the files (a script that already has them) or the
+  # `report_token` returned by `analyze` (the wizard's path, and cheaper for a
+  # caller that just analysed). What it does NOT accept is a report body: a
+  # saved coverage run is a compliance artifact, and an unsigned payload would
+  # let a caller assert whatever coverage they wanted.
   def create_run
     boundary = resolve_boundary
-    inventory = TerraformUploadInventoryService.call(uploads: uploaded_files)
-    report = CdefCoverageAnalysis.call(inventory: inventory)
 
-    run = CdefCoverageRun.persist!(report: report, actor: current_user, authorization_boundary: boundary)
+    hash =
+      if params[:report_token].present?
+        CdefCoverageReportToken.verify(params[:report_token])
+      else
+        CdefCoverageAnalysis.call(inventory: TerraformUploadInventoryService.call(uploads: uploaded_files)).to_h
+      end
+
+    run = CdefCoverageRun.persist_report_hash!(hash: hash, actor: current_user,
+                                               authorization_boundary: boundary)
     audit_log("cdef_coverage_run_saved", subject: run,
               metadata: { boundary: boundary&.id, services: run.cdef_coverage_results.count })
 
     render json: { data: serialize_run(run, detailed: true) }, status: :created
-  rescue TerraformUploadInventoryService::Error => e
+  rescue TerraformUploadInventoryService::Error, CdefCoverageReportToken::Error => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 

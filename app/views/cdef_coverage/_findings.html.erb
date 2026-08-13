@@ -1,0 +1,75 @@
+<%# #904 — the verdict table, shared by the ephemeral report and a saved run.
+    `rows` is a list responding to service/verdict/inferred/resource_count/
+    resource_types, which both CdefCoverageAnalysis::Finding and
+    CdefCoverageResult do. %>
+<%
+  verdict_styles = {
+    "adopt"        => { label: "Adopt AWS Labs CDEF", css: "sparc-status sparc-status--success",
+                        note: "Published upstream — vendor theirs instead of maintaining your own." },
+    "keep_custom"  => { label: "Keep custom CDEF", css: "badge bg-info text-dark",
+                        note: "Deployed, and only your CDEF covers it." },
+    "needs_custom" => { label: "Needs a CDEF", css: "sparc-status sparc-status--warning",
+                        note: "Deployed with no Component Definition anywhere. This is the work." },
+    "stale_custom" => { label: "Unused CDEF", css: "badge bg-secondary",
+                        note: "You maintain this, but nothing in the uploaded Terraform deploys it." }
+  }
+%>
+
+<% CdefCoverageAnalysis::VERDICTS.each do |verdict| %>
+  <% group = rows.select { |r| r.verdict == verdict } %>
+  <% next if group.empty? %>
+  <% style = verdict_styles[verdict] %>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h3 class="h5 d-flex align-items-center gap-2">
+        <span class="<%= style[:css] %>"><%= style[:label] %></span>
+        <span class="text-body-secondary fw-normal">(<%= group.size %>)</span>
+      </h3>
+      <p class="text-body-secondary small mb-3"><%= style[:note] %></p>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Service</th>
+              <th scope="col">Resources</th>
+              <th scope="col">Terraform resource types</th>
+              <th scope="col">Component definitions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% group.each do |row| %>
+              <tr>
+                <td>
+                  <code><%= row.service_key %></code>
+                  <% if row.inferred %>
+                    <%# The name was derived from the resource type, not matched by a
+                        rule. Saying so prevents a reader treating an inference as a
+                        fact SPARC knows (#904). %>
+                    <span class="badge bg-light text-dark ms-1"
+                          title="Service name inferred from the Terraform resource type; SPARC has no mapping rule for it yet.">inferred</span>
+                  <% end %>
+                </td>
+                <td><%= row.resource_count %></td>
+                <td class="small"><%= Array(row.resource_types).map { |t| tag.code(t) }.join(" ").html_safe %></td>
+                <td class="small">
+                  <% docs = Array(row.cdef_documents) %>
+                  <% if docs.any? %>
+                    <% docs.each do |doc| %>
+                      <% id = doc.is_a?(Hash) ? (doc["id"] || doc[:id]) : nil %>
+                      <% name = doc.is_a?(Hash) ? (doc["name"] || doc[:name]) : doc.to_s %>
+                      <%= id ? link_to(name, cdef_document_path(id), class: "d-block") : content_tag(:span, name) %>
+                    <% end %>
+                  <% else %>
+                    <span class="text-body-secondary">—</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% end %>

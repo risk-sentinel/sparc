@@ -297,6 +297,15 @@ Rails.application.routes.draw do
   get "artifacts/:uuid", to: "artifacts#show", as: :artifact,
       constraints: { uuid: uuid_constraint }
 
+  # #904 — Terraform → CDEF coverage wizard. `analyze` renders a report and
+  # persists nothing; `create` saves one from the signed token that report
+  # carried, so the uploaded state is never needed twice and never stored.
+  resources :cdef_coverage, only: [ :new, :index, :show, :create ] do
+    collection do
+      post :analyze
+    end
+  end
+
   resources :cdef_documents do
     member do
       # #911 — the write the reconciliation gate exists to provoke.

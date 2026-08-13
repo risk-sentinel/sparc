@@ -1,0 +1,84 @@
+<%# #904 — the analysis result. Nothing here has been saved yet; that is the
+    point. An operator can read this, export it, and leave without SPARC having
+    retained the Terraform or the report. %>
+
+<%= render "shared/section_summary", tiles: [
+  [@report.counts["adopt"], "Adopt AWS Labs"],
+  [@report.counts["keep_custom"], "Keep custom"],
+  [@report.counts["needs_custom"], "Needs a CDEF"],
+  [@report.counts["stale_custom"], "Unused CDEF"]
+] %>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h2>Coverage analysis</h2>
+        <p class="text-body-secondary mb-0">
+          Analysed <%= pluralize(@report.inventory.sources.size, "file") %>:
+          <% @report.inventory.sources.each do |source| %>
+            <code><%= source.filename %></code>
+            <span class="badge bg-light text-dark"><%= source.format %></span>
+            <span class="text-body-secondary small">(<%= pluralize(source.resource_count, "resource") %>)</span>
+          <% end %>
+        </p>
+      </div>
+    </div>
+
+    <div class="alert alert-secondary mt-3 mb-0 small" role="note">
+      This analysis has <strong>not</strong> been saved, and your uploaded files have already
+      been discarded. Download it, or save the result to a boundary below — saving records the
+      services and counts shown here, never the Terraform.
+    </div>
+  </div>
+</div>
+
+<%= render "cdef_coverage/findings", rows: @report.findings %>
+
+<% if @report.inventory.unmapped.any? %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h3 class="h5">Resource types with no mapping rule</h3>
+      <p class="text-body-secondary small">
+        SPARC has no rule mapping these Terraform types to a service. They are counted as
+        coverage gaps above under an inferred service name; listing them here is what lets
+        the mapping table be extended from real usage.
+      </p>
+      <ul class="mb-0 small">
+        <% @report.inventory.unmapped.keys.sort.each do |type| %>
+          <li><code><%= type %></code> &times; <%= @report.inventory.unmapped[type] %></li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>
+
+<div class="card">
+  <div class="card-body">
+    <h3 class="h5">Save this analysis</h3>
+    <p class="text-body-secondary small">
+      Saving records the services and counts above. Attach it to a boundary to keep a history
+      of what that boundary needed, or save it unattached. Your Terraform is not re-read and
+      not stored — the result carries forward in a signed, short-lived token.
+    </p>
+
+    <%= form_with url: cdef_coverage_index_path, method: :post, local: true do |f| %>
+      <%= hidden_field_tag :report_token, @report_token %>
+
+      <div class="row g-3 align-items-end">
+        <div class="col-md-6">
+          <%= label_tag :authorization_boundary_id, "Attach to boundary (optional)", class: "form-label" %>
+          <%= select_tag :authorization_boundary_id,
+                options_from_collection_for_select(@boundaries, :id, :name, @boundary&.id),
+                include_blank: "Not attached to a boundary",
+                class: "form-select" %>
+        </div>
+      </div>
+
+      <div class="d-flex gap-3 mt-3">
+        <%= f.submit "Save analysis", class: "btn btn-success" %>
+        <%= link_to "Analyze different files", new_cdef_coverage_path, class: "btn btn-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

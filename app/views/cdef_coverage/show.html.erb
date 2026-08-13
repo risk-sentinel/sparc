@@ -1,0 +1,62 @@
+<%= render "shared/section_summary", tiles: [
+  [@run.adopt_count, "Adopt AWS Labs"],
+  [@run.keep_custom_count, "Keep custom"],
+  [@run.needs_custom_count, "Needs a CDEF"],
+  [@run.stale_custom_count, "Unused CDEF"]
+] %>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h2>Coverage analysis</h2>
+        <p class="text-body-secondary mb-0">
+          <%= @run.analyzed_at.strftime("%Y-%m-%d %H:%M UTC") %>
+          <% if @run.created_by.present? %> · <%= @run.created_by %><% end %>
+          <% if @run.authorization_boundary %>
+            · <%= link_to @run.authorization_boundary.name,
+                          authorization_boundary_path(@run.authorization_boundary) %>
+          <% end %>
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <%= link_to "New analysis", new_cdef_coverage_path, class: "btn btn-success btn-sm" %>
+        <%= link_to "All analyses", cdef_coverage_index_path, class: "btn btn-outline-primary btn-sm" %>
+      </div>
+    </div>
+
+    <table class="table table-sm mt-3 mb-0">
+      <caption class="small text-body-secondary">
+        Files analysed, recorded by name and checksum. The Terraform itself was not stored.
+      </caption>
+      <thead>
+        <tr><th scope="col">File</th><th scope="col">Format</th><th scope="col">Resources</th><th scope="col">SHA-256</th></tr>
+      </thead>
+      <tbody>
+        <% Array(@run.source_files).each do |source| %>
+          <tr>
+            <td><code><%= source["filename"] %></code></td>
+            <td><%= source["format"] %></td>
+            <td><%= source["resource_count"] %></td>
+            <td class="small text-body-secondary"><code><%= source["digest"].to_s.first(16) %>…</code></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%= render "cdef_coverage/findings", rows: @results %>
+
+<% if Array(@run.unmapped_resource_types).any? %>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="h5">Resource types with no mapping rule</h3>
+      <ul class="mb-0 small">
+        <% Array(@run.unmapped_resource_types).each do |entry| %>
+          <li><code><%= entry["resource_type"] %></code> &times; <%= entry["count"] %></li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>

@@ -9,6 +9,12 @@
       <%= link_to "Amendments",
             triage_authorization_boundary_path(@authorization_boundary),
             class: "btn btn-outline-info btn-sm" %>
+      <%# #904 — "what CDEFs does this boundary need?", answered from the
+          Terraform it is built from. Its primary home is here, on the boundary,
+          because that is the question being asked. %>
+      <%= link_to "CDEF Coverage",
+            new_cdef_coverage_path(authorization_boundary_id: @authorization_boundary.id),
+            class: "btn btn-outline-info btn-sm" %>
       <% has_documents = @authorization_boundary.ssp_document.present? ||
                          @authorization_boundary.sap_document.present? ||
                          @authorization_boundary.sar_document.present? ||
