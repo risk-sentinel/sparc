@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_160100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -355,6 +355,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_160000) do
     t.index ["cdef_document_id"], name: "index_cdef_controls_on_cdef_document_id"
     t.index ["source_vocabulary"], name: "index_cdef_controls_on_source_vocabulary"
     t.index ["uuid"], name: "index_cdef_controls_on_uuid", unique: true
+  end
+
+  create_table "cdef_coverage_results", force: :cascade do |t|
+    t.bigint "cdef_coverage_run_id", null: false
+    t.jsonb "cdef_documents", default: [], null: false
+    t.datetime "created_at", null: false
+    t.boolean "inferred", default: false, null: false
+    t.integer "resource_count", default: 0, null: false
+    t.string "resource_types", default: [], null: false, array: true
+    t.string "service_key", null: false
+    t.datetime "updated_at", null: false
+    t.string "verdict", null: false
+    t.index ["cdef_coverage_run_id", "service_key"], name: "index_cdef_coverage_results_on_run_and_service", unique: true
+    t.index ["cdef_coverage_run_id"], name: "index_cdef_coverage_results_on_cdef_coverage_run_id"
+    t.index ["verdict"], name: "index_cdef_coverage_results_on_verdict"
+  end
+
+  create_table "cdef_coverage_runs", force: :cascade do |t|
+    t.integer "adopt_count", default: 0, null: false
+    t.datetime "analyzed_at", null: false
+    t.bigint "authorization_boundary_id"
+    t.datetime "created_at", null: false
+    t.string "created_by"
+    t.bigint "created_by_user_id"
+    t.integer "keep_custom_count", default: 0, null: false
+    t.integer "needs_custom_count", default: 0, null: false
+    t.jsonb "source_files", default: [], null: false
+    t.integer "stale_custom_count", default: 0, null: false
+    t.jsonb "unmapped_resource_types", default: [], null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["analyzed_at"], name: "index_cdef_coverage_runs_on_analyzed_at"
+    t.index ["authorization_boundary_id"], name: "index_cdef_coverage_runs_on_authorization_boundary_id"
+    t.index ["created_by_user_id"], name: "index_cdef_coverage_runs_on_created_by_user_id"
+    t.index ["uuid"], name: "index_cdef_coverage_runs_on_uuid", unique: true
   end
 
   create_table "cdef_documents", force: :cascade do |t|
@@ -1806,6 +1841,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_160000) do
   add_foreign_key "cdef_control_fields", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_control_statements", "cdef_controls", on_delete: :cascade
   add_foreign_key "cdef_controls", "cdef_documents", on_delete: :cascade
+  add_foreign_key "cdef_coverage_results", "cdef_coverage_runs", on_delete: :cascade
+  add_foreign_key "cdef_coverage_runs", "authorization_boundaries", on_delete: :nullify
+  add_foreign_key "cdef_coverage_runs", "users", column: "created_by_user_id", on_delete: :nullify
   add_foreign_key "cdef_documents", "cdef_documents", column: "cloned_from_id"
   add_foreign_key "cdef_documents", "organizations", on_delete: :nullify
   add_foreign_key "cdef_documents", "profile_documents", on_delete: :nullify

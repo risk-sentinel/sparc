@@ -652,6 +652,17 @@ Rails.application.routes.draw do
           post "import/confirm", to: "baseline_parameters#import_confirm", on: :member, as: :import_confirm
         end
       end
+      # #904 — Terraform → CDEF coverage. `analyze` persists nothing, which is
+      # why it is a POST that needs only read permission: it uploads files to
+      # answer a question, and the answer is not saved unless a run is created.
+      scope "cdef_coverage", as: "cdef_coverage" do
+        post "analyze", to: "cdef_coverage#analyze"
+        get "runs", to: "cdef_coverage#runs"
+        post "runs", to: "cdef_coverage#create_run"
+        get "runs/:id", to: "cdef_coverage#show_run", as: "run"
+        delete "runs/:id", to: "cdef_coverage#destroy_run"
+      end
+
       resources :cdef_documents, only: [ :index, :show, :create, :update, :destroy ] do
         collection do
           # #629 — admin-only bulk delete; ids[] body, partial-success result.
