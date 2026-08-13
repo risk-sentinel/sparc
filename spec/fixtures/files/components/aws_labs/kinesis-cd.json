@@ -1,0 +1,32 @@
+{
+  "component-definition": {
+    "uuid": "33333333-3333-4333-8333-333333333333",
+    "metadata": {
+      "title": "Amazon Kinesis",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-01-01T00:00:00Z"
+    },
+    "components": [
+      {
+        "uuid": "44444444-4444-4444-8444-444444444444",
+        "type": "service",
+        "title": "Kinesis",
+        "description": "Streaming",
+        "props": [
+          {
+            "name": "service-id",
+            "value": "Kinesis"
+          }
+        ],
+        "links": [
+          {
+            "rel": "provided-by",
+            "href": "#regions",
+            "resource-fragment": "11111111-1111-4111-8111-111111111111"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -159,6 +159,65 @@ RSpec.describe AwsLabsCdefImportService do
   # Issues #491 + #494 -- two-hop NIST enrichment with Converters
   # aws_security_hub_to_nist (direct) and aws_config_to_nist (chained
   # via the SecHub -> AWS Config Rule bridge in lib/data_mappings/).
+  # ── Regions ordering (#904) ───────────────────────────────────────────────
+  #
+  # CdefComponentIndexer resolves a service's regions by looking up region
+  # components across documents, so "the regions CDEF must be indexed before the
+  # services that reference it" — its own words. Nothing enforced that, and the
+  # import order was upstream's tree order, in which
+  # `component-definitions/acm/…` sorts BEFORE
+  # `component-definitions/aws_regions.oscal.json`. The result was silent and
+  # partial: services early in the alphabet lost their regions and the report
+  # still looked like real data.
+  describe "regions are indexed before the services that reference them" do
+    let(:regions)  { fixture_dir.join("regions-cd.json").read }
+    let(:kinesis)  { fixture_dir.join("kinesis-cd.json").read }
+
+    # Deliberately ordered so the SERVICE comes first, which is the upstream
+    # tree order this used to follow.
+    def stub_service_before_regions
+      entries = [ tree_entry(path: "component-definitions/kinesis/kinesis-cd.json", sha: "sha-k"),
+                  tree_entry(path: "component-definitions/aws_regions.oscal.json", sha: "sha-r") ]
+      allow(client).to receive(:list_component_definition_files).and_return(entries)
+      allow(client).to receive(:fetch_file)
+        .with(path: "component-definitions/kinesis/kinesis-cd.json")
+        .and_return(file_entry(path: "component-definitions/kinesis/kinesis-cd.json", sha: "sha-k", content: kinesis))
+      allow(client).to receive(:fetch_file)
+        .with(path: "component-definitions/aws_regions.oscal.json")
+        .and_return(file_entry(path: "component-definitions/aws_regions.oscal.json", sha: "sha-r", content: regions))
+    end
+
+    it "resolves a service's regions even when upstream lists the service first" do
+      stub_service_before_regions
+
+      described_class.new(client: client).run
+
+      service_component = CdefComponent.find_by(component_type: "service")
+      expect(service_component).to be_present
+      expect(service_component.region_ids).to eq([ "us-east-1" ])
+    end
+
+    it "repairs a service imported before any regions CDEF existed" do
+      # First run: the service alone, so there is nothing to resolve against.
+      allow(client).to receive(:list_component_definition_files)
+        .and_return([ tree_entry(path: "component-definitions/kinesis/kinesis-cd.json", sha: "sha-k") ])
+      allow(client).to receive(:fetch_file)
+        .with(path: "component-definitions/kinesis/kinesis-cd.json")
+        .and_return(file_entry(path: "component-definitions/kinesis/kinesis-cd.json", sha: "sha-k", content: kinesis))
+      described_class.new(client: client).run
+
+      expect(CdefComponent.find_by(component_type: "service").region_ids).to be_empty
+
+      # Second run: the regions CDEF arrives. The service file is UNCHANGED, so
+      # it is skipped for import — but it must still be re-indexed, or it keeps
+      # its empty regions until upstream happens to edit that one file.
+      stub_service_before_regions
+      described_class.new(client: client).run
+
+      expect(CdefComponent.find_by(component_type: "service").region_ids).to eq([ "us-east-1" ])
+    end
+  end
+
   describe "NIST enrichment via two-hop chain (#491 + #494)" do
     let(:iam_cd) { fixture_dir.join("iam-cd-realistic.json").read }
 

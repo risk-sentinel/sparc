@@ -1,0 +1,25 @@
+{
+  "component-definition": {
+    "uuid": "22222222-2222-4222-8222-222222222222",
+    "metadata": {
+      "title": "AWS Regions",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "last-modified": "2026-01-01T00:00:00Z"
+    },
+    "components": [
+      {
+        "uuid": "11111111-1111-4111-8111-111111111111",
+        "type": "region",
+        "title": "us-east-1",
+        "description": "US East (N. Virginia)",
+        "props": [
+          {
+            "name": "region-id",
+            "value": "us-east-1"
+          }
+        ]
+      }
+    ]
+  }
+}
