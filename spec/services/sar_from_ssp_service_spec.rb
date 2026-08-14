@@ -237,6 +237,58 @@ RSpec.describe SarFromSspService do
         expect(sar.sar_results.first.sar_risks.pluck(:deadline)).to all(eq(pinned))
       end
 
+      # #954's acceptance criteria required this outright: "a satisfied finding
+      # does not produce a risk". Without it every control reaches the POA&M,
+      # which is why the full reference estate produced 287 items per POA&M —
+      # an entry for literally every control, which no real assessment yields.
+      context "when the caller already knows some controls are satisfied" do
+        it "assesses those controls satisfied" do
+          sar = described_class.new(ssp, satisfied_control_ids: %w[ac-1]).create
+
+          states = sar.sar_results.first.sar_findings.to_h do |f|
+            [ f.target_data["target-id"], f.target_data["status"]["state"] ]
+          end
+
+          expect(states["ac-1"]).to eq("satisfied")
+          expect(states["sc-7"]).to eq("not-satisfied")
+        end
+
+        it "creates no risk for a satisfied control" do
+          sar = described_class.new(ssp, satisfied_control_ids: %w[ac-1]).create
+
+          expect(sar.sar_results.first.sar_risks.pluck(:title)).to contain_exactly("Risk for sc-7")
+        end
+
+        it "keeps a satisfied control out of the POA&M entirely" do
+          sar      = described_class.new(ssp, satisfied_control_ids: %w[ac-1]).create
+          boundary = create(:authorization_boundary)
+
+          generated = PoamGeneratorService.new(name: "POA&M", sar_document: sar,
+                                               authorization_boundary: boundary).generate
+
+          expect(generated.poam_document.poam_items.count).to eq(1)
+          expect(generated.skipped).to be_empty
+        end
+
+        # The caller passes what a human writes; controls are stored
+        # canonically. A literal match would silently satisfy nothing.
+        it "matches control ids canonically, not literally" do
+          sar = described_class.new(ssp, satisfied_control_ids: %w[AC-01]).create
+
+          satisfied = sar.sar_results.first.sar_findings.select do |f|
+            f.target_data["status"]["state"] == "satisfied"
+          end
+
+          expect(satisfied.map { |f| f.target_data["target-id"] }).to contain_exactly("ac-1")
+        end
+
+        it "still assesses everything not-satisfied when given none" do
+          sar = described_class.new(ssp).create
+
+          expect(sar.sar_results.first.sar_risks.count).to eq(2)
+        end
+      end
+
       it "produces a POA&M with real items instead of an empty one" do
         sar      = described_class.new(ssp).create
         boundary = create(:authorization_boundary)

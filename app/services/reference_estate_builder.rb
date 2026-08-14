@@ -163,14 +163,25 @@ class ReferenceEstateBuilder
     profile  = build_profile(boundary_name, control_ids, baseline)
     ssp      = build_ssp(profile, boundary, boundary_name)
     sap      = build_sap(ssp, profile, boundary_name)
-    sar      = build_sar(ssp, boundary_name)
-    poams    = build_poams(sar, boundary, boundary_name)
+
+    # The evidence has to exist before the SAR, because it is what decides
+    # which controls the assessment finds satisfied.
+    satisfied = simulate_automated_evidence(boundary, ssp, boundary_name)
+    sar       = build_sar(ssp, boundary_name, satisfied)
+    poams     = build_poams(sar, boundary, boundary_name)
+    evidence  = build_evidence(boundary, boundary_name)
 
     boundary.update!(profile_document_id: profile.id) if boundary.profile_document_id != profile.id
 
+    # Fold the scanner findings into the documents the way a live boundary
+    # would: `hdf_scan_result` annotations on SSP/SAP/SAR controls, and failed
+    # findings tracked on the POA&M. Shipped in v1.15.0 with no realistic
+    # fixture until now, so it runs here rather than being described.
+    HdfAggregationService.new(boundary.reload).aggregate
+
     { role: role, organization: org, boundary: boundary, profile: profile,
       ssp: ssp, sap: sap, sar: sar, poams: poams,
-      evidence: build_evidence(boundary, boundary_name) }
+      evidence: evidence, satisfied_control_ids: satisfied }
   end
 
   def upsert_organization(name)
@@ -235,10 +246,11 @@ class ReferenceEstateBuilder
   # The pinned deadline is the point: left nil, PoamGeneratorService resolves
   # one from the remediation SLA as Time.current + N days, and every
   # regeneration of the committed OSCAL would differ.
-  def build_sar(ssp, label)
+  def build_sar(ssp, label, satisfied_control_ids)
     name = "#{label} — SAR"
     SarDocument.find_by(name: name) ||
-      SarFromSspService.new(ssp, name: name, deadline: PINNED_DEADLINE).create
+      SarFromSspService.new(ssp, name: name, deadline: PINNED_DEADLINE,
+                                 satisfied_control_ids: satisfied_control_ids).create
   end
 
   # Three POA&Ms with genuinely different postures, so screens that filter or
@@ -265,6 +277,54 @@ class ReferenceEstateBuilder
     end
   end
 
+  # ── Automated evidence ───────────────────────────────────────────────────
+  #
+  # Control satisfaction is DERIVED from evidence rather than assigned by a
+  # coin flip, because that is the product's actual proposition: a control is
+  # satisfied because something demonstrated it, and you can click through to
+  # what that was.
+  #
+  # Technical families are covered by scanners. Management and policy families
+  # — and every `-1`, which is "Policy and Procedures" by definition — are
+  # covered by documents a policy team publishes, because no scanner can
+  # assess whether an organisation has written and disseminated a policy.
+  #
+  # Each scanner owns a DISJOINT set of families: scanner_findings carries a
+  # unique index on (authorization_boundary_id, control_id) WHERE current, so
+  # two scanners cannot both hold a current finding for one control.
+  # `scope` is prose describing what the tool looks at; `scanner_scope` is the
+  # model's own vocabulary (ScanRun::SCANNER_SCOPES = target|boundary) — the
+  # two are not interchangeable. IaC and cloud-posture scans assess the whole
+  # boundary; a host baseline assesses one target.
+  SCANNERS = [
+    { scanner: "checkov",    version: "3.2.334", scope: "iac",   scanner_scope: "boundary",
+      families: %w[cm sc sa cp], file: "checkov-terraform.hdf.json" },
+    { scanner: "aws-config", version: "2.10.1",  scope: "cloud", scanner_scope: "boundary",
+      families: %w[ac au ra], file: "aws-config-conformance.hdf.json" },
+    { scanner: "inspec",     version: "6.8.11",  scope: "host",  scanner_scope: "target",
+      families: %w[ia si pe ma mp], file: "inspec-rhel9-stig.hdf.json" }
+  ].freeze
+
+  # ScannerFinding::SEVERITIES is upper-case, and RemediationTimeline maps
+  # MEDIUM onto its own "Moderate" criticality — so this vocabulary is what
+  # makes the POA&M deadline SLA resolve to a real window.
+  FAILED_SEVERITY = "MEDIUM"
+
+  # Families a policy team evidences rather than a scanner. Everything here is
+  # documentation, training, planning, process or agreements — assessed by
+  # reading, not by probing a system. IR belongs here because incident
+  # handling is a procedure exercised and recorded, not a setting.
+  #
+  # POLICY_FAMILIES and the scanners' families must together cover every
+  # family present, or a control ends up with no evidence at all — see
+  # `simulate_automated_evidence`, which refuses to satisfy those.
+  POLICY_FAMILIES = %w[at ca ir pl pm ps pt sr].freeze
+
+  # 5% of controls carry an open finding. A real assessment finds most controls
+  # satisfied; a POA&M with an item for literally every control is not a
+  # credible artifact, which is what this estate produced before.
+  FAILURE_RATE = 0.05
+
   # Types and statuses come from the Evidence enums, not invented strings —
   # an invalid enum raises at assignment rather than failing validation.
   EVIDENCE_KINDS = %w[policy_document test_result scan_result].freeze
@@ -290,6 +350,129 @@ class ReferenceEstateBuilder
     evidence.stamp_collection!(actor: @actor, label: "Reference Estate") if @actor
     evidence
   end
+
+  # ── Automated evidence → control satisfaction ────────────────────────────
+
+  # Returns the control ids an assessor would mark satisfied, having been
+  # handed this evidence. Everything else stays not-satisfied and becomes a
+  # POA&M item through the normal path.
+  def simulate_automated_evidence(boundary, ssp, label)
+    control_ids = ssp.ssp_controls.pluck(:control_id).compact.sort
+    policy_ids, technical_ids = control_ids.partition { |id| policy_evidenced?(id) }
+
+    # A control no scanner covers has NO evidence, so it cannot be satisfied.
+    # Subtracting failures from the technical pool would have quietly marked
+    # those satisfied on the strength of nothing, which is the opposite of
+    # what this whole mechanism is for.
+    scanned_ids, unscanned_ids = technical_ids.partition { |id| scanner_for(id) }
+
+    # Failures are drawn at evenly spaced indices rather than at random: the
+    # estate has to regenerate byte-identically, and a random draw would put a
+    # fresh diff in every run.
+    failure_count = (control_ids.size * FAILURE_RATE).round.clamp(1, scanned_ids.size)
+    failed_ids    = evenly_spaced(scanned_ids, failure_count)
+    passed_ids    = scanned_ids - failed_ids
+
+    record_scan_runs(boundary, passed_ids, failed_ids)
+    record_policy_evidence(boundary, ssp, policy_ids, label)
+
+    if unscanned_ids.any?
+      Rails.logger.info("[ReferenceEstate] #{unscanned_ids.size} controls have no evidence source " \
+                        "and stay not-satisfied: #{unscanned_ids.first(10).join(', ')}")
+    end
+
+    policy_ids + passed_ids
+  end
+
+  def scanner_for(control_id)
+    family = family_of(control_id)
+    SCANNERS.find { |spec| spec[:families].include?(family) }
+  end
+
+  # `-1` is "Policy and Procedures" in every family, and the management
+  # families are documentation rather than configuration.
+  def policy_evidenced?(control_id)
+    family = control_id.to_s.split("-").first.to_s.downcase
+    control_id.to_s.match?(/\A[a-z]{2}-0*1\z/) || POLICY_FAMILIES.include?(family)
+  end
+
+  # Deterministic, order-stable selection of n items spread across the list.
+  def evenly_spaced(items, count)
+    return [] if items.empty? || count <= 0
+    return items.dup if count >= items.size
+
+    step = items.size.to_f / count
+    Array.new(count) { |i| items[(i * step).floor] }.uniq
+  end
+
+  def record_scan_runs(boundary, passed_ids, failed_ids)
+    SCANNERS.each do |spec|
+      mine_passed = passed_ids.select { |id| scanner_for(id) == spec }
+      mine_failed = failed_ids.select { |id| scanner_for(id) == spec }
+      next if mine_passed.empty? && mine_failed.empty?
+
+      run = ScanRun.find_or_create_by!(authorization_boundary: boundary, scanner: spec[:scanner]) do |r|
+        r.scanner_version = spec[:version]
+        r.scanner_scope   = spec[:scanner_scope]
+        r.source_filename = spec[:file]
+        r.created_by      = "reference-estate"
+        r.ingested_at     = PINNED_ASSESSMENT[:start]
+      end
+
+      mine_passed.each { |id| upsert_finding(boundary, run, spec, id, "passed") }
+      mine_failed.each { |id| upsert_finding(boundary, run, spec, id, "failed") }
+
+      run.update!(finding_count: mine_passed.size + mine_failed.size,
+                  passed_count:  mine_passed.size,
+                  failed_count:  mine_failed.size,
+                  skipped_count: 0)
+    end
+  end
+
+  def upsert_finding(boundary, run, spec, control_id, status)
+    finding = ScannerFinding.find_or_initialize_by(authorization_boundary: boundary,
+                                                    control_id: control_id, current: true)
+    finding.scan_run    = run
+    finding.scanner     = spec[:scanner]
+    finding.status      = status
+    finding.severity    = status == "failed" ? FAILED_SEVERITY : nil
+    finding.title       = "#{spec[:scanner]} check for #{control_id.upcase}"
+    finding.description = if status == "passed"
+      "#{spec[:scanner]} verified #{control_id.upcase} against the #{spec[:scope]} baseline."
+    else
+      "#{spec[:scanner]} found #{control_id.upcase} non-compliant against the #{spec[:scope]} baseline."
+    end
+    finding.source_location = spec[:file]
+    finding.raw_hdf = { "tags" => { "nist" => [ control_id.upcase ] }, "status" => status }
+    finding.save!
+    finding
+  end
+
+  # One evidence record per policy family, linked to every control it covers.
+  # EvidenceControlLink syncs a BackMatterResource onto the SSP on create, so
+  # the evidence is reachable from the exported OSCAL too.
+  def record_policy_evidence(boundary, ssp, policy_ids, label)
+    policy_ids.group_by { |id| family_of(id) }.each do |family, ids|
+      title = "#{label} — #{family.upcase} Policy and Procedures"
+      evidence = Evidence.find_by(title: title) || Evidence.create!(
+        title:                  title,
+        evidence_type:          "policy_document",
+        status:                 "reviewed",
+        description:            "Published #{family.upcase} policy and procedures, " \
+                                "maintained by the policy team and reviewed annually.",
+        source:                 "policy-team",
+        authorization_boundary: boundary,
+        collected_at:           PINNED_ASSESSMENT[:start]
+      )
+
+      ids.each do |control_id|
+        EvidenceControlLink.find_or_create_by!(evidence: evidence, control_id: control_id,
+                                                document_type: "SspDocument", document_id: ssp.id)
+      end
+    end
+  end
+
+  def family_of(control_id) = control_id.to_s.split("-").first.to_s.downcase
 
   # ── The leveraging relationship ──────────────────────────────────────────
 
