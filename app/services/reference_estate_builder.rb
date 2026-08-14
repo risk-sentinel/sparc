@@ -65,6 +65,10 @@ class ReferenceEstateBuilder
   PINNED_DEADLINE   = Time.utc(2030, 1, 1)
   PINNED_ASSESSMENT = { start: Time.utc(2026, 1, 5), end: Time.utc(2026, 3, 27) }.freeze
 
+  # OSCAL metadata.last-modified is read from each record's updated_at, so it
+  # is pinned too or every regenerated artifact diffs on the timestamp alone.
+  PINNED_LAST_MODIFIED = Time.utc(2026, 3, 27, 12, 0, 0)
+
   # The controls Boundary 1 declares it operates on its customers' behalf.
   # Chosen because they are genuinely platform-level in a real leveraging
   # relationship — physical access, boundary protection, audit storage.
@@ -98,6 +102,9 @@ class ReferenceEstateBuilder
 
     declare_customer_responsibility_split(leveraged)
     links = wire_leveraging(leveraged: leveraged, leveraging: leveraging)
+
+    # LAST, because anything that writes afterwards would bump it again.
+    pin_last_modified!([ leveraged, leveraging ])
 
     Result.new(tier: @tier, leveraged: leveraged, leveraging: leveraging, inheritance_links: links)
   end
@@ -375,6 +382,18 @@ class ReferenceEstateBuilder
     evidence
   end
 
+  # OSCAL `metadata.last-modified` comes from the record's `updated_at`
+  # (OscalMetadata#build_oscal_metadata), so an unpinned timestamp puts a fresh
+  # diff in every regenerated artifact even when every identifier is stable.
+  #
+  # update_column, so pinning the timestamp does not itself bump it.
+  def pin_last_modified!(sides)
+    sides.each do |side|
+      records = [ side[:ssp], side[:sap], side[:sar], side[:profile], *side[:poams] ].compact
+      records.each { |record| record.update_column(:updated_at, PINNED_LAST_MODIFIED) }
+    end
+  end
+
   # ── Deterministic identifiers ────────────────────────────────────────────
   #
   # #957 — SspFromProfileService and SarFromSspService mint identifiers with
@@ -403,12 +422,49 @@ class ReferenceEstateBuilder
     side[:poams].each { |poam| pin_poam(poam, seed) }
     side[:evidence].each { |e| pin_record(e, "reference-evidence", e.title) }
 
-    Evidence.where(authorization_boundary_id: side[:boundary].id)
-            .find_each { |e| pin_record(e, "reference-evidence", e.title) }
+    pin_export_side_effects(side)
+
+    # EvidenceControlLink stamps a BackMatterResource with the evidence UUID
+    # when the link is created — which is before this runs — so the resource
+    # keeps the pre-pin identifier and the SSP's back-matter drifts. Repoint
+    # it after the evidence itself is settled.
+    Evidence.where(authorization_boundary_id: side[:boundary].id).find_each do |evidence|
+      pin_record(evidence, "reference-evidence", evidence.title)
+      evidence.reload
+      # `href` is a STORED column (the #680 durable resolver URL, which embeds
+      # the evidence UUID), captured at link creation. Repoint it too, or the
+      # resource uuid matches while its rlink still cites the old identifier.
+      BackMatterResource.where(evidence_id: evidence.id).find_each do |resource|
+        resource.update_columns(uuid: evidence.uuid, href: evidence.oscal_resolver_url)
+      end
+    end
     ScanRun.where(authorization_boundary_id: side[:boundary].id)
            .find_each { |r| pin_record(r, "reference-scan-run", seed, r.scanner) }
     ScannerFinding.where(authorization_boundary_id: side[:boundary].id)
                   .find_each { |f| pin_record(f, "reference-scan-finding", seed, f.control_id) }
+  end
+
+  # Two things the EXPORT would otherwise decide for itself, both of which
+  # would drift on every regeneration.
+  #
+  # OscalMetadata#sparc_back_matter_resource mints a SecureRandom uuid at
+  # export time and persists it, so a rebuilt document gets a different one
+  # (#957 — and an export writing to the document is its own problem).
+  # Seeding it here means the export finds one already there.
+  #
+  # SarFromSspService stamps its result's start_time with Time.current, which
+  # lands in the exported OSCAL verbatim.
+  def pin_export_side_effects(side)
+    [ side[:ssp], side[:sap], side[:sar], *side[:poams] ].compact.each do |document|
+      metadata = (document.import_metadata || {}).merge(
+        "sparc_resource_uuid" => OscalUuidService.derived(document.uuid, "sparc-back-matter-resource")
+      )
+      document.update_column(:import_metadata, metadata)
+    end
+
+    side[:sar].sar_results.each do |result|
+      result.update_column(:start_time, PINNED_ASSESSMENT[:start])
+    end
   end
 
   # update_column, not update! — these records are already valid and a UUID
@@ -423,7 +479,22 @@ class ReferenceEstateBuilder
 
   def pin_ssp(ssp, seed)
     pin_record(ssp, "reference-ssp", seed)
+
+    # Without a system_id the exporter falls back to the database primary key
+    # (`build_system_ids`), so the row id leaks into the OSCAL and changes on
+    # every rebuild.
+    ssp.update_column(:system_id, "REF-#{seed.parameterize.upcase}") if ssp.system_id.blank?
     ssp.reload
+
+    # SspFromProfileService scaffolds these with SecureRandom (#957).
+    ssp.ssp_components.find_each { |c| pin_record(c, "reference-ssp-component", ssp.uuid, c.title.to_s) }
+    ssp.ssp_users.find_each { |u| pin_record(u, "reference-ssp-user", ssp.uuid, u.title.to_s) }
+    ssp.ssp_information_types.find_each { |i| pin_record(i, "reference-ssp-info-type", ssp.uuid, i.title.to_s) }
+    ssp.ssp_controls.find_each do |control|
+      control.ssp_by_components.find_each do |bc|
+        pin_record(bc, "reference-ssp-by-component", ssp.uuid, control.control_id.to_s)
+      end
+    end
 
     ssp.ssp_controls.find_each do |control|
       pin_record(control, "reference-ssp-control", ssp.uuid, control.control_id)
@@ -632,6 +703,11 @@ class ReferenceEstateBuilder
       la.date_authorized = PINNED_ASSESSMENT[:start].to_date
       la.description     = "Reference estate leveraged authorization (#845), scenario 1."
     end
+
+    # Pinned here rather than in pin_identifiers!, which runs per boundary
+    # before this relationship exists.
+    pin_record(authorization, "reference-leveraged-authorization", authorization.name)
+    authorization.reload
 
     LeveragedAuthorizationService.populate_from_leveraged!(authorization)
 

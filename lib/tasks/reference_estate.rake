@@ -58,6 +58,44 @@ namespace :db do
         puts "[reference] purged: #{counts.map { |k, v| "#{k}=#{v}" }.join(' ')}"
       end
 
+      desc "Regenerate the committed OSCAL artifacts from the loaded estate ([lean]|full)"
+      task :regenerate, [ :tier ] => :environment do |_t, args|
+        tier = (args[:tier].presence || "lean").to_s
+        abort "Refusing to regenerate in production." if Rails.env.production?
+
+        loaded = ReferenceEstate.loaded_tier
+        if loaded.nil?
+          abort "No reference estate loaded. Run: bin/rails 'db:seed:reference[#{tier}]'"
+        elsif loaded != tier
+          abort "A #{loaded} estate is loaded but you asked to regenerate #{tier}. " \
+                "Load the matching tier first, or regenerate #{loaded}."
+        end
+
+        written = ReferenceEstate.regenerate!(tier)
+        puts "[reference] wrote #{written.size} artifacts to db/fixtures/reference/#{tier}/"
+        written.each { |name| puts "  #{name}" }
+      end
+
+      desc "Fail if the committed OSCAL artifacts have drifted from the generators ([lean]|full)"
+      task :check, [ :tier ] => :environment do |_t, args|
+        tier   = (args[:tier].presence || "lean").to_s
+        loaded = ReferenceEstate.loaded_tier
+
+        if loaded != tier
+          abort "Cannot check #{tier}: the loaded estate is #{loaded.inspect}. " \
+                "Run: bin/rails 'db:seed:reference[#{tier}]'"
+        end
+
+        drift = ReferenceEstate.check(tier)
+        if drift.empty?
+          puts "[reference] #{tier}: committed OSCAL matches the generators."
+        else
+          puts "[reference] #{tier}: DRIFT in #{drift.size} artifact(s):"
+          drift.each { |d| puts "  #{d}" }
+          abort "Run: bin/rails 'db:seed:reference:regenerate[#{tier}]' and commit the result."
+        end
+      end
+
       desc "Report what the reference estate currently contains"
       task status: :environment do
         tier = ReferenceEstate.loaded_tier

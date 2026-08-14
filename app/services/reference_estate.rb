@@ -87,6 +87,107 @@ module ReferenceEstate
       end
     end
 
+    # ── Committed OSCAL artifacts ────────────────────────────────────────
+    #
+    # The estate is committed to the repo as OSCAL JSON so consumers can read
+    # it without a database, and so regeneration proves the fixtures have not
+    # drifted from the generators that produce them. `check!` is the drift
+    # gate: regenerate into memory and compare against what is on disk.
+    #
+    # Exports go through the VALIDATED path, so regenerating also proves every
+    # document still satisfies the OSCAL schema.
+    EXPORTERS = {
+      "ssp"  => [ :ssp,   OscalSspExportService ],
+      "sap"  => [ :sap,   OscalAssessmentPlanExportService ],
+      "sar"  => [ :sar,   OscalSarExportService ]
+    }.freeze
+
+    def fixture_root(tier) = Rails.root.join("db/fixtures/reference", tier.to_s)
+
+    # { "leveraged-ssp.json" => "<json>", ... }
+    def export_all
+      artifacts = {}
+
+      { "leveraged" => leveraged_boundary, "leveraging" => leveraging_boundary }.each do |role, boundary|
+        next if boundary.nil?
+
+        EXPORTERS.each do |kind, (_sym, service)|
+          document = boundary.public_send(:"#{kind}_document")
+          next if document.nil?
+
+          artifacts["#{role}-#{kind}.json"] = service.new(document).export
+        end
+
+        boundary.poam_documents.order(:name).each do |poam|
+          slug = poam.name[/\(([^)]+)\)\z/, 1].to_s.parameterize.presence || poam.id.to_s
+          artifacts["#{role}-poam-#{slug}.json"] = OscalPoamExportService.new(poam).export
+        end
+      end
+
+      artifacts
+    end
+
+    # Instance-level authoritative back-matter is embedded in EVERY export
+    # regardless of relevance (#959), so regenerating from a working database
+    # silently bakes unrelated resources into the committed artifacts — 96
+    # leftover ui-smoke resources, the first time this ran. Refuse instead:
+    # the artifacts are only trustworthy when generated from a clean instance.
+    # `where.not(evidence_id: <ids>)` would silently miss every row with a NULL
+    # evidence_id — `NULL NOT IN (...)` is NULL, not true — and those are
+    # precisely the instance-level resources this needs to catch. Hence the
+    # explicit IS NULL arm.
+    def contaminating_resources
+      BackMatterResource.active.where(source: "authoritative")
+                        .where("evidence_id IS NULL OR evidence_id NOT IN (?)",
+                               estate_evidence_ids.presence || [ -1 ])
+    end
+
+    def estate_evidence_ids
+      Evidence.where(authorization_boundary_id: boundary_ids)
+              .or(Evidence.where("title LIKE ?", like_prefix)).pluck(:id)
+    end
+
+    def regenerate!(tier)
+      contaminants = contaminating_resources.pluck(:title).tally
+      if contaminants.any?
+        raise ReferenceEstateBuilder::UnsafeEnvironment,
+              "refusing to regenerate: #{contaminants.values.sum} instance-level authoritative " \
+              "back-matter resources would be embedded in every artifact " \
+              "(#{contaminants.map { |t, n| "#{n}x #{t}" }.join(', ')}). " \
+              "Regenerate from a clean, freshly seeded database. See #959."
+      end
+
+      root = fixture_root(tier)
+      FileUtils.mkdir_p(root)
+
+      artifacts = export_all
+      # Remove artifacts that no longer regenerate, so a renamed or dropped
+      # document leaves no stale file behind claiming to be current.
+      (Dir.children(root).select { |f| f.end_with?(".json") } - artifacts.keys).each do |stale|
+        File.delete(root.join(stale))
+      end
+
+      artifacts.each { |name, json| File.write(root.join(name), "#{json.chomp}\n") }
+      artifacts.keys.sort
+    end
+
+    # Returns the artifacts whose regenerated content differs from disk, plus
+    # anything missing or unexpected. Empty means no drift.
+    def check(tier)
+      root      = fixture_root(tier)
+      artifacts = export_all
+      on_disk   = Dir.exist?(root) ? Dir.children(root).select { |f| f.end_with?(".json") } : []
+
+      differing = artifacts.filter_map do |name, json|
+        path = root.join(name)
+        next "#{name} (missing on disk)" unless File.exist?(path)
+
+        File.read(path).chomp == json.chomp ? nil : "#{name} (content differs)"
+      end
+
+      differing + (on_disk - artifacts.keys).map { |f| "#{f} (on disk but not regenerated)" }
+    end
+
     def report(result)
       puts "  tier: #{result.tier}"
       summary.each { |line| puts "  #{line}" }
