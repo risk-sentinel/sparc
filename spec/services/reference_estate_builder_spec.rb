@@ -159,9 +159,9 @@ RSpec.describe ReferenceEstateBuilder do
   end
 
   describe "the full tier" do
-    it "sources its control ids from the real NIST baseline profiles" do
-      full = described_class.new(tier: :full, catalog: catalog)
+    let(:full) { described_class.new(tier: :full, catalog: catalog) }
 
+    it "sources its control ids from the real NIST baseline profiles" do
       low      = full.send(:baseline_control_ids, "LOW")
       moderate = full.send(:baseline_control_ids, "MODERATE")
 
@@ -170,7 +170,22 @@ RSpec.describe ReferenceEstateBuilder do
       expect(low).to all(match(/\A[a-z]{2}-\d/))
       # MODERATE genuinely supersets LOW — that is what makes the pair a
       # meaningful leveraging relationship rather than two unrelated systems.
-      expect(moderate).to include(*low.first(20))
+      expect(low - moderate).to be_empty
+    end
+
+    # Inheritance flows from the leveraged (providing) boundary to the
+    # leveraging (consuming) one, so the PROVIDER must hold the superset. With
+    # these reversed, 138 controls on the consumer would reference a platform
+    # never assessed against them and could never be inherited.
+    it "gives the providing boundary the higher baseline" do
+      provider = full.send(:leveraged_spec)
+      consumer = full.send(:leveraging_spec)
+
+      expect(provider[:baseline]).to eq("moderate")
+      expect(consumer[:baseline]).to eq("low")
+      expect(provider[:control_ids].size).to eq(287)
+      expect(consumer[:control_ids].size).to eq(149)
+      expect(consumer[:control_ids] - provider[:control_ids]).to be_empty
     end
   end
 end

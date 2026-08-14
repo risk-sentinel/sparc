@@ -24,8 +24,10 @@
 #           includes controls with parameters, with sub-part rows, and the
 #           known-awkward ones (ac-2 has no catalog statement at all, ac-20
 #           carries a `select` parameter whose choices are insert references).
-#   :full — the real NIST baselines: LOW (149) for the leveraged platform,
-#           MODERATE (287) for the leveraging system.
+#   :full — the real NIST baselines: MODERATE (287) for the leveraged platform
+#           that provides, LOW (149) for the leveraging system that consumes.
+#           The provider carries the higher baseline because inheritance only
+#           flows downward — see leveraged_spec.
 #
 # ── Not for production ─────────────────────────────────────────────────────
 #
@@ -103,23 +105,35 @@ class ReferenceEstateBuilder
           "documents that are indistinguishable from real ones."
   end
 
+  # `leveraged` is the boundary being consumed — the platform that PROVIDES
+  # control implementation. `leveraging` is the boundary consuming it. The
+  # model states the direction outright: "the leveraging boundary inherits
+  # control implementation from the leveraged boundary", and the service reads
+  # inheritable_statements from leveraged_boundary while writing to
+  # leveraging_boundary.
+  #
+  # So the PROVIDER carries the higher baseline. A system cannot inherit a
+  # control its platform was never assessed against, and MODERATE is a strict
+  # superset of LOW (measured: 0 LOW controls absent from MODERATE, 138 added).
+  # Handing the provider LOW and the consumer MODERATE would leave 138 controls
+  # on the consumer that no amount of configuration could ever satisfy.
   def leveraged_spec
     {
-      role:         :leveraged,
-      org_name:     "Reference Platform Provider (Org A)",
+      role:          :leveraged,
+      org_name:      "Reference Platform Provider (Org A)",
       boundary_name: "Reference Platform (Boundary 1)",
-      control_ids:  @tier == :lean ? LEAN_CONTROL_IDS : baseline_control_ids("LOW"),
-      baseline:     @tier == :lean ? "moderate" : "low"
+      control_ids:   @tier == :lean ? LEAN_CONTROL_IDS : baseline_control_ids("MODERATE"),
+      baseline:      "moderate"
     }
   end
 
   def leveraging_spec
     {
-      role:         :leveraging,
-      org_name:     "Reference Mission System Owner (Org B)",
+      role:          :leveraging,
+      org_name:      "Reference Mission System Owner (Org B)",
       boundary_name: "Reference Mission System (Boundary 2)",
-      control_ids:  @tier == :lean ? LEAN_CONTROL_IDS : baseline_control_ids("MODERATE"),
-      baseline:     "moderate"
+      control_ids:   @tier == :lean ? LEAN_CONTROL_IDS : baseline_control_ids("LOW"),
+      baseline:      @tier == :lean ? "moderate" : "low"
     }
   end
 
