@@ -37,7 +37,7 @@
           </div>
 
           <hr>
-          <h5 class="fw-semibold mb-3">Instance Roles</h5>
+          <h5 class="fw-semibold mb-3">Instance Roles<%= field_help "Instance roles apply everywhere in SPARC. Access to a particular system is granted separately, on that boundary's roster — the same person can be an editor on one boundary and read-only on another." %></h5>
 
           <div class="row g-2 mb-4">
             <% @instance_roles.each do |role| %>

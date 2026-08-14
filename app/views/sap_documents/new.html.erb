@@ -62,7 +62,7 @@
       <div class="row row-cols-1 row-cols-md-2 g-3" data-controller="ssp-profile-sync">
         <div class="col">
           <div class="form-group">
-            <label for="sap_document_ssp_document_id">System Security Plan (SSP)</label>
+            <label for="sap_document_ssp_document_id">System Security Plan (SSP)</label><%= field_help "The system being assessed — links this plan to the SSP whose controls it will test." %>
             <%= f.select :ssp_document_id,
                   options_for_select(
                     @ssp_documents.map { |s| ["#{s.name} (#{s.ssp_controls.count} controls)", s.id] },
@@ -76,7 +76,7 @@
         </div>
         <div class="col">
           <div class="form-group">
-            <label for="sap_document_profile_document_id">Baseline Profile</label>
+            <label for="sap_document_profile_document_id">Baseline Profile</label><%= field_help "The baseline that decides which controls are in scope for this assessment." %>
             <%= f.select :profile_document_id,
                   options_for_select(
                     @profile_documents.map { |p| ["#{p.name} (#{p.baseline_level || 'Custom'}, #{p.profile_controls.count} controls)", p.id] },

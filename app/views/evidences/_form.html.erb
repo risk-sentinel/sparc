@@ -20,13 +20,13 @@
           <%= f.text_field :title, class: "form-control", placeholder: "e.g. AC-1 Policy Document Screenshot" %>
         </div>
         <div class="col-md-3">
-          <%= f.label :evidence_type, class: "form-label fw-semibold" do %>Evidence Type <span class="text-danger">*</span><% end %>
+          <%= f.label :evidence_type, class: "form-label fw-semibold" do %>Evidence Type <span class="text-danger">*</span><% end %><%= field_help "What the artefact is — a screenshot, a scan output, a signed statement. It describes the file, not the control it supports." %>
           <%= f.select :evidence_type,
               options_for_select(Evidence::EVIDENCE_TYPE_LABELS.map { |k, v| [ v, k ] }, @evidence.evidence_type),
               {}, class: "form-select" %>
         </div>
         <div class="col-md-3">
-          <%= f.label :status, "Status", class: "form-label fw-semibold" %>
+          <%= f.label :status, "Status", class: "form-label fw-semibold" %><%= field_help "How far this has got in review, not whether the control passes. Only Attested means someone has formally signed off; Expired keeps it on record without counting as current." %>
           <%= f.select :status,
               options_for_select(Evidence::STATUS_LABELS.map { |k, v| [ v, k ] }, @evidence.status),
               {}, class: "form-select" %>
@@ -34,7 +34,7 @@
       </div>
 
       <div class="mb-3">
-        <%= f.label :description, "Description", class: "form-label fw-semibold" %>
+        <%= f.label :description, "Description", class: "form-label fw-semibold" %><%= field_help "What an assessor needs in order to accept this without coming back to ask: what it shows, and why it satisfies the control." %>
         <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Describe the evidence and its relevance to the control(s)..." %>
       </div>
 
@@ -59,7 +59,7 @@
           </p>
         </div>
         <div class="col-md-4">
-          <%= f.label :source, "Source", class: "form-label fw-semibold" %>
+          <%= f.label :source, "Source", class: "form-label fw-semibold" %><%= field_help "Where it came from — the scanner, system or person that produced it. This is the provenance an assessor checks first." %>
           <%= f.text_field :source, class: "form-control", placeholder: "e.g. InSpec, Vulcan, Manual" %>
         </div>
       </div>
@@ -70,7 +70,7 @@
 
       <div class="row g-3 mb-3">
         <div class="col-md-6">
-          <%= f.label :authorization_boundary_id, "Authorization Boundary", class: "form-label fw-semibold" %>
+          <%= f.label :authorization_boundary_id, "Authorization Boundary", class: "form-label fw-semibold" %><%= field_help "Which system this belongs to, and who can see it. Left blank, the evidence is visible to every signed-in user." %>
           <%= f.select :authorization_boundary_id,
               options_for_select(AuthorizationBoundary.order(:name).pluck(:name, :id), @evidence.authorization_boundary_id),
               { include_blank: "None" }, class: "form-select" %>
