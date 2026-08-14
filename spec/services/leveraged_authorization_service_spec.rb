@@ -53,6 +53,45 @@ RSpec.describe LeveragedAuthorizationService do
         described_class.populate_from_leveraged!(la)
       end.not_to change { SspControlStatementInheritance.count }
     end
+
+    # #955 made profile-generated SSPs arrive with statements already
+    # scaffolded, so the leveraging target is no longer a new record. The
+    # old new_record?-only guard then linked the statement and left it empty.
+    context "when the leveraging SSP already has the statement scaffolded" do
+      let!(:scaffolded) do
+        create(:ssp_control_statement, ssp_control: leveraging_ctrl,
+               statement_id: "ac-2_smt.a",
+               implementation_prose: nil)
+      end
+
+      it "fills blank prose from the source instead of leaving it empty" do
+        described_class.populate_from_leveraged!(la)
+
+        expect(scaffolded.reload.implementation_prose).to eq("Leveraged prose A")
+      end
+
+      it "still creates the inheritance link" do
+        expect { described_class.populate_from_leveraged!(la) }
+          .to change { scaffolded.inheritance_links.count }.by(1)
+        expect(scaffolded.reload.source_kind).to eq(:leveraged)
+      end
+
+      it "never clobbers prose the author has already written" do
+        scaffolded.update!(implementation_prose: "Our own implementation")
+
+        described_class.populate_from_leveraged!(la)
+
+        expect(scaffolded.reload.implementation_prose).to eq("Our own implementation")
+      end
+
+      it "leaves blank prose alone when the source has none either" do
+        provided_stmt.update!(implementation_prose: nil)
+
+        described_class.populate_from_leveraged!(la)
+
+        expect(scaffolded.reload.implementation_prose).to be_blank
+      end
+    end
   end
 
   describe ".responsibility_gaps" do

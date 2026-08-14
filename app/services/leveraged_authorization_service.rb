@@ -70,6 +70,15 @@ class LeveragedAuthorizationService
 
     private
 
+    # The `new_record?` guard alone left inherited statements EMPTY once #955
+    # made profile-generated SSPs arrive with statements already scaffolded:
+    # the target was no longer a new record, so the source prose was never
+    # copied and the leveraging system showed "inherited" with nothing in it.
+    #
+    # A statement that exists but carries no prose has nothing to protect, so
+    # the source fills it. Author edits are still never clobbered — once
+    # someone writes prose it is no longer blank, and the controller flips the
+    # link to `overridden` on edit regardless.
     def upsert_target_statement(target_ctrl, source_stmt)
       stmt = target_ctrl.ssp_control_statements
                         .find_or_initialize_by(statement_id: source_stmt.statement_id)
@@ -80,6 +89,13 @@ class LeveragedAuthorizationService
         stmt.implementation_prose = source_stmt.implementation_prose
         stmt.row_order = source_stmt.row_order
         stmt.save!
+      elsif stmt.implementation_prose.blank?
+        # No `source_stmt.implementation_prose.present?` guard: when the source
+        # is blank too this assigns blank over blank, which ActiveRecord sees
+        # as unchanged and never writes. The guard was unobservable — a
+        # mutation removing it failed to break any test, which is what
+        # revealed it as dead weight rather than protection.
+        stmt.update!(implementation_prose: source_stmt.implementation_prose)
       end
       stmt
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
