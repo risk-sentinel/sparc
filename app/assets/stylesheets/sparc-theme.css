@@ -831,9 +831,30 @@ a.link-purple { color: var(--sparc-purple); }
  *
  * Converting the existing 6 belongs to #528, not to whatever feature happens to
  * add the 7th button. */
+/* Index-screen action buttons. THE single sizing source for these rows — the
+   CDEF index previously mixed three (two inline `style=` attributes, this
+   class, and one button on Bootstrap's defaults), so the row rendered at three
+   different heights and font sizes.
+
+   Centring is here rather than on the row because a button whose label wraps
+   to two lines must still read as the same control as its single-line
+   neighbours: pair with `.sparc-btn-action-row` and every button matches the
+   tallest, with its label centred instead of pinned to the top. */
 .sparc-btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Equal-height action row. `align-items: stretch` is the flex default, but
+   Bootstrap's `.btn` is inline-block, so without this the buttons size to
+   their own content and a wrapped label skews the row. */
+.sparc-btn-action-row {
+  align-items: stretch;
 }
 
 /* ── Dashboard header buttons (dark gradient backgrounds) ──────── */

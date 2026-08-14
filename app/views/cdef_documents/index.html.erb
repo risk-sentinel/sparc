@@ -12,16 +12,15 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Component Definitions</h2>
     <% if signed_in? %>
-      <div class="d-flex gap-2">
+      <div class="d-flex gap-2 sparc-btn-action-row">
         <%# #488: manual trigger for AwsLabsCdefRefreshJob, gated on the
             converters.write permission (same RBAC bucket as the DISA CCI
             "Refresh Now" button). Button + modal are hidden entirely when
             the feature flag is off — no point teasing operators with a
             button that would just flash an error. %>
         <% if can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
-          <button type="button" class="btn btn-outline-secondary"
-                  data-bs-toggle="modal" data-bs-target="#refreshAwsLabsModal"
-                  style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+          <button type="button" class="btn btn-outline-secondary sparc-btn-action"
+                  data-bs-toggle="modal" data-bs-target="#refreshAwsLabsModal">
             Refresh from AWS Labs
           </button>
         <% end %>
@@ -29,10 +28,16 @@
             is the boundary screen (that is where the question is asked), but
             someone standing in the CDEF library asking "what are we missing?"
             should not have to go find a boundary first. %>
-        <%= link_to "Terraform-CDEF Wizard", new_cdef_coverage_path,
-              class: "btn btn-sparc-purple sparc-btn-action" %>
-        <%= link_to "Create New", select_profile_cdef_documents_path, class: "btn btn-primary", style: "padding: 0.5rem 1rem; font-size: 0.875rem;" %>
-        <%= link_to "Upload File", new_cdef_document_path, class: "btn btn-success" %>
+        <%# Two lines deliberately: the label is far longer than its
+            neighbours, and wrapping it keeps the row's width sane. The <br>
+            lives inside a <span> because the button is a flex container —
+            a bare <br> between text nodes would not break the line there. %>
+        <%= link_to new_cdef_coverage_path,
+              class: "btn btn-sparc-purple sparc-btn-action" do %>
+          <span>Terraform-CDEF<br>Wizard</span>
+        <% end %>
+        <%= link_to "Create New", select_profile_cdef_documents_path, class: "btn btn-primary sparc-btn-action" %>
+        <%= link_to "Upload File", new_cdef_document_path, class: "btn btn-success sparc-btn-action" %>
       </div>
     <% end %>
   </div>
