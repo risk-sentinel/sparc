@@ -21,13 +21,13 @@
       <div class="row row-cols-1 row-cols-md-2 g-3">
         <div class="col">
           <div class="form-group">
-            <label for="poam_document_system_id">System Identifier</label>
+            <label for="poam_document_system_id">System Identifier</label><%= field_help "The identifier the authorizing official knows this system by. It goes into the exported OSCAL, so it should match what the ATO package uses." %>
             <%= f.text_field :system_id, placeholder: "e.g., SPARC-PROD-001", class: "form-control" %>
           </div>
         </div>
         <div class="col">
           <div class="form-group">
-            <label for="poam_document_authorization_boundary_id">Authorization Boundary</label>
+            <label for="poam_document_authorization_boundary_id">Authorization Boundary</label><%= field_help "Which system this covers, and who can see it. Left blank, it is visible to every signed-in user." %>
             <%= f.select :authorization_boundary_id,
                   options_for_select(
                     AuthorizationBoundary.order(:name).map { |b| [b.name, b.id] },
@@ -50,7 +50,7 @@
       <div class="row row-cols-1 row-cols-md-2 g-3">
         <div class="col">
           <div class="form-group">
-            <label for="poam_document_poam_version">POA&amp;M Version</label>
+            <label for="poam_document_poam_version">POA&amp;M Version</label><%= field_help "Your own revision number for this document — not the OSCAL schema version beside it." %>
             <%= f.text_field :poam_version,
                   value: (f.object.poam_version.presence || "1.0.0"),
                   class: "form-control",
@@ -62,7 +62,7 @@
         </div>
         <div class="col">
           <div class="form-group">
-            <label for="poam_document_oscal_version">OSCAL Version</label>
+            <label for="poam_document_oscal_version">OSCAL Version</label><%= field_help "The schema version the export targets. Leave the default unless a consumer has asked for a specific one." %>
             <%= f.text_field :oscal_version,
                   value: (f.object.oscal_version.presence || "1.1.2"),
                   class: "form-control",
@@ -75,7 +75,7 @@
       </div>
 
       <div class="form-group mt-3">
-        <label for="poam_document_ssp_document_id">Source SSP <span class="text-body-secondary">(optional)</span></label>
+        <label for="poam_document_ssp_document_id">Source SSP <span class="text-body-secondary">(optional)</span></label><%= field_help "The SSP whose findings this POA&M tracks." %>
         <%= f.select :ssp_document_id,
               grouped_options_for_select(
                 (@ssp_options_by_boundary || {}).map { |group, ssps|

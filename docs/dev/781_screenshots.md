@@ -53,6 +53,27 @@ new page added there is captured automatically.
 
    PNGs land in `wiki/images/<page-label>.png`, one per screen in `pages.py`.
 
+   **Layers that are not screens need their own runner.** `pages.py` is a list of
+   URLs, so anything that only exists after an interaction — a drawer, a modal, an
+   expanded panel — cannot be captured by the loop above. `capture_help_drawer.py`
+   (#880) is the worked example: same Chrome channel, same 2x scale, same viewport
+   and the same UBI9 + demo-seed target, but it clicks first and shoots the
+   resulting state. Copy it rather than adding a fake entry to `pages.py`.
+
+   ```bash
+   SPARC_SMOKE_BASE_URL=https://localhost:3443 \
+   SPARC_SMOKE_SA_TOKEN=<token-from-step-2> \
+   SPARC_SMOKE_INSECURE_TLS=1 \
+     .venv/bin/python capture_help_drawer.py
+   ```
+
+   > **A freshly-seeded UBI9 instance may 404 the demo admin's avatar.** The seed
+   > creates the attachment record but the blob is not on disk, so every
+   > authenticated page logs a 404 for it — harmless for a screenshot, but it fails
+   > `test_authenticated_nav.py` on **every** page and can look like a broad
+   > regression. Clear it before a gate run:
+   > `User.find(1).avatar.purge if …blob missing`.
+
 4. **Publish** to the wiki (`PUSH_TO_WIKI.sh` now also copies `wiki/images/`):
 
    ```bash

@@ -1,0 +1,11 @@
+<%# #880 — the same guide HelpController#show renders, as a bare Turbo Frame for
+    the help drawer. Layout-less by design: the drawer is already inside a page,
+    so a second <html>/navbar would be nested inside the first. %>
+<%= turbo_frame_tag "help_drawer" do %>
+  <div class="sparc-guide-content">
+    <%# Sanitised in UserGuideLibrary#markdown_to_html, so this is already a
+        SafeBuffer — no `.html_safe` needed, and adding one back would defeat
+        the sanitisation. Same rule as help/show.html.erb. %>
+    <%= @guide.html %>
+  </div>
+<% end %>

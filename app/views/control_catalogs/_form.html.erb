@@ -18,13 +18,13 @@
   <div class="row row-cols-1 row-cols-md-2 g-3">
     <div class="col">
       <div class="form-group">
-        <%= f.label :version, "Version" %>
+        <%= f.label :version, "Version" %><%= field_help "The catalog revision, e.g. Rev 5. Baselines are matched to a catalog and a version, so this is not cosmetic." %>
         <%= f.text_field :version, class: "form-control", placeholder: "e.g. 5.1.1" %>
       </div>
     </div>
     <div class="col">
       <div class="form-group">
-        <%= f.label :source, "Source" %>
+        <%= f.label :source, "Source" %><%= field_help "Where the catalog came from — NIST, an agency overlay, or your own authoring." %>
         <%= f.text_field :source, class: "form-control", placeholder: "e.g. NIST, CIS, ISO" %>
       </div>
     </div>

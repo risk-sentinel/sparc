@@ -831,9 +831,30 @@ a.link-purple { color: var(--sparc-purple); }
  *
  * Converting the existing 6 belongs to #528, not to whatever feature happens to
  * add the 7th button. */
+/* Index-screen action buttons. THE single sizing source for these rows — the
+   CDEF index previously mixed three (two inline `style=` attributes, this
+   class, and one button on Bootstrap's defaults), so the row rendered at three
+   different heights and font sizes.
+
+   Centring is here rather than on the row because a button whose label wraps
+   to two lines must still read as the same control as its single-line
+   neighbours: pair with `.sparc-btn-action-row` and every button matches the
+   tallest, with its label centred instead of pinned to the top. */
 .sparc-btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Equal-height action row. `align-items: stretch` is the flex default, but
+   Bootstrap's `.btn` is inline-block, so without this the buttons size to
+   their own content and a wrapped label skews the row. */
+.sparc-btn-action-row {
+  align-items: stretch;
 }
 
 /* ── Dashboard header buttons (dark gradient backgrounds) ──────── */
@@ -2340,6 +2361,49 @@ a.link-purple { color: var(--sparc-purple); }
   margin: 1.5rem 0;
 }
 .sparc-guide-content .table-responsive { margin-bottom: 1rem; }
+
+/* ── In-page help drawer (#880) ───────────────────────────────────────────
+   Bootstrap's offcanvas defaults to 400px, which is too narrow for guide
+   content carrying tables and screenshots. Wide enough to read, capped at the
+   viewport so it never overflows on a phone. */
+.sparc-help-drawer {
+  --bs-offcanvas-width: min(38rem, 100vw);
+}
+
+.sparc-help-drawer-header {
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* The guide is long and the drawer is fixed-height, so the body — not the
+   page — is what scrolls. `offcanvas-body` is already overflow-y:auto; this
+   pins the horizontal axis so a wide table cannot widen the whole panel. */
+.sparc-help-drawer-body {
+  overflow-x: hidden;
+}
+
+/* Anything that can be wider than the drawer scrolls inside its own box
+   rather than pushing the panel out. Guide tables come from
+   UserGuideLibrary already wrapped in .table-responsive; the bare `table`
+   rule is the belt-and-braces for content that is not. */
+.sparc-help-drawer .sparc-guide-content pre,
+.sparc-help-drawer .sparc-guide-content .table-responsive,
+.sparc-help-drawer .sparc-guide-content table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.sparc-help-drawer .sparc-guide-content img,
+.sparc-help-drawer .sparc-guide-content .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* The drawer is a lookup surface, not a reading surface — the first heading
+   of the guide would otherwise repeat the panel title at full page size. */
+.sparc-help-drawer .sparc-guide-content h1 {
+  font-size: 1.35rem;
+  margin-top: 0;
+}
 
 /* ── Field-level help (#870) ──────────────────────────────────────────────
    A small "?" beside a field label. It is a <button> so keyboard users can

@@ -21,7 +21,12 @@ RSpec.describe "Contextual help (#870)", type: :request do
   end
 
   describe "guides open without leaving the current screen" do
-    it "opens the navbar help control in a new tab" do
+    # #880 moved the navbar "?" to the in-page drawer, but deliberately left
+    # the href/target as they were. That is not vestigial markup: it is the
+    # fallback if help_drawer_controller never connects, and it keeps the
+    # property this issue is actually about — the click cannot replace the
+    # current page and discard a part-filled form.
+    it "never navigates the navbar help control in place, even without JS" do
       get authorization_boundaries_path
 
       help = links_to(response.body, "/help").find { |a| a["class"].to_s.include?("sparc-nav-btn") }
@@ -43,11 +48,18 @@ RSpec.describe "Contextual help (#870)", type: :request do
       end
     end
 
-    it "announces the new tab to screen readers rather than only visually" do
+    # Before #880 this asserted the label said "opens in a new tab". It no
+    # longer does, and must not: a screen-reader user has JS, so what they get
+    # is the drawer. A label promising a new tab would now be describing the
+    # fallback nobody with a working browser experiences. The dialog announces
+    # itself — Bootstrap sets role=dialog + aria-modal on the offcanvas, which
+    # carries its own accessible name (see the #880 spec).
+    it "announces the navbar help control, and does not promise a new tab it no longer opens" do
       get authorization_boundaries_path
 
       help = links_to(response.body, "/help").find { |a| a["class"].to_s.include?("sparc-nav-btn") }
-      expect(help["aria-label"].to_s).to match(/new tab/i)
+      expect(help["aria-label"].to_s).to match(/help/i)
+      expect(help["aria-label"].to_s).not_to match(/new tab/i)
     end
 
     it "leaves the Help Center index navigating normally — it is a destination, not a reference" do

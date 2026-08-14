@@ -80,9 +80,16 @@ Colour-coded dropdowns group the app by OSCAL layer:
 | **Authorization Boundaries** | Your boundaries | Signed in |
 | **Compliance Library** | Authoritative Sources, Review/Promotion Queues, Federation Peers | Signed in, per role |
 
-On the right you'll find a **theme toggle** (light/dark, remembered per browser)
-and your **user menu** (avatar/initials) with **Profile**, **Change Password**,
-the **Administration** submenu (Instance Admins only), and **Sign Out**.
+On the right you'll find the **?** help button, a **theme toggle** (light/dark,
+remembered per browser) and your **user menu** (avatar/initials) with
+**Profile**, **Change Password**, the **Administration** submenu (Instance
+Admins only), and **Sign Out**.
+
+The **?** opens the guide for whichever screen you're on in a drawer over the
+page — the form underneath stays visible and anything you've typed is left
+alone, so you can check a definition without abandoning what you were doing.
+Press **Esc** to close it, or use **Open full guide** inside it to read the
+whole thing in a new tab. See [User Guides](User-Guides) for more.
 
 ### Left sidebar
 

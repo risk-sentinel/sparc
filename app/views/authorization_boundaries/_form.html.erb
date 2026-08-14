@@ -3,13 +3,13 @@
       stays in the User Guides, reachable from the header ? in a new tab. %>
   <div class="mb-3">
     <%= f.label :name, class: "form-label fw-semibold" %>
-    <%= field_help "The system or programme this authorization covers, as it should read on the ATO package." %>
+    <%= field_help "The system this authorization covers, as it should appear on the ATO package." %>
     <%= f.text_field :name, class: "form-control", required: true %>
   </div>
 
   <div class="mb-3">
     <%= f.label :description, class: "form-label fw-semibold" %>
-    <%= field_help "A short summary of what the system does. Plain language — assessors read this first." %>
+    <%= field_help "A short summary of what the system does." %>
     <%= f.text_area :description, class: "form-control", rows: 3 %>
   </div>
 
@@ -21,7 +21,7 @@
 
   <div class="mb-3">
     <%= f.label :authorization_boundary_description, "Authorization Boundary", class: "form-label fw-semibold" %>
-    <%= field_help "What is inside the boundary and what is explicitly outside it — components, data flows and interconnections the authorization covers." %>
+    <%= field_help "What is inside the boundary — e.g. components, data flows and interconnections the authorization covers." %>
     <%= f.text_area :authorization_boundary_description, class: "form-control", rows: 3 %>
   </div>
 
