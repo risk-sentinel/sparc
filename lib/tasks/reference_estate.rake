@@ -1,0 +1,73 @@
+# Issue #845 — load the two-boundary leveraged reference authorization estate.
+#
+# A complete, inspectable authorization chain for two boundaries, so demos,
+# manual testing and scanners have something real to work against instead of a
+# handful of disconnected fixtures.
+#
+# Usage:
+#   bin/rails db:seed:reference                 # lean tier (40 curated controls)
+#   bin/rails 'db:seed:reference[full]'         # real NIST baselines
+#   bin/rails db:seed:reference:purge           # remove it again
+#   bin/rails db:seed:reference:status          # what is currently loaded
+#
+# The tiers deliberately share organization and boundary names — there is ONE
+# reference estate, not one per tier — so loading a different tier replaces the
+# current one rather than sitting alongside it. `purge` runs automatically when
+# the loaded tier differs from the requested one.
+namespace :db do
+  namespace :seed do
+    desc "Load the #845 reference leveraged authorization estate ([lean]|full)"
+    task :reference, [ :tier ] => :environment do |_t, args|
+      tier = (args[:tier].presence || "lean").to_sym
+
+      unless ReferenceEstateBuilder::TIERS.include?(tier)
+        abort "Unknown tier #{tier.inspect}. Expected one of: #{ReferenceEstateBuilder::TIERS.join(', ')}."
+      end
+
+      # The builder refuses production itself; aborting here too means the
+      # operator gets a clear message instead of a backtrace.
+      if Rails.env.production?
+        abort "Refusing to load the reference estate in production — it creates authorization " \
+              "documents that are indistinguishable from real ones."
+      end
+
+      loaded = ReferenceEstate.loaded_tier
+      if loaded && loaded != tier.to_s
+        puts "[reference] a #{loaded} estate is already loaded — replacing it with #{tier}."
+        ReferenceEstate.purge!
+      end
+
+      puts "[reference] building the #{tier} estate..."
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      result  = ReferenceEstateBuilder.new(tier: tier).build
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+
+      ReferenceEstate.record_tier!(tier)
+      puts format("[reference] done in %.1fs", elapsed)
+      ReferenceEstate.report(result)
+    end
+
+    namespace :reference do
+      desc "Remove the reference estate"
+      task purge: :environment do
+        if Rails.env.production?
+          abort "Refusing to touch reference estate data in production."
+        end
+
+        counts = ReferenceEstate.purge!
+        puts "[reference] purged: #{counts.map { |k, v| "#{k}=#{v}" }.join(' ')}"
+      end
+
+      desc "Report what the reference estate currently contains"
+      task status: :environment do
+        tier = ReferenceEstate.loaded_tier
+        if tier.nil?
+          puts "[reference] no reference estate loaded."
+        else
+          puts "[reference] tier=#{tier}"
+          ReferenceEstate.summary.each { |line| puts "  #{line}" }
+        end
+      end
+    end
+  end
+end

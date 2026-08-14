@@ -68,11 +68,37 @@ RSpec.describe ReferenceEstateBuilder do
     # #952 — SspFromProfileService leaves authorization_boundary_id nil, and a
     # nil boundary is treated as instance-wide and shown to every signed-in
     # user. An estate that reproduced that would be actively misleading.
-    it "attaches every SSP to its boundary" do
+    # Not just the SSP: the SAP and SAR generators leave it nil too. Beyond
+    # #952's exposure, a nil boundary makes the document invisible to
+    # HdfAggregationService, which reads boundary.sar_document /
+    # .sap_document and silently annotates nothing when they are missing.
+    it "attaches every document to its boundary" do
       result = builder.build
 
-      expect(result.leveraged[:ssp].authorization_boundary_id).to eq(result.leveraged[:boundary].id)
-      expect(result.leveraging[:ssp].authorization_boundary_id).to eq(result.leveraging[:boundary].id)
+      %i[leveraged leveraging].each do |role|
+        side = result.public_send(role)
+        expect(side[:ssp].authorization_boundary_id).to eq(side[:boundary].id)
+        expect(side[:sar].authorization_boundary_id).to eq(side[:boundary].id)
+        expect(side[:sap].authorization_boundary_id).to eq(side[:boundary].id)
+        expect(side[:poams]).to all(have_attributes(authorization_boundary_id: side[:boundary].id))
+
+        # The has_one associations must actually resolve, since that is what
+        # the aggregation service and the status report go through.
+        boundary = side[:boundary].reload
+        expect(boundary.ssp_document).to eq(side[:ssp])
+        expect(boundary.sar_document).to eq(side[:sar])
+        expect(boundary.sap_document).to eq(side[:sap])
+      end
+    end
+
+    it "folds the scan results onto the SAR and SAP as well as the SSP" do
+      side = builder.build.leveraged
+      field = HdfAggregationService::ANNOTATION_FIELD
+
+      expect(SarControlField.where(field_name: field,
+                                   sar_control_id: side[:sar].sar_controls.select(:id)).count).to eq(4)
+      expect(SapControlField.where(field_name: field,
+                                   sap_control_id: side[:sap].sap_controls.select(:id)).count).to eq(4)
     end
 
     it "creates statements only for controls the catalog gives one" do
@@ -234,6 +260,59 @@ RSpec.describe ReferenceEstateBuilder do
         second = described_class.new(tier: :lean, catalog: catalog).build.leveraged[:satisfied_control_ids].sort
 
         expect(second).to eq(first)
+      end
+    end
+
+    # #957 — the generator services mint identifiers with SecureRandom, so
+    # without this every rebuild changes every UUID and the committed OSCAL
+    # diffs in full, making "regenerate and confirm no drift" worthless.
+    # Asserted against the derivation itself rather than merely observing that
+    # two builds agree, because idempotency would make that pass trivially.
+    describe "deterministic identifiers" do
+      it "derives the SSP, its controls and their statements" do
+        side = builder.build.leveraged
+        ssp  = side[:ssp]
+
+        expect(ssp.uuid).to eq(OscalUuidService.derived("reference-ssp", side[:boundary].name))
+
+        control = ssp.ssp_controls.find_by(control_id: "ac-1")
+        expect(control.uuid).to eq(OscalUuidService.derived("reference-ssp-control", ssp.uuid, "ac-1"))
+
+        # The documented #397 derivation, so a pinned statement matches what
+        # the importer and LeveragedAuthorizationService would produce.
+        statement = control.ssp_control_statements.first
+        expect(statement.uuid).to eq(
+          OscalUuidService.derived(control.uuid, "ssp-statement", statement.statement_id)
+        )
+      end
+
+      it "derives the SAR and POA&M identifiers" do
+        side = builder.build.leveraged
+
+        expect(side[:sar].uuid).to eq(OscalUuidService.derived("reference-sar", side[:boundary].name))
+        poam = side[:poams].first
+        expect(poam.uuid).to eq(
+          OscalUuidService.derived("reference-poam", side[:boundary].name, poam.name)
+        )
+      end
+
+      # A derived UUID that is not v4-shaped would be silently rewritten to a
+      # fresh random one on import, defeating the entire point.
+      it "keeps every derived identifier v4-shaped" do
+        side = builder.build.leveraged
+
+        uuids = [ side[:ssp].uuid, side[:sar].uuid, side[:boundary].uuid,
+                  side[:organization].uuid, *side[:poams].map(&:uuid),
+                  *side[:ssp].ssp_controls.pluck(:uuid) ]
+
+        expect(uuids).to all(match(BackMatterResource::UUID_V4_REGEX))
+      end
+
+      it "gives the two boundaries different identifiers" do
+        result = builder.build
+
+        expect(result.leveraged[:ssp].uuid).not_to eq(result.leveraging[:ssp].uuid)
+        expect(result.leveraged[:boundary].uuid).not_to eq(result.leveraging[:boundary].uuid)
       end
     end
 

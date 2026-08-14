@@ -39,6 +39,16 @@ class ReferenceEstateBuilder
 
   TIERS = %i[lean full].freeze
 
+  # Every record the estate owns starts with this, which is how
+  # ReferenceEstate finds them again to purge or report. Both tiers use the
+  # SAME names deliberately: there is one reference estate, not one per tier,
+  # so loading a different tier replaces it rather than sitting alongside it.
+  NAME_PREFIX         = "Reference "
+  LEVERAGED_ORG       = "Reference Platform Provider (Org A)"
+  LEVERAGED_BOUNDARY  = "Reference Platform (Boundary 1)"
+  LEVERAGING_ORG      = "Reference Mission System Owner (Org B)"
+  LEVERAGING_BOUNDARY = "Reference Mission System (Boundary 2)"
+
   # Owner-approved 2026-08-14. All 20 families, ~173 parameters, ~109 sub-part
   # rows in scope. See the issue for why each one earns its place.
   LEAN_CONTROL_IDS = %w[
@@ -120,8 +130,8 @@ class ReferenceEstateBuilder
   def leveraged_spec
     {
       role:          :leveraged,
-      org_name:      "Reference Platform Provider (Org A)",
-      boundary_name: "Reference Platform (Boundary 1)",
+      org_name:      LEVERAGED_ORG,
+      boundary_name: LEVERAGED_BOUNDARY,
       control_ids:   @tier == :lean ? LEAN_CONTROL_IDS : baseline_control_ids("MODERATE"),
       baseline:      "moderate"
     }
@@ -130,8 +140,8 @@ class ReferenceEstateBuilder
   def leveraging_spec
     {
       role:          :leveraging,
-      org_name:      "Reference Mission System Owner (Org B)",
-      boundary_name: "Reference Mission System (Boundary 2)",
+      org_name:      LEVERAGING_ORG,
+      boundary_name: LEVERAGING_BOUNDARY,
       control_ids:   @tier == :lean ? LEAN_CONTROL_IDS : baseline_control_ids("LOW"),
       baseline:      @tier == :lean ? "moderate" : "low"
     }
@@ -162,12 +172,12 @@ class ReferenceEstateBuilder
     boundary = upsert_boundary(boundary_name, org)
     profile  = build_profile(boundary_name, control_ids, baseline)
     ssp      = build_ssp(profile, boundary, boundary_name)
-    sap      = build_sap(ssp, profile, boundary_name)
+    sap      = build_sap(ssp, profile, boundary, boundary_name)
 
     # The evidence has to exist before the SAR, because it is what decides
     # which controls the assessment finds satisfied.
     satisfied = simulate_automated_evidence(boundary, ssp, boundary_name)
-    sar       = build_sar(ssp, boundary_name, satisfied)
+    sar       = build_sar(ssp, boundary, boundary_name, satisfied)
     poams     = build_poams(sar, boundary, boundary_name)
     evidence  = build_evidence(boundary, boundary_name)
 
@@ -179,9 +189,12 @@ class ReferenceEstateBuilder
     # fixture until now, so it runs here rather than being described.
     HdfAggregationService.new(boundary.reload).aggregate
 
-    { role: role, organization: org, boundary: boundary, profile: profile,
-      ssp: ssp, sap: sap, sar: sar, poams: poams,
-      evidence: evidence, satisfied_control_ids: satisfied }
+    side = { role: role, organization: org, boundary: boundary, profile: profile,
+             ssp: ssp, sap: sap, sar: sar, poams: poams,
+             evidence: evidence, satisfied_control_ids: satisfied }
+
+    pin_identifiers!(side)
+    side.merge(ssp: ssp.reload, sar: sar.reload)
   end
 
   def upsert_organization(name)
@@ -232,25 +245,36 @@ class ReferenceEstateBuilder
     ssp
   end
 
-  def build_sap(ssp, profile, label)
+  # Like the SSP, the generator does not attach the document to a boundary,
+  # and a nil boundary is treated as instance-wide and shown to every
+  # signed-in user (#952). It also makes the document invisible to
+  # HdfAggregationService, which reads `boundary.sap_document` and silently
+  # annotates nothing when it is nil.
+  def build_sap(ssp, profile, boundary, label)
     name = "#{label} — SAP"
-    SapDocument.find_by(name: name) ||
-      SapGeneratorService.new(name: name,
-                              ssp_document:     ssp,
-                              profile_document: profile,
-                              assessment_type:  "initial",
-                              assessment_start: PINNED_ASSESSMENT[:start],
-                              assessment_end:   PINNED_ASSESSMENT[:end]).generate
+    sap  = SapDocument.find_by(name: name) ||
+           SapGeneratorService.new(name: name,
+                                   ssp_document:     ssp,
+                                   profile_document: profile,
+                                   assessment_type:  "initial",
+                                   assessment_start: PINNED_ASSESSMENT[:start],
+                                   assessment_end:   PINNED_ASSESSMENT[:end]).generate
+
+    sap&.update!(authorization_boundary_id: boundary.id) if sap && sap.authorization_boundary_id != boundary.id
+    sap
   end
 
   # The pinned deadline is the point: left nil, PoamGeneratorService resolves
   # one from the remediation SLA as Time.current + N days, and every
   # regeneration of the committed OSCAL would differ.
-  def build_sar(ssp, label, satisfied_control_ids)
+  def build_sar(ssp, boundary, label, satisfied_control_ids)
     name = "#{label} — SAR"
-    SarDocument.find_by(name: name) ||
-      SarFromSspService.new(ssp, name: name, deadline: PINNED_DEADLINE,
-                                 satisfied_control_ids: satisfied_control_ids).create
+    sar  = SarDocument.find_by(name: name) ||
+           SarFromSspService.new(ssp, name: name, deadline: PINNED_DEADLINE,
+                                      satisfied_control_ids: satisfied_control_ids).create
+
+    sar.update!(authorization_boundary_id: boundary.id) if sar.authorization_boundary_id != boundary.id
+    sar
   end
 
   # Three POA&Ms with genuinely different postures, so screens that filter or
@@ -349,6 +373,99 @@ class ReferenceEstateBuilder
     evidence.save!
     evidence.stamp_collection!(actor: @actor, label: "Reference Estate") if @actor
     evidence
+  end
+
+  # ── Deterministic identifiers ────────────────────────────────────────────
+  #
+  # #957 — SspFromProfileService and SarFromSspService mint identifiers with
+  # SecureRandom, so a rebuild changes every UUID in the estate and committed
+  # OSCAL would diff in full even when nothing changed. That makes the whole
+  # "regenerate and confirm no drift" check worthless.
+  #
+  # Until the services derive their own (#957), the estate pins them here,
+  # using the same OscalUuidService the exporters already use. Everything is
+  # seeded from the boundary name, which is stable across tiers and runs.
+  #
+  # ORDER MATTERS: a statement's UUID derives from its control's, so controls
+  # must be pinned before statements are recomputed. Pinning runs per boundary
+  # BEFORE the leveraging is wired, so inheritance links record source UUIDs
+  # that are already final.
+  def pin_identifiers!(side)
+    seed = side[:boundary].name
+
+    pin_record(side[:organization], "reference-org", side[:organization].name)
+    pin_record(side[:boundary], "reference-boundary", seed)
+    pin_record(side[:profile], "reference-profile", seed)
+
+    pin_ssp(side[:ssp], seed)
+    pin_sap(side[:sap], seed)
+    pin_sar(side[:sar], seed)
+    side[:poams].each { |poam| pin_poam(poam, seed) }
+    side[:evidence].each { |e| pin_record(e, "reference-evidence", e.title) }
+
+    Evidence.where(authorization_boundary_id: side[:boundary].id)
+            .find_each { |e| pin_record(e, "reference-evidence", e.title) }
+    ScanRun.where(authorization_boundary_id: side[:boundary].id)
+           .find_each { |r| pin_record(r, "reference-scan-run", seed, r.scanner) }
+    ScannerFinding.where(authorization_boundary_id: side[:boundary].id)
+                  .find_each { |f| pin_record(f, "reference-scan-finding", seed, f.control_id) }
+  end
+
+  # update_column, not update! — these records are already valid and a UUID
+  # rewrite must not fire callbacks that would re-derive dependants out of
+  # order (EvidenceControlLink syncs a BackMatterResource keyed on the
+  # evidence UUID, for one).
+  def pin_record(record, kind, *parts)
+    return if record.nil?
+
+    record.update_column(:uuid, OscalUuidService.derived(kind, *parts.map(&:to_s)))
+  end
+
+  def pin_ssp(ssp, seed)
+    pin_record(ssp, "reference-ssp", seed)
+    ssp.reload
+
+    ssp.ssp_controls.find_each do |control|
+      pin_record(control, "reference-ssp-control", ssp.uuid, control.control_id)
+      control.reload
+      control.ssp_control_statements.find_each do |statement|
+        # The documented #397 derivation, so a pinned statement matches what
+        # the importer and LeveragedAuthorizationService would produce.
+        statement.update_column(
+          :uuid, OscalUuidService.derived(control.uuid, "ssp-statement", statement.statement_id)
+        )
+      end
+    end
+  end
+
+  def pin_sap(sap, seed)
+    return if sap.nil?
+
+    pin_record(sap, "reference-sap", seed)
+    sap.reload
+    sap.sap_controls.find_each { |c| pin_record(c, "reference-sap-control", sap.uuid, c.control_id) }
+  end
+
+  def pin_sar(sar, seed)
+    pin_record(sar, "reference-sar", seed)
+    sar.reload
+
+    sar.sar_controls.find_each { |c| pin_record(c, "reference-sar-control", sar.uuid, c.control_id) }
+    sar.sar_results.each do |result|
+      pin_record(result, "reference-sar-result", sar.uuid, result.position.to_s)
+      result.reload
+      result.sar_findings.find_each { |f| pin_record(f, "reference-sar-finding", result.uuid, f.title) }
+      result.sar_risks.find_each   { |r| pin_record(r, "reference-sar-risk",   result.uuid, r.title) }
+    end
+  end
+
+  def pin_poam(poam, seed)
+    pin_record(poam, "reference-poam", seed, poam.name)
+    poam.reload
+
+    poam.poam_items.find_each    { |i| pin_record(i, "reference-poam-item",    poam.uuid, i.title.to_s) }
+    poam.poam_risks.find_each    { |r| pin_record(r, "reference-poam-risk",    poam.uuid, r.title.to_s) }
+    poam.poam_findings.find_each { |f| pin_record(f, "reference-poam-finding", poam.uuid, f.title.to_s) }
   end
 
   # ── Automated evidence → control satisfaction ────────────────────────────
