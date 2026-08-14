@@ -39,9 +39,10 @@ class LeveragedAuthorizationService
       links
     end
 
-    # Gap detection: statements on the leveraged SSP flagged as customer
-    # responsibility that are NOT addressed (have no inheritance link
-    # with overridden=false) on the leveraging SSP.
+    # Gap detection: statements the leveraged SSP flags as a customer
+    # responsibility that the leveraging system has NOT yet implemented for
+    # itself. See `addressed?` for what counts — it is deliberately not "a
+    # link exists" (#956).
     #
     # Surfaces in the UI as a finding and (future) as a SAR validation rule.
     def responsibility_gaps(leveraged_auth)
@@ -53,22 +54,57 @@ class LeveragedAuthorizationService
       responsibility_stmts = leveraged_auth.inheritable_statements
                                            .where(
                                              "set_parameters_data::jsonb @> ?::jsonb",
-                                             [ { "tag" => "responsibility" } ].to_json
+                                             [ { "tag" => SspControlStatement::RESPONSIBILITY_TAG } ].to_json
                                            )
       return [] if responsibility_stmts.empty?
 
-      addressed_uuids = SspControlStatementInheritance
-                          .from_leveraged.active
-                          .where(source_id: responsibility_stmts.ids)
-                          .joins(:ssp_control_statement)
-                          .where(ssp_control_statements: { ssp_control_id: leveraging_ssp.ssp_controls.select(:id) })
-                          .pluck(:source_uuid)
-                          .to_set
-
-      responsibility_stmts.reject { |s| addressed_uuids.include?(s.uuid) }
+      responsibility_stmts.reject { |source| addressed?(source, leveraging_ssp) }
     end
 
     private
+
+    # #956 — only a `provided` statement carries an implementation the
+    # leveraging system can inherit. A `responsibility` says "the customer
+    # must do this themselves"; copying that in as the customer's own
+    # implementation prose asserts the opposite of an implementation, and it
+    # showed on screen — Boundary 2's SSP read "The reference platform does
+    # not implement AC-20" as B's own narrative. A responsibility scaffolds a
+    # place to author, not a pre-filled answer.
+    def inheritable_prose(source_stmt)
+      return nil if source_stmt.customer_responsibility?
+
+      source_stmt.implementation_prose
+    end
+
+    # #956 — "addressed" used to mean "an active inheritance link exists",
+    # which was wrong in BOTH directions and made the gap report useless:
+    #
+    #   - populate_from_leveraged! creates exactly that link for every
+    #     responsibility, so doing NOTHING cleared the gap.
+    #   - editing the statement flips the link to overridden, dropping it out
+    #     of `.active`, so doing the RIGHT THING re-opened the gap. A customer
+    #     who correctly implemented a responsibility was told they had not.
+    #
+    # A link records where a responsibility came FROM. It says nothing about
+    # whether anyone has acted on it. Addressed means the leveraging system
+    # has written its own implementation: the statement exists, carries prose,
+    # and that prose is not merely the provider's text arriving by inheritance.
+    def addressed?(source_stmt, leveraging_ssp)
+      target = SspControlStatement
+                 .joins(:ssp_control)
+                 .where(ssp_controls: { ssp_document_id: leveraging_ssp.id,
+                                        control_id: source_stmt.ssp_control.control_id })
+                 .find_by(statement_id: source_stmt.statement_id)
+
+      return false if target.nil? || target.implementation_prose.blank?
+
+      link = target.inheritance_links.find_by(source_type: "SspControlStatement",
+                                              source_id: source_stmt.id)
+
+      # No link: the prose was authored independently. Overridden: the author
+      # replaced what was inherited. Either way, someone did the work.
+      link.nil? || link.overridden?
+    end
 
     # The `new_record?` guard alone left inherited statements EMPTY once #955
     # made profile-generated SSPs arrive with statements already scaffolded:
@@ -86,16 +122,11 @@ class LeveragedAuthorizationService
         stmt.uuid = OscalUuidService.derived(target_ctrl.uuid, "ssp-statement", source_stmt.statement_id)
         stmt.label = source_stmt.label
         stmt.parent_statement_id = source_stmt.parent_statement_id
-        stmt.implementation_prose = source_stmt.implementation_prose
+        stmt.implementation_prose = inheritable_prose(source_stmt)
         stmt.row_order = source_stmt.row_order
         stmt.save!
-      elsif stmt.implementation_prose.blank?
-        # No `source_stmt.implementation_prose.present?` guard: when the source
-        # is blank too this assigns blank over blank, which ActiveRecord sees
-        # as unchanged and never writes. The guard was unobservable — a
-        # mutation removing it failed to break any test, which is what
-        # revealed it as dead weight rather than protection.
-        stmt.update!(implementation_prose: source_stmt.implementation_prose)
+      elsif stmt.implementation_prose.blank? && inheritable_prose(source_stmt).present?
+        stmt.update!(implementation_prose: inheritable_prose(source_stmt))
       end
       stmt
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e

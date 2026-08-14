@@ -43,6 +43,13 @@
                   <span class="badge bg-info text-dark" style="font-size: 0.65rem;" title="Implementation inherited from a CDEF">CDEF</span>
                 <% when :leveraged %>
                   <span class="badge bg-primary" style="font-size: 0.65rem;" title="Inherited via a leveraged authorization">Leveraged</span>
+                <% when :responsibility %>
+                  <%# #956 — the leveraged system hands this back to us. It is
+                      the opposite of an inherited implementation, and the one
+                      the reader actually has to act on. %>
+                  <span class="badge bg-danger" style="font-size: 0.65rem;" title="The leveraged system requires this system to implement the control itself">Your responsibility</span>
+                <% when :overridden_responsibility %>
+                  <span class="badge bg-success" style="font-size: 0.65rem;" title="A customer responsibility this system has implemented">Responsibility met</span>
                 <% when :overridden_cdef, :overridden_leveraged %>
                   <span class="badge bg-warning text-dark" style="font-size: 0.65rem;" title="Inherited but edited locally">Overridden</span>
                 <% end %>
