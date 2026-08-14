@@ -654,7 +654,7 @@ Backlog / gated:
 
 ### Phase 16: v1.16.0 — Config Correctness, Authorization Sweep, UX Filters, Auth Entitlements (CURRENT)
 
-**Goal:** Close the v1.16.0 milestone (20 issues — 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F). Two structural security deliverables lead —
+**Goal:** Close the v1.16.0 milestone (21 issues — 15 originally scoped, plus #939, #941, #942 and #936 filed during Bundle F, and #944 found in local review of Bundle E). Two structural security deliverables lead —
 a spec that fails when a controller ships without authorization (#919) and one that pins
 `disposition: "attachment"` on user content (#894) — followed by index filtering, the help
 drawer, the Terraform→CDEF coverage wizard, and the IdP-as-entitlement-source auth epic.
@@ -685,6 +685,7 @@ Sequenced in nine PRs; issues are bundled only where they share a hot file or an
 | **P0** | [ ] | #939 | `AwsLabsCdefRefreshJob` reports 39–51 errors on a cold pass and still reports success | **Filed during Bundle F, not yet slotted into a bundle.** The most serious open finding on this milestone: each failed file leaks a **permanent orphaned `CdefDocument`** — `write_through_parser` creates the row before parsing, so a parse failure leaves `status: "processing"`, zero controls and no `source_type`, which means `aws_labs_sourced` cannot even see it to clean it up. 82 measured after four passes. They surface at the top of the CDEF index and they break OSCAL export. |
 | **P2** | [ ] | #941 | Catalog statement sub-parts sort after the last control instead of under their parent | **Filed during Bundle F.** `ac-2.7.(a)` sorts after `AC-25`, because `default_scope order(COALESCE(sort_id, control_id))` mixes a padded `sort_id` ("ac-02.07") with an unpadded `control_id` ("ac-2.7.(a)") — OSCAL parts carry no `sort-id` at all. 31 of 60 `ac-2%` rows have a NULL `sort_id`. |
 | **P2** | [ ] | #942 | Selection choices that reference other ODPs export as opaque text | **Filed during Bundle F.** A `select` whose choices are `{{ insert: param, <id> }}` references (AC-20 odp.01 → odp.02/odp.03) is exported as flat text, so the dependency is lost and the choices render as raw markup. Lives in `BaselineParameterService#extract_schema`. |
+| **P0** | [ ] | #944 | A component definition cannot be authored from scratch, and cannot be edited at all | **Bundle L — NEXT, owner-directed.** Found in local review of Bundle E. `CdefDocumentsController` has `new`/`create` but **no `edit` and no `update`**: `create` is `handle_multi_file_upload`, so the only way a CDEF enters SPARC is as a file someone else authored, and afterwards the only mutators are the three inline fragment paths (`update_field`, `update_metadata`, `update_statement`). There are **no routes and no views for authoring components at all**. So every field NIST's simple-component-definition tutorial calls required — component `type`/`title`/`description`, `control-implementations[].source`/`.description`, `implemented-requirements[].control-id` — has nowhere to be entered. `create_from_profile` gives a control basis but never describes the component. Same create/edit inversion as #928 and #929, on the document type where authoring matters most. Must not weaken `refuse_if_aws_labs!` or `ensure_editable!`. |
 | **P3** | [ ] | #936 | Serve a real favicon and link-preview metadata | **Filed during Bundle F.** Saved SPARC URLs show a generic globe. Cosmetic, but it is the cheapest item on the milestone. |
 
 <!-- markdownlint-enable MD013 -->
@@ -702,11 +703,15 @@ file or an audit shape.
 ```text
 A #914 #909  ->  B #894 #897  ->  [#923 actions]  ->  C #919  ->  [#922 #921 bundler]
   ->  D #908 #928  ->  K #934  ->  F #904  ->  E #880 #879  ->  G #822 (+#820 openssl)
-  ->  H #707  ->  I #860 #842  ->  release/v1.16.0
+  ->  L #944  ->  H #707  ->  I #860 #842  ->  release/v1.16.0
 ```
 
 **Status 2026-08-13:** A, B, C, D, K and F are **merged**; **E is in PR**. H shipped
 early, inside #919. That leaves G, I, and the bugs below before the release.
+
+**Bundle L (#944) is next, by owner direction** — ahead of G and I. It came out of
+local review of Bundle E and is the same create/edit inversion as #928/#929, but on
+component definitions, where "author OSCAL" is the product's core claim.
 
 **Not yet sequenced.** #939, #941, #942 and #936 were all filed *during* Bundle F,
 after the order above was written, and none of them has a bundle. **#939 should not
@@ -842,7 +847,7 @@ removed and are no longer tracked:
 | 13 | Complete | v1.7.x Pre-Pen-Test Hardening + Patch Fixes | ~~#509~~, ~~#510~~, ~~#511~~, ~~#513~~, ~~#514~~, ~~#515~~, ~~#524~~, ~~#525~~, ~~#535~~, ~~#536~~, ~~#537~~, ~~#541~~, ~~#543~~, ~~#547~~, ~~#548~~, ~~#549~~, ~~#553~~ | **COMPLETE** — v1.7.0 / v1.7.1 / v1.7.2 shipped |
 | 14 | Current | Pre-Public-Flip + API Test Validation + CDEF Mutations | #545, #433, #498, #499, #528, #531, #447, #341, #246, #413, #422, #616, #618 | In Progress |
 | 15 | Complete | v1.15.4 / v1.15.5 patches — account-lifecycle and UX defects | ~~#868~~, ~~#869~~, ~~#870~~, ~~#867~~, ~~#878~~, ~~#877~~, ~~#875~~, ~~#881~~, ~~#887~~, ~~#888~~, ~~#902~~, ~~#903~~, ~~#911~~ | **COMPLETE** — v1.15.4 and v1.15.5 shipped. #879 (field-help copy) was not done here and is carried into Phase 16. #911 shipped in PR #916/#918; the boundary-roster authorization bug found during it became #919 |
-| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, #880, #879, #929, #822, #860, #842, #939, #941, #942, #936 | In Progress — **11 of 20 shipped** (PRs #924, #925, #931, #932, #933, #937, #938). **Bundle E (#880 + #879) implemented and in PR.** The issue count moved 16 → 20: #939, #941, #942 and #936 were filed during Bundle F and belong to this milestone. Remaining: E in review, then G (#822 + #820), I (#860 + #842), #929, and the four Bundle F bugs — of which **#939 is the one that should not wait**. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
+| 16 | Current | v1.16.0 — config correctness, authorization sweep, UX filters, auth entitlements (milestone `v1.16.0`) | ~~#914~~, ~~#909~~, ~~#894~~, ~~#897~~, ~~#919~~, ~~#707~~, ~~#908~~, ~~#928~~, ~~#934~~, ~~#904~~, #880, #879, #929, #822, #860, #842, #939, #941, #942, #936, #944 | In Progress — **11 of 21 shipped** (PRs #924, #925, #931, #932, #933, #937, #938). **Bundle E (#880 + #879) implemented and in PR.** The issue count moved 16 → 21: #939, #941, #942 and #936 were filed during Bundle F, and #944 came out of local review of Bundle E. **#944 is next, by owner direction.** Remaining: E in review, then G (#822 + #820), I (#860 + #842), #929, and the four Bundle F bugs — of which **#939 is the one that should not wait**. Target tag ~2026-09-21. Per-issue detail and bundle sequencing live in the Phase 16 section above; this row is the phase-level status |
 
 <!-- markdownlint-enable MD013 -->
 
