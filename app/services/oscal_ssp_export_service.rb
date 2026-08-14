@@ -25,6 +25,14 @@ class OscalSspExportService
   RESPONSIBLE_ROLES     = "responsible-roles".freeze
   IMPLEMENTATION_STATUS = "implementation-status".freeze
   STATEMENT_ID          = "statement-id".freeze
+  BY_COMPONENTS         = "by-components".freeze
+
+  # #958 — SPARC's own markers, parked in a statement's set_parameters_data by
+  # SspJsonParserService so LeveragedAuthorization can query them. They are
+  # bookkeeping, not OSCAL, and must never reach an export as-is.
+  STATEMENT_MARKER_KEY  = "tag".freeze
+  PROVIDED_MARKER       = "provided".freeze
+  RESPONSIBILITY_MARKER = "responsibility".freeze
   SSP_STATEMENT         = "ssp-statement".freeze
   # Namespace for SPARC-specific OSCAL props (control-type, provided-as, etc.).
   SPARC_NS = "https://sparc.local/ns".freeze
@@ -64,9 +72,10 @@ class OscalSspExportService
   private
 
   def eager_load_associations
-    @components    = @document.ssp_components.to_a
-    @users         = @document.ssp_users.to_a
-    @info_types    = @document.ssp_information_types.to_a
+    # Ordered so repeated exports of an unchanged document are identical.
+    @components    = @document.ssp_components.order(:id).to_a
+    @users         = @document.ssp_users.order(:id).to_a
+    @info_types    = @document.ssp_information_types.order(:id).to_a
     @leveraged     = @document.ssp_leveraged_authorizations.to_a
     @inventory     = @document.ssp_inventory_items.to_a
     @controls      = @document.ssp_controls
@@ -109,11 +118,36 @@ class OscalSspExportService
         { "id" => "system-owner",    "title" => "System Owner" },
         { "id" => "authorizing-official", "title" => "Authorizing Official" }
       ],
-      default_parties: [
-        { "uuid" => OscalUuidService.org_party_uuid_for(@document),
-          "type" => "organization", "name" => "SPARC Export" }
-      ]
+      default_parties: default_parties
     )
+  end
+
+  # The document's own org, plus a party for each leveraged system's owner —
+  # a leveraged-authorization's `party-uuid` must resolve to a declared party,
+  # not dangle.
+  def default_parties
+    parties = [ { "uuid" => OscalUuidService.org_party_uuid_for(@document),
+                  "type" => "organization", "name" => "SPARC Export" } ]
+
+    @boundary_leveraged_auths.each do |la|
+      uuid = leveraged_party_uuid(la)
+      next if uuid.blank? || parties.any? { |p| p["uuid"] == uuid }
+
+      org = la.leveraged_boundary&.organization
+      parties << { "uuid" => uuid, "type" => "organization",
+                   "name" => org&.name.presence || "Leveraged System Provider" }
+    end
+
+    parties
+  end
+
+  def leveraged_party_uuid(la)
+    org = la.leveraged_boundary&.organization
+    return org.uuid if org&.uuid.present?
+
+    # No organization on the leveraged boundary (or no boundary at all, which
+    # is Scenario 2/3): derive a stable one rather than omit a required field.
+    OscalUuidService.derived(la.uuid, "leveraged-authorization-party")
   end
 
   # ── Import Profile ─────────────────────────────────────────────────
@@ -347,10 +381,19 @@ class OscalSspExportService
     end
   end
 
+  # #958 — OSCAL REQUIRES `party-uuid` on a leveraged-authorization, and this
+  # path never emitted one, so every boundary-level leveraged authorization
+  # (#396) made its leveraging SSP fail schema validation on export. The
+  # legacy SspLeveragedAuthorization path carries the column and always did.
+  #
+  # The party is the organization that owns the LEVERAGED system — the
+  # provider being relied upon — and it is declared in metadata.parties by
+  # build_metadata so the reference resolves instead of dangling.
   def build_boundary_leveraged_authorization(la)
     entry = {
-      "uuid"  => la.uuid,
-      "title" => la.name
+      "uuid"       => la.uuid,
+      "title"      => la.name,
+      "party-uuid" => leveraged_party_uuid(la)
     }
     entry[DATE_AUTHORIZED] = la.date_authorized.iso8601 if la.date_authorized
     entry["remarks"] = la.description if la.description.present?
@@ -362,6 +405,7 @@ class OscalSspExportService
       links << { "href" => href, "rel" => "leveraged-system" } if href
     end
     entry["links"] = links if links.any?
+    entry.compact
 
     party_uuid = la.metadata && la.metadata["party_uuid"]
     entry["party-uuid"] = party_uuid if party_uuid.present?
@@ -509,7 +553,12 @@ class OscalSspExportService
         "remarks"      => stmt.implementation_prose.presence || stmt.remarks
       }
       entry[RESPONSIBLE_ROLES] = stmt.responsible_roles_data if stmt.responsible_roles_data.present?
-      entry["set-parameters"]    = stmt.set_parameters_data    if stmt.set_parameters_data.present?
+
+      # #958 — `set-parameters` is NOT legal on a statement (OSCAL allows it
+      # on an implemented-requirement and on a by-component), so emitting it
+      # here made every SSP carrying one fail schema validation on export.
+      by_components = build_statement_by_components(stmt)
+      entry[BY_COMPONENTS] = by_components if by_components.any?
 
       # #396 + #398: emit inheritance links so the source of the prose
       # round-trips through OSCAL. `implements` for CDEF source,
@@ -518,6 +567,69 @@ class OscalSspExportService
       entry["links"] = inh_links if inh_links.any?
       entry.compact
     end
+  end
+
+  # #958 — what SPARC stores in a statement's `set_parameters_data` is mostly
+  # not set-parameters at all. SspJsonParserService parks `{"tag" =>
+  # "provided"}` / `{"tag" => "responsibility"}` markers there so
+  # LeveragedAuthorization#inheritable_statements can match them with a jsonb
+  # containment query. Those markers are READ on import from
+  # `by-component.satisfied[]` and `.responsibilities[]` — exactly where OSCAL
+  # models this — so they round-trip back there instead of leaking as an
+  # illegal property or being silently dropped.
+  #
+  # Genuine set-parameters ride along on the same by-component, which is a
+  # place OSCAL does allow them.
+  def build_statement_by_components(stmt)
+    markers, real_params = Array(stmt.set_parameters_data).partition do |param|
+      param.is_a?(Hash) && param.key?(STATEMENT_MARKER_KEY)
+    end
+    return [] if markers.empty? && real_params.empty?
+
+    component_uuid = statement_component_uuid
+    return [] if component_uuid.blank?
+
+    tags  = markers.filter_map { |m| m[STATEMENT_MARKER_KEY] }
+    entry = {
+      "component-uuid" => component_uuid,
+      "uuid"           => OscalUuidService.derived(stmt.uuid, "ssp-statement-by-component"),
+      "description"    => "Implementation of #{stmt.statement_id} by this system."
+    }
+
+    # Both live under `by-component.export`, not directly on the by-component:
+    # OSCAL models this from the PROVIDER's point of view, which is exactly
+    # what a leveraged SSP is. `satisfied` is the mirror image — the
+    # leveraging system declaring it met a responsibility — and does not
+    # belong here.
+    exported = {}
+    if tags.include?(PROVIDED_MARKER)
+      exported["provided"] = [ {
+        "uuid"        => OscalUuidService.derived(stmt.uuid, "ssp-statement-provided"),
+        "description" => "This system provides #{stmt.statement_id} to leveraging systems."
+      } ]
+    end
+
+    if tags.include?(RESPONSIBILITY_MARKER)
+      exported["responsibilities"] = [ {
+        "uuid"        => OscalUuidService.derived(stmt.uuid, "ssp-statement-responsibility"),
+        "description" => "A leveraging system is responsible for #{stmt.statement_id}."
+      } ]
+    end
+
+    entry["export"] = exported if exported.any?
+
+    entry["set-parameters"] = real_params if real_params.any?
+    [ entry ]
+  end
+
+  # The by-component has to name a component that exists in `components`, or
+  # the reference dangles. Falls back to the synthesized this-system uuid,
+  # which build_components derives the same way.
+  def statement_component_uuid
+    @statement_component_uuid ||=
+      @components.find { |c| c.component_type == "this-system" }&.uuid ||
+      @components.first&.uuid ||
+      OscalUuidService.derived(@document.uuid, "ssp-this-system-component")
   end
 
   def build_statement_inheritance_links(stmt)

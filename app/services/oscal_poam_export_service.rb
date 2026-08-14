@@ -45,15 +45,16 @@ class OscalPoamExportService
   private
 
   def eager_load_associations
-    @observations = @document.poam_observations.to_a
+    # Ordered so repeated exports of an unchanged document are identical.
+    @observations = @document.poam_observations.order(:id).to_a
     @risks = @document.poam_risks.includes(
       poam_remediations: :poam_milestones,
       poam_risk_observations: :poam_observation
-    ).to_a
+    ).order(:id).to_a
     @findings = @document.poam_findings.includes(
       :poam_finding_observations, :poam_finding_risks
-    ).to_a
-    @components = @document.poam_local_components.to_a
+    ).order(:id).to_a
+    @components = @document.poam_local_components.order(:id).to_a
     @items = @document.poam_items.order(:row_order).includes(
       :poam_item_risks, :poam_item_observations, :poam_item_findings
     ).to_a

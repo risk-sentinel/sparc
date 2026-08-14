@@ -154,7 +154,10 @@ class SarFromSspService
   # control gets its finding and no risk — it is not a risk, and a POA&M
   # carrying an item for a control that passed is not a credible artifact.
   def create_default_findings
-    @document.sar_controls.includes(:sar_control_fields).each do |sar_ctrl|
+    # order(:row_order) so findings are created in control order. Without it
+    # Postgres decides, and the SAR export emits them in a different order
+    # every rebuild despite being semantically identical.
+    @document.sar_controls.includes(:sar_control_fields).order(:row_order, :id).each do |sar_ctrl|
       next if sar_ctrl.control_id.blank?
 
       control_id = normalize_control_id(sar_ctrl.control_id)
