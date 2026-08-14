@@ -13,7 +13,7 @@ import { Controller } from "@hotwired/stimulus"
 // happens once we know we can handle it.
 //
 // No inline handlers anywhere — CSP has no 'unsafe-inline' (see #650).
-export default class extends Controller {
+export default class HelpDrawerController extends Controller {
   static targets = ["drawer", "frame", "fullGuide"]
 
   connect() {
@@ -102,7 +102,7 @@ export default class extends Controller {
     const trigger = this.returnFocusTo
     this.returnFocusTo = null
     // isConnected guards the case where the trigger was removed while open.
-    if (trigger && trigger.isConnected) trigger.focus()
+    if (trigger?.isConnected) trigger.focus()
   }
 
   teardownBeforeRender() {
