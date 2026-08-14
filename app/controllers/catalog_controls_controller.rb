@@ -153,10 +153,14 @@ class CatalogControlsController < ApplicationController
     return if catalog.nil?
 
     target = action_name == "edit" ? :edit : :show
+    # Carry the format across — a redirect that drops `.json` hands the caller
+    # an HTML page where it asked for JSON, and fetch() follows it silently.
+    # Same defect as control_catalogs_controller; see the note there.
+    fmt = params[:format]
     path = if target == :edit
-      control_catalog_edit_control_path(catalog.url_id, @catalog_control.canonical_identifier)
+      control_catalog_edit_control_path(catalog.url_id, @catalog_control.canonical_identifier, format: fmt)
     else
-      control_catalog_control_path(catalog.url_id, @catalog_control.canonical_identifier)
+      control_catalog_control_path(catalog.url_id, @catalog_control.canonical_identifier, format: fmt)
     end
     redirect_to path, status: :moved_permanently
   end

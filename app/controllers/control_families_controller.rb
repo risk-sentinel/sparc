@@ -83,7 +83,11 @@ class ControlFamiliesController < ApplicationController
     catalog = @control_family.control_catalog
     return if catalog.nil?
 
-    redirect_to control_catalog_family_path(catalog.url_id, @control_family.code.downcase),
+    # Carry the format across — a redirect that drops `.json` hands the caller
+    # an HTML page where it asked for JSON, and fetch() follows it silently.
+    # Same defect as control_catalogs_controller; see the note there.
+    redirect_to control_catalog_family_path(catalog.url_id, @control_family.code.downcase,
+                                            format: params[:format]),
                 status: :moved_permanently
   end
 

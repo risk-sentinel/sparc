@@ -379,7 +379,18 @@ class ControlCatalogsController < ApplicationController
     return if @control_catalog.blank? || @control_catalog.oscal_uuid.blank?
     return if params[:id] == @control_catalog.oscal_uuid
 
-    redirect_to control_catalog_path(@control_catalog.url_id), status: :moved_permanently
+    # Carry the FORMAT across the redirect. Without this, `/control_catalogs/
+    # 783.json` 301s to `/control_catalogs/<uuid>` — no `.json` — and since
+    # fetch() follows redirects transparently, the caller silently receives a
+    # full HTML page where it asked for JSON. `response.json()` then throws and
+    # the screen reports a generic failure with nothing in the log to explain
+    # it. That is exactly how "Create Profile from Catalog" came to say
+    # "Failed to load controls. Try again." for every catalog.
+    #
+    # params[:format] is nil for HTML requests and Rails omits it then, so this
+    # does not turn ordinary page URLs into `.html`.
+    redirect_to control_catalog_path(@control_catalog.url_id, format: params[:format]),
+                status: :moved_permanently
   end
 
   def set_control_catalog
