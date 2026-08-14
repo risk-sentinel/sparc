@@ -3,17 +3,28 @@
 # (stated_requirement, description, ssp_status) and editable assessment
 # placeholder fields (result, working_status, notes_weakness, etc.).
 #
-# A default SarResult and SarFinding per control are scaffolded so the
-# SAR is enrichment-ready.
+# A default SarResult, and a SarFinding and SarRisk per control, are
+# scaffolded so the SAR is enrichment-ready.
 #
 # Usage:
 #   service = SarFromSspService.new(ssp_document, name: "My SAR")
 #   sar = service.create
 #
 class SarFromSspService
-  def initialize(ssp_document, name: nil)
-    @ssp  = ssp_document
-    @name = name.presence || "SAR from #{ssp_document.name}"
+  # Every scaffolded control is assessed not-satisfied until an assessor says
+  # otherwise — that is what makes each one a risk to the authorization.
+  FINDING_STATE = "not-satisfied"
+
+  # `deadline` is normally nil: PoamGeneratorService then resolves one from the
+  # organisation's RemediationTimeline SLA, which is a policy lookup rather
+  # than a date this service made up. A caller pins it only when the generated
+  # OSCAL must be byte-reproducible — the #845 reference estate does, because
+  # an SLA-derived deadline is Time.current-relative and would put a fresh diff
+  # in every regeneration.
+  def initialize(ssp_document, name: nil, deadline: nil)
+    @ssp      = ssp_document
+    @name     = name.presence || "SAR from #{ssp_document.name}"
+    @deadline = deadline
   end
 
   def create
@@ -112,24 +123,67 @@ class SarFromSspService
     )
   end
 
-  # ── Default findings per control ────────────────────────────────
+  # ── Default findings and risks per control ──────────────────────
 
+  # #954 — this used to write findings ONLY, and the result was an empty POA&M
+  # that reported success. PoamGeneratorService sources exclusively from
+  # SarRisk (`SarRisk.where(sar_result_id: ...)`), never from SarFinding, so a
+  # SAR generated from an SSP handed it nothing to convert: items=0 with
+  # skipped=0, because there was no input to reject. SarJsonParserService and
+  # manual authoring both create risks, which is why only this one path — the
+  # path of building an authorization inside SPARC rather than importing one —
+  # produced a hollow document.
+  #
+  # A control assessed not-satisfied IS a risk to the authorization, so the
+  # risk is created here beside its finding and linked to it.
   def create_default_findings
-    @document.sar_controls.each do |sar_ctrl|
+    @document.sar_controls.includes(:sar_control_fields).each do |sar_ctrl|
       next if sar_ctrl.control_id.blank?
 
-      control_id = normalize_control_id(sar_ctrl.control_id)
-
-      @result.sar_findings.create!(
+      finding = @result.sar_findings.create!(
         uuid:        SecureRandom.uuid,
         title:       "Finding for #{sar_ctrl.control_id}",
         description: "Assessment finding for control #{sar_ctrl.control_id}",
         target_data: {
           "type"      => "objective-id",
-          "target-id" => control_id,
-          "status"    => { "state" => "not-satisfied" }
+          "target-id" => normalize_control_id(sar_ctrl.control_id),
+          "status"    => { "state" => FINDING_STATE }
         }
       )
+
+      link_risk_to(finding, sar_ctrl)
+    end
+  end
+
+  # PoamRisk::OSCAL_REQUIRED_FIELDS is title/description/statement/status, and
+  # the generator SKIPS a source risk missing any of them rather than filling
+  # it in. So all four are set — but `statement`, the one an assessor and an AO
+  # actually read, is the control's own requirement carried over from the SSP,
+  # not prose composed here. Where the SSP records no requirement, the
+  # statement says exactly that instead of implying an assessment nobody made.
+  def link_risk_to(finding, sar_ctrl)
+    risk = @result.sar_risks.create!(
+      uuid:        SecureRandom.uuid,
+      title:       "Risk for #{sar_ctrl.control_id}",
+      description: "Control #{sar_ctrl.control_id} was assessed #{FINDING_STATE}.",
+      statement:   risk_statement_for(sar_ctrl),
+      status:      "open",
+      deadline:    @deadline
+    )
+
+    SarFindingRisk.create!(sar_finding: finding, sar_risk: risk)
+  end
+
+  def risk_statement_for(sar_ctrl)
+    requirement = sar_ctrl.sar_control_fields
+                          .find { |field| field.field_name == "stated_requirement" }
+                          &.field_value
+
+    if requirement.present?
+      "#{sar_ctrl.control_id} is assessed #{FINDING_STATE}. The control requires: #{requirement}"
+    else
+      "#{sar_ctrl.control_id} is assessed #{FINDING_STATE}. " \
+        "The SSP records no stated requirement for this control."
     end
   end
 
