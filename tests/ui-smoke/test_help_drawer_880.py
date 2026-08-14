@@ -260,6 +260,39 @@ def test_drawer_does_not_strand_into_a_cached_snapshot(authed_page):
     )
 
 
+def test_drawer_header_is_laid_out_not_just_present(authed_page):
+    """A regression guard for a bug every other test here missed.
+
+    Bootstrap's offcanvas header sets no justify-content — it right-aligns the
+    close button purely through `.btn-close { margin-left: auto }`. Wrapping
+    that button in an action group removes the auto-margin from the header's
+    flex context, and the title and buttons collapse to the left with ZERO gap
+    between them, leaving ~380px of empty header on the right. Everything is
+    present, focusable and accessible, so the markup assertions and axe were
+    all green; only the rendered screen showed it.
+    """
+    authed_page.goto(BOUNDARY_FORM)
+    open_drawer(authed_page)
+
+    panel = authed_page.locator(DRAWER).bounding_box()
+    title = authed_page.locator("#sparc-help-drawer-title").bounding_box()
+    close = authed_page.locator(f"{DRAWER} .btn-close").bounding_box()
+    full = authed_page.locator(f"{DRAWER} [data-help-drawer-target='fullGuide']").bounding_box()
+
+    gap = full["x"] - (title["x"] + title["width"])
+    assert gap >= 8, (
+        f"only {gap:.1f}px between the drawer title and the action button — "
+        "the header has collapsed to the left"
+    )
+
+    panel_right = panel["x"] + panel["width"]
+    close_right = close["x"] + close["width"]
+    assert panel_right - close_right < 40, (
+        f"close button ends {panel_right - close_right:.1f}px from the panel edge — "
+        "the header actions are not right-aligned"
+    )
+
+
 def test_open_drawer_passes_the_a11y_bar(authed_page):
     """Audit the drawer OPEN, which no page baseline ever sees.
 

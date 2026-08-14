@@ -30,6 +30,9 @@ somewhere else. The form stays visible underneath it, and anything you have
 already typed is untouched — so checking what a field means mid-way through
 filling one in costs you nothing.
 
+![The help drawer open over a part-filled Authorization Boundary form, with the
+typed name still in place underneath](images/help-drawer.png)
+
 - **Esc**, the **×**, or a click outside closes the drawer and returns you to
   exactly where you were, including keyboard focus.
 - The drawer is fully keyboard-operable and is announced to screen readers as a

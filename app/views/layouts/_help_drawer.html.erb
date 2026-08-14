@@ -20,7 +20,14 @@
   <div class="offcanvas-header sparc-help-drawer-header">
     <h2 class="offcanvas-title h6 mb-0" id="sparc-help-drawer-title">Help</h2>
 
-    <div class="d-flex align-items-center gap-2">
+    <%# ms-auto is load-bearing. Bootstrap's offcanvas header is a plain flex
+        row with NO justify-content — it right-aligns the close button purely
+        via `.btn-close { margin-left: auto }`. Wrapping the close button in
+        this group takes that auto-margin out of the header's own flex context,
+        so without ms-auto both children bunch against the left edge with zero
+        gap and the title sits jammed under the button. Caught by looking at
+        the rendered screen; every test still passed. %>
+    <div class="d-flex align-items-center gap-2 ms-auto">
       <%# The escape hatch #880 asks to keep prominent. Its href is repointed at
           whichever guide the drawer is showing, so "open the whole thing" is
           never a different page than the one being read. %>
