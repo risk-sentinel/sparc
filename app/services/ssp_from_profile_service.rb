@@ -142,6 +142,7 @@ class SspFromProfileService
     groups = catalog.dig("catalog", "groups") || []
     control_attrs = []
     field_entries = []
+    statement_entries = []
     row_order = 0
 
     groups.each do |group|
@@ -161,6 +162,8 @@ class SspFromProfileService
         field_entries << [ idx, "stated_requirement", statement ] if statement.present?
         field_entries << [ idx, "description", guidance ]         if guidance.present?
 
+        statement_entries << [ idx, statement_part_id(control) ] if statement.present?
+
         # Editable placeholder fields
         field_entries << [ idx, "status", "Deferred" ]
         field_entries << [ idx, "control_type", "" ]
@@ -173,13 +176,70 @@ class SspFromProfileService
       end
     end
 
-    batch_insert_records(
+    imported_ids = batch_insert_records(
       control_class: SspControl,
       field_class:   SspControlField,
       document_fk:   :ssp_document_id,
       control_attrs: control_attrs,
       field_entries: field_entries
     )
+
+    create_statements_from_catalog(imported_ids, statement_entries)
+
+    imported_ids
+  end
+
+  # #955 — the SSP's statements are what another system can leverage. Without
+  # them a profile-generated SSP carried nothing addressable: a field is
+  # display text, while only a statement row can hold `set_parameters_data`,
+  # be tagged `provided`/`responsibility`, be inherited and be gap-checked. So
+  # LeveragedAuthorization#inheritable_statements matched nothing and
+  # populate_from_leveraged! resolved zero links no matter how the leveraged
+  # authorization was configured.
+  #
+  # `implementation_prose` is deliberately left blank. It holds the SSP
+  # author's response, and a freshly generated SSP has none yet — the same
+  # reason `implementation_statement` is scaffolded empty above. The catalog's
+  # requirement text is not an implementation of itself.
+  #
+  # Also deliberately absent: the `provided`/`responsibility` tags. Those are
+  # an authoring decision a system owner makes when declaring a customer
+  # responsibility matrix, and generating them would fabricate a CRM nobody
+  # wrote.
+  def create_statements_from_catalog(imported_ids, statement_entries)
+    return if statement_entries.empty?
+
+    control_uuids = SspControl.where(id: imported_ids).pluck(:id, :uuid).to_h
+
+    records = statement_entries.filter_map do |idx, statement_id|
+      control_id = imported_ids[idx]
+      uuid       = control_uuids[control_id]
+      next if uuid.blank?
+
+      SspControlStatement.new(
+        ssp_control_id:       control_id,
+        statement_id:         statement_id,
+        # #397 stability invariant, the same derivation the OSCAL importer
+        # uses, so the two paths cannot produce different ids for one statement.
+        uuid:                 OscalUuidService.derived(uuid, "ssp-statement", statement_id),
+        implementation_prose: nil,
+        row_order:            0
+      )
+    end
+
+    records.each_slice(BATCH_SIZE_FIELDS) do |batch|
+      SspControlStatement.import(batch, validate: false)
+    end
+  end
+
+  # OSCAL names a control's statement part "<control-id>_smt", which is what
+  # OscalResolvedProfileCatalogService emits. Fall back to that convention
+  # when a catalog omits the id, so the statement is still addressable.
+  def statement_part_id(control)
+    parts = control["parts"]
+    part  = parts.is_a?(Array) ? parts.find { |p| p["name"] == "statement" } : nil
+
+    part&.dig("id").presence || "#{control['id']}_smt"
   end
 
   def create_by_component_records(imported_control_ids)

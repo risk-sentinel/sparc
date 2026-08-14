@@ -200,6 +200,91 @@ RSpec.describe SspFromProfileService do
       expect(ssp.import_metadata["format"]).to eq("resolved_catalog")
     end
 
+    # #955 — an SSP generated from a profile carried no statements at all, so
+    # nothing on it could be marked `provided` and a leveraged authorization
+    # resolved zero links however it was configured.
+    describe "control statements (#955)" do
+      def statements_for(ssp)
+        SspControlStatement.joins(:ssp_control).where(ssp_controls: { ssp_document_id: ssp.id })
+      end
+
+      it "creates a statement for each control that has a catalog statement" do
+        ssp = described_class.new(profile).create
+
+        expect(statements_for(ssp).pluck(:statement_id))
+          .to contain_exactly("ac-1_smt", "ac-2_smt", "sc-1_smt")
+      end
+
+      # 30 base controls in Rev 5.2.0 genuinely have no statement (ac-2, au-2
+      # among them). They must yield no row rather than an empty one.
+      it "creates no statement for a control the catalog gives none" do
+        catalog = resolved_catalog_json.deep_dup
+        catalog["catalog"]["groups"][0]["controls"][1]["parts"] =
+          [ { "id" => "ac-2_gdn", "name" => "guidance", "prose" => "Guidance only." } ]
+        silent = create(:profile_document, lifecycle_status: "published",
+                                           resolved_catalog_json: catalog,
+                                           published: Time.current.iso8601)
+
+        ssp = described_class.new(silent).create
+
+        expect(statements_for(ssp).pluck(:statement_id)).to contain_exactly("ac-1_smt", "sc-1_smt")
+        expect(ssp.ssp_controls.count).to eq(3)
+      end
+
+      # #397 invariant, shared with the OSCAL importer so one statement cannot
+      # end up with two different ids depending on how it arrived.
+      # The count assertion in each of the next three is load-bearing: without
+      # it they pass vacuously when no statement is created at all, which is
+      # exactly the bug they exist to catch.
+      it "derives the statement uuid from the control uuid" do
+        ssp = described_class.new(profile).create
+
+        statements = statements_for(ssp).to_a
+        expect(statements.size).to eq(3)
+        statements.each do |statement|
+          expect(statement.uuid).to eq(
+            OscalUuidService.derived(statement.ssp_control.uuid, "ssp-statement", statement.statement_id)
+          )
+        end
+      end
+
+      it "leaves implementation_prose blank — the author has written none yet" do
+        ssp = described_class.new(profile).create
+
+        prose = statements_for(ssp).pluck(:implementation_prose)
+        expect(prose.size).to eq(3)
+        expect(prose.compact).to be_empty
+      end
+
+      # Tagging is a system owner declaring a customer responsibility matrix.
+      # Generating the tags would fabricate a CRM nobody authored.
+      it "tags no statement provided or responsibility" do
+        ssp = described_class.new(profile).create
+
+        tags = statements_for(ssp).pluck(:set_parameters_data)
+        expect(tags.size).to eq(3)
+        expect(tags.flatten).to be_empty
+      end
+
+      it "makes the SSP leverageable once a statement is tagged provided" do
+        leveraged = described_class.new(profile, name: "Leveraged").create
+        leveraging = described_class.new(profile, name: "Leveraging").create
+        b1 = create(:authorization_boundary)
+        b2 = create(:authorization_boundary)
+        leveraged.update!(authorization_boundary_id: b1.id)
+        leveraging.update!(authorization_boundary_id: b2.id)
+
+        statements_for(leveraged).find_by(statement_id: "ac-1_smt")
+                                 .update!(set_parameters_data: [ { "tag" => "provided" } ])
+
+        la = LeveragedAuthorization.create!(name: "LA", leveraging_boundary: b2,
+                                            leveraged_boundary: b1, crm_type: "oscal_with_access")
+
+        expect(la.inheritable_statements.count).to eq(1)
+        expect(LeveragedAuthorizationService.populate_from_leveraged!(la)).to eq(1)
+      end
+    end
+
     it "raises error for unpublished profile" do
       unpublished = create(:profile_document, lifecycle_status: "in_progress")
 
